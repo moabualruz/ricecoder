@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 1b29c871b02ef763cdef4c85d49343ce95640ea20f553b74307910f5f26a4a36 # shrinks to cmd = CommandDef { name: "0", description: "0", template: " ", agent: None, model: None, subtask: None }
+cc 9516d1e1eb1ef099ec30c843fd00ff18100d8b56cf84791f7865ab3fc88b0704 # shrinks to cmd = CommandDef { name: "a", description: " ", template: "a", agent: None, model: None, subtask: None }

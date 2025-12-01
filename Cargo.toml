@@ -3,6 +3,7 @@ members = [
     "crates/ricecoder-storage",
     "crates/ricecoder-cli",
     "crates/ricecoder-providers",
+    "crates/ricecoder-permissions",
 ]
 resolver = "2"
 
@@ -38,3 +39,6 @@ futures = "0.3"
 reqwest = { version = "0.11", features = ["json"] }
 dotenv = "0.15"
 regex = "1.10"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+glob = "0.3"

@@ -32,6 +32,7 @@ syntect = { workspace = true }
 dirs = { workspace = true }
 term_size = { workspace = true }
 atty = "0.2"
+regex = { workspace = true }
 ricecoder-storage = { path = "../ricecoder-storage" }
 
 [dev-dependencies]

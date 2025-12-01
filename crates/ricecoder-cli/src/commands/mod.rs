@@ -7,6 +7,7 @@ pub mod config;
 pub mod refactor;
 pub mod review;
 pub mod version;
+pub mod custom;
 
 pub use init::InitCommand;
 pub use gen::GenCommand;
@@ -15,6 +16,10 @@ pub use config::ConfigCommand;
 pub use refactor::RefactorCommand;
 pub use review::ReviewCommand;
 pub use version::VersionCommand;
+pub use custom::{
+    CommandDef, ExecutionContext, ExecutionResult, ExecutionStatus, CustomCommand,
+    CustomCommandHandler, CustomAction, CommandRegistry,
+};
 
 use crate::error::CliResult;
 
