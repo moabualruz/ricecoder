@@ -42,6 +42,8 @@ pub enum ResourceType {
     Boilerplate,
     /// Learned rules from the learning system
     Rule,
+    /// Custom command definitions
+    CustomCommand,
 }
 
 impl ResourceType {
@@ -54,6 +56,7 @@ impl ResourceType {
             ResourceType::Steering => "steering",
             ResourceType::Boilerplate => "boilerplates",
             ResourceType::Rule => "rules",
+            ResourceType::CustomCommand => "commands",
         }
     }
 }
@@ -141,6 +144,7 @@ mod tests {
         assert_eq!(ResourceType::Steering.dir_name(), "steering");
         assert_eq!(ResourceType::Boilerplate.dir_name(), "boilerplates");
         assert_eq!(ResourceType::Rule.dir_name(), "rules");
+        assert_eq!(ResourceType::CustomCommand.dir_name(), "commands");
     }
 
     #[test]

@@ -95,6 +95,56 @@ pub enum Commands {
         #[arg(value_name = "SHELL")]
         shell: String,
     },
+
+    /// Manage and execute custom commands
+    #[command(about = "Manage and execute custom commands")]
+    Custom {
+        #[command(subcommand)]
+        action: Option<CustomSubcommand>,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum CustomSubcommand {
+    /// List all available custom commands
+    #[command(about = "Display all available custom commands")]
+    List,
+
+    /// Show help for a specific custom command
+    #[command(about = "Show help for a specific custom command")]
+    Help {
+        /// Command name
+        #[arg(value_name = "NAME")]
+        name: String,
+    },
+
+    /// Execute a custom command
+    #[command(about = "Execute a custom command")]
+    Run {
+        /// Command name
+        #[arg(value_name = "NAME")]
+        name: String,
+
+        /// Arguments to pass to the command
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+
+    /// Load custom commands from a file
+    #[command(about = "Load custom commands from a JSON or Markdown file")]
+    Load {
+        /// Path to command definition file
+        #[arg(value_name = "FILE")]
+        file: String,
+    },
+
+    /// Search for custom commands
+    #[command(about = "Search for custom commands by name or description")]
+    Search {
+        /// Search query
+        #[arg(value_name = "QUERY")]
+        query: String,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -179,6 +229,21 @@ impl CommandRouter {
             Commands::Completions { shell } => {
                 crate::completion::generate_completions(shell)
                     .map_err(|e| CliError::Internal(e))
+            }
+            Commands::Custom { action } => {
+                let custom_action = match action {
+                    Some(CustomSubcommand::List) | None => custom::CustomAction::List,
+                    Some(CustomSubcommand::Help { name }) => custom::CustomAction::Help(name.clone()),
+                    Some(CustomSubcommand::Run { name, args }) => {
+                        custom::CustomAction::Run(name.clone(), args.clone())
+                    }
+                    Some(CustomSubcommand::Load { file }) => custom::CustomAction::Load(file.clone()),
+                    Some(CustomSubcommand::Search { query }) => {
+                        custom::CustomAction::Search(query.clone())
+                    }
+                };
+                let cmd = custom::CustomCommandHandler::new(custom_action);
+                cmd.execute()
             }
         }
     }
