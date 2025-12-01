@@ -91,12 +91,12 @@ test: add property tests for template rendering
 ```
 
 Prefixes:
-- `feat:` — New feature
-- `fix:` — Bug fix
-- `docs:` — Documentation
-- `refactor:` — Code refactoring
-- `test:` — Tests
-- `chore:` — Maintenance
+- `feat:` - New feature
+- `fix:` - Bug fix
+- `docs:` - Documentation
+- `refactor:` - Code refactoring
+- `test:` - Tests
+- `chore:` - Maintenance
 
 ---
 
