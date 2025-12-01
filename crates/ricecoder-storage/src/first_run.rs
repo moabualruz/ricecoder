@@ -6,7 +6,7 @@
 use crate::error::StorageResult;
 use crate::manager::PathResolver;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Marker file name for tracking first-run status
 const FIRST_RUN_MARKER: &str = ".ricecoder-initialized";
@@ -18,7 +18,7 @@ impl FirstRunHandler {
     /// Check if this is the first run
     ///
     /// Returns true if the marker file doesn't exist in the global storage path
-    pub fn is_first_run(global_path: &PathBuf) -> StorageResult<bool> {
+    pub fn is_first_run(global_path: &Path) -> StorageResult<bool> {
         let marker_path = global_path.join(FIRST_RUN_MARKER);
         Ok(!marker_path.exists())
     }
@@ -26,7 +26,7 @@ impl FirstRunHandler {
     /// Mark the first run as complete
     ///
     /// Creates the marker file to indicate initialization is done
-    pub fn mark_first_run_complete(global_path: &PathBuf) -> StorageResult<()> {
+    pub fn mark_first_run_complete(global_path: &Path) -> StorageResult<()> {
         let marker_path = global_path.join(FIRST_RUN_MARKER);
 
         // Ensure parent directory exists
@@ -84,7 +84,7 @@ mod tests {
     #[test]
     fn test_is_first_run_no_marker() {
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
-        let is_first = FirstRunHandler::is_first_run(&temp_dir.path().to_path_buf())
+        let is_first = FirstRunHandler::is_first_run(temp_dir.path())
             .expect("Failed to check first run");
         assert!(is_first, "Should be first run when marker doesn't exist");
     }
@@ -95,7 +95,7 @@ mod tests {
         let marker_path = temp_dir.path().join(FIRST_RUN_MARKER);
         fs::write(&marker_path, "").expect("Failed to create marker");
 
-        let is_first = FirstRunHandler::is_first_run(&temp_dir.path().to_path_buf())
+        let is_first = FirstRunHandler::is_first_run(temp_dir.path())
             .expect("Failed to check first run");
         assert!(!is_first, "Should not be first run when marker exists");
     }

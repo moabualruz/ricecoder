@@ -2,7 +2,7 @@
 
 use crate::error::{StorageError, StorageResult};
 use crate::types::{ResourceType, StorageMode};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Storage manager trait for managing storage operations
 pub trait StorageManager: Send + Sync {
@@ -65,7 +65,7 @@ impl PathResolver {
     }
 
     /// Expand ~ in paths to home directory
-    pub fn expand_home(path: &PathBuf) -> StorageResult<PathBuf> {
+    pub fn expand_home(path: &Path) -> StorageResult<PathBuf> {
         let path_str = path
             .to_str()
             .ok_or_else(|| StorageError::path_resolution_error("Invalid path encoding"))?;
@@ -81,7 +81,7 @@ impl PathResolver {
             }
         }
 
-        Ok(path.clone())
+        Ok(path.to_path_buf())
     }
 }
 
