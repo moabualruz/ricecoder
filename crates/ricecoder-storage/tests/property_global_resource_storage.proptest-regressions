@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc e72409de7134f5415d00d6b8927678be858c070bda76babb704b67a8e3a2e79c # shrinks to resource_type = Template, names = ["-.txt", "-.txt"], content = []
+cc 71b20dbec162d0b6df70d7c0e8232f48ee5ecfd863f43881b49b89c181bc40fb # shrinks to resource_type = Template, names = {"w.txt", "W.txt"}, content = []

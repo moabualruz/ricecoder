@@ -1,0 +1,50 @@
+// Progress indicators and spinners
+
+use indicatif::{ProgressBar, ProgressStyle};
+use std::time::Duration;
+
+/// Create a spinner for long-running operations
+pub fn create_spinner(message: &str) -> ProgressBar {
+    let spinner = ProgressBar::new_spinner();
+    spinner.set_style(
+        ProgressStyle::default_spinner()
+            .tick_strings(&["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"])
+            .template("{spinner:.cyan} {msg}")
+            .unwrap(),
+    );
+    spinner.set_message(message.to_string());
+    spinner.enable_steady_tick(Duration::from_millis(80));
+    spinner
+}
+
+/// Create a progress bar for operations with known length
+pub fn create_progress_bar(total: u64, message: &str) -> ProgressBar {
+    let pb = ProgressBar::new(total);
+    pb.set_style(
+        ProgressStyle::default_bar()
+            .template("{msg} [{bar:40.cyan/blue}] {pos}/{len}")
+            .unwrap()
+            .progress_chars("=>-"),
+    );
+    pb.set_message(message.to_string());
+    pb
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_spinner_creation() {
+        let spinner = create_spinner("Testing...");
+        assert!(!spinner.is_finished());
+        spinner.finish_with_message("Done!");
+    }
+
+    #[test]
+    fn test_progress_bar_creation() {
+        let pb = create_progress_bar(100, "Processing...");
+        assert_eq!(pb.length(), Some(100));
+        pb.finish_with_message("Complete!");
+    }
+}

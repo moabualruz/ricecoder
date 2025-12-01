@@ -1,0 +1,40 @@
+[package]
+name = "ricecoder-cli"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Command-line interface for RiceCoder"
+
+[[bin]]
+name = "rice"
+path = "src/main.rs"
+
+[lib]
+name = "ricecoder_cli"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+clap = { workspace = true }
+clap_complete = "4.4"
+colored = { workspace = true }
+indicatif = { workspace = true }
+rustyline = { workspace = true }
+syntect = { workspace = true }
+dirs = { workspace = true }
+term_size = { workspace = true }
+atty = "0.2"
+ricecoder-storage = { path = "../ricecoder-storage" }
+
+[dev-dependencies]
+proptest = { workspace = true }
+tokio-test = { workspace = true }
+tempfile = { workspace = true }

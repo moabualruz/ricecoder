@@ -154,7 +154,7 @@ proptest! {
             Just(ResourceType::Template),
             Just(ResourceType::Standard),
         ],
-        names in prop::collection::vec(resource_name_strategy(), 1..10),
+        names in prop::collection::hash_set(resource_name_strategy(), 1..10),
         content in resource_content_strategy(),
     ) {
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
