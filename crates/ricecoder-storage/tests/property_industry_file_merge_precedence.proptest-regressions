@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc f05d5fd693a892d3c7b3693f55533a2744509944ff67a97db20c0ace0f6b1779 # shrinks to combination = IndustryFilesCombination { has_cursorrules: false, has_cursor_dir: false, has_claude_md: false, has_agents_md: false, has_windsurfrules: false, has_clinerules: false, has_aider_config: false, has_copilot_instructions: true, has_continue_dir: false, has_kiro_dir: false }
+cc 5afa86a425db503bf06780e7fa54c11c666ce82157d513afe5d3886342f825e3 # shrinks to combination = IndustryFilesCombination { has_cursorrules: false, has_cursor_dir: false, has_claude_md: false, has_agents_md: false, has_windsurfrules: false, has_clinerules: false, has_aider_config: false, has_copilot_instructions: false, has_continue_dir: false, has_kiro_dir: false }
