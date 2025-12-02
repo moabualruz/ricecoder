@@ -1,0 +1,12 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc a4a37e8d2e2fa610c6c21c4451a80c6c385861fe0b2b4992573a45f06f32b36c # shrinks to boilerplate = Boilerplate { id: "aa", name: "AA", description: "Test boilerplate", language: "rust", files: [BoilerplateFile { path: "/_0.rs", template: "pub struct a {}", condition: None }], dependencies: [], scripts: [] }, variables = {"aa": "_"}
+cc cb149794701320ba49023d098ca8469eb6301ab2bf1d1eaae2ed7c55fa83c65e # shrinks to boilerplate = Boilerplate { id: "a-", name: "A0", description: "Test boilerplate", language: "rust", files: [BoilerplateFile { path: "/0a.rs", template: "pub struct 0 {}", condition: None }], dependencies: [], scripts: [] }, variables = {"a0": "A"}
+cc 72b3cc99d075d14ba24d8113aca25da2ea5ad188e85268437e80fed3525e6d93 # shrinks to boilerplate = Boilerplate { id: "a0", name: "Aa", description: "Test boilerplate", language: "rust", files: [BoilerplateFile { path: "/a_.rs", template: "pub struct a {}", condition: None }], dependencies: [], scripts: [] }, variables = {"a0": "-"}
+cc de7abee771408680fd680b0a3f51def32fbfe62353a553ddde12d26b2b0517ff # shrinks to boilerplate = Boilerplate { id: "a0", name: "A ", description: "Test boilerplate", language: "rust", files: [BoilerplateFile { path: "/a_.rs", template: "pub struct A {}", condition: None }], dependencies: [], scripts: [] }, variables = {"a0": "A"}
+cc 95d50374277dd8234c20f0bd8e84f049375a44c0d12e1e8e4f08caffa43c70fe # shrinks to boilerplate = Boilerplate { id: "a-", name: "A0", description: "Test boilerplate", language: "rust", files: [BoilerplateFile { path: "/_0.rs", template: "pub struct _ {}", condition: None }], dependencies: [], scripts: [] }, variables = {"aa": "a"}
+cc 5f780271c57cbacd703a9a63ec098d162398bebc378a53d65984614336e8f832 # shrinks to boilerplate = Boilerplate { id: "aa", name: "AA", description: "Test boilerplate", language: "rust", files: [BoilerplateFile { path: "//a.rs", template: "pub struct _ {}", condition: None }], dependencies: [], scripts: [] }, variables = {"aa": "-"}

@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 2a7b1f67a3bb54afffdd5626e163965b1e46f812b983e168b482a157dfb0347f # shrinks to (template, values) = ("Project: {{a}}, Author: {{a0}}", {"a": "A", "a0": "B"})
+cc 29662acc350e98e1edec8b0b3aa6654d50ee7b404779141e2400db9a404f6dc2 # shrinks to (template, values) = ("Project: {{a}}, Author: {{aa}}", {"a": "0", "aa": "B"})

@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 829a94a3c76a10bf3ba45895a17b03065d4d6d9e09a73983cf6b8ca580ef77fa # shrinks to global = Steering { rules: [], standards: [Standard { id: "_", description: " " }, Standard { id: "_", description: "a" }], templates: [] }, project = Steering { rules: [], standards: [], templates: [] }

@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc e50b1ed8ba596aaed619708612c38f1f87611b6880f98adcef49b8d6d13178c7 # shrinks to message_ids = ["msg-_", "msg-_"], spec_id = "-", roles = [User, User], contents = ["AA?a?A,?aa", ".0.0a.AA? "]
