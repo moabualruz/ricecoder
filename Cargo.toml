@@ -5,6 +5,8 @@ members = [
     "crates/ricecoder-providers",
     "crates/ricecoder-permissions",
     "crates/ricecoder-commands",
+    "crates/ricecoder-tui",
+    "crates/ricecoder-local-models",
 ]
 resolver = "2"
 
@@ -35,6 +37,7 @@ proptest = "1.4"
 tokio-test = "0.4"
 tempfile = "3.8"
 lazy_static = "1.4"
+mockito = "1.2"
 async-trait = "0.1"
 futures = "0.3"
 reqwest = { version = "0.11", features = ["json"] }
@@ -43,3 +46,6 @@ regex = "1.10"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1.0", features = ["v4", "serde"] }
 glob = "0.3"
+ratatui = "0.26"
+crossterm = "0.27"
+arboard = "3.3"

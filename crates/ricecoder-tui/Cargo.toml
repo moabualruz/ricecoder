@@ -1,17 +1,17 @@
 [package]
-name = "ricecoder-cli"
+name = "ricecoder-tui"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
-description = "Command-line interface for RiceCoder"
+description = "Terminal User Interface for RiceCoder"
 
 [[bin]]
-name = "rice"
+name = "ricecoder-tui"
 path = "src/main.rs"
 
 [lib]
-name = "ricecoder_cli"
+name = "ricecoder_tui"
 path = "src/lib.rs"
 
 [dependencies]
@@ -23,19 +23,11 @@ tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 tokio = { workspace = true }
 anyhow = { workspace = true }
-clap = { workspace = true }
-clap_complete = "4.4"
+ratatui = { workspace = true }
+crossterm = { workspace = true }
 colored = { workspace = true }
-indicatif = { workspace = true }
-rustyline = { workspace = true }
-syntect = { workspace = true }
 dirs = { workspace = true }
-term_size = { workspace = true }
-atty = "0.2"
-regex = { workspace = true }
-ricecoder-storage = { path = "../ricecoder-storage" }
-ricecoder-commands = { path = "../ricecoder-commands" }
-ricecoder-tui = { path = "../ricecoder-tui" }
+arboard = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
