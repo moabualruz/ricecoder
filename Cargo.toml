@@ -7,6 +7,9 @@ members = [
     "crates/ricecoder-commands",
     "crates/ricecoder-tui",
     "crates/ricecoder-local-models",
+    "crates/ricecoder-specs",
+    "crates/ricecoder-files",
+    "crates/ricecoder-generation",
 ]
 resolver = "2"
 
@@ -49,3 +52,8 @@ glob = "0.3"
 ratatui = "0.26"
 crossterm = "0.27"
 arboard = "3.3"
+sha2 = "0.10"
+git2 = "0.18"
+similar = "2.3"
+handlebars = "5.0"
+heck = "0.4"

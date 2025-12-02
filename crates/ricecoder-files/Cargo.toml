@@ -1,0 +1,24 @@
+[package]
+name = "ricecoder-files"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+tokio = { workspace = true }
+sha2 = "0.10"
+uuid = { workspace = true }
+chrono = { workspace = true }
+thiserror = { workspace = true }
+git2 = "0.18"
+similar = "2.3"
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+fxhash = "0.2"
+
+[dev-dependencies]
+proptest = { workspace = true }
+tokio-test = { workspace = true }
+tempfile = { workspace = true }
