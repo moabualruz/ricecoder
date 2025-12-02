@@ -408,7 +408,7 @@ fn test_output_formatting_idempotence_key_value() {
 
 #[test]
 fn test_output_style_default_detects_tty() {
-    let style = OutputStyle::default();
+    let _style = OutputStyle::default();
     // Just verify it creates successfully
     assert!(true);
 }

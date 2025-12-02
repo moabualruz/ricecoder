@@ -34,6 +34,7 @@ term_size = { workspace = true }
 atty = "0.2"
 regex = { workspace = true }
 ricecoder-storage = { path = "../ricecoder-storage" }
+ricecoder-commands = { path = "../ricecoder-commands" }
 
 [dev-dependencies]
 proptest = { workspace = true }

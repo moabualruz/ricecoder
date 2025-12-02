@@ -134,8 +134,6 @@ impl ConfigLoader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::NamedTempFile;
-    use std::io::Write;
 
     #[test]
     fn test_load_yaml_config() {

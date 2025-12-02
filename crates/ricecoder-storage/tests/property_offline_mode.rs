@@ -4,7 +4,6 @@
 
 use proptest::prelude::*;
 use ricecoder_storage::{OfflineModeHandler, StorageState};
-use std::fs;
 use tempfile::TempDir;
 
 /// Strategy for generating cache availability states
