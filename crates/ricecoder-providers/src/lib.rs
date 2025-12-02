@@ -17,7 +17,7 @@ pub mod token_counter;
 pub use api_key::ApiKeyManager;
 pub use error::ProviderError;
 pub use health_check::{HealthCheckCache, HealthCheckResult};
-pub use models::{Capability, ChatRequest, ChatResponse, Message, ModelInfo, TokenUsage};
+pub use models::{Capability, ChatRequest, ChatResponse, FinishReason, Message, ModelInfo, TokenUsage};
 pub use provider::{Provider, ProviderManager, ProviderRegistry};
 pub use providers::{OpenAiProvider, AnthropicProvider, OllamaProvider, GoogleProvider, ZenProvider};
 pub use redaction::{redact, contains_sensitive_info, RedactionFilter, Redacted};

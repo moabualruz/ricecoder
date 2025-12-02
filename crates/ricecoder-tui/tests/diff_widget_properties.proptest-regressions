@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc d26807f1c7c706d02388946336bf1ccf261d2be96b9960d2e7ed4c10ff37673e # shrinks to widget = DiffWidget { hunks: [], view_type: Unified, selected_hunk: None, scroll: 0, approvals: [] }

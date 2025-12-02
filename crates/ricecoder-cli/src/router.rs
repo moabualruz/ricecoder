@@ -102,6 +102,88 @@ pub enum Commands {
         #[command(subcommand)]
         action: Option<CustomSubcommand>,
     },
+
+    /// Launch the terminal user interface
+    #[command(about = "Launch the beautiful terminal user interface")]
+    Tui {
+        /// Theme to use (dark, light, monokai, dracula, nord)
+        #[arg(short, long)]
+        theme: Option<String>,
+
+        /// Enable vim keybindings
+        #[arg(long)]
+        vim_mode: bool,
+
+        /// Custom config file path
+        #[arg(short, long)]
+        config: Option<String>,
+
+        /// AI provider to use (openai, anthropic, local)
+        #[arg(short, long)]
+        provider: Option<String>,
+
+        /// Model to use
+        #[arg(short, long)]
+        model: Option<String>,
+    },
+
+    /// Manage sessions
+    #[command(about = "Manage ricecoder sessions")]
+    Sessions {
+        #[command(subcommand)]
+        action: Option<SessionsSubcommand>,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum SessionsSubcommand {
+    /// List all sessions
+    #[command(about = "List all sessions")]
+    List,
+
+    /// Create a new session
+    #[command(about = "Create a new session")]
+    Create {
+        /// Session name
+        #[arg(value_name = "NAME")]
+        name: String,
+    },
+
+    /// Delete a session
+    #[command(about = "Delete a session")]
+    Delete {
+        /// Session ID
+        #[arg(value_name = "ID")]
+        id: String,
+    },
+
+    /// Rename a session
+    #[command(about = "Rename a session")]
+    Rename {
+        /// Session ID
+        #[arg(value_name = "ID")]
+        id: String,
+
+        /// New session name
+        #[arg(value_name = "NAME")]
+        name: String,
+    },
+
+    /// Switch to a session
+    #[command(about = "Switch to a session")]
+    Switch {
+        /// Session ID
+        #[arg(value_name = "ID")]
+        id: String,
+    },
+
+    /// Show session info
+    #[command(about = "Show session information")]
+    Info {
+        /// Session ID
+        #[arg(value_name = "ID")]
+        id: String,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -245,12 +327,54 @@ impl CommandRouter {
                 let cmd = custom::CustomCommandHandler::new(custom_action);
                 cmd.execute()
             }
+            Commands::Tui {
+                theme,
+                vim_mode,
+                config,
+                provider,
+                model,
+            } => {
+                let config_path = config.as_ref().map(|c| std::path::PathBuf::from(c));
+                let cmd = TuiCommand::new(
+                    theme.clone(),
+                    *vim_mode,
+                    config_path,
+                    provider.clone(),
+                    model.clone(),
+                );
+                cmd.execute()
+            }
+            Commands::Sessions { action } => {
+                let sessions_action = match action {
+                    Some(SessionsSubcommand::List) | None => sessions::SessionsAction::List,
+                    Some(SessionsSubcommand::Create { name }) => {
+                        sessions::SessionsAction::Create { name: name.clone() }
+                    }
+                    Some(SessionsSubcommand::Delete { id }) => {
+                        sessions::SessionsAction::Delete { id: id.clone() }
+                    }
+                    Some(SessionsSubcommand::Rename { id, name }) => {
+                        sessions::SessionsAction::Rename {
+                            id: id.clone(),
+                            name: name.clone(),
+                        }
+                    }
+                    Some(SessionsSubcommand::Switch { id }) => {
+                        sessions::SessionsAction::Switch { id: id.clone() }
+                    }
+                    Some(SessionsSubcommand::Info { id }) => {
+                        sessions::SessionsAction::Info { id: id.clone() }
+                    }
+                };
+                let cmd = SessionsCommand::new(sessions_action);
+                cmd.execute()
+            }
         }
     }
 
     /// Find similar command for suggestions
     pub fn find_similar(command: &str) -> Option<String> {
-        let commands = vec!["init", "gen", "chat", "refactor", "review", "config"];
+        let commands = vec!["init", "gen", "chat", "refactor", "review", "config", "tui"];
         
         // Simple similarity check: commands that start with same letter
         commands
