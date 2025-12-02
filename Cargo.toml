@@ -4,6 +4,7 @@ members = [
     "crates/ricecoder-cli",
     "crates/ricecoder-providers",
     "crates/ricecoder-permissions",
+    "crates/ricecoder-commands",
 ]
 resolver = "2"
 

@@ -110,9 +110,9 @@ pub enum CustomSubcommand {
     #[command(about = "Display all available custom commands")]
     List,
 
-    /// Show help for a specific custom command
-    #[command(about = "Show help for a specific custom command")]
-    Help {
+    /// Show info for a specific custom command
+    #[command(about = "Show info for a specific custom command")]
+    Info {
         /// Command name
         #[arg(value_name = "NAME")]
         name: String,
@@ -233,7 +233,7 @@ impl CommandRouter {
             Commands::Custom { action } => {
                 let custom_action = match action {
                     Some(CustomSubcommand::List) | None => custom::CustomAction::List,
-                    Some(CustomSubcommand::Help { name }) => custom::CustomAction::Help(name.clone()),
+                    Some(CustomSubcommand::Info { name }) => custom::CustomAction::Info(name.clone()),
                     Some(CustomSubcommand::Run { name, args }) => {
                         custom::CustomAction::Run(name.clone(), args.clone())
                     }
