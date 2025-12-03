@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 13979d9db72b8599dfa331cb25d7b8d17df8d0d1a470eb42216bdd2cbd84af0e # shrinks to deps = [("e-", "0.0.1"), ("e-", "0.0.0")]
