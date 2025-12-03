@@ -116,7 +116,7 @@ fn launch_tui(config: TuiConfig) -> CliResult<()> {
 
 /// Validate provider configuration
 fn validate_provider_config(config: &ricecoder_tui::TuiConfig) -> CliResult<()> {
-    let supported_providers = vec!["openai", "anthropic", "ollama", "google", "zen"];
+    let supported_providers = ["openai", "anthropic", "ollama", "google", "zen"];
     
     if let Some(ref provider) = config.provider {
         if !supported_providers.contains(&provider.as_str()) {

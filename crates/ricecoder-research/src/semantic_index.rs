@@ -40,13 +40,13 @@ impl SemanticIndex {
         // Add to symbols_by_name
         self.symbols_by_name
             .entry(symbol_name)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(symbol_id.clone());
 
         // Add to symbols_by_file
         self.symbols_by_file
             .entry(symbol_file)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(symbol_id);
     }
 
@@ -54,7 +54,7 @@ impl SemanticIndex {
     pub fn add_reference(&mut self, reference: SymbolReference) {
         self.references_by_symbol
             .entry(reference.symbol_id.clone())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(reference);
     }
 

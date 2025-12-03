@@ -161,8 +161,19 @@ proptest! {
         let store = GlobalStore::new(temp_dir.path().to_path_buf());
         store.initialize().expect("Failed to initialize store");
 
+        // Filter names to ensure case-insensitive uniqueness (for Windows compatibility)
+        // On case-insensitive file systems, "W.txt" and "w.txt" are the same file
+        let mut unique_names = Vec::new();
+        let mut seen_lower = std::collections::HashSet::new();
+        for name in names {
+            let lower = name.to_lowercase();
+            if seen_lower.insert(lower) {
+                unique_names.push(name);
+            }
+        }
+
         // Store all resources
-        for name in &names {
+        for name in &unique_names {
             store
                 .store_resource(resource_type, name, &content)
                 .expect("Failed to store resource");
@@ -174,7 +185,7 @@ proptest! {
             .expect("Failed to list resources");
 
         // Verify all stored resources are in the list
-        for name in &names {
+        for name in &unique_names {
             assert!(
                 listed.contains(name),
                 "Stored resource {} should be in list",
@@ -185,7 +196,7 @@ proptest! {
         // Verify count matches
         assert_eq!(
             listed.len(),
-            names.len(),
+            unique_names.len(),
             "Listed resources count should match stored count"
         );
     }

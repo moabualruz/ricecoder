@@ -5,7 +5,7 @@ use crate::error::{CliError, CliResult};
 use crate::output::OutputStyle;
 use crate::chat::ChatSession;
 use super::Command;
-use std::path::Path;
+use ricecoder_storage::PathResolver;
 
 /// Interactive chat mode
 pub struct ChatCommand {
@@ -28,7 +28,7 @@ impl ChatCommand {
         let provider = self.provider.as_deref().unwrap_or("openai");
 
         // List of supported providers
-        let supported = vec!["openai", "anthropic", "local"];
+        let supported = ["openai", "anthropic", "local"];
 
         if !supported.contains(&provider) {
             return Err(CliError::Provider(format!(
@@ -51,10 +51,14 @@ impl ChatCommand {
         let style = OutputStyle::default();
         let mut specs = Vec::new();
 
-        // Check for .kiro/specs directory
-        if Path::new(".kiro/specs").exists() {
+        // Resolve project path using PathResolver
+        let project_path = PathResolver::resolve_project_path();
+        let specs_path = project_path.join("specs");
+
+        // Check for .agent/specs directory (project-level specs)
+        if specs_path.exists() {
             println!("{}", style.info("Loading project specs..."));
-            // TODO: Actually load specs from .kiro/specs/ directory
+            // TODO: Actually load specs from .agent/specs/ directory
             specs.push("specs_loaded".to_string());
             println!("{}", style.success("Specs loaded"));
         }

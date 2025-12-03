@@ -22,7 +22,7 @@ impl VersionAnalyzer {
         for dep in dependencies {
             version_map
                 .entry(dep.name.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(dep.version.clone());
         }
 

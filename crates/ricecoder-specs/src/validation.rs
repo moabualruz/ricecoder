@@ -332,7 +332,7 @@ impl ValidationEngine {
     // Helper functions for INCOSE validation
 
     fn is_passive_voice(text: &str) -> bool {
-        let passive_indicators = vec!["should be", "can be", "is able to", "is required to"];
+        let passive_indicators = ["should be", "can be", "is able to", "is required to"];
         passive_indicators
             .iter()
             .any(|indicator| text.to_lowercase().contains(indicator))
@@ -358,7 +358,7 @@ impl ValidationEngine {
     }
 
     fn contains_pronouns(text: &str) -> bool {
-        let pronouns = vec!["it ", " it", "them", "they", "this", "that", "these", "those"];
+        let pronouns = ["it ", " it", "them", "they", "this", "that", "these", "those"];
         let lower = text.to_lowercase();
         pronouns.iter().any(|pronoun| lower.contains(pronoun))
     }

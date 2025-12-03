@@ -5,6 +5,7 @@ use crate::output::OutputStyle;
 use super::Command;
 
 /// Display version information
+#[derive(Default)]
 pub struct VersionCommand;
 
 impl VersionCommand {

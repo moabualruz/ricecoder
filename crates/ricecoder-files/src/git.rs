@@ -302,7 +302,7 @@ impl GitIntegration {
             .map_err(|e| FileError::GitError(format!("Failed to get HEAD commit: {}", e)))?;
 
         repo.reset(
-            &head_commit.as_object(),
+            head_commit.as_object(),
             git2::ResetType::Mixed,
             None,
         )

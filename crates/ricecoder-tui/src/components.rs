@@ -556,11 +556,8 @@ impl DialogWidget {
 
     /// Cancel dialog
     pub fn cancel(&mut self) {
-        match self.dialog_type {
-            DialogType::Confirm => {
-                self.confirmed = Some(false);
-            }
-            _ => {}
+        if self.dialog_type == DialogType::Confirm {
+            self.confirmed = Some(false);
         }
         self.result = DialogResult::Cancelled;
     }
@@ -687,10 +684,8 @@ impl SplitViewWidget {
             if self.left_scroll > 0 {
                 self.left_scroll -= 1;
             }
-        } else {
-            if self.right_scroll > 0 {
-                self.right_scroll -= 1;
-            }
+        } else if self.right_scroll > 0 {
+            self.right_scroll -= 1;
         }
     }
 

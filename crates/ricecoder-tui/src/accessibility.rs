@@ -340,7 +340,7 @@ impl StateChangeEvent {
 }
 
 /// Focus management for accessibility
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct FocusManager {
     /// Currently focused element
     pub focused_element: Option<String>,
@@ -351,10 +351,7 @@ pub struct FocusManager {
 impl FocusManager {
     /// Create a new focus manager
     pub fn new() -> Self {
-        Self {
-            focused_element: None,
-            focus_history: Vec::new(),
-        }
+        Self::default()
     }
 
     /// Set focus to an element
@@ -378,7 +375,7 @@ impl FocusManager {
 }
 
 /// Keyboard navigation manager
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct KeyboardNavigationManager {
     /// Currently focused element ID
     pub focused_element: Option<String>,
@@ -391,11 +388,7 @@ pub struct KeyboardNavigationManager {
 impl KeyboardNavigationManager {
     /// Create a new keyboard navigation manager
     pub fn new() -> Self {
-        Self {
-            focused_element: None,
-            tab_order: Vec::new(),
-            element_descriptions: HashMap::new(),
-        }
+        Self::default()
     }
 
     /// Register an element for keyboard navigation

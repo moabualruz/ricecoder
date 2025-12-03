@@ -310,7 +310,7 @@ impl CommandRouter {
             }
             Commands::Completions { shell } => {
                 crate::completion::generate_completions(shell)
-                    .map_err(|e| CliError::Internal(e))
+                    .map_err(CliError::Internal)
             }
             Commands::Custom { action } => {
                 let custom_action = match action {
@@ -334,7 +334,7 @@ impl CommandRouter {
                 provider,
                 model,
             } => {
-                let config_path = config.as_ref().map(|c| std::path::PathBuf::from(c));
+                let config_path = config.as_ref().map(std::path::PathBuf::from);
                 let cmd = TuiCommand::new(
                     theme.clone(),
                     *vim_mode,
@@ -374,7 +374,7 @@ impl CommandRouter {
 
     /// Find similar command for suggestions
     pub fn find_similar(command: &str) -> Option<String> {
-        let commands = vec!["init", "gen", "chat", "refactor", "review", "config", "tui"];
+        let commands = ["init", "gen", "chat", "refactor", "review", "config", "tui"];
         
         // Simple similarity check: commands that start with same letter
         commands

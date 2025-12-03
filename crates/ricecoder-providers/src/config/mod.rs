@@ -545,6 +545,12 @@ mod tests {
 
     #[test]
     fn test_validate_missing_api_key() {
+        // Clean up any existing env vars that might have been set by other tests
+        std::env::remove_var("OPENAI_API_KEY");
+        std::env::remove_var("ANTHROPIC_API_KEY");
+        std::env::remove_var("GOOGLE_API_KEY");
+        std::env::remove_var("ZEN_API_KEY");
+        
         let mut manager = ConfigurationManager::new();
         
         manager.config_mut().providers.insert(

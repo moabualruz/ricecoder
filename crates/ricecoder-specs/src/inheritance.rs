@@ -107,11 +107,11 @@ impl SpecInheritanceResolver {
         let mut merged_from = child
             .inheritance
             .as_ref()
-            .and_then(|inh| {
+            .map(|inh| {
                 if inh.merged_from.is_empty() {
-                    Some(vec![child.id.clone()])
+                    vec![child.id.clone()]
                 } else {
-                    Some(inh.merged_from.clone())
+                    inh.merged_from.clone()
                 }
             })
             .unwrap_or_else(|| vec![child.id.clone()]);

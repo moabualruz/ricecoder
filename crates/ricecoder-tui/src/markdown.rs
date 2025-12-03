@@ -35,8 +35,8 @@ impl MarkdownParser {
             let line = lines[i];
 
             // Check for code block
-            if line.starts_with("```") {
-                let lang = line[3..].trim().to_string();
+            if let Some(after_backticks) = line.strip_prefix("```") {
+                let lang = after_backticks.trim().to_string();
                 let lang = if lang.is_empty() { None } else { Some(lang) };
                 let mut code = String::new();
                 i += 1;
@@ -81,6 +81,7 @@ impl MarkdownParser {
     }
 
     /// Parse inline markdown elements
+    #[allow(clippy::while_let_on_iterator)]
     fn parse_inline(text: &str) -> Vec<MarkdownElement> {
         let mut elements = Vec::new();
         let mut current = String::new();

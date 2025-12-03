@@ -39,6 +39,8 @@ impl ModelCache {
     }
 
     /// Create a new model cache with custom TTL
+    /// Reserved for future use when configurable TTL is needed
+    #[allow(dead_code)]
     fn with_ttl(ttl: Duration) -> Self {
         Self {
             models: None,
@@ -78,6 +80,8 @@ impl ModelCache {
     }
 
     /// Clear the cache
+    /// Reserved for future use when cache invalidation is needed
+    #[allow(dead_code)]
     fn clear(&mut self) {
         self.models = None;
         self.cached_at = None;
@@ -258,7 +262,7 @@ impl OllamaProvider {
         debug!("Fetching available models from Ollama");
 
         // Check if cache is valid
-        let mut cache = self.model_cache.lock().await;
+        let cache = self.model_cache.lock().await;
         if let Some(cached_models) = cache.get() {
             debug!("Using cached models ({} models)", cached_models.len());
             self.available_models = cached_models;

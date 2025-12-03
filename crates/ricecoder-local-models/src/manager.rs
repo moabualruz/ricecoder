@@ -18,9 +18,10 @@ struct OllamaPullResponse {
 }
 
 /// Ollama API response for model deletion
+/// Reserved for future use when model deletion is implemented
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 struct OllamaDeleteResponse {
-    #[allow(dead_code)]
     status: String,
 }
 
@@ -305,6 +306,7 @@ struct OllamaModelInfo {
     name: String,
     digest: String,
     modified_at: chrono::DateTime<chrono::Utc>,
+    #[allow(dead_code)]
     size: u64,
     details: OllamaModelDetails,
 }

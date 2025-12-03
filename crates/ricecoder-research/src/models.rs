@@ -303,7 +303,7 @@ pub struct SearchResult {
 // ============================================================================
 
 /// Detected standards and conventions
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct StandardsProfile {
     /// Naming conventions
     pub naming_conventions: NamingConventions,
@@ -313,17 +313,6 @@ pub struct StandardsProfile {
     pub import_organization: ImportOrganization,
     /// Documentation style
     pub documentation_style: DocumentationStyle,
-}
-
-impl Default for StandardsProfile {
-    fn default() -> Self {
-        StandardsProfile {
-            naming_conventions: NamingConventions::default(),
-            formatting_style: FormattingStyle::default(),
-            import_organization: ImportOrganization::default(),
-            documentation_style: DocumentationStyle::default(),
-        }
-    }
 }
 
 impl Default for NamingConventions {

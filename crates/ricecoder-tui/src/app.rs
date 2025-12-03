@@ -65,7 +65,7 @@ impl AppMode {
 }
 
 /// Chat state
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ChatState {
     /// Messages in the conversation
     pub messages: Vec<String>,
@@ -73,16 +73,6 @@ pub struct ChatState {
     pub input: String,
     /// Whether streaming is active
     pub streaming: bool,
-}
-
-impl Default for ChatState {
-    fn default() -> Self {
-        Self {
-            messages: Vec::new(),
-            input: String::new(),
-            streaming: false,
-        }
-    }
 }
 
 /// Main application state
@@ -358,7 +348,6 @@ impl App {
         // Tab: Toggle between current and previous mode
         if key_event.code == crate::event::KeyCode::Tab && key_event.modifiers.alt {
             self.toggle_mode();
-            return;
         }
     }
 
@@ -489,7 +478,7 @@ impl App {
 
     /// Set animation speed multiplier
     pub fn set_animation_speed(&mut self, speed: f32) {
-        let clamped_speed = speed.max(0.1).min(2.0);
+        let clamped_speed = speed.clamp(0.1, 2.0);
         self.config.accessibility.animations.speed = clamped_speed;
         
         if self.config.accessibility.screen_reader_enabled {

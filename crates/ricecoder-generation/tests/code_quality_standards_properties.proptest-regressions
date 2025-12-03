@@ -1,0 +1,9 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 2031547180e6dd689fd7dbcb52658c0198f0b5db7291e62a8c0fad6851973c96 # shrinks to file = GeneratedFile { path: "src/main.rs", content: "export function hello() {}", language: "rust" }
+cc 9ddaabe6760b21b787b25b25c6ca9a40fc08e6cd7e0b79684ad78c81cf05206a # shrinks to file = GeneratedFile { path: "src/main.rs", content: "export function hello() {}", language: "typescript" }
+cc 2aa4d4312257ea1a3d1e1f3192756c257474b30b096df9acef5bfff903c5f070 # shrinks to file = GeneratedFile { path: "src/main.rs", content: "export class User { name: string; }", language: "python" }

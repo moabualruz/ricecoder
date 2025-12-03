@@ -82,12 +82,9 @@ impl ChangeDetector {
 
         // Skip common directories
         if let Some(file_name) = path.file_name() {
-            if let Some(name_str) = file_name.to_str() {
-                match name_str {
-                    "node_modules" | "target" | ".git" | ".venv" | "venv" | "__pycache__"
-                    | ".pytest_cache" | "dist" | "build" => return true,
-                    _ => {}
-                }
+            if let Some(_name_str @ ("node_modules" | "target" | ".git" | ".venv" | "venv" | "__pycache__"
+                    | ".pytest_cache" | "dist" | "build")) = file_name.to_str() {
+                return true;
             }
         }
 
@@ -160,11 +157,9 @@ impl ChangeDetector {
 
             if path.is_dir() {
                 self.collect_mtimes(&path, mtimes)?;
-            } else {
-                if let Ok(metadata) = std::fs::metadata(&path) {
-                    if let Ok(modified) = metadata.modified() {
-                        mtimes.insert(path, modified);
-                    }
+            } else if let Ok(metadata) = std::fs::metadata(&path) {
+                if let Ok(modified) = metadata.modified() {
+                    mtimes.insert(path, modified);
                 }
             }
         }

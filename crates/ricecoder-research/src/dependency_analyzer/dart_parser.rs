@@ -49,7 +49,7 @@ impl DartParser {
                         let version = if let Some(version_str) = value.as_str() {
                             version_str.to_string()
                         } else if let Some(mapping) = value.as_mapping() {
-                            if let Some(version) = mapping.get(&serde_yaml::Value::String("version".to_string())) {
+                            if let Some(version) = mapping.get(serde_yaml::Value::String("version".to_string())) {
                                 version.as_str().unwrap_or("*").to_string()
                             } else {
                                 "*".to_string()
@@ -76,7 +76,7 @@ impl DartParser {
                     let version = if let Some(version_str) = value.as_str() {
                         version_str.to_string()
                     } else if let Some(mapping) = value.as_mapping() {
-                        if let Some(version) = mapping.get(&serde_yaml::Value::String("version".to_string())) {
+                        if let Some(version) = mapping.get(serde_yaml::Value::String("version".to_string())) {
                             version.as_str().unwrap_or("*").to_string()
                         } else {
                             "*".to_string()

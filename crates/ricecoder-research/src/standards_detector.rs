@@ -295,7 +295,7 @@ impl FormattingAnalyzer {
             line_lengths.sort_unstable();
             // Use 75th percentile as the preferred line length
             let index = (line_lengths.len() * 75) / 100;
-            line_lengths[index].max(80).min(120)
+            line_lengths[index].clamp(80, 120)
         }
     }
 }

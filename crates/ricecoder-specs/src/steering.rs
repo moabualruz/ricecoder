@@ -57,10 +57,10 @@ impl SteeringLoader {
         standards: &mut Vec<Standard>,
         templates: &mut Vec<TemplateRef>,
     ) -> Result<(), SpecError> {
-        let entries = fs::read_dir(dir).map_err(|e| SpecError::IoError(e))?;
+        let entries = fs::read_dir(dir).map_err(SpecError::IoError)?;
 
         for entry in entries {
-            let entry = entry.map_err(|e| SpecError::IoError(e))?;
+            let entry = entry.map_err(SpecError::IoError)?;
             let path = entry.path();
 
             if path.is_dir() {
@@ -71,13 +71,13 @@ impl SteeringLoader {
 
                 // Check if it's a YAML or Markdown file
                 if file_name.ends_with(".yaml") || file_name.ends_with(".yml") {
-                    let content = fs::read_to_string(&path).map_err(|e| SpecError::IoError(e))?;
+                    let content = fs::read_to_string(&path).map_err(SpecError::IoError)?;
                     let steering = Self::parse_yaml(&content, &path)?;
                     rules.extend(steering.rules);
                     standards.extend(steering.standards);
                     templates.extend(steering.templates);
                 } else if file_name.ends_with(".md") {
-                    let content = fs::read_to_string(&path).map_err(|e| SpecError::IoError(e))?;
+                    let content = fs::read_to_string(&path).map_err(SpecError::IoError)?;
                     let steering = Self::parse_markdown(&content, &path)?;
                     rules.extend(steering.rules);
                     standards.extend(steering.standards);

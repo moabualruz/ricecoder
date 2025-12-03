@@ -23,7 +23,7 @@ impl DotNetParser {
         if let Ok(entries) = std::fs::read_dir(root) {
             for entry in entries.flatten() {
                 let path = entry.path();
-                if path.extension().map_or(false, |ext| ext == "csproj") {
+                if path.extension().is_some_and(|ext| ext == "csproj") {
                     debug!("Parsing .NET dependencies from {:?}", path);
                     if let Ok(mut deps) = self.parse_csproj(&path) {
                         dependencies.append(&mut deps);
@@ -113,7 +113,7 @@ impl DotNetParser {
         // Check for .csproj files
         if let Ok(entries) = std::fs::read_dir(root) {
             for entry in entries.flatten() {
-                if entry.path().extension().map_or(false, |ext| ext == "csproj") {
+                if entry.path().extension().is_some_and(|ext| ext == "csproj") {
                     return true;
                 }
             }

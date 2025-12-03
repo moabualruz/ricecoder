@@ -87,7 +87,7 @@ impl RelevanceScorer {
     }
 
     /// Score path match
-    fn score_path_match(&self, path: &std::path::PathBuf, query: &str) -> f32 {
+    fn score_path_match(&self, path: &std::path::Path, query: &str) -> f32 {
         let path_str = path.to_string_lossy().to_lowercase();
 
         // Exact match

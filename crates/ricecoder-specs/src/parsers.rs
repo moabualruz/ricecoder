@@ -15,14 +15,14 @@ impl YamlParser {
     /// Frontmatter is optional and will be stripped before parsing.
     pub fn parse(content: &str) -> Result<Spec, SpecError> {
         let yaml_content = Self::extract_yaml_content(content);
-        serde_yaml::from_str(yaml_content).map_err(|e| SpecError::YamlError(e))
+        serde_yaml::from_str(yaml_content).map_err(SpecError::YamlError)
     }
 
     /// Serialize a spec to YAML
     /// 
     /// Produces valid YAML without frontmatter markers.
     pub fn serialize(spec: &Spec) -> Result<String, SpecError> {
-        serde_yaml::to_string(spec).map_err(|e| SpecError::YamlError(e))
+        serde_yaml::to_string(spec).map_err(SpecError::YamlError)
     }
 
     /// Extract YAML content from a string that may contain frontmatter
@@ -33,9 +33,8 @@ impl YamlParser {
         let trimmed = content.trim_start();
         
         // Check if content starts with frontmatter delimiter
-        if trimmed.starts_with("---") {
+        if let Some(after_opening) = trimmed.strip_prefix("---") {
             // Find the closing delimiter
-            let after_opening = &trimmed[3..];
             if let Some(closing_pos) = after_opening.find("---") {
                 // Return content after the closing delimiter
                 let yaml_start = 3 + closing_pos + 3;
@@ -197,7 +196,7 @@ impl MarkdownParser {
                 for component in &design.components {
                     output.push_str(&format!("- **{}**: {}\n", component.name, component.description));
                 }
-                output.push_str("\n");
+                output.push('\n');
             }
             
             if !design.data_models.is_empty() {
@@ -205,7 +204,7 @@ impl MarkdownParser {
                 for model in &design.data_models {
                     output.push_str(&format!("- **{}**: {}\n", model.name, model.description));
                 }
-                output.push_str("\n");
+                output.push('\n');
             }
             
             if !design.correctness_properties.is_empty() {
@@ -216,7 +215,7 @@ impl MarkdownParser {
                         output.push_str(&format!("  - Validates: {}\n", prop.validates.join(", ")));
                     }
                 }
-                output.push_str("\n");
+                output.push('\n');
             }
         }
         

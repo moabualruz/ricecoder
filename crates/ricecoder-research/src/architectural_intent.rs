@@ -204,7 +204,7 @@ impl ArchitecturalIntentTracker {
                 if let Ok(entries) = std::fs::read_dir(&adr_dir) {
                     for entry in entries.filter_map(|e| e.ok()) {
                         let path = entry.path();
-                        if path.is_file() && (path.extension().map_or(false, |ext| ext == "md")) {
+                        if path.is_file() && (path.extension().is_some_and(|ext| ext == "md")) {
                             if let Ok(decision) = self.parse_adr_file(&path) {
                                 decisions.push(decision);
                             }
@@ -284,7 +284,7 @@ impl ArchitecturalIntentTracker {
                     }
                     "consequences" => {
                         if line.trim().starts_with('-') || line.trim().starts_with('*') {
-                            consequences.push(line.trim_start_matches(|c| c == '-' || c == '*').trim().to_string());
+                            consequences.push(line.trim_start_matches(['-', '*']).trim().to_string());
                         }
                     }
                     _ => {}

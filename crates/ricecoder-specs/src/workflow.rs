@@ -64,7 +64,7 @@ impl WorkflowOrchestrator {
         for req_id in requirement_ids {
             self.requirement_to_tasks
                 .entry(req_id)
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(task_id.clone());
         }
 
@@ -269,6 +269,7 @@ impl WorkflowOrchestrator {
     }
 
     /// Collect all task IDs from a hierarchical task list
+    #[allow(clippy::only_used_in_recursion)]
     fn collect_all_task_ids(&self, tasks: &[Task]) -> Vec<String> {
         let mut ids = Vec::new();
 

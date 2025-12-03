@@ -20,7 +20,7 @@ impl Command for InitCommand {
         
         // Create .agent/ directory structure
         std::fs::create_dir_all(format!("{}/.agent", path))
-            .map_err(|e| CliError::Io(e))?;
+            .map_err(CliError::Io)?;
         
         // Create default configuration
         let config_content = r#"# RiceCoder Project Configuration
@@ -38,7 +38,7 @@ mode = "merged"
 "#;
         
         std::fs::write(format!("{}/.agent/ricecoder.toml", path), config_content)
-            .map_err(|e| CliError::Io(e))?;
+            .map_err(CliError::Io)?;
         
         println!("✓ Initialized ricecoder project at {}", path);
         Ok(())

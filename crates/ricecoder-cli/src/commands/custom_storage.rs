@@ -68,8 +68,8 @@ impl CustomCommandsStorage {
             return Ok(());
         }
 
-        for entry in fs::read_dir(dir).map_err(|e| CliError::Io(e))? {
-            let entry = entry.map_err(|e| CliError::Io(e))?;
+        for entry in fs::read_dir(dir).map_err(CliError::Io)? {
+            let entry = entry.map_err(CliError::Io)?;
             let path = entry.path();
 
             if path.is_file() {
@@ -104,7 +104,7 @@ impl CustomCommandsStorage {
         let target_dir = self.commands_dir(use_project);
 
         // Create directory if it doesn't exist
-        fs::create_dir_all(&target_dir).map_err(|e| CliError::Io(e))?;
+        fs::create_dir_all(&target_dir).map_err(CliError::Io)?;
 
         // Save as JSON with commands wrapper
         let file_name = format!("{}.json", cmd.id);
@@ -120,7 +120,7 @@ impl CustomCommandsStorage {
             .map_err(|e| CliError::Internal(e.to_string()))?;
 
         // Write file
-        fs::write(&file_path, json_str).map_err(|e| CliError::Io(e))?;
+        fs::write(&file_path, json_str).map_err(CliError::Io)?;
 
         Ok(file_path)
     }
@@ -132,7 +132,7 @@ impl CustomCommandsStorage {
             let project_commands_dir = project_path.join("commands");
             let file_path = project_commands_dir.join(format!("{}.json", command_id));
             if file_path.exists() {
-                fs::remove_file(&file_path).map_err(|e| CliError::Io(e))?;
+                fs::remove_file(&file_path).map_err(CliError::Io)?;
                 return Ok(());
             }
         }
@@ -141,7 +141,7 @@ impl CustomCommandsStorage {
         let global_commands_dir = self.commands_dir(false);
         let file_path = global_commands_dir.join(format!("{}.json", command_id));
         if file_path.exists() {
-            fs::remove_file(&file_path).map_err(|e| CliError::Io(e))?;
+            fs::remove_file(&file_path).map_err(CliError::Io)?;
             return Ok(());
         }
 

@@ -80,7 +80,7 @@ impl ThemeLoader {
             return Err(anyhow!("Theme file not found: {}", path.display()));
         }
 
-        if !path.extension().map_or(false, |ext| ext == "yaml" || ext == "yml") {
+        if !path.extension().is_some_and(|ext| ext == "yaml" || ext == "yml") {
             return Err(anyhow!("Theme file must be YAML format (.yaml or .yml)"));
         }
 
@@ -117,7 +117,7 @@ impl ThemeLoader {
             let entry = entry?;
             let path = entry.path();
 
-            if path.is_file() && (path.extension().map_or(false, |ext| ext == "yaml" || ext == "yml")) {
+            if path.is_file() && (path.extension().is_some_and(|ext| ext == "yaml" || ext == "yml")) {
                 match Self::load_from_file(&path) {
                     Ok(theme) => themes.push(theme),
                     Err(e) => {

@@ -1,0 +1,11 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc aa0bff7c76f67ac1517026d743401b5c281bcdc27b495b8919c73c9e09ba960c # shrinks to files = [GeneratedFile { path: "src/main.rs", content: "fn main() { }", language: "rust" }]
+cc 9853b614da94291b735aff6c66c3f6ef6483ef032e20aec0e9ced4419b92d71e # shrinks to file = GeneratedFile { path: "src/main.py", content: "class User\n    def __init__(self):\n        pass", language: "python" }
+cc 332cfc7ed93dd8f5382f87177177b512414e2ff20c2ba2de3c1d3c32f84f8e1a # shrinks to file = GeneratedFile { path: "src/main.py", content: "def test():\n    arr = [1, 2, 3", language: "python" }
+cc c02d6f0ca7fab4b13ca4a7062ff71202cc1fbcfd81b03440d8825d6ad99518ad # shrinks to files = [GeneratedFile { path: "src/index.ts", content: "function test() { const arr = [1, 2, 3; }", language: "typescript" }]
+cc 2bdffc5c8824b62b826f103c61e06dbcc44a4ef0cbfa5a44ff9208dd206a7deb # shrinks to files = [GeneratedFile { path: "src/main.py", content: "def test():\n    arr = [1, 2, 3", language: "python" }]

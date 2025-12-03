@@ -456,13 +456,13 @@ impl ResearchManagerBuilder {
     /// Build the ResearchManager
     pub fn build(self) -> ResearchManager {
         ResearchManager::with_config(
-            self.project_analyzer.unwrap_or_else(ProjectAnalyzer::new),
-            self.pattern_detector.unwrap_or_else(PatternDetector::new),
-            self.standards_detector.unwrap_or_else(StandardsDetector::new),
-            self.architectural_intent_tracker.unwrap_or_else(ArchitecturalIntentTracker::new),
+            self.project_analyzer.unwrap_or_default(),
+            self.pattern_detector.unwrap_or_default(),
+            self.standards_detector.unwrap_or_default(),
+            self.architectural_intent_tracker.unwrap_or_default(),
             self.context_builder.unwrap_or_else(|| ContextBuilder::new(8000)),
-            self.dependency_analyzer.unwrap_or_else(DependencyAnalyzer::new),
-            self.cache_manager.unwrap_or_else(CacheManager::new),
+            self.dependency_analyzer.unwrap_or_default(),
+            self.cache_manager.unwrap_or_default(),
         )
     }
 }

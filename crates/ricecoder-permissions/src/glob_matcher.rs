@@ -30,6 +30,7 @@ impl GlobMatcher {
     }
 
     /// Recursively match pattern against tool name
+    #[allow(clippy::only_used_in_recursion)]
     fn match_recursive(&self, pattern: &[u8], tool_name: &[u8]) -> bool {
         match (pattern.first(), tool_name.first()) {
             // Both empty - match

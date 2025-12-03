@@ -17,11 +17,7 @@ pub enum PermissionLevel {
 impl PermissionLevel {
     /// Check if this permission level is more restrictive than another
     pub fn is_more_restrictive_than(&self, other: PermissionLevel) -> bool {
-        match (self, other) {
-            (PermissionLevel::Deny, _) => true,
-            (PermissionLevel::Ask, PermissionLevel::Allow) => true,
-            _ => false,
-        }
+        matches!((self, other), (PermissionLevel::Deny, _) | (PermissionLevel::Ask, PermissionLevel::Allow))
     }
 }
 

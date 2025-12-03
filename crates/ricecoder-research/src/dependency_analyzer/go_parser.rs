@@ -63,8 +63,8 @@ impl GoParser {
 
             // Parse require block entries
             if in_require || (line.starts_with("require ") && !line.contains("(")) {
-                let line = if line.starts_with("require ") {
-                    &line[8..]
+                let line = if let Some(stripped) = line.strip_prefix("require ") {
+                    stripped
                 } else {
                     line
                 };
