@@ -10,6 +10,7 @@ members = [
     "crates/ricecoder-specs",
     "crates/ricecoder-files",
     "crates/ricecoder-generation",
+    "crates/ricecoder-research",
 ]
 resolver = "2"
 
