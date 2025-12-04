@@ -2590,6 +2590,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "ricecoder-sessions"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "dirs",
+ "lazy_static",
+ "proptest",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-test",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "ricecoder-specs"
 version = "0.1.0"
 dependencies = [
@@ -2634,11 +2653,13 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "arboard",
+ "chrono",
  "colored",
  "crossterm",
  "dirs",
  "proptest",
  "ratatui",
+ "ricecoder-sessions",
  "serde",
  "serde_json",
  "serde_yaml",

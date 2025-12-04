@@ -22,6 +22,7 @@ pub mod command_blocks;
 pub mod clipboard;
 pub mod sessions;
 pub mod session_manager;
+pub mod session_integration;
 pub mod accessibility;
 pub mod performance;
 pub mod provider_integration;
@@ -44,6 +45,7 @@ pub use command_blocks::{CommandBlocksWidget, CommandBlock, Command, CommandStat
 pub use clipboard::{ClipboardManager, ClipboardError, CopyFeedback, CopyOperation};
 pub use sessions::{SessionWidget, Session, SessionStatus, SessionDisplayMode};
 pub use session_manager::{SessionManager, SessionData};
+pub use session_integration::SessionIntegration;
 pub use accessibility::{
     AccessibilityConfig, AnimationConfig, FocusIndicatorStyle, TextAlternative, ElementType,
     ScreenReaderAnnouncer, Announcement, AnnouncementPriority, KeyboardNavigationManager,

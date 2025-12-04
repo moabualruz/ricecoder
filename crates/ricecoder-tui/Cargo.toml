@@ -28,6 +28,8 @@ crossterm = { workspace = true }
 colored = { workspace = true }
 dirs = { workspace = true }
 arboard = { workspace = true }
+chrono = { workspace = true }
+ricecoder-sessions = { path = "../ricecoder-sessions" }
 
 [dev-dependencies]
 proptest = { workspace = true }
