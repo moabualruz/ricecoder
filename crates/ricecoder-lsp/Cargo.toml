@@ -25,6 +25,7 @@ tree-sitter-typescript = "0.20"
 tree-sitter-python = "0.20"
 regex = { workspace = true }
 chrono = { workspace = true }
+ricecoder-storage = { path = "../ricecoder-storage" }
 
 [dev-dependencies]
 proptest = { workspace = true }

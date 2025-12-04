@@ -1,0 +1,49 @@
+# Python Language Configuration
+# This configuration defines language-specific analyzers, diagnostic rules, and code actions for Python
+
+language: python
+extensions:
+  - py
+
+# Parser plugin reference (tree-sitter-python)
+parser_plugin: tree-sitter-python
+
+# Diagnostic rules for Python
+diagnostic_rules:
+  - name: unused-import
+    pattern: 'import\s+\w+'
+    severity: warning
+    message: "Unused import"
+    code: unused-import
+    fix_template: "Remove import"
+
+  - name: missing-docstring
+    pattern: 'def\s+\w+\s*\('
+    severity: info
+    message: "Function missing docstring"
+    code: missing-docstring
+    fix_template: "Add docstring"
+
+  - name: snake-case-naming
+    pattern: '[A-Z][a-zA-Z0-9]*'
+    severity: warning
+    message: "Variable should use snake_case"
+    code: naming-convention
+    fix_template: "Convert to snake_case"
+
+# Code action transformations for Python
+code_actions:
+  - name: remove-unused-import
+    title: "Remove unused import"
+    kind: quickfix
+    transformation: "delete_line"
+
+  - name: add-docstring
+    title: "Add docstring"
+    kind: refactor
+    transformation: "add_docstring"
+
+  - name: convert-to-snake-case
+    title: "Convert to snake_case"
+    kind: refactor
+    transformation: "snake_case_conversion"

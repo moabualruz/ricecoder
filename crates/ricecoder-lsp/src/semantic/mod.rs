@@ -10,11 +10,15 @@ pub mod rust_analyzer;
 pub mod typescript_analyzer;
 pub mod python_analyzer;
 pub mod fallback_analyzer;
+pub mod generic_analyzer;
+pub mod adapters;
 
 pub use rust_analyzer::RustAnalyzer;
 pub use typescript_analyzer::TypeScriptAnalyzer;
 pub use python_analyzer::PythonAnalyzer;
 pub use fallback_analyzer::FallbackAnalyzer;
+pub use generic_analyzer::GenericSemanticAnalyzer;
+pub use adapters::{RustAnalyzerAdapter, TypeScriptAnalyzerAdapter, PythonAnalyzerAdapter, FallbackAnalyzerAdapter};
 
 /// Error type for semantic analysis
 #[derive(Debug, thiserror::Error)]

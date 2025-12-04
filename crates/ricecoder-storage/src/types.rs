@@ -44,6 +44,8 @@ pub enum ResourceType {
     Rule,
     /// Custom command definitions
     CustomCommand,
+    /// LSP language configuration files
+    LspLanguageConfig,
 }
 
 impl ResourceType {
@@ -57,6 +59,7 @@ impl ResourceType {
             ResourceType::Boilerplate => "boilerplates",
             ResourceType::Rule => "rules",
             ResourceType::CustomCommand => "commands",
+            ResourceType::LspLanguageConfig => "lsp/languages",
         }
     }
 }

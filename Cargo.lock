@@ -2529,6 +2529,7 @@ dependencies = [
  "itertools 0.12.1",
  "proptest",
  "regex",
+ "ricecoder-storage",
  "serde",
  "serde_json",
  "serde_yaml",

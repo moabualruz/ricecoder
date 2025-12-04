@@ -20,6 +20,11 @@
 //! ```
 
 pub mod applier;
+pub mod adapters;
+pub mod generic_engine;
+
+pub use adapters::{RustCodeActionAdapter, TypeScriptCodeActionAdapter, PythonCodeActionAdapter};
+pub use generic_engine::GenericCodeActionsEngine;
 
 use crate::types::{CodeAction, CodeActionKind, Diagnostic, TextEdit, WorkspaceEdit};
 use std::error::Error;

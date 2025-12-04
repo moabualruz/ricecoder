@@ -12,6 +12,8 @@ pub mod code_actions;
 pub mod hover;
 pub mod cache;
 pub mod performance;
+pub mod config;
+pub mod providers;
 
 // Re-export public API
 pub use server::LspServer;
@@ -22,3 +24,8 @@ pub use code_actions::CodeActionsEngine;
 pub use hover::HoverProvider;
 pub use cache::{SemanticCache, AstCache, SymbolIndexCache, hash_input};
 pub use performance::{PerformanceTracker, Timer, PerformanceAnalyzer};
+pub use config::{ConfigRegistry, ConfigLoader, LanguageConfig, DiagnosticRule, CodeActionTemplate, ConfigurationManager};
+pub use providers::{
+    SemanticAnalyzerProvider, DiagnosticsProvider, CodeActionProvider,
+    SemanticAnalyzerRegistry, DiagnosticsRegistry, CodeActionRegistry,
+};

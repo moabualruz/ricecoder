@@ -23,6 +23,11 @@
 pub mod rust_rules;
 pub mod typescript_rules;
 pub mod python_rules;
+pub mod adapters;
+pub mod generic_engine;
+
+pub use adapters::{RustDiagnosticsAdapter, TypeScriptDiagnosticsAdapter, PythonDiagnosticsAdapter};
+pub use generic_engine::GenericDiagnosticsEngine;
 
 use crate::types::{Diagnostic, Language, Range};
 use std::error::Error;
