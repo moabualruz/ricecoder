@@ -133,6 +133,22 @@ pub enum Commands {
         #[command(subcommand)]
         action: Option<SessionsSubcommand>,
     },
+
+    /// Start the Language Server Protocol server
+    #[command(about = "Start the Language Server Protocol server for IDE integration")]
+    Lsp {
+        /// Log level (trace, debug, info, warn, error)
+        #[arg(short, long, default_value = "info")]
+        log_level: Option<String>,
+
+        /// Port for TCP transport (future support)
+        #[arg(short, long)]
+        port: Option<u16>,
+
+        /// Enable debug mode for verbose logging
+        #[arg(long)]
+        debug: bool,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -367,6 +383,14 @@ impl CommandRouter {
                     }
                 };
                 let cmd = SessionsCommand::new(sessions_action);
+                cmd.execute()
+            }
+            Commands::Lsp {
+                log_level,
+                port,
+                debug,
+            } => {
+                let cmd = lsp::LspCommand::new(log_level.clone(), *port, *debug);
                 cmd.execute()
             }
         }

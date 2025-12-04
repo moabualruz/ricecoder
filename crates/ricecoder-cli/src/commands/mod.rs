@@ -11,6 +11,7 @@ pub mod custom;
 pub mod custom_storage;
 pub mod tui;
 pub mod sessions;
+pub mod lsp;
 
 pub use init::InitCommand;
 pub use gen::GenCommand;
@@ -24,6 +25,7 @@ pub use custom::{
 };
 pub use tui::TuiCommand;
 pub use sessions::{SessionsCommand, SessionsAction};
+pub use lsp::LspCommand;
 
 use crate::error::CliResult;
 
