@@ -1,0 +1,28 @@
+[package]
+name = "ricecoder-modes"
+version = "0.1.0"
+edition = "2021"
+authors = ["RiceCoder Contributors"]
+description = "Mode system for RiceCoder with Code, Ask, and Vibe modes"
+license = "MIT"
+
+[lib]
+name = "ricecoder_modes"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+tracing = "0.1"
+tokio = { version = "1.0", features = ["full"] }
+async-trait = "0.1"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+anyhow = "1.0"
+
+[dev-dependencies]
+proptest = "1.4"
+tokio-test = "0.4"
+tempfile = "3.8"
+lazy_static = "1.4"

@@ -142,7 +142,7 @@ impl ShareService {
             .values()
             .filter(|share| {
                 // Include only non-expired shares
-                share.expires_at.is_none() || share.expires_at.map_or(false, |exp| now <= exp)
+                share.expires_at.is_none() || share.expires_at.is_some_and(|exp| now <= exp)
             })
             .cloned()
             .collect();
@@ -161,7 +161,7 @@ impl ShareService {
         let initial_count = shares.len();
 
         shares.retain(|_, share| {
-            share.expires_at.is_none() || share.expires_at.map_or(true, |exp| now <= exp)
+            share.expires_at.is_none() || share.expires_at.is_some_and(|exp| now <= exp)
         });
 
         Ok(initial_count - shares.len())

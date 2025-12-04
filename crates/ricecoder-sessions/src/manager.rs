@@ -60,7 +60,7 @@ impl SessionManager {
         self.sessions.remove(session_id);
 
         // If the deleted session was active, switch to another session
-        if self.active_session_id.as_ref().map(|id| id.as_str()) == Some(session_id) {
+        if self.active_session_id.as_deref() == Some(session_id) {
             self.active_session_id = self.sessions.keys().next().cloned();
         }
 

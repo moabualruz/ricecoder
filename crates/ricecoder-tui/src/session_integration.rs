@@ -15,8 +15,6 @@ pub struct SessionIntegration {
     pub manager: SessionManager,
     /// TUI session widget for display
     pub widget: SessionWidget,
-    /// Session limit
-    session_limit: usize,
 }
 
 impl SessionIntegration {
@@ -25,7 +23,6 @@ impl SessionIntegration {
         Self {
             manager: SessionManager::new(session_limit),
             widget: SessionWidget::new(),
-            session_limit,
         }
     }
 

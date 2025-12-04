@@ -2520,6 +2520,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "ricecoder-modes"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "lazy_static",
+ "proptest",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-test",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "ricecoder-permissions"
 version = "0.1.0"
 dependencies = [

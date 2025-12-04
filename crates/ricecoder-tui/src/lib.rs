@@ -39,7 +39,7 @@ pub use markdown::{MarkdownParser, MarkdownElement};
 pub use input::{Intent, InputAnalyzer, ChatInputWidget};
 pub use prompt::{PromptWidget, ContextIndicators, PromptConfig};
 pub use diff::{DiffWidget, DiffLine, DiffHunk, DiffViewType, DiffLineType};
-pub use components::{MenuWidget, ListWidget, DialogWidget, SplitViewWidget, TabWidget, DialogType, ModeIndicator};
+pub use components::{MenuWidget, ListWidget, DialogWidget, SplitViewWidget, TabWidget, DialogType, ModeIndicator, ModeSelectionMenu};
 pub use integration::{WidgetContainer, LayoutCoordinator, WidgetIntegration, StateSynchronizer, LayoutInfo};
 pub use command_blocks::{CommandBlocksWidget, CommandBlock, Command, CommandStatus};
 pub use clipboard::{ClipboardManager, ClipboardError, CopyFeedback, CopyOperation};
