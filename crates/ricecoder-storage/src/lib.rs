@@ -5,6 +5,7 @@
 //! and data persistence.
 
 pub mod cache;
+pub mod completion;
 pub mod config;
 pub mod error;
 pub mod first_run;
@@ -19,6 +20,7 @@ pub mod types;
 
 // Re-export commonly used types
 pub use cache::{CacheManager, CacheEntry, CacheInvalidationStrategy};
+pub use completion::{get_builtin_completion_configs, get_completion_config};
 pub use config::{Config, ConfigLoader, DocumentLoader, EnvOverrides, ConfigMerger, StorageModeHandler};
 pub use error::{IoOperation, StorageError, StorageResult};
 pub use first_run::FirstRunHandler;

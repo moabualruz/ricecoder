@@ -10,7 +10,7 @@ pub mod manager;
 // Re-export commonly used types
 pub use types::{
     ConfigError, ConfigResult, LanguageConfig, DiagnosticRule, CodeActionTemplate,
-    ConfigRegistry,
+    ConfigRegistry, CompletionConfig,
 };
 pub use loader::ConfigLoader;
 pub use manager::ConfigurationManager;

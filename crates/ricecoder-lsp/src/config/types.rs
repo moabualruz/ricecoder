@@ -166,10 +166,108 @@ impl CodeActionTemplate {
     }
 }
 
+/// Completion configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CompletionConfig {
+    /// Enable/disable completion
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+
+    /// Completion timeout in milliseconds
+    #[serde(default = "default_completion_timeout")]
+    pub timeout_ms: u64,
+
+    /// Maximum number of completions to return
+    #[serde(default = "default_max_completions")]
+    pub max_completions: usize,
+
+    /// Enable ghost text display
+    #[serde(default = "default_true")]
+    pub ghost_text_enabled: bool,
+
+    /// Minimum prefix length to trigger completion
+    #[serde(default = "default_min_prefix_length")]
+    pub min_prefix_length: usize,
+
+    /// Enable fuzzy matching
+    #[serde(default = "default_true")]
+    pub fuzzy_matching: bool,
+
+    /// Enable frequency-based ranking
+    #[serde(default = "default_true")]
+    pub frequency_ranking: bool,
+
+    /// Enable recency-based ranking
+    #[serde(default = "default_true")]
+    pub recency_ranking: bool,
+
+    /// Language-specific completion providers
+    #[serde(default)]
+    pub providers: HashMap<String, String>,
+}
+
+impl Default for CompletionConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            timeout_ms: 100,
+            max_completions: 50,
+            ghost_text_enabled: true,
+            min_prefix_length: 1,
+            fuzzy_matching: true,
+            frequency_ranking: true,
+            recency_ranking: true,
+            providers: HashMap::new(),
+        }
+    }
+}
+
+impl CompletionConfig {
+    /// Validate the completion configuration
+    pub fn validate(&self) -> ConfigResult<()> {
+        if self.timeout_ms == 0 {
+            return Err(ConfigError::ValidationError(
+                "Completion timeout must be greater than 0".to_string(),
+            ));
+        }
+
+        if self.max_completions == 0 {
+            return Err(ConfigError::ValidationError(
+                "Max completions must be greater than 0".to_string(),
+            ));
+        }
+
+        Ok(())
+    }
+}
+
+/// Default value for enabled fields
+fn default_true() -> bool {
+    true
+}
+
+/// Default completion timeout (100ms)
+fn default_completion_timeout() -> u64 {
+    100
+}
+
+/// Default max completions (50)
+fn default_max_completions() -> usize {
+    50
+}
+
+/// Default min prefix length (1)
+fn default_min_prefix_length() -> usize {
+    1
+}
+
 /// Configuration registry for managing multiple languages
 pub struct ConfigRegistry {
     /// Language configurations by language identifier
     languages: HashMap<String, LanguageConfig>,
+
+    /// Completion configuration
+    completion_config: CompletionConfig,
 }
 
 impl ConfigRegistry {
@@ -177,7 +275,17 @@ impl ConfigRegistry {
     pub fn new() -> Self {
         Self {
             languages: HashMap::new(),
+            completion_config: CompletionConfig::default(),
         }
+    }
+
+    /// Create a new configuration registry with custom completion config
+    pub fn with_completion_config(completion_config: CompletionConfig) -> ConfigResult<Self> {
+        completion_config.validate()?;
+        Ok(Self {
+            languages: HashMap::new(),
+            completion_config,
+        })
     }
 
     /// Register a language configuration
@@ -218,6 +326,23 @@ impl ConfigRegistry {
     /// Check if a language is configured
     pub fn has_language(&self, language: &str) -> bool {
         self.languages.contains_key(language)
+    }
+
+    /// Get completion configuration
+    pub fn completion_config(&self) -> &CompletionConfig {
+        &self.completion_config
+    }
+
+    /// Get mutable completion configuration
+    pub fn completion_config_mut(&mut self) -> &mut CompletionConfig {
+        &mut self.completion_config
+    }
+
+    /// Set completion configuration
+    pub fn set_completion_config(&mut self, config: CompletionConfig) -> ConfigResult<()> {
+        config.validate()?;
+        self.completion_config = config;
+        Ok(())
     }
 }
 
@@ -287,5 +412,39 @@ mod tests {
         assert!(registry.has_language("rust"));
         assert!(registry.get("rust").is_some());
         assert!(registry.get_by_extension("rs").is_some());
+    }
+
+    #[test]
+    fn test_completion_config_default() {
+        let config = CompletionConfig::default();
+        assert!(config.enabled);
+        assert_eq!(config.timeout_ms, 100);
+        assert_eq!(config.max_completions, 50);
+        assert!(config.ghost_text_enabled);
+    }
+
+    #[test]
+    fn test_completion_config_validation() {
+        let config = CompletionConfig::default();
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_completion_config_validation_invalid_timeout() {
+        let mut config = CompletionConfig::default();
+        config.timeout_ms = 0;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_config_registry_completion_config() {
+        let mut registry = ConfigRegistry::new();
+        let completion_config = registry.completion_config();
+        assert!(completion_config.enabled);
+
+        let mut new_config = CompletionConfig::default();
+        new_config.enabled = false;
+        assert!(registry.set_completion_config(new_config).is_ok());
+        assert!(!registry.completion_config().enabled);
     }
 }

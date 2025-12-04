@@ -38,10 +38,14 @@ mod tests {
     #[test]
     fn test_get_builtin_language_configs() {
         let configs = get_builtin_language_configs();
-        assert_eq!(configs.len(), 3);
+        assert_eq!(configs.len(), 7);
         assert!(configs.iter().any(|(lang, _)| *lang == "rust"));
         assert!(configs.iter().any(|(lang, _)| *lang == "typescript"));
         assert!(configs.iter().any(|(lang, _)| *lang == "python"));
+        assert!(configs.iter().any(|(lang, _)| *lang == "go"));
+        assert!(configs.iter().any(|(lang, _)| *lang == "java"));
+        assert!(configs.iter().any(|(lang, _)| *lang == "kotlin"));
+        assert!(configs.iter().any(|(lang, _)| *lang == "dart"));
     }
 
     #[test]

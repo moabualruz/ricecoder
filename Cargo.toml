@@ -17,6 +17,7 @@ members = [
     "crates/ricecoder-sessions",
     "crates/ricecoder-modes",
     "crates/ricecoder-lsp",
+    "crates/ricecoder-completion",
 ]
 resolver = "2"
 

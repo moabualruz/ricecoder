@@ -46,6 +46,8 @@ pub enum ResourceType {
     CustomCommand,
     /// LSP language configuration files
     LspLanguageConfig,
+    /// Code completion language configuration files
+    CompletionLanguageConfig,
 }
 
 impl ResourceType {
@@ -60,6 +62,7 @@ impl ResourceType {
             ResourceType::Rule => "rules",
             ResourceType::CustomCommand => "commands",
             ResourceType::LspLanguageConfig => "lsp/languages",
+            ResourceType::CompletionLanguageConfig => "completion/languages",
         }
     }
 }

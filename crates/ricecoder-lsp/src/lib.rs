@@ -14,6 +14,7 @@ pub mod cache;
 pub mod performance;
 pub mod config;
 pub mod providers;
+pub mod completion;
 
 // Re-export public API
 pub use server::LspServer;
@@ -29,3 +30,4 @@ pub use providers::{
     SemanticAnalyzerProvider, DiagnosticsProvider, CodeActionProvider,
     SemanticAnalyzerRegistry, DiagnosticsRegistry, CodeActionRegistry,
 };
+pub use completion::CompletionHandler;

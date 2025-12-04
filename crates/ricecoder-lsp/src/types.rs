@@ -450,6 +450,16 @@ impl Language {
             Language::Unknown => &[],
         }
     }
+
+    /// Convert language to string identifier
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Language::Rust => "rust",
+            Language::TypeScript => "typescript",
+            Language::Python => "python",
+            Language::Unknown => "unknown",
+        }
+    }
 }
 
 #[cfg(test)]

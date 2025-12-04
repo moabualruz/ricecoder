@@ -8,9 +8,13 @@ use crate::transport::{AsyncStdioTransport, JsonRpcError, JsonRpcResponse, LspMe
 use crate::hover::HoverProvider;
 use crate::diagnostics::{DiagnosticsEngine, DefaultDiagnosticsEngine};
 use crate::code_actions::{CodeActionsEngine, DefaultCodeActionsEngine};
+use crate::completion::CompletionHandler;
+use crate::config::CompletionConfig;
 use serde_json::{json, Value};
 use std::collections::HashMap;
+use std::sync::Arc;
 use tracing::{info, warn, error, debug};
+use ricecoder_completion::CompletionEngine;
 
 /// Server capabilities
 #[derive(Debug, Clone)]
@@ -23,6 +27,8 @@ pub struct ServerCapabilities {
     pub code_action_provider: bool,
     /// Diagnostics capability
     pub diagnostic_provider: bool,
+    /// Completion capability
+    pub completion_provider: bool,
 }
 
 impl Default for ServerCapabilities {
@@ -32,6 +38,7 @@ impl Default for ServerCapabilities {
             hover_provider: true,
             code_action_provider: true,
             diagnostic_provider: true,
+            completion_provider: true,
         }
     }
 }
@@ -45,6 +52,10 @@ impl ServerCapabilities {
             "hoverProvider": self.hover_provider,
             "codeActionProvider": self.code_action_provider,
             "diagnosticProvider": self.diagnostic_provider,
+            "completionProvider": {
+                "resolveProvider": true,
+                "triggerCharacters": [".", ":", "::", "(", "[", "{", " "]
+            },
         })
     }
 }
@@ -81,6 +92,10 @@ pub struct LspServer {
     diagnostics_engine: Box<dyn DiagnosticsEngine>,
     /// Code actions engine
     code_actions_engine: Box<dyn CodeActionsEngine>,
+    /// Completion handler
+    completion_handler: Option<CompletionHandler>,
+    /// Completion configuration
+    completion_config: CompletionConfig,
 }
 
 impl LspServer {
@@ -95,7 +110,47 @@ impl LspServer {
             hover_provider: HoverProvider::new(),
             diagnostics_engine: Box::new(DefaultDiagnosticsEngine::new()),
             code_actions_engine: Box::new(DefaultCodeActionsEngine::new()),
+            completion_handler: None,
+            completion_config: CompletionConfig::default(),
         }
+    }
+
+    /// Create a new LSP server with custom completion config
+    pub fn with_completion_config(completion_config: CompletionConfig) -> Self {
+        Self {
+            state: ServerState::Initializing,
+            capabilities: ServerCapabilities::default(),
+            client_capabilities: None,
+            documents: HashMap::new(),
+            transport: AsyncStdioTransport::new(),
+            hover_provider: HoverProvider::new(),
+            diagnostics_engine: Box::new(DefaultDiagnosticsEngine::new()),
+            code_actions_engine: Box::new(DefaultCodeActionsEngine::new()),
+            completion_handler: None,
+            completion_config,
+        }
+    }
+
+    /// Register a completion engine
+    pub fn register_completion_engine(&mut self, engine: Arc<dyn CompletionEngine>) {
+        self.completion_handler = Some(CompletionHandler::new(engine));
+        info!("Completion engine registered");
+    }
+
+    /// Get completion configuration
+    pub fn completion_config(&self) -> &CompletionConfig {
+        &self.completion_config
+    }
+
+    /// Set completion configuration
+    pub fn set_completion_config(&mut self, config: CompletionConfig) {
+        self.completion_config = config;
+        debug!("Completion configuration updated");
+    }
+
+    /// Check if completion is enabled
+    pub fn is_completion_enabled(&self) -> bool {
+        self.completion_config.enabled && self.completion_handler.is_some()
     }
 
     /// Get the current server state
@@ -410,6 +465,83 @@ impl LspServer {
         Ok(json!(diagnostics_json))
     }
 
+    /// Handle completion request
+    pub async fn handle_completion(&self, params: Value) -> LspResult<Value> {
+        if self.state != ServerState::Initialized {
+            return Err(LspError::InvalidRequest(
+                "Server is not initialized".to_string(),
+            ));
+        }
+
+        if !self.is_completion_enabled() {
+            return Ok(json!([]));
+        }
+
+        let text_document = params
+            .get("textDocument")
+            .ok_or_else(|| LspError::InvalidParams("Missing textDocument".to_string()))?;
+
+        let uri = text_document
+            .get("uri")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| LspError::InvalidParams("Missing uri".to_string()))?;
+
+        let position = params
+            .get("position")
+            .ok_or_else(|| LspError::InvalidParams("Missing position".to_string()))?;
+
+        let line = position
+            .get("line")
+            .and_then(|v| v.as_u64())
+            .ok_or_else(|| LspError::InvalidParams("Missing line".to_string()))? as u32;
+
+        let character = position
+            .get("character")
+            .and_then(|v| v.as_u64())
+            .ok_or_else(|| LspError::InvalidParams("Missing character".to_string()))? as u32;
+
+        // Get document content
+        let code = self
+            .get_document(uri)
+            .ok_or_else(|| LspError::InvalidParams(format!("Document not found: {}", uri)))?;
+
+        // Detect language from URI
+        let language = self.detect_language(uri);
+
+        // Get completion handler
+        let handler = self
+            .completion_handler
+            .as_ref()
+            .ok_or_else(|| LspError::InternalError("Completion engine not initialized".to_string()))?;
+
+        // Generate completions
+        let completions = handler
+            .handle_completion(code, Position::new(line, character), language.as_str())
+            .await?;
+
+        Ok(json!(completions))
+    }
+
+    /// Handle completionItem/resolve request
+    pub async fn handle_completion_resolve(&self, params: Value) -> LspResult<Value> {
+        if self.state != ServerState::Initialized {
+            return Err(LspError::InvalidRequest(
+                "Server is not initialized".to_string(),
+            ));
+        }
+
+        if !self.is_completion_enabled() {
+            return Ok(params);
+        }
+
+        let handler = self
+            .completion_handler
+            .as_ref()
+            .ok_or_else(|| LspError::InternalError("Completion engine not initialized".to_string()))?;
+
+        handler.handle_completion_resolve(&params).await
+    }
+
     /// Handle code action request
     pub async fn handle_code_action(&self, params: Value) -> LspResult<Value> {
         if self.state != ServerState::Initialized {
@@ -527,6 +659,14 @@ impl LspServer {
                     "textDocument/codeAction" => {
                         let params = req.params.unwrap_or(json!({}));
                         self.handle_code_action(params).await
+                    }
+                    "textDocument/completion" => {
+                        let params = req.params.unwrap_or(json!({}));
+                        self.handle_completion(params).await
+                    }
+                    "completionItem/resolve" => {
+                        let params = req.params.unwrap_or(json!({}));
+                        self.handle_completion_resolve(params).await
                     }
                     _ => Err(LspError::MethodNotFound(req.method)),
                 }

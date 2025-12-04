@@ -1,0 +1,80 @@
+language: rust
+keywords:
+  - fn
+  - let
+  - mut
+  - const
+  - static
+  - struct
+  - enum
+  - trait
+  - impl
+  - pub
+  - priv
+  - mod
+  - use
+  - crate
+  - super
+  - self
+  - if
+  - else
+  - match
+  - for
+  - while
+  - loop
+  - break
+  - continue
+  - return
+  - async
+  - await
+  - unsafe
+  - move
+  - where
+  - as
+  - dyn
+  - ref
+  - type
+  - macro_rules
+  - derive
+  - cfg
+  - test
+  - doc
+  - deprecated
+  - must_use
+  - allow
+  - warn
+  - deny
+  - forbid
+
+snippets:
+  - label: "fn"
+    insert_text: "fn ${1:name}(${2:args}) ${3:-> ReturnType} {\n    ${0}\n}"
+    kind: Function
+    detail: "Function definition"
+  
+  - label: "struct"
+    insert_text: "struct ${1:Name} {\n    ${0}\n}"
+    kind: Struct
+    detail: "Struct definition"
+  
+  - label: "impl"
+    insert_text: "impl ${1:Type} {\n    ${0}\n}"
+    kind: Keyword
+    detail: "Implementation block"
+  
+  - label: "match"
+    insert_text: "match ${1:expr} {\n    ${2:pattern} => ${0},\n}"
+    kind: Keyword
+    detail: "Match expression"
+  
+  - label: "for"
+    insert_text: "for ${1:item} in ${2:iter} {\n    ${0}\n}"
+    kind: Keyword
+    detail: "For loop"
+
+ranking_weights:
+  relevance: 0.5
+  frequency: 0.3
+  recency: 0.2
+
+provider: null

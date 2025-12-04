@@ -1,0 +1,221 @@
+# Dart Language Completion Configuration
+# Provides Dart-specific keywords, snippets, and patterns for code completion
+
+language: dart
+version: "1.0"
+description: "Dart language completion configuration"
+
+# Dart-specific keywords
+keywords:
+  - abstract
+  - as
+  - assert
+  - async
+  - await
+  - break
+  - case
+  - catch
+  - class
+  - const
+  - continue
+  - covariant
+  - default
+  - deferred
+  - do
+  - dynamic
+  - else
+  - enum
+  - export
+  - extends
+  - external
+  - factory
+  - false
+  - final
+  - finally
+  - for
+  - function
+  - get
+  - if
+  - implements
+  - import
+  - in
+  - is
+  - late
+  - library
+  - mixin
+  - new
+  - null
+  - on
+  - operator
+  - part
+  - required
+  - rethrow
+  - return
+  - set
+  - show
+  - static
+  - super
+  - switch
+  - sync
+  - this
+  - throw
+  - true
+  - try
+  - typedef
+  - var
+  - void
+  - while
+  - with
+  - yield
+
+# Dart-specific snippets and templates
+snippets:
+  - label: "class_snippet"
+    template: "class ${1:ClassName} {\n    ${2:body}\n}"
+    description: "Class declaration"
+  
+  - label: "mixin_snippet"
+    template: "mixin ${1:MixinName} {\n    ${2:methods}\n}"
+    description: "Mixin definition"
+  
+  - label: "abstract_class_snippet"
+    template: "abstract class ${1:ClassName} {\n    ${2:abstract methods}\n}"
+    description: "Abstract class"
+  
+  - label: "enum_snippet"
+    template: "enum ${1:EnumName} {\n    ${2:values}\n}"
+    description: "Enum definition"
+  
+  - label: "method_snippet"
+    template: "${1:returnType} ${2:methodName}(${3:params}) {\n    ${4:body}\n}"
+    description: "Method declaration"
+  
+  - label: "async_method_snippet"
+    template: "Future<${1:Type}> ${2:methodName}(${3:params}) async {\n    ${4:body}\n}"
+    description: "Async method"
+  
+  - label: "stream_snippet"
+    template: "Stream<${1:Type}> ${2:methodName}(${3:params}) async* {\n    ${4:yield statements}\n}"
+    description: "Stream generator"
+  
+  - label: "for_snippet"
+    template: "for (var ${1:item} in ${2:collection}) {\n    ${3:body}\n}"
+    description: "For loop"
+  
+  - label: "for_each_snippet"
+    template: "${1:collection}.forEach((${2:item}) {\n    ${3:body}\n});"
+    description: "For-each loop"
+  
+  - label: "if_snippet"
+    template: "if (${1:condition}) {\n    ${2:then}\n} else {\n    ${3:else}\n}"
+    description: "If-else statement"
+
+# Dart standard library types and functions
+standard_library:
+  - name: "dart:core"
+    items:
+      - "String"
+      - "int"
+      - "double"
+      - "bool"
+      - "List"
+      - "Map"
+      - "Set"
+      - "Iterable"
+      - "Iterator"
+      - "Object"
+      - "Type"
+      - "Exception"
+      - "Error"
+      - "print"
+      - "identical"
+      - "identical"
+  
+  - name: "dart:async"
+    items:
+      - "Future"
+      - "Stream"
+      - "Completer"
+      - "StreamController"
+      - "Timer"
+      - "Zone"
+  
+  - name: "dart:collection"
+    items:
+      - "Queue"
+      - "LinkedList"
+      - "HashMap"
+      - "LinkedHashMap"
+      - "SplayTreeMap"
+      - "HashSet"
+      - "LinkedHashSet"
+      - "SplayTreeSet"
+  
+  - name: "dart:convert"
+    items:
+      - "json"
+      - "utf8"
+      - "base64"
+      - "base64Url"
+      - "JsonCodec"
+      - "Utf8Codec"
+  
+  - name: "dart:io"
+    items:
+      - "File"
+      - "Directory"
+      - "Socket"
+      - "ServerSocket"
+      - "HttpClient"
+      - "HttpServer"
+      - "Process"
+
+# Flutter-specific types and functions
+flutter_library:
+  - name: "flutter"
+    items:
+      - "Widget"
+      - "StatelessWidget"
+      - "StatefulWidget"
+      - "State"
+      - "BuildContext"
+      - "MaterialApp"
+      - "Scaffold"
+      - "AppBar"
+      - "FloatingActionButton"
+      - "Text"
+      - "Container"
+      - "Column"
+      - "Row"
+      - "ListView"
+      - "GridView"
+      - "Stack"
+      - "Positioned"
+      - "GestureDetector"
+      - "InkWell"
+      - "ElevatedButton"
+      - "TextButton"
+      - "IconButton"
+      - "TextField"
+      - "Image"
+      - "Icon"
+
+# Naming conventions
+naming_conventions:
+  - pattern: "^[a-z]"
+    description: "Class names should use PascalCase (but Dart convention is camelCase for some)"
+  
+  - pattern: "^[a-z]"
+    description: "Function and variable names should use camelCase"
+  
+  - pattern: "^[A-Z_]+$"
+    description: "Constants should use UPPER_SNAKE_CASE"
+  
+  - pattern: "^_"
+    description: "Private members should start with underscore"
+
+# Ranking weights for completion scoring
+ranking:
+  relevance_weight: 0.4
+  frequency_weight: 0.3
+  recency_weight: 0.3

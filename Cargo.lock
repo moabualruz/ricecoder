@@ -2431,6 +2431,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "ricecoder-completion"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "itertools 0.12.1",
+ "proptest",
+ "regex",
+ "ricecoder-storage",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-test",
+ "tracing",
+ "tracing-subscriber",
+ "tree-sitter",
+ "tree-sitter-python",
+ "tree-sitter-rust",
+ "tree-sitter-typescript",
+]
+
+[[package]]
 name = "ricecoder-execution"
 version = "0.1.0"
 dependencies = [
@@ -2525,10 +2551,12 @@ name = "ricecoder-lsp"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "chrono",
  "itertools 0.12.1",
  "proptest",
  "regex",
+ "ricecoder-completion",
  "ricecoder-storage",
  "serde",
  "serde_json",

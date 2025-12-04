@@ -1,13 +1,13 @@
 [package]
-name = "ricecoder-lsp"
+name = "ricecoder-completion"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
-description = "Language Server Protocol integration for RiceCoder"
+description = "Code completion engine for RiceCoder with language-agnostic architecture"
 
 [lib]
-name = "ricecoder_lsp"
+name = "ricecoder_completion"
 path = "src/lib.rs"
 
 [dependencies]
@@ -27,7 +27,6 @@ tree-sitter-python = "0.20"
 regex = { workspace = true }
 chrono = { workspace = true }
 ricecoder-storage = { path = "../ricecoder-storage" }
-ricecoder-completion = { path = "../ricecoder-completion" }
 
 [dev-dependencies]
 proptest = { workspace = true }
