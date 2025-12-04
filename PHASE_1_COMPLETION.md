@@ -535,7 +535,7 @@ Phase 1 successfully established a solid foundation for RiceCoder. All core infr
 
 ## Quick Links
 
-- **Main Repository**: [ricecoder](https://github.com/your-org/ricecoder)
+- **Main Repository**: [ricecoder](https://github.com/moabualruz/ricecoder)
 - **Wiki**: [RiceCoder Wiki](../ricecoder.wiki/Home.md)
 - **Development Roadmap**: [Roadmap](../ricecoder.wiki/Development-Roadmap.md)
 - **Contributing**: [Contributing Guide](../ricecoder.wiki/Contributing.md)
