@@ -7,6 +7,7 @@
 
 pub mod ai_writer;
 pub mod approval;
+pub mod cache;
 pub mod change_tracking;
 pub mod conversation;
 pub mod error;
@@ -22,6 +23,7 @@ pub mod workflow;
 
 pub use ai_writer::{AISpecWriter, GapAnalysis};
 pub use approval::ApprovalManager;
+pub use cache::SpecCache;
 pub use change_tracking::ChangeTracker;
 pub use conversation::ConversationManager;
 pub use error::*;

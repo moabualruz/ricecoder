@@ -18,6 +18,8 @@ reqwest = { workspace = true }
 dotenv = { workspace = true }
 futures = { workspace = true }
 regex = { workspace = true }
+sha2 = { workspace = true }
+ricecoder-storage = { path = "../ricecoder-storage" }
 
 [dev-dependencies]
 proptest = { workspace = true }

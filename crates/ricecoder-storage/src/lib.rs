@@ -7,6 +7,7 @@
 pub mod cache;
 pub mod completion;
 pub mod config;
+pub mod config_cache;
 pub mod error;
 pub mod first_run;
 pub mod global_store;
@@ -24,6 +25,7 @@ pub use completion::{get_builtin_completion_configs, get_completion_config};
 pub use config::{
     Config, ConfigLoader, ConfigMerger, DocumentLoader, EnvOverrides, StorageModeHandler,
 };
+pub use config_cache::ConfigCache;
 pub use error::{IoOperation, StorageError, StorageResult};
 pub use first_run::FirstRunHandler;
 pub use global_store::GlobalStore;

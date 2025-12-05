@@ -4,6 +4,7 @@
 //! (OpenAI, Anthropic, ollama, Google, etc.) without changing your workflow.
 
 pub mod api_key;
+pub mod cache;
 pub mod config;
 pub mod error;
 pub mod health_check;
@@ -15,6 +16,7 @@ pub mod token_counter;
 
 // Re-export commonly used types
 pub use api_key::ApiKeyManager;
+pub use cache::ProviderCache;
 pub use error::ProviderError;
 pub use health_check::{HealthCheckCache, HealthCheckResult};
 pub use models::{
