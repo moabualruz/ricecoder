@@ -6,7 +6,7 @@
 //! - ricecoder-storage (configuration loading)
 
 use ricecoder_external_lsp::{
-    ExternalLspError, LspServerConfig, LspServerRegistry, Result,
+    LspServerConfig, LspServerRegistry,
 };
 use std::collections::HashMap;
 

@@ -191,16 +191,27 @@ impl SpecCache {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::{SpecMetadata, SpecPhase, SpecStatus};
+    use chrono::Utc;
+    use std::path::PathBuf;
     use tempfile::TempDir;
 
     fn create_test_spec() -> Spec {
         Spec {
+            id: "test-spec".to_string(),
             name: "test".to_string(),
             version: "1.0.0".to_string(),
-            description: Some("Test spec".to_string()),
             requirements: vec![],
             design: None,
             tasks: vec![],
+            metadata: SpecMetadata {
+                author: None,
+                created_at: Utc::now(),
+                updated_at: Utc::now(),
+                phase: SpecPhase::Tasks,
+                status: SpecStatus::Approved,
+            },
+            inheritance: None,
         }
     }
 
@@ -224,7 +235,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cache_miss() -> SpecResult<()> {
+    fn test_cache_miss() -> Result<(), SpecError> {
         let temp_dir = TempDir::new().unwrap();
         let cache = SpecCache::new(temp_dir.path(), 3600)?;
 
@@ -238,7 +249,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cache_invalidate() -> SpecResult<()> {
+    fn test_cache_invalidate() -> Result<(), SpecError> {
         let temp_dir = TempDir::new().unwrap();
         let cache = SpecCache::new(temp_dir.path(), 3600)?;
 
@@ -260,7 +271,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cache_clear() -> SpecResult<()> {
+    fn test_cache_clear() -> Result<(), SpecError> {
         let temp_dir = TempDir::new().unwrap();
         let cache = SpecCache::new(temp_dir.path(), 3600)?;
 

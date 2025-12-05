@@ -123,15 +123,15 @@ mod tests {
 
     #[test]
     fn test_dart_parser_creation() {
-        let parser = DartParser::new();
+        let _parser = DartParser::new();
         assert!(true);
     }
 
     #[test]
     fn test_dart_parser_no_manifest() {
-        let parser = DartParser::new();
+        let _parser = DartParser::new();
         let temp_dir = TempDir::new().unwrap();
-        let result = parser.parse(temp_dir.path()).unwrap();
+        let result = _parser.parse(temp_dir.path()).unwrap();
         assert!(result.is_empty());
     }
 
