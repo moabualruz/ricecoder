@@ -10,6 +10,33 @@
 //! - Language-specific rule modules: `rust_rules`, `typescript_rules`, `python_rules`
 //! - `Diagnostic` types: Error, warning, and hint severity levels
 //!
+//! # External LSP Integration
+//!
+//! The diagnostics engine integrates with external LSP servers for semantic diagnostics:
+//!
+//! 1. **External LSP First**: If an external LSP server is configured for the language,
+//!    it provides semantic diagnostics (compiler errors, type errors, etc.)
+//! 2. **Merge Results**: External diagnostics are merged with internal diagnostics
+//!    (external takes priority)
+//! 3. **Fallback**: If the external LSP is unavailable, the system falls back to
+//!    internal diagnostics engine
+//!
+//! # Fallback Behavior
+//!
+//! When external LSP is unavailable, the internal diagnostics engine provides:
+//!
+//! - **Syntax Errors**: Basic syntax validation
+//! - **Pattern-Based Warnings**: Common coding patterns and anti-patterns
+//! - **Style Issues**: Code style and formatting issues
+//! - **Language-Specific Rules**: Language-specific rules (Rust, TypeScript, Python)
+//!
+//! However, the internal engine lacks:
+//!
+//! - **Type Checking**: Cannot perform type inference or type checking
+//! - **Semantic Analysis**: Cannot resolve references or perform semantic analysis
+//! - **Project Context**: Cannot access project configuration or dependencies
+//! - **Compiler Errors**: Cannot provide actual compiler errors
+//!
 //! # Example
 //!
 //! ```ignore

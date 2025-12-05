@@ -2,6 +2,31 @@
 //!
 //! This module provides hover information for symbols in code, including type information,
 //! documentation, and definition locations.
+//!
+//! # External LSP Integration
+//!
+//! The hover provider integrates with external LSP servers for semantic hover information:
+//!
+//! 1. **External LSP First**: If an external LSP server is configured for the language,
+//!    it provides semantic hover information (type information, documentation, etc.)
+//! 2. **Fallback**: If the external LSP is unavailable, the system falls back to
+//!    internal hover provider
+//!
+//! # Fallback Behavior
+//!
+//! When external LSP is unavailable, the internal hover provider provides:
+//!
+//! - **Symbol Information**: Basic symbol name and kind
+//! - **Documentation**: Documentation from code comments
+//! - **Definition Location**: File and line number where symbol is defined
+//! - **Reference Count**: Number of references to the symbol
+//!
+//! However, the internal provider lacks:
+//!
+//! - **Type Information**: Cannot infer or display type information
+//! - **Semantic Documentation**: Cannot extract semantic documentation from LSP
+//! - **Project Context**: Cannot resolve symbols across project files
+//! - **Markdown Rendering**: Limited markdown support compared to LSP
 
 pub mod symbol_resolver;
 

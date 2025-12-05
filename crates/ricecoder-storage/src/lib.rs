@@ -5,6 +5,7 @@
 //! and data persistence.
 
 pub mod cache;
+pub mod cache_implementations;
 pub mod completion;
 pub mod config;
 pub mod config_cache;
@@ -21,6 +22,9 @@ pub mod types;
 
 // Re-export commonly used types
 pub use cache::{CacheEntry, CacheInvalidationStrategy, CacheManager};
+pub use cache_implementations::{
+    CacheStats, ConfigCache as ConfigCacheImpl, ProviderCache, ProjectAnalysisCache, SpecCache,
+};
 pub use completion::{get_builtin_completion_configs, get_completion_config};
 pub use config::{
     Config, ConfigLoader, ConfigMerger, DocumentLoader, EnvOverrides, StorageModeHandler,

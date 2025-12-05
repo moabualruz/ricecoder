@@ -205,7 +205,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cache_set_and_get() -> SpecResult<()> {
+    fn test_cache_set_and_get() -> Result<(), SpecError> {
         let temp_dir = TempDir::new().unwrap();
         let cache = SpecCache::new(temp_dir.path(), 3600)?;
 

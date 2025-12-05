@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 004553286b40caa0eec25d054945ab0e0aa974ebfcef87842ce1ad3f032fb6b9 # shrinks to config_yaml = "\nglobal:\n  max_processes: 5\n  default_timeout_ms: 5000\n  enable_fallback: true\n  health_check_interval_ms: 30000\n\nservers:\n  a:\n    - language: a\n      extensions: [\".a\"]\n      executable: -\n      args: []\n      env: {}\n      enabled: true\n      timeout_ms: 1000\n      max_restarts: 1\n      idle_timeout_ms: 0\n"

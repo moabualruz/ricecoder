@@ -19,6 +19,7 @@ members = [
     "crates/ricecoder-lsp",
     "crates/ricecoder-completion",
     "crates/ricecoder-hooks",
+    "crates/ricecoder-external-lsp",
 ]
 resolver = "2"
 

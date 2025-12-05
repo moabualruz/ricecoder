@@ -1,6 +1,34 @@
 /// Code completion support for LSP
 ///
 /// This module provides LSP handlers for code completion requests and item resolution.
+///
+/// # Routing Strategy
+///
+/// The completion handler routes requests to external LSP servers when available:
+///
+/// 1. **External LSP First**: If an external LSP server is configured for the language,
+///    the request is forwarded to it for semantic completions
+/// 2. **Merge Results**: External completions are merged with internal completions
+///    (external takes priority)
+/// 3. **Fallback**: If the external LSP is unavailable or times out, the system falls back
+///    to internal completion providers
+///
+/// # Merge Strategy
+///
+/// When merging external and internal completions:
+///
+/// - External completions appear first (higher priority)
+/// - Internal completions are added if they don't duplicate external ones
+/// - All completions are sorted by relevance score
+/// - Deduplication is based on completion label
+///
+/// # Fallback Behavior
+///
+/// When external LSP is unavailable:
+///
+/// - Internal completion providers are used (keyword and pattern-based)
+/// - Users get basic completions instead of semantic ones
+/// - No error is shown to the user (graceful degradation)
 use crate::types::{LspError, LspResult, Position};
 use ricecoder_completion::{
     CompletionEngine, CompletionItem, CompletionItemKind, Position as CompletionPosition,
