@@ -140,7 +140,7 @@ impl DiffRenderOptimizer {
 }
 
 /// Theme switching performance tracker
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ThemeSwitchPerformance {
     /// Last theme switch time in milliseconds
     pub last_switch_time_ms: u64,
@@ -148,16 +148,6 @@ pub struct ThemeSwitchPerformance {
     pub average_switch_time_ms: u64,
     /// Number of theme switches
     pub switch_count: u32,
-}
-
-impl Default for ThemeSwitchPerformance {
-    fn default() -> Self {
-        Self {
-            last_switch_time_ms: 0,
-            average_switch_time_ms: 0,
-            switch_count: 0,
-        }
-    }
 }
 
 impl ThemeSwitchPerformance {

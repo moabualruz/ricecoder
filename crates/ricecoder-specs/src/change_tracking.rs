@@ -53,7 +53,7 @@ impl ChangeTracker {
         let mut history = self.history.lock().unwrap();
         history
             .entry(spec_id.to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(spec_change.clone());
 
         spec_change
@@ -64,7 +64,7 @@ impl ChangeTracker {
         let history = self.history.lock().unwrap();
         history
             .get(spec_id)
-            .map(|changes| changes.clone())
+            .cloned()
             .unwrap_or_default()
     }
 

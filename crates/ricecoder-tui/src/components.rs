@@ -9,6 +9,8 @@ pub struct ModeIndicator {
     pub mode: AppMode,
     /// Show keyboard shortcut
     pub show_shortcut: bool,
+    /// Show mode capabilities
+    pub show_capabilities: bool,
 }
 
 impl ModeIndicator {
@@ -17,6 +19,7 @@ impl ModeIndicator {
         Self {
             mode,
             show_shortcut: true,
+            show_capabilities: false,
         }
     }
 
@@ -34,6 +37,22 @@ impl ModeIndicator {
         self.mode.display_name()
     }
 
+    /// Get the capabilities for the current mode
+    pub fn get_capabilities(&self) -> Vec<&'static str> {
+        match self.mode {
+            AppMode::Chat => vec!["QuestionAnswering", "FreeformChat"],
+            AppMode::Command => vec!["CodeGeneration", "FileOperations", "CommandExecution"],
+            AppMode::Diff => vec!["CodeModification", "FileOperations"],
+            AppMode::Help => vec!["QuestionAnswering"],
+        }
+    }
+
+    /// Get capabilities display text
+    pub fn capabilities_text(&self) -> String {
+        let caps = self.get_capabilities();
+        format!("Capabilities: {}", caps.join(", "))
+    }
+
     /// Update the mode
     pub fn set_mode(&mut self, mode: AppMode) {
         self.mode = mode;
@@ -43,11 +62,137 @@ impl ModeIndicator {
     pub fn toggle_shortcut_display(&mut self) {
         self.show_shortcut = !self.show_shortcut;
     }
+
+    /// Toggle capabilities display
+    pub fn toggle_capabilities_display(&mut self) {
+        self.show_capabilities = !self.show_capabilities;
+    }
+
+    /// Enable capabilities display
+    pub fn show_capabilities_enabled(&mut self) {
+        self.show_capabilities = true;
+    }
+
+    /// Disable capabilities display
+    pub fn hide_capabilities_enabled(&mut self) {
+        self.show_capabilities = false;
+    }
 }
 
 impl Default for ModeIndicator {
     fn default() -> Self {
         Self::new(AppMode::Chat)
+    }
+}
+
+/// Mode selection menu for switching between modes
+#[derive(Debug, Clone)]
+pub struct ModeSelectionMenu {
+    /// Available modes
+    pub modes: Vec<AppMode>,
+    /// Currently selected mode index
+    pub selected: usize,
+    /// Whether the menu is open
+    pub open: bool,
+    /// Whether to show confirmation dialog
+    pub show_confirmation: bool,
+    /// Previous mode (for cancellation)
+    pub previous_mode: AppMode,
+}
+
+impl ModeSelectionMenu {
+    /// Create a new mode selection menu
+    pub fn new() -> Self {
+        Self {
+            modes: vec![AppMode::Chat, AppMode::Command, AppMode::Diff, AppMode::Help],
+            selected: 0,
+            open: false,
+            show_confirmation: false,
+            previous_mode: AppMode::Chat,
+        }
+    }
+
+    /// Open the mode selection menu
+    pub fn open(&mut self, current_mode: AppMode) {
+        self.open = true;
+        self.previous_mode = current_mode;
+        // Find and select the current mode
+        if let Some(pos) = self.modes.iter().position(|&m| m == current_mode) {
+            self.selected = pos;
+        }
+    }
+
+    /// Close the mode selection menu
+    pub fn close(&mut self) {
+        self.open = false;
+        self.show_confirmation = false;
+    }
+
+    /// Get the currently selected mode
+    pub fn selected_mode(&self) -> AppMode {
+        self.modes.get(self.selected).copied().unwrap_or(AppMode::Chat)
+    }
+
+    /// Move selection to next mode
+    pub fn select_next(&mut self) {
+        if self.selected < self.modes.len().saturating_sub(1) {
+            self.selected += 1;
+        } else {
+            self.selected = 0;
+        }
+    }
+
+    /// Move selection to previous mode
+    pub fn select_prev(&mut self) {
+        if self.selected > 0 {
+            self.selected -= 1;
+        } else {
+            self.selected = self.modes.len().saturating_sub(1);
+        }
+    }
+
+    /// Confirm mode switch
+    pub fn confirm_switch(&mut self) -> AppMode {
+        let mode = self.selected_mode();
+        self.close();
+        mode
+    }
+
+    /// Cancel mode switch
+    pub fn cancel_switch(&mut self) {
+        self.close();
+    }
+
+    /// Get mode descriptions for display
+    pub fn get_mode_descriptions(&self) -> Vec<(&AppMode, &'static str)> {
+        self.modes
+            .iter()
+            .map(|mode| {
+                let desc = match mode {
+                    AppMode::Chat => "Chat with the AI assistant",
+                    AppMode::Command => "Execute commands and generate code",
+                    AppMode::Diff => "Review and apply code changes",
+                    AppMode::Help => "Get help and documentation",
+                };
+                (mode, desc)
+            })
+            .collect()
+    }
+
+    /// Get keyboard shortcuts for mode switching
+    pub fn get_shortcuts(&self) -> Vec<(&'static str, &'static str)> {
+        vec![
+            ("Ctrl+1", "Chat Mode"),
+            ("Ctrl+2", "Command Mode"),
+            ("Ctrl+3", "Diff Mode"),
+            ("Ctrl+4", "Help Mode"),
+        ]
+    }
+}
+
+impl Default for ModeSelectionMenu {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -556,11 +701,8 @@ impl DialogWidget {
 
     /// Cancel dialog
     pub fn cancel(&mut self) {
-        match self.dialog_type {
-            DialogType::Confirm => {
-                self.confirmed = Some(false);
-            }
-            _ => {}
+        if self.dialog_type == DialogType::Confirm {
+            self.confirmed = Some(false);
         }
         self.result = DialogResult::Cancelled;
     }
@@ -687,10 +829,8 @@ impl SplitViewWidget {
             if self.left_scroll > 0 {
                 self.left_scroll -= 1;
             }
-        } else {
-            if self.right_scroll > 0 {
-                self.right_scroll -= 1;
-            }
+        } else if self.right_scroll > 0 {
+            self.right_scroll -= 1;
         }
     }
 
@@ -1554,6 +1694,118 @@ mod tests {
         assert!(!indicator.show_shortcut);
         indicator.toggle_shortcut_display();
         assert!(indicator.show_shortcut);
+    }
+
+    #[test]
+    fn test_mode_indicator_get_capabilities() {
+        let indicator = ModeIndicator::new(AppMode::Chat);
+        let caps = indicator.get_capabilities();
+        assert!(caps.contains(&"QuestionAnswering"));
+        assert!(caps.contains(&"FreeformChat"));
+    }
+
+    #[test]
+    fn test_mode_indicator_capabilities_text() {
+        let indicator = ModeIndicator::new(AppMode::Command);
+        let text = indicator.capabilities_text();
+        assert!(text.contains("Capabilities:"));
+        assert!(text.contains("CodeGeneration"));
+    }
+
+    #[test]
+    fn test_mode_indicator_toggle_capabilities() {
+        let mut indicator = ModeIndicator::new(AppMode::Chat);
+        assert!(!indicator.show_capabilities);
+        indicator.toggle_capabilities_display();
+        assert!(indicator.show_capabilities);
+        indicator.toggle_capabilities_display();
+        assert!(!indicator.show_capabilities);
+    }
+
+    #[test]
+    fn test_mode_indicator_show_hide_capabilities() {
+        let mut indicator = ModeIndicator::new(AppMode::Chat);
+        assert!(!indicator.show_capabilities);
+        
+        indicator.show_capabilities_enabled();
+        assert!(indicator.show_capabilities);
+        
+        indicator.hide_capabilities_enabled();
+        assert!(!indicator.show_capabilities);
+    }
+
+    #[test]
+    fn test_mode_selection_menu_creation() {
+        let menu = ModeSelectionMenu::new();
+        assert!(!menu.open);
+        assert_eq!(menu.modes.len(), 4);
+        assert_eq!(menu.selected_mode(), AppMode::Chat);
+    }
+
+    #[test]
+    fn test_mode_selection_menu_open_close() {
+        let mut menu = ModeSelectionMenu::new();
+        assert!(!menu.open);
+        
+        menu.open(AppMode::Chat);
+        assert!(menu.open);
+        
+        menu.close();
+        assert!(!menu.open);
+    }
+
+    #[test]
+    fn test_mode_selection_menu_navigation() {
+        let mut menu = ModeSelectionMenu::new();
+        menu.open(AppMode::Chat);
+        
+        assert_eq!(menu.selected_mode(), AppMode::Chat);
+        menu.select_next();
+        assert_eq!(menu.selected_mode(), AppMode::Command);
+        menu.select_next();
+        assert_eq!(menu.selected_mode(), AppMode::Diff);
+        menu.select_prev();
+        assert_eq!(menu.selected_mode(), AppMode::Command);
+    }
+
+    #[test]
+    fn test_mode_selection_menu_wrap_around() {
+        let mut menu = ModeSelectionMenu::new();
+        menu.open(AppMode::Help);
+        
+        assert_eq!(menu.selected_mode(), AppMode::Help);
+        menu.select_next();
+        assert_eq!(menu.selected_mode(), AppMode::Chat);
+        
+        menu.select_prev();
+        assert_eq!(menu.selected_mode(), AppMode::Help);
+    }
+
+    #[test]
+    fn test_mode_selection_menu_confirm() {
+        let mut menu = ModeSelectionMenu::new();
+        menu.open(AppMode::Chat);
+        menu.select_next();
+        
+        let selected = menu.confirm_switch();
+        assert_eq!(selected, AppMode::Command);
+        assert!(!menu.open);
+    }
+
+    #[test]
+    fn test_mode_selection_menu_descriptions() {
+        let menu = ModeSelectionMenu::new();
+        let descriptions = menu.get_mode_descriptions();
+        assert_eq!(descriptions.len(), 4);
+        assert!(descriptions[0].1.contains("Chat"));
+    }
+
+    #[test]
+    fn test_mode_selection_menu_shortcuts() {
+        let menu = ModeSelectionMenu::new();
+        let shortcuts = menu.get_shortcuts();
+        assert_eq!(shortcuts.len(), 4);
+        assert_eq!(shortcuts[0].0, "Ctrl+1");
     }
 
     #[test]

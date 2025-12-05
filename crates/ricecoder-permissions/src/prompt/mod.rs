@@ -85,6 +85,7 @@ impl PermissionPrompt {
     }
 
     /// Collect user decision from stdin
+    #[allow(clippy::only_used_in_recursion)]
     pub fn collect_decision(&self) -> io::Result<UserDecision> {
         print!("\nYour decision: ");
         io::stdout().flush()?;

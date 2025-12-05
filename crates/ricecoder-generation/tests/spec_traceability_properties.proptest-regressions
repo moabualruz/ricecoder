@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 00e4a61be202d7de4c10b39cfaaf5b8251f5f49918060349dcc3b52db120d942 # shrinks to spec = Spec { id: "spec-a", name: "Aaaa", version: "0.0.0", requirements: [Requirement { id: "req-5", user_story: "As a aaa, I want aaa, so that aaa", acceptance_criteria: [AcceptanceCriterion { id: "ac-0", when: "WHEN aaa", then: "THEN aaa" }], priority: Must }, Requirement { id: "req-5", user_story: "As a aaa, I want aaa, so that aaa", acceptance_criteria: [AcceptanceCriterion { id: "ac-a", when: "WHEN aaa", then: "THEN aaa" }], priority: Must }], design: None, tasks: [], metadata: SpecMetadata { author: Some("Test"), created_at: 2025-12-03T15:04:48.128564100Z, updated_at: 2025-12-03T15:04:48.128564600Z, phase: Requirements, status: Approved }, inheritance: None }
+cc fda92baa11df090e41acd79bb0d6df5ad7785bf647df778ba62dce46017116b7 # shrinks to spec = Spec { id: "spec-0", name: "Aaaa", version: "0.0.0", requirements: [Requirement { id: "req-0", user_story: "As a aaa, I want aaa, so that aaa", acceptance_criteria: [AcceptanceCriterion { id: "ac-a", when: "WHEN aaa", then: "THEN doc" }], priority: Must }], design: None, tasks: [], metadata: SpecMetadata { author: Some("Test"), created_at: 2025-12-03T15:05:15.752672200Z, updated_at: 2025-12-03T15:05:15.752672600Z, phase: Requirements, status: Approved }, inheritance: None }

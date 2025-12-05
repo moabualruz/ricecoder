@@ -99,7 +99,7 @@ impl AgentExecutor {
                     tool_name.to_string(),
                     self.agent_name.clone(),
                     None,
-                ).map_err(|e| crate::error::Error::Internal(e))?;
+                ).map_err(crate::error::Error::Internal)?;
 
                 // Execute the tool
                 let result = execute_fn()?;
@@ -124,7 +124,7 @@ impl AgentExecutor {
                     tool_name.to_string(),
                     self.agent_name.clone(),
                     None,
-                ).map_err(|e| crate::error::Error::Internal(e))?;
+                ).map_err(crate::error::Error::Internal)?;
 
                 // Collect user decision
                 let prompt_result = prompt.execute()
@@ -137,7 +137,7 @@ impl AgentExecutor {
                             tool_name.to_string(),
                             self.agent_name.clone(),
                             Some("User approved via prompt".to_string()),
-                        ).map_err(|e| crate::error::Error::Internal(e))?;
+                        ).map_err(crate::error::Error::Internal)?;
 
                         // Execute the tool
                         let result = execute_fn()?;
@@ -149,7 +149,7 @@ impl AgentExecutor {
                             tool_name.to_string(),
                             self.agent_name.clone(),
                             Some("User denied via prompt".to_string()),
-                        ).map_err(|e| crate::error::Error::Internal(e))?;
+                        ).map_err(crate::error::Error::Internal)?;
 
                         Ok((AgentExecutionResult::UserDenied, None))
                     }
@@ -161,7 +161,7 @@ impl AgentExecutor {
                     tool_name.to_string(),
                     self.agent_name.clone(),
                     Some("Permission denied".to_string()),
-                ).map_err(|e| crate::error::Error::Internal(e))?;
+                ).map_err(crate::error::Error::Internal)?;
 
                 Ok((AgentExecutionResult::Denied, None))
             }

@@ -149,7 +149,7 @@ impl SafeWriter {
         let mut temp_path = path.to_path_buf();
         let file_name = format!(
             ".tmp-{}-{}",
-            Uuid::new_v4().to_string(),
+            Uuid::new_v4(),
             path.file_name()
                 .and_then(|n| n.to_str())
                 .unwrap_or("file")
@@ -193,7 +193,7 @@ impl SafeWriter {
         let mut backup_path = path.to_path_buf();
         let file_name = format!(
             ".backup-{}-{}",
-            Uuid::new_v4().to_string(),
+            Uuid::new_v4(),
             path.file_name()
                 .and_then(|n| n.to_str())
                 .unwrap_or("file")

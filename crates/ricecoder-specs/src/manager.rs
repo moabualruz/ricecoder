@@ -49,10 +49,10 @@ impl SpecManager {
         }
 
         let entries = fs::read_dir(path)
-            .map_err(|e| SpecError::IoError(e))?;
+            .map_err(SpecError::IoError)?;
 
         for entry in entries {
-            let entry = entry.map_err(|e| SpecError::IoError(e))?;
+            let entry = entry.map_err(SpecError::IoError)?;
             let path = entry.path();
 
             if path.is_dir() {
@@ -94,7 +94,7 @@ impl SpecManager {
 
         // Read file content
         let content = fs::read_to_string(path)
-            .map_err(|e| SpecError::IoError(e))?;
+            .map_err(SpecError::IoError)?;
 
         // Determine format and parse
         let spec = if let Some(ext) = path.extension() {
@@ -149,13 +149,13 @@ impl SpecManager {
         if let Some(parent) = path.parent() {
             if !parent.as_os_str().is_empty() {
                 fs::create_dir_all(parent)
-                    .map_err(|e| SpecError::IoError(e))?;
+                    .map_err(SpecError::IoError)?;
             }
         }
 
         // Write file
         fs::write(path, content)
-            .map_err(|e| SpecError::IoError(e))?;
+            .map_err(SpecError::IoError)?;
 
         // Update cache
         self.cache.insert(path.to_path_buf(), spec.clone());

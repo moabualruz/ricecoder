@@ -2360,6 +2360,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "ricecoder-agents"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "futures",
+ "proptest",
+ "ricecoder-providers",
+ "ricecoder-storage",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-test",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "ricecoder-cli"
 version = "0.1.0"
 dependencies = [
@@ -2410,6 +2430,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "ricecoder-execution"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "futures",
+ "proptest",
+ "ricecoder-files",
+ "ricecoder-storage",
+ "ricecoder-workflows",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-test",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "ricecoder-files"
 version = "0.1.0"
 dependencies = [
@@ -2433,10 +2475,16 @@ dependencies = [
 name = "ricecoder-generation"
 version = "0.1.0"
 dependencies = [
+ "chrono",
+ "futures",
  "handlebars",
  "heck 0.4.1",
+ "lazy_static",
  "proptest",
  "regex",
+ "ricecoder-providers",
+ "ricecoder-specs",
+ "ricecoder-storage",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -2445,6 +2493,7 @@ dependencies = [
  "tokio",
  "tokio-test",
  "tracing",
+ "uuid",
 ]
 
 [[package]]
@@ -2468,6 +2517,25 @@ dependencies = [
  "tokio",
  "tokio-test",
  "tracing",
+]
+
+[[package]]
+name = "ricecoder-modes"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "lazy_static",
+ "proptest",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-test",
+ "tracing",
+ "uuid",
 ]
 
 [[package]]
@@ -2541,6 +2609,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "ricecoder-sessions"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "dirs",
+ "lazy_static",
+ "proptest",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-test",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "ricecoder-specs"
 version = "0.1.0"
 dependencies = [
@@ -2585,11 +2672,13 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "arboard",
+ "chrono",
  "colored",
  "crossterm",
  "dirs",
  "proptest",
  "ratatui",
+ "ricecoder-sessions",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -2599,6 +2688,24 @@ dependencies = [
  "tokio-test",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "ricecoder-workflows"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "proptest",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-test",
+ "tracing",
+ "uuid",
 ]
 
 [[package]]

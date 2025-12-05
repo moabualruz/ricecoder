@@ -48,8 +48,8 @@ impl SwiftParser {
             // Extract package name from URL
             let name = if let Some(last_slash) = url.rfind('/') {
                 let name_with_ext = &url[last_slash + 1..];
-                if name_with_ext.ends_with(".git") {
-                    &name_with_ext[..name_with_ext.len() - 4]
+                if let Some(stripped) = name_with_ext.strip_suffix(".git") {
+                    stripped
                 } else {
                     name_with_ext
                 }

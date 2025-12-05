@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 21cb3e3320215385a8cb7ce3a692af89bfb27247fdd838bede2a05ace6cbbd09 # shrinks to provider1 = "openai", model1 = "gpt-4", provider2 = "openai", model2 = "gpt-4", files1 = ["_.rs"], files2 = ["_.rs"]
+cc a015ef7ba67916114be33e07a42f4f4c6c3b444371bfe5bc3ab1ec76c3af2fb1 # shrinks to provider1 = "openai", model1 = "gpt-4", provider2 = "openai", model2 = "gpt-4", files1 = ["_.rs", "_.rs"], files2 = []

@@ -49,8 +49,6 @@ impl From<reqwest::Error> for LocalModelError {
     fn from(err: reqwest::Error) -> Self {
         if err.is_timeout() {
             LocalModelError::Timeout(err.to_string())
-        } else if err.is_connect() {
-            LocalModelError::NetworkError(err.to_string())
         } else {
             LocalModelError::NetworkError(err.to_string())
         }

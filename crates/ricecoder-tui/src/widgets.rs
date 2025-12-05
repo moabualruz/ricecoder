@@ -60,9 +60,8 @@ pub struct StreamingMessage {
     pub token_count: usize,
 }
 
-impl StreamingMessage {
-    /// Create a new streaming message
-    pub fn new() -> Self {
+impl Default for StreamingMessage {
+    fn default() -> Self {
         Self {
             content: String::new(),
             active: true,
@@ -70,6 +69,13 @@ impl StreamingMessage {
             animation_frame: 0,
             token_count: 0,
         }
+    }
+}
+
+impl StreamingMessage {
+    /// Create a new streaming message
+    pub fn new() -> Self {
+        Self::default()
     }
 
     /// Append a token to the message

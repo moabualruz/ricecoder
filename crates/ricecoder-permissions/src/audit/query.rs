@@ -219,7 +219,7 @@ impl AuditQuery {
         if self.pagination.limit == 0 {
             return 0;
         }
-        (self.total + self.pagination.limit - 1) / self.pagination.limit
+        self.total.div_ceil(self.pagination.limit)
     }
 
     /// Get the current page number (1-indexed)

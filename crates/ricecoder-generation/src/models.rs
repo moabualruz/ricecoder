@@ -194,3 +194,78 @@ pub struct BoilerplateDiscoveryResult {
     /// Paths that were searched
     pub search_paths: Vec<PathBuf>,
 }
+
+/// A generated code file
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GeneratedFile {
+    /// File path relative to project root
+    pub path: String,
+    /// File content
+    pub content: String,
+    /// Programming language
+    pub language: String,
+}
+
+/// Result of code validation
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidationResult {
+    /// Whether validation passed
+    pub valid: bool,
+    /// Validation errors found
+    pub errors: Vec<ValidationError>,
+    /// Validation warnings found
+    pub warnings: Vec<ValidationWarning>,
+}
+
+impl Default for ValidationResult {
+    fn default() -> Self {
+        Self {
+            valid: true,
+            errors: Vec::new(),
+            warnings: Vec::new(),
+        }
+    }
+}
+
+/// A validation error
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidationError {
+    /// File path where error occurred
+    pub file: String,
+    /// Line number where error occurred
+    pub line: usize,
+    /// Column number where error occurred
+    pub column: usize,
+    /// Error message
+    pub message: String,
+    /// Error code (e.g., "E0001")
+    pub code: Option<String>,
+}
+
+/// A validation warning
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidationWarning {
+    /// File path where warning occurred
+    pub file: String,
+    /// Line number where warning occurred
+    pub line: usize,
+    /// Column number where warning occurred
+    pub column: usize,
+    /// Warning message
+    pub message: String,
+    /// Warning code (e.g., "W0001")
+    pub code: Option<String>,
+}
+
+/// Configuration for code validation
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidationConfig {
+    /// Whether to check syntax
+    pub check_syntax: bool,
+    /// Whether to run linters
+    pub run_linters: bool,
+    /// Whether to run type checking
+    pub run_type_checking: bool,
+    /// Whether to treat warnings as errors
+    pub warnings_as_errors: bool,
+}

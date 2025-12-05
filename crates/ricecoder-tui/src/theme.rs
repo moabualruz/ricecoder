@@ -7,13 +7,16 @@ use anyhow::Result;
 use std::sync::{Arc, Mutex};
 use std::path::Path;
 
+/// Type alias for theme listeners
+type ThemeListeners = Arc<Mutex<Vec<Box<dyn Fn(&Theme) + Send>>>>;
+
 /// Theme manager for runtime theme management and switching
 #[derive(Clone)]
 pub struct ThemeManager {
     /// Current active theme
     current_theme: Arc<Mutex<Theme>>,
     /// Theme change listeners
-    listeners: Arc<Mutex<Vec<Box<dyn Fn(&Theme) + Send>>>>,
+    listeners: ThemeListeners,
 }
 
 impl std::fmt::Debug for ThemeManager {

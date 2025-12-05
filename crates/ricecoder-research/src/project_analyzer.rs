@@ -341,10 +341,10 @@ impl ProjectAnalyzer {
         }
 
         // Language-specific patterns
-        if root.join("src/main.rs").exists() || root.join("src/lib.rs").exists() {
-            if !source_dirs.contains(&root.join("src")) {
-                source_dirs.push(root.join("src"));
-            }
+        if (root.join("src/main.rs").exists() || root.join("src/lib.rs").exists())
+            && !source_dirs.contains(&root.join("src"))
+        {
+            source_dirs.push(root.join("src"));
         }
 
         Ok(source_dirs)
@@ -452,7 +452,7 @@ impl ProjectAnalyzer {
             .into_iter()
             .filter_map(|e| e.ok())
         {
-            if entry.path().extension().map_or(false, |ext| ext == "csproj") {
+            if entry.path().extension().is_some_and(|ext| ext == "csproj") {
                 return Ok(true);
             }
         }

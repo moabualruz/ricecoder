@@ -38,6 +38,7 @@ fn test_configuration_precedence_env_overrides_project() {
 
 /// Test: Loading configuration from environment variables
 #[test]
+#[serial_test::serial]
 fn test_load_from_environment_variables() {
     let mut manager = ConfigurationManager::new();
     
@@ -49,16 +50,24 @@ fn test_load_from_environment_variables() {
     manager.load_from_env().unwrap();
     
     // Verify all keys were loaded
+    let openai_settings = manager.get_provider_settings("openai");
+    assert!(openai_settings.is_some(), "OpenAI provider settings should exist");
     assert_eq!(
-        manager.get_provider_settings("openai").unwrap().api_key,
+        openai_settings.unwrap().api_key,
         Some("openai-key-123".to_string())
     );
+    
+    let anthropic_settings = manager.get_provider_settings("anthropic");
+    assert!(anthropic_settings.is_some(), "Anthropic provider settings should exist");
     assert_eq!(
-        manager.get_provider_settings("anthropic").unwrap().api_key,
+        anthropic_settings.unwrap().api_key,
         Some("anthropic-key-456".to_string())
     );
+    
+    let google_settings = manager.get_provider_settings("google");
+    assert!(google_settings.is_some(), "Google provider settings should exist");
     assert_eq!(
-        manager.get_provider_settings("google").unwrap().api_key,
+        google_settings.unwrap().api_key,
         Some("google-key-789".to_string())
     );
     
@@ -408,6 +417,9 @@ fn test_get_api_key_from_configuration() {
 /// Test: Get API key from environment when not in config
 #[test]
 fn test_get_api_key_from_environment() {
+    // Ensure clean environment state
+    std::env::remove_var("ANTHROPIC_API_KEY");
+    
     let mut manager = ConfigurationManager::new();
     
     manager.config_mut().providers.insert(

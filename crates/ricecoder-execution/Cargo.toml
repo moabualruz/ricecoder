@@ -1,0 +1,27 @@
+[package]
+name = "ricecoder-execution"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
+tokio = { workspace = true }
+async-trait = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
+futures = { workspace = true }
+
+ricecoder-workflows = { path = "../ricecoder-workflows" }
+ricecoder-files = { path = "../ricecoder-files" }
+ricecoder-storage = { path = "../ricecoder-storage" }
+
+[dev-dependencies]
+proptest = { workspace = true }
+tempfile = { workspace = true }
+tokio-test = { workspace = true }

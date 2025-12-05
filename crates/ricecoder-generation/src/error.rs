@@ -37,4 +37,47 @@ pub enum GenerationError {
     /// Serialization error
     #[error("Serialization error: {0}")]
     SerializationError(#[from] serde_json::Error),
+
+    /// Spec processing error
+    #[error("Spec error: {0}")]
+    SpecError(String),
+
+    /// Prompt building error
+    #[error("Prompt error: {0}")]
+    PromptError(String),
+
+    /// Code generation failed
+    #[error("Generation failed: {0}")]
+    GenerationFailed(String),
+
+    /// Validation error with details
+    #[error("Validation error in {file}:{line}: {message}")]
+    ValidationError {
+        /// File path where error occurred
+        file: String,
+        /// Line number where error occurred
+        line: usize,
+        /// Error message
+        message: String,
+    },
+
+    /// Linting error
+    #[error("Linting error: {0}")]
+    LintingError(String),
+
+    /// Type checking error
+    #[error("Type checking error: {0}")]
+    TypeCheckingError(String),
+
+    /// Syntax error
+    #[error("Syntax error: {0}")]
+    SyntaxError(String),
+
+    /// Write failed
+    #[error("Write failed: {0}")]
+    WriteFailed(String),
+
+    /// Rollback failed
+    #[error("Rollback failed: {0}")]
+    RollbackFailed(String),
 }
