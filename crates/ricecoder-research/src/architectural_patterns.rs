@@ -1,7 +1,7 @@
 //! Architectural pattern detection
 
-use crate::models::{DetectedPattern, PatternCategory};
 use crate::codebase_scanner::ScanResult;
+use crate::models::{DetectedPattern, PatternCategory};
 use crate::ResearchError;
 use std::collections::HashMap;
 
@@ -16,7 +16,9 @@ impl ArchitecturalPatternDetector {
     /// - Application layer (use cases, services)
     /// - Infrastructure layer (persistence, external services)
     /// - Interfaces layer (API, CLI, UI)
-    pub fn detect_layered_architecture(scan_result: &ScanResult) -> Result<Option<DetectedPattern>, ResearchError> {
+    pub fn detect_layered_architecture(
+        scan_result: &ScanResult,
+    ) -> Result<Option<DetectedPattern>, ResearchError> {
         let mut layer_indicators = HashMap::new();
 
         for file in &scan_result.files {
@@ -39,11 +41,15 @@ impl ArchitecturalPatternDetector {
         let layer_count = layer_indicators.len();
         if layer_count >= 2 {
             let confidence = (layer_count as f32) / 4.0;
-            let locations = scan_result.files.iter()
+            let locations = scan_result
+                .files
+                .iter()
                 .filter(|f| {
                     let path_str = f.path.to_string_lossy().to_lowercase();
-                    path_str.contains("domain") || path_str.contains("application") ||
-                    path_str.contains("infrastructure") || path_str.contains("interface")
+                    path_str.contains("domain")
+                        || path_str.contains("application")
+                        || path_str.contains("infrastructure")
+                        || path_str.contains("interface")
                 })
                 .map(|f| f.path.clone())
                 .collect();
@@ -56,7 +62,11 @@ impl ArchitecturalPatternDetector {
                 description: format!(
                     "Layered architecture detected with {} layers: {}",
                     layer_count,
-                    layer_indicators.keys().cloned().collect::<Vec<_>>().join(", ")
+                    layer_indicators
+                        .keys()
+                        .cloned()
+                        .collect::<Vec<_>>()
+                        .join(", ")
                 ),
             }));
         }
@@ -70,7 +80,9 @@ impl ArchitecturalPatternDetector {
     /// - Multiple service modules/directories
     /// - Service-specific configuration files
     /// - Independent deployment units
-    pub fn detect_microservices_pattern(scan_result: &ScanResult) -> Result<Option<DetectedPattern>, ResearchError> {
+    pub fn detect_microservices_pattern(
+        scan_result: &ScanResult,
+    ) -> Result<Option<DetectedPattern>, ResearchError> {
         let mut service_modules = HashMap::new();
 
         for file in &scan_result.files {
@@ -89,8 +101,11 @@ impl ArchitecturalPatternDetector {
             }
 
             // Look for service configuration files
-            if path_str.ends_with("service.yaml") || path_str.ends_with("service.yml") ||
-               path_str.ends_with("service.toml") || path_str.ends_with("service.json") {
+            if path_str.ends_with("service.yaml")
+                || path_str.ends_with("service.yml")
+                || path_str.ends_with("service.toml")
+                || path_str.ends_with("service.json")
+            {
                 if let Some(parent) = file.path.parent() {
                     *service_modules.entry(parent.to_path_buf()).or_insert(0) += 1;
                 }
@@ -122,12 +137,16 @@ impl ArchitecturalPatternDetector {
     /// - Event definitions and handlers
     /// - Pub/sub or message broker patterns
     /// - Event sourcing patterns
-    pub fn detect_event_driven_pattern(scan_result: &ScanResult) -> Result<Option<DetectedPattern>, ResearchError> {
+    pub fn detect_event_driven_pattern(
+        scan_result: &ScanResult,
+    ) -> Result<Option<DetectedPattern>, ResearchError> {
         let mut event_indicators = 0;
         let mut event_files = Vec::new();
 
         for file in &scan_result.files {
-            let file_name = file.path.file_name()
+            let file_name = file
+                .path
+                .file_name()
                 .and_then(|n| n.to_str())
                 .unwrap_or("")
                 .to_lowercase();
@@ -177,24 +196,35 @@ impl ArchitecturalPatternDetector {
     /// - Single entry point
     /// - Tightly coupled modules
     /// - No service separation
-    pub fn detect_monolithic_pattern(scan_result: &ScanResult) -> Result<Option<DetectedPattern>, ResearchError> {
+    pub fn detect_monolithic_pattern(
+        scan_result: &ScanResult,
+    ) -> Result<Option<DetectedPattern>, ResearchError> {
         let mut entry_points = Vec::new();
         let mut service_count = 0;
 
         for file in &scan_result.files {
-            let file_name = file.path.file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("");
+            let file_name = file.path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
             // Look for entry points
-            if file_name == "main.rs" || file_name == "main.py" || file_name == "main.go" ||
-               file_name == "main.java" || file_name == "main.ts" || file_name == "main.js" ||
-               file_name == "index.ts" || file_name == "index.js" {
+            if file_name == "main.rs"
+                || file_name == "main.py"
+                || file_name == "main.go"
+                || file_name == "main.java"
+                || file_name == "main.ts"
+                || file_name == "main.js"
+                || file_name == "index.ts"
+                || file_name == "index.js"
+            {
                 entry_points.push(file.path.clone());
             }
 
             // Count service modules
-            if file.path.to_string_lossy().to_lowercase().contains("service") {
+            if file
+                .path
+                .to_string_lossy()
+                .to_lowercase()
+                .contains("service")
+            {
                 service_count += 1;
             }
         }
@@ -221,20 +251,27 @@ impl ArchitecturalPatternDetector {
     /// - Function definitions (Lambda, Cloud Functions, etc.)
     /// - Serverless configuration files
     /// - Event-driven function triggers
-    pub fn detect_serverless_pattern(scan_result: &ScanResult) -> Result<Option<DetectedPattern>, ResearchError> {
+    pub fn detect_serverless_pattern(
+        scan_result: &ScanResult,
+    ) -> Result<Option<DetectedPattern>, ResearchError> {
         let mut serverless_indicators = 0;
         let mut serverless_files = Vec::new();
 
         for file in &scan_result.files {
-            let file_name = file.path.file_name()
+            let file_name = file
+                .path
+                .file_name()
                 .and_then(|n| n.to_str())
                 .unwrap_or("")
                 .to_lowercase();
 
             // Look for serverless configuration
-            if file_name == "serverless.yml" || file_name == "serverless.yaml" ||
-               file_name == "serverless.json" || file_name == "sam.yaml" ||
-               file_name == "sam.yml" {
+            if file_name == "serverless.yml"
+                || file_name == "serverless.yaml"
+                || file_name == "serverless.json"
+                || file_name == "sam.yaml"
+                || file_name == "sam.yml"
+            {
                 serverless_indicators += 3;
                 serverless_files.push(file.path.clone());
             }
@@ -269,13 +306,17 @@ impl ArchitecturalPatternDetector {
     /// - Plugin directories/modules
     /// - Plugin interface definitions
     /// - Plugin loader/registry
-    pub fn detect_plugin_architecture(scan_result: &ScanResult) -> Result<Option<DetectedPattern>, ResearchError> {
+    pub fn detect_plugin_architecture(
+        scan_result: &ScanResult,
+    ) -> Result<Option<DetectedPattern>, ResearchError> {
         let mut plugin_indicators = 0;
         let mut plugin_files = Vec::new();
 
         for file in &scan_result.files {
             let path_str = file.path.to_string_lossy().to_lowercase();
-            let file_name = file.path.file_name()
+            let file_name = file
+                .path
+                .file_name()
                 .and_then(|n| n.to_str())
                 .unwrap_or("")
                 .to_lowercase();
@@ -300,7 +341,8 @@ impl ArchitecturalPatternDetector {
                 category: PatternCategory::Architectural,
                 confidence,
                 locations: plugin_files,
-                description: "Plugin architecture detected with plugin modules and loader/registry".to_string(),
+                description: "Plugin architecture detected with plugin modules and loader/registry"
+                    .to_string(),
             }));
         }
 
@@ -311,12 +353,13 @@ impl ArchitecturalPatternDetector {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::Language;
     use crate::codebase_scanner::FileMetadata;
+    use crate::models::Language;
     use std::path::PathBuf;
 
     fn create_test_scan_result(files: Vec<(&str, Option<Language>)>) -> ScanResult {
-        let files = files.into_iter()
+        let files = files
+            .into_iter()
             .map(|(path, lang)| FileMetadata {
                 path: PathBuf::from(path),
                 language: lang,
@@ -342,8 +385,8 @@ mod tests {
             ("src/infrastructure/repository.rs", Some(Language::Rust)),
         ]);
 
-        let pattern = ArchitecturalPatternDetector::detect_layered_architecture(&scan_result)
-            .unwrap();
+        let pattern =
+            ArchitecturalPatternDetector::detect_layered_architecture(&scan_result).unwrap();
         assert!(pattern.is_some());
         let pattern = pattern.unwrap();
         assert_eq!(pattern.name, "Layered Architecture");
@@ -357,8 +400,8 @@ mod tests {
             ("services/order-service/main.rs", Some(Language::Rust)),
         ]);
 
-        let pattern = ArchitecturalPatternDetector::detect_microservices_pattern(&scan_result)
-            .unwrap();
+        let pattern =
+            ArchitecturalPatternDetector::detect_microservices_pattern(&scan_result).unwrap();
         assert!(pattern.is_some());
     }
 
@@ -367,11 +410,14 @@ mod tests {
         let scan_result = create_test_scan_result(vec![
             ("src/events/user_event.rs", Some(Language::Rust)),
             ("src/handlers/user_handler.rs", Some(Language::Rust)),
-            ("src/listeners/notification_listener.rs", Some(Language::Rust)),
+            (
+                "src/listeners/notification_listener.rs",
+                Some(Language::Rust),
+            ),
         ]);
 
-        let pattern = ArchitecturalPatternDetector::detect_event_driven_pattern(&scan_result)
-            .unwrap();
+        let pattern =
+            ArchitecturalPatternDetector::detect_event_driven_pattern(&scan_result).unwrap();
         assert!(pattern.is_some());
     }
 
@@ -382,8 +428,8 @@ mod tests {
             ("src/lib.rs", Some(Language::Rust)),
         ]);
 
-        let pattern = ArchitecturalPatternDetector::detect_monolithic_pattern(&scan_result)
-            .unwrap();
+        let pattern =
+            ArchitecturalPatternDetector::detect_monolithic_pattern(&scan_result).unwrap();
         assert!(pattern.is_some());
     }
 }

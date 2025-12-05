@@ -38,7 +38,10 @@ impl ContextOptimizer {
     }
 
     /// Optimize multiple files
-    pub fn optimize_files(&self, files: Vec<FileContext>) -> Result<Vec<FileContext>, ResearchError> {
+    pub fn optimize_files(
+        &self,
+        files: Vec<FileContext>,
+    ) -> Result<Vec<FileContext>, ResearchError> {
         files
             .into_iter()
             .map(|file| self.optimize_file(&file))
@@ -298,7 +301,8 @@ mod tests {
     #[test]
     fn test_extract_key_sections() {
         let optimizer = ContextOptimizer::new(2048);
-        let content = "fn helper() {\n    println!(\"hello\");\n}\n\nfn main() {\n    helper();\n}\n";
+        let content =
+            "fn helper() {\n    println!(\"hello\");\n}\n\nfn main() {\n    helper();\n}\n";
 
         let sections = optimizer.extract_key_sections(content);
         assert!(!sections.is_empty());

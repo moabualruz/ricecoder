@@ -37,7 +37,8 @@ impl RedactionFilter {
                 },
                 // Generic API keys (api_key=*, apiKey=*, api-key=*)
                 RedactionPattern {
-                    regex: Regex::new(r"(?i)(api[_-]?key|token|secret|password)\s*=\s*[^\s,;]+").unwrap(),
+                    regex: Regex::new(r"(?i)(api[_-]?key|token|secret|password)\s*=\s*[^\s,;]+")
+                        .unwrap(),
                     replacement: "$1=[REDACTED]".to_string(),
                 },
                 // Bearer tokens
@@ -52,7 +53,10 @@ impl RedactionFilter {
                 },
                 // Environment variable patterns
                 RedactionPattern {
-                    regex: Regex::new(r"(?i)(OPENAI|ANTHROPIC|GOOGLE|GROQ|MISTRAL)_API_KEY\s*=\s*[^\s,;]+").unwrap(),
+                    regex: Regex::new(
+                        r"(?i)(OPENAI|ANTHROPIC|GOOGLE|GROQ|MISTRAL)_API_KEY\s*=\s*[^\s,;]+",
+                    )
+                    .unwrap(),
                     replacement: "$1_API_KEY=[REDACTED]".to_string(),
                 },
             ],
@@ -73,7 +77,10 @@ impl RedactionFilter {
     pub fn redact(&self, input: &str) -> String {
         let mut result = input.to_string();
         for pattern in &self.patterns {
-            result = pattern.regex.replace_all(&result, &pattern.replacement).to_string();
+            result = pattern
+                .regex
+                .replace_all(&result, &pattern.replacement)
+                .to_string();
         }
         result
     }
@@ -189,8 +196,10 @@ mod tests {
     #[test]
     fn test_add_custom_pattern() {
         let mut filter = RedactionFilter::new();
-        filter.add_pattern(r"custom_secret_\d+", "[CUSTOM_REDACTED]").unwrap();
-        
+        filter
+            .add_pattern(r"custom_secret_\d+", "[CUSTOM_REDACTED]")
+            .unwrap();
+
         let input = "Found custom_secret_12345";
         let redacted = filter.redact(input);
         assert!(redacted.contains("[CUSTOM_REDACTED]"));

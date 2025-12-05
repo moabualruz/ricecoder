@@ -1,7 +1,7 @@
 //! Format conversion utilities for converting between YAML and Markdown spec formats
 
 use crate::error::SpecError;
-use crate::parsers::{YamlParser, MarkdownParser};
+use crate::parsers::{MarkdownParser, YamlParser};
 use crate::validation::ValidationEngine;
 
 /// Converts specs between YAML and Markdown formats
@@ -69,11 +69,7 @@ impl FormatConverter {
     /// - The source format is invalid
     /// - The content cannot be parsed
     /// - The parsed spec fails validation
-    pub fn convert(
-        content: &str,
-        from_format: &str,
-        to_format: &str,
-    ) -> Result<String, SpecError> {
+    pub fn convert(content: &str, from_format: &str, to_format: &str) -> Result<String, SpecError> {
         let from_lower = from_format.to_lowercase();
         let to_lower = to_format.to_lowercase();
 
@@ -126,7 +122,8 @@ mod tests {
         };
 
         let yaml = YamlParser::serialize(&spec).expect("Failed to serialize to YAML");
-        let markdown = FormatConverter::yaml_to_markdown(&yaml).expect("Failed to convert YAML to Markdown");
+        let markdown =
+            FormatConverter::yaml_to_markdown(&yaml).expect("Failed to convert YAML to Markdown");
 
         assert!(markdown.contains("# Test Spec"));
         assert!(markdown.contains("test-spec"));
@@ -153,7 +150,8 @@ mod tests {
         };
 
         let markdown = MarkdownParser::serialize(&spec).expect("Failed to serialize to Markdown");
-        let yaml = FormatConverter::markdown_to_yaml(&markdown).expect("Failed to convert Markdown to YAML");
+        let yaml = FormatConverter::markdown_to_yaml(&markdown)
+            .expect("Failed to convert Markdown to YAML");
 
         assert!(yaml.contains("id: test-spec"));
         assert!(yaml.contains("name: Test Spec"));
@@ -180,8 +178,8 @@ mod tests {
         };
 
         let yaml = YamlParser::serialize(&spec).expect("Failed to serialize to YAML");
-        let markdown = FormatConverter::convert(&yaml, "yaml", "markdown")
-            .expect("Failed to convert");
+        let markdown =
+            FormatConverter::convert(&yaml, "yaml", "markdown").expect("Failed to convert");
 
         assert!(markdown.contains("# Test Spec"));
     }
@@ -206,8 +204,8 @@ mod tests {
         };
 
         let markdown = MarkdownParser::serialize(&spec).expect("Failed to serialize to Markdown");
-        let yaml = FormatConverter::convert(&markdown, "markdown", "yaml")
-            .expect("Failed to convert");
+        let yaml =
+            FormatConverter::convert(&markdown, "markdown", "yaml").expect("Failed to convert");
 
         assert!(yaml.contains("id: test-spec"));
     }
@@ -232,8 +230,8 @@ mod tests {
         };
 
         let yaml = YamlParser::serialize(&spec).expect("Failed to serialize to YAML");
-        let normalized = FormatConverter::convert(&yaml, "yaml", "yaml")
-            .expect("Failed to normalize YAML");
+        let normalized =
+            FormatConverter::convert(&yaml, "yaml", "yaml").expect("Failed to normalize YAML");
 
         // Should be able to parse both
         let parsed_original = YamlParser::parse(&yaml).expect("Failed to parse original");
@@ -267,7 +265,8 @@ mod tests {
 
         // Should be able to parse both
         let parsed_original = MarkdownParser::parse(&markdown).expect("Failed to parse original");
-        let parsed_normalized = MarkdownParser::parse(&normalized).expect("Failed to parse normalized");
+        let parsed_normalized =
+            MarkdownParser::parse(&normalized).expect("Failed to parse normalized");
 
         assert_eq!(parsed_original.id, parsed_normalized.id);
     }
@@ -298,11 +297,11 @@ mod tests {
         };
 
         let yaml = YamlParser::serialize(&spec).expect("Failed to serialize to YAML");
-        
+
         // Test with uppercase
         let result1 = FormatConverter::convert(&yaml, "YAML", "MARKDOWN");
         assert!(result1.is_ok());
-        
+
         // Test with mixed case
         let result2 = FormatConverter::convert(&yaml, "YaMl", "MaRkDoWn");
         assert!(result2.is_ok());
@@ -321,26 +320,25 @@ mod property_tests {
         let valid_name = r"[a-zA-Z0-9][a-zA-Z0-9 ]{0,29}";
         let valid_version = r"[0-9]\.[0-9](\.[0-9])?";
 
-        (valid_id, valid_name, valid_version)
-            .prop_map(|(id, name, version)| {
-                let now = Utc::now();
-                Spec {
-                    id,
-                    name: name.trim().to_string(),
-                    version,
-                    requirements: vec![],
-                    design: None,
-                    tasks: vec![],
-                    metadata: SpecMetadata {
-                        author: Some("Test".to_string()),
-                        created_at: now,
-                        updated_at: now,
-                        phase: SpecPhase::Requirements,
-                        status: SpecStatus::Draft,
-                    },
-                    inheritance: None,
-                }
-            })
+        (valid_id, valid_name, valid_version).prop_map(|(id, name, version)| {
+            let now = Utc::now();
+            Spec {
+                id,
+                name: name.trim().to_string(),
+                version,
+                requirements: vec![],
+                design: None,
+                tasks: vec![],
+                metadata: SpecMetadata {
+                    author: Some("Test".to_string()),
+                    created_at: now,
+                    updated_at: now,
+                    phase: SpecPhase::Requirements,
+                    status: SpecStatus::Draft,
+                },
+                inheritance: None,
+            }
+        })
     }
 
     proptest! {

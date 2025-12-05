@@ -39,7 +39,7 @@ impl ApiKeyManager {
     }
 
     /// Get an API key for a provider
-    /// 
+    ///
     /// Retrieves API key in the following order:
     /// 1. From cache (if already loaded)
     /// 2. From environment variable (if configured)
@@ -83,9 +83,13 @@ impl ApiKeyManager {
     }
 
     /// Rotate an API key for a provider
-    /// 
+    ///
     /// This updates the cached key and can optionally persist to config
-    pub fn rotate_key(&mut self, provider_id: String, new_key: String) -> Result<(), ProviderError> {
+    pub fn rotate_key(
+        &mut self,
+        provider_id: String,
+        new_key: String,
+    ) -> Result<(), ProviderError> {
         // Validate that the new key is not empty
         if new_key.is_empty() {
             return Err(ProviderError::ConfigError(
@@ -246,7 +250,7 @@ mod tests {
     #[test]
     fn test_load_from_env() {
         let mut manager = ApiKeyManager::new();
-        
+
         let config1 = ApiKeyConfig {
             env_var: "TEST_KEY_1".to_string(),
             secure_storage: false,
@@ -255,7 +259,7 @@ mod tests {
             env_var: "TEST_KEY_2".to_string(),
             secure_storage: false,
         };
-        
+
         manager.register_config("provider1".to_string(), config1);
         manager.register_config("provider2".to_string(), config2);
 
@@ -275,7 +279,7 @@ mod tests {
     #[test]
     fn test_configured_providers() {
         let mut manager = ApiKeyManager::new();
-        
+
         let config1 = ApiKeyConfig {
             env_var: "KEY_1".to_string(),
             secure_storage: false,
@@ -284,7 +288,7 @@ mod tests {
             env_var: "KEY_2".to_string(),
             secure_storage: false,
         };
-        
+
         manager.register_config("openai".to_string(), config1);
         manager.register_config("anthropic".to_string(), config2);
 
@@ -297,7 +301,7 @@ mod tests {
     #[test]
     fn test_cached_key_takes_precedence_over_env() {
         let mut manager = ApiKeyManager::new();
-        
+
         let config = ApiKeyConfig {
             env_var: "TEST_PRECEDENCE_KEY".to_string(),
             secure_storage: false,
@@ -306,7 +310,7 @@ mod tests {
 
         // Set environment variable
         std::env::set_var("TEST_PRECEDENCE_KEY", "env-key");
-        
+
         // Store a different key in cache
         manager.store_key("test".to_string(), "cached-key".to_string());
 

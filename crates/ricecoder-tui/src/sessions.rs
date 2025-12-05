@@ -161,12 +161,12 @@ impl SessionWidget {
     pub fn remove_session(&mut self, index: usize) -> Option<Session> {
         if index < self.sessions.len() {
             let removed = self.sessions.remove(index);
-            
+
             // Adjust selected index if needed
             if self.selected_index >= self.sessions.len() && !self.sessions.is_empty() {
                 self.selected_index = self.sessions.len() - 1;
             }
-            
+
             Some(removed)
         } else {
             None
@@ -377,14 +377,14 @@ mod tests {
     #[test]
     fn test_session_status_changes() {
         let mut session = Session::new("session-1".to_string(), "Session 1".to_string());
-        
+
         session.set_status(SessionStatus::Active);
         assert_eq!(session.status, SessionStatus::Active);
-        
+
         session.mark_dirty();
         assert_eq!(session.status, SessionStatus::Dirty);
         assert!(session.has_changes);
-        
+
         session.mark_clean();
         assert!(!session.has_changes);
     }
@@ -393,10 +393,10 @@ mod tests {
     fn test_session_widget_add_session() {
         let mut widget = SessionWidget::new();
         assert_eq!(widget.session_count(), 0);
-        
+
         let session = Session::new("session-1".to_string(), "Session 1".to_string());
         widget.add_session(session);
-        
+
         assert_eq!(widget.session_count(), 1);
         assert_eq!(widget.selected_index(), 0);
     }
@@ -404,16 +404,22 @@ mod tests {
     #[test]
     fn test_session_widget_switch_session() {
         let mut widget = SessionWidget::new();
-        
-        widget.add_session(Session::new("session-1".to_string(), "Session 1".to_string()));
-        widget.add_session(Session::new("session-2".to_string(), "Session 2".to_string()));
-        
+
+        widget.add_session(Session::new(
+            "session-1".to_string(),
+            "Session 1".to_string(),
+        ));
+        widget.add_session(Session::new(
+            "session-2".to_string(),
+            "Session 2".to_string(),
+        ));
+
         // After adding session-2, it becomes the current session
         assert_eq!(widget.selected_index(), 1);
-        
+
         widget.switch_to_session(0);
         assert_eq!(widget.selected_index(), 0);
-        
+
         let current = widget.current_session().unwrap();
         assert_eq!(current.id, "session-1");
     }
@@ -421,23 +427,32 @@ mod tests {
     #[test]
     fn test_session_widget_next_previous() {
         let mut widget = SessionWidget::new();
-        
-        widget.add_session(Session::new("session-1".to_string(), "Session 1".to_string()));
-        widget.add_session(Session::new("session-2".to_string(), "Session 2".to_string()));
-        widget.add_session(Session::new("session-3".to_string(), "Session 3".to_string()));
-        
+
+        widget.add_session(Session::new(
+            "session-1".to_string(),
+            "Session 1".to_string(),
+        ));
+        widget.add_session(Session::new(
+            "session-2".to_string(),
+            "Session 2".to_string(),
+        ));
+        widget.add_session(Session::new(
+            "session-3".to_string(),
+            "Session 3".to_string(),
+        ));
+
         // After adding session-3, it becomes the current session
         assert_eq!(widget.selected_index(), 2);
-        
+
         widget.next_session();
         assert_eq!(widget.selected_index(), 0); // Wraps around
-        
+
         widget.next_session();
         assert_eq!(widget.selected_index(), 1);
-        
+
         widget.next_session();
         assert_eq!(widget.selected_index(), 2);
-        
+
         widget.previous_session();
         assert_eq!(widget.selected_index(), 1);
     }
@@ -445,12 +460,18 @@ mod tests {
     #[test]
     fn test_session_widget_remove_session() {
         let mut widget = SessionWidget::new();
-        
-        widget.add_session(Session::new("session-1".to_string(), "Session 1".to_string()));
-        widget.add_session(Session::new("session-2".to_string(), "Session 2".to_string()));
-        
+
+        widget.add_session(Session::new(
+            "session-1".to_string(),
+            "Session 1".to_string(),
+        ));
+        widget.add_session(Session::new(
+            "session-2".to_string(),
+            "Session 2".to_string(),
+        ));
+
         assert_eq!(widget.session_count(), 2);
-        
+
         let removed = widget.remove_session(0);
         assert!(removed.is_some());
         assert_eq!(widget.session_count(), 1);
@@ -460,11 +481,14 @@ mod tests {
     #[test]
     fn test_session_widget_rename() {
         let mut widget = SessionWidget::new();
-        
-        widget.add_session(Session::new("session-1".to_string(), "Session 1".to_string()));
-        
+
+        widget.add_session(Session::new(
+            "session-1".to_string(),
+            "Session 1".to_string(),
+        ));
+
         widget.rename_current_session("New Name".to_string());
-        
+
         let current = widget.current_session().unwrap();
         assert_eq!(current.name, "New Name");
     }
@@ -472,12 +496,12 @@ mod tests {
     #[test]
     fn test_session_widget_display_mode() {
         let mut widget = SessionWidget::new();
-        
+
         assert_eq!(widget.display_mode(), SessionDisplayMode::Tabs);
-        
+
         widget.toggle_display_mode();
         assert_eq!(widget.display_mode(), SessionDisplayMode::List);
-        
+
         widget.set_display_mode(SessionDisplayMode::Tabs);
         assert_eq!(widget.display_mode(), SessionDisplayMode::Tabs);
     }
@@ -485,15 +509,15 @@ mod tests {
     #[test]
     fn test_session_widget_visibility() {
         let mut widget = SessionWidget::new();
-        
+
         assert!(widget.is_visible());
-        
+
         widget.hide();
         assert!(!widget.is_visible());
-        
+
         widget.show();
         assert!(widget.is_visible());
-        
+
         widget.toggle_visibility();
         assert!(!widget.is_visible());
     }
@@ -511,19 +535,19 @@ mod tests {
     fn test_session_widget_scroll() {
         let mut widget = SessionWidget::new();
         widget.max_visible = 3;
-        
+
         for i in 0..10 {
             widget.add_session(Session::new(
                 format!("session-{}", i),
                 format!("Session {}", i),
             ));
         }
-        
+
         assert_eq!(widget.scroll_offset, 0);
-        
+
         widget.scroll_down();
         assert_eq!(widget.scroll_offset, 1);
-        
+
         widget.scroll_up();
         assert_eq!(widget.scroll_offset, 0);
     }

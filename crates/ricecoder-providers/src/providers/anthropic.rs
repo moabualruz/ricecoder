@@ -54,8 +54,6 @@ impl AnthropicProvider {
         })
     }
 
-
-
     /// Convert Anthropic API response to our ChatResponse
     fn convert_response(
         response: AnthropicChatResponse,
@@ -170,7 +168,10 @@ impl Provider for AnthropicProvider {
             temperature: request.temperature,
         };
 
-        debug!("Sending chat request to Anthropic for model: {}", request.model);
+        debug!(
+            "Sending chat request to Anthropic for model: {}",
+            request.model
+        );
 
         let response = self
             .client
@@ -253,7 +254,10 @@ impl Provider for AnthropicProvider {
                 Err(ProviderError::AuthError)
             }
             _ => {
-                warn!("Anthropic health check failed with status: {}", response.status());
+                warn!(
+                    "Anthropic health check failed with status: {}",
+                    response.status()
+                );
                 Ok(false)
             }
         }
@@ -340,7 +344,9 @@ mod tests {
     #[test]
     fn test_token_counting() {
         let provider = AnthropicProvider::new("test-key".to_string()).unwrap();
-        let tokens = provider.count_tokens("Hello, world!", "claude-3-opus-20250219").unwrap();
+        let tokens = provider
+            .count_tokens("Hello, world!", "claude-3-opus-20250219")
+            .unwrap();
         assert!(tokens > 0);
     }
 

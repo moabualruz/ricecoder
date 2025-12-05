@@ -241,7 +241,8 @@ mod tests {
             id: "test-workflow".to_string(),
             name: "Test Workflow".to_string(),
             description: "A test workflow".to_string(),
-            parameters: vec![],steps: vec![WorkflowStep {
+            parameters: vec![],
+            steps: vec![WorkflowStep {
                 id: "step1".to_string(),
                 name: "Step 1".to_string(),
                 step_type: StepType::Agent(AgentStep {
@@ -396,7 +397,8 @@ mod tests {
             id: "test-workflow".to_string(),
             name: "Test Workflow".to_string(),
             description: "A test workflow".to_string(),
-            parameters: vec![],steps: vec![
+            parameters: vec![],
+            steps: vec![
                 WorkflowStep {
                     id: "step1".to_string(),
                     name: "Step 1".to_string(),
@@ -409,7 +411,9 @@ mod tests {
                     },
                     dependencies: vec![],
                     approval_required: false,
-                    on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                    on_error: ErrorAction::Fail,
+                    risk_score: None,
+                    risk_factors: RiskFactors::default(),
                 },
                 WorkflowStep {
                     id: "step2".to_string(),
@@ -423,7 +427,9 @@ mod tests {
                     },
                     dependencies: vec![],
                     approval_required: false,
-                    on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                    on_error: ErrorAction::Fail,
+                    risk_score: None,
+                    risk_factors: RiskFactors::default(),
                 },
             ],
             config: WorkflowConfig {
@@ -444,6 +450,3 @@ mod tests {
         assert_eq!(errors.len(), 2);
     }
 }
-
-
-

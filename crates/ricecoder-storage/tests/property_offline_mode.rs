@@ -169,10 +169,7 @@ fn prop_offline_mode_logging() {
     let temp_dir = TempDir::new().expect("Failed to create temp dir");
 
     // This should not panic or error
-    OfflineModeHandler::log_offline_warning(
-        temp_dir.path(),
-        "Test offline warning",
-    );
+    OfflineModeHandler::log_offline_warning(temp_dir.path(), "Test offline warning");
 
     // If we get here, logging succeeded
     assert!(true);

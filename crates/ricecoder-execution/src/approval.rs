@@ -71,10 +71,14 @@ impl ApprovalManager {
         let request_id = self
             .gate
             .request_approval(plan.id.clone(), message, 1_800_000) // 30 minutes
-            .map_err(|e| ExecutionError::ValidationError(format!("Failed to request approval: {}", e)))?;
+            .map_err(|e| {
+                ExecutionError::ValidationError(format!("Failed to request approval: {}", e))
+            })?;
 
-        self.plan_requests.insert(plan.id.clone(), request_id.clone());
-        self.request_plans.insert(request_id.clone(), plan.id.clone());
+        self.plan_requests
+            .insert(plan.id.clone(), request_id.clone());
+        self.request_plans
+            .insert(request_id.clone(), plan.id.clone());
 
         tracing::info!(
             plan_id = %plan.id,
@@ -130,32 +134,32 @@ impl ApprovalManager {
     ///
     /// Returns true if the plan has been approved, false if rejected or pending.
     pub fn is_approved(&self, request_id: &str) -> ExecutionResult<bool> {
-        self.gate
-            .is_approved(request_id)
-            .map_err(|e| ExecutionError::ValidationError(format!("Failed to check approval status: {}", e)))
+        self.gate.is_approved(request_id).map_err(|e| {
+            ExecutionError::ValidationError(format!("Failed to check approval status: {}", e))
+        })
     }
 
     /// Check if a plan is rejected
     ///
     /// Returns true if the plan has been rejected, false if approved or pending.
     pub fn is_rejected(&self, request_id: &str) -> ExecutionResult<bool> {
-        self.gate
-            .is_rejected(request_id)
-            .map_err(|e| ExecutionError::ValidationError(format!("Failed to check rejection status: {}", e)))
+        self.gate.is_rejected(request_id).map_err(|e| {
+            ExecutionError::ValidationError(format!("Failed to check rejection status: {}", e))
+        })
     }
 
     /// Check if a request is still pending
     pub fn is_pending(&self, request_id: &str) -> ExecutionResult<bool> {
-        self.gate
-            .is_pending(request_id)
-            .map_err(|e| ExecutionError::ValidationError(format!("Failed to check pending status: {}", e)))
+        self.gate.is_pending(request_id).map_err(|e| {
+            ExecutionError::ValidationError(format!("Failed to check pending status: {}", e))
+        })
     }
 
     /// Get the approval request details
     pub fn get_request(&self, request_id: &str) -> ExecutionResult<ApprovalRequest> {
-        self.gate
-            .get_request_status(request_id)
-            .map_err(|e| ExecutionError::ValidationError(format!("Failed to get request status: {}", e)))
+        self.gate.get_request_status(request_id).map_err(|e| {
+            ExecutionError::ValidationError(format!("Failed to get request status: {}", e))
+        })
     }
 
     /// Get all pending approval requests
@@ -317,10 +321,18 @@ mod tests {
 
     #[test]
     fn test_approval_strongly_recommended() {
-        assert!(!ApprovalManager::approval_strongly_recommended(RiskLevel::Low));
-        assert!(!ApprovalManager::approval_strongly_recommended(RiskLevel::Medium));
-        assert!(!ApprovalManager::approval_strongly_recommended(RiskLevel::High));
-        assert!(ApprovalManager::approval_strongly_recommended(RiskLevel::Critical));
+        assert!(!ApprovalManager::approval_strongly_recommended(
+            RiskLevel::Low
+        ));
+        assert!(!ApprovalManager::approval_strongly_recommended(
+            RiskLevel::Medium
+        ));
+        assert!(!ApprovalManager::approval_strongly_recommended(
+            RiskLevel::High
+        ));
+        assert!(ApprovalManager::approval_strongly_recommended(
+            RiskLevel::Critical
+        ));
     }
 
     #[test]

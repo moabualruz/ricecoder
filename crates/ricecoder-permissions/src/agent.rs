@@ -4,9 +4,9 @@
 //! It handles permission checking, prompting, and audit logging for tool execution.
 
 use crate::audit::AuditLogger;
+use crate::error::Result;
 use crate::permission::{PermissionChecker, PermissionConfig, PermissionDecision};
 use crate::prompt::{PermissionPrompt, PromptResult};
-use crate::error::Result;
 use std::sync::Arc;
 
 /// Result of agent tool execution with permission decision
@@ -45,10 +45,7 @@ pub struct AgentExecutor {
 
 impl AgentExecutor {
     /// Create a new agent executor
-    pub fn new(
-        config: Arc<PermissionConfig>,
-        audit_logger: Arc<AuditLogger>,
-    ) -> Self {
+    pub fn new(config: Arc<PermissionConfig>, audit_logger: Arc<AuditLogger>) -> Self {
         Self {
             config,
             audit_logger,
@@ -95,11 +92,9 @@ impl AgentExecutor {
         match decision {
             PermissionDecision::Allow => {
                 // Log the execution
-                self.audit_logger.log_execution(
-                    tool_name.to_string(),
-                    self.agent_name.clone(),
-                    None,
-                ).map_err(crate::error::Error::Internal)?;
+                self.audit_logger
+                    .log_execution(tool_name.to_string(), self.agent_name.clone(), None)
+                    .map_err(crate::error::Error::Internal)?;
 
                 // Execute the tool
                 let result = execute_fn()?;
@@ -120,24 +115,25 @@ impl AgentExecutor {
                 };
 
                 // Log the prompt
-                self.audit_logger.log_prompt(
-                    tool_name.to_string(),
-                    self.agent_name.clone(),
-                    None,
-                ).map_err(crate::error::Error::Internal)?;
+                self.audit_logger
+                    .log_prompt(tool_name.to_string(), self.agent_name.clone(), None)
+                    .map_err(crate::error::Error::Internal)?;
 
                 // Collect user decision
-                let prompt_result = prompt.execute()
+                let prompt_result = prompt
+                    .execute()
                     .map_err(|e| crate::error::Error::PromptError(e.to_string()))?;
 
                 match prompt_result {
                     PromptResult::Approved => {
                         // Log the execution
-                        self.audit_logger.log_execution(
-                            tool_name.to_string(),
-                            self.agent_name.clone(),
-                            Some("User approved via prompt".to_string()),
-                        ).map_err(crate::error::Error::Internal)?;
+                        self.audit_logger
+                            .log_execution(
+                                tool_name.to_string(),
+                                self.agent_name.clone(),
+                                Some("User approved via prompt".to_string()),
+                            )
+                            .map_err(crate::error::Error::Internal)?;
 
                         // Execute the tool
                         let result = execute_fn()?;
@@ -145,11 +141,13 @@ impl AgentExecutor {
                     }
                     PromptResult::Denied => {
                         // Log the denial
-                        self.audit_logger.log_denial(
-                            tool_name.to_string(),
-                            self.agent_name.clone(),
-                            Some("User denied via prompt".to_string()),
-                        ).map_err(crate::error::Error::Internal)?;
+                        self.audit_logger
+                            .log_denial(
+                                tool_name.to_string(),
+                                self.agent_name.clone(),
+                                Some("User denied via prompt".to_string()),
+                            )
+                            .map_err(crate::error::Error::Internal)?;
 
                         Ok((AgentExecutionResult::UserDenied, None))
                     }
@@ -157,11 +155,13 @@ impl AgentExecutor {
             }
             PermissionDecision::Deny => {
                 // Log the denial
-                self.audit_logger.log_denial(
-                    tool_name.to_string(),
-                    self.agent_name.clone(),
-                    Some("Permission denied".to_string()),
-                ).map_err(crate::error::Error::Internal)?;
+                self.audit_logger
+                    .log_denial(
+                        tool_name.to_string(),
+                        self.agent_name.clone(),
+                        Some("Permission denied".to_string()),
+                    )
+                    .map_err(crate::error::Error::Internal)?;
 
                 Ok((AgentExecutionResult::Denied, None))
             }
@@ -196,7 +196,7 @@ impl AgentExecutor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::permission::{ToolPermission, PermissionLevel};
+    use crate::permission::{PermissionLevel, ToolPermission};
 
     #[test]
     fn test_agent_executor_creation() {
@@ -313,7 +313,8 @@ mod tests {
         let logger = Arc::new(AuditLogger::new());
 
         // For agent1, should be denied
-        let executor = AgentExecutor::with_agent(config.clone(), logger.clone(), "agent1".to_string());
+        let executor =
+            AgentExecutor::with_agent(config.clone(), logger.clone(), "agent1".to_string());
         let (result, _) = executor
             .execute_with_permission("test_tool", None, None, || Ok(42))
             .unwrap();

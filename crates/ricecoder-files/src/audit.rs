@@ -69,7 +69,11 @@ impl AuditLogger {
 
         // Write to file
         fs::write(&filepath, json).map_err(|e| {
-            error!("Failed to write audit entry to {}: {}", filepath.display(), e);
+            error!(
+                "Failed to write audit entry to {}: {}",
+                filepath.display(),
+                e
+            );
             FileError::IoError(e)
         })?;
 
@@ -147,11 +151,7 @@ impl AuditLogger {
         // Sort by timestamp (oldest first)
         entries.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
 
-        info!(
-            "Retrieved {} audit entries for {:?}",
-            entries.len(),
-            path
-        );
+        info!("Retrieved {} audit entries for {:?}", entries.len(), path);
         Ok(entries)
     }
 

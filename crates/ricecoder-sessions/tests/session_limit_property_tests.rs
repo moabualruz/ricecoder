@@ -3,7 +3,7 @@
 //! **Validates: Requirements 1.1, 1.5**
 
 use proptest::prelude::*;
-use ricecoder_sessions::{SessionManager, SessionContext, SessionMode};
+use ricecoder_sessions::{SessionContext, SessionManager, SessionMode};
 
 /// Property: For any configured session limit, the SessionManager SHALL reject creation
 /// of new sessions when the limit is reached.

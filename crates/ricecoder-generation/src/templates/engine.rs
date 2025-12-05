@@ -8,8 +8,8 @@
 
 use crate::models::{RenderResult, TemplateContext};
 use crate::templates::error::TemplateError;
-use crate::templates::parser::{TemplateParser, TemplateElement};
-use crate::templates::resolver::{PlaceholderResolver, CaseTransform};
+use crate::templates::parser::{TemplateElement, TemplateParser};
+use crate::templates::resolver::{CaseTransform, PlaceholderResolver};
 use std::collections::HashMap;
 
 /// Template engine for rendering templates with variable substitution
@@ -92,10 +92,7 @@ impl TemplateEngine {
                     let rendered = self.render_placeholder(placeholder_name, context)?;
                     result.push_str(&rendered);
                 }
-                TemplateElement::Conditional {
-                    condition,
-                    content,
-                } => {
+                TemplateElement::Conditional { condition, content } => {
                     if self.evaluate_condition(condition, context)? {
                         let rendered = self.render_elements(content, context)?;
                         result.push_str(&rendered);
@@ -108,9 +105,10 @@ impl TemplateEngine {
                 TemplateElement::Include(partial_name) => {
                     // For now, includes are not supported in the basic implementation
                     // This would require a template loader
-                    return Err(TemplateError::RenderError(
-                        format!("Includes not yet supported: {}", partial_name),
-                    ));
+                    return Err(TemplateError::RenderError(format!(
+                        "Includes not yet supported: {}",
+                        partial_name
+                    )));
                 }
             }
         }
@@ -132,7 +130,10 @@ impl TemplateEngine {
     }
 
     /// Parse placeholder syntax to extract name and case transform
-    fn parse_placeholder_syntax(&self, content: &str) -> Result<(String, CaseTransform), TemplateError> {
+    fn parse_placeholder_syntax(
+        &self,
+        content: &str,
+    ) -> Result<(String, CaseTransform), TemplateError> {
         let content = content.trim();
 
         // Determine case transform based on suffix
@@ -186,9 +187,10 @@ impl TemplateEngine {
     ) -> Result<String, TemplateError> {
         // For now, loops are not fully supported
         // This would require iterating over array values
-        Err(TemplateError::RenderError(
-            format!("Loops not yet fully supported: {}", variable),
-        ))
+        Err(TemplateError::RenderError(format!(
+            "Loops not yet fully supported: {}",
+            variable
+        )))
     }
 
     /// Render a template string directly with simple variable substitution

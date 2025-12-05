@@ -288,7 +288,10 @@ impl ReviewEngine {
             // Count comment lines
             for line in &lines {
                 let trimmed = line.trim();
-                if trimmed.starts_with("//") || trimmed.starts_with("/*") || trimmed.starts_with("*") {
+                if trimmed.starts_with("//")
+                    || trimmed.starts_with("/*")
+                    || trimmed.starts_with("*")
+                {
                     metrics.comment_lines += 1;
                 }
             }
@@ -304,7 +307,8 @@ impl ReviewEngine {
 
         // Calculate documentation score
         if metrics.total_lines > 0 {
-            metrics.documentation_score = (metrics.comment_lines as f32 / metrics.total_lines as f32).min(1.0);
+            metrics.documentation_score =
+                (metrics.comment_lines as f32 / metrics.total_lines as f32).min(1.0);
         }
 
         // Estimate coverage based on test presence
@@ -345,7 +349,10 @@ impl ReviewEngine {
             "typescript" | "javascript" => content.matches("export ").count(),
             "python" => {
                 // In Python, functions not starting with _ are public
-                content.lines().filter(|l| l.trim().starts_with("def ") && !l.contains("_")).count()
+                content
+                    .lines()
+                    .filter(|l| l.trim().starts_with("def ") && !l.contains("_"))
+                    .count()
             }
             "go" => {
                 // In Go, functions starting with uppercase are public
@@ -391,7 +398,10 @@ impl ReviewEngine {
             }
 
             // Check for trailing whitespace
-            let trailing_ws = lines.iter().filter(|l| l.ends_with(' ') || l.ends_with('\t')).count();
+            let trailing_ws = lines
+                .iter()
+                .filter(|l| l.ends_with(' ') || l.ends_with('\t'))
+                .count();
             if trailing_ws > 0 {
                 score -= 0.05;
             }
@@ -401,7 +411,10 @@ impl ReviewEngine {
     }
 
     /// Calculates error handling score
-    fn calculate_error_handling_score(&self, files: &[GeneratedFile]) -> Result<f32, GenerationError> {
+    fn calculate_error_handling_score(
+        &self,
+        files: &[GeneratedFile],
+    ) -> Result<f32, GenerationError> {
         let mut total_score = 0.0;
         let mut file_count = 0;
 
@@ -418,7 +431,10 @@ impl ReviewEngine {
                 _ => vec![],
             };
 
-            let error_count = error_patterns.iter().map(|p| content.matches(p).count()).sum::<usize>();
+            let error_count = error_patterns
+                .iter()
+                .map(|p| content.matches(p).count())
+                .sum::<usize>();
             let lines = content.lines().count();
 
             let score = if lines > 0 {
@@ -450,19 +466,27 @@ impl ReviewEngine {
         };
 
         // Check if requirements are addressed in generated code
-        let combined_content = files.iter().map(|f| f.content.as_str()).collect::<Vec<_>>().join("\n");
+        let combined_content = files
+            .iter()
+            .map(|f| f.content.as_str())
+            .collect::<Vec<_>>()
+            .join("\n");
 
         for requirement in &spec.requirements {
             let mut requirement_addressed = false;
 
             // Check if requirement ID or keywords appear in code
-            if combined_content.contains(&requirement.id) || combined_content.contains(&requirement.user_story) {
+            if combined_content.contains(&requirement.id)
+                || combined_content.contains(&requirement.user_story)
+            {
                 requirement_addressed = true;
                 details.addressed_requirements += 1;
             }
 
             if !requirement_addressed {
-                details.unaddressed_requirements.push(requirement.id.clone());
+                details
+                    .unaddressed_requirements
+                    .push(requirement.id.clone());
             }
 
             // Check acceptance criteria
@@ -476,7 +500,9 @@ impl ReviewEngine {
 
         // Calculate coverage
         if details.total_requirements > 0 {
-            details.criteria_coverage = (details.addressed_requirements as f32 / details.total_requirements as f32).min(1.0);
+            details.criteria_coverage = (details.addressed_requirements as f32
+                / details.total_requirements as f32)
+                .min(1.0);
         }
 
         Ok(details)
@@ -532,8 +558,12 @@ impl ReviewEngine {
                 category: SuggestionCategory::SpecCompliance,
                 file: None,
                 line: None,
-                message: format!("Only {:.0}% of spec requirements are addressed", compliance.criteria_coverage * 100.0),
-                action: "Review unaddressed requirements and implement missing functionality".to_string(),
+                message: format!(
+                    "Only {:.0}% of spec requirements are addressed",
+                    compliance.criteria_coverage * 100.0
+                ),
+                action: "Review unaddressed requirements and implement missing functionality"
+                    .to_string(),
                 priority: 5,
             });
         }
@@ -545,7 +575,9 @@ impl ReviewEngine {
                 file: None,
                 line: None,
                 message: "Average function complexity is high".to_string(),
-                action: "Consider breaking down complex functions into smaller, more focused functions".to_string(),
+                action:
+                    "Consider breaking down complex functions into smaller, more focused functions"
+                        .to_string(),
                 priority: 3,
             });
         }
@@ -568,7 +600,10 @@ impl ReviewEngine {
                 let trimmed = line.trim();
 
                 // Check for public functions without doc comments
-                if trimmed.starts_with("pub fn ") || trimmed.starts_with("pub struct ") || trimmed.starts_with("pub enum ") {
+                if trimmed.starts_with("pub fn ")
+                    || trimmed.starts_with("pub struct ")
+                    || trimmed.starts_with("pub enum ")
+                {
                     // Check if previous line is a doc comment
                     if idx == 0 || !lines[idx - 1].trim().starts_with("///") {
                         issues.push(ReviewIssue {

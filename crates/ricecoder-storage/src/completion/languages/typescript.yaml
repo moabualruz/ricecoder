@@ -1,0 +1,87 @@
+language: typescript
+keywords:
+  - function
+  - const
+  - let
+  - var
+  - class
+  - interface
+  - type
+  - enum
+  - namespace
+  - module
+  - export
+  - import
+  - from
+  - as
+  - default
+  - public
+  - private
+  - protected
+  - readonly
+  - static
+  - async
+  - await
+  - yield
+  - return
+  - if
+  - else
+  - switch
+  - case
+  - break
+  - continue
+  - for
+  - while
+  - do
+  - try
+  - catch
+  - finally
+  - throw
+  - new
+  - this
+  - super
+  - extends
+  - implements
+  - instanceof
+  - typeof
+  - keyof
+  - in
+  - of
+  - is
+  - abstract
+  - declare
+  - get
+  - set
+
+snippets:
+  - label: "function"
+    insert_text: "function ${1:name}(${2:args}): ${3:ReturnType} {\n    ${0}\n}"
+    kind: Function
+    detail: "Function declaration"
+  
+  - label: "const"
+    insert_text: "const ${1:name}: ${2:Type} = ${0};"
+    kind: Variable
+    detail: "Const declaration"
+  
+  - label: "interface"
+    insert_text: "interface ${1:Name} {\n    ${0}\n}"
+    kind: Interface
+    detail: "Interface definition"
+  
+  - label: "class"
+    insert_text: "class ${1:Name} {\n    constructor(${2:args}) {\n        ${0}\n    }\n}"
+    kind: Class
+    detail: "Class definition"
+  
+  - label: "arrow"
+    insert_text: "(${1:args}) => ${0}"
+    kind: Function
+    detail: "Arrow function"
+
+ranking_weights:
+  relevance: 0.5
+  frequency: 0.3
+  recency: 0.2
+
+provider: null

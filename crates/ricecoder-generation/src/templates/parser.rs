@@ -227,7 +227,10 @@ impl Parser {
         text
     }
 
-    fn parse_until_end_block(&mut self, block_type: &str) -> Result<Vec<TemplateElement>, TemplateError> {
+    fn parse_until_end_block(
+        &mut self,
+        block_type: &str,
+    ) -> Result<Vec<TemplateElement>, TemplateError> {
         let mut elements = Vec::new();
         let end_marker = format!("{{{{/{}}}}}", block_type);
 
@@ -275,7 +278,10 @@ impl Parser {
         }
 
         // For all-uppercase (like NAME), just lowercase it
-        if placeholder.chars().all(|c| c.is_uppercase() || !c.is_alphabetic()) {
+        if placeholder
+            .chars()
+            .all(|c| c.is_uppercase() || !c.is_alphabetic())
+        {
             return placeholder.to_lowercase();
         }
 

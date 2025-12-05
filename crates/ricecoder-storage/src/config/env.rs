@@ -51,8 +51,7 @@ impl EnvOverrides {
     /// - PROVIDERS_API_KEYS_OPENAI -> providers.api_keys.openai
     /// - DEFAULTS_MODEL -> defaults.model
     fn env_key_to_config_path(key: &str) -> String {
-        key.to_lowercase()
-            .replace('_', ".")
+        key.to_lowercase().replace('_', ".")
     }
 
     /// Set a configuration value by path
@@ -66,10 +65,16 @@ impl EnvOverrides {
                 config.providers.default_provider = Some(value.to_string());
             }
             ["providers", "api_keys", key] => {
-                config.providers.api_keys.insert(key.to_string(), value.to_string());
+                config
+                    .providers
+                    .api_keys
+                    .insert(key.to_string(), value.to_string());
             }
             ["providers", "endpoints", key] => {
-                config.providers.endpoints.insert(key.to_string(), value.to_string());
+                config
+                    .providers
+                    .endpoints
+                    .insert(key.to_string(), value.to_string());
             }
             ["defaults", "model"] => {
                 config.defaults.model = Some(value.to_string());
@@ -119,11 +124,17 @@ mod tests {
     fn test_apply_provider_default_override() {
         let mut config = Config::default();
         let mut overrides = HashMap::new();
-        overrides.insert("providers.default_provider".to_string(), "openai".to_string());
+        overrides.insert(
+            "providers.default_provider".to_string(),
+            "openai".to_string(),
+        );
 
         EnvOverrides::apply_overrides(&mut config, &overrides);
 
-        assert_eq!(config.providers.default_provider, Some("openai".to_string()));
+        assert_eq!(
+            config.providers.default_provider,
+            Some("openai".to_string())
+        );
     }
 
     #[test]
@@ -162,7 +173,10 @@ mod tests {
     fn test_apply_multiple_overrides() {
         let mut config = Config::default();
         let mut overrides = HashMap::new();
-        overrides.insert("providers.default_provider".to_string(), "openai".to_string());
+        overrides.insert(
+            "providers.default_provider".to_string(),
+            "openai".to_string(),
+        );
         overrides.insert("defaults.model".to_string(), "gpt-4".to_string());
         overrides.insert(
             "providers.api_keys.openai".to_string(),
@@ -171,7 +185,10 @@ mod tests {
 
         EnvOverrides::apply_overrides(&mut config, &overrides);
 
-        assert_eq!(config.providers.default_provider, Some("openai".to_string()));
+        assert_eq!(
+            config.providers.default_provider,
+            Some("openai".to_string())
+        );
         assert_eq!(config.defaults.model, Some("gpt-4".to_string()));
         assert_eq!(
             config.providers.api_keys.get("openai"),

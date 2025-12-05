@@ -1,0 +1,40 @@
+language: java
+file_extensions:
+  - java
+
+parser_plugin: tree-sitter-java
+
+diagnostic_rules:
+  - name: unused_imports
+    pattern: "^import"
+    severity: warning
+    message: "Unused import"
+    fix_template: "Remove import"
+
+  - name: unused_variables
+    pattern: "^\\s*\\w+\\s+\\w+\\s*="
+    severity: warning
+    message: "Unused variable"
+    fix_template: "Prefix with underscore"
+
+  - name: missing_javadoc
+    pattern: "^\\s*(public|protected)\\s+(class|interface|enum|method)"
+    severity: hint
+    message: "Missing Javadoc comment"
+    fix_template: "Add Javadoc comment"
+
+code_actions:
+  - name: add_javadoc
+    title: "Add Javadoc comment"
+    kind: quickfix
+    transformation: "Add /** */ comment above"
+
+  - name: remove_unused_import
+    title: "Remove unused import"
+    kind: quickfix
+    transformation: "Delete import line"
+
+  - name: organize_imports
+    title: "Organize imports"
+    kind: source
+    transformation: "Sort and group imports"

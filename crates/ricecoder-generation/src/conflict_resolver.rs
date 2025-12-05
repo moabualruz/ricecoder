@@ -97,7 +97,10 @@ impl ConflictResolver {
     ///
     /// # Requirements
     /// - Requirement 4.2: Skip strategy - don't write conflicting files
-    fn resolve_skip(&self, conflict: &FileConflictInfo) -> Result<ConflictResolutionResult, GenerationError> {
+    fn resolve_skip(
+        &self,
+        conflict: &FileConflictInfo,
+    ) -> Result<ConflictResolutionResult, GenerationError> {
         Ok(ConflictResolutionResult {
             written: false,
             backup_path: None,
@@ -127,12 +130,11 @@ impl ConflictResolver {
         let backup_path = self.create_backup(&conflict.path)?;
 
         // Write new content
-        fs::write(&conflict.path, new_content)
-            .map_err(|e| GenerationError::ValidationError {
-                file: conflict.path.to_string_lossy().to_string(),
-                line: 0,
-                message: format!("Failed to write file: {}", e),
-            })?;
+        fs::write(&conflict.path, new_content).map_err(|e| GenerationError::ValidationError {
+            file: conflict.path.to_string_lossy().to_string(),
+            line: 0,
+            message: format!("Failed to write file: {}", e),
+        })?;
 
         Ok(ConflictResolutionResult {
             written: true,
@@ -171,12 +173,13 @@ impl ConflictResolver {
         let merged_content = self.merge_contents(&conflict.old_content, new_content)?;
 
         // Write merged content
-        fs::write(&conflict.path, &merged_content)
-            .map_err(|e| GenerationError::ValidationError {
+        fs::write(&conflict.path, &merged_content).map_err(|e| {
+            GenerationError::ValidationError {
                 file: conflict.path.to_string_lossy().to_string(),
                 line: 0,
                 message: format!("Failed to write merged file: {}", e),
-            })?;
+            }
+        })?;
 
         Ok(ConflictResolutionResult {
             written: true,
@@ -203,20 +206,19 @@ impl ConflictResolver {
         let backup_path_obj = Path::new(&backup_path);
 
         // Read original content
-        let content = fs::read_to_string(file_path)
-            .map_err(|e| GenerationError::ValidationError {
+        let content =
+            fs::read_to_string(file_path).map_err(|e| GenerationError::ValidationError {
                 file: file_path.to_string_lossy().to_string(),
                 line: 0,
                 message: format!("Failed to read file for backup: {}", e),
             })?;
 
         // Write backup
-        fs::write(backup_path_obj, content)
-            .map_err(|e| GenerationError::ValidationError {
-                file: file_path.to_string_lossy().to_string(),
-                line: 0,
-                message: format!("Failed to create backup: {}", e),
-            })?;
+        fs::write(backup_path_obj, content).map_err(|e| GenerationError::ValidationError {
+            file: file_path.to_string_lossy().to_string(),
+            line: 0,
+            message: format!("Failed to create backup: {}", e),
+        })?;
 
         Ok(Some(backup_path))
     }
@@ -231,7 +233,11 @@ impl ConflictResolver {
     ///
     /// # Returns
     /// Merged content
-    fn merge_contents(&self, old_content: &str, new_content: &str) -> Result<String, GenerationError> {
+    fn merge_contents(
+        &self,
+        old_content: &str,
+        new_content: &str,
+    ) -> Result<String, GenerationError> {
         // Simple merge: if contents are identical, return as-is
         if old_content == new_content {
             return Ok(new_content.to_string());
@@ -259,7 +265,7 @@ impl ConflictResolver {
         // A conflict is auto-mergeable if:
         // 1. The files are identical (no actual conflict)
         // 2. The new content is a superset of the old content (only additions)
-        
+
         if conflict.old_content == conflict.new_content {
             return true;
         }
@@ -268,7 +274,9 @@ impl ConflictResolver {
         let old_lines: Vec<&str> = conflict.old_content.lines().collect();
         let new_content_lines = conflict.new_content.lines().collect::<Vec<_>>();
 
-        old_lines.iter().all(|line| new_content_lines.contains(line))
+        old_lines
+            .iter()
+            .all(|line| new_content_lines.contains(line))
     }
 
     /// Get a human-readable description of a strategy
@@ -324,7 +332,9 @@ mod tests {
         let resolver = ConflictResolver::new();
         let conflict = create_test_conflict("old", "new");
 
-        let result = resolver.resolve(&conflict, ConflictStrategy::Skip, "new").unwrap();
+        let result = resolver
+            .resolve(&conflict, ConflictStrategy::Skip, "new")
+            .unwrap();
         assert!(!result.written);
         assert!(result.backup_path.is_none());
     }

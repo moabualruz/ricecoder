@@ -104,7 +104,8 @@ impl TransactionManager {
         }
 
         // Create backups for all files that will be modified (for rollback)
-        let mut pre_transaction_backups: HashMap<std::path::PathBuf, Option<std::path::PathBuf>> = HashMap::new();
+        let mut pre_transaction_backups: HashMap<std::path::PathBuf, Option<std::path::PathBuf>> =
+            HashMap::new();
 
         for op in &transaction.operations {
             if op.path.exists() {
@@ -128,7 +129,11 @@ impl TransactionManager {
         for op in &transaction.operations {
             match self
                 .writer
-                .write(&op.path, op.content.as_ref().unwrap_or(&String::new()), crate::models::ConflictResolution::Overwrite)
+                .write(
+                    &op.path,
+                    op.content.as_ref().unwrap_or(&String::new()),
+                    crate::models::ConflictResolution::Overwrite,
+                )
                 .await
             {
                 Ok(_) => {
@@ -136,8 +141,12 @@ impl TransactionManager {
                 }
                 Err(e) => {
                     // Rollback all completed operations
-                    self.rollback_operations(&pre_transaction_backups, executed_count, &transaction.operations)
-                        .await?;
+                    self.rollback_operations(
+                        &pre_transaction_backups,
+                        executed_count,
+                        &transaction.operations,
+                    )
+                    .await?;
 
                     return Err(FileError::TransactionFailed(format!(
                         "Operation failed after {} successful operations: {}",
@@ -190,12 +199,12 @@ impl TransactionManager {
                     .await?;
             } else if op.path.exists() {
                 // File didn't exist before transaction, delete it
-                fs::remove_file(&op.path)
-                    .await
-                    .map_err(|e| FileError::RollbackFailed(format!(
+                fs::remove_file(&op.path).await.map_err(|e| {
+                    FileError::RollbackFailed(format!(
                         "Failed to delete file during rollback: {}",
                         e
-                    )))?;
+                    ))
+                })?;
             }
         }
 
@@ -256,18 +265,20 @@ impl TransactionManager {
                     self.backup_manager
                         .restore_from_backup(backup_path, &op.path)
                         .await
-                        .map_err(|e| FileError::RollbackFailed(format!(
-                            "Failed to restore backup during rollback: {}",
-                            e
-                        )))?;
+                        .map_err(|e| {
+                            FileError::RollbackFailed(format!(
+                                "Failed to restore backup during rollback: {}",
+                                e
+                            ))
+                        })?;
                 } else if op.path.exists() {
                     // File didn't exist before, delete it
-                    fs::remove_file(&op.path)
-                        .await
-                        .map_err(|e| FileError::RollbackFailed(format!(
+                    fs::remove_file(&op.path).await.map_err(|e| {
+                        FileError::RollbackFailed(format!(
                             "Failed to delete file during rollback: {}",
                             e
-                        )))?;
+                        ))
+                    })?;
                 }
             }
         }
@@ -419,9 +430,7 @@ mod tests {
         let file_path = temp_dir.path().join("test.txt");
 
         // Create original file
-        fs::write(&file_path, "original content")
-            .await
-            .unwrap();
+        fs::write(&file_path, "original content").await.unwrap();
 
         let manager = TransactionManager::new(BackupManager::new(backup_dir, 10));
         let tx_id = manager.begin_transaction().await.unwrap();

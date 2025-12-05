@@ -1,7 +1,7 @@
 //! Project analyzer for detecting project type and structure
 
 use crate::error::ResearchError;
-use crate::models::{Language, ProjectType, ProjectStructure, Framework};
+use crate::models::{Framework, Language, ProjectStructure, ProjectType};
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
@@ -303,7 +303,10 @@ impl ProjectAnalyzer {
         // Check for common service indicators
         if let Ok(cargo_toml) = std::fs::read_to_string(root.join("Cargo.toml")) {
             // Web frameworks indicate a service
-            if cargo_toml.contains("actix") || cargo_toml.contains("axum") || cargo_toml.contains("rocket") {
+            if cargo_toml.contains("actix")
+                || cargo_toml.contains("axum")
+                || cargo_toml.contains("rocket")
+            {
                 return Ok(true);
             }
         }
@@ -417,8 +420,11 @@ impl ProjectAnalyzer {
             if let Some(main_start) = package_json.find("\"main\"") {
                 if let Some(colon_pos) = package_json[main_start..].find(':') {
                     if let Some(quote_start) = package_json[main_start + colon_pos..].find('"') {
-                        if let Some(quote_end) = package_json[main_start + colon_pos + quote_start + 1..].find('"') {
-                            let main_file = &package_json[main_start + colon_pos + quote_start + 1..main_start + colon_pos + quote_start + 1 + quote_end];
+                        if let Some(quote_end) =
+                            package_json[main_start + colon_pos + quote_start + 1..].find('"')
+                        {
+                            let main_file = &package_json[main_start + colon_pos + quote_start + 1
+                                ..main_start + colon_pos + quote_start + 1 + quote_end];
                             let path = root.join(main_file);
                             if path.exists() {
                                 entry_points.push(path);

@@ -4,7 +4,7 @@
 
 use proptest::prelude::*;
 use ricecoder_sessions::{
-    Session, SessionContext, SessionMode, SessionStore, Message, MessageRole,
+    Message, MessageRole, Session, SessionContext, SessionMode, SessionStore,
 };
 use tempfile::TempDir;
 
@@ -14,9 +14,7 @@ fn session_context_strategy() -> impl Strategy<Value = SessionContext> {
         prop::string::string_regex("[a-z]+").unwrap(),
         prop::string::string_regex("[a-z0-9-]+").unwrap(),
     )
-        .prop_map(|(provider, model)| {
-            SessionContext::new(provider, model, SessionMode::Chat)
-        })
+        .prop_map(|(provider, model)| SessionContext::new(provider, model, SessionMode::Chat))
 }
 
 /// Strategy for generating valid messages

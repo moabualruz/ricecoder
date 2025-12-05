@@ -3,7 +3,7 @@
 //! **Validates: Requirements 1.1, 2.1, 2.2**
 
 use proptest::prelude::*;
-use ricecoder_generation::templates::{PlaceholderResolver, CaseTransform};
+use ricecoder_generation::templates::{CaseTransform, PlaceholderResolver};
 
 /// Strategy for generating valid placeholder names
 fn placeholder_name_strategy() -> impl Strategy<Value = String> {

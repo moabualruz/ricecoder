@@ -62,10 +62,8 @@ impl PermissionManager {
             crate::error::Error::Internal(format!("Failed to acquire read lock: {}", e))
         })?;
 
-        let all_perms: Vec<ToolPermission> = perms
-            .values()
-            .flat_map(|v| v.iter().cloned())
-            .collect();
+        let all_perms: Vec<ToolPermission> =
+            perms.values().flat_map(|v| v.iter().cloned()).collect();
 
         Ok(all_perms)
     }
@@ -81,7 +79,11 @@ impl PermissionManager {
     }
 
     /// Update an existing permission
-    pub fn update_permission(&self, old_pattern: &str, new_permission: ToolPermission) -> Result<()> {
+    pub fn update_permission(
+        &self,
+        old_pattern: &str,
+        new_permission: ToolPermission,
+    ) -> Result<()> {
         let mut perms = self.permissions.write().map_err(|e| {
             crate::error::Error::Internal(format!("Failed to acquire write lock: {}", e))
         })?;
@@ -296,7 +298,9 @@ mod tests {
         assert_eq!(manager.get_all_permissions().unwrap().len(), 1);
 
         let updated_perm = ToolPermission::new("test_tool".to_string(), PermissionLevel::Deny);
-        manager.update_permission("test_tool", updated_perm).unwrap();
+        manager
+            .update_permission("test_tool", updated_perm)
+            .unwrap();
 
         let perms = manager.get_all_permissions().unwrap();
         assert_eq!(perms.len(), 1);
@@ -336,7 +340,10 @@ mod tests {
         manager.store_permission(perm1).unwrap();
         assert_eq!(manager.get_all_permissions().unwrap().len(), 1);
 
-        let new_perms = vec![ToolPermission::new("new_tool".to_string(), PermissionLevel::Ask)];
+        let new_perms = vec![ToolPermission::new(
+            "new_tool".to_string(),
+            PermissionLevel::Ask,
+        )];
 
         manager.reload_permissions(new_perms).unwrap();
 
@@ -353,7 +360,9 @@ mod tests {
         manager.store_permission(perm).unwrap();
 
         let updated_perm = ToolPermission::new("new_pattern".to_string(), PermissionLevel::Deny);
-        manager.update_permission("old_pattern", updated_perm).unwrap();
+        manager
+            .update_permission("old_pattern", updated_perm)
+            .unwrap();
 
         let perms = manager.get_all_permissions().unwrap();
         assert_eq!(perms.len(), 1);

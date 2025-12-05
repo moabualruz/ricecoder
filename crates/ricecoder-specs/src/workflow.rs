@@ -120,10 +120,7 @@ impl WorkflowOrchestrator {
         status: TaskStatus,
     ) -> Result<(), SpecError> {
         if !self.task_completion.contains_key(&task_id) {
-            return Err(SpecError::NotFound(format!(
-                "Task not found: {}",
-                task_id
-            )));
+            return Err(SpecError::NotFound(format!("Task not found: {}", task_id)));
         }
 
         self.task_completion.insert(task_id, status);
@@ -335,10 +332,8 @@ mod tests {
     fn test_link_task_empty_task_id() {
         let mut orchestrator = WorkflowOrchestrator::new();
 
-        let result = orchestrator.link_task_to_requirements(
-            "".to_string(),
-            vec!["REQ-1".to_string()],
-        );
+        let result =
+            orchestrator.link_task_to_requirements("".to_string(), vec!["REQ-1".to_string()]);
 
         assert!(result.is_err());
     }
@@ -357,17 +352,11 @@ mod tests {
         let mut orchestrator = WorkflowOrchestrator::new();
 
         orchestrator
-            .link_task_to_requirements(
-                "task-1".to_string(),
-                vec!["REQ-1".to_string()],
-            )
+            .link_task_to_requirements("task-1".to_string(), vec!["REQ-1".to_string()])
             .unwrap();
 
         orchestrator
-            .link_task_to_requirements(
-                "task-2".to_string(),
-                vec!["REQ-1".to_string()],
-            )
+            .link_task_to_requirements("task-2".to_string(), vec!["REQ-1".to_string()])
             .unwrap();
 
         let tasks = orchestrator.get_requirement_tasks("REQ-1");
@@ -381,22 +370,23 @@ mod tests {
         let mut orchestrator = WorkflowOrchestrator::new();
 
         orchestrator
-            .link_task_to_requirements(
-                "task-1".to_string(),
-                vec!["REQ-1".to_string()],
-            )
+            .link_task_to_requirements("task-1".to_string(), vec!["REQ-1".to_string()])
             .unwrap();
 
         let result = orchestrator.update_task_status("task-1".to_string(), TaskStatus::InProgress);
         assert!(result.is_ok());
-        assert_eq!(orchestrator.get_task_status("task-1"), TaskStatus::InProgress);
+        assert_eq!(
+            orchestrator.get_task_status("task-1"),
+            TaskStatus::InProgress
+        );
     }
 
     #[test]
     fn test_update_task_status_not_found() {
         let mut orchestrator = WorkflowOrchestrator::new();
 
-        let result = orchestrator.update_task_status("nonexistent".to_string(), TaskStatus::Complete);
+        let result =
+            orchestrator.update_task_status("nonexistent".to_string(), TaskStatus::Complete);
         assert!(result.is_err());
     }
 
@@ -405,17 +395,11 @@ mod tests {
         let mut orchestrator = WorkflowOrchestrator::new();
 
         orchestrator
-            .link_task_to_requirements(
-                "task-1".to_string(),
-                vec!["REQ-1".to_string()],
-            )
+            .link_task_to_requirements("task-1".to_string(), vec!["REQ-1".to_string()])
             .unwrap();
 
         orchestrator
-            .link_task_to_requirements(
-                "task-2".to_string(),
-                vec!["REQ-2".to_string()],
-            )
+            .link_task_to_requirements("task-2".to_string(), vec!["REQ-2".to_string()])
             .unwrap();
 
         orchestrator
@@ -432,10 +416,7 @@ mod tests {
         let mut orchestrator = WorkflowOrchestrator::new();
 
         orchestrator
-            .link_task_to_requirements(
-                "task-1".to_string(),
-                vec!["REQ-1".to_string()],
-            )
+            .link_task_to_requirements("task-1".to_string(), vec!["REQ-1".to_string()])
             .unwrap();
 
         orchestrator
@@ -452,10 +433,7 @@ mod tests {
         let mut orchestrator = WorkflowOrchestrator::new();
 
         orchestrator
-            .link_task_to_requirements(
-                "task-1".to_string(),
-                vec!["REQ-1".to_string()],
-            )
+            .link_task_to_requirements("task-1".to_string(), vec!["REQ-1".to_string()])
             .unwrap();
 
         let not_started = orchestrator.get_not_started_tasks();
@@ -468,17 +446,11 @@ mod tests {
         let mut orchestrator = WorkflowOrchestrator::new();
 
         orchestrator
-            .link_task_to_requirements(
-                "task-1".to_string(),
-                vec!["REQ-1".to_string()],
-            )
+            .link_task_to_requirements("task-1".to_string(), vec!["REQ-1".to_string()])
             .unwrap();
 
         orchestrator
-            .link_task_to_requirements(
-                "task-2".to_string(),
-                vec!["REQ-2".to_string()],
-            )
+            .link_task_to_requirements("task-2".to_string(), vec!["REQ-2".to_string()])
             .unwrap();
 
         orchestrator
@@ -517,17 +489,11 @@ mod tests {
         let mut orchestrator = WorkflowOrchestrator::new();
 
         orchestrator
-            .link_task_to_requirements(
-                "task-1".to_string(),
-                vec!["REQ-1".to_string()],
-            )
+            .link_task_to_requirements("task-1".to_string(), vec!["REQ-1".to_string()])
             .unwrap();
 
         orchestrator
-            .link_task_to_requirements(
-                "task-2".to_string(),
-                vec!["REQ-2".to_string()],
-            )
+            .link_task_to_requirements("task-2".to_string(), vec!["REQ-2".to_string()])
             .unwrap();
 
         let tasks = orchestrator.get_all_linked_tasks();
@@ -541,10 +507,7 @@ mod tests {
         let mut orchestrator = WorkflowOrchestrator::new();
 
         orchestrator
-            .link_task_to_requirements(
-                "task-1".to_string(),
-                vec!["REQ-1".to_string()],
-            )
+            .link_task_to_requirements("task-1".to_string(), vec!["REQ-1".to_string()])
             .unwrap();
 
         orchestrator.reset();

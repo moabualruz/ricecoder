@@ -1,8 +1,8 @@
 //! Audit log persistence to JSON files
 
 use super::models::AuditLogEntry;
-use std::path::{Path, PathBuf};
 use std::fs;
+use std::path::{Path, PathBuf};
 
 /// Audit log storage for persisting logs to disk
 pub struct AuditStorage {
@@ -21,8 +21,7 @@ impl AuditStorage {
     pub fn save_logs(&self, entries: &[AuditLogEntry]) -> Result<(), String> {
         // Ensure parent directory exists
         if let Some(parent) = self.path.parent() {
-            fs::create_dir_all(parent)
-                .map_err(|e| format!("Failed to create directory: {}", e))?;
+            fs::create_dir_all(parent).map_err(|e| format!("Failed to create directory: {}", e))?;
         }
 
         // Serialize entries to JSON
@@ -30,8 +29,7 @@ impl AuditStorage {
             .map_err(|e| format!("Failed to serialize logs: {}", e))?;
 
         // Write to file
-        fs::write(&self.path, json)
-            .map_err(|e| format!("Failed to write logs to file: {}", e))?;
+        fs::write(&self.path, json).map_err(|e| format!("Failed to write logs to file: {}", e))?;
 
         Ok(())
     }
@@ -83,8 +81,8 @@ impl AuditStorage {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
     use crate::audit::models::{AuditAction, AuditResult};
+    use tempfile::TempDir;
 
     #[test]
     fn test_save_and_load_logs() {

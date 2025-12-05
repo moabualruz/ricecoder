@@ -94,7 +94,10 @@ async fn test_full_mode_lifecycle() {
     // Verify context is still valid
     let final_context = manager.context().await;
     assert_eq!(final_context.session_id, "lifecycle-test");
-    assert_eq!(final_context.project_path, Some(PathBuf::from("/test/project")));
+    assert_eq!(
+        final_context.project_path,
+        Some(PathBuf::from("/test/project"))
+    );
 }
 
 /// Test 9.2: Mode interaction with session management
@@ -310,10 +313,7 @@ async fn test_context_preservation_multiple_switches() {
     switcher.switch_mode("code").await.unwrap();
     let code_ctx = switcher.context().await;
     assert_eq!(code_ctx.conversation_history.len(), 1);
-    assert_eq!(
-        code_ctx.conversation_history[0].content,
-        "Code message"
-    );
+    assert_eq!(code_ctx.conversation_history[0].content, "Code message");
 
     // Switch back to Ask Mode and verify context is restored
     switcher.switch_mode("ask").await.unwrap();

@@ -25,8 +25,9 @@ impl TestRunner {
 
     /// Create a test runner for the current directory
     pub fn current_dir() -> ExecutionResult<Self> {
-        let project_root = std::env::current_dir()
-            .map_err(|e| ExecutionError::ValidationError(format!("Failed to get current dir: {}", e)))?;
+        let project_root = std::env::current_dir().map_err(|e| {
+            ExecutionError::ValidationError(format!("Failed to get current dir: {}", e))
+        })?;
         Ok(Self { project_root })
     }
 
@@ -47,7 +48,9 @@ impl TestRunner {
         }
 
         // Check for Python (pytest.ini or setup.py)
-        if self.project_root.join("pytest.ini").exists() || self.project_root.join("setup.py").exists() {
+        if self.project_root.join("pytest.ini").exists()
+            || self.project_root.join("setup.py").exists()
+        {
             debug!("Detected Python project");
             return Ok(TestFramework::Python);
         }
@@ -76,7 +79,10 @@ impl TestRunner {
             .current_dir(&self.project_root)
             .output()
             .map_err(|e| {
-                ExecutionError::StepFailed(format!("Failed to execute test command {}: {}", command, e))
+                ExecutionError::StepFailed(format!(
+                    "Failed to execute test command {}: {}",
+                    command, e
+                ))
             })?;
 
         // Parse test results
@@ -125,7 +131,11 @@ impl TestRunner {
     ) -> ExecutionResult<(String, Vec<String>)> {
         match framework {
             TestFramework::Rust => {
-                let mut args = vec!["test".to_string(), "--".to_string(), "--nocapture".to_string()];
+                let mut args = vec![
+                    "test".to_string(),
+                    "--".to_string(),
+                    "--nocapture".to_string(),
+                ];
                 if let Some(p) = pattern {
                     args.push(p.to_string());
                 }
@@ -146,11 +156,9 @@ impl TestRunner {
                 }
                 Ok(("pytest".to_string(), args))
             }
-            TestFramework::Other => {
-                Err(ExecutionError::ValidationError(
-                    "Cannot build test command for unknown framework".to_string(),
-                ))
-            }
+            TestFramework::Other => Err(ExecutionError::ValidationError(
+                "Cannot build test command for unknown framework".to_string(),
+            )),
         }
     }
 
@@ -190,12 +198,7 @@ impl TestRunner {
 
             // Parse individual test failures
             if line.contains("FAILED") && line.contains("::") {
-                let test_name = line
-                    .split("FAILED")
-                    .nth(1)
-                    .unwrap_or("")
-                    .trim()
-                    .to_string();
+                let test_name = line.split("FAILED").nth(1).unwrap_or("").trim().to_string();
                 results.failures.push(TestFailure {
                     name: test_name,
                     message: "Test failed".to_string(),
@@ -431,7 +434,9 @@ mod tests {
             framework: TestFramework::TypeScript,
         };
 
-        runner.parse_typescript_output(stdout, "", &mut results).unwrap();
+        runner
+            .parse_typescript_output(stdout, "", &mut results)
+            .unwrap();
         assert_eq!(results.passed, 3);
         assert_eq!(results.failed, 0);
     }
@@ -450,7 +455,9 @@ mod tests {
             framework: TestFramework::Python,
         };
 
-        runner.parse_python_output(stdout, "", &mut results).unwrap();
+        runner
+            .parse_python_output(stdout, "", &mut results)
+            .unwrap();
         assert_eq!(results.passed, 4);
         assert_eq!(results.failed, 0);
     }

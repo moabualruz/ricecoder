@@ -294,7 +294,10 @@ mod tests {
         let result = AuditQuery::execute(&entries, &filter, &pagination);
 
         assert_eq!(result.total, 2);
-        assert!(result.entries.iter().all(|e| e.action == AuditAction::Allowed));
+        assert!(result
+            .entries
+            .iter()
+            .all(|e| e.action == AuditAction::Allowed));
     }
 
     #[test]
@@ -306,7 +309,10 @@ mod tests {
         let result = AuditQuery::execute(&entries, &filter, &pagination);
 
         assert_eq!(result.total, 3);
-        assert!(result.entries.iter().all(|e| e.result == AuditResult::Success));
+        assert!(result
+            .entries
+            .iter()
+            .all(|e| e.result == AuditResult::Success));
     }
 
     #[test]

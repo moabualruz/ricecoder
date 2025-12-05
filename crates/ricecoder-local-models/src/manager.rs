@@ -87,8 +87,7 @@ impl LocalModelManager {
             error!("Failed to pull model {}: {}", model_name, error_text);
             return Err(LocalModelError::PullFailed(format!(
                 "HTTP {}: {}",
-                status,
-                error_text
+                status, error_text
             )));
         }
 
@@ -154,8 +153,7 @@ impl LocalModelManager {
             error!("Failed to remove model {}: {}", model_name, error_text);
             return Err(LocalModelError::RemovalFailed(format!(
                 "HTTP {}: {}",
-                status,
-                error_text
+                status, error_text
             )));
         }
 
@@ -212,11 +210,13 @@ impl LocalModelManager {
                 return Err(LocalModelError::ModelNotFound(model_name.to_string()));
             }
             let error_text = response.text().await.unwrap_or_default();
-            error!("Failed to get model info for {}: {}", model_name, error_text);
+            error!(
+                "Failed to get model info for {}: {}",
+                model_name, error_text
+            );
             return Err(LocalModelError::Unknown(format!(
                 "HTTP {}: {}",
-                status,
-                error_text
+                status, error_text
             )));
         }
 
@@ -258,8 +258,7 @@ impl LocalModelManager {
             error!("Failed to list models: {}", error_text);
             return Err(LocalModelError::Unknown(format!(
                 "HTTP {}: {}",
-                status,
-                error_text
+                status, error_text
             )));
         }
 

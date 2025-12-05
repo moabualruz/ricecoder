@@ -3,8 +3,8 @@
 //! **Validates: Requirements 3.1, 3.2, 3.3**
 
 use proptest::prelude::*;
-use ricecoder_generation::{BoilerplateManager};
 use ricecoder_generation::models::{Boilerplate, BoilerplateFile};
+use ricecoder_generation::BoilerplateManager;
 use std::collections::HashMap;
 
 /// Strategy for generating valid boilerplate IDs
@@ -37,12 +37,13 @@ fn template_content_strategy() -> impl Strategy<Value = String> {
 
 /// Strategy for generating boilerplate files
 fn boilerplate_file_strategy() -> impl Strategy<Value = BoilerplateFile> {
-    (file_path_strategy(), template_content_strategy())
-        .prop_map(|(path, template)| BoilerplateFile {
+    (file_path_strategy(), template_content_strategy()).prop_map(|(path, template)| {
+        BoilerplateFile {
             path,
             template,
             condition: None,
-        })
+        }
+    })
 }
 
 /// Strategy for generating boilerplates
@@ -52,25 +53,24 @@ fn boilerplate_strategy() -> impl Strategy<Value = Boilerplate> {
         boilerplate_name_strategy(),
         prop::collection::vec(boilerplate_file_strategy(), 1..3),
     )
-    .prop_map(|(id, name, files)| Boilerplate {
-        id,
-        name,
-        description: "Test boilerplate".to_string(),
-        language: "rust".to_string(),
-        files,
-        dependencies: vec![],
-        scripts: vec![],
-    })
+        .prop_map(|(id, name, files)| Boilerplate {
+            id,
+            name,
+            description: "Test boilerplate".to_string(),
+            language: "rust".to_string(),
+            files,
+            dependencies: vec![],
+            scripts: vec![],
+        })
 }
 
 /// Strategy for generating variable maps
 fn variables_strategy() -> impl Strategy<Value = HashMap<String, String>> {
-    prop::collection::hash_map("[a-z][a-z0-9]{1,5}", "[a-zA-Z0-9_-]{1,10}", 1..3)
-        .prop_map(|map| {
-            map.into_iter()
-                .map(|(k, v)| (k.to_string(), v.to_string()))
-                .collect()
-        })
+    prop::collection::hash_map("[a-z][a-z0-9]{1,5}", "[a-zA-Z0-9_-]{1,10}", 1..3).prop_map(|map| {
+        map.into_iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect()
+    })
 }
 
 proptest! {

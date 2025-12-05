@@ -1,8 +1,8 @@
 // Unit tests for user experience features
 // **Feature: ricecoder-cli, Tests for Requirements 5.1-5.6**
 
-use ricecoder_cli::logging::{VerbosityLevel, init_logging};
-use ricecoder_cli::commands::{VersionCommand, Command};
+use ricecoder_cli::commands::{Command, VersionCommand};
+use ricecoder_cli::logging::{init_logging, VerbosityLevel};
 
 // ============================================================================
 // Verbosity Flag Tests
@@ -44,7 +44,7 @@ fn test_verbosity_level_ordering() {
 #[test]
 fn test_verbosity_should_output_quiet() {
     VerbosityLevel::set(VerbosityLevel::Quiet);
-    
+
     // In quiet mode, only Quiet level should output
     assert!(VerbosityLevel::Quiet.should_output());
     assert!(!VerbosityLevel::Normal.should_output());
@@ -54,7 +54,7 @@ fn test_verbosity_should_output_quiet() {
 #[test]
 fn test_verbosity_should_output_normal() {
     VerbosityLevel::set(VerbosityLevel::Normal);
-    
+
     // In normal mode, Quiet and Normal should output
     assert!(VerbosityLevel::Quiet.should_output());
     assert!(VerbosityLevel::Normal.should_output());
@@ -64,7 +64,7 @@ fn test_verbosity_should_output_normal() {
 #[test]
 fn test_verbosity_should_output_verbose() {
     VerbosityLevel::set(VerbosityLevel::Verbose);
-    
+
     // In verbose mode, all levels should output
     assert!(VerbosityLevel::Quiet.should_output());
     assert!(VerbosityLevel::Normal.should_output());
@@ -76,11 +76,11 @@ fn test_verbosity_level_persistence() {
     // Set verbosity level
     VerbosityLevel::set(VerbosityLevel::Verbose);
     assert_eq!(VerbosityLevel::current(), VerbosityLevel::Verbose);
-    
+
     // Change it
     VerbosityLevel::set(VerbosityLevel::Normal);
     assert_eq!(VerbosityLevel::current(), VerbosityLevel::Normal);
-    
+
     // Change it again
     VerbosityLevel::set(VerbosityLevel::Quiet);
     assert_eq!(VerbosityLevel::current(), VerbosityLevel::Quiet);
@@ -91,13 +91,13 @@ fn test_init_logging_with_various_combinations() {
     // Test all combinations
     init_logging(false, false);
     assert_eq!(VerbosityLevel::current(), VerbosityLevel::Normal);
-    
+
     init_logging(true, false);
     assert_eq!(VerbosityLevel::current(), VerbosityLevel::Verbose);
-    
+
     init_logging(false, true);
     assert_eq!(VerbosityLevel::current(), VerbosityLevel::Quiet);
-    
+
     init_logging(true, true);
     assert_eq!(VerbosityLevel::current(), VerbosityLevel::Quiet);
 }
@@ -138,15 +138,18 @@ fn test_version_command_creation() {
 fn test_version_command_execution() {
     let cmd = VersionCommand::new();
     let result = cmd.execute();
-    
-    assert!(result.is_ok(), "Version command should execute successfully");
+
+    assert!(
+        result.is_ok(),
+        "Version command should execute successfully"
+    );
 }
 
 #[test]
 fn test_version_command_displays_version() {
     let cmd = VersionCommand::new();
     let result = cmd.execute();
-    
+
     // Command should succeed
     assert!(result.is_ok());
 }
@@ -158,10 +161,14 @@ fn test_version_command_includes_build_info() {
     let version_info = format!(
         "RiceCoder v{}\n\nBuild Information:\n  Edition: 2021\n  Profile: {}\n  Rust: {}",
         env!("CARGO_PKG_VERSION"),
-        if cfg!(debug_assertions) { "debug" } else { "release" },
+        if cfg!(debug_assertions) {
+            "debug"
+        } else {
+            "release"
+        },
         env!("CARGO_PKG_RUST_VERSION")
     );
-    
+
     // Verify the format contains expected parts
     assert!(version_info.contains("RiceCoder v"));
     assert!(version_info.contains("Build Information"));
@@ -202,7 +209,7 @@ fn test_global_flags_dry_run() {
 #[test]
 fn test_quiet_mode_minimizes_output() {
     VerbosityLevel::set(VerbosityLevel::Quiet);
-    
+
     // In quiet mode, only essential output should be shown
     assert!(!VerbosityLevel::Normal.should_output());
     assert!(!VerbosityLevel::Verbose.should_output());
@@ -211,7 +218,7 @@ fn test_quiet_mode_minimizes_output() {
 #[test]
 fn test_verbose_mode_shows_detailed_output() {
     VerbosityLevel::set(VerbosityLevel::Verbose);
-    
+
     // In verbose mode, detailed output should be shown
     assert!(VerbosityLevel::Verbose.should_output());
 }
@@ -219,7 +226,7 @@ fn test_verbose_mode_shows_detailed_output() {
 #[test]
 fn test_normal_mode_balanced_output() {
     VerbosityLevel::set(VerbosityLevel::Normal);
-    
+
     // In normal mode, standard output should be shown
     assert!(VerbosityLevel::Normal.should_output());
     assert!(!VerbosityLevel::Verbose.should_output());
@@ -235,11 +242,11 @@ fn test_verbosity_and_version_command() {
     init_logging(false, false);
     let cmd = VersionCommand::new();
     assert!(cmd.execute().is_ok());
-    
+
     init_logging(true, false);
     let cmd = VersionCommand::new();
     assert!(cmd.execute().is_ok());
-    
+
     init_logging(false, true);
     let cmd = VersionCommand::new();
     assert!(cmd.execute().is_ok());
@@ -249,7 +256,7 @@ fn test_verbosity_and_version_command() {
 fn test_verbosity_level_debug() {
     VerbosityLevel::set(VerbosityLevel::VeryVerbose);
     assert_eq!(VerbosityLevel::current(), VerbosityLevel::VeryVerbose);
-    
+
     // All levels should output in very verbose mode
     assert!(VerbosityLevel::Quiet.should_output());
     assert!(VerbosityLevel::Normal.should_output());
@@ -298,10 +305,10 @@ fn test_verbosity_level_consistency() {
     for _ in 0..10 {
         VerbosityLevel::set(VerbosityLevel::Verbose);
         assert_eq!(VerbosityLevel::current(), VerbosityLevel::Verbose);
-        
+
         VerbosityLevel::set(VerbosityLevel::Normal);
         assert_eq!(VerbosityLevel::current(), VerbosityLevel::Normal);
-        
+
         VerbosityLevel::set(VerbosityLevel::Quiet);
         assert_eq!(VerbosityLevel::current(), VerbosityLevel::Quiet);
     }
@@ -312,10 +319,10 @@ fn test_init_logging_idempotent() {
     // Calling init_logging multiple times should be safe
     init_logging(true, false);
     let level1 = VerbosityLevel::current();
-    
+
     init_logging(true, false);
     let level2 = VerbosityLevel::current();
-    
+
     assert_eq!(level1, level2);
 }
 
@@ -323,10 +330,10 @@ fn test_init_logging_idempotent() {
 fn test_version_command_idempotent() {
     // Running version command multiple times should produce same result
     let cmd = VersionCommand::new();
-    
+
     let result1 = cmd.execute();
     let result2 = cmd.execute();
-    
+
     assert_eq!(result1.is_ok(), result2.is_ok());
 }
 
@@ -339,7 +346,7 @@ fn test_all_verbosity_levels_valid() {
         VerbosityLevel::Verbose,
         VerbosityLevel::VeryVerbose,
     ];
-    
+
     for level in levels {
         VerbosityLevel::set(level);
         assert_eq!(VerbosityLevel::current(), level);
@@ -350,7 +357,7 @@ fn test_all_verbosity_levels_valid() {
 fn test_verbosity_should_output_monotonic() {
     // If a level should output, all lower levels should also output
     VerbosityLevel::set(VerbosityLevel::Verbose);
-    
+
     if VerbosityLevel::Verbose.should_output() {
         assert!(VerbosityLevel::Normal.should_output());
         assert!(VerbosityLevel::Quiet.should_output());

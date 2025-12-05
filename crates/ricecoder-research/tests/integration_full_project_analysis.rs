@@ -2,8 +2,8 @@
 //! Tests the complete analyze_project workflow including type detection, scanning, indexing, and analysis
 //! **Validates: Requirements 1.1, 1.2, 1.3, 1.4, 1.5, 1.7, 1.8, 1.9, 1.10, 2.1, 2.2, 2.3, 2.4, 2.5**
 
-use ricecoder_research::{ResearchManager, ProjectType, CaseStyle, ArchitecturalStyle};
 use ricecoder_research::models::Language;
+use ricecoder_research::{ArchitecturalStyle, CaseStyle, ProjectType, ResearchManager};
 use std::fs;
 use std::path::PathBuf;
 use tempfile::TempDir;
@@ -15,7 +15,7 @@ use tempfile::TempDir;
 /// Create a complete Rust project with multiple components
 fn create_complete_rust_project(temp_dir: &TempDir) -> PathBuf {
     let root = temp_dir.path();
-    
+
     // Create directory structure
     fs::create_dir_all(root.join("src/domain")).unwrap();
     fs::create_dir_all(root.join("src/application")).unwrap();
@@ -37,7 +37,8 @@ tokio = { version = "1.0", features = ["full"] }
 [dev-dependencies]
 proptest = "1.0"
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     // Create source files
     fs::write(
@@ -48,7 +49,8 @@ pub mod infrastructure;
 
 pub fn public_function() {}
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     fs::write(
         root.join("src/domain/entity.rs"),
@@ -63,7 +65,8 @@ impl Entity {
     }
 }
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     fs::write(
         root.join("src/application/service.rs"),
@@ -77,7 +80,8 @@ impl Service {
     }
 }
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     fs::write(
         root.join("src/infrastructure/repository.rs"),
@@ -95,7 +99,8 @@ impl Repository {
     }
 }
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     // Create test files
     fs::write(
@@ -105,7 +110,8 @@ fn test_integration() {
     assert!(true);
 }
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     root.to_path_buf()
 }
@@ -113,7 +119,7 @@ fn test_integration() {
 /// Create a Node.js project
 fn create_nodejs_project(temp_dir: &TempDir) -> PathBuf {
     let root = temp_dir.path();
-    
+
     fs::create_dir_all(root.join("src")).unwrap();
     fs::create_dir_all(root.join("tests")).unwrap();
 
@@ -131,7 +137,8 @@ fn create_nodejs_project(temp_dir: &TempDir) -> PathBuf {
   }
 }
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     fs::write(
         root.join("src/index.ts"),
@@ -139,7 +146,8 @@ fn create_nodejs_project(temp_dir: &TempDir) -> PathBuf {
   console.log("Hello");
 }
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     fs::write(
         root.join("tests/test.ts"),
@@ -149,7 +157,8 @@ fn create_nodejs_project(temp_dir: &TempDir) -> PathBuf {
   });
 });
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     root.to_path_buf()
 }
@@ -157,7 +166,7 @@ fn create_nodejs_project(temp_dir: &TempDir) -> PathBuf {
 /// Create a Python project
 fn create_python_project(temp_dir: &TempDir) -> PathBuf {
     let root = temp_dir.path();
-    
+
     fs::create_dir_all(root.join("src")).unwrap();
     fs::create_dir_all(root.join("tests")).unwrap();
 
@@ -171,7 +180,8 @@ dependencies = [
     "pydantic>=1.10.0",
 ]
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     fs::write(
         root.join("src/main.py"),
@@ -181,14 +191,16 @@ dependencies = [
 if __name__ == "__main__":
     main()
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     fs::write(
         root.join("tests/test_main.py"),
         r#"def test_main():
     assert True
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     root.to_path_buf()
 }
@@ -196,7 +208,7 @@ if __name__ == "__main__":
 /// Create a Go project
 fn create_go_project(temp_dir: &TempDir) -> PathBuf {
     let root = temp_dir.path();
-    
+
     fs::create_dir_all(root.join("cmd")).unwrap();
     fs::create_dir_all(root.join("pkg")).unwrap();
 
@@ -211,7 +223,8 @@ require (
     github.com/sirupsen/logrus v1.9.0
 )
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     fs::write(
         root.join("cmd/main.go"),
@@ -221,7 +234,8 @@ func main() {
     println("Hello")
 }
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     fs::write(
         root.join("pkg/util.go"),
@@ -231,7 +245,8 @@ func Util() string {
     return "util"
 }
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     root.to_path_buf()
 }
@@ -280,16 +295,23 @@ async fn test_analyze_nodejs_project() {
     let context = result.unwrap();
 
     // Verify project type detection (could be Application or Service)
-    assert!(context.project_type == ProjectType::Application || context.project_type == ProjectType::Service);
+    assert!(
+        context.project_type == ProjectType::Application
+            || context.project_type == ProjectType::Service
+    );
 
     // Verify language detection
     assert!(context.languages.iter().any(|l| l == &Language::TypeScript));
 
     // Verify dependencies were found
     assert!(!context.dependencies.is_empty());
-    
+
     // Verify specific dependencies
-    let dep_names: Vec<_> = context.dependencies.iter().map(|d| d.name.as_str()).collect();
+    let dep_names: Vec<_> = context
+        .dependencies
+        .iter()
+        .map(|d| d.name.as_str())
+        .collect();
     assert!(dep_names.contains(&"express"));
     assert!(dep_names.contains(&"lodash"));
 }
@@ -310,9 +332,13 @@ async fn test_analyze_python_project() {
 
     // Verify dependencies were found
     assert!(!context.dependencies.is_empty());
-    
+
     // Verify specific dependencies
-    let dep_names: Vec<_> = context.dependencies.iter().map(|d| d.name.as_str()).collect();
+    let dep_names: Vec<_> = context
+        .dependencies
+        .iter()
+        .map(|d| d.name.as_str())
+        .collect();
     assert!(dep_names.contains(&"requests"));
     assert!(dep_names.contains(&"pydantic"));
 }
@@ -333,9 +359,13 @@ async fn test_analyze_go_project() {
 
     // Verify dependencies were found
     assert!(!context.dependencies.is_empty());
-    
+
     // Verify specific dependencies
-    let dep_names: Vec<_> = context.dependencies.iter().map(|d| d.name.as_str()).collect();
+    let dep_names: Vec<_> = context
+        .dependencies
+        .iter()
+        .map(|d| d.name.as_str())
+        .collect();
     assert!(dep_names.contains(&"github.com/gin-gonic/gin"));
 }
 
@@ -348,13 +378,25 @@ async fn test_analyze_project_structure_detection() {
     let context = manager.analyze_project(&root).await.unwrap();
 
     // Verify source directories are detected
-    assert!(context.structure.source_dirs.iter().any(|d| d.ends_with("src")));
+    assert!(context
+        .structure
+        .source_dirs
+        .iter()
+        .any(|d| d.ends_with("src")));
 
     // Verify test directories are detected
-    assert!(context.structure.test_dirs.iter().any(|d| d.ends_with("tests")));
+    assert!(context
+        .structure
+        .test_dirs
+        .iter()
+        .any(|d| d.ends_with("tests")));
 
     // Verify config files are detected
-    assert!(context.structure.config_files.iter().any(|f| f.ends_with("Cargo.toml")));
+    assert!(context
+        .structure
+        .config_files
+        .iter()
+        .any(|f| f.ends_with("Cargo.toml")));
 }
 
 #[tokio::test]
@@ -375,7 +417,7 @@ async fn test_analyze_project_caching() {
     // Results should be identical
     let context1 = result1.unwrap();
     let context2 = result2.unwrap();
-    
+
     assert_eq!(context1.project_type, context2.project_type);
     assert_eq!(context1.languages.len(), context2.languages.len());
     assert_eq!(context1.dependencies.len(), context2.dependencies.len());
@@ -384,7 +426,9 @@ async fn test_analyze_project_caching() {
 #[tokio::test]
 async fn test_analyze_project_nonexistent_path() {
     let manager = ResearchManager::new();
-    let result = manager.analyze_project(std::path::Path::new("/nonexistent/path")).await;
+    let result = manager
+        .analyze_project(std::path::Path::new("/nonexistent/path"))
+        .await;
 
     assert!(result.is_err(), "Analysis should fail for nonexistent path");
 }
@@ -418,10 +462,10 @@ async fn test_analyze_project_consistency() {
     // All results should be identical
     assert_eq!(result1.project_type, result2.project_type);
     assert_eq!(result2.project_type, result3.project_type);
-    
+
     assert_eq!(result1.languages.len(), result2.languages.len());
     assert_eq!(result2.languages.len(), result3.languages.len());
-    
+
     assert_eq!(result1.dependencies.len(), result2.dependencies.len());
     assert_eq!(result2.dependencies.len(), result3.dependencies.len());
 }

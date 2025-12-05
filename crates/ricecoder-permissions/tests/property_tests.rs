@@ -4,9 +4,9 @@
 
 use proptest::prelude::*;
 use ricecoder_permissions::{
-    PermissionLevel, ToolPermission, GlobMatcher, AuditLogger,
-    permission::PermissionChecker,
     audit::{AuditAction, AuditResult},
+    permission::PermissionChecker,
+    AuditLogger, GlobMatcher, PermissionLevel, ToolPermission,
 };
 
 // ============================================================================
@@ -18,14 +18,12 @@ use ricecoder_permissions::{
 
 /// Strategy for generating tool names
 fn tool_name_strategy() -> impl Strategy<Value = String> {
-    r"[a-z_][a-z0-9_]{0,20}"
-        .prop_map(|s| s.to_string())
+    r"[a-z_][a-z0-9_]{0,20}".prop_map(|s| s.to_string())
 }
 
 /// Strategy for generating agent names
 fn agent_name_strategy() -> impl Strategy<Value = String> {
-    r"[a-z_][a-z0-9_]{0,10}"
-        .prop_map(|s| s.to_string())
+    r"[a-z_][a-z0-9_]{0,10}".prop_map(|s| s.to_string())
 }
 
 proptest! {

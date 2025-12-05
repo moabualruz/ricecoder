@@ -21,63 +21,77 @@ fn valid_rust_code_strategy() -> impl Strategy<Value = String> {
 /// Strategy for generating invalid Rust code with syntax errors
 fn invalid_rust_code_strategy() -> impl Strategy<Value = String> {
     prop_oneof![
-        Just("fn main() {".to_string()),  // Missing closing brace
-        Just("fn hello() { println!(\"Hello\") ".to_string()),  // Missing closing brace
-        Just("struct User { name: String".to_string()),  // Missing closing brace
-        Just("fn test() { let x = [1, 2, 3".to_string()),  // Missing closing bracket
-        Just("fn test() { let x = (1, 2, 3".to_string()),  // Missing closing paren
+        Just("fn main() {".to_string()), // Missing closing brace
+        Just("fn hello() { println!(\"Hello\") ".to_string()), // Missing closing brace
+        Just("struct User { name: String".to_string()), // Missing closing brace
+        Just("fn test() { let x = [1, 2, 3".to_string()), // Missing closing bracket
+        Just("fn test() { let x = (1, 2, 3".to_string()), // Missing closing paren
     ]
 }
 
 /// Strategy for generating TypeScript code with syntax errors
 fn invalid_typescript_code_strategy() -> impl Strategy<Value = String> {
     prop_oneof![
-        Just("function hello() { console.log(\"Hello\") ".to_string()),  // Missing closing brace
-        Just("const x = { a: 1, b: 2".to_string()),  // Missing closing brace
-        Just("interface User { name: string".to_string()),  // Missing closing brace
-        Just("function test() { const arr = [1, 2, 3".to_string()),  // Missing closing bracket
-        Just("function test() { const x = (1, 2, 3".to_string()),  // Missing closing paren
+        Just("function hello() { console.log(\"Hello\") ".to_string()), // Missing closing brace
+        Just("const x = { a: 1, b: 2".to_string()),                     // Missing closing brace
+        Just("interface User { name: string".to_string()),              // Missing closing brace
+        Just("function test() { const arr = [1, 2, 3".to_string()),     // Missing closing bracket
+        Just("function test() { const x = (1, 2, 3".to_string()),       // Missing closing paren
     ]
 }
 
 /// Strategy for generating Python code with syntax errors
 fn invalid_python_code_strategy() -> impl Strategy<Value = String> {
     prop_oneof![
-        Just("def hello(:\n    print(\"Hello\")".to_string()),  // Missing closing paren
-        Just("def test():\n    arr = [1, 2, 3".to_string()),  // Missing closing bracket
-        Just("def test():\n    x = (1, 2, 3".to_string()),  // Missing closing paren
-        Just("def test():\n    d = {\"a\": 1".to_string()),  // Missing closing brace
+        Just("def hello(:\n    print(\"Hello\")".to_string()), // Missing closing paren
+        Just("def test():\n    arr = [1, 2, 3".to_string()),   // Missing closing bracket
+        Just("def test():\n    x = (1, 2, 3".to_string()),     // Missing closing paren
+        Just("def test():\n    d = {\"a\": 1".to_string()),    // Missing closing brace
     ]
 }
 
 /// Strategy for generating generated files with valid code
 fn valid_generated_file_strategy() -> impl Strategy<Value = GeneratedFile> {
-    prop_oneof![
-        (Just("src/main.rs"), valid_rust_code_strategy(), Just("rust"))
-            .prop_map(|(path, content, language)| GeneratedFile {
-                path: path.to_string(),
-                content,
-                language: language.to_string(),
-            }),
-    ]
+    prop_oneof![(
+        Just("src/main.rs"),
+        valid_rust_code_strategy(),
+        Just("rust")
+    )
+        .prop_map(|(path, content, language)| GeneratedFile {
+            path: path.to_string(),
+            content,
+            language: language.to_string(),
+        }),]
 }
 
 /// Strategy for generating generated files with invalid code
 fn invalid_generated_file_strategy() -> impl Strategy<Value = GeneratedFile> {
     prop_oneof![
-        (Just("src/main.rs"), invalid_rust_code_strategy(), Just("rust"))
+        (
+            Just("src/main.rs"),
+            invalid_rust_code_strategy(),
+            Just("rust")
+        )
             .prop_map(|(path, content, language)| GeneratedFile {
                 path: path.to_string(),
                 content,
                 language: language.to_string(),
             }),
-        (Just("src/index.ts"), invalid_typescript_code_strategy(), Just("typescript"))
+        (
+            Just("src/index.ts"),
+            invalid_typescript_code_strategy(),
+            Just("typescript")
+        )
             .prop_map(|(path, content, language)| GeneratedFile {
                 path: path.to_string(),
                 content,
                 language: language.to_string(),
             }),
-        (Just("src/main.py"), invalid_python_code_strategy(), Just("python"))
+        (
+            Just("src/main.py"),
+            invalid_python_code_strategy(),
+            Just("python")
+        )
             .prop_map(|(path, content, language)| GeneratedFile {
                 path: path.to_string(),
                 content,
@@ -136,7 +150,7 @@ proptest! {
                 // So only assert if the code has unmatched braces or parens
                 let has_unmatched_braces = file.content.matches('{').count() != file.content.matches('}').count();
                 let has_unmatched_parens = file.content.matches('(').count() != file.content.matches(')').count();
-                
+
                 if has_unmatched_braces || has_unmatched_parens {
                     prop_assert!(
                         !result.valid,

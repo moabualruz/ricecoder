@@ -1,6 +1,6 @@
 //! Semantic index for fast symbol lookup and search
 
-use crate::models::{Symbol, SymbolKind, SymbolReference, SearchResult};
+use crate::models::{SearchResult, Symbol, SymbolKind, SymbolReference};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -123,7 +123,11 @@ impl SemanticIndex {
         }
 
         // Sort by relevance (descending)
-        results.sort_by(|a, b| b.relevance.partial_cmp(&a.relevance).unwrap_or(std::cmp::Ordering::Equal));
+        results.sort_by(|a, b| {
+            b.relevance
+                .partial_cmp(&a.relevance)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         results
     }

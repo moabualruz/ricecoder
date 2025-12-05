@@ -125,11 +125,7 @@ impl PromptBuilder {
             )));
         }
 
-        let steering_rules_applied = steering_rules
-            .naming_conventions
-            .keys()
-            .cloned()
-            .collect();
+        let steering_rules_applied = steering_rules.naming_conventions.keys().cloned().collect();
 
         Ok(GeneratedPrompt {
             id: format!("prompt-{}", uuid::Uuid::new_v4()),
@@ -174,9 +170,15 @@ impl PromptBuilder {
 
         // Set default naming conventions if not loaded
         if rules.naming_conventions.is_empty() {
-            rules.naming_conventions.insert("rust".to_string(), "snake_case".to_string());
-            rules.naming_conventions.insert("typescript".to_string(), "camelCase".to_string());
-            rules.naming_conventions.insert("python".to_string(), "snake_case".to_string());
+            rules
+                .naming_conventions
+                .insert("rust".to_string(), "snake_case".to_string());
+            rules
+                .naming_conventions
+                .insert("typescript".to_string(), "camelCase".to_string());
+            rules
+                .naming_conventions
+                .insert("python".to_string(), "snake_case".to_string());
         }
 
         Ok(rules)
@@ -256,7 +258,10 @@ impl PromptBuilder {
     }
 
     /// Builds the system prompt
-    fn build_system_prompt(&self, steering_rules: &SteeringRules) -> Result<String, GenerationError> {
+    fn build_system_prompt(
+        &self,
+        steering_rules: &SteeringRules,
+    ) -> Result<String, GenerationError> {
         let mut prompt = String::new();
 
         prompt.push_str("You are an expert code generation assistant.\n\n");
@@ -302,7 +307,10 @@ impl PromptBuilder {
             if !step.acceptance_criteria.is_empty() {
                 prompt.push_str("\nAcceptance Criteria:\n");
                 for criterion in &step.acceptance_criteria {
-                    prompt.push_str(&format!("- WHEN {} THEN {}\n", criterion.when, criterion.then));
+                    prompt.push_str(&format!(
+                        "- WHEN {} THEN {}\n",
+                        criterion.when, criterion.then
+                    ));
                 }
             }
 
@@ -360,23 +368,19 @@ mod tests {
         GenerationPlan {
             id: "test-plan".to_string(),
             spec_id: "test-spec".to_string(),
-            steps: vec![
-                crate::spec_processor::GenerationStep {
-                    id: "step-1".to_string(),
-                    description: "Implement user authentication".to_string(),
-                    requirement_ids: vec!["req-1".to_string()],
-                    acceptance_criteria: vec![
-                        AcceptanceCriterion {
-                            id: "ac-1".to_string(),
-                            when: "user provides credentials".to_string(),
-                            then: "system authenticates user".to_string(),
-                        },
-                    ],
-                    priority: Priority::Must,
-                    optional: false,
-                    sequence: 0,
-                },
-            ],
+            steps: vec![crate::spec_processor::GenerationStep {
+                id: "step-1".to_string(),
+                description: "Implement user authentication".to_string(),
+                requirement_ids: vec!["req-1".to_string()],
+                acceptance_criteria: vec![AcceptanceCriterion {
+                    id: "ac-1".to_string(),
+                    when: "user provides credentials".to_string(),
+                    then: "system authenticates user".to_string(),
+                }],
+                priority: Priority::Must,
+                optional: false,
+                sequence: 0,
+            }],
             dependencies: vec![],
             constraints: vec![],
         }
@@ -419,7 +423,10 @@ mod tests {
             .build(&plan, None, Some(design_content))
             .expect("Failed to build prompt");
 
-        assert_eq!(prompt.context.design_content, Some(design_content.to_string()));
+        assert_eq!(
+            prompt.context.design_content,
+            Some(design_content.to_string())
+        );
     }
 
     #[test]
@@ -616,10 +623,7 @@ mod tests {
 
         // Both should have the same naming conventions
         assert_eq!(rules1.naming_conventions, rules2.naming_conventions);
-        assert_eq!(
-            rules1.code_quality_standards,
-            rules2.code_quality_standards
-        );
+        assert_eq!(rules1.code_quality_standards, rules2.code_quality_standards);
     }
 
     #[test]

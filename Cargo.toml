@@ -16,11 +16,14 @@ members = [
     "crates/ricecoder-execution",
     "crates/ricecoder-sessions",
     "crates/ricecoder-modes",
+    "crates/ricecoder-lsp",
+    "crates/ricecoder-completion",
+    "crates/ricecoder-hooks",
 ]
 resolver = "2"
 
 [workspace.package]
-version = "0.1.0"
+version = "0.3.0"
 edition = "2021"
 authors = ["RiceCoder Contributors"]
 license = "MIT"
@@ -63,3 +66,4 @@ git2 = "0.18"
 similar = "2.3"
 handlebars = "5.0"
 heck = "0.4"
+itertools = "0.12"

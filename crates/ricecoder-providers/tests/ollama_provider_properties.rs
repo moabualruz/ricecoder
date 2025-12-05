@@ -4,9 +4,7 @@
 //! Each property is derived from acceptance criteria in the requirements document.
 
 use proptest::prelude::*;
-use ricecoder_providers::{
-    ChatRequest, Message, OllamaProvider, Provider, Capability,
-};
+use ricecoder_providers::{Capability, ChatRequest, Message, OllamaProvider, Provider};
 
 // ============================================================================
 // Property 1: Provider Trait Implementation
@@ -69,7 +67,7 @@ proptest! {
     fn prop_models_have_required_fields(_seed in 0u32..100) {
         let provider = OllamaProvider::new("http://localhost:11434".to_string()).unwrap();
         let models = provider.models();
-        
+
         for model in models {
             // All models must have required fields
             prop_assert!(!model.id.is_empty(), "Model ID must not be empty");
@@ -84,7 +82,7 @@ proptest! {
     fn prop_models_have_chat_capability(_seed in 0u32..100) {
         let provider = OllamaProvider::new("http://localhost:11434".to_string()).unwrap();
         let models = provider.models();
-        
+
         for model in models {
             prop_assert!(
                 model.capabilities.contains(&Capability::Chat),
@@ -98,7 +96,7 @@ proptest! {
     fn prop_models_have_streaming_capability(_seed in 0u32..100) {
         let provider = OllamaProvider::new("http://localhost:11434".to_string()).unwrap();
         let models = provider.models();
-        
+
         for model in models {
             prop_assert!(
                 model.capabilities.contains(&Capability::Streaming),
@@ -112,7 +110,7 @@ proptest! {
     fn prop_local_models_have_no_pricing(_seed in 0u32..100) {
         let provider = OllamaProvider::new("http://localhost:11434".to_string()).unwrap();
         let models = provider.models();
-        
+
         for model in models {
             prop_assert!(
                 model.pricing.is_none(),
@@ -126,7 +124,7 @@ proptest! {
     fn prop_model_ids_are_unique(_seed in 0u32..100) {
         let provider = OllamaProvider::new("http://localhost:11434".to_string()).unwrap();
         let models = provider.models();
-        
+
         let mut ids = Vec::new();
         for model in models {
             prop_assert!(
@@ -152,7 +150,7 @@ fn test_model_cache_returns_same_models() {
     let provider = OllamaProvider::new("http://localhost:11434".to_string()).unwrap();
     let models1 = provider.models();
     let models2 = provider.models();
-    
+
     // Cache should return identical results
     assert_eq!(models1.len(), models2.len());
     for (m1, m2) in models1.iter().zip(models2.iter()) {
@@ -167,19 +165,19 @@ proptest! {
     #[test]
     fn prop_cache_consistency_across_calls(_seed in 0u32..100) {
         let provider = OllamaProvider::new("http://localhost:11434".to_string()).unwrap();
-        
+
         // Multiple calls should return consistent results
         let models1 = provider.models();
         let models2 = provider.models();
         let models3 = provider.models();
-        
+
         prop_assert_eq!(models1.len(), models2.len());
         prop_assert_eq!(models2.len(), models3.len());
-        
+
         for (m1, m2) in models1.iter().zip(models2.iter()) {
             prop_assert_eq!(&m1.id, &m2.id);
         }
-        
+
         for (m2, m3) in models2.iter().zip(models3.iter()) {
             prop_assert_eq!(&m2.id, &m3.id);
         }
@@ -202,7 +200,7 @@ proptest! {
     ) {
         let provider = OllamaProvider::new("http://localhost:11434".to_string()).unwrap();
         let models = provider.models();
-        
+
         if !models.is_empty() {
             let model_id = &models[0].id;
             let request = ChatRequest {
@@ -215,7 +213,7 @@ proptest! {
                 max_tokens: Some(100),
                 stream: false,
             };
-            
+
             // Verify request structure is valid
             prop_assert!(!request.model.is_empty());
             prop_assert!(!request.messages.is_empty());
@@ -227,10 +225,10 @@ proptest! {
     fn prop_token_usage_is_present_in_response(_seed in 0u32..100) {
         let provider = OllamaProvider::new("http://localhost:11434".to_string()).unwrap();
         let models = provider.models();
-        
+
         if !models.is_empty() {
             let model_id = &models[0].id;
-            
+
             // Verify token counting works
             let tokens = provider.count_tokens("test message", model_id).unwrap();
             prop_assert!(tokens > 0);
@@ -254,7 +252,7 @@ proptest! {
     ) {
         let provider = OllamaProvider::new("http://localhost:11434".to_string()).unwrap();
         let models = provider.models();
-        
+
         if !models.is_empty() {
             let model_id = &models[0].id;
             let request = ChatRequest {
@@ -267,7 +265,7 @@ proptest! {
                 max_tokens: Some(100),
                 stream: true,  // Streaming enabled
             };
-            
+
             // Verify streaming request structure
             prop_assert!(request.stream);
             prop_assert!(!request.messages.is_empty());
@@ -278,7 +276,7 @@ proptest! {
     fn prop_streaming_models_support_streaming(_seed in 0u32..100) {
         let provider = OllamaProvider::new("http://localhost:11434".to_string()).unwrap();
         let models = provider.models();
-        
+
         for model in models {
             prop_assert!(
                 model.capabilities.contains(&Capability::Streaming),
@@ -317,7 +315,7 @@ proptest! {
         // Empty URL should produce descriptive error
         let result = OllamaProvider::new("".to_string());
         prop_assert!(result.is_err());
-        
+
         if let Err(err) = result {
             let error_msg = err.to_string();
             prop_assert!(
@@ -342,14 +340,14 @@ proptest! {
     fn prop_model_metadata_is_consistent(_seed in 0u32..100) {
         let provider = OllamaProvider::new("http://localhost:11434".to_string()).unwrap();
         let models = provider.models();
-        
+
         for model in models {
             // Metadata should be consistent
             prop_assert!(!model.id.is_empty());
             prop_assert!(!model.name.is_empty());
             prop_assert_eq!(model.provider, "ollama");
             prop_assert!(model.context_window > 0);
-            
+
             // Capabilities should be valid
             for cap in &model.capabilities {
                 match cap {
@@ -366,14 +364,14 @@ proptest! {
     fn prop_token_usage_is_consistent(content in "\\PC{1,1000}", _seed in 0u32..100) {
         let provider = OllamaProvider::new("http://localhost:11434".to_string()).unwrap();
         let models = provider.models();
-        
+
         if !models.is_empty() {
             let model_id = &models[0].id;
-            
+
             // Token counting should be consistent
             let tokens1 = provider.count_tokens(&content, model_id).unwrap();
             let tokens2 = provider.count_tokens(&content, model_id).unwrap();
-            
+
             prop_assert_eq!(tokens1, tokens2);
         }
     }
@@ -381,11 +379,11 @@ proptest! {
     #[test]
     fn prop_configuration_has_defaults(_seed in 0u32..100) {
         let provider = OllamaProvider::new("http://localhost:11434".to_string()).unwrap();
-        
+
         // Provider should have default configuration
         let config_result = provider.config();
         prop_assert!(config_result.is_ok());
-        
+
         let config = config_result.unwrap();
         prop_assert!(!config.base_url.is_empty());
         prop_assert!(!config.default_model.is_empty());
@@ -404,11 +402,11 @@ proptest! {
     #[test]
     fn prop_default_models_available_when_offline(_seed in 0u32..100) {
         let provider = OllamaProvider::new("http://localhost:11434".to_string()).unwrap();
-        
+
         // Even without fetching from Ollama, default models should be available
         let models = provider.models();
         prop_assert!(!models.is_empty(), "Default models should be available");
-        
+
         // Should have at least the default models
         let model_ids: Vec<_> = models.iter().map(|m| m.id.as_str()).collect();
         prop_assert!(
@@ -421,7 +419,7 @@ proptest! {
     fn prop_fallback_models_have_valid_metadata(_seed in 0u32..100) {
         let provider = OllamaProvider::new("http://localhost:11434".to_string()).unwrap();
         let models = provider.models();
-        
+
         // All fallback models should have valid metadata
         for model in models {
             prop_assert!(!model.id.is_empty());
@@ -437,7 +435,7 @@ proptest! {
     fn prop_multiple_models_in_fallback(_seed in 0u32..100) {
         let provider = OllamaProvider::new("http://localhost:11434".to_string()).unwrap();
         let models = provider.models();
-        
+
         // Should have multiple fallback models
         prop_assert!(models.len() >= 3, "Should have at least 3 default models");
     }
@@ -451,7 +449,7 @@ proptest! {
 fn test_provider_creation_with_default_endpoint() {
     let provider = OllamaProvider::with_default_endpoint();
     assert!(provider.is_ok());
-    
+
     let provider = provider.unwrap();
     assert_eq!(provider.id(), "ollama");
     assert_eq!(provider.name(), "Ollama");
@@ -460,12 +458,12 @@ fn test_provider_creation_with_default_endpoint() {
 #[test]
 fn test_token_counting_approximation() {
     let provider = OllamaProvider::new("http://localhost:11434".to_string()).unwrap();
-    
+
     // Test the approximation: 1 token ≈ 4 characters
     let content = "1234"; // 4 characters
     let tokens = provider.count_tokens(content, "mistral").unwrap();
     assert_eq!(tokens, 1); // Should be approximately 1 token
-    
+
     let content = "12345678"; // 8 characters
     let tokens = provider.count_tokens(content, "mistral").unwrap();
     assert_eq!(tokens, 2); // Should be approximately 2 tokens
@@ -482,7 +480,7 @@ fn test_empty_content_token_counting() {
 fn test_all_default_models_have_capabilities() {
     let provider = OllamaProvider::new("http://localhost:11434".to_string()).unwrap();
     let models = provider.models();
-    
+
     for model in models {
         assert!(!model.capabilities.is_empty());
         assert!(model.capabilities.contains(&Capability::Chat));
@@ -495,7 +493,7 @@ fn test_all_default_models_have_capabilities() {
 fn test_provider_multiple_instances_consistency() {
     let provider1 = OllamaProvider::new("http://localhost:11434".to_string()).unwrap();
     let provider2 = OllamaProvider::new("http://localhost:11434".to_string()).unwrap();
-    
+
     assert_eq!(provider1.id(), provider2.id());
     assert_eq!(provider1.name(), provider2.name());
     assert_eq!(provider1.models().len(), provider2.models().len());

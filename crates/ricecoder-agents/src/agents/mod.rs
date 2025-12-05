@@ -2,9 +2,9 @@
 
 pub mod code_review;
 
-use async_trait::async_trait;
 use crate::error::Result;
 use crate::models::{AgentInput, AgentMetrics, AgentOutput, ConfigSchema, TaskType};
+use async_trait::async_trait;
 
 pub use code_review::CodeReviewAgent;
 
@@ -137,8 +137,10 @@ pub trait Agent: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::{
+        AgentConfig, AgentTask, ProjectContext, TaskOptions, TaskScope, TaskTarget,
+    };
     use std::path::PathBuf;
-    use crate::models::{AgentConfig, AgentTask, ProjectContext, TaskOptions, TaskScope, TaskTarget};
 
     /// Mock agent for testing
     struct MockAgent {

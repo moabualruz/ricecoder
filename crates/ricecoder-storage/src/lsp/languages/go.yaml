@@ -1,0 +1,40 @@
+language: go
+file_extensions:
+  - go
+
+parser_plugin: tree-sitter-go
+
+diagnostic_rules:
+  - name: unused_imports
+    pattern: "^import"
+    severity: warning
+    message: "Unused import"
+    fix_template: "Remove import"
+
+  - name: unused_variables
+    pattern: "^\\s*\\w+\\s*:="
+    severity: warning
+    message: "Unused variable"
+    fix_template: "Prefix with underscore"
+
+  - name: missing_error_check
+    pattern: "err :="
+    severity: warning
+    message: "Error not checked"
+    fix_template: "Add if err != nil check"
+
+code_actions:
+  - name: organize_imports
+    title: "Organize imports"
+    kind: source
+    transformation: "Sort and group imports"
+
+  - name: add_error_check
+    title: "Add error check"
+    kind: quickfix
+    transformation: "Add if err != nil check"
+
+  - name: remove_unused_import
+    title: "Remove unused import"
+    kind: quickfix
+    transformation: "Delete import line"

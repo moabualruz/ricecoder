@@ -1,8 +1,8 @@
 // Display version information
 
+use super::Command;
 use crate::error::CliResult;
 use crate::output::OutputStyle;
-use super::Command;
 
 /// Display version information
 #[derive(Default)]
@@ -18,7 +18,11 @@ impl VersionCommand {
         format!(
             "RiceCoder v{}\n\nBuild Information:\n  Edition: 2021\n  Profile: {}\n  Rust: {}",
             env!("CARGO_PKG_VERSION"),
-            if cfg!(debug_assertions) { "debug" } else { "release" },
+            if cfg!(debug_assertions) {
+                "debug"
+            } else {
+                "release"
+            },
             env!("CARGO_PKG_RUST_VERSION")
         )
     }

@@ -2,7 +2,7 @@
 //! **Feature: ricecoder-sessions, Property 14: Background Agent State Transitions**
 //! **Validates: Requirements 4.4**
 
-use ricecoder_sessions::{BackgroundAgentManager, BackgroundAgent, AgentStatus};
+use ricecoder_sessions::{AgentStatus, BackgroundAgent, BackgroundAgentManager};
 
 /// Property: For any background agent, requesting pause or cancel SHALL transition
 /// the agent to the requested state and stop execution.
@@ -20,10 +20,7 @@ async fn prop_background_agent_state_transitions() {
             // Start agents
             let mut agent_ids = Vec::new();
             for i in 0..num_agents {
-                let agent = BackgroundAgent::new(
-                    format!("agent_{}", i),
-                    None,
-                );
+                let agent = BackgroundAgent::new(format!("agent_{}", i), None);
                 let agent_id = manager.start_agent(agent).await.unwrap();
                 agent_ids.push(agent_id);
             }
@@ -65,10 +62,7 @@ async fn prop_pause_only_running_agents() {
         // Start agents
         let mut agent_ids = Vec::new();
         for i in 0..num_agents {
-            let agent = BackgroundAgent::new(
-                format!("agent_{}", i),
-                None,
-            );
+            let agent = BackgroundAgent::new(format!("agent_{}", i), None);
             let agent_id = manager.start_agent(agent).await.unwrap();
             agent_ids.push(agent_id);
         }
@@ -80,10 +74,7 @@ async fn prop_pause_only_running_agents() {
 
             // Try to pause again - should fail
             let result2 = manager.pause_agent(agent_id).await;
-            assert!(
-                result2.is_err(),
-                "Cannot pause an already paused agent"
-            );
+            assert!(result2.is_err(), "Cannot pause an already paused agent");
         }
     }
 }
@@ -98,10 +89,7 @@ async fn prop_agent_completion_timestamp_on_cancel() {
         // Start agents
         let mut agent_ids = Vec::new();
         for i in 0..num_agents {
-            let agent = BackgroundAgent::new(
-                format!("agent_{}", i),
-                None,
-            );
+            let agent = BackgroundAgent::new(format!("agent_{}", i), None);
             let agent_id = manager.start_agent(agent).await.unwrap();
             agent_ids.push(agent_id);
         }
@@ -132,10 +120,7 @@ async fn prop_atomic_state_transitions() {
         // Start agents
         let mut agent_ids = Vec::new();
         for i in 0..num_agents {
-            let agent = BackgroundAgent::new(
-                format!("agent_{}", i),
-                None,
-            );
+            let agent = BackgroundAgent::new(format!("agent_{}", i), None);
             let agent_id = manager.start_agent(agent).await.unwrap();
             agent_ids.push(agent_id);
         }
@@ -149,7 +134,10 @@ async fn prop_atomic_state_transitions() {
             assert!(
                 matches!(
                     status,
-                    AgentStatus::Running | AgentStatus::Completed | AgentStatus::Failed | AgentStatus::Cancelled
+                    AgentStatus::Running
+                        | AgentStatus::Completed
+                        | AgentStatus::Failed
+                        | AgentStatus::Cancelled
                 ),
                 "Agent should be in a valid state, not intermediate"
             );

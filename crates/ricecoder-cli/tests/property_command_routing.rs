@@ -52,14 +52,17 @@ fn test_command_router_suggestions() {
     assert_eq!(CommandRouter::find_similar("i"), Some("init".to_string()));
     assert_eq!(CommandRouter::find_similar("g"), Some("gen".to_string()));
     assert_eq!(CommandRouter::find_similar("c"), Some("chat".to_string()));
-    assert_eq!(CommandRouter::find_similar("r"), Some("refactor".to_string()));
+    assert_eq!(
+        CommandRouter::find_similar("r"),
+        Some("refactor".to_string())
+    );
 }
 
 /// Test that all known commands are valid
 #[test]
 fn test_all_known_commands_valid() {
     let known_commands = vec!["init", "gen", "chat", "refactor", "review", "config"];
-    
+
     for cmd in known_commands {
         // Verify each command is recognized
         assert!(!cmd.is_empty(), "Command should not be empty");

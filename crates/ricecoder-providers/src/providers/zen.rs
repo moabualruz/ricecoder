@@ -274,7 +274,11 @@ impl ZenProvider {
         content: &str,
         model: &str,
     ) -> Result<usize, ProviderError> {
-        debug!("Counting tokens for model: {} (content length: {})", model, content.len());
+        debug!(
+            "Counting tokens for model: {} (content length: {})",
+            model,
+            content.len()
+        );
 
         let request = ZenTokenCountRequest {
             model: model.to_string(),

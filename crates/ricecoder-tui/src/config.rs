@@ -56,10 +56,10 @@
 //!   disable_animations: false
 //! ```
 
+use crate::accessibility::AccessibilityConfig;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use crate::accessibility::AccessibilityConfig;
 
 /// TUI configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]

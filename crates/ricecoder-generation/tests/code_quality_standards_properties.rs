@@ -7,7 +7,7 @@
 //! and all fallible operations SHALL include error handling using language-native error types.
 
 use proptest::prelude::*;
-use ricecoder_generation::{CodeQualityEnforcer, CodeQualityConfig, GeneratedFile};
+use ricecoder_generation::{CodeQualityConfig, CodeQualityEnforcer, GeneratedFile};
 
 /// Strategy for generating Rust code with public items
 fn rust_code_strategy() -> impl Strategy<Value = String> {
@@ -41,24 +41,30 @@ fn python_code_strategy() -> impl Strategy<Value = String> {
 /// Strategy for generating generated files
 fn generated_file_strategy() -> impl Strategy<Value = GeneratedFile> {
     prop_oneof![
-        (Just("src/main.rs"), rust_code_strategy(), Just("rust"))
+        (Just("src/main.rs"), rust_code_strategy(), Just("rust")).prop_map(
+            |(path, content, language)| GeneratedFile {
+                path: path.to_string(),
+                content,
+                language: language.to_string(),
+            }
+        ),
+        (
+            Just("src/index.ts"),
+            typescript_code_strategy(),
+            Just("typescript")
+        )
             .prop_map(|(path, content, language)| GeneratedFile {
                 path: path.to_string(),
                 content,
                 language: language.to_string(),
             }),
-        (Just("src/index.ts"), typescript_code_strategy(), Just("typescript"))
-            .prop_map(|(path, content, language)| GeneratedFile {
+        (Just("src/main.py"), python_code_strategy(), Just("python")).prop_map(
+            |(path, content, language)| GeneratedFile {
                 path: path.to_string(),
                 content,
                 language: language.to_string(),
-            }),
-        (Just("src/main.py"), python_code_strategy(), Just("python"))
-            .prop_map(|(path, content, language)| GeneratedFile {
-                path: path.to_string(),
-                content,
-                language: language.to_string(),
-            }),
+            }
+        ),
     ]
 }
 

@@ -178,7 +178,9 @@ impl UndoCommandHandler {
             let stderr = String::from_utf8_lossy(&output.stderr);
             return Err(ExecutionError::RollbackFailed(format!(
                 "Undo command {} failed with exit code {:?}: {}",
-                command, output.status.code(), stderr
+                command,
+                output.status.code(),
+                stderr
             )));
         }
 

@@ -29,15 +29,8 @@ async fn test_git_status_detects_modified_files() {
     let tree = repo.find_tree(tree_id).unwrap();
     let sig = repo.signature().unwrap();
 
-    repo.commit(
-        Some("HEAD"),
-        &sig,
-        &sig,
-        "Initial commit",
-        &tree,
-        &[],
-    )
-    .unwrap();
+    repo.commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[])
+        .unwrap();
 
     // Modify the file
     fs::write(&file_path, "modified content").await.unwrap();
@@ -47,7 +40,10 @@ async fn test_git_status_detects_modified_files() {
 
     // Verify modified file is detected
     assert!(!status.modified.is_empty());
-    assert!(status.modified.iter().any(|p| p.to_string_lossy().contains("test.txt")));
+    assert!(status
+        .modified
+        .iter()
+        .any(|p| p.to_string_lossy().contains("test.txt")));
 }
 
 /// Test git status with untracked files
@@ -71,26 +67,24 @@ async fn test_git_status_detects_untracked_files() {
     let tree = repo.find_tree(tree_id).unwrap();
     let sig = repo.signature().unwrap();
 
-    repo.commit(
-        Some("HEAD"),
-        &sig,
-        &sig,
-        "Initial commit",
-        &tree,
-        &[],
-    )
-    .unwrap();
+    repo.commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[])
+        .unwrap();
 
     // Create an untracked file
     let untracked_path = repo_path.join("untracked.txt");
-    fs::write(&untracked_path, "untracked content").await.unwrap();
+    fs::write(&untracked_path, "untracked content")
+        .await
+        .unwrap();
 
     // Check git status
     let status = GitIntegration::check_status(repo_path).unwrap();
 
     // Verify untracked file is detected
     assert!(!status.untracked.is_empty());
-    assert!(status.untracked.iter().any(|p| p.to_string_lossy().contains("untracked.txt")));
+    assert!(status
+        .untracked
+        .iter()
+        .any(|p| p.to_string_lossy().contains("untracked.txt")));
 }
 
 /// Test git status with staged files
@@ -114,15 +108,8 @@ async fn test_git_status_detects_staged_files() {
     let tree = repo.find_tree(tree_id).unwrap();
     let sig = repo.signature().unwrap();
 
-    repo.commit(
-        Some("HEAD"),
-        &sig,
-        &sig,
-        "Initial commit",
-        &tree,
-        &[],
-    )
-    .unwrap();
+    repo.commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[])
+        .unwrap();
 
     // Create a new file and stage it
     let new_file = repo_path.join("new.txt");
@@ -137,7 +124,10 @@ async fn test_git_status_detects_staged_files() {
 
     // Verify staged file is detected
     assert!(!status.staged.is_empty());
-    assert!(status.staged.iter().any(|p| p.to_string_lossy().contains("new.txt")));
+    assert!(status
+        .staged
+        .iter()
+        .any(|p| p.to_string_lossy().contains("new.txt")));
 }
 
 /// Test getting current branch name
@@ -161,15 +151,8 @@ async fn test_get_current_branch() {
     let tree = repo.find_tree(tree_id).unwrap();
     let sig = repo.signature().unwrap();
 
-    repo.commit(
-        Some("HEAD"),
-        &sig,
-        &sig,
-        "Initial commit",
-        &tree,
-        &[],
-    )
-    .unwrap();
+    repo.commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[])
+        .unwrap();
 
     // Get current branch
     let branch = GitIntegration::get_current_branch(repo_path).unwrap();
@@ -199,15 +182,8 @@ async fn test_git_status_clean_repository() {
     let tree = repo.find_tree(tree_id).unwrap();
     let sig = repo.signature().unwrap();
 
-    repo.commit(
-        Some("HEAD"),
-        &sig,
-        &sig,
-        "Initial commit",
-        &tree,
-        &[],
-    )
-    .unwrap();
+    repo.commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[])
+        .unwrap();
 
     // Check git status on clean repository
     let status = GitIntegration::check_status(repo_path).unwrap();
@@ -267,7 +243,11 @@ fn test_commit_message_generation_multiple_files() {
 
     // Verify message contains file count
     assert!(!message.is_empty());
-    assert!(message.contains("Create 1 file(s)") || message.contains("Update 1 file(s)") || message.contains("file(s)"));
+    assert!(
+        message.contains("Create 1 file(s)")
+            || message.contains("Update 1 file(s)")
+            || message.contains("file(s)")
+    );
 }
 
 /// Test commit message generation with different operation types
@@ -320,15 +300,8 @@ async fn test_git_status_with_multiple_file_types() {
     let tree = repo.find_tree(tree_id).unwrap();
     let sig = repo.signature().unwrap();
 
-    repo.commit(
-        Some("HEAD"),
-        &sig,
-        &sig,
-        "Initial commit",
-        &tree,
-        &[],
-    )
-    .unwrap();
+    repo.commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[])
+        .unwrap();
 
     // Modify file1, create untracked file3, and stage file2 modification
     fs::write(&file1, "modified1").await.unwrap();
@@ -345,6 +318,6 @@ async fn test_git_status_with_multiple_file_types() {
 
     // Verify all file types are detected
     assert!(!status.modified.is_empty()); // file1
-    assert!(!status.staged.is_empty());   // file2
+    assert!(!status.staged.is_empty()); // file2
     assert!(!status.untracked.is_empty()); // file3
 }

@@ -2,7 +2,7 @@
 
 use crate::error::ResearchError;
 use crate::models::{
-    CaseStyle, DocumentationStyle, DocFormat, FormattingStyle, ImportGroup, ImportOrganization,
+    CaseStyle, DocFormat, DocumentationStyle, FormattingStyle, ImportGroup, ImportOrganization,
     IndentType, NamingConventions, StandardsProfile,
 };
 use regex::Regex;
@@ -90,7 +90,10 @@ impl StandardsDetector {
     }
 
     /// Detect documentation style from code
-    fn detect_documentation_style(&self, content: &str) -> Result<DocumentationStyle, ResearchError> {
+    fn detect_documentation_style(
+        &self,
+        content: &str,
+    ) -> Result<DocumentationStyle, ResearchError> {
         let doc_analyzer = DocumentationAnalyzer::new();
         doc_analyzer.analyze(content)
     }
@@ -149,8 +152,14 @@ impl NamingAnalyzer {
 
     fn detect_class_naming(&self, content: &str) -> CaseStyle {
         // Detect class/struct naming patterns
-        let pascal_case_count = self.count_pattern(content, r"(?:struct|class|interface)\s+([A-Z][a-zA-Z0-9]*)\s*[{<]");
-        let snake_case_count = self.count_pattern(content, r"(?:struct|class|interface)\s+([a-z_][a-z0-9_]*)\s*[{<]");
+        let pascal_case_count = self.count_pattern(
+            content,
+            r"(?:struct|class|interface)\s+([A-Z][a-zA-Z0-9]*)\s*[{<]",
+        );
+        let snake_case_count = self.count_pattern(
+            content,
+            r"(?:struct|class|interface)\s+([a-z_][a-z0-9_]*)\s*[{<]",
+        );
 
         if pascal_case_count > snake_case_count {
             CaseStyle::PascalCase
@@ -346,7 +355,11 @@ impl ImportAnalyzer {
         }
 
         if groups_seen.is_empty() {
-            vec![ImportGroup::Standard, ImportGroup::External, ImportGroup::Internal]
+            vec![
+                ImportGroup::Standard,
+                ImportGroup::External,
+                ImportGroup::Internal,
+            ]
         } else {
             groups_seen
         }
@@ -419,7 +432,10 @@ impl DocumentationAnalyzer {
         let jsdoc_count = content.matches("/**").count();
         let python_doc_count = content.matches("\"\"\"").count();
 
-        if rustdoc_count > javadoc_count && rustdoc_count > jsdoc_count && rustdoc_count > python_doc_count {
+        if rustdoc_count > javadoc_count
+            && rustdoc_count > jsdoc_count
+            && rustdoc_count > python_doc_count
+        {
             DocFormat::RustDoc
         } else if javadoc_count > jsdoc_count && javadoc_count > python_doc_count {
             DocFormat::JavaDoc
@@ -565,7 +581,7 @@ mod tests {
         let content = "// Empty code";
         let result = analyzer.analyze(content).unwrap();
         assert_eq!(result.indent_size, 4); // Default
-        // Line length defaults to 100 but can be adjusted based on content
+                                           // Line length defaults to 100 but can be adjusted based on content
         assert!(result.line_length >= 80 && result.line_length <= 120);
     }
 
@@ -633,7 +649,10 @@ mod tests {
         let content = "/** This is a doc comment */\npub fn my_function() {}";
         let result = analyzer.analyze(content).unwrap();
         // Either JavaDoc or JSDoc is acceptable since they use the same syntax
-        assert!(matches!(result.format, DocFormat::JavaDoc | DocFormat::JSDoc));
+        assert!(matches!(
+            result.format,
+            DocFormat::JavaDoc | DocFormat::JSDoc
+        ));
     }
 
     #[test]
@@ -658,8 +677,8 @@ mod tests {
 
     #[test]
     fn test_standards_detector_full_analysis() {
-        use tempfile::NamedTempFile;
         use std::io::Write;
+        use tempfile::NamedTempFile;
 
         let detector = StandardsDetector::new();
         let code = "/// Doc\nfn my_function() {\n    let x = 1;\n}";
@@ -670,15 +689,18 @@ mod tests {
         let result = detector.detect(&[file.path()]).unwrap();
 
         // Verify all components are present
-        assert_eq!(result.naming_conventions.function_case, CaseStyle::SnakeCase);
+        assert_eq!(
+            result.naming_conventions.function_case,
+            CaseStyle::SnakeCase
+        );
         assert_eq!(result.formatting_style.indent_type, IndentType::Spaces);
         assert_eq!(result.documentation_style.format, DocFormat::RustDoc);
     }
 
     #[test]
     fn test_standards_detector_multiple_files() {
-        use tempfile::NamedTempFile;
         use std::io::Write;
+        use tempfile::NamedTempFile;
 
         let detector = StandardsDetector::new();
 
@@ -691,7 +713,10 @@ mod tests {
         let result = detector.detect(&[file1.path(), file2.path()]).unwrap();
 
         // Should analyze both files
-        assert_eq!(result.naming_conventions.function_case, CaseStyle::SnakeCase);
+        assert_eq!(
+            result.naming_conventions.function_case,
+            CaseStyle::SnakeCase
+        );
     }
 
     #[test]

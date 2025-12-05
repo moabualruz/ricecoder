@@ -25,12 +25,13 @@ impl SwiftParser {
 
         debug!("Parsing Swift dependencies from {:?}", package_swift_path);
 
-        let content = std::fs::read_to_string(&package_swift_path)
-            .map_err(|e| ResearchError::DependencyParsingFailed {
+        let content = std::fs::read_to_string(&package_swift_path).map_err(|e| {
+            ResearchError::DependencyParsingFailed {
                 language: "Swift".to_string(),
                 path: Some(package_swift_path.clone()),
                 reason: format!("Failed to read Package.swift: {}", e),
-            })?;
+            }
+        })?;
 
         let mut dependencies = Vec::new();
 

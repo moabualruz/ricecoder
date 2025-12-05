@@ -64,7 +64,12 @@ impl ConfigMerger {
     }
 
     /// Merge one configuration into another
-    fn merge_into(target: &mut Config, source: &Config, source_name: &str, decisions: &mut Vec<MergeDecision>) {
+    fn merge_into(
+        target: &mut Config,
+        source: &Config,
+        source_name: &str,
+        decisions: &mut Vec<MergeDecision>,
+    ) {
         // Merge providers
         if let Some(ref provider) = source.providers.default_provider {
             if target.providers.default_provider != source.providers.default_provider {
@@ -96,7 +101,10 @@ impl ConfigMerger {
                     value: value.clone(),
                 });
             }
-            target.providers.endpoints.insert(key.clone(), value.clone());
+            target
+                .providers
+                .endpoints
+                .insert(key.clone(), value.clone());
         }
 
         // Merge defaults
@@ -211,15 +219,27 @@ mod tests {
     fn test_merge_api_keys() {
         let defaults = Config::default();
         let mut global = Config::default();
-        global.providers.api_keys.insert("openai".to_string(), "key1".to_string());
+        global
+            .providers
+            .api_keys
+            .insert("openai".to_string(), "key1".to_string());
 
         let mut project = Config::default();
-        project.providers.api_keys.insert("anthropic".to_string(), "key2".to_string());
+        project
+            .providers
+            .api_keys
+            .insert("anthropic".to_string(), "key2".to_string());
 
         let (result, _) = ConfigMerger::merge(defaults, Some(global), Some(project), None);
 
-        assert_eq!(result.providers.api_keys.get("openai"), Some(&"key1".to_string()));
-        assert_eq!(result.providers.api_keys.get("anthropic"), Some(&"key2".to_string()));
+        assert_eq!(
+            result.providers.api_keys.get("openai"),
+            Some(&"key1".to_string())
+        );
+        assert_eq!(
+            result.providers.api_keys.get("anthropic"),
+            Some(&"key2".to_string())
+        );
     }
 
     #[test]
@@ -248,7 +268,10 @@ mod tests {
         let (_, decisions) = ConfigMerger::merge(defaults, Some(global), Some(project), None);
 
         // Should only have one decision for model (from global), not from project
-        let model_decisions: Vec<_> = decisions.iter().filter(|d| d.key == "defaults.model").collect();
+        let model_decisions: Vec<_> = decisions
+            .iter()
+            .filter(|d| d.key == "defaults.model")
+            .collect();
         assert_eq!(model_decisions.len(), 1);
     }
 }

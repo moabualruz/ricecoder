@@ -60,9 +60,14 @@ impl PartialEq for ExecutionError {
             (ExecutionError::ApprovalDenied, ExecutionError::ApprovalDenied) => true,
             (ExecutionError::ValidationError(a), ExecutionError::ValidationError(b)) => a == b,
             (ExecutionError::ConfigError(a), ExecutionError::ConfigError(b)) => a == b,
-            (ExecutionError::SerializationError(a), ExecutionError::SerializationError(b)) => a == b,
+            (ExecutionError::SerializationError(a), ExecutionError::SerializationError(b)) => {
+                a == b
+            }
             (ExecutionError::Timeout(a), ExecutionError::Timeout(b)) => a == b,
-            (ExecutionError::StatePersistenceError(a), ExecutionError::StatePersistenceError(b)) => a == b,
+            (
+                ExecutionError::StatePersistenceError(a),
+                ExecutionError::StatePersistenceError(b),
+            ) => a == b,
             // IoError comparison: compare error kinds
             (ExecutionError::IoError(a), ExecutionError::IoError(b)) => a.kind() == b.kind(),
             _ => false,

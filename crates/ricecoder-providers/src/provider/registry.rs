@@ -3,9 +3,9 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use super::Provider;
 use crate::error::ProviderError;
 use crate::models::ModelInfo;
-use super::Provider;
 
 /// Registry for managing available providers
 pub struct ProviderRegistry {

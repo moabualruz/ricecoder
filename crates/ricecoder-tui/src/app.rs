@@ -1,13 +1,15 @@
 //! Application state and main TUI application
 
-use anyhow::Result;
+use crate::accessibility::{
+    FocusManager, KeyboardNavigationManager, ScreenReaderAnnouncer, StateChangeEvent,
+};
 use crate::config::TuiConfig;
+use crate::event::{Event, EventLoop};
+use crate::integration::WidgetIntegration;
+use crate::render::Renderer;
 use crate::style::Theme;
 use crate::theme::ThemeManager;
-use crate::event::{Event, EventLoop};
-use crate::render::Renderer;
-use crate::integration::WidgetIntegration;
-use crate::accessibility::{ScreenReaderAnnouncer, KeyboardNavigationManager, FocusManager, StateChangeEvent};
+use anyhow::Result;
 
 /// Application mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -119,7 +121,7 @@ impl App {
     /// Create a new application instance with a specific configuration
     pub fn with_config(config: TuiConfig) -> Result<Self> {
         let theme_manager = ThemeManager::new();
-        
+
         // Load theme from config
         theme_manager.load_from_config(&config)?;
         let theme = theme_manager.current()?;
@@ -184,9 +186,12 @@ impl App {
             tracing::info!("Switching mode from {:?} to {:?}", self.mode, mode);
             self.previous_mode = self.mode;
             self.mode = mode;
-            
+
             // Notify widget integration of mode switch
-            if let Err(e) = self.widget_integration.on_mode_switch(self.previous_mode, self.mode) {
+            if let Err(e) = self
+                .widget_integration
+                .on_mode_switch(self.previous_mode, self.mode)
+            {
                 tracing::error!("Failed to switch mode: {}", e);
             }
         }
@@ -244,7 +249,7 @@ impl App {
     pub fn sync_widget_state(&mut self) {
         // Create a temporary copy of app state for synchronization
         let mode = self.mode;
-        
+
         // Sync state with widgets
         self.widget_integration.widgets.prompt.context.mode = mode;
         tracing::debug!("Widget state synchronized for mode: {:?}", mode);
@@ -294,7 +299,7 @@ impl App {
                 tracing::debug!("Resize event: {}x{}", width, height);
                 self.config.width = Some(width);
                 self.config.height = Some(height);
-                
+
                 // Notify widget integration of resize
                 if let Err(e) = self.widget_integration.on_resize(width, height) {
                     tracing::error!("Failed to handle resize: {}", e);
@@ -340,7 +345,10 @@ impl App {
         }
 
         // Ctrl+Shift+M: Cycle to previous mode
-        if key_event.modifiers.ctrl && key_event.modifiers.shift && key_event.code == crate::event::KeyCode::Char('m') {
+        if key_event.modifiers.ctrl
+            && key_event.modifiers.shift
+            && key_event.code == crate::event::KeyCode::Char('m')
+        {
             self.previous_mode_switch();
             return;
         }
@@ -354,13 +362,11 @@ impl App {
     /// Switch mode with accessibility announcement
     pub fn switch_mode_with_announcement(&mut self, mode: AppMode) {
         self.switch_mode(mode);
-        
+
         // Announce mode change if screen reader is enabled
         if self.config.accessibility.screen_reader_enabled {
-            self.screen_reader.announce_state_change(
-                "Mode",
-                &format!("switched to {}", mode.display_name()),
-            );
+            self.screen_reader
+                .announce_state_change("Mode", &format!("switched to {}", mode.display_name()));
         }
     }
 
@@ -368,7 +374,8 @@ impl App {
     pub fn announce(&mut self, message: impl Into<String>) {
         if self.config.accessibility.announcements_enabled {
             use crate::accessibility::AnnouncementPriority;
-            self.screen_reader.announce(message, AnnouncementPriority::Normal);
+            self.screen_reader
+                .announce(message, AnnouncementPriority::Normal);
         }
     }
 
@@ -440,7 +447,10 @@ impl App {
     }
 
     /// Register an element for keyboard navigation
-    pub fn register_keyboard_element(&mut self, alternative: crate::accessibility::TextAlternative) {
+    pub fn register_keyboard_element(
+        &mut self,
+        alternative: crate::accessibility::TextAlternative,
+    ) {
         self.keyboard_nav.register_element(alternative);
     }
 
@@ -453,7 +463,7 @@ impl App {
     pub fn set_animations_enabled(&mut self, enabled: bool) {
         self.config.accessibility.animations.enabled = enabled;
         self.config.animations = enabled;
-        
+
         if self.config.accessibility.screen_reader_enabled {
             let state = if enabled { "enabled" } else { "disabled" };
             self.screen_reader.announce(
@@ -466,7 +476,7 @@ impl App {
     /// Enable or disable reduce motion (for accessibility)
     pub fn set_reduce_motion(&mut self, enabled: bool) {
         self.config.accessibility.animations.reduce_motion = enabled;
-        
+
         if self.config.accessibility.screen_reader_enabled {
             let state = if enabled { "enabled" } else { "disabled" };
             self.screen_reader.announce(
@@ -480,7 +490,7 @@ impl App {
     pub fn set_animation_speed(&mut self, speed: f32) {
         let clamped_speed = speed.clamp(0.1, 2.0);
         self.config.accessibility.animations.speed = clamped_speed;
-        
+
         if self.config.accessibility.screen_reader_enabled {
             self.screen_reader.announce(
                 format!("Animation speed set to {:.1}x", clamped_speed),
@@ -502,7 +512,8 @@ impl App {
     /// Announce a state change
     pub fn announce_state_change(&mut self, event: StateChangeEvent) {
         if self.config.accessibility.announcements_enabled {
-            self.screen_reader.announce(event.announcement_text(), event.priority);
+            self.screen_reader
+                .announce(event.announcement_text(), event.priority);
         }
     }
 
@@ -510,7 +521,7 @@ impl App {
     pub fn set_focus_with_announcement(&mut self, element_id: impl Into<String>) {
         let id = element_id.into();
         self.focus_manager.set_focus(&id);
-        
+
         if self.config.accessibility.screen_reader_enabled {
             self.screen_reader.announce(
                 format!("Focus moved to {}", id),
@@ -542,10 +553,8 @@ impl App {
                 crate::accessibility::AnnouncementPriority::Low
             };
 
-            self.screen_reader.announce(
-                format!("{}: {}", operation, status),
-                priority,
-            );
+            self.screen_reader
+                .announce(format!("{}: {}", operation, status), priority);
         }
     }
 }

@@ -144,9 +144,13 @@ impl OutputWriter {
             // Create parent directories if needed
             if let Some(parent) = file_path.parent() {
                 if !parent.exists() && !self.config.dry_run {
-                    fs::create_dir_all(parent).map_err(|e| GenerationError::WriteFailed(
-                        format!("Failed to create directory {}: {}", parent.display(), e),
-                    ))?;
+                    fs::create_dir_all(parent).map_err(|e| {
+                        GenerationError::WriteFailed(format!(
+                            "Failed to create directory {}: {}",
+                            parent.display(),
+                            e
+                        ))
+                    })?;
                 }
             }
 
@@ -247,7 +251,11 @@ impl OutputWriter {
             };
 
             fs::write(file_path, content_to_write).map_err(|e| {
-                GenerationError::WriteFailed(format!("Failed to write {}: {}", file_path.display(), e))
+                GenerationError::WriteFailed(format!(
+                    "Failed to write {}: {}",
+                    file_path.display(),
+                    e
+                ))
             })?;
         }
 
@@ -283,11 +291,9 @@ impl OutputWriter {
         backups: &mut Vec<(PathBuf, PathBuf)>,
     ) -> Result<FileWriteResult, GenerationError> {
         // Resolve conflict using configured strategy
-        let resolution = self.conflict_resolver.resolve(
-            conflict,
-            self.config.conflict_strategy,
-            new_content,
-        )?;
+        let resolution =
+            self.conflict_resolver
+                .resolve(conflict, self.config.conflict_strategy, new_content)?;
 
         // Track backup if created
         if let Some(backup_path) = &resolution.backup_path {

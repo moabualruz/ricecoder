@@ -5,7 +5,7 @@
 //! **Validates: Requirements 1.9**
 
 use proptest::prelude::*;
-use ricecoder_research::{SemanticIndex, Symbol, SymbolKind, SymbolReference, ReferenceKind};
+use ricecoder_research::{ReferenceKind, SemanticIndex, Symbol, SymbolKind, SymbolReference};
 use std::path::PathBuf;
 
 // ============================================================================
@@ -26,7 +26,12 @@ fn create_symbol(id: &str, name: &str, kind: SymbolKind, file: &str) -> Symbol {
 }
 
 /// Generate a symbol reference
-fn create_reference(symbol_id: &str, file: &str, line: usize, kind: ReferenceKind) -> SymbolReference {
+fn create_reference(
+    symbol_id: &str,
+    file: &str,
+    line: usize,
+    kind: ReferenceKind,
+) -> SymbolReference {
     SymbolReference {
         symbol_id: symbol_id.to_string(),
         file: PathBuf::from(file),

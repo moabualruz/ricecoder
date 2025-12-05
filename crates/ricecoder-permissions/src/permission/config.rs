@@ -1,7 +1,7 @@
 //! Permission configuration storage
 
-use serde::{Deserialize, Serialize};
 use crate::permission::models::{PermissionLevel, ToolPermission};
+use serde::{Deserialize, Serialize};
 
 /// Configuration for storing permissions
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -45,11 +45,15 @@ impl PermissionConfig {
     }
 
     /// Get permissions for a specific tool
-    pub fn get_permissions_for_tool(&self, tool_name: &str) -> crate::error::Result<Vec<ToolPermission>> {
+    pub fn get_permissions_for_tool(
+        &self,
+        tool_name: &str,
+    ) -> crate::error::Result<Vec<ToolPermission>> {
         // Use glob matcher to find permissions that apply to this tool
         let matcher = crate::glob_matcher::GlobMatcher::new();
-        
-        let matching_perms: Vec<ToolPermission> = self.permissions
+
+        let matching_perms: Vec<ToolPermission> = self
+            .permissions
             .iter()
             .filter(|p| {
                 // Check if this permission's pattern matches the tool name

@@ -1,0 +1,9 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 05f37e109a78b682391608089f5efe0b5ac4bb6c2cd35b892f90e6aa2482d3e7 # shrinks to symbol = Symbol { name: "_", kind: Function, range: Range { start: Position { line: 0, character: 0 }, end: Position { line: 50, character: 0 } }, definition: None, references: [], documentation: None }
+cc bfe49a041122a5585468766f128770b5ad902aa9d627fb3b81d9e3dd008979ce # shrinks to symbol = Symbol { name: "a", kind: Function, range: Range { start: Position { line: 0, character: 0 }, end: Position { line: 50, character: 0 } }, definition: None, references: [], documentation: None }
+cc 65d87e8b0928eb61531c35d9758c849b4347283fce1b37965d5dc97ac98f7a1f # shrinks to symbol = Symbol { name: "_", kind: Function, range: Range { start: Position { line: 0, character: 0 }, end: Position { line: 50, character: 0 } }, definition: None, references: [], documentation: None }

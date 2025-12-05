@@ -113,7 +113,9 @@ mod tests {
         // Aggregate multiple times with same inputs
         let mut all_results = Vec::new();
         for _ in 0..3 {
-            let result = coordinator.aggregate(vec![output1.clone(), output2.clone()]).unwrap();
+            let result = coordinator
+                .aggregate(vec![output1.clone(), output2.clone()])
+                .unwrap();
             all_results.push(result);
         }
 
@@ -197,11 +199,13 @@ mod tests {
                 .count();
             assert_eq!(critical_count, 2, "Should have 2 critical findings");
             assert_eq!(
-                result.findings[0].severity, Severity::Critical,
+                result.findings[0].severity,
+                Severity::Critical,
                 "First finding should be critical"
             );
             assert_eq!(
-                result.findings[1].severity, Severity::Critical,
+                result.findings[1].severity,
+                Severity::Critical,
                 "Second finding should be critical"
             );
         }
@@ -330,10 +334,7 @@ mod tests {
                 "Warning findings should be preserved"
             );
             assert!(
-                result
-                    .findings
-                    .iter()
-                    .any(|f| f.severity == Severity::Info),
+                result.findings.iter().any(|f| f.severity == Severity::Info),
                 "Info findings should be preserved"
             );
         }
@@ -362,9 +363,7 @@ mod tests {
             create_finding("f4", Severity::Critical, "performance", "issue4"),
         ];
 
-        let agent3_findings = vec![
-            create_finding("f5", Severity::Warning, "quality", "issue5"),
-        ];
+        let agent3_findings = vec![create_finding("f5", Severity::Warning, "quality", "issue5")];
 
         let output1 = create_output_with_agent("agent1", agent1_findings);
         let output2 = create_output_with_agent("agent2", agent2_findings);
@@ -405,7 +404,7 @@ mod tests {
 
         let agent2_findings = vec![
             create_finding("f3", Severity::Critical, "security", "sql injection"), // Duplicate
-            create_finding("f4", Severity::Warning, "quality", "long function"), // Duplicate
+            create_finding("f4", Severity::Warning, "quality", "long function"),   // Duplicate
         ];
 
         let output1 = create_output_with_agent("agent1", agent1_findings);
@@ -452,7 +451,10 @@ mod tests {
                     ),
                 ];
 
-                outputs.push(create_output_with_agent(&format!("agent{}", agent_idx), findings));
+                outputs.push(create_output_with_agent(
+                    &format!("agent{}", agent_idx),
+                    findings,
+                ));
             }
 
             let result = coordinator.aggregate(outputs).unwrap();

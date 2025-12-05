@@ -25,7 +25,10 @@ impl SessionStore {
         fs::create_dir_all(&sessions_dir)?;
         fs::create_dir_all(&archive_dir)?;
 
-        debug!("SessionStore initialized with sessions_dir: {:?}", sessions_dir);
+        debug!(
+            "SessionStore initialized with sessions_dir: {:?}",
+            sessions_dir
+        );
 
         Ok(Self {
             sessions_dir,
@@ -46,15 +49,17 @@ impl SessionStore {
 
     /// Get the default sessions directory (~/.ricecoder/sessions/)
     fn get_sessions_dir() -> SessionResult<PathBuf> {
-        let home = dirs::home_dir()
-            .ok_or_else(|| SessionError::ConfigError("Could not determine home directory".to_string()))?;
+        let home = dirs::home_dir().ok_or_else(|| {
+            SessionError::ConfigError("Could not determine home directory".to_string())
+        })?;
         Ok(home.join(".ricecoder").join("sessions"))
     }
 
     /// Get the default archive directory (~/.ricecoder/sessions/archive/)
     fn get_archive_dir() -> SessionResult<PathBuf> {
-        let home = dirs::home_dir()
-            .ok_or_else(|| SessionError::ConfigError("Could not determine home directory".to_string()))?;
+        let home = dirs::home_dir().ok_or_else(|| {
+            SessionError::ConfigError("Could not determine home directory".to_string())
+        })?;
         Ok(home.join(".ricecoder").join("sessions").join("archive"))
     }
 

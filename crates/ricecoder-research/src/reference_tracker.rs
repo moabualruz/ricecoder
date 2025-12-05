@@ -37,10 +37,12 @@ impl ReferenceTracker {
     ) -> Result<Vec<SymbolReference>, ResearchError> {
         let mut parser = Parser::new();
         let ts_language = Self::get_tree_sitter_language(language)?;
-        parser.set_language(ts_language)
+        parser
+            .set_language(ts_language)
             .map_err(|_| ResearchError::AnalysisFailed {
                 reason: format!("Failed to set language for {:?}", language),
-                context: "Reference tracking requires a valid tree-sitter language parser".to_string(),
+                context: "Reference tracking requires a valid tree-sitter language parser"
+                    .to_string(),
             })?;
 
         let tree = parser.parse(content, None)
@@ -75,13 +77,9 @@ impl ReferenceTracker {
         references: &mut Vec<SymbolReference>,
     ) -> Result<(), ResearchError> {
         // Extract references from current node if applicable
-        if let Some(reference) = Self::extract_reference_from_node(
-            node,
-            content,
-            path,
-            language,
-            known_symbols,
-        ) {
+        if let Some(reference) =
+            Self::extract_reference_from_node(node, content, path, language, known_symbols)
+        {
             references.push(reference);
         }
 
@@ -111,7 +109,9 @@ impl ReferenceTracker {
     ) -> Option<SymbolReference> {
         match language {
             Language::Rust => Self::extract_rust_reference(node, content, path, known_symbols),
-            Language::TypeScript => Self::extract_typescript_reference(node, content, path, known_symbols),
+            Language::TypeScript => {
+                Self::extract_typescript_reference(node, content, path, known_symbols)
+            }
             Language::Python => Self::extract_python_reference(node, content, path, known_symbols),
             Language::Go => Self::extract_go_reference(node, content, path, known_symbols),
             Language::Java => Self::extract_java_reference(node, content, path, known_symbols),
@@ -298,12 +298,9 @@ mod tests {
         let mut known_symbols = HashMap::new();
         known_symbols.insert("x".to_string(), "test.rs:1:11".to_string());
 
-        let references = ReferenceTracker::track_references(
-            path,
-            &Language::Rust,
-            content,
-            &known_symbols,
-        ).expect("Failed to track references");
+        let references =
+            ReferenceTracker::track_references(path, &Language::Rust, content, &known_symbols)
+                .expect("Failed to track references");
 
         // Should find at least one reference to 'x'
         assert!(!references.is_empty());
@@ -316,12 +313,9 @@ mod tests {
         let mut known_symbols = HashMap::new();
         known_symbols.insert("x".to_string(), "test.py:2:5".to_string());
 
-        let references = ReferenceTracker::track_references(
-            path,
-            &Language::Python,
-            content,
-            &known_symbols,
-        ).expect("Failed to track references");
+        let references =
+            ReferenceTracker::track_references(path, &Language::Python, content, &known_symbols)
+                .expect("Failed to track references");
 
         // Should find references to 'x'
         let _ = references;
@@ -333,12 +327,9 @@ mod tests {
         let path = Path::new("test.rs");
         let known_symbols = HashMap::new();
 
-        let references = ReferenceTracker::track_references(
-            path,
-            &Language::Rust,
-            content,
-            &known_symbols,
-        ).expect("Failed to track references");
+        let references =
+            ReferenceTracker::track_references(path, &Language::Rust, content, &known_symbols)
+                .expect("Failed to track references");
 
         // Should find no references since no symbols are known
         assert!(references.is_empty());

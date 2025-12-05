@@ -1,0 +1,49 @@
+# Rust Language Configuration
+# This configuration defines language-specific analyzers, diagnostic rules, and code actions for Rust
+
+language: rust
+extensions:
+  - rs
+
+# Parser plugin reference (tree-sitter-rust)
+parser_plugin: tree-sitter-rust
+
+# Diagnostic rules for Rust
+diagnostic_rules:
+  - name: unused-import
+    pattern: 'use\s+\w+;'
+    severity: warning
+    message: "Unused import"
+    code: unused-import
+    fix_template: "Remove import"
+
+  - name: missing-semicolon
+    pattern: '\w+\s*$'
+    severity: error
+    message: "Missing semicolon"
+    code: missing-semicolon
+    fix_template: "Add semicolon"
+
+  - name: snake-case-naming
+    pattern: '[A-Z][a-zA-Z0-9]*'
+    severity: warning
+    message: "Variable should use snake_case"
+    code: naming-convention
+    fix_template: "Convert to snake_case"
+
+# Code action transformations for Rust
+code_actions:
+  - name: remove-unused-import
+    title: "Remove unused import"
+    kind: quickfix
+    transformation: "delete_line"
+
+  - name: add-semicolon
+    title: "Add semicolon"
+    kind: quickfix
+    transformation: "append_semicolon"
+
+  - name: convert-to-snake-case
+    title: "Convert to snake_case"
+    kind: refactor
+    transformation: "snake_case_conversion"

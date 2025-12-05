@@ -56,9 +56,7 @@ mod tests {
             create_finding("f4", Severity::Critical, "performance", "issue4"),
         ];
 
-        let agent3_findings = vec![
-            create_finding("f5", Severity::Warning, "quality", "issue5"),
-        ];
+        let agent3_findings = vec![create_finding("f5", Severity::Warning, "quality", "issue5")];
 
         let output1 = create_output_with_findings("agent1", agent1_findings);
         let output2 = create_output_with_findings("agent2", agent2_findings);
@@ -134,7 +132,7 @@ mod tests {
 
         let agent2_findings = vec![
             create_finding("f4", Severity::Critical, "security", "sql injection"), // Duplicate
-            create_finding("f5", Severity::Warning, "quality", "long function"), // Duplicate
+            create_finding("f5", Severity::Warning, "quality", "long function"),   // Duplicate
             create_finding("f6", Severity::Critical, "performance", "n+1 query"),
         ];
 
@@ -244,10 +242,7 @@ mod tests {
                 "Warning findings should be preserved"
             );
             assert!(
-                result
-                    .findings
-                    .iter()
-                    .any(|f| f.severity == Severity::Info),
+                result.findings.iter().any(|f| f.severity == Severity::Info),
                 "Info findings should be preserved"
             );
 
@@ -267,11 +262,13 @@ mod tests {
                 .count();
             assert_eq!(critical_count, 2, "Should have 2 critical findings");
             assert_eq!(
-                result.findings[0].severity, Severity::Critical,
+                result.findings[0].severity,
+                Severity::Critical,
                 "First finding should be critical"
             );
             assert_eq!(
-                result.findings[1].severity, Severity::Critical,
+                result.findings[1].severity,
+                Severity::Critical,
                 "Second finding should be critical"
             );
         }
@@ -313,10 +310,7 @@ mod tests {
                     ));
                 }
 
-                let result = orchestrator
-                    .coordinator()
-                    .aggregate(outputs)
-                    .unwrap();
+                let result = orchestrator.coordinator().aggregate(outputs).unwrap();
 
                 // Property: All findings should be aggregated
                 assert_eq!(

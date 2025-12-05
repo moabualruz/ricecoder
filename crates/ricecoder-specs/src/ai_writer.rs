@@ -3,15 +3,15 @@
 //! Manages AI-assisted spec creation through sequential phases (requirements → design → tasks)
 //! with conversation history, gap identification, and integration with approval gates and validation.
 
-use chrono::Utc;
-use crate::models::{
-    Spec, SpecPhase, SpecStatus, SpecMetadata, SpecWritingSession, ConversationMessage,
-    MessageRole, Steering,
-};
-use crate::error::SpecError;
 use crate::approval::ApprovalManager;
-use crate::validation::ValidationEngine;
+use crate::error::SpecError;
+use crate::models::{
+    ConversationMessage, MessageRole, Spec, SpecMetadata, SpecPhase, SpecStatus,
+    SpecWritingSession, Steering,
+};
 use crate::steering::SteeringLoader;
+use crate::validation::ValidationEngine;
+use chrono::Utc;
 
 /// Manages AI-assisted spec writing with phase guidance and approval gates
 #[derive(Debug, Clone)]
@@ -161,7 +161,9 @@ impl AISpecWriter {
         match session.phase {
             SpecPhase::Discovery => {
                 if spec.requirements.is_empty() {
-                    suggestions.push("Consider researching similar products and existing solutions".to_string());
+                    suggestions.push(
+                        "Consider researching similar products and existing solutions".to_string(),
+                    );
                 }
                 suggestions.push("Define feature hierarchy (MVP → Phase 2 → Phase 3)".to_string());
                 suggestions.push("Document constraints and dependencies".to_string());
@@ -169,25 +171,34 @@ impl AISpecWriter {
             SpecPhase::Requirements => {
                 if spec.requirements.is_empty() {
                     missing_sections.push("Requirements".to_string());
-                    suggestions.push("Add at least one requirement with user story and acceptance criteria".to_string());
+                    suggestions.push(
+                        "Add at least one requirement with user story and acceptance criteria"
+                            .to_string(),
+                    );
                 }
 
                 for req in &spec.requirements {
                     if req.user_story.is_empty() {
-                        incomplete_sections.push(format!("Requirement {}: missing user story", req.id));
+                        incomplete_sections
+                            .push(format!("Requirement {}: missing user story", req.id));
                     }
                     if req.acceptance_criteria.is_empty() {
-                        incomplete_sections.push(format!("Requirement {}: missing acceptance criteria", req.id));
+                        incomplete_sections.push(format!(
+                            "Requirement {}: missing acceptance criteria",
+                            req.id
+                        ));
                     }
                 }
 
-                suggestions.push("Ensure each requirement has clear acceptance criteria".to_string());
+                suggestions
+                    .push("Ensure each requirement has clear acceptance criteria".to_string());
                 suggestions.push("Prioritize requirements (MUST/SHOULD/COULD)".to_string());
             }
             SpecPhase::Design => {
                 if spec.design.is_none() {
                     missing_sections.push("Design".to_string());
-                    suggestions.push("Create design document with overview and architecture".to_string());
+                    suggestions
+                        .push("Create design document with overview and architecture".to_string());
                 } else if let Some(design) = &spec.design {
                     if design.overview.is_empty() {
                         incomplete_sections.push("Design: missing overview".to_string());
@@ -199,7 +210,8 @@ impl AISpecWriter {
                         incomplete_sections.push("Design: missing components".to_string());
                     }
                     if design.correctness_properties.is_empty() {
-                        incomplete_sections.push("Design: missing correctness properties".to_string());
+                        incomplete_sections
+                            .push("Design: missing correctness properties".to_string());
                     }
                 }
 
@@ -218,7 +230,8 @@ impl AISpecWriter {
                         incomplete_sections.push(format!("Task {}: missing description", task.id));
                     }
                     if task.requirements.is_empty() {
-                        incomplete_sections.push(format!("Task {}: missing requirement links", task.id));
+                        incomplete_sections
+                            .push(format!("Task {}: missing requirement links", task.id));
                     }
                 }
 
@@ -368,7 +381,10 @@ impl AISpecWriter {
         if !merged_steering.standards.is_empty() {
             prompt.push_str("## Standards\n");
             for standard in &merged_steering.standards {
-                prompt.push_str(&format!("- **{}**: {}\n", standard.id, standard.description));
+                prompt.push_str(&format!(
+                    "- **{}**: {}\n",
+                    standard.id, standard.description
+                ));
             }
             prompt.push('\n');
         }
@@ -536,7 +552,7 @@ impl Default for AISpecWriter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{Requirement, AcceptanceCriterion, Priority, Design, Task};
+    use crate::models::{AcceptanceCriterion, Design, Priority, Requirement, Task};
 
     fn create_test_session() -> SpecWritingSession {
         AISpecWriter::initialize_session("test-spec", "Test Spec")
@@ -576,19 +592,29 @@ mod tests {
     fn test_add_message_user() {
         let mut session = create_test_session();
 
-        let result = AISpecWriter::add_message(&mut session, MessageRole::User, "What should we build?");
+        let result =
+            AISpecWriter::add_message(&mut session, MessageRole::User, "What should we build?");
         assert!(result.is_ok());
         assert_eq!(session.conversation_history.len(), 1);
         assert_eq!(session.conversation_history[0].role, MessageRole::User);
-        assert_eq!(session.conversation_history[0].content, "What should we build?");
+        assert_eq!(
+            session.conversation_history[0].content,
+            "What should we build?"
+        );
     }
 
     #[test]
     fn test_add_message_assistant() {
         let mut session = create_test_session();
 
-        AISpecWriter::add_message(&mut session, MessageRole::User, "What should we build?").unwrap();
-        AISpecWriter::add_message(&mut session, MessageRole::Assistant, "Let's build a task manager").unwrap();
+        AISpecWriter::add_message(&mut session, MessageRole::User, "What should we build?")
+            .unwrap();
+        AISpecWriter::add_message(
+            &mut session,
+            MessageRole::Assistant,
+            "Let's build a task manager",
+        )
+        .unwrap();
 
         assert_eq!(session.conversation_history.len(), 2);
         assert_eq!(session.conversation_history[1].role, MessageRole::Assistant);
@@ -599,7 +625,8 @@ mod tests {
         let mut session = create_test_session();
 
         for i in 0..5 {
-            AISpecWriter::add_message(&mut session, MessageRole::User, &format!("Message {}", i)).unwrap();
+            AISpecWriter::add_message(&mut session, MessageRole::User, &format!("Message {}", i))
+                .unwrap();
         }
 
         assert_eq!(session.conversation_history.len(), 5);
@@ -724,10 +751,18 @@ mod tests {
     fn test_request_approval() {
         let mut session = create_test_session();
 
-        let result = AISpecWriter::request_approval(&mut session, "reviewer", Some("Looks good".to_string()));
+        let result = AISpecWriter::request_approval(
+            &mut session,
+            "reviewer",
+            Some("Looks good".to_string()),
+        );
         assert!(result.is_ok());
 
-        let gate = session.approval_gates.iter().find(|g| g.phase == SpecPhase::Discovery).unwrap();
+        let gate = session
+            .approval_gates
+            .iter()
+            .find(|g| g.phase == SpecPhase::Discovery)
+            .unwrap();
         assert!(gate.approved);
     }
 
@@ -786,24 +821,36 @@ mod tests {
     fn test_get_current_phase() {
         let mut session = create_test_session();
 
-        assert_eq!(AISpecWriter::get_current_phase(&session), SpecPhase::Discovery);
+        assert_eq!(
+            AISpecWriter::get_current_phase(&session),
+            SpecPhase::Discovery
+        );
 
         session.phase = SpecPhase::Requirements;
 
-        assert_eq!(AISpecWriter::get_current_phase(&session), SpecPhase::Requirements);
+        assert_eq!(
+            AISpecWriter::get_current_phase(&session),
+            SpecPhase::Requirements
+        );
     }
 
     #[test]
     fn test_are_phases_approved_up_to() {
         let mut session = create_test_session();
 
-        assert!(!AISpecWriter::are_phases_approved_up_to(&session, SpecPhase::Requirements));
+        assert!(!AISpecWriter::are_phases_approved_up_to(
+            &session,
+            SpecPhase::Requirements
+        ));
 
         AISpecWriter::request_approval(&mut session, "reviewer", None).unwrap();
         AISpecWriter::transition_to_next_phase(&mut session).unwrap();
         AISpecWriter::request_approval(&mut session, "reviewer", None).unwrap();
 
-        assert!(AISpecWriter::are_phases_approved_up_to(&session, SpecPhase::Requirements));
+        assert!(AISpecWriter::are_phases_approved_up_to(
+            &session,
+            SpecPhase::Requirements
+        ));
     }
 
     #[test]
@@ -816,7 +863,12 @@ mod tests {
         let guidance = AISpecWriter::get_phase_guidance(&session);
         assert!(guidance.contains("Discovery"));
 
-        AISpecWriter::add_message(&mut session, MessageRole::User, "Let's build a task manager").unwrap();
+        AISpecWriter::add_message(
+            &mut session,
+            MessageRole::User,
+            "Let's build a task manager",
+        )
+        .unwrap();
         AISpecWriter::request_approval(&mut session, "reviewer", None).unwrap();
         AISpecWriter::transition_to_next_phase(&mut session).unwrap();
 
@@ -872,7 +924,8 @@ mod tests {
         let mut session = create_test_session();
 
         for i in 0..10 {
-            AISpecWriter::add_message(&mut session, MessageRole::User, &format!("Message {}", i)).unwrap();
+            AISpecWriter::add_message(&mut session, MessageRole::User, &format!("Message {}", i))
+                .unwrap();
         }
 
         let history = AISpecWriter::get_conversation_history(&session);
@@ -951,8 +1004,14 @@ mod tests {
     #[test]
     fn test_build_prompt_with_steering_context_includes_conversation() {
         let mut session = create_test_session();
-        AISpecWriter::add_message(&mut session, MessageRole::User, "What should we build?").unwrap();
-        AISpecWriter::add_message(&mut session, MessageRole::Assistant, "Let's build a task manager").unwrap();
+        AISpecWriter::add_message(&mut session, MessageRole::User, "What should we build?")
+            .unwrap();
+        AISpecWriter::add_message(
+            &mut session,
+            MessageRole::Assistant,
+            "Let's build a task manager",
+        )
+        .unwrap();
 
         let global_steering = Steering {
             rules: vec![],
@@ -984,7 +1043,7 @@ mod tests {
 
     #[test]
     fn test_build_prompt_with_steering_context_project_precedence() {
-        use crate::models::{SteeringRule};
+        use crate::models::SteeringRule;
 
         let session = create_test_session();
         let global_steering = Steering {
@@ -1131,7 +1190,7 @@ mod tests {
 
     #[test]
     fn test_format_steering_context() {
-        use crate::models::{SteeringRule, Standard, TemplateRef};
+        use crate::models::{Standard, SteeringRule, TemplateRef};
 
         let steering = Steering {
             rules: vec![SteeringRule {

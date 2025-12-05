@@ -42,10 +42,7 @@ pub enum StorageError {
 
     /// Environment variable error
     #[error("Environment variable error for {var_name}: {message}")]
-    EnvVarError {
-        var_name: String,
-        message: String,
-    },
+    EnvVarError { var_name: String, message: String },
 
     /// Relocation failed
     #[error("Failed to relocate storage from {from} to {to}: {message}")]
@@ -108,7 +105,11 @@ impl StorageError {
     }
 
     /// Create a parse error
-    pub fn parse_error(path: PathBuf, format: impl Into<String>, message: impl Into<String>) -> Self {
+    pub fn parse_error(
+        path: PathBuf,
+        format: impl Into<String>,
+        message: impl Into<String>,
+    ) -> Self {
         StorageError::ParseError {
             path,
             format: format.into(),

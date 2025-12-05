@@ -2,7 +2,7 @@
 //! Tests for context selection, optimization, and provision
 
 use ricecoder_research::{
-    ContextBuilder, ContextOptimizer, ContextProvider, RelevanceScorer, FileContext,
+    ContextBuilder, ContextOptimizer, ContextProvider, FileContext, RelevanceScorer,
 };
 use std::path::PathBuf;
 
@@ -432,14 +432,12 @@ fn test_provide_context_for_generation() {
 fn test_provide_context_for_review() {
     let provider = ContextProvider::new(4096, 2048);
 
-    let files = vec![
-        FileContext {
-            path: PathBuf::from("src/main.rs"),
-            relevance: 0.0,
-            summary: Some("Main entry point".to_string()),
-            content: Some("fn main() {}".to_string()),
-        },
-    ];
+    let files = vec![FileContext {
+        path: PathBuf::from("src/main.rs"),
+        relevance: 0.0,
+        summary: Some("Main entry point".to_string()),
+        content: Some("fn main() {}".to_string()),
+    }];
 
     let result = provider.provide_context_for_review("main", files);
     assert!(result.is_ok());
@@ -452,14 +450,12 @@ fn test_provide_context_for_review() {
 fn test_provide_context_for_refactoring() {
     let provider = ContextProvider::new(4096, 2048);
 
-    let files = vec![
-        FileContext {
-            path: PathBuf::from("src/main.rs"),
-            relevance: 0.0,
-            summary: Some("Main entry point".to_string()),
-            content: Some("fn main() {}".to_string()),
-        },
-    ];
+    let files = vec![FileContext {
+        path: PathBuf::from("src/main.rs"),
+        relevance: 0.0,
+        summary: Some("Main entry point".to_string()),
+        content: Some("fn main() {}".to_string()),
+    }];
 
     let result = provider.provide_context_for_refactoring("main", files);
     assert!(result.is_ok());

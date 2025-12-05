@@ -2,12 +2,9 @@
 //! **Feature: ricecoder-specs, Property 4: Spec Inheritance Precedence**
 //! **Validates: Requirements 1.7**
 
-use proptest::prelude::*;
-use ricecoder_specs::{
-    models::*,
-    inheritance::SpecInheritanceResolver,
-};
 use chrono::Utc;
+use proptest::prelude::*;
+use ricecoder_specs::{inheritance::SpecInheritanceResolver, models::*};
 
 // ============================================================================
 // Generators for property-based testing
@@ -29,11 +26,7 @@ fn arb_precedence_level() -> impl Strategy<Value = u32> {
     0u32..=2u32
 }
 
-fn arb_spec_with_inheritance(
-    id: String,
-    precedence_level: u32,
-    parent_id: Option<String>,
-) -> Spec {
+fn arb_spec_with_inheritance(id: String, precedence_level: u32, parent_id: Option<String>) -> Spec {
     Spec {
         id,
         name: format!("Spec {}", precedence_level),

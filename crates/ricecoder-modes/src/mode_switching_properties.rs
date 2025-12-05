@@ -7,9 +7,11 @@
 mod tests {
     use std::sync::Arc;
 
-    use crate::models::{Capability, ModeConfig, ModeConstraints, ModeContext, ModeResponse, Operation};
-    use crate::mode::Mode;
     use crate::error::Result;
+    use crate::mode::Mode;
+    use crate::models::{
+        Capability, ModeConfig, ModeConstraints, ModeContext, ModeResponse, Operation,
+    };
 
     struct TestMode {
         id: String,
@@ -34,11 +36,7 @@ mod tests {
             "You are a test mode"
         }
 
-        async fn process(
-            &self,
-            _input: &str,
-            _context: &ModeContext,
-        ) -> Result<ModeResponse> {
+        async fn process(&self, _input: &str, _context: &ModeContext) -> Result<ModeResponse> {
             Ok(ModeResponse::new(
                 "Test response".to_string(),
                 self.id.clone(),
@@ -130,10 +128,7 @@ mod tests {
             // Add a message to the context
             switcher
                 .update_context(|ctx| {
-                    ctx.add_message(
-                        crate::models::MessageRole::User,
-                        message_content.clone(),
-                    );
+                    ctx.add_message(crate::models::MessageRole::User, message_content.clone());
                 })
                 .await
                 .unwrap();
@@ -158,14 +153,16 @@ mod tests {
             // Context should be restored with the original message
             let ctx1_restored = switcher.context().await;
             assert_eq!(ctx1_restored.conversation_history.len(), 1);
-            assert_eq!(ctx1_restored.conversation_history[0].content, message_content);
+            assert_eq!(
+                ctx1_restored.conversation_history[0].content,
+                message_content
+            );
             assert_eq!(ctx1_restored.session_id, session_id);
 
             // Session ID should be preserved throughout
             assert_eq!(ctx1_restored.session_id, session_id);
         }
     }
-
 
     /// Property: Multiple mode switches preserve context
     ///

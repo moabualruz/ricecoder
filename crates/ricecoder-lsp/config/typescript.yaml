@@ -1,0 +1,52 @@
+# TypeScript Language Configuration
+# This configuration defines language-specific analyzers, diagnostic rules, and code actions for TypeScript
+
+language: typescript
+extensions:
+  - ts
+  - tsx
+  - js
+  - jsx
+
+# Parser plugin reference (tree-sitter-typescript)
+parser_plugin: tree-sitter-typescript
+
+# Diagnostic rules for TypeScript
+diagnostic_rules:
+  - name: unused-variable
+    pattern: 'const\s+\w+\s*='
+    severity: warning
+    message: "Unused variable"
+    code: unused-variable
+    fix_template: "Remove variable"
+
+  - name: missing-return-type
+    pattern: 'function\s+\w+\s*\('
+    severity: info
+    message: "Function missing return type annotation"
+    code: missing-return-type
+    fix_template: "Add return type"
+
+  - name: camel-case-naming
+    pattern: '[a-z]+_[a-z]+'
+    severity: warning
+    message: "Variable should use camelCase"
+    code: naming-convention
+    fix_template: "Convert to camelCase"
+
+# Code action transformations for TypeScript
+code_actions:
+  - name: remove-unused-variable
+    title: "Remove unused variable"
+    kind: quickfix
+    transformation: "delete_line"
+
+  - name: add-return-type
+    title: "Add return type annotation"
+    kind: refactor
+    transformation: "add_return_type"
+
+  - name: convert-to-camel-case
+    title: "Convert to camelCase"
+    kind: refactor
+    transformation: "camel_case_conversion"

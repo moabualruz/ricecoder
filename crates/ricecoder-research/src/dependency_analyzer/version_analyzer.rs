@@ -1,7 +1,7 @@
 //! Version analysis for dependencies
 
-use crate::models::Dependency;
 use super::{VersionConflict, VersionUpdate};
+use crate::models::Dependency;
 
 /// Analyzes dependency versions for conflicts and updates
 #[derive(Debug)]
@@ -16,7 +16,8 @@ impl VersionAnalyzer {
     /// Finds version conflicts in dependencies
     pub fn find_conflicts(&self, dependencies: &[Dependency]) -> Vec<VersionConflict> {
         let mut conflicts = Vec::new();
-        let mut version_map: std::collections::HashMap<String, Vec<String>> = std::collections::HashMap::new();
+        let mut version_map: std::collections::HashMap<String, Vec<String>> =
+            std::collections::HashMap::new();
 
         // Group dependencies by name
         for dep in dependencies {

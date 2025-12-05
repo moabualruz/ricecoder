@@ -51,7 +51,9 @@ impl ValidationEngine {
     ///
     /// # Returns
     /// Ok if valid, Err if structure is invalid
-    pub fn validate_boilerplate_structure(boilerplate: &Boilerplate) -> Result<(), BoilerplateError> {
+    pub fn validate_boilerplate_structure(
+        boilerplate: &Boilerplate,
+    ) -> Result<(), BoilerplateError> {
         // Check required fields
         if boilerplate.id.is_empty() {
             return Err(BoilerplateError::InvalidStructure(
@@ -102,8 +104,12 @@ impl ValidationEngine {
 
         // Validate template syntax if it looks like a template
         if file.template.contains("{{") {
-            ValidationEngine::validate_template_syntax(&file.template)
-                .map_err(|e| BoilerplateError::InvalidStructure(format!("Invalid template in file {}: {}", file.path, e)))?;
+            ValidationEngine::validate_template_syntax(&file.template).map_err(|e| {
+                BoilerplateError::InvalidStructure(format!(
+                    "Invalid template in file {}: {}",
+                    file.path, e
+                ))
+            })?;
         }
 
         Ok(())
@@ -116,7 +122,9 @@ impl ValidationEngine {
     ///
     /// # Returns
     /// Ok if consistent, Err if issues found
-    pub fn validate_placeholder_consistency(parsed_template: &ParsedTemplate) -> Result<(), TemplateError> {
+    pub fn validate_placeholder_consistency(
+        parsed_template: &ParsedTemplate,
+    ) -> Result<(), TemplateError> {
         // Check for duplicate placeholder definitions
         let mut seen = HashSet::new();
         for placeholder in &parsed_template.placeholders {
@@ -142,7 +150,10 @@ impl ValidationEngine {
         Self::validate_nesting_recursive(elements, 0)
     }
 
-    fn validate_nesting_recursive(elements: &[TemplateElement], depth: usize) -> Result<(), TemplateError> {
+    fn validate_nesting_recursive(
+        elements: &[TemplateElement],
+        depth: usize,
+    ) -> Result<(), TemplateError> {
         // Prevent excessive nesting (max 10 levels)
         if depth > 10 {
             return Err(TemplateError::ValidationFailed(
@@ -152,7 +163,8 @@ impl ValidationEngine {
 
         for element in elements {
             match element {
-                TemplateElement::Conditional { content, .. } | TemplateElement::Loop { content, .. } => {
+                TemplateElement::Conditional { content, .. }
+                | TemplateElement::Loop { content, .. } => {
                     Self::validate_nesting_recursive(content, depth + 1)?;
                 }
                 _ => {}
@@ -191,7 +203,8 @@ impl ValidationEngine {
                         )));
                     }
                 }
-                TemplateElement::Conditional { content, .. } | TemplateElement::Loop { content, .. } => {
+                TemplateElement::Conditional { content, .. }
+                | TemplateElement::Loop { content, .. } => {
                     Self::validate_partials_recursive(content, available_partials)?;
                 }
                 _ => {}

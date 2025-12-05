@@ -1,14 +1,12 @@
 // Custom commands module - CLI integration for ricecoder-commands
 // Integrates the ricecoder-commands crate with the CLI router and storage
 
-use crate::error::{CliError, CliResult};
-use super::Command;
 use super::custom_storage::CustomCommandsStorage;
+use super::Command;
+use crate::error::{CliError, CliResult};
+use ricecoder_commands::{CommandManager, CommandRegistry, ConfigManager};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use ricecoder_commands::{
-    CommandRegistry, CommandManager, ConfigManager,
-};
 
 /// Action for custom command handler
 #[derive(Debug, Clone)]
@@ -37,16 +35,26 @@ impl CustomCommandHandler {
     pub fn new(action: CustomAction) -> Self {
         // Load commands from storage
         let storage = CustomCommandsStorage::default();
-        let registry = storage.load_all().unwrap_or_else(|_| CommandRegistry::new());
+        let registry = storage
+            .load_all()
+            .unwrap_or_else(|_| CommandRegistry::new());
         let manager = CommandManager::new(registry);
-        
-        Self { action, manager, storage }
+
+        Self {
+            action,
+            manager,
+            storage,
+        }
     }
 
     /// Create a handler with a pre-populated manager
     pub fn with_manager(action: CustomAction, manager: CommandManager) -> Self {
         let storage = CustomCommandsStorage::default();
-        Self { action, manager, storage }
+        Self {
+            action,
+            manager,
+            storage,
+        }
     }
 }
 
@@ -85,13 +93,15 @@ impl CustomCommandHandler {
 
     /// Handle info action - show info for a specific command
     fn handle_info(&self, name: &str) -> CliResult<()> {
-        let cmd = self.manager.get_command(name)
+        let cmd = self
+            .manager
+            .get_command(name)
             .map_err(|e| CliError::Internal(e.to_string()))?;
 
         println!("Command: {}", cmd.name);
         println!("Description: {}", cmd.description);
         println!("Command: {}", cmd.command);
-        
+
         if !cmd.arguments.is_empty() {
             println!("\nArguments:");
             for arg in &cmd.arguments {
@@ -102,14 +112,16 @@ impl CustomCommandHandler {
                 }
             }
         }
-        
+
         Ok(())
     }
 
     /// Handle run action - execute a custom command
     fn handle_run(&self, name: &str, args: &[String]) -> CliResult<()> {
         // Get the command from registry
-        let cmd = self.manager.get_command(name)
+        let cmd = self
+            .manager
+            .get_command(name)
             .map_err(|e| CliError::Internal(e.to_string()))?;
 
         // Build arguments map from positional arguments
@@ -126,7 +138,9 @@ impl CustomCommandHandler {
             .to_string_lossy()
             .to_string();
 
-        let result = self.manager.execute(name, arguments, cwd)
+        let result = self
+            .manager
+            .execute(name, arguments, cwd)
             .map_err(|e| CliError::Internal(e.to_string()))?;
 
         // Display the result
@@ -139,28 +153,28 @@ impl CustomCommandHandler {
                 result.exit_code
             )));
         }
-        
+
         Ok(())
     }
 
     /// Handle load action - load commands from a file
     fn handle_load(&self, file: &str) -> CliResult<()> {
-        let registry = ConfigManager::load_from_file(file)
-            .map_err(|e| CliError::Internal(e.to_string()))?;
+        let registry =
+            ConfigManager::load_from_file(file).map_err(|e| CliError::Internal(e.to_string()))?;
 
         let commands = registry.list_all();
-        
+
         if commands.is_empty() {
             println!("No commands found in file: {}", file);
             return Ok(());
         }
 
         println!("Loaded {} command(s) from {}", commands.len(), file);
-        
+
         // Save each command to storage
         for cmd in commands {
             println!("  - {}: {}", cmd.name, cmd.description);
-            
+
             match self.storage.save_command(&cmd) {
                 Ok(path) => {
                     println!("    Saved to: {}", path.display());
@@ -215,10 +229,8 @@ mod tests {
 
     #[test]
     fn test_custom_handler_run_not_found() {
-        let handler = CustomCommandHandler::new(CustomAction::Run(
-            "nonexistent".to_string(),
-            vec![],
-        ));
+        let handler =
+            CustomCommandHandler::new(CustomAction::Run("nonexistent".to_string(), vec![]));
         let result = handler.execute();
         assert!(result.is_err());
     }

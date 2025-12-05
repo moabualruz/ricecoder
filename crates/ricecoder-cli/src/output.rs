@@ -122,7 +122,11 @@ impl OutputStyle {
     /// Format a section header
     pub fn section(&self, title: &str) -> String {
         if self.use_colors {
-            format!("\n{}\n{}", title.bold().underline(), "─".repeat(title.len()))
+            format!(
+                "\n{}\n{}",
+                title.bold().underline(),
+                "─".repeat(title.len())
+            )
         } else {
             format!("\n{}\n{}", title, "─".repeat(title.len()))
         }

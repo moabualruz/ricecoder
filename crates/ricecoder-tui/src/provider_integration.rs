@@ -328,6 +328,9 @@ mod tests {
 
         assert_eq!(cloned.provider(), integration.provider());
         assert_eq!(cloned.model(), integration.model());
-        assert_eq!(cloned.is_streaming_enabled(), integration.is_streaming_enabled());
+        assert_eq!(
+            cloned.is_streaming_enabled(),
+            integration.is_streaming_enabled()
+        );
     }
 }

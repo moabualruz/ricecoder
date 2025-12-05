@@ -4,28 +4,24 @@
 
 use proptest::prelude::*;
 use ricecoder_sessions::{
-    ShareService, SharePermissions, Session, SessionContext, SessionMode, Message, MessageRole,
+    Message, MessageRole, Session, SessionContext, SessionMode, SharePermissions, ShareService,
 };
 
 fn arb_session_context() -> impl Strategy<Value = SessionContext> {
     (
         ".*",
         ".*",
-        prop_oneof![Just(SessionMode::Chat), Just(SessionMode::Code), Just(SessionMode::Vibe)],
+        prop_oneof![
+            Just(SessionMode::Chat),
+            Just(SessionMode::Code),
+            Just(SessionMode::Vibe)
+        ],
     )
-        .prop_map(|(provider, model, mode)| {
-            SessionContext::new(provider, model, mode)
-        })
+        .prop_map(|(provider, model, mode)| SessionContext::new(provider, model, mode))
 }
 
 fn arb_session() -> impl Strategy<Value = Session> {
-    (
-        ".*",
-        arb_session_context(),
-    )
-        .prop_map(|(name, context)| {
-            Session::new(name, context)
-        })
+    (".*", arb_session_context()).prop_map(|(name, context)| Session::new(name, context))
 }
 
 proptest! {

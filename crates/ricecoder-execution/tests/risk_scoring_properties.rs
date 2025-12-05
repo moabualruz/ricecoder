@@ -12,8 +12,7 @@ use uuid::Uuid;
 
 /// Strategy for generating valid file paths
 fn file_path_strategy() -> impl Strategy<Value = String> {
-    r"[a-zA-Z0-9_\-./]{1,50}\.rs"
-        .prop_map(|s| s.to_string())
+    r"[a-zA-Z0-9_\-./]{1,50}\.rs".prop_map(|s| s.to_string())
 }
 
 /// Strategy for generating execution steps

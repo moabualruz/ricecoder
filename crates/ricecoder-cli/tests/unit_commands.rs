@@ -1,7 +1,7 @@
 // Unit tests for core commands
 // **Feature: ricecoder-cli, Tests for Requirements 2.1-2.6**
 
-use ricecoder_cli::commands::{InitCommand, GenCommand, ConfigCommand, Command};
+use ricecoder_cli::commands::{Command, ConfigCommand, GenCommand, InitCommand};
 use std::fs;
 use std::path::Path;
 use tempfile::TempDir;
@@ -66,8 +66,7 @@ fn test_init_command_config_contains_required_sections() {
 
     // Read and verify config content
     let config_file = Path::new(temp_path).join(".agent/ricecoder.toml");
-    let content = fs::read_to_string(&config_file)
-        .expect("Failed to read ricecoder.toml");
+    let content = fs::read_to_string(&config_file).expect("Failed to read ricecoder.toml");
 
     // Verify required sections exist
     assert!(
@@ -88,7 +87,7 @@ fn test_init_command_config_contains_required_sections() {
 fn test_init_command_uses_current_directory_by_default() {
     // This test verifies the behavior when no path is provided
     let cmd = InitCommand::new(None);
-    
+
     // The command should use "." as the default path
     // We can't easily test this without modifying the current directory,
     // so we just verify the command can be created with None
@@ -123,7 +122,7 @@ fn test_gen_command_validates_spec_file_exists() {
 fn test_gen_command_accepts_valid_spec_file() {
     let temp_dir = TempDir::new().expect("Failed to create temp directory");
     let spec_file = temp_dir.path().join("test_spec.md");
-    
+
     // Create a valid spec file
     fs::write(&spec_file, "# Test Specification\n\nThis is a test spec.")
         .expect("Failed to write spec file");
@@ -141,7 +140,7 @@ fn test_gen_command_accepts_valid_spec_file() {
 fn test_gen_command_rejects_empty_spec_file() {
     let temp_dir = TempDir::new().expect("Failed to create temp directory");
     let spec_file = temp_dir.path().join("empty_spec.md");
-    
+
     // Create an empty spec file
     fs::write(&spec_file, "").expect("Failed to write spec file");
 
@@ -173,7 +172,7 @@ fn test_gen_command_loads_spec_content() {
     let temp_dir = TempDir::new().expect("Failed to create temp directory");
     let spec_file = temp_dir.path().join("test_spec.md");
     let spec_content = "# Test Specification\n\nGenerate code from this spec.";
-    
+
     fs::write(&spec_file, spec_content).expect("Failed to write spec file");
 
     let cmd = GenCommand::new(spec_file.to_str().unwrap().to_string());
@@ -187,7 +186,7 @@ fn test_gen_command_loads_spec_content() {
 fn test_gen_command_with_whitespace_only_spec() {
     let temp_dir = TempDir::new().expect("Failed to create temp directory");
     let spec_file = temp_dir.path().join("whitespace_spec.md");
-    
+
     // Create a spec file with only whitespace
     fs::write(&spec_file, "   \n\n  \t  \n").expect("Failed to write spec file");
 
@@ -207,7 +206,7 @@ fn test_gen_command_with_whitespace_only_spec() {
 #[test]
 fn test_config_command_list_action() {
     use ricecoder_cli::commands::config::ConfigAction;
-    
+
     let cmd = ConfigCommand::new(ConfigAction::List);
     let result = cmd.execute();
 
@@ -218,7 +217,7 @@ fn test_config_command_list_action() {
 #[test]
 fn test_config_command_get_existing_key() {
     use ricecoder_cli::commands::config::ConfigAction;
-    
+
     let cmd = ConfigCommand::new(ConfigAction::Get("provider.default".to_string()));
     let result = cmd.execute();
 
@@ -229,18 +228,21 @@ fn test_config_command_get_existing_key() {
 #[test]
 fn test_config_command_get_nonexistent_key() {
     use ricecoder_cli::commands::config::ConfigAction;
-    
+
     let cmd = ConfigCommand::new(ConfigAction::Get("nonexistent.key".to_string()));
     let result = cmd.execute();
 
     // Get action for non-existent key should still succeed (with warning)
-    assert!(result.is_ok(), "Config get for non-existent key should succeed with warning");
+    assert!(
+        result.is_ok(),
+        "Config get for non-existent key should succeed with warning"
+    );
 }
 
 #[test]
 fn test_config_command_set_value() {
     use ricecoder_cli::commands::config::ConfigAction;
-    
+
     let cmd = ConfigCommand::new(ConfigAction::Set(
         "test.key".to_string(),
         "test_value".to_string(),
@@ -254,11 +256,8 @@ fn test_config_command_set_value() {
 #[test]
 fn test_config_command_set_with_empty_value() {
     use ricecoder_cli::commands::config::ConfigAction;
-    
-    let cmd = ConfigCommand::new(ConfigAction::Set(
-        "test.key".to_string(),
-        "".to_string(),
-    ));
+
+    let cmd = ConfigCommand::new(ConfigAction::Set("test.key".to_string(), "".to_string()));
     let result = cmd.execute();
 
     // Set action with empty value should still succeed
@@ -268,7 +267,7 @@ fn test_config_command_set_with_empty_value() {
 #[test]
 fn test_config_command_set_with_special_characters() {
     use ricecoder_cli::commands::config::ConfigAction;
-    
+
     let cmd = ConfigCommand::new(ConfigAction::Set(
         "test.key".to_string(),
         "value with spaces and special chars: !@#$%".to_string(),
@@ -276,7 +275,10 @@ fn test_config_command_set_with_special_characters() {
     let result = cmd.execute();
 
     // Set action with special characters should succeed
-    assert!(result.is_ok(), "Config set with special characters should succeed");
+    assert!(
+        result.is_ok(),
+        "Config set with special characters should succeed"
+    );
 }
 
 // ============================================================================
@@ -286,7 +288,7 @@ fn test_config_command_set_with_special_characters() {
 #[test]
 fn test_init_command_implements_command_trait() {
     let cmd = InitCommand::new(None);
-    
+
     // Verify InitCommand implements Command trait
     let _: &dyn Command = &cmd;
 }
@@ -296,9 +298,9 @@ fn test_gen_command_implements_command_trait() {
     let temp_dir = TempDir::new().expect("Failed to create temp directory");
     let spec_file = temp_dir.path().join("test.md");
     fs::write(&spec_file, "# Test").expect("Failed to write file");
-    
+
     let cmd = GenCommand::new(spec_file.to_str().unwrap().to_string());
-    
+
     // Verify GenCommand implements Command trait
     let _: &dyn Command = &cmd;
 }
@@ -306,9 +308,9 @@ fn test_gen_command_implements_command_trait() {
 #[test]
 fn test_config_command_implements_command_trait() {
     use ricecoder_cli::commands::config::ConfigAction;
-    
+
     let cmd = ConfigCommand::new(ConfigAction::List);
-    
+
     // Verify ConfigCommand implements Command trait
     let _: &dyn Command = &cmd;
 }
@@ -324,7 +326,7 @@ fn test_init_command_idempotent() {
     let temp_path = temp_dir.path().to_str().unwrap();
 
     let cmd = InitCommand::new(Some(temp_path.to_string()));
-    
+
     // First execution
     let result1 = cmd.execute();
     assert!(result1.is_ok(), "First init should succeed");
@@ -337,7 +339,7 @@ fn test_init_command_idempotent() {
 #[test]
 fn test_gen_command_with_various_spec_formats() {
     let temp_dir = TempDir::new().expect("Failed to create temp directory");
-    
+
     // Test with markdown spec
     let md_spec = temp_dir.path().join("spec.md");
     fs::write(&md_spec, "# Spec\n\nContent").expect("Failed to write");
@@ -360,7 +362,7 @@ fn test_gen_command_with_various_spec_formats() {
 #[test]
 fn test_config_command_all_actions_succeed() {
     use ricecoder_cli::commands::config::ConfigAction;
-    
+
     // All config actions should succeed without panicking
     let actions = vec![
         ConfigAction::List,

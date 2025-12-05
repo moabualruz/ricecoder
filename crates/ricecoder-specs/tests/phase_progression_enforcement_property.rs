@@ -2,12 +2,12 @@
 //! **Feature: ricecoder-specs, Property 7: Phase Progression Enforcement**
 //! **Validates: Requirements 3.1, 3.8**
 
+use chrono::Utc;
 use proptest::prelude::*;
 use ricecoder_specs::{
     approval::ApprovalManager,
     models::{SpecPhase, SpecWritingSession},
 };
-use chrono::Utc;
 
 // ============================================================================
 // Generators for property-based testing
@@ -26,26 +26,22 @@ fn arb_approver_name() -> impl Strategy<Value = String> {
 }
 
 fn arb_feedback() -> impl Strategy<Value = Option<String>> {
-    prop_oneof![
-        Just(None),
-        "[A-Za-z0-9 ]{1,50}".prop_map(|s| Some(s)),
-    ]
+    prop_oneof![Just(None), "[A-Za-z0-9 ]{1,50}".prop_map(|s| Some(s)),]
 }
 
 fn arb_spec_writing_session() -> impl Strategy<Value = SpecWritingSession> {
-    (arb_spec_id(), arb_session_id())
-        .prop_map(|(spec_id, session_id)| {
-            let now = Utc::now();
-            SpecWritingSession {
-                id: session_id,
-                spec_id,
-                phase: SpecPhase::Discovery,
-                conversation_history: vec![],
-                approval_gates: ApprovalManager::initialize_gates(),
-                created_at: now,
-                updated_at: now,
-            }
-        })
+    (arb_spec_id(), arb_session_id()).prop_map(|(spec_id, session_id)| {
+        let now = Utc::now();
+        SpecWritingSession {
+            id: session_id,
+            spec_id,
+            phase: SpecPhase::Discovery,
+            conversation_history: vec![],
+            approval_gates: ApprovalManager::initialize_gates(),
+            created_at: now,
+            updated_at: now,
+        }
+    })
 }
 
 // ============================================================================

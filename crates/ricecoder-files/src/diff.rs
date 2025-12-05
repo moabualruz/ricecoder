@@ -33,11 +33,7 @@ impl DiffEngine {
         let hunks = self.extract_hunks(old, new)?;
         let stats = self.compute_stats_from_hunks(&hunks);
 
-        Ok(FileDiff {
-            path,
-            hunks,
-            stats,
-        })
+        Ok(FileDiff { path, hunks, stats })
     }
 
     /// Generates a side-by-side diff between two file versions

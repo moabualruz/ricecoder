@@ -1,11 +1,11 @@
 // Generate code from specification
 // Adapted from automation/src/commands/generate.rs
 
+use super::Command;
 use crate::error::{CliError, CliResult};
 use crate::output::OutputStyle;
-use super::Command;
-use std::path::{Path, PathBuf};
 use std::fs;
+use std::path::{Path, PathBuf};
 
 /// Generate code from a specification
 pub struct GenCommand {
@@ -72,7 +72,10 @@ impl Command for GenCommand {
 
         // Validate spec file
         let spec_path = self.validate_spec()?;
-        println!("{}", style.info(&format!("Loading spec: {}", self.spec_file)));
+        println!(
+            "{}",
+            style.info(&format!("Loading spec: {}", self.spec_file))
+        );
 
         // Load spec content
         let spec_content = self.load_spec(&spec_path)?;

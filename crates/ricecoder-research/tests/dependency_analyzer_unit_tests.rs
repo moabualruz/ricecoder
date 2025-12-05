@@ -176,7 +176,10 @@ require (
     let deps = analyzer.analyze(temp_dir.path()).unwrap();
     assert_eq!(deps.len(), 2);
 
-    let mux = deps.iter().find(|d| d.name == "github.com/gorilla/mux").unwrap();
+    let mux = deps
+        .iter()
+        .find(|d| d.name == "github.com/gorilla/mux")
+        .unwrap();
     assert_eq!(mux.version, "v1.8.0");
 }
 
@@ -440,10 +443,16 @@ fn test_detect_languages_rust() {
     let analyzer = DependencyAnalyzer::new();
     let temp_dir = TempDir::new().unwrap();
 
-    fs::write(temp_dir.path().join("Cargo.toml"), "[package]\nname = \"test\"").unwrap();
+    fs::write(
+        temp_dir.path().join("Cargo.toml"),
+        "[package]\nname = \"test\"",
+    )
+    .unwrap();
 
     let languages = analyzer.detect_languages(temp_dir.path()).unwrap();
-    assert!(languages.iter().any(|l| format!("{:?}", l).contains("Rust")));
+    assert!(languages
+        .iter()
+        .any(|l| format!("{:?}", l).contains("Rust")));
 }
 
 #[test]
@@ -454,7 +463,9 @@ fn test_detect_languages_nodejs() {
     fs::write(temp_dir.path().join("package.json"), "{}").unwrap();
 
     let languages = analyzer.detect_languages(temp_dir.path()).unwrap();
-    assert!(languages.iter().any(|l| format!("{:?}", l).contains("TypeScript")));
+    assert!(languages
+        .iter()
+        .any(|l| format!("{:?}", l).contains("TypeScript")));
 }
 
 #[test]
@@ -462,7 +473,11 @@ fn test_detect_languages_multiple() {
     let analyzer = DependencyAnalyzer::new();
     let temp_dir = TempDir::new().unwrap();
 
-    fs::write(temp_dir.path().join("Cargo.toml"), "[package]\nname = \"test\"").unwrap();
+    fs::write(
+        temp_dir.path().join("Cargo.toml"),
+        "[package]\nname = \"test\"",
+    )
+    .unwrap();
     fs::write(temp_dir.path().join("package.json"), "{}").unwrap();
     fs::write(temp_dir.path().join("go.mod"), "module test").unwrap();
 

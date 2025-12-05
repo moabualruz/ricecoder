@@ -4,8 +4,8 @@
 //! orders steps for correct execution, and validates plan completeness.
 
 use crate::error::GenerationError;
-use crate::spec_processor::{GenerationPlan, GenerationStep, ConstraintType};
-use ricecoder_specs::models::{Requirement, Priority};
+use crate::spec_processor::{ConstraintType, GenerationPlan, GenerationStep};
+use ricecoder_specs::models::{Priority, Requirement};
 use std::collections::{HashMap, HashSet};
 
 /// Builds generation plans from specifications
@@ -47,7 +47,10 @@ impl GenerationPlanBuilder {
     /// # Returns
     ///
     /// A vector of generation steps
-    pub fn create_steps(&self, requirements: &[Requirement]) -> Result<Vec<GenerationStep>, GenerationError> {
+    pub fn create_steps(
+        &self,
+        requirements: &[Requirement],
+    ) -> Result<Vec<GenerationStep>, GenerationError> {
         if requirements.len() > self.max_steps {
             return Err(GenerationError::SpecError(format!(
                 "Too many requirements: {} exceeds maximum of {}",
@@ -222,10 +225,7 @@ impl GenerationPlanBuilder {
         // Check that all steps have acceptance criteria
         for step in &plan.steps {
             if step.acceptance_criteria.is_empty() && !step.optional {
-                warnings.push(format!(
-                    "Step {} has no acceptance criteria",
-                    step.id
-                ));
+                warnings.push(format!("Step {} has no acceptance criteria", step.id));
             }
         }
 
@@ -449,9 +449,6 @@ mod tests {
         let validation = builder.validate_plan(&plan);
 
         assert!(!validation.is_valid);
-        assert!(validation
-            .errors
-            .iter()
-            .any(|e| e.contains("non-existent")));
+        assert!(validation.errors.iter().any(|e| e.contains("non-existent")));
     }
 }

@@ -28,7 +28,8 @@ regex = "1.5"
 [dev-dependencies]
 proptest = "1.0"
 "#,
-    ).unwrap();
+    )
+    .unwrap();
     root.to_path_buf()
 }
 
@@ -51,7 +52,8 @@ fn create_nodejs_project(temp_dir: &TempDir) -> PathBuf {
   }
 }
 "#,
-    ).unwrap();
+    )
+    .unwrap();
     root.to_path_buf()
 }
 
@@ -69,7 +71,8 @@ dependencies = [
     "fastapi>=0.95.0",
 ]
 "#,
-    ).unwrap();
+    )
+    .unwrap();
     root.to_path_buf()
 }
 
@@ -88,7 +91,8 @@ require (
     github.com/google/uuid v1.3.0
 )
 "#,
-    ).unwrap();
+    )
+    .unwrap();
     root.to_path_buf()
 }
 
@@ -118,7 +122,8 @@ fn create_java_project(temp_dir: &TempDir) -> PathBuf {
     </dependencies>
 </project>
 "#,
-    ).unwrap();
+    )
+    .unwrap();
     root.to_path_buf()
 }
 
@@ -133,7 +138,8 @@ fn create_kotlin_project(temp_dir: &TempDir) -> PathBuf {
     testImplementation("junit:junit:4.13.2")
 }
 "#,
-    ).unwrap();
+    )
+    .unwrap();
     root.to_path_buf()
 }
 
@@ -150,7 +156,8 @@ fn create_dotnet_project(temp_dir: &TempDir) -> PathBuf {
     </ItemGroup>
 </Project>
 "#,
-    ).unwrap();
+    )
+    .unwrap();
     root.to_path_buf()
 }
 
@@ -170,7 +177,8 @@ fn create_php_project(temp_dir: &TempDir) -> PathBuf {
   }
 }
 "#,
-    ).unwrap();
+    )
+    .unwrap();
     root.to_path_buf()
 }
 
@@ -189,7 +197,8 @@ group :development, :test do
   gem 'rspec-rails', '~> 6.0'
 end
 "#,
-    ).unwrap();
+    )
+    .unwrap();
     root.to_path_buf()
 }
 
@@ -209,7 +218,8 @@ let package = Package(
     ]
 )
 "#,
-    ).unwrap();
+    )
+    .unwrap();
     root.to_path_buf()
 }
 
@@ -231,7 +241,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 "#,
-    ).unwrap();
+    )
+    .unwrap();
     root.to_path_buf()
 }
 
@@ -249,10 +260,14 @@ fn test_analyze_rust_dependencies() {
 
     assert!(result.is_ok());
     let dependencies = result.unwrap();
-    
+
     // Verify dependencies were found
     let dep_names: Vec<_> = dependencies.iter().map(|d| d.name.as_str()).collect();
-    assert!(dep_names.contains(&"serde") || dep_names.contains(&"tokio") || dep_names.contains(&"regex"));
+    assert!(
+        dep_names.contains(&"serde")
+            || dep_names.contains(&"tokio")
+            || dep_names.contains(&"regex")
+    );
 }
 
 #[test]
@@ -265,7 +280,7 @@ fn test_analyze_nodejs_dependencies() {
 
     assert!(result.is_ok());
     let dependencies = result.unwrap();
-    
+
     assert!(!dependencies.is_empty());
     let dep_names: Vec<_> = dependencies.iter().map(|d| d.name.as_str()).collect();
     assert!(dep_names.contains(&"express"));
@@ -283,7 +298,7 @@ fn test_analyze_python_dependencies() {
 
     assert!(result.is_ok());
     let dependencies = result.unwrap();
-    
+
     assert!(!dependencies.is_empty());
     let dep_names: Vec<_> = dependencies.iter().map(|d| d.name.as_str()).collect();
     assert!(dep_names.contains(&"requests"));
@@ -301,7 +316,7 @@ fn test_analyze_go_dependencies() {
 
     assert!(result.is_ok());
     let dependencies = result.unwrap();
-    
+
     assert!(!dependencies.is_empty());
     let dep_names: Vec<_> = dependencies.iter().map(|d| d.name.as_str()).collect();
     assert!(dep_names.contains(&"github.com/gin-gonic/gin"));
@@ -318,10 +333,12 @@ fn test_analyze_java_dependencies() {
 
     assert!(result.is_ok());
     let dependencies = result.unwrap();
-    
+
     // Verify dependencies were found
     let dep_names: Vec<_> = dependencies.iter().map(|d| d.name.as_str()).collect();
-    assert!(dep_names.iter().any(|d| d.contains("spring") || d.contains("guava")));
+    assert!(dep_names
+        .iter()
+        .any(|d| d.contains("spring") || d.contains("guava")));
 }
 
 #[test]
@@ -334,7 +351,7 @@ fn test_analyze_kotlin_dependencies() {
 
     assert!(result.is_ok());
     let dependencies = result.unwrap();
-    
+
     // Verify dependencies were found
     let dep_names: Vec<_> = dependencies.iter().map(|d| d.name.as_str()).collect();
     assert!(dep_names.iter().any(|d| d.contains("spring")));
@@ -350,7 +367,7 @@ fn test_analyze_dotnet_dependencies() {
 
     assert!(result.is_ok());
     let dependencies = result.unwrap();
-    
+
     assert!(!dependencies.is_empty());
     let dep_names: Vec<_> = dependencies.iter().map(|d| d.name.as_str()).collect();
     assert!(dep_names.contains(&"Newtonsoft.Json"));
@@ -367,7 +384,7 @@ fn test_analyze_php_dependencies() {
 
     assert!(result.is_ok());
     let dependencies = result.unwrap();
-    
+
     assert!(!dependencies.is_empty());
     let dep_names: Vec<_> = dependencies.iter().map(|d| d.name.as_str()).collect();
     assert!(dep_names.contains(&"laravel/framework"));
@@ -384,7 +401,7 @@ fn test_analyze_ruby_dependencies() {
 
     assert!(result.is_ok());
     let dependencies = result.unwrap();
-    
+
     assert!(!dependencies.is_empty());
     let dep_names: Vec<_> = dependencies.iter().map(|d| d.name.as_str()).collect();
     assert!(dep_names.contains(&"rails"));
@@ -401,7 +418,7 @@ fn test_analyze_swift_dependencies() {
 
     assert!(result.is_ok());
     let dependencies = result.unwrap();
-    
+
     assert!(!dependencies.is_empty());
     let dep_names: Vec<_> = dependencies.iter().map(|d| d.name.as_str()).collect();
     assert!(dep_names.contains(&"swift-nio"));
@@ -418,7 +435,7 @@ fn test_analyze_dart_dependencies() {
 
     assert!(result.is_ok());
     let dependencies = result.unwrap();
-    
+
     assert!(!dependencies.is_empty());
     let dep_names: Vec<_> = dependencies.iter().map(|d| d.name.as_str()).collect();
     assert!(dep_names.contains(&"provider"));
@@ -455,7 +472,7 @@ fn test_dependency_analyzer_consistency() {
     // Results should be identical
     assert_eq!(deps1.len(), deps2.len());
     assert_eq!(deps2.len(), deps3.len());
-    
+
     for i in 0..deps1.len() {
         assert_eq!(deps1[i].name, deps2[i].name);
         assert_eq!(deps2[i].name, deps3[i].name);
@@ -498,19 +515,21 @@ name = "test"
 [dependencies]
 serde = "1.0"
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     fs::write(
         root.join("package.json"),
         r#"{"dependencies": {"express": "^4.18.0"}}"#,
-    ).unwrap();
+    )
+    .unwrap();
 
     let analyzer = DependencyAnalyzer::new();
     let result = analyzer.analyze(root);
 
     assert!(result.is_ok());
     let dependencies = result.unwrap();
-    
+
     // Should find dependencies from both Rust and Node.js
     let dep_names: Vec<_> = dependencies.iter().map(|d| d.name.as_str()).collect();
     assert!(dep_names.contains(&"serde") || dep_names.contains(&"express"));

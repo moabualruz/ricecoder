@@ -49,7 +49,10 @@ impl StepConfigSubstitutor {
     ) -> WorkflowResult<()> {
         // Check that all required parameters are provided
         for param_def in &workflow.parameters {
-            if param_def.required && !parameters.contains_key(&param_def.name) && param_def.default.is_none() {
+            if param_def.required
+                && !parameters.contains_key(&param_def.name)
+                && param_def.default.is_none()
+            {
                 return Err(WorkflowError::Invalid(format!(
                     "Required parameter '{}' not provided",
                     param_def.name
@@ -99,8 +102,8 @@ impl StepConfigSubstitutor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json::json;
     use crate::models::StepConfig;
+    use serde_json::json;
 
     fn create_test_workflow() -> Workflow {
         Workflow {
@@ -123,27 +126,25 @@ mod tests {
                     description: "Count parameter".to_string(),
                 },
             ],
-            steps: vec![
-                crate::models::WorkflowStep {
-                    id: "step1".to_string(),
-                    name: "Step 1".to_string(),
-                    step_type: crate::models::StepType::Agent(crate::models::AgentStep {
-                        agent_id: "test-agent".to_string(),
-                        task: "test-task".to_string(),
+            steps: vec![crate::models::WorkflowStep {
+                id: "step1".to_string(),
+                name: "Step 1".to_string(),
+                step_type: crate::models::StepType::Agent(crate::models::AgentStep {
+                    agent_id: "test-agent".to_string(),
+                    task: "test-task".to_string(),
+                }),
+                config: StepConfig {
+                    config: json!({
+                        "message": "Hello ${name}",
+                        "count": "${count}"
                     }),
-                    config: StepConfig {
-                        config: json!({
-                            "message": "Hello ${name}",
-                            "count": "${count}"
-                        }),
-                    },
-                    dependencies: vec![],
-                    approval_required: false,
-                    on_error: crate::models::ErrorAction::Fail,
-                    risk_score: None,
-                    risk_factors: crate::models::RiskFactors::default(),
                 },
-            ],
+                dependencies: vec![],
+                approval_required: false,
+                on_error: crate::models::ErrorAction::Fail,
+                risk_score: None,
+                risk_factors: crate::models::RiskFactors::default(),
+            }],
             config: crate::models::WorkflowConfig {
                 timeout_ms: None,
                 max_parallel: None,
@@ -222,7 +223,8 @@ mod tests {
 
         let step = &workflow.steps[0];
         assert_eq!(
-            step.config.config
+            step.config
+                .config
                 .get("nested")
                 .and_then(|v| v.get("message"))
                 .and_then(|v| v.as_str()),
@@ -268,5 +270,3 @@ mod tests {
         );
     }
 }
-
-

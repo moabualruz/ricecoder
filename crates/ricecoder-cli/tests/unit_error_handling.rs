@@ -14,9 +14,12 @@ fn test_command_not_found_error() {
         command: "invalid".to_string(),
         suggestion: "init".to_string(),
     };
-    
+
     match error {
-        CliError::CommandNotFound { command, suggestion } => {
+        CliError::CommandNotFound {
+            command,
+            suggestion,
+        } => {
             assert_eq!(command, "invalid");
             assert_eq!(suggestion, "init");
         }
@@ -29,7 +32,7 @@ fn test_invalid_argument_error() {
     let error = CliError::InvalidArgument {
         message: "Missing required argument".to_string(),
     };
-    
+
     match error {
         CliError::InvalidArgument { message } => {
             assert_eq!(message, "Missing required argument");
@@ -41,7 +44,7 @@ fn test_invalid_argument_error() {
 #[test]
 fn test_config_error() {
     let error = CliError::Config("Config file not found".to_string());
-    
+
     match error {
         CliError::Config(msg) => {
             assert_eq!(msg, "Config file not found");
@@ -53,7 +56,7 @@ fn test_config_error() {
 #[test]
 fn test_provider_error() {
     let error = CliError::Provider("Unsupported provider".to_string());
-    
+
     match error {
         CliError::Provider(msg) => {
             assert_eq!(msg, "Unsupported provider");
@@ -65,7 +68,7 @@ fn test_provider_error() {
 #[test]
 fn test_generation_error() {
     let error = CliError::Generation("Failed to generate code".to_string());
-    
+
     match error {
         CliError::Generation(msg) => {
             assert_eq!(msg, "Failed to generate code");
@@ -77,7 +80,7 @@ fn test_generation_error() {
 #[test]
 fn test_storage_error() {
     let error = CliError::Storage("Failed to write to storage".to_string());
-    
+
     match error {
         CliError::Storage(msg) => {
             assert_eq!(msg, "Failed to write to storage");
@@ -89,7 +92,7 @@ fn test_storage_error() {
 #[test]
 fn test_internal_error() {
     let error = CliError::Internal("Unexpected error".to_string());
-    
+
     match error {
         CliError::Internal(msg) => {
             assert_eq!(msg, "Unexpected error");
@@ -106,7 +109,7 @@ fn test_internal_error() {
 fn test_io_error_conversion() {
     let io_error = io::Error::new(io::ErrorKind::NotFound, "file not found");
     let cli_error = CliError::from(io_error);
-    
+
     match cli_error {
         CliError::Io(_) => {
             // Successfully converted
@@ -120,7 +123,7 @@ fn test_io_error_conversion() {
 fn test_io_error_permission_denied() {
     let io_error = io::Error::new(io::ErrorKind::PermissionDenied, "permission denied");
     let cli_error = CliError::from(io_error);
-    
+
     match cli_error {
         CliError::Io(_) => {
             assert!(true);
@@ -139,9 +142,9 @@ fn test_command_not_found_user_message() {
         command: "invalid".to_string(),
         suggestion: "init".to_string(),
     };
-    
+
     let message = error.user_message();
-    
+
     assert!(message.contains("invalid"));
     assert!(message.contains("init"));
     assert!(message.contains("Did you mean"));
@@ -152,9 +155,9 @@ fn test_invalid_argument_user_message() {
     let error = CliError::InvalidArgument {
         message: "Missing spec file".to_string(),
     };
-    
+
     let message = error.user_message();
-    
+
     assert!(message.contains("Invalid argument"));
     assert!(message.contains("Missing spec file"));
     assert!(message.contains("help"));
@@ -163,9 +166,9 @@ fn test_invalid_argument_user_message() {
 #[test]
 fn test_config_error_user_message() {
     let error = CliError::Config("Invalid configuration".to_string());
-    
+
     let message = error.user_message();
-    
+
     assert!(message.contains("Configuration error"));
     assert!(message.contains("Invalid configuration"));
     assert!(message.contains("rice config"));
@@ -174,9 +177,9 @@ fn test_config_error_user_message() {
 #[test]
 fn test_provider_error_user_message() {
     let error = CliError::Provider("Provider not available".to_string());
-    
+
     let message = error.user_message();
-    
+
     assert!(message.contains("Provider error"));
     assert!(message.contains("Provider not available"));
     assert!(message.contains("configuration"));
@@ -185,9 +188,9 @@ fn test_provider_error_user_message() {
 #[test]
 fn test_generation_error_user_message() {
     let error = CliError::Generation("Syntax error in spec".to_string());
-    
+
     let message = error.user_message();
-    
+
     assert!(message.contains("Code generation failed"));
     assert!(message.contains("Syntax error in spec"));
 }
@@ -195,9 +198,9 @@ fn test_generation_error_user_message() {
 #[test]
 fn test_storage_error_user_message() {
     let error = CliError::Storage("Disk full".to_string());
-    
+
     let message = error.user_message();
-    
+
     assert!(message.contains("Storage error"));
     assert!(message.contains("Disk full"));
 }
@@ -205,9 +208,9 @@ fn test_storage_error_user_message() {
 #[test]
 fn test_internal_error_user_message() {
     let error = CliError::Internal("Unexpected panic".to_string());
-    
+
     let message = error.user_message();
-    
+
     assert!(message.contains("Internal error"));
     assert!(message.contains("Unexpected panic"));
     assert!(message.contains("report"));
@@ -217,9 +220,9 @@ fn test_internal_error_user_message() {
 fn test_io_error_user_message() {
     let io_error = io::Error::new(io::ErrorKind::NotFound, "file not found");
     let error = CliError::from(io_error);
-    
+
     let message = error.user_message();
-    
+
     assert!(message.contains("File operation failed"));
 }
 
@@ -233,9 +236,9 @@ fn test_error_message_includes_context() {
         command: "gen".to_string(),
         suggestion: "generate".to_string(),
     };
-    
+
     let message = error.user_message();
-    
+
     // Should include the invalid command
     assert!(message.contains("gen"));
     // Should include the suggestion
@@ -249,9 +252,9 @@ fn test_error_message_includes_suggestions() {
     let error = CliError::InvalidArgument {
         message: "Missing required argument: spec".to_string(),
     };
-    
+
     let message = error.user_message();
-    
+
     // Should include the problem
     assert!(message.contains("Missing required argument"));
     // Should include a suggestion
@@ -261,9 +264,9 @@ fn test_error_message_includes_suggestions() {
 #[test]
 fn test_error_message_includes_documentation_link() {
     let error = CliError::Config("Invalid config format".to_string());
-    
+
     let message = error.user_message();
-    
+
     // Should include a reference to documentation or help
     assert!(message.contains("rice config") || message.contains("help"));
 }
@@ -284,10 +287,10 @@ fn test_all_error_types_have_helpful_messages() {
         CliError::Storage("test".to_string()),
         CliError::Internal("test".to_string()),
     ];
-    
+
     for error in errors {
         let message = error.user_message();
-        
+
         // All messages should be non-empty
         assert!(!message.is_empty());
         // All messages should contain helpful information
@@ -305,9 +308,9 @@ fn test_technical_details_command_not_found() {
         command: "invalid".to_string(),
         suggestion: "init".to_string(),
     };
-    
+
     let details = error.technical_details();
-    
+
     assert!(details.contains("CommandNotFound"));
 }
 
@@ -316,54 +319,54 @@ fn test_technical_details_invalid_argument() {
     let error = CliError::InvalidArgument {
         message: "test".to_string(),
     };
-    
+
     let details = error.technical_details();
-    
+
     assert!(details.contains("InvalidArgument"));
 }
 
 #[test]
 fn test_technical_details_config() {
     let error = CliError::Config("test".to_string());
-    
+
     let details = error.technical_details();
-    
+
     assert!(details.contains("Config"));
 }
 
 #[test]
 fn test_technical_details_provider() {
     let error = CliError::Provider("test".to_string());
-    
+
     let details = error.technical_details();
-    
+
     assert!(details.contains("Provider"));
 }
 
 #[test]
 fn test_technical_details_generation() {
     let error = CliError::Generation("test".to_string());
-    
+
     let details = error.technical_details();
-    
+
     assert!(details.contains("Generation"));
 }
 
 #[test]
 fn test_technical_details_storage() {
     let error = CliError::Storage("test".to_string());
-    
+
     let details = error.technical_details();
-    
+
     assert!(details.contains("Storage"));
 }
 
 #[test]
 fn test_technical_details_internal() {
     let error = CliError::Internal("test".to_string());
-    
+
     let details = error.technical_details();
-    
+
     assert!(details.contains("Internal"));
 }
 
@@ -374,7 +377,7 @@ fn test_technical_details_internal() {
 #[test]
 fn test_cli_result_ok() {
     let result: CliResult<i32> = Ok(42);
-    
+
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), 42);
 }
@@ -383,7 +386,7 @@ fn test_cli_result_ok() {
 fn test_cli_result_err() {
     let error = CliError::Internal("test".to_string());
     let result: CliResult<i32> = Err(error);
-    
+
     assert!(result.is_err());
 }
 
@@ -391,7 +394,7 @@ fn test_cli_result_err() {
 fn test_cli_result_map() {
     let result: CliResult<i32> = Ok(5);
     let mapped = result.map(|x| x * 2);
-    
+
     assert_eq!(mapped.unwrap(), 10);
 }
 
@@ -399,9 +402,9 @@ fn test_cli_result_map() {
 fn test_cli_result_map_err() {
     let error = CliError::Internal("test".to_string());
     let result: CliResult<i32> = Err(error);
-    
+
     let mapped = result.map_err(|_| CliError::Internal("mapped".to_string()));
-    
+
     assert!(mapped.is_err());
 }
 
@@ -415,9 +418,9 @@ fn test_error_display_command_not_found() {
         command: "invalid".to_string(),
         suggestion: "init".to_string(),
     };
-    
+
     let display = format!("{}", error);
-    
+
     assert!(display.contains("invalid"));
     assert!(display.contains("init"));
 }
@@ -427,27 +430,27 @@ fn test_error_display_invalid_argument() {
     let error = CliError::InvalidArgument {
         message: "test message".to_string(),
     };
-    
+
     let display = format!("{}", error);
-    
+
     assert!(display.contains("test message"));
 }
 
 #[test]
 fn test_error_display_config() {
     let error = CliError::Config("test".to_string());
-    
+
     let display = format!("{}", error);
-    
+
     assert!(display.contains("Configuration error"));
 }
 
 #[test]
 fn test_error_display_provider() {
     let error = CliError::Provider("test".to_string());
-    
+
     let display = format!("{}", error);
-    
+
     assert!(display.contains("Provider error"));
 }
 
@@ -458,9 +461,9 @@ fn test_error_display_provider() {
 #[test]
 fn test_error_debug_format() {
     let error = CliError::Internal("test".to_string());
-    
+
     let debug = format!("{:?}", error);
-    
+
     assert!(debug.contains("Internal"));
 }
 
@@ -471,20 +474,20 @@ fn test_error_debug_format() {
 #[test]
 fn test_error_user_message_idempotent() {
     let error = CliError::Config("test".to_string());
-    
+
     let message1 = error.user_message();
     let message2 = error.user_message();
-    
+
     assert_eq!(message1, message2);
 }
 
 #[test]
 fn test_error_technical_details_idempotent() {
     let error = CliError::Provider("test".to_string());
-    
+
     let details1 = error.technical_details();
     let details2 = error.technical_details();
-    
+
     assert_eq!(details1, details2);
 }
 
@@ -504,11 +507,11 @@ fn test_all_error_types_have_messages() {
         CliError::Storage("test".to_string()),
         CliError::Internal("test".to_string()),
     ];
-    
+
     for error in errors {
         let user_msg = error.user_message();
         let tech_details = error.technical_details();
-        
+
         // Both should be non-empty
         assert!(!user_msg.is_empty());
         assert!(!tech_details.is_empty());
@@ -519,10 +522,10 @@ fn test_all_error_types_have_messages() {
 fn test_error_messages_are_distinct() {
     let error1 = CliError::Config("error1".to_string());
     let error2 = CliError::Config("error2".to_string());
-    
+
     let msg1 = error1.user_message();
     let msg2 = error2.user_message();
-    
+
     // Messages should be different for different errors
     assert_ne!(msg1, msg2);
 }

@@ -3,9 +3,9 @@
 //! Manages approval gates and enforces sequential phase progression through
 //! the spec writing workflow (requirements → design → tasks → execution).
 
-use chrono::Utc;
-use crate::models::{ApprovalGate, SpecPhase, SpecWritingSession};
 use crate::error::SpecError;
+use crate::models::{ApprovalGate, SpecPhase, SpecWritingSession};
+use chrono::Utc;
 
 /// Manages approval gates and phase transitions for spec writing sessions
 #[derive(Debug, Clone)]
@@ -116,9 +116,7 @@ impl ApprovalManager {
     /// # Returns
     ///
     /// Updated session with new phase, or error if transition is not allowed
-    pub fn transition_to_next_phase(
-        session: &mut SpecWritingSession,
-    ) -> Result<(), SpecError> {
+    pub fn transition_to_next_phase(session: &mut SpecWritingSession) -> Result<(), SpecError> {
         // Check if current phase is approved
         let current_gate = session
             .approval_gates
@@ -281,7 +279,11 @@ mod tests {
     fn test_approve_phase() {
         let mut session = create_test_session();
 
-        let result = ApprovalManager::approve_phase(&mut session, "reviewer", Some("Looks good".to_string()));
+        let result = ApprovalManager::approve_phase(
+            &mut session,
+            "reviewer",
+            Some("Looks good".to_string()),
+        );
         assert!(result.is_ok());
 
         let gate = ApprovalManager::get_phase_approval(&session, SpecPhase::Discovery).unwrap();
@@ -397,7 +399,10 @@ mod tests {
         let mut session = create_test_session();
 
         // Initially, no phases are approved
-        assert!(!ApprovalManager::are_phases_approved_up_to(&session, SpecPhase::Requirements));
+        assert!(!ApprovalManager::are_phases_approved_up_to(
+            &session,
+            SpecPhase::Requirements
+        ));
 
         // Approve discovery
         ApprovalManager::approve_phase(&mut session, "reviewer", None).unwrap();
@@ -407,10 +412,16 @@ mod tests {
         ApprovalManager::approve_phase(&mut session, "reviewer", None).unwrap();
 
         // Check that phases up to requirements are approved
-        assert!(ApprovalManager::are_phases_approved_up_to(&session, SpecPhase::Requirements));
+        assert!(ApprovalManager::are_phases_approved_up_to(
+            &session,
+            SpecPhase::Requirements
+        ));
 
         // Check that phases up to design are not approved
-        assert!(!ApprovalManager::are_phases_approved_up_to(&session, SpecPhase::Design));
+        assert!(!ApprovalManager::are_phases_approved_up_to(
+            &session,
+            SpecPhase::Design
+        ));
     }
 
     #[test]

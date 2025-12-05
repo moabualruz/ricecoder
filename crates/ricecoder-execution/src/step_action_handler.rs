@@ -162,8 +162,9 @@ impl TestHandler {
 
     /// Detect the test framework based on project structure
     fn detect_test_framework() -> ExecutionResult<TestFramework> {
-        let current_dir = std::env::current_dir()
-            .map_err(|e| ExecutionError::ValidationError(format!("Failed to get current dir: {}", e)))?;
+        let current_dir = std::env::current_dir().map_err(|e| {
+            ExecutionError::ValidationError(format!("Failed to get current dir: {}", e))
+        })?;
 
         // Check for Rust (Cargo.toml)
         if current_dir.join("Cargo.toml").exists() {

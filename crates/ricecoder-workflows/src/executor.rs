@@ -1,13 +1,13 @@
 //! Step execution orchestration
 
+use crate::agent_executor::AgentExecutor;
+use crate::approval::ApprovalGate;
+use crate::command_executor::CommandExecutor;
+use crate::condition::ConditionEvaluator;
 use crate::error::{WorkflowError, WorkflowResult};
 use crate::models::{StepResult, StepStatus, StepType, Workflow, WorkflowState};
-use crate::state::StateManager;
-use crate::condition::ConditionEvaluator;
-use crate::approval::ApprovalGate;
-use crate::agent_executor::AgentExecutor;
-use crate::command_executor::CommandExecutor;
 use crate::parallel_executor::ParallelExecutor;
+use crate::state::StateManager;
 use std::time::Instant;
 
 /// Orchestrates step execution within workflows
@@ -48,7 +48,8 @@ impl StepExecutor {
                 StateManager::start_step(state, step_id.to_string());
                 let start_time = Instant::now();
 
-                let next_steps = ConditionEvaluator::evaluate_condition(workflow, state, condition_step)?;
+                let next_steps =
+                    ConditionEvaluator::evaluate_condition(workflow, state, condition_step)?;
 
                 let duration_ms = start_time.elapsed().as_millis() as u64;
 
@@ -95,10 +96,7 @@ impl StepExecutor {
     ///
     /// Executes all steps in the workflow, respecting dependencies.
     /// Stops on first error unless error handling specifies otherwise.
-    pub fn execute_workflow(
-        workflow: &Workflow,
-        state: &mut WorkflowState,
-    ) -> WorkflowResult<()> {
+    pub fn execute_workflow(workflow: &Workflow, state: &mut WorkflowState) -> WorkflowResult<()> {
         // Get execution order
         let order = crate::engine::WorkflowEngine::get_execution_order(workflow)?;
 
@@ -247,9 +245,10 @@ impl StepExecutor {
         let condition_step = match &step.step_type {
             StepType::Condition(cs) => cs,
             _ => {
-                return Err(WorkflowError::Invalid(
-                    format!("Step {} is not a condition step", step_id),
-                ))
+                return Err(WorkflowError::Invalid(format!(
+                    "Step {} is not a condition step",
+                    step_id
+                )))
             }
         };
 
@@ -297,9 +296,10 @@ impl StepExecutor {
         let condition_step = match &step.step_type {
             StepType::Condition(cs) => cs,
             _ => {
-                return Err(WorkflowError::Invalid(
-                    format!("Step {} is not a condition step", step_id),
-                ))
+                return Err(WorkflowError::Invalid(format!(
+                    "Step {} is not a condition step",
+                    step_id
+                )))
             }
         };
 
@@ -377,14 +377,17 @@ impl StepExecutor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{AgentStep, ErrorAction, RiskFactors, StepConfig, StepType, WorkflowConfig, WorkflowStep};
+    use crate::models::{
+        AgentStep, ErrorAction, RiskFactors, StepConfig, StepType, WorkflowConfig, WorkflowStep,
+    };
 
     fn create_simple_workflow() -> Workflow {
         Workflow {
             id: "test-workflow".to_string(),
             name: "Test Workflow".to_string(),
             description: "A test workflow".to_string(),
-            parameters: vec![],steps: vec![WorkflowStep {
+            parameters: vec![],
+            steps: vec![WorkflowStep {
                 id: "step1".to_string(),
                 name: "Step 1".to_string(),
                 step_type: StepType::Agent(AgentStep {
@@ -396,7 +399,9 @@ mod tests {
                 },
                 dependencies: vec![],
                 approval_required: false,
-                on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                on_error: ErrorAction::Fail,
+                risk_score: None,
+                risk_factors: RiskFactors::default(),
             }],
             config: WorkflowConfig {
                 timeout_ms: None,
@@ -499,7 +504,8 @@ mod tests {
             id: "test-workflow".to_string(),
             name: "Test Workflow".to_string(),
             description: "A test workflow".to_string(),
-            parameters: vec![],steps: vec![
+            parameters: vec![],
+            steps: vec![
                 WorkflowStep {
                     id: "step1".to_string(),
                     name: "Step 1".to_string(),
@@ -512,7 +518,9 @@ mod tests {
                     },
                     dependencies: vec![],
                     approval_required: false,
-                    on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                    on_error: ErrorAction::Fail,
+                    risk_score: None,
+                    risk_factors: RiskFactors::default(),
                 },
                 WorkflowStep {
                     id: "condition".to_string(),
@@ -527,7 +535,9 @@ mod tests {
                     },
                     dependencies: vec!["step1".to_string()],
                     approval_required: false,
-                    on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                    on_error: ErrorAction::Fail,
+                    risk_score: None,
+                    risk_factors: RiskFactors::default(),
                 },
             ],
             config: crate::models::WorkflowConfig {
@@ -566,7 +576,8 @@ mod tests {
             id: "test-workflow".to_string(),
             name: "Test Workflow".to_string(),
             description: "A test workflow".to_string(),
-            parameters: vec![],steps: vec![
+            parameters: vec![],
+            steps: vec![
                 WorkflowStep {
                     id: "step1".to_string(),
                     name: "Step 1".to_string(),
@@ -579,7 +590,9 @@ mod tests {
                     },
                     dependencies: vec![],
                     approval_required: false,
-                    on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                    on_error: ErrorAction::Fail,
+                    risk_score: None,
+                    risk_factors: RiskFactors::default(),
                 },
                 WorkflowStep {
                     id: "condition".to_string(),
@@ -594,7 +607,9 @@ mod tests {
                     },
                     dependencies: vec!["step1".to_string()],
                     approval_required: false,
-                    on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                    on_error: ErrorAction::Fail,
+                    risk_score: None,
+                    risk_factors: RiskFactors::default(),
                 },
             ],
             config: crate::models::WorkflowConfig {
@@ -633,7 +648,8 @@ mod tests {
             id: "test-workflow".to_string(),
             name: "Test Workflow".to_string(),
             description: "A test workflow".to_string(),
-            parameters: vec![],steps: vec![
+            parameters: vec![],
+            steps: vec![
                 WorkflowStep {
                     id: "step1".to_string(),
                     name: "Step 1".to_string(),
@@ -646,7 +662,9 @@ mod tests {
                     },
                     dependencies: vec![],
                     approval_required: false,
-                    on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                    on_error: ErrorAction::Fail,
+                    risk_score: None,
+                    risk_factors: RiskFactors::default(),
                 },
                 WorkflowStep {
                     id: "condition".to_string(),
@@ -661,7 +679,9 @@ mod tests {
                     },
                     dependencies: vec!["step1".to_string()],
                     approval_required: false,
-                    on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                    on_error: ErrorAction::Fail,
+                    risk_score: None,
+                    risk_factors: RiskFactors::default(),
                 },
             ],
             config: crate::models::WorkflowConfig {
@@ -696,7 +716,8 @@ mod tests {
             id: "test-workflow".to_string(),
             name: "Test Workflow".to_string(),
             description: "A test workflow".to_string(),
-            parameters: vec![],steps: vec![
+            parameters: vec![],
+            steps: vec![
                 WorkflowStep {
                     id: "step1".to_string(),
                     name: "Step 1".to_string(),
@@ -709,7 +730,9 @@ mod tests {
                     },
                     dependencies: vec![],
                     approval_required: true,
-                    on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                    on_error: ErrorAction::Fail,
+                    risk_score: None,
+                    risk_factors: RiskFactors::default(),
                 },
                 WorkflowStep {
                     id: "step2".to_string(),
@@ -723,7 +746,9 @@ mod tests {
                     },
                     dependencies: vec![],
                     approval_required: false,
-                    on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                    on_error: ErrorAction::Fail,
+                    risk_score: None,
+                    risk_factors: RiskFactors::default(),
                 },
             ],
             config: crate::models::WorkflowConfig {
@@ -743,8 +768,8 @@ mod tests {
         let workflow = create_simple_workflow();
         let mut approval_gate = ApprovalGate::new();
 
-        let request_id = StepExecutor::request_step_approval(&mut approval_gate, &workflow, "step1")
-            .unwrap();
+        let request_id =
+            StepExecutor::request_step_approval(&mut approval_gate, &workflow, "step1").unwrap();
 
         assert!(!request_id.is_empty());
         assert!(StepExecutor::is_approval_pending(&approval_gate, &request_id).unwrap());
@@ -757,8 +782,8 @@ mod tests {
         let workflow = create_simple_workflow();
         let mut approval_gate = ApprovalGate::new();
 
-        let request_id = StepExecutor::request_step_approval(&mut approval_gate, &workflow, "step1")
-            .unwrap();
+        let request_id =
+            StepExecutor::request_step_approval(&mut approval_gate, &workflow, "step1").unwrap();
 
         // Initially not approved
         assert!(!StepExecutor::is_step_approved(&approval_gate, &request_id).unwrap());
@@ -777,8 +802,8 @@ mod tests {
         let workflow = create_simple_workflow();
         let mut approval_gate = ApprovalGate::new();
 
-        let request_id = StepExecutor::request_step_approval(&mut approval_gate, &workflow, "step1")
-            .unwrap();
+        let request_id =
+            StepExecutor::request_step_approval(&mut approval_gate, &workflow, "step1").unwrap();
 
         // Initially not rejected
         assert!(!StepExecutor::is_step_rejected(&approval_gate, &request_id).unwrap());
@@ -790,7 +815,3 @@ mod tests {
         assert!(StepExecutor::is_step_rejected(&approval_gate, &request_id).unwrap());
     }
 }
-
-
-
-

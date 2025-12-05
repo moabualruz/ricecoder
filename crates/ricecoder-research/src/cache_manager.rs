@@ -112,11 +112,9 @@ impl CacheManager {
         project_root: &Path,
         file_mtimes: &HashMap<PathBuf, SystemTime>,
     ) -> Result<Option<ProjectContext>, ResearchError> {
-        let cache = self.cache.read().map_err(|e| {
-            ResearchError::CacheError {
-                operation: "read".to_string(),
-                reason: format!("Failed to acquire read lock: {}", e),
-            }
+        let cache = self.cache.read().map_err(|e| ResearchError::CacheError {
+            operation: "read".to_string(),
+            reason: format!("Failed to acquire read lock: {}", e),
         })?;
 
         if let Some(entry) = cache.get(project_root) {
@@ -124,11 +122,9 @@ impl CacheManager {
             if entry.is_expired() {
                 drop(cache);
                 self.invalidate(project_root)?;
-                let mut stats = self.stats.write().map_err(|e| {
-                    ResearchError::CacheError {
-                        operation: "write".to_string(),
-                        reason: format!("Failed to acquire write lock: {}", e),
-                    }
+                let mut stats = self.stats.write().map_err(|e| ResearchError::CacheError {
+                    operation: "write".to_string(),
+                    reason: format!("Failed to acquire write lock: {}", e),
                 })?;
                 stats.misses += 1;
                 return Ok(None);
@@ -138,11 +134,9 @@ impl CacheManager {
             if entry.has_file_changes(file_mtimes) {
                 drop(cache);
                 self.invalidate(project_root)?;
-                let mut stats = self.stats.write().map_err(|e| {
-                    ResearchError::CacheError {
-                        operation: "write".to_string(),
-                        reason: format!("Failed to acquire write lock: {}", e),
-                    }
+                let mut stats = self.stats.write().map_err(|e| ResearchError::CacheError {
+                    operation: "write".to_string(),
+                    reason: format!("Failed to acquire write lock: {}", e),
                 })?;
                 stats.misses += 1;
                 stats.invalidations += 1;
@@ -150,21 +144,17 @@ impl CacheManager {
             }
 
             // Cache hit
-            let mut stats = self.stats.write().map_err(|e| {
-                ResearchError::CacheError {
-                    operation: "write".to_string(),
-                    reason: format!("Failed to acquire write lock: {}", e),
-                }
+            let mut stats = self.stats.write().map_err(|e| ResearchError::CacheError {
+                operation: "write".to_string(),
+                reason: format!("Failed to acquire write lock: {}", e),
             })?;
             stats.hits += 1;
 
             Ok(Some(entry.data.clone()))
         } else {
-            let mut stats = self.stats.write().map_err(|e| {
-                ResearchError::CacheError {
-                    operation: "write".to_string(),
-                    reason: format!("Failed to acquire write lock: {}", e),
-                }
+            let mut stats = self.stats.write().map_err(|e| ResearchError::CacheError {
+                operation: "write".to_string(),
+                reason: format!("Failed to acquire write lock: {}", e),
             })?;
             stats.misses += 1;
             Ok(None)
@@ -188,21 +178,17 @@ impl CacheManager {
             file_mtimes,
         };
 
-        let mut cache = self.cache.write().map_err(|e| {
-            ResearchError::CacheError {
-                operation: "write".to_string(),
-                reason: format!("Failed to acquire write lock: {}", e),
-            }
+        let mut cache = self.cache.write().map_err(|e| ResearchError::CacheError {
+            operation: "write".to_string(),
+            reason: format!("Failed to acquire write lock: {}", e),
         })?;
 
         cache.insert(project_root.to_path_buf(), entry);
 
         // Update statistics
-        let mut stats = self.stats.write().map_err(|e| {
-            ResearchError::CacheError {
-                operation: "write".to_string(),
-                reason: format!("Failed to acquire write lock: {}", e),
-            }
+        let mut stats = self.stats.write().map_err(|e| ResearchError::CacheError {
+            operation: "write".to_string(),
+            reason: format!("Failed to acquire write lock: {}", e),
         })?;
         stats.entry_count = cache.len();
 
@@ -211,19 +197,15 @@ impl CacheManager {
 
     /// Invalidate cache for a specific project
     pub fn invalidate(&self, project_root: &Path) -> Result<(), ResearchError> {
-        let mut cache = self.cache.write().map_err(|e| {
-            ResearchError::CacheError {
-                operation: "write".to_string(),
-                reason: format!("Failed to acquire write lock: {}", e),
-            }
+        let mut cache = self.cache.write().map_err(|e| ResearchError::CacheError {
+            operation: "write".to_string(),
+            reason: format!("Failed to acquire write lock: {}", e),
         })?;
 
         if cache.remove(project_root).is_some() {
-            let mut stats = self.stats.write().map_err(|e| {
-                ResearchError::CacheError {
-                    operation: "write".to_string(),
-                    reason: format!("Failed to acquire write lock: {}", e),
-                }
+            let mut stats = self.stats.write().map_err(|e| ResearchError::CacheError {
+                operation: "write".to_string(),
+                reason: format!("Failed to acquire write lock: {}", e),
             })?;
             stats.invalidations += 1;
             stats.entry_count = cache.len();
@@ -234,21 +216,17 @@ impl CacheManager {
 
     /// Clear all cache entries
     pub fn clear(&self) -> Result<(), ResearchError> {
-        let mut cache = self.cache.write().map_err(|e| {
-            ResearchError::CacheError {
-                operation: "write".to_string(),
-                reason: format!("Failed to acquire write lock: {}", e),
-            }
+        let mut cache = self.cache.write().map_err(|e| ResearchError::CacheError {
+            operation: "write".to_string(),
+            reason: format!("Failed to acquire write lock: {}", e),
         })?;
 
         let cleared_count = cache.len();
         cache.clear();
 
-        let mut stats = self.stats.write().map_err(|e| {
-            ResearchError::CacheError {
-                operation: "write".to_string(),
-                reason: format!("Failed to acquire write lock: {}", e),
-            }
+        let mut stats = self.stats.write().map_err(|e| ResearchError::CacheError {
+            operation: "write".to_string(),
+            reason: format!("Failed to acquire write lock: {}", e),
         })?;
         stats.invalidations += cleared_count as u64;
         stats.entry_count = 0;
@@ -258,11 +236,9 @@ impl CacheManager {
 
     /// Get current cache statistics
     pub fn statistics(&self) -> Result<CacheStatistics, ResearchError> {
-        let stats = self.stats.read().map_err(|e| {
-            ResearchError::CacheError {
-                operation: "read".to_string(),
-                reason: format!("Failed to acquire read lock: {}", e),
-            }
+        let stats = self.stats.read().map_err(|e| ResearchError::CacheError {
+            operation: "read".to_string(),
+            reason: format!("Failed to acquire read lock: {}", e),
         })?;
 
         Ok(stats.clone())
@@ -274,11 +250,9 @@ impl CacheManager {
         project_root: &Path,
         file_mtimes: &HashMap<PathBuf, SystemTime>,
     ) -> Result<bool, ResearchError> {
-        let cache = self.cache.read().map_err(|e| {
-            ResearchError::CacheError {
-                operation: "read".to_string(),
-                reason: format!("Failed to acquire read lock: {}", e),
-            }
+        let cache = self.cache.read().map_err(|e| ResearchError::CacheError {
+            operation: "read".to_string(),
+            reason: format!("Failed to acquire read lock: {}", e),
         })?;
 
         if let Some(entry) = cache.get(project_root) {
@@ -290,11 +264,9 @@ impl CacheManager {
 
     /// Get cache entry count
     pub fn entry_count(&self) -> Result<usize, ResearchError> {
-        let cache = self.cache.read().map_err(|e| {
-            ResearchError::CacheError {
-                operation: "read".to_string(),
-                reason: format!("Failed to acquire read lock: {}", e),
-            }
+        let cache = self.cache.read().map_err(|e| ResearchError::CacheError {
+            operation: "read".to_string(),
+            reason: format!("Failed to acquire read lock: {}", e),
         })?;
 
         Ok(cache.len())
@@ -509,7 +481,10 @@ mod tests {
 
         // Test: file was modified
         let mut current_mtimes = HashMap::new();
-        current_mtimes.insert(PathBuf::from("/test/file1.rs"), now + Duration::from_secs(1));
+        current_mtimes.insert(
+            PathBuf::from("/test/file1.rs"),
+            now + Duration::from_secs(1),
+        );
         assert!(entry.has_file_changes(&current_mtimes));
 
         // Test: file was deleted

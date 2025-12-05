@@ -5,9 +5,7 @@
 //! and session switching is routed correctly.
 
 use crate::sessions::{Session as TuiSession, SessionStatus as TuiSessionStatus, SessionWidget};
-use ricecoder_sessions::{
-    Session, SessionManager, SessionStatus as CoreSessionStatus,
-};
+use ricecoder_sessions::{Session, SessionManager, SessionStatus as CoreSessionStatus};
 
 /// Integrates core session management with TUI display
 pub struct SessionIntegration {
@@ -59,10 +57,7 @@ impl SessionIntegration {
         let mut tui_session = TuiSession::new(session.id.clone(), session.name.clone());
         tui_session.set_status(tui_status);
         tui_session.message_count = session.history.len();
-        tui_session.last_activity = session
-            .updated_at
-            .timestamp()
-            .max(0) as u64;
+        tui_session.last_activity = session.updated_at.timestamp().max(0) as u64;
 
         tui_session
     }
@@ -143,9 +138,7 @@ impl SessionIntegration {
 
     /// Get the active session
     pub fn get_active_session(&self) -> Result<Session, String> {
-        self.manager
-            .get_active_session()
-            .map_err(|e| e.to_string())
+        self.manager.get_active_session().map_err(|e| e.to_string())
     }
 
     /// Add a message to the active session
@@ -335,9 +328,7 @@ mod tests {
             .create_session("Test Session".to_string(), context)
             .unwrap();
 
-        let routed_id = integration
-            .add_message_to_active("Hello")
-            .unwrap();
+        let routed_id = integration.add_message_to_active("Hello").unwrap();
 
         assert_eq!(routed_id, session_id);
 

@@ -25,15 +25,16 @@ impl DartParser {
 
         debug!("Parsing Dart/Flutter dependencies from {:?}", pubspec_path);
 
-        let content = std::fs::read_to_string(&pubspec_path)
-            .map_err(|e| ResearchError::DependencyParsingFailed {
+        let content = std::fs::read_to_string(&pubspec_path).map_err(|e| {
+            ResearchError::DependencyParsingFailed {
                 language: "Dart".to_string(),
                 path: Some(pubspec_path.clone()),
                 reason: format!("Failed to read pubspec.yaml: {}", e),
-            })?;
+            }
+        })?;
 
-        let pubspec: serde_yaml::Value = serde_yaml::from_str(&content)
-            .map_err(|e| ResearchError::DependencyParsingFailed {
+        let pubspec: serde_yaml::Value =
+            serde_yaml::from_str(&content).map_err(|e| ResearchError::DependencyParsingFailed {
                 language: "Dart".to_string(),
                 path: Some(pubspec_path.clone()),
                 reason: format!("Failed to parse pubspec.yaml: {}", e),
@@ -49,7 +50,9 @@ impl DartParser {
                         let version = if let Some(version_str) = value.as_str() {
                             version_str.to_string()
                         } else if let Some(mapping) = value.as_mapping() {
-                            if let Some(version) = mapping.get(serde_yaml::Value::String("version".to_string())) {
+                            if let Some(version) =
+                                mapping.get(serde_yaml::Value::String("version".to_string()))
+                            {
                                 version.as_str().unwrap_or("*").to_string()
                             } else {
                                 "*".to_string()
@@ -76,7 +79,9 @@ impl DartParser {
                     let version = if let Some(version_str) = value.as_str() {
                         version_str.to_string()
                     } else if let Some(mapping) = value.as_mapping() {
-                        if let Some(version) = mapping.get(serde_yaml::Value::String("version".to_string())) {
+                        if let Some(version) =
+                            mapping.get(serde_yaml::Value::String("version".to_string()))
+                        {
                             version.as_str().unwrap_or("*").to_string()
                         } else {
                             "*".to_string()

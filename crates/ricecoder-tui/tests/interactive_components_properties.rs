@@ -5,8 +5,8 @@
 
 use proptest::prelude::*;
 use ricecoder_tui::components::{
-    MenuWidget, MenuItem, ListWidget, DialogWidget, DialogType,
-    SplitViewWidget, TabWidget, VimKeybindings,
+    DialogType, DialogWidget, ListWidget, MenuItem, MenuWidget, SplitViewWidget, TabWidget,
+    VimKeybindings,
 };
 
 // ============================================================================
@@ -17,10 +17,7 @@ use ricecoder_tui::components::{
 fn arb_menu_item() -> impl Strategy<Value = MenuItem> {
     (
         "[a-zA-Z0-9 ]{1,20}",
-        prop_oneof![
-            Just(None),
-            "[a-zA-Z0-9 ]{1,30}".prop_map(Some),
-        ],
+        prop_oneof![Just(None), "[a-zA-Z0-9 ]{1,30}".prop_map(Some),],
     )
         .prop_map(|(label, desc)| {
             let item = MenuItem::new(label);
@@ -215,11 +212,11 @@ proptest! {
             if i == 0 {
                 list.select_next();
             }
-            
+
             if let Some(selected) = list.selected {
                 assert_eq!(selected, i, "Should be at item {}", i);
             }
-            
+
             if i < items.len() - 1 {
                 list.select_next();
             }
@@ -256,7 +253,7 @@ proptest! {
                     // Check if we can navigate
                     let has_items = !filtered.is_empty();
                     drop(filtered); // Drop the borrow before calling select_next
-                    
+
                     if has_items {
                         list.select_next();
                         // Selection should be one of the filtered items

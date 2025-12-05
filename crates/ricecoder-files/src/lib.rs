@@ -5,33 +5,30 @@
 //! Provides safe file operations with backups, rollback support, atomic writes,
 //! and comprehensive audit logging for all file changes.
 
-pub mod error;
-pub mod models;
-pub mod manager;
-pub mod verifier;
-pub mod conflict;
-pub mod writer;
-pub mod backup;
 pub mod audit;
-pub mod transaction;
+pub mod backup;
+pub mod conflict;
 pub mod diff;
+pub mod error;
 pub mod git;
+pub mod manager;
+pub mod models;
+pub mod transaction;
+pub mod verifier;
+pub mod writer;
 
 // Re-export public API
-pub use error::FileError;
-pub use models::{
-    FileOperation, OperationType, ConflictInfo, ConflictResolution,
-    FileTransaction, TransactionStatus,
-    AuditEntry, BackupMetadata,
-    FileDiff, DiffHunk, DiffLine, DiffStats,
-    GitStatus,
-};
-pub use manager::FileManager;
-pub use verifier::ContentVerifier;
-pub use conflict::ConflictResolver;
-pub use writer::SafeWriter;
-pub use backup::BackupManager;
 pub use audit::AuditLogger;
-pub use transaction::TransactionManager;
+pub use backup::BackupManager;
+pub use conflict::ConflictResolver;
 pub use diff::DiffEngine;
+pub use error::FileError;
 pub use git::GitIntegration;
+pub use manager::FileManager;
+pub use models::{
+    AuditEntry, BackupMetadata, ConflictInfo, ConflictResolution, DiffHunk, DiffLine, DiffStats,
+    FileDiff, FileOperation, FileTransaction, GitStatus, OperationType, TransactionStatus,
+};
+pub use transaction::TransactionManager;
+pub use verifier::ContentVerifier;
+pub use writer::SafeWriter;

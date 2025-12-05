@@ -36,15 +36,11 @@ impl ChangeDetector {
             });
         }
 
-        for entry in std::fs::read_dir(path).map_err(|e| {
-            ResearchError::IoError {
-                reason: format!("Failed to read directory {}: {}", path.display(), e),
-            }
+        for entry in std::fs::read_dir(path).map_err(|e| ResearchError::IoError {
+            reason: format!("Failed to read directory {}: {}", path.display(), e),
         })? {
-            let entry = entry.map_err(|e| {
-                ResearchError::IoError {
-                    reason: format!("Failed to read directory entry: {}", e),
-                }
+            let entry = entry.map_err(|e| ResearchError::IoError {
+                reason: format!("Failed to read directory entry: {}", e),
             })?;
 
             let path = entry.path();
@@ -82,8 +78,11 @@ impl ChangeDetector {
 
         // Skip common directories
         if let Some(file_name) = path.file_name() {
-            if let Some(_name_str @ ("node_modules" | "target" | ".git" | ".venv" | "venv" | "__pycache__"
-                    | ".pytest_cache" | "dist" | "build")) = file_name.to_str() {
+            if let Some(
+                _name_str @ ("node_modules" | "target" | ".git" | ".venv" | "venv" | "__pycache__"
+                | ".pytest_cache" | "dist" | "build"),
+            ) = file_name.to_str()
+            {
                 return true;
             }
         }
@@ -138,15 +137,11 @@ impl ChangeDetector {
             return Ok(());
         }
 
-        for entry in std::fs::read_dir(path).map_err(|e| {
-            ResearchError::IoError {
-                reason: format!("Failed to read directory {}: {}", path.display(), e),
-            }
+        for entry in std::fs::read_dir(path).map_err(|e| ResearchError::IoError {
+            reason: format!("Failed to read directory {}: {}", path.display(), e),
         })? {
-            let entry = entry.map_err(|e| {
-                ResearchError::IoError {
-                    reason: format!("Failed to read directory entry: {}", e),
-                }
+            let entry = entry.map_err(|e| ResearchError::IoError {
+                reason: format!("Failed to read directory entry: {}", e),
             })?;
 
             let path = entry.path();
@@ -337,7 +332,9 @@ mod tests {
     #[test]
     fn test_change_detector_clear() {
         let mut detector = ChangeDetector::new();
-        detector.file_mtimes.insert(PathBuf::from("test.txt"), SystemTime::now());
+        detector
+            .file_mtimes
+            .insert(PathBuf::from("test.txt"), SystemTime::now());
         assert_eq!(detector.tracked_file_count(), 1);
 
         detector.clear();

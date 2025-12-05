@@ -1,0 +1,41 @@
+language: kotlin
+file_extensions:
+  - kt
+  - kts
+
+parser_plugin: tree-sitter-kotlin
+
+diagnostic_rules:
+  - name: unused_imports
+    pattern: "^import"
+    severity: warning
+    message: "Unused import"
+    fix_template: "Remove import"
+
+  - name: unused_variables
+    pattern: "^\\s*(val|var)\\s+\\w+\\s*="
+    severity: warning
+    message: "Unused variable"
+    fix_template: "Prefix with underscore"
+
+  - name: missing_kdoc
+    pattern: "^\\s*(public|internal)\\s+(class|fun|interface)"
+    severity: hint
+    message: "Missing KDoc comment"
+    fix_template: "Add KDoc comment"
+
+code_actions:
+  - name: add_kdoc
+    title: "Add KDoc comment"
+    kind: quickfix
+    transformation: "Add /** */ comment above"
+
+  - name: remove_unused_import
+    title: "Remove unused import"
+    kind: quickfix
+    transformation: "Delete import line"
+
+  - name: organize_imports
+    title: "Organize imports"
+    kind: source
+    transformation: "Sort and group imports"

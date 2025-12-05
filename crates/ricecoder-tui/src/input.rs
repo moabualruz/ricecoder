@@ -33,11 +33,17 @@ impl InputAnalyzer {
 
         if lower.contains("generate") || lower.contains("create") || lower.contains("write") {
             Intent::Generate
-        } else if lower.contains("explain") || lower.contains("what is") || lower.contains("how does") {
+        } else if lower.contains("explain")
+            || lower.contains("what is")
+            || lower.contains("how does")
+        {
             Intent::Explain
         } else if lower.contains("fix") || lower.contains("bug") || lower.contains("error") {
             Intent::Fix
-        } else if lower.contains("refactor") || lower.contains("improve") || lower.contains("optimize") {
+        } else if lower.contains("refactor")
+            || lower.contains("improve")
+            || lower.contains("optimize")
+        {
             Intent::Refactor
         } else if lower.contains("test") || lower.contains("unit test") {
             Intent::Test
@@ -227,13 +233,28 @@ mod tests {
 
     #[test]
     fn test_intent_detection() {
-        assert_eq!(InputAnalyzer::detect_intent("generate code"), Intent::Generate);
-        assert_eq!(InputAnalyzer::detect_intent("explain this"), Intent::Explain);
+        assert_eq!(
+            InputAnalyzer::detect_intent("generate code"),
+            Intent::Generate
+        );
+        assert_eq!(
+            InputAnalyzer::detect_intent("explain this"),
+            Intent::Explain
+        );
         assert_eq!(InputAnalyzer::detect_intent("fix the bug"), Intent::Fix);
-        assert_eq!(InputAnalyzer::detect_intent("refactor this"), Intent::Refactor);
+        assert_eq!(
+            InputAnalyzer::detect_intent("refactor this"),
+            Intent::Refactor
+        );
         assert_eq!(InputAnalyzer::detect_intent("unit test"), Intent::Test);
-        assert_eq!(InputAnalyzer::detect_intent("document this"), Intent::Document);
-        assert_eq!(InputAnalyzer::detect_intent("execute command"), Intent::Execute);
+        assert_eq!(
+            InputAnalyzer::detect_intent("document this"),
+            Intent::Document
+        );
+        assert_eq!(
+            InputAnalyzer::detect_intent("execute command"),
+            Intent::Execute
+        );
         assert_eq!(InputAnalyzer::detect_intent("help me"), Intent::Help);
         assert_eq!(InputAnalyzer::detect_intent("hello"), Intent::Chat);
     }

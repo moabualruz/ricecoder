@@ -18,15 +18,14 @@ use tempfile::TempDir;
 
 /// Strategy for generating valid file paths
 fn valid_path_strategy() -> impl Strategy<Value = String> {
-    r"[a-zA-Z0-9_\-]+"
-        .prop_map(|s| format!("test_{}.txt", s))
+    r"[a-zA-Z0-9_\-]+".prop_map(|s| format!("test_{}.txt", s))
 }
 
 /// Strategy for generating invalid file paths
 fn invalid_path_strategy() -> impl Strategy<Value = String> {
     prop_oneof![
-        Just("".to_string()),                    // Empty path
-        Just("path\0with\0nulls".to_string()),   // Path with null bytes
+        Just("".to_string()),                  // Empty path
+        Just("path\0with\0nulls".to_string()), // Path with null bytes
     ]
 }
 

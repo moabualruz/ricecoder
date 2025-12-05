@@ -1,0 +1,72 @@
+language: python
+keywords:
+  - def
+  - class
+  - if
+  - elif
+  - else
+  - for
+  - while
+  - break
+  - continue
+  - return
+  - yield
+  - import
+  - from
+  - as
+  - try
+  - except
+  - finally
+  - raise
+  - with
+  - assert
+  - pass
+  - del
+  - lambda
+  - global
+  - nonlocal
+  - and
+  - or
+  - not
+  - in
+  - is
+  - True
+  - False
+  - None
+  - async
+  - await
+  - match
+  - case
+
+snippets:
+  - label: "def"
+    insert_text: "def ${1:name}(${2:args}):\n    ${0}"
+    kind: Function
+    detail: "Function definition"
+  
+  - label: "class"
+    insert_text: "class ${1:Name}:\n    def __init__(self, ${2:args}):\n        ${0}"
+    kind: Class
+    detail: "Class definition"
+  
+  - label: "if"
+    insert_text: "if ${1:condition}:\n    ${0}"
+    kind: Keyword
+    detail: "If statement"
+  
+  - label: "for"
+    insert_text: "for ${1:item} in ${2:iterable}:\n    ${0}"
+    kind: Keyword
+    detail: "For loop"
+  
+  - label: "with"
+    insert_text: "with ${1:context} as ${2:var}:\n    ${0}"
+    kind: Keyword
+    detail: "Context manager"
+
+ranking_weights:
+  relevance: 0.5
+  frequency: 0.3
+  recency: 0.2
+
+provider: null

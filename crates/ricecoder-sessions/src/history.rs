@@ -34,10 +34,10 @@ impl HistoryManager {
     /// the maximum size, the oldest message is removed.
     pub fn add_message(&mut self, message: Message) {
         self.messages.push(message);
-        
+
         // Sort by timestamp to maintain ordering
         self.messages.sort_by_key(|m| m.timestamp);
-        
+
         // Enforce size limit if set
         if let Some(max) = self.max_size {
             if self.messages.len() > max {
@@ -55,13 +55,13 @@ impl HistoryManager {
         if count == 0 {
             return Vec::new();
         }
-        
+
         let start = if self.messages.len() > count {
             self.messages.len() - count
         } else {
             0
         };
-        
+
         self.messages[start..].to_vec()
     }
 

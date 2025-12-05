@@ -123,7 +123,10 @@ impl RollbackHandler {
     ///
     /// # Returns
     /// A vector of rollback results for executed actions
-    pub fn execute_partial_rollback(&mut self, step_ids: &[String]) -> ExecutionResult<Vec<RollbackResult>> {
+    pub fn execute_partial_rollback(
+        &mut self,
+        step_ids: &[String],
+    ) -> ExecutionResult<Vec<RollbackResult>> {
         info!(
             step_count = step_ids.len(),
             "Starting partial rollback execution"
@@ -342,7 +345,9 @@ impl RollbackHandler {
             let stderr = String::from_utf8_lossy(&output.stderr);
             return Err(ExecutionError::RollbackFailed(format!(
                 "Undo command {} failed with exit code {:?}: {}",
-                command, output.status.code(), stderr
+                command,
+                output.status.code(),
+                stderr
             )));
         }
 

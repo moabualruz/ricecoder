@@ -3,8 +3,8 @@
 //! **Feature: ricecoder-local-models, Integration Tests: Provider Configuration**
 //! **Validates: Requirements 1.1, 1.2**
 
-use ricecoder_providers::{OllamaProvider, Provider};
 use ricecoder_providers::providers::OllamaConfig;
+use ricecoder_providers::{OllamaProvider, Provider};
 use std::path::PathBuf;
 
 /// Note: Environment variable loading tests are covered in unit tests in ollama_config.rs
@@ -15,7 +15,7 @@ use std::path::PathBuf;
 #[test]
 fn test_ollama_config_validation_default_values() {
     let config = OllamaConfig::default();
-    
+
     let result = config.validate();
     assert!(result.is_ok());
 }
@@ -30,7 +30,7 @@ fn test_ollama_config_validation_custom_values() {
         timeout_secs: 60,
         cache_ttl_secs: 600,
     };
-    
+
     let result = config.validate();
     assert!(result.is_ok());
 }
@@ -41,7 +41,7 @@ fn test_ollama_config_validation_custom_values() {
 fn test_ollama_config_validation_empty_base_url() {
     let mut config = OllamaConfig::default();
     config.base_url = String::new();
-    
+
     let result = config.validate();
     assert!(result.is_err());
 }
@@ -52,7 +52,7 @@ fn test_ollama_config_validation_empty_base_url() {
 fn test_ollama_config_validation_invalid_url_scheme() {
     let mut config = OllamaConfig::default();
     config.base_url = "ftp://localhost:11434".to_string();
-    
+
     let result = config.validate();
     assert!(result.is_err());
 }
@@ -63,7 +63,7 @@ fn test_ollama_config_validation_invalid_url_scheme() {
 fn test_ollama_config_validation_empty_default_model() {
     let mut config = OllamaConfig::default();
     config.default_model = String::new();
-    
+
     let result = config.validate();
     assert!(result.is_err());
 }
@@ -74,7 +74,7 @@ fn test_ollama_config_validation_empty_default_model() {
 fn test_ollama_config_validation_zero_timeout() {
     let mut config = OllamaConfig::default();
     config.timeout_secs = 0;
-    
+
     let result = config.validate();
     assert!(result.is_err());
 }
@@ -85,7 +85,7 @@ fn test_ollama_config_validation_zero_timeout() {
 fn test_ollama_config_validation_zero_cache_ttl() {
     let mut config = OllamaConfig::default();
     config.cache_ttl_secs = 0;
-    
+
     let result = config.validate();
     assert!(result.is_err());
 }
@@ -100,7 +100,7 @@ fn test_ollama_config_validation_https_url() {
         timeout_secs: 30,
         cache_ttl_secs: 300,
     };
-    
+
     let result = config.validate();
     assert!(result.is_ok());
 }
@@ -115,7 +115,7 @@ fn test_ollama_config_validation_http_url() {
         timeout_secs: 30,
         cache_ttl_secs: 300,
     };
-    
+
     let result = config.validate();
     assert!(result.is_ok());
 }
@@ -125,7 +125,7 @@ fn test_ollama_config_validation_http_url() {
 #[test]
 fn test_ollama_config_default_values() {
     let config = OllamaConfig::default();
-    
+
     assert_eq!(config.base_url, "http://localhost:11434");
     assert_eq!(config.default_model, "mistral");
     assert_eq!(config.timeout_secs, 30);
@@ -142,7 +142,7 @@ fn test_ollama_config_timeout_as_duration() {
         timeout_secs: 45,
         cache_ttl_secs: 300,
     };
-    
+
     let duration = config.timeout();
     assert_eq!(duration.as_secs(), 45);
 }
@@ -157,7 +157,7 @@ fn test_ollama_config_cache_ttl_as_duration() {
         timeout_secs: 30,
         cache_ttl_secs: 600,
     };
-    
+
     let duration = config.cache_ttl();
     assert_eq!(duration.as_secs(), 600);
 }
@@ -167,7 +167,7 @@ fn test_ollama_config_cache_ttl_as_duration() {
 #[test]
 fn test_ollama_config_global_config_path() {
     let path = OllamaConfig::get_global_config_path();
-    
+
     assert!(path.to_string_lossy().contains(".ricecoder"));
     assert!(path.to_string_lossy().contains("config.yaml"));
 }
@@ -177,7 +177,7 @@ fn test_ollama_config_global_config_path() {
 #[test]
 fn test_ollama_config_project_config_path() {
     let path = OllamaConfig::get_project_config_path();
-    
+
     assert_eq!(path, PathBuf::from(".ricecoder/config.yaml"));
 }
 
@@ -187,7 +187,7 @@ fn test_ollama_config_project_config_path() {
 fn test_ollama_provider_creation_from_config() {
     let provider = OllamaProvider::from_config();
     assert!(provider.is_ok());
-    
+
     let prov = provider.unwrap();
     assert_eq!(prov.id(), "ollama");
 }
@@ -197,10 +197,10 @@ fn test_ollama_provider_creation_from_config() {
 #[test]
 fn test_ollama_provider_config_retrieval() {
     let provider = OllamaProvider::new("http://localhost:11434".to_string()).unwrap();
-    
+
     let config = provider.config();
     assert!(config.is_ok());
-    
+
     let cfg = config.unwrap();
     assert_eq!(cfg.base_url, "http://localhost:11434");
 }
@@ -215,7 +215,7 @@ fn test_ollama_config_validation_large_timeout() {
         timeout_secs: 3600, // 1 hour
         cache_ttl_secs: 300,
     };
-    
+
     let result = config.validate();
     assert!(result.is_ok());
 }
@@ -230,7 +230,7 @@ fn test_ollama_config_validation_large_cache_ttl() {
         timeout_secs: 30,
         cache_ttl_secs: 86400, // 1 day
     };
-    
+
     let result = config.validate();
     assert!(result.is_ok());
 }
@@ -245,7 +245,7 @@ fn test_ollama_config_custom_model_name() {
         timeout_secs: 30,
         cache_ttl_secs: 300,
     };
-    
+
     let result = config.validate();
     assert!(result.is_ok());
 }
@@ -259,7 +259,7 @@ fn test_ollama_config_localhost_variations() {
         "http://127.0.0.1:11434",
         "http://0.0.0.0:11434",
     ];
-    
+
     for base_url in configs {
         let config = OllamaConfig {
             base_url: base_url.to_string(),
@@ -267,7 +267,7 @@ fn test_ollama_config_localhost_variations() {
             timeout_secs: 30,
             cache_ttl_secs: 300,
         };
-        
+
         assert!(config.validate().is_ok(), "Failed for {}", base_url);
     }
 }
@@ -281,7 +281,7 @@ fn test_ollama_config_port_variations() {
         "http://localhost:8080",
         "http://localhost:3000",
     ];
-    
+
     for base_url in configs {
         let config = OllamaConfig {
             base_url: base_url.to_string(),
@@ -289,7 +289,7 @@ fn test_ollama_config_port_variations() {
             timeout_secs: 30,
             cache_ttl_secs: 300,
         };
-        
+
         assert!(config.validate().is_ok(), "Failed for {}", base_url);
     }
 }
@@ -304,7 +304,7 @@ fn test_ollama_config_numeric_model_names() {
         timeout_secs: 30,
         cache_ttl_secs: 300,
     };
-    
+
     let result = config.validate();
     assert!(result.is_ok());
 }

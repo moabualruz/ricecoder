@@ -120,7 +120,9 @@ impl TemplateCache {
         file_path: Option<PathBuf>,
     ) {
         let size_bytes = template.elements.len() * 8; // Rough estimate
-        let last_modified = file_path.as_ref().and_then(|p| self.get_file_modified_time(p).ok());
+        let last_modified = file_path
+            .as_ref()
+            .and_then(|p| self.get_file_modified_time(p).ok());
 
         let entry = CacheEntry {
             template,
@@ -141,7 +143,8 @@ impl TemplateCache {
     pub fn remove(&mut self, key: &str) -> Option<ParsedTemplate> {
         if let Some(entry) = self.cache.remove(key) {
             self.stats.total_templates = self.stats.total_templates.saturating_sub(1);
-            self.stats.total_size_bytes = self.stats.total_size_bytes.saturating_sub(entry.size_bytes);
+            self.stats.total_size_bytes =
+                self.stats.total_size_bytes.saturating_sub(entry.size_bytes);
             Some(entry.template)
         } else {
             None
@@ -160,9 +163,7 @@ impl TemplateCache {
         let keys_to_remove: Vec<String> = self
             .cache
             .iter()
-            .filter(|(_, entry)| {
-                entry.file_path.as_ref().is_some_and(|p| p == file_path)
-            })
+            .filter(|(_, entry)| entry.file_path.as_ref().is_some_and(|p| p == file_path))
             .map(|(k, _)| k.clone())
             .collect();
 
@@ -193,16 +194,13 @@ impl TemplateCache {
 
     /// Get file modification time as Unix timestamp
     fn get_file_modified_time(&self, path: &Path) -> Result<u64, TemplateError> {
-        let metadata = std::fs::metadata(path)
-            .map_err(TemplateError::IoError)?;
+        let metadata = std::fs::metadata(path).map_err(TemplateError::IoError)?;
 
-        let modified = metadata
-            .modified()
-            .map_err(TemplateError::IoError)?;
+        let modified = metadata.modified().map_err(TemplateError::IoError)?;
 
-        let duration = modified
-            .duration_since(UNIX_EPOCH)
-            .map_err(|_| TemplateError::RenderError("Invalid file modification time".to_string()))?;
+        let duration = modified.duration_since(UNIX_EPOCH).map_err(|_| {
+            TemplateError::RenderError("Invalid file modification time".to_string())
+        })?;
 
         Ok(duration.as_secs())
     }

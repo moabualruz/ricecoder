@@ -25,12 +25,13 @@ impl RubyParser {
 
         debug!("Parsing Ruby dependencies from {:?}", gemfile_path);
 
-        let content = std::fs::read_to_string(&gemfile_path)
-            .map_err(|e| ResearchError::DependencyParsingFailed {
+        let content = std::fs::read_to_string(&gemfile_path).map_err(|e| {
+            ResearchError::DependencyParsingFailed {
                 language: "Ruby".to_string(),
                 path: Some(gemfile_path.clone()),
                 reason: format!("Failed to read Gemfile: {}", e),
-            })?;
+            }
+        })?;
 
         let mut dependencies = Vec::new();
 
@@ -38,9 +39,9 @@ impl RubyParser {
         // Patterns: gem 'name', 'version'
         //          gem 'name', '~> 1.0'
         //          gem 'name'
-        let gem_pattern = regex::Regex::new(
-            r#"gem\s+['"]([a-zA-Z0-9_\-\.]+)['"](?:\s*,\s*['"]([^'"]+)['"])?"#
-        ).unwrap();
+        let gem_pattern =
+            regex::Regex::new(r#"gem\s+['"]([a-zA-Z0-9_\-\.]+)['"](?:\s*,\s*['"]([^'"]+)['"])?"#)
+                .unwrap();
 
         for cap in gem_pattern.captures_iter(&content) {
             let name = cap.get(1).map(|m| m.as_str()).unwrap_or("");

@@ -394,10 +394,7 @@ mod tests {
         // Add a message to the context
         switcher
             .update_context(|ctx| {
-                ctx.add_message(
-                    crate::models::MessageRole::User,
-                    "Test message".to_string(),
-                );
+                ctx.add_message(crate::models::MessageRole::User, "Test message".to_string());
             })
             .await
             .unwrap();
@@ -418,7 +415,10 @@ mod tests {
         assert_eq!(ctx.conversation_history.len(), 0);
 
         // Restore context
-        switcher.restore_context_for_mode("test-mode").await.unwrap();
+        switcher
+            .restore_context_for_mode("test-mode")
+            .await
+            .unwrap();
 
         let restored_ctx = switcher.context().await;
         assert_eq!(restored_ctx.conversation_history.len(), 1);

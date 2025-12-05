@@ -190,7 +190,11 @@ impl ScoringSystem {
         files: &[GeneratedFile],
         spec: &Spec,
     ) -> Result<ComplianceScore, GenerationError> {
-        let combined_content = files.iter().map(|f| f.content.as_str()).collect::<Vec<_>>().join("\n");
+        let combined_content = files
+            .iter()
+            .map(|f| f.content.as_str())
+            .collect::<Vec<_>>()
+            .join("\n");
 
         let mut requirement_scores = HashMap::new();
         let mut total_coverage = 0.0;
@@ -201,7 +205,9 @@ impl ScoringSystem {
             let mut req_coverage = 0.0;
 
             // Check if requirement is addressed
-            if combined_content.contains(&requirement.id) || combined_content.contains(&requirement.user_story) {
+            if combined_content.contains(&requirement.id)
+                || combined_content.contains(&requirement.user_story)
+            {
                 req_coverage = 0.5;
             }
 
@@ -217,7 +223,8 @@ impl ScoringSystem {
             }
 
             if !requirement.acceptance_criteria.is_empty() {
-                let criteria_ratio = criteria_count as f32 / requirement.acceptance_criteria.len() as f32;
+                let criteria_ratio =
+                    criteria_count as f32 / requirement.acceptance_criteria.len() as f32;
                 req_coverage = (req_coverage + criteria_ratio) / 2.0;
             }
 
@@ -239,7 +246,8 @@ impl ScoringSystem {
 
         let constraint_adherence = self.score_constraint_adherence(files)?;
 
-        let overall = (requirement_coverage * 0.4) + (criteria_coverage * 0.4) + (constraint_adherence * 0.2);
+        let overall =
+            (requirement_coverage * 0.4) + (criteria_coverage * 0.4) + (constraint_adherence * 0.2);
 
         Ok(ComplianceScore {
             overall,
@@ -346,8 +354,12 @@ impl ScoringSystem {
     }
 
     /// Scores documentation
-    fn score_documentation(&self, files: &[GeneratedFile]) -> Result<ScoreComponent, GenerationError> {
-        let mut component = ScoreComponent::new("Documentation", 0.0, self.config.documentation_weight);
+    fn score_documentation(
+        &self,
+        files: &[GeneratedFile],
+    ) -> Result<ScoreComponent, GenerationError> {
+        let mut component =
+            ScoreComponent::new("Documentation", 0.0, self.config.documentation_weight);
 
         let mut total_lines = 0;
         let mut doc_lines = 0;
@@ -362,7 +374,10 @@ impl ScoringSystem {
                 let trimmed = line.trim();
 
                 // Count documentation lines
-                if trimmed.starts_with("///") || trimmed.starts_with("//!") || trimmed.starts_with("/**") {
+                if trimmed.starts_with("///")
+                    || trimmed.starts_with("//!")
+                    || trimmed.starts_with("/**")
+                {
                     doc_lines += 1;
                 }
 
@@ -370,7 +385,10 @@ impl ScoringSystem {
                 if trimmed.starts_with("pub ") {
                     public_items += 1;
                     // Check if documented
-                    if idx > 0 && (lines[idx - 1].trim().starts_with("///") || lines[idx - 1].trim().starts_with("//!")) {
+                    if idx > 0
+                        && (lines[idx - 1].trim().starts_with("///")
+                            || lines[idx - 1].trim().starts_with("//!"))
+                    {
                         documented_items += 1;
                     }
                 }
@@ -398,15 +416,22 @@ impl ScoringSystem {
             component.add_issue("Some public items lack documentation".to_string());
         } else {
             component.feedback = "Documentation coverage is insufficient".to_string();
-            component.add_issue(format!("Only {:.0}% of public items are documented", public_doc_ratio * 100.0));
+            component.add_issue(format!(
+                "Only {:.0}% of public items are documented",
+                public_doc_ratio * 100.0
+            ));
         }
 
         Ok(component)
     }
 
     /// Scores error handling
-    fn score_error_handling(&self, files: &[GeneratedFile]) -> Result<ScoreComponent, GenerationError> {
-        let mut component = ScoreComponent::new("Error Handling", 0.0, self.config.error_handling_weight);
+    fn score_error_handling(
+        &self,
+        files: &[GeneratedFile],
+    ) -> Result<ScoreComponent, GenerationError> {
+        let mut component =
+            ScoreComponent::new("Error Handling", 0.0, self.config.error_handling_weight);
 
         let mut total_lines = 0;
         let mut error_lines = 0;
@@ -458,7 +483,10 @@ impl ScoringSystem {
             let lines: Vec<&str> = file.content.lines().collect();
 
             // Check for trailing whitespace
-            let trailing_ws = lines.iter().filter(|l| l.ends_with(' ') || l.ends_with('\t')).count();
+            let trailing_ws = lines
+                .iter()
+                .filter(|l| l.ends_with(' ') || l.ends_with('\t'))
+                .count();
             if trailing_ws > 0 {
                 component.score -= 0.05;
                 component.add_issue(format!("{} lines have trailing whitespace", trailing_ws));
@@ -583,7 +611,8 @@ impl ScoringSystem {
                     let violations = content.matches("const [a-z]_[a-z]").count();
                     if violations > 0 {
                         component.score -= 0.1;
-                        component.add_issue("TypeScript variables should use camelCase".to_string());
+                        component
+                            .add_issue("TypeScript variables should use camelCase".to_string());
                     }
                 }
                 "python" => {

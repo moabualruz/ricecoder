@@ -18,30 +18,30 @@ use crate::models::{Dependency, Language};
 use std::path::Path;
 use tracing::debug;
 
-mod rust_parser;
-mod nodejs_parser;
-mod python_parser;
+mod dart_parser;
+mod dotnet_parser;
 mod go_parser;
 mod java_parser;
 mod kotlin_parser;
-mod dotnet_parser;
+mod nodejs_parser;
 mod php_parser;
+mod python_parser;
 mod ruby_parser;
+mod rust_parser;
 mod swift_parser;
-mod dart_parser;
 mod version_analyzer;
 
-pub use rust_parser::RustParser;
-pub use nodejs_parser::NodeJsParser;
-pub use python_parser::PythonParser;
+pub use dart_parser::DartParser;
+pub use dotnet_parser::DotNetParser;
 pub use go_parser::GoParser;
 pub use java_parser::JavaParser;
 pub use kotlin_parser::KotlinParser;
-pub use dotnet_parser::DotNetParser;
+pub use nodejs_parser::NodeJsParser;
 pub use php_parser::PhpParser;
+pub use python_parser::PythonParser;
 pub use ruby_parser::RubyParser;
+pub use rust_parser::RustParser;
 pub use swift_parser::SwiftParser;
-pub use dart_parser::DartParser;
 pub use version_analyzer::VersionAnalyzer;
 
 /// Analyzes project dependencies across multiple languages
@@ -146,10 +146,8 @@ impl DependencyAnalyzer {
         }
 
         // Remove duplicates (same name and version)
-        all_dependencies.sort_by(|a, b| {
-            a.name.cmp(&b.name)
-                .then_with(|| a.version.cmp(&b.version))
-        });
+        all_dependencies
+            .sort_by(|a, b| a.name.cmp(&b.name).then_with(|| a.version.cmp(&b.version)));
         all_dependencies.dedup_by(|a, b| a.name == b.name && a.version == b.version);
 
         Ok(all_dependencies)

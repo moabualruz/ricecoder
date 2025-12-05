@@ -22,11 +22,7 @@ fn placeholder_value_strategy() -> impl Strategy<Value = String> {
 
 /// Strategy for generating simple templates with placeholders
 fn simple_template_strategy() -> impl Strategy<Value = (String, HashMap<String, String>)> {
-    (
-        placeholder_name_strategy(),
-        placeholder_value_strategy(),
-    )
-    .prop_map(|(name, value)| {
+    (placeholder_name_strategy(), placeholder_value_strategy()).prop_map(|(name, value)| {
         let template = format!("Hello {{{{{}}}}} world", name);
         let mut values = HashMap::new();
         values.insert(name, value);
@@ -35,43 +31,48 @@ fn simple_template_strategy() -> impl Strategy<Value = (String, HashMap<String, 
 }
 
 /// Strategy for generating templates with multiple placeholders
-fn multi_placeholder_template_strategy() -> impl Strategy<Value = (String, HashMap<String, String>)> {
+fn multi_placeholder_template_strategy() -> impl Strategy<Value = (String, HashMap<String, String>)>
+{
     (
         placeholder_name_strategy(),
         placeholder_value_strategy(),
         placeholder_name_strategy(),
         placeholder_value_strategy(),
     )
-    .prop_map(|(name1, value1, name2, value2)| {
-        let template = format!(
-            "Project: {{{{{}}}}}, Author: {{{{{}}}}}",
-            name1, name2
-        );
-        let mut values = HashMap::new();
-        values.insert(name1, value1);
-        values.insert(name2, value2);
-        (template, values)
-    })
-    .prop_filter("names must be different and not substrings", |(_, values)| {
-        if values.len() != 2 {
-            return false;
-        }
-        let names: Vec<_> = values.keys().collect();
-        // Ensure names are not substrings of each other
-        !names[0].contains(names[1]) && !names[1].contains(names[0])
-    })
+        .prop_map(|(name1, value1, name2, value2)| {
+            let template = format!("Project: {{{{{}}}}}, Author: {{{{{}}}}}", name1, name2);
+            let mut values = HashMap::new();
+            values.insert(name1, value1);
+            values.insert(name2, value2);
+            (template, values)
+        })
+        .prop_filter(
+            "names must be different and not substrings",
+            |(_, values)| {
+                if values.len() != 2 {
+                    return false;
+                }
+                let names: Vec<_> = values.keys().collect();
+                // Ensure names are not substrings of each other
+                !names[0].contains(names[1]) && !names[1].contains(names[0])
+            },
+        )
 }
 
 /// Strategy for generating templates with case transformations
 fn case_transform_template_strategy() -> impl Strategy<Value = (String, HashMap<String, String>)> {
-    (
-        placeholder_name_strategy(),
-        placeholder_value_strategy(),
-    )
-    .prop_map(|(name, value)| {
+    (placeholder_name_strategy(), placeholder_value_strategy()).prop_map(|(name, value)| {
         let template = format!(
             "PascalCase: {{{{{}}}}}, lowercase: {{{{{}}}}}",
-            format!("{}", name.chars().next().unwrap().to_uppercase().collect::<String>() + &name[1..]),
+            format!(
+                "{}",
+                name.chars()
+                    .next()
+                    .unwrap()
+                    .to_uppercase()
+                    .collect::<String>()
+                    + &name[1..]
+            ),
             name
         );
         let mut values = HashMap::new();

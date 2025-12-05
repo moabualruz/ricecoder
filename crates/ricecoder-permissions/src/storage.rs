@@ -2,9 +2,9 @@
 //!
 //! This module provides persistence for permissions configuration and audit logs.
 
-use crate::permission::PermissionConfig;
 use crate::audit::AuditLogEntry;
 use crate::error::Result;
+use crate::permission::PermissionConfig;
 use std::path::Path;
 
 /// Repository trait for storing and retrieving permissions
@@ -180,10 +180,10 @@ impl PermissionRepository for InMemoryPermissionRepository {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::permission::ToolPermission;
-    use crate::permission::PermissionLevel;
     use crate::audit::AuditAction;
     use crate::audit::AuditResult;
+    use crate::permission::PermissionLevel;
+    use crate::permission::ToolPermission;
 
     #[test]
     fn test_in_memory_repository_save_and_load_config() {

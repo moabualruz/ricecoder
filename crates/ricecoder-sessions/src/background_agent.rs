@@ -1,7 +1,7 @@
 //! Background agent management
 
 use crate::error::{SessionError, SessionResult};
-use crate::models::{BackgroundAgent, AgentStatus};
+use crate::models::{AgentStatus, BackgroundAgent};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -120,7 +120,10 @@ impl BackgroundAgentManager {
                 )))
             }
         } else {
-            Err(SessionError::AgentError(format!("Agent not found: {}", agent_id)))
+            Err(SessionError::AgentError(format!(
+                "Agent not found: {}",
+                agent_id
+            )))
         }
     }
 
@@ -141,7 +144,10 @@ impl BackgroundAgentManager {
 
             Ok(())
         } else {
-            Err(SessionError::AgentError(format!("Agent not found: {}", agent_id)))
+            Err(SessionError::AgentError(format!(
+                "Agent not found: {}",
+                agent_id
+            )))
         }
     }
 

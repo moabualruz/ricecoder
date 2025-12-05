@@ -11,10 +11,10 @@ use std::time::{Duration, SystemTime};
 use tokio::time::sleep;
 use tracing::{debug, error, info, warn};
 
+use super::ollama_config::OllamaConfig;
 use crate::error::ProviderError;
 use crate::models::{Capability, ChatRequest, ChatResponse, FinishReason, ModelInfo, TokenUsage};
 use crate::provider::Provider;
-use super::ollama_config::OllamaConfig;
 
 /// Configuration for retry logic
 const MAX_RETRIES: u32 = 3;
@@ -103,9 +103,7 @@ fn is_transient_error(err: &reqwest::Error) -> bool {
 
 /// Execute a request with exponential backoff retry logic
 /// Returns the response if successful, or the last error if all retries fail
-async fn execute_with_retry<F, Fut>(
-    mut request_fn: F,
-) -> Result<reqwest::Response, reqwest::Error>
+async fn execute_with_retry<F, Fut>(mut request_fn: F) -> Result<reqwest::Response, reqwest::Error>
 where
     F: FnMut() -> Fut,
     Fut: std::future::Future<Output = Result<reqwest::Response, reqwest::Error>>,
@@ -135,10 +133,7 @@ where
                 } else {
                     // Permanent error or max retries exceeded
                     if attempt >= MAX_RETRIES {
-                        debug!(
-                            "Max retries ({}) exceeded for request",
-                            MAX_RETRIES
-                        );
+                        debug!("Max retries ({}) exceeded for request", MAX_RETRIES);
                     }
                     return Err(err);
                 }
@@ -177,8 +172,10 @@ impl OllamaProvider {
     /// 4. Built-in defaults (lowest priority)
     pub fn from_config() -> Result<Self, ProviderError> {
         let config = OllamaConfig::load_with_precedence()?;
-        debug!("Creating OllamaProvider from configuration: base_url={}, default_model={}", 
-               config.base_url, config.default_model);
+        debug!(
+            "Creating OllamaProvider from configuration: base_url={}, default_model={}",
+            config.base_url, config.default_model
+        );
         Self::new(config.base_url)
     }
 
@@ -191,7 +188,7 @@ impl OllamaProvider {
     /// Returns true if Ollama is running and accessible
     pub async fn detect_availability(&self) -> bool {
         debug!("Detecting Ollama availability at {}", self.base_url);
-        
+
         match self.health_check().await {
             Ok(true) => {
                 info!("Ollama is available at {}", self.base_url);
@@ -212,7 +209,7 @@ impl OllamaProvider {
     /// Returns cached models if available, or default models if offline
     pub async fn get_models_with_fallback(&self) -> Vec<ModelInfo> {
         let cache = self.model_cache.lock().await;
-        
+
         // Try to get valid cached models
         if let Some(cached_models) = cache.get() {
             debug!("Returning cached models ({} models)", cached_models.len());
@@ -221,7 +218,10 @@ impl OllamaProvider {
 
         // Try to get stale cached models as fallback
         if let Some(stale_models) = cache.get_stale() {
-            warn!("Returning stale cached models ({} models) - cache expired", stale_models.len());
+            warn!(
+                "Returning stale cached models ({} models) - cache expired",
+                stale_models.len()
+            );
             return stale_models;
         }
 
@@ -388,7 +388,10 @@ impl Provider for OllamaProvider {
     }
 
     async fn chat(&self, request: ChatRequest) -> Result<ChatResponse, ProviderError> {
-        debug!("Sending chat request to Ollama for model: {}", request.model);
+        debug!(
+            "Sending chat request to Ollama for model: {}",
+            request.model
+        );
 
         let ollama_request = OllamaChatRequest {
             model: request.model.clone(),
@@ -441,7 +444,10 @@ impl Provider for OllamaProvider {
         &self,
         request: ChatRequest,
     ) -> Result<crate::provider::ChatStream, ProviderError> {
-        debug!("Starting streaming chat request to Ollama for model: {}", request.model);
+        debug!(
+            "Starting streaming chat request to Ollama for model: {}",
+            request.model
+        );
 
         let ollama_request = OllamaChatRequest {
             model: request.model.clone(),
@@ -491,24 +497,22 @@ impl Provider for OllamaProvider {
         let responses: Vec<Result<ChatResponse, ProviderError>> = body
             .lines()
             .filter(|line| !line.is_empty())
-            .map(|line| {
-                match serde_json::from_str::<OllamaChatResponse>(line) {
-                    Ok(ollama_response) => {
-                        Ok(ChatResponse {
-                            content: ollama_response.message.content,
-                            model: model.clone(),
-                            usage: TokenUsage {
-                                prompt_tokens: 0,
-                                completion_tokens: 0,
-                                total_tokens: 0,
-                            },
-                            finish_reason: if ollama_response.done {
-                                FinishReason::Stop
-                            } else {
-                                FinishReason::Error
-                            },
-                        })
-                    }
+            .map(
+                |line| match serde_json::from_str::<OllamaChatResponse>(line) {
+                    Ok(ollama_response) => Ok(ChatResponse {
+                        content: ollama_response.message.content,
+                        model: model.clone(),
+                        usage: TokenUsage {
+                            prompt_tokens: 0,
+                            completion_tokens: 0,
+                            total_tokens: 0,
+                        },
+                        finish_reason: if ollama_response.done {
+                            FinishReason::Stop
+                        } else {
+                            FinishReason::Error
+                        },
+                    }),
                     Err(e) => {
                         debug!("Failed to parse streaming response line: {}", e);
                         Err(ProviderError::ProviderError(format!(
@@ -516,8 +520,8 @@ impl Provider for OllamaProvider {
                             e
                         )))
                     }
-                }
-            })
+                },
+            )
             .collect();
 
         // Convert to a stream
@@ -555,7 +559,10 @@ impl Provider for OllamaProvider {
                 Ok(true)
             }
             _ => {
-                warn!("Ollama health check failed with status: {}", response.status());
+                warn!(
+                    "Ollama health check failed with status: {}",
+                    response.status()
+                );
                 Ok(false)
             }
         }

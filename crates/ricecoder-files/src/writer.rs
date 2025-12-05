@@ -45,8 +45,13 @@ impl SafeWriter {
         self.validate_content(content)?;
 
         // 2. Check for conflicts
-        if let Some(conflict_info) = self.conflict_resolver.detect_conflict(path, content).await? {
-            self.conflict_resolver.resolve(conflict_resolution, &conflict_info)?;
+        if let Some(conflict_info) = self
+            .conflict_resolver
+            .detect_conflict(path, content)
+            .await?
+        {
+            self.conflict_resolver
+                .resolve(conflict_resolution, &conflict_info)?;
         }
 
         // 3. Create backup if file exists
@@ -103,11 +108,7 @@ impl SafeWriter {
     /// # Returns
     ///
     /// FileOperation describing the write, or an error
-    async fn write_atomic(
-        &self,
-        path: &Path,
-        content: &str,
-    ) -> Result<FileOperation, FileError> {
+    async fn write_atomic(&self, path: &Path, content: &str) -> Result<FileOperation, FileError> {
         // Create parent directory if it doesn't exist
         if let Some(parent) = path.parent() {
             if !parent.as_os_str().is_empty() {
@@ -150,9 +151,7 @@ impl SafeWriter {
         let file_name = format!(
             ".tmp-{}-{}",
             Uuid::new_v4(),
-            path.file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("file")
+            path.file_name().and_then(|n| n.to_str()).unwrap_or("file")
         );
         temp_path.set_file_name(file_name);
         temp_path
@@ -194,9 +193,7 @@ impl SafeWriter {
         let file_name = format!(
             ".backup-{}-{}",
             Uuid::new_v4(),
-            path.file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("file")
+            path.file_name().and_then(|n| n.to_str()).unwrap_or("file")
         );
         backup_path.set_file_name(file_name);
         backup_path

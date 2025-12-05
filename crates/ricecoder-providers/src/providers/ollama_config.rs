@@ -56,7 +56,10 @@ impl OllamaConfig {
         // Load project config if it exists (overrides global)
         let project_config_path = Self::get_project_config_path();
         if project_config_path.exists() {
-            debug!("Loading project Ollama config from {:?}", project_config_path);
+            debug!(
+                "Loading project Ollama config from {:?}",
+                project_config_path
+            );
             config.merge_from_file(&project_config_path)?;
         }
 
@@ -346,7 +349,7 @@ mod tests {
         // by checking that a valid timeout value is parsed
         let mut config = OllamaConfig::default();
         assert_eq!(config.timeout_secs, 30); // Default value
-        
+
         // Verify the load_from_env method exists and can be called
         config.load_from_env();
         // After calling load_from_env, config should have default or env value
@@ -360,7 +363,7 @@ mod tests {
         // by checking that a valid cache_ttl value is parsed
         let mut config = OllamaConfig::default();
         assert_eq!(config.cache_ttl_secs, 300); // Default value
-        
+
         // Verify the load_from_env method exists and can be called
         config.load_from_env();
         // After calling load_from_env, config should have default or env value
@@ -373,7 +376,7 @@ mod tests {
         // Note: This test verifies that invalid env values don't crash
         let mut config = OllamaConfig::default();
         let original_timeout = config.timeout_secs;
-        
+
         // Verify the load_from_env method exists and can be called
         config.load_from_env();
         // After calling load_from_env, config should still be valid
@@ -506,23 +509,29 @@ ollama:
 
         // Save original value to restore later
         let original_value = std::env::var("OLLAMA_BASE_URL").ok();
-        
+
         // Clear any existing value first
         std::env::remove_var("OLLAMA_BASE_URL");
-        
+
         // Now set the test value
         std::env::set_var("OLLAMA_BASE_URL", "http://env-host:11434");
-        
+
         // Verify it was set
         let env_value = std::env::var("OLLAMA_BASE_URL").expect("OLLAMA_BASE_URL should be set");
-        assert_eq!(env_value, "http://env-host:11434", "Environment variable not set correctly");
+        assert_eq!(
+            env_value, "http://env-host:11434",
+            "Environment variable not set correctly"
+        );
 
         let mut config = OllamaConfig::default();
         config.merge_from_file(&config_path).unwrap();
         config.load_from_env();
 
         // Environment variable should override file
-        assert_eq!(config.base_url, "http://env-host:11434", "Environment variable did not override file value");
+        assert_eq!(
+            config.base_url, "http://env-host:11434",
+            "Environment variable did not override file value"
+        );
         // File value should be used for non-overridden settings
         assert_eq!(config.default_model, "llama2");
 

@@ -86,12 +86,13 @@ impl ConflictDetector {
             // Check if file already exists
             if file_path.exists() {
                 // Read existing content
-                let old_content = fs::read_to_string(&file_path)
-                    .map_err(|e| GenerationError::ValidationError {
+                let old_content = fs::read_to_string(&file_path).map_err(|e| {
+                    GenerationError::ValidationError {
                         file: file.path.clone(),
                         line: 0,
                         message: format!("Failed to read existing file: {}", e),
-                    })?;
+                    }
+                })?;
 
                 // Compute diff
                 let diff = self.compute_diff(&old_content, &file.content)?;
@@ -125,8 +126,8 @@ impl ConflictDetector {
             return Ok(None);
         }
 
-        let old_content = fs::read_to_string(file_path)
-            .map_err(|e| GenerationError::ValidationError {
+        let old_content =
+            fs::read_to_string(file_path).map_err(|e| GenerationError::ValidationError {
                 file: file_path.to_string_lossy().to_string(),
                 line: 0,
                 message: format!("Failed to read existing file: {}", e),
@@ -152,7 +153,11 @@ impl ConflictDetector {
     ///
     /// # Returns
     /// Diff information
-    fn compute_diff(&self, old_content: &str, new_content: &str) -> Result<FileDiff, GenerationError> {
+    fn compute_diff(
+        &self,
+        old_content: &str,
+        new_content: &str,
+    ) -> Result<FileDiff, GenerationError> {
         let old_lines: Vec<&str> = old_content.lines().collect();
         let new_lines: Vec<&str> = new_content.lines().collect();
 

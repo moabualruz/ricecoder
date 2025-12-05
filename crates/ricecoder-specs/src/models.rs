@@ -1179,8 +1179,14 @@ mod tests {
         assert_eq!(session.id, deserialized.id);
         assert_eq!(session.spec_id, deserialized.spec_id);
         assert_eq!(session.phase, deserialized.phase);
-        assert_eq!(session.conversation_history.len(), deserialized.conversation_history.len());
-        assert_eq!(session.approval_gates.len(), deserialized.approval_gates.len());
+        assert_eq!(
+            session.conversation_history.len(),
+            deserialized.conversation_history.len()
+        );
+        assert_eq!(
+            session.approval_gates.len(),
+            deserialized.approval_gates.len()
+        );
     }
 
     #[test]

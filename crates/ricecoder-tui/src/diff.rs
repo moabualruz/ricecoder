@@ -424,7 +424,10 @@ mod tests {
         let mut widget = DiffWidget::new();
         let mut hunk = DiffHunk::new("@@ -1,5 +1,6 @@");
         for i in 0..20 {
-            hunk.add_line(DiffLine::new(DiffLineType::Unchanged, format!("line {}", i)));
+            hunk.add_line(DiffLine::new(
+                DiffLineType::Unchanged,
+                format!("line {}", i),
+            ));
         }
         widget.add_hunk(hunk);
 

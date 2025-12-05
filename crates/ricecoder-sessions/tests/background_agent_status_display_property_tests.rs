@@ -2,7 +2,7 @@
 //! **Feature: ricecoder-sessions, Property 12: Background Agent Status Display**
 //! **Validates: Requirements 4.2**
 
-use ricecoder_sessions::{BackgroundAgentManager, BackgroundAgent, AgentStatus};
+use ricecoder_sessions::{AgentStatus, BackgroundAgent, BackgroundAgentManager};
 
 /// Property: For any running background agent, the system SHALL display its status
 /// (Running, Completed, Failed, Cancelled) in the session UI.
@@ -19,10 +19,7 @@ async fn prop_background_agent_status_display() {
         // Start agents
         let mut agent_ids = Vec::new();
         for i in 0..num_agents {
-            let agent = BackgroundAgent::new(
-                format!("agent_{}", i),
-                Some(format!("task_{}", i)),
-            );
+            let agent = BackgroundAgent::new(format!("agent_{}", i), Some(format!("task_{}", i)));
             let agent_id = manager.start_agent(agent).await.unwrap();
             agent_ids.push(agent_id);
         }
@@ -30,7 +27,11 @@ async fn prop_background_agent_status_display() {
         // All agents should have retrievable status
         for agent_id in &agent_ids {
             let status = manager.get_agent_status(agent_id).await;
-            assert!(status.is_ok(), "Status should be retrievable for agent {}", agent_id);
+            assert!(
+                status.is_ok(),
+                "Status should be retrievable for agent {}",
+                agent_id
+            );
             assert_eq!(
                 status.unwrap(),
                 AgentStatus::Running,
@@ -65,10 +66,7 @@ async fn prop_agent_status_after_cancellation() {
         // Start agents
         let mut agent_ids = Vec::new();
         for i in 0..num_agents {
-            let agent = BackgroundAgent::new(
-                format!("agent_{}", i),
-                None,
-            );
+            let agent = BackgroundAgent::new(format!("agent_{}", i), None);
             let agent_id = manager.start_agent(agent).await.unwrap();
             agent_ids.push(agent_id);
         }
@@ -100,10 +98,7 @@ async fn prop_agent_list_completeness() {
         // Start agents
         let mut agent_ids = Vec::new();
         for i in 0..num_agents {
-            let agent = BackgroundAgent::new(
-                format!("agent_{}", i),
-                Some(format!("task_{}", i)),
-            );
+            let agent = BackgroundAgent::new(format!("agent_{}", i), Some(format!("task_{}", i)));
             let agent_id = manager.start_agent(agent).await.unwrap();
             agent_ids.push(agent_id);
         }
@@ -119,7 +114,10 @@ async fn prop_agent_list_completeness() {
             assert!(
                 matches!(
                     agent.status,
-                    AgentStatus::Running | AgentStatus::Completed | AgentStatus::Failed | AgentStatus::Cancelled
+                    AgentStatus::Running
+                        | AgentStatus::Completed
+                        | AgentStatus::Failed
+                        | AgentStatus::Cancelled
                 ),
                 "Agent status should be one of the valid states"
             );

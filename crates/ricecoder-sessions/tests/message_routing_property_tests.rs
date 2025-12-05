@@ -3,7 +3,7 @@
 //! **Validates: Requirements 1.2**
 
 use proptest::prelude::*;
-use ricecoder_sessions::{SessionRouter, SessionContext, SessionMode};
+use ricecoder_sessions::{SessionContext, SessionMode, SessionRouter};
 
 // Strategy for generating session names
 fn session_name_strategy() -> impl Strategy<Value = String> {
@@ -21,9 +21,7 @@ fn session_context_strategy() -> impl Strategy<Value = SessionContext> {
         "[a-z]{3,10}".prop_map(|s| s),
         "[a-z0-9-]{3,20}".prop_map(|s| s),
     )
-        .prop_map(|(provider, model)| {
-            SessionContext::new(provider, model, SessionMode::Chat)
-        })
+        .prop_map(|(provider, model)| SessionContext::new(provider, model, SessionMode::Chat))
 }
 
 proptest! {

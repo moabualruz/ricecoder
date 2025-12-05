@@ -1,5 +1,5 @@
-use crate::models::{ModeResponse, ModeAction, ThinkingDepth};
 use crate::error::Result;
+use crate::models::{ModeAction, ModeResponse, ThinkingDepth};
 
 /// Formats and displays thinking content for user consumption
 #[derive(Debug, Clone)]
@@ -35,9 +35,7 @@ impl ThinkingDisplay {
 
         // Add thinking as an action for display
         let formatted = Self::format_thinking(thinking_content, depth);
-        response.add_action(ModeAction::DisplayThinking {
-            content: formatted,
-        });
+        response.add_action(ModeAction::DisplayThinking { content: formatted });
 
         Ok(())
     }
@@ -56,14 +54,7 @@ impl ThinkingDisplay {
         let formatted_lines: Vec<String> = lines
             .iter()
             .enumerate()
-            .map(|(i, line)| {
-                format!(
-                    "{:width$} | {}",
-                    i + 1,
-                    line,
-                    width = max_line_num
-                )
-            })
+            .map(|(i, line)| format!("{:width$} | {}", i + 1, line, width = max_line_num))
             .collect();
 
         format!(
@@ -83,12 +74,7 @@ impl ThinkingDisplay {
             ThinkingDepth::Deep => "🔬 Deep Analysis",
         };
 
-        format!(
-            "▼ {}\n{}\n{}",
-            header,
-            "─".repeat(50),
-            content
-        )
+        format!("▼ {}\n{}\n{}", header, "─".repeat(50), content)
     }
 
     /// Extract key insights from thinking content
@@ -212,7 +198,8 @@ mod tests {
     #[test]
     fn test_format_thinking_with_line_numbers() {
         let content = "Line 1\nLine 2\nLine 3";
-        let formatted = ThinkingDisplay::format_thinking_with_line_numbers(content, ThinkingDepth::Medium);
+        let formatted =
+            ThinkingDisplay::format_thinking_with_line_numbers(content, ThinkingDepth::Medium);
         assert!(formatted.contains("1 |"));
         assert!(formatted.contains("2 |"));
         assert!(formatted.contains("3 |"));
@@ -221,7 +208,8 @@ mod tests {
     #[test]
     fn test_format_thinking_collapsible() {
         let content = "This is collapsible";
-        let formatted = ThinkingDisplay::format_thinking_collapsible(content, ThinkingDepth::Medium);
+        let formatted =
+            ThinkingDisplay::format_thinking_collapsible(content, ThinkingDepth::Medium);
         assert!(formatted.contains("▼"));
         assert!(formatted.contains("🧠 Thinking"));
     }
@@ -246,7 +234,8 @@ mod tests {
     #[test]
     fn test_format_thinking_with_emphasis() {
         let content = "Normal line\n→ Important point\nKey: This is important";
-        let formatted = ThinkingDisplay::format_thinking_with_emphasis(content, ThinkingDepth::Medium);
+        let formatted =
+            ThinkingDisplay::format_thinking_with_emphasis(content, ThinkingDepth::Medium);
         assert!(formatted.contains("⭐"));
         assert!(formatted.contains("🔑"));
     }
@@ -274,8 +263,9 @@ mod tests {
             &mut response,
             "Test thinking",
             ThinkingDepth::Medium,
-        ).unwrap();
-        
+        )
+        .unwrap();
+
         assert!(response.metadata.think_more_used);
         assert!(response.metadata.thinking_content.is_some());
         assert_eq!(response.actions.len(), 1);

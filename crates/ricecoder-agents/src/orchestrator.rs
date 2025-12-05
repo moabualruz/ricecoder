@@ -147,7 +147,7 @@ impl AgentOrchestrator {
                 }
                 Err(e) => {
                     last_error = Some(e.clone());
-                    
+
                     if attempt < self.retry_config.max_retries {
                         warn!(
                             "Orchestration failed on attempt {}, retrying in {}ms: {}",
@@ -155,10 +155,10 @@ impl AgentOrchestrator {
                             backoff_ms,
                             e
                         );
-                        
+
                         // Wait with exponential backoff
                         tokio::time::sleep(Duration::from_millis(backoff_ms)).await;
-                        
+
                         // Calculate next backoff
                         backoff_ms = std::cmp::min(
                             (backoff_ms as f64 * self.retry_config.backoff_multiplier) as u64,
@@ -198,7 +198,10 @@ impl AgentOrchestrator {
 
         // Create execution schedule
         let schedule = self.scheduler.schedule(&tasks)?;
-        debug!("Created execution schedule with {} phases", schedule.phases.len());
+        debug!(
+            "Created execution schedule with {} phases",
+            schedule.phases.len()
+        );
 
         let mut all_outputs = Vec::new();
 
@@ -284,10 +287,10 @@ impl AgentOrchestrator {
     }
 
     /// Execute tasks conditionally based on a predicate
-    /// 
+    ///
     /// This method supports conditional workflows where later tasks only execute
     /// if earlier tasks meet certain conditions.
-    /// 
+    ///
     /// # Arguments
     /// * `tasks` - Vector of tasks to execute
     /// * `condition` - Closure that determines if execution should continue
@@ -300,10 +303,16 @@ impl AgentOrchestrator {
     where
         F: Fn(&[AgentOutput]) -> bool,
     {
-        info!("Starting conditional orchestration of {} tasks", tasks.len());
+        info!(
+            "Starting conditional orchestration of {} tasks",
+            tasks.len()
+        );
 
         let schedule = self.scheduler.schedule(&tasks)?;
-        debug!("Created execution schedule with {} phases", schedule.phases.len());
+        debug!(
+            "Created execution schedule with {} phases",
+            schedule.phases.len()
+        );
 
         let mut all_outputs = Vec::new();
 
@@ -370,7 +379,10 @@ impl AgentOrchestrator {
             }
         }
 
-        info!("Conditional orchestration completed with {} outputs", all_outputs.len());
+        info!(
+            "Conditional orchestration completed with {} outputs",
+            all_outputs.len()
+        );
         Ok(all_outputs)
     }
 
@@ -394,7 +406,7 @@ impl AgentOrchestrator {
 mod tests {
     use super::*;
     use crate::agents::Agent;
-    use crate::models::{TaskScope, TaskTarget, TaskType, TaskOptions};
+    use crate::models::{TaskOptions, TaskScope, TaskTarget, TaskType};
     use std::path::PathBuf;
 
     struct TestAgent {
@@ -630,10 +642,7 @@ mod tests {
             options: TaskOptions::default(),
         };
 
-        let results = orchestrator
-            .execute_with_retry(vec![task])
-            .await
-            .unwrap();
+        let results = orchestrator.execute_with_retry(vec![task]).await.unwrap();
         assert_eq!(results.len(), 1);
     }
 

@@ -65,10 +65,7 @@ impl ProgressTracker {
     pub fn new(plan: &ExecutionPlan) -> Self {
         let total_steps = plan.steps.len();
 
-        info!(
-            total_steps = total_steps,
-            "Creating progress tracker"
-        );
+        info!(total_steps = total_steps, "Creating progress tracker");
 
         Self {
             total_steps,
@@ -127,10 +124,7 @@ impl ProgressTracker {
         self.step_durations.push(Duration::from_secs(0));
         self.current_step += 1;
 
-        debug!(
-            current_step = self.current_step,
-            "Step skipped"
-        );
+        debug!(current_step = self.current_step, "Step skipped");
 
         self.notify_progress();
     }
@@ -257,19 +251,17 @@ mod tests {
 
     fn create_test_plan(step_count: usize) -> ExecutionPlan {
         let steps = (0..step_count)
-            .map(|i| {
-                ExecutionStep {
-                    id: format!("step-{}", i),
-                    description: format!("Step {}", i),
-                    action: StepAction::RunCommand {
-                        command: "echo".to_string(),
-                        args: vec![format!("step {}", i)],
-                    },
-                    risk_score: RiskScore::default(),
-                    dependencies: Vec::new(),
-                    rollback_action: None,
-                    status: StepStatus::Pending,
-                }
+            .map(|i| ExecutionStep {
+                id: format!("step-{}", i),
+                description: format!("Step {}", i),
+                action: StepAction::RunCommand {
+                    command: "echo".to_string(),
+                    args: vec![format!("step {}", i)],
+                },
+                risk_score: RiskScore::default(),
+                dependencies: Vec::new(),
+                rollback_action: None,
+                status: StepStatus::Pending,
             })
             .collect();
 

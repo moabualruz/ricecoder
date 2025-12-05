@@ -122,7 +122,6 @@ impl ProgressTracker {
 mod tests {
     use super::*;
 
-
     fn create_test_workflow_state() -> WorkflowState {
         WorkflowState {
             workflow_id: "test-workflow".to_string(),

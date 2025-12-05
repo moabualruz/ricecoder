@@ -6,87 +6,64 @@
 //! conditional logic, and boilerplate scaffolding from global and project-specific locations.
 //! Also provides spec processing for converting specifications into generation plans.
 
-pub mod error;
-pub mod models;
-pub mod templates;
-pub mod spec_processor;
-pub mod generation_plan_builder;
-pub mod prompt_builder;
 pub mod code_generator;
 pub mod code_quality_enforcer;
 pub mod code_validator;
-pub mod language_validators;
 pub mod conflict_detector;
-pub mod conflict_resolver;
 pub mod conflict_prompter;
+pub mod conflict_resolver;
+pub mod error;
+pub mod generation_manager;
+pub mod generation_plan_builder;
+pub mod language_validators;
+pub mod models;
 pub mod output_writer;
+pub mod prompt_builder;
+pub mod report_generator;
 pub mod review_engine;
 pub mod scoring_system;
-pub mod report_generator;
-pub mod generation_manager;
+pub mod spec_processor;
+pub mod templates;
 
 // Re-export public API
+pub use code_generator::{CodeGenerator, CodeGeneratorConfig};
+pub use code_quality_enforcer::{CodeQualityConfig, CodeQualityEnforcer};
+pub use code_validator::CodeValidator;
+pub use conflict_detector::{ConflictDetector, DiffLine, FileConflictInfo, FileDiff};
+pub use conflict_prompter::{ConflictPrompter, PromptResult};
+pub use conflict_resolver::{ConflictResolutionResult, ConflictResolver, ConflictStrategy};
 pub use error::GenerationError;
-pub use models::{
-    Template, Placeholder, TemplateContext, RenderOptions, RenderResult,
-    Boilerplate, BoilerplateFile, BoilerplateMetadata, BoilerplateSource,
-    ConflictResolution, CaseTransform, GeneratedFile,
-    ValidationResult, ValidationError, ValidationWarning, ValidationConfig,
-};
-pub use templates::{
-    TemplateEngine, TemplateCache, CacheStats,
-    TemplateError, BoilerplateError,
-    TemplateParser, ParsedTemplate, TemplateElement,
-    PlaceholderResolver, ValidationEngine,
-    BoilerplateManager, ScaffoldingResult, FileConflict,
-};
-pub use spec_processor::{
-    SpecProcessor, GenerationPlan, GenerationStep, Constraint, ConstraintType,
-};
-pub use generation_plan_builder::{
-    GenerationPlanBuilder, PlanValidation,
-};
-pub use prompt_builder::{
-    PromptBuilder, GeneratedPrompt, PromptContext, SteeringRules,
-};
-pub use code_generator::{
-    CodeGenerator, CodeGeneratorConfig,
-};
-pub use code_quality_enforcer::{
-    CodeQualityEnforcer, CodeQualityConfig,
-};
-pub use code_validator::{
-    CodeValidator,
-};
+pub use generation_manager::{GenerationManager, GenerationManagerConfig};
+pub use generation_plan_builder::{GenerationPlanBuilder, PlanValidation};
 pub use language_validators::{
-    LanguageValidator, RustValidator, TypeScriptValidator, PythonValidator,
-    GoValidator, JavaValidator, get_validator,
+    get_validator, GoValidator, JavaValidator, LanguageValidator, PythonValidator, RustValidator,
+    TypeScriptValidator,
 };
-pub use conflict_detector::{
-    ConflictDetector, FileConflictInfo, FileDiff, DiffLine,
-};
-pub use conflict_resolver::{
-    ConflictResolver, ConflictStrategy, ConflictResolutionResult,
-};
-pub use conflict_prompter::{
-    ConflictPrompter, PromptResult,
+pub use models::{
+    Boilerplate, BoilerplateFile, BoilerplateMetadata, BoilerplateSource, CaseTransform,
+    ConflictResolution, GeneratedFile, Placeholder, RenderOptions, RenderResult, Template,
+    TemplateContext, ValidationConfig, ValidationError, ValidationResult, ValidationWarning,
 };
 pub use output_writer::{
-    OutputWriter, OutputWriterConfig, FileWriteResult, WriteResult, RollbackInfo,
+    FileWriteResult, OutputWriter, OutputWriterConfig, RollbackInfo, WriteResult,
+};
+pub use prompt_builder::{GeneratedPrompt, PromptBuilder, PromptContext, SteeringRules};
+pub use report_generator::{
+    ConflictReport, FileStatistics, GenerationReport, GenerationResult, GenerationStats,
+    PerformanceMetrics, ReportGenerator, ReportSummary, ReviewReport, ValidationReport,
 };
 pub use review_engine::{
-    ReviewEngine, ReviewResult, CodeQualityMetrics, ComplianceDetails,
-    Suggestion, SuggestionCategory, ReviewIssue, IssueSeverity, ReviewConfig,
+    CodeQualityMetrics, ComplianceDetails, IssueSeverity, ReviewConfig, ReviewEngine, ReviewIssue,
+    ReviewResult, Suggestion, SuggestionCategory,
 };
 pub use scoring_system::{
-    ScoringSystem, ScoreBreakdown, ScoreComponent, ComplianceScore,
-    ScoringFeedback, ScoringConfig,
+    ComplianceScore, ScoreBreakdown, ScoreComponent, ScoringConfig, ScoringFeedback, ScoringSystem,
 };
-pub use report_generator::{
-    GenerationStats, GenerationResult, GenerationReport, ReportSummary,
-    FileStatistics, ValidationReport, ConflictReport, ReviewReport,
-    PerformanceMetrics, ReportGenerator,
+pub use spec_processor::{
+    Constraint, ConstraintType, GenerationPlan, GenerationStep, SpecProcessor,
 };
-pub use generation_manager::{
-    GenerationManager, GenerationManagerConfig,
+pub use templates::{
+    BoilerplateError, BoilerplateManager, CacheStats, FileConflict, ParsedTemplate,
+    PlaceholderResolver, ScaffoldingResult, TemplateCache, TemplateElement, TemplateEngine,
+    TemplateError, TemplateParser, ValidationEngine,
 };

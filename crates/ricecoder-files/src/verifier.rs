@@ -40,17 +40,10 @@ impl ContentVerifier {
     /// # Returns
     ///
     /// Ok(()) if verification succeeds, error otherwise
-    pub async fn verify_write(
-        &self,
-        path: &Path,
-        expected: &str,
-    ) -> Result<(), FileError> {
-        let written = fs::read_to_string(path)
-            .await
-            .map_err(|e| FileError::VerificationFailed(format!(
-                "Failed to read written file: {}",
-                e
-            )))?;
+    pub async fn verify_write(&self, path: &Path, expected: &str) -> Result<(), FileError> {
+        let written = fs::read_to_string(path).await.map_err(|e| {
+            FileError::VerificationFailed(format!("Failed to read written file: {}", e))
+        })?;
 
         if written == expected {
             Ok(())
@@ -78,10 +71,7 @@ impl ContentVerifier {
     ) -> Result<(), FileError> {
         let backup_content = fs::read_to_string(backup_path)
             .await
-            .map_err(|e| FileError::BackupFailed(format!(
-                "Failed to read backup file: {}",
-                e
-            )))?;
+            .map_err(|e| FileError::BackupFailed(format!("Failed to read backup file: {}", e)))?;
 
         let computed_hash = Self::compute_hash(&backup_content);
 

@@ -72,7 +72,7 @@ impl ConfigurationManager {
         // Load provider-specific environment variables
         // These override any configuration from files
         let providers_to_check = vec!["openai", "anthropic", "google", "ollama"];
-        
+
         for provider in providers_to_check {
             let env_var = format!("{}_API_KEY", provider.to_uppercase());
             if let Ok(api_key) = std::env::var(&env_var) {
@@ -123,11 +123,13 @@ impl ConfigurationManager {
             return Ok(()); // File doesn't exist, skip
         }
 
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| ProviderError::ConfigError(format!("Failed to read config file: {}", e)))?;
+        let content = std::fs::read_to_string(path).map_err(|e| {
+            ProviderError::ConfigError(format!("Failed to read config file: {}", e))
+        })?;
 
-        let config: ProviderConfig = serde_yaml::from_str(&content)
-            .map_err(|e| ProviderError::ConfigError(format!("Failed to parse config file: {}", e)))?;
+        let config: ProviderConfig = serde_yaml::from_str(&content).map_err(|e| {
+            ProviderError::ConfigError(format!("Failed to parse config file: {}", e))
+        })?;
 
         self.config = config;
         Ok(())
@@ -139,11 +141,13 @@ impl ConfigurationManager {
             return Ok(()); // File doesn't exist, skip
         }
 
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| ProviderError::ConfigError(format!("Failed to read config file: {}", e)))?;
+        let content = std::fs::read_to_string(path).map_err(|e| {
+            ProviderError::ConfigError(format!("Failed to read config file: {}", e))
+        })?;
 
-        let new_config: ProviderConfig = serde_yaml::from_str(&content)
-            .map_err(|e| ProviderError::ConfigError(format!("Failed to parse config file: {}", e)))?;
+        let new_config: ProviderConfig = serde_yaml::from_str(&content).map_err(|e| {
+            ProviderError::ConfigError(format!("Failed to parse config file: {}", e))
+        })?;
 
         // Merge defaults
         if !new_config.defaults.provider.is_empty() {
@@ -152,8 +156,14 @@ impl ConfigurationManager {
         if !new_config.defaults.model.is_empty() {
             self.config.defaults.model = new_config.defaults.model;
         }
-        self.config.defaults.per_command.extend(new_config.defaults.per_command);
-        self.config.defaults.per_action.extend(new_config.defaults.per_action);
+        self.config
+            .defaults
+            .per_command
+            .extend(new_config.defaults.per_command);
+        self.config
+            .defaults
+            .per_action
+            .extend(new_config.defaults.per_action);
 
         // Merge provider settings
         for (provider_id, settings) in new_config.providers {
@@ -181,7 +191,7 @@ impl ConfigurationManager {
     }
 
     /// Validate the current configuration
-    /// 
+    ///
     /// Validates:
     /// - At least one provider is configured
     /// - Default provider exists in configuration
@@ -197,7 +207,11 @@ impl ConfigurationManager {
         }
 
         // Check that default provider exists
-        if !self.config.providers.contains_key(&self.config.defaults.provider) {
+        if !self
+            .config
+            .providers
+            .contains_key(&self.config.defaults.provider)
+        {
             return Err(ProviderError::ConfigError(format!(
                 "Default provider '{}' not configured",
                 self.config.defaults.provider
@@ -244,7 +258,7 @@ impl ConfigurationManager {
         // Validate per-command defaults reference valid commands
         for command in self.config.defaults.per_command.keys() {
             match command.as_str() {
-                "gen" | "refactor" | "review" => {}, // Valid commands
+                "gen" | "refactor" | "review" => {} // Valid commands
                 _ => {
                     return Err(ProviderError::ConfigError(format!(
                         "Invalid command in per_command defaults: '{}'. Valid commands are: gen, refactor, review",
@@ -257,7 +271,7 @@ impl ConfigurationManager {
         // Validate per-action defaults reference valid actions
         for action in self.config.defaults.per_action.keys() {
             match action.as_str() {
-                "analysis" | "generation" => {}, // Valid actions
+                "analysis" | "generation" => {} // Valid actions
                 _ => {
                     return Err(ProviderError::ConfigError(format!(
                         "Invalid action in per_action defaults: '{}'. Valid actions are: analysis, generation",
@@ -271,22 +285,25 @@ impl ConfigurationManager {
     }
 
     /// Validate configuration with provider registry (validates models are available)
-    /// 
+    ///
     /// This method requires a provider registry to validate that:
     /// - Default model is available in the default provider
     /// - Per-command models are available in their respective providers
     /// - Per-action models are available in their respective providers
-    pub fn validate_with_registry(&self, registry: &crate::provider::ProviderRegistry) -> Result<(), ProviderError> {
+    pub fn validate_with_registry(
+        &self,
+        registry: &crate::provider::ProviderRegistry,
+    ) -> Result<(), ProviderError> {
         // First run basic validation
         self.validate()?;
 
         // Validate default model is available in default provider
         let default_provider_id = &self.config.defaults.provider;
         let default_model_id = &self.config.defaults.model;
-        
+
         let provider = registry.get(default_provider_id)?;
         let models = provider.models();
-        
+
         if !models.iter().any(|m| m.id == *default_model_id) {
             return Err(ProviderError::ConfigError(format!(
                 "Default model '{}' not found in provider '{}'",
@@ -299,7 +316,7 @@ impl ConfigurationManager {
             let provider_id = default_provider_id; // Use default provider for per-command
             let provider = registry.get(provider_id)?;
             let models = provider.models();
-            
+
             if !models.iter().any(|m| m.id == *model_id) {
                 return Err(ProviderError::ConfigError(format!(
                     "Model '{}' for command '{}' not found in provider '{}'",
@@ -313,7 +330,7 @@ impl ConfigurationManager {
             let provider_id = default_provider_id; // Use default provider for per-action
             let provider = registry.get(provider_id)?;
             let models = provider.models();
-            
+
             if !models.iter().any(|m| m.id == *model_id) {
                 return Err(ProviderError::ConfigError(format!(
                     "Model '{}' for action '{}' not found in provider '{}'",
@@ -421,7 +438,7 @@ mod tests {
     #[test]
     fn test_merge_from_file_preserves_existing() {
         let mut manager = ConfigurationManager::new();
-        
+
         // Add initial provider
         manager.config_mut().providers.insert(
             "openai".to_string(),
@@ -458,7 +475,10 @@ mod tests {
 
         // Simulate merge by directly updating config
         manager.config_mut().defaults = merged_config.defaults;
-        manager.config_mut().providers.extend(merged_config.providers);
+        manager
+            .config_mut()
+            .providers
+            .extend(merged_config.providers);
 
         assert_eq!(manager.default_provider(), "anthropic");
         assert_eq!(manager.default_model(), "claude-3");
@@ -469,17 +489,20 @@ mod tests {
     #[test]
     fn test_load_from_env_sets_api_keys() {
         let mut manager = ConfigurationManager::new();
-        
+
         // Set environment variable
         std::env::set_var("OPENAI_API_KEY", "test-key-123");
-        
+
         manager.load_from_env().unwrap();
-        
+
         // Verify API key was loaded
         let openai_settings = manager.get_provider_settings("openai");
         assert!(openai_settings.is_some());
-        assert_eq!(openai_settings.unwrap().api_key, Some("test-key-123".to_string()));
-        
+        assert_eq!(
+            openai_settings.unwrap().api_key,
+            Some("test-key-123".to_string())
+        );
+
         // Cleanup
         std::env::remove_var("OPENAI_API_KEY");
     }
@@ -487,7 +510,7 @@ mod tests {
     #[test]
     fn test_get_api_key_from_config() {
         let mut manager = ConfigurationManager::new();
-        
+
         manager.config_mut().providers.insert(
             "openai".to_string(),
             ProviderSettings {
@@ -506,7 +529,7 @@ mod tests {
     #[test]
     fn test_get_api_key_from_env() {
         let mut manager = ConfigurationManager::new();
-        
+
         manager.config_mut().providers.insert(
             "anthropic".to_string(),
             ProviderSettings {
@@ -518,18 +541,18 @@ mod tests {
         );
 
         std::env::set_var("ANTHROPIC_API_KEY", "env-key-456");
-        
+
         let key = manager.get_api_key("anthropic");
         assert!(key.is_ok());
         assert_eq!(key.unwrap(), "env-key-456");
-        
+
         std::env::remove_var("ANTHROPIC_API_KEY");
     }
 
     #[test]
     fn test_validate_with_valid_config() {
         let mut manager = ConfigurationManager::new();
-        
+
         manager.config_mut().providers.insert(
             "openai".to_string(),
             ProviderSettings {
@@ -550,9 +573,9 @@ mod tests {
         std::env::remove_var("ANTHROPIC_API_KEY");
         std::env::remove_var("GOOGLE_API_KEY");
         std::env::remove_var("ZEN_API_KEY");
-        
+
         let mut manager = ConfigurationManager::new();
-        
+
         manager.config_mut().providers.insert(
             "openai".to_string(),
             ProviderSettings {
@@ -570,7 +593,7 @@ mod tests {
     #[test]
     fn test_validate_invalid_timeout() {
         let mut manager = ConfigurationManager::new();
-        
+
         manager.config_mut().providers.insert(
             "openai".to_string(),
             ProviderSettings {
@@ -587,7 +610,7 @@ mod tests {
     #[test]
     fn test_validate_invalid_retry_count() {
         let mut manager = ConfigurationManager::new();
-        
+
         manager.config_mut().providers.insert(
             "openai".to_string(),
             ProviderSettings {
@@ -604,7 +627,7 @@ mod tests {
     #[test]
     fn test_validate_invalid_command() {
         let mut manager = ConfigurationManager::new();
-        
+
         manager.config_mut().providers.insert(
             "openai".to_string(),
             ProviderSettings {
@@ -615,7 +638,11 @@ mod tests {
             },
         );
 
-        manager.config_mut().defaults.per_command.insert("invalid_command".to_string(), "gpt-4".to_string());
+        manager
+            .config_mut()
+            .defaults
+            .per_command
+            .insert("invalid_command".to_string(), "gpt-4".to_string());
 
         assert!(manager.validate().is_err());
     }
@@ -623,7 +650,7 @@ mod tests {
     #[test]
     fn test_validate_invalid_action() {
         let mut manager = ConfigurationManager::new();
-        
+
         manager.config_mut().providers.insert(
             "openai".to_string(),
             ProviderSettings {
@@ -634,7 +661,11 @@ mod tests {
             },
         );
 
-        manager.config_mut().defaults.per_action.insert("invalid_action".to_string(), "gpt-4".to_string());
+        manager
+            .config_mut()
+            .defaults
+            .per_action
+            .insert("invalid_action".to_string(), "gpt-4".to_string());
 
         assert!(manager.validate().is_err());
     }
@@ -642,7 +673,7 @@ mod tests {
     #[test]
     fn test_validate_valid_commands() {
         let mut manager = ConfigurationManager::new();
-        
+
         manager.config_mut().providers.insert(
             "openai".to_string(),
             ProviderSettings {
@@ -653,9 +684,21 @@ mod tests {
             },
         );
 
-        manager.config_mut().defaults.per_command.insert("gen".to_string(), "gpt-4".to_string());
-        manager.config_mut().defaults.per_command.insert("refactor".to_string(), "gpt-4".to_string());
-        manager.config_mut().defaults.per_command.insert("review".to_string(), "gpt-4".to_string());
+        manager
+            .config_mut()
+            .defaults
+            .per_command
+            .insert("gen".to_string(), "gpt-4".to_string());
+        manager
+            .config_mut()
+            .defaults
+            .per_command
+            .insert("refactor".to_string(), "gpt-4".to_string());
+        manager
+            .config_mut()
+            .defaults
+            .per_command
+            .insert("review".to_string(), "gpt-4".to_string());
 
         assert!(manager.validate().is_ok());
     }
@@ -663,7 +706,7 @@ mod tests {
     #[test]
     fn test_validate_valid_actions() {
         let mut manager = ConfigurationManager::new();
-        
+
         manager.config_mut().providers.insert(
             "openai".to_string(),
             ProviderSettings {
@@ -674,16 +717,24 @@ mod tests {
             },
         );
 
-        manager.config_mut().defaults.per_action.insert("analysis".to_string(), "gpt-4".to_string());
-        manager.config_mut().defaults.per_action.insert("generation".to_string(), "gpt-4".to_string());
+        manager
+            .config_mut()
+            .defaults
+            .per_action
+            .insert("analysis".to_string(), "gpt-4".to_string());
+        manager
+            .config_mut()
+            .defaults
+            .per_action
+            .insert("generation".to_string(), "gpt-4".to_string());
 
         assert!(manager.validate().is_ok());
     }
 
     #[test]
     fn test_validate_with_registry_valid_model() {
-        use crate::provider::{Provider, ProviderRegistry};
         use crate::models::ModelInfo;
+        use crate::provider::{Provider, ProviderRegistry};
         use async_trait::async_trait;
         use std::sync::Arc;
 
@@ -701,27 +752,39 @@ mod tests {
             }
 
             fn models(&self) -> Vec<ModelInfo> {
-                vec![
-                    ModelInfo {
-                        id: "gpt-4".to_string(),
-                        name: "GPT-4".to_string(),
-                        provider: "openai".to_string(),
-                        context_window: 8192,
-                        capabilities: vec![],
-                        pricing: None,
-                    },
-                ]
+                vec![ModelInfo {
+                    id: "gpt-4".to_string(),
+                    name: "GPT-4".to_string(),
+                    provider: "openai".to_string(),
+                    context_window: 8192,
+                    capabilities: vec![],
+                    pricing: None,
+                }]
             }
 
-            async fn chat(&self, _request: crate::models::ChatRequest) -> Result<crate::models::ChatResponse, crate::error::ProviderError> {
-                Err(crate::error::ProviderError::NotFound("Not implemented".to_string()))
+            async fn chat(
+                &self,
+                _request: crate::models::ChatRequest,
+            ) -> Result<crate::models::ChatResponse, crate::error::ProviderError> {
+                Err(crate::error::ProviderError::NotFound(
+                    "Not implemented".to_string(),
+                ))
             }
 
-            async fn chat_stream(&self, _request: crate::models::ChatRequest) -> Result<crate::provider::ChatStream, crate::error::ProviderError> {
-                Err(crate::error::ProviderError::NotFound("Not implemented".to_string()))
+            async fn chat_stream(
+                &self,
+                _request: crate::models::ChatRequest,
+            ) -> Result<crate::provider::ChatStream, crate::error::ProviderError> {
+                Err(crate::error::ProviderError::NotFound(
+                    "Not implemented".to_string(),
+                ))
             }
 
-            fn count_tokens(&self, _content: &str, _model: &str) -> Result<usize, crate::error::ProviderError> {
+            fn count_tokens(
+                &self,
+                _content: &str,
+                _model: &str,
+            ) -> Result<usize, crate::error::ProviderError> {
                 Ok(0)
             }
 
@@ -749,8 +812,8 @@ mod tests {
 
     #[test]
     fn test_validate_with_registry_invalid_model() {
-        use crate::provider::{Provider, ProviderRegistry};
         use crate::models::ModelInfo;
+        use crate::provider::{Provider, ProviderRegistry};
         use async_trait::async_trait;
         use std::sync::Arc;
 
@@ -768,27 +831,39 @@ mod tests {
             }
 
             fn models(&self) -> Vec<ModelInfo> {
-                vec![
-                    ModelInfo {
-                        id: "gpt-3.5-turbo".to_string(),
-                        name: "GPT-3.5 Turbo".to_string(),
-                        provider: "openai".to_string(),
-                        context_window: 4096,
-                        capabilities: vec![],
-                        pricing: None,
-                    },
-                ]
+                vec![ModelInfo {
+                    id: "gpt-3.5-turbo".to_string(),
+                    name: "GPT-3.5 Turbo".to_string(),
+                    provider: "openai".to_string(),
+                    context_window: 4096,
+                    capabilities: vec![],
+                    pricing: None,
+                }]
             }
 
-            async fn chat(&self, _request: crate::models::ChatRequest) -> Result<crate::models::ChatResponse, crate::error::ProviderError> {
-                Err(crate::error::ProviderError::NotFound("Not implemented".to_string()))
+            async fn chat(
+                &self,
+                _request: crate::models::ChatRequest,
+            ) -> Result<crate::models::ChatResponse, crate::error::ProviderError> {
+                Err(crate::error::ProviderError::NotFound(
+                    "Not implemented".to_string(),
+                ))
             }
 
-            async fn chat_stream(&self, _request: crate::models::ChatRequest) -> Result<crate::provider::ChatStream, crate::error::ProviderError> {
-                Err(crate::error::ProviderError::NotFound("Not implemented".to_string()))
+            async fn chat_stream(
+                &self,
+                _request: crate::models::ChatRequest,
+            ) -> Result<crate::provider::ChatStream, crate::error::ProviderError> {
+                Err(crate::error::ProviderError::NotFound(
+                    "Not implemented".to_string(),
+                ))
             }
 
-            fn count_tokens(&self, _content: &str, _model: &str) -> Result<usize, crate::error::ProviderError> {
+            fn count_tokens(
+                &self,
+                _content: &str,
+                _model: &str,
+            ) -> Result<usize, crate::error::ProviderError> {
                 Ok(0)
             }
 

@@ -174,11 +174,7 @@ impl VibeMode {
     ///
     /// This method ensures that all code and context is preserved
     /// when converting from Vibe Mode to spec-driven format.
-    pub fn preserve_code_and_context(
-        &self,
-        code: &str,
-        context: &ModeContext,
-    ) -> Result<String> {
+    pub fn preserve_code_and_context(&self, code: &str, context: &ModeContext) -> Result<String> {
         let mut preserved = String::new();
         preserved.push_str("# Preserved Context\n\n");
         preserved.push_str(&format!("Session ID: {}\n", context.session_id));
@@ -252,11 +248,7 @@ impl VibeMode {
     ///
     /// This method provides a complete conversion workflow from Vibe Mode
     /// to spec-driven development.
-    pub fn convert_project_to_specs(
-        &self,
-        code: &str,
-        context: &ModeContext,
-    ) -> Result<String> {
+    pub fn convert_project_to_specs(&self, code: &str, context: &ModeContext) -> Result<String> {
         let mut conversion = String::new();
         conversion.push_str("# Vibe Mode to Spec-Driven Conversion\n\n");
 
@@ -361,11 +353,7 @@ impl VibeMode {
     /// Include specific warnings based on context
     ///
     /// This method adds context-specific warnings to a response.
-    pub fn add_specific_warnings_to_response(
-        &self,
-        response: &mut ModeResponse,
-        context: &str,
-    ) {
+    pub fn add_specific_warnings_to_response(&self, response: &mut ModeResponse, context: &str) {
         let warnings = self.generate_specific_warnings(context);
         for warning in warnings {
             response.add_suggestion(warning);

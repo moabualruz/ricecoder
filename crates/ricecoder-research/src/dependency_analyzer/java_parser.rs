@@ -42,8 +42,8 @@ impl JavaParser {
 
     /// Parses dependencies from pom.xml
     fn parse_pom(&self, path: &Path) -> Result<Vec<Dependency>, ResearchError> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| ResearchError::DependencyParsingFailed {
+        let content =
+            std::fs::read_to_string(path).map_err(|e| ResearchError::DependencyParsingFailed {
                 language: "Java".to_string(),
                 path: Some(path.to_path_buf()),
                 reason: format!("Failed to read pom.xml: {}", e),
@@ -79,8 +79,8 @@ impl JavaParser {
 
     /// Parses dependencies from build.gradle
     fn parse_gradle(&self, path: &Path) -> Result<Vec<Dependency>, ResearchError> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| ResearchError::DependencyParsingFailed {
+        let content =
+            std::fs::read_to_string(path).map_err(|e| ResearchError::DependencyParsingFailed {
                 language: "Java".to_string(),
                 path: Some(path.to_path_buf()),
                 reason: format!("Failed to read build.gradle: {}", e),

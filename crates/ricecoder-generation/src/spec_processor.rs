@@ -4,7 +4,7 @@
 //! acceptance criteria, and constraints, then mapping them to generation tasks.
 
 use crate::error::GenerationError;
-use ricecoder_specs::models::{Spec, Requirement, AcceptanceCriterion, Priority};
+use ricecoder_specs::models::{AcceptanceCriterion, Priority, Requirement, Spec};
 use std::collections::BTreeMap;
 
 /// Processes specifications into generation plans

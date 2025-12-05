@@ -2,12 +2,9 @@
 //! **Feature: ricecoder-specs, Property 5: Circular Dependency Detection**
 //! **Validates: Requirements 2.5**
 
-use proptest::prelude::*;
-use ricecoder_specs::{
-    models::*,
-    query::SpecQueryEngine,
-};
 use chrono::Utc;
+use proptest::prelude::*;
+use ricecoder_specs::{models::*, query::SpecQueryEngine};
 
 // ============================================================================
 // Generators for property-based testing
@@ -17,10 +14,7 @@ fn arb_spec_id() -> impl Strategy<Value = String> {
     "[a-z0-9_-]{1,20}".prop_map(|s| s)
 }
 
-fn arb_spec_with_tasks(
-    id: String,
-    task_requirements: Vec<String>,
-) -> Spec {
+fn arb_spec_with_tasks(id: String, task_requirements: Vec<String>) -> Spec {
     let tasks = if task_requirements.is_empty() {
         vec![]
     } else {

@@ -6,9 +6,9 @@
 //! - Permission overrides require explicit action
 
 use ricecoder_permissions::{
-    PermissionLevel, ToolPermission, PermissionConfig,
-    AgentExecutor, AuditLogger, InMemoryPermissionRepository, PermissionRepository,
     audit::{AuditAction, AuditResult},
+    AgentExecutor, AuditLogger, InMemoryPermissionRepository, PermissionConfig, PermissionLevel,
+    PermissionRepository, ToolPermission,
 };
 use std::sync::Arc;
 
@@ -100,11 +100,8 @@ fn test_permission_enforced_for_all_agents() {
 
     // Test: Denial enforced for all agents
     for agent_name in &["agent1", "agent2", "admin", "root", "system"] {
-        let executor = AgentExecutor::with_agent(
-            config.clone(),
-            logger.clone(),
-            agent_name.to_string(),
-        );
+        let executor =
+            AgentExecutor::with_agent(config.clone(), logger.clone(), agent_name.to_string());
 
         let (result, output) = executor
             .execute_with_permission("tool", None, None, || Ok(42))
@@ -197,7 +194,11 @@ fn test_audit_logs_do_not_contain_passwords() {
     // Note: The context field might contain the sensitive data as provided,
     // but the important fields (tool, agent) should not expose it
     assert_eq!(entry.tool, "database_tool", "Tool name must be clean");
-    assert_eq!(entry.agent, Some("admin".to_string()), "Agent must be clean");
+    assert_eq!(
+        entry.agent,
+        Some("admin".to_string()),
+        "Agent must be clean"
+    );
 }
 
 #[test]
@@ -257,7 +258,11 @@ fn test_audit_logs_contain_only_safe_fields() {
     let logger = AuditLogger::new();
 
     logger
-        .log_execution("test_tool".to_string(), Some("test_agent".to_string()), None)
+        .log_execution(
+            "test_tool".to_string(),
+            Some("test_agent".to_string()),
+            None,
+        )
         .unwrap();
 
     let entries = logger.entries().unwrap();
@@ -266,7 +271,11 @@ fn test_audit_logs_contain_only_safe_fields() {
     // Verify only safe fields are present
     assert!(!entry.tool.is_empty(), "Tool must be present");
     assert_eq!(entry.tool, "test_tool", "Tool must be correct");
-    assert_eq!(entry.agent, Some("test_agent".to_string()), "Agent must be correct");
+    assert_eq!(
+        entry.agent,
+        Some("test_agent".to_string()),
+        "Agent must be correct"
+    );
     assert_eq!(entry.action, AuditAction::Allowed, "Action must be present");
     assert_eq!(entry.result, AuditResult::Success, "Result must be present");
     // Timestamp is a DateTime, just verify it exists
@@ -286,9 +295,7 @@ fn test_audit_logs_sanitize_tool_names() {
     ];
 
     for tool in &sensitive_tools {
-        logger
-            .log_execution(tool.to_string(), None, None)
-            .unwrap();
+        logger.log_execution(tool.to_string(), None, None).unwrap();
     }
 
     let entries = logger.entries().unwrap();
@@ -338,11 +345,7 @@ fn test_permission_override_requires_explicit_agent_specification() {
     );
 
     // Test: With explicit agent specification, should be allowed
-    let executor = AgentExecutor::with_agent(
-        config,
-        logger.clone(),
-        "admin".to_string(),
-    );
+    let executor = AgentExecutor::with_agent(config, logger.clone(), "admin".to_string());
     let (result, _) = executor
         .execute_with_permission("tool", None, None, || Ok(42))
         .unwrap();
@@ -371,11 +374,8 @@ fn test_permission_override_not_implicit_from_similar_agent_names() {
 
     // Test: Similar agent names should NOT get the override
     for agent_name in &["admin1", "admin_user", "administrator", "admin_agent"] {
-        let executor = AgentExecutor::with_agent(
-            config.clone(),
-            logger.clone(),
-            agent_name.to_string(),
-        );
+        let executor =
+            AgentExecutor::with_agent(config.clone(), logger.clone(), agent_name.to_string());
 
         let (result, _) = executor
             .execute_with_permission("tool", None, None, || Ok(42))
@@ -406,11 +406,7 @@ fn test_permission_override_logged_explicitly() {
     let logger = Arc::new(AuditLogger::new());
 
     // Execute with admin override
-    let executor = AgentExecutor::with_agent(
-        config,
-        logger.clone(),
-        "admin".to_string(),
-    );
+    let executor = AgentExecutor::with_agent(config, logger.clone(), "admin".to_string());
     let (result, _) = executor
         .execute_with_permission("tool", None, None, || Ok(42))
         .unwrap();
@@ -424,8 +420,16 @@ fn test_permission_override_logged_explicitly() {
     // Verify override is logged with explicit agent
     let entries = logger.entries().unwrap();
     assert_eq!(entries.len(), 1, "Override must be logged");
-    assert_eq!(entries[0].agent, Some("admin".to_string()), "Agent must be logged");
-    assert_eq!(entries[0].action, AuditAction::Allowed, "Action must be Allowed");
+    assert_eq!(
+        entries[0].agent,
+        Some("admin".to_string()),
+        "Agent must be logged"
+    );
+    assert_eq!(
+        entries[0].action,
+        AuditAction::Allowed,
+        "Action must be Allowed"
+    );
 }
 
 #[test]
@@ -446,19 +450,16 @@ fn test_permission_override_requires_exact_agent_match() {
 
     // Test: Only exact agent match gets override
     let test_cases = vec![
-        ("admin", true),      // Exact match - should be allowed
-        ("Admin", false),     // Case mismatch - should be denied
-        ("ADMIN", false),     // Case mismatch - should be denied
-        ("admin ", false),    // Whitespace - should be denied
-        (" admin", false),    // Whitespace - should be denied
+        ("admin", true),   // Exact match - should be allowed
+        ("Admin", false),  // Case mismatch - should be denied
+        ("ADMIN", false),  // Case mismatch - should be denied
+        ("admin ", false), // Whitespace - should be denied
+        (" admin", false), // Whitespace - should be denied
     ];
 
     for (agent_name, should_allow) in test_cases {
-        let executor = AgentExecutor::with_agent(
-            config.clone(),
-            logger.clone(),
-            agent_name.to_string(),
-        );
+        let executor =
+            AgentExecutor::with_agent(config.clone(), logger.clone(), agent_name.to_string());
 
         let (result, _) = executor
             .execute_with_permission("tool", None, None, || Ok(42))
@@ -471,7 +472,8 @@ fn test_permission_override_requires_exact_agent_match() {
         };
 
         assert_eq!(
-            result, expected,
+            result,
+            expected,
             "Agent '{}' should be {} (exact match required)",
             agent_name,
             if should_allow { "allowed" } else { "denied" }
@@ -503,11 +505,7 @@ fn test_permission_override_persists_across_restarts() {
     let logger = Arc::new(AuditLogger::new());
 
     // Verify override still works after restart
-    let executor = AgentExecutor::with_agent(
-        config,
-        logger.clone(),
-        "admin".to_string(),
-    );
+    let executor = AgentExecutor::with_agent(config, logger.clone(), "admin".to_string());
 
     let (result, _) = executor
         .execute_with_permission("tool", None, None, || Ok(42))
@@ -519,4 +517,3 @@ fn test_permission_override_persists_across_restarts() {
         "Override must persist across restart"
     );
 }
-

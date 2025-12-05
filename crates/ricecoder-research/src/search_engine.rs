@@ -115,7 +115,11 @@ impl SearchEngine {
         }
 
         // Sort by relevance (descending)
-        results.sort_by(|a, b| b.relevance.partial_cmp(&a.relevance).unwrap_or(std::cmp::Ordering::Equal));
+        results.sort_by(|a, b| {
+            b.relevance
+                .partial_cmp(&a.relevance)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         // Limit results
         results.truncate(options.max_results);
@@ -217,9 +221,17 @@ mod tests {
 
     fn create_test_index() -> SemanticIndex {
         let mut index = SemanticIndex::new();
-        index.add_symbol(create_test_symbol("sym1", "my_function", SymbolKind::Function));
+        index.add_symbol(create_test_symbol(
+            "sym1",
+            "my_function",
+            SymbolKind::Function,
+        ));
         index.add_symbol(create_test_symbol("sym2", "MyClass", SymbolKind::Class));
-        index.add_symbol(create_test_symbol("sym3", "my_constant", SymbolKind::Constant));
+        index.add_symbol(create_test_symbol(
+            "sym3",
+            "my_constant",
+            SymbolKind::Constant,
+        ));
         index
     }
 

@@ -2,8 +2,8 @@
 //! Tests directory traversal, gitignore support, symbol extraction, and reference tracking
 //! **Validates: Requirements 1.7, 1.8, 1.9**
 
-use ricecoder_research::CodebaseScanner;
 use ricecoder_research::models::Language;
+use ricecoder_research::CodebaseScanner;
 use std::fs;
 use std::path::PathBuf;
 use tempfile::TempDir;
@@ -20,7 +20,11 @@ fn create_simple_rust_project(temp_dir: &TempDir) -> PathBuf {
 
     fs::write(root.join("src/main.rs"), "fn main() {}").unwrap();
     fs::write(root.join("src/lib.rs"), "pub fn lib_func() {}").unwrap();
-    fs::write(root.join("tests/integration_test.rs"), "#[test]\nfn test() {}").unwrap();
+    fs::write(
+        root.join("tests/integration_test.rs"),
+        "#[test]\nfn test() {}",
+    )
+    .unwrap();
 
     root.to_path_buf()
 }
@@ -48,10 +52,26 @@ fn create_nested_project(temp_dir: &TempDir) -> PathBuf {
     fs::create_dir_all(root.join("tests/integration")).unwrap();
 
     fs::write(root.join("src/domain/entity.rs"), "pub struct Entity {}").unwrap();
-    fs::write(root.join("src/application/service.rs"), "pub struct Service {}").unwrap();
-    fs::write(root.join("src/infrastructure/repo.rs"), "pub struct Repository {}").unwrap();
-    fs::write(root.join("tests/unit/entity_test.rs"), "#[test]\nfn test() {}").unwrap();
-    fs::write(root.join("tests/integration/integration_test.rs"), "#[test]\nfn test() {}").unwrap();
+    fs::write(
+        root.join("src/application/service.rs"),
+        "pub struct Service {}",
+    )
+    .unwrap();
+    fs::write(
+        root.join("src/infrastructure/repo.rs"),
+        "pub struct Repository {}",
+    )
+    .unwrap();
+    fs::write(
+        root.join("tests/unit/entity_test.rs"),
+        "#[test]\nfn test() {}",
+    )
+    .unwrap();
+    fs::write(
+        root.join("tests/integration/integration_test.rs"),
+        "#[test]\nfn test() {}",
+    )
+    .unwrap();
 
     root.to_path_buf()
 }
@@ -104,8 +124,14 @@ fn test_scan_nested_directories() {
 
     // Verify nested source directories are detected
     assert!(result.source_dirs.iter().any(|d| d.ends_with("domain")));
-    assert!(result.source_dirs.iter().any(|d| d.ends_with("application")));
-    assert!(result.source_dirs.iter().any(|d| d.ends_with("infrastructure")));
+    assert!(result
+        .source_dirs
+        .iter()
+        .any(|d| d.ends_with("application")));
+    assert!(result
+        .source_dirs
+        .iter()
+        .any(|d| d.ends_with("infrastructure")));
 
     // Verify nested test directories are detected
     assert!(result.test_dirs.iter().any(|d| d.ends_with("unit")));
@@ -122,7 +148,11 @@ fn test_scan_identifies_test_files() {
 
     fs::write(root.join("src/main.rs"), "fn main() {}").unwrap();
     fs::write(root.join("src/lib_test.rs"), "#[test]\nfn test() {}").unwrap();
-    fs::write(root.join("tests/integration_test.rs"), "#[test]\nfn test() {}").unwrap();
+    fs::write(
+        root.join("tests/integration_test.rs"),
+        "#[test]\nfn test() {}",
+    )
+    .unwrap();
 
     let result = CodebaseScanner::scan(root).unwrap();
 
@@ -132,7 +162,7 @@ fn test_scan_identifies_test_files() {
 
     let source_files: Vec<_> = result.files.iter().filter(|f| !f.is_test).collect();
     assert_eq!(source_files.len(), 1);
-    
+
     // Verify language detection
     assert_eq!(source_files[0].language, Some(Language::Rust));
 }
@@ -285,6 +315,10 @@ fn test_scan_ignores_non_source_files() {
     let result = CodebaseScanner::scan(root).unwrap();
 
     // Should only find main.rs (other files have no language)
-    let source_files: Vec<_> = result.files.iter().filter(|f| f.language.is_some()).collect();
+    let source_files: Vec<_> = result
+        .files
+        .iter()
+        .filter(|f| f.language.is_some())
+        .collect();
     assert_eq!(source_files.len(), 1);
 }

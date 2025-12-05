@@ -2,12 +2,9 @@
 //! **Feature: ricecoder-specs, Property 6: Query Result Consistency**
 //! **Validates: Requirements 2.1, 2.2**
 
-use proptest::prelude::*;
-use ricecoder_specs::{
-    models::*,
-    query::SpecQueryEngine,
-};
 use chrono::Utc;
+use proptest::prelude::*;
+use ricecoder_specs::{models::*, query::SpecQueryEngine};
 
 // ============================================================================
 // Generators for property-based testing

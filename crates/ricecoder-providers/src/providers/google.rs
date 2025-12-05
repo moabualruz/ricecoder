@@ -209,12 +209,12 @@ impl Provider for GoogleProvider {
             }),
         };
 
-        debug!("Sending chat request to Google for model: {}", request.model);
-
-        let url = format!(
-            "{}:generateContent?key={}",
-            self.base_url, self.api_key
+        debug!(
+            "Sending chat request to Google for model: {}",
+            request.model
         );
+
+        let url = format!("{}:generateContent?key={}", self.base_url, self.api_key);
 
         let response = self
             .client
@@ -274,15 +274,10 @@ impl Provider for GoogleProvider {
         // Try to list models as a health check
         let url = format!("{}?key={}", self.base_url, self.api_key);
 
-        let response = self
-            .client
-            .get(&url)
-            .send()
-            .await
-            .map_err(|e| {
-                warn!("Google health check failed: {}", e);
-                ProviderError::from(e)
-            })?;
+        let response = self.client.get(&url).send().await.map_err(|e| {
+            warn!("Google health check failed: {}", e);
+            ProviderError::from(e)
+        })?;
 
         match response.status().as_u16() {
             200 => {
@@ -294,7 +289,10 @@ impl Provider for GoogleProvider {
                 Err(ProviderError::AuthError)
             }
             _ => {
-                warn!("Google health check failed with status: {}", response.status());
+                warn!(
+                    "Google health check failed with status: {}",
+                    response.status()
+                );
                 Ok(false)
             }
         }
@@ -396,7 +394,9 @@ mod tests {
     #[test]
     fn test_token_counting() {
         let provider = GoogleProvider::new("test-key".to_string()).unwrap();
-        let tokens = provider.count_tokens("Hello, world!", "gemini-1.5-pro").unwrap();
+        let tokens = provider
+            .count_tokens("Hello, world!", "gemini-1.5-pro")
+            .unwrap();
         assert!(tokens > 0);
     }
 

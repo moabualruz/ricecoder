@@ -1,7 +1,7 @@
 //! TUI command - Launch the terminal user interface
 
-use crate::error::{CliError, CliResult};
 use crate::commands::Command;
+use crate::error::{CliError, CliResult};
 use std::path::PathBuf;
 
 /// TUI command configuration
@@ -117,7 +117,7 @@ fn launch_tui(config: TuiConfig) -> CliResult<()> {
 /// Validate provider configuration
 fn validate_provider_config(config: &ricecoder_tui::TuiConfig) -> CliResult<()> {
     let supported_providers = ["openai", "anthropic", "ollama", "google", "zen"];
-    
+
     if let Some(ref provider) = config.provider {
         if !supported_providers.contains(&provider.as_str()) {
             return Err(CliError::Internal(format!(
@@ -180,13 +180,7 @@ mod tests {
 
     #[test]
     fn test_tui_config_with_theme() {
-        let cmd = TuiCommand::new(
-            Some("monokai".to_string()),
-            false,
-            None,
-            None,
-            None,
-        );
+        let cmd = TuiCommand::new(Some("monokai".to_string()), false, None, None, None);
 
         let config = cmd.get_config();
         assert_eq!(config.theme, Some("monokai".to_string()));
@@ -194,13 +188,7 @@ mod tests {
 
     #[test]
     fn test_tui_config_with_vim_mode() {
-        let cmd = TuiCommand::new(
-            None,
-            true,
-            None,
-            None,
-            None,
-        );
+        let cmd = TuiCommand::new(None, true, None, None, None);
 
         let config = cmd.get_config();
         assert!(config.vim_mode);

@@ -22,7 +22,7 @@ fn prop_hash_is_deterministic() {
 fn prop_different_content_produces_different_hashes() {
     proptest!(|(content1 in ".*", content2 in ".*")| {
         prop_assume!(content1 != content2);
-        
+
         let hash1 = ContentVerifier::compute_hash(&content1);
         let hash2 = ContentVerifier::compute_hash(&content2);
         prop_assert_ne!(hash1, hash2);

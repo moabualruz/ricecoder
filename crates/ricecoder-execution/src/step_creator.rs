@@ -199,8 +199,7 @@ mod tests {
 
     #[test]
     fn test_rollback_action_for_create() {
-        let step = StepCreator::create_file("test.txt".to_string(), "content".to_string())
-            .unwrap();
+        let step = StepCreator::create_file("test.txt".to_string(), "content".to_string()).unwrap();
         let rollback = step.rollback_action.unwrap();
         assert_eq!(rollback.action_type, RollbackType::DeleteFile);
     }

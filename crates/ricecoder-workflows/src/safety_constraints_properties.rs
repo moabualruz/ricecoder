@@ -1,9 +1,9 @@
 //! Property-based tests for safety constraints
 //! **Feature: ricecoder-workflows, Property 16: Safety Constraints Application**
 
-use proptest::prelude::*;
-use crate::models::{WorkflowStep, StepType, StepConfig, ErrorAction, CommandStep, RiskFactors};
+use crate::models::{CommandStep, ErrorAction, RiskFactors, StepConfig, StepType, WorkflowStep};
 use crate::safety_constraints::SafetyConstraints;
+use proptest::prelude::*;
 
 // Strategy for generating command steps
 fn command_step_strategy() -> impl Strategy<Value = WorkflowStep> {

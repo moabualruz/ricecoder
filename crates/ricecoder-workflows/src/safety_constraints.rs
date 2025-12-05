@@ -20,8 +20,8 @@ impl SafetyConstraints {
     /// Create default safety constraints
     pub fn new() -> Self {
         Self {
-            max_timeout_ms: 300_000,  // 5 minutes
-            max_memory_mb: 1024,      // 1 GB
+            max_timeout_ms: 300_000, // 5 minutes
+            max_memory_mb: 1024,     // 1 GB
             max_cpu_percent: 80,
             max_file_handles: 1024,
         }
@@ -83,7 +83,7 @@ impl Default for SafetyConstraints {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{StepConfig, StepType, ErrorAction, CommandStep, RiskFactors};
+    use crate::models::{CommandStep, ErrorAction, RiskFactors, StepConfig, StepType};
 
     fn create_command_step(id: &str, timeout: u64) -> WorkflowStep {
         WorkflowStep {

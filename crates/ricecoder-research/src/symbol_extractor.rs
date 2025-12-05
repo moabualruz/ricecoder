@@ -25,29 +25,27 @@ impl SymbolExtractor {
     ) -> Result<Vec<Symbol>, ResearchError> {
         let mut parser = Parser::new();
         let ts_language = Self::get_tree_sitter_language(language)?;
-        parser.set_language(ts_language)
+        parser
+            .set_language(ts_language)
             .map_err(|_| ResearchError::AnalysisFailed {
                 reason: format!("Failed to set language for {:?}", language),
-                context: "Symbol extraction requires a valid tree-sitter language parser".to_string(),
+                context: "Symbol extraction requires a valid tree-sitter language parser"
+                    .to_string(),
             })?;
 
-        let tree = parser.parse(content, None)
+        let tree = parser
+            .parse(content, None)
             .ok_or_else(|| ResearchError::AnalysisFailed {
                 reason: "Failed to parse file".to_string(),
-                context: "Tree-sitter parser could not generate an abstract syntax tree".to_string(),
+                context: "Tree-sitter parser could not generate an abstract syntax tree"
+                    .to_string(),
             })?;
 
         let mut symbols = Vec::new();
         let root = tree.root_node();
 
         // Extract symbols based on language
-        Self::extract_symbols_recursive(
-            &root,
-            content,
-            path,
-            language,
-            &mut symbols,
-        )?;
+        Self::extract_symbols_recursive(&root, content, path, language, &mut symbols)?;
 
         Ok(symbols)
     }
@@ -100,11 +98,7 @@ impl SymbolExtractor {
     }
 
     /// Extract symbols from Rust code
-    fn extract_rust_symbol(
-        node: &tree_sitter::Node,
-        content: &str,
-        path: &Path,
-    ) -> Option<Symbol> {
+    fn extract_rust_symbol(node: &tree_sitter::Node, content: &str, path: &Path) -> Option<Symbol> {
         let kind_str = node.kind();
         let (symbol_kind, is_definition) = match kind_str {
             "function_item" => (SymbolKind::Function, true),
@@ -123,7 +117,8 @@ impl SymbolExtractor {
 
         // Find the name node
         let mut cursor = node.walk();
-        let name_node = node.children(&mut cursor)
+        let name_node = node
+            .children(&mut cursor)
             .find(|child| child.kind() == "identifier")?;
 
         let name = name_node.utf8_text(content.as_bytes()).ok()?.to_string();
@@ -163,7 +158,8 @@ impl SymbolExtractor {
 
         // Find the name node
         let mut cursor = node.walk();
-        let name_node = node.children(&mut cursor)
+        let name_node = node
+            .children(&mut cursor)
             .find(|child| child.kind() == "identifier" || child.kind() == "type_identifier")?;
 
         let name = name_node.utf8_text(content.as_bytes()).ok()?.to_string();
@@ -199,7 +195,8 @@ impl SymbolExtractor {
 
         // Find the name node (second child after 'def' or 'class')
         let mut cursor = node.walk();
-        let name_node = node.children(&mut cursor)
+        let name_node = node
+            .children(&mut cursor)
             .find(|child| child.kind() == "identifier")?;
 
         let name = name_node.utf8_text(content.as_bytes()).ok()?.to_string();
@@ -217,11 +214,7 @@ impl SymbolExtractor {
     }
 
     /// Extract symbols from Go code
-    fn extract_go_symbol(
-        node: &tree_sitter::Node,
-        content: &str,
-        path: &Path,
-    ) -> Option<Symbol> {
+    fn extract_go_symbol(node: &tree_sitter::Node, content: &str, path: &Path) -> Option<Symbol> {
         let kind_str = node.kind();
         let (symbol_kind, is_definition) = match kind_str {
             "function_declaration" => (SymbolKind::Function, true),
@@ -237,7 +230,8 @@ impl SymbolExtractor {
 
         // Find the name node
         let mut cursor = node.walk();
-        let name_node = node.children(&mut cursor)
+        let name_node = node
+            .children(&mut cursor)
             .find(|child| child.kind() == "identifier")?;
 
         let name = name_node.utf8_text(content.as_bytes()).ok()?.to_string();
@@ -255,11 +249,7 @@ impl SymbolExtractor {
     }
 
     /// Extract symbols from Java code
-    fn extract_java_symbol(
-        node: &tree_sitter::Node,
-        content: &str,
-        path: &Path,
-    ) -> Option<Symbol> {
+    fn extract_java_symbol(node: &tree_sitter::Node, content: &str, path: &Path) -> Option<Symbol> {
         let kind_str = node.kind();
         let (symbol_kind, is_definition) = match kind_str {
             "method_declaration" => (SymbolKind::Function, true),
@@ -275,7 +265,8 @@ impl SymbolExtractor {
 
         // Find the name node
         let mut cursor = node.walk();
-        let name_node = node.children(&mut cursor)
+        let name_node = node
+            .children(&mut cursor)
             .find(|child| child.kind() == "identifier")?;
 
         let name = name_node.utf8_text(content.as_bytes()).ok()?.to_string();
@@ -302,7 +293,9 @@ impl SymbolExtractor {
             Language::Java => Ok(tree_sitter_java::language()),
             _ => Err(ResearchError::AnalysisFailed {
                 reason: format!("Unsupported language for symbol extraction: {:?}", language),
-                context: "Symbol extraction is only supported for Rust, TypeScript, Python, Go, and Java".to_string(),
+                context:
+                    "Symbol extraction is only supported for Rust, TypeScript, Python, Go, and Java"
+                        .to_string(),
             }),
         }
     }
@@ -378,7 +371,11 @@ mod tests {
     fn test_unsupported_language() {
         let content = "some code";
         let path = Path::new("test.unknown");
-        let result = SymbolExtractor::extract_symbols(path, &Language::Other("unknown".to_string()), content);
+        let result = SymbolExtractor::extract_symbols(
+            path,
+            &Language::Other("unknown".to_string()),
+            content,
+        );
 
         assert!(result.is_err());
     }

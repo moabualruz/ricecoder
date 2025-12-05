@@ -44,6 +44,12 @@ pub enum ResourceType {
     Rule,
     /// Custom command definitions
     CustomCommand,
+    /// LSP language configuration files
+    LspLanguageConfig,
+    /// Code completion language configuration files
+    CompletionLanguageConfig,
+    /// Hooks configuration files
+    HooksConfig,
 }
 
 impl ResourceType {
@@ -57,6 +63,9 @@ impl ResourceType {
             ResourceType::Boilerplate => "boilerplates",
             ResourceType::Rule => "rules",
             ResourceType::CustomCommand => "commands",
+            ResourceType::LspLanguageConfig => "lsp/languages",
+            ResourceType::CompletionLanguageConfig => "completion/languages",
+            ResourceType::HooksConfig => "hooks",
         }
     }
 }
@@ -145,6 +154,7 @@ mod tests {
         assert_eq!(ResourceType::Boilerplate.dir_name(), "boilerplates");
         assert_eq!(ResourceType::Rule.dir_name(), "rules");
         assert_eq!(ResourceType::CustomCommand.dir_name(), "commands");
+        assert_eq!(ResourceType::HooksConfig.dir_name(), "hooks");
     }
 
     #[test]
@@ -156,10 +166,22 @@ mod tests {
 
     #[test]
     fn test_config_format_detection() {
-        assert_eq!(ConfigFormat::from_extension("yaml"), Some(ConfigFormat::Yaml));
-        assert_eq!(ConfigFormat::from_extension("yml"), Some(ConfigFormat::Yaml));
-        assert_eq!(ConfigFormat::from_extension("toml"), Some(ConfigFormat::Toml));
-        assert_eq!(ConfigFormat::from_extension("json"), Some(ConfigFormat::Json));
+        assert_eq!(
+            ConfigFormat::from_extension("yaml"),
+            Some(ConfigFormat::Yaml)
+        );
+        assert_eq!(
+            ConfigFormat::from_extension("yml"),
+            Some(ConfigFormat::Yaml)
+        );
+        assert_eq!(
+            ConfigFormat::from_extension("toml"),
+            Some(ConfigFormat::Toml)
+        );
+        assert_eq!(
+            ConfigFormat::from_extension("json"),
+            Some(ConfigFormat::Json)
+        );
         assert_eq!(ConfigFormat::from_extension("txt"), None);
     }
 

@@ -601,7 +601,10 @@ mod tests {
         let plan = ExecutionPlan::new("Test Plan".to_string(), vec![]);
         let result = ExecutionValidator::validate_plan(&plan);
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("at least one step"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("at least one step"));
     }
 
     #[test]
@@ -664,10 +667,7 @@ mod tests {
         let plan = ExecutionPlan::new("Test Plan".to_string(), vec![step]);
         let result = ExecutionValidator::validate_plan(&plan);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("self-referential"));
+        assert!(result.unwrap_err().to_string().contains("self-referential"));
     }
 
     #[test]

@@ -6,10 +6,10 @@
 //! - Permission denials are enforced (no bypasses)
 
 use ricecoder_permissions::{
-    PermissionLevel, ToolPermission, PermissionManager,
-    AuditLogger, InMemoryPermissionRepository, PermissionRepository,
-    permission::PermissionChecker,
     audit::{AuditAction, AuditResult},
+    permission::PermissionChecker,
+    AuditLogger, InMemoryPermissionRepository, PermissionLevel, PermissionManager,
+    PermissionRepository, ToolPermission,
 };
 use std::sync::Arc;
 
@@ -42,9 +42,13 @@ fn test_permission_check_explicit_error_handling() {
     // Test: Check permission for denied tool
     // Should return explicit decision, not silently fail
     let perms = manager.get_permission("test_tool").unwrap();
-    assert!(!perms.is_empty(), "Permission check must return explicit result");
+    assert!(
+        !perms.is_empty(),
+        "Permission check must return explicit result"
+    );
 
-    let decision = PermissionChecker::check_permission(&perms, None, PermissionLevel::Allow).unwrap();
+    let decision =
+        PermissionChecker::check_permission(&perms, None, PermissionLevel::Allow).unwrap();
     // Verify the decision is explicit (not a silent failure)
     assert_eq!(
         decision,
@@ -160,9 +164,7 @@ fn test_audit_logs_survive_multiple_save_load_cycles() {
             .log_execution(entry.tool.clone(), entry.agent.clone(), None)
             .unwrap();
     }
-    logger2
-        .log_denial("tool2".to_string(), None, None)
-        .unwrap();
+    logger2.log_denial("tool2".to_string(), None, None).unwrap();
 
     let entries2 = logger2.entries().unwrap();
     repo.save_audit_logs(&entries2).unwrap();
@@ -198,9 +200,21 @@ fn test_audit_logs_preserve_all_fields() {
 
     let entry = &loaded[0];
     assert_eq!(entry.tool, "test_tool", "Tool must be preserved");
-    assert_eq!(entry.agent, Some("test_agent".to_string()), "Agent must be preserved");
-    assert_eq!(entry.action, AuditAction::Allowed, "Action must be preserved");
-    assert_eq!(entry.result, AuditResult::Success, "Result must be preserved");
+    assert_eq!(
+        entry.agent,
+        Some("test_agent".to_string()),
+        "Agent must be preserved"
+    );
+    assert_eq!(
+        entry.action,
+        AuditAction::Allowed,
+        "Action must be preserved"
+    );
+    assert_eq!(
+        entry.result,
+        AuditResult::Success,
+        "Result must be preserved"
+    );
     // Timestamp is a DateTime, just verify it exists
     let _ = entry.timestamp;
 }
@@ -255,7 +269,8 @@ fn test_permission_denial_cannot_be_bypassed_with_empty_agent() {
 
     // Test: Try to bypass denial by checking with no agent
     let perms = manager.get_permission("denied_tool").unwrap();
-    let decision = PermissionChecker::check_permission(&perms, None, PermissionLevel::Allow).unwrap();
+    let decision =
+        PermissionChecker::check_permission(&perms, None, PermissionLevel::Allow).unwrap();
 
     assert_eq!(
         decision,
@@ -273,7 +288,9 @@ fn test_permission_denial_cannot_be_bypassed_with_different_agent() {
     // Test: Try to bypass denial by checking with different agents
     for agent in &["agent1", "agent2", "admin", "root"] {
         let perms = manager.get_permission("denied_tool").unwrap();
-        let decision = PermissionChecker::check_permission(&perms, Some(agent), PermissionLevel::Allow).unwrap();
+        let decision =
+            PermissionChecker::check_permission(&perms, Some(agent), PermissionLevel::Allow)
+                .unwrap();
 
         assert_eq!(
             decision,
@@ -292,7 +309,8 @@ fn test_permission_denial_cannot_be_bypassed_with_pattern_matching() {
     // Test: Try to bypass denial with tools matching the pattern
     for tool in &["denied_tool1", "denied_tool2", "denied_anything"] {
         let perms = manager.get_permission(tool).unwrap();
-        let decision = PermissionChecker::check_permission(&perms, None, PermissionLevel::Allow).unwrap();
+        let decision =
+            PermissionChecker::check_permission(&perms, None, PermissionLevel::Allow).unwrap();
 
         assert_eq!(
             decision,
@@ -312,8 +330,13 @@ fn test_permission_denial_is_logged() {
 
     // Check permission (which should be denied)
     let perms = manager.get_permission("denied_tool").unwrap();
-    let decision = PermissionChecker::check_permission(&perms, None, PermissionLevel::Allow).unwrap();
-    assert_eq!(decision, ricecoder_permissions::permission::PermissionDecision::Deny, "Permission check must return Deny");
+    let decision =
+        PermissionChecker::check_permission(&perms, None, PermissionLevel::Allow).unwrap();
+    assert_eq!(
+        decision,
+        ricecoder_permissions::permission::PermissionDecision::Deny,
+        "Permission check must return Deny"
+    );
 
     // Log the denial
     logger
@@ -323,8 +346,16 @@ fn test_permission_denial_is_logged() {
     // Verify denial is logged
     let entries = logger.entries().unwrap();
     assert_eq!(entries.len(), 1, "Denial must be logged");
-    assert_eq!(entries[0].action, AuditAction::Denied, "Action must be Denied");
-    assert_eq!(entries[0].result, AuditResult::Blocked, "Result must be Blocked");
+    assert_eq!(
+        entries[0].action,
+        AuditAction::Denied,
+        "Action must be Denied"
+    );
+    assert_eq!(
+        entries[0].result,
+        AuditResult::Blocked,
+        "Result must be Blocked"
+    );
 }
 
 #[test]
@@ -340,11 +371,14 @@ fn test_permission_denial_enforced_across_restarts() {
     // Simulate restart: Load config
     let loaded_config = repo.load_config().unwrap();
     let manager = PermissionManager::new();
-    manager.reload_permissions(loaded_config.get_permissions().to_vec()).unwrap();
+    manager
+        .reload_permissions(loaded_config.get_permissions().to_vec())
+        .unwrap();
 
     // Verify denial is still enforced after "restart"
     let perms = manager.get_permission("denied_tool").unwrap();
-    let decision = PermissionChecker::check_permission(&perms, None, PermissionLevel::Allow).unwrap();
+    let decision =
+        PermissionChecker::check_permission(&perms, None, PermissionLevel::Allow).unwrap();
 
     assert_eq!(
         decision,
@@ -359,7 +393,7 @@ fn test_permission_denial_with_per_agent_override() {
     // Global deny
     let global_deny = ToolPermission::new("tool".to_string(), PermissionLevel::Deny);
     manager.store_permission(global_deny).unwrap();
-    
+
     // Agent-specific allow (should override global deny)
     let agent_allow = ToolPermission::with_agent(
         "tool".to_string(),
@@ -370,7 +404,8 @@ fn test_permission_denial_with_per_agent_override() {
 
     // Test: Regular user should be denied
     let perms = manager.get_permission("tool").unwrap();
-    let decision = PermissionChecker::check_permission(&perms, Some("user"), PermissionLevel::Allow).unwrap();
+    let decision =
+        PermissionChecker::check_permission(&perms, Some("user"), PermissionLevel::Allow).unwrap();
     assert_eq!(
         decision,
         ricecoder_permissions::permission::PermissionDecision::Deny,
@@ -379,11 +414,11 @@ fn test_permission_denial_with_per_agent_override() {
 
     // Test: Admin should be allowed (override)
     let perms = manager.get_permission("tool").unwrap();
-    let decision = PermissionChecker::check_permission(&perms, Some("admin"), PermissionLevel::Allow).unwrap();
+    let decision =
+        PermissionChecker::check_permission(&perms, Some("admin"), PermissionLevel::Allow).unwrap();
     assert_eq!(
         decision,
         ricecoder_permissions::permission::PermissionDecision::Allow,
         "Admin should be allowed (override)"
     );
 }
-

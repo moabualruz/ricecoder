@@ -2,13 +2,9 @@
 //! **Feature: ricecoder-specs, Property 9: EARS Compliance Validation**
 //! **Validates: Requirements 3.3, 3.9**
 
-use proptest::prelude::*;
-use ricecoder_specs::{
-    models::*,
-    validation::ValidationEngine,
-    error::Severity,
-};
 use chrono::Utc;
+use proptest::prelude::*;
+use ricecoder_specs::{error::Severity, models::*, validation::ValidationEngine};
 
 // ============================================================================
 // Generators for property-based testing
@@ -38,75 +34,34 @@ fn arb_user_story() -> impl Strategy<Value = String> {
 fn arb_ears_compliant_criterion() -> impl Strategy<Value = AcceptanceCriterion> {
     prop_oneof![
         // Event-driven pattern: WHEN ... THEN THE system SHALL ...
-        (
-            "AC-[0-9]{1,3}",
-            "when [a-z ]+",
-            "THE system SHALL [a-z ]+",
-        )
-            .prop_map(|(id, when, then)| AcceptanceCriterion {
-                id,
-                when,
-                then,
-            }),
+        ("AC-[0-9]{1,3}", "when [a-z ]+", "THE system SHALL [a-z ]+",)
+            .prop_map(|(id, when, then)| AcceptanceCriterion { id, when, then }),
         // Ubiquitous pattern: THE system SHALL ...
-        (
-            "AC-[0-9]{1,3}",
-            "",
-            "THE system SHALL [a-z ]+",
-        )
-            .prop_map(|(id, when, then)| AcceptanceCriterion {
-                id,
-                when,
-                then,
-            }),
+        ("AC-[0-9]{1,3}", "", "THE system SHALL [a-z ]+",)
+            .prop_map(|(id, when, then)| AcceptanceCriterion { id, when, then }),
         // State-driven pattern: WHILE ... THE system SHALL ...
-        (
-            "AC-[0-9]{1,3}",
-            "WHILE [a-z ]+",
-            "THE system SHALL [a-z ]+",
-        )
-            .prop_map(|(id, when, then)| AcceptanceCriterion {
-                id,
-                when,
-                then,
-            }),
+        ("AC-[0-9]{1,3}", "WHILE [a-z ]+", "THE system SHALL [a-z ]+",)
+            .prop_map(|(id, when, then)| AcceptanceCriterion { id, when, then }),
         // Unwanted event pattern: IF ... THEN THE system SHALL ...
         (
             "AC-[0-9]{1,3}",
             "IF [a-z ]+",
             "THEN THE system SHALL [a-z ]+",
         )
-            .prop_map(|(id, when, then)| AcceptanceCriterion {
-                id,
-                when,
-                then,
-            }),
+            .prop_map(|(id, when, then)| AcceptanceCriterion { id, when, then }),
         // Optional feature pattern: WHERE ... THE system SHALL ...
-        (
-            "AC-[0-9]{1,3}",
-            "WHERE [a-z ]+",
-            "THE system SHALL [a-z ]+",
-        )
-            .prop_map(|(id, when, then)| AcceptanceCriterion {
-                id,
-                when,
-                then,
-            }),
+        ("AC-[0-9]{1,3}", "WHERE [a-z ]+", "THE system SHALL [a-z ]+",)
+            .prop_map(|(id, when, then)| AcceptanceCriterion { id, when, then }),
     ]
 }
 
 /// Generate non-EARS-compliant acceptance criteria
 fn arb_non_ears_compliant_criterion() -> impl Strategy<Value = AcceptanceCriterion> {
-    (
-        "AC-[0-9]{1,3}",
-        "[a-z ]+",
-        "[a-z ]+",
-    )
-        .prop_map(|(id, when, then)| AcceptanceCriterion {
-            id,
-            when,
-            then,
-        })
+    ("AC-[0-9]{1,3}", "[a-z ]+", "[a-z ]+").prop_map(|(id, when, then)| AcceptanceCriterion {
+        id,
+        when,
+        then,
+    })
 }
 
 fn arb_requirement_with_ears_criteria() -> impl Strategy<Value = Requirement> {

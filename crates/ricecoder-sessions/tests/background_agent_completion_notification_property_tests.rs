@@ -2,7 +2,7 @@
 //! **Feature: ricecoder-sessions, Property 13: Background Agent Completion Notification**
 //! **Validates: Requirements 4.3**
 
-use ricecoder_sessions::{BackgroundAgentManager, BackgroundAgent, AgentStatus};
+use ricecoder_sessions::{AgentStatus, BackgroundAgent, BackgroundAgentManager};
 
 /// Property: For any background agent that completes, the system SHALL emit a
 /// notification event.
@@ -19,10 +19,7 @@ async fn prop_background_agent_completion_notification() {
         // Start agents
         let mut agent_ids = Vec::new();
         for i in 0..num_agents {
-            let agent = BackgroundAgent::new(
-                format!("agent_{}", i),
-                Some(format!("task_{}", i)),
-            );
+            let agent = BackgroundAgent::new(format!("agent_{}", i), Some(format!("task_{}", i)));
             let agent_id = manager.start_agent(agent).await.unwrap();
             agent_ids.push(agent_id);
         }
@@ -73,10 +70,7 @@ async fn prop_agent_cancellation_notification() {
         // Start agents
         let mut agent_ids = Vec::new();
         for i in 0..num_agents {
-            let agent = BackgroundAgent::new(
-                format!("agent_{}", i),
-                None,
-            );
+            let agent = BackgroundAgent::new(format!("agent_{}", i), None);
             let agent_id = manager.start_agent(agent).await.unwrap();
             agent_ids.push(agent_id);
         }
@@ -119,10 +113,7 @@ async fn prop_completion_events_clearable() {
 
         // Start and complete first batch of agents
         for i in 0..num_agents {
-            let agent = BackgroundAgent::new(
-                format!("agent_batch1_{}", i),
-                None,
-            );
+            let agent = BackgroundAgent::new(format!("agent_batch1_{}", i), None);
             manager.start_agent(agent).await.unwrap();
         }
 
@@ -141,18 +132,11 @@ async fn prop_completion_events_clearable() {
 
         // Events should be cleared
         let events_after_clear = manager.get_completion_events().await;
-        assert_eq!(
-            events_after_clear.len(),
-            0,
-            "Events should be cleared"
-        );
+        assert_eq!(events_after_clear.len(), 0, "Events should be cleared");
 
         // Start second batch
         for i in 0..num_agents {
-            let agent = BackgroundAgent::new(
-                format!("agent_batch2_{}", i),
-                None,
-            );
+            let agent = BackgroundAgent::new(format!("agent_batch2_{}", i), None);
             manager.start_agent(agent).await.unwrap();
         }
 

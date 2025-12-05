@@ -1,9 +1,7 @@
 //! Property-based tests for transaction rollback functionality
 //! **Feature: ricecoder-files, Property 5: Transaction Rollback**
 
-use ricecoder_files::{
-    FileOperation, OperationType, TransactionManager, TransactionStatus,
-};
+use ricecoder_files::{FileOperation, OperationType, TransactionManager, TransactionStatus};
 use tempfile::TempDir;
 use tokio::fs;
 
@@ -21,9 +19,7 @@ async fn test_rollback_restores_all_files_to_pre_transaction_state() {
     fs::write(&file1, "original1").await.unwrap();
     fs::write(&file2, "original2").await.unwrap();
 
-    let manager = TransactionManager::new(
-        ricecoder_files::BackupManager::new(backup_dir, 10)
-    );
+    let manager = TransactionManager::new(ricecoder_files::BackupManager::new(backup_dir, 10));
 
     // Begin transaction
     let tx_id = manager.begin_transaction().await.unwrap();
@@ -84,9 +80,7 @@ async fn test_partial_transaction_failure_triggers_rollback() {
     // Create original file1
     fs::write(&file1, "original1").await.unwrap();
 
-    let manager = TransactionManager::new(
-        ricecoder_files::BackupManager::new(backup_dir, 10)
-    );
+    let manager = TransactionManager::new(ricecoder_files::BackupManager::new(backup_dir, 10));
 
     // Begin transaction
     let tx_id = manager.begin_transaction().await.unwrap();
@@ -131,9 +125,7 @@ async fn test_rollback_with_multiple_files_property() {
     let temp_dir = TempDir::new().unwrap();
     let backup_dir = temp_dir.path().join("backups");
 
-    let manager = TransactionManager::new(
-        ricecoder_files::BackupManager::new(backup_dir, 10)
-    );
+    let manager = TransactionManager::new(ricecoder_files::BackupManager::new(backup_dir, 10));
 
     // Create 5 files with original content
     let mut files = Vec::new();
@@ -191,9 +183,7 @@ async fn test_rollback_idempotence() {
 
     fs::write(&file_path, "original").await.unwrap();
 
-    let manager = TransactionManager::new(
-        ricecoder_files::BackupManager::new(backup_dir, 10)
-    );
+    let manager = TransactionManager::new(ricecoder_files::BackupManager::new(backup_dir, 10));
 
     let tx_id = manager.begin_transaction().await.unwrap();
 
@@ -233,9 +223,7 @@ async fn test_rollback_deletes_created_files() {
     // Create only the first file
     fs::write(&file1, "original").await.unwrap();
 
-    let manager = TransactionManager::new(
-        ricecoder_files::BackupManager::new(backup_dir, 10)
-    );
+    let manager = TransactionManager::new(ricecoder_files::BackupManager::new(backup_dir, 10));
 
     let tx_id = manager.begin_transaction().await.unwrap();
 

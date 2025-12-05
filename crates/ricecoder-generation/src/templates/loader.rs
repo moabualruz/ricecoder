@@ -6,9 +6,9 @@
 use crate::models::{Template, TemplateMetadata};
 use crate::templates::error::TemplateError;
 use crate::templates::parser::TemplateParser;
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::collections::HashMap;
 
 /// Loads templates from files and directories
 pub struct TemplateLoader {
@@ -38,8 +38,7 @@ impl TemplateLoader {
         }
 
         // Read file
-        let content = fs::read_to_string(path)
-            .map_err(TemplateError::IoError)?;
+        let content = fs::read_to_string(path).map_err(TemplateError::IoError)?;
 
         // Parse template to validate syntax
         let parsed = TemplateParser::parse(&content)?;
@@ -76,7 +75,8 @@ impl TemplateLoader {
         };
 
         // Cache the template
-        self.cache.insert(path.to_string_lossy().to_string(), template.clone());
+        self.cache
+            .insert(path.to_string_lossy().to_string(), template.clone());
 
         Ok(template)
     }
@@ -102,9 +102,12 @@ impl TemplateLoader {
     }
 
     /// Scan directory recursively for .tmpl files
-    fn scan_directory(&mut self, dir: &Path, templates: &mut Vec<Template>) -> Result<(), TemplateError> {
-        let entries = fs::read_dir(dir)
-            .map_err(TemplateError::IoError)?;
+    fn scan_directory(
+        &mut self,
+        dir: &Path,
+        templates: &mut Vec<Template>,
+    ) -> Result<(), TemplateError> {
+        let entries = fs::read_dir(dir).map_err(TemplateError::IoError)?;
 
         for entry in entries {
             let entry = entry.map_err(TemplateError::IoError)?;
@@ -144,7 +147,10 @@ impl TemplateLoader {
     ///
     /// # Returns
     /// Vector of loaded templates or error
-    pub fn load_project_templates(&mut self, project_root: &Path) -> Result<Vec<Template>, TemplateError> {
+    pub fn load_project_templates(
+        &mut self,
+        project_root: &Path,
+    ) -> Result<Vec<Template>, TemplateError> {
         let project_dir = project_root.join(".ricecoder").join("templates");
         self.load_from_directory(&project_dir)
     }
@@ -158,7 +164,10 @@ impl TemplateLoader {
     ///
     /// # Returns
     /// Vector of loaded templates (project templates override global ones)
-    pub fn load_all_templates(&mut self, project_root: &Path) -> Result<Vec<Template>, TemplateError> {
+    pub fn load_all_templates(
+        &mut self,
+        project_root: &Path,
+    ) -> Result<Vec<Template>, TemplateError> {
         // Load global templates first
         let templates = self.load_global_templates()?;
 
@@ -166,10 +175,8 @@ impl TemplateLoader {
         let project_templates = self.load_project_templates(project_root)?;
 
         // Create a map of templates by ID for deduplication
-        let mut template_map: HashMap<String, Template> = templates
-            .into_iter()
-            .map(|t| (t.id.clone(), t))
-            .collect();
+        let mut template_map: HashMap<String, Template> =
+            templates.into_iter().map(|t| (t.id.clone(), t)).collect();
 
         // Add/override with project templates
         for template in project_templates {
@@ -196,12 +203,8 @@ impl TemplateLoader {
         path.extension()
             .and_then(|_ext| {
                 // Get the extension before .tmpl
-                let parts: Vec<&str> = path
-                    .file_name()?
-                    .to_str()?
-                    .split('.')
-                    .collect();
-                
+                let parts: Vec<&str> = path.file_name()?.to_str()?.split('.').collect();
+
                 if parts.len() >= 2 {
                     Some(parts[parts.len() - 2].to_string())
                 } else {
@@ -247,7 +250,7 @@ mod tests {
     fn test_load_from_file() {
         let temp_dir = TempDir::new().unwrap();
         let template_path = temp_dir.path().join("test.rs.tmpl");
-        
+
         let content = "pub struct {{Name}} {\n    pub field: String,\n}";
         fs::write(&template_path, content).unwrap();
 
@@ -262,9 +265,13 @@ mod tests {
     #[test]
     fn test_load_from_directory() {
         let temp_dir = TempDir::new().unwrap();
-        
+
         // Create multiple template files
-        fs::write(temp_dir.path().join("struct.rs.tmpl"), "pub struct {{Name}} {}").unwrap();
+        fs::write(
+            temp_dir.path().join("struct.rs.tmpl"),
+            "pub struct {{Name}} {}",
+        )
+        .unwrap();
         fs::write(temp_dir.path().join("impl.rs.tmpl"), "impl {{Name}} {}").unwrap();
 
         let mut loader = TemplateLoader::new();
@@ -278,15 +285,17 @@ mod tests {
     #[test]
     fn test_load_nonexistent_directory() {
         let mut loader = TemplateLoader::new();
-        let templates = loader.load_from_directory(Path::new("/nonexistent/path")).unwrap();
-        
+        let templates = loader
+            .load_from_directory(Path::new("/nonexistent/path"))
+            .unwrap();
+
         assert_eq!(templates.len(), 0);
     }
 
     #[test]
     fn test_detect_language() {
         let loader = TemplateLoader::new();
-        
+
         assert_eq!(loader.detect_language(Path::new("test.rs.tmpl")), "rs");
         assert_eq!(loader.detect_language(Path::new("test.ts.tmpl")), "ts");
         assert_eq!(loader.detect_language(Path::new("test.py.tmpl")), "py");

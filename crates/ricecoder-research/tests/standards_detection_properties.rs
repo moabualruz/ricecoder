@@ -4,8 +4,8 @@
 
 use proptest::prelude::*;
 use ricecoder_research::StandardsDetector;
-use tempfile::NamedTempFile;
 use std::io::Write;
+use tempfile::NamedTempFile;
 
 // ============================================================================
 // Generators for property testing
@@ -15,12 +15,7 @@ use std::io::Write;
 fn arb_rust_code_snake_case() -> impl Strategy<Value = String> {
     prop::string::string_regex("[a-z_][a-z0-9_]{0,20}")
         .expect("valid regex")
-        .prop_map(|name| {
-            format!(
-                "fn {}_function() {{\n    let {} = 42;\n}}\n",
-                name, name
-            )
-        })
+        .prop_map(|name| format!("fn {}_function() {{\n    let {} = 42;\n}}\n", name, name))
 }
 
 /// Generate valid Rust code with consistent formatting

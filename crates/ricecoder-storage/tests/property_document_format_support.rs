@@ -4,14 +4,13 @@
 //! **Validates: Requirements 2.3, 2.4**
 
 use proptest::prelude::*;
-use ricecoder_storage::config::{DocumentLoader, Document};
+use ricecoder_storage::config::{Document, DocumentLoader};
 use ricecoder_storage::types::DocumentFormat;
 use tempfile::TempDir;
 
 /// Strategy for generating valid document content
 fn document_content_strategy() -> impl Strategy<Value = String> {
-    r"[a-zA-Z0-9\n\r\t !@#$%^&*()_+=\-\[\]{};:',.<>?/\\|`~]*"
-        .prop_map(|s| s.to_string())
+    r"[a-zA-Z0-9\n\r\t !@#$%^&*()_+=\-\[\]{};:',.<>?/\\|`~]*".prop_map(|s| s.to_string())
 }
 
 proptest! {

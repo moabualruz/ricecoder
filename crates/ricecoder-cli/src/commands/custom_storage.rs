@@ -2,7 +2,7 @@
 // Handles loading and saving custom commands to ricecoder-storage
 
 use crate::error::{CliError, CliResult};
-use ricecoder_commands::{CommandRegistry, CommandDefinition, ConfigManager};
+use ricecoder_commands::{CommandDefinition, CommandRegistry, ConfigManager};
 use ricecoder_storage::PathResolver;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -16,9 +16,9 @@ pub struct CustomCommandsStorage {
 impl CustomCommandsStorage {
     /// Create a new custom commands storage manager
     pub fn new() -> CliResult<Self> {
-        let global_path = PathResolver::resolve_global_path()
-            .map_err(|e| CliError::Internal(e.to_string()))?;
-        
+        let global_path =
+            PathResolver::resolve_global_path().map_err(|e| CliError::Internal(e.to_string()))?;
+
         let project_path = if PathResolver::resolve_project_path().exists() {
             Some(PathResolver::resolve_project_path())
         } else {
@@ -76,7 +76,10 @@ impl CustomCommandsStorage {
                 let file_name = path.file_name().unwrap().to_string_lossy();
 
                 // Try to load as JSON or YAML
-                if file_name.ends_with(".json") || file_name.ends_with(".yaml") || file_name.ends_with(".yml") {
+                if file_name.ends_with(".json")
+                    || file_name.ends_with(".yaml")
+                    || file_name.ends_with(".yml")
+                {
                     match ConfigManager::load_from_file(&path) {
                         Ok(loaded_registry) => {
                             // Merge loaded commands into registry
@@ -87,7 +90,11 @@ impl CustomCommandsStorage {
                         }
                         Err(e) => {
                             // Log warning but continue loading other files
-                            eprintln!("Warning: Failed to load commands from {}: {}", path.display(), e);
+                            eprintln!(
+                                "Warning: Failed to load commands from {}: {}",
+                                path.display(),
+                                e
+                            );
                         }
                     }
                 }
@@ -116,8 +123,8 @@ impl CustomCommandsStorage {
         });
 
         // Serialize to JSON
-        let json_str = serde_json::to_string_pretty(&config)
-            .map_err(|e| CliError::Internal(e.to_string()))?;
+        let json_str =
+            serde_json::to_string_pretty(&config).map_err(|e| CliError::Internal(e.to_string()))?;
 
         // Write file
         fs::write(&file_path, json_str).map_err(CliError::Io)?;

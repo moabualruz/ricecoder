@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 5fd3c3bdb97afaa4940c21bb09672a82bde3a69fb449f9dc40c3a131946a494a # shrinks to ext = "pyi"
+cc 6d0cbf63cf5b5d435542514da755b62701ef6914ff14ba4e7d25b7e4ae85c1cb # shrinks to code = "fn main() {}"

@@ -36,6 +36,8 @@ regex = { workspace = true }
 ricecoder-storage = { path = "../ricecoder-storage" }
 ricecoder-commands = { path = "../ricecoder-commands" }
 ricecoder-tui = { path = "../ricecoder-tui" }
+ricecoder-lsp = { path = "../ricecoder-lsp" }
+ricecoder-hooks = { path = "../ricecoder-hooks" }
 
 [dev-dependencies]
 proptest = { workspace = true }

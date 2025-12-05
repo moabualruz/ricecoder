@@ -7,11 +7,11 @@
 
 #[cfg(test)]
 mod tests {
-    use proptest::prelude::*;
-    use crate::models::*;
     use crate::error_handler::{ErrorHandler, RetryState};
+    use crate::models::*;
     use crate::rollback::RollbackManager;
     use crate::state::StateManager;
+    use proptest::prelude::*;
 
     // Strategy for generating error actions
     fn error_action_strategy() -> impl Strategy<Value = ErrorAction> {
@@ -19,15 +19,12 @@ mod tests {
             Just(ErrorAction::Fail),
             Just(ErrorAction::Skip),
             Just(ErrorAction::Rollback),
-            (1usize..10, 10u64..1000u64)
-                .prop_map(|(max_attempts, delay_ms)| ErrorAction::Retry {
-                    max_attempts,
-                    delay_ms,
-                }),
+            (1usize..10, 10u64..1000u64).prop_map(|(max_attempts, delay_ms)| ErrorAction::Retry {
+                max_attempts,
+                delay_ms,
+            }),
         ]
     }
-
-
 
     // Property 3: Error Action Execution
     // **Feature: ricecoder-workflows, Property 3: Error Action Execution**

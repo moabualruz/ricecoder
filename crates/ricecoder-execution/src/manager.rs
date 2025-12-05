@@ -78,7 +78,8 @@ impl ExecutionManager {
         let progress_tracker = ProgressTracker::new(&plan);
 
         self.active_executions.insert(execution_id.clone(), state);
-        self.progress_trackers.insert(execution_id.clone(), progress_tracker);
+        self.progress_trackers
+            .insert(execution_id.clone(), progress_tracker);
 
         tracing::info!(
             execution_id = %execution_id,
@@ -191,31 +192,24 @@ impl ExecutionManager {
         &mut self,
         execution_id: &str,
     ) -> ExecutionResult<&mut ProgressTracker> {
-        self.progress_trackers
-            .get_mut(execution_id)
-            .ok_or_else(|| {
-                ExecutionError::ValidationError(format!(
-                    "Progress tracker not found for execution: {}",
-                    execution_id
-                ))
-            })
+        self.progress_trackers.get_mut(execution_id).ok_or_else(|| {
+            ExecutionError::ValidationError(format!(
+                "Progress tracker not found for execution: {}",
+                execution_id
+            ))
+        })
     }
 
     /// Get the progress tracker for an execution (read-only)
     ///
     /// Returns a reference to the progress tracker for the given execution.
-    pub fn get_progress_tracker(
-        &self,
-        execution_id: &str,
-    ) -> ExecutionResult<&ProgressTracker> {
-        self.progress_trackers
-            .get(execution_id)
-            .ok_or_else(|| {
-                ExecutionError::ValidationError(format!(
-                    "Progress tracker not found for execution: {}",
-                    execution_id
-                ))
-            })
+    pub fn get_progress_tracker(&self, execution_id: &str) -> ExecutionResult<&ProgressTracker> {
+        self.progress_trackers.get(execution_id).ok_or_else(|| {
+            ExecutionError::ValidationError(format!(
+                "Progress tracker not found for execution: {}",
+                execution_id
+            ))
+        })
     }
 
     /// Register a progress callback for an execution

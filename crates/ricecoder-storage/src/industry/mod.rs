@@ -19,7 +19,7 @@ pub mod kiro;
 pub mod windsurf;
 
 // Re-export commonly used types
-pub use adapter::{IndustryFileAdapter, IndustryFileDetector, FileDetectionResult};
+pub use adapter::{FileDetectionResult, IndustryFileAdapter, IndustryFileDetector};
 pub use agents::AgentsAdapter;
 pub use aider::AiderAdapter;
 pub use claude::ClaudeAdapter;

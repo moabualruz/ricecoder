@@ -1,0 +1,153 @@
+# Go Language Completion Configuration
+# Provides Go-specific keywords, snippets, and patterns for code completion
+
+language: go
+version: "1.0"
+description: "Go language completion configuration"
+
+# Go-specific keywords
+keywords:
+  - package
+  - import
+  - func
+  - const
+  - var
+  - type
+  - struct
+  - interface
+  - defer
+  - go
+  - chan
+  - select
+  - case
+  - default
+  - if
+  - else
+  - for
+  - range
+  - break
+  - continue
+  - return
+  - fallthrough
+  - switch
+  - goto
+  - map
+  - make
+  - new
+  - append
+  - copy
+  - delete
+  - len
+  - cap
+  - close
+  - panic
+  - recover
+
+# Go-specific snippets and templates
+snippets:
+  - label: "func_snippet"
+    template: "func ${1:name}(${2:params}) ${3:returnType} {\n    ${4:body}\n}"
+    description: "Function declaration"
+  
+  - label: "interface_snippet"
+    template: "type ${1:Name} interface {\n    ${2:methods}\n}"
+    description: "Interface definition"
+  
+  - label: "struct_snippet"
+    template: "type ${1:Name} struct {\n    ${2:fields}\n}"
+    description: "Struct definition"
+  
+  - label: "for_snippet"
+    template: "for ${1:i} := 0; ${1:i} < ${2:n}; ${1:i}++ {\n    ${3:body}\n}"
+    description: "For loop"
+  
+  - label: "for_range_snippet"
+    template: "for ${1:key}, ${2:value} := range ${3:collection} {\n    ${4:body}\n}"
+    description: "For-range loop"
+  
+  - label: "if_err_snippet"
+    template: "if err != nil {\n    ${1:handle error}\n}"
+    description: "Error handling pattern"
+  
+  - label: "defer_snippet"
+    template: "defer ${1:function}()"
+    description: "Defer statement"
+  
+  - label: "goroutine_snippet"
+    template: "go ${1:function}()"
+    description: "Goroutine"
+  
+  - label: "channel_snippet"
+    template: "ch := make(chan ${1:Type})\ngo func() {\n    ch <- ${2:value}\n}()\n${3:result} := <-ch"
+    description: "Channel pattern"
+  
+  - label: "select_snippet"
+    template: "select {\ncase ${1:case1}:\n    ${2:body1}\ncase ${3:case2}:\n    ${4:body2}\ndefault:\n    ${5:default}\n}"
+    description: "Select statement"
+
+# Go standard library types and functions
+standard_library:
+  - name: "fmt"
+    items:
+      - "Print"
+      - "Println"
+      - "Printf"
+      - "Sprintf"
+      - "Fprintf"
+  
+  - name: "io"
+    items:
+      - "Reader"
+      - "Writer"
+      - "ReadWriter"
+      - "ReadCloser"
+      - "WriteCloser"
+  
+  - name: "os"
+    items:
+      - "Open"
+      - "Create"
+      - "Remove"
+      - "Rename"
+      - "Mkdir"
+      - "Exit"
+      - "Getenv"
+      - "Setenv"
+  
+  - name: "strings"
+    items:
+      - "Contains"
+      - "HasPrefix"
+      - "HasSuffix"
+      - "Index"
+      - "Split"
+      - "Join"
+      - "ToLower"
+      - "ToUpper"
+      - "TrimSpace"
+  
+  - name: "strconv"
+    items:
+      - "Atoi"
+      - "Itoa"
+      - "ParseInt"
+      - "ParseFloat"
+      - "FormatInt"
+      - "FormatFloat"
+
+# Naming conventions
+naming_conventions:
+  - pattern: "^[a-z]"
+    description: "Package names should be lowercase"
+  
+  - pattern: "^[A-Z]"
+    description: "Exported identifiers should start with uppercase"
+  
+  - pattern: "^[a-z]"
+    description: "Unexported identifiers should start with lowercase"
+
+# Ranking weights for completion scoring
+ranking:
+  relevance_weight: 0.4
+  frequency_weight: 0.3
+  recency_weight: 0.3

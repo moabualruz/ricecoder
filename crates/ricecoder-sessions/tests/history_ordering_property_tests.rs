@@ -2,9 +2,9 @@
 //! **Feature: ricecoder-sessions, Property 2: History Ordering**
 //! **Validates: Requirements 2.3**
 
+use chrono::Utc;
 use proptest::prelude::*;
 use ricecoder_sessions::{HistoryManager, Message, MessageRole};
-use chrono::Utc;
 
 /// Strategy to generate valid messages with controlled timestamps
 fn message_strategy() -> impl Strategy<Value = Message> {
@@ -34,22 +34,22 @@ fn message_strategy() -> impl Strategy<Value = Message> {
 fn prop_history_messages_ordered_by_timestamp() {
     proptest!(|(messages in prop::collection::vec(message_strategy(), 1..100))| {
         let mut history = HistoryManager::new();
-        
+
         // Add messages in random order
         for msg in messages.iter() {
             history.add_message(msg.clone());
         }
-        
+
         // Get all messages
         let stored_messages = history.get_all_messages();
-        
+
         // Verify all messages are present
         prop_assert_eq!(
             stored_messages.len(),
             messages.len(),
             "All messages should be stored"
         );
-        
+
         // Verify messages are ordered by timestamp (ascending)
         for i in 1..stored_messages.len() {
             prop_assert!(
@@ -73,15 +73,15 @@ fn prop_recent_messages_ordered() {
         count in 1usize..50
     )| {
         let mut history = HistoryManager::new();
-        
+
         // Add messages
         for msg in messages.iter() {
             history.add_message(msg.clone());
         }
-        
+
         // Get recent messages
         let recent = history.get_recent_messages(count);
-        
+
         // Verify count is respected
         let expected_count = std::cmp::min(count, messages.len());
         prop_assert_eq!(
@@ -89,7 +89,7 @@ fn prop_recent_messages_ordered() {
             expected_count,
             "Should return at most count messages"
         );
-        
+
         // Verify they are in chronological order
         for i in 1..recent.len() {
             prop_assert!(
@@ -97,7 +97,7 @@ fn prop_recent_messages_ordered() {
                 "Recent messages should be in chronological order"
             );
         }
-        
+
         // Verify they are the most recent messages
         let all_messages = history.get_all_messages();
         if recent.len() > 0 && all_messages.len() > 0 {
@@ -126,15 +126,15 @@ fn prop_search_results_ordered() {
         query in "[a-z]{1,5}"
     )| {
         let mut history = HistoryManager::new();
-        
+
         // Add messages
         for msg in messages.iter() {
             history.add_message(msg.clone());
         }
-        
+
         // Search for messages
         let results = history.search_by_content(&query);
-        
+
         // Verify all results contain the query (case-insensitive)
         let query_lower = query.to_lowercase();
         for result in results.iter() {
@@ -143,7 +143,7 @@ fn prop_search_results_ordered() {
                 "Search result should contain the query"
             );
         }
-        
+
         // Verify results are ordered by timestamp
         for i in 1..results.len() {
             prop_assert!(
@@ -167,21 +167,21 @@ fn prop_history_ordering_with_size_limit() {
         max_size in 1usize..30
     )| {
         let mut history = HistoryManager::with_max_size(max_size);
-        
+
         // Add messages
         for msg in messages.iter() {
             history.add_message(msg.clone());
         }
-        
+
         // Get all messages
         let stored = history.get_all_messages();
-        
+
         // Verify size limit is enforced
         prop_assert!(
             stored.len() <= max_size,
             "History should not exceed max size"
         );
-        
+
         // Verify messages are still ordered
         for i in 1..stored.len() {
             prop_assert!(
@@ -189,7 +189,7 @@ fn prop_history_ordering_with_size_limit() {
                 "Messages should remain ordered even with size limit"
             );
         }
-        
+
         // Verify the most recent messages are preserved
         if stored.len() > 0 && messages.len() > 0 {
             let all_sorted = {
@@ -197,13 +197,13 @@ fn prop_history_ordering_with_size_limit() {
                 sorted.sort_by_key(|m| m.timestamp);
                 sorted
             };
-            
+
             let expected_start = if all_sorted.len() > max_size {
                 all_sorted.len() - max_size
             } else {
                 0
             };
-            
+
             // The stored messages should be the most recent ones
             for i in 0..stored.len() {
                 prop_assert_eq!(
@@ -228,28 +228,28 @@ fn prop_history_ordering_is_deterministic() {
         // Create two histories and add messages in different orders
         let mut history1 = HistoryManager::new();
         let mut history2 = HistoryManager::new();
-        
+
         // Add in original order to history1
         for msg in messages.iter() {
             history1.add_message(msg.clone());
         }
-        
+
         // Add in reverse order to history2
         for msg in messages.iter().rev() {
             history2.add_message(msg.clone());
         }
-        
+
         // Get all messages from both
         let stored1 = history1.get_all_messages();
         let stored2 = history2.get_all_messages();
-        
+
         // They should have the same order (by timestamp)
         prop_assert_eq!(
             stored1.len(),
             stored2.len(),
             "Both histories should have the same number of messages"
         );
-        
+
         for i in 0..stored1.len() {
             prop_assert_eq!(
                 stored1[i].timestamp,

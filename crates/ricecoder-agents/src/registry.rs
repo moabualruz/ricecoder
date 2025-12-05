@@ -73,9 +73,9 @@ impl AgentRegistry {
     pub fn register(&mut self, agent: Arc<dyn Agent>) {
         let agent_id = agent.id().to_string();
         let agent_name = agent.name().to_string();
-        
+
         debug!(agent_id = %agent_id, agent_name = %agent_name, "Registering agent");
-        
+
         self.agents.insert(agent_id.clone(), agent.clone());
 
         // Collect supported task types
@@ -113,7 +113,7 @@ impl AgentRegistry {
             supported_task_types,
         };
         self.metadata.insert(metadata.id.clone(), metadata);
-        
+
         info!(agent_id = %agent_id, agent_name = %agent_name, "Agent registered successfully");
     }
 
@@ -378,7 +378,9 @@ mod tests {
         assert_eq!(meta.description, "A test agent for metadata");
         assert_eq!(meta.supported_task_types.len(), 2);
         assert!(meta.supported_task_types.contains(&TaskType::CodeReview));
-        assert!(meta.supported_task_types.contains(&TaskType::SecurityAnalysis));
+        assert!(meta
+            .supported_task_types
+            .contains(&TaskType::SecurityAnalysis));
     }
 
     #[test]
@@ -487,7 +489,10 @@ mod tests {
         assert_eq!(deserialized.id, metadata.id);
         assert_eq!(deserialized.name, metadata.name);
         assert_eq!(deserialized.description, metadata.description);
-        assert_eq!(deserialized.supported_task_types, metadata.supported_task_types);
+        assert_eq!(
+            deserialized.supported_task_types,
+            metadata.supported_task_types
+        );
     }
 
     #[test]

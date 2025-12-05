@@ -26,7 +26,11 @@ impl RelocationService {
     ///
     /// Returns error if relocation fails
     pub fn relocate(from: &Path, to: &Path) -> StorageResult<()> {
-        debug!("Starting relocation from {} to {}", from.display(), to.display());
+        debug!(
+            "Starting relocation from {} to {}",
+            from.display(),
+            to.display()
+        );
 
         // Validate source exists
         if !from.exists() {
@@ -40,9 +44,8 @@ impl RelocationService {
         // Validate target doesn't exist or is empty
         if to.exists() {
             if to.is_dir() {
-                let entries = fs::read_dir(to).map_err(|e| {
-                    StorageError::io_error(to.to_path_buf(), IoOperation::Read, e)
-                })?;
+                let entries = fs::read_dir(to)
+                    .map_err(|e| StorageError::io_error(to.to_path_buf(), IoOperation::Read, e))?;
 
                 if entries.count() > 0 {
                     return Err(StorageError::relocation_error(
@@ -117,9 +120,8 @@ impl RelocationService {
             return Ok(None);
         }
 
-        let content = fs::read_to_string(&marker_path).map_err(|e| {
-            StorageError::io_error(marker_path.clone(), IoOperation::Read, e)
-        })?;
+        let content = fs::read_to_string(&marker_path)
+            .map_err(|e| StorageError::io_error(marker_path.clone(), IoOperation::Read, e))?;
 
         let path = PathBuf::from(content.trim());
         debug!("Read stored storage path: {}", path.display());
@@ -129,16 +131,14 @@ impl RelocationService {
 
     /// Copy directory recursively
     fn copy_dir_recursive(src: &Path, dst: &Path) -> StorageResult<()> {
-        fs::create_dir_all(dst).map_err(|e| {
-            StorageError::directory_creation_failed(dst.to_path_buf(), e)
-        })?;
+        fs::create_dir_all(dst)
+            .map_err(|e| StorageError::directory_creation_failed(dst.to_path_buf(), e))?;
 
-        for entry in fs::read_dir(src).map_err(|e| {
-            StorageError::io_error(src.to_path_buf(), IoOperation::Read, e)
-        })? {
-            let entry = entry.map_err(|e| {
-                StorageError::io_error(src.to_path_buf(), IoOperation::Read, e)
-            })?;
+        for entry in fs::read_dir(src)
+            .map_err(|e| StorageError::io_error(src.to_path_buf(), IoOperation::Read, e))?
+        {
+            let entry = entry
+                .map_err(|e| StorageError::io_error(src.to_path_buf(), IoOperation::Read, e))?;
 
             let path = entry.path();
             let file_name = entry.file_name();
@@ -147,9 +147,8 @@ impl RelocationService {
             if path.is_dir() {
                 Self::copy_dir_recursive(&path, &dest_path)?;
             } else {
-                fs::copy(&path, &dest_path).map_err(|e| {
-                    StorageError::io_error(path.clone(), IoOperation::Read, e)
-                })?;
+                fs::copy(&path, &dest_path)
+                    .map_err(|e| StorageError::io_error(path.clone(), IoOperation::Read, e))?;
             }
         }
 
@@ -160,12 +159,11 @@ impl RelocationService {
     fn count_files(dir: &Path) -> StorageResult<usize> {
         let mut count = 0;
 
-        for entry in fs::read_dir(dir).map_err(|e| {
-            StorageError::io_error(dir.to_path_buf(), IoOperation::Read, e)
-        })? {
-            let entry = entry.map_err(|e| {
-                StorageError::io_error(dir.to_path_buf(), IoOperation::Read, e)
-            })?;
+        for entry in fs::read_dir(dir)
+            .map_err(|e| StorageError::io_error(dir.to_path_buf(), IoOperation::Read, e))?
+        {
+            let entry = entry
+                .map_err(|e| StorageError::io_error(dir.to_path_buf(), IoOperation::Read, e))?;
 
             let path = entry.path();
 
@@ -188,15 +186,12 @@ impl RelocationService {
 
         let marker_path = home.join(STORAGE_PATH_MARKER);
 
-        let path_str = storage_path
-            .to_str()
-            .ok_or_else(|| {
-                StorageError::path_resolution_error("Could not convert path to string")
-            })?;
-
-        fs::write(&marker_path, path_str).map_err(|e| {
-            StorageError::io_error(marker_path.clone(), IoOperation::Write, e)
+        let path_str = storage_path.to_str().ok_or_else(|| {
+            StorageError::path_resolution_error("Could not convert path to string")
         })?;
+
+        fs::write(&marker_path, path_str)
+            .map_err(|e| StorageError::io_error(marker_path.clone(), IoOperation::Write, e))?;
 
         debug!("Updated storage path marker: {}", marker_path.display());
 

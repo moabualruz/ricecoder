@@ -127,7 +127,11 @@ pub struct TextAlternative {
 
 impl TextAlternative {
     /// Create a new text alternative
-    pub fn new(id: impl Into<String>, short_desc: impl Into<String>, element_type: ElementType) -> Self {
+    pub fn new(
+        id: impl Into<String>,
+        short_desc: impl Into<String>,
+        element_type: ElementType,
+    ) -> Self {
         Self {
             id: id.into(),
             short_description: short_desc.into(),
@@ -394,7 +398,8 @@ impl KeyboardNavigationManager {
     /// Register an element for keyboard navigation
     pub fn register_element(&mut self, alternative: TextAlternative) {
         self.tab_order.push(alternative.id.clone());
-        self.element_descriptions.insert(alternative.id.clone(), alternative);
+        self.element_descriptions
+            .insert(alternative.id.clone(), alternative);
     }
 
     /// Set focus to an element
@@ -506,7 +511,10 @@ mod tests {
         let mut announcer = ScreenReaderAnnouncer::new(true);
         announcer.announce("Test announcement", AnnouncementPriority::Normal);
         assert_eq!(announcer.announcements().len(), 1);
-        assert_eq!(announcer.last_announcement().unwrap().text, "Test announcement");
+        assert_eq!(
+            announcer.last_announcement().unwrap().text,
+            "Test announcement"
+        );
     }
 
     #[test]
@@ -536,8 +544,16 @@ mod tests {
     #[test]
     fn test_keyboard_navigation_wrap_around() {
         let mut manager = KeyboardNavigationManager::new();
-        manager.register_element(TextAlternative::new("btn1", "Button 1", ElementType::Button));
-        manager.register_element(TextAlternative::new("btn2", "Button 2", ElementType::Button));
+        manager.register_element(TextAlternative::new(
+            "btn1",
+            "Button 1",
+            ElementType::Button,
+        ));
+        manager.register_element(TextAlternative::new(
+            "btn2",
+            "Button 2",
+            ElementType::Button,
+        ));
 
         manager.focus("btn2");
         let _next = manager.focus_next();

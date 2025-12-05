@@ -43,10 +43,9 @@ impl WorkflowEngine {
     ///
     /// Transitions the workflow from pending to running state.
     pub fn start_execution(&mut self, execution_id: &str) -> WorkflowResult<()> {
-        let state = self
-            .active_workflows
-            .get_mut(execution_id)
-            .ok_or_else(|| WorkflowError::NotFound(format!("Execution not found: {}", execution_id)))?;
+        let state = self.active_workflows.get_mut(execution_id).ok_or_else(|| {
+            WorkflowError::NotFound(format!("Execution not found: {}", execution_id))
+        })?;
 
         StateManager::start_workflow(state);
         Ok(())
@@ -56,10 +55,9 @@ impl WorkflowEngine {
     ///
     /// Pauses the workflow at the current step, allowing resumption later.
     pub fn pause_execution(&mut self, execution_id: &str) -> WorkflowResult<()> {
-        let state = self
-            .active_workflows
-            .get_mut(execution_id)
-            .ok_or_else(|| WorkflowError::NotFound(format!("Execution not found: {}", execution_id)))?;
+        let state = self.active_workflows.get_mut(execution_id).ok_or_else(|| {
+            WorkflowError::NotFound(format!("Execution not found: {}", execution_id))
+        })?;
 
         let _ = StateManager::pause_workflow(state);
         Ok(())
@@ -69,10 +67,9 @@ impl WorkflowEngine {
     ///
     /// Resumes a paused workflow from the last completed step.
     pub fn resume_execution(&mut self, execution_id: &str) -> WorkflowResult<()> {
-        let state = self
-            .active_workflows
-            .get_mut(execution_id)
-            .ok_or_else(|| WorkflowError::NotFound(format!("Execution not found: {}", execution_id)))?;
+        let state = self.active_workflows.get_mut(execution_id).ok_or_else(|| {
+            WorkflowError::NotFound(format!("Execution not found: {}", execution_id))
+        })?;
 
         let _ = StateManager::resume_workflow(state);
         Ok(())
@@ -82,10 +79,9 @@ impl WorkflowEngine {
     ///
     /// Cancels the workflow, stopping any further execution.
     pub fn cancel_execution(&mut self, execution_id: &str) -> WorkflowResult<()> {
-        let state = self
-            .active_workflows
-            .get_mut(execution_id)
-            .ok_or_else(|| WorkflowError::NotFound(format!("Execution not found: {}", execution_id)))?;
+        let state = self.active_workflows.get_mut(execution_id).ok_or_else(|| {
+            WorkflowError::NotFound(format!("Execution not found: {}", execution_id))
+        })?;
 
         StateManager::cancel_workflow(state);
         Ok(())
@@ -96,7 +92,9 @@ impl WorkflowEngine {
         self.active_workflows
             .get(execution_id)
             .cloned()
-            .ok_or_else(|| WorkflowError::NotFound(format!("Execution not found: {}", execution_id)))
+            .ok_or_else(|| {
+                WorkflowError::NotFound(format!("Execution not found: {}", execution_id))
+            })
     }
 
     /// Get execution order for workflow steps
@@ -134,7 +132,8 @@ impl WorkflowEngine {
 
             // Check if all dependencies are completed
             if let Some(step) = step_map.get(&step_id) {
-                let all_deps_completed = step.dependencies.iter().all(|dep| completed.contains(dep));
+                let all_deps_completed =
+                    step.dependencies.iter().all(|dep| completed.contains(dep));
 
                 if all_deps_completed {
                     order.push(step_id.clone());
@@ -142,7 +141,9 @@ impl WorkflowEngine {
 
                     // Add steps that depend on this one
                     for other_step in &workflow.steps {
-                        if other_step.dependencies.contains(&step_id) && !completed.contains(&other_step.id) {
+                        if other_step.dependencies.contains(&step_id)
+                            && !completed.contains(&other_step.id)
+                        {
                             queue.push_back(other_step.id.clone());
                         }
                     }
@@ -191,7 +192,10 @@ impl WorkflowEngine {
     ///
     /// Returns the next step that can be executed based on completed dependencies.
     /// Returns None if all steps are completed or no steps are ready.
-    pub fn get_next_step(workflow: &Workflow, state: &WorkflowState) -> WorkflowResult<Option<String>> {
+    pub fn get_next_step(
+        workflow: &Workflow,
+        state: &WorkflowState,
+    ) -> WorkflowResult<Option<String>> {
         for step in &workflow.steps {
             if !state.completed_steps.contains(&step.id)
                 && !state.step_results.contains_key(&step.id)
@@ -234,10 +238,9 @@ impl WorkflowEngine {
 
     /// Complete workflow execution
     pub fn complete_execution(&mut self, execution_id: &str) -> WorkflowResult<()> {
-        let state = self
-            .active_workflows
-            .get_mut(execution_id)
-            .ok_or_else(|| WorkflowError::NotFound(format!("Execution not found: {}", execution_id)))?;
+        let state = self.active_workflows.get_mut(execution_id).ok_or_else(|| {
+            WorkflowError::NotFound(format!("Execution not found: {}", execution_id))
+        })?;
 
         StateManager::complete_workflow(state);
         Ok(())
@@ -245,10 +248,9 @@ impl WorkflowEngine {
 
     /// Fail workflow execution
     pub fn fail_execution(&mut self, execution_id: &str) -> WorkflowResult<()> {
-        let state = self
-            .active_workflows
-            .get_mut(execution_id)
-            .ok_or_else(|| WorkflowError::NotFound(format!("Execution not found: {}", execution_id)))?;
+        let state = self.active_workflows.get_mut(execution_id).ok_or_else(|| {
+            WorkflowError::NotFound(format!("Execution not found: {}", execution_id))
+        })?;
 
         StateManager::fail_workflow(state);
         Ok(())
@@ -256,9 +258,9 @@ impl WorkflowEngine {
 
     /// Remove a completed execution from tracking
     pub fn remove_execution(&mut self, execution_id: &str) -> WorkflowResult<WorkflowState> {
-        self.active_workflows
-            .remove(execution_id)
-            .ok_or_else(|| WorkflowError::NotFound(format!("Execution not found: {}", execution_id)))
+        self.active_workflows.remove(execution_id).ok_or_else(|| {
+            WorkflowError::NotFound(format!("Execution not found: {}", execution_id))
+        })
     }
 
     /// Get all active executions
@@ -275,14 +277,17 @@ impl WorkflowEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{ErrorAction, RiskFactors, StepType, WorkflowConfig, WorkflowStatus, WorkflowStep};
+    use crate::models::{
+        ErrorAction, RiskFactors, StepType, WorkflowConfig, WorkflowStatus, WorkflowStep,
+    };
 
     fn create_test_workflow_with_deps() -> Workflow {
         Workflow {
             id: "test-workflow".to_string(),
             name: "Test Workflow".to_string(),
             description: "A test workflow".to_string(),
-            parameters: vec![],steps: vec![
+            parameters: vec![],
+            steps: vec![
                 WorkflowStep {
                     id: "step1".to_string(),
                     name: "Step 1".to_string(),
@@ -295,7 +300,9 @@ mod tests {
                     },
                     dependencies: vec![],
                     approval_required: false,
-                    on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                    on_error: ErrorAction::Fail,
+                    risk_score: None,
+                    risk_factors: RiskFactors::default(),
                 },
                 WorkflowStep {
                     id: "step2".to_string(),
@@ -309,7 +316,9 @@ mod tests {
                     },
                     dependencies: vec!["step1".to_string()],
                     approval_required: false,
-                    on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                    on_error: ErrorAction::Fail,
+                    risk_score: None,
+                    risk_factors: RiskFactors::default(),
                 },
                 WorkflowStep {
                     id: "step3".to_string(),
@@ -323,7 +332,9 @@ mod tests {
                     },
                     dependencies: vec!["step1".to_string(), "step2".to_string()],
                     approval_required: false,
-                    on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                    on_error: ErrorAction::Fail,
+                    risk_score: None,
+                    risk_factors: RiskFactors::default(),
                 },
             ],
             config: WorkflowConfig {
@@ -474,7 +485,3 @@ mod tests {
         assert!(result.is_ok());
     }
 }
-
-
-
-

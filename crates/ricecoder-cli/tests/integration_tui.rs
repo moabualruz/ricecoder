@@ -1,7 +1,7 @@
 //! Integration tests for TUI command and session management
 
-use ricecoder_cli::commands::{TuiCommand, SessionsCommand, SessionsAction};
 use ricecoder_cli::commands::Command;
+use ricecoder_cli::commands::{SessionsAction, SessionsCommand, TuiCommand};
 use std::fs;
 use std::path::PathBuf;
 
@@ -87,18 +87,16 @@ fn test_sessions_command_create() {
     assert!(result.is_ok());
 }
 
-
-
 #[test]
 fn test_sessions_command_delete() {
     cleanup_test_sessions();
-    
+
     // Create a session first
     let create_cmd = SessionsCommand::new(SessionsAction::Create {
         name: "session-to-delete".to_string(),
     });
     assert!(create_cmd.execute().is_ok());
-    
+
     // Try to delete it (will fail because we don't know the ID, but that's OK for this test)
     let cmd = SessionsCommand::new(SessionsAction::Delete {
         id: "session-1".to_string(),
@@ -110,13 +108,13 @@ fn test_sessions_command_delete() {
 #[test]
 fn test_sessions_command_rename() {
     cleanup_test_sessions();
-    
+
     // Create a session first
     let create_cmd = SessionsCommand::new(SessionsAction::Create {
         name: "original-name".to_string(),
     });
     assert!(create_cmd.execute().is_ok());
-    
+
     // Try to rename it (will fail because we don't know the ID, but that's OK for this test)
     let cmd = SessionsCommand::new(SessionsAction::Rename {
         id: "session-1".to_string(),
@@ -129,13 +127,13 @@ fn test_sessions_command_rename() {
 #[test]
 fn test_sessions_command_switch() {
     cleanup_test_sessions();
-    
+
     // Create a session first
     let create_cmd = SessionsCommand::new(SessionsAction::Create {
         name: "session-to-switch".to_string(),
     });
     assert!(create_cmd.execute().is_ok());
-    
+
     // Try to switch to it (will fail because we don't know the ID, but that's OK for this test)
     let cmd = SessionsCommand::new(SessionsAction::Switch {
         id: "session-1".to_string(),
@@ -147,13 +145,13 @@ fn test_sessions_command_switch() {
 #[test]
 fn test_sessions_command_info() {
     cleanup_test_sessions();
-    
+
     // Create a session first
     let create_cmd = SessionsCommand::new(SessionsAction::Create {
         name: "session-for-info".to_string(),
     });
     assert!(create_cmd.execute().is_ok());
-    
+
     // Try to get info (will fail because we don't know the ID, but that's OK for this test)
     let cmd = SessionsCommand::new(SessionsAction::Info {
         id: "session-1".to_string(),
@@ -166,7 +164,7 @@ fn test_sessions_command_info() {
 fn test_tui_with_provider_configuration() {
     // Test that TUI can be configured with different providers
     let providers = vec!["openai", "anthropic", "ollama"];
-    
+
     for provider in providers {
         let cmd = TuiCommand::new(
             None,
@@ -175,7 +173,7 @@ fn test_tui_with_provider_configuration() {
             Some(provider.to_string()),
             Some("test-model".to_string()),
         );
-        
+
         let config = cmd.get_config();
         assert_eq!(config.provider, Some(provider.to_string()));
         assert_eq!(config.model, Some("test-model".to_string()));
@@ -186,16 +184,10 @@ fn test_tui_with_provider_configuration() {
 fn test_tui_with_theme_configuration() {
     // Test that TUI can be configured with different themes
     let themes = vec!["dark", "light", "monokai", "dracula", "nord"];
-    
+
     for theme in themes {
-        let cmd = TuiCommand::new(
-            Some(theme.to_string()),
-            false,
-            None,
-            None,
-            None,
-        );
-        
+        let cmd = TuiCommand::new(Some(theme.to_string()), false, None, None, None);
+
         let config = cmd.get_config();
         assert_eq!(config.theme, Some(theme.to_string()));
     }

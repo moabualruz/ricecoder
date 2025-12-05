@@ -24,15 +24,9 @@ impl StorageModeHandler {
         project_path: Option<&Path>,
     ) -> crate::error::StorageResult<Config> {
         match mode {
-            StorageMode::GlobalOnly => {
-                Self::load_global_only(global_path)
-            }
-            StorageMode::ProjectOnly => {
-                Self::load_project_only(project_path)
-            }
-            StorageMode::Merged => {
-                Self::load_merged(global_path, project_path)
-            }
+            StorageMode::GlobalOnly => Self::load_global_only(global_path),
+            StorageMode::ProjectOnly => Self::load_project_only(project_path),
+            StorageMode::Merged => Self::load_merged(global_path, project_path),
         }
     }
 
@@ -134,8 +128,8 @@ impl StorageModeHandler {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
     use std::fs;
+    use tempfile::TempDir;
 
     #[test]
     fn test_global_only_mode_loads_global() {
@@ -153,13 +147,14 @@ steering: []
 "#;
         fs::write(&config_file, config_content).expect("Failed to write config");
 
-        let config = StorageModeHandler::load_for_mode(
-            StorageMode::GlobalOnly,
-            Some(global_path),
-            None,
-        ).expect("Failed to load config");
+        let config =
+            StorageModeHandler::load_for_mode(StorageMode::GlobalOnly, Some(global_path), None)
+                .expect("Failed to load config");
 
-        assert_eq!(config.providers.default_provider, Some("openai".to_string()));
+        assert_eq!(
+            config.providers.default_provider,
+            Some("openai".to_string())
+        );
         assert_eq!(config.defaults.model, Some("gpt-4".to_string()));
     }
 
@@ -179,13 +174,14 @@ steering: []
 "#;
         fs::write(&config_file, config_content).expect("Failed to write config");
 
-        let config = StorageModeHandler::load_for_mode(
-            StorageMode::ProjectOnly,
-            None,
-            Some(project_path),
-        ).expect("Failed to load config");
+        let config =
+            StorageModeHandler::load_for_mode(StorageMode::ProjectOnly, None, Some(project_path))
+                .expect("Failed to load config");
 
-        assert_eq!(config.providers.default_provider, Some("anthropic".to_string()));
+        assert_eq!(
+            config.providers.default_provider,
+            Some("anthropic".to_string())
+        );
         assert_eq!(config.defaults.model, Some("claude-3".to_string()));
     }
 
@@ -220,10 +216,14 @@ steering: []
             StorageMode::Merged,
             Some(global_dir.path()),
             Some(project_dir.path()),
-        ).expect("Failed to load config");
+        )
+        .expect("Failed to load config");
 
         // Project should override global
-        assert_eq!(config.providers.default_provider, Some("anthropic".to_string()));
+        assert_eq!(
+            config.providers.default_provider,
+            Some("anthropic".to_string())
+        );
         assert_eq!(config.defaults.model, Some("claude-3".to_string()));
     }
 
@@ -234,22 +234,32 @@ steering: []
 
         // Create both configs
         let global_config_file = global_dir.path().join("config.yaml");
-        fs::write(&global_config_file, "providers:\n  default_provider: openai\ndefaults: {}\nsteering: []")
-            .expect("Failed to write global config");
+        fs::write(
+            &global_config_file,
+            "providers:\n  default_provider: openai\ndefaults: {}\nsteering: []",
+        )
+        .expect("Failed to write global config");
 
         let project_config_file = project_dir.path().join("config.yaml");
-        fs::write(&project_config_file, "providers:\n  default_provider: anthropic\ndefaults: {}\nsteering: []")
-            .expect("Failed to write project config");
+        fs::write(
+            &project_config_file,
+            "providers:\n  default_provider: anthropic\ndefaults: {}\nsteering: []",
+        )
+        .expect("Failed to write project config");
 
         // Load in GlobalOnly mode
         let config = StorageModeHandler::load_for_mode(
             StorageMode::GlobalOnly,
             Some(global_dir.path()),
             Some(project_dir.path()),
-        ).expect("Failed to load config");
+        )
+        .expect("Failed to load config");
 
         // Should only have global config
-        assert_eq!(config.providers.default_provider, Some("openai".to_string()));
+        assert_eq!(
+            config.providers.default_provider,
+            Some("openai".to_string())
+        );
     }
 
     #[test]
@@ -259,21 +269,31 @@ steering: []
 
         // Create both configs
         let global_config_file = global_dir.path().join("config.yaml");
-        fs::write(&global_config_file, "providers:\n  default_provider: openai\ndefaults: {}\nsteering: []")
-            .expect("Failed to write global config");
+        fs::write(
+            &global_config_file,
+            "providers:\n  default_provider: openai\ndefaults: {}\nsteering: []",
+        )
+        .expect("Failed to write global config");
 
         let project_config_file = project_dir.path().join("config.yaml");
-        fs::write(&project_config_file, "providers:\n  default_provider: anthropic\ndefaults: {}\nsteering: []")
-            .expect("Failed to write project config");
+        fs::write(
+            &project_config_file,
+            "providers:\n  default_provider: anthropic\ndefaults: {}\nsteering: []",
+        )
+        .expect("Failed to write project config");
 
         // Load in ProjectOnly mode
         let config = StorageModeHandler::load_for_mode(
             StorageMode::ProjectOnly,
             Some(global_dir.path()),
             Some(project_dir.path()),
-        ).expect("Failed to load config");
+        )
+        .expect("Failed to load config");
 
         // Should only have project config
-        assert_eq!(config.providers.default_provider, Some("anthropic".to_string()));
+        assert_eq!(
+            config.providers.default_provider,
+            Some("anthropic".to_string())
+        );
     }
 }

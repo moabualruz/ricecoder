@@ -155,7 +155,9 @@ impl CommandExecutor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{ErrorAction, RiskFactors, StepConfig, StepStatus, StepType, WorkflowConfig, WorkflowStep};
+    use crate::models::{
+        ErrorAction, RiskFactors, StepConfig, StepStatus, StepType, WorkflowConfig, WorkflowStep,
+    };
 
     fn create_workflow_with_command_step() -> Workflow {
         Workflow {
@@ -197,7 +199,12 @@ mod tests {
             timeout: 5000,
         };
 
-        let result = CommandExecutor::execute_command_step(&workflow, &mut state, "command-step", &command_step);
+        let result = CommandExecutor::execute_command_step(
+            &workflow,
+            &mut state,
+            "command-step",
+            &command_step,
+        );
         assert!(result.is_ok());
 
         // Verify step is marked as completed
@@ -250,7 +257,10 @@ mod tests {
             timeout: 5000,
         };
 
-        assert_eq!(CommandExecutor::get_args(&command_step), &["-la".to_string(), "-h".to_string()]);
+        assert_eq!(
+            CommandExecutor::get_args(&command_step),
+            &["-la".to_string(), "-h".to_string()]
+        );
     }
 
     #[test]

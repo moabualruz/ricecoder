@@ -50,11 +50,9 @@ impl ClipboardManager {
     /// Read text from clipboard
     pub fn read_text() -> Result<String, ClipboardError> {
         match arboard::Clipboard::new() {
-            Ok(mut clipboard) => {
-                clipboard
-                    .get_text()
-                    .map_err(|e| ClipboardError::ReadError(e.to_string()))
-            }
+            Ok(mut clipboard) => clipboard
+                .get_text()
+                .map_err(|e| ClipboardError::ReadError(e.to_string())),
             Err(e) => Err(ClipboardError::AccessError(e.to_string())),
         }
     }
@@ -224,7 +222,10 @@ mod tests {
 
     #[test]
     fn test_copy_feedback_display() {
-        assert_eq!(CopyFeedback::Success.display_text(), "✓ Copied to clipboard");
+        assert_eq!(
+            CopyFeedback::Success.display_text(),
+            "✓ Copied to clipboard"
+        );
         assert_eq!(CopyFeedback::Failed.display_text(), "✗ Failed to copy");
         assert_eq!(CopyFeedback::Cancelled.display_text(), "⊘ Copy cancelled");
     }

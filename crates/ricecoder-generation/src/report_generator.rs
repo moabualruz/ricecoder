@@ -8,8 +8,8 @@
 //!
 //! Implements Requirement 1.6: Generation report with statistics
 
-use crate::models::{GeneratedFile, ValidationResult};
 use crate::conflict_detector::FileConflictInfo;
+use crate::models::{GeneratedFile, ValidationResult};
 use crate::review_engine::ReviewResult;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -189,26 +189,26 @@ impl ReportGenerator {
     /// Generate a report from generation results
     pub fn generate(result: &GenerationResult) -> GenerationReport {
         let timestamp = chrono::Local::now().to_rfc3339();
-        
+
         // Calculate file statistics
         let file_stats = Self::calculate_file_stats(&result.files);
-        
+
         // Calculate validation report
         let validation_report = Self::calculate_validation_report(&result.validation);
-        
+
         // Calculate conflict report
         let conflict_report = Self::calculate_conflict_report(&result.conflicts);
-        
+
         // Calculate performance metrics
         let performance = Self::calculate_performance(&result.stats);
-        
+
         // Calculate review report if available
         let review_report = result.review.as_ref().map(|review| ReviewReport {
             quality_score: (review.overall_score * 100.0) as f64,
             suggestion_count: review.suggestions.len(),
             issue_count: review.issues.len(),
         });
-        
+
         // Determine overall success
         let success = result.validation.valid && result.conflicts.is_empty();
         let status = if success {
@@ -224,7 +224,7 @@ impl ReportGenerator {
                 result.conflicts.len()
             )
         };
-        
+
         GenerationReport {
             title: "Code Generation Report".to_string(),
             timestamp,
@@ -261,7 +261,7 @@ impl ReportGenerator {
         for file in files {
             let line_count = file.content.lines().count();
             total_lines += line_count;
-            
+
             *files_by_language.entry(file.language.clone()).or_insert(0) += 1;
         }
 
@@ -341,7 +341,10 @@ impl ReportGenerator {
         let mut output = String::new();
 
         output.push_str("╔════════════════════════════════════════════════════════════╗\n");
-        output.push_str(&format!("║ {}                                    ║\n", report.title));
+        output.push_str(&format!(
+            "║ {}                                    ║\n",
+            report.title
+        ));
         output.push_str("╚════════════════════════════════════════════════════════════╝\n\n");
 
         output.push_str(&format!("Timestamp: {}\n\n", report.timestamp));
@@ -350,8 +353,14 @@ impl ReportGenerator {
         output.push_str("SUMMARY\n");
         output.push_str("───────────────────────────────────────────────────────────────\n");
         output.push_str(&format!("Status: {}\n", report.summary.status));
-        output.push_str(&format!("Files Generated: {}\n", report.summary.files_generated));
-        output.push_str(&format!("Lines Generated: {}\n\n", report.summary.lines_generated));
+        output.push_str(&format!(
+            "Files Generated: {}\n",
+            report.summary.files_generated
+        ));
+        output.push_str(&format!(
+            "Lines Generated: {}\n\n",
+            report.summary.lines_generated
+        ));
 
         // File Statistics
         output.push_str("FILE STATISTICS\n");
@@ -362,7 +371,7 @@ impl ReportGenerator {
             "Average Lines per File: {:.2}\n",
             report.file_stats.average_lines_per_file
         ));
-        
+
         if !report.file_stats.files_by_language.is_empty() {
             output.push_str("\nFiles by Language:\n");
             for (lang, count) in &report.file_stats.files_by_language {
@@ -382,8 +391,14 @@ impl ReportGenerator {
                 "FAILED"
             }
         ));
-        output.push_str(&format!("Errors: {}\n", report.validation_report.error_count));
-        output.push_str(&format!("Warnings: {}\n\n", report.validation_report.warning_count));
+        output.push_str(&format!(
+            "Errors: {}\n",
+            report.validation_report.error_count
+        ));
+        output.push_str(&format!(
+            "Warnings: {}\n\n",
+            report.validation_report.warning_count
+        ));
 
         // Conflict Report
         output.push_str("CONFLICT DETECTION\n");
@@ -408,7 +423,10 @@ impl ReportGenerator {
             "Time Elapsed: {:.2}s\n",
             report.performance.time_elapsed_seconds
         ));
-        output.push_str(&format!("Tokens Used: {}\n", report.performance.tokens_used));
+        output.push_str(&format!(
+            "Tokens Used: {}\n",
+            report.performance.tokens_used
+        ));
         output.push_str(&format!(
             "Files per Second: {:.2}\n",
             report.performance.files_per_second

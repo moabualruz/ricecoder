@@ -11,10 +11,8 @@ fn test_provider_integration_creation() {
 
 #[test]
 fn test_provider_integration_with_provider() {
-    let integration = ProviderIntegration::with_provider(
-        Some("openai".to_string()),
-        Some("gpt-4".to_string()),
-    );
+    let integration =
+        ProviderIntegration::with_provider(Some("openai".to_string()), Some("gpt-4".to_string()));
     assert_eq!(integration.provider(), Some("openai"));
     assert_eq!(integration.model(), Some("gpt-4"));
 }
@@ -35,10 +33,8 @@ fn test_set_model() {
 
 #[test]
 fn test_provider_display_name_openai() {
-    let integration = ProviderIntegration::with_provider(
-        Some("openai".to_string()),
-        Some("gpt-4".to_string()),
-    );
+    let integration =
+        ProviderIntegration::with_provider(Some("openai".to_string()), Some("gpt-4".to_string()));
     assert_eq!(integration.provider_display_name(), "OpenAI");
 }
 
@@ -53,37 +49,28 @@ fn test_provider_display_name_anthropic() {
 
 #[test]
 fn test_provider_display_name_ollama() {
-    let integration = ProviderIntegration::with_provider(
-        Some("ollama".to_string()),
-        Some("llama2".to_string()),
-    );
+    let integration =
+        ProviderIntegration::with_provider(Some("ollama".to_string()), Some("llama2".to_string()));
     assert_eq!(integration.provider_display_name(), "Ollama");
 }
 
 #[test]
 fn test_model_display_name() {
-    let integration = ProviderIntegration::with_provider(
-        Some("openai".to_string()),
-        Some("gpt-4".to_string()),
-    );
+    let integration =
+        ProviderIntegration::with_provider(Some("openai".to_string()), Some("gpt-4".to_string()));
     assert_eq!(integration.model_display_name(), "gpt-4");
 }
 
 #[test]
 fn test_info_string_with_provider_and_model() {
-    let integration = ProviderIntegration::with_provider(
-        Some("openai".to_string()),
-        Some("gpt-4".to_string()),
-    );
+    let integration =
+        ProviderIntegration::with_provider(Some("openai".to_string()), Some("gpt-4".to_string()));
     assert_eq!(integration.info_string(), "OpenAI (gpt-4)");
 }
 
 #[test]
 fn test_info_string_with_provider_only() {
-    let integration = ProviderIntegration::with_provider(
-        Some("openai".to_string()),
-        None,
-    );
+    let integration = ProviderIntegration::with_provider(Some("openai".to_string()), None);
     assert_eq!(integration.info_string(), "OpenAI");
 }
 
@@ -129,19 +116,15 @@ fn test_available_models_for_ollama() {
 
 #[test]
 fn test_validate_valid_provider() {
-    let integration = ProviderIntegration::with_provider(
-        Some("openai".to_string()),
-        Some("gpt-4".to_string()),
-    );
+    let integration =
+        ProviderIntegration::with_provider(Some("openai".to_string()), Some("gpt-4".to_string()));
     assert!(integration.validate().is_ok());
 }
 
 #[test]
 fn test_validate_invalid_provider() {
-    let integration = ProviderIntegration::with_provider(
-        Some("invalid".to_string()),
-        Some("gpt-4".to_string()),
-    );
+    let integration =
+        ProviderIntegration::with_provider(Some("invalid".to_string()), Some("gpt-4".to_string()));
     assert!(integration.validate().is_err());
 }
 

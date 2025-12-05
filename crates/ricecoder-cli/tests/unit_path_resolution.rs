@@ -48,7 +48,10 @@ fn test_chat_command_error_handling_for_missing_specs() {
 
     // Should handle gracefully even if specs don't exist
     let result = cmd.execute();
-    assert!(result.is_ok(), "Chat command should handle missing specs gracefully");
+    assert!(
+        result.is_ok(),
+        "Chat command should handle missing specs gracefully"
+    );
 }
 
 #[test]
@@ -64,7 +67,10 @@ fn test_chat_command_with_environment_variable_override() {
     let result = cmd.execute();
 
     // Should still work with environment variable set
-    assert!(result.is_ok(), "Chat command should work with RICECODER_HOME set");
+    assert!(
+        result.is_ok(),
+        "Chat command should work with RICECODER_HOME set"
+    );
 
     // Restore original
     if let Some(orig) = original {
@@ -87,7 +93,10 @@ fn test_chat_command_without_environment_variable() {
     let result = cmd.execute();
 
     // Should work without environment variable
-    assert!(result.is_ok(), "Chat command should work without RICECODER_HOME");
+    assert!(
+        result.is_ok(),
+        "Chat command should work without RICECODER_HOME"
+    );
 
     // Restore original
     if let Some(orig) = original {
@@ -112,7 +121,10 @@ fn test_chat_command_invalid_provider_error_handling() {
 
     // Should fail with invalid provider
     let result = cmd.execute();
-    assert!(result.is_err(), "Chat command should reject invalid provider");
+    assert!(
+        result.is_err(),
+        "Chat command should reject invalid provider"
+    );
 }
 
 #[test]
@@ -171,8 +183,7 @@ fn test_path_resolver_global_path_ends_with_ricecoder() {
     // Ensure RICECODER_HOME is not set
     std::env::remove_var("RICECODER_HOME");
 
-    let global_path = PathResolver::resolve_global_path()
-        .expect("Should resolve global path");
+    let global_path = PathResolver::resolve_global_path().expect("Should resolve global path");
 
     let path_str = global_path.to_str().expect("Path should be valid UTF-8");
     assert!(
@@ -200,7 +211,10 @@ fn test_chat_command_uses_path_resolver_for_specs() {
     let result = cmd.execute();
 
     // Should succeed (path resolution should work)
-    assert!(result.is_ok(), "Chat command should use PathResolver successfully");
+    assert!(
+        result.is_ok(),
+        "Chat command should use PathResolver successfully"
+    );
 }
 
 #[test]

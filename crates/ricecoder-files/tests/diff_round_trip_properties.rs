@@ -3,7 +3,7 @@
 //! **Validates: Requirements 3.4, 3.5**
 
 use proptest::prelude::*;
-use ricecoder_files::{DiffEngine, FileDiff, DiffHunk, DiffLine, DiffStats};
+use ricecoder_files::{DiffEngine, DiffHunk, DiffLine, DiffStats, FileDiff};
 use std::path::PathBuf;
 
 /// Strategy for generating simple text content

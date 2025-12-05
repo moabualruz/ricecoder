@@ -123,20 +123,16 @@ impl ApprovalGate {
     ///
     /// Marks the approval request as approved.
     /// Returns error if the request is not found or already decided.
-    pub fn approve(
-        &mut self,
-        request_id: &str,
-        comments: Option<String>,
-    ) -> WorkflowResult<()> {
-        let request = self
-            .requests
-            .get_mut(request_id)
-            .ok_or_else(|| WorkflowError::NotFound(format!("Approval request not found: {}", request_id)))?;
+    pub fn approve(&mut self, request_id: &str, comments: Option<String>) -> WorkflowResult<()> {
+        let request = self.requests.get_mut(request_id).ok_or_else(|| {
+            WorkflowError::NotFound(format!("Approval request not found: {}", request_id))
+        })?;
 
         if request.approved {
-            return Err(WorkflowError::Invalid(
-                format!("Approval request already decided: {}", request_id),
-            ));
+            return Err(WorkflowError::Invalid(format!(
+                "Approval request already decided: {}",
+                request_id
+            )));
         }
 
         if request.is_timed_out() {
@@ -151,20 +147,16 @@ impl ApprovalGate {
     ///
     /// Marks the approval request as rejected.
     /// Returns error if the request is not found or already decided.
-    pub fn reject(
-        &mut self,
-        request_id: &str,
-        comments: Option<String>,
-    ) -> WorkflowResult<()> {
-        let request = self
-            .requests
-            .get_mut(request_id)
-            .ok_or_else(|| WorkflowError::NotFound(format!("Approval request not found: {}", request_id)))?;
+    pub fn reject(&mut self, request_id: &str, comments: Option<String>) -> WorkflowResult<()> {
+        let request = self.requests.get_mut(request_id).ok_or_else(|| {
+            WorkflowError::NotFound(format!("Approval request not found: {}", request_id))
+        })?;
 
         if request.approved {
-            return Err(WorkflowError::Invalid(
-                format!("Approval request already decided: {}", request_id),
-            ));
+            return Err(WorkflowError::Invalid(format!(
+                "Approval request already decided: {}",
+                request_id
+            )));
         }
 
         if request.is_timed_out() {
@@ -177,10 +169,9 @@ impl ApprovalGate {
 
     /// Get the status of an approval request
     pub fn get_request_status(&self, request_id: &str) -> WorkflowResult<ApprovalRequest> {
-        self.requests
-            .get(request_id)
-            .cloned()
-            .ok_or_else(|| WorkflowError::NotFound(format!("Approval request not found: {}", request_id)))
+        self.requests.get(request_id).cloned().ok_or_else(|| {
+            WorkflowError::NotFound(format!("Approval request not found: {}", request_id))
+        })
     }
 
     /// Check if a step is approved
@@ -321,11 +312,7 @@ mod tests {
         let mut gate = ApprovalGate::new();
 
         let request_id = gate
-            .request_approval(
-                "step1".to_string(),
-                "Please approve".to_string(),
-                5000,
-            )
+            .request_approval("step1".to_string(), "Please approve".to_string(), 5000)
             .unwrap();
 
         assert!(!request_id.is_empty());
@@ -337,11 +324,7 @@ mod tests {
         let mut gate = ApprovalGate::new();
 
         let request_id = gate
-            .request_approval(
-                "step1".to_string(),
-                "Please approve".to_string(),
-                5000,
-            )
+            .request_approval("step1".to_string(), "Please approve".to_string(), 5000)
             .unwrap();
 
         gate.approve(&request_id, Some("Approved".to_string()))
@@ -357,11 +340,7 @@ mod tests {
         let mut gate = ApprovalGate::new();
 
         let request_id = gate
-            .request_approval(
-                "step1".to_string(),
-                "Please approve".to_string(),
-                5000,
-            )
+            .request_approval("step1".to_string(), "Please approve".to_string(), 5000)
             .unwrap();
 
         gate.reject(&request_id, Some("Rejected".to_string()))
@@ -377,11 +356,7 @@ mod tests {
         let mut gate = ApprovalGate::new();
 
         let _req1 = gate
-            .request_approval(
-                "step1".to_string(),
-                "Please approve".to_string(),
-                5000,
-            )
+            .request_approval("step1".to_string(), "Please approve".to_string(), 5000)
             .unwrap();
 
         let _req2 = gate
@@ -393,11 +368,7 @@ mod tests {
             .unwrap();
 
         let _req3 = gate
-            .request_approval(
-                "step2".to_string(),
-                "Please approve".to_string(),
-                5000,
-            )
+            .request_approval("step2".to_string(), "Please approve".to_string(), 5000)
             .unwrap();
 
         let step1_requests = gate.get_step_requests("step1");
@@ -412,11 +383,7 @@ mod tests {
         let mut gate = ApprovalGate::new();
 
         let request_id = gate
-            .request_approval(
-                "step1".to_string(),
-                "Please approve".to_string(),
-                5000,
-            )
+            .request_approval("step1".to_string(), "Please approve".to_string(), 5000)
             .unwrap();
 
         gate.approve(&request_id, None).unwrap();

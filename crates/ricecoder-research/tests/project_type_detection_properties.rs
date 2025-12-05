@@ -48,7 +48,11 @@ fn create_rust_library_project(temp_dir: &TempDir) -> PathBuf {
     let root = temp_dir.path();
     std::fs::create_dir_all(root.join("src")).ok();
     std::fs::write(root.join("src/lib.rs"), "").ok();
-    std::fs::write(root.join("Cargo.toml"), "[package]\nname = \"test\"\n[lib]\n").ok();
+    std::fs::write(
+        root.join("Cargo.toml"),
+        "[package]\nname = \"test\"\n[lib]\n",
+    )
+    .ok();
     root.to_path_buf()
 }
 
@@ -71,8 +75,16 @@ fn create_rust_workspace(temp_dir: &TempDir) -> PathBuf {
         "[workspace]\nmembers = [\"crate1\", \"crate2\"]\n",
     )
     .ok();
-    std::fs::write(root.join("crate1/Cargo.toml"), "[package]\nname = \"crate1\"\n").ok();
-    std::fs::write(root.join("crate2/Cargo.toml"), "[package]\nname = \"crate2\"\n").ok();
+    std::fs::write(
+        root.join("crate1/Cargo.toml"),
+        "[package]\nname = \"crate1\"\n",
+    )
+    .ok();
+    std::fs::write(
+        root.join("crate2/Cargo.toml"),
+        "[package]\nname = \"crate2\"\n",
+    )
+    .ok();
     root.to_path_buf()
 }
 

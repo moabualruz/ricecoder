@@ -1,32 +1,62 @@
 //! Tests for free chat mode
 
-use ricecoder_tui::{Intent, InputAnalyzer, ChatInputWidget, App, AppMode};
+use ricecoder_tui::{App, AppMode, ChatInputWidget, InputAnalyzer, Intent};
 
 #[test]
 fn test_intent_detection_generate() {
-    assert_eq!(InputAnalyzer::detect_intent("generate a function"), Intent::Generate);
-    assert_eq!(InputAnalyzer::detect_intent("create a class"), Intent::Generate);
-    assert_eq!(InputAnalyzer::detect_intent("write a module"), Intent::Generate);
+    assert_eq!(
+        InputAnalyzer::detect_intent("generate a function"),
+        Intent::Generate
+    );
+    assert_eq!(
+        InputAnalyzer::detect_intent("create a class"),
+        Intent::Generate
+    );
+    assert_eq!(
+        InputAnalyzer::detect_intent("write a module"),
+        Intent::Generate
+    );
 }
 
 #[test]
 fn test_intent_detection_explain() {
-    assert_eq!(InputAnalyzer::detect_intent("explain this code"), Intent::Explain);
-    assert_eq!(InputAnalyzer::detect_intent("what is a closure"), Intent::Explain);
-    assert_eq!(InputAnalyzer::detect_intent("how does async work"), Intent::Explain);
+    assert_eq!(
+        InputAnalyzer::detect_intent("explain this code"),
+        Intent::Explain
+    );
+    assert_eq!(
+        InputAnalyzer::detect_intent("what is a closure"),
+        Intent::Explain
+    );
+    assert_eq!(
+        InputAnalyzer::detect_intent("how does async work"),
+        Intent::Explain
+    );
 }
 
 #[test]
 fn test_intent_detection_fix() {
     assert_eq!(InputAnalyzer::detect_intent("fix this bug"), Intent::Fix);
-    assert_eq!(InputAnalyzer::detect_intent("there's an error"), Intent::Fix);
+    assert_eq!(
+        InputAnalyzer::detect_intent("there's an error"),
+        Intent::Fix
+    );
 }
 
 #[test]
 fn test_intent_detection_refactor() {
-    assert_eq!(InputAnalyzer::detect_intent("refactor this code"), Intent::Refactor);
-    assert_eq!(InputAnalyzer::detect_intent("improve performance"), Intent::Refactor);
-    assert_eq!(InputAnalyzer::detect_intent("optimize this"), Intent::Refactor);
+    assert_eq!(
+        InputAnalyzer::detect_intent("refactor this code"),
+        Intent::Refactor
+    );
+    assert_eq!(
+        InputAnalyzer::detect_intent("improve performance"),
+        Intent::Refactor
+    );
+    assert_eq!(
+        InputAnalyzer::detect_intent("optimize this"),
+        Intent::Refactor
+    );
 }
 
 #[test]
@@ -37,14 +67,26 @@ fn test_intent_detection_test() {
 
 #[test]
 fn test_intent_detection_document() {
-    assert_eq!(InputAnalyzer::detect_intent("document this"), Intent::Document);
-    assert_eq!(InputAnalyzer::detect_intent("add comments"), Intent::Document);
+    assert_eq!(
+        InputAnalyzer::detect_intent("document this"),
+        Intent::Document
+    );
+    assert_eq!(
+        InputAnalyzer::detect_intent("add comments"),
+        Intent::Document
+    );
 }
 
 #[test]
 fn test_intent_detection_execute() {
-    assert_eq!(InputAnalyzer::detect_intent("execute this"), Intent::Execute);
-    assert_eq!(InputAnalyzer::detect_intent("run the command"), Intent::Execute);
+    assert_eq!(
+        InputAnalyzer::detect_intent("execute this"),
+        Intent::Execute
+    );
+    assert_eq!(
+        InputAnalyzer::detect_intent("run the command"),
+        Intent::Execute
+    );
 }
 
 #[test]
@@ -352,11 +394,11 @@ fn test_app_keybindings_enabled() {
 #[test]
 fn test_mode_switching_preserves_previous_mode() {
     let mut app = App::new().expect("Failed to create app");
-    
+
     app.switch_mode(AppMode::Command);
     app.switch_mode(AppMode::Diff);
     app.switch_mode(AppMode::Help);
-    
+
     assert_eq!(app.mode, AppMode::Help);
     assert_eq!(app.previous_mode, AppMode::Diff);
 }
@@ -366,7 +408,7 @@ fn test_mode_switching_same_mode_no_change() {
     let mut app = App::new().expect("Failed to create app");
     app.switch_mode(AppMode::Command);
     let prev = app.previous_mode;
-    
+
     app.switch_mode(AppMode::Command);
     assert_eq!(app.mode, AppMode::Command);
     assert_eq!(app.previous_mode, prev);

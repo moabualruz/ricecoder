@@ -120,8 +120,12 @@ fn test_anthropic_token_counting_consistency() {
     let provider = AnthropicProvider::new("sk-ant-test-key".to_string()).unwrap();
     let content = "This is a test message for token counting";
 
-    let tokens1 = provider.count_tokens(content, "claude-3-opus-20250219").unwrap();
-    let tokens2 = provider.count_tokens(content, "claude-3-opus-20250219").unwrap();
+    let tokens1 = provider
+        .count_tokens(content, "claude-3-opus-20250219")
+        .unwrap();
+    let tokens2 = provider
+        .count_tokens(content, "claude-3-opus-20250219")
+        .unwrap();
 
     assert_eq!(tokens1, tokens2);
 }
@@ -131,8 +135,12 @@ fn test_anthropic_token_counting_different_models() {
     let provider = AnthropicProvider::new("sk-ant-test-key".to_string()).unwrap();
     let content = "Test content";
 
-    let tokens_opus = provider.count_tokens(content, "claude-3-opus-20250219").unwrap();
-    let tokens_sonnet = provider.count_tokens(content, "claude-3-5-sonnet-20241022").unwrap();
+    let tokens_opus = provider
+        .count_tokens(content, "claude-3-opus-20250219")
+        .unwrap();
+    let tokens_sonnet = provider
+        .count_tokens(content, "claude-3-5-sonnet-20241022")
+        .unwrap();
 
     // Both should return valid token counts
     assert!(tokens_opus > 0);
@@ -145,8 +153,12 @@ fn test_anthropic_token_counting_longer_content() {
     let short = "Hello";
     let long = "Hello world, this is a much longer message with more content and words";
 
-    let tokens_short = provider.count_tokens(short, "claude-3-opus-20250219").unwrap();
-    let tokens_long = provider.count_tokens(long, "claude-3-opus-20250219").unwrap();
+    let tokens_short = provider
+        .count_tokens(short, "claude-3-opus-20250219")
+        .unwrap();
+    let tokens_long = provider
+        .count_tokens(long, "claude-3-opus-20250219")
+        .unwrap();
 
     // Longer content should have more tokens
     assert!(tokens_long > tokens_short);
@@ -158,8 +170,12 @@ fn test_anthropic_token_counting_special_characters() {
     let simple = "hello";
     let with_special = "hello!!!???";
 
-    let tokens_simple = provider.count_tokens(simple, "claude-3-opus-20250219").unwrap();
-    let tokens_special = provider.count_tokens(with_special, "claude-3-opus-20250219").unwrap();
+    let tokens_simple = provider
+        .count_tokens(simple, "claude-3-opus-20250219")
+        .unwrap();
+    let tokens_special = provider
+        .count_tokens(with_special, "claude-3-opus-20250219")
+        .unwrap();
 
     // Special characters should increase token count
     assert!(tokens_special >= tokens_simple);

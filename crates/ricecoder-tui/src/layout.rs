@@ -49,7 +49,12 @@ pub struct Rect {
 impl Rect {
     /// Create a new rect
     pub const fn new(x: u16, y: u16, width: u16, height: u16) -> Self {
-        Self { x, y, width, height }
+        Self {
+            x,
+            y,
+            width,
+            height,
+        }
     }
 
     /// Get the right edge

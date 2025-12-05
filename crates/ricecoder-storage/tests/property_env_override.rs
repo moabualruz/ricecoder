@@ -9,11 +9,7 @@ use std::collections::HashMap;
 
 /// Strategy for generating valid environment variable overrides
 fn env_override_strategy() -> impl Strategy<Value = HashMap<String, String>> {
-    prop::collection::hash_map(
-        r"[a-z_]+",
-        r"[a-zA-Z0-9_\-\.]+",
-        0..5,
-    )
+    prop::collection::hash_map(r"[a-z_]+", r"[a-zA-Z0-9_\-\.]+", 0..5)
 }
 
 proptest! {

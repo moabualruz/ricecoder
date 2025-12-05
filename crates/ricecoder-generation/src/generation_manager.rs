@@ -12,20 +12,20 @@
 //!
 //! Implements Requirement 3.1: Generation pipeline with strict ordering
 
-use crate::error::GenerationError;
-use crate::spec_processor::SpecProcessor;
-use crate::prompt_builder::PromptBuilder;
 use crate::code_generator::CodeGenerator;
 use crate::code_quality_enforcer::CodeQualityEnforcer;
 use crate::code_validator::CodeValidator;
 use crate::conflict_detector::ConflictDetector;
 use crate::conflict_resolver::{ConflictResolver, ConflictStrategy};
+use crate::error::GenerationError;
 use crate::output_writer::OutputWriter;
-use crate::review_engine::ReviewEngine;
+use crate::prompt_builder::PromptBuilder;
 use crate::report_generator::{GenerationResult, GenerationStats, ReportGenerator};
+use crate::review_engine::ReviewEngine;
+use crate::spec_processor::SpecProcessor;
 use crate::templates::TemplateEngine;
-use ricecoder_specs::models::Spec;
 use ricecoder_providers::provider::Provider;
+use ricecoder_specs::models::Spec;
 use std::path::PathBuf;
 use std::time::Instant;
 
@@ -171,12 +171,16 @@ impl GenerationManager {
 
         // STEP 1: Process spec into plan
         // Requirement 3.1: Spec processing happens before code generation
-        let plan = self.spec_processor.process(spec)
+        let plan = self
+            .spec_processor
+            .process(spec)
             .map_err(|e| GenerationError::SpecError(format!("Failed to process spec: {}", e)))?;
 
         // STEP 2: Build prompts for each step
         // Requirement 2.1, 2.3: Apply steering rules and naming conventions
-        let prompt = self.prompt_builder.build(&plan, None, None)
+        let prompt = self
+            .prompt_builder
+            .build(&plan, None, None)
             .map_err(|e| GenerationError::PromptError(format!("Failed to build prompts: {}", e)))?;
 
         // STEP 3: Generate code (templates or AI)
@@ -186,43 +190,71 @@ impl GenerationManager {
             // For now, use AI generation as fallback since template generation requires
             // specific template files and context setup
             let provider = provider.ok_or_else(|| {
-                GenerationError::GenerationFailed("AI provider required for code generation".to_string())
+                GenerationError::GenerationFailed(
+                    "AI provider required for code generation".to_string(),
+                )
             })?;
-            self.code_generator.generate(provider, &prompt, model, temperature, max_tokens).await
-                .map_err(|e| GenerationError::GenerationFailed(format!("Code generation failed: {}", e)))?
+            self.code_generator
+                .generate(provider, &prompt, model, temperature, max_tokens)
+                .await
+                .map_err(|e| {
+                    GenerationError::GenerationFailed(format!("Code generation failed: {}", e))
+                })?
         } else {
             // AI-based generation with configured model and temperature
             let provider = provider.ok_or_else(|| {
-                GenerationError::GenerationFailed("AI provider required for AI-based generation".to_string())
+                GenerationError::GenerationFailed(
+                    "AI provider required for AI-based generation".to_string(),
+                )
             })?;
-            self.code_generator.generate(provider, &prompt, model, temperature, max_tokens).await
-                .map_err(|e| GenerationError::GenerationFailed(format!("AI generation failed: {}", e)))?
+            self.code_generator
+                .generate(provider, &prompt, model, temperature, max_tokens)
+                .await
+                .map_err(|e| {
+                    GenerationError::GenerationFailed(format!("AI generation failed: {}", e))
+                })?
         };
 
         // STEP 4: Enforce code quality standards
         // Requirement 2.2, 2.3, 2.4: Apply quality standards, naming conventions, error handling
-        generated_files = self.code_quality_enforcer.enforce(generated_files)
-            .map_err(|e| GenerationError::GenerationFailed(format!("Quality enforcement failed: {}", e)))?;
+        generated_files = self
+            .code_quality_enforcer
+            .enforce(generated_files)
+            .map_err(|e| {
+                GenerationError::GenerationFailed(format!("Quality enforcement failed: {}", e))
+            })?;
 
         // STEP 5: Validate generated code
         // Requirement 1.4, 3.4: Validate syntax, linting, type checking before writing
         let validation_result = if self.config.validate {
-            self.code_validator.validate(&generated_files)
-                .map_err(|e| GenerationError::ValidationFailed(format!("Validation failed: {}", e)))?
+            self.code_validator
+                .validate(&generated_files)
+                .map_err(|e| {
+                    GenerationError::ValidationFailed(format!("Validation failed: {}", e))
+                })?
         } else {
             crate::models::ValidationResult::default()
         };
 
         // STEP 6: Detect conflicts before writing
         // Requirement 1.5, 4.1: Detect conflicts and compute diffs
-        let conflicts = self.conflict_detector.detect(&generated_files, &target_path)
-            .map_err(|e| GenerationError::GenerationFailed(format!("Conflict detection failed: {}", e)))?;
+        let conflicts = self
+            .conflict_detector
+            .detect(&generated_files, &target_path)
+            .map_err(|e| {
+                GenerationError::GenerationFailed(format!("Conflict detection failed: {}", e))
+            })?;
 
         // STEP 7: Review generated code (optional)
         // Requirement 1.6: Review code quality and spec compliance
         let review_result = if self.config.review {
-            Some(self.review_engine.review(&generated_files, spec)
-                .map_err(|e| GenerationError::GenerationFailed(format!("Review failed: {}", e)))?)
+            Some(
+                self.review_engine
+                    .review(&generated_files, spec)
+                    .map_err(|e| {
+                        GenerationError::GenerationFailed(format!("Review failed: {}", e))
+                    })?,
+            )
         } else {
             None
         };
@@ -230,7 +262,8 @@ impl GenerationManager {
         // STEP 8: Write files (unless dry-run or validation failed)
         // Requirement 1.6, 3.1, 3.5: Write with rollback support, skip if validation failed
         if !self.config.dry_run && validation_result.valid {
-            self.output_writer.write(&generated_files, &target_path, &conflicts)
+            self.output_writer
+                .write(&generated_files, &target_path, &conflicts)
                 .map_err(|e| GenerationError::WriteFailed(format!("Write failed: {}", e)))?;
         }
 
@@ -240,18 +273,17 @@ impl GenerationManager {
             tokens_used: prompt.estimated_tokens,
             time_elapsed: elapsed,
             files_generated: generated_files.len(),
-            lines_generated: generated_files.iter().map(|f| f.content.lines().count()).sum(),
+            lines_generated: generated_files
+                .iter()
+                .map(|f| f.content.lines().count())
+                .sum(),
             conflicts_detected: conflicts.len(),
             conflicts_resolved: conflicts.len(), // Simplified: assume all resolved
         };
 
         // Build result
-        let mut result = GenerationResult::new(
-            generated_files,
-            validation_result,
-            conflicts,
-            stats,
-        );
+        let mut result =
+            GenerationResult::new(generated_files, validation_result, conflicts, stats);
 
         if let Some(review) = review_result {
             result = result.with_review(review);
@@ -295,7 +327,18 @@ impl GenerationManager {
         let mut last_error = None;
 
         for attempt in 0..self.config.max_retries {
-            match self.generate(spec, target_path.clone(), language.clone(), provider, model, temperature, max_tokens).await {
+            match self
+                .generate(
+                    spec,
+                    target_path.clone(),
+                    language.clone(),
+                    provider,
+                    model,
+                    temperature,
+                    max_tokens,
+                )
+                .await
+            {
                 Ok(result) => return Ok(result),
                 Err(e) => {
                     last_error = Some(e);
