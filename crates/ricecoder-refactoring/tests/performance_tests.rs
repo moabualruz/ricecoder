@@ -8,6 +8,8 @@
 
 use ricecoder_refactoring::{
     ConfigManager, ImpactAnalyzer, PreviewGenerator, RefactoringEngine, RefactoringType,
+    adapters::GenericRefactoringProvider,
+    providers::ProviderRegistry,
 };
 use std::sync::Arc;
 use std::time::Instant;
@@ -25,8 +27,10 @@ fn test_performance_config_manager_creation() {
 #[test]
 fn test_performance_engine_creation() {
     let start = Instant::now();
-    let config_manager = Arc::new(ConfigManager::new());
-    let _engine = RefactoringEngine::new(config_manager);
+    let config_manager = ConfigManager::new();
+    let generic_provider = Arc::new(GenericRefactoringProvider::new());
+    let provider_registry = ProviderRegistry::new(generic_provider);
+    let _engine = RefactoringEngine::new(config_manager, provider_registry);
     let elapsed = start.elapsed();
 
     println!("Engine creation: {:?}", elapsed);
@@ -35,8 +39,10 @@ fn test_performance_engine_creation() {
 
 #[test]
 fn test_performance_provider_lookup() {
-    let config_manager = Arc::new(ConfigManager::new());
-    let engine = RefactoringEngine::new(config_manager);
+    let config_manager = ConfigManager::new();
+    let generic_provider = Arc::new(GenericRefactoringProvider::new());
+    let provider_registry = ProviderRegistry::new(generic_provider);
+    let engine = RefactoringEngine::new(config_manager, provider_registry);
 
     let start = Instant::now();
     let _provider = engine.provider_registry().clone().get_provider("rust");
@@ -48,8 +54,10 @@ fn test_performance_provider_lookup() {
 
 #[test]
 fn test_performance_provider_lookup_multiple() {
-    let config_manager = Arc::new(ConfigManager::new());
-    let engine = RefactoringEngine::new(config_manager);
+    let config_manager = ConfigManager::new();
+    let generic_provider = Arc::new(GenericRefactoringProvider::new());
+    let provider_registry = ProviderRegistry::new(generic_provider);
+    let engine = RefactoringEngine::new(config_manager, provider_registry);
 
     let start = Instant::now();
     for _ in 0..100 {
@@ -63,8 +71,10 @@ fn test_performance_provider_lookup_multiple() {
 
 #[test]
 fn test_performance_analysis_simple_code() {
-    let config_manager = Arc::new(ConfigManager::new());
-    let engine = RefactoringEngine::new(config_manager);
+    let config_manager = ConfigManager::new();
+    let generic_provider = Arc::new(GenericRefactoringProvider::new());
+    let provider_registry = ProviderRegistry::new(generic_provider);
+    let engine = RefactoringEngine::new(config_manager, provider_registry);
     let provider = engine.provider_registry().clone().get_provider("rust");
 
     let code = "fn main() {}";
@@ -79,8 +89,10 @@ fn test_performance_analysis_simple_code() {
 
 #[test]
 fn test_performance_analysis_complex_code() {
-    let config_manager = Arc::new(ConfigManager::new());
-    let engine = RefactoringEngine::new(config_manager);
+    let config_manager = ConfigManager::new();
+    let generic_provider = Arc::new(GenericRefactoringProvider::new());
+    let provider_registry = ProviderRegistry::new(generic_provider);
+    let engine = RefactoringEngine::new(config_manager, provider_registry);
     let provider = engine.provider_registry().clone().get_provider("rust");
 
     let code = r#"
@@ -111,8 +123,10 @@ fn test_performance_analysis_complex_code() {
 
 #[test]
 fn test_performance_validation_simple() {
-    let config_manager = Arc::new(ConfigManager::new());
-    let engine = RefactoringEngine::new(config_manager);
+    let config_manager = ConfigManager::new();
+    let generic_provider = Arc::new(GenericRefactoringProvider::new());
+    let provider_registry = ProviderRegistry::new(generic_provider);
+    let engine = RefactoringEngine::new(config_manager, provider_registry);
     let provider = engine.provider_registry().clone().get_provider("rust");
 
     let original = "fn main() {}";
@@ -128,8 +142,10 @@ fn test_performance_validation_simple() {
 
 #[test]
 fn test_performance_validation_complex() {
-    let config_manager = Arc::new(ConfigManager::new());
-    let engine = RefactoringEngine::new(config_manager);
+    let config_manager = ConfigManager::new();
+    let generic_provider = Arc::new(GenericRefactoringProvider::new());
+    let provider_registry = ProviderRegistry::new(generic_provider);
+    let engine = RefactoringEngine::new(config_manager, provider_registry);
     let provider = engine.provider_registry().clone().get_provider("rust");
 
     let original = r#"
@@ -182,8 +198,10 @@ fn test_performance_preview_generator_diff() {
 
 #[test]
 fn test_performance_multiple_languages() {
-    let config_manager = Arc::new(ConfigManager::new());
-    let engine = RefactoringEngine::new(config_manager);
+    let config_manager = ConfigManager::new();
+    let generic_provider = Arc::new(GenericRefactoringProvider::new());
+    let provider_registry = ProviderRegistry::new(generic_provider);
+    let engine = RefactoringEngine::new(config_manager, provider_registry);
 
     let languages = vec!["rust", "typescript", "python"];
     let code_samples = vec![
@@ -205,8 +223,10 @@ fn test_performance_multiple_languages() {
 
 #[test]
 fn test_performance_batch_analysis() {
-    let config_manager = Arc::new(ConfigManager::new());
-    let engine = RefactoringEngine::new(config_manager);
+    let config_manager = ConfigManager::new();
+    let generic_provider = Arc::new(GenericRefactoringProvider::new());
+    let provider_registry = ProviderRegistry::new(generic_provider);
+    let engine = RefactoringEngine::new(config_manager, provider_registry);
     let provider = engine.provider_registry().clone().get_provider("rust");
 
     let code = "fn main() {}";
@@ -223,8 +243,10 @@ fn test_performance_batch_analysis() {
 
 #[test]
 fn test_performance_all_refactoring_types() {
-    let config_manager = Arc::new(ConfigManager::new());
-    let engine = RefactoringEngine::new(config_manager);
+    let config_manager = ConfigManager::new();
+    let generic_provider = Arc::new(GenericRefactoringProvider::new());
+    let provider_registry = ProviderRegistry::new(generic_provider);
+    let engine = RefactoringEngine::new(config_manager, provider_registry);
     let provider = engine.provider_registry().clone().get_provider("rust");
 
     let types = vec![
@@ -251,8 +273,10 @@ fn test_performance_all_refactoring_types() {
 
 #[test]
 fn test_performance_unknown_language_fallback() {
-    let config_manager = Arc::new(ConfigManager::new());
-    let engine = RefactoringEngine::new(config_manager);
+    let config_manager = ConfigManager::new();
+    let generic_provider = Arc::new(GenericRefactoringProvider::new());
+    let provider_registry = ProviderRegistry::new(generic_provider);
+    let engine = RefactoringEngine::new(config_manager, provider_registry);
 
     let start = Instant::now();
     let _provider = engine.provider_registry().clone().get_provider("unknown_language");

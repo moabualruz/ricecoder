@@ -10,6 +10,8 @@
 use proptest::prelude::*;
 use ricecoder_refactoring::{
     ConfigManager, RefactoringEngine, RefactoringType,
+    adapters::GenericRefactoringProvider,
+    providers::ProviderRegistry,
 };
 use std::sync::Arc;
 
@@ -81,6 +83,13 @@ fn refactoring_type_strategy() -> impl Strategy<Value = RefactoringType> {
     ]
 }
 
+fn create_test_engine() -> RefactoringEngine {
+    let config_manager = ConfigManager::new();
+    let generic_provider = Arc::new(GenericRefactoringProvider::new());
+    let provider_registry = ProviderRegistry::new(generic_provider);
+    RefactoringEngine::new(config_manager, provider_registry)
+}
+
 proptest! {
     /// Property 4: Generic Fallback for Unconfigured Languages
     ///
@@ -97,8 +106,7 @@ proptest! {
         refactoring_type in refactoring_type_strategy(),
     ) {
         // Setup: Create engine
-        let config_manager = Arc::new(ConfigManager::new());
-        let engine = RefactoringEngine::new(config_manager);
+        let engine = create_test_engine();
 
         // Verify: Get provider for unknown language (should return generic)
         let provider = engine.provider_registry().clone().get_provider(&language);
@@ -124,8 +132,7 @@ proptest! {
         language in unknown_language_strategy(),
         code in code_strategy(),
     ) {
-        let config_manager = Arc::new(ConfigManager::new());
-        let engine = RefactoringEngine::new(config_manager);
+        let engine = create_test_engine();
 
         // Get provider twice for the same unknown language
         let provider1 = engine.provider_registry().clone().get_provider(&language);
@@ -154,8 +161,7 @@ proptest! {
         original_code in code_strategy(),
         modified_code in code_strategy(),
     ) {
-        let config_manager = Arc::new(ConfigManager::new());
-        let engine = RefactoringEngine::new(config_manager);
+        let engine = create_test_engine();
 
         let provider = engine.provider_registry().clone().get_provider(&language);
 
@@ -184,8 +190,7 @@ proptest! {
         code in code_strategy(),
         refactoring_type in refactoring_type_strategy(),
     ) {
-        let config_manager = Arc::new(ConfigManager::new());
-        let engine = RefactoringEngine::new(config_manager);
+        let engine = create_test_engine();
 
         // This should never panic or fail
         let provider = engine.provider_registry().clone().get_provider(&language);
@@ -202,8 +207,7 @@ proptest! {
     fn prop_generic_provider_fallback(
         language in unknown_language_strategy(),
     ) {
-        let config_manager = Arc::new(ConfigManager::new());
-        let engine = RefactoringEngine::new(config_manager);
+        let engine = create_test_engine();
 
         // Get provider for unknown language
         let provider = engine.provider_registry().clone().get_provider(&language);
@@ -224,8 +228,7 @@ proptest! {
         languages in prop::collection::vec(unknown_language_strategy(), 1..5),
         code in code_strategy(),
     ) {
-        let config_manager = Arc::new(ConfigManager::new());
-        let engine = RefactoringEngine::new(config_manager);
+        let engine = create_test_engine();
 
         // For each unknown language, verify the system handles it
         for language in languages {
@@ -245,8 +248,7 @@ mod tests {
 
     #[test]
     fn test_unknown_language_cobol() {
-        let config_manager = Arc::new(ConfigManager::new());
-        let engine = RefactoringEngine::new(config_manager);
+        let engine = create_test_engine();
 
         let provider = engine.provider_registry().clone().get_provider("cobol");
         let analysis = provider.analyze_refactoring("PROGRAM MAIN", "cobol", RefactoringType::Rename);
@@ -258,8 +260,7 @@ mod tests {
 
     #[test]
     fn test_unknown_language_lisp() {
-        let config_manager = Arc::new(ConfigManager::new());
-        let engine = RefactoringEngine::new(config_manager);
+        let engine = create_test_engine();
 
         let provider = engine.provider_registry().clone().get_provider("lisp");
         let analysis = provider.analyze_refactoring("(defn main [] nil)", "lisp", RefactoringType::Rename);
@@ -271,8 +272,7 @@ mod tests {
 
     #[test]
     fn test_unknown_language_haskell() {
-        let config_manager = Arc::new(ConfigManager::new());
-        let engine = RefactoringEngine::new(config_manager);
+        let engine = create_test_engine();
 
         let provider = engine.provider_registry().clone().get_provider("haskell");
         let analysis = provider.analyze_refactoring("main :: IO ()", "haskell", RefactoringType::Rename);
@@ -284,8 +284,7 @@ mod tests {
 
     #[test]
     fn test_unknown_language_custom_dsl() {
-        let config_manager = Arc::new(ConfigManager::new());
-        let engine = RefactoringEngine::new(config_manager);
+        let engine = create_test_engine();
 
         let provider = engine.provider_registry().clone().get_provider("custom_dsl");
         let analysis = provider.analyze_refactoring("custom code", "custom_dsl", RefactoringType::Rename);
@@ -297,8 +296,7 @@ mod tests {
 
     #[test]
     fn test_generic_provider_validation_unchanged() {
-        let config_manager = Arc::new(ConfigManager::new());
-        let engine = RefactoringEngine::new(config_manager);
+        let engine = create_test_engine();
 
         let provider = engine.provider_registry().clone().get_provider("unknown");
         let validation = provider.validate_refactoring("code", "code", "unknown");
@@ -310,8 +308,7 @@ mod tests {
 
     #[test]
     fn test_generic_provider_validation_changed() {
-        let config_manager = Arc::new(ConfigManager::new());
-        let engine = RefactoringEngine::new(config_manager);
+        let engine = create_test_engine();
 
         let provider = engine.provider_registry().clone().get_provider("unknown");
         let validation = provider.validate_refactoring("code", "modified code", "unknown");
@@ -323,8 +320,7 @@ mod tests {
 
     #[test]
     fn test_generic_provider_all_refactoring_types() {
-        let config_manager = Arc::new(ConfigManager::new());
-        let engine = RefactoringEngine::new(config_manager);
+        let engine = create_test_engine();
 
         let provider = engine.provider_registry().clone().get_provider("unknown");
 
