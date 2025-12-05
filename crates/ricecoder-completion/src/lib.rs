@@ -4,21 +4,48 @@
 ///
 /// # Architecture
 ///
-/// The completion engine follows a layered architecture:
+/// The completion engine follows a layered architecture with external LSP integration:
 ///
-/// 1. **Configuration Layer**: Load and manage language-specific completion configurations
-/// 2. **Context Analysis Layer**: Analyze code context to determine available symbols and expected types
-/// 3. **Completion Generation Layer**: Generate completion suggestions (generic or language-specific)
-/// 4. **Ranking Layer**: Rank completions by relevance, frequency, and recency
+/// 1. **External LSP Layer** (Primary): Query external LSP servers (rust-analyzer, tsserver, pylsp, etc.)
+///    for semantic completions when available
+/// 2. **Configuration Layer**: Load and manage language-specific completion configurations
+/// 3. **Context Analysis Layer**: Analyze code context to determine available symbols and expected types
+/// 4. **Completion Generation Layer**: Generate completion suggestions (generic or language-specific)
+/// 5. **Ranking Layer**: Rank completions by relevance, frequency, and recency
+/// 6. **Fallback Layer**: Use internal providers when external LSP is unavailable
 ///
 /// # Language Support
 ///
 /// The engine supports multiple languages through a pluggable provider system:
 ///
-/// - **Rust**: Full support with Rust-specific keywords and patterns
-/// - **TypeScript**: Full support with TypeScript-specific keywords and patterns
-/// - **Python**: Full support with Python-specific keywords and patterns
+/// - **Rust**: External LSP (rust-analyzer) with fallback to internal provider
+/// - **TypeScript**: External LSP (typescript-language-server) with fallback to internal provider
+/// - **Python**: External LSP (pylsp) with fallback to internal provider
+/// - **Go**: External LSP (gopls) with fallback to internal provider
+/// - **Java**: External LSP (jdtls) with fallback to internal provider
+/// - **Kotlin**: External LSP (kotlin-language-server) with fallback to internal provider
+/// - **Dart**: External LSP (dart-language-server) with fallback to internal provider
 /// - **Generic**: Fallback for unconfigured languages using text-based completion
+///
+/// # External LSP Integration
+///
+/// The completion engine integrates with external LSP servers through the `ExternalLspCompletionProxy`.
+/// When a completion request is made:
+///
+/// 1. If an external LSP server is configured and available, the request is forwarded to it
+/// 2. The external LSP response is transformed to ricecoder's internal model
+/// 3. External completions are merged with internal completions (external takes priority)
+/// 4. If the external LSP is unavailable, the system falls back to internal providers
+///
+/// This provides production-quality semantic completions while maintaining graceful degradation.
+///
+/// # Fallback Providers
+///
+/// **IMPORTANT**: Internal completion providers are now **fallback providers** used only when
+/// external LSP servers are unavailable. They provide basic keyword and pattern-based completions
+/// but lack semantic understanding.
+///
+/// See the `providers` module documentation for details on fallback behavior and limitations.
 ///
 /// # Core Components
 ///
@@ -124,6 +151,7 @@
 pub mod config;
 pub mod context;
 pub mod engine;
+pub mod external_lsp_proxy;
 pub mod ghost_text;
 pub mod ghost_text_state;
 pub mod history;
@@ -139,6 +167,7 @@ pub use engine::{
     CompletionEngine, CompletionGenerator, CompletionProvider, CompletionRanker,
     GenericCompletionEngine, ProviderRegistry,
 };
+pub use external_lsp_proxy::{ExternalLspCompletionClient, ExternalLspCompletionProxy};
 pub use ghost_text::{
     BasicGhostTextGenerator, BasicGhostTextRenderer, GhostTextGenerator, GhostTextRenderer,
     GhostTextStyle,

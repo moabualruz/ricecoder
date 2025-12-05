@@ -9,11 +9,9 @@
 //! - Context preservation across multiple mode switches
 
 use ricecoder_modes::{
-    AskMode, Capability, CodeMode, ComplexityLevel, ModeAction, ModeConfig, ModeConstraints,
-    ModeContext, ModeError, ModeManager, ModeResponse, ModeSwitcher, Operation, ResponseMetadata,
+    AskMode, Capability, CodeMode, ModeContext, ModeError, ModeManager, ModeSwitcher, Operation,
     ThinkMoreConfig, ThinkingDepth, VibeMode,
 };
-use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;

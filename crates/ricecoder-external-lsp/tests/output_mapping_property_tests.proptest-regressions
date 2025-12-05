@@ -1,0 +1,9 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc e60750f78227ca9419f2d2d4c6b2c43f2853e42b6da47b5cc18ffd72f239da2a # shrinks to response = Object {"result": Array [Object {"message": String(" "), "range": Object {"end": Object {"character": Number(5), "line": Number(0)}, "start": Object {"character": Number(0), "line": Number(0)}}, "severity": Number(1)}]}, field_mappings = {"label": "$.label"}
+cc 543982da7e4ad19ec923611733272ec6fd4b71c9419bb3a4fb7aaca09a40b491 # shrinks to response = Object {"result": Object {"contents": Object {"language": String("a"), "value": String("a")}}}, field_mappings = {"label": "$.label"}
+cc f2572f320c0cbbcccc39db917c9c5791f4283a3d3b1b29deaf3e0192fec036d0 # shrinks to response = Object {"result": Object {"items": Array [Object {"detail": String("a"), "kind": Number(0), "label": String("a")}]}}, field_mappings = {"message": "$.message"}

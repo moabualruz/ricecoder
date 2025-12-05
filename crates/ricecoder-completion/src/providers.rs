@@ -1,4 +1,49 @@
 /// Pluggable completion providers for language-specific behavior
+///
+/// # Architecture
+///
+/// This module provides language-specific completion providers that generate suggestions
+/// based on language keywords, patterns, and available symbols.
+///
+/// # Fallback Providers
+///
+/// **IMPORTANT**: These providers are now **fallback providers** used when external LSP servers
+/// are unavailable. For production-quality semantic completions, external LSP servers
+/// (rust-analyzer, tsserver, pylsp, etc.) should be configured and used instead.
+///
+/// ## When Fallback Providers Are Used
+///
+/// Fallback providers are used in the following scenarios:
+///
+/// 1. **External LSP Not Configured**: No external LSP server is configured for the language
+/// 2. **External LSP Unavailable**: The configured external LSP server is not installed or fails to start
+/// 3. **External LSP Timeout**: The external LSP server times out or becomes unresponsive
+/// 4. **Graceful Degradation**: When external LSP fails, the system falls back to internal providers
+///    to ensure users still get basic completions
+///
+/// ## Limitations of Fallback Providers
+///
+/// Fallback providers have significant limitations compared to external LSP servers:
+///
+/// - **No Type Inference**: Cannot infer types or resolve type information
+/// - **No Project Context**: Cannot access project configuration or dependencies
+/// - **Limited Scope Analysis**: Cannot determine variable scope or lifetime
+/// - **No Semantic Analysis**: Cannot perform semantic analysis or resolve references
+/// - **Keyword-Based Only**: Provide only keyword and pattern-based completions
+///
+/// ## Recommended Configuration
+///
+/// For best results, configure external LSP servers for your languages:
+///
+/// - **Rust**: Install and configure `rust-analyzer`
+/// - **TypeScript/JavaScript**: Install and configure `typescript-language-server`
+/// - **Python**: Install and configure `pylsp` or `pyright`
+/// - **Go**: Install and configure `gopls`
+/// - **Java**: Install and configure `jdtls`
+/// - **Kotlin**: Install and configure `kotlin-language-server`
+/// - **Dart**: Install and configure `dart-language-server`
+///
+/// See `projects/ricecoder.wiki/External-LSP-Configuration.md` for configuration instructions.
 use crate::types::*;
 use async_trait::async_trait;
 
@@ -62,6 +107,31 @@ fn create_snippet_item(
 }
 
 /// Generic text-based completion provider (fallback for unconfigured languages)
+///
+/// This is a **fallback provider** used when no language-specific provider is available
+/// or when external LSP servers are not configured.
+///
+/// # Behavior
+///
+/// Generates completions from available symbols in the code context. This provider
+/// does not perform any language-specific analysis and is suitable only as a fallback.
+///
+/// # When Used
+///
+/// - No language-specific provider is registered
+/// - Language is not recognized
+/// - External LSP server is unavailable
+///
+/// # Limitations
+///
+/// - No language-specific keywords or patterns
+/// - No type inference or semantic analysis
+/// - Limited to available symbols in context
+/// - No project-aware completions
+///
+/// # Recommendation
+///
+/// For better completions, configure an external LSP server for your language.
 pub struct GenericTextProvider;
 
 #[async_trait]
@@ -88,7 +158,53 @@ impl crate::engine::CompletionProvider for GenericTextProvider {
     }
 }
 
-/// Rust-specific completion provider
+/// Rust-specific completion provider (fallback)
+///
+/// This is a **fallback provider** for Rust code when external LSP (rust-analyzer) is unavailable.
+///
+/// # Behavior
+///
+/// Generates Rust-specific completions including:
+/// - Rust keywords (fn, let, mut, const, struct, enum, trait, impl, etc.)
+/// - Rust-specific snippets (function templates, impl blocks, match expressions, etc.)
+/// - Rust traits and standard library types
+/// - Rust macros (println!, format!, vec!, etc.)
+/// - Derive attributes
+/// - Available symbols from code context
+///
+/// # When Used
+///
+/// - External LSP (rust-analyzer) is not configured
+/// - rust-analyzer is not installed or fails to start
+/// - rust-analyzer times out or becomes unresponsive
+///
+/// # Limitations
+///
+/// - No type inference or semantic analysis
+/// - Cannot resolve imports or dependencies
+/// - No project-aware completions
+/// - Cannot determine variable scope or lifetime
+/// - Limited to hardcoded keywords and patterns
+///
+/// # Recommended Configuration
+///
+/// For production-quality Rust completions, install and configure rust-analyzer:
+///
+/// ```bash
+/// rustup component add rust-analyzer
+/// ```
+///
+/// Then configure it in `lsp-servers.yaml`:
+///
+/// ```yaml
+/// servers:
+///   rust:
+///     - language: rust
+///       executable: rust-analyzer
+///       enabled: true
+/// ```
+///
+/// See `projects/ricecoder.wiki/External-LSP-Configuration.md` for details.
 pub struct RustCompletionProvider;
 
 #[async_trait]
@@ -389,7 +505,55 @@ impl crate::engine::CompletionProvider for RustCompletionProvider {
     }
 }
 
-/// TypeScript-specific completion provider
+/// TypeScript-specific completion provider (fallback)
+///
+/// This is a **fallback provider** for TypeScript/JavaScript code when external LSP
+/// (typescript-language-server) is unavailable.
+///
+/// # Behavior
+///
+/// Generates TypeScript-specific completions including:
+/// - TypeScript keywords (function, const, let, class, interface, type, enum, etc.)
+/// - TypeScript-specific snippets (function templates, class definitions, etc.)
+/// - TypeScript utility types (Record, Partial, Required, Pick, Omit, etc.)
+/// - TypeScript decorators
+/// - Generic type patterns
+/// - Available symbols from code context
+///
+/// # When Used
+///
+/// - External LSP (typescript-language-server) is not configured
+/// - typescript-language-server is not installed or fails to start
+/// - typescript-language-server times out or becomes unresponsive
+///
+/// # Limitations
+///
+/// - No type inference or semantic analysis
+/// - Cannot resolve imports or dependencies
+/// - No project-aware completions
+/// - Cannot determine variable scope or type information
+/// - Limited to hardcoded keywords and patterns
+///
+/// # Recommended Configuration
+///
+/// For production-quality TypeScript completions, install and configure typescript-language-server:
+///
+/// ```bash
+/// npm install -g typescript-language-server typescript
+/// ```
+///
+/// Then configure it in `lsp-servers.yaml`:
+///
+/// ```yaml
+/// servers:
+///   typescript:
+///     - language: typescript
+///       executable: typescript-language-server
+///       args: ["--stdio"]
+///       enabled: true
+/// ```
+///
+/// See `projects/ricecoder.wiki/External-LSP-Configuration.md` for details.
 pub struct TypeScriptCompletionProvider;
 
 #[async_trait]
@@ -651,7 +815,53 @@ impl crate::engine::CompletionProvider for TypeScriptCompletionProvider {
     }
 }
 
-/// Python-specific completion provider
+/// Python-specific completion provider (fallback)
+///
+/// This is a **fallback provider** for Python code when external LSP (pylsp) is unavailable.
+///
+/// # Behavior
+///
+/// Generates Python-specific completions including:
+/// - Python keywords (def, class, if, for, while, try, except, etc.)
+/// - Python-specific snippets (function definitions, class definitions, etc.)
+/// - Python decorators (@property, @staticmethod, @classmethod, etc.)
+/// - Python type hints (List, Dict, Set, Optional, Union, etc.)
+/// - Python context managers (open, lock, transaction, etc.)
+/// - Available symbols from code context
+///
+/// # When Used
+///
+/// - External LSP (pylsp) is not configured
+/// - pylsp is not installed or fails to start
+/// - pylsp times out or becomes unresponsive
+///
+/// # Limitations
+///
+/// - No type inference or semantic analysis
+/// - Cannot resolve imports or dependencies
+/// - No project-aware completions
+/// - Cannot determine variable scope or type information
+/// - Limited to hardcoded keywords and patterns
+///
+/// # Recommended Configuration
+///
+/// For production-quality Python completions, install and configure pylsp:
+///
+/// ```bash
+/// pip install python-lsp-server
+/// ```
+///
+/// Then configure it in `lsp-servers.yaml`:
+///
+/// ```yaml
+/// servers:
+///   python:
+///     - language: python
+///       executable: pylsp
+///       enabled: true
+/// ```
+///
+/// See `projects/ricecoder.wiki/External-LSP-Configuration.md` for details.
 pub struct PythonCompletionProvider;
 
 #[async_trait]
@@ -874,7 +1084,52 @@ impl crate::engine::CompletionProvider for PythonCompletionProvider {
     }
 }
 
-/// Go-specific completion provider
+/// Go-specific completion provider (fallback)
+///
+/// This is a **fallback provider** for Go code when external LSP (gopls) is unavailable.
+///
+/// # Behavior
+///
+/// Generates Go-specific completions including:
+/// - Go keywords (package, import, func, const, var, type, struct, interface, etc.)
+/// - Go-specific snippets (function templates, interface definitions, etc.)
+/// - Go built-in functions (make, new, append, copy, delete, len, cap, etc.)
+/// - Available symbols from code context
+///
+/// # When Used
+///
+/// - External LSP (gopls) is not configured
+/// - gopls is not installed or fails to start
+/// - gopls times out or becomes unresponsive
+///
+/// # Limitations
+///
+/// - No type inference or semantic analysis
+/// - Cannot resolve imports or dependencies
+/// - No project-aware completions
+/// - Cannot determine variable scope or type information
+/// - Limited to hardcoded keywords and patterns
+///
+/// # Recommended Configuration
+///
+/// For production-quality Go completions, install and configure gopls:
+///
+/// ```bash
+/// go install github.com/golang/tools/gopls@latest
+/// ```
+///
+/// Then configure it in `lsp-servers.yaml`:
+///
+/// ```yaml
+/// servers:
+///   go:
+///     - language: go
+///       executable: gopls
+///       args: ["serve"]
+///       enabled: true
+/// ```
+///
+/// See `projects/ricecoder.wiki/External-LSP-Configuration.md` for details.
 pub struct GoCompletionProvider;
 
 #[async_trait]
@@ -970,7 +1225,52 @@ impl crate::engine::CompletionProvider for GoCompletionProvider {
     }
 }
 
-/// Java-specific completion provider
+/// Java-specific completion provider (fallback)
+///
+/// This is a **fallback provider** for Java code when external LSP (jdtls) is unavailable.
+///
+/// # Behavior
+///
+/// Generates Java-specific completions including:
+/// - Java keywords (abstract, class, interface, public, private, static, etc.)
+/// - Java-specific snippets (class declarations, method definitions, etc.)
+/// - Java primitive types (int, long, double, boolean, etc.)
+/// - Available symbols from code context
+///
+/// # When Used
+///
+/// - External LSP (jdtls) is not configured
+/// - jdtls is not installed or fails to start
+/// - jdtls times out or becomes unresponsive
+///
+/// # Limitations
+///
+/// - No type inference or semantic analysis
+/// - Cannot resolve imports or dependencies
+/// - No project-aware completions
+/// - Cannot determine variable scope or type information
+/// - Limited to hardcoded keywords and patterns
+///
+/// # Recommended Configuration
+///
+/// For production-quality Java completions, install and configure jdtls:
+///
+/// ```bash
+/// # Download and install Eclipse JDT Language Server
+/// # See: https://github.com/eclipse/eclipse.jdt.ls
+/// ```
+///
+/// Then configure it in `lsp-servers.yaml`:
+///
+/// ```yaml
+/// servers:
+///   java:
+///     - language: java
+///       executable: jdtls
+///       enabled: true
+/// ```
+///
+/// See `projects/ricecoder.wiki/External-LSP-Configuration.md` for details.
 pub struct JavaCompletionProvider;
 
 #[async_trait]
@@ -1080,7 +1380,52 @@ impl crate::engine::CompletionProvider for JavaCompletionProvider {
     }
 }
 
-/// Kotlin-specific completion provider
+/// Kotlin-specific completion provider (fallback)
+///
+/// This is a **fallback provider** for Kotlin code when external LSP (kotlin-language-server) is unavailable.
+///
+/// # Behavior
+///
+/// Generates Kotlin-specific completions including:
+/// - Kotlin keywords (fun, class, interface, object, data, sealed, enum, etc.)
+/// - Kotlin-specific snippets (function declarations, class definitions, etc.)
+/// - Kotlin modifiers (val, var, const, open, override, etc.)
+/// - Available symbols from code context
+///
+/// # When Used
+///
+/// - External LSP (kotlin-language-server) is not configured
+/// - kotlin-language-server is not installed or fails to start
+/// - kotlin-language-server times out or becomes unresponsive
+///
+/// # Limitations
+///
+/// - No type inference or semantic analysis
+/// - Cannot resolve imports or dependencies
+/// - No project-aware completions
+/// - Cannot determine variable scope or type information
+/// - Limited to hardcoded keywords and patterns
+///
+/// # Recommended Configuration
+///
+/// For production-quality Kotlin completions, install and configure kotlin-language-server:
+///
+/// ```bash
+/// # Download and install Kotlin Language Server
+/// # See: https://github.com/fwcd/kotlin-language-server
+/// ```
+///
+/// Then configure it in `lsp-servers.yaml`:
+///
+/// ```yaml
+/// servers:
+///   kotlin:
+///     - language: kotlin
+///       executable: kotlin-language-server
+///       enabled: true
+/// ```
+///
+/// See `projects/ricecoder.wiki/External-LSP-Configuration.md` for details.
 pub struct KotlinCompletionProvider;
 
 #[async_trait]
@@ -1197,7 +1542,53 @@ impl crate::engine::CompletionProvider for KotlinCompletionProvider {
     }
 }
 
-/// Dart-specific completion provider
+/// Dart-specific completion provider (fallback)
+///
+/// This is a **fallback provider** for Dart code when external LSP (dart-language-server) is unavailable.
+///
+/// # Behavior
+///
+/// Generates Dart-specific completions including:
+/// - Dart keywords (class, abstract, interface, mixin, enum, extension, etc.)
+/// - Dart-specific snippets (class declarations, method definitions, etc.)
+/// - Dart modifiers (var, final, const, late, required, etc.)
+/// - Available symbols from code context
+///
+/// # When Used
+///
+/// - External LSP (dart-language-server) is not configured
+/// - dart-language-server is not installed or fails to start
+/// - dart-language-server times out or becomes unresponsive
+///
+/// # Limitations
+///
+/// - No type inference or semantic analysis
+/// - Cannot resolve imports or dependencies
+/// - No project-aware completions
+/// - Cannot determine variable scope or type information
+/// - Limited to hardcoded keywords and patterns
+///
+/// # Recommended Configuration
+///
+/// For production-quality Dart completions, install and configure dart-language-server:
+///
+/// ```bash
+/// # Dart SDK includes the language server
+/// dart pub global activate dart_language_server
+/// ```
+///
+/// Then configure it in `lsp-servers.yaml`:
+///
+/// ```yaml
+/// servers:
+///   dart:
+///     - language: dart
+///       executable: dart
+///       args: ["language-server"]
+///       enabled: true
+/// ```
+///
+/// See `projects/ricecoder.wiki/External-LSP-Configuration.md` for details.
 pub struct DartCompletionProvider;
 
 #[async_trait]

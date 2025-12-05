@@ -19,11 +19,12 @@ members = [
     "crates/ricecoder-lsp",
     "crates/ricecoder-completion",
     "crates/ricecoder-hooks",
+    "crates/ricecoder-external-lsp",
 ]
 resolver = "2"
 
 [workspace.package]
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 authors = ["RiceCoder Contributors"]
 license = "MIT"
@@ -67,3 +68,4 @@ similar = "2.3"
 handlebars = "5.0"
 heck = "0.4"
 itertools = "0.12"
+criterion = { version = "0.5", features = ["html_reports"] }

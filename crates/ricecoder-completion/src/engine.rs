@@ -2,15 +2,41 @@
 ///
 /// This module provides the main completion engine and related traits for generating,
 /// ranking, and managing code completions. The engine is designed to be language-agnostic
-/// with pluggable providers for language-specific behavior.
+/// with pluggable providers for language-specific behavior and external LSP integration.
 ///
 /// # Architecture
 ///
-/// The completion engine follows a pipeline architecture:
+/// The completion engine follows a pipeline architecture with external LSP routing:
 ///
-/// 1. **Context Analysis**: Analyze code context to determine available symbols and expected types
-/// 2. **Completion Generation**: Generate suggestions using language-specific provider or generic generator
-/// 3. **Ranking**: Rank completions by relevance, frequency, and recency
+/// 1. **External LSP Routing** (Primary): Route to external LSP server if available and configured
+/// 2. **Context Analysis**: Analyze code context to determine available symbols and expected types
+/// 3. **Completion Generation**: Generate suggestions using language-specific provider or generic generator
+/// 4. **Merging**: Merge external LSP completions with internal completions (external takes priority)
+/// 5. **Ranking**: Rank completions by relevance, frequency, and recency
+///
+/// # External LSP Integration
+///
+/// The completion engine integrates with external LSP servers through the `ExternalLspCompletionProxy`.
+/// When a completion request is made:
+///
+/// 1. If an external LSP server is configured for the language, the request is forwarded to it
+/// 2. The external LSP response is transformed to ricecoder's internal model
+/// 3. External completions are merged with internal completions:
+///    - External completions have higher priority (appear first)
+///    - Internal completions are added if they don't duplicate external ones
+///    - Results are sorted by relevance score
+/// 4. If the external LSP is unavailable or times out, the system falls back to internal providers
+///
+/// # Merge Strategy
+///
+/// The merge strategy for combining external and internal completions:
+///
+/// - **Priority**: External completions are prioritized over internal ones
+/// - **Deduplication**: Completions with the same label are deduplicated (external wins)
+/// - **Sorting**: All completions are sorted by relevance score
+/// - **Fallback**: If external LSP fails, internal completions are used as fallback
+///
+/// This ensures users get the best available completions while maintaining graceful degradation.
 ///
 /// # Example
 ///
@@ -100,14 +126,35 @@ pub trait CompletionEngine: Send + Sync {
 /// Generic completion engine implementation
 ///
 /// This is the main implementation of the completion engine. It coordinates
-/// context analysis, completion generation, and ranking to produce ranked
-/// completion suggestions.
+/// external LSP routing, context analysis, completion generation, and ranking
+/// to produce ranked completion suggestions.
+///
+/// # Completion Flow
+///
+/// The engine follows this flow for each completion request:
+///
+/// 1. **External LSP Check**: Check if an external LSP server is configured for the language
+/// 2. **Context Analysis**: Analyze code context to determine available symbols and expected types
+/// 3. **Completion Generation**: Generate suggestions using:
+///    - External LSP server (if available and configured)
+///    - Language-specific provider (if registered)
+///    - Generic completion generator (fallback)
+/// 4. **Merging**: Merge external and internal completions (external takes priority)
+/// 5. **Ranking**: Rank all completions by relevance, frequency, and recency
 ///
 /// # Language Support
 ///
 /// The engine supports multiple languages through a pluggable provider system:
-/// - If a language-specific provider is registered, it will be used
+/// - If an external LSP server is configured, it will be used for semantic completions
+/// - If a language-specific provider is registered, it will be used as fallback
 /// - Otherwise, the generic completion generator is used as a fallback
+///
+/// # Graceful Degradation
+///
+/// If the external LSP server is unavailable or times out:
+/// - The system falls back to language-specific providers
+/// - If no provider is available, the generic generator is used
+/// - Users always get some completions, even if not semantic
 ///
 /// # Example
 ///

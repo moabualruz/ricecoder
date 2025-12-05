@@ -16,6 +16,7 @@ use clap::{Parser, Subcommand};
 #[command(version)]
 #[command(author = "RiceCoder Contributors")]
 #[command(arg_required_else_help = true)]
+#[command(disable_help_subcommand = true)]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,
@@ -157,6 +158,14 @@ pub enum Commands {
     Hooks {
         #[command(subcommand)]
         action: Option<HooksSubcommand>,
+    },
+
+    /// Show help and tutorials
+    #[command(about = "Show help, tutorials, and troubleshooting guides")]
+    Help {
+        /// Topic to get help on (command name, 'tutorial', 'troubleshooting')
+        #[arg(value_name = "TOPIC")]
+        topic: Option<String>,
     },
 }
 
@@ -473,6 +482,10 @@ impl CommandRouter {
                     }
                 };
                 let cmd = hooks::HooksCommand::new(hooks_action);
+                cmd.execute()
+            }
+            Commands::Help { topic } => {
+                let cmd = HelpCommand::new(topic.clone());
                 cmd.execute()
             }
         }

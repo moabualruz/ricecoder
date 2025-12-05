@@ -1,0 +1,9 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc f21983e1cafe8a9b647a01b5908b2b79a3239eb0ef42cbb889f6348d6a76e2c2 # shrinks to external = Some([]), internal = [Diagnostic { range: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 5 } }, severity: Error, message: " a  a", code: None, source: "ricecoder-lsp", related_information: None }]
+cc 4cffb5e72a1dcd84a3f82d0113309c1db6b6117219aa67f3a41e0a41a3b60696 # shrinks to external = None, internal = [CompletionItem { label: "d", kind: Variable, detail: None, documentation: None, sort_text: None, filter_text: None, insert_text: "insert_text", score: 0.0, additional_edits: [] }, CompletionItem { label: "d", kind: Variable, detail: None, documentation: None, sort_text: None, filter_text: None, insert_text: "insert_text", score: 0.0, additional_edits: [] }]
+cc 34543ac19bc55c5d998025e587187cf287eb60eb8bb2713fd8e9a5fad300b06a # shrinks to external = Some([CompletionItem { label: "g", kind: Variable, detail: None, documentation: None, sort_text: None, filter_text: None, insert_text: "insert_text", score: 0.0, additional_edits: [] }, CompletionItem { label: "g", kind: Variable, detail: None, documentation: None, sort_text: None, filter_text: None, insert_text: "insert_text", score: 0.0, additional_edits: [] }]), internal = []
