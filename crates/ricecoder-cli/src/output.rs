@@ -119,6 +119,27 @@ impl OutputStyle {
         format!("{}{}", error_msg, details_msg)
     }
 
+    /// Format error with multiple suggestions
+    pub fn error_with_suggestions(&self, error: &str, suggestions: &[&str]) -> String {
+        let mut output = self.error(error);
+        if !suggestions.is_empty() {
+            output.push_str("\n\n💡 Suggestions:");
+            for (i, suggestion) in suggestions.iter().enumerate() {
+                output.push_str(&format!("\n  {}. {}", i + 1, suggestion));
+            }
+        }
+        output
+    }
+
+    /// Format error with documentation link
+    pub fn error_with_docs(&self, error: &str, doc_url: &str) -> String {
+        format!(
+            "{}\n\n📖 Learn more: {}",
+            self.error(error),
+            doc_url
+        )
+    }
+
     /// Format a section header
     pub fn section(&self, title: &str) -> String {
         if self.use_colors {
@@ -137,12 +158,35 @@ impl OutputStyle {
         format!("  • {}", item)
     }
 
+    /// Format a numbered list item
+    pub fn numbered_item(&self, number: usize, item: &str) -> String {
+        format!("  {}. {}", number, item)
+    }
+
     /// Format a key-value pair
     pub fn key_value(&self, key: &str, value: &str) -> String {
         if self.use_colors {
             format!("  {}: {}", key.bold(), value)
         } else {
             format!("  {}: {}", key, value)
+        }
+    }
+
+    /// Format a tip/hint
+    pub fn tip(&self, tip: &str) -> String {
+        if self.use_colors {
+            format!("{} {}", "💡".yellow(), tip)
+        } else {
+            format!("💡 {}", tip)
+        }
+    }
+
+    /// Format a link
+    pub fn link(&self, text: &str, url: &str) -> String {
+        if self.use_colors {
+            format!("{} ({})", text.cyan(), url.cyan())
+        } else {
+            format!("{} ({})", text, url)
         }
     }
 }
@@ -228,5 +272,47 @@ mod tests {
         let result = style.key_value("key", "value");
         assert!(result.contains("key"));
         assert!(result.contains("value"));
+    }
+
+    #[test]
+    fn test_error_with_suggestions() {
+        let style = OutputStyle { use_colors: false };
+        let suggestions = vec!["Try this", "Or that"];
+        let result = style.error_with_suggestions("Something failed", &suggestions);
+        assert!(result.contains("✗ Something failed"));
+        assert!(result.contains("Suggestions:"));
+        assert!(result.contains("1. Try this"));
+        assert!(result.contains("2. Or that"));
+    }
+
+    #[test]
+    fn test_error_with_docs() {
+        let style = OutputStyle { use_colors: false };
+        let result = style.error_with_docs("File not found", "https://docs.example.com");
+        assert!(result.contains("✗ File not found"));
+        assert!(result.contains("https://docs.example.com"));
+    }
+
+    #[test]
+    fn test_numbered_item_formatting() {
+        let style = OutputStyle { use_colors: false };
+        let result = style.numbered_item(1, "First item");
+        assert!(result.contains("1. First item"));
+    }
+
+    #[test]
+    fn test_tip_formatting() {
+        let style = OutputStyle { use_colors: false };
+        let result = style.tip("This is a helpful tip");
+        assert!(result.contains("💡"));
+        assert!(result.contains("This is a helpful tip"));
+    }
+
+    #[test]
+    fn test_link_formatting() {
+        let style = OutputStyle { use_colors: false };
+        let result = style.link("Documentation", "https://docs.example.com");
+        assert!(result.contains("Documentation"));
+        assert!(result.contains("https://docs.example.com"));
     }
 }
