@@ -7,6 +7,19 @@ use crate::types::{Refactoring, RefactoringPreview};
 /// Generates previews of refactoring operations
 pub struct PreviewGenerator;
 
+impl PreviewGenerator {
+    /// Create a new preview generator
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl Default for PreviewGenerator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Represents a diff hunk (a contiguous block of changes)
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DiffHunk {

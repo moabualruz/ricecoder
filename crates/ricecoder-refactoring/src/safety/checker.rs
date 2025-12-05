@@ -7,6 +7,11 @@ use crate::types::{Refactoring, ValidationResult};
 pub struct SafetyChecker;
 
 impl SafetyChecker {
+    /// Create a new safety checker
+    pub fn new() -> Self {
+        Self
+    }
+
     /// Check if a refactoring is safe to apply
     pub fn check(refactoring: &Refactoring) -> Result<ValidationResult> {
         let mut errors = vec![];
@@ -57,6 +62,12 @@ impl SafetyChecker {
             errors,
             warnings,
         })
+    }
+}
+
+impl Default for SafetyChecker {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

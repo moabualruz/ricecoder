@@ -50,7 +50,6 @@ impl ImpactAnalyzer {
             affected_symbols: affected_symbols_vec,
             risk_level,
             estimated_effort,
-            change_count: 0,
         })
     }
 

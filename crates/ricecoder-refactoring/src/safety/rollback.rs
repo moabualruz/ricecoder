@@ -21,7 +21,7 @@ impl RollbackHandler {
 
         Ok(BackupInfo {
             id: Uuid::new_v4().to_string(),
-            timestamp: Utc::now(),
+            timestamp: Utc::now().to_string(),
             files: backup_files,
         })
     }
@@ -83,7 +83,7 @@ mod tests {
     fn test_verify_backup_empty() -> Result<()> {
         let backup = BackupInfo {
             id: "test".to_string(),
-            timestamp: Utc::now(),
+            timestamp: Utc::now().to_string(),
             files: HashMap::new(),
         };
 
@@ -104,7 +104,7 @@ mod tests {
 
         let backup = BackupInfo {
             id: "test".to_string(),
-            timestamp: Utc::now(),
+            timestamp: Utc::now().to_string(),
             files: backup_files,
         };
 

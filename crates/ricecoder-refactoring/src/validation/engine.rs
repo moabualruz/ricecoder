@@ -8,6 +8,19 @@ use std::process::Command;
 /// Validates refactoring results
 pub struct ValidationEngine;
 
+impl ValidationEngine {
+    /// Create a new validation engine
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl Default for ValidationEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Result of test execution
 #[derive(Debug, Clone)]
 pub struct TestExecutionResult {
