@@ -2689,6 +2689,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "ricecoder-keybinds"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "dirs",
+ "lazy_static",
+ "proptest",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-test",
+ "tracing",
+]
+
+[[package]]
 name = "ricecoder-local-models"
 version = "0.1.0"
 dependencies = [

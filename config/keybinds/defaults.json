@@ -1,0 +1,145 @@
+{
+  "version": "1.0",
+  "keybinds": [
+    {
+      "action_id": "editor.save",
+      "key": "Ctrl+S",
+      "category": "editing",
+      "description": "Save current file",
+      "is_default": true
+    },
+    {
+      "action_id": "editor.save_all",
+      "key": "Ctrl+Shift+S",
+      "category": "editing",
+      "description": "Save all files",
+      "is_default": true
+    },
+    {
+      "action_id": "editor.undo",
+      "key": "Ctrl+Z",
+      "category": "editing",
+      "description": "Undo last change",
+      "is_default": true
+    },
+    {
+      "action_id": "editor.redo",
+      "key": "Ctrl+Y",
+      "category": "editing",
+      "description": "Redo last change",
+      "is_default": true
+    },
+    {
+      "action_id": "editor.cut",
+      "key": "Ctrl+X",
+      "category": "editing",
+      "description": "Cut selection",
+      "is_default": true
+    },
+    {
+      "action_id": "editor.copy",
+      "key": "Ctrl+C",
+      "category": "editing",
+      "description": "Copy selection",
+      "is_default": true
+    },
+    {
+      "action_id": "editor.paste",
+      "key": "Ctrl+V",
+      "category": "editing",
+      "description": "Paste from clipboard",
+      "is_default": true
+    },
+    {
+      "action_id": "editor.select_all",
+      "key": "Ctrl+A",
+      "category": "editing",
+      "description": "Select all content",
+      "is_default": true
+    },
+    {
+      "action_id": "editor.find",
+      "key": "Ctrl+F",
+      "category": "search",
+      "description": "Find in file",
+      "is_default": true
+    },
+    {
+      "action_id": "editor.replace",
+      "key": "Ctrl+H",
+      "category": "search",
+      "description": "Find and replace",
+      "is_default": true
+    },
+    {
+      "action_id": "nav.next",
+      "key": "Tab",
+      "category": "navigation",
+      "description": "Move to next item",
+      "is_default": true
+    },
+    {
+      "action_id": "nav.prev",
+      "key": "Shift+Tab",
+      "category": "navigation",
+      "description": "Move to previous item",
+      "is_default": true
+    },
+    {
+      "action_id": "nav.up",
+      "key": "Up",
+      "category": "navigation",
+      "description": "Move up",
+      "is_default": true
+    },
+    {
+      "action_id": "nav.down",
+      "key": "Down",
+      "category": "navigation",
+      "description": "Move down",
+      "is_default": true
+    },
+    {
+      "action_id": "nav.left",
+      "key": "Left",
+      "category": "navigation",
+      "description": "Move left",
+      "is_default": true
+    },
+    {
+      "action_id": "nav.right",
+      "key": "Right",
+      "category": "navigation",
+      "description": "Move right",
+      "is_default": true
+    },
+    {
+      "action_id": "nav.home",
+      "key": "Home",
+      "category": "navigation",
+      "description": "Move to start of line",
+      "is_default": true
+    },
+    {
+      "action_id": "nav.end",
+      "key": "End",
+      "category": "navigation",
+      "description": "Move to end of line",
+      "is_default": true
+    },
+    {
+      "action_id": "nav.page_up",
+      "key": "PageUp",
+      "category": "navigation",
+      "description": "Page up",
+      "is_default": true
+    },
+    {
+      "action_id": "nav.page_down",
+      "key": "PageDown",
+      "category": "navigation",
+      "description": "Page down",
+      "is_default": true
+    }
+  ]
+}
