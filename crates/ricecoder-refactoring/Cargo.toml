@@ -1,0 +1,33 @@
+[package]
+name = "ricecoder-refactoring"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Safe refactoring engine with impact analysis and rollback for RiceCoder"
+
+[lib]
+name = "ricecoder_refactoring"
+path = "src/lib.rs"
+
+[dependencies]
+ricecoder-storage = { path = "../ricecoder-storage" }
+ricecoder-files = { path = "../ricecoder-files" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
+regex = { workspace = true }
+chrono = { workspace = true }
+tree-sitter = { workspace = true }
+tree-sitter-rust = { workspace = true }
+tree-sitter-typescript = { workspace = true }
+tree-sitter-python = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+tokio-test = { workspace = true }
+tempfile = { workspace = true }

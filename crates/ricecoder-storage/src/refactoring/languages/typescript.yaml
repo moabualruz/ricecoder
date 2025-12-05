@@ -1,0 +1,33 @@
+language: typescript
+extensions:
+  - .ts
+  - .tsx
+parser_plugin: tree-sitter-typescript
+
+rules:
+  - name: "unused_variable"
+    pattern: "let\\s+\\w+\\s*=.*;"
+    refactoring_type: "RemoveUnused"
+    enabled: true
+  - name: "unused_import"
+    pattern: "import\\s+.*from.*;"
+    refactoring_type: "RemoveUnused"
+    enabled: true
+  - name: "unused_function"
+    pattern: "function\\s+\\w+\\s*\\(.*\\)\\s*\\{.*\\}"
+    refactoring_type: "RemoveUnused"
+    enabled: true
+
+transformations:
+  - name: "rename_function"
+    from_pattern: "function oldName"
+    to_pattern: "function newName"
+    description: "Rename function from oldName to newName"
+  - name: "extract_method"
+    from_pattern: "// Extract this block"
+    to_pattern: "this.extractedMethod()"
+    description: "Extract code block into separate method"
+  - name: "convert_var_to_const"
+    from_pattern: "var "
+    to_pattern: "const "
+    description: "Convert var to const"

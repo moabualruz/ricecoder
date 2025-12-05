@@ -1,0 +1,32 @@
+language: python
+extensions:
+  - .py
+parser_plugin: tree-sitter-python
+
+rules:
+  - name: "unused_variable"
+    pattern: "\\w+\\s*=.*"
+    refactoring_type: "RemoveUnused"
+    enabled: true
+  - name: "unused_import"
+    pattern: "import\\s+\\w+|from\\s+\\w+\\s+import"
+    refactoring_type: "RemoveUnused"
+    enabled: true
+  - name: "unused_function"
+    pattern: "def\\s+\\w+\\s*\\(.*\\):"
+    refactoring_type: "RemoveUnused"
+    enabled: true
+
+transformations:
+  - name: "rename_function"
+    from_pattern: "def old_name"
+    to_pattern: "def new_name"
+    description: "Rename function from old_name to new_name"
+  - name: "extract_method"
+    from_pattern: "# Extract this block"
+    to_pattern: "self.extracted_method()"
+    description: "Extract code block into separate method"
+  - name: "add_type_hints"
+    from_pattern: "def func(arg):"
+    to_pattern: "def func(arg: Any) -> None:"
+    description: "Add type hints to function"

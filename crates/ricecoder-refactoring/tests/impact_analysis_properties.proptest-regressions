@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc cb8ab88eb5b677ed2b9ca99425fe20cd9b8f82d092625a018e946d895b590e3b # shrinks to target_symbol = Symbol { name: "a", file: "src/_.rs", symbol_type: Function }, num_dependents = 1
+cc 0bda03c458abe7571c6da46c4cb2f87fc0e488ffe6b1436d04fb2d6fb2b28e30 # shrinks to target_symbol = Symbol { name: "a", file: "src/0.rs", symbol_type: Function }, dependent_symbols = [Symbol { name: "x", file: "src/_.rs", symbol_type: Function }, Symbol { name: "x", file: "src/a.rs", symbol_type: Function }]

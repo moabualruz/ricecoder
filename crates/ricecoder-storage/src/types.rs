@@ -50,6 +50,8 @@ pub enum ResourceType {
     CompletionLanguageConfig,
     /// Hooks configuration files
     HooksConfig,
+    /// Refactoring language configuration files
+    RefactoringLanguageConfig,
 }
 
 impl ResourceType {
@@ -66,6 +68,7 @@ impl ResourceType {
             ResourceType::LspLanguageConfig => "lsp/languages",
             ResourceType::CompletionLanguageConfig => "completion/languages",
             ResourceType::HooksConfig => "hooks",
+            ResourceType::RefactoringLanguageConfig => "refactoring/languages",
         }
     }
 }
@@ -155,6 +158,10 @@ mod tests {
         assert_eq!(ResourceType::Rule.dir_name(), "rules");
         assert_eq!(ResourceType::CustomCommand.dir_name(), "commands");
         assert_eq!(ResourceType::HooksConfig.dir_name(), "hooks");
+        assert_eq!(
+            ResourceType::RefactoringLanguageConfig.dir_name(),
+            "refactoring/languages"
+        );
     }
 
     #[test]

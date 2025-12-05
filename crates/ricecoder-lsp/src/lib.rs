@@ -43,6 +43,7 @@ pub mod hover;
 pub mod performance;
 pub mod providers;
 pub mod proxy;
+pub mod refactoring;
 pub mod semantic;
 pub mod server;
 pub mod transport;
@@ -64,6 +65,7 @@ pub use providers::{
     SemanticAnalyzerProvider, SemanticAnalyzerRegistry,
 };
 pub use proxy::{ExternalLspClient, LspProxy};
+pub use refactoring::RefactoringHandler;
 pub use semantic::SemanticAnalyzer;
 pub use server::LspServer;
 pub use types::{CodeAction, Diagnostic, HoverInfo, Position, Range};

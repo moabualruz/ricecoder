@@ -1,10 +1,10 @@
-/// Concrete caching implementations for ricecoder
-///
-/// This module provides ready-to-use caching implementations for common operations:
-/// - Configuration caching
-/// - Specification caching
-/// - Provider response caching
-/// - Project analysis caching
+//! Concrete caching implementations for ricecoder
+//!
+//! This module provides ready-to-use caching implementations for common operations:
+//! - Configuration caching
+//! - Specification caching
+//! - Provider response caching
+//! - Project analysis caching
 
 use crate::CacheManager;
 use std::path::Path;
