@@ -1,4 +1,50 @@
 //! Configuration loader for discovering and loading markdown configurations
+//!
+//! This module provides the [`ConfigurationLoader`] which discovers and loads
+//! markdown configuration files from standard locations.
+//!
+//! # Discovery Locations
+//!
+//! Configuration files are discovered in the following locations (in priority order):
+//!
+//! 1. **Project-level**: `projects/ricecoder/.agent/`
+//! 2. **User-level**: `~/.ricecoder/agents/`, `~/.ricecoder/modes/`, `~/.ricecoder/commands/`
+//! 3. **System-level**: `/etc/ricecoder/agents/` (Linux/macOS)
+//!
+//! # File Patterns
+//!
+//! - `*.agent.md` - Agent configurations
+//! - `*.mode.md` - Mode configurations
+//! - `*.command.md` - Command configurations
+//!
+//! # Usage
+//!
+//! ```ignore
+//! use ricecoder_storage::markdown_config::{ConfigurationLoader, ConfigRegistry};
+//! use std::sync::Arc;
+//! use std::path::PathBuf;
+//!
+//! #[tokio::main]
+//! async fn main() -> Result<(), Box<dyn std::error::Error>> {
+//!     let registry = Arc::new(ConfigRegistry::new());
+//!     let loader = ConfigurationLoader::new(registry.clone());
+//!
+//!     // Discover and load configurations
+//!     let paths = vec![
+//!         PathBuf::from("~/.ricecoder/agents"),
+//!         PathBuf::from("projects/ricecoder/.agent"),
+//!     ];
+//!
+//!     loader.load_all(&paths).await?;
+//!
+//!     // Query loaded configurations
+//!     if let Some(agent) = registry.get_agent("code-review") {
+//!         println!("Found agent: {}", agent.name);
+//!     }
+//!
+//!     Ok(())
+//! }
+//! ```
 
 use crate::markdown_config::error::{MarkdownConfigError, MarkdownConfigResult};
 use crate::markdown_config::parser::MarkdownParser;

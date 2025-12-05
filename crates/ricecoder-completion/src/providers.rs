@@ -43,7 +43,7 @@
 /// - **Kotlin**: Install and configure `kotlin-language-server`
 /// - **Dart**: Install and configure `dart-language-server`
 ///
-/// See `projects/ricecoder.wiki/External-LSP-Configuration.md` for configuration instructions.
+/// See `https://github.com/moabualruz/ricecoder/wiki/External-LSP-Configuration.md` for configuration instructions.
 use crate::types::*;
 use async_trait::async_trait;
 
@@ -204,7 +204,7 @@ impl crate::engine::CompletionProvider for GenericTextProvider {
 ///       enabled: true
 /// ```
 ///
-/// See `projects/ricecoder.wiki/External-LSP-Configuration.md` for details.
+/// See `https://github.com/moabualruz/ricecoder/wiki/External-LSP-Configuration.md` for details.
 pub struct RustCompletionProvider;
 
 #[async_trait]
@@ -553,7 +553,7 @@ impl crate::engine::CompletionProvider for RustCompletionProvider {
 ///       enabled: true
 /// ```
 ///
-/// See `projects/ricecoder.wiki/External-LSP-Configuration.md` for details.
+/// See `https://github.com/moabualruz/ricecoder/wiki/External-LSP-Configuration.md` for details.
 pub struct TypeScriptCompletionProvider;
 
 #[async_trait]
@@ -861,7 +861,7 @@ impl crate::engine::CompletionProvider for TypeScriptCompletionProvider {
 ///       enabled: true
 /// ```
 ///
-/// See `projects/ricecoder.wiki/External-LSP-Configuration.md` for details.
+/// See `https://github.com/moabualruz/ricecoder/wiki/External-LSP-Configuration.md` for details.
 pub struct PythonCompletionProvider;
 
 #[async_trait]
@@ -1129,7 +1129,7 @@ impl crate::engine::CompletionProvider for PythonCompletionProvider {
 ///       enabled: true
 /// ```
 ///
-/// See `projects/ricecoder.wiki/External-LSP-Configuration.md` for details.
+/// See `https://github.com/moabualruz/ricecoder/wiki/External-LSP-Configuration.md` for details.
 pub struct GoCompletionProvider;
 
 #[async_trait]
@@ -1270,7 +1270,7 @@ impl crate::engine::CompletionProvider for GoCompletionProvider {
 ///       enabled: true
 /// ```
 ///
-/// See `projects/ricecoder.wiki/External-LSP-Configuration.md` for details.
+/// See `https://github.com/moabualruz/ricecoder/wiki/External-LSP-Configuration.md` for details.
 pub struct JavaCompletionProvider;
 
 #[async_trait]
@@ -1425,7 +1425,7 @@ impl crate::engine::CompletionProvider for JavaCompletionProvider {
 ///       enabled: true
 /// ```
 ///
-/// See `projects/ricecoder.wiki/External-LSP-Configuration.md` for details.
+/// See `https://github.com/moabualruz/ricecoder/wiki/External-LSP-Configuration.md` for details.
 pub struct KotlinCompletionProvider;
 
 #[async_trait]
@@ -1588,7 +1588,7 @@ impl crate::engine::CompletionProvider for KotlinCompletionProvider {
 ///       enabled: true
 /// ```
 ///
-/// See `projects/ricecoder.wiki/External-LSP-Configuration.md` for details.
+/// See `https://github.com/moabualruz/ricecoder/wiki/External-LSP-Configuration.md` for details.
 pub struct DartCompletionProvider;
 
 #[async_trait]

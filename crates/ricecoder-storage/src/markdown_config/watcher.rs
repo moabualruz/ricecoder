@@ -1,8 +1,50 @@
 //! File watcher for hot-reload of configuration files
+//!
+//! This module provides the [`FileWatcher`] which monitors configuration directories
+//! for file changes and automatically reloads configurations when files are modified.
+//!
+//! # Hot-Reload Behavior
+//!
+//! When a configuration file is modified:
+//!
+//! 1. File change is detected (within 5 seconds)
+//! 2. Configuration is re-parsed and validated
+//! 3. If valid, configuration is updated in the registry
+//! 4. If invalid, error is logged and previous configuration is retained
+//!
+//! # Debouncing
+//!
+//! Rapid file changes are debounced to avoid excessive reloads. The default
+//! debounce delay is 500ms, which can be customized with [`FileWatcher::with_debounce`].
+//!
+//! # Usage
+//!
+//! ```ignore
+//! use ricecoder_storage::markdown_config::{ConfigurationLoader, ConfigRegistry, FileWatcher};
+//! use std::sync::Arc;
+//! use std::path::PathBuf;
+//!
+//! #[tokio::main]
+//! async fn main() -> Result<(), Box<dyn std::error::Error>> {
+//!     let registry = Arc::new(ConfigRegistry::new());
+//!     let loader = Arc::new(ConfigurationLoader::new(registry.clone()));
+//!
+//!     let paths = vec![
+//!         PathBuf::from("~/.ricecoder/agents"),
+//!         PathBuf::from("projects/ricecoder/.agent"),
+//!     ];
+//!
+//!     let mut watcher = FileWatcher::new(loader, paths);
+//!
+//!     // Start watching for changes
+//!     watcher.watch().await?;
+//!
+//!     Ok(())
+//! }
+//! ```
 
 use crate::markdown_config::error::{MarkdownConfigError, MarkdownConfigResult};
 use crate::markdown_config::loader::ConfigurationLoader;
-use notify::watcher;
 use notify::{RecursiveMode, Watcher};
 use std::path::PathBuf;
 use std::sync::mpsc;
@@ -35,6 +77,7 @@ impl FileWatcher {
             loader,
             paths,
             debounce_ms: 500,
+            is_watching: Arc::new(RwLock::new(false)),
         }
     }
 
@@ -60,22 +103,19 @@ impl FileWatcher {
         // Create a channel for file system events
         let (tx, rx) = mpsc::channel();
 
-        // Create a watcher
-        let mut watcher = watcher(
-            move |res| {
-                match res {
-                    Ok(event) => {
-                        if let Err(e) = tx.send(event) {
-                            error!("Failed to send file watch event: {}", e);
-                        }
-                    }
-                    Err(e) => {
-                        error!("File watcher error: {}", e);
+        // Create a watcher using the recommended API
+        let mut watcher = notify::recommended_watcher(move |res| {
+            match res {
+                Ok(event) => {
+                    if let Err(e) = tx.send(event) {
+                        error!("Failed to send file watch event: {}", e);
                     }
                 }
-            },
-            notify::Config::default().with_poll_interval(Duration::from_millis(100)),
-        )
+                Err(e) => {
+                    error!("File watcher error: {}", e);
+                }
+            }
+        })
         .map_err(|e| {
             MarkdownConfigError::watch_error(format!("Failed to create file watcher: {}", e))
         })?;
@@ -201,14 +241,6 @@ impl FileWatcher {
 mod tests {
     use super::*;
     use crate::markdown_config::registry::ConfigRegistry;
-    use std::fs;
-    use tempfile::TempDir;
-
-    fn create_test_agent_file(dir: &std::path::Path, name: &str, content: &str) -> PathBuf {
-        let path = dir.join(format!("{}.agent.md", name));
-        fs::write(&path, content).unwrap();
-        path
-    }
 
     #[test]
     fn test_file_watcher_creation() {

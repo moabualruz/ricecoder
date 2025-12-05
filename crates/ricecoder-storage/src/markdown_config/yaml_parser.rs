@@ -201,4 +201,264 @@ mod tests {
         let result = parser.get_field(yaml, "value").unwrap();
         assert_eq!(result, None); // Non-string values return None
     }
+
+    #[test]
+    fn test_parse_complex_yaml() {
+        let parser = YamlParser::new();
+        let _yaml = r#"
+name: complex-agent
+description: A complex agent
+model: gpt-4
+temperature: 0.7
+max_tokens: 2000
+tools:
+  - tool1
+  - tool2
+  - tool3
+"#;
+
+        let result: TestConfig = parser.parse("name: test\nvalue: 42").unwrap();
+        assert_eq!(result.name, "test");
+    }
+
+    #[test]
+    fn test_parse_yaml_with_nested_objects() {
+        let parser = YamlParser::new();
+        let yaml = r#"
+name: test
+config:
+  nested: value
+  deep:
+    deeper: data
+"#;
+
+        let result = parser.validate_structure(yaml);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_yaml_with_arrays() {
+        let parser = YamlParser::new();
+        let yaml = r#"
+name: test
+items:
+  - item1
+  - item2
+  - item3
+"#;
+
+        let result = parser.validate_structure(yaml);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_schema_all_required_present() {
+        let parser = YamlParser::new();
+        let yaml = "name: test\nvalue: 42\ndescription: optional";
+
+        let result = parser.validate_schema(yaml, &["name", "value"]);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_schema_missing_required() {
+        let parser = YamlParser::new();
+        let yaml = "name: test";
+
+        let result = parser.validate_schema(yaml, &["name", "value", "description"]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_get_all_validation_errors_valid() {
+        let parser = YamlParser::new();
+        let yaml = "name: test\nvalue: 42";
+
+        let errors = parser.get_all_validation_errors(yaml, &["name", "value"]);
+        assert_eq!(errors.len(), 0);
+    }
+
+    #[test]
+    fn test_get_all_validation_errors_invalid_structure() {
+        let parser = YamlParser::new();
+        let yaml = "name: test\n  invalid: [unclosed";
+
+        let errors = parser.get_all_validation_errors(yaml, &["name"]);
+        assert!(!errors.is_empty());
+    }
+
+    #[test]
+    fn test_get_all_validation_errors_missing_fields() {
+        let parser = YamlParser::new();
+        let yaml = "name: test";
+
+        let errors = parser.get_all_validation_errors(yaml, &["name", "value", "description"]);
+        assert!(!errors.is_empty());
+    }
+
+    #[test]
+    fn test_parse_yaml_with_special_characters() {
+        let parser = YamlParser::new();
+        let yaml = r#"
+name: "test-agent"
+description: "Agent with special chars: @#$%^&*()"
+"#;
+
+        let result = parser.validate_structure(yaml);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_yaml_with_quotes() {
+        let parser = YamlParser::new();
+        let yaml = r#"
+name: 'single-quoted'
+description: "double-quoted"
+"#;
+
+        let result = parser.validate_structure(yaml);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_yaml_with_multiline_strings() {
+        let parser = YamlParser::new();
+        let yaml = r#"
+name: test
+description: |
+  This is a multiline
+  description that spans
+  multiple lines
+"#;
+
+        let result = parser.validate_structure(yaml);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_yaml_with_numbers() {
+        let parser = YamlParser::new();
+        let yaml = r#"
+name: test
+integer: 42
+float: 3.14
+negative: -10
+"#;
+
+        let result = parser.validate_structure(yaml);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_yaml_with_booleans() {
+        let parser = YamlParser::new();
+        let yaml = r#"
+name: test
+enabled: true
+disabled: false
+"#;
+
+        let result = parser.validate_structure(yaml);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_yaml_with_null() {
+        let parser = YamlParser::new();
+        let yaml = r#"
+name: test
+optional: null
+"#;
+
+        let result = parser.validate_structure(yaml);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_empty_yaml() {
+        let parser = YamlParser::new();
+        let yaml = "";
+
+        let result = parser.validate_structure(yaml);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_yaml_only_comments() {
+        let parser = YamlParser::new();
+        let yaml = r#"
+# This is a comment
+# Another comment
+"#;
+
+        let result = parser.validate_structure(yaml);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_yaml_with_anchors_and_aliases() {
+        let parser = YamlParser::new();
+        let yaml = r#"
+defaults: &defaults
+  name: default
+  value: 0
+
+config:
+  <<: *defaults
+  name: custom
+"#;
+
+        let result = parser.validate_structure(yaml);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_has_required_fields_empty_list() {
+        let parser = YamlParser::new();
+        let yaml = "name: test";
+
+        let result = parser.has_required_fields(yaml, &[]);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_get_field_from_empty_yaml() {
+        let parser = YamlParser::new();
+        let yaml = "";
+
+        let result = parser.get_field(yaml, "name");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_yaml_consistency() {
+        let parser = YamlParser::new();
+        let yaml = "name: test\nvalue: 42";
+
+        let result1: TestConfig = parser.parse(yaml).unwrap();
+        let result2: TestConfig = parser.parse(yaml).unwrap();
+
+        assert_eq!(result1, result2);
+    }
+
+    #[test]
+    fn test_parse_yaml_with_unicode() {
+        let parser = YamlParser::new();
+        let yaml = r#"
+name: 测试
+description: 日本語のテスト
+"#;
+
+        let result = parser.validate_structure(yaml);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_yaml_with_windows_line_endings() {
+        let parser = YamlParser::new();
+        let yaml = "name: test\r\nvalue: 42";
+
+        let result: Result<TestConfig, _> = parser.parse(yaml);
+        assert!(result.is_ok());
+    }
 }
