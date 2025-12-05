@@ -22,6 +22,7 @@ members = [
     "crates/ricecoder-external-lsp",
     "crates/ricecoder-refactoring",
     "crates/ricecoder-keybinds",
+    "crates/ricecoder-orchestration",
 ]
 resolver = "2"
 

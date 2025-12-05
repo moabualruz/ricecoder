@@ -1,0 +1,9 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 9d8b530b0fe88e19ffca83961debaa04e1783c3b069334fded5a8ac1a1094a55 # shrinks to project_specs = [("rust", "ya", "0.0.0"), ("rust", "a", "0.0.0")]
+cc 3288a99a68d595651206092a84a2f7152844119bd0463d8625ead246d2ec83ec # shrinks to project_specs = [("rust", "c", "0.0.0"), ("rust", "c", "0.0.0")]
+cc cb20e27e9bb3355d01f6ee0115202ed6fe82bba34d4dc35cceaef8257e3fae5a # shrinks to project_specs = [("rust", "u", "0.0.0"), ("rust", "u", "0.0.0")]

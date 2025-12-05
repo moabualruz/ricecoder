@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc fee42953d86dab2a32c1ad39ba73e38db208f6dfa6f1bc61110c0ae2746fc1d2 # shrinks to project_names = ["a-0", "a-1", "a-2", "a-3"], dependency_indices = [(0, 3), (0, 3)]

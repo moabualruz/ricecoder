@@ -2481,7 +2481,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-agents"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "async-trait",
  "chrono",
@@ -2501,7 +2501,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-cli"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "anyhow",
  "atty",
@@ -2553,7 +2553,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-completion"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2579,7 +2579,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-execution"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "async-trait",
  "chrono",
@@ -2601,7 +2601,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-external-lsp"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2626,7 +2626,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-files"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "chrono",
  "fxhash",
@@ -2646,7 +2646,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-generation"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "chrono",
  "futures",
@@ -2671,7 +2671,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-hooks"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "chrono",
  "proptest",
@@ -2731,7 +2731,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-lsp"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2777,8 +2777,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "ricecoder-orchestration"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "dirs",
+ "proptest",
+ "rand 0.8.5",
+ "ricecoder-storage",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-test",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "ricecoder-permissions"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "chrono",
  "criterion",
@@ -2794,7 +2815,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-providers"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2822,7 +2843,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-refactoring"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "chrono",
  "proptest",
@@ -2846,7 +2867,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-research"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "chrono",
  "fxhash",
@@ -2895,7 +2916,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-specs"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "async-trait",
  "chrono",
@@ -2937,7 +2958,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-tui"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "anyhow",
  "arboard",
@@ -2961,7 +2982,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-workflows"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "async-trait",
  "chrono",
