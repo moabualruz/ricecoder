@@ -8,6 +8,7 @@ use crate::completion::CompletionHandler;
 use crate::config::CompletionConfig;
 use crate::diagnostics::{DefaultDiagnosticsEngine, DiagnosticsEngine};
 use crate::hover::HoverProvider;
+use crate::refactoring::RefactoringHandler;
 use crate::transport::{AsyncStdioTransport, JsonRpcError, JsonRpcResponse, LspMessage};
 use crate::types::{Language, LspError, LspResult, Position, ServerState};
 use ricecoder_completion::CompletionEngine;
@@ -95,6 +96,8 @@ pub struct LspServer {
     completion_handler: Option<CompletionHandler>,
     /// Completion configuration
     completion_config: CompletionConfig,
+    /// Refactoring handler
+    refactoring_handler: RefactoringHandler,
 }
 
 impl LspServer {
@@ -111,6 +114,7 @@ impl LspServer {
             code_actions_engine: Box::new(DefaultCodeActionsEngine::new()),
             completion_handler: None,
             completion_config: CompletionConfig::default(),
+            refactoring_handler: RefactoringHandler::new(),
         }
     }
 
@@ -127,6 +131,7 @@ impl LspServer {
             code_actions_engine: Box::new(DefaultCodeActionsEngine::new()),
             completion_handler: None,
             completion_config,
+            refactoring_handler: RefactoringHandler::new(),
         }
     }
 
@@ -150,6 +155,26 @@ impl LspServer {
     /// Check if completion is enabled
     pub fn is_completion_enabled(&self) -> bool {
         self.completion_config.enabled && self.completion_handler.is_some()
+    }
+
+    /// Get the refactoring handler
+    pub fn refactoring_handler(&self) -> &RefactoringHandler {
+        &self.refactoring_handler
+    }
+
+    /// Get mutable refactoring handler
+    pub fn refactoring_handler_mut(&mut self) -> &mut RefactoringHandler {
+        &mut self.refactoring_handler
+    }
+
+    /// Enable or disable refactoring
+    pub fn set_refactoring_enabled(&mut self, enabled: bool) {
+        self.refactoring_handler.set_enabled(enabled);
+    }
+
+    /// Check if refactoring is enabled
+    pub fn is_refactoring_enabled(&self) -> bool {
+        self.refactoring_handler.is_enabled()
     }
 
     /// Get the current server state

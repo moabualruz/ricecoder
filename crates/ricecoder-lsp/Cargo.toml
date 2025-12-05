@@ -28,6 +28,7 @@ regex = { workspace = true }
 chrono = { workspace = true }
 ricecoder-storage = { path = "../ricecoder-storage" }
 ricecoder-completion = { path = "../ricecoder-completion" }
+ricecoder-refactoring = { path = "../ricecoder-refactoring" }
 
 [dev-dependencies]
 proptest = { workspace = true }

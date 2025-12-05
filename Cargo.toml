@@ -20,6 +20,7 @@ members = [
     "crates/ricecoder-completion",
     "crates/ricecoder-hooks",
     "crates/ricecoder-external-lsp",
+    "crates/ricecoder-refactoring",
 ]
 resolver = "2"
 
@@ -69,3 +70,7 @@ handlebars = "5.0"
 heck = "0.4"
 itertools = "0.12"
 criterion = { version = "0.5", features = ["html_reports"] }
+tree-sitter = "0.20"
+tree-sitter-rust = "0.20"
+tree-sitter-typescript = "0.20"
+tree-sitter-python = "0.20"

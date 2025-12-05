@@ -17,6 +17,7 @@ pub mod lsp;
 pub mod manager;
 pub mod offline;
 pub mod project_store;
+pub mod refactoring;
 pub mod relocation;
 pub mod types;
 
@@ -38,6 +39,7 @@ pub use lsp::{get_builtin_language_configs, get_language_config};
 pub use manager::{PathResolver, StorageManager};
 pub use offline::OfflineModeHandler;
 pub use project_store::ProjectStore;
+pub use refactoring::{get_builtin_refactoring_configs, get_refactoring_config};
 pub use relocation::RelocationService;
 pub use types::{
     ConfigFormat, DocumentFormat, ResourceType, StorageConfig, StorageMode, StorageState,
