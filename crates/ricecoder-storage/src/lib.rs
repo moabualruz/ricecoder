@@ -15,6 +15,7 @@ pub mod global_store;
 pub mod industry;
 pub mod lsp;
 pub mod manager;
+pub mod markdown_config;
 pub mod offline;
 pub mod project_store;
 pub mod refactoring;
@@ -37,6 +38,10 @@ pub use global_store::GlobalStore;
 pub use industry::{FileDetectionResult, IndustryFileAdapter, IndustryFileDetector};
 pub use lsp::{get_builtin_language_configs, get_language_config};
 pub use manager::{PathResolver, StorageManager};
+pub use markdown_config::{
+    AgentConfig, CommandConfig, MarkdownConfigError, MarkdownParser, ModeConfig, Parameter,
+    ParsedMarkdown, YamlParser,
+};
 pub use offline::OfflineModeHandler;
 pub use project_store::ProjectStore;
 pub use refactoring::{get_builtin_refactoring_configs, get_refactoring_config};

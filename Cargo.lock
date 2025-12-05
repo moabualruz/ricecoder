@@ -2814,6 +2814,7 @@ dependencies = [
  "dirs",
  "lazy_static",
  "proptest",
+ "pulldown-cmark",
  "serde",
  "serde_json",
  "serde_yaml",

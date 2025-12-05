@@ -4,7 +4,7 @@
 //! providing refactoring capabilities through LSP code actions and commands.
 
 use ricecoder_refactoring::{
-    ConfigManager, ImpactAnalyzer, RefactoringEngine, RefactoringType,
+    ConfigManager, GenericRefactoringProvider, ImpactAnalyzer, ProviderRegistry, RefactoringEngine, RefactoringType,
 };
 use serde_json::Value;
 use std::sync::Arc;
@@ -25,9 +25,19 @@ pub struct RefactoringHandler {
 impl RefactoringHandler {
     /// Create a new refactoring handler
     pub fn new() -> Self {
-        let config_manager = Arc::new(ConfigManager::new());
-        let engine = Arc::new(RefactoringEngine::new(config_manager.clone()));
+        let config_manager = ConfigManager::new();
+        
+        // Create generic provider for fallback
+        let generic_provider = Arc::new(GenericRefactoringProvider::new());
+        
+        // Create provider registry with generic fallback
+        let provider_registry = ProviderRegistry::new(generic_provider);
+        
+        let engine = Arc::new(RefactoringEngine::new(config_manager, provider_registry));
         let impact_analyzer = Arc::new(ImpactAnalyzer::new());
+
+        // Create a new config manager for the handler (since we moved the first one)
+        let config_manager = Arc::new(ConfigManager::new());
 
         Self {
             engine,
