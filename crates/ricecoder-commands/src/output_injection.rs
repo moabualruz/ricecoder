@@ -53,7 +53,10 @@ impl OutputInjector {
     }
 
     /// Format output as plain text
-    fn format_plain(result: &CommandExecutionResult, config: &OutputInjectionConfig) -> Result<String> {
+    fn format_plain(
+        result: &CommandExecutionResult,
+        config: &OutputInjectionConfig,
+    ) -> Result<String> {
         let mut output = String::new();
 
         if config.include_exit_code {
@@ -66,10 +69,7 @@ impl OutputInjector {
 
         if config.inject_stdout && !result.stdout.is_empty() {
             let stdout = if config.max_length > 0 && result.stdout.len() > config.max_length {
-                format!(
-                    "{}... (truncated)",
-                    &result.stdout[..config.max_length]
-                )
+                format!("{}... (truncated)", &result.stdout[..config.max_length])
             } else {
                 result.stdout.clone()
             };
@@ -78,10 +78,7 @@ impl OutputInjector {
 
         if config.inject_stderr && !result.stderr.is_empty() {
             let stderr = if config.max_length > 0 && result.stderr.len() > config.max_length {
-                format!(
-                    "{}... (truncated)",
-                    &result.stderr[..config.max_length]
-                )
+                format!("{}... (truncated)", &result.stderr[..config.max_length])
             } else {
                 result.stderr.clone()
             };
@@ -92,7 +89,10 @@ impl OutputInjector {
     }
 
     /// Format output as markdown
-    fn format_markdown(result: &CommandExecutionResult, config: &OutputInjectionConfig) -> Result<String> {
+    fn format_markdown(
+        result: &CommandExecutionResult,
+        config: &OutputInjectionConfig,
+    ) -> Result<String> {
         let mut output = String::new();
 
         if config.include_exit_code {
@@ -105,10 +105,7 @@ impl OutputInjector {
 
         if config.inject_stdout && !result.stdout.is_empty() {
             let stdout = if config.max_length > 0 && result.stdout.len() > config.max_length {
-                format!(
-                    "{}... (truncated)",
-                    &result.stdout[..config.max_length]
-                )
+                format!("{}... (truncated)", &result.stdout[..config.max_length])
             } else {
                 result.stdout.clone()
             };
@@ -117,10 +114,7 @@ impl OutputInjector {
 
         if config.inject_stderr && !result.stderr.is_empty() {
             let stderr = if config.max_length > 0 && result.stderr.len() > config.max_length {
-                format!(
-                    "{}... (truncated)",
-                    &result.stderr[..config.max_length]
-                )
+                format!("{}... (truncated)", &result.stderr[..config.max_length])
             } else {
                 result.stderr.clone()
             };
@@ -131,7 +125,10 @@ impl OutputInjector {
     }
 
     /// Format output as JSON
-    fn format_json(result: &CommandExecutionResult, config: &OutputInjectionConfig) -> Result<String> {
+    fn format_json(
+        result: &CommandExecutionResult,
+        config: &OutputInjectionConfig,
+    ) -> Result<String> {
         let mut json = serde_json::json!({
             "command_id": result.command_id,
             "exit_code": result.exit_code,
@@ -144,10 +141,7 @@ impl OutputInjector {
 
         if config.inject_stdout {
             let stdout = if config.max_length > 0 && result.stdout.len() > config.max_length {
-                format!(
-                    "{}... (truncated)",
-                    &result.stdout[..config.max_length]
-                )
+                format!("{}... (truncated)", &result.stdout[..config.max_length])
             } else {
                 result.stdout.clone()
             };
@@ -156,10 +150,7 @@ impl OutputInjector {
 
         if config.inject_stderr {
             let stderr = if config.max_length > 0 && result.stderr.len() > config.max_length {
-                format!(
-                    "{}... (truncated)",
-                    &result.stderr[..config.max_length]
-                )
+                format!("{}... (truncated)", &result.stderr[..config.max_length])
             } else {
                 result.stderr.clone()
             };

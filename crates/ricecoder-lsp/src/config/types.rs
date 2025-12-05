@@ -63,9 +63,10 @@ impl LanguageConfig {
         }
 
         if self.extensions.is_empty() {
-            return Err(ConfigError::ValidationError(
-                format!("Language '{}' must have at least one file extension", self.language),
-            ));
+            return Err(ConfigError::ValidationError(format!(
+                "Language '{}' must have at least one file extension",
+                self.language
+            )));
         }
 
         Ok(())
@@ -112,9 +113,10 @@ impl DiagnosticRule {
         match self.severity.as_str() {
             "error" | "warning" | "info" => {}
             _ => {
-                return Err(ConfigError::ValidationError(
-                    format!("Invalid severity level: {}", self.severity),
-                ))
+                return Err(ConfigError::ValidationError(format!(
+                    "Invalid severity level: {}",
+                    self.severity
+                )))
             }
         }
 
@@ -156,9 +158,10 @@ impl CodeActionTemplate {
         match self.kind.as_str() {
             "quickfix" | "refactor" | "source" => {}
             _ => {
-                return Err(ConfigError::ValidationError(
-                    format!("Invalid action kind: {}", self.kind),
-                ))
+                return Err(ConfigError::ValidationError(format!(
+                    "Invalid action kind: {}",
+                    self.kind
+                )))
             }
         }
 

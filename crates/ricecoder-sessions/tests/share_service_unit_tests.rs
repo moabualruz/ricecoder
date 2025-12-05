@@ -4,7 +4,7 @@
 
 use chrono::Duration;
 use ricecoder_sessions::{
-    Session, SessionContext, SessionMode, ShareService, SharePermissions, Message, MessageRole,
+    Message, MessageRole, Session, SessionContext, SessionMode, SharePermissions, ShareService,
 };
 
 fn create_test_session(name: &str) -> Session {
@@ -99,8 +99,12 @@ fn test_create_shared_session_view_with_history() {
     let mut session = create_test_session("test_session");
 
     // Add messages to history
-    session.history.push(Message::new(MessageRole::User, "Hello".to_string()));
-    session.history.push(Message::new(MessageRole::Assistant, "Hi".to_string()));
+    session
+        .history
+        .push(Message::new(MessageRole::User, "Hello".to_string()));
+    session
+        .history
+        .push(Message::new(MessageRole::Assistant, "Hi".to_string()));
 
     let permissions = SharePermissions {
         read_only: true,
@@ -120,8 +124,12 @@ fn test_create_shared_session_view_without_history() {
     let mut session = create_test_session("test_session");
 
     // Add messages to history
-    session.history.push(Message::new(MessageRole::User, "Hello".to_string()));
-    session.history.push(Message::new(MessageRole::Assistant, "Hi".to_string()));
+    session
+        .history
+        .push(Message::new(MessageRole::User, "Hello".to_string()));
+    session
+        .history
+        .push(Message::new(MessageRole::Assistant, "Hi".to_string()));
 
     let permissions = SharePermissions {
         read_only: true,
@@ -161,16 +169,16 @@ fn test_import_shared_session() {
     let service = ShareService::new();
     let mut session = create_test_session("original_session");
     session.context.project_path = Some("/path/to/project".to_string());
-    session.history.push(Message::new(MessageRole::User, "Hello".to_string()));
+    session
+        .history
+        .push(Message::new(MessageRole::User, "Hello".to_string()));
 
     let permissions = create_test_permissions();
     let share = service
         .generate_share_link(&session.id, permissions, None)
         .unwrap();
 
-    let imported = service
-        .import_shared_session(&share.id, &session)
-        .unwrap();
+    let imported = service.import_shared_session(&share.id, &session).unwrap();
 
     // Imported session should have different ID
     assert_ne!(imported.id, session.id);
@@ -347,9 +355,7 @@ fn test_share_preserves_session_metadata() {
         .generate_share_link(&session.id, permissions, None)
         .unwrap();
 
-    let imported = service
-        .import_shared_session(&share.id, &session)
-        .unwrap();
+    let imported = service.import_shared_session(&share.id, &session).unwrap();
 
     // Metadata should be preserved
     assert_eq!(imported.context.provider, "anthropic");

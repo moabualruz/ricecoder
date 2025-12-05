@@ -3,7 +3,7 @@
 /// **Validates: Requirements 4.3**
 #[cfg(test)]
 mod tests {
-    use crate::{ThinkMoreController, ThinkingDepth, ThinkMoreConfig, TaskConfigManager};
+    use crate::{TaskConfigManager, ThinkMoreConfig, ThinkMoreController, ThinkingDepth};
     use proptest::prelude::*;
     use std::time::Duration;
 
@@ -24,10 +24,10 @@ mod tests {
             ],
         ) {
             let controller = ThinkMoreController::new();
-            
+
             // Set global configuration
             controller.set_depth(global_depth).unwrap();
-            
+
             // Create task-specific configuration
             let task_config = ThinkMoreConfig {
                 enabled: true,
@@ -35,13 +35,13 @@ mod tests {
                 timeout: Duration::from_secs(60),
                 auto_enable: false,
             };
-            
+
             // Set task configuration
             controller.set_task_config("task1".to_string(), task_config).unwrap();
-            
+
             // Get effective configuration for the task
             let effective = controller.get_effective_config(Some("task1")).unwrap();
-            
+
             // Task configuration should override global
             prop_assert_eq!(effective.depth, task_depth);
         }
@@ -57,13 +57,13 @@ mod tests {
             ],
         ) {
             let controller = ThinkMoreController::new();
-            
+
             // Set global configuration
             controller.set_depth(depth).unwrap();
-            
+
             // Get effective configuration for non-existent task
             let effective = controller.get_effective_config(Some("nonexistent")).unwrap();
-            
+
             // Should use global configuration
             prop_assert_eq!(effective.depth, depth);
         }
@@ -84,7 +84,7 @@ mod tests {
             ],
         ) {
             let controller = ThinkMoreController::new();
-            
+
             // Set initial task configuration
             let initial_config = ThinkMoreConfig {
                 enabled: true,
@@ -93,7 +93,7 @@ mod tests {
                 auto_enable: false,
             };
             controller.set_task_config("task1".to_string(), initial_config).unwrap();
-            
+
             // Update task configuration
             let updated_config = ThinkMoreConfig {
                 enabled: true,
@@ -102,7 +102,7 @@ mod tests {
                 auto_enable: true,
             };
             controller.set_task_config("task1".to_string(), updated_config).unwrap();
-            
+
             // Verify update
             let retrieved = controller.get_task_config("task1").unwrap();
             prop_assert!(retrieved.is_some());
@@ -120,7 +120,7 @@ mod tests {
             ],
         ) {
             let controller = ThinkMoreController::new();
-            
+
             // Set task configuration
             let config = ThinkMoreConfig {
                 enabled: true,
@@ -129,13 +129,13 @@ mod tests {
                 auto_enable: false,
             };
             controller.set_task_config("task1".to_string(), config).unwrap();
-            
+
             // Verify it exists
             prop_assert!(controller.get_task_config("task1").unwrap().is_some());
-            
+
             // Remove it
             controller.remove_task_config("task1").unwrap();
-            
+
             // Verify it's gone
             prop_assert!(controller.get_task_config("task1").unwrap().is_none());
         }
@@ -155,7 +155,7 @@ mod tests {
         ) {
             let _num_tasks = depths.len();
             let controller = ThinkMoreController::new();
-            
+
             // Set configurations for multiple tasks
             for (i, depth) in depths.iter().enumerate() {
                 let config = ThinkMoreConfig {
@@ -167,7 +167,7 @@ mod tests {
                 let task_id = format!("task{}", i);
                 controller.set_task_config(task_id, config).unwrap();
             }
-            
+
             // Verify each task has its configuration
             for (i, expected_depth) in depths.iter().enumerate() {
                 let task_id = format!("task{}", i);
@@ -191,7 +191,7 @@ mod tests {
             auto_enable in any::<bool>(),
         ) {
             let controller = ThinkMoreController::new();
-            
+
             // Set various configurations
             controller.enable().unwrap();
             controller.set_depth(depth).unwrap();
@@ -201,7 +201,7 @@ mod tests {
             } else {
                 controller.disable_auto_enable().unwrap();
             }
-            
+
             // Verify each setting
             prop_assert!(controller.is_enabled().unwrap());
             prop_assert_eq!(controller.get_depth().unwrap(), depth);
@@ -226,7 +226,7 @@ mod tests {
         ) {
             let num_tasks = depths.len();
             let manager = TaskConfigManager::new();
-            
+
             // Register tasks
             for (i, depth) in depths.iter().enumerate() {
                 let config = ThinkMoreConfig {
@@ -238,10 +238,10 @@ mod tests {
                 let task_id = format!("task{}", i);
                 manager.register_task(task_id, config).unwrap();
             }
-            
+
             // Verify count
             prop_assert_eq!(manager.task_count().unwrap(), num_tasks);
-            
+
             // Verify each task
             for (i, expected_depth) in depths.iter().enumerate() {
                 let task_id = format!("task{}", i);
@@ -259,13 +259,13 @@ mod tests {
             context_values in prop::collection::vec(".*", 1..5),
         ) {
             let manager = TaskConfigManager::new();
-            
+
             // Register tasks with context
             for i in 0..num_tasks {
                 let config = ThinkMoreConfig::default();
                 let task_id = format!("task{}", i);
                 manager.register_task(task_id.clone(), config).unwrap();
-                
+
                 // Add context
                 for (j, value) in context_values.iter().enumerate() {
                     let key = format!("key{}", j);
@@ -276,7 +276,7 @@ mod tests {
                     ).unwrap();
                 }
             }
-            
+
             // Verify context
             for i in 0..num_tasks {
                 let task_id = format!("task{}", i);

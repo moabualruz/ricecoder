@@ -8,9 +8,9 @@
 //! - Risk-scored execution
 
 use ricecoder_workflows::{
-    ErrorAction, RiskFactors, StateManager, StepConfig, StepResult, StepStatus, StepType, Workflow,
-    WorkflowEngine, WorkflowStatus, AgentStep, WorkflowStep, WorkflowConfig, ApprovalDefault,
-    StepExecutor,
+    AgentStep, ApprovalDefault, ErrorAction, RiskFactors, StateManager, StepConfig, StepExecutor,
+    StepResult, StepStatus, StepType, Workflow, WorkflowConfig, WorkflowEngine, WorkflowStatus,
+    WorkflowStep,
 };
 use std::collections::HashMap;
 
@@ -257,7 +257,8 @@ fn create_workflow_with_risk_scoring() -> Workflow {
 #[test]
 fn test_multi_step_workflow_execution_order() {
     let workflow = create_simple_workflow();
-    let order = WorkflowEngine::get_execution_order(&workflow).expect("Failed to get execution order");
+    let order =
+        WorkflowEngine::get_execution_order(&workflow).expect("Failed to get execution order");
 
     assert_eq!(order.len(), 3);
     assert_eq!(order[0], "step1");
@@ -291,17 +292,23 @@ fn test_workflow_execution_lifecycle() {
     let workflow = create_simple_workflow();
 
     // Create execution
-    let execution_id = engine.create_execution(&workflow).expect("Failed to create execution");
+    let execution_id = engine
+        .create_execution(&workflow)
+        .expect("Failed to create execution");
     let state = engine.get_execution_state(&execution_id).unwrap();
     assert_eq!(state.status, WorkflowStatus::Pending);
 
     // Start execution
-    engine.start_execution(&execution_id).expect("Failed to start execution");
+    engine
+        .start_execution(&execution_id)
+        .expect("Failed to start execution");
     let state = engine.get_execution_state(&execution_id).unwrap();
     assert_eq!(state.status, WorkflowStatus::Running);
 
     // Complete execution
-    engine.complete_execution(&execution_id).expect("Failed to complete execution");
+    engine
+        .complete_execution(&execution_id)
+        .expect("Failed to complete execution");
     let state = engine.get_execution_state(&execution_id).unwrap();
     assert_eq!(state.status, WorkflowStatus::Completed);
 }
@@ -311,7 +318,11 @@ fn test_workflow_error_handling_with_retry() {
     let workflow = create_workflow_with_error_handling();
 
     // Get the risky step
-    let risky_step = workflow.steps.iter().find(|s| s.id == "risky-step").unwrap();
+    let risky_step = workflow
+        .steps
+        .iter()
+        .find(|s| s.id == "risky-step")
+        .unwrap();
 
     // Verify error action is retry
     match &risky_step.on_error {
@@ -343,8 +354,12 @@ fn test_workflow_error_recovery() {
     let mut engine = WorkflowEngine::new();
     let workflow = create_workflow_with_error_handling();
 
-    let execution_id = engine.create_execution(&workflow).expect("Failed to create execution");
-    engine.start_execution(&execution_id).expect("Failed to start execution");
+    let execution_id = engine
+        .create_execution(&workflow)
+        .expect("Failed to create execution");
+    engine
+        .start_execution(&execution_id)
+        .expect("Failed to start execution");
 
     let mut state = engine.get_execution_state(&execution_id).unwrap();
 
@@ -394,8 +409,12 @@ fn test_workflow_state_tracking() {
     let mut engine = WorkflowEngine::new();
     let workflow = create_simple_workflow();
 
-    let execution_id = engine.create_execution(&workflow).expect("Failed to create execution");
-    engine.start_execution(&execution_id).expect("Failed to start execution");
+    let execution_id = engine
+        .create_execution(&workflow)
+        .expect("Failed to create execution");
+    engine
+        .start_execution(&execution_id)
+        .expect("Failed to start execution");
 
     let mut state = engine.get_execution_state(&execution_id).unwrap();
 
@@ -430,13 +449,19 @@ fn test_pause_workflow_execution() {
     let mut engine = WorkflowEngine::new();
     let workflow = create_simple_workflow();
 
-    let execution_id = engine.create_execution(&workflow).expect("Failed to create execution");
-    engine.start_execution(&execution_id).expect("Failed to start execution");
+    let execution_id = engine
+        .create_execution(&workflow)
+        .expect("Failed to create execution");
+    engine
+        .start_execution(&execution_id)
+        .expect("Failed to start execution");
 
     let state = engine.get_execution_state(&execution_id).unwrap();
     assert_eq!(state.status, WorkflowStatus::Running);
 
-    engine.pause_execution(&execution_id).expect("Failed to pause execution");
+    engine
+        .pause_execution(&execution_id)
+        .expect("Failed to pause execution");
 
     let state = engine.get_execution_state(&execution_id).unwrap();
     assert_eq!(state.status, WorkflowStatus::Paused);
@@ -447,14 +472,22 @@ fn test_resume_workflow_execution() {
     let mut engine = WorkflowEngine::new();
     let workflow = create_simple_workflow();
 
-    let execution_id = engine.create_execution(&workflow).expect("Failed to create execution");
-    engine.start_execution(&execution_id).expect("Failed to start execution");
-    engine.pause_execution(&execution_id).expect("Failed to pause execution");
+    let execution_id = engine
+        .create_execution(&workflow)
+        .expect("Failed to create execution");
+    engine
+        .start_execution(&execution_id)
+        .expect("Failed to start execution");
+    engine
+        .pause_execution(&execution_id)
+        .expect("Failed to pause execution");
 
     let state = engine.get_execution_state(&execution_id).unwrap();
     assert_eq!(state.status, WorkflowStatus::Paused);
 
-    engine.resume_execution(&execution_id).expect("Failed to resume execution");
+    engine
+        .resume_execution(&execution_id)
+        .expect("Failed to resume execution");
 
     let state = engine.get_execution_state(&execution_id).unwrap();
     assert_eq!(state.status, WorkflowStatus::Running);
@@ -465,17 +498,25 @@ fn test_pause_resume_preserves_completed_steps() {
     let mut engine = WorkflowEngine::new();
     let workflow = create_simple_workflow();
 
-    let execution_id = engine.create_execution(&workflow).expect("Failed to create execution");
-    engine.start_execution(&execution_id).expect("Failed to start execution");
+    let execution_id = engine
+        .create_execution(&workflow)
+        .expect("Failed to create execution");
+    engine
+        .start_execution(&execution_id)
+        .expect("Failed to start execution");
 
     // Pause workflow
-    engine.pause_execution(&execution_id).expect("Failed to pause execution");
+    engine
+        .pause_execution(&execution_id)
+        .expect("Failed to pause execution");
 
     let paused_state = engine.get_execution_state(&execution_id).unwrap();
     assert_eq!(paused_state.status, WorkflowStatus::Paused);
 
     // Resume workflow
-    engine.resume_execution(&execution_id).expect("Failed to resume execution");
+    engine
+        .resume_execution(&execution_id)
+        .expect("Failed to resume execution");
 
     let resumed_state = engine.get_execution_state(&execution_id).unwrap();
     assert_eq!(resumed_state.status, WorkflowStatus::Running);
@@ -486,12 +527,20 @@ fn test_pause_resume_prevents_step_reexecution() {
     let mut engine = WorkflowEngine::new();
     let workflow = create_simple_workflow();
 
-    let execution_id = engine.create_execution(&workflow).expect("Failed to create execution");
-    engine.start_execution(&execution_id).expect("Failed to start execution");
+    let execution_id = engine
+        .create_execution(&workflow)
+        .expect("Failed to create execution");
+    engine
+        .start_execution(&execution_id)
+        .expect("Failed to start execution");
 
     // Pause and resume
-    engine.pause_execution(&execution_id).expect("Failed to pause execution");
-    engine.resume_execution(&execution_id).expect("Failed to resume execution");
+    engine
+        .pause_execution(&execution_id)
+        .expect("Failed to pause execution");
+    engine
+        .resume_execution(&execution_id)
+        .expect("Failed to resume execution");
 
     let resumed_state = engine.get_execution_state(&execution_id).unwrap();
 
@@ -507,17 +556,25 @@ fn test_workflow_state_persistence_across_pause_resume() {
     let mut engine = WorkflowEngine::new();
     let workflow = create_simple_workflow();
 
-    let execution_id = engine.create_execution(&workflow).expect("Failed to create execution");
-    engine.start_execution(&execution_id).expect("Failed to start execution");
+    let execution_id = engine
+        .create_execution(&workflow)
+        .expect("Failed to create execution");
+    engine
+        .start_execution(&execution_id)
+        .expect("Failed to start execution");
 
     // Pause
-    engine.pause_execution(&execution_id).expect("Failed to pause execution");
+    engine
+        .pause_execution(&execution_id)
+        .expect("Failed to pause execution");
 
     let paused_state = engine.get_execution_state(&execution_id).unwrap();
     assert_eq!(paused_state.status, WorkflowStatus::Paused);
 
     // Resume
-    engine.resume_execution(&execution_id).expect("Failed to resume execution");
+    engine
+        .resume_execution(&execution_id)
+        .expect("Failed to resume execution");
 
     let resumed_state = engine.get_execution_state(&execution_id).unwrap();
     assert_eq!(resumed_state.status, WorkflowStatus::Running);
@@ -642,7 +699,10 @@ fn test_workflow_with_multiple_risk_levels() {
     let low_score = low_risk.risk_score.unwrap_or(0);
     let high_score = high_risk.risk_score.unwrap_or(0);
 
-    assert!(high_score > low_score, "High-risk score should be greater than low-risk score");
+    assert!(
+        high_score > low_score,
+        "High-risk score should be greater than low-risk score"
+    );
 }
 
 // ============================================================================
@@ -655,8 +715,12 @@ fn test_workflow_execution_with_multiple_active_workflows() {
     let workflow1 = create_simple_workflow();
     let workflow2 = create_workflow_with_approval();
 
-    let id1 = engine.create_execution(&workflow1).expect("Failed to create execution 1");
-    let id2 = engine.create_execution(&workflow2).expect("Failed to create execution 2");
+    let id1 = engine
+        .create_execution(&workflow1)
+        .expect("Failed to create execution 1");
+    let id2 = engine
+        .create_execution(&workflow2)
+        .expect("Failed to create execution 2");
 
     assert_eq!(engine.active_execution_count(), 2);
 
@@ -670,11 +734,19 @@ fn test_workflow_execution_removal() {
     let mut engine = WorkflowEngine::new();
     let workflow = create_simple_workflow();
 
-    let execution_id = engine.create_execution(&workflow).expect("Failed to create execution");
-    engine.start_execution(&execution_id).expect("Failed to start execution");
-    engine.complete_execution(&execution_id).expect("Failed to complete execution");
+    let execution_id = engine
+        .create_execution(&workflow)
+        .expect("Failed to create execution");
+    engine
+        .start_execution(&execution_id)
+        .expect("Failed to start execution");
+    engine
+        .complete_execution(&execution_id)
+        .expect("Failed to complete execution");
 
-    let removed_state = engine.remove_execution(&execution_id).expect("Failed to remove execution");
+    let removed_state = engine
+        .remove_execution(&execution_id)
+        .expect("Failed to remove execution");
     assert_eq!(removed_state.status, WorkflowStatus::Completed);
     assert_eq!(engine.active_execution_count(), 0);
 }
@@ -684,9 +756,15 @@ fn test_workflow_cancellation() {
     let mut engine = WorkflowEngine::new();
     let workflow = create_simple_workflow();
 
-    let execution_id = engine.create_execution(&workflow).expect("Failed to create execution");
-    engine.start_execution(&execution_id).expect("Failed to start execution");
-    engine.cancel_execution(&execution_id).expect("Failed to cancel execution");
+    let execution_id = engine
+        .create_execution(&workflow)
+        .expect("Failed to create execution");
+    engine
+        .start_execution(&execution_id)
+        .expect("Failed to start execution");
+    engine
+        .cancel_execution(&execution_id)
+        .expect("Failed to cancel execution");
 
     let state = engine.get_execution_state(&execution_id).unwrap();
     assert_eq!(state.status, WorkflowStatus::Cancelled);
@@ -697,14 +775,19 @@ fn test_workflow_failure_handling() {
     let mut engine = WorkflowEngine::new();
     let workflow = create_simple_workflow();
 
-    let execution_id = engine.create_execution(&workflow).expect("Failed to create execution");
-    engine.start_execution(&execution_id).expect("Failed to start execution");
-    engine.fail_execution(&execution_id).expect("Failed to fail execution");
+    let execution_id = engine
+        .create_execution(&workflow)
+        .expect("Failed to create execution");
+    engine
+        .start_execution(&execution_id)
+        .expect("Failed to start execution");
+    engine
+        .fail_execution(&execution_id)
+        .expect("Failed to fail execution");
 
     let state = engine.get_execution_state(&execution_id).unwrap();
     assert_eq!(state.status, WorkflowStatus::Failed);
 }
-
 
 // ============================================================================
 // Task 13.5: Step Type Execution Handler Tests

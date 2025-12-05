@@ -21,8 +21,6 @@ pub enum CacheInvalidationStrategy {
     Manual,
 }
 
-
-
 /// Cache entry with metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CacheEntry {
@@ -88,9 +86,8 @@ impl CacheManager {
 
         // Create cache directory if it doesn't exist
         if !cache_dir.exists() {
-            fs::create_dir_all(&cache_dir).map_err(|e| {
-                StorageError::directory_creation_failed(cache_dir.clone(), e)
-            })?;
+            fs::create_dir_all(&cache_dir)
+                .map_err(|e| StorageError::directory_creation_failed(cache_dir.clone(), e))?;
             debug!("Created cache directory: {}", cache_dir.display());
         }
 
@@ -114,9 +111,8 @@ impl CacheManager {
             return Ok(None);
         }
 
-        let content = fs::read_to_string(&path).map_err(|e| {
-            StorageError::io_error(path.clone(), IoOperation::Read, e)
-        })?;
+        let content = fs::read_to_string(&path)
+            .map_err(|e| StorageError::io_error(path.clone(), IoOperation::Read, e))?;
 
         let entry: CacheEntry = serde_json::from_str(&content).map_err(|e| {
             StorageError::parse_error(
@@ -184,9 +180,8 @@ impl CacheManager {
             )
         })?;
 
-        fs::write(&path, json).map_err(|e| {
-            StorageError::io_error(path.clone(), IoOperation::Write, e)
-        })?;
+        fs::write(&path, json)
+            .map_err(|e| StorageError::io_error(path.clone(), IoOperation::Write, e))?;
 
         debug!("Cached value for key: {}", key);
         Ok(())
@@ -209,9 +204,8 @@ impl CacheManager {
             return Ok(false);
         }
 
-        fs::remove_file(&path).map_err(|e| {
-            StorageError::io_error(path.clone(), IoOperation::Delete, e)
-        })?;
+        fs::remove_file(&path)
+            .map_err(|e| StorageError::io_error(path.clone(), IoOperation::Delete, e))?;
 
         debug!("Invalidated cache for key: {}", key);
         Ok(true)
@@ -229,9 +223,8 @@ impl CacheManager {
             return Ok(false);
         }
 
-        let content = fs::read_to_string(&path).map_err(|e| {
-            StorageError::io_error(path.clone(), IoOperation::Read, e)
-        })?;
+        let content = fs::read_to_string(&path)
+            .map_err(|e| StorageError::io_error(path.clone(), IoOperation::Read, e))?;
 
         let entry: CacheEntry = serde_json::from_str(&content).map_err(|e| {
             StorageError::parse_error(
@@ -254,17 +247,11 @@ impl CacheManager {
             return Ok(());
         }
 
-        fs::remove_dir_all(&self.cache_dir).map_err(|e| {
-            StorageError::io_error(
-                self.cache_dir.clone(),
-                IoOperation::Delete,
-                e,
-            )
-        })?;
+        fs::remove_dir_all(&self.cache_dir)
+            .map_err(|e| StorageError::io_error(self.cache_dir.clone(), IoOperation::Delete, e))?;
 
-        fs::create_dir_all(&self.cache_dir).map_err(|e| {
-            StorageError::directory_creation_failed(self.cache_dir.clone(), e)
-        })?;
+        fs::create_dir_all(&self.cache_dir)
+            .map_err(|e| StorageError::directory_creation_failed(self.cache_dir.clone(), e))?;
 
         debug!("Cleared all cache entries");
         Ok(())
@@ -284,19 +271,11 @@ impl CacheManager {
 
         let mut cleaned = 0;
 
-        for entry in fs::read_dir(&self.cache_dir).map_err(|e| {
-            StorageError::io_error(
-                self.cache_dir.clone(),
-                IoOperation::Read,
-                e,
-            )
-        })? {
+        for entry in fs::read_dir(&self.cache_dir)
+            .map_err(|e| StorageError::io_error(self.cache_dir.clone(), IoOperation::Read, e))?
+        {
             let entry = entry.map_err(|e| {
-                StorageError::io_error(
-                    self.cache_dir.clone(),
-                    IoOperation::Read,
-                    e,
-                )
+                StorageError::io_error(self.cache_dir.clone(), IoOperation::Read, e)
             })?;
 
             let path = entry.path();
@@ -326,7 +305,13 @@ impl CacheManager {
         // Sanitize key to create valid filename
         let sanitized = key
             .chars()
-            .map(|c| if c.is_alphanumeric() || c == '_' || c == '-' { c } else { '_' })
+            .map(|c| {
+                if c.is_alphanumeric() || c == '_' || c == '-' {
+                    c
+                } else {
+                    '_'
+                }
+            })
             .collect::<String>();
 
         self.cache_dir.join(format!("{}.json", sanitized))

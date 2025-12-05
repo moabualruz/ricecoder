@@ -44,9 +44,21 @@ impl Color {
         let g = self.g as f32 / 255.0;
         let b = self.b as f32 / 255.0;
 
-        let r = if r <= 0.03928 { r / 12.92 } else { ((r + 0.055) / 1.055).powf(2.4) };
-        let g = if g <= 0.03928 { g / 12.92 } else { ((g + 0.055) / 1.055).powf(2.4) };
-        let b = if b <= 0.03928 { b / 12.92 } else { ((b + 0.055) / 1.055).powf(2.4) };
+        let r = if r <= 0.03928 {
+            r / 12.92
+        } else {
+            ((r + 0.055) / 1.055).powf(2.4)
+        };
+        let g = if g <= 0.03928 {
+            g / 12.92
+        } else {
+            ((g + 0.055) / 1.055).powf(2.4)
+        };
+        let b = if b <= 0.03928 {
+            b / 12.92
+        } else {
+            ((b + 0.055) / 1.055).powf(2.4)
+        };
 
         0.2126 * r + 0.7152 * g + 0.0722 * b
     }
@@ -271,14 +283,14 @@ impl Theme {
     pub fn high_contrast() -> Self {
         Self {
             name: "high-contrast".to_string(),
-            primary: Color::new(255, 255, 255),    // Pure white (high contrast on black)
-            secondary: Color::new(255, 255, 0),    // Pure yellow
-            accent: Color::new(255, 0, 0),         // Pure red
-            background: Color::new(0, 0, 0),       // Pure black
+            primary: Color::new(255, 255, 255), // Pure white (high contrast on black)
+            secondary: Color::new(255, 255, 0), // Pure yellow
+            accent: Color::new(255, 0, 0),      // Pure red
+            background: Color::new(0, 0, 0),    // Pure black
             foreground: Color::new(255, 255, 255), // Pure white
-            error: Color::new(255, 0, 0),          // Pure red
-            warning: Color::new(255, 255, 0),      // Pure yellow
-            success: Color::new(0, 255, 0),        // Pure green
+            error: Color::new(255, 0, 0),       // Pure red
+            warning: Color::new(255, 255, 0),   // Pure yellow
+            success: Color::new(0, 255, 0),     // Pure green
         }
     }
 
@@ -320,7 +332,14 @@ impl Theme {
 
     /// Get all available theme names
     pub fn available_themes() -> Vec<&'static str> {
-        vec!["dark", "light", "monokai", "dracula", "nord", "high-contrast"]
+        vec![
+            "dark",
+            "light",
+            "monokai",
+            "dracula",
+            "nord",
+            "high-contrast",
+        ]
     }
 
     /// Check if the theme meets WCAG AA contrast standards

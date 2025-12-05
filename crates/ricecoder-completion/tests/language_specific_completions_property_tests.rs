@@ -3,9 +3,8 @@
 /// **Validates: Requirements Completion-4.1, Completion-4.2**
 /// Property: For any supported language, completions follow language conventions
 use ricecoder_completion::{
-    CompletionContext, CompletionItemKind, Position,
-    RustCompletionProvider, TypeScriptCompletionProvider, PythonCompletionProvider,
-    CompletionProvider,
+    CompletionContext, CompletionItemKind, CompletionProvider, Position, PythonCompletionProvider,
+    RustCompletionProvider, TypeScriptCompletionProvider,
 };
 
 /// Property: For any Rust code position, Rust completions follow Rust naming conventions
@@ -25,35 +24,80 @@ async fn prop_rust_completions_follow_conventions() {
                 .expect("Failed to generate completions");
 
             // All completions should be present
-            assert!(!completions.is_empty(), "No completions generated for Rust at pos ({}, {})", line, char);
+            assert!(
+                !completions.is_empty(),
+                "No completions generated for Rust at pos ({}, {})",
+                line,
+                char
+            );
 
             // Should have keywords
-            let has_keywords = completions.iter().any(|c| c.kind == CompletionItemKind::Keyword);
-            assert!(has_keywords, "No keywords found in Rust completions at pos ({}, {})", line, char);
+            let has_keywords = completions
+                .iter()
+                .any(|c| c.kind == CompletionItemKind::Keyword);
+            assert!(
+                has_keywords,
+                "No keywords found in Rust completions at pos ({}, {})",
+                line, char
+            );
 
             // Should have snippets
-            let has_snippets = completions.iter().any(|c| c.kind == CompletionItemKind::Snippet);
-            assert!(has_snippets, "No snippets found in Rust completions at pos ({}, {})", line, char);
+            let has_snippets = completions
+                .iter()
+                .any(|c| c.kind == CompletionItemKind::Snippet);
+            assert!(
+                has_snippets,
+                "No snippets found in Rust completions at pos ({}, {})",
+                line, char
+            );
 
             // Should have traits
-            let has_traits = completions.iter().any(|c| c.kind == CompletionItemKind::Trait);
-            assert!(has_traits, "No traits found in Rust completions at pos ({}, {})", line, char);
+            let has_traits = completions
+                .iter()
+                .any(|c| c.kind == CompletionItemKind::Trait);
+            assert!(
+                has_traits,
+                "No traits found in Rust completions at pos ({}, {})",
+                line, char
+            );
 
             // All completions should have labels
             for completion in &completions {
-                assert!(!completion.label.is_empty(), "Empty completion label at pos ({}, {})", line, char);
-                assert!(!completion.insert_text.is_empty(), "Empty insert text at pos ({}, {})", line, char);
+                assert!(
+                    !completion.label.is_empty(),
+                    "Empty completion label at pos ({}, {})",
+                    line,
+                    char
+                );
+                assert!(
+                    !completion.insert_text.is_empty(),
+                    "Empty insert text at pos ({}, {})",
+                    line,
+                    char
+                );
             }
 
             // Rust-specific completions should be present
             let has_debug_trait = completions.iter().any(|c| c.label == "Debug");
-            assert!(has_debug_trait, "Debug trait not found in Rust completions at pos ({}, {})", line, char);
+            assert!(
+                has_debug_trait,
+                "Debug trait not found in Rust completions at pos ({}, {})",
+                line, char
+            );
 
             let has_println_macro = completions.iter().any(|c| c.label == "println!");
-            assert!(has_println_macro, "println! macro not found in Rust completions at pos ({}, {})", line, char);
+            assert!(
+                has_println_macro,
+                "println! macro not found in Rust completions at pos ({}, {})",
+                line, char
+            );
 
             let has_derive = completions.iter().any(|c| c.label.contains("derive"));
-            assert!(has_derive, "Derive attributes not found in Rust completions at pos ({}, {})", line, char);
+            assert!(
+                has_derive,
+                "Derive attributes not found in Rust completions at pos ({}, {})",
+                line, char
+            );
         }
     }
 }
@@ -75,35 +119,80 @@ async fn prop_typescript_completions_follow_conventions() {
                 .expect("Failed to generate completions");
 
             // All completions should be present
-            assert!(!completions.is_empty(), "No completions generated for TypeScript at pos ({}, {})", line, char);
+            assert!(
+                !completions.is_empty(),
+                "No completions generated for TypeScript at pos ({}, {})",
+                line,
+                char
+            );
 
             // Should have keywords
-            let has_keywords = completions.iter().any(|c| c.kind == CompletionItemKind::Keyword);
-            assert!(has_keywords, "No keywords found in TypeScript completions at pos ({}, {})", line, char);
+            let has_keywords = completions
+                .iter()
+                .any(|c| c.kind == CompletionItemKind::Keyword);
+            assert!(
+                has_keywords,
+                "No keywords found in TypeScript completions at pos ({}, {})",
+                line, char
+            );
 
             // Should have snippets
-            let has_snippets = completions.iter().any(|c| c.kind == CompletionItemKind::Snippet);
-            assert!(has_snippets, "No snippets found in TypeScript completions at pos ({}, {})", line, char);
+            let has_snippets = completions
+                .iter()
+                .any(|c| c.kind == CompletionItemKind::Snippet);
+            assert!(
+                has_snippets,
+                "No snippets found in TypeScript completions at pos ({}, {})",
+                line, char
+            );
 
             // Should have interfaces
-            let has_interfaces = completions.iter().any(|c| c.kind == CompletionItemKind::Interface);
-            assert!(has_interfaces, "No interfaces found in TypeScript completions at pos ({}, {})", line, char);
+            let has_interfaces = completions
+                .iter()
+                .any(|c| c.kind == CompletionItemKind::Interface);
+            assert!(
+                has_interfaces,
+                "No interfaces found in TypeScript completions at pos ({}, {})",
+                line, char
+            );
 
             // All completions should have labels
             for completion in &completions {
-                assert!(!completion.label.is_empty(), "Empty completion label at pos ({}, {})", line, char);
-                assert!(!completion.insert_text.is_empty(), "Empty insert text at pos ({}, {})", line, char);
+                assert!(
+                    !completion.label.is_empty(),
+                    "Empty completion label at pos ({}, {})",
+                    line,
+                    char
+                );
+                assert!(
+                    !completion.insert_text.is_empty(),
+                    "Empty insert text at pos ({}, {})",
+                    line,
+                    char
+                );
             }
 
             // TypeScript-specific completions should be present
             let has_record = completions.iter().any(|c| c.label == "Record");
-            assert!(has_record, "Record interface not found in TypeScript completions at pos ({}, {})", line, char);
+            assert!(
+                has_record,
+                "Record interface not found in TypeScript completions at pos ({}, {})",
+                line, char
+            );
 
             let has_decorator = completions.iter().any(|c| c.label.starts_with("@"));
-            assert!(has_decorator, "Decorators not found in TypeScript completions at pos ({}, {})", line, char);
+            assert!(
+                has_decorator,
+                "Decorators not found in TypeScript completions at pos ({}, {})",
+                line, char
+            );
 
             let has_generic = completions.iter().any(|c| c.label.contains("<"));
-            assert!(has_generic, "Generic types not found in TypeScript completions at pos ({}, {})", line, char);
+            assert!(
+                has_generic,
+                "Generic types not found in TypeScript completions at pos ({}, {})",
+                line, char
+            );
         }
     }
 }
@@ -125,35 +214,80 @@ async fn prop_python_completions_follow_conventions() {
                 .expect("Failed to generate completions");
 
             // All completions should be present
-            assert!(!completions.is_empty(), "No completions generated for Python at pos ({}, {})", line, char);
+            assert!(
+                !completions.is_empty(),
+                "No completions generated for Python at pos ({}, {})",
+                line,
+                char
+            );
 
             // Should have keywords
-            let has_keywords = completions.iter().any(|c| c.kind == CompletionItemKind::Keyword);
-            assert!(has_keywords, "No keywords found in Python completions at pos ({}, {})", line, char);
+            let has_keywords = completions
+                .iter()
+                .any(|c| c.kind == CompletionItemKind::Keyword);
+            assert!(
+                has_keywords,
+                "No keywords found in Python completions at pos ({}, {})",
+                line, char
+            );
 
             // Should have snippets
-            let has_snippets = completions.iter().any(|c| c.kind == CompletionItemKind::Snippet);
-            assert!(has_snippets, "No snippets found in Python completions at pos ({}, {})", line, char);
+            let has_snippets = completions
+                .iter()
+                .any(|c| c.kind == CompletionItemKind::Snippet);
+            assert!(
+                has_snippets,
+                "No snippets found in Python completions at pos ({}, {})",
+                line, char
+            );
 
             // Should have type parameters (type hints)
-            let has_type_hints = completions.iter().any(|c| c.kind == CompletionItemKind::TypeParameter);
-            assert!(has_type_hints, "No type hints found in Python completions at pos ({}, {})", line, char);
+            let has_type_hints = completions
+                .iter()
+                .any(|c| c.kind == CompletionItemKind::TypeParameter);
+            assert!(
+                has_type_hints,
+                "No type hints found in Python completions at pos ({}, {})",
+                line, char
+            );
 
             // All completions should have labels
             for completion in &completions {
-                assert!(!completion.label.is_empty(), "Empty completion label at pos ({}, {})", line, char);
-                assert!(!completion.insert_text.is_empty(), "Empty insert text at pos ({}, {})", line, char);
+                assert!(
+                    !completion.label.is_empty(),
+                    "Empty completion label at pos ({}, {})",
+                    line,
+                    char
+                );
+                assert!(
+                    !completion.insert_text.is_empty(),
+                    "Empty insert text at pos ({}, {})",
+                    line,
+                    char
+                );
             }
 
             // Python-specific completions should be present
             let has_property = completions.iter().any(|c| c.label == "@property");
-            assert!(has_property, "@property decorator not found in Python completions at pos ({}, {})", line, char);
+            assert!(
+                has_property,
+                "@property decorator not found in Python completions at pos ({}, {})",
+                line, char
+            );
 
             let has_list_hint = completions.iter().any(|c| c.label == "List[T]");
-            assert!(has_list_hint, "List[T] type hint not found in Python completions at pos ({}, {})", line, char);
+            assert!(
+                has_list_hint,
+                "List[T] type hint not found in Python completions at pos ({}, {})",
+                line, char
+            );
 
             let has_context_manager = completions.iter().any(|c| c.label == "open()");
-            assert!(has_context_manager, "open() context manager not found in Python completions at pos ({}, {})", line, char);
+            assert!(
+                has_context_manager,
+                "open() context manager not found in Python completions at pos ({}, {})",
+                line, char
+            );
         }
     }
 }
@@ -246,7 +380,11 @@ async fn prop_all_completions_have_valid_labels() {
 
         for completion in &completions {
             assert!(!completion.label.is_empty(), "Empty label in {}", lang);
-            assert!(!completion.insert_text.is_empty(), "Empty insert_text in {}", lang);
+            assert!(
+                !completion.insert_text.is_empty(),
+                "Empty insert_text in {}",
+                lang
+            );
         }
     }
 }

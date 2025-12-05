@@ -262,7 +262,10 @@ mod tests {
         );
         let plan = create_test_plan(vec![step]);
         let score = scorer.score_plan(&plan);
-        assert!(score.score > 0.4, "Critical file should increase risk score");
+        assert!(
+            score.score > 0.4,
+            "Critical file should increase risk score"
+        );
     }
 
     #[test]
@@ -276,7 +279,10 @@ mod tests {
         );
         let plan = create_test_plan(vec![step]);
         let score = scorer.score_plan(&plan);
-        assert!(score.score > 0.2, "File deletion should increase risk score");
+        assert!(
+            score.score > 0.2,
+            "File deletion should increase risk score"
+        );
     }
 
     #[test]
@@ -307,7 +313,10 @@ mod tests {
         ];
         let plan = create_test_plan(steps);
         let score = scorer.score_plan(&plan);
-        assert!(score.score > 0.2, "Multiple files should increase risk score");
+        assert!(
+            score.score > 0.2,
+            "Multiple files should increase risk score"
+        );
     }
 
     #[test]
@@ -322,7 +331,11 @@ mod tests {
         );
         let plan = create_test_plan(vec![step]);
         let score = scorer.score_plan(&plan);
-        assert!(scorer.requires_approval(&score), "Score {} should require approval with threshold 0.4", score.score);
+        assert!(
+            scorer.requires_approval(&score),
+            "Score {} should require approval with threshold 0.4",
+            score.score
+        );
     }
 
     #[test]
@@ -340,7 +353,10 @@ mod tests {
         );
         let plan = create_test_plan(vec![step]);
         let score = scorer.score_plan(&plan);
-        assert!(score.score > 0.4, "Custom critical file should increase risk");
+        assert!(
+            score.score > 0.4,
+            "Custom critical file should increase risk"
+        );
     }
 
     #[test]

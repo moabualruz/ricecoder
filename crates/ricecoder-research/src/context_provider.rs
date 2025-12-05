@@ -1,8 +1,8 @@
 //! Automatic context provision for AI providers
 
-use crate::models::{CodeContext, FileContext};
 use crate::context_builder::ContextBuilder;
 use crate::context_optimizer::ContextOptimizer;
+use crate::models::{CodeContext, FileContext};
 use crate::relevance_scorer::RelevanceScorer;
 use crate::ResearchError;
 
@@ -34,7 +34,9 @@ impl ContextProvider {
         available_files: Vec<FileContext>,
     ) -> Result<CodeContext, ResearchError> {
         // Select relevant files
-        let relevant_files = self.context_builder.select_relevant_files(query, available_files)?;
+        let relevant_files = self
+            .context_builder
+            .select_relevant_files(query, available_files)?;
 
         // Optimize files to fit within token budget
         let optimized_files = self.context_optimizer.optimize_files(relevant_files)?;
@@ -70,7 +72,9 @@ impl ContextProvider {
         available_files: Vec<FileContext>,
     ) -> Result<CodeContext, ResearchError> {
         // For refactoring, include related files
-        let relevant_files = self.context_builder.select_relevant_files(query, available_files)?;
+        let relevant_files = self
+            .context_builder
+            .select_relevant_files(query, available_files)?;
 
         // Optimize files
         let optimized_files = self.context_optimizer.optimize_files(relevant_files)?;
@@ -201,14 +205,12 @@ mod tests {
     fn test_provide_context_for_review() {
         let provider = ContextProvider::new(4096, 2048);
 
-        let files = vec![
-            FileContext {
-                path: PathBuf::from("src/main.rs"),
-                relevance: 0.0,
-                summary: Some("Main entry point".to_string()),
-                content: Some("fn main() {}".to_string()),
-            },
-        ];
+        let files = vec![FileContext {
+            path: PathBuf::from("src/main.rs"),
+            relevance: 0.0,
+            summary: Some("Main entry point".to_string()),
+            content: Some("fn main() {}".to_string()),
+        }];
 
         let result = provider.provide_context_for_review("main", files);
         assert!(result.is_ok());
@@ -221,14 +223,12 @@ mod tests {
     fn test_provide_context_for_refactoring() {
         let provider = ContextProvider::new(4096, 2048);
 
-        let files = vec![
-            FileContext {
-                path: PathBuf::from("src/main.rs"),
-                relevance: 0.0,
-                summary: Some("Main entry point".to_string()),
-                content: Some("fn main() {}".to_string()),
-            },
-        ];
+        let files = vec![FileContext {
+            path: PathBuf::from("src/main.rs"),
+            relevance: 0.0,
+            summary: Some("Main entry point".to_string()),
+            content: Some("fn main() {}".to_string()),
+        }];
 
         let result = provider.provide_context_for_refactoring("main", files);
         assert!(result.is_ok());

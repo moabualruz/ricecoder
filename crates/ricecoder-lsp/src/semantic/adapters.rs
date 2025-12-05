@@ -3,9 +3,9 @@
 //! This module provides adapter wrappers that allow existing language-specific analyzers
 //! to be used as pluggable providers in the configuration-driven architecture.
 
-use crate::providers::{SemanticAnalyzerProvider, ProviderResult};
+use super::{FallbackAnalyzer, PythonAnalyzer, RustAnalyzer, SemanticAnalyzer, TypeScriptAnalyzer};
+use crate::providers::{ProviderResult, SemanticAnalyzerProvider};
 use crate::types::{Position, SemanticInfo, Symbol};
-use super::{RustAnalyzer, TypeScriptAnalyzer, PythonAnalyzer, FallbackAnalyzer, SemanticAnalyzer};
 
 /// Adapter for Rust semantic analyzer
 pub struct RustAnalyzerAdapter {

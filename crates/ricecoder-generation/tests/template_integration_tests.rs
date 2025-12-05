@@ -1,11 +1,11 @@
 //! Integration tests for template rendering with full workflows
 //! Tests template rendering with conditionals, loops, and boilerplate scaffolding
 
-use ricecoder_generation::{
-    TemplateEngine, BoilerplateManager, Boilerplate,
-    BoilerplateFile, ConflictResolution, TemplateParser, PlaceholderResolver,
-};
 use ricecoder_generation::templates::resolver::CaseTransform;
+use ricecoder_generation::{
+    Boilerplate, BoilerplateFile, BoilerplateManager, ConflictResolution, PlaceholderResolver,
+    TemplateEngine, TemplateParser,
+};
 use std::collections::HashMap;
 use std::fs;
 use tempfile::TempDir;
@@ -333,7 +333,9 @@ fn test_placeholder_resolution_nested() {
     resolver.add_value("base", "my_project");
     resolver.add_value("full_name", "{{base}}_extended");
 
-    let result = resolver.resolve_nested("full_name", CaseTransform::SnakeCase).unwrap();
+    let result = resolver
+        .resolve_nested("full_name", CaseTransform::SnakeCase)
+        .unwrap();
     assert_eq!(result, "my_project_extended");
 }
 
@@ -382,7 +384,8 @@ version = "0.1.0"
 authors = ["{{author}}"]
 
 [dependencies]
-"#.to_string(),
+"#
+                .to_string(),
                 condition: None,
             },
             BoilerplateFile {
@@ -400,7 +403,8 @@ impl {{Name}} {
         Self { data }
     }
 }
-"#.to_string(),
+"#
+                .to_string(),
                 condition: None,
             },
             BoilerplateFile {
@@ -416,7 +420,8 @@ use {{name_snake}};
 
 let instance = {{Name}}::new("data".to_string());
 ```
-"#.to_string(),
+"#
+                .to_string(),
                 condition: None,
             },
         ],

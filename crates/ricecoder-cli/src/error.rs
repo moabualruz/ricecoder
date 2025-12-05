@@ -34,29 +34,44 @@ impl CliError {
     /// Get a user-friendly error message with suggestions
     pub fn user_message(&self) -> String {
         match self {
-            CliError::CommandNotFound { command, suggestion } => {
+            CliError::CommandNotFound {
+                command,
+                suggestion,
+            } => {
                 format!(
                     "Command '{}' not found.\n\nDid you mean: {}\n\nRun 'rice help' for available commands.",
                     command, suggestion
                 )
             }
             CliError::InvalidArgument { message } => {
-                format!("Invalid argument: {}\n\nRun 'rice help' for usage information.", message)
+                format!(
+                    "Invalid argument: {}\n\nRun 'rice help' for usage information.",
+                    message
+                )
             }
             CliError::Io(e) => {
                 format!("File operation failed: {}", e)
             }
             CliError::Config(msg) => {
-                format!("Configuration error: {}\n\nRun 'rice config' to check your configuration.", msg)
+                format!(
+                    "Configuration error: {}\n\nRun 'rice config' to check your configuration.",
+                    msg
+                )
             }
             CliError::Provider(msg) => {
-                format!("Provider error: {}\n\nCheck your provider configuration with 'rice config'.", msg)
+                format!(
+                    "Provider error: {}\n\nCheck your provider configuration with 'rice config'.",
+                    msg
+                )
             }
             CliError::Generation(msg) => {
                 format!("Code generation failed: {}", msg)
             }
             CliError::Storage(msg) => {
-                format!("Storage error: {}\n\nCheck your storage configuration.", msg)
+                format!(
+                    "Storage error: {}\n\nCheck your storage configuration.",
+                    msg
+                )
             }
             CliError::Internal(msg) => {
                 format!("Internal error: {}\n\nPlease report this issue.", msg)

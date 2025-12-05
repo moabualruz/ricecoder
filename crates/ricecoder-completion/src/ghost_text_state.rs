@@ -16,8 +16,6 @@ pub enum GhostTextState {
     Accepted(GhostText),
 }
 
-
-
 /// Partial acceptance mode for ghost text
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PartialAcceptanceMode {
@@ -109,12 +107,7 @@ impl GhostTextStateManager for BasicGhostTextStateManager {
                     }
                     PartialAcceptanceMode::Line => {
                         // Accept until the first newline
-                        ghost_text
-                            .text
-                            .lines()
-                            .next()
-                            .unwrap_or("")
-                            .to_string()
+                        ghost_text.text.lines().next().unwrap_or("").to_string()
                     }
                     PartialAcceptanceMode::Characters(n) => {
                         ghost_text.text.chars().take(n).collect()

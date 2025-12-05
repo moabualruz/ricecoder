@@ -46,7 +46,12 @@ fn symbol_to_completion_item(symbol: &Symbol, score: f32) -> CompletionItem {
 }
 
 /// Helper function to create snippet completions
-fn create_snippet_item(label: &str, template: &str, description: &str, score: f32) -> CompletionItem {
+fn create_snippet_item(
+    label: &str,
+    template: &str,
+    description: &str,
+    score: f32,
+) -> CompletionItem {
     CompletionItem::new(
         label.to_string(),
         CompletionItemKind::Snippet,
@@ -183,15 +188,51 @@ impl crate::engine::CompletionProvider for RustCompletionProvider {
 
         // Add Rust-specific snippets
         let rust_snippets = vec![
-            ("fn_snippet", "fn ${1:name}(${2:args}) {\n    ${3:body}\n}", "Function template"),
-            ("impl_snippet", "impl ${1:Type} {\n    ${2:methods}\n}", "Implementation block"),
-            ("match_snippet", "match ${1:expr} {\n    ${2:pattern} => ${3:result},\n}", "Match expression"),
-            ("for_snippet", "for ${1:item} in ${2:iter} {\n    ${3:body}\n}", "For loop"),
-            ("while_snippet", "while ${1:condition} {\n    ${2:body}\n}", "While loop"),
-            ("if_snippet", "if ${1:condition} {\n    ${2:then}\n} else {\n    ${3:else}\n}", "If-else block"),
-            ("struct_snippet", "struct ${1:Name} {\n    ${2:fields}\n}", "Struct definition"),
-            ("enum_snippet", "enum ${1:Name} {\n    ${2:variants}\n}", "Enum definition"),
-            ("trait_snippet", "trait ${1:Name} {\n    ${2:methods}\n}", "Trait definition"),
+            (
+                "fn_snippet",
+                "fn ${1:name}(${2:args}) {\n    ${3:body}\n}",
+                "Function template",
+            ),
+            (
+                "impl_snippet",
+                "impl ${1:Type} {\n    ${2:methods}\n}",
+                "Implementation block",
+            ),
+            (
+                "match_snippet",
+                "match ${1:expr} {\n    ${2:pattern} => ${3:result},\n}",
+                "Match expression",
+            ),
+            (
+                "for_snippet",
+                "for ${1:item} in ${2:iter} {\n    ${3:body}\n}",
+                "For loop",
+            ),
+            (
+                "while_snippet",
+                "while ${1:condition} {\n    ${2:body}\n}",
+                "While loop",
+            ),
+            (
+                "if_snippet",
+                "if ${1:condition} {\n    ${2:then}\n} else {\n    ${3:else}\n}",
+                "If-else block",
+            ),
+            (
+                "struct_snippet",
+                "struct ${1:Name} {\n    ${2:fields}\n}",
+                "Struct definition",
+            ),
+            (
+                "enum_snippet",
+                "enum ${1:Name} {\n    ${2:variants}\n}",
+                "Enum definition",
+            ),
+            (
+                "trait_snippet",
+                "trait ${1:Name} {\n    ${2:methods}\n}",
+                "Trait definition",
+            ),
             ("closure_snippet", "|${1:args}| ${2:body}", "Closure"),
         ];
 
@@ -202,34 +243,86 @@ impl crate::engine::CompletionProvider for RustCompletionProvider {
 
         // Add Rust-specific traits and macros
         let rust_traits = vec![
-            ("Debug", "Debug trait for formatting", CompletionItemKind::Trait),
-            ("Clone", "Clone trait for copying", CompletionItemKind::Trait),
-            ("Copy", "Copy trait for stack copying", CompletionItemKind::Trait),
-            ("Default", "Default trait for default values", CompletionItemKind::Trait),
-            ("Display", "Display trait for formatting", CompletionItemKind::Trait),
-            ("Iterator", "Iterator trait for iteration", CompletionItemKind::Trait),
-            ("IntoIterator", "IntoIterator trait for conversion", CompletionItemKind::Trait),
-            ("From", "From trait for conversion", CompletionItemKind::Trait),
-            ("Into", "Into trait for conversion", CompletionItemKind::Trait),
-            ("AsRef", "AsRef trait for borrowing", CompletionItemKind::Trait),
-            ("AsMut", "AsMut trait for mutable borrowing", CompletionItemKind::Trait),
-            ("Deref", "Deref trait for dereferencing", CompletionItemKind::Trait),
+            (
+                "Debug",
+                "Debug trait for formatting",
+                CompletionItemKind::Trait,
+            ),
+            (
+                "Clone",
+                "Clone trait for copying",
+                CompletionItemKind::Trait,
+            ),
+            (
+                "Copy",
+                "Copy trait for stack copying",
+                CompletionItemKind::Trait,
+            ),
+            (
+                "Default",
+                "Default trait for default values",
+                CompletionItemKind::Trait,
+            ),
+            (
+                "Display",
+                "Display trait for formatting",
+                CompletionItemKind::Trait,
+            ),
+            (
+                "Iterator",
+                "Iterator trait for iteration",
+                CompletionItemKind::Trait,
+            ),
+            (
+                "IntoIterator",
+                "IntoIterator trait for conversion",
+                CompletionItemKind::Trait,
+            ),
+            (
+                "From",
+                "From trait for conversion",
+                CompletionItemKind::Trait,
+            ),
+            (
+                "Into",
+                "Into trait for conversion",
+                CompletionItemKind::Trait,
+            ),
+            (
+                "AsRef",
+                "AsRef trait for borrowing",
+                CompletionItemKind::Trait,
+            ),
+            (
+                "AsMut",
+                "AsMut trait for mutable borrowing",
+                CompletionItemKind::Trait,
+            ),
+            (
+                "Deref",
+                "Deref trait for dereferencing",
+                CompletionItemKind::Trait,
+            ),
             ("Drop", "Drop trait for cleanup", CompletionItemKind::Trait),
             ("Eq", "Eq trait for equality", CompletionItemKind::Trait),
-            ("PartialEq", "PartialEq trait for partial equality", CompletionItemKind::Trait),
+            (
+                "PartialEq",
+                "PartialEq trait for partial equality",
+                CompletionItemKind::Trait,
+            ),
             ("Ord", "Ord trait for ordering", CompletionItemKind::Trait),
-            ("PartialOrd", "PartialOrd trait for partial ordering", CompletionItemKind::Trait),
+            (
+                "PartialOrd",
+                "PartialOrd trait for partial ordering",
+                CompletionItemKind::Trait,
+            ),
             ("Hash", "Hash trait for hashing", CompletionItemKind::Trait),
         ];
 
         for (name, description, kind) in rust_traits {
-            let item = CompletionItem::new(
-                name.to_string(),
-                kind,
-                name.to_string(),
-            )
-            .with_detail(description.to_string())
-            .with_score(0.75);
+            let item = CompletionItem::new(name.to_string(), kind, name.to_string())
+                .with_detail(description.to_string())
+                .with_score(0.75);
             completions.push(item);
         }
 
@@ -434,29 +527,77 @@ impl crate::engine::CompletionProvider for TypeScriptCompletionProvider {
 
         // Add TypeScript-specific interfaces and types
         let ts_interfaces = vec![
-            ("Record", "Record type for key-value pairs", CompletionItemKind::Interface),
-            ("Partial", "Partial type for optional properties", CompletionItemKind::Interface),
-            ("Required", "Required type for mandatory properties", CompletionItemKind::Interface),
-            ("Readonly", "Readonly type for immutable properties", CompletionItemKind::Interface),
-            ("Pick", "Pick type for selecting properties", CompletionItemKind::Interface),
-            ("Omit", "Omit type for excluding properties", CompletionItemKind::Interface),
-            ("Exclude", "Exclude type for union exclusion", CompletionItemKind::Interface),
-            ("Extract", "Extract type for union extraction", CompletionItemKind::Interface),
-            ("NonNullable", "NonNullable type for non-null values", CompletionItemKind::Interface),
-            ("Parameters", "Parameters type for function parameters", CompletionItemKind::Interface),
-            ("ReturnType", "ReturnType type for function return type", CompletionItemKind::Interface),
-            ("InstanceType", "InstanceType type for class instances", CompletionItemKind::Interface),
-            ("Awaited", "Awaited type for promise resolution", CompletionItemKind::Interface),
+            (
+                "Record",
+                "Record type for key-value pairs",
+                CompletionItemKind::Interface,
+            ),
+            (
+                "Partial",
+                "Partial type for optional properties",
+                CompletionItemKind::Interface,
+            ),
+            (
+                "Required",
+                "Required type for mandatory properties",
+                CompletionItemKind::Interface,
+            ),
+            (
+                "Readonly",
+                "Readonly type for immutable properties",
+                CompletionItemKind::Interface,
+            ),
+            (
+                "Pick",
+                "Pick type for selecting properties",
+                CompletionItemKind::Interface,
+            ),
+            (
+                "Omit",
+                "Omit type for excluding properties",
+                CompletionItemKind::Interface,
+            ),
+            (
+                "Exclude",
+                "Exclude type for union exclusion",
+                CompletionItemKind::Interface,
+            ),
+            (
+                "Extract",
+                "Extract type for union extraction",
+                CompletionItemKind::Interface,
+            ),
+            (
+                "NonNullable",
+                "NonNullable type for non-null values",
+                CompletionItemKind::Interface,
+            ),
+            (
+                "Parameters",
+                "Parameters type for function parameters",
+                CompletionItemKind::Interface,
+            ),
+            (
+                "ReturnType",
+                "ReturnType type for function return type",
+                CompletionItemKind::Interface,
+            ),
+            (
+                "InstanceType",
+                "InstanceType type for class instances",
+                CompletionItemKind::Interface,
+            ),
+            (
+                "Awaited",
+                "Awaited type for promise resolution",
+                CompletionItemKind::Interface,
+            ),
         ];
 
         for (name, description, kind) in ts_interfaces {
-            let item = CompletionItem::new(
-                name.to_string(),
-                kind,
-                name.to_string(),
-            )
-            .with_detail(description.to_string())
-            .with_score(0.75);
+            let item = CompletionItem::new(name.to_string(), kind, name.to_string())
+                .with_detail(description.to_string())
+                .with_score(0.75);
             completions.push(item);
         }
 
@@ -696,11 +837,26 @@ impl crate::engine::CompletionProvider for PythonCompletionProvider {
             ("lock", "Lock context manager"),
             ("pool", "Connection pool context manager"),
             ("transaction", "Database transaction context manager"),
-            ("tempfile.TemporaryDirectory()", "Temporary directory context manager"),
-            ("tempfile.NamedTemporaryFile()", "Temporary file context manager"),
-            ("contextlib.suppress()", "Suppress exceptions context manager"),
-            ("contextlib.redirect_stdout()", "Redirect stdout context manager"),
-            ("contextlib.redirect_stderr()", "Redirect stderr context manager"),
+            (
+                "tempfile.TemporaryDirectory()",
+                "Temporary directory context manager",
+            ),
+            (
+                "tempfile.NamedTemporaryFile()",
+                "Temporary file context manager",
+            ),
+            (
+                "contextlib.suppress()",
+                "Suppress exceptions context manager",
+            ),
+            (
+                "contextlib.redirect_stdout()",
+                "Redirect stdout context manager",
+            ),
+            (
+                "contextlib.redirect_stderr()",
+                "Redirect stderr context manager",
+            ),
         ];
 
         for (cm_name, description) in py_context_managers {
@@ -1168,7 +1324,9 @@ pub struct CompletionProviderFactory;
 
 impl CompletionProviderFactory {
     /// Create a completion provider for the given language
-    pub fn create(language: crate::language::Language) -> Box<dyn crate::engine::CompletionProvider> {
+    pub fn create(
+        language: crate::language::Language,
+    ) -> Box<dyn crate::engine::CompletionProvider> {
         match language {
             crate::language::Language::Rust => Box::new(RustCompletionProvider),
             crate::language::Language::TypeScript => Box::new(TypeScriptCompletionProvider),
@@ -1182,7 +1340,10 @@ impl CompletionProviderFactory {
     }
 
     /// Create a completion provider from file path and content
-    pub fn from_file(path: &std::path::Path, content: &str) -> Box<dyn crate::engine::CompletionProvider> {
+    pub fn from_file(
+        path: &std::path::Path,
+        content: &str,
+    ) -> Box<dyn crate::engine::CompletionProvider> {
         let language = crate::language::LanguageDetector::detect(path, content);
         Self::create(language)
     }

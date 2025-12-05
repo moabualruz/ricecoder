@@ -6,30 +6,30 @@
 //! Property: For any detected conflict, the system SHALL apply the selected strategy (skip, overwrite, merge) correctly and report the action taken.
 
 use proptest::prelude::*;
+use ricecoder_generation::conflict_detector::{DiffLine, FileConflictInfo, FileDiff};
 use ricecoder_generation::{ConflictResolver, ConflictStrategy};
-use ricecoder_generation::conflict_detector::{FileConflictInfo, FileDiff, DiffLine};
 use std::fs;
 use std::path::PathBuf;
 use tempfile::TempDir;
 
 /// Strategy for generating file paths
 fn file_path_strategy() -> impl Strategy<Value = String> {
-    r"[a-z]{1,10}\.rs"
-        .prop_map(|s| s.to_string())
+    r"[a-z]{1,10}\.rs".prop_map(|s| s.to_string())
 }
 
 /// Strategy for generating file content
 fn file_content_strategy() -> impl Strategy<Value = String> {
-    r"[a-zA-Z0-9\n ]{10,50}"
-        .prop_map(|s| s.to_string())
+    r"[a-zA-Z0-9\n ]{10,50}".prop_map(|s| s.to_string())
 }
 
 /// Strategy for generating conflict info
 fn conflict_info_strategy() -> impl Strategy<Value = (String, String, String)> {
-    (file_path_strategy(), file_content_strategy(), file_content_strategy())
-        .prop_map(|(path, old_content, new_content)| {
-            (path, old_content, new_content)
-        })
+    (
+        file_path_strategy(),
+        file_content_strategy(),
+        file_content_strategy(),
+    )
+        .prop_map(|(path, old_content, new_content)| (path, old_content, new_content))
 }
 
 proptest! {

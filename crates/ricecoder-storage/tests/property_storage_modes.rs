@@ -40,11 +40,18 @@ defaults: {}
         StorageMode::GlobalOnly,
         Some(global_dir.path()),
         Some(project_dir.path()),
-    ).expect("Failed to load config");
+    )
+    .expect("Failed to load config");
 
     // Should have global provider, not project provider
-    assert_eq!(config.providers.default_provider, Some("openai".to_string()));
-    assert_ne!(config.providers.default_provider, Some("anthropic".to_string()));
+    assert_eq!(
+        config.providers.default_provider,
+        Some("openai".to_string())
+    );
+    assert_ne!(
+        config.providers.default_provider,
+        Some("anthropic".to_string())
+    );
 }
 
 #[test]
@@ -78,11 +85,18 @@ defaults: {}
         StorageMode::ProjectOnly,
         Some(global_dir.path()),
         Some(project_dir.path()),
-    ).expect("Failed to load config");
+    )
+    .expect("Failed to load config");
 
     // Should have project provider, not global provider
-    assert_eq!(config.providers.default_provider, Some("anthropic".to_string()));
-    assert_ne!(config.providers.default_provider, Some("openai".to_string()));
+    assert_eq!(
+        config.providers.default_provider,
+        Some("anthropic".to_string())
+    );
+    assert_ne!(
+        config.providers.default_provider,
+        Some("openai".to_string())
+    );
 }
 
 #[test]
@@ -116,10 +130,14 @@ defaults: {}
         StorageMode::Merged,
         Some(global_dir.path()),
         Some(project_dir.path()),
-    ).expect("Failed to load config");
+    )
+    .expect("Failed to load config");
 
     // Should have project provider (project overrides global)
-    assert_eq!(config.providers.default_provider, Some("anthropic".to_string()));
+    assert_eq!(
+        config.providers.default_provider,
+        Some("anthropic".to_string())
+    );
 }
 
 #[test]
@@ -142,10 +160,14 @@ defaults: {}
         StorageMode::GlobalOnly,
         Some(global_dir.path()),
         Some(project_dir.path()),
-    ).expect("Failed to load config");
+    )
+    .expect("Failed to load config");
 
     // Should have global provider
-    assert_eq!(config.providers.default_provider, Some("openai".to_string()));
+    assert_eq!(
+        config.providers.default_provider,
+        Some("openai".to_string())
+    );
 }
 
 #[test]
@@ -168,10 +190,14 @@ defaults: {}
         StorageMode::ProjectOnly,
         Some(global_dir.path()),
         Some(project_dir.path()),
-    ).expect("Failed to load config");
+    )
+    .expect("Failed to load config");
 
     // Should have project provider
-    assert_eq!(config.providers.default_provider, Some("anthropic".to_string()));
+    assert_eq!(
+        config.providers.default_provider,
+        Some("anthropic".to_string())
+    );
 }
 
 #[test]
@@ -185,7 +211,8 @@ fn test_merged_mode_handles_missing_configs() {
         StorageMode::Merged,
         Some(global_dir.path()),
         Some(project_dir.path()),
-    ).expect("Failed to load config");
+    )
+    .expect("Failed to load config");
 
     // Should return defaults
     assert_eq!(config.providers.default_provider, None);

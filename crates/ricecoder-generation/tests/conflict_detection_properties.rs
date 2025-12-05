@@ -12,24 +12,23 @@ use tempfile::TempDir;
 
 /// Strategy for generating file paths
 fn file_path_strategy() -> impl Strategy<Value = String> {
-    r"[a-z]{1,10}\.rs|[a-z]{1,10}\.ts|[a-z]{1,10}\.py"
-        .prop_map(|s| s.to_string())
+    r"[a-z]{1,10}\.rs|[a-z]{1,10}\.ts|[a-z]{1,10}\.py".prop_map(|s| s.to_string())
 }
 
 /// Strategy for generating file content
 fn file_content_strategy() -> impl Strategy<Value = String> {
-    r"[a-zA-Z0-9\n ]{10,100}"
-        .prop_map(|s| s.to_string())
+    r"[a-zA-Z0-9\n ]{10,100}".prop_map(|s| s.to_string())
 }
 
 /// Strategy for generating generated files
 fn generated_file_strategy() -> impl Strategy<Value = GeneratedFile> {
-    (file_path_strategy(), file_content_strategy(), Just("rust"))
-        .prop_map(|(path, content, language)| GeneratedFile {
+    (file_path_strategy(), file_content_strategy(), Just("rust")).prop_map(
+        |(path, content, language)| GeneratedFile {
             path,
             content,
             language: language.to_string(),
-        })
+        },
+    )
 }
 
 proptest! {

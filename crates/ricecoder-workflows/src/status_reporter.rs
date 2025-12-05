@@ -47,7 +47,10 @@ impl StatusReporter {
 
     /// Get last reported status
     pub fn get_last_status(&self) -> Option<StatusReport> {
-        self.last_status.lock().ok().and_then(|status| status.clone())
+        self.last_status
+            .lock()
+            .ok()
+            .and_then(|status| status.clone())
     }
 
     /// Get average step duration
@@ -90,7 +93,10 @@ impl StatusReporter {
         }
 
         if let Some(eta) = report.estimated_completion_time {
-            output.push_str(&format!("Estimated Completion: {}\n", eta.format("%Y-%m-%d %H:%M:%S")));
+            output.push_str(&format!(
+                "Estimated Completion: {}\n",
+                eta.format("%Y-%m-%d %H:%M:%S")
+            ));
         }
 
         output

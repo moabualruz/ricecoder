@@ -6,9 +6,9 @@
 #[cfg(test)]
 mod tests {
     use crate::executor::{ExecutionConfig, ParallelExecutor};
+    use crate::models::AgentTask;
     use crate::models::{TaskOptions, TaskScope, TaskTarget, TaskType};
     use crate::scheduler::{ExecutionPhase, TaskDAG};
-    use crate::models::AgentTask;
     use std::path::PathBuf;
 
     fn create_test_task(id: &str) -> AgentTask {
@@ -51,7 +51,11 @@ mod tests {
         let results = executor.execute_phase(&phase).await.unwrap();
 
         // Property: All tasks should have results (isolation means no task blocks others)
-        assert_eq!(results.len(), tasks.len(), "All tasks should produce results");
+        assert_eq!(
+            results.len(),
+            tasks.len(),
+            "All tasks should produce results"
+        );
 
         // Property: Each task should have a unique ID
         let task_ids: Vec<String> = results.iter().map(|r| r.task_id.clone()).collect();
@@ -113,8 +117,7 @@ mod tests {
                 assert!(
                     result.success,
                     "Task {} should succeed with concurrency limit {}",
-                    result.task_id,
-                    max_concurrency
+                    result.task_id, max_concurrency
                 );
             }
         }
@@ -200,7 +203,11 @@ mod tests {
         for i in 1..=5 {
             let task_id = format!("task{}", i);
             let deps = dag.get_dependencies(&task_id);
-            assert!(deps.is_empty(), "Task {} should have no dependencies", task_id);
+            assert!(
+                deps.is_empty(),
+                "Task {} should have no dependencies",
+                task_id
+            );
         }
 
         // Property: Each task should have no dependents
@@ -455,11 +462,7 @@ mod tests {
 
             // Property: All tasks should succeed
             for result in &results {
-                assert!(
-                    result.success,
-                    "Task {} should succeed",
-                    result.task_id
-                );
+                assert!(result.success, "Task {} should succeed", result.task_id);
             }
 
             // Property: No duplicate results

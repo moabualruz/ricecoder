@@ -2,11 +2,11 @@
 //! **Feature: ricecoder-providers, Property 6: Provider Availability**
 //! **Validates: Requirements 1.1**
 
-use ricecoder_providers::{
-    ChatRequest, ChatResponse, ModelInfo, Provider, ProviderError, ProviderManager,
-    ProviderRegistry, TokenUsage, HealthCheckCache,
-};
 use ricecoder_providers::models::{FinishReason, Message};
+use ricecoder_providers::{
+    ChatRequest, ChatResponse, HealthCheckCache, ModelInfo, Provider, ProviderError,
+    ProviderManager, ProviderRegistry, TokenUsage,
+};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -43,7 +43,9 @@ impl Provider for AvailableMockProvider {
                 finish_reason: FinishReason::Stop,
             })
         } else {
-            Err(ProviderError::ProviderError("Provider unavailable".to_string()))
+            Err(ProviderError::ProviderError(
+                "Provider unavailable".to_string(),
+            ))
         }
     }
 
@@ -171,10 +173,7 @@ async fn prop_health_check_timeout_enforced() {
             vec![]
         }
 
-        async fn chat(
-            &self,
-            _request: ChatRequest,
-        ) -> Result<ChatResponse, ProviderError> {
+        async fn chat(&self, _request: ChatRequest) -> Result<ChatResponse, ProviderError> {
             Ok(ChatResponse {
                 content: "test".to_string(),
                 model: "test".to_string(),

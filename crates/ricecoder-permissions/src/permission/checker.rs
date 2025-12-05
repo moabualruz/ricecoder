@@ -48,10 +48,8 @@ impl PermissionChecker {
             .filter(|p| p.agent.is_some() && p.applies_to_agent(agent))
             .collect();
 
-        let global_perms: Vec<&ToolPermission> = permissions
-            .iter()
-            .filter(|p| p.agent.is_none())
-            .collect();
+        let global_perms: Vec<&ToolPermission> =
+            permissions.iter().filter(|p| p.agent.is_none()).collect();
 
         // Determine which permissions to use
         // If there are agent-specific permissions, use only those (they override global)
@@ -105,12 +103,8 @@ mod tests {
     #[test]
     fn test_check_permission_allow() {
         let perm = ToolPermission::new("test_tool".to_string(), PermissionLevel::Allow);
-        let decision = PermissionChecker::check_permission(
-            &[perm],
-            None,
-            PermissionLevel::Ask,
-        )
-        .unwrap();
+        let decision =
+            PermissionChecker::check_permission(&[perm], None, PermissionLevel::Ask).unwrap();
 
         assert_eq!(decision, PermissionDecision::Allow);
     }
@@ -118,12 +112,8 @@ mod tests {
     #[test]
     fn test_check_permission_ask() {
         let perm = ToolPermission::new("test_tool".to_string(), PermissionLevel::Ask);
-        let decision = PermissionChecker::check_permission(
-            &[perm],
-            None,
-            PermissionLevel::Allow,
-        )
-        .unwrap();
+        let decision =
+            PermissionChecker::check_permission(&[perm], None, PermissionLevel::Allow).unwrap();
 
         assert_eq!(decision, PermissionDecision::Ask);
     }
@@ -131,24 +121,16 @@ mod tests {
     #[test]
     fn test_check_permission_deny() {
         let perm = ToolPermission::new("test_tool".to_string(), PermissionLevel::Deny);
-        let decision = PermissionChecker::check_permission(
-            &[perm],
-            None,
-            PermissionLevel::Allow,
-        )
-        .unwrap();
+        let decision =
+            PermissionChecker::check_permission(&[perm], None, PermissionLevel::Allow).unwrap();
 
         assert_eq!(decision, PermissionDecision::Deny);
     }
 
     #[test]
     fn test_check_permission_no_match_uses_default() {
-        let decision = PermissionChecker::check_permission(
-            &[],
-            None,
-            PermissionLevel::Ask,
-        )
-        .unwrap();
+        let decision =
+            PermissionChecker::check_permission(&[], None, PermissionLevel::Ask).unwrap();
 
         assert_eq!(decision, PermissionDecision::Ask);
     }
@@ -158,12 +140,9 @@ mod tests {
         let perm1 = ToolPermission::new("test_*".to_string(), PermissionLevel::Allow);
         let perm2 = ToolPermission::new("test_tool".to_string(), PermissionLevel::Deny);
 
-        let decision = PermissionChecker::check_permission(
-            &[perm1, perm2],
-            None,
-            PermissionLevel::Ask,
-        )
-        .unwrap();
+        let decision =
+            PermissionChecker::check_permission(&[perm1, perm2], None, PermissionLevel::Ask)
+                .unwrap();
 
         // Should use the most restrictive (Deny)
         assert_eq!(decision, PermissionDecision::Deny);

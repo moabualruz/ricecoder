@@ -1,11 +1,11 @@
+use async_trait::async_trait;
 /// Integration tests for the completion engine core
 use ricecoder_completion::{
-    CompletionContext, CompletionEngine, CompletionItem, CompletionItemKind, Position,
-    GenericCompletionEngine, ProviderRegistry, Symbol, SymbolKind, Scope, ScopeKind,
-    Range, Type,
+    CompletionContext, CompletionEngine, CompletionItem, CompletionItemKind,
+    GenericCompletionEngine, Position, ProviderRegistry, Range, Scope, ScopeKind, Symbol,
+    SymbolKind, Type,
 };
 use std::sync::Arc;
-use async_trait::async_trait;
 
 /// Mock context analyzer for testing
 struct MockContextAnalyzer;
@@ -19,7 +19,7 @@ impl ricecoder_completion::ContextAnalyzer for MockContextAnalyzer {
         language: &str,
     ) -> ricecoder_completion::CompletionResult<CompletionContext> {
         let mut context = CompletionContext::new(language.to_string(), position, "".to_string());
-        
+
         // Add some test symbols
         context.available_symbols.push(Symbol {
             name: "test_var".to_string(),
@@ -149,11 +149,8 @@ async fn test_completion_item_with_details() {
 
 #[tokio::test]
 async fn test_completion_context_creation() {
-    let context = CompletionContext::new(
-        "rust".to_string(),
-        Position::new(5, 10),
-        "test".to_string(),
-    );
+    let context =
+        CompletionContext::new("rust".to_string(), Position::new(5, 10), "test".to_string());
 
     assert_eq!(context.language, "rust");
     assert_eq!(context.position.line, 5);
@@ -164,11 +161,8 @@ async fn test_completion_context_creation() {
 
 #[tokio::test]
 async fn test_completion_context_with_symbols() {
-    let mut context = CompletionContext::new(
-        "rust".to_string(),
-        Position::new(0, 0),
-        "".to_string(),
-    );
+    let mut context =
+        CompletionContext::new("rust".to_string(), Position::new(0, 0), "".to_string());
 
     let symbol = Symbol {
         name: "my_var".to_string(),
@@ -225,11 +219,8 @@ async fn test_completion_item_serialization() {
 
 #[tokio::test]
 async fn test_completion_context_serialization() {
-    let context = CompletionContext::new(
-        "rust".to_string(),
-        Position::new(5, 10),
-        "test".to_string(),
-    );
+    let context =
+        CompletionContext::new("rust".to_string(), Position::new(5, 10), "test".to_string());
 
     let json = serde_json::to_value(&context).expect("Failed to serialize");
     assert_eq!(json["language"], "rust");
@@ -239,11 +230,7 @@ async fn test_completion_context_serialization() {
 #[tokio::test]
 async fn test_completion_item_invalid_input() {
     // Test with empty label
-    let item = CompletionItem::new(
-        "".to_string(),
-        CompletionItemKind::Variable,
-        "".to_string(),
-    );
+    let item = CompletionItem::new("".to_string(), CompletionItemKind::Variable, "".to_string());
 
     assert_eq!(item.label, "");
     assert_eq!(item.insert_text, "");

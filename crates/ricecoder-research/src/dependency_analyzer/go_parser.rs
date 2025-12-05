@@ -25,12 +25,13 @@ impl GoParser {
 
         debug!("Parsing Go dependencies from {:?}", go_mod_path);
 
-        let content = std::fs::read_to_string(&go_mod_path)
-            .map_err(|e| ResearchError::DependencyParsingFailed {
+        let content = std::fs::read_to_string(&go_mod_path).map_err(|e| {
+            ResearchError::DependencyParsingFailed {
                 language: "Go".to_string(),
                 path: Some(go_mod_path.clone()),
                 reason: format!("Failed to read go.mod: {}", e),
-            })?;
+            }
+        })?;
 
         let mut dependencies = Vec::new();
         let mut in_require = false;
@@ -156,7 +157,10 @@ require (
         let deps = parser.parse(temp_dir.path()).unwrap();
         assert_eq!(deps.len(), 2);
 
-        let mux = deps.iter().find(|d| d.name == "github.com/gorilla/mux").unwrap();
+        let mux = deps
+            .iter()
+            .find(|d| d.name == "github.com/gorilla/mux")
+            .unwrap();
         assert_eq!(mux.version, "v1.8.0");
     }
 

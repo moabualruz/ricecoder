@@ -4,45 +4,40 @@
 
 #[cfg(test)]
 mod tests {
-    use proptest::prelude::*;
-    use crate::{
-        StatusReporter, WorkflowState, WorkflowStatus,
-    };
+    use crate::{StatusReporter, WorkflowState, WorkflowStatus};
     use chrono::Utc;
+    use proptest::prelude::*;
     use std::collections::HashMap;
 
     // Strategy for generating valid workflow states with total steps
     fn workflow_state_with_total_steps_strategy() -> impl Strategy<Value = (WorkflowState, usize)> {
-        (1usize..100)
-            .prop_flat_map(|total_steps| {
-                (
-                    "workflow-[a-z0-9]{5}",
-                    0usize..=total_steps,
-                )
-                    .prop_map(move |(workflow_id, completed_count)| {
-                        let completed_steps: Vec<String> = (0..completed_count)
-                            .map(|i| format!("step-{}", i))
-                            .collect();
+        (1usize..100).prop_flat_map(|total_steps| {
+            ("workflow-[a-z0-9]{5}", 0usize..=total_steps).prop_map(
+                move |(workflow_id, completed_count)| {
+                    let completed_steps: Vec<String> = (0..completed_count)
+                        .map(|i| format!("step-{}", i))
+                        .collect();
 
-                        let current_step = if completed_count < total_steps {
-                            Some(format!("step-{}", completed_count))
-                        } else {
-                            None
-                        };
+                    let current_step = if completed_count < total_steps {
+                        Some(format!("step-{}", completed_count))
+                    } else {
+                        None
+                    };
 
-                        let state = WorkflowState {
-                            workflow_id,
-                            status: WorkflowStatus::Running,
-                            current_step,
-                            completed_steps,
-                            step_results: HashMap::new(),
-                            started_at: Utc::now(),
-                            updated_at: Utc::now(),
-                        };
+                    let state = WorkflowState {
+                        workflow_id,
+                        status: WorkflowStatus::Running,
+                        current_step,
+                        completed_steps,
+                        step_results: HashMap::new(),
+                        started_at: Utc::now(),
+                        updated_at: Utc::now(),
+                    };
 
-                        (state, total_steps)
-                    })
-            })
+                    (state, total_steps)
+                },
+            )
+        })
     }
 
     // Strategy for generating valid total step counts

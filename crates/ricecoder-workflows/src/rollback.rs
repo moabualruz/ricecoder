@@ -99,7 +99,10 @@ impl RollbackManager {
                 .iter()
                 .find(|s| s.id == rollback_step_id)
                 .ok_or_else(|| {
-                    WorkflowError::NotFound(format!("Rollback step not found: {}", rollback_step_id))
+                    WorkflowError::NotFound(format!(
+                        "Rollback step not found: {}",
+                        rollback_step_id
+                    ))
                 })?;
 
             // Mark rollback step as started
@@ -171,14 +174,17 @@ impl RollbackManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{AgentStep, ErrorAction, StepConfig, StepType, WorkflowConfig, WorkflowStep, RiskFactors};
+    use crate::models::{
+        AgentStep, ErrorAction, RiskFactors, StepConfig, StepType, WorkflowConfig, WorkflowStep,
+    };
 
     fn create_simple_workflow() -> Workflow {
         Workflow {
             id: "test-workflow".to_string(),
             name: "Test Workflow".to_string(),
             description: "A test workflow".to_string(),
-            parameters: vec![],steps: vec![
+            parameters: vec![],
+            steps: vec![
                 WorkflowStep {
                     id: "step1".to_string(),
                     name: "Step 1".to_string(),
@@ -191,7 +197,9 @@ mod tests {
                     },
                     dependencies: vec![],
                     approval_required: false,
-                    on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                    on_error: ErrorAction::Fail,
+                    risk_score: None,
+                    risk_factors: RiskFactors::default(),
                 },
                 WorkflowStep {
                     id: "step2".to_string(),
@@ -205,7 +213,9 @@ mod tests {
                     },
                     dependencies: vec!["step1".to_string()],
                     approval_required: false,
-                    on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                    on_error: ErrorAction::Fail,
+                    risk_score: None,
+                    risk_factors: RiskFactors::default(),
                 },
             ],
             config: WorkflowConfig {
@@ -240,7 +250,10 @@ mod tests {
         plan.record_execution("step1".to_string());
         plan.record_execution("step2".to_string());
 
-        assert_eq!(plan.execution_order, vec!["step1".to_string(), "step2".to_string()]);
+        assert_eq!(
+            plan.execution_order,
+            vec!["step1".to_string(), "step2".to_string()]
+        );
     }
 
     #[test]
@@ -305,7 +318,10 @@ mod tests {
         plan.add_rollback_step("step1".to_string(), "rollback2".to_string());
 
         let steps = RollbackManager::get_rollback_steps(&plan, "step1");
-        assert_eq!(steps, vec!["rollback1".to_string(), "rollback2".to_string()]);
+        assert_eq!(
+            steps,
+            vec!["rollback1".to_string(), "rollback2".to_string()]
+        );
     }
 
     #[test]
@@ -324,5 +340,3 @@ mod tests {
         assert_eq!(plan.execution_order, vec!["step1".to_string()]);
     }
 }
-
-

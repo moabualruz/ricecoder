@@ -203,12 +203,10 @@ impl SpecInheritanceResolver {
                             .unwrap_or(0);
 
                         if parent_level >= inh.precedence_level {
-                            return Err(SpecError::InheritanceConflict(
-                                format!(
-                                    "Parent {} has precedence level {} but child {} has level {}",
-                                    parent_id, parent_level, spec.id, inh.precedence_level
-                                ),
-                            ));
+                            return Err(SpecError::InheritanceConflict(format!(
+                                "Parent {} has precedence level {} but child {} has level {}",
+                                parent_id, parent_level, spec.id, inh.precedence_level
+                            )));
                         }
                     }
                 }

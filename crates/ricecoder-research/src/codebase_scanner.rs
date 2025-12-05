@@ -1,7 +1,7 @@
 //! Codebase scanning and file discovery
 
 use crate::error::ResearchError;
-use crate::models::{Language, Framework};
+use crate::models::{Framework, Language};
 use ignore::WalkBuilder;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -59,10 +59,7 @@ impl CodebaseScanner {
         let mut test_dirs = HashSet::new();
 
         // Use ignore crate to respect .gitignore
-        let walker = WalkBuilder::new(root)
-            .hidden(true)
-            .git_ignore(true)
-            .build();
+        let walker = WalkBuilder::new(root).hidden(true).git_ignore(true).build();
 
         for entry in walker {
             let entry = match entry {
@@ -179,19 +176,28 @@ mod tests {
     #[test]
     fn test_detect_language_rust() {
         let path = PathBuf::from("main.rs");
-        assert_eq!(CodebaseScanner::detect_language(&path), Some(Language::Rust));
+        assert_eq!(
+            CodebaseScanner::detect_language(&path),
+            Some(Language::Rust)
+        );
     }
 
     #[test]
     fn test_detect_language_typescript() {
         let path = PathBuf::from("main.ts");
-        assert_eq!(CodebaseScanner::detect_language(&path), Some(Language::TypeScript));
+        assert_eq!(
+            CodebaseScanner::detect_language(&path),
+            Some(Language::TypeScript)
+        );
     }
 
     #[test]
     fn test_detect_language_python() {
         let path = PathBuf::from("main.py");
-        assert_eq!(CodebaseScanner::detect_language(&path), Some(Language::Python));
+        assert_eq!(
+            CodebaseScanner::detect_language(&path),
+            Some(Language::Python)
+        );
     }
 
     #[test]
@@ -234,7 +240,10 @@ mod tests {
         fs::create_dir_all(root.join("tests"))?;
         fs::write(root.join("src/main.rs"), "fn main() {}")?;
         fs::write(root.join("src/lib.rs"), "pub fn lib() {}")?;
-        fs::write(root.join("tests/integration_test.rs"), "#[test]\nfn test() {}")?;
+        fs::write(
+            root.join("tests/integration_test.rs"),
+            "#[test]\nfn test() {}",
+        )?;
 
         let result = CodebaseScanner::scan(root)?;
 
@@ -251,6 +260,4 @@ mod tests {
         let result = CodebaseScanner::scan(Path::new("/nonexistent/path"));
         assert!(result.is_err());
     }
-
-
 }

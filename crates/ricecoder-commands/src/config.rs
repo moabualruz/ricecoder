@@ -49,10 +49,7 @@ impl ConfigManager {
     /// Load commands from a file (auto-detect format)
     pub fn load_from_file<P: AsRef<Path>>(path: P) -> Result<CommandRegistry> {
         let path = path.as_ref();
-        let extension = path
-            .extension()
-            .and_then(|ext| ext.to_str())
-            .unwrap_or("");
+        let extension = path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
 
         match extension {
             "yaml" | "yml" => Self::load_from_yaml(path),
@@ -70,8 +67,9 @@ impl ConfigManager {
         };
 
         let content = serde_yaml::to_string(&config)?;
-        fs::write(path, content)
-            .map_err(|e| CommandError::ConfigError(format!("Failed to write config file: {}", e)))?;
+        fs::write(path, content).map_err(|e| {
+            CommandError::ConfigError(format!("Failed to write config file: {}", e))
+        })?;
 
         Ok(())
     }
@@ -83,8 +81,9 @@ impl ConfigManager {
         };
 
         let content = serde_json::to_string_pretty(&config)?;
-        fs::write(path, content)
-            .map_err(|e| CommandError::ConfigError(format!("Failed to write config file: {}", e)))?;
+        fs::write(path, content).map_err(|e| {
+            CommandError::ConfigError(format!("Failed to write config file: {}", e))
+        })?;
 
         Ok(())
     }
@@ -92,10 +91,7 @@ impl ConfigManager {
     /// Save commands to a file (auto-detect format)
     pub fn save_to_file<P: AsRef<Path>>(registry: &CommandRegistry, path: P) -> Result<()> {
         let path = path.as_ref();
-        let extension = path
-            .extension()
-            .and_then(|ext| ext.to_str())
-            .unwrap_or("");
+        let extension = path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
 
         match extension {
             "yaml" | "yml" => Self::save_to_yaml(registry, path),

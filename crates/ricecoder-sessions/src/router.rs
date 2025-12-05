@@ -67,7 +67,8 @@ impl SessionRouter {
         session.updated_at = chrono::Utc::now();
 
         // Track which session this message belongs to
-        self.message_session_map.insert(message_id, session_id.clone());
+        self.message_session_map
+            .insert(message_id, session_id.clone());
 
         Ok(session_id)
     }
@@ -159,8 +160,7 @@ impl SessionRouter {
         }
 
         // Remove all messages from this session from the tracking map
-        self.message_session_map
-            .retain(|_, sid| sid != session_id);
+        self.message_session_map.retain(|_, sid| sid != session_id);
 
         self.sessions.remove(session_id);
 
@@ -293,9 +293,7 @@ mod tests {
             .unwrap();
 
         // Route message to session 1
-        router
-            .route_to_session(&session1.id, "Message 1")
-            .unwrap();
+        router.route_to_session(&session1.id, "Message 1").unwrap();
 
         // Switch to session 2 and route message
         router.switch_session(&session2.id).unwrap();
@@ -336,7 +334,9 @@ mod tests {
             .unwrap();
 
         let session_id = router.route_to_active_session("Hello").unwrap();
-        let message_id = router.get_session(&session_id).unwrap().history[0].id.clone();
+        let message_id = router.get_session(&session_id).unwrap().history[0]
+            .id
+            .clone();
 
         assert_eq!(router.get_message_session(&message_id), Some(session.id));
     }
@@ -353,13 +353,12 @@ mod tests {
             .create_session("Session 2".to_string(), context)
             .unwrap();
 
-        router
-            .route_to_session(&session1.id, "Message")
-            .unwrap();
-        let message_id = router.get_session(&session1.id).unwrap().history[0].id.clone();
+        router.route_to_session(&session1.id, "Message").unwrap();
+        let message_id = router.get_session(&session1.id).unwrap().history[0]
+            .id
+            .clone();
 
         assert!(router.verify_message_in_session(&message_id, &session1.id));
         assert!(!router.verify_message_in_session(&message_id, &session2.id));
     }
 }
-

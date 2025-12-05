@@ -35,12 +35,19 @@ impl GenericDiagnosticsEngine {
     }
 
     /// Generate diagnostics using the appropriate provider or fallback
-    pub fn generate_diagnostics(&self, code: &str, language: &str) -> ProviderResult<Vec<Diagnostic>> {
+    pub fn generate_diagnostics(
+        &self,
+        code: &str,
+        language: &str,
+    ) -> ProviderResult<Vec<Diagnostic>> {
         if let Some(provider) = self.registry.get(language) {
             provider.generate_diagnostics(code)
         } else {
             // Gracefully degrade to empty diagnostics for unconfigured languages
-            tracing::debug!("No diagnostics provider found for language '{}', returning empty", language);
+            tracing::debug!(
+                "No diagnostics provider found for language '{}', returning empty",
+                language
+            );
             Ok(Vec::new())
         }
     }
@@ -58,8 +65,7 @@ impl GenericDiagnosticsEngine {
         let filtered = all_diagnostics
             .into_iter()
             .filter(|diag| {
-                diag.range.start.line >= range.start.line
-                    && diag.range.end.line <= range.end.line
+                diag.range.start.line >= range.start.line && diag.range.end.line <= range.end.line
             })
             .collect();
 

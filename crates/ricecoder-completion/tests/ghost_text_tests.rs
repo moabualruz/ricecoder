@@ -5,11 +5,10 @@
 /// - Ghost text acceptance
 /// - Ghost text dismissal
 /// - Ghost text updates on context change
-
 use ricecoder_completion::{
-    BasicGhostTextGenerator, BasicGhostTextKeyHandler, BasicGhostTextStateManager,
-    CompletionItem, CompletionItemKind, GhostText, GhostTextGenerator, GhostTextKeyHandler,
-    GhostTextState, GhostTextStateManager, PartialAcceptanceMode, Position, Range,
+    BasicGhostTextGenerator, BasicGhostTextKeyHandler, BasicGhostTextStateManager, CompletionItem,
+    CompletionItemKind, GhostText, GhostTextGenerator, GhostTextKeyHandler, GhostTextState,
+    GhostTextStateManager, PartialAcceptanceMode, Position, Range,
 };
 
 #[test]
@@ -208,7 +207,10 @@ fn test_ghost_text_state_transitions() {
         Range::new(Position::new(0, 0), Position::new(0, 4)),
     );
     manager.display(ghost_text.clone());
-    assert_eq!(manager.get_state(), &GhostTextState::Displayed(ghost_text.clone()));
+    assert_eq!(
+        manager.get_state(),
+        &GhostTextState::Displayed(ghost_text.clone())
+    );
 
     // Accept ghost text
     manager.accept();

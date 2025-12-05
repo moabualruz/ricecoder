@@ -3,7 +3,7 @@
 //! **Validates: Requirements 1.6**
 
 use proptest::prelude::*;
-use ricecoder_generation::{TemplateParser, TemplateCache};
+use ricecoder_generation::{TemplateCache, TemplateParser};
 
 /// Strategy for generating valid template content
 fn template_content_strategy() -> impl Strategy<Value = String> {

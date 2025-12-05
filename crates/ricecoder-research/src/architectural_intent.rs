@@ -3,10 +3,10 @@
 //! This module provides functionality to track and understand architectural decisions,
 //! infer architectural styles from code structure, and parse Architecture Decision Records (ADRs).
 
-use crate::models::{ArchitecturalIntent, ArchitecturalStyle, ArchitecturalDecision};
+use crate::models::{ArchitecturalDecision, ArchitecturalIntent, ArchitecturalStyle};
 use crate::ResearchError;
-use std::path::Path;
 use chrono::Utc;
+use std::path::Path;
 
 /// Tracks and understands architectural decisions and patterns
 #[derive(Debug, Clone)]
@@ -48,7 +48,7 @@ impl ArchitecturalIntentTracker {
     /// Infers architectural style from directory structure
     fn infer_from_structure(&self, root: &Path) -> Result<ArchitecturalStyle, ResearchError> {
         // Check for common architectural patterns in directory structure
-        
+
         // Check for layered architecture (domain, application, infrastructure, interfaces)
         if self.has_layered_structure(root)? {
             return Ok(ArchitecturalStyle::Layered);
@@ -77,7 +77,7 @@ impl ArchitecturalIntentTracker {
     fn has_layered_structure(&self, root: &Path) -> Result<bool, ResearchError> {
         // Look for common layered architecture directories
         let layered_dirs = ["domain", "application", "infrastructure", "interfaces"];
-        
+
         for dir in &layered_dirs {
             let path = root.join(dir);
             if path.exists() && path.is_dir() {
@@ -105,10 +105,11 @@ impl ArchitecturalIntentTracker {
         let services_path = root.join("services");
         if services_path.exists() && services_path.is_dir() {
             if let Ok(entries) = std::fs::read_dir(&services_path) {
-                let service_count = entries.filter_map(|e| e.ok()).filter(|e| {
-                    e.path().is_dir()
-                }).count();
-                
+                let service_count = entries
+                    .filter_map(|e| e.ok())
+                    .filter(|e| e.path().is_dir())
+                    .count();
+
                 if service_count >= 2 {
                     return Ok(true);
                 }
@@ -119,10 +120,11 @@ impl ArchitecturalIntentTracker {
         let crates_path = root.join("crates");
         if crates_path.exists() && crates_path.is_dir() {
             if let Ok(entries) = std::fs::read_dir(&crates_path) {
-                let crate_count = entries.filter_map(|e| e.ok()).filter(|e| {
-                    e.path().is_dir()
-                }).count();
-                
+                let crate_count = entries
+                    .filter_map(|e| e.ok())
+                    .filter(|e| e.path().is_dir())
+                    .count();
+
                 if crate_count >= 2 {
                     return Ok(true);
                 }
@@ -136,7 +138,7 @@ impl ArchitecturalIntentTracker {
     fn has_event_driven_structure(&self, root: &Path) -> Result<bool, ResearchError> {
         // Look for event-related directories
         let event_dirs = ["events", "handlers", "subscribers", "listeners"];
-        
+
         for dir in &event_dirs {
             let path = root.join(dir);
             if path.exists() && path.is_dir() {
@@ -162,7 +164,7 @@ impl ArchitecturalIntentTracker {
     fn has_serverless_structure(&self, root: &Path) -> Result<bool, ResearchError> {
         // Look for serverless-specific directories
         let serverless_dirs = ["functions", "handlers", "lambdas"];
-        
+
         for dir in &serverless_dirs {
             let path = root.join(dir);
             if path.exists() && path.is_dir() {
@@ -219,13 +221,13 @@ impl ArchitecturalIntentTracker {
 
     /// Parses a single ADR file
     fn parse_adr_file(&self, path: &Path) -> Result<ArchitecturalDecision, ResearchError> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| ResearchError::IoError {
-                reason: format!("Failed to read ADR file: {}", e),
-            })?;
+        let content = std::fs::read_to_string(path).map_err(|e| ResearchError::IoError {
+            reason: format!("Failed to read ADR file: {}", e),
+        })?;
 
         // Extract ADR metadata from filename and content
-        let filename = path.file_name()
+        let filename = path
+            .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or("unknown");
 
@@ -263,7 +265,7 @@ impl ArchitecturalIntentTracker {
 
         for line in lines {
             let lower = line.to_lowercase();
-            
+
             if lower.contains("## context") || lower.contains("# context") {
                 current_section = "context";
             } else if lower.contains("## decision") || lower.contains("# decision") {
@@ -284,7 +286,8 @@ impl ArchitecturalIntentTracker {
                     }
                     "consequences" => {
                         if line.trim().starts_with('-') || line.trim().starts_with('*') {
-                            consequences.push(line.trim_start_matches(['-', '*']).trim().to_string());
+                            consequences
+                                .push(line.trim_start_matches(['-', '*']).trim().to_string());
                         }
                     }
                     _ => {}
@@ -292,7 +295,11 @@ impl ArchitecturalIntentTracker {
             }
         }
 
-        (context.trim().to_string(), decision.trim().to_string(), consequences)
+        (
+            context.trim().to_string(),
+            decision.trim().to_string(),
+            consequences,
+        )
     }
 
     /// Builds complete architectural intent from analysis
@@ -307,7 +314,7 @@ impl ArchitecturalIntentTracker {
     pub fn build_intent(&self, root: &Path) -> Result<ArchitecturalIntent, ResearchError> {
         let style = self.infer_style(root)?;
         let decisions = self.parse_adrs(root)?;
-        
+
         // Extract principles and constraints from decisions
         let principles = self.extract_principles(&decisions);
         let constraints = self.extract_constraints(&decisions);
@@ -346,9 +353,10 @@ impl ArchitecturalIntentTracker {
         for decision in decisions {
             // Extract constraints from consequences
             for consequence in &decision.consequences {
-                if consequence.to_lowercase().contains("constraint") 
+                if consequence.to_lowercase().contains("constraint")
                     || consequence.to_lowercase().contains("must")
-                    || consequence.to_lowercase().contains("require") {
+                    || consequence.to_lowercase().contains("require")
+                {
                     constraints.push(consequence.clone());
                 }
             }
@@ -462,7 +470,7 @@ We will use Rust for core components.
 "#;
 
         let (context, decision, consequences) = tracker.parse_adr_sections(content);
-        
+
         assert!(context.contains("performant"));
         assert!(decision.contains("Rust"));
         assert_eq!(consequences.len(), 2);
@@ -470,42 +478,38 @@ We will use Rust for core components.
 
     #[test]
     fn test_extract_principles() {
-        let decisions = vec![
-            ArchitecturalDecision {
-                id: "001".to_string(),
-                title: "Test Decision".to_string(),
-                context: "Following the principle of separation of concerns".to_string(),
-                decision: "We will use layered architecture".to_string(),
-                consequences: vec![],
-                date: Utc::now(),
-            },
-        ];
+        let decisions = vec![ArchitecturalDecision {
+            id: "001".to_string(),
+            title: "Test Decision".to_string(),
+            context: "Following the principle of separation of concerns".to_string(),
+            decision: "We will use layered architecture".to_string(),
+            consequences: vec![],
+            date: Utc::now(),
+        }];
 
         let tracker = ArchitecturalIntentTracker::new();
         let principles = tracker.extract_principles(&decisions);
-        
+
         assert!(!principles.is_empty());
     }
 
     #[test]
     fn test_extract_constraints() {
-        let decisions = vec![
-            ArchitecturalDecision {
-                id: "001".to_string(),
-                title: "Test Decision".to_string(),
-                context: "".to_string(),
-                decision: "".to_string(),
-                consequences: vec![
-                    "Must use HTTPS for all communication".to_string(),
-                    "Constraint: Maximum response time 100ms".to_string(),
-                ],
-                date: Utc::now(),
-            },
-        ];
+        let decisions = vec![ArchitecturalDecision {
+            id: "001".to_string(),
+            title: "Test Decision".to_string(),
+            context: "".to_string(),
+            decision: "".to_string(),
+            consequences: vec![
+                "Must use HTTPS for all communication".to_string(),
+                "Constraint: Maximum response time 100ms".to_string(),
+            ],
+            date: Utc::now(),
+        }];
 
         let tracker = ArchitecturalIntentTracker::new();
         let constraints = tracker.extract_constraints(&decisions);
-        
+
         assert_eq!(constraints.len(), 2);
     }
 
@@ -520,7 +524,7 @@ We will use Rust for core components.
 
         let tracker = ArchitecturalIntentTracker::new();
         let style = tracker.infer_style(root)?;
-        
+
         assert_eq!(style, ArchitecturalStyle::Layered);
         Ok(())
     }
@@ -538,7 +542,7 @@ We will use Rust for core components.
 
         let tracker = ArchitecturalIntentTracker::new();
         let style = tracker.infer_style(root)?;
-        
+
         assert_eq!(style, ArchitecturalStyle::Microservices);
         Ok(())
     }
@@ -554,7 +558,7 @@ We will use Rust for core components.
 
         let tracker = ArchitecturalIntentTracker::new();
         let style = tracker.infer_style(root)?;
-        
+
         assert_eq!(style, ArchitecturalStyle::EventDriven);
         Ok(())
     }
@@ -569,7 +573,7 @@ We will use Rust for core components.
 
         let tracker = ArchitecturalIntentTracker::new();
         let style = tracker.infer_style(root)?;
-        
+
         assert_eq!(style, ArchitecturalStyle::Serverless);
         Ok(())
     }
@@ -584,7 +588,7 @@ We will use Rust for core components.
 
         let tracker = ArchitecturalIntentTracker::new();
         let style = tracker.infer_style(root)?;
-        
+
         assert_eq!(style, ArchitecturalStyle::Monolithic);
         Ok(())
     }
@@ -600,7 +604,7 @@ We will use Rust for core components.
 
         let tracker = ArchitecturalIntentTracker::new();
         let intent = tracker.build_intent(root)?;
-        
+
         assert_eq!(intent.style, ArchitecturalStyle::Layered);
         assert!(intent.decisions.is_empty()); // No ADR files
         Ok(())
@@ -633,7 +637,7 @@ We will use Rust for all core infrastructure.
 
         let tracker = ArchitecturalIntentTracker::new();
         let decisions = tracker.parse_adrs(root)?;
-        
+
         assert_eq!(decisions.len(), 1);
         assert_eq!(decisions[0].id, "0001");
         // Title is extracted from filename, replacing hyphens with spaces
@@ -651,12 +655,15 @@ We will use Rust for all core infrastructure.
         let adr_dir = root.join("adr");
         fs::create_dir(&adr_dir)?;
 
-        fs::write(adr_dir.join("0001-use-rust.md"), "# ADR-001\n## Context\nTest\n## Decision\nUse Rust\n## Consequences\n- Good")?;
+        fs::write(
+            adr_dir.join("0001-use-rust.md"),
+            "# ADR-001\n## Context\nTest\n## Decision\nUse Rust\n## Consequences\n- Good",
+        )?;
         fs::write(adr_dir.join("0002-use-postgres.md"), "# ADR-002\n## Context\nDatabase\n## Decision\nUse PostgreSQL\n## Consequences\n- Reliable")?;
 
         let tracker = ArchitecturalIntentTracker::new();
         let decisions = tracker.parse_adrs(root)?;
-        
+
         assert_eq!(decisions.len(), 2);
         Ok(())
     }
@@ -670,7 +677,7 @@ We will use Rust for all core infrastructure.
     #[test]
     fn test_parse_adr_sections_with_markdown_variations() {
         let tracker = ArchitecturalIntentTracker::new();
-        
+
         // Test with different markdown heading levels
         let content = r#"
 # ADR-001
@@ -687,7 +694,7 @@ This is the decision section.
 "#;
 
         let (context, decision, consequences) = tracker.parse_adr_sections(content);
-        
+
         assert!(context.contains("context section"));
         assert!(decision.contains("decision section"));
         assert_eq!(consequences.len(), 2);
@@ -699,7 +706,7 @@ This is the decision section.
         let content = "";
 
         let (context, decision, consequences) = tracker.parse_adr_sections(content);
-        
+
         assert!(context.is_empty());
         assert!(decision.is_empty());
         assert!(consequences.is_empty());
@@ -728,30 +735,25 @@ This is the decision section.
 
         let tracker = ArchitecturalIntentTracker::new();
         let principles = tracker.extract_principles(&decisions);
-        
+
         // Should be deduplicated
         assert_eq!(principles.len(), 1);
     }
 
     #[test]
     fn test_extract_constraints_deduplication() {
-        let decisions = vec![
-            ArchitecturalDecision {
-                id: "001".to_string(),
-                title: "Test".to_string(),
-                context: "".to_string(),
-                decision: "".to_string(),
-                consequences: vec![
-                    "Must use HTTPS".to_string(),
-                    "Must use HTTPS".to_string(),
-                ],
-                date: Utc::now(),
-            },
-        ];
+        let decisions = vec![ArchitecturalDecision {
+            id: "001".to_string(),
+            title: "Test".to_string(),
+            context: "".to_string(),
+            decision: "".to_string(),
+            consequences: vec!["Must use HTTPS".to_string(), "Must use HTTPS".to_string()],
+            date: Utc::now(),
+        }];
 
         let tracker = ArchitecturalIntentTracker::new();
         let constraints = tracker.extract_constraints(&decisions);
-        
+
         // Should be deduplicated
         assert_eq!(constraints.len(), 1);
     }

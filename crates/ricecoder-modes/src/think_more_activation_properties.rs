@@ -20,22 +20,22 @@ mod tests {
             content in ".*",
         ) {
             let controller = ThinkMoreController::new();
-            
+
             // Enable Think More
             prop_assert!(controller.enable().is_ok());
             prop_assert!(controller.is_enabled().unwrap());
-            
+
             // Start thinking
             prop_assert!(controller.start_thinking(depth).is_ok());
             prop_assert!(controller.is_thinking().unwrap());
-            
+
             // Add content
             prop_assert!(controller.add_thinking_content(&content).is_ok());
-            
+
             // Verify content is visible
             let thinking_content = controller.get_thinking_content().unwrap();
             prop_assert!(!thinking_content.is_empty() || content.is_empty());
-            
+
             // Stop thinking
             let stopped_content = controller.stop_thinking().unwrap();
             prop_assert!(!controller.is_thinking().unwrap());
@@ -54,13 +54,13 @@ mod tests {
         ) {
             let controller = ThinkMoreController::new();
             controller.set_depth(depth).unwrap();
-            
+
             controller.start_thinking(depth).unwrap();
-            
+
             // Depth should be preserved
             let metadata = controller.get_thinking_metadata().unwrap();
             prop_assert_eq!(metadata.depth, depth);
-            
+
             controller.stop_thinking().unwrap();
         }
 
@@ -72,20 +72,20 @@ mod tests {
         ) {
             let controller = ThinkMoreController::new();
             controller.start_thinking(ThinkingDepth::Medium).unwrap();
-            
+
             for content in &contents {
                 prop_assert!(controller.add_thinking_content(content).is_ok());
             }
-            
+
             let accumulated = controller.get_thinking_content().unwrap();
-            
+
             // All non-empty contents should be in the accumulated string
             for content in &contents {
                 if !content.is_empty() {
                     prop_assert!(accumulated.contains(content));
                 }
             }
-            
+
             controller.stop_thinking().unwrap();
         }
 
@@ -96,15 +96,15 @@ mod tests {
             num_cycles in 1..5usize,
         ) {
             let controller = ThinkMoreController::new();
-            
+
             for _ in 0..num_cycles {
                 // Initially not thinking
                 prop_assert!(!controller.is_thinking().unwrap());
-                
+
                 // Start thinking
                 prop_assert!(controller.start_thinking(ThinkingDepth::Medium).is_ok());
                 prop_assert!(controller.is_thinking().unwrap());
-                
+
                 // Stop thinking
                 prop_assert!(controller.stop_thinking().is_ok());
                 prop_assert!(!controller.is_thinking().unwrap());
@@ -124,14 +124,14 @@ mod tests {
             let controller = ThinkMoreController::new();
             controller.enable().unwrap();
             controller.start_thinking(depth).unwrap();
-            
+
             let metadata = controller.get_thinking_metadata().unwrap();
-            
+
             prop_assert!(metadata.enabled);
             prop_assert!(metadata.active);
             prop_assert_eq!(metadata.depth, depth);
             prop_assert!(metadata.elapsed_time.is_some());
-            
+
             controller.stop_thinking().unwrap();
         }
 
@@ -144,18 +144,18 @@ mod tests {
             let controller = ThinkMoreController::new();
             controller.start_thinking(ThinkingDepth::Medium).unwrap();
             controller.add_thinking_content(&content).unwrap();
-            
+
             let stopped_content = controller.stop_thinking().unwrap();
-            
+
             // Content should be preserved
             if !content.is_empty() {
                 prop_assert!(stopped_content.contains(&content));
             }
-            
+
             // New additions should not be added (thinking is stopped)
             controller.add_thinking_content("new content").unwrap();
             let final_content = controller.get_thinking_content().unwrap();
-            
+
             // Final content should not include the new content since thinking was stopped
             prop_assert_eq!(final_content, stopped_content);
         }
@@ -169,11 +169,11 @@ mod tests {
             let controller = ThinkMoreController::new();
             controller.start_thinking(ThinkingDepth::Medium).unwrap();
             controller.add_thinking_content(&content).unwrap();
-            
+
             prop_assert!(controller.is_thinking().unwrap());
-            
+
             controller.cancel_thinking().unwrap();
-            
+
             prop_assert!(!controller.is_thinking().unwrap());
         }
     }

@@ -3,10 +3,7 @@
 //! **Validates: Requirements 4.4, 4.5**
 
 use proptest::prelude::*;
-use ricecoder_specs::{
-    models::*,
-    workflow::WorkflowOrchestrator,
-};
+use ricecoder_specs::{models::*, workflow::WorkflowOrchestrator};
 
 // ============================================================================
 // Generators for property-based testing
@@ -19,8 +16,6 @@ fn arb_task_id() -> impl Strategy<Value = String> {
 fn arb_requirement_id() -> impl Strategy<Value = String> {
     "REQ-[0-9]{1,3}".prop_map(|s| s)
 }
-
-
 
 // ============================================================================
 // Property 11: Spec-to-Task Traceability

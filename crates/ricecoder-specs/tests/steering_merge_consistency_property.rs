@@ -4,7 +4,7 @@
 
 use proptest::prelude::*;
 use ricecoder_specs::{
-    models::{Steering, SteeringRule, Standard, TemplateRef},
+    models::{Standard, Steering, SteeringRule, TemplateRef},
     steering::SteeringLoader,
 };
 
@@ -69,8 +69,7 @@ fn arb_template_path() -> impl Strategy<Value = String> {
 }
 
 fn arb_template() -> impl Strategy<Value = TemplateRef> {
-    (arb_template_id(), arb_template_path())
-        .prop_map(|(id, path)| TemplateRef { id, path })
+    (arb_template_id(), arb_template_path()).prop_map(|(id, path)| TemplateRef { id, path })
 }
 
 fn arb_steering() -> impl Strategy<Value = Steering> {

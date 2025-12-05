@@ -1,6 +1,6 @@
 //! Configuration loader for loading language configurations from files
 
-use super::types::{ConfigError, ConfigResult, LanguageConfig, ConfigRegistry};
+use super::types::{ConfigError, ConfigRegistry, ConfigResult, LanguageConfig};
 use std::path::Path;
 
 /// Configuration loader
@@ -39,9 +39,10 @@ impl ConfigLoader {
         let mut registry = ConfigRegistry::new();
 
         if !path.is_dir() {
-            return Err(ConfigError::ValidationError(
-                format!("Path is not a directory: {}", path.display()),
-            ));
+            return Err(ConfigError::ValidationError(format!(
+                "Path is not a directory: {}",
+                path.display()
+            )));
         }
 
         for entry in std::fs::read_dir(path)? {
@@ -56,7 +57,11 @@ impl ConfigLoader {
                                 registry.register(config)?;
                             }
                             Err(e) => {
-                                tracing::warn!("Failed to load configuration from {}: {}", path.display(), e);
+                                tracing::warn!(
+                                    "Failed to load configuration from {}: {}",
+                                    path.display(),
+                                    e
+                                );
                             }
                         }
                     }

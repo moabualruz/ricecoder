@@ -35,12 +35,20 @@ impl GenericCodeActionsEngine {
     }
 
     /// Suggest code actions using the appropriate provider or fallback
-    pub fn suggest_actions(&self, diagnostic: &Diagnostic, code: &str, language: &str) -> ProviderResult<Vec<String>> {
+    pub fn suggest_actions(
+        &self,
+        diagnostic: &Diagnostic,
+        code: &str,
+        language: &str,
+    ) -> ProviderResult<Vec<String>> {
         if let Some(provider) = self.registry.get(language) {
             provider.suggest_actions(diagnostic, code)
         } else {
             // Gracefully degrade to empty actions for unconfigured languages
-            tracing::debug!("No code action provider found for language '{}', returning empty", language);
+            tracing::debug!(
+                "No code action provider found for language '{}', returning empty",
+                language
+            );
             Ok(Vec::new())
         }
     }
@@ -51,7 +59,10 @@ impl GenericCodeActionsEngine {
             provider.apply_action(code, action)
         } else {
             // Gracefully degrade to returning original code for unconfigured languages
-            tracing::debug!("No code action provider found for language '{}', returning original code", language);
+            tracing::debug!(
+                "No code action provider found for language '{}', returning original code",
+                language
+            );
             Ok(code.to_string())
         }
     }
@@ -84,7 +95,11 @@ mod tests {
             "mock"
         }
 
-        fn suggest_actions(&self, _diagnostic: &Diagnostic, _code: &str) -> ProviderResult<Vec<String>> {
+        fn suggest_actions(
+            &self,
+            _diagnostic: &Diagnostic,
+            _code: &str,
+        ) -> ProviderResult<Vec<String>> {
             Ok(vec!["action1".to_string()])
         }
 
@@ -107,7 +122,7 @@ mod tests {
 
     #[test]
     fn test_generic_code_actions_engine_fallback() {
-        use crate::types::{Position, Range, DiagnosticSeverity};
+        use crate::types::{DiagnosticSeverity, Position, Range};
 
         let engine = GenericCodeActionsEngine::new();
 

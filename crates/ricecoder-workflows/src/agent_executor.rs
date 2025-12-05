@@ -50,12 +50,7 @@ impl AgentExecutor {
         let duration_ms = start_time.elapsed().as_millis() as u64;
 
         // Mark step as completed with the agent output
-        StateManager::complete_step(
-            state,
-            step_id.to_string(),
-            Some(agent_output),
-            duration_ms,
-        );
+        StateManager::complete_step(state, step_id.to_string(), Some(agent_output), duration_ms);
 
         Ok(())
     }
@@ -157,7 +152,9 @@ impl AgentExecutor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{ErrorAction, RiskFactors, StepConfig, StepStatus, StepType, WorkflowConfig, WorkflowStep};
+    use crate::models::{
+        ErrorAction, RiskFactors, StepConfig, StepStatus, StepType, WorkflowConfig, WorkflowStep,
+    };
 
     fn create_workflow_with_agent_step() -> Workflow {
         Workflow {
@@ -197,7 +194,8 @@ mod tests {
             task: "test-task".to_string(),
         };
 
-        let result = AgentExecutor::execute_agent_step(&workflow, &mut state, "agent-step", &agent_step);
+        let result =
+            AgentExecutor::execute_agent_step(&workflow, &mut state, "agent-step", &agent_step);
         assert!(result.is_ok());
 
         // Verify step is marked as completed

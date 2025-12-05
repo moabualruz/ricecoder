@@ -4,8 +4,8 @@
 
 #[cfg(test)]
 mod tests {
-    use proptest::prelude::*;
     use crate::{ActivityLogger, ActivityType};
+    use proptest::prelude::*;
 
     // Strategy for generating activity types
     fn activity_type_strategy() -> impl Strategy<Value = ActivityType> {
@@ -26,10 +26,7 @@ mod tests {
 
     // Strategy for generating step IDs
     fn step_id_strategy() -> impl Strategy<Value = Option<String>> {
-        prop_oneof![
-            Just(None),
-            "step-[a-z0-9]{5}".prop_map(Some),
-        ]
+        prop_oneof![Just(None), "step-[a-z0-9]{5}".prop_map(Some),]
     }
 
     proptest! {

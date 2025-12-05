@@ -2,10 +2,9 @@
 //! Tests cache storage, retrieval, invalidation, and statistics tracking
 
 use ricecoder_research::{
-    CacheManager, ChangeDetector, CacheStatsTracker, ProjectContext, ProjectType,
-    ProjectStructure, ArchitecturalIntent, ArchitecturalStyle, StandardsProfile,
-    NamingConventions, CaseStyle, FormattingStyle, IndentType, ImportOrganization,
-    DocumentationStyle, DocFormat,
+    ArchitecturalIntent, ArchitecturalStyle, CacheManager, CacheStatsTracker, CaseStyle,
+    ChangeDetector, DocFormat, DocumentationStyle, FormattingStyle, ImportOrganization, IndentType,
+    NamingConventions, ProjectContext, ProjectStructure, ProjectType, StandardsProfile,
 };
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -70,7 +69,9 @@ fn test_cache_manager_set_and_get() {
     let file_mtimes = HashMap::new();
 
     // Set cache
-    cache.set(&project_root, &context, file_mtimes.clone()).unwrap();
+    cache
+        .set(&project_root, &context, file_mtimes.clone())
+        .unwrap();
 
     // Get cache
     let retrieved = cache.get(&project_root, &file_mtimes).unwrap();
@@ -96,7 +97,9 @@ fn test_cache_manager_invalidate() {
     let file_mtimes = HashMap::new();
 
     // Set cache
-    cache.set(&project_root, &context, file_mtimes.clone()).unwrap();
+    cache
+        .set(&project_root, &context, file_mtimes.clone())
+        .unwrap();
     assert_eq!(cache.entry_count().unwrap(), 1);
 
     // Invalidate
@@ -117,8 +120,12 @@ fn test_cache_manager_clear() {
     let file_mtimes = HashMap::new();
 
     // Set multiple entries
-    cache.set(&project_root1, &context, file_mtimes.clone()).unwrap();
-    cache.set(&project_root2, &context, file_mtimes.clone()).unwrap();
+    cache
+        .set(&project_root1, &context, file_mtimes.clone())
+        .unwrap();
+    cache
+        .set(&project_root2, &context, file_mtimes.clone())
+        .unwrap();
     assert_eq!(cache.entry_count().unwrap(), 2);
 
     // Clear all
@@ -137,7 +144,9 @@ fn test_cache_manager_is_cached() {
     assert!(!cache.is_cached(&project_root, &file_mtimes).unwrap());
 
     // Set cache
-    cache.set(&project_root, &context, file_mtimes.clone()).unwrap();
+    cache
+        .set(&project_root, &context, file_mtimes.clone())
+        .unwrap();
 
     // Now it's cached
     assert!(cache.is_cached(&project_root, &file_mtimes).unwrap());
@@ -156,7 +165,9 @@ fn test_cache_manager_statistics() {
     assert_eq!(stats.misses, 0);
 
     // Set and get (hit)
-    cache.set(&project_root, &context, file_mtimes.clone()).unwrap();
+    cache
+        .set(&project_root, &context, file_mtimes.clone())
+        .unwrap();
     let _ = cache.get(&project_root, &file_mtimes.clone()).unwrap();
 
     let stats = cache.statistics().unwrap();
@@ -181,12 +192,17 @@ fn test_cache_manager_file_change_detection() {
     file_mtimes.insert(test_file.clone(), SystemTime::now());
 
     // Set cache
-    cache.set(&project_root, &context, file_mtimes.clone()).unwrap();
+    cache
+        .set(&project_root, &context, file_mtimes.clone())
+        .unwrap();
     assert!(cache.is_cached(&project_root, &file_mtimes).unwrap());
 
     // Simulate file modification
     let mut modified_mtimes = HashMap::new();
-    modified_mtimes.insert(test_file, SystemTime::now() + std::time::Duration::from_secs(1));
+    modified_mtimes.insert(
+        test_file,
+        SystemTime::now() + std::time::Duration::from_secs(1),
+    );
 
     // Cache should be invalidated
     assert!(!cache.is_cached(&project_root, &modified_mtimes).unwrap());
@@ -225,7 +241,9 @@ fn test_cache_manager_file_addition_detection() {
     file_mtimes.insert(test_file1, SystemTime::now());
 
     // Set cache
-    cache.set(&project_root, &context, file_mtimes.clone()).unwrap();
+    cache
+        .set(&project_root, &context, file_mtimes.clone())
+        .unwrap();
 
     // Simulate file addition
     let test_file2 = PathBuf::from("/test/project/src/lib.rs");
@@ -392,8 +410,12 @@ fn test_cache_manager_multiple_projects() {
     let file_mtimes = HashMap::new();
 
     // Set cache for both projects
-    cache.set(&project_root1, &context, file_mtimes.clone()).unwrap();
-    cache.set(&project_root2, &context, file_mtimes.clone()).unwrap();
+    cache
+        .set(&project_root1, &context, file_mtimes.clone())
+        .unwrap();
+    cache
+        .set(&project_root2, &context, file_mtimes.clone())
+        .unwrap();
 
     assert_eq!(cache.entry_count().unwrap(), 2);
 

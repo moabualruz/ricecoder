@@ -167,11 +167,8 @@ mod tests {
     #[test]
     fn test_log_execution_with_agent() {
         let logger = AuditLogger::new();
-        let result = logger.log_execution(
-            "test_tool".to_string(),
-            Some("agent1".to_string()),
-            None,
-        );
+        let result =
+            logger.log_execution("test_tool".to_string(), Some("agent1".to_string()), None);
 
         assert!(result.is_ok());
         let entries = logger.entries().unwrap();
@@ -209,11 +206,7 @@ mod tests {
     #[test]
     fn test_log_denial_with_agent() {
         let logger = AuditLogger::new();
-        let result = logger.log_denial(
-            "test_tool".to_string(),
-            Some("agent1".to_string()),
-            None,
-        );
+        let result = logger.log_denial("test_tool".to_string(), Some("agent1".to_string()), None);
 
         assert!(result.is_ok());
         let entries = logger.entries().unwrap();
@@ -237,11 +230,7 @@ mod tests {
     #[test]
     fn test_log_prompt_with_agent() {
         let logger = AuditLogger::new();
-        let result = logger.log_prompt(
-            "test_tool".to_string(),
-            Some("agent1".to_string()),
-            None,
-        );
+        let result = logger.log_prompt("test_tool".to_string(), Some("agent1".to_string()), None);
 
         assert!(result.is_ok());
         let entries = logger.entries().unwrap();
@@ -252,7 +241,9 @@ mod tests {
     fn test_multiple_logs() {
         let logger = AuditLogger::new();
 
-        logger.log_execution("tool1".to_string(), None, None).unwrap();
+        logger
+            .log_execution("tool1".to_string(), None, None)
+            .unwrap();
         logger.log_denial("tool2".to_string(), None, None).unwrap();
         logger.log_prompt("tool3".to_string(), None, None).unwrap();
 
@@ -271,8 +262,12 @@ mod tests {
     fn test_clear_entries() {
         let logger = AuditLogger::new();
 
-        logger.log_execution("tool1".to_string(), None, None).unwrap();
-        logger.log_execution("tool2".to_string(), None, None).unwrap();
+        logger
+            .log_execution("tool1".to_string(), None, None)
+            .unwrap();
+        logger
+            .log_execution("tool2".to_string(), None, None)
+            .unwrap();
 
         assert_eq!(logger.len().unwrap(), 2);
 
@@ -290,12 +285,16 @@ mod tests {
     #[test]
     fn test_clone() {
         let logger1 = AuditLogger::new();
-        logger1.log_execution("tool1".to_string(), None, None).unwrap();
+        logger1
+            .log_execution("tool1".to_string(), None, None)
+            .unwrap();
 
         let logger2 = logger1.clone();
         assert_eq!(logger2.len().unwrap(), 1);
 
-        logger2.log_execution("tool2".to_string(), None, None).unwrap();
+        logger2
+            .log_execution("tool2".to_string(), None, None)
+            .unwrap();
         assert_eq!(logger1.len().unwrap(), 2);
     }
 }

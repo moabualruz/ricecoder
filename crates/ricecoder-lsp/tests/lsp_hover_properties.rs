@@ -4,9 +4,7 @@
 //! **Validates: Requirements LSP-4.1, LSP-4.2**
 
 use proptest::prelude::*;
-use ricecoder_lsp::types::{
-    Definition, MarkupKind, Position, Range, Symbol, SymbolKind,
-};
+use ricecoder_lsp::types::{Definition, MarkupKind, Position, Range, Symbol, SymbolKind};
 use ricecoder_lsp::HoverProvider;
 
 /// Strategy for generating valid positions
@@ -16,12 +14,14 @@ fn position_strategy() -> impl Strategy<Value = Position> {
 
 /// Strategy for generating valid ranges
 fn range_strategy() -> impl Strategy<Value = Range> {
-    (0u32..50, 0u32..50, 50u32..100, 0u32..50).prop_map(|(start_line, start_char, end_line, end_char)| {
-        Range::new(
-            Position::new(start_line, start_char),
-            Position::new(end_line, end_char),
-        )
-    })
+    (0u32..50, 0u32..50, 50u32..100, 0u32..50).prop_map(
+        |(start_line, start_char, end_line, end_char)| {
+            Range::new(
+                Position::new(start_line, start_char),
+                Position::new(end_line, end_char),
+            )
+        },
+    )
 }
 
 /// Strategy for generating symbol kinds

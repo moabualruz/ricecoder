@@ -205,14 +205,20 @@ async fn test_transaction_status_lifecycle() {
 
     // Check status is Committed
     let status = manager.get_status(tx_id).await.unwrap();
-    assert_eq!(status, ricecoder_files::models::TransactionStatus::Committed);
+    assert_eq!(
+        status,
+        ricecoder_files::models::TransactionStatus::Committed
+    );
 
     // Rollback
     manager.rollback(tx_id).await.unwrap();
 
     // Check status is RolledBack
     let status = manager.get_status(tx_id).await.unwrap();
-    assert_eq!(status, ricecoder_files::models::TransactionStatus::RolledBack);
+    assert_eq!(
+        status,
+        ricecoder_files::models::TransactionStatus::RolledBack
+    );
 }
 
 /// Test that transaction preserves operation order

@@ -3,14 +3,14 @@
 //! This module provides configuration loading, validation, and management for
 //! language-specific analyzers, diagnostics rules, and code actions.
 
-pub mod types;
 pub mod loader;
 pub mod manager;
+pub mod types;
 
 // Re-export commonly used types
-pub use types::{
-    ConfigError, ConfigResult, LanguageConfig, DiagnosticRule, CodeActionTemplate,
-    ConfigRegistry, CompletionConfig,
-};
 pub use loader::ConfigLoader;
 pub use manager::ConfigurationManager;
+pub use types::{
+    CodeActionTemplate, CompletionConfig, ConfigError, ConfigRegistry, ConfigResult,
+    DiagnosticRule, LanguageConfig,
+};

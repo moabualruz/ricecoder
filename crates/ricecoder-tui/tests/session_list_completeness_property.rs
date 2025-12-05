@@ -7,8 +7,8 @@
 //! all active sessions with their current status.
 
 use proptest::prelude::*;
-use ricecoder_tui::SessionIntegration;
 use ricecoder_sessions::SessionMode;
+use ricecoder_tui::SessionIntegration;
 
 /// Generate a valid session name
 fn session_name_strategy() -> impl Strategy<Value = String> {

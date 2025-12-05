@@ -3,22 +3,24 @@
 //! This module provides semantic analysis capabilities for multiple programming languages.
 //! It includes language detection, symbol extraction, and semantic information gathering.
 
-use crate::types::{Language, SemanticInfo, Symbol, Position};
+use crate::types::{Language, Position, SemanticInfo, Symbol};
 use std::path::Path;
 
-pub mod rust_analyzer;
-pub mod typescript_analyzer;
-pub mod python_analyzer;
+pub mod adapters;
 pub mod fallback_analyzer;
 pub mod generic_analyzer;
-pub mod adapters;
+pub mod python_analyzer;
+pub mod rust_analyzer;
+pub mod typescript_analyzer;
 
-pub use rust_analyzer::RustAnalyzer;
-pub use typescript_analyzer::TypeScriptAnalyzer;
-pub use python_analyzer::PythonAnalyzer;
+pub use adapters::{
+    FallbackAnalyzerAdapter, PythonAnalyzerAdapter, RustAnalyzerAdapter, TypeScriptAnalyzerAdapter,
+};
 pub use fallback_analyzer::FallbackAnalyzer;
 pub use generic_analyzer::GenericSemanticAnalyzer;
-pub use adapters::{RustAnalyzerAdapter, TypeScriptAnalyzerAdapter, PythonAnalyzerAdapter, FallbackAnalyzerAdapter};
+pub use python_analyzer::PythonAnalyzer;
+pub use rust_analyzer::RustAnalyzer;
+pub use typescript_analyzer::TypeScriptAnalyzer;
 
 /// Error type for semantic analysis
 #[derive(Debug, thiserror::Error)]
@@ -88,17 +90,17 @@ impl LanguageDetector {
         if content.contains("use ") && content.contains("fn ") {
             return Language::Rust;
         }
-        
+
         // Check Python (look for def keyword which is Python-specific)
         if content.contains("def ") {
             return Language::Python;
         }
-        
+
         // Check TypeScript/JavaScript (look for export which is more specific)
         if content.contains("export ") {
             return Language::TypeScript;
         }
-        
+
         // Check for import statements (but only if no def keyword)
         if content.contains("import ") {
             return Language::TypeScript;
@@ -180,10 +182,7 @@ mod tests {
     #[test]
     fn test_language_detection_from_content_patterns() {
         let rust_code = "use std::io;\nfn main() {}";
-        assert_eq!(
-            LanguageDetector::from_content(rust_code),
-            Language::Rust
-        );
+        assert_eq!(LanguageDetector::from_content(rust_code), Language::Rust);
 
         let ts_code = "import { foo } from 'bar';\nexport const x = 1;";
         assert_eq!(
@@ -192,20 +191,14 @@ mod tests {
         );
 
         let py_code = "import os\ndef hello():\n    pass";
-        assert_eq!(
-            LanguageDetector::from_content(py_code),
-            Language::Python
-        );
+        assert_eq!(LanguageDetector::from_content(py_code), Language::Python);
     }
 
     #[test]
     fn test_language_detection_combined() {
         let path = Path::new("test.rs");
         let content = "fn main() {}";
-        assert_eq!(
-            LanguageDetector::detect(path, content),
-            Language::Rust
-        );
+        assert_eq!(LanguageDetector::detect(path, content), Language::Rust);
     }
 
     #[test]

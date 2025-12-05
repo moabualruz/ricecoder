@@ -262,7 +262,10 @@ mod tests {
         let elements = MarkdownParser::parse(text);
 
         assert_eq!(elements.len(), 1);
-        assert!(matches!(elements[0], MarkdownElement::CodeBlock(Some(_), _)));
+        assert!(matches!(
+            elements[0],
+            MarkdownElement::CodeBlock(Some(_), _)
+        ));
     }
 
     #[test]
@@ -279,7 +282,9 @@ mod tests {
         let text = "This is **bold** text";
         let elements = MarkdownParser::parse_inline(text);
 
-        assert!(elements.iter().any(|e| matches!(e, MarkdownElement::Bold(_))));
+        assert!(elements
+            .iter()
+            .any(|e| matches!(e, MarkdownElement::Bold(_))));
     }
 
     #[test]
@@ -287,7 +292,9 @@ mod tests {
         let text = "This is *italic* text";
         let elements = MarkdownParser::parse_inline(text);
 
-        assert!(elements.iter().any(|e| matches!(e, MarkdownElement::Italic(_))));
+        assert!(elements
+            .iter()
+            .any(|e| matches!(e, MarkdownElement::Italic(_))));
     }
 
     #[test]
@@ -295,7 +302,9 @@ mod tests {
         let text = "Use `let x = 5;` for variables";
         let elements = MarkdownParser::parse_inline(text);
 
-        assert!(elements.iter().any(|e| matches!(e, MarkdownElement::Code(_))));
+        assert!(elements
+            .iter()
+            .any(|e| matches!(e, MarkdownElement::Code(_))));
     }
 
     #[test]
@@ -303,7 +312,9 @@ mod tests {
         let text = "Visit [example](https://example.com)";
         let elements = MarkdownParser::parse_inline(text);
 
-        assert!(elements.iter().any(|e| matches!(e, MarkdownElement::Link(_, _))));
+        assert!(elements
+            .iter()
+            .any(|e| matches!(e, MarkdownElement::Link(_, _))));
     }
 
     #[test]

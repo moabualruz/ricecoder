@@ -430,7 +430,10 @@ mod tests {
     #[test]
     fn test_capability_display() {
         assert_eq!(Capability::CodeGeneration.to_string(), "CodeGeneration");
-        assert_eq!(Capability::QuestionAnswering.to_string(), "QuestionAnswering");
+        assert_eq!(
+            Capability::QuestionAnswering.to_string(),
+            "QuestionAnswering"
+        );
     }
 
     #[test]

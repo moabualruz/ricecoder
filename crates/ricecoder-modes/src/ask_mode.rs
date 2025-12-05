@@ -132,31 +132,21 @@ impl AskMode {
     /// This method generates a user-friendly error message for blocked operations.
     pub fn blocked_operation_message(&self, operation: &Operation) -> String {
         match operation {
-            Operation::ModifyFile => {
-                "File operations are not allowed in Ask Mode. \
+            Operation::ModifyFile => "File operations are not allowed in Ask Mode. \
                 Switch to Code Mode if you need to modify files."
-                    .to_string()
-            }
-            Operation::ExecuteCommand => {
-                "Command execution is not allowed in Ask Mode. \
+                .to_string(),
+            Operation::ExecuteCommand => "Command execution is not allowed in Ask Mode. \
                 Switch to Code Mode if you need to execute commands."
-                    .to_string()
-            }
-            Operation::GenerateCode => {
-                "Code generation is not allowed in Ask Mode. \
+                .to_string(),
+            Operation::GenerateCode => "Code generation is not allowed in Ask Mode. \
                 Switch to Code Mode if you need to generate code."
-                    .to_string()
-            }
-            Operation::RunTests => {
-                "Test execution is not allowed in Ask Mode. \
+                .to_string(),
+            Operation::RunTests => "Test execution is not allowed in Ask Mode. \
                 Switch to Code Mode if you need to run tests."
-                    .to_string()
-            }
-            Operation::ValidateQuality => {
-                "Quality validation is not allowed in Ask Mode. \
+                .to_string(),
+            Operation::ValidateQuality => "Quality validation is not allowed in Ask Mode. \
                 Switch to Code Mode if you need to validate code quality."
-                    .to_string()
-            }
+                .to_string(),
             Operation::AnswerQuestion => {
                 "This operation should be allowed in Ask Mode.".to_string()
             }
@@ -306,7 +296,10 @@ mod tests {
     async fn test_ask_mode_process_with_code_keyword() {
         let mode = AskMode::new();
         let context = ModeContext::new("test-session".to_string());
-        let response = mode.process("Show me a code example", &context).await.unwrap();
+        let response = mode
+            .process("Show me a code example", &context)
+            .await
+            .unwrap();
         assert!(!response.suggestions.is_empty());
     }
 

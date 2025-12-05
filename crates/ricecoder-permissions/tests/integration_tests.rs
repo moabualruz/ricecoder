@@ -1,7 +1,7 @@
 //! Integration tests for permissions system with agent execution and storage
 
 use ricecoder_permissions::{
-    AgentExecutor, AgentExecutionResult, AuditLogger, InMemoryPermissionRepository,
+    AgentExecutionResult, AgentExecutor, AuditLogger, InMemoryPermissionRepository,
     PermissionConfig, PermissionLevel, PermissionRepository, ToolPermission,
 };
 use std::sync::Arc;
@@ -62,22 +62,16 @@ fn test_agent_execution_with_per_agent_override() {
     let logger = Arc::new(AuditLogger::new());
 
     // Test with unrestricted agent
-    let executor = AgentExecutor::with_agent(
-        config.clone(),
-        logger.clone(),
-        "normal_agent".to_string(),
-    );
+    let executor =
+        AgentExecutor::with_agent(config.clone(), logger.clone(), "normal_agent".to_string());
     let (result, _) = executor
         .execute_with_permission("test_tool", None, None, || Ok(42))
         .unwrap();
     assert_eq!(result, AgentExecutionResult::Allowed);
 
     // Test with restricted agent
-    let executor = AgentExecutor::with_agent(
-        config,
-        logger.clone(),
-        "restricted_agent".to_string(),
-    );
+    let executor =
+        AgentExecutor::with_agent(config, logger.clone(), "restricted_agent".to_string());
     let (result, _) = executor
         .execute_with_permission("test_tool", None, None, || Ok(42))
         .unwrap();
@@ -113,7 +107,10 @@ fn test_storage_integration_load_and_save_config() {
     // Verify
     assert_eq!(loaded_config.get_permissions().len(), 2);
     assert_eq!(loaded_config.get_permissions()[0].tool_pattern, "test_tool");
-    assert_eq!(loaded_config.get_permissions()[1].tool_pattern, "restricted_tool");
+    assert_eq!(
+        loaded_config.get_permissions()[1].tool_pattern,
+        "restricted_tool"
+    );
     assert_eq!(
         loaded_config.get_permissions()[1].agent,
         Some("agent1".to_string())
@@ -178,11 +175,7 @@ fn test_full_workflow_with_storage() {
     let loaded_config = repo.load_config().unwrap();
     let config = Arc::new(loaded_config);
     let logger = Arc::new(AuditLogger::new());
-    let executor = AgentExecutor::with_agent(
-        config,
-        logger.clone(),
-        "test_agent".to_string(),
-    );
+    let executor = AgentExecutor::with_agent(config, logger.clone(), "test_agent".to_string());
 
     // Execute tools
     let (result1, _) = executor
@@ -235,11 +228,8 @@ fn test_permission_checking_in_agent_context() {
     let logger = Arc::new(AuditLogger::new());
 
     // Test as regular user
-    let user_executor = AgentExecutor::with_agent(
-        config.clone(),
-        logger.clone(),
-        "user".to_string(),
-    );
+    let user_executor =
+        AgentExecutor::with_agent(config.clone(), logger.clone(), "user".to_string());
 
     let (result, _) = user_executor
         .execute_with_permission("public_tool", None, None, || Ok(1))
@@ -252,11 +242,7 @@ fn test_permission_checking_in_agent_context() {
     assert_eq!(result, AgentExecutionResult::Denied);
 
     // Test as admin
-    let admin_executor = AgentExecutor::with_agent(
-        config,
-        logger.clone(),
-        "admin".to_string(),
-    );
+    let admin_executor = AgentExecutor::with_agent(config, logger.clone(), "admin".to_string());
 
     let (result, _) = admin_executor
         .execute_with_permission("public_tool", None, None, || Ok(3))

@@ -1,7 +1,7 @@
 //! TypeScript-specific diagnostic rules
 
-use crate::types::{Diagnostic, DiagnosticSeverity, Position, Range};
 use super::DiagnosticsResult;
+use crate::types::{Diagnostic, DiagnosticSeverity, Position, Range};
 
 /// Generate diagnostics for TypeScript code
 pub fn generate_typescript_diagnostics(code: &str) -> DiagnosticsResult<Vec<Diagnostic>> {
@@ -166,14 +166,19 @@ fn check_naming_conventions(code: &str) -> Vec<Diagnostic> {
         if line.contains("class ") {
             if let Some(class_pos) = line.find("class ") {
                 let after_class = &line[class_pos + 6..];
-                if let Some(space_or_brace) = after_class.find(|c: char| c.is_whitespace() || c == '{') {
+                if let Some(space_or_brace) =
+                    after_class.find(|c: char| c.is_whitespace() || c == '{')
+                {
                     let class_name = after_class[..space_or_brace].trim();
 
                     // Check if name starts with lowercase (should be PascalCase)
                     if class_name.chars().next().is_some_and(|c| c.is_lowercase()) {
                         let range = Range::new(
                             Position::new(line_num as u32, (class_pos + 6) as u32),
-                            Position::new(line_num as u32, (class_pos + 6 + class_name.len()) as u32),
+                            Position::new(
+                                line_num as u32,
+                                (class_pos + 6 + class_name.len()) as u32,
+                            ),
                         );
 
                         let diagnostic = Diagnostic::new(

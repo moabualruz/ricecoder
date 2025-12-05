@@ -125,18 +125,16 @@ impl MetricsCollector {
         // Update agent stats
         {
             let mut stats = self.agent_stats.lock().unwrap();
-            let agent_stat = stats
-                .entry(agent_id.clone())
-                .or_insert_with(|| AgentStats {
-                    agent_id: agent_id.clone(),
-                    total_executions: 0,
-                    successful_executions: 0,
-                    failed_executions: 0,
-                    total_findings: 0,
-                    avg_execution_time_ms: 0.0,
-                    min_execution_time_ms: u64::MAX,
-                    max_execution_time_ms: 0,
-                });
+            let agent_stat = stats.entry(agent_id.clone()).or_insert_with(|| AgentStats {
+                agent_id: agent_id.clone(),
+                total_executions: 0,
+                successful_executions: 0,
+                failed_executions: 0,
+                total_findings: 0,
+                avg_execution_time_ms: 0.0,
+                min_execution_time_ms: u64::MAX,
+                max_execution_time_ms: 0,
+            });
 
             agent_stat.total_executions += 1;
             if success {
@@ -147,7 +145,8 @@ impl MetricsCollector {
             agent_stat.total_findings += findings_count as u64;
 
             // Update average execution time
-            let total_time = agent_stat.avg_execution_time_ms * (agent_stat.total_executions - 1) as f64
+            let total_time = agent_stat.avg_execution_time_ms
+                * (agent_stat.total_executions - 1) as f64
                 + duration_ms as f64;
             agent_stat.avg_execution_time_ms = total_time / agent_stat.total_executions as f64;
 

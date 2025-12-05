@@ -1,20 +1,20 @@
 //! Research manager - central coordinator for analysis operations
 
-use crate::error::ResearchError;
-use crate::models::{
-    ProjectContext, ArchitecturalIntent, ArchitecturalStyle,
-    StandardsProfile, NamingConventions, FormattingStyle, CaseStyle, IndentType,
-    ImportOrganization, ImportGroup, DocumentationStyle, DocFormat, CodeContext, SearchResult,
-};
-use crate::project_analyzer::ProjectAnalyzer;
-use crate::codebase_scanner::CodebaseScanner;
-use crate::semantic_index::SemanticIndex;
-use crate::pattern_detector::PatternDetector;
-use crate::standards_detector::StandardsDetector;
 use crate::architectural_intent::ArchitecturalIntentTracker;
+use crate::cache_manager::CacheManager;
+use crate::codebase_scanner::CodebaseScanner;
 use crate::context_builder::ContextBuilder;
 use crate::dependency_analyzer::DependencyAnalyzer;
-use crate::cache_manager::CacheManager;
+use crate::error::ResearchError;
+use crate::models::{
+    ArchitecturalIntent, ArchitecturalStyle, CaseStyle, CodeContext, DocFormat, DocumentationStyle,
+    FormattingStyle, ImportGroup, ImportOrganization, IndentType, NamingConventions,
+    ProjectContext, SearchResult, StandardsProfile,
+};
+use crate::pattern_detector::PatternDetector;
+use crate::project_analyzer::ProjectAnalyzer;
+use crate::semantic_index::SemanticIndex;
+use crate::standards_detector::StandardsDetector;
 use std::path::Path;
 use std::sync::Arc;
 use tracing::{debug, info, warn};
@@ -115,41 +115,40 @@ impl ResearchManager {
 
         // 1. Detect project type
         debug!("Step 1: Detecting project type");
-        let project_type = self.project_analyzer.detect_type(root)
-            .map_err(|e| {
-                warn!("Failed to detect project type: {}", e);
-                e
-            })?;
+        let project_type = self.project_analyzer.detect_type(root).map_err(|e| {
+            warn!("Failed to detect project type: {}", e);
+            e
+        })?;
         debug!("Detected project type: {:?}", project_type);
 
         // 2. Analyze project structure
         debug!("Step 2: Analyzing project structure");
-        let structure = self.project_analyzer.analyze_structure(root)
-            .map_err(|e| {
-                warn!("Failed to analyze project structure: {}", e);
-                e
-            })?;
+        let structure = self.project_analyzer.analyze_structure(root).map_err(|e| {
+            warn!("Failed to analyze project structure: {}", e);
+            e
+        })?;
         debug!("Found {} source directories", structure.source_dirs.len());
 
         // 3. Identify frameworks
         debug!("Step 3: Identifying frameworks");
-        let frameworks = self.project_analyzer.identify_frameworks(root)
+        let frameworks = self
+            .project_analyzer
+            .identify_frameworks(root)
             .unwrap_or_default();
         debug!("Identified {} frameworks", frameworks.len());
 
         // 4. Scan codebase and build semantic index
         debug!("Step 4: Scanning codebase");
-        let scan_result = CodebaseScanner::scan(root)
-            .map_err(|e| {
-                warn!("Failed to scan codebase: {}", e);
-                e
-            })?;
+        let scan_result = CodebaseScanner::scan(root).map_err(|e| {
+            warn!("Failed to scan codebase: {}", e);
+            e
+        })?;
         debug!("Found {} files in codebase", scan_result.files.len());
 
         // 5. Build semantic index
         debug!("Step 5: Building semantic index");
         let mut semantic_index = SemanticIndex::new();
-        
+
         // Extract symbols from scanned files
         for file_meta in &scan_result.files {
             if let Some(language) = &file_meta.language {
@@ -170,20 +169,23 @@ impl ResearchManager {
 
         // 6. Track references
         debug!("Step 6: Tracking cross-file references");
-        let mut known_symbols: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+        let mut known_symbols: std::collections::HashMap<String, String> =
+            std::collections::HashMap::new();
         for symbol in semantic_index.all_symbols() {
             known_symbols.insert(symbol.name.clone(), symbol.id.clone());
         }
-        
+
         for file_meta in &scan_result.files {
             if let Some(language) = &file_meta.language {
                 if let Ok(content) = std::fs::read_to_string(&file_meta.path) {
-                    if let Ok(references) = crate::reference_tracker::ReferenceTracker::track_references(
-                        &file_meta.path,
-                        language,
-                        &content,
-                        &known_symbols,
-                    ) {
+                    if let Ok(references) =
+                        crate::reference_tracker::ReferenceTracker::track_references(
+                            &file_meta.path,
+                            language,
+                            &content,
+                            &known_symbols,
+                        )
+                    {
                         for reference in references {
                             semantic_index.add_reference(reference);
                         }
@@ -195,14 +197,18 @@ impl ResearchManager {
 
         // 7. Detect patterns
         debug!("Step 7: Detecting patterns");
-        let patterns = self.pattern_detector.detect(&scan_result)
+        let patterns = self
+            .pattern_detector
+            .detect(&scan_result)
             .unwrap_or_default();
         debug!("Detected {} patterns", patterns.len());
 
         // 8. Detect standards and conventions
         debug!("Step 8: Detecting standards and conventions");
         let file_paths: Vec<&Path> = scan_result.files.iter().map(|f| f.path.as_path()).collect();
-        let standards = self.standards_detector.detect(&file_paths)
+        let standards = self
+            .standards_detector
+            .detect(&file_paths)
             .unwrap_or_else(|_| StandardsProfile {
                 naming_conventions: NamingConventions {
                     function_case: CaseStyle::Mixed,
@@ -216,7 +222,11 @@ impl ResearchManager {
                     line_length: 100,
                 },
                 import_organization: ImportOrganization {
-                    order: vec![ImportGroup::Standard, ImportGroup::External, ImportGroup::Internal],
+                    order: vec![
+                        ImportGroup::Standard,
+                        ImportGroup::External,
+                        ImportGroup::Internal,
+                    ],
                     sort_within_group: false,
                 },
                 documentation_style: DocumentationStyle {
@@ -228,13 +238,14 @@ impl ResearchManager {
 
         // 9. Analyze dependencies (multi-language)
         debug!("Step 9: Analyzing dependencies");
-        let dependencies = self.dependency_analyzer.analyze(root)
-            .unwrap_or_default();
+        let dependencies = self.dependency_analyzer.analyze(root).unwrap_or_default();
         debug!("Found {} dependencies", dependencies.len());
 
         // 10. Track architectural intent
         debug!("Step 10: Tracking architectural intent");
-        let architectural_style = self.architectural_intent_tracker.infer_style(root)
+        let architectural_style = self
+            .architectural_intent_tracker
+            .infer_style(root)
             .unwrap_or(ArchitecturalStyle::Unknown);
         let architectural_intent = ArchitecturalIntent {
             style: architectural_style,
@@ -242,7 +253,10 @@ impl ResearchManager {
             constraints: vec![],
             decisions: vec![],
         };
-        debug!("Inferred architectural style: {:?}", architectural_intent.style);
+        debug!(
+            "Inferred architectural style: {:?}",
+            architectural_intent.style
+        );
 
         // 11. Build final context
         debug!("Step 11: Building final project context");
@@ -259,7 +273,8 @@ impl ResearchManager {
 
         // Cache results
         debug!("Caching analysis results");
-        let file_mtimes: HashMap<std::path::PathBuf, SystemTime> = scan_result.files
+        let file_mtimes: HashMap<std::path::PathBuf, SystemTime> = scan_result
+            .files
             .iter()
             .filter_map(|f| {
                 std::fs::metadata(&f.path)
@@ -268,7 +283,7 @@ impl ResearchManager {
                     .map(|mtime| (f.path.clone(), mtime))
             })
             .collect();
-        
+
         if let Err(e) = self.cache_manager.set(root, &context, file_mtimes) {
             warn!("Failed to cache analysis results: {}", e);
             // Don't fail the analysis if caching fails
@@ -307,7 +322,7 @@ impl ResearchManager {
 
         // Use semantic index to search by name
         let results = semantic_index.search_by_name(query);
-        
+
         debug!("Found {} search results", results.len());
         Ok(results)
     }
@@ -334,14 +349,17 @@ impl ResearchManager {
         if query.is_empty() {
             return Err(ResearchError::AnalysisFailed {
                 reason: "Query string cannot be empty".to_string(),
-                context: "Context building requires a non-empty query to select relevant files".to_string(),
+                context: "Context building requires a non-empty query to select relevant files"
+                    .to_string(),
             });
         }
 
         debug!("Building context for query: {}", query);
 
         // Select relevant files based on query
-        let relevant_files = self.context_builder.select_relevant_files(query, all_files)
+        let relevant_files = self
+            .context_builder
+            .select_relevant_files(query, all_files)
             .map_err(|e| {
                 warn!("Failed to select relevant files: {}", e);
                 e
@@ -350,7 +368,9 @@ impl ResearchManager {
         debug!("Selected {} relevant files", relevant_files.len());
 
         // Build context from selected files
-        let context = self.context_builder.build_context(relevant_files)
+        let context = self
+            .context_builder
+            .build_context(relevant_files)
             .map_err(|e| {
                 warn!("Failed to build context: {}", e);
                 e
@@ -365,7 +385,9 @@ impl ResearchManager {
     /// # Returns
     ///
     /// Cache statistics including hit rate, miss rate, and size, or a `ResearchError`
-    pub fn get_cache_statistics(&self) -> Result<crate::cache_manager::CacheStatistics, ResearchError> {
+    pub fn get_cache_statistics(
+        &self,
+    ) -> Result<crate::cache_manager::CacheStatistics, ResearchError> {
         self.cache_manager.statistics()
     }
 
@@ -430,7 +452,10 @@ impl ResearchManagerBuilder {
     }
 
     /// Set the architectural intent tracker
-    pub fn with_architectural_intent_tracker(mut self, tracker: ArchitecturalIntentTracker) -> Self {
+    pub fn with_architectural_intent_tracker(
+        mut self,
+        tracker: ArchitecturalIntentTracker,
+    ) -> Self {
         self.architectural_intent_tracker = Some(tracker);
         self
     }
@@ -460,7 +485,8 @@ impl ResearchManagerBuilder {
             self.pattern_detector.unwrap_or_default(),
             self.standards_detector.unwrap_or_default(),
             self.architectural_intent_tracker.unwrap_or_default(),
-            self.context_builder.unwrap_or_else(|| ContextBuilder::new(8000)),
+            self.context_builder
+                .unwrap_or_else(|| ContextBuilder::new(8000)),
             self.dependency_analyzer.unwrap_or_default(),
             self.cache_manager.unwrap_or_default(),
         )
@@ -508,7 +534,9 @@ mod tests {
     #[tokio::test]
     async fn test_analyze_project_nonexistent_path() {
         let manager = ResearchManager::new();
-        let result = manager.analyze_project(Path::new("/nonexistent/path")).await;
+        let result = manager
+            .analyze_project(Path::new("/nonexistent/path"))
+            .await;
         assert!(result.is_err());
         match result {
             Err(ResearchError::ProjectNotFound { path: _, reason: _ }) => (),

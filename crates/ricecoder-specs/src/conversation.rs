@@ -1,7 +1,9 @@
 //! Conversation history storage and retrieval for spec writing sessions
 
-use crate::models::{ConversationMessage, MessageRole, SpecWritingSession, SpecPhase, ApprovalGate};
 use crate::error::SpecError;
+use crate::models::{
+    ApprovalGate, ConversationMessage, MessageRole, SpecPhase, SpecWritingSession,
+};
 use chrono::Utc;
 use std::collections::HashMap;
 
@@ -27,9 +29,10 @@ impl ConversationManager {
         spec_id: String,
     ) -> Result<SpecWritingSession, SpecError> {
         if self.sessions.contains_key(&session_id) {
-            return Err(SpecError::ConversationError(
-                format!("Session {} already exists", session_id),
-            ));
+            return Err(SpecError::ConversationError(format!(
+                "Session {} already exists",
+                session_id
+            )));
         }
 
         let now = Utc::now();
@@ -49,10 +52,9 @@ impl ConversationManager {
 
     /// Retrieve a session by ID
     pub fn get_session(&self, session_id: &str) -> Result<SpecWritingSession, SpecError> {
-        self.sessions
-            .get(session_id)
-            .cloned()
-            .ok_or_else(|| SpecError::ConversationError(format!("Session {} not found", session_id)))
+        self.sessions.get(session_id).cloned().ok_or_else(|| {
+            SpecError::ConversationError(format!("Session {} not found", session_id))
+        })
     }
 
     /// Add a message to a session's conversation history
@@ -189,9 +191,9 @@ impl ConversationManager {
 
     /// Delete a session
     pub fn delete_session(&mut self, session_id: &str) -> Result<(), SpecError> {
-        self.sessions
-            .remove(session_id)
-            .ok_or_else(|| SpecError::ConversationError(format!("Session {} not found", session_id)))?;
+        self.sessions.remove(session_id).ok_or_else(|| {
+            SpecError::ConversationError(format!("Session {} not found", session_id))
+        })?;
         Ok(())
     }
 

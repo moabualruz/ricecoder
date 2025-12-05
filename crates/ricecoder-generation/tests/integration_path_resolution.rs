@@ -23,8 +23,11 @@ fn test_prompt_builder_loads_steering_rules_from_project_location() {
 
     // Create a steering rules file
     let rules_file = steering_dir.join("naming-conventions.md");
-    fs::write(&rules_file, "# Naming Conventions\n\nUse snake_case for Rust")
-        .expect("Failed to write rules file");
+    fs::write(
+        &rules_file,
+        "# Naming Conventions\n\nUse snake_case for Rust",
+    )
+    .expect("Failed to write rules file");
 
     // Create PromptBuilder with temp directory as project root
     let builder = PromptBuilder::new(temp_path.to_path_buf());
@@ -96,8 +99,11 @@ fn test_prompt_builder_environment_variable_override_end_to_end() {
 
     // Create a steering rules file with unique content
     let rules_file = steering_dir.join("override.md");
-    fs::write(&rules_file, "# Override Rules\n\nThis is from override location")
-        .expect("Failed to write rules file");
+    fs::write(
+        &rules_file,
+        "# Override Rules\n\nThis is from override location",
+    )
+    .expect("Failed to write rules file");
 
     // Create PromptBuilder
     let builder = PromptBuilder::new(temp_default.path().to_path_buf());
@@ -186,8 +192,7 @@ fn test_prompt_builder_both_agent_and_kiro_configurations_coexist() {
     // Create files in both locations
     fs::write(agent_steering.join("agent.md"), "# Agent Rules")
         .expect("Failed to write agent rules");
-    fs::write(kiro_steering.join("kiro.md"), "# Kiro Rules")
-        .expect("Failed to write kiro rules");
+    fs::write(kiro_steering.join("kiro.md"), "# Kiro Rules").expect("Failed to write kiro rules");
 
     // Create PromptBuilder
     let builder = PromptBuilder::new(temp_path.to_path_buf());
@@ -329,11 +334,13 @@ fn test_cli_backward_compatibility_with_kiro_specs() {
 
     // Create a spec file in old location
     let spec_file = kiro_specs.join("legacy-spec.md");
-    fs::write(&spec_file, "# Legacy Specification")
-        .expect("Failed to write legacy spec");
+    fs::write(&spec_file, "# Legacy Specification").expect("Failed to write legacy spec");
 
     // Verify the file exists
-    assert!(spec_file.exists(), "Legacy spec should exist at .kiro/specs");
+    assert!(
+        spec_file.exists(),
+        "Legacy spec should exist at .kiro/specs"
+    );
 }
 
 #[test]
@@ -380,16 +387,14 @@ fn test_end_to_end_path_resolution_workflow() {
         .expect("Failed to write project spec");
     fs::write(global_steering.join("rules.md"), "# Global Rules")
         .expect("Failed to write global rules");
-    fs::write(global_specs.join("spec.md"), "# Global Spec")
-        .expect("Failed to write global spec");
+    fs::write(global_specs.join("spec.md"), "# Global Spec").expect("Failed to write global spec");
 
     // Verify paths are resolved correctly
     let project_path = PathResolver::resolve_project_path();
     assert_eq!(project_path, PathBuf::from(".agent"));
 
-    let global_path = PathResolver::resolve_global_path()
-        .expect("Should resolve global path");
-    
+    let global_path = PathResolver::resolve_global_path().expect("Should resolve global path");
+
     // Global path should be resolvable (exact value depends on environment)
     assert!(!global_path.as_os_str().is_empty());
 

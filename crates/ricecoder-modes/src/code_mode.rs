@@ -65,7 +65,10 @@ impl CodeMode {
     pub fn generate_code(&self, spec: &str) -> Result<String> {
         // For now, return the spec as a placeholder
         // In a real implementation, this would call an LLM
-        Ok(format!("// Generated from spec:\n// {}\n\n// TODO: Implement based on spec", spec))
+        Ok(format!(
+            "// Generated from spec:\n// {}\n\n// TODO: Implement based on spec",
+            spec
+        ))
     }
 
     /// Create a file with the given content
@@ -132,11 +135,7 @@ impl CodeMode {
     /// Track file changes and return a summary
     ///
     /// This method creates a summary of file operations performed.
-    pub fn track_changes(
-        &self,
-        files_created: usize,
-        files_modified: usize,
-    ) -> ChangeSummary {
+    pub fn track_changes(&self, files_created: usize, files_modified: usize) -> ChangeSummary {
         ChangeSummary {
             files_created,
             files_modified,
@@ -151,7 +150,11 @@ impl CodeMode {
     /// This method executes tests and captures the results.
     pub async fn run_tests(&self, paths: &[PathBuf]) -> Result<(usize, usize, Vec<String>)> {
         // Validate that test execution is allowed
-        if !self.config.capabilities.contains(&Capability::TestExecution) {
+        if !self
+            .config
+            .capabilities
+            .contains(&Capability::TestExecution)
+        {
             return Err(crate::error::ModeError::OperationNotAllowed {
                 mode: self.id().to_string(),
                 operation: Operation::RunTests.to_string(),
@@ -216,7 +219,11 @@ impl CodeMode {
     /// This method checks code for quality issues.
     pub async fn validate_quality(&self, paths: &[PathBuf]) -> Result<Vec<String>> {
         // Validate that quality validation is allowed
-        if !self.config.capabilities.contains(&Capability::QualityValidation) {
+        if !self
+            .config
+            .capabilities
+            .contains(&Capability::QualityValidation)
+        {
             return Err(crate::error::ModeError::OperationNotAllowed {
                 mode: self.id().to_string(),
                 operation: Operation::ValidateQuality.to_string(),
@@ -347,7 +354,10 @@ impl CodeMode {
         }
 
         if !summary.quality_issues.is_empty() {
-            output.push_str(&format!("Quality issues: {}\n", summary.quality_issues.len()));
+            output.push_str(&format!(
+                "Quality issues: {}\n",
+                summary.quality_issues.len()
+            ));
             for issue in &summary.quality_issues {
                 output.push_str(&format!("  - {}\n", issue));
             }
@@ -384,10 +394,7 @@ impl CodeMode {
                 feedback.push("All tests passed! ✓".to_string());
             } else {
                 let failed = summary.tests_run - summary.tests_passed;
-                feedback.push(format!(
-                    "{} test(s) failed. Please review and fix.",
-                    failed
-                ));
+                feedback.push(format!("{} test(s) failed. Please review and fix.", failed));
             }
         }
 

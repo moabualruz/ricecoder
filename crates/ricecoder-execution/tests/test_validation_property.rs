@@ -4,7 +4,7 @@
 //! **Validates: Requirements 3.1, 3.2**
 
 use proptest::prelude::*;
-use ricecoder_execution::{TestFramework, TestResults, TestFailure};
+use ricecoder_execution::{TestFailure, TestFramework, TestResults};
 use tempfile::TempDir;
 
 /// Property: Test failures prevent completion

@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc abce7b55152a17c8b2f3ac299fdc920014c99b9852c804aefee41bd33fb078b0 # shrinks to hook1 = Hook { id: "a", name: "Test Hook", description: None, event: "file_saved", action: Command(CommandAction { command: "echo", args: ["test"], timeout_ms: None, capture_output: false }), enabled: true, tags: [], metadata: Object {}, condition: None }, hook2 = Hook { id: "_", name: "Test Hook", description: None, event: "file_saved", action: Command(CommandAction { command: "echo", args: ["test"], timeout_ms: None, capture_output: false }), enabled: true, tags: [], metadata: Object {}, condition: None }, hook3 = Hook { id: "_", name: "Test Hook", description: None, event: "file_saved", action: Command(CommandAction { command: "echo", args: ["test"], timeout_ms: None, capture_output: false }), enabled: true, tags: [], metadata: Object {}, condition: None }

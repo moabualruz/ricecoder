@@ -1,16 +1,18 @@
 // Command routing and dispatch
 // Adapted from automation/src/cli/router.rs
 
-use clap::{Parser, Subcommand};
-use crate::error::{CliError, CliResult};
 use crate::commands::*;
+use crate::error::{CliError, CliResult};
+use clap::{Parser, Subcommand};
 
 /// RiceCoder - Terminal-first, spec-driven coding assistant
 #[derive(Parser, Debug)]
 #[command(name = "rice")]
 #[command(bin_name = "rice")]
 #[command(about = "Terminal-first, spec-driven coding assistant")]
-#[command(long_about = "RiceCoder: A terminal-first, spec-driven coding assistant.\n\nGenerate code from specifications, refactor existing code, and get AI-powered code reviews.\n\nFor more information, visit: https://ricecoder.dev")]
+#[command(
+    long_about = "RiceCoder: A terminal-first, spec-driven coding assistant.\n\nGenerate code from specifications, refactor existing code, and get AI-powered code reviews.\n\nFor more information, visit: https://ricecoder.dev"
+)]
 #[command(version)]
 #[command(author = "RiceCoder Contributors")]
 #[command(arg_required_else_help = true)]
@@ -149,6 +151,60 @@ pub enum Commands {
         #[arg(long)]
         debug: bool,
     },
+
+    /// Manage hooks for event-driven automation
+    #[command(about = "Manage hooks for event-driven automation")]
+    Hooks {
+        #[command(subcommand)]
+        action: Option<HooksSubcommand>,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum HooksSubcommand {
+    /// List all hooks
+    #[command(about = "List all registered hooks")]
+    List {
+        /// Output format (table or json)
+        #[arg(short, long)]
+        format: Option<String>,
+    },
+
+    /// Inspect a specific hook
+    #[command(about = "Inspect a specific hook")]
+    Inspect {
+        /// Hook ID
+        #[arg(value_name = "ID")]
+        id: String,
+
+        /// Output format (table or json)
+        #[arg(short, long)]
+        format: Option<String>,
+    },
+
+    /// Enable a hook
+    #[command(about = "Enable a hook")]
+    Enable {
+        /// Hook ID
+        #[arg(value_name = "ID")]
+        id: String,
+    },
+
+    /// Disable a hook
+    #[command(about = "Disable a hook")]
+    Disable {
+        /// Hook ID
+        #[arg(value_name = "ID")]
+        id: String,
+    },
+
+    /// Delete a hook
+    #[command(about = "Delete a hook")]
+    Delete {
+        /// Hook ID
+        #[arg(value_name = "ID")]
+        id: String,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -279,10 +335,10 @@ impl CommandRouter {
     /// Parse CLI arguments and route to appropriate handler
     pub fn route() -> CliResult<()> {
         let cli = Cli::parse();
-        
+
         // Initialize logging based on CLI flags
         crate::logging::init_logging(cli.verbose, cli.quiet);
-        
+
         Self::execute(&cli)
     }
 
@@ -325,17 +381,20 @@ impl CommandRouter {
                 cmd.execute()
             }
             Commands::Completions { shell } => {
-                crate::completion::generate_completions(shell)
-                    .map_err(CliError::Internal)
+                crate::completion::generate_completions(shell).map_err(CliError::Internal)
             }
             Commands::Custom { action } => {
                 let custom_action = match action {
                     Some(CustomSubcommand::List) | None => custom::CustomAction::List,
-                    Some(CustomSubcommand::Info { name }) => custom::CustomAction::Info(name.clone()),
+                    Some(CustomSubcommand::Info { name }) => {
+                        custom::CustomAction::Info(name.clone())
+                    }
                     Some(CustomSubcommand::Run { name, args }) => {
                         custom::CustomAction::Run(name.clone(), args.clone())
                     }
-                    Some(CustomSubcommand::Load { file }) => custom::CustomAction::Load(file.clone()),
+                    Some(CustomSubcommand::Load { file }) => {
+                        custom::CustomAction::Load(file.clone())
+                    }
                     Some(CustomSubcommand::Search { query }) => {
                         custom::CustomAction::Search(query.clone())
                     }
@@ -393,13 +452,36 @@ impl CommandRouter {
                 let cmd = lsp::LspCommand::new(log_level.clone(), *port, *debug);
                 cmd.execute()
             }
+            Commands::Hooks { action } => {
+                let hooks_action = match action {
+                    Some(HooksSubcommand::List { format }) => hooks::HooksAction::List {
+                        format: format.clone(),
+                    },
+                    None => hooks::HooksAction::List { format: None },
+                    Some(HooksSubcommand::Inspect { id, format }) => hooks::HooksAction::Inspect {
+                        id: id.clone(),
+                        format: format.clone(),
+                    },
+                    Some(HooksSubcommand::Enable { id }) => {
+                        hooks::HooksAction::Enable { id: id.clone() }
+                    }
+                    Some(HooksSubcommand::Disable { id }) => {
+                        hooks::HooksAction::Disable { id: id.clone() }
+                    }
+                    Some(HooksSubcommand::Delete { id }) => {
+                        hooks::HooksAction::Delete { id: id.clone() }
+                    }
+                };
+                let cmd = hooks::HooksCommand::new(hooks_action);
+                cmd.execute()
+            }
         }
     }
 
     /// Find similar command for suggestions
     pub fn find_similar(command: &str) -> Option<String> {
         let commands = ["init", "gen", "chat", "refactor", "review", "config", "tui"];
-        
+
         // Simple similarity check: commands that start with same letter
         commands
             .iter()

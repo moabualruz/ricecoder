@@ -177,10 +177,7 @@ impl StepExecutor {
     /// Allows resuming execution after a pause.
     pub fn resume_from_step(&mut self, step_index: usize) {
         self.current_step_index = step_index;
-        debug!(
-            step_index = step_index,
-            "Resuming execution from step"
-        );
+        debug!(step_index = step_index, "Resuming execution from step");
     }
 
     /// Skip a step
@@ -263,7 +260,9 @@ impl StepExecutor {
             let stderr = String::from_utf8_lossy(&output.stderr);
             return Err(ExecutionError::StepFailed(format!(
                 "Command {} failed with exit code {:?}: {}",
-                command, output.status.code(), stderr
+                command,
+                output.status.code(),
+                stderr
             )));
         }
 

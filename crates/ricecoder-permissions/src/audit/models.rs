@@ -75,11 +75,7 @@ pub struct AuditLogEntry {
 
 impl AuditLogEntry {
     /// Create a new audit log entry
-    pub fn new(
-        tool: String,
-        action: AuditAction,
-        result: AuditResult,
-    ) -> Self {
+    pub fn new(tool: String, action: AuditAction, result: AuditResult) -> Self {
         Self {
             id: Uuid::new_v4().to_string(),
             timestamp: Utc::now(),
@@ -176,7 +172,10 @@ mod tests {
         )
         .with_context("User approved after 5 seconds".to_string());
 
-        assert_eq!(entry.context, Some("User approved after 5 seconds".to_string()));
+        assert_eq!(
+            entry.context,
+            Some("User approved after 5 seconds".to_string())
+        );
     }
 
     #[test]

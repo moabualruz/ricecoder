@@ -1,10 +1,10 @@
 // Interactive chat mode
 // Adapted from automation/src/cli/prompts.rs
 
+use super::Command;
+use crate::chat::ChatSession;
 use crate::error::{CliError, CliResult};
 use crate::output::OutputStyle;
-use crate::chat::ChatSession;
-use super::Command;
 use ricecoder_storage::PathResolver;
 
 /// Interactive chat mode

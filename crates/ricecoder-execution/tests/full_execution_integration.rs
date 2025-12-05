@@ -35,7 +35,9 @@ fn test_complete_execution_flow_automatic() {
     let plan = create_test_plan("test_plan", 3);
 
     let mut manager = ExecutionManager::new();
-    manager.register_plan(plan.clone()).expect("Failed to register plan");
+    manager
+        .register_plan(plan.clone())
+        .expect("Failed to register plan");
 
     let execution_id = manager
         .start_execution(&plan.id, ExecutionMode::Automatic)
@@ -126,7 +128,9 @@ fn test_rollback_on_failure() {
     assert_eq!(handler.action_count(), 1);
 
     // Execute rollback
-    let results = handler.execute_rollback().expect("Failed to execute rollback");
+    let results = handler
+        .execute_rollback()
+        .expect("Failed to execute rollback");
     assert!(!results.is_empty());
 }
 
@@ -135,7 +139,9 @@ fn test_rollback_on_failure() {
 fn test_pause_resume_execution() {
     let plan = create_test_plan("test_plan", 3);
     let mut manager = ExecutionManager::new();
-    manager.register_plan(plan.clone()).expect("Failed to register plan");
+    manager
+        .register_plan(plan.clone())
+        .expect("Failed to register plan");
 
     let execution_id = manager
         .start_execution(&plan.id, ExecutionMode::StepByStep)
@@ -169,7 +175,9 @@ fn test_pause_resume_execution() {
 fn test_step_by_step_execution_with_approval() {
     let plan = create_test_plan("test_plan", 2);
     let mut manager = ExecutionManager::new();
-    manager.register_plan(plan.clone()).expect("Failed to register plan");
+    manager
+        .register_plan(plan.clone())
+        .expect("Failed to register plan");
 
     let execution_id = manager
         .start_execution(&plan.id, ExecutionMode::StepByStep)
@@ -188,7 +196,9 @@ fn test_dry_run_mode_no_changes() {
     let _temp_dir = TempDir::new().expect("Failed to create temp dir");
     let plan = create_test_plan("test_plan", 2);
     let mut manager = ExecutionManager::new();
-    manager.register_plan(plan.clone()).expect("Failed to register plan");
+    manager
+        .register_plan(plan.clone())
+        .expect("Failed to register plan");
 
     let execution_id = manager
         .start_execution(&plan.id, ExecutionMode::DryRun)
@@ -206,7 +216,9 @@ fn test_dry_run_mode_no_changes() {
 fn test_cancel_execution() {
     let plan = create_test_plan("test_plan", 2);
     let mut manager = ExecutionManager::new();
-    manager.register_plan(plan.clone()).expect("Failed to register plan");
+    manager
+        .register_plan(plan.clone())
+        .expect("Failed to register plan");
 
     let execution_id = manager
         .start_execution(&plan.id, ExecutionMode::Automatic)
@@ -229,8 +241,12 @@ fn test_multiple_concurrent_executions() {
     let plan2 = create_test_plan("plan_2", 2);
 
     let mut manager = ExecutionManager::new();
-    manager.register_plan(plan1.clone()).expect("Failed to register plan 1");
-    manager.register_plan(plan2.clone()).expect("Failed to register plan 2");
+    manager
+        .register_plan(plan1.clone())
+        .expect("Failed to register plan 1");
+    manager
+        .register_plan(plan2.clone())
+        .expect("Failed to register plan 2");
 
     let exec_id_1 = manager
         .start_execution(&plan1.id, ExecutionMode::Automatic)
@@ -252,7 +268,9 @@ fn test_multiple_concurrent_executions() {
 fn test_execution_with_progress_tracking() {
     let plan = create_test_plan("test_plan", 3);
     let mut manager = ExecutionManager::new();
-    manager.register_plan(plan.clone()).expect("Failed to register plan");
+    manager
+        .register_plan(plan.clone())
+        .expect("Failed to register plan");
 
     let execution_id = manager
         .start_execution(&plan.id, ExecutionMode::Automatic)
@@ -273,7 +291,9 @@ fn test_execution_with_progress_tracking() {
 fn test_execution_state_persistence() {
     let plan = create_test_plan("test_plan", 2);
     let mut manager = ExecutionManager::new();
-    manager.register_plan(plan.clone()).expect("Failed to register plan");
+    manager
+        .register_plan(plan.clone())
+        .expect("Failed to register plan");
 
     let execution_id = manager
         .start_execution(&plan.id, ExecutionMode::StepByStep)
@@ -326,7 +346,9 @@ fn test_plan_validation_before_execution() {
     let mut manager = ExecutionManager::new();
 
     // Register plan
-    manager.register_plan(plan.clone()).expect("Failed to register plan");
+    manager
+        .register_plan(plan.clone())
+        .expect("Failed to register plan");
 
     // Verify plan is registered
     let execution_id = manager
@@ -341,7 +363,9 @@ fn test_plan_validation_before_execution() {
 fn test_execution_mode_isolation() {
     let plan = create_test_plan("test_plan", 2);
     let mut manager = ExecutionManager::new();
-    manager.register_plan(plan.clone()).expect("Failed to register plan");
+    manager
+        .register_plan(plan.clone())
+        .expect("Failed to register plan");
 
     // Start execution in automatic mode
     let auto_exec = manager

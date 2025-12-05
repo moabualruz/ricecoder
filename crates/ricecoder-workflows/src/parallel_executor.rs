@@ -131,7 +131,12 @@ impl ParallelExecutor {
         let duration_ms = start_time.elapsed().as_millis() as u64;
 
         // Mark step as completed
-        StateManager::complete_step(state, step_id.to_string(), Some(parallel_output), duration_ms);
+        StateManager::complete_step(
+            state,
+            step_id.to_string(),
+            Some(parallel_output),
+            duration_ms,
+        );
 
         Ok(())
     }
@@ -171,7 +176,9 @@ impl ParallelExecutor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{ErrorAction, RiskFactors, StepConfig, StepStatus, StepType, WorkflowConfig, WorkflowStep};
+    use crate::models::{
+        ErrorAction, RiskFactors, StepConfig, StepStatus, StepType, WorkflowConfig, WorkflowStep,
+    };
 
     fn create_workflow_with_parallel_step() -> Workflow {
         Workflow {
@@ -211,7 +218,12 @@ mod tests {
             max_concurrency: 2,
         };
 
-        let result = ParallelExecutor::execute_parallel_step(&workflow, &mut state, "parallel-step", &parallel_step);
+        let result = ParallelExecutor::execute_parallel_step(
+            &workflow,
+            &mut state,
+            "parallel-step",
+            &parallel_step,
+        );
         assert!(result.is_ok());
 
         // Verify step is marked as completed
@@ -225,7 +237,11 @@ mod tests {
         let workflow = create_workflow_with_parallel_step();
         let mut state = StateManager::create_state(&workflow);
         let parallel_step = ParallelStep {
-            steps: vec!["step1".to_string(), "step2".to_string(), "step3".to_string()],
+            steps: vec![
+                "step1".to_string(),
+                "step2".to_string(),
+                "step3".to_string(),
+            ],
             max_concurrency: 2,
         };
 

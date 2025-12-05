@@ -1,16 +1,14 @@
 //! Parsers for YAML and Markdown spec formats
 
 use crate::error::SpecError;
-use crate::models::{
-    Spec, SpecPhase, SpecStatus, SpecMetadata, Task
-};
+use crate::models::{Spec, SpecMetadata, SpecPhase, SpecStatus, Task};
 
 /// YAML parser for spec files
 pub struct YamlParser;
 
 impl YamlParser {
     /// Parse a YAML spec from a string
-    /// 
+    ///
     /// Supports both plain YAML and YAML with frontmatter (---\n...\n---).
     /// Frontmatter is optional and will be stripped before parsing.
     pub fn parse(content: &str) -> Result<Spec, SpecError> {
@@ -19,19 +17,19 @@ impl YamlParser {
     }
 
     /// Serialize a spec to YAML
-    /// 
+    ///
     /// Produces valid YAML without frontmatter markers.
     pub fn serialize(spec: &Spec) -> Result<String, SpecError> {
         serde_yaml::to_string(spec).map_err(SpecError::YamlError)
     }
 
     /// Extract YAML content from a string that may contain frontmatter
-    /// 
+    ///
     /// If the content starts with ---, it's treated as frontmatter and extracted.
     /// Otherwise, the entire content is returned as-is.
     fn extract_yaml_content(content: &str) -> &str {
         let trimmed = content.trim_start();
-        
+
         // Check if content starts with frontmatter delimiter
         if let Some(after_opening) = trimmed.strip_prefix("---") {
             // Find the closing delimiter
@@ -59,19 +57,19 @@ pub struct MarkdownParser;
 
 impl MarkdownParser {
     /// Parse a Markdown spec from a string
-    /// 
+    ///
     /// Extracts structured data from markdown sections using regex patterns.
     /// Looks for metadata fields in the format: - **Field**: value
     pub fn parse(content: &str) -> Result<Spec, SpecError> {
         use regex::Regex;
-        
+
         let mut spec_id = String::new();
         let mut spec_name = String::new();
         let mut spec_version = String::new();
         let mut author: Option<String> = None;
         let mut phase = SpecPhase::Requirements;
         let mut status = SpecStatus::Draft;
-        
+
         // Extract first H1 as spec name (multiline mode)
         if let Ok(re) = Regex::new(r"(?m)^#\s+(.+)$") {
             if let Some(cap) = re.captures(content) {
@@ -79,20 +77,20 @@ impl MarkdownParser {
                 spec_id = spec_name.to_lowercase().replace(" ", "-");
             }
         }
-        
+
         // Extract metadata fields
         if let Ok(re) = Regex::new(r"(?i)-\s*\*\*ID\*\*:\s*([^\n]+)") {
             if let Some(cap) = re.captures(content) {
                 spec_id = cap[1].trim().to_string();
             }
         }
-        
+
         if let Ok(re) = Regex::new(r"(?i)-\s*\*\*Version\*\*:\s*([^\n]+)") {
             if let Some(cap) = re.captures(content) {
                 spec_version = cap[1].trim().to_string();
             }
         }
-        
+
         if let Ok(re) = Regex::new(r"(?i)-\s*\*\*Author\*\*:\s*([^\n]+)") {
             if let Some(cap) = re.captures(content) {
                 let author_str = cap[1].trim().to_string();
@@ -101,7 +99,7 @@ impl MarkdownParser {
                 }
             }
         }
-        
+
         if let Ok(re) = Regex::new(r"(?i)-\s*\*\*Phase\*\*:\s*([^\n]+)") {
             if let Some(cap) = re.captures(content) {
                 let phase_str = cap[1].trim().to_lowercase();
@@ -115,7 +113,7 @@ impl MarkdownParser {
                 };
             }
         }
-        
+
         if let Ok(re) = Regex::new(r"(?i)-\s*\*\*Status\*\*:\s*([^\n]+)") {
             if let Some(cap) = re.captures(content) {
                 let status_str = cap[1].trim().to_lowercase();
@@ -128,7 +126,7 @@ impl MarkdownParser {
                 };
             }
         }
-        
+
         Ok(Spec {
             id: spec_id,
             name: spec_name,
@@ -148,14 +146,14 @@ impl MarkdownParser {
     }
 
     /// Serialize a spec to Markdown
-    /// 
+    ///
     /// Produces markdown with sections for each spec component.
     pub fn serialize(spec: &Spec) -> Result<String, SpecError> {
         let mut output = String::new();
-        
+
         // Header
         output.push_str(&format!("# {}\n\n", spec.name));
-        
+
         // Metadata section
         output.push_str("## Metadata\n\n");
         output.push_str(&format!("- **ID**: {}\n", spec.id));
@@ -167,7 +165,7 @@ impl MarkdownParser {
         output.push_str(&format!("- **Status**: {:?}\n", spec.metadata.status));
         output.push_str(&format!("- **Created**: {}\n", spec.metadata.created_at));
         output.push_str(&format!("- **Updated**: {}\n\n", spec.metadata.updated_at));
-        
+
         // Requirements section
         if !spec.requirements.is_empty() {
             output.push_str("## Requirements\n\n");
@@ -175,30 +173,35 @@ impl MarkdownParser {
                 output.push_str(&format!("### {}: {}\n\n", req.id, req.user_story));
                 output.push_str("#### Acceptance Criteria\n\n");
                 for criterion in &req.acceptance_criteria {
-                    output.push_str(&format!("- **{}**: WHEN {} THEN {}\n", 
-                        criterion.id, criterion.when, criterion.then));
+                    output.push_str(&format!(
+                        "- **{}**: WHEN {} THEN {}\n",
+                        criterion.id, criterion.when, criterion.then
+                    ));
                 }
                 output.push_str(&format!("\n**Priority**: {:?}\n\n", req.priority));
             }
         }
-        
+
         // Design section
         if let Some(design) = &spec.design {
             output.push_str("## Design\n\n");
             output.push_str("### Overview\n\n");
             output.push_str(&format!("{}\n\n", design.overview));
-            
+
             output.push_str("### Architecture\n\n");
             output.push_str(&format!("{}\n\n", design.architecture));
-            
+
             if !design.components.is_empty() {
                 output.push_str("### Components\n\n");
                 for component in &design.components {
-                    output.push_str(&format!("- **{}**: {}\n", component.name, component.description));
+                    output.push_str(&format!(
+                        "- **{}**: {}\n",
+                        component.name, component.description
+                    ));
                 }
                 output.push('\n');
             }
-            
+
             if !design.data_models.is_empty() {
                 output.push_str("### Data Models\n\n");
                 for model in &design.data_models {
@@ -206,7 +209,7 @@ impl MarkdownParser {
                 }
                 output.push('\n');
             }
-            
+
             if !design.correctness_properties.is_empty() {
                 output.push_str("### Correctness Properties\n\n");
                 for prop in &design.correctness_properties {
@@ -218,32 +221,41 @@ impl MarkdownParser {
                 output.push('\n');
             }
         }
-        
+
         // Tasks section
         if !spec.tasks.is_empty() {
             output.push_str("## Tasks\n\n");
             Self::serialize_tasks(&mut output, &spec.tasks, 0);
         }
-        
+
         Ok(output)
     }
-    
+
     /// Helper to serialize tasks recursively
     fn serialize_tasks(output: &mut String, tasks: &[Task], depth: usize) {
         for task in tasks {
             let prefix = "#".repeat(3 + depth);
             output.push_str(&format!("{} {}: {}\n\n", prefix, task.id, task.description));
-            
+
             if !task.requirements.is_empty() {
-                output.push_str(&format!("{}**Requirements**: {}\n\n", 
-                    " ".repeat(depth * 2), task.requirements.join(", ")));
+                output.push_str(&format!(
+                    "{}**Requirements**: {}\n\n",
+                    " ".repeat(depth * 2),
+                    task.requirements.join(", ")
+                ));
             }
-            
-            output.push_str(&format!("{}**Status**: {:?}\n", 
-                " ".repeat(depth * 2), task.status));
-            output.push_str(&format!("{}**Optional**: {}\n\n", 
-                " ".repeat(depth * 2), task.optional));
-            
+
+            output.push_str(&format!(
+                "{}**Status**: {:?}\n",
+                " ".repeat(depth * 2),
+                task.status
+            ));
+            output.push_str(&format!(
+                "{}**Optional**: {}\n\n",
+                " ".repeat(depth * 2),
+                task.optional
+            ));
+
             if !task.subtasks.is_empty() {
                 Self::serialize_tasks(output, &task.subtasks, depth + 1);
             }
@@ -394,20 +406,16 @@ mod markdown_tests {
             id: "test-spec".to_string(),
             name: "Test Spec".to_string(),
             version: "1.0".to_string(),
-            requirements: vec![
-                Requirement {
-                    id: "REQ-1".to_string(),
-                    user_story: "As a user, I want to create tasks".to_string(),
-                    acceptance_criteria: vec![
-                        AcceptanceCriterion {
-                            id: "AC-1.1".to_string(),
-                            when: "user enters task".to_string(),
-                            then: "task is added".to_string(),
-                        },
-                    ],
-                    priority: Priority::Must,
-                },
-            ],
+            requirements: vec![Requirement {
+                id: "REQ-1".to_string(),
+                user_story: "As a user, I want to create tasks".to_string(),
+                acceptance_criteria: vec![AcceptanceCriterion {
+                    id: "AC-1.1".to_string(),
+                    when: "user enters task".to_string(),
+                    then: "task is added".to_string(),
+                }],
+                priority: Priority::Must,
+            }],
             design: None,
             tasks: vec![],
             metadata: SpecMetadata {
@@ -438,25 +446,19 @@ mod markdown_tests {
             design: Some(Design {
                 overview: "System overview".to_string(),
                 architecture: "Layered architecture".to_string(),
-                components: vec![
-                    Component {
-                        name: "ComponentA".to_string(),
-                        description: "First component".to_string(),
-                    },
-                ],
-                data_models: vec![
-                    DataModel {
-                        name: "Model1".to_string(),
-                        description: "First model".to_string(),
-                    },
-                ],
-                correctness_properties: vec![
-                    Property {
-                        id: "PROP-1".to_string(),
-                        description: "Property description".to_string(),
-                        validates: vec!["REQ-1".to_string()],
-                    },
-                ],
+                components: vec![Component {
+                    name: "ComponentA".to_string(),
+                    description: "First component".to_string(),
+                }],
+                data_models: vec![DataModel {
+                    name: "Model1".to_string(),
+                    description: "First model".to_string(),
+                }],
+                correctness_properties: vec![Property {
+                    id: "PROP-1".to_string(),
+                    description: "Property description".to_string(),
+                    validates: vec!["REQ-1".to_string()],
+                }],
             }),
             tasks: vec![],
             metadata: SpecMetadata {
@@ -486,25 +488,21 @@ mod markdown_tests {
             version: "1.0".to_string(),
             requirements: vec![],
             design: None,
-            tasks: vec![
-                Task {
-                    id: "1".to_string(),
-                    description: "Main task".to_string(),
-                    subtasks: vec![
-                        Task {
-                            id: "1.1".to_string(),
-                            description: "Subtask".to_string(),
-                            subtasks: vec![],
-                            requirements: vec!["REQ-1".to_string()],
-                            status: TaskStatus::NotStarted,
-                            optional: false,
-                        },
-                    ],
-                    requirements: vec![],
-                    status: TaskStatus::InProgress,
+            tasks: vec![Task {
+                id: "1".to_string(),
+                description: "Main task".to_string(),
+                subtasks: vec![Task {
+                    id: "1.1".to_string(),
+                    description: "Subtask".to_string(),
+                    subtasks: vec![],
+                    requirements: vec!["REQ-1".to_string()],
+                    status: TaskStatus::NotStarted,
                     optional: false,
-                },
-            ],
+                }],
+                requirements: vec![],
+                status: TaskStatus::InProgress,
+                optional: false,
+            }],
             metadata: SpecMetadata {
                 author: None,
                 created_at: chrono::Utc::now(),
@@ -536,44 +534,43 @@ mod property_tests {
         // Generate valid names: must have at least one non-space character
         let valid_name = r"[a-zA-Z0-9][a-zA-Z0-9 ]{0,29}";
         let valid_version = r"[0-9]\.[0-9](\.[0-9])?";
-        
-        (valid_id, valid_name, valid_version)
-            .prop_map(|(id, name, version)| {
-                let now = Utc::now();
-                Spec {
-                    id,
-                    name: name.trim().to_string(),  // Trim whitespace for consistency
-                    version,
-                    requirements: vec![],
-                    design: None,
-                    tasks: vec![],
-                    metadata: SpecMetadata {
-                        author: Some("Test".to_string()),
-                        created_at: now,
-                        updated_at: now,
-                        phase: SpecPhase::Requirements,
-                        status: SpecStatus::Draft,
-                    },
-                    inheritance: None,
-                }
-            })
+
+        (valid_id, valid_name, valid_version).prop_map(|(id, name, version)| {
+            let now = Utc::now();
+            Spec {
+                id,
+                name: name.trim().to_string(), // Trim whitespace for consistency
+                version,
+                requirements: vec![],
+                design: None,
+                tasks: vec![],
+                metadata: SpecMetadata {
+                    author: Some("Test".to_string()),
+                    created_at: now,
+                    updated_at: now,
+                    phase: SpecPhase::Requirements,
+                    status: SpecStatus::Draft,
+                },
+                inheritance: None,
+            }
+        })
     }
 
     proptest! {
         /// **Feature: ricecoder-specs, Property 1: Spec Parsing Round-Trip**
         /// **Validates: Requirements 1.1, 1.2, 1.4**
-        /// 
+        ///
         /// For any valid spec, parsing and serializing SHALL produce semantically equivalent output.
         #[test]
         fn prop_yaml_roundtrip_preserves_spec(spec in arb_spec()) {
             // Serialize the spec to YAML
             let yaml = YamlParser::serialize(&spec)
                 .expect("Failed to serialize spec");
-            
+
             // Parse it back
             let parsed = YamlParser::parse(&yaml)
                 .expect("Failed to parse spec");
-            
+
             // Verify semantic equivalence
             prop_assert_eq!(spec.id, parsed.id, "ID should be preserved");
             prop_assert_eq!(spec.name, parsed.name, "Name should be preserved");
@@ -586,21 +583,21 @@ mod property_tests {
 
         /// **Feature: ricecoder-specs, Property 1: Spec Parsing Round-Trip**
         /// **Validates: Requirements 1.1, 1.2, 1.4**
-        /// 
+        ///
         /// For any valid spec with frontmatter, parsing and serializing SHALL produce semantically equivalent output.
         #[test]
         fn prop_yaml_roundtrip_with_frontmatter(spec in arb_spec()) {
             // Serialize the spec to YAML
             let yaml = YamlParser::serialize(&spec)
                 .expect("Failed to serialize spec");
-            
+
             // Add frontmatter
             let with_frontmatter = format!("---\n# Metadata\n---\n{}", yaml);
-            
+
             // Parse it back
             let parsed = YamlParser::parse(&with_frontmatter)
                 .expect("Failed to parse spec with frontmatter");
-            
+
             // Verify semantic equivalence
             prop_assert_eq!(spec.id, parsed.id, "ID should be preserved with frontmatter");
             prop_assert_eq!(spec.name, parsed.name, "Name should be preserved with frontmatter");
@@ -609,18 +606,18 @@ mod property_tests {
 
         /// **Feature: ricecoder-specs, Property 1: Spec Parsing Round-Trip**
         /// **Validates: Requirements 1.1, 1.2, 1.4**
-        /// 
+        ///
         /// For any valid spec, markdown serialization and parsing SHALL produce semantically equivalent output.
         #[test]
         fn prop_markdown_roundtrip_preserves_spec(spec in arb_spec()) {
             // Serialize the spec to Markdown
             let markdown = MarkdownParser::serialize(&spec)
                 .expect("Failed to serialize spec to markdown");
-            
+
             // Parse it back
             let parsed = MarkdownParser::parse(&markdown)
                 .expect("Failed to parse markdown spec");
-            
+
             // Verify semantic equivalence
             prop_assert_eq!(spec.id, parsed.id, "ID should be preserved in markdown roundtrip");
             prop_assert_eq!(spec.name, parsed.name, "Name should be preserved in markdown roundtrip");

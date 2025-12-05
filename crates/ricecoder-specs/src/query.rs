@@ -243,9 +243,7 @@ impl SpecQueryEngine {
 
             for dep_id in dependencies {
                 if !visited.contains(&dep_id) {
-                    Self::dfs_detect_cycle(
-                        &dep_id, all_specs, visited, rec_stack, path, cycles,
-                    );
+                    Self::dfs_detect_cycle(&dep_id, all_specs, visited, rec_stack, path, cycles);
                 } else if rec_stack.contains(&dep_id) {
                     // Found a cycle
                     if let Some(pos) = path.iter().position(|id| id == &dep_id) {
@@ -267,12 +265,7 @@ mod tests {
     use crate::models::{SpecMetadata, SpecPhase, SpecStatus};
     use chrono::Utc;
 
-    fn create_test_spec(
-        id: &str,
-        name: &str,
-        status: SpecStatus,
-        phase: SpecPhase,
-    ) -> Spec {
+    fn create_test_spec(id: &str, name: &str, status: SpecStatus, phase: SpecPhase) -> Spec {
         Spec {
             id: id.to_string(),
             name: name.to_string(),
@@ -306,8 +299,18 @@ mod tests {
     #[test]
     fn test_query_no_filters() {
         let specs = vec![
-            create_test_spec("spec-1", "Feature One", SpecStatus::Draft, SpecPhase::Requirements),
-            create_test_spec("spec-2", "Feature Two", SpecStatus::Approved, SpecPhase::Design),
+            create_test_spec(
+                "spec-1",
+                "Feature One",
+                SpecStatus::Draft,
+                SpecPhase::Requirements,
+            ),
+            create_test_spec(
+                "spec-2",
+                "Feature Two",
+                SpecStatus::Approved,
+                SpecPhase::Design,
+            ),
         ];
         let query = SpecQuery::default();
         let results = SpecQueryEngine::query(&specs, &query);
@@ -317,8 +320,18 @@ mod tests {
     #[test]
     fn test_query_by_name_exact_match() {
         let specs = vec![
-            create_test_spec("spec-1", "Feature One", SpecStatus::Draft, SpecPhase::Requirements),
-            create_test_spec("spec-2", "Feature Two", SpecStatus::Approved, SpecPhase::Design),
+            create_test_spec(
+                "spec-1",
+                "Feature One",
+                SpecStatus::Draft,
+                SpecPhase::Requirements,
+            ),
+            create_test_spec(
+                "spec-2",
+                "Feature Two",
+                SpecStatus::Approved,
+                SpecPhase::Design,
+            ),
         ];
         let query = SpecQuery {
             name: Some("Feature One".to_string()),
@@ -332,8 +345,18 @@ mod tests {
     #[test]
     fn test_query_by_name_partial_match() {
         let specs = vec![
-            create_test_spec("spec-1", "Feature One", SpecStatus::Draft, SpecPhase::Requirements),
-            create_test_spec("spec-2", "Feature Two", SpecStatus::Approved, SpecPhase::Design),
+            create_test_spec(
+                "spec-1",
+                "Feature One",
+                SpecStatus::Draft,
+                SpecPhase::Requirements,
+            ),
+            create_test_spec(
+                "spec-2",
+                "Feature Two",
+                SpecStatus::Approved,
+                SpecPhase::Design,
+            ),
         ];
         let query = SpecQuery {
             name: Some("Feature".to_string()),
@@ -362,8 +385,18 @@ mod tests {
     #[test]
     fn test_query_by_status() {
         let specs = vec![
-            create_test_spec("spec-1", "Feature One", SpecStatus::Draft, SpecPhase::Requirements),
-            create_test_spec("spec-2", "Feature Two", SpecStatus::Approved, SpecPhase::Design),
+            create_test_spec(
+                "spec-1",
+                "Feature One",
+                SpecStatus::Draft,
+                SpecPhase::Requirements,
+            ),
+            create_test_spec(
+                "spec-2",
+                "Feature Two",
+                SpecStatus::Approved,
+                SpecPhase::Design,
+            ),
         ];
         let query = SpecQuery {
             status: Some(SpecStatus::Approved),
@@ -377,8 +410,18 @@ mod tests {
     #[test]
     fn test_query_by_phase() {
         let specs = vec![
-            create_test_spec("spec-1", "Feature One", SpecStatus::Draft, SpecPhase::Requirements),
-            create_test_spec("spec-2", "Feature Two", SpecStatus::Approved, SpecPhase::Design),
+            create_test_spec(
+                "spec-1",
+                "Feature One",
+                SpecStatus::Draft,
+                SpecPhase::Requirements,
+            ),
+            create_test_spec(
+                "spec-2",
+                "Feature Two",
+                SpecStatus::Approved,
+                SpecPhase::Design,
+            ),
         ];
         let query = SpecQuery {
             phase: Some(SpecPhase::Design),
@@ -392,9 +435,24 @@ mod tests {
     #[test]
     fn test_query_by_multiple_filters() {
         let specs = vec![
-            create_test_spec("spec-1", "Feature One", SpecStatus::Draft, SpecPhase::Requirements),
-            create_test_spec("spec-2", "Feature Two", SpecStatus::Approved, SpecPhase::Design),
-            create_test_spec("spec-3", "Feature Three", SpecStatus::Approved, SpecPhase::Requirements),
+            create_test_spec(
+                "spec-1",
+                "Feature One",
+                SpecStatus::Draft,
+                SpecPhase::Requirements,
+            ),
+            create_test_spec(
+                "spec-2",
+                "Feature Two",
+                SpecStatus::Approved,
+                SpecPhase::Design,
+            ),
+            create_test_spec(
+                "spec-3",
+                "Feature Three",
+                SpecStatus::Approved,
+                SpecPhase::Requirements,
+            ),
         ];
         let query = SpecQuery {
             status: Some(SpecStatus::Approved),
@@ -408,10 +466,20 @@ mod tests {
 
     #[test]
     fn test_query_by_custom_filter_author() {
-        let mut spec1 = create_test_spec("spec-1", "Feature One", SpecStatus::Draft, SpecPhase::Requirements);
+        let mut spec1 = create_test_spec(
+            "spec-1",
+            "Feature One",
+            SpecStatus::Draft,
+            SpecPhase::Requirements,
+        );
         spec1.metadata.author = Some("Alice".to_string());
 
-        let mut spec2 = create_test_spec("spec-2", "Feature Two", SpecStatus::Approved, SpecPhase::Design);
+        let mut spec2 = create_test_spec(
+            "spec-2",
+            "Feature Two",
+            SpecStatus::Approved,
+            SpecPhase::Design,
+        );
         spec2.metadata.author = Some("Bob".to_string());
 
         let specs = vec![spec1, spec2];
@@ -426,10 +494,20 @@ mod tests {
 
     #[test]
     fn test_query_by_custom_filter_version() {
-        let mut spec1 = create_test_spec("spec-1", "Feature One", SpecStatus::Draft, SpecPhase::Requirements);
+        let mut spec1 = create_test_spec(
+            "spec-1",
+            "Feature One",
+            SpecStatus::Draft,
+            SpecPhase::Requirements,
+        );
         spec1.version = "1.0.0".to_string();
 
-        let mut spec2 = create_test_spec("spec-2", "Feature Two", SpecStatus::Approved, SpecPhase::Design);
+        let mut spec2 = create_test_spec(
+            "spec-2",
+            "Feature Two",
+            SpecStatus::Approved,
+            SpecPhase::Design,
+        );
         spec2.version = "2.0.0".to_string();
 
         let specs = vec![spec1, spec2];
@@ -448,7 +526,12 @@ mod tests {
 
     #[test]
     fn test_resolve_dependencies_no_dependencies() {
-        let spec = create_test_spec("spec-1", "Feature One", SpecStatus::Draft, SpecPhase::Requirements);
+        let spec = create_test_spec(
+            "spec-1",
+            "Feature One",
+            SpecStatus::Draft,
+            SpecPhase::Requirements,
+        );
         let all_specs = vec![spec.clone()];
         let deps = SpecQueryEngine::resolve_dependencies(&spec, &all_specs);
         assert_eq!(deps.len(), 0);
@@ -456,7 +539,12 @@ mod tests {
 
     #[test]
     fn test_resolve_dependencies_with_task_requirements() {
-        let mut spec1 = create_test_spec("spec-1", "Feature One", SpecStatus::Draft, SpecPhase::Requirements);
+        let mut spec1 = create_test_spec(
+            "spec-1",
+            "Feature One",
+            SpecStatus::Draft,
+            SpecPhase::Requirements,
+        );
         spec1.requirements = vec![crate::models::Requirement {
             id: "REQ-1".to_string(),
             user_story: "Test".to_string(),
@@ -464,7 +552,12 @@ mod tests {
             priority: Priority::Must,
         }];
 
-        let mut spec2 = create_test_spec("spec-2", "Feature Two", SpecStatus::Approved, SpecPhase::Design);
+        let mut spec2 = create_test_spec(
+            "spec-2",
+            "Feature Two",
+            SpecStatus::Approved,
+            SpecPhase::Design,
+        );
         spec2.tasks = vec![crate::models::Task {
             id: "1".to_string(),
             description: "Task 1".to_string(),
@@ -487,8 +580,18 @@ mod tests {
     #[test]
     fn test_detect_circular_dependencies_no_cycles() {
         let specs = vec![
-            create_test_spec("spec-1", "Feature One", SpecStatus::Draft, SpecPhase::Requirements),
-            create_test_spec("spec-2", "Feature Two", SpecStatus::Approved, SpecPhase::Design),
+            create_test_spec(
+                "spec-1",
+                "Feature One",
+                SpecStatus::Draft,
+                SpecPhase::Requirements,
+            ),
+            create_test_spec(
+                "spec-2",
+                "Feature Two",
+                SpecStatus::Approved,
+                SpecPhase::Design,
+            ),
         ];
         let cycles = SpecQueryEngine::detect_circular_dependencies(&specs);
         assert_eq!(cycles.len(), 0);
@@ -497,8 +600,18 @@ mod tests {
     #[test]
     fn test_query_consistency_multiple_executions() {
         let specs = vec![
-            create_test_spec("spec-1", "Feature One", SpecStatus::Draft, SpecPhase::Requirements),
-            create_test_spec("spec-2", "Feature Two", SpecStatus::Approved, SpecPhase::Design),
+            create_test_spec(
+                "spec-1",
+                "Feature One",
+                SpecStatus::Draft,
+                SpecPhase::Requirements,
+            ),
+            create_test_spec(
+                "spec-2",
+                "Feature Two",
+                SpecStatus::Approved,
+                SpecPhase::Design,
+            ),
         ];
         let query = SpecQuery {
             status: Some(SpecStatus::Approved),

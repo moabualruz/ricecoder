@@ -2,7 +2,7 @@
 //! **Feature: ricecoder-sessions, Property 15: Background Agent Isolation**
 //! **Validates: Requirements 4.5**
 
-use ricecoder_sessions::{BackgroundAgentManager, BackgroundAgent, AgentStatus};
+use ricecoder_sessions::{AgentStatus, BackgroundAgent, BackgroundAgentManager};
 
 /// Property: For any two background agents running concurrently, the execution
 /// context of one agent SHALL NOT affect the execution context of the other agent.
@@ -19,10 +19,7 @@ async fn prop_background_agent_isolation() {
         // Start multiple agents
         let mut agent_ids = Vec::new();
         for i in 0..num_agents {
-            let agent = BackgroundAgent::new(
-                format!("agent_{}", i),
-                Some(format!("task_{}", i)),
-            );
+            let agent = BackgroundAgent::new(format!("agent_{}", i), Some(format!("task_{}", i)));
             let agent_id = manager.start_agent(agent).await.unwrap();
             agent_ids.push(agent_id);
         }
@@ -76,7 +73,11 @@ async fn prop_agent_metadata_isolation() {
                 Some(format!("unique_task_{}", i)),
             );
             let agent_id = manager.start_agent(agent).await.unwrap();
-            agent_metadata.push((agent_id, format!("agent_type_{}", i), format!("unique_task_{}", i)));
+            agent_metadata.push((
+                agent_id,
+                format!("agent_type_{}", i),
+                format!("unique_task_{}", i),
+            ));
         }
 
         // Each agent should have its own metadata
@@ -85,17 +86,12 @@ async fn prop_agent_metadata_isolation() {
 
         // Verify each agent has unique metadata
         for (expected_id, expected_type, expected_task) in agent_metadata {
-            let agent = agents.iter().find(|a| a.id == expected_id).expect("Agent should exist");
-            assert_eq!(
-                agent.agent_type,
-                expected_type,
-                "Agent type should match"
-            );
-            assert_eq!(
-                agent.task,
-                Some(expected_task),
-                "Agent task should match"
-            );
+            let agent = agents
+                .iter()
+                .find(|a| a.id == expected_id)
+                .expect("Agent should exist");
+            assert_eq!(agent.agent_type, expected_type, "Agent type should match");
+            assert_eq!(agent.task, Some(expected_task), "Agent task should match");
         }
     }
 }
@@ -110,10 +106,7 @@ async fn prop_agent_events_isolation() {
         // Start agents
         let mut agent_ids = Vec::new();
         for i in 0..num_agents {
-            let agent = BackgroundAgent::new(
-                format!("agent_{}", i),
-                None,
-            );
+            let agent = BackgroundAgent::new(format!("agent_{}", i), None);
             let agent_id = manager.start_agent(agent).await.unwrap();
             agent_ids.push(agent_id);
         }
@@ -142,10 +135,7 @@ async fn prop_agent_events_isolation() {
 
         // Each agent should have its own event
         for agent_id in &agent_ids {
-            let agent_events: Vec<_> = events
-                .iter()
-                .filter(|e| e.agent_id == *agent_id)
-                .collect();
+            let agent_events: Vec<_> = events.iter().filter(|e| e.agent_id == *agent_id).collect();
             assert!(
                 !agent_events.is_empty(),
                 "Agent {} should have its own event",
@@ -169,10 +159,7 @@ async fn prop_manager_isolation() {
                 let mut manager_agent_ids = Vec::new();
 
                 for a in 0..agents_per_manager {
-                    let agent = BackgroundAgent::new(
-                        format!("manager_{}_agent_{}", m, a),
-                        None,
-                    );
+                    let agent = BackgroundAgent::new(format!("manager_{}_agent_{}", m, a), None);
                     let agent_id = manager.start_agent(agent).await.unwrap();
                     manager_agent_ids.push(agent_id);
                 }
@@ -194,7 +181,10 @@ async fn prop_manager_isolation() {
 
             // Cancelling in one manager shouldn't affect others
             if !managers.is_empty() && !all_agent_ids[0].is_empty() {
-                managers[0].cancel_agent(&all_agent_ids[0][0]).await.unwrap();
+                managers[0]
+                    .cancel_agent(&all_agent_ids[0][0])
+                    .await
+                    .unwrap();
 
                 // First manager's agent should be cancelled
                 let status = managers[0]

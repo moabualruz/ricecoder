@@ -23,7 +23,8 @@ impl CommandExecutor {
         }
 
         // Process the command template with arguments
-        let processed_command = TemplateProcessor::process(&command_def.command, &context.arguments)?;
+        let processed_command =
+            TemplateProcessor::process(&command_def.command, &context.arguments)?;
 
         // Start timing
         let start = Instant::now();
@@ -205,8 +206,8 @@ mod tests {
         );
 
         let args = HashMap::new();
-        let context = CommandExecutor::build_context_with_defaults(&cmd, args, ".".to_string())
-            .unwrap();
+        let context =
+            CommandExecutor::build_context_with_defaults(&cmd, args, ".".to_string()).unwrap();
 
         assert_eq!(context.arguments.get("name").unwrap(), "Guest");
     }
@@ -222,8 +223,8 @@ mod tests {
 
         let mut args = HashMap::new();
         args.insert("name".to_string(), "Alice".to_string());
-        let context = CommandExecutor::build_context_with_defaults(&cmd, args, ".".to_string())
-            .unwrap();
+        let context =
+            CommandExecutor::build_context_with_defaults(&cmd, args, ".".to_string()).unwrap();
 
         assert_eq!(context.arguments.get("name").unwrap(), "Alice");
     }

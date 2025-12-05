@@ -2393,6 +2393,7 @@ dependencies = [
  "proptest",
  "regex",
  "ricecoder-commands",
+ "ricecoder-hooks",
  "ricecoder-lsp",
  "ricecoder-storage",
  "ricecoder-tui",
@@ -2511,6 +2512,25 @@ dependencies = [
  "regex",
  "ricecoder-providers",
  "ricecoder-specs",
+ "ricecoder-storage",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-test",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "ricecoder-hooks"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "proptest",
+ "regex",
  "ricecoder-storage",
  "serde",
  "serde_json",

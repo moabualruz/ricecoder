@@ -190,22 +190,38 @@ impl CommandBlock {
         }
 
         // If any command is running, block is running
-        if self.commands.iter().any(|c| c.status == CommandStatus::Running) {
+        if self
+            .commands
+            .iter()
+            .any(|c| c.status == CommandStatus::Running)
+        {
             return CommandStatus::Running;
         }
 
         // If any command failed, block failed
-        if self.commands.iter().any(|c| c.status == CommandStatus::Failed) {
+        if self
+            .commands
+            .iter()
+            .any(|c| c.status == CommandStatus::Failed)
+        {
             return CommandStatus::Failed;
         }
 
         // If any command is pending, block is pending
-        if self.commands.iter().any(|c| c.status == CommandStatus::Pending) {
+        if self
+            .commands
+            .iter()
+            .any(|c| c.status == CommandStatus::Pending)
+        {
             return CommandStatus::Pending;
         }
 
         // If any command is cancelled, block is cancelled
-        if self.commands.iter().any(|c| c.status == CommandStatus::Cancelled) {
+        if self
+            .commands
+            .iter()
+            .any(|c| c.status == CommandStatus::Cancelled)
+        {
             return CommandStatus::Cancelled;
         }
 
@@ -268,10 +284,7 @@ impl CommandBlock {
 
     /// Get total duration of all commands
     pub fn total_duration_secs(&self) -> u64 {
-        self.commands
-            .iter()
-            .filter_map(|c| c.duration_secs())
-            .sum()
+        self.commands.iter().filter_map(|c| c.duration_secs()).sum()
     }
 
     /// Get the number of successful commands

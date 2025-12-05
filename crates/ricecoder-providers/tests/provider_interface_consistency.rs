@@ -3,10 +3,10 @@
 //! **Validates: Requirements 1.1, 1.2**
 
 use proptest::prelude::*;
+use ricecoder_providers::models::{FinishReason, Message};
 use ricecoder_providers::{
     ChatRequest, ChatResponse, ModelInfo, Provider, ProviderError, TokenUsage,
 };
-use ricecoder_providers::models::{FinishReason, Message};
 use std::sync::Arc;
 
 /// Mock provider for testing consistency
@@ -59,8 +59,6 @@ impl Provider for ConsistentMockProvider {
         Ok(true)
     }
 }
-
-
 
 /// Property: Calling the same method with the same input produces consistent behavior
 /// For any provider implementation, calling chat() with the same request should

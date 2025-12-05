@@ -190,7 +190,9 @@ fn test_audit_trail_includes_transaction_ids() {
     assert!(logger.log_operation(entry).is_ok());
 
     // Retrieve and verify transaction ID is preserved
-    let history = logger.get_change_history(&PathBuf::from("test.txt")).unwrap();
+    let history = logger
+        .get_change_history(&PathBuf::from("test.txt"))
+        .unwrap();
     assert_eq!(history.len(), 1);
     assert_eq!(history[0].transaction_id, Some(tx_id));
 }

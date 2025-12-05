@@ -38,9 +38,7 @@ impl FileManager {
     ) -> Result<FileOperation, FileError> {
         // Placeholder implementation
         // Will be implemented in subsequent tasks
-        Err(FileError::InvalidContent(
-            "Not yet implemented".to_string(),
-        ))
+        Err(FileError::InvalidContent("Not yet implemented".to_string()))
     }
 
     /// Begins a new transaction
@@ -79,9 +77,7 @@ impl FileManager {
     /// Result indicating success or failure
     pub async fn rollback_transaction(&self, _tx_id: Uuid) -> Result<(), FileError> {
         // Placeholder implementation
-        Err(FileError::RollbackFailed(
-            "Not yet implemented".to_string(),
-        ))
+        Err(FileError::RollbackFailed("Not yet implemented".to_string()))
     }
 }
 

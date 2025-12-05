@@ -9,8 +9,8 @@
 //! - Language-specific rules are applied correctly
 
 use proptest::prelude::*;
-use ricecoder_lsp::semantic::{SemanticAnalyzerFactory, LanguageDetector};
 use ricecoder_lsp::diagnostics::{DefaultDiagnosticsEngine, DiagnosticsEngine};
+use ricecoder_lsp::semantic::{LanguageDetector, SemanticAnalyzerFactory};
 use ricecoder_lsp::types::Language;
 use std::path::Path;
 
@@ -26,7 +26,9 @@ fn rust_code_strategy() -> impl Strategy<Value = String> {
         Just("const MAX_SIZE: usize = 100;".to_string()),
         Just("enum Result<T, E> { Ok(T), Err(E) }".to_string()),
         Just("impl Point { fn new(x: i32, y: i32) -> Self { Point { x, y } } }".to_string()),
-        Just("pub async fn fetch_data() -> Result<String, Error> { Ok(String::new()) }".to_string()),
+        Just(
+            "pub async fn fetch_data() -> Result<String, Error> { Ok(String::new()) }".to_string()
+        ),
     ]
 }
 
@@ -53,7 +55,10 @@ fn python_code_strategy() -> impl Strategy<Value = String> {
         Just("class Point:\n    def __init__(self, x, y):\n        self.x = x".to_string()),
         Just("import os\nimport sys".to_string()),
         Just("MAX_SIZE = 100".to_string()),
-        Just("def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)".to_string()),
+        Just(
+            "def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)"
+                .to_string()
+        ),
         Just("class Iterator:\n    def __next__(self):\n        pass".to_string()),
         Just("from typing import List, Dict".to_string()),
         Just("x: str = 'hello'".to_string()),
@@ -385,4 +390,3 @@ fn prop_python_analyzer_handles_python_syntax() {
         let _ = symbols.len();
     });
 }
-

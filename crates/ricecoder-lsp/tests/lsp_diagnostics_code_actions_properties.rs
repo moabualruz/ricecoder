@@ -14,21 +14,22 @@
 //! - Code actions do not introduce new issues
 
 use proptest::prelude::*;
-use ricecoder_lsp::diagnostics::{DiagnosticsEngine, DefaultDiagnosticsEngine};
 use ricecoder_lsp::code_actions::{CodeActionsEngine, DefaultCodeActionsEngine};
-use ricecoder_lsp::types::{Language, DiagnosticSeverity};
+use ricecoder_lsp::diagnostics::{DefaultDiagnosticsEngine, DiagnosticsEngine};
+use ricecoder_lsp::types::{DiagnosticSeverity, Language};
 
 /// Strategy for generating Rust code with potential issues
 fn rust_code_strategy() -> impl Strategy<Value = String> {
     prop_oneof![
         // Unused imports
         Just("use std::collections::HashMap;\nfn main() {}".to_string()),
-        Just("use std::io::Read;\nuse std::fs::File;\nfn main() { let _ = File::open(\"test\"); }".to_string()),
-        
+        Just(
+            "use std::io::Read;\nuse std::fs::File;\nfn main() { let _ = File::open(\"test\"); }"
+                .to_string()
+        ),
         // Naming convention violations
         Just("fn MyFunction() {}".to_string()),
         Just("const my_const: i32 = 42;".to_string()),
-        
         // Valid code
         Just("fn main() {}".to_string()),
         Just("use std::io::Read;\nfn main() { let _ = Read::read; }".to_string()),
@@ -40,15 +41,18 @@ fn typescript_code_strategy() -> impl Strategy<Value = String> {
     prop_oneof![
         // Unused imports
         Just("import { HashMap } from 'collections';\nfunction main() {}".to_string()),
-        Just("import { readFile } from 'fs';\nfunction main() { console.log('test'); }".to_string()),
-        
+        Just(
+            "import { readFile } from 'fs';\nfunction main() { console.log('test'); }".to_string()
+        ),
         // Naming convention violations
         Just("function MyFunction() {}".to_string()),
         Just("class myClass {}".to_string()),
-        
         // Valid code
         Just("function main() {}".to_string()),
-        Just("import { readFile } from 'fs';\nfunction main() { readFile('test', () => {}); }".to_string()),
+        Just(
+            "import { readFile } from 'fs';\nfunction main() { readFile('test', () => {}); }"
+                .to_string()
+        ),
     ]
 }
 
@@ -58,11 +62,9 @@ fn python_code_strategy() -> impl Strategy<Value = String> {
         // Unused imports
         Just("import os\ndef main(): pass".to_string()),
         Just("from collections import defaultdict\ndef main(): print('test')".to_string()),
-        
         // Naming convention violations
         Just("def MyFunction(): pass".to_string()),
         Just("class myClass: pass".to_string()),
-        
         // Valid code
         Just("def main(): pass".to_string()),
         Just("import os\ndef main(): print(os.path.exists('test'))".to_string()),

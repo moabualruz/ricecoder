@@ -3,9 +3,9 @@
 //! This module provides performance tracking, metrics collection, and optimization
 //! utilities for the LSP server.
 
-use std::time::{Instant, Duration};
-use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
+use std::time::{Duration, Instant};
 use tracing::{info, warn};
 
 /// Performance metrics for a specific operation
@@ -60,9 +60,10 @@ impl PerformanceTracker {
     /// Record operation time
     pub fn record(&self, operation: String, duration: Duration) {
         let time_ms = duration.as_secs_f64() * 1000.0;
-        
+
         let mut metrics = self.metrics.write().unwrap();
-        let entry = metrics.entry(operation.clone())
+        let entry = metrics
+            .entry(operation.clone())
             .or_insert_with(|| OperationMetrics {
                 name: operation.clone(),
                 count: 0,
@@ -70,12 +71,12 @@ impl PerformanceTracker {
                 min_time_ms: f64::MAX,
                 max_time_ms: 0.0,
             });
-        
+
         entry.count += 1;
         entry.total_time_ms += time_ms;
         entry.min_time_ms = entry.min_time_ms.min(time_ms);
         entry.max_time_ms = entry.max_time_ms.max(time_ms);
-        
+
         // Check if target was exceeded
         let targets = self.targets.read().unwrap();
         if let Some(&target) = targets.get(&operation) {
@@ -109,12 +110,12 @@ impl PerformanceTracker {
     /// Print performance report
     pub fn print_report(&self) {
         let metrics = self.metrics.read().unwrap();
-        
+
         if metrics.is_empty() {
             info!("No performance metrics recorded");
             return;
         }
-        
+
         info!("=== Performance Report ===");
         for (_, metric) in metrics.iter() {
             info!(
@@ -183,9 +184,9 @@ impl PerformanceAnalyzer {
     pub fn identify_slow_operations(&self) -> Vec<(String, f64, f64)> {
         let metrics = self.tracker.metrics.read().unwrap();
         let targets = self.tracker.targets.read().unwrap();
-        
+
         let mut slow_ops = Vec::new();
-        
+
         for (name, metric) in metrics.iter() {
             if let Some(&target) = targets.get(name) {
                 let avg = metric.avg_time_ms();
@@ -194,7 +195,7 @@ impl PerformanceAnalyzer {
                 }
             }
         }
-        
+
         slow_ops.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
         slow_ops
     }
@@ -247,9 +248,9 @@ mod tests {
     fn test_performance_tracker_record() {
         let tracker = PerformanceTracker::new();
         let duration = Duration::from_millis(100);
-        
+
         tracker.record("test_op".to_string(), duration);
-        
+
         let metrics = tracker.get_metrics("test_op").unwrap();
         assert_eq!(metrics.count, 1);
         assert!(metrics.total_time_ms >= 100.0);
@@ -258,11 +259,11 @@ mod tests {
     #[test]
     fn test_performance_tracker_multiple_records() {
         let tracker = PerformanceTracker::new();
-        
+
         tracker.record("test_op".to_string(), Duration::from_millis(100));
         tracker.record("test_op".to_string(), Duration::from_millis(200));
         tracker.record("test_op".to_string(), Duration::from_millis(150));
-        
+
         let metrics = tracker.get_metrics("test_op").unwrap();
         assert_eq!(metrics.count, 3);
         assert!(metrics.avg_time_ms() >= 150.0);
@@ -273,12 +274,12 @@ mod tests {
     #[test]
     fn test_timer_auto_record() {
         let tracker = Arc::new(PerformanceTracker::new());
-        
+
         {
             let _timer = Timer::new("test_op".to_string(), tracker.clone());
             thread::sleep(Duration::from_millis(50));
         }
-        
+
         let metrics = tracker.get_metrics("test_op").unwrap();
         assert_eq!(metrics.count, 1);
         assert!(metrics.total_time_ms >= 50.0);
@@ -288,9 +289,9 @@ mod tests {
     fn test_performance_target() {
         let tracker = PerformanceTracker::new();
         tracker.set_target("test_op".to_string(), 100.0);
-        
+
         tracker.record("test_op".to_string(), Duration::from_millis(50));
-        
+
         let metrics = tracker.get_metrics("test_op").unwrap();
         assert_eq!(metrics.count, 1);
     }
@@ -298,14 +299,14 @@ mod tests {
     #[test]
     fn test_performance_analyzer_slowest() {
         let tracker = Arc::new(PerformanceTracker::new());
-        
+
         tracker.record("op1".to_string(), Duration::from_millis(100));
         tracker.record("op2".to_string(), Duration::from_millis(200));
         tracker.record("op3".to_string(), Duration::from_millis(150));
-        
+
         let analyzer = PerformanceAnalyzer::new(tracker);
         let slowest = analyzer.slowest_operations(2);
-        
+
         assert_eq!(slowest.len(), 2);
         assert_eq!(slowest[0].name, "op2");
         assert_eq!(slowest[1].name, "op3");
@@ -319,7 +320,7 @@ mod tests {
             target_time_ms: 100.0,
             recommendation: "Optimize parsing".to_string(),
         };
-        
+
         assert_eq!(rec.improvement_needed(), 100.0);
     }
 }

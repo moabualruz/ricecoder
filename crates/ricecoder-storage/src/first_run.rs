@@ -33,21 +33,14 @@ impl FirstRunHandler {
         if let Some(parent) = marker_path.parent() {
             if !parent.exists() {
                 fs::create_dir_all(parent).map_err(|e| {
-                    crate::error::StorageError::directory_creation_failed(
-                        parent.to_path_buf(),
-                        e,
-                    )
+                    crate::error::StorageError::directory_creation_failed(parent.to_path_buf(), e)
                 })?;
             }
         }
 
         // Create the marker file
         fs::write(&marker_path, "").map_err(|e| {
-            crate::error::StorageError::io_error(
-                marker_path,
-                crate::error::IoOperation::Write,
-                e,
-            )
+            crate::error::StorageError::io_error(marker_path, crate::error::IoOperation::Write, e)
         })?;
 
         Ok(())
@@ -84,8 +77,8 @@ mod tests {
     #[test]
     fn test_is_first_run_no_marker() {
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
-        let is_first = FirstRunHandler::is_first_run(temp_dir.path())
-            .expect("Failed to check first run");
+        let is_first =
+            FirstRunHandler::is_first_run(temp_dir.path()).expect("Failed to check first run");
         assert!(is_first, "Should be first run when marker doesn't exist");
     }
 
@@ -95,8 +88,8 @@ mod tests {
         let marker_path = temp_dir.path().join(FIRST_RUN_MARKER);
         fs::write(&marker_path, "").expect("Failed to create marker");
 
-        let is_first = FirstRunHandler::is_first_run(temp_dir.path())
-            .expect("Failed to check first run");
+        let is_first =
+            FirstRunHandler::is_first_run(temp_dir.path()).expect("Failed to check first run");
         assert!(!is_first, "Should not be first run when marker exists");
     }
 
@@ -106,24 +99,22 @@ mod tests {
         let path = temp_dir.path().to_path_buf();
 
         // Initially should be first run
-        let is_first_before = FirstRunHandler::is_first_run(&path)
-            .expect("Failed to check first run");
+        let is_first_before =
+            FirstRunHandler::is_first_run(&path).expect("Failed to check first run");
         assert!(is_first_before);
 
         // Mark as complete
-        FirstRunHandler::mark_first_run_complete(&path)
-            .expect("Failed to mark first run complete");
+        FirstRunHandler::mark_first_run_complete(&path).expect("Failed to mark first run complete");
 
         // Should no longer be first run
-        let is_first_after = FirstRunHandler::is_first_run(&path)
-            .expect("Failed to check first run");
+        let is_first_after =
+            FirstRunHandler::is_first_run(&path).expect("Failed to check first run");
         assert!(!is_first_after);
     }
 
     #[test]
     fn test_get_suggested_path() {
-        let path = FirstRunHandler::get_suggested_path()
-            .expect("Failed to get suggested path");
+        let path = FirstRunHandler::get_suggested_path().expect("Failed to get suggested path");
         assert!(path.to_string_lossy().contains(".ricecoder"));
     }
 
@@ -131,6 +122,9 @@ mod tests {
     fn test_detect_first_run_nonexistent_dir() {
         // This test uses the actual path resolution, so we just verify it returns a result
         let result = FirstRunHandler::detect_first_run();
-        assert!(result.is_ok(), "Should successfully detect first run status");
+        assert!(
+            result.is_ok(),
+            "Should successfully detect first run status"
+        );
     }
 }

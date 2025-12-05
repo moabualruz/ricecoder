@@ -4,12 +4,17 @@
 //! hot-reload, and fallback behavior for unconfigured languages.
 
 use ricecoder_lsp::{
-    ConfigRegistry, ConfigurationManager, LanguageConfig, DiagnosticRule, CodeActionTemplate,
-    semantic::GenericSemanticAnalyzer, diagnostics::GenericDiagnosticsEngine, 
+    code_actions::adapters::{
+        PythonCodeActionAdapter, RustCodeActionAdapter, TypeScriptCodeActionAdapter,
+    },
     code_actions::GenericCodeActionsEngine,
-    semantic::adapters::{RustAnalyzerAdapter, TypeScriptAnalyzerAdapter, PythonAnalyzerAdapter},
-    diagnostics::adapters::{RustDiagnosticsAdapter, TypeScriptDiagnosticsAdapter, PythonDiagnosticsAdapter},
-    code_actions::adapters::{RustCodeActionAdapter, TypeScriptCodeActionAdapter, PythonCodeActionAdapter},
+    diagnostics::adapters::{
+        PythonDiagnosticsAdapter, RustDiagnosticsAdapter, TypeScriptDiagnosticsAdapter,
+    },
+    diagnostics::GenericDiagnosticsEngine,
+    semantic::adapters::{PythonAnalyzerAdapter, RustAnalyzerAdapter, TypeScriptAnalyzerAdapter},
+    semantic::GenericSemanticAnalyzer,
+    CodeActionTemplate, ConfigRegistry, ConfigurationManager, DiagnosticRule, LanguageConfig,
 };
 
 #[test]
@@ -71,24 +76,20 @@ fn test_configuration_loading_and_validation() {
         language: "go".to_string(),
         extensions: vec!["go".to_string()],
         parser_plugin: Some("tree-sitter-go".to_string()),
-        diagnostic_rules: vec![
-            DiagnosticRule {
-                name: "unused-import".to_string(),
-                pattern: "import".to_string(),
-                severity: "warning".to_string(),
-                message: "Unused import".to_string(),
-                fix_template: None,
-                code: Some("unused-import".to_string()),
-            },
-        ],
-        code_actions: vec![
-            CodeActionTemplate {
-                name: "remove-import".to_string(),
-                title: "Remove import".to_string(),
-                kind: "quickfix".to_string(),
-                transformation: "delete_line".to_string(),
-            },
-        ],
+        diagnostic_rules: vec![DiagnosticRule {
+            name: "unused-import".to_string(),
+            pattern: "import".to_string(),
+            severity: "warning".to_string(),
+            message: "Unused import".to_string(),
+            fix_template: None,
+            code: Some("unused-import".to_string()),
+        }],
+        code_actions: vec![CodeActionTemplate {
+            name: "remove-import".to_string(),
+            title: "Remove import".to_string(),
+            kind: "quickfix".to_string(),
+            transformation: "delete_line".to_string(),
+        }],
     };
 
     // Registration should succeed
@@ -224,8 +225,12 @@ fn test_generic_diagnostics_engine_with_providers() {
 
     // Verify we can generate diagnostics with each provider
     assert!(engine.generate_diagnostics("fn main() {}", "rust").is_ok());
-    assert!(engine.generate_diagnostics("const x = 1;", "typescript").is_ok());
-    assert!(engine.generate_diagnostics("def foo(): pass", "python").is_ok());
+    assert!(engine
+        .generate_diagnostics("const x = 1;", "typescript")
+        .is_ok());
+    assert!(engine
+        .generate_diagnostics("def foo(): pass", "python")
+        .is_ok());
 
     // Verify fallback for unknown language (should return empty)
     let result = engine.generate_diagnostics("unknown code", "unknown");
@@ -248,7 +253,7 @@ fn test_generic_code_actions_engine_with_providers() {
     assert!(engine.has_provider("python"));
 
     // Create a test diagnostic
-    use ricecoder_lsp::types::{Position, Range, DiagnosticSeverity, Diagnostic};
+    use ricecoder_lsp::types::{Diagnostic, DiagnosticSeverity, Position, Range};
     let test_diagnostic = Diagnostic::new(
         Range::new(Position::new(0, 0), Position::new(0, 5)),
         DiagnosticSeverity::Error,
@@ -256,9 +261,15 @@ fn test_generic_code_actions_engine_with_providers() {
     );
 
     // Verify we can suggest actions with each provider
-    assert!(engine.suggest_actions(&test_diagnostic, "fn main() {}", "rust").is_ok());
-    assert!(engine.suggest_actions(&test_diagnostic, "const x = 1;", "typescript").is_ok());
-    assert!(engine.suggest_actions(&test_diagnostic, "def foo(): pass", "python").is_ok());
+    assert!(engine
+        .suggest_actions(&test_diagnostic, "fn main() {}", "rust")
+        .is_ok());
+    assert!(engine
+        .suggest_actions(&test_diagnostic, "const x = 1;", "typescript")
+        .is_ok());
+    assert!(engine
+        .suggest_actions(&test_diagnostic, "def foo(): pass", "python")
+        .is_ok());
 
     // Verify fallback for unknown language (should return empty)
     let result = engine.suggest_actions(&test_diagnostic, "unknown code", "unknown");

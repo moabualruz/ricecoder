@@ -77,7 +77,10 @@ fn test_get_recent_messages() {
     let mut manager = HistoryManager::new();
 
     for i in 1..=5 {
-        manager.add_message(create_test_message(MessageRole::User, &format!("Message {}", i)));
+        manager.add_message(create_test_message(
+            MessageRole::User,
+            &format!("Message {}", i),
+        ));
     }
 
     let recent = manager.get_recent_messages(3);
@@ -149,8 +152,14 @@ fn test_search_by_content_no_matches() {
 fn test_search_by_content_partial_match() {
     let mut manager = HistoryManager::new();
 
-    manager.add_message(create_test_message(MessageRole::User, "The quick brown fox"));
-    manager.add_message(create_test_message(MessageRole::Assistant, "Jumps over the lazy dog"));
+    manager.add_message(create_test_message(
+        MessageRole::User,
+        "The quick brown fox",
+    ));
+    manager.add_message(create_test_message(
+        MessageRole::Assistant,
+        "Jumps over the lazy dog",
+    ));
 
     let results = manager.search_by_content("quick");
     assert_eq!(results.len(), 1);
@@ -179,7 +188,10 @@ fn test_max_size_enforcement_multiple_adds() {
     let mut manager = HistoryManager::with_max_size(2);
 
     for i in 1..=5 {
-        manager.add_message(create_test_message(MessageRole::User, &format!("Message {}", i)));
+        manager.add_message(create_test_message(
+            MessageRole::User,
+            &format!("Message {}", i),
+        ));
     }
 
     assert_eq!(manager.message_count(), 2);
@@ -231,7 +243,10 @@ fn test_message_roles_preserved() {
     let mut manager = HistoryManager::new();
 
     manager.add_message(create_test_message(MessageRole::User, "User message"));
-    manager.add_message(create_test_message(MessageRole::Assistant, "Assistant message"));
+    manager.add_message(create_test_message(
+        MessageRole::Assistant,
+        "Assistant message",
+    ));
     manager.add_message(create_test_message(MessageRole::System, "System message"));
 
     let messages = manager.get_all_messages();

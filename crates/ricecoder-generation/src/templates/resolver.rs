@@ -1,7 +1,7 @@
 //! Placeholder resolution and case transformation
 
-use std::collections::{HashMap, HashSet};
 use crate::templates::error::TemplateError;
+use std::collections::{HashMap, HashSet};
 
 /// Represents a case transformation for placeholder values
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -23,8 +23,8 @@ pub enum CaseTransform {
 impl CaseTransform {
     /// Apply case transformation to a string
     pub fn apply(&self, input: &str) -> String {
-        use heck::{ToPascalCase, ToLowerCamelCase, ToSnakeCase, ToKebabCase};
-        
+        use heck::{ToKebabCase, ToLowerCamelCase, ToPascalCase, ToSnakeCase};
+
         match self {
             CaseTransform::PascalCase => input.to_pascal_case(),
             CaseTransform::CamelCase => input.to_lower_camel_case(),
@@ -179,12 +179,12 @@ impl PlaceholderResolver {
             if let Some(end_pos) = template[start_pos..].find("}}") {
                 let end_pos = start_pos + end_pos;
                 let content = &template[start_pos + 2..end_pos];
-                
+
                 // Parse the placeholder to extract the name
                 if let Ok((name, _)) = self.parse_placeholder_syntax(content) {
                     names.push(name);
                 }
-                
+
                 start = end_pos + 2;
             } else {
                 break;
@@ -288,7 +288,10 @@ impl PlaceholderResolver {
 
     /// Parse placeholder syntax to extract name and case transform
     /// Supports formats like: "name", "Name", "NAME", "name_snake", "name-kebab", "nameCamel"
-    fn parse_placeholder_syntax(&self, content: &str) -> Result<(String, CaseTransform), TemplateError> {
+    fn parse_placeholder_syntax(
+        &self,
+        content: &str,
+    ) -> Result<(String, CaseTransform), TemplateError> {
         let content = content.trim();
 
         // Determine case transform based on suffix
@@ -402,7 +405,8 @@ mod tests {
     #[test]
     fn test_placeholder_resolver_with_default() {
         let resolver = PlaceholderResolver::new();
-        let result = resolver.resolve_with_default("name", CaseTransform::PascalCase, Some("default_value"));
+        let result =
+            resolver.resolve_with_default("name", CaseTransform::PascalCase, Some("default_value"));
         assert_eq!(result.unwrap(), "DefaultValue");
     }
 

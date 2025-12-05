@@ -5,8 +5,7 @@
 
 use proptest::prelude::*;
 use ricecoder_lsp::{
-    ConfigRegistry, LanguageConfig, DiagnosticRule, CodeActionTemplate,
-    ConfigurationManager,
+    CodeActionTemplate, ConfigRegistry, ConfigurationManager, DiagnosticRule, LanguageConfig,
 };
 
 // Strategy for generating valid language names
@@ -62,15 +61,17 @@ fn language_config_strategy() -> impl Strategy<Value = LanguageConfig> {
         prop::collection::vec(diagnostic_rule_strategy(), 0..3),
         prop::collection::vec(code_action_strategy(), 0..3),
     )
-        .prop_map(|(language, extensions, parser_plugin, diagnostic_rules, code_actions)| {
-            LanguageConfig {
-                language,
-                extensions,
-                parser_plugin: parser_plugin.map(|s| s.to_string()),
-                diagnostic_rules,
-                code_actions,
-            }
-        })
+        .prop_map(
+            |(language, extensions, parser_plugin, diagnostic_rules, code_actions)| {
+                LanguageConfig {
+                    language,
+                    extensions,
+                    parser_plugin: parser_plugin.map(|s| s.to_string()),
+                    diagnostic_rules,
+                    code_actions,
+                }
+            },
+        )
 }
 
 proptest! {

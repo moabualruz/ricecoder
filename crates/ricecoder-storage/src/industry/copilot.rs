@@ -32,7 +32,10 @@ impl CopilotAdapter {
             return Ok(None);
         }
 
-        debug!("Reading .github/copilot-instructions.md from {:?}", copilot_path);
+        debug!(
+            "Reading .github/copilot-instructions.md from {:?}",
+            copilot_path
+        );
         let content = std::fs::read_to_string(&copilot_path).map_err(|e| {
             crate::error::StorageError::io_error(
                 copilot_path.clone(),
@@ -57,7 +60,9 @@ impl IndustryFileAdapter for CopilotAdapter {
     }
 
     fn can_handle(&self, project_root: &Path) -> bool {
-        project_root.join(".github/copilot-instructions.md").exists()
+        project_root
+            .join(".github/copilot-instructions.md")
+            .exists()
     }
 
     fn read_config(&self, project_root: &Path) -> StorageResult<Config> {

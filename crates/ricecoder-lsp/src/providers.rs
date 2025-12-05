@@ -3,8 +3,8 @@
 //! This module defines traits for pluggable providers that enable
 //! language-agnostic architecture with configuration-driven behavior.
 
-use crate::types::{Diagnostic, SemanticInfo, Symbol, Position};
 use crate::config::LanguageConfig;
+use crate::types::{Diagnostic, Position, SemanticInfo, Symbol};
 
 /// Error type for provider operations
 #[derive(Debug, Clone, thiserror::Error)]
@@ -21,8 +21,6 @@ pub enum ProviderError {
     #[error("Unsupported operation: {0}")]
     UnsupportedOperation(String),
 }
-
-
 
 /// Result type for provider operations
 pub type ProviderResult<T> = Result<T, ProviderError>;
@@ -216,7 +214,11 @@ mod tests {
             Ok(vec![])
         }
 
-        fn get_hover_info(&self, _code: &str, _position: Position) -> ProviderResult<Option<String>> {
+        fn get_hover_info(
+            &self,
+            _code: &str,
+            _position: Position,
+        ) -> ProviderResult<Option<String>> {
             Ok(None)
         }
     }

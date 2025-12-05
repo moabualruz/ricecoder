@@ -2,13 +2,9 @@
 //! **Feature: ricecoder-specs, Property 3: Validation Completeness**
 //! **Validates: Requirements 1.5, 1.6**
 
-use proptest::prelude::*;
-use ricecoder_specs::{
-    models::*,
-    validation::ValidationEngine,
-    error::Severity,
-};
 use chrono::Utc;
+use proptest::prelude::*;
+use ricecoder_specs::{error::Severity, models::*, validation::ValidationEngine};
 
 // ============================================================================
 // Generators for property-based testing
@@ -35,16 +31,8 @@ fn arb_user_story() -> impl Strategy<Value = String> {
 }
 
 fn arb_acceptance_criterion() -> impl Strategy<Value = AcceptanceCriterion> {
-    (
-        "AC-[0-9]{1,3}",
-        "when [a-z ]+",
-        "then [a-z ]+",
-    )
-        .prop_map(|(id, when, then)| AcceptanceCriterion {
-            id,
-            when,
-            then,
-        })
+    ("AC-[0-9]{1,3}", "when [a-z ]+", "then [a-z ]+")
+        .prop_map(|(id, when, then)| AcceptanceCriterion { id, when, then })
 }
 
 fn arb_requirement() -> impl Strategy<Value = Requirement> {

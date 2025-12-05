@@ -1,11 +1,10 @@
+use async_trait::async_trait;
 /// Tests for language-specific completion suggestions
 /// Tests that language-specific completions include traits, macros, decorators, type hints, etc.
 use ricecoder_completion::{
-    CompletionContext, CompletionItem, CompletionItemKind, Position,
-    RustCompletionProvider, TypeScriptCompletionProvider, PythonCompletionProvider,
-    CompletionProvider,
+    CompletionContext, CompletionItem, CompletionItemKind, CompletionProvider, Position,
+    PythonCompletionProvider, RustCompletionProvider, TypeScriptCompletionProvider,
 };
-use async_trait::async_trait;
 
 #[tokio::test]
 async fn test_rust_trait_completions() {
@@ -104,7 +103,11 @@ async fn test_rust_derive_attribute_completions() {
 #[tokio::test]
 async fn test_typescript_interface_completions() {
     let provider = TypeScriptCompletionProvider;
-    let context = CompletionContext::new("typescript".to_string(), Position::new(0, 0), "".to_string());
+    let context = CompletionContext::new(
+        "typescript".to_string(),
+        Position::new(0, 0),
+        "".to_string(),
+    );
 
     let completions = provider
         .generate_completions("", Position::new(0, 0), &context)
@@ -137,7 +140,11 @@ async fn test_typescript_interface_completions() {
 #[tokio::test]
 async fn test_typescript_decorator_completions() {
     let provider = TypeScriptCompletionProvider;
-    let context = CompletionContext::new("typescript".to_string(), Position::new(0, 0), "".to_string());
+    let context = CompletionContext::new(
+        "typescript".to_string(),
+        Position::new(0, 0),
+        "".to_string(),
+    );
 
     let completions = provider
         .generate_completions("", Position::new(0, 0), &context)
@@ -163,7 +170,11 @@ async fn test_typescript_decorator_completions() {
 #[tokio::test]
 async fn test_typescript_generic_completions() {
     let provider = TypeScriptCompletionProvider;
-    let context = CompletionContext::new("typescript".to_string(), Position::new(0, 0), "".to_string());
+    let context = CompletionContext::new(
+        "typescript".to_string(),
+        Position::new(0, 0),
+        "".to_string(),
+    );
 
     let completions = provider
         .generate_completions("", Position::new(0, 0), &context)
@@ -303,10 +314,22 @@ async fn test_rust_language_specific_completions_count() {
         .expect("Failed to generate completions");
 
     // Should have keywords, snippets, traits, macros, and derives
-    let keywords = completions.iter().filter(|c| c.kind == CompletionItemKind::Keyword).count();
-    let snippets = completions.iter().filter(|c| c.kind == CompletionItemKind::Snippet).count();
-    let traits = completions.iter().filter(|c| c.kind == CompletionItemKind::Trait).count();
-    let operators = completions.iter().filter(|c| c.kind == CompletionItemKind::Operator).count();
+    let keywords = completions
+        .iter()
+        .filter(|c| c.kind == CompletionItemKind::Keyword)
+        .count();
+    let snippets = completions
+        .iter()
+        .filter(|c| c.kind == CompletionItemKind::Snippet)
+        .count();
+    let traits = completions
+        .iter()
+        .filter(|c| c.kind == CompletionItemKind::Trait)
+        .count();
+    let operators = completions
+        .iter()
+        .filter(|c| c.kind == CompletionItemKind::Operator)
+        .count();
 
     assert!(keywords > 0, "No keywords found");
     assert!(snippets > 0, "No snippets found");
@@ -317,7 +340,11 @@ async fn test_rust_language_specific_completions_count() {
 #[tokio::test]
 async fn test_typescript_language_specific_completions_count() {
     let provider = TypeScriptCompletionProvider;
-    let context = CompletionContext::new("typescript".to_string(), Position::new(0, 0), "".to_string());
+    let context = CompletionContext::new(
+        "typescript".to_string(),
+        Position::new(0, 0),
+        "".to_string(),
+    );
 
     let completions = provider
         .generate_completions("", Position::new(0, 0), &context)
@@ -325,10 +352,22 @@ async fn test_typescript_language_specific_completions_count() {
         .expect("Failed to generate completions");
 
     // Should have keywords, snippets, interfaces, decorators, and generics
-    let keywords = completions.iter().filter(|c| c.kind == CompletionItemKind::Keyword).count();
-    let snippets = completions.iter().filter(|c| c.kind == CompletionItemKind::Snippet).count();
-    let interfaces = completions.iter().filter(|c| c.kind == CompletionItemKind::Interface).count();
-    let type_params = completions.iter().filter(|c| c.kind == CompletionItemKind::TypeParameter).count();
+    let keywords = completions
+        .iter()
+        .filter(|c| c.kind == CompletionItemKind::Keyword)
+        .count();
+    let snippets = completions
+        .iter()
+        .filter(|c| c.kind == CompletionItemKind::Snippet)
+        .count();
+    let interfaces = completions
+        .iter()
+        .filter(|c| c.kind == CompletionItemKind::Interface)
+        .count();
+    let type_params = completions
+        .iter()
+        .filter(|c| c.kind == CompletionItemKind::TypeParameter)
+        .count();
 
     assert!(keywords > 0, "No keywords found");
     assert!(snippets > 0, "No snippets found");
@@ -347,10 +386,22 @@ async fn test_python_language_specific_completions_count() {
         .expect("Failed to generate completions");
 
     // Should have keywords, snippets, decorators, type hints, and context managers
-    let keywords = completions.iter().filter(|c| c.kind == CompletionItemKind::Keyword).count();
-    let snippets = completions.iter().filter(|c| c.kind == CompletionItemKind::Snippet).count();
-    let type_params = completions.iter().filter(|c| c.kind == CompletionItemKind::TypeParameter).count();
-    let functions = completions.iter().filter(|c| c.kind == CompletionItemKind::Function).count();
+    let keywords = completions
+        .iter()
+        .filter(|c| c.kind == CompletionItemKind::Keyword)
+        .count();
+    let snippets = completions
+        .iter()
+        .filter(|c| c.kind == CompletionItemKind::Snippet)
+        .count();
+    let type_params = completions
+        .iter()
+        .filter(|c| c.kind == CompletionItemKind::TypeParameter)
+        .count();
+    let functions = completions
+        .iter()
+        .filter(|c| c.kind == CompletionItemKind::Function)
+        .count();
 
     assert!(keywords > 0, "No keywords found");
     assert!(snippets > 0, "No snippets found");
@@ -421,7 +472,11 @@ async fn test_rust_naming_conventions() {
 #[tokio::test]
 async fn test_typescript_naming_conventions() {
     let provider = TypeScriptCompletionProvider;
-    let context = CompletionContext::new("typescript".to_string(), Position::new(0, 0), "".to_string());
+    let context = CompletionContext::new(
+        "typescript".to_string(),
+        Position::new(0, 0),
+        "".to_string(),
+    );
 
     let completions = provider
         .generate_completions("", Position::new(0, 0), &context)

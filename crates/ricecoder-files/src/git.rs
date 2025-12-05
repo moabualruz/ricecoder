@@ -168,10 +168,7 @@ impl GitIntegration {
             .find_tree(tree_id)
             .map_err(|e| FileError::GitError(format!("Failed to find tree: {}", e)))?;
 
-        let parent_commit = repo
-            .head()
-            .ok()
-            .and_then(|head| head.peel_to_commit().ok());
+        let parent_commit = repo.head().ok().and_then(|head| head.peel_to_commit().ok());
 
         let parents = if let Some(parent) = parent_commit {
             vec![parent]
@@ -301,12 +298,8 @@ impl GitIntegration {
             .peel_to_commit()
             .map_err(|e| FileError::GitError(format!("Failed to get HEAD commit: {}", e)))?;
 
-        repo.reset(
-            head_commit.as_object(),
-            git2::ResetType::Mixed,
-            None,
-        )
-        .map_err(|e| FileError::GitError(format!("Failed to reset changes: {}", e)))?;
+        repo.reset(head_commit.as_object(), git2::ResetType::Mixed, None)
+            .map_err(|e| FileError::GitError(format!("Failed to reset changes: {}", e)))?;
 
         Ok(())
     }
@@ -464,32 +457,28 @@ mod tests {
 
     #[test]
     fn test_generate_commit_message_deletes() {
-        let operations = vec![
-            FileOperation {
-                path: PathBuf::from("file1.rs"),
-                operation: OperationType::Delete,
-                content: None,
-                backup_path: None,
-                content_hash: None,
-            },
-        ];
+        let operations = vec![FileOperation {
+            path: PathBuf::from("file1.rs"),
+            operation: OperationType::Delete,
+            content: None,
+            backup_path: None,
+            content_hash: None,
+        }];
         let message = GitIntegration::generate_commit_message(&operations);
         assert_eq!(message, "Delete 1 file(s)");
     }
 
     #[test]
     fn test_generate_commit_message_renames() {
-        let operations = vec![
-            FileOperation {
-                path: PathBuf::from("file1.rs"),
-                operation: OperationType::Rename {
-                    to: PathBuf::from("file2.rs"),
-                },
-                content: None,
-                backup_path: None,
-                content_hash: None,
+        let operations = vec![FileOperation {
+            path: PathBuf::from("file1.rs"),
+            operation: OperationType::Rename {
+                to: PathBuf::from("file2.rs"),
             },
-        ];
+            content: None,
+            backup_path: None,
+            content_hash: None,
+        }];
         let message = GitIntegration::generate_commit_message(&operations);
         assert!(message.contains("Update 1 file(s)"));
     }

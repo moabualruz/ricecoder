@@ -3,12 +3,10 @@
 //! Handles loading, parsing, validating, and applying boilerplates to create new projects.
 //! Supports variable customization, file conflict resolution, and custom boilerplate creation.
 
-use crate::models::{
-    Boilerplate, BoilerplateFile, BoilerplateSource, ConflictResolution,
-};
-use crate::templates::error::BoilerplateError;
+use crate::models::{Boilerplate, BoilerplateFile, BoilerplateSource, ConflictResolution};
 use crate::templates::discovery::BoilerplateDiscovery;
-use crate::templates::resolver::{PlaceholderResolver, CaseTransform};
+use crate::templates::error::BoilerplateError;
+use crate::templates::resolver::{CaseTransform, PlaceholderResolver};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
@@ -149,7 +147,7 @@ impl BoilerplateManager {
         boilerplate: &Boilerplate,
     ) -> Result<HashMap<String, String>, BoilerplateError> {
         let mut placeholders = HashMap::new();
-        
+
         // Compile regex once outside the loop
         let re = regex::Regex::new(r"\{\{([a-zA-Z_][a-zA-Z0-9_-]*)\}\}").unwrap();
 
@@ -245,8 +243,7 @@ impl BoilerplateManager {
             }
 
             // Write file
-            fs::write(&file_path, &rendered_content)
-                .map_err(BoilerplateError::IoError)?;
+            fs::write(&file_path, &rendered_content).map_err(BoilerplateError::IoError)?;
 
             created_files.push(file.path.clone());
         }
@@ -281,9 +278,10 @@ impl BoilerplateManager {
         language: &str,
     ) -> Result<Boilerplate, BoilerplateError> {
         if !source_dir.exists() {
-            return Err(BoilerplateError::InvalidStructure(
-                format!("Source directory not found: {}", source_dir.display()),
-            ));
+            return Err(BoilerplateError::InvalidStructure(format!(
+                "Source directory not found: {}",
+                source_dir.display()
+            )));
         }
 
         let mut files = Vec::new();
@@ -328,8 +326,7 @@ impl BoilerplateManager {
         let yaml_content = serde_yaml::to_string(boilerplate)
             .map_err(|e| BoilerplateError::InvalidStructure(format!("YAML error: {}", e)))?;
 
-        fs::write(&metadata_path, yaml_content)
-            .map_err(BoilerplateError::IoError)?;
+        fs::write(&metadata_path, yaml_content).map_err(BoilerplateError::IoError)?;
 
         Ok(())
     }
@@ -382,7 +379,7 @@ impl BoilerplateManager {
         for cap in re.captures_iter(template) {
             if let Some(placeholder_match) = cap.get(1) {
                 let placeholder_content = placeholder_match.as_str();
-                
+
                 // Parse placeholder syntax to extract name and case transform
                 let (name, case_transform) = self.parse_placeholder_syntax(placeholder_content)?;
 
@@ -460,8 +457,7 @@ impl BoilerplateManager {
                 self.scan_directory(&path, base_dir, files)?;
             } else if path.is_file() {
                 // Read file content
-                let content = fs::read_to_string(&path)
-                    .map_err(BoilerplateError::IoError)?;
+                let content = fs::read_to_string(&path).map_err(BoilerplateError::IoError)?;
 
                 // Calculate relative path
                 let relative_path = path
@@ -798,12 +794,7 @@ mod tests {
         fs::write(src_dir.join("lib.rs"), "pub fn lib() {}").unwrap();
 
         let boilerplate = manager
-            .create_custom(
-                temp_dir.path(),
-                "custom-bp",
-                "Custom Boilerplate",
-                "rust",
-            )
+            .create_custom(temp_dir.path(), "custom-bp", "Custom Boilerplate", "rust")
             .unwrap();
 
         assert_eq!(boilerplate.id, "custom-bp");

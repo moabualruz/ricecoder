@@ -260,46 +260,36 @@ impl DryRunModeExecutor {
         );
 
         let change = match &step.action {
-            StepAction::CreateFile { path, content } => {
-                PreviewChange {
-                    step_id: step.id.clone(),
-                    change_type: ChangeType::Create,
-                    path: path.clone(),
-                    description: format!("Create file with {} bytes", content.len()),
-                }
-            }
-            StepAction::ModifyFile { path, diff } => {
-                PreviewChange {
-                    step_id: step.id.clone(),
-                    change_type: ChangeType::Modify,
-                    path: path.clone(),
-                    description: format!("Modify file with diff ({} bytes)", diff.len()),
-                }
-            }
-            StepAction::DeleteFile { path } => {
-                PreviewChange {
-                    step_id: step.id.clone(),
-                    change_type: ChangeType::Delete,
-                    path: path.clone(),
-                    description: "Delete file".to_string(),
-                }
-            }
-            StepAction::RunCommand { command, args } => {
-                PreviewChange {
-                    step_id: step.id.clone(),
-                    change_type: ChangeType::Command,
-                    path: command.clone(),
-                    description: format!("Run command with {} args", args.len()),
-                }
-            }
-            StepAction::RunTests { pattern } => {
-                PreviewChange {
-                    step_id: step.id.clone(),
-                    change_type: ChangeType::Test,
-                    path: pattern.clone().unwrap_or_else(|| "all".to_string()),
-                    description: "Run tests".to_string(),
-                }
-            }
+            StepAction::CreateFile { path, content } => PreviewChange {
+                step_id: step.id.clone(),
+                change_type: ChangeType::Create,
+                path: path.clone(),
+                description: format!("Create file with {} bytes", content.len()),
+            },
+            StepAction::ModifyFile { path, diff } => PreviewChange {
+                step_id: step.id.clone(),
+                change_type: ChangeType::Modify,
+                path: path.clone(),
+                description: format!("Modify file with diff ({} bytes)", diff.len()),
+            },
+            StepAction::DeleteFile { path } => PreviewChange {
+                step_id: step.id.clone(),
+                change_type: ChangeType::Delete,
+                path: path.clone(),
+                description: "Delete file".to_string(),
+            },
+            StepAction::RunCommand { command, args } => PreviewChange {
+                step_id: step.id.clone(),
+                change_type: ChangeType::Command,
+                path: command.clone(),
+                description: format!("Run command with {} args", args.len()),
+            },
+            StepAction::RunTests { pattern } => PreviewChange {
+                step_id: step.id.clone(),
+                change_type: ChangeType::Test,
+                path: pattern.clone().unwrap_or_else(|| "all".to_string()),
+                description: "Run tests".to_string(),
+            },
         };
 
         self.preview_changes.push(change);
@@ -413,17 +403,11 @@ impl ModePersistence {
         }
 
         let content = std::fs::read_to_string(&self.config_path).map_err(|e| {
-            ExecutionError::ValidationError(format!(
-                "Failed to read mode config: {}",
-                e
-            ))
+            ExecutionError::ValidationError(format!("Failed to read mode config: {}", e))
         })?;
 
         let config: ModeConfig = serde_yaml::from_str(&content).map_err(|e| {
-            ExecutionError::ValidationError(format!(
-                "Failed to parse mode config: {}",
-                e
-            ))
+            ExecutionError::ValidationError(format!("Failed to parse mode config: {}", e))
         })?;
 
         info!(
@@ -447,17 +431,11 @@ impl ModePersistence {
         };
 
         let yaml = serde_yaml::to_string(&config).map_err(|e| {
-            ExecutionError::ValidationError(format!(
-                "Failed to serialize mode config: {}",
-                e
-            ))
+            ExecutionError::ValidationError(format!("Failed to serialize mode config: {}", e))
         })?;
 
         std::fs::write(&self.config_path, yaml).map_err(|e| {
-            ExecutionError::ValidationError(format!(
-                "Failed to write mode config: {}",
-                e
-            ))
+            ExecutionError::ValidationError(format!("Failed to write mode config: {}", e))
         })?;
 
         info!(
@@ -576,7 +554,10 @@ mod tests {
         let result = executor.preview_step(&step);
         assert!(result.is_ok());
         assert_eq!(executor.preview_changes().len(), 1);
-        assert_eq!(executor.preview_changes()[0].change_type, ChangeType::Create);
+        assert_eq!(
+            executor.preview_changes()[0].change_type,
+            ChangeType::Create
+        );
     }
 
     #[test]
@@ -594,7 +575,10 @@ mod tests {
         let result = executor.preview_step(&step);
         assert!(result.is_ok());
         assert_eq!(executor.preview_changes().len(), 1);
-        assert_eq!(executor.preview_changes()[0].change_type, ChangeType::Delete);
+        assert_eq!(
+            executor.preview_changes()[0].change_type,
+            ChangeType::Delete
+        );
     }
 
     #[test]

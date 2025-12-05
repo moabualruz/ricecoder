@@ -1,7 +1,7 @@
 //! Custom theme loading from YAML files
 
-use crate::style::{Theme, Color};
-use anyhow::{Result, anyhow};
+use crate::style::{Color, Theme};
+use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -80,16 +80,19 @@ impl ThemeLoader {
             return Err(anyhow!("Theme file not found: {}", path.display()));
         }
 
-        if !path.extension().is_some_and(|ext| ext == "yaml" || ext == "yml") {
+        if !path
+            .extension()
+            .is_some_and(|ext| ext == "yaml" || ext == "yml")
+        {
             return Err(anyhow!("Theme file must be YAML format (.yaml or .yml)"));
         }
 
         let content = fs::read_to_string(path)?;
         let theme_yaml: ThemeYaml = serde_yaml::from_str(&content)?;
-        
+
         // Validate theme
         Self::validate_theme(&theme_yaml)?;
-        
+
         theme_yaml.to_theme()
     }
 
@@ -117,7 +120,11 @@ impl ThemeLoader {
             let entry = entry?;
             let path = entry.path();
 
-            if path.is_file() && (path.extension().is_some_and(|ext| ext == "yaml" || ext == "yml")) {
+            if path.is_file()
+                && (path
+                    .extension()
+                    .is_some_and(|ext| ext == "yaml" || ext == "yml"))
+            {
                 match Self::load_from_file(&path) {
                     Ok(theme) => themes.push(theme),
                     Err(e) => {
@@ -132,8 +139,8 @@ impl ThemeLoader {
 
     /// Get the default themes directory
     pub fn themes_directory() -> Result<PathBuf> {
-        let config_dir = dirs::config_dir()
-            .ok_or_else(|| anyhow!("Could not determine config directory"))?;
+        let config_dir =
+            dirs::config_dir().ok_or_else(|| anyhow!("Could not determine config directory"))?;
         Ok(config_dir.join("ricecoder").join("themes"))
     }
 

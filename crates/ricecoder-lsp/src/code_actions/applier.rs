@@ -2,8 +2,8 @@
 //!
 //! This module provides functionality for applying code actions to code.
 
-use crate::types::{CodeAction, TextEdit, WorkspaceEdit};
 use super::{CodeActionsError, CodeActionsResult};
+use crate::types::{CodeAction, TextEdit, WorkspaceEdit};
 
 /// Apply a code action to code
 pub fn apply_code_action(code: &str, action: &CodeAction) -> CodeActionsResult<String> {
@@ -61,15 +61,17 @@ fn apply_single_text_edit(code: &str, edit: &TextEdit) -> CodeActionsResult<Stri
 
     // Check bounds
     if start_line >= lines.len() {
-        return Err(CodeActionsError::ApplicationFailed(
-            format!("Start line {} out of bounds", start_line),
-        ));
+        return Err(CodeActionsError::ApplicationFailed(format!(
+            "Start line {} out of bounds",
+            start_line
+        )));
     }
 
     if end_line >= lines.len() {
-        return Err(CodeActionsError::ApplicationFailed(
-            format!("End line {} out of bounds", end_line),
-        ));
+        return Err(CodeActionsError::ApplicationFailed(format!(
+            "End line {} out of bounds",
+            end_line
+        )));
     }
 
     // Calculate byte positions
@@ -118,36 +120,36 @@ pub fn validate_edit_range(code: &str, edit: &TextEdit) -> CodeActionsResult<()>
 
     // Check line bounds
     if start_line >= lines.len() {
-        return Err(CodeActionsError::ApplicationFailed(
-            format!("Start line {} out of bounds (total lines: {})", start_line, lines.len()),
-        ));
+        return Err(CodeActionsError::ApplicationFailed(format!(
+            "Start line {} out of bounds (total lines: {})",
+            start_line,
+            lines.len()
+        )));
     }
 
     if end_line >= lines.len() {
-        return Err(CodeActionsError::ApplicationFailed(
-            format!("End line {} out of bounds (total lines: {})", end_line, lines.len()),
-        ));
+        return Err(CodeActionsError::ApplicationFailed(format!(
+            "End line {} out of bounds (total lines: {})",
+            end_line,
+            lines.len()
+        )));
     }
 
     // Check character bounds
     if start_char > lines[start_line].len() {
-        return Err(CodeActionsError::ApplicationFailed(
-            format!(
-                "Start character {} out of bounds (line length: {})",
-                start_char,
-                lines[start_line].len()
-            ),
-        ));
+        return Err(CodeActionsError::ApplicationFailed(format!(
+            "Start character {} out of bounds (line length: {})",
+            start_char,
+            lines[start_line].len()
+        )));
     }
 
     if end_char > lines[end_line].len() {
-        return Err(CodeActionsError::ApplicationFailed(
-            format!(
-                "End character {} out of bounds (line length: {})",
-                end_char,
-                lines[end_line].len()
-            ),
-        ));
+        return Err(CodeActionsError::ApplicationFailed(format!(
+            "End character {} out of bounds (line length: {})",
+            end_char,
+            lines[end_line].len()
+        )));
     }
 
     // Check that start <= end

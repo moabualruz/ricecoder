@@ -101,7 +101,7 @@ proptest! {
                     d.key == "providers.default_provider" && d.source == "project"
                 });
                 // Only assert if global had a different value
-                if global.providers.default_provider.is_some() && 
+                if global.providers.default_provider.is_some() &&
                    global.providers.default_provider != project.providers.default_provider {
                     assert!(has_decision);
                 }
@@ -182,8 +182,8 @@ proptest! {
         for decision in decisions {
             assert!(!decision.source.is_empty());
             assert!(
-                decision.source == "global" || 
-                decision.source == "project" || 
+                decision.source == "global" ||
+                decision.source == "project" ||
                 decision.source == "environment"
             );
         }

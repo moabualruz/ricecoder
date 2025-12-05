@@ -46,8 +46,8 @@ impl DotNetParser {
 
     /// Parses dependencies from .csproj
     fn parse_csproj(&self, path: &Path) -> Result<Vec<Dependency>, ResearchError> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| ResearchError::DependencyParsingFailed {
+        let content =
+            std::fs::read_to_string(path).map_err(|e| ResearchError::DependencyParsingFailed {
                 language: ".NET".to_string(),
                 path: Some(path.to_path_buf()),
                 reason: format!("Failed to read .csproj: {}", e),
@@ -57,9 +57,9 @@ impl DotNetParser {
 
         // Look for PackageReference elements
         // <PackageReference Include="PackageName" Version="1.0.0" />
-        let dep_pattern = regex::Regex::new(
-            r#"<PackageReference\s+Include="([^"]+)"\s+Version="([^"]+)"#
-        ).unwrap();
+        let dep_pattern =
+            regex::Regex::new(r#"<PackageReference\s+Include="([^"]+)"\s+Version="([^"]+)"#)
+                .unwrap();
 
         for cap in dep_pattern.captures_iter(&content) {
             let name = cap.get(1).map(|m| m.as_str()).unwrap_or("");
@@ -78,8 +78,8 @@ impl DotNetParser {
 
     /// Parses dependencies from packages.config
     fn parse_packages_config(&self, path: &Path) -> Result<Vec<Dependency>, ResearchError> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| ResearchError::DependencyParsingFailed {
+        let content =
+            std::fs::read_to_string(path).map_err(|e| ResearchError::DependencyParsingFailed {
                 language: ".NET".to_string(),
                 path: Some(path.to_path_buf()),
                 reason: format!("Failed to read packages.config: {}", e),
@@ -89,9 +89,8 @@ impl DotNetParser {
 
         // Look for package elements
         // <package id="PackageName" version="1.0.0" />
-        let dep_pattern = regex::Regex::new(
-            r#"<package\s+id="([^"]+)"\s+version="([^"]+)"#
-        ).unwrap();
+        let dep_pattern =
+            regex::Regex::new(r#"<package\s+id="([^"]+)"\s+version="([^"]+)"#).unwrap();
 
         for cap in dep_pattern.captures_iter(&content) {
             let name = cap.get(1).map(|m| m.as_str()).unwrap_or("");

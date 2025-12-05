@@ -59,10 +59,9 @@ impl CompletionHandler {
         debug!("Handling completion item resolve");
 
         // Validate that the item has a label
-        let _label = item
-            .get("label")
-            .and_then(|v| v.as_str())
-            .ok_or_else(|| LspError::InvalidParams("Missing label in completion item".to_string()))?;
+        let _label = item.get("label").and_then(|v| v.as_str()).ok_or_else(|| {
+            LspError::InvalidParams("Missing label in completion item".to_string())
+        })?;
 
         // Resolve additional details (documentation, additional edits, etc.)
         let mut resolved = item.clone();
@@ -226,9 +225,18 @@ mod tests {
     #[test]
     fn test_completion_kind_to_lsp() {
         let handler = CompletionHandler::new(Arc::new(MockCompletionEngine));
-        assert_eq!(handler.completion_kind_to_lsp(CompletionItemKind::Function), 3);
-        assert_eq!(handler.completion_kind_to_lsp(CompletionItemKind::Variable), 6);
-        assert_eq!(handler.completion_kind_to_lsp(CompletionItemKind::Keyword), 14);
+        assert_eq!(
+            handler.completion_kind_to_lsp(CompletionItemKind::Function),
+            3
+        );
+        assert_eq!(
+            handler.completion_kind_to_lsp(CompletionItemKind::Variable),
+            6
+        );
+        assert_eq!(
+            handler.completion_kind_to_lsp(CompletionItemKind::Keyword),
+            14
+        );
     }
 
     #[test]

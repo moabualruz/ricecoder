@@ -25,7 +25,10 @@ impl ConfigLoader {
     }
 
     /// Load completion configuration from a string
-    pub fn load_from_string(content: &str, format: ConfigFormat) -> CompletionResult<CompletionConfig> {
+    pub fn load_from_string(
+        content: &str,
+        format: ConfigFormat,
+    ) -> CompletionResult<CompletionConfig> {
         let config = match format {
             ConfigFormat::Yaml => serde_yaml::from_str(content)?,
             ConfigFormat::Json => serde_json::from_str(content)?,
@@ -47,7 +50,7 @@ impl ConfigLoader {
         // Try project-level configuration first
         let project_path = PathResolver::resolve_project_path();
         let project_completion_path = project_path.join("completion").join("languages");
-        
+
         if let Ok(config) = Self::load_from_directory(&project_completion_path, language) {
             return Ok(config);
         }
@@ -55,7 +58,7 @@ impl ConfigLoader {
         // Try user-level configuration
         let global_path = PathResolver::resolve_global_path()?;
         let user_completion_path = global_path.join("completion").join("languages");
-        
+
         if let Ok(config) = Self::load_from_directory(&user_completion_path, language) {
             return Ok(config);
         }
@@ -156,16 +159,16 @@ impl LanguageConfigRegistry {
     /// Create a registry and load configurations from storage hierarchy
     pub fn with_hierarchy() -> CompletionResult<Self> {
         let mut registry = Self::new();
-        
+
         // Load from project directory
         let project_dir = ConfigLoader::get_project_completion_config_dir();
         let _ = registry.load_from_directory(&project_dir);
-        
+
         // Load from user directory (overrides project)
         if let Ok(user_dir) = ConfigLoader::get_completion_config_dir() {
             let _ = registry.load_from_directory(&user_dir);
         }
-        
+
         Ok(registry)
     }
 

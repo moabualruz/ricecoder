@@ -29,8 +29,8 @@ impl ChatSession {
 
     /// Start interactive chat mode
     pub fn start(&mut self) -> CliResult<()> {
-        let mut rl = DefaultEditor::new()
-            .map_err(|e| crate::error::CliError::Internal(e.to_string()))?;
+        let mut rl =
+            DefaultEditor::new().map_err(|e| crate::error::CliError::Internal(e.to_string()))?;
 
         println!("Entering chat mode. Type 'exit' to quit.");
         println!("Provider: {}, Model: {}", self.provider, self.model);
@@ -102,7 +102,7 @@ mod tests {
         let mut session = ChatSession::new("openai".to_string(), "gpt-4".to_string());
         session.add_message("user".to_string(), "Hello".to_string());
         session.add_message("assistant".to_string(), "Hi there!".to_string());
-        
+
         let history = session.get_history();
         assert_eq!(history.len(), 2);
     }

@@ -3,7 +3,7 @@
 //! line number display, approval logic, and edge cases.
 //! Validates Requirements 3.1, 3.2, 3.3, 3.4, 3.5, 3.6
 
-use ricecoder_tui::{DiffWidget, DiffHunk, DiffLine, DiffLineType, DiffViewType};
+use ricecoder_tui::{DiffHunk, DiffLine, DiffLineType, DiffViewType, DiffWidget};
 
 // ============================================================================
 // DiffLine Tests
@@ -54,8 +54,7 @@ fn test_diff_line_with_different_line_numbers() {
 
 #[test]
 fn test_diff_line_with_only_old_line_number() {
-    let line = DiffLine::new(DiffLineType::Removed, "old code")
-        .with_old_line_num(10);
+    let line = DiffLine::new(DiffLineType::Removed, "old code").with_old_line_num(10);
 
     assert_eq!(line.old_line_num, Some(10));
     assert_eq!(line.new_line_num, None);
@@ -63,8 +62,7 @@ fn test_diff_line_with_only_old_line_number() {
 
 #[test]
 fn test_diff_line_with_only_new_line_number() {
-    let line = DiffLine::new(DiffLineType::Added, "new code")
-        .with_new_line_num(15);
+    let line = DiffLine::new(DiffLineType::Added, "new code").with_new_line_num(15);
 
     assert_eq!(line.old_line_num, None);
     assert_eq!(line.new_line_num, Some(15));
@@ -443,7 +441,10 @@ fn test_diff_widget_scroll_down() {
     let mut widget = DiffWidget::new();
     let mut hunk = DiffHunk::new("@@ -1,5 +1,6 @@");
     for i in 0..20 {
-        hunk.add_line(DiffLine::new(DiffLineType::Unchanged, format!("line {}", i)));
+        hunk.add_line(DiffLine::new(
+            DiffLineType::Unchanged,
+            format!("line {}", i),
+        ));
     }
     widget.add_hunk(hunk);
 
@@ -459,7 +460,10 @@ fn test_diff_widget_scroll_up() {
     let mut widget = DiffWidget::new();
     let mut hunk = DiffHunk::new("@@ -1,5 +1,6 @@");
     for i in 0..20 {
-        hunk.add_line(DiffLine::new(DiffLineType::Unchanged, format!("line {}", i)));
+        hunk.add_line(DiffLine::new(
+            DiffLineType::Unchanged,
+            format!("line {}", i),
+        ));
     }
     widget.add_hunk(hunk);
 
@@ -488,7 +492,10 @@ fn test_diff_widget_scroll_down_at_bottom() {
     let mut widget = DiffWidget::new();
     let mut hunk = DiffHunk::new("@@ -1,5 +1,6 @@");
     for i in 0..10 {
-        hunk.add_line(DiffLine::new(DiffLineType::Unchanged, format!("line {}", i)));
+        hunk.add_line(DiffLine::new(
+            DiffLineType::Unchanged,
+            format!("line {}", i),
+        ));
     }
     widget.add_hunk(hunk);
 
@@ -535,12 +542,24 @@ fn test_diff_widget_mixed_line_types() {
     let mut widget = DiffWidget::new();
     let mut hunk = DiffHunk::new("@@ -1,10 +1,11 @@");
 
-    hunk.add_line(DiffLine::new(DiffLineType::Unchanged, "fn main() {").with_old_line_num(1).with_new_line_num(1));
+    hunk.add_line(
+        DiffLine::new(DiffLineType::Unchanged, "fn main() {")
+            .with_old_line_num(1)
+            .with_new_line_num(1),
+    );
     hunk.add_line(DiffLine::new(DiffLineType::Removed, "    let x = 5;").with_old_line_num(2));
     hunk.add_line(DiffLine::new(DiffLineType::Added, "    let x = 10;").with_new_line_num(2));
-    hunk.add_line(DiffLine::new(DiffLineType::Unchanged, "    println!(\"{}\", x);").with_old_line_num(3).with_new_line_num(3));
+    hunk.add_line(
+        DiffLine::new(DiffLineType::Unchanged, "    println!(\"{}\", x);")
+            .with_old_line_num(3)
+            .with_new_line_num(3),
+    );
     hunk.add_line(DiffLine::new(DiffLineType::Added, "    let y = 20;").with_new_line_num(4));
-    hunk.add_line(DiffLine::new(DiffLineType::Unchanged, "}").with_old_line_num(4).with_new_line_num(5));
+    hunk.add_line(
+        DiffLine::new(DiffLineType::Unchanged, "}")
+            .with_old_line_num(4)
+            .with_new_line_num(5),
+    );
 
     widget.add_hunk(hunk);
 
@@ -565,7 +584,10 @@ fn test_diff_widget_hunk_with_empty_content() {
 fn test_diff_widget_hunk_with_special_characters() {
     let mut widget = DiffWidget::new();
     let mut hunk = DiffHunk::new("@@ -1,5 +1,6 @@");
-    hunk.add_line(DiffLine::new(DiffLineType::Added, "let s = \"hello\\nworld\";"));
+    hunk.add_line(DiffLine::new(
+        DiffLineType::Added,
+        "let s = \"hello\\nworld\";",
+    ));
     hunk.add_line(DiffLine::new(DiffLineType::Added, "let emoji = \"🦀\";"));
     hunk.add_line(DiffLine::new(DiffLineType::Added, "let tab = \"a\\tb\";"));
 
@@ -610,10 +632,7 @@ fn test_diff_widget_line_number_accuracy() {
                 .with_new_line_num(i),
         );
     }
-    hunk.add_line(
-        DiffLine::new(DiffLineType::Added, "new line")
-            .with_new_line_num(6),
-    );
+    hunk.add_line(DiffLine::new(DiffLineType::Added, "new line").with_new_line_num(6));
 
     widget.add_hunk(hunk);
 

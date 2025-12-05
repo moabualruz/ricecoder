@@ -1,6 +1,6 @@
 //! Integration tests for core TUI framework
 
-use ricecoder_tui::{App, AppMode, Layout, Rect, Constraint, Theme};
+use ricecoder_tui::{App, AppMode, Constraint, Layout, Rect, Theme};
 
 #[test]
 fn test_app_creation() {

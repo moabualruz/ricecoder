@@ -4,9 +4,9 @@
 
 use proptest::prelude::*;
 use ricecoder_research::{
-    CacheManager, ProjectContext, ProjectType, ProjectStructure, ArchitecturalIntent,
-    ArchitecturalStyle, StandardsProfile, NamingConventions, CaseStyle, FormattingStyle,
-    IndentType, ImportOrganization, DocumentationStyle, DocFormat,
+    ArchitecturalIntent, ArchitecturalStyle, CacheManager, CaseStyle, DocFormat,
+    DocumentationStyle, FormattingStyle, ImportOrganization, IndentType, NamingConventions,
+    ProjectContext, ProjectStructure, ProjectType, StandardsProfile,
 };
 use std::collections::HashMap;
 use std::path::PathBuf;

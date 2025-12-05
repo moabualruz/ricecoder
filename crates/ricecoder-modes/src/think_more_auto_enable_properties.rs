@@ -3,7 +3,7 @@
 /// **Validates: Requirements 4.5**
 #[cfg(test)]
 mod tests {
-    use crate::{ThinkMoreController, ComplexityLevel, ComplexityDetector};
+    use crate::{ComplexityDetector, ComplexityLevel, ThinkMoreController};
     use proptest::prelude::*;
 
     proptest! {
@@ -15,10 +15,10 @@ mod tests {
         ) {
             let controller = ThinkMoreController::new();
             controller.enable_auto_enable().unwrap();
-            
+
             let detector = ComplexityDetector::default();
             let complexity = detector.detect_complexity(&task_description);
-            
+
             // Complex tasks should trigger auto-enable
             if complexity == ComplexityLevel::Complex {
                 prop_assert!(controller.should_auto_enable(complexity).unwrap());
@@ -33,10 +33,10 @@ mod tests {
         ) {
             let controller = ThinkMoreController::new();
             controller.enable_auto_enable().unwrap();
-            
+
             let detector = ComplexityDetector::default();
             let complexity = detector.detect_complexity(&task_description);
-            
+
             // Simple tasks should not trigger auto-enable
             if complexity == ComplexityLevel::Simple {
                 prop_assert!(!controller.should_auto_enable(complexity).unwrap());
@@ -50,7 +50,7 @@ mod tests {
             num_toggles in 1..10usize,
         ) {
             let controller = ThinkMoreController::new();
-            
+
             for i in 0..num_toggles {
                 if i % 2 == 0 {
                     controller.enable_auto_enable().unwrap();
@@ -74,7 +74,7 @@ mod tests {
         ) {
             let controller = ThinkMoreController::new();
             controller.enable_auto_enable().unwrap();
-            
+
             // Complex should always auto-enable
             if complexity == ComplexityLevel::Complex {
                 prop_assert!(controller.should_auto_enable(complexity).unwrap());
@@ -88,10 +88,10 @@ mod tests {
             task_description in ".*",
         ) {
             let detector = ComplexityDetector::default();
-            
+
             let complexity1 = detector.detect_complexity(&task_description);
             let complexity2 = detector.detect_complexity(&task_description);
-            
+
             // Same input should produce same complexity
             prop_assert_eq!(complexity1, complexity2);
         }
@@ -104,7 +104,7 @@ mod tests {
         ) {
             let detector = ComplexityDetector::default();
             let analysis = detector.analyze_task(&task_description);
-            
+
             // Analysis should have non-empty reasoning
             prop_assert!(!analysis.reasoning.is_empty());
             prop_assert!(analysis.reasoning.contains("Complexity Level"));
@@ -118,10 +118,10 @@ mod tests {
             complex_task in ".*complex.*algorithm.*optimization.*",
         ) {
             let detector = ComplexityDetector::default();
-            
+
             let simple_score = detector.calculate_complexity_score(&simple_task);
             let complex_score = detector.calculate_complexity_score(&complex_task);
-            
+
             // Complex task should have higher score
             prop_assert!(complex_score >= simple_score);
         }
@@ -138,10 +138,10 @@ mod tests {
         ) {
             let controller = ThinkMoreController::new();
             controller.enable_auto_enable().unwrap();
-            
+
             let decision1 = controller.should_auto_enable(complexity).unwrap();
             let decision2 = controller.should_auto_enable(complexity).unwrap();
-            
+
             // Same complexity should produce same decision
             prop_assert_eq!(decision1, decision2);
         }
@@ -158,7 +158,7 @@ mod tests {
         ) {
             let controller = ThinkMoreController::new();
             controller.disable_auto_enable().unwrap();
-            
+
             // Nothing should auto-enable when disabled
             prop_assert!(!controller.should_auto_enable(complexity).unwrap());
         }
@@ -174,12 +174,12 @@ mod tests {
             ],
         ) {
             let mut detector = ComplexityDetector::new(threshold);
-            
+
             prop_assert_eq!(detector.get_threshold(), threshold);
-            
+
             let new_threshold = ComplexityLevel::Complex;
             detector.set_threshold(new_threshold);
-            
+
             prop_assert_eq!(detector.get_threshold(), new_threshold);
         }
 
@@ -190,10 +190,10 @@ mod tests {
             task_description in ".*",
         ) {
             let detector = ComplexityDetector::default();
-            
+
             let analysis1 = detector.analyze_task(&task_description);
             let analysis2 = detector.analyze_task(&task_description);
-            
+
             // Same task should produce same analysis
             prop_assert_eq!(analysis1.complexity, analysis2.complexity);
             prop_assert_eq!(analysis1.score, analysis2.score);

@@ -2,9 +2,9 @@
 //! **Feature: ricecoder-specs, Property 8: Conversation History Preservation**
 //! **Validates: Requirements 3.7, 3.11**
 
+use chrono::Utc;
 use proptest::prelude::*;
 use ricecoder_specs::models::*;
-use chrono::Utc;
 
 // ============================================================================
 // Generators for property-based testing

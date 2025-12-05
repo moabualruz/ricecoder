@@ -25,11 +25,17 @@ mod tests {
 
         // Test that GenerateCode operation is blocked
         let result = mode.validate_operation(&Operation::GenerateCode);
-        assert!(result.is_err(), "GenerateCode should be blocked in Ask Mode");
+        assert!(
+            result.is_err(),
+            "GenerateCode should be blocked in Ask Mode"
+        );
 
         // Test that ExecuteCommand operation is blocked
         let result = mode.validate_operation(&Operation::ExecuteCommand);
-        assert!(result.is_err(), "ExecuteCommand should be blocked in Ask Mode");
+        assert!(
+            result.is_err(),
+            "ExecuteCommand should be blocked in Ask Mode"
+        );
 
         // Test that RunTests operation is blocked
         let result = mode.validate_operation(&Operation::RunTests);
@@ -37,11 +43,17 @@ mod tests {
 
         // Test that ValidateQuality operation is blocked
         let result = mode.validate_operation(&Operation::ValidateQuality);
-        assert!(result.is_err(), "ValidateQuality should be blocked in Ask Mode");
+        assert!(
+            result.is_err(),
+            "ValidateQuality should be blocked in Ask Mode"
+        );
 
         // Test that AnswerQuestion operation is allowed
         let result = mode.validate_operation(&Operation::AnswerQuestion);
-        assert!(result.is_ok(), "AnswerQuestion should be allowed in Ask Mode");
+        assert!(
+            result.is_ok(),
+            "AnswerQuestion should be allowed in Ask Mode"
+        );
     }
 
     /// Property: Ask Mode never allows file operations

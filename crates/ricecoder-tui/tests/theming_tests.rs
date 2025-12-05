@@ -1,8 +1,8 @@
 //! Tests for theming functionality
 
-use ricecoder_tui::{Theme, ThemeManager, ThemeLoader, ColorSupport};
-use tempfile::TempDir;
+use ricecoder_tui::{ColorSupport, Theme, ThemeLoader, ThemeManager};
 use std::path::Path;
+use tempfile::TempDir;
 
 #[test]
 fn test_theme_creation_all_built_in_themes() {
@@ -203,15 +203,23 @@ fn test_theme_manager_load_custom_themes_from_directory() {
 
     let manager = ThemeManager::new();
     manager.switch_by_name("dark").unwrap();
-    manager.save_custom_theme(&temp_dir.path().join("dark.yaml")).unwrap();
+    manager
+        .save_custom_theme(&temp_dir.path().join("dark.yaml"))
+        .unwrap();
 
     manager.switch_by_name("light").unwrap();
-    manager.save_custom_theme(&temp_dir.path().join("light.yaml")).unwrap();
+    manager
+        .save_custom_theme(&temp_dir.path().join("light.yaml"))
+        .unwrap();
 
     manager.switch_by_name("monokai").unwrap();
-    manager.save_custom_theme(&temp_dir.path().join("monokai.yaml")).unwrap();
+    manager
+        .save_custom_theme(&temp_dir.path().join("monokai.yaml"))
+        .unwrap();
 
-    let themes = manager.load_custom_themes_from_directory(temp_dir.path()).unwrap();
+    let themes = manager
+        .load_custom_themes_from_directory(temp_dir.path())
+        .unwrap();
     assert_eq!(themes.len(), 3);
 }
 

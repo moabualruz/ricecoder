@@ -4,11 +4,11 @@
 //! and coordinating layout between different UI components.
 
 use crate::app::{App, AppMode};
-use crate::widgets::ChatWidget;
+use crate::components::{DialogWidget, ListWidget, MenuWidget, SplitViewWidget, TabWidget};
 use crate::diff::DiffWidget;
-use crate::prompt::PromptWidget;
-use crate::components::{MenuWidget, ListWidget, DialogWidget, SplitViewWidget, TabWidget};
 use crate::layout::Rect;
+use crate::prompt::PromptWidget;
+use crate::widgets::ChatWidget;
 use anyhow::Result;
 
 /// Widget container for managing all active widgets
@@ -106,7 +106,11 @@ impl LayoutCoordinator {
     /// Get layout for chat mode
     pub fn layout_chat(&self) -> Result<ChatLayout> {
         if !self.is_valid() {
-            return Err(anyhow::anyhow!("Terminal too small: {}x{}", self.width, self.height));
+            return Err(anyhow::anyhow!(
+                "Terminal too small: {}x{}",
+                self.width,
+                self.height
+            ));
         }
 
         let prompt_height = 3;
@@ -131,7 +135,11 @@ impl LayoutCoordinator {
     /// Get layout for diff mode
     pub fn layout_diff(&self) -> Result<DiffLayout> {
         if !self.is_valid() {
-            return Err(anyhow::anyhow!("Terminal too small: {}x{}", self.width, self.height));
+            return Err(anyhow::anyhow!(
+                "Terminal too small: {}x{}",
+                self.width,
+                self.height
+            ));
         }
 
         let prompt_height = 3;
@@ -156,7 +164,11 @@ impl LayoutCoordinator {
     /// Get layout for command mode
     pub fn layout_command(&self) -> Result<CommandLayout> {
         if !self.is_valid() {
-            return Err(anyhow::anyhow!("Terminal too small: {}x{}", self.width, self.height));
+            return Err(anyhow::anyhow!(
+                "Terminal too small: {}x{}",
+                self.width,
+                self.height
+            ));
         }
 
         let prompt_height = 3;
@@ -181,7 +193,11 @@ impl LayoutCoordinator {
     /// Get layout for help mode
     pub fn layout_help(&self) -> Result<HelpLayout> {
         if !self.is_valid() {
-            return Err(anyhow::anyhow!("Terminal too small: {}x{}", self.width, self.height));
+            return Err(anyhow::anyhow!(
+                "Terminal too small: {}x{}",
+                self.width,
+                self.height
+            ));
         }
 
         let prompt_height = 3;
@@ -450,7 +466,9 @@ mod tests {
     #[test]
     fn test_widget_container_reset() {
         let mut container = WidgetContainer::new();
-        container.chat.add_message(crate::widgets::Message::user("test"));
+        container
+            .chat
+            .add_message(crate::widgets::Message::user("test"));
         assert_eq!(container.chat.messages.len(), 1);
 
         container.reset_all();
@@ -613,26 +631,66 @@ mod tests {
     #[test]
     fn test_layout_info_variants() {
         let chat_layout = ChatLayout {
-            chat_area: Rect { x: 0, y: 0, width: 80, height: 21 },
-            prompt_area: Rect { x: 0, y: 21, width: 80, height: 3 },
+            chat_area: Rect {
+                x: 0,
+                y: 0,
+                width: 80,
+                height: 21,
+            },
+            prompt_area: Rect {
+                x: 0,
+                y: 21,
+                width: 80,
+                height: 3,
+            },
         };
         let _info = LayoutInfo::Chat(chat_layout);
 
         let diff_layout = DiffLayout {
-            diff_area: Rect { x: 0, y: 0, width: 80, height: 21 },
-            prompt_area: Rect { x: 0, y: 21, width: 80, height: 3 },
+            diff_area: Rect {
+                x: 0,
+                y: 0,
+                width: 80,
+                height: 21,
+            },
+            prompt_area: Rect {
+                x: 0,
+                y: 21,
+                width: 80,
+                height: 3,
+            },
         };
         let _info = LayoutInfo::Diff(diff_layout);
 
         let command_layout = CommandLayout {
-            menu_area: Rect { x: 0, y: 0, width: 80, height: 21 },
-            prompt_area: Rect { x: 0, y: 21, width: 80, height: 3 },
+            menu_area: Rect {
+                x: 0,
+                y: 0,
+                width: 80,
+                height: 21,
+            },
+            prompt_area: Rect {
+                x: 0,
+                y: 21,
+                width: 80,
+                height: 3,
+            },
         };
         let _info = LayoutInfo::Command(command_layout);
 
         let help_layout = HelpLayout {
-            help_area: Rect { x: 0, y: 0, width: 80, height: 21 },
-            prompt_area: Rect { x: 0, y: 21, width: 80, height: 3 },
+            help_area: Rect {
+                x: 0,
+                y: 0,
+                width: 80,
+                height: 21,
+            },
+            prompt_area: Rect {
+                x: 0,
+                y: 21,
+                width: 80,
+                height: 3,
+            },
         };
         let _info = LayoutInfo::Help(help_layout);
     }

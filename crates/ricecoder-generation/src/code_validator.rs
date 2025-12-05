@@ -8,8 +8,10 @@
 //! - Preventing writing if validation fails
 
 use crate::error::GenerationError;
-use crate::models::{GeneratedFile, ValidationResult, ValidationError, ValidationWarning, ValidationConfig};
 use crate::language_validators::get_validator;
+use crate::models::{
+    GeneratedFile, ValidationConfig, ValidationError, ValidationResult, ValidationWarning,
+};
 use tracing::{debug, warn};
 
 /// Validates generated code before writing
@@ -53,13 +55,14 @@ impl CodeValidator {
 
         for file in files {
             debug!("Validating file: {}", file.path);
-            
+
             let result = self.validate_file(file)?;
             all_errors.extend(result.errors);
             all_warnings.extend(result.warnings);
         }
 
-        let valid = (all_warnings.is_empty() || !self.config.warnings_as_errors) && all_errors.is_empty();
+        let valid =
+            (all_warnings.is_empty() || !self.config.warnings_as_errors) && all_errors.is_empty();
 
         Ok(ValidationResult {
             valid,
@@ -116,7 +119,12 @@ impl CodeValidator {
     }
 
     /// Checks syntax for the target language
-    fn check_syntax(&self, content: &str, language: &str, file_path: &str) -> Result<Vec<ValidationError>, GenerationError> {
+    fn check_syntax(
+        &self,
+        content: &str,
+        language: &str,
+        file_path: &str,
+    ) -> Result<Vec<ValidationError>, GenerationError> {
         debug!("Checking syntax for {} file: {}", language, file_path);
 
         match language {
@@ -133,7 +141,11 @@ impl CodeValidator {
     }
 
     /// Checks Rust syntax
-    fn check_rust_syntax(&self, content: &str, file_path: &str) -> Result<Vec<ValidationError>, GenerationError> {
+    fn check_rust_syntax(
+        &self,
+        content: &str,
+        file_path: &str,
+    ) -> Result<Vec<ValidationError>, GenerationError> {
         // Basic syntax validation for Rust
         let mut errors = Vec::new();
 
@@ -145,7 +157,10 @@ impl CodeValidator {
                 file: file_path.to_string(),
                 line: 1,
                 column: 1,
-                message: format!("Unmatched braces: {} open, {} close", open_braces, close_braces),
+                message: format!(
+                    "Unmatched braces: {} open, {} close",
+                    open_braces, close_braces
+                ),
                 code: Some("E0001".to_string()),
             });
         }
@@ -158,7 +173,10 @@ impl CodeValidator {
                 file: file_path.to_string(),
                 line: 1,
                 column: 1,
-                message: format!("Unmatched parentheses: {} open, {} close", open_parens, close_parens),
+                message: format!(
+                    "Unmatched parentheses: {} open, {} close",
+                    open_parens, close_parens
+                ),
                 code: Some("E0002".to_string()),
             });
         }
@@ -171,7 +189,10 @@ impl CodeValidator {
                 file: file_path.to_string(),
                 line: 1,
                 column: 1,
-                message: format!("Unmatched brackets: {} open, {} close", open_brackets, close_brackets),
+                message: format!(
+                    "Unmatched brackets: {} open, {} close",
+                    open_brackets, close_brackets
+                ),
                 code: Some("E0003".to_string()),
             });
         }
@@ -180,7 +201,11 @@ impl CodeValidator {
     }
 
     /// Checks TypeScript syntax
-    fn check_typescript_syntax(&self, content: &str, file_path: &str) -> Result<Vec<ValidationError>, GenerationError> {
+    fn check_typescript_syntax(
+        &self,
+        content: &str,
+        file_path: &str,
+    ) -> Result<Vec<ValidationError>, GenerationError> {
         // Basic syntax validation for TypeScript
         let mut errors = Vec::new();
 
@@ -192,7 +217,10 @@ impl CodeValidator {
                 file: file_path.to_string(),
                 line: 1,
                 column: 1,
-                message: format!("Unmatched braces: {} open, {} close", open_braces, close_braces),
+                message: format!(
+                    "Unmatched braces: {} open, {} close",
+                    open_braces, close_braces
+                ),
                 code: Some("TS1005".to_string()),
             });
         }
@@ -205,7 +233,10 @@ impl CodeValidator {
                 file: file_path.to_string(),
                 line: 1,
                 column: 1,
-                message: format!("Unmatched parentheses: {} open, {} close", open_parens, close_parens),
+                message: format!(
+                    "Unmatched parentheses: {} open, {} close",
+                    open_parens, close_parens
+                ),
                 code: Some("TS1005".to_string()),
             });
         }
@@ -214,7 +245,11 @@ impl CodeValidator {
     }
 
     /// Checks Python syntax
-    fn check_python_syntax(&self, content: &str, file_path: &str) -> Result<Vec<ValidationError>, GenerationError> {
+    fn check_python_syntax(
+        &self,
+        content: &str,
+        file_path: &str,
+    ) -> Result<Vec<ValidationError>, GenerationError> {
         // Basic syntax validation for Python
         let mut errors = Vec::new();
 
@@ -226,7 +261,10 @@ impl CodeValidator {
                 file: file_path.to_string(),
                 line: 1,
                 column: 1,
-                message: format!("Unmatched braces: {} open, {} close", open_braces, close_braces),
+                message: format!(
+                    "Unmatched braces: {} open, {} close",
+                    open_braces, close_braces
+                ),
                 code: Some("E0001".to_string()),
             });
         }
@@ -239,7 +277,10 @@ impl CodeValidator {
                 file: file_path.to_string(),
                 line: 1,
                 column: 1,
-                message: format!("Unmatched parentheses: {} open, {} close", open_parens, close_parens),
+                message: format!(
+                    "Unmatched parentheses: {} open, {} close",
+                    open_parens, close_parens
+                ),
                 code: Some("E0001".to_string()),
             });
         }
@@ -248,7 +289,11 @@ impl CodeValidator {
     }
 
     /// Checks Go syntax
-    fn check_go_syntax(&self, content: &str, file_path: &str) -> Result<Vec<ValidationError>, GenerationError> {
+    fn check_go_syntax(
+        &self,
+        content: &str,
+        file_path: &str,
+    ) -> Result<Vec<ValidationError>, GenerationError> {
         // Basic syntax validation for Go
         let mut errors = Vec::new();
 
@@ -260,7 +305,10 @@ impl CodeValidator {
                 file: file_path.to_string(),
                 line: 1,
                 column: 1,
-                message: format!("Unmatched braces: {} open, {} close", open_braces, close_braces),
+                message: format!(
+                    "Unmatched braces: {} open, {} close",
+                    open_braces, close_braces
+                ),
                 code: Some("E0001".to_string()),
             });
         }
@@ -269,7 +317,11 @@ impl CodeValidator {
     }
 
     /// Checks Java syntax
-    fn check_java_syntax(&self, content: &str, file_path: &str) -> Result<Vec<ValidationError>, GenerationError> {
+    fn check_java_syntax(
+        &self,
+        content: &str,
+        file_path: &str,
+    ) -> Result<Vec<ValidationError>, GenerationError> {
         // Basic syntax validation for Java
         let mut errors = Vec::new();
 
@@ -281,7 +333,10 @@ impl CodeValidator {
                 file: file_path.to_string(),
                 line: 1,
                 column: 1,
-                message: format!("Unmatched braces: {} open, {} close", open_braces, close_braces),
+                message: format!(
+                    "Unmatched braces: {} open, {} close",
+                    open_braces, close_braces
+                ),
                 code: Some("E0001".to_string()),
             });
         }
@@ -290,14 +345,23 @@ impl CodeValidator {
     }
 
     /// Runs language-specific linters
-    fn run_linters(&self, content: &str, language: &str, file_path: &str) -> Result<(Vec<ValidationError>, Vec<ValidationWarning>), GenerationError> {
+    fn run_linters(
+        &self,
+        content: &str,
+        language: &str,
+        file_path: &str,
+    ) -> Result<(Vec<ValidationError>, Vec<ValidationWarning>), GenerationError> {
         debug!("Running linters for {} file: {}", language, file_path);
 
         // Try to get a language-specific validator
         if let Some(validator) = get_validator(language) {
             match validator.validate(content, file_path) {
                 Ok((errors, warnings)) => {
-                    debug!("Language-specific validation found {} errors and {} warnings", errors.len(), warnings.len());
+                    debug!(
+                        "Language-specific validation found {} errors and {} warnings",
+                        errors.len(),
+                        warnings.len()
+                    );
                     Ok((errors, warnings))
                 }
                 Err(e) => {
@@ -312,7 +376,12 @@ impl CodeValidator {
     }
 
     /// Runs type checking for the target language
-    fn run_type_checking(&self, content: &str, language: &str, file_path: &str) -> Result<Vec<ValidationError>, GenerationError> {
+    fn run_type_checking(
+        &self,
+        content: &str,
+        language: &str,
+        file_path: &str,
+    ) -> Result<Vec<ValidationError>, GenerationError> {
         debug!("Running type checking for {} file: {}", language, file_path);
 
         match language {
@@ -329,61 +398,81 @@ impl CodeValidator {
     }
 
     /// Runs Rust type checking (cargo check)
-    fn run_rust_type_checking(&self, _content: &str, _file_path: &str) -> Result<Vec<ValidationError>, GenerationError> {
+    fn run_rust_type_checking(
+        &self,
+        _content: &str,
+        _file_path: &str,
+    ) -> Result<Vec<ValidationError>, GenerationError> {
         // In a real implementation, we would:
         // 1. Write content to a temporary file
         // 2. Run `cargo check` on it
         // 3. Parse the output
         // 4. Return errors
-        
+
         debug!("Rust type checking would be performed by cargo check");
         Ok(Vec::new())
     }
 
     /// Runs TypeScript type checking (tsc)
-    fn run_typescript_type_checking(&self, _content: &str, _file_path: &str) -> Result<Vec<ValidationError>, GenerationError> {
+    fn run_typescript_type_checking(
+        &self,
+        _content: &str,
+        _file_path: &str,
+    ) -> Result<Vec<ValidationError>, GenerationError> {
         // In a real implementation, we would:
         // 1. Write content to a temporary file
         // 2. Run `tsc` on it
         // 3. Parse the output
         // 4. Return errors
-        
+
         debug!("TypeScript type checking would be performed by tsc");
         Ok(Vec::new())
     }
 
     /// Runs Python type checking (mypy)
-    fn run_python_type_checking(&self, _content: &str, _file_path: &str) -> Result<Vec<ValidationError>, GenerationError> {
+    fn run_python_type_checking(
+        &self,
+        _content: &str,
+        _file_path: &str,
+    ) -> Result<Vec<ValidationError>, GenerationError> {
         // In a real implementation, we would:
         // 1. Write content to a temporary file
         // 2. Run `mypy` on it
         // 3. Parse the output
         // 4. Return errors
-        
+
         debug!("Python type checking would be performed by mypy");
         Ok(Vec::new())
     }
 
     /// Runs Go type checking (go vet)
-    fn run_go_type_checking(&self, _content: &str, _file_path: &str) -> Result<Vec<ValidationError>, GenerationError> {
+    fn run_go_type_checking(
+        &self,
+        _content: &str,
+        _file_path: &str,
+    ) -> Result<Vec<ValidationError>, GenerationError> {
         // In a real implementation, we would:
         // 1. Write content to a temporary file
         // 2. Run `go vet` on it
         // 3. Parse the output
         // 4. Return errors
-        
+
         debug!("Go type checking would be performed by go vet");
         Ok(Vec::new())
     }
 
     /// Runs Java type checking (javac)
-    fn run_java_type_checking(&self, _content: &str, _file_path: &str) -> Result<Vec<ValidationError>, GenerationError> {
+    fn run_java_type_checking(
+        &self,
+        _content: &str,
+        _file_path: &str,
+    ) -> Result<Vec<ValidationError>, GenerationError> {
         // In a real implementation, we would:
         // 1. Write content to a temporary file
         // 2. Run `javac` on it
         // 3. Parse the output
         // 4. Return errors
-        
+
         debug!("Java type checking would be performed by javac");
         Ok(Vec::new())
     }
@@ -454,7 +543,9 @@ mod tests {
     fn test_check_typescript_syntax_valid() {
         let validator = CodeValidator::new();
         let content = "function hello() { console.log(\"Hello\"); }";
-        let errors = validator.check_typescript_syntax(content, "main.ts").unwrap();
+        let errors = validator
+            .check_typescript_syntax(content, "main.ts")
+            .unwrap();
         assert!(errors.is_empty());
     }
 
@@ -462,7 +553,9 @@ mod tests {
     fn test_check_typescript_syntax_unmatched_parens() {
         let validator = CodeValidator::new();
         let content = "function hello( { console.log(\"Hello\"); }";
-        let errors = validator.check_typescript_syntax(content, "main.ts").unwrap();
+        let errors = validator
+            .check_typescript_syntax(content, "main.ts")
+            .unwrap();
         assert!(!errors.is_empty());
         assert!(errors[0].message.contains("Unmatched parentheses"));
     }
@@ -529,24 +622,20 @@ mod tests {
         let validator = CodeValidator::new();
         let result = ValidationResult {
             valid: false,
-            errors: vec![
-                ValidationError {
-                    file: "main.rs".to_string(),
-                    line: 1,
-                    column: 1,
-                    message: "Unmatched braces".to_string(),
-                    code: Some("E0001".to_string()),
-                },
-            ],
-            warnings: vec![
-                ValidationWarning {
-                    file: "main.rs".to_string(),
-                    line: 2,
-                    column: 1,
-                    message: "Unused variable".to_string(),
-                    code: Some("W0001".to_string()),
-                },
-            ],
+            errors: vec![ValidationError {
+                file: "main.rs".to_string(),
+                line: 1,
+                column: 1,
+                message: "Unmatched braces".to_string(),
+                code: Some("E0001".to_string()),
+            }],
+            warnings: vec![ValidationWarning {
+                file: "main.rs".to_string(),
+                line: 2,
+                column: 1,
+                message: "Unused variable".to_string(),
+                code: Some("W0001".to_string()),
+            }],
         };
 
         let issues = validator.get_all_issues(&result);
@@ -582,17 +671,15 @@ mod tests {
         let validator = CodeValidator::with_config(config);
         // When warnings_as_errors is true, a result with warnings should be invalid
         let result = ValidationResult {
-            valid: false,  // This should be false when warnings_as_errors is true and there are warnings
+            valid: false, // This should be false when warnings_as_errors is true and there are warnings
             errors: Vec::new(),
-            warnings: vec![
-                ValidationWarning {
-                    file: "main.rs".to_string(),
-                    line: 1,
-                    column: 1,
-                    message: "Warning".to_string(),
-                    code: None,
-                },
-            ],
+            warnings: vec![ValidationWarning {
+                file: "main.rs".to_string(),
+                line: 1,
+                column: 1,
+                message: "Warning".to_string(),
+                code: None,
+            }],
         };
 
         assert!(!validator.is_valid(&result));

@@ -51,15 +51,17 @@ impl HoverProvider {
 
         // Add definition location
         if let Some(def) = &symbol.definition {
-            content.push_str(&format!("**Defined at**: `{}`:{}-{}\n", def.uri, def.range.start.line, def.range.start.character));
+            content.push_str(&format!(
+                "**Defined at**: `{}`:{}-{}\n",
+                def.uri, def.range.start.line, def.range.start.character
+            ));
         }
 
         // Add usage count
         let usage_count = symbol.references.len();
         content.push_str(&format!("**References**: {}", usage_count));
 
-        let hover_info = HoverInfo::new(MarkupContent::markdown(content))
-            .with_range(symbol.range);
+        let hover_info = HoverInfo::new(MarkupContent::markdown(content)).with_range(symbol.range);
 
         Some(hover_info)
     }

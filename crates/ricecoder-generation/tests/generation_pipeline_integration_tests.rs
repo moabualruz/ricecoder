@@ -3,7 +3,7 @@
 //! **Feature: ricecoder-generation, Integration Tests for Requirements 1.1, 1.2, 1.4, 1.5, 1.6, 3.1, 3.5**
 
 use ricecoder_generation::{
-    TemplateEngine, BoilerplateManager, Boilerplate, BoilerplateFile, ConflictResolution,
+    Boilerplate, BoilerplateFile, BoilerplateManager, ConflictResolution, TemplateEngine,
 };
 use std::collections::HashMap;
 use std::fs;
@@ -86,7 +86,7 @@ fn test_generation_pipeline_preserves_spec_requirements() {
 
     // Parse spec to verify requirements are preserved
     let spec_text = fs::read_to_string(&spec_file).expect("Failed to read spec");
-    
+
     // Verify all requirements are present
     assert!(spec_text.contains("Requirement 1: User Management"));
     assert!(spec_text.contains("Requirement 2: Authentication"));
@@ -159,20 +159,20 @@ fn test_multi_file_generation_from_single_spec() {
     assert!(temp_path.join("README.md").exists());
 
     // Verify file contents
-    let main_content = fs::read_to_string(temp_path.join("src/main.rs"))
-        .expect("Failed to read main.rs");
+    let main_content =
+        fs::read_to_string(temp_path.join("src/main.rs")).expect("Failed to read main.rs");
     assert!(main_content.contains("MyService"));
 
-    let lib_content = fs::read_to_string(temp_path.join("src/lib.rs"))
-        .expect("Failed to read lib.rs");
+    let lib_content =
+        fs::read_to_string(temp_path.join("src/lib.rs")).expect("Failed to read lib.rs");
     assert!(lib_content.contains("my_service"));
 
-    let cargo_content = fs::read_to_string(temp_path.join("Cargo.toml"))
-        .expect("Failed to read Cargo.toml");
+    let cargo_content =
+        fs::read_to_string(temp_path.join("Cargo.toml")).expect("Failed to read Cargo.toml");
     assert!(cargo_content.contains("my_service"));
 
-    let readme_content = fs::read_to_string(temp_path.join("README.md"))
-        .expect("Failed to read README.md");
+    let readme_content =
+        fs::read_to_string(temp_path.join("README.md")).expect("Failed to read README.md");
     assert!(readme_content.contains("MyService"));
 }
 
@@ -293,8 +293,7 @@ fn test_conflict_resolution_skip_strategy() {
     assert_eq!(result.created_files.len(), 0);
 
     // Verify old content is preserved
-    let content = fs::read_to_string(src_dir.join("main.rs"))
-        .expect("Failed to read file");
+    let content = fs::read_to_string(src_dir.join("main.rs")).expect("Failed to read file");
     assert_eq!(content, "// old content");
 }
 
@@ -340,8 +339,7 @@ fn test_conflict_resolution_overwrite_strategy() {
     assert_eq!(result.skipped_files.len(), 0);
 
     // Verify new content
-    let content = fs::read_to_string(src_dir.join("main.rs"))
-        .expect("Failed to read file");
+    let content = fs::read_to_string(src_dir.join("main.rs")).expect("Failed to read file");
     assert_eq!(content, "// new content");
 }
 
@@ -387,8 +385,7 @@ fn test_conflict_resolution_multiple_files_mixed_strategies() {
     assert_eq!(result1.skipped_files.len(), 1);
 
     // Verify main.rs was not changed
-    let main_content = fs::read_to_string(src_dir.join("main.rs"))
-        .expect("Failed to read main.rs");
+    let main_content = fs::read_to_string(src_dir.join("main.rs")).expect("Failed to read main.rs");
     assert_eq!(main_content, "// old main");
 
     // Second pass: overwrite strategy for lib.rs
@@ -418,8 +415,7 @@ fn test_conflict_resolution_multiple_files_mixed_strategies() {
     assert_eq!(result2.created_files.len(), 1);
 
     // Verify lib.rs was changed
-    let lib_content = fs::read_to_string(src_dir.join("lib.rs"))
-        .expect("Failed to read lib.rs");
+    let lib_content = fs::read_to_string(src_dir.join("lib.rs")).expect("Failed to read lib.rs");
     assert_eq!(lib_content, "// new lib");
 }
 
@@ -437,23 +433,20 @@ fn test_rollback_on_validation_failure_preserves_original_files() {
     let src_dir = temp_path.join("src");
     fs::create_dir_all(&src_dir).expect("Failed to create src directory");
     let original_content = "// original content";
-    fs::write(src_dir.join("main.rs"), original_content)
-        .expect("Failed to write original file");
+    fs::write(src_dir.join("main.rs"), original_content).expect("Failed to write original file");
 
     // Simulate generation that would fail validation
     let _generated_content = "// generated content";
-    
+
     // Verify original content is preserved
-    let current_content = fs::read_to_string(src_dir.join("main.rs"))
-        .expect("Failed to read file");
+    let current_content = fs::read_to_string(src_dir.join("main.rs")).expect("Failed to read file");
     assert_eq!(current_content, original_content);
 
     // Simulate rollback by not writing the generated content
     // (In real scenario, this would be done by OutputWriter on validation failure)
-    
+
     // Verify original is still there
-    let final_content = fs::read_to_string(src_dir.join("main.rs"))
-        .expect("Failed to read file");
+    let final_content = fs::read_to_string(src_dir.join("main.rs")).expect("Failed to read file");
     assert_eq!(final_content, original_content);
 }
 
@@ -466,14 +459,12 @@ fn test_rollback_restores_multiple_files_on_failure() {
     // Create original files
     let src_dir = temp_path.join("src");
     fs::create_dir_all(&src_dir).expect("Failed to create src directory");
-    
+
     let original_main = "// original main";
     let original_lib = "// original lib";
-    
-    fs::write(src_dir.join("main.rs"), original_main)
-        .expect("Failed to write original main");
-    fs::write(src_dir.join("lib.rs"), original_lib)
-        .expect("Failed to write original lib");
+
+    fs::write(src_dir.join("main.rs"), original_main).expect("Failed to write original main");
+    fs::write(src_dir.join("lib.rs"), original_lib).expect("Failed to write original lib");
 
     // Verify originals are in place
     assert_eq!(
@@ -486,7 +477,7 @@ fn test_rollback_restores_multiple_files_on_failure() {
     );
 
     // Simulate rollback (no changes made)
-    
+
     // Verify all originals are still there
     assert_eq!(
         fs::read_to_string(src_dir.join("main.rs")).unwrap(),
@@ -521,7 +512,9 @@ pub struct {{Name}} {
 }
 "#;
 
-    let result = engine.render_simple(template).expect("Failed to render template");
+    let result = engine
+        .render_simple(template)
+        .expect("Failed to render template");
 
     // Verify all variables were substituted
     assert!(result.contains("my_project")); // {{name_snake}}
@@ -545,7 +538,9 @@ UPPERCASE: {{NAME}}
 lowercase: {{name}}
 "#;
 
-    let result = engine.render_simple(template).expect("Failed to render template");
+    let result = engine
+        .render_simple(template)
+        .expect("Failed to render template");
 
     // Verify all case variations
     assert!(result.contains("MyProjectName")); // PascalCase
@@ -571,7 +566,9 @@ pub mod {{module}} {
 }
 "#;
 
-    let result = engine.render_simple(template).expect("Failed to render template");
+    let result = engine
+        .render_simple(template)
+        .expect("Failed to render template");
 
     // Verify variables were substituted
     assert!(result.contains("core")); // {{module}}
@@ -594,8 +591,12 @@ Project: {{Name}}
 Version: {{version}}
 "#;
 
-    let result1 = engine1.render_simple(template).expect("Failed to render template");
-    let result2 = engine2.render_simple(template).expect("Failed to render template");
+    let result1 = engine1
+        .render_simple(template)
+        .expect("Failed to render template");
+    let result2 = engine2
+        .render_simple(template)
+        .expect("Failed to render template");
 
     // Verify outputs are identical
     assert_eq!(result1, result2);
@@ -609,7 +610,7 @@ Version: {{version}}
 fn test_ai_based_generation_handles_streaming_responses() {
     // Test that AI-based generation can handle streaming responses
     // This is a placeholder test that verifies the structure
-    
+
     let temp_dir = TempDir::new().expect("Failed to create temp directory");
     let temp_path = temp_dir.path();
 
@@ -634,8 +635,8 @@ impl Service {
     assert!(temp_path.join("generated.rs").exists());
 
     // Verify content
-    let content = fs::read_to_string(temp_path.join("generated.rs"))
-        .expect("Failed to read generated file");
+    let content =
+        fs::read_to_string(temp_path.join("generated.rs")).expect("Failed to read generated file");
     assert!(content.contains("pub struct Service"));
     assert!(content.contains("pub fn new"));
 }
@@ -666,9 +667,9 @@ name = "test"
         .expect("Failed to write mock response");
 
     // Verify the response contains multiple file markers
-    let content = fs::read_to_string(temp_path.join("response.txt"))
-        .expect("Failed to read response");
-    
+    let content =
+        fs::read_to_string(temp_path.join("response.txt")).expect("Failed to read response");
+
     assert!(content.contains("// File: src/main.rs"));
     assert!(content.contains("// File: src/lib.rs"));
     assert!(content.contains("// File: Cargo.toml"));
@@ -705,8 +706,7 @@ impl Service {
 
     // In a real scenario, CodeQualityEnforcer would add doc comments
     // For this test, we verify the structure is correct
-    let content = fs::read_to_string(temp_path.join("service.rs"))
-        .expect("Failed to read file");
+    let content = fs::read_to_string(temp_path.join("service.rs")).expect("Failed to read file");
     assert!(content.contains("pub struct Service"));
     assert!(content.contains("pub fn new"));
 }
@@ -736,9 +736,8 @@ impl MyService {
         .expect("Failed to write generated code");
 
     // Verify naming conventions are followed
-    let content = fs::read_to_string(temp_path.join("service.rs"))
-        .expect("Failed to read file");
-    
+    let content = fs::read_to_string(temp_path.join("service.rs")).expect("Failed to read file");
+
     // Verify snake_case for fields
     assert!(content.contains("internal_state"));
     // Verify PascalCase for struct
@@ -764,13 +763,11 @@ pub fn parse_config(path: &str) -> Result<Config, ConfigError> {
 }
 "#;
 
-    fs::write(temp_path.join("config.rs"), generated_code)
-        .expect("Failed to write generated code");
+    fs::write(temp_path.join("config.rs"), generated_code).expect("Failed to write generated code");
 
     // Verify error handling is present
-    let content = fs::read_to_string(temp_path.join("config.rs"))
-        .expect("Failed to read file");
-    
+    let content = fs::read_to_string(temp_path.join("config.rs")).expect("Failed to read file");
+
     assert!(content.contains("Result<"));
     assert!(content.contains("ConfigError"));
     assert!(content.contains("map_err"));
@@ -791,8 +788,7 @@ fn test_code_quality_enforcement_across_multiple_files() {
 
     for (path, content) in files {
         let full_path = temp_path.join(path);
-        fs::create_dir_all(full_path.parent().unwrap())
-            .expect("Failed to create directory");
+        fs::create_dir_all(full_path.parent().unwrap()).expect("Failed to create directory");
         fs::write(&full_path, content).expect("Failed to write file");
     }
 
@@ -802,12 +798,12 @@ fn test_code_quality_enforcement_across_multiple_files() {
     assert!(temp_path.join("src/models/mod.rs").exists());
 
     // Verify content
-    let main_content = fs::read_to_string(temp_path.join("src/main.rs"))
-        .expect("Failed to read main.rs");
+    let main_content =
+        fs::read_to_string(temp_path.join("src/main.rs")).expect("Failed to read main.rs");
     assert!(main_content.contains("fn main"));
 
-    let lib_content = fs::read_to_string(temp_path.join("src/lib.rs"))
-        .expect("Failed to read lib.rs");
+    let lib_content =
+        fs::read_to_string(temp_path.join("src/lib.rs")).expect("Failed to read lib.rs");
     assert!(lib_content.contains("pub mod models"));
 
     let models_content = fs::read_to_string(temp_path.join("src/models/mod.rs"))

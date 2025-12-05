@@ -2,7 +2,7 @@
 //! **Feature: ricecoder-sessions, Property 11: Background Agent Async Execution**
 //! **Validates: Requirements 4.1**
 
-use ricecoder_sessions::{BackgroundAgentManager, BackgroundAgent, AgentStatus};
+use ricecoder_sessions::{AgentStatus, BackgroundAgent, BackgroundAgentManager};
 
 /// Property: For any background agent, starting the agent SHALL NOT block the active session
 /// from processing messages.
@@ -20,10 +20,7 @@ async fn prop_background_agent_async_execution() {
         // Start multiple agents
         let mut agent_ids = Vec::new();
         for i in 0..num_agents {
-            let agent = BackgroundAgent::new(
-                format!("agent_{}", i),
-                Some(format!("task_{}", i)),
-            );
+            let agent = BackgroundAgent::new(format!("agent_{}", i), Some(format!("task_{}", i)));
             let agent_id = manager.start_agent(agent).await.unwrap();
             agent_ids.push(agent_id);
         }
@@ -71,10 +68,8 @@ async fn prop_concurrent_agent_execution() {
         for i in 0..num_agents {
             let mgr = manager.clone();
             let handle = tokio::spawn(async move {
-                let agent = BackgroundAgent::new(
-                    format!("agent_{}", i),
-                    Some(format!("task_{}", i)),
-                );
+                let agent =
+                    BackgroundAgent::new(format!("agent_{}", i), Some(format!("task_{}", i)));
                 mgr.start_agent(agent).await
             });
             handles.push(handle);

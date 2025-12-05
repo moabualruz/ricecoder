@@ -5,4 +5,4 @@
 pub mod manager;
 
 // Re-export commonly used types
-pub use manager::{CacheManager, CacheEntry, CacheInvalidationStrategy};
+pub use manager::{CacheEntry, CacheInvalidationStrategy, CacheManager};

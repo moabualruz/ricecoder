@@ -39,31 +39,23 @@ impl BackupManager {
     /// BackupMetadata containing backup location and hash, or an error
     pub async fn create_backup(&self, path: &Path) -> Result<BackupMetadata, FileError> {
         // Read the original file
-        let content = fs::read_to_string(path)
-            .await
-            .map_err(|e| FileError::BackupFailed(format!(
-                "Failed to read file for backup: {}",
-                e
-            )))?;
+        let content = fs::read_to_string(path).await.map_err(|e| {
+            FileError::BackupFailed(format!("Failed to read file for backup: {}", e))
+        })?;
 
         // Compute hash of the content
         let content_hash = ContentVerifier::compute_hash(&content);
 
         // Create backup directory structure
-        fs::create_dir_all(&self.backup_dir)
-            .await
-            .map_err(|e| FileError::BackupFailed(format!(
-                "Failed to create backup directory: {}",
-                e
-            )))?;
+        fs::create_dir_all(&self.backup_dir).await.map_err(|e| {
+            FileError::BackupFailed(format!("Failed to create backup directory: {}", e))
+        })?;
 
         // Generate timestamped backup filename
         let timestamp = Utc::now();
         let filename = format!(
             "{}.{}.bak",
-            path.file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("file"),
+            path.file_name().and_then(|n| n.to_str()).unwrap_or("file"),
             timestamp.format("%Y%m%d_%H%M%S_%f")
         );
 
@@ -72,10 +64,7 @@ impl BackupManager {
         // Write backup file
         fs::write(&backup_path, &content)
             .await
-            .map_err(|e| FileError::BackupFailed(format!(
-                "Failed to write backup file: {}",
-                e
-            )))?;
+            .map_err(|e| FileError::BackupFailed(format!("Failed to write backup file: {}", e)))?;
 
         Ok(BackupMetadata {
             original_path: path.to_path_buf(),
@@ -102,12 +91,9 @@ impl BackupManager {
             .ok_or_else(|| FileError::BackupFailed("Invalid file path".to_string()))?;
 
         // Read all entries in backup directory
-        let mut entries = fs::read_dir(&self.backup_dir)
-            .await
-            .map_err(|e| FileError::BackupFailed(format!(
-                "Failed to read backup directory: {}",
-                e
-            )))?;
+        let mut entries = fs::read_dir(&self.backup_dir).await.map_err(|e| {
+            FileError::BackupFailed(format!("Failed to read backup directory: {}", e))
+        })?;
 
         let mut backups = Vec::new();
 
@@ -115,19 +101,19 @@ impl BackupManager {
         while let Some(entry) = entries
             .next_entry()
             .await
-            .map_err(|e| FileError::BackupFailed(format!(
-                "Failed to read backup entry: {}",
-                e
-            )))?
+            .map_err(|e| FileError::BackupFailed(format!("Failed to read backup entry: {}", e)))?
         {
             let path = entry.path();
             if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
                 // Check if this backup belongs to our file
                 if filename.starts_with(base_filename) && filename.ends_with(".bak") {
                     if let Ok(metadata) = fs::metadata(&path).await {
-                        backups.push((path, metadata.modified().unwrap_or_else(|_| {
-                            std::time::SystemTime::now()
-                        })));
+                        backups.push((
+                            path,
+                            metadata
+                                .modified()
+                                .unwrap_or_else(|_| std::time::SystemTime::now()),
+                        ));
                     }
                 }
             }
@@ -138,12 +124,9 @@ impl BackupManager {
 
         // Delete old backups beyond retention count
         for (backup_path, _) in backups.iter().skip(self.retention_count) {
-            fs::remove_file(backup_path)
-                .await
-                .map_err(|e| FileError::BackupFailed(format!(
-                    "Failed to delete old backup: {}",
-                    e
-                )))?;
+            fs::remove_file(backup_path).await.map_err(|e| {
+                FileError::BackupFailed(format!("Failed to delete old backup: {}", e))
+            })?;
         }
 
         Ok(())
@@ -167,28 +150,19 @@ impl BackupManager {
         // Read backup content
         let content = fs::read_to_string(backup_path)
             .await
-            .map_err(|e| FileError::BackupFailed(format!(
-                "Failed to read backup file: {}",
-                e
-            )))?;
+            .map_err(|e| FileError::BackupFailed(format!("Failed to read backup file: {}", e)))?;
 
         // Ensure target directory exists
         if let Some(parent) = target_path.parent() {
-            fs::create_dir_all(parent)
-                .await
-                .map_err(|e| FileError::BackupFailed(format!(
-                    "Failed to create target directory: {}",
-                    e
-                )))?;
+            fs::create_dir_all(parent).await.map_err(|e| {
+                FileError::BackupFailed(format!("Failed to create target directory: {}", e))
+            })?;
         }
 
         // Write to target location
         fs::write(target_path, &content)
             .await
-            .map_err(|e| FileError::BackupFailed(format!(
-                "Failed to restore file: {}",
-                e
-            )))?;
+            .map_err(|e| FileError::BackupFailed(format!("Failed to restore file: {}", e)))?;
 
         Ok(())
     }
@@ -238,9 +212,7 @@ mod tests {
 
         // Verify backup was created
         assert!(metadata.backup_path.exists());
-        let backup_content = fs::read_to_string(&metadata.backup_path)
-            .await
-            .unwrap();
+        let backup_content = fs::read_to_string(&metadata.backup_path).await.unwrap();
         assert_eq!(backup_content, "test content");
     }
 

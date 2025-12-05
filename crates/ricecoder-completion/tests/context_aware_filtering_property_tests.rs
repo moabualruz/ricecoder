@@ -8,23 +8,18 @@ use ricecoder_completion::*;
 
 // Strategy for generating valid Rust code with variable declarations
 fn rust_code_with_vars() -> impl Strategy<Value = String> {
-    prop::string::string_regex("(let [a-z_][a-z0-9_]* = [0-9]+;\\n)*")
-        .expect("valid regex")
+    prop::string::string_regex("(let [a-z_][a-z0-9_]* = [0-9]+;\\n)*").expect("valid regex")
 }
 
 // Strategy for generating valid TypeScript code with variable declarations
 fn typescript_code_with_vars() -> impl Strategy<Value = String> {
-    prop::string::string_regex("(const [a-z_][a-z0-9_]* = [0-9]+;\\n)*")
-        .expect("valid regex")
+    prop::string::string_regex("(const [a-z_][a-z0-9_]* = [0-9]+;\\n)*").expect("valid regex")
 }
 
 // Strategy for generating valid Python code with variable declarations
 fn python_code_with_vars() -> impl Strategy<Value = String> {
-    prop::string::string_regex("([a-z_][a-z0-9_]* = [0-9]+\\n)*")
-        .expect("valid regex")
+    prop::string::string_regex("([a-z_][a-z0-9_]* = [0-9]+\\n)*").expect("valid regex")
 }
-
-
 
 #[tokio::test]
 async fn test_context_aware_filtering_builtin_symbols_always_available() {

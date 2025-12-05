@@ -19,11 +19,11 @@
 //! let actions = engine.suggest_code_actions(&diagnostic, code)?;
 //! ```
 
-pub mod applier;
 pub mod adapters;
+pub mod applier;
 pub mod generic_engine;
 
-pub use adapters::{RustCodeActionAdapter, TypeScriptCodeActionAdapter, PythonCodeActionAdapter};
+pub use adapters::{PythonCodeActionAdapter, RustCodeActionAdapter, TypeScriptCodeActionAdapter};
 pub use generic_engine::GenericCodeActionsEngine;
 
 use crate::types::{CodeAction, CodeActionKind, Diagnostic, TextEdit, WorkspaceEdit};
@@ -44,7 +44,9 @@ pub enum CodeActionsError {
 impl fmt::Display for CodeActionsError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            CodeActionsError::GenerationFailed(msg) => write!(f, "Action generation failed: {}", msg),
+            CodeActionsError::GenerationFailed(msg) => {
+                write!(f, "Action generation failed: {}", msg)
+            }
             CodeActionsError::InvalidDiagnostic(msg) => write!(f, "Invalid diagnostic: {}", msg),
             CodeActionsError::ApplicationFailed(msg) => write!(f, "Application failed: {}", msg),
         }
@@ -59,7 +61,11 @@ pub type CodeActionsResult<T> = Result<T, CodeActionsError>;
 /// Trait for generating code actions
 pub trait CodeActionsEngine: Send + Sync {
     /// Suggest code actions for a diagnostic
-    fn suggest_code_actions(&self, diagnostic: &Diagnostic, code: &str) -> CodeActionsResult<Vec<CodeAction>>;
+    fn suggest_code_actions(
+        &self,
+        diagnostic: &Diagnostic,
+        code: &str,
+    ) -> CodeActionsResult<Vec<CodeAction>>;
 
     /// Apply a code action to code
     fn apply_code_action(&self, code: &str, action: &CodeAction) -> CodeActionsResult<String>;
@@ -82,7 +88,11 @@ impl Default for DefaultCodeActionsEngine {
 }
 
 impl CodeActionsEngine for DefaultCodeActionsEngine {
-    fn suggest_code_actions(&self, diagnostic: &Diagnostic, code: &str) -> CodeActionsResult<Vec<CodeAction>> {
+    fn suggest_code_actions(
+        &self,
+        diagnostic: &Diagnostic,
+        code: &str,
+    ) -> CodeActionsResult<Vec<CodeAction>> {
         let mut actions = Vec::new();
 
         // Generate actions based on diagnostic code
@@ -113,7 +123,10 @@ impl CodeActionsEngine for DefaultCodeActionsEngine {
 }
 
 /// Suggest removing an unused import
-fn suggest_remove_import_action(diagnostic: &Diagnostic, code: &str) -> CodeActionsResult<Vec<CodeAction>> {
+fn suggest_remove_import_action(
+    diagnostic: &Diagnostic,
+    code: &str,
+) -> CodeActionsResult<Vec<CodeAction>> {
     let line_num = diagnostic.range.start.line as usize;
 
     // Get the line to remove
@@ -139,7 +152,10 @@ fn suggest_remove_import_action(diagnostic: &Diagnostic, code: &str) -> CodeActi
 }
 
 /// Suggest removing unreachable code
-fn suggest_remove_unreachable_action(diagnostic: &Diagnostic, code: &str) -> CodeActionsResult<Vec<CodeAction>> {
+fn suggest_remove_unreachable_action(
+    diagnostic: &Diagnostic,
+    code: &str,
+) -> CodeActionsResult<Vec<CodeAction>> {
     let line_num = diagnostic.range.start.line as usize;
 
     // Get the line to remove
@@ -165,7 +181,10 @@ fn suggest_remove_unreachable_action(diagnostic: &Diagnostic, code: &str) -> Cod
 }
 
 /// Suggest renaming to follow naming conventions
-fn suggest_rename_action(diagnostic: &Diagnostic, _code: &str) -> CodeActionsResult<Vec<CodeAction>> {
+fn suggest_rename_action(
+    diagnostic: &Diagnostic,
+    _code: &str,
+) -> CodeActionsResult<Vec<CodeAction>> {
     // Extract the current name from the diagnostic message
     if let Some(start) = diagnostic.message.find('`') {
         if let Some(end) = diagnostic.message[start + 1..].find('`') {
@@ -206,7 +225,10 @@ fn suggest_rename_action(diagnostic: &Diagnostic, _code: &str) -> CodeActionsRes
 }
 
 /// Suggest fixing syntax errors
-fn suggest_fix_syntax_action(diagnostic: &Diagnostic, _code: &str) -> CodeActionsResult<Vec<CodeAction>> {
+fn suggest_fix_syntax_action(
+    diagnostic: &Diagnostic,
+    _code: &str,
+) -> CodeActionsResult<Vec<CodeAction>> {
     if diagnostic.message.contains("mismatched brackets") {
         // This is a complex fix that would require parsing
         // For now, we'll just suggest a generic fix

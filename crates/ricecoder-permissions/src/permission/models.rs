@@ -17,7 +17,10 @@ pub enum PermissionLevel {
 impl PermissionLevel {
     /// Check if this permission level is more restrictive than another
     pub fn is_more_restrictive_than(&self, other: PermissionLevel) -> bool {
-        matches!((self, other), (PermissionLevel::Deny, _) | (PermissionLevel::Ask, PermissionLevel::Allow))
+        matches!(
+            (self, other),
+            (PermissionLevel::Deny, _) | (PermissionLevel::Ask, PermissionLevel::Allow)
+        )
     }
 }
 
@@ -64,9 +67,9 @@ impl ToolPermission {
     /// Check if this permission applies to a specific agent
     pub fn applies_to_agent(&self, agent: Option<&str>) -> bool {
         match (&self.agent, agent) {
-            (None, _) => true,                    // Global permission applies to all
+            (None, _) => true, // Global permission applies to all
             (Some(perm_agent), Some(check_agent)) => perm_agent == check_agent,
-            (Some(_), None) => false,             // Agent-specific doesn't apply to global
+            (Some(_), None) => false, // Agent-specific doesn't apply to global
         }
     }
 }

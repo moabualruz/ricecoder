@@ -5,10 +5,10 @@
 
 #[cfg(test)]
 mod tests {
-    use proptest::prelude::*;
-    use crate::models::*;
     use crate::condition::ConditionEvaluator;
+    use crate::models::*;
     use crate::state::StateManager;
+    use proptest::prelude::*;
 
     /// Strategy for generating valid step IDs
     fn step_id_strategy() -> impl Strategy<Value = String> {
@@ -109,11 +109,11 @@ mod tests {
             let count = output_value.get("count").and_then(|v| v.as_i64()).unwrap_or(0);
             if count > 5 {
                 // Then branch should be selected
-                prop_assert_eq!(next_steps, vec![then_step_id.clone()], 
+                prop_assert_eq!(next_steps, vec![then_step_id.clone()],
                     "Then branch should be selected when condition is true");
             } else {
                 // Else branch should be selected
-                prop_assert_eq!(next_steps, vec![else_step_id.clone()], 
+                prop_assert_eq!(next_steps, vec![else_step_id.clone()],
                     "Else branch should be selected when condition is false");
             }
         }
@@ -196,9 +196,9 @@ mod tests {
             let r1 = result1.as_ref().unwrap();
             let r2 = result2.as_ref().unwrap();
             let r3 = result3.as_ref().unwrap();
-            prop_assert_eq!(r1, r2, 
+            prop_assert_eq!(r1, r2,
                 "Condition evaluation should be deterministic");
-            prop_assert_eq!(r2, r3, 
+            prop_assert_eq!(r2, r3,
                 "Condition evaluation should be deterministic");
         }
 
@@ -293,18 +293,16 @@ mod tests {
             // Verify that all steps in the selected branch are returned
             let count = output_value.get("count").and_then(|v| v.as_i64()).unwrap_or(0);
             if count > 5 {
-                prop_assert_eq!(next_steps.len(), then_steps.len(), 
+                prop_assert_eq!(next_steps.len(), then_steps.len(),
                     "All then-steps should be returned");
-                prop_assert_eq!(next_steps, then_steps, 
+                prop_assert_eq!(next_steps, then_steps,
                     "Returned steps should match then-steps");
             } else {
-                prop_assert_eq!(next_steps.len(), else_steps.len(), 
+                prop_assert_eq!(next_steps.len(), else_steps.len(),
                     "All else-steps should be returned");
-                prop_assert_eq!(next_steps, else_steps, 
+                prop_assert_eq!(next_steps, else_steps,
                     "Returned steps should match else-steps");
             }
         }
     }
 }
-
-

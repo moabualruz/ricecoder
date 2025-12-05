@@ -25,15 +25,16 @@ impl RustParser {
 
         debug!("Parsing Rust dependencies from {:?}", cargo_toml_path);
 
-        let content = std::fs::read_to_string(&cargo_toml_path)
-            .map_err(|e| ResearchError::DependencyParsingFailed {
+        let content = std::fs::read_to_string(&cargo_toml_path).map_err(|e| {
+            ResearchError::DependencyParsingFailed {
                 language: "Rust".to_string(),
                 path: Some(cargo_toml_path.clone()),
                 reason: format!("Failed to read Cargo.toml: {}", e),
-            })?;
+            }
+        })?;
 
-        let cargo_toml: toml::Value = toml::from_str(&content)
-            .map_err(|e| ResearchError::DependencyParsingFailed {
+        let cargo_toml: toml::Value =
+            toml::from_str(&content).map_err(|e| ResearchError::DependencyParsingFailed {
                 language: "Rust".to_string(),
                 path: Some(cargo_toml_path.clone()),
                 reason: format!("Failed to parse Cargo.toml: {}", e),
@@ -51,7 +52,10 @@ impl RustParser {
         }
 
         // Parse dev dependencies
-        if let Some(deps) = cargo_toml.get("dev-dependencies").and_then(|d| d.as_table()) {
+        if let Some(deps) = cargo_toml
+            .get("dev-dependencies")
+            .and_then(|d| d.as_table())
+        {
             for (name, value) in deps {
                 if let Some(dep) = self.parse_dependency(name, value, true) {
                     dependencies.push(dep);
@@ -60,7 +64,10 @@ impl RustParser {
         }
 
         // Parse build dependencies
-        if let Some(deps) = cargo_toml.get("build-dependencies").and_then(|d| d.as_table()) {
+        if let Some(deps) = cargo_toml
+            .get("build-dependencies")
+            .and_then(|d| d.as_table())
+        {
             for (name, value) in deps {
                 if let Some(dep) = self.parse_dependency(name, value, false) {
                     dependencies.push(dep);
@@ -88,7 +95,12 @@ impl RustParser {
     }
 
     /// Parses a single dependency entry
-    fn parse_dependency(&self, name: &str, value: &toml::Value, is_dev: bool) -> Option<Dependency> {
+    fn parse_dependency(
+        &self,
+        name: &str,
+        value: &toml::Value,
+        is_dev: bool,
+    ) -> Option<Dependency> {
         let (version, constraints) = if let Some(version_str) = value.as_str() {
             // Simple version string
             (version_str.to_string(), Some(version_str.to_string()))
@@ -190,7 +202,11 @@ proptest = "1.0"
 
         assert!(!parser.has_manifest(temp_dir.path()));
 
-        fs::write(temp_dir.path().join("Cargo.toml"), "[package]\nname = \"test\"").unwrap();
+        fs::write(
+            temp_dir.path().join("Cargo.toml"),
+            "[package]\nname = \"test\"",
+        )
+        .unwrap();
         assert!(parser.has_manifest(temp_dir.path()));
     }
 }

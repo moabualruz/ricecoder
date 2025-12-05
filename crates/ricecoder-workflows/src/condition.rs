@@ -215,12 +215,9 @@ impl ConditionEvaluator {
         let step_id = parts[0];
 
         // Get the step result
-        let step_result = state
-            .step_results
-            .get(step_id)
-            .ok_or_else(|| {
-                WorkflowError::StateError(format!("Step {} has not been executed", step_id))
-            })?;
+        let step_result = state.step_results.get(step_id).ok_or_else(|| {
+            WorkflowError::StateError(format!("Step {} has not been executed", step_id))
+        })?;
 
         // Start with null
         let mut value = Value::Null;
@@ -265,9 +262,10 @@ impl ConditionEvaluator {
                     if let Ok(index) = index_str.parse::<usize>() {
                         value = value[field_name][index].clone();
                     } else {
-                        return Err(WorkflowError::Invalid(
-                            format!("Invalid array index: {}", index_str),
-                        ));
+                        return Err(WorkflowError::Invalid(format!(
+                            "Invalid array index: {}",
+                            index_str
+                        )));
                     }
                 } else {
                     value = value[part].clone();
@@ -333,7 +331,10 @@ impl ConditionEvaluator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{AgentStep, ErrorAction, RiskFactors, StepConfig, StepStatus, StepType, WorkflowConfig, WorkflowStep};
+    use crate::models::{
+        AgentStep, ErrorAction, RiskFactors, StepConfig, StepStatus, StepType, WorkflowConfig,
+        WorkflowStep,
+    };
 
     fn create_test_workflow() -> Workflow {
         Workflow {
@@ -354,7 +355,9 @@ mod tests {
                     },
                     dependencies: vec![],
                     approval_required: false,
-                    on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                    on_error: ErrorAction::Fail,
+                    risk_score: None,
+                    risk_factors: RiskFactors::default(),
                 },
                 WorkflowStep {
                     id: "condition".to_string(),
@@ -369,7 +372,9 @@ mod tests {
                     },
                     dependencies: vec!["step1".to_string()],
                     approval_required: false,
-                    on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                    on_error: ErrorAction::Fail,
+                    risk_score: None,
+                    risk_factors: RiskFactors::default(),
                 },
                 WorkflowStep {
                     id: "step2".to_string(),
@@ -383,7 +388,9 @@ mod tests {
                     },
                     dependencies: vec!["condition".to_string()],
                     approval_required: false,
-                    on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                    on_error: ErrorAction::Fail,
+                    risk_score: None,
+                    risk_factors: RiskFactors::default(),
                 },
                 WorkflowStep {
                     id: "step3".to_string(),
@@ -397,7 +404,9 @@ mod tests {
                     },
                     dependencies: vec!["condition".to_string()],
                     approval_required: false,
-                    on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                    on_error: ErrorAction::Fail,
+                    risk_score: None,
+                    risk_factors: RiskFactors::default(),
                 },
             ],
             config: WorkflowConfig {
@@ -497,12 +506,8 @@ mod tests {
             },
         );
 
-        let result = ConditionEvaluator::evaluate_greater_than(
-            "step1.output.count",
-            "5",
-            &workflow,
-            &state,
-        );
+        let result =
+            ConditionEvaluator::evaluate_greater_than("step1.output.count", "5", &workflow, &state);
         assert!(result.is_ok());
         assert!(result.unwrap());
     }
@@ -522,12 +527,8 @@ mod tests {
             },
         );
 
-        let result = ConditionEvaluator::evaluate_greater_than(
-            "step1.output.count",
-            "5",
-            &workflow,
-            &state,
-        );
+        let result =
+            ConditionEvaluator::evaluate_greater_than("step1.output.count", "5", &workflow, &state);
         assert!(result.is_ok());
         assert!(!result.unwrap());
     }
@@ -623,11 +624,8 @@ mod tests {
             },
         );
 
-        let result = ConditionEvaluator::evaluate_expression(
-            "step1.output.count < 5",
-            &workflow,
-            &state,
-        );
+        let result =
+            ConditionEvaluator::evaluate_expression("step1.output.count < 5", &workflow, &state);
         assert!(result.is_ok());
         assert!(result.unwrap());
     }
@@ -647,11 +645,8 @@ mod tests {
             },
         );
 
-        let result = ConditionEvaluator::evaluate_expression(
-            "step1.output.count >= 5",
-            &workflow,
-            &state,
-        );
+        let result =
+            ConditionEvaluator::evaluate_expression("step1.output.count >= 5", &workflow, &state);
         assert!(result.is_ok());
         assert!(result.unwrap());
     }
@@ -671,15 +666,9 @@ mod tests {
             },
         );
 
-        let result = ConditionEvaluator::evaluate_expression(
-            "step1.output.count <= 5",
-            &workflow,
-            &state,
-        );
+        let result =
+            ConditionEvaluator::evaluate_expression("step1.output.count <= 5", &workflow, &state);
         assert!(result.is_ok());
         assert!(result.unwrap());
     }
 }
-
-
-

@@ -28,7 +28,7 @@ proptest! {
         // All calls should return identical results
         prop_assert_eq!(&path1, &path2);
         prop_assert_eq!(&path2, &path3);
-        
+
         // Project path should always be .agent
         prop_assert_eq!(&path1, &PathBuf::from(".agent"));
     }
@@ -39,15 +39,15 @@ fn test_global_path_resolution_is_consistent() {
     // This test doesn't use proptest because environment variables
     // can interfere with parallel test execution. Instead, we test
     // the core property: multiple calls return identical results.
-    
+
     let _guard = ENV_LOCK.lock().unwrap();
-    
+
     // Save original value if it exists
     let original = std::env::var("RICECODER_HOME").ok();
-    
+
     // Remove RICECODER_HOME to test default behavior
     std::env::remove_var("RICECODER_HOME");
-    
+
     // Call resolve_global_path multiple times (without modifying environment)
     let path1 = PathResolver::resolve_global_path();
     let path2 = PathResolver::resolve_global_path();
@@ -63,10 +63,13 @@ fn test_global_path_resolution_is_consistent() {
             // All failed - this is also consistent
         }
         _ => {
-            panic!("Inconsistent path resolution results: {:?}, {:?}, {:?}", path1, path2, path3);
+            panic!(
+                "Inconsistent path resolution results: {:?}, {:?}, {:?}",
+                path1, path2, path3
+            );
         }
     }
-    
+
     // Restore original value
     if let Some(orig) = original {
         std::env::set_var("RICECODER_HOME", orig);
@@ -78,12 +81,12 @@ fn test_environment_variable_override_is_respected() {
     // This test doesn't use proptest because environment variables
     // can interfere with parallel test execution. Instead, we test
     // the core property: RICECODER_HOME is respected when set.
-    
+
     let _guard = ENV_LOCK.lock().unwrap();
-    
+
     // Save the original value if it exists
     let original = std::env::var("RICECODER_HOME").ok();
-    
+
     // Ensure clean state - remove any existing value first
     std::env::remove_var("RICECODER_HOME");
 
@@ -104,8 +107,11 @@ fn test_environment_variable_override_is_respected() {
     // Should succeed and return the override path
     assert!(resolved.is_ok(), "Path resolution should succeed");
     if let Ok(path) = resolved {
-        assert_eq!(&path, &PathBuf::from(override_path), 
-            "Resolved path should match RICECODER_HOME environment variable");
+        assert_eq!(
+            &path,
+            &PathBuf::from(override_path),
+            "Resolved path should match RICECODER_HOME environment variable"
+        );
     }
 
     // Restore original value - CRITICAL: must restore before test ends
@@ -130,10 +136,10 @@ fn test_dependency_isolation_all_path_resolution_through_path_resolver() {
     // 3. Multiple calls return identical results (no custom logic)
 
     let _guard = ENV_LOCK.lock().unwrap();
-    
+
     // Save original value if it exists
     let original = std::env::var("RICECODER_HOME").ok();
-    
+
     // Remove RICECODER_HOME to test default behavior
     std::env::remove_var("RICECODER_HOME");
 
@@ -164,10 +170,13 @@ fn test_dependency_isolation_all_path_resolution_through_path_resolver() {
             // All failed - this is also consistent
         }
         _ => {
-            panic!("Inconsistent path resolution results: {:?}, {:?}, {:?}", global_path1, global_path2, global_path3);
+            panic!(
+                "Inconsistent path resolution results: {:?}, {:?}, {:?}",
+                global_path1, global_path2, global_path3
+            );
         }
     }
-    
+
     // Restore original value
     if let Some(orig) = original {
         std::env::set_var("RICECODER_HOME", orig);
@@ -205,10 +214,10 @@ fn test_dependency_isolation_consistency_across_multiple_calls() {
     // ensuring that all path resolution goes through the same PathResolver logic
 
     let _guard = ENV_LOCK.lock().unwrap();
-    
+
     // Save the original RICECODER_HOME value to restore it later
     let original = std::env::var("RICECODER_HOME").ok();
-    
+
     // Remove RICECODER_HOME to test default behavior
     std::env::remove_var("RICECODER_HOME");
 
@@ -239,7 +248,10 @@ fn test_dependency_isolation_consistency_across_multiple_calls() {
                 // Both failed - this is also consistent
             }
             _ => {
-                panic!("Inconsistent path resolution results: {:?} vs {:?}", global_paths[i], global_paths[0]);
+                panic!(
+                    "Inconsistent path resolution results: {:?} vs {:?}",
+                    global_paths[i], global_paths[0]
+                );
             }
         }
     }

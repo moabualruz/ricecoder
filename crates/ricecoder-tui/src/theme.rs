@@ -1,11 +1,11 @@
 //! Theme management for the TUI
 
-use crate::style::Theme;
 use crate::config::TuiConfig;
+use crate::style::Theme;
 use crate::theme_loader::ThemeLoader;
 use anyhow::Result;
-use std::sync::{Arc, Mutex};
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 
 /// Type alias for theme listeners
 type ThemeListeners = Arc<Mutex<Vec<Box<dyn Fn(&Theme) + Send>>>>;
@@ -46,7 +46,9 @@ impl ThemeManager {
 
     /// Get the current theme
     pub fn current(&self) -> Result<Theme> {
-        let theme = self.current_theme.lock()
+        let theme = self
+            .current_theme
+            .lock()
             .map_err(|e| anyhow::anyhow!("Failed to lock theme: {}", e))?
             .clone();
         Ok(theme)
@@ -63,12 +65,16 @@ impl ThemeManager {
 
     /// Switch to a specific theme
     pub fn switch_to(&self, theme: Theme) -> Result<()> {
-        let mut current = self.current_theme.lock()
+        let mut current = self
+            .current_theme
+            .lock()
             .map_err(|e| anyhow::anyhow!("Failed to lock theme: {}", e))?;
         *current = theme.clone();
 
         // Notify listeners
-        let listeners = self.listeners.lock()
+        let listeners = self
+            .listeners
+            .lock()
             .map_err(|e| anyhow::anyhow!("Failed to lock listeners: {}", e))?;
         for listener in listeners.iter() {
             listener(&theme);
@@ -208,7 +214,7 @@ mod tests {
     #[test]
     fn test_save_and_load_custom_theme() {
         use tempfile::TempDir;
-        
+
         let temp_dir = TempDir::new().unwrap();
         let theme_path = temp_dir.path().join("custom.yaml");
 
@@ -224,17 +230,23 @@ mod tests {
     #[test]
     fn test_load_custom_themes_from_directory() {
         use tempfile::TempDir;
-        
+
         let temp_dir = TempDir::new().unwrap();
 
         let manager = ThemeManager::new();
         manager.switch_by_name("dark").unwrap();
-        manager.save_custom_theme(&temp_dir.path().join("dark.yaml")).unwrap();
+        manager
+            .save_custom_theme(&temp_dir.path().join("dark.yaml"))
+            .unwrap();
 
         manager.switch_by_name("light").unwrap();
-        manager.save_custom_theme(&temp_dir.path().join("light.yaml")).unwrap();
+        manager
+            .save_custom_theme(&temp_dir.path().join("light.yaml"))
+            .unwrap();
 
-        let themes = manager.load_custom_themes_from_directory(temp_dir.path()).unwrap();
+        let themes = manager
+            .load_custom_themes_from_directory(temp_dir.path())
+            .unwrap();
         assert_eq!(themes.len(), 2);
     }
 }

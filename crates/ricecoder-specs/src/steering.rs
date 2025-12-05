@@ -1,7 +1,7 @@
 //! Steering file loading and management
 
-use crate::error::{SpecError, ValidationError, Severity};
-use crate::models::{Steering, SteeringRule, Standard, TemplateRef};
+use crate::error::{Severity, SpecError, ValidationError};
+use crate::models::{Standard, Steering, SteeringRule, TemplateRef};
 use std::fs;
 use std::path::Path;
 
@@ -91,12 +91,10 @@ impl SteeringLoader {
 
     /// Parse YAML steering file
     fn parse_yaml(content: &str, path: &Path) -> Result<Steering, SpecError> {
-        serde_yaml::from_str(content).map_err(|e| {
-            SpecError::ParseError {
-                path: path.display().to_string(),
-                line: e.location().map(|l| l.line()).unwrap_or(0),
-                message: e.to_string(),
-            }
+        serde_yaml::from_str(content).map_err(|e| SpecError::ParseError {
+            path: path.display().to_string(),
+            line: e.location().map(|l| l.line()).unwrap_or(0),
+            message: e.to_string(),
         })
     }
 
@@ -105,18 +103,16 @@ impl SteeringLoader {
         // For now, try to parse as YAML embedded in markdown
         // In a full implementation, this would extract YAML code blocks
         // or parse markdown-specific steering format
-        
+
         // Try to find YAML code block
         if let Some(start) = content.find("```yaml") {
             let after_start = &content[start + 7..];
             if let Some(end) = after_start.find("```") {
                 let yaml_content = &after_start[..end];
-                return serde_yaml::from_str(yaml_content).map_err(|e| {
-                    SpecError::ParseError {
-                        path: path.display().to_string(),
-                        line: e.location().map(|l| l.line()).unwrap_or(0),
-                        message: e.to_string(),
-                    }
+                return serde_yaml::from_str(yaml_content).map_err(|e| SpecError::ParseError {
+                    path: path.display().to_string(),
+                    line: e.location().map(|l| l.line()).unwrap_or(0),
+                    message: e.to_string(),
                 });
             }
         }

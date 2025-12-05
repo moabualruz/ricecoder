@@ -105,16 +105,12 @@ impl BrandingManager {
 
     /// Get terminal width
     pub fn get_terminal_width() -> u16 {
-        term_size::dimensions()
-            .map(|(w, _)| w as u16)
-            .unwrap_or(80)
+        term_size::dimensions().map(|(w, _)| w as u16).unwrap_or(80)
     }
 
     /// Get terminal height
     pub fn get_terminal_height() -> u16 {
-        term_size::dimensions()
-            .map(|(_, h)| h as u16)
-            .unwrap_or(24)
+        term_size::dimensions().map(|(_, h)| h as u16).unwrap_or(24)
     }
 }
 

@@ -45,8 +45,8 @@
 //! };
 //! ```
 
-use crate::style::Color;
 use crate::app::AppMode;
+use crate::style::Color;
 
 /// Context indicators for the prompt
 #[derive(Debug, Clone)]
@@ -360,9 +360,7 @@ mod tests {
 
     #[test]
     fn test_prompt_config() {
-        let config = PromptConfig::new()
-            .with_prefix("$")
-            .with_suffix(" ");
+        let config = PromptConfig::new().with_prefix("$").with_suffix(" ");
 
         assert_eq!(config.prefix, "$");
         assert_eq!(config.suffix, " ");

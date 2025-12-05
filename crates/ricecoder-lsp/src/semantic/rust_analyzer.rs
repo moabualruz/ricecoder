@@ -3,7 +3,7 @@
 //! Provides semantic analysis for Rust code using tree-sitter.
 
 use super::{SemanticAnalyzer, SemanticResult};
-use crate::types::{Language, SemanticInfo, Symbol, Position};
+use crate::types::{Language, Position, SemanticInfo, Symbol};
 
 /// Rust semantic analyzer
 pub struct RustAnalyzer;

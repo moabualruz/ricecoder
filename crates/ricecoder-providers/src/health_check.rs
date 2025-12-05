@@ -58,14 +58,8 @@ impl Default for HealthCheckCache {
 }
 
 impl HealthCheckCache {
-
-
-
     /// Check provider health with caching
-    pub async fn check_health(
-        &self,
-        provider: &Arc<dyn Provider>,
-    ) -> Result<bool, ProviderError> {
+    pub async fn check_health(&self, provider: &Arc<dyn Provider>) -> Result<bool, ProviderError> {
         let provider_id = provider.id();
 
         // Check cache first
@@ -138,7 +132,10 @@ impl HealthCheckCache {
     pub async fn invalidate(&self, provider_id: &str) {
         let mut cache = self.cache.write().await;
         cache.remove(provider_id);
-        debug!("Invalidated health check cache for provider: {}", provider_id);
+        debug!(
+            "Invalidated health check cache for provider: {}",
+            provider_id
+        );
     }
 
     /// Invalidate all cached results
@@ -170,10 +167,10 @@ impl HealthCheckCache {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::ChatRequest;
     use crate::models::{ChatResponse, FinishReason, TokenUsage};
     use crate::provider::Provider;
     use async_trait::async_trait;
-    use crate::models::ChatRequest;
 
     struct MockHealthyProvider;
 
@@ -191,10 +188,7 @@ mod tests {
             vec![]
         }
 
-        async fn chat(
-            &self,
-            _request: ChatRequest,
-        ) -> Result<ChatResponse, ProviderError> {
+        async fn chat(&self, _request: ChatRequest) -> Result<ChatResponse, ProviderError> {
             Ok(ChatResponse {
                 content: "test".to_string(),
                 model: "test".to_string(),
@@ -239,10 +233,7 @@ mod tests {
             vec![]
         }
 
-        async fn chat(
-            &self,
-            _request: ChatRequest,
-        ) -> Result<ChatResponse, ProviderError> {
+        async fn chat(&self, _request: ChatRequest) -> Result<ChatResponse, ProviderError> {
             Ok(ChatResponse {
                 content: "test".to_string(),
                 model: "test".to_string(),
@@ -353,7 +344,7 @@ mod tests {
     #[tokio::test]
     async fn test_health_check_timeout() {
         let cache = HealthCheckCache::new(Duration::from_secs(300), Duration::from_millis(1));
-        
+
         struct SlowProvider;
 
         #[async_trait]
@@ -370,10 +361,7 @@ mod tests {
                 vec![]
             }
 
-            async fn chat(
-                &self,
-                _request: ChatRequest,
-            ) -> Result<ChatResponse, ProviderError> {
+            async fn chat(&self, _request: ChatRequest) -> Result<ChatResponse, ProviderError> {
                 Ok(ChatResponse {
                     content: "test".to_string(),
                     model: "test".to_string(),

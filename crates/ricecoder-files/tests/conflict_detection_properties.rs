@@ -24,9 +24,7 @@ async fn prop_conflict_detected_before_overwrite() {
         .expect("Should be able to write file");
 
     // Detect conflict
-    let result = resolver
-        .detect_conflict(&path, new_content)
-        .await;
+    let result = resolver.detect_conflict(&path, new_content).await;
 
     assert!(result.is_ok(), "detect_conflict should succeed");
 
@@ -64,21 +62,14 @@ async fn prop_conflict_info_contains_correct_data() {
         .expect("Should be able to write file");
 
     // Detect conflict
-    let result = resolver
-        .detect_conflict(&path, new_content)
-        .await;
+    let result = resolver.detect_conflict(&path, new_content).await;
 
     assert!(result.is_ok(), "detect_conflict should succeed");
 
-    let conflict_info = result
-        .unwrap()
-        .expect("Conflict should be detected");
+    let conflict_info = result.unwrap().expect("Conflict should be detected");
 
     // Verify path
-    assert_eq!(
-        conflict_info.path, path,
-        "Conflict path should match"
-    );
+    assert_eq!(conflict_info.path, path, "Conflict path should match");
 
     // Verify existing content
     assert_eq!(
@@ -108,14 +99,15 @@ async fn prop_no_conflict_for_nonexistent_file() {
     assert!(!path.exists(), "File should not exist");
 
     // Detect conflict
-    let result = resolver
-        .detect_conflict(&path, new_content)
-        .await;
+    let result = resolver.detect_conflict(&path, new_content).await;
 
     assert!(result.is_ok(), "detect_conflict should succeed");
 
     let conflict = result.unwrap();
-    assert!(conflict.is_none(), "No conflict should be detected for non-existent file");
+    assert!(
+        conflict.is_none(),
+        "No conflict should be detected for non-existent file"
+    );
 }
 
 /// Property 6d: Conflict detected for identical content
@@ -137,14 +129,15 @@ async fn prop_conflict_detected_for_identical_content() {
         .expect("Should be able to write file");
 
     // Detect conflict with identical content
-    let result = resolver
-        .detect_conflict(&path, content)
-        .await;
+    let result = resolver.detect_conflict(&path, content).await;
 
     assert!(result.is_ok(), "detect_conflict should succeed");
 
     let conflict = result.unwrap();
-    assert!(conflict.is_some(), "Conflict should be detected even for identical content");
+    assert!(
+        conflict.is_some(),
+        "Conflict should be detected even for identical content"
+    );
 
     let conflict_info = conflict.unwrap();
     assert_eq!(
@@ -176,9 +169,7 @@ async fn prop_conflict_detection_consistent() {
         .expect("Should be able to write file");
 
     // First detection
-    let result1 = resolver
-        .detect_conflict(&path, new_content)
-        .await;
+    let result1 = resolver.detect_conflict(&path, new_content).await;
 
     assert!(result1.is_ok(), "First detection should succeed");
 
@@ -186,9 +177,7 @@ async fn prop_conflict_detection_consistent() {
     assert!(conflict1.is_some(), "First detection should find conflict");
 
     // Second detection
-    let result2 = resolver
-        .detect_conflict(&path, new_content)
-        .await;
+    let result2 = resolver.detect_conflict(&path, new_content).await;
 
     assert!(result2.is_ok(), "Second detection should succeed");
 
@@ -229,9 +218,7 @@ async fn prop_conflict_detected_with_empty_new_content() {
         .expect("Should be able to write file");
 
     // Detect conflict
-    let result = resolver
-        .detect_conflict(&path, new_content)
-        .await;
+    let result = resolver.detect_conflict(&path, new_content).await;
 
     assert!(result.is_ok(), "detect_conflict should succeed");
 

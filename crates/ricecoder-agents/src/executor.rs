@@ -70,9 +70,8 @@ impl ParallelExecutor {
         let mut results = Vec::new();
 
         // Execute tasks with concurrency limit
-        let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(
-            self.config.max_concurrency,
-        ));
+        let semaphore =
+            std::sync::Arc::new(tokio::sync::Semaphore::new(self.config.max_concurrency));
 
         let mut handles = Vec::new();
 
@@ -172,7 +171,10 @@ impl ParallelExecutor {
     }
 
     /// Internal task execution logic
-    async fn execute_task_internal(task: &AgentTask, verbose: bool) -> std::result::Result<(), String> {
+    async fn execute_task_internal(
+        task: &AgentTask,
+        verbose: bool,
+    ) -> std::result::Result<(), String> {
         if verbose {
             eprintln!("Executing task: {}", task.id);
         }

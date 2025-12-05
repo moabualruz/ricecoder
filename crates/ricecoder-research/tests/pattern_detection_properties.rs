@@ -3,7 +3,9 @@
 //! **Validates: Requirements 1.3, 1.4**
 
 use proptest::prelude::*;
-use ricecoder_research::{PatternDetector, CodebaseScanner, ArchitecturalPatternDetector, CodingPatternDetector};
+use ricecoder_research::{
+    ArchitecturalPatternDetector, CodebaseScanner, CodingPatternDetector, PatternDetector,
+};
 use std::path::PathBuf;
 use tempfile::TempDir;
 
@@ -18,13 +20,21 @@ fn create_layered_architecture_project(temp_dir: &TempDir) -> PathBuf {
     std::fs::create_dir_all(root.join("src/application")).ok();
     std::fs::create_dir_all(root.join("src/infrastructure")).ok();
     std::fs::create_dir_all(root.join("src/interfaces")).ok();
-    
+
     std::fs::write(root.join("src/domain/entity.rs"), "pub struct Entity;").ok();
-    std::fs::write(root.join("src/application/service.rs"), "pub struct Service;").ok();
-    std::fs::write(root.join("src/infrastructure/repository.rs"), "pub struct Repository;").ok();
+    std::fs::write(
+        root.join("src/application/service.rs"),
+        "pub struct Service;",
+    )
+    .ok();
+    std::fs::write(
+        root.join("src/infrastructure/repository.rs"),
+        "pub struct Repository;",
+    )
+    .ok();
     std::fs::write(root.join("src/interfaces/api.rs"), "pub struct Api;").ok();
     std::fs::write(root.join("Cargo.toml"), "[package]\nname = \"test\"\n").ok();
-    
+
     root.to_path_buf()
 }
 
@@ -33,12 +43,28 @@ fn create_microservices_project(temp_dir: &TempDir) -> PathBuf {
     let root = temp_dir.path();
     std::fs::create_dir_all(root.join("services/user-service/src")).ok();
     std::fs::create_dir_all(root.join("services/order-service/src")).ok();
-    
-    std::fs::write(root.join("services/user-service/Cargo.toml"), "[package]\nname = \"user-service\"\n").ok();
-    std::fs::write(root.join("services/order-service/Cargo.toml"), "[package]\nname = \"order-service\"\n").ok();
-    std::fs::write(root.join("services/user-service/src/main.rs"), "fn main() {}").ok();
-    std::fs::write(root.join("services/order-service/src/main.rs"), "fn main() {}").ok();
-    
+
+    std::fs::write(
+        root.join("services/user-service/Cargo.toml"),
+        "[package]\nname = \"user-service\"\n",
+    )
+    .ok();
+    std::fs::write(
+        root.join("services/order-service/Cargo.toml"),
+        "[package]\nname = \"order-service\"\n",
+    )
+    .ok();
+    std::fs::write(
+        root.join("services/user-service/src/main.rs"),
+        "fn main() {}",
+    )
+    .ok();
+    std::fs::write(
+        root.join("services/order-service/src/main.rs"),
+        "fn main() {}",
+    )
+    .ok();
+
     root.to_path_buf()
 }
 
@@ -46,12 +72,20 @@ fn create_microservices_project(temp_dir: &TempDir) -> PathBuf {
 fn create_event_driven_project(temp_dir: &TempDir) -> PathBuf {
     let root = temp_dir.path();
     std::fs::create_dir_all(root.join("src")).ok();
-    
+
     std::fs::write(root.join("src/events.rs"), "pub struct Event;").ok();
-    std::fs::write(root.join("src/event_handler.rs"), "pub struct EventHandler;").ok();
-    std::fs::write(root.join("src/event_listener.rs"), "pub struct EventListener;").ok();
+    std::fs::write(
+        root.join("src/event_handler.rs"),
+        "pub struct EventHandler;",
+    )
+    .ok();
+    std::fs::write(
+        root.join("src/event_listener.rs"),
+        "pub struct EventListener;",
+    )
+    .ok();
     std::fs::write(root.join("Cargo.toml"), "[package]\nname = \"test\"\n").ok();
-    
+
     root.to_path_buf()
 }
 
@@ -59,13 +93,13 @@ fn create_event_driven_project(temp_dir: &TempDir) -> PathBuf {
 fn create_design_patterns_project(temp_dir: &TempDir) -> PathBuf {
     let root = temp_dir.path();
     std::fs::create_dir_all(root.join("src")).ok();
-    
+
     std::fs::write(root.join("src/factory.rs"), "pub struct Factory;").ok();
     std::fs::write(root.join("src/observer.rs"), "pub struct Observer;").ok();
     std::fs::write(root.join("src/strategy.rs"), "pub struct Strategy;").ok();
     std::fs::write(root.join("src/repository.rs"), "pub struct Repository;").ok();
     std::fs::write(root.join("Cargo.toml"), "[package]\nname = \"test\"\n").ok();
-    
+
     root.to_path_buf()
 }
 
@@ -73,11 +107,11 @@ fn create_design_patterns_project(temp_dir: &TempDir) -> PathBuf {
 fn create_monolithic_project(temp_dir: &TempDir) -> PathBuf {
     let root = temp_dir.path();
     std::fs::create_dir_all(root.join("src")).ok();
-    
+
     std::fs::write(root.join("src/main.rs"), "fn main() {}").ok();
     std::fs::write(root.join("src/lib.rs"), "pub mod utils;").ok();
     std::fs::write(root.join("Cargo.toml"), "[package]\nname = \"test\"\n").ok();
-    
+
     root.to_path_buf()
 }
 
@@ -274,7 +308,7 @@ fn test_layered_architecture_detection() {
 
     let scan_result = CodebaseScanner::scan(&root).unwrap();
     let pattern = ArchitecturalPatternDetector::detect_layered_architecture(&scan_result).unwrap();
-    
+
     assert!(pattern.is_some());
     let pattern = pattern.unwrap();
     assert_eq!(pattern.name, "Layered Architecture");
@@ -287,7 +321,7 @@ fn test_microservices_detection() {
 
     let scan_result = CodebaseScanner::scan(&root).unwrap();
     let pattern = ArchitecturalPatternDetector::detect_microservices_pattern(&scan_result).unwrap();
-    
+
     assert!(pattern.is_some());
     let pattern = pattern.unwrap();
     assert_eq!(pattern.name, "Microservices Pattern");
@@ -300,7 +334,7 @@ fn test_event_driven_detection() {
 
     let scan_result = CodebaseScanner::scan(&root).unwrap();
     let pattern = ArchitecturalPatternDetector::detect_event_driven_pattern(&scan_result).unwrap();
-    
+
     assert!(pattern.is_some());
     let pattern = pattern.unwrap();
     assert_eq!(pattern.name, "Event-Driven Pattern");
@@ -313,7 +347,7 @@ fn test_factory_pattern_detection() {
 
     let scan_result = CodebaseScanner::scan(&root).unwrap();
     let pattern = CodingPatternDetector::detect_factory_pattern(&scan_result).unwrap();
-    
+
     assert!(pattern.is_some());
     let pattern = pattern.unwrap();
     assert_eq!(pattern.name, "Factory Pattern");
@@ -326,7 +360,7 @@ fn test_observer_pattern_detection() {
 
     let scan_result = CodebaseScanner::scan(&root).unwrap();
     let pattern = CodingPatternDetector::detect_observer_pattern(&scan_result).unwrap();
-    
+
     assert!(pattern.is_some());
     let pattern = pattern.unwrap();
     assert_eq!(pattern.name, "Observer Pattern");
@@ -339,7 +373,7 @@ fn test_repository_pattern_detection() {
 
     let scan_result = CodebaseScanner::scan(&root).unwrap();
     let pattern = CodingPatternDetector::detect_repository_pattern(&scan_result).unwrap();
-    
+
     assert!(pattern.is_some());
     let pattern = pattern.unwrap();
     assert_eq!(pattern.name, "Repository Pattern");
@@ -352,7 +386,7 @@ fn test_monolithic_detection() {
 
     let scan_result = CodebaseScanner::scan(&root).unwrap();
     let pattern = ArchitecturalPatternDetector::detect_monolithic_pattern(&scan_result).unwrap();
-    
+
     assert!(pattern.is_some());
     let pattern = pattern.unwrap();
     assert_eq!(pattern.name, "Monolithic Architecture");

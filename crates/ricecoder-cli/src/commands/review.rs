@@ -1,7 +1,7 @@
 // Review code
 
-use crate::error::CliResult;
 use super::Command;
+use crate::error::CliResult;
 
 /// Review code
 pub struct ReviewCommand {

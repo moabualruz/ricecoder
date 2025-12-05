@@ -3,21 +3,19 @@
 //! **Validates: Requirements 3.1**
 
 use proptest::prelude::*;
-use ricecoder_storage::IndustryFileAdapter;
 use ricecoder_storage::industry::KiroAdapter;
+use ricecoder_storage::IndustryFileAdapter;
 use std::fs;
 use tempfile::TempDir;
 
 /// Strategy for generating valid steering rule names
 fn steering_rule_name_strategy() -> impl Strategy<Value = String> {
-    r"[a-zA-Z0-9_\-]{1,20}"
-        .prop_map(|s| format!("rule_{}", s))
+    r"[a-zA-Z0-9_\-]{1,20}".prop_map(|s| format!("rule_{}", s))
 }
 
 /// Strategy for generating valid steering rule content
 fn steering_rule_content_strategy() -> impl Strategy<Value = String> {
-    r"[a-zA-Z0-9\s\.\,\-]{10,100}"
-        .prop_map(|s| format!("# Steering Rule\n\n{}", s))
+    r"[a-zA-Z0-9\s\.\,\-]{10,100}".prop_map(|s| format!("# Steering Rule\n\n{}", s))
 }
 
 proptest! {

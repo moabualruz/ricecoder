@@ -1,6 +1,6 @@
 //! Validation engine for specs
 
-use crate::error::{SpecError, ValidationError, Severity};
+use crate::error::{Severity, SpecError, ValidationError};
 use crate::models::Spec;
 use regex::Regex;
 
@@ -189,9 +189,11 @@ impl ValidationEngine {
 
         // EARS patterns to check
         let ubiquitous_pattern = Regex::new(r"(?i)^THE\s+\w+\s+SHALL").unwrap();
-        let event_driven_pattern = Regex::new(r"(?i)^WHEN\s+.+\s+THEN\s+THE\s+\w+\s+SHALL").unwrap();
+        let event_driven_pattern =
+            Regex::new(r"(?i)^WHEN\s+.+\s+THEN\s+THE\s+\w+\s+SHALL").unwrap();
         let state_driven_pattern = Regex::new(r"(?i)^WHILE\s+.+\s+THE\s+\w+\s+SHALL").unwrap();
-        let unwanted_event_pattern = Regex::new(r"(?i)^IF\s+.+\s+THEN\s+THE\s+\w+\s+SHALL").unwrap();
+        let unwanted_event_pattern =
+            Regex::new(r"(?i)^IF\s+.+\s+THEN\s+THE\s+\w+\s+SHALL").unwrap();
         let optional_pattern = Regex::new(r"(?i)^WHERE\s+.+\s+THE\s+\w+\s+SHALL").unwrap();
 
         for (idx, req) in spec.requirements.iter().enumerate() {
@@ -340,9 +342,26 @@ impl ValidationEngine {
 
     fn contains_vague_terms(text: &str) -> bool {
         let vague_terms = vec![
-            "quickly", "slowly", "fast", "adequate", "sufficient", "appropriate", "suitable",
-            "good", "bad", "nice", "easy", "hard", "simple", "complex", "etc", "and so on",
-            "as needed", "as appropriate", "where possible", "if possible",
+            "quickly",
+            "slowly",
+            "fast",
+            "adequate",
+            "sufficient",
+            "appropriate",
+            "suitable",
+            "good",
+            "bad",
+            "nice",
+            "easy",
+            "hard",
+            "simple",
+            "complex",
+            "etc",
+            "and so on",
+            "as needed",
+            "as appropriate",
+            "where possible",
+            "if possible",
         ];
         let lower = text.to_lowercase();
         vague_terms.iter().any(|term| lower.contains(term))
@@ -358,7 +377,9 @@ impl ValidationEngine {
     }
 
     fn contains_pronouns(text: &str) -> bool {
-        let pronouns = ["it ", " it", "them", "they", "this", "that", "these", "those"];
+        let pronouns = [
+            "it ", " it", "them", "they", "this", "that", "these", "those",
+        ];
         let lower = text.to_lowercase();
         pronouns.iter().any(|pronoun| lower.contains(pronoun))
     }
@@ -433,7 +454,9 @@ mod tests {
         assert!(result.is_err());
 
         let errors = result.unwrap_err();
-        assert!(errors.iter().any(|e| e.message.contains("name is required")));
+        assert!(errors
+            .iter()
+            .any(|e| e.message.contains("name is required")));
     }
 
     #[test]
@@ -445,7 +468,9 @@ mod tests {
         assert!(result.is_err());
 
         let errors = result.unwrap_err();
-        assert!(errors.iter().any(|e| e.message.contains("version is required")));
+        assert!(errors
+            .iter()
+            .any(|e| e.message.contains("version is required")));
     }
 
     #[test]
@@ -473,7 +498,9 @@ mod tests {
         assert!(result.is_err());
 
         let errors = result.unwrap_err();
-        assert!(errors.iter().any(|e| e.message.contains("empty user story")));
+        assert!(errors
+            .iter()
+            .any(|e| e.message.contains("empty user story")));
     }
 
     #[test]
@@ -487,7 +514,9 @@ mod tests {
         assert!(result.is_err());
 
         let errors = result.unwrap_err();
-        assert!(errors.iter().any(|e| e.message.contains("no acceptance criteria")));
+        assert!(errors
+            .iter()
+            .any(|e| e.message.contains("no acceptance criteria")));
     }
 
     #[test]
@@ -515,7 +544,9 @@ mod tests {
         assert!(result.is_err());
 
         let errors = result.unwrap_err();
-        assert!(errors.iter().any(|e| e.message.contains("empty 'when' clause")));
+        assert!(errors
+            .iter()
+            .any(|e| e.message.contains("empty 'when' clause")));
     }
 
     #[test]
@@ -529,7 +560,9 @@ mod tests {
         assert!(result.is_err());
 
         let errors = result.unwrap_err();
-        assert!(errors.iter().any(|e| e.message.contains("empty 'then' clause")));
+        assert!(errors
+            .iter()
+            .any(|e| e.message.contains("empty 'then' clause")));
     }
 
     #[test]
@@ -569,7 +602,9 @@ mod tests {
         assert!(result.is_err());
 
         let errors = result.unwrap_err();
-        assert!(errors.iter().any(|e| e.message.contains("empty description")));
+        assert!(errors
+            .iter()
+            .any(|e| e.message.contains("empty description")));
     }
 
     #[test]
@@ -708,7 +743,9 @@ mod tests {
         assert!(result.is_err());
 
         let errors = result.unwrap_err();
-        assert!(errors.iter().any(|e| e.message.contains("negative statements")));
+        assert!(errors
+            .iter()
+            .any(|e| e.message.contains("negative statements")));
     }
 
     #[test]

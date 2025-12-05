@@ -5,22 +5,21 @@
 
 #[cfg(test)]
 mod tests {
-    use proptest::prelude::*;
     use crate::approval::ApprovalGate;
     use crate::models::{
-        Workflow, WorkflowStep, StepType, AgentStep, StepConfig, ErrorAction, WorkflowConfig, RiskFactors,
+        AgentStep, ErrorAction, RiskFactors, StepConfig, StepType, Workflow, WorkflowConfig,
+        WorkflowStep,
     };
+    use proptest::prelude::*;
 
     /// Strategy for generating step IDs
     fn step_id_strategy() -> impl Strategy<Value = String> {
-        r"step[0-9]{1,3}"
-            .prop_map(|s| s.to_string())
+        r"step[0-9]{1,3}".prop_map(|s| s.to_string())
     }
 
     /// Strategy for generating approval messages
     fn message_strategy() -> impl Strategy<Value = String> {
-        r"[a-zA-Z0-9 ]{10,50}"
-            .prop_map(|s| s.to_string())
+        r"[a-zA-Z0-9 ]{10,50}".prop_map(|s| s.to_string())
     }
 
     /// Strategy for generating timeout values (in milliseconds)

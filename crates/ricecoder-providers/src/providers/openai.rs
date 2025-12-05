@@ -185,7 +185,10 @@ impl Provider for OpenAiProvider {
             max_tokens: request.max_tokens,
         };
 
-        debug!("Sending chat request to OpenAI for model: {}", request.model);
+        debug!(
+            "Sending chat request to OpenAI for model: {}",
+            request.model
+        );
 
         let response = self
             .client
@@ -265,7 +268,10 @@ impl Provider for OpenAiProvider {
                 Err(ProviderError::AuthError)
             }
             _ => {
-                warn!("OpenAI health check failed with status: {}", response.status());
+                warn!(
+                    "OpenAI health check failed with status: {}",
+                    response.status()
+                );
                 Ok(false)
             }
         }

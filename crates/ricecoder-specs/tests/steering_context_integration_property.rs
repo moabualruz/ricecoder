@@ -2,15 +2,15 @@
 //! **Feature: ricecoder-specs, Property 10: Steering Context Integration**
 //! **Validates: Requirements 5.5, 5.6**
 
+use chrono::Utc;
 use proptest::prelude::*;
 use ricecoder_specs::{
-    models::{
-        Steering, SteeringRule, Standard, TemplateRef, SpecWritingSession, SpecPhase,
-        ConversationMessage, MessageRole, ApprovalGate,
-    },
     ai_writer::AISpecWriter,
+    models::{
+        ApprovalGate, ConversationMessage, MessageRole, SpecPhase, SpecWritingSession, Standard,
+        Steering, SteeringRule, TemplateRef,
+    },
 };
-use chrono::Utc;
 
 // ============================================================================
 // Generators for property-based testing
@@ -73,8 +73,7 @@ fn arb_template_path() -> impl Strategy<Value = String> {
 }
 
 fn arb_template() -> impl Strategy<Value = TemplateRef> {
-    (arb_template_id(), arb_template_path())
-        .prop_map(|(id, path)| TemplateRef { id, path })
+    (arb_template_id(), arb_template_path()).prop_map(|(id, path)| TemplateRef { id, path })
 }
 
 fn arb_steering() -> impl Strategy<Value = Steering> {

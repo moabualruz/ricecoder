@@ -6,7 +6,6 @@
 /// Property: For any completion, ghost text accurately represents what will be inserted
 /// - Generate random completions and verify ghost text matches insertion
 /// - Run 100+ iterations with various completion types
-
 use proptest::prelude::*;
 use ricecoder_completion::{
     BasicGhostTextGenerator, CompletionItem, CompletionItemKind, GhostTextGenerator, Position,
@@ -27,9 +26,7 @@ fn completion_item_strategy() -> impl Strategy<Value = CompletionItem> {
         ],
         ".*",
     )
-        .prop_map(|(label, kind, insert_text)| {
-            CompletionItem::new(label, kind, insert_text)
-        })
+        .prop_map(|(label, kind, insert_text)| CompletionItem::new(label, kind, insert_text))
 }
 
 /// Strategy for generating valid positions

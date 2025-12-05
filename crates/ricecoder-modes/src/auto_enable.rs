@@ -36,12 +36,36 @@ impl ComplexityDetector {
 
         // Factor 2: Presence of complexity keywords
         let complexity_keywords = [
-            "complex", "difficult", "challenging", "intricate", "sophisticated",
-            "algorithm", "optimization", "performance", "architecture", "design",
-            "refactor", "restructure", "integrate", "coordinate", "orchestrate",
-            "analyze", "debug", "troubleshoot", "investigate", "research",
-            "multiple", "various", "several", "many", "numerous",
-            "concurrent", "parallel", "async", "distributed", "scalable",
+            "complex",
+            "difficult",
+            "challenging",
+            "intricate",
+            "sophisticated",
+            "algorithm",
+            "optimization",
+            "performance",
+            "architecture",
+            "design",
+            "refactor",
+            "restructure",
+            "integrate",
+            "coordinate",
+            "orchestrate",
+            "analyze",
+            "debug",
+            "troubleshoot",
+            "investigate",
+            "research",
+            "multiple",
+            "various",
+            "several",
+            "many",
+            "numerous",
+            "concurrent",
+            "parallel",
+            "async",
+            "distributed",
+            "scalable",
         ];
 
         for keyword in &complexity_keywords {
@@ -52,9 +76,21 @@ impl ComplexityDetector {
 
         // Factor 3: Presence of uncertainty indicators
         let uncertainty_keywords = [
-            "unclear", "ambiguous", "uncertain", "unknown", "not sure",
-            "might", "could", "possibly", "perhaps", "maybe",
-            "question", "problem", "issue", "bug", "error",
+            "unclear",
+            "ambiguous",
+            "uncertain",
+            "unknown",
+            "not sure",
+            "might",
+            "could",
+            "possibly",
+            "perhaps",
+            "maybe",
+            "question",
+            "problem",
+            "issue",
+            "bug",
+            "error",
         ];
 
         for keyword in &uncertainty_keywords {
@@ -73,9 +109,21 @@ impl ComplexityDetector {
 
         // Factor 5: Presence of technical depth indicators
         let technical_keywords = [
-            "algorithm", "data structure", "memory", "performance", "optimization",
-            "concurrency", "threading", "async", "distributed", "microservice",
-            "database", "query", "index", "cache", "transaction",
+            "algorithm",
+            "data structure",
+            "memory",
+            "performance",
+            "optimization",
+            "concurrency",
+            "threading",
+            "async",
+            "distributed",
+            "microservice",
+            "database",
+            "query",
+            "index",
+            "cache",
+            "transaction",
         ];
 
         for keyword in &technical_keywords {
@@ -131,7 +179,12 @@ impl ComplexityDetector {
     }
 
     /// Generate reasoning for the complexity assessment
-    fn generate_reasoning(&self, task_description: &str, complexity: ComplexityLevel, score: f32) -> String {
+    fn generate_reasoning(
+        &self,
+        task_description: &str,
+        complexity: ComplexityLevel,
+        score: f32,
+    ) -> String {
         let mut reasoning = String::new();
 
         reasoning.push_str(&format!("Complexity Level: {:?}\n", complexity));
@@ -146,8 +199,16 @@ impl ComplexityDetector {
         }
 
         let complexity_keywords = [
-            "complex", "difficult", "challenging", "intricate", "sophisticated",
-            "algorithm", "optimization", "performance", "architecture", "design",
+            "complex",
+            "difficult",
+            "challenging",
+            "intricate",
+            "sophisticated",
+            "algorithm",
+            "optimization",
+            "performance",
+            "architecture",
+            "design",
         ];
         let found_keywords: Vec<&str> = complexity_keywords
             .iter()
@@ -155,12 +216,22 @@ impl ComplexityDetector {
             .copied()
             .collect();
         if !found_keywords.is_empty() {
-            factors.push(format!("Complex keywords found: {}", found_keywords.join(", ")));
+            factors.push(format!(
+                "Complex keywords found: {}",
+                found_keywords.join(", ")
+            ));
         }
 
         let technical_keywords = [
-            "algorithm", "data structure", "memory", "performance", "optimization",
-            "concurrency", "threading", "async", "distributed",
+            "algorithm",
+            "data structure",
+            "memory",
+            "performance",
+            "optimization",
+            "concurrency",
+            "threading",
+            "async",
+            "distributed",
         ];
         let found_technical: Vec<&str> = technical_keywords
             .iter()
@@ -230,9 +301,12 @@ mod tests {
     fn test_detect_moderate_task() {
         let detector = ComplexityDetector::default();
         let complexity = detector.detect_complexity(
-            "Implement a sorting algorithm with optimization and performance considerations"
+            "Implement a sorting algorithm with optimization and performance considerations",
         );
-        assert!(matches!(complexity, ComplexityLevel::Moderate | ComplexityLevel::Complex));
+        assert!(matches!(
+            complexity,
+            ComplexityLevel::Moderate | ComplexityLevel::Complex
+        ));
     }
 
     #[test]

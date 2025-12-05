@@ -4,9 +4,7 @@
 //! **Validates: Requirements 2.1, 2.2**
 
 use proptest::prelude::*;
-use ricecoder_execution::{
-    RollbackAction, RollbackHandler, RollbackType,
-};
+use ricecoder_execution::{RollbackAction, RollbackHandler, RollbackType};
 use serde_json::json;
 use tempfile::TempDir;
 
@@ -14,13 +12,14 @@ use tempfile::TempDir;
 #[allow(dead_code)]
 fn temp_file_path_strategy(temp_dir: &TempDir) -> impl Strategy<Value = String> {
     let base_path = temp_dir.path().to_string_lossy().to_string();
-    r"[a-zA-Z0-9_\-]{1,20}\.txt"
-        .prop_map(move |filename| format!("{}/{}", base_path, filename))
+    r"[a-zA-Z0-9_\-]{1,20}\.txt".prop_map(move |filename| format!("{}/{}", base_path, filename))
 }
 
 /// Strategy for generating delete file rollback actions
 #[allow(dead_code)]
-fn delete_file_action_strategy(temp_dir: &TempDir) -> impl Strategy<Value = (String, RollbackAction)> {
+fn delete_file_action_strategy(
+    temp_dir: &TempDir,
+) -> impl Strategy<Value = (String, RollbackAction)> {
     temp_file_path_strategy(temp_dir).prop_map(|path| {
         let action = RollbackAction {
             action_type: RollbackType::DeleteFile,
@@ -32,7 +31,9 @@ fn delete_file_action_strategy(temp_dir: &TempDir) -> impl Strategy<Value = (Str
 
 /// Strategy for generating restore file rollback actions
 #[allow(dead_code)]
-fn restore_file_action_strategy(temp_dir: &TempDir) -> impl Strategy<Value = (String, String, RollbackAction)> {
+fn restore_file_action_strategy(
+    temp_dir: &TempDir,
+) -> impl Strategy<Value = (String, String, RollbackAction)> {
     (
         temp_file_path_strategy(temp_dir),
         temp_file_path_strategy(temp_dir),

@@ -32,7 +32,7 @@
 //! assert_eq!(streaming.content, "Hello world");
 //! ```
 
-use crate::clipboard::{CopyOperation, CopyFeedback};
+use crate::clipboard::{CopyFeedback, CopyOperation};
 
 /// Message in the chat
 #[derive(Debug, Clone)]
@@ -277,7 +277,7 @@ impl ChatWidget {
             msg.finish();
             let content = msg.content.clone();
             self.is_streaming = false;
-            
+
             // Create a regular message from the streaming message
             let message = Message::assistant(content);
             self.messages.push(message.clone());
@@ -295,7 +295,9 @@ impl ChatWidget {
 
     /// Get the current streaming message display text
     pub fn get_streaming_display(&self) -> Option<String> {
-        self.streaming_message.as_ref().map(|msg| msg.display_text())
+        self.streaming_message
+            .as_ref()
+            .map(|msg| msg.display_text())
     }
 
     /// Cancel streaming
@@ -997,9 +999,8 @@ mod tests {
 
     #[test]
     fn test_message_extract_code_blocks() {
-        let msg = Message::assistant(
-            "Here's some code:\n```rust\nfn main() {}\n```\nAnd more text"
-        );
+        let msg =
+            Message::assistant("Here's some code:\n```rust\nfn main() {}\n```\nAnd more text");
         let blocks = msg.extract_code_blocks();
         assert_eq!(blocks.len(), 1);
         assert!(blocks[0].contains("fn main()"));
@@ -1008,7 +1009,7 @@ mod tests {
     #[test]
     fn test_message_extract_multiple_code_blocks() {
         let msg = Message::assistant(
-            "First:\n```rust\nfn foo() {}\n```\nSecond:\n```python\ndef bar(): pass\n```"
+            "First:\n```rust\nfn foo() {}\n```\nSecond:\n```python\ndef bar(): pass\n```",
         );
         let blocks = msg.extract_code_blocks();
         assert_eq!(blocks.len(), 2);
@@ -1016,9 +1017,7 @@ mod tests {
 
     #[test]
     fn test_message_get_first_code_block() {
-        let msg = Message::assistant(
-            "Code:\n```rust\nfn main() {}\n```"
-        );
+        let msg = Message::assistant("Code:\n```rust\nfn main() {}\n```");
         let block = msg.get_first_code_block();
         assert!(block.is_some());
         assert!(block.unwrap().contains("fn main()"));
@@ -1185,7 +1184,7 @@ mod tests {
         let _ = widget.execute_action(MessageAction::Copy);
 
         assert!(widget.is_copy_feedback_visible());
-        
+
         // Update feedback multiple times
         for _ in 0..100 {
             widget.update_copy_feedback();
@@ -1225,7 +1224,9 @@ mod tests {
         widget.select_next();
         widget.update_actions();
 
-        assert!(widget.available_actions.contains(&MessageAction::Regenerate));
+        assert!(widget
+            .available_actions
+            .contains(&MessageAction::Regenerate));
         let result = widget.execute_action(MessageAction::Regenerate);
         assert!(result.is_ok());
     }

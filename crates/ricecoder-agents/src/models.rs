@@ -408,8 +408,7 @@ mod tests {
     fn test_task_type_serialization() {
         let task_type = TaskType::CodeReview;
         let json = serde_json::to_string(&task_type).expect("serialization failed");
-        let deserialized: TaskType =
-            serde_json::from_str(&json).expect("deserialization failed");
+        let deserialized: TaskType = serde_json::from_str(&json).expect("deserialization failed");
 
         assert_eq!(deserialized, task_type);
     }
@@ -418,8 +417,7 @@ mod tests {
     fn test_task_scope_serialization() {
         let scope = TaskScope::Module;
         let json = serde_json::to_string(&scope).expect("serialization failed");
-        let deserialized: TaskScope =
-            serde_json::from_str(&json).expect("deserialization failed");
+        let deserialized: TaskScope = serde_json::from_str(&json).expect("deserialization failed");
 
         assert_eq!(deserialized, scope);
     }
@@ -516,7 +514,10 @@ mod tests {
         };
 
         assert_eq!(context.name, "my-project");
-        assert_eq!(context.root, PathBuf::from("/home/user/projects/my-project"));
+        assert_eq!(
+            context.root,
+            PathBuf::from("/home/user/projects/my-project")
+        );
     }
 
     #[test]

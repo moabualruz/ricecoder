@@ -3,10 +3,10 @@
 use std::sync::Arc;
 use std::time::Duration;
 
+use super::{ChatStream, Provider, ProviderRegistry};
 use crate::error::ProviderError;
 use crate::health_check::HealthCheckCache;
 use crate::models::{ChatRequest, ChatResponse};
-use super::{Provider, ProviderRegistry, ChatStream};
 
 /// Central coordinator for provider operations
 pub struct ProviderManager {
@@ -92,9 +92,8 @@ impl ProviderManager {
             }
         }
 
-        Err(last_error.unwrap_or_else(|| {
-            ProviderError::ProviderError("Failed after retries".to_string())
-        }))
+        Err(last_error
+            .unwrap_or_else(|| ProviderError::ProviderError("Failed after retries".to_string())))
     }
 
     /// Stream a chat response
@@ -180,10 +179,7 @@ mod tests {
             vec![]
         }
 
-        async fn chat(
-            &self,
-            _request: ChatRequest,
-        ) -> Result<ChatResponse, ProviderError> {
+        async fn chat(&self, _request: ChatRequest) -> Result<ChatResponse, ProviderError> {
             Ok(ChatResponse {
                 content: "test response".to_string(),
                 model: "test-model".to_string(),
@@ -196,10 +192,7 @@ mod tests {
             })
         }
 
-        async fn chat_stream(
-            &self,
-            _request: ChatRequest,
-        ) -> Result<ChatStream, ProviderError> {
+        async fn chat_stream(&self, _request: ChatRequest) -> Result<ChatStream, ProviderError> {
             Err(ProviderError::NotFound("Not implemented".to_string()))
         }
 

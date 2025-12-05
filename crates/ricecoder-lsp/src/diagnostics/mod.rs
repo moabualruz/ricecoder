@@ -20,13 +20,15 @@
 //! let diagnostics = engine.generate_diagnostics(code, Language::Rust)?;
 //! ```
 
-pub mod rust_rules;
-pub mod typescript_rules;
-pub mod python_rules;
 pub mod adapters;
 pub mod generic_engine;
+pub mod python_rules;
+pub mod rust_rules;
+pub mod typescript_rules;
 
-pub use adapters::{RustDiagnosticsAdapter, TypeScriptDiagnosticsAdapter, PythonDiagnosticsAdapter};
+pub use adapters::{
+    PythonDiagnosticsAdapter, RustDiagnosticsAdapter, TypeScriptDiagnosticsAdapter,
+};
 pub use generic_engine::GenericDiagnosticsEngine;
 
 use crate::types::{Diagnostic, Language, Range};
@@ -64,7 +66,11 @@ pub type DiagnosticsResult<T> = Result<T, DiagnosticsError>;
 /// Trait for generating diagnostics from code
 pub trait DiagnosticsEngine: Send + Sync {
     /// Generate diagnostics for the given code
-    fn generate_diagnostics(&self, code: &str, language: Language) -> DiagnosticsResult<Vec<Diagnostic>>;
+    fn generate_diagnostics(
+        &self,
+        code: &str,
+        language: Language,
+    ) -> DiagnosticsResult<Vec<Diagnostic>>;
 
     /// Generate diagnostics for a specific range
     fn generate_diagnostics_for_range(
@@ -92,7 +98,11 @@ impl Default for DefaultDiagnosticsEngine {
 }
 
 impl DiagnosticsEngine for DefaultDiagnosticsEngine {
-    fn generate_diagnostics(&self, code: &str, language: Language) -> DiagnosticsResult<Vec<Diagnostic>> {
+    fn generate_diagnostics(
+        &self,
+        code: &str,
+        language: Language,
+    ) -> DiagnosticsResult<Vec<Diagnostic>> {
         if code.is_empty() {
             return Ok(Vec::new());
         }
@@ -120,8 +130,7 @@ impl DiagnosticsEngine for DefaultDiagnosticsEngine {
         let filtered = all_diagnostics
             .into_iter()
             .filter(|diag| {
-                diag.range.start.line >= range.start.line
-                    && diag.range.end.line <= range.end.line
+                diag.range.start.line >= range.start.line && diag.range.end.line <= range.end.line
             })
             .collect();
 

@@ -5,8 +5,8 @@
 
 use ricecoder_sessions::{
     BackgroundAgent, BackgroundAgentManager, ContextManager, HistoryManager, Message, MessageRole,
-    Session, SessionContext, SessionManager, SessionMode, SessionRouter, SessionStore, ShareService,
-    SharePermissions,
+    Session, SessionContext, SessionManager, SessionMode, SessionRouter, SessionStore,
+    SharePermissions, ShareService,
 };
 use tempfile::TempDir;
 
@@ -15,11 +15,7 @@ use tempfile::TempDir;
 // ============================================================================
 
 fn create_test_context() -> SessionContext {
-    SessionContext::new(
-        "openai".to_string(),
-        "gpt-4".to_string(),
-        SessionMode::Chat,
-    )
+    SessionContext::new("openai".to_string(), "gpt-4".to_string(), SessionMode::Chat)
 }
 
 fn create_test_session(name: &str) -> Session {
@@ -341,10 +337,9 @@ async fn test_session_sharing_workflow_with_privacy_settings() {
     // Add some data to the session
     session.context.project_path = Some("/project".to_string());
     session.context.files.push("file1.rs".to_string());
-    session.history.push(Message::new(
-        MessageRole::User,
-        "Test message".to_string(),
-    ));
+    session
+        .history
+        .push(Message::new(MessageRole::User, "Test message".to_string()));
 
     // 1. Create share with history but no context
     let permissions = SharePermissions {
@@ -382,7 +377,10 @@ async fn test_session_sharing_workflow_with_privacy_settings() {
 
     // 7. Verify context is included
     assert_eq!(shared_view2.context.files.len(), 1);
-    assert_eq!(shared_view2.context.project_path, Some("/project".to_string()));
+    assert_eq!(
+        shared_view2.context.project_path,
+        Some("/project".to_string())
+    );
 }
 
 #[tokio::test]
@@ -556,21 +554,27 @@ async fn test_message_routing_to_active_session() {
     let session2_id = session2.id.clone();
 
     // 2. Route message to active session (should be session1)
-    let routed_id = router.route_to_active_session("Hello from session 1").unwrap();
+    let routed_id = router
+        .route_to_active_session("Hello from session 1")
+        .unwrap();
     assert_eq!(routed_id, session1_id);
 
     // 3. Switch to session 2
     router.switch_session(&session2_id).unwrap();
 
     // 4. Route message to active session (should be session2)
-    let routed_id = router.route_to_active_session("Hello from session 2").unwrap();
+    let routed_id = router
+        .route_to_active_session("Hello from session 2")
+        .unwrap();
     assert_eq!(routed_id, session2_id);
 
     // 5. Switch back to session 1
     router.switch_session(&session1_id).unwrap();
 
     // 6. Route message to active session (should be session1)
-    let routed_id = router.route_to_active_session("Hello again from session 1").unwrap();
+    let routed_id = router
+        .route_to_active_session("Hello again from session 1")
+        .unwrap();
     assert_eq!(routed_id, session1_id);
 }
 
@@ -591,14 +595,20 @@ async fn test_message_routing_prevents_cross_session_leakage() {
     let session2_id = session2.id.clone();
 
     // 2. Add messages to session 1
-    router.route_to_active_session("Message 1 for session 1").unwrap();
-    router.route_to_active_session("Message 2 for session 1").unwrap();
+    router
+        .route_to_active_session("Message 1 for session 1")
+        .unwrap();
+    router
+        .route_to_active_session("Message 2 for session 1")
+        .unwrap();
 
     // 3. Switch to session 2
     router.switch_session(&session2_id).unwrap();
 
     // 4. Add messages to session 2
-    router.route_to_active_session("Message 1 for session 2").unwrap();
+    router
+        .route_to_active_session("Message 1 for session 2")
+        .unwrap();
 
     // 5. Get both sessions and verify message isolation
     let session1_data = router.get_session(&session1_id).unwrap();

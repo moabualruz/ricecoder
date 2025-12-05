@@ -35,7 +35,10 @@ async fn prop_atomic_write_completes_fully_simple_content() {
         .await
         .expect("Should be able to read written file");
 
-    assert_eq!(written, content, "Written content should match source exactly");
+    assert_eq!(
+        written, content,
+        "Written content should match source exactly"
+    );
 }
 
 /// Property 1a: Write either completes fully or not at all (no partial writes)
@@ -66,7 +69,10 @@ async fn prop_atomic_write_completes_fully_empty_content() {
         .await
         .expect("Should be able to read written file");
 
-    assert_eq!(written, content, "Written content should match source exactly");
+    assert_eq!(
+        written, content,
+        "Written content should match source exactly"
+    );
 }
 
 /// Property 1a: Write either completes fully or not at all (no partial writes)
@@ -97,7 +103,10 @@ async fn prop_atomic_write_completes_fully_multiline_content() {
         .await
         .expect("Should be able to read written file");
 
-    assert_eq!(written, content, "Written content should match source exactly");
+    assert_eq!(
+        written, content,
+        "Written content should match source exactly"
+    );
 }
 
 /// Property 1b: Original file unchanged if write fails
@@ -126,7 +135,10 @@ async fn prop_atomic_write_preserves_original_on_failure() {
         .await;
 
     // Write should fail
-    assert!(result.is_err(), "Write should fail with Skip strategy on conflict");
+    assert!(
+        result.is_err(),
+        "Write should fail with Skip strategy on conflict"
+    );
 
     // Original file should still exist
     assert!(path.exists(), "Original file should still exist");
@@ -207,7 +219,10 @@ async fn prop_atomic_write_creates_parent_dirs() {
     let content = "test content";
 
     // Ensure parent doesn't exist
-    assert!(!path.parent().unwrap().exists(), "Parent should not exist initially");
+    assert!(
+        !path.parent().unwrap().exists(),
+        "Parent should not exist initially"
+    );
 
     // Perform write
     let result = writer
@@ -216,7 +231,10 @@ async fn prop_atomic_write_creates_parent_dirs() {
 
     assert!(result.is_ok(), "Write should succeed");
     assert!(path.exists(), "File should exist");
-    assert!(path.parent().unwrap().exists(), "Parent directories should be created");
+    assert!(
+        path.parent().unwrap().exists(),
+        "Parent directories should be created"
+    );
 
     let written = fs::read_to_string(&path)
         .await

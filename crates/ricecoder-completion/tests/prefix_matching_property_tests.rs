@@ -1,7 +1,6 @@
 /// Property-based tests for prefix matching in completion ranking
 /// **Feature: ricecoder-completion, Property 5: Prefix matching**
 /// **Validates: Requirements Completion-5.1, Completion-5.2**
-
 use proptest::prelude::*;
 use ricecoder_completion::{
     BasicCompletionRanker, CompletionContext, CompletionItem, CompletionItemKind, CompletionRanker,
@@ -10,25 +9,18 @@ use ricecoder_completion::{
 
 /// Strategy for generating valid completion labels
 fn completion_label_strategy() -> impl Strategy<Value = String> {
-    "[a-z][a-z0-9_]{0,20}"
-        .prop_map(|s| s.to_string())
+    "[a-z][a-z0-9_]{0,20}".prop_map(|s| s.to_string())
 }
 
 /// Strategy for generating valid prefixes
 fn prefix_strategy() -> impl Strategy<Value = String> {
-    "[a-z]{0,5}"
-        .prop_map(|s| s.to_string())
+    "[a-z]{0,5}".prop_map(|s| s.to_string())
 }
 
 /// Strategy for generating completion items
 fn completion_item_strategy() -> impl Strategy<Value = CompletionItem> {
-    completion_label_strategy().prop_map(|label| {
-        CompletionItem::new(
-            label.clone(),
-            CompletionItemKind::Variable,
-            label,
-        )
-    })
+    completion_label_strategy()
+        .prop_map(|label| CompletionItem::new(label.clone(), CompletionItemKind::Variable, label))
 }
 
 proptest! {
@@ -262,4 +254,3 @@ proptest! {
         );
     }
 }
-

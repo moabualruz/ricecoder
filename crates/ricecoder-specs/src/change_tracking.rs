@@ -62,10 +62,7 @@ impl ChangeTracker {
     /// Get change history for a spec
     pub fn get_history(&self, spec_id: &str) -> Vec<SpecChange> {
         let history = self.history.lock().unwrap();
-        history
-            .get(spec_id)
-            .cloned()
-            .unwrap_or_default()
+        history.get(spec_id).cloned().unwrap_or_default()
     }
 
     /// Get all changes across all specs
@@ -230,11 +227,7 @@ mod tests {
         assert_eq!(change.rationale, "Updated spec name");
         assert!(!change.changes.is_empty());
 
-        let name_change = change
-            .changes
-            .iter()
-            .find(|c| c.field == "name")
-            .unwrap();
+        let name_change = change.changes.iter().find(|c| c.field == "name").unwrap();
         assert_eq!(name_change.old_value, Some("Old Name".to_string()));
         assert_eq!(name_change.new_value, Some("New Name".to_string()));
     }
@@ -308,13 +301,7 @@ mod tests {
         for i in 0..3 {
             let mut next = current.clone();
             next.version = format!("1.{}.0", i + 1);
-            tracker.record_change(
-                "spec-1",
-                &current,
-                &next,
-                None,
-                format!("Change {}", i + 1),
-            );
+            tracker.record_change("spec-1", &current, &next, None, format!("Change {}", i + 1));
             current = next;
         }
 

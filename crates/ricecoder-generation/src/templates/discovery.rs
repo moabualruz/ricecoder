@@ -3,14 +3,14 @@
 //! Scans template and boilerplate directories, parses metadata, and returns available resources.
 
 use crate::models::{
-    Template, TemplateMetadata, Boilerplate, BoilerplateMetadata, BoilerplateSource,
-    BoilerplateDiscoveryResult,
+    Boilerplate, BoilerplateDiscoveryResult, BoilerplateMetadata, BoilerplateSource, Template,
+    TemplateMetadata,
 };
-use crate::templates::error::{TemplateError, BoilerplateError};
+use crate::templates::error::{BoilerplateError, TemplateError};
 use crate::templates::loader::TemplateLoader;
-use std::path::{Path, PathBuf};
-use std::fs;
 use std::collections::HashMap;
+use std::fs;
+use std::path::{Path, PathBuf};
 
 /// Discovers available templates in project and global scopes
 pub struct TemplateDiscovery {
@@ -52,12 +52,10 @@ impl TemplateDiscovery {
         if project_dir.exists() {
             search_paths.push(project_dir.clone());
             let project_templates = self.loader.load_project_templates(project_root)?;
-            
+
             // Create a map for deduplication
-            let mut template_map: std::collections::HashMap<String, Template> = templates
-                .into_iter()
-                .map(|t| (t.id.clone(), t))
-                .collect();
+            let mut template_map: std::collections::HashMap<String, Template> =
+                templates.into_iter().map(|t| (t.id.clone(), t)).collect();
 
             // Override with project templates
             for template in project_templates {
@@ -126,8 +124,7 @@ impl TemplateDiscovery {
     /// # Returns
     /// Template metadata or error
     pub fn parse_metadata(&self, template_path: &Path) -> Result<TemplateMetadata, TemplateError> {
-        let content = fs::read_to_string(template_path)
-            .map_err(TemplateError::IoError)?;
+        let content = fs::read_to_string(template_path).map_err(TemplateError::IoError)?;
 
         // Extract metadata from template comments
         let mut metadata = TemplateMetadata {
@@ -167,20 +164,21 @@ impl TemplateDiscovery {
     /// Ok if valid, error otherwise
     pub fn validate_template(&self, template_path: &Path) -> Result<(), TemplateError> {
         if !template_path.exists() {
-            return Err(TemplateError::NotFound(
-                format!("Template not found: {}", template_path.display()),
-            ));
+            return Err(TemplateError::NotFound(format!(
+                "Template not found: {}",
+                template_path.display()
+            )));
         }
 
         if !template_path.is_file() {
-            return Err(TemplateError::ValidationFailed(
-                format!("Template is not a file: {}", template_path.display()),
-            ));
+            return Err(TemplateError::ValidationFailed(format!(
+                "Template is not a file: {}",
+                template_path.display()
+            )));
         }
 
         // Try to read the file
-        fs::read_to_string(template_path)
-            .map_err(TemplateError::IoError)?;
+        fs::read_to_string(template_path).map_err(TemplateError::IoError)?;
 
         Ok(())
     }
@@ -319,15 +317,17 @@ impl BoilerplateDiscovery {
     /// Ok if valid, error otherwise
     pub fn validate_boilerplate(boilerplate_path: &Path) -> Result<(), BoilerplateError> {
         if !boilerplate_path.exists() {
-            return Err(BoilerplateError::NotFound(
-                format!("Boilerplate not found: {}", boilerplate_path.display()),
-            ));
+            return Err(BoilerplateError::NotFound(format!(
+                "Boilerplate not found: {}",
+                boilerplate_path.display()
+            )));
         }
 
         if !boilerplate_path.is_dir() {
-            return Err(BoilerplateError::InvalidStructure(
-                format!("Boilerplate is not a directory: {}", boilerplate_path.display()),
-            ));
+            return Err(BoilerplateError::InvalidStructure(format!(
+                "Boilerplate is not a directory: {}",
+                boilerplate_path.display()
+            )));
         }
 
         // Check for boilerplate.yaml or boilerplate.json metadata file
@@ -335,12 +335,10 @@ impl BoilerplateDiscovery {
         let json_path = boilerplate_path.join("boilerplate.json");
 
         if !yaml_path.exists() && !json_path.exists() {
-            return Err(BoilerplateError::InvalidStructure(
-                format!(
-                    "Boilerplate missing metadata file (boilerplate.yaml or boilerplate.json): {}",
-                    boilerplate_path.display()
-                ),
-            ));
+            return Err(BoilerplateError::InvalidStructure(format!(
+                "Boilerplate missing metadata file (boilerplate.yaml or boilerplate.json): {}",
+                boilerplate_path.display()
+            )));
         }
 
         Ok(())
@@ -361,13 +359,11 @@ impl BoilerplateDiscovery {
         let json_path = boilerplate_path.join("boilerplate.json");
 
         if yaml_path.exists() {
-            let content = fs::read_to_string(&yaml_path)
-                .map_err(BoilerplateError::IoError)?;
+            let content = fs::read_to_string(&yaml_path).map_err(BoilerplateError::IoError)?;
             serde_yaml::from_str(&content)
                 .map_err(|e| BoilerplateError::InvalidStructure(format!("Invalid YAML: {}", e)))
         } else if json_path.exists() {
-            let content = fs::read_to_string(&json_path)
-                .map_err(BoilerplateError::IoError)?;
+            let content = fs::read_to_string(&json_path).map_err(BoilerplateError::IoError)?;
             serde_json::from_str(&content)
                 .map_err(|e| BoilerplateError::InvalidStructure(format!("Invalid JSON: {}", e)))
         } else {
@@ -395,9 +391,7 @@ impl BoilerplateDiscovery {
             return Ok(boilerplates);
         }
 
-        for entry in fs::read_dir(directory)
-            .map_err(BoilerplateError::IoError)?
-        {
+        for entry in fs::read_dir(directory).map_err(BoilerplateError::IoError)? {
             let entry = entry.map_err(BoilerplateError::IoError)?;
             let path = entry.path();
 
@@ -451,7 +445,11 @@ mod tests {
         let templates_dir = temp_dir.path().join(".ricecoder").join("templates");
         fs::create_dir_all(&templates_dir).unwrap();
 
-        fs::write(templates_dir.join("struct.rs.tmpl"), "pub struct {{Name}} {}").unwrap();
+        fs::write(
+            templates_dir.join("struct.rs.tmpl"),
+            "pub struct {{Name}} {}",
+        )
+        .unwrap();
         fs::write(templates_dir.join("impl.rs.tmpl"), "impl {{Name}} {}").unwrap();
 
         let mut discovery = TemplateDiscovery::new();
@@ -467,11 +465,21 @@ mod tests {
         let templates_dir = temp_dir.path().join(".ricecoder").join("templates");
         fs::create_dir_all(&templates_dir).unwrap();
 
-        fs::write(templates_dir.join("struct.rs.tmpl"), "pub struct {{Name}} {}").unwrap();
-        fs::write(templates_dir.join("component.ts.tmpl"), "export const {{Name}} = () => {}").unwrap();
+        fs::write(
+            templates_dir.join("struct.rs.tmpl"),
+            "pub struct {{Name}} {}",
+        )
+        .unwrap();
+        fs::write(
+            templates_dir.join("component.ts.tmpl"),
+            "export const {{Name}} = () => {}",
+        )
+        .unwrap();
 
         let mut discovery = TemplateDiscovery::new();
-        let rust_templates = discovery.discover_by_language(temp_dir.path(), "rs").unwrap();
+        let rust_templates = discovery
+            .discover_by_language(temp_dir.path(), "rs")
+            .unwrap();
 
         assert_eq!(rust_templates.len(), 1);
         assert_eq!(rust_templates[0].language, "rs");
@@ -483,11 +491,17 @@ mod tests {
         let templates_dir = temp_dir.path().join(".ricecoder").join("templates");
         fs::create_dir_all(&templates_dir).unwrap();
 
-        fs::write(templates_dir.join("struct.rs.tmpl"), "pub struct {{Name}} {}").unwrap();
+        fs::write(
+            templates_dir.join("struct.rs.tmpl"),
+            "pub struct {{Name}} {}",
+        )
+        .unwrap();
         fs::write(templates_dir.join("impl.rs.tmpl"), "impl {{Name}} {}").unwrap();
 
         let mut discovery = TemplateDiscovery::new();
-        let struct_templates = discovery.discover_by_name(temp_dir.path(), "struct").unwrap();
+        let struct_templates = discovery
+            .discover_by_name(temp_dir.path(), "struct")
+            .unwrap();
 
         assert_eq!(struct_templates.len(), 1);
         assert_eq!(struct_templates[0].id, "struct");
@@ -507,7 +521,7 @@ mod tests {
     fn test_validate_nonexistent_template() {
         let discovery = TemplateDiscovery::new();
         let result = discovery.validate_template(Path::new("/nonexistent/template.rs.tmpl"));
-        
+
         assert!(result.is_err());
     }
 
@@ -515,7 +529,7 @@ mod tests {
     fn test_parse_metadata() {
         let temp_dir = TempDir::new().unwrap();
         let template_path = temp_dir.path().join("test.rs.tmpl");
-        
+
         let content = "// @description A test template\n// @version 1.0.0\n// @author Test Author\npub struct {{Name}} {}";
         fs::write(&template_path, content).unwrap();
 
@@ -555,7 +569,11 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let bp_dir = temp_dir.path().join("test-bp");
         fs::create_dir_all(&bp_dir).unwrap();
-        fs::write(bp_dir.join("boilerplate.json"), r#"{"id":"test","name":"Test"}"#).unwrap();
+        fs::write(
+            bp_dir.join("boilerplate.json"),
+            r#"{"id":"test","name":"Test"}"#,
+        )
+        .unwrap();
 
         let result = BoilerplateDiscovery::validate_boilerplate(&bp_dir);
         assert!(result.is_ok());
@@ -585,9 +603,13 @@ scripts: []
 
         // Should find the project boilerplate
         assert!(result.boilerplates.iter().any(|bp| bp.id == "my-bp"));
-        
+
         // Verify it's marked as project source
-        let bp = result.boilerplates.iter().find(|bp| bp.id == "my-bp").unwrap();
+        let bp = result
+            .boilerplates
+            .iter()
+            .find(|bp| bp.id == "my-bp")
+            .unwrap();
         assert!(matches!(bp.source, BoilerplateSource::Project(_)));
     }
 

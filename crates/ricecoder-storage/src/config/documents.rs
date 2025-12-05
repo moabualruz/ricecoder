@@ -26,22 +26,14 @@ impl DocumentLoader {
     pub fn load_from_file<P: AsRef<Path>>(path: P) -> StorageResult<Document> {
         let path = path.as_ref();
         let content = std::fs::read_to_string(path).map_err(|e| {
-            StorageError::io_error(
-                path.to_path_buf(),
-                crate::error::IoOperation::Read,
-                e,
-            )
+            StorageError::io_error(path.to_path_buf(), crate::error::IoOperation::Read, e)
         })?;
 
         let extension = path
             .extension()
             .and_then(|ext| ext.to_str())
             .ok_or_else(|| {
-                StorageError::parse_error(
-                    path.to_path_buf(),
-                    "unknown",
-                    "File has no extension",
-                )
+                StorageError::parse_error(path.to_path_buf(), "unknown", "File has no extension")
             })?;
 
         let format = DocumentFormat::from_extension(extension).ok_or_else(|| {
@@ -61,17 +53,10 @@ impl DocumentLoader {
     }
 
     /// Save a document to a file
-    pub fn save_to_file<P: AsRef<Path>>(
-        document: &Document,
-        path: P,
-    ) -> StorageResult<()> {
+    pub fn save_to_file<P: AsRef<Path>>(document: &Document, path: P) -> StorageResult<()> {
         let path = path.as_ref();
         std::fs::write(path, &document.content).map_err(|e| {
-            StorageError::io_error(
-                path.to_path_buf(),
-                crate::error::IoOperation::Write,
-                e,
-            )
+            StorageError::io_error(path.to_path_buf(), crate::error::IoOperation::Write, e)
         })
     }
 
@@ -87,11 +72,7 @@ impl DocumentLoader {
             .extension()
             .and_then(|ext| ext.to_str())
             .ok_or_else(|| {
-                StorageError::parse_error(
-                    path.to_path_buf(),
-                    "unknown",
-                    "File has no extension",
-                )
+                StorageError::parse_error(path.to_path_buf(), "unknown", "File has no extension")
             })?;
 
         DocumentFormat::from_extension(extension).ok_or_else(|| {
@@ -119,7 +100,8 @@ mod tests {
     #[test]
     fn test_load_markdown_document() {
         let md_content = "# Steering Document\n\nThis is a markdown document.\n";
-        let doc = DocumentLoader::load_from_string(md_content.to_string(), DocumentFormat::Markdown);
+        let doc =
+            DocumentLoader::load_from_string(md_content.to_string(), DocumentFormat::Markdown);
         assert_eq!(doc.content, md_content);
         assert_eq!(doc.format, DocumentFormat::Markdown);
     }
@@ -133,11 +115,9 @@ mod tests {
             format: DocumentFormat::Yaml,
         };
 
-        DocumentLoader::save_to_file(&original, &file_path)
-            .expect("Failed to save document");
+        DocumentLoader::save_to_file(&original, &file_path).expect("Failed to save document");
 
-        let loaded = DocumentLoader::load_from_file(&file_path)
-            .expect("Failed to load document");
+        let loaded = DocumentLoader::load_from_file(&file_path).expect("Failed to load document");
 
         assert_eq!(original, loaded);
     }
@@ -151,40 +131,41 @@ mod tests {
             format: DocumentFormat::Markdown,
         };
 
-        DocumentLoader::save_to_file(&original, &file_path)
-            .expect("Failed to save document");
+        DocumentLoader::save_to_file(&original, &file_path).expect("Failed to save document");
 
-        let loaded = DocumentLoader::load_from_file(&file_path)
-            .expect("Failed to load document");
+        let loaded = DocumentLoader::load_from_file(&file_path).expect("Failed to load document");
 
         assert_eq!(original, loaded);
     }
 
     #[test]
     fn test_detect_yaml_format() {
-        let format = DocumentLoader::detect_format("test.yaml")
-            .expect("Failed to detect format");
+        let format = DocumentLoader::detect_format("test.yaml").expect("Failed to detect format");
         assert_eq!(format, DocumentFormat::Yaml);
 
-        let format = DocumentLoader::detect_format("test.yml")
-            .expect("Failed to detect format");
+        let format = DocumentLoader::detect_format("test.yml").expect("Failed to detect format");
         assert_eq!(format, DocumentFormat::Yaml);
     }
 
     #[test]
     fn test_detect_markdown_format() {
-        let format = DocumentLoader::detect_format("test.md")
-            .expect("Failed to detect format");
+        let format = DocumentLoader::detect_format("test.md").expect("Failed to detect format");
         assert_eq!(format, DocumentFormat::Markdown);
 
-        let format = DocumentLoader::detect_format("test.markdown")
-            .expect("Failed to detect format");
+        let format =
+            DocumentLoader::detect_format("test.markdown").expect("Failed to detect format");
         assert_eq!(format, DocumentFormat::Markdown);
     }
 
     #[test]
     fn test_extension_for_format() {
-        assert_eq!(DocumentLoader::extension_for_format(DocumentFormat::Yaml), "yaml");
-        assert_eq!(DocumentLoader::extension_for_format(DocumentFormat::Markdown), "md");
+        assert_eq!(
+            DocumentLoader::extension_for_format(DocumentFormat::Yaml),
+            "yaml"
+        );
+        assert_eq!(
+            DocumentLoader::extension_for_format(DocumentFormat::Markdown),
+            "md"
+        );
     }
 }

@@ -173,7 +173,7 @@ impl LanguageDetector {
         }
 
         // Check for language-specific patterns (order matters - most specific first)
-        
+
         // Check Go (package + func is very specific to Go)
         if content.contains("package ") && content.contains("func ") {
             return Language::Go;
@@ -210,7 +210,11 @@ impl LanguageDetector {
         }
 
         // Check Kotlin (fun is Kotlin-specific when combined with class/object/interface)
-        if content.contains("fun ") && (content.contains("class ") || content.contains("object ") || content.contains("interface ")) {
+        if content.contains("fun ")
+            && (content.contains("class ")
+                || content.contains("object ")
+                || content.contains("interface "))
+        {
             return Language::Kotlin;
         }
 
@@ -279,7 +283,10 @@ mod tests {
     #[test]
     fn test_language_extensions() {
         assert_eq!(Language::Rust.extensions(), &["rs"]);
-        assert_eq!(Language::TypeScript.extensions(), &["ts", "tsx", "js", "jsx"]);
+        assert_eq!(
+            Language::TypeScript.extensions(),
+            &["ts", "tsx", "js", "jsx"]
+        );
         assert_eq!(Language::Python.extensions(), &["py"]);
         assert_eq!(Language::Go.extensions(), &["go"]);
         assert_eq!(Language::Java.extensions(), &["java"]);
@@ -354,22 +361,13 @@ mod tests {
     #[test]
     fn test_language_detector_from_content_patterns() {
         let rust_code = "use std::io;\nfn main() {}";
-        assert_eq!(
-            LanguageDetector::from_content(rust_code),
-            Language::Rust
-        );
+        assert_eq!(LanguageDetector::from_content(rust_code), Language::Rust);
 
         let go_code = "package main\nfunc main() {}";
-        assert_eq!(
-            LanguageDetector::from_content(go_code),
-            Language::Go
-        );
+        assert_eq!(LanguageDetector::from_content(go_code), Language::Go);
 
         let java_code = "public class Main {}";
-        assert_eq!(
-            LanguageDetector::from_content(java_code),
-            Language::Java
-        );
+        assert_eq!(LanguageDetector::from_content(java_code), Language::Java);
 
         let kotlin_code = "fun main() {}";
         assert_eq!(
@@ -378,10 +376,7 @@ mod tests {
         );
 
         let dart_code = "void main() {}";
-        assert_eq!(
-            LanguageDetector::from_content(dart_code),
-            Language::Dart
-        );
+        assert_eq!(LanguageDetector::from_content(dart_code), Language::Dart);
 
         let ts_code = "import { foo } from 'bar';\nexport const x = 1;";
         assert_eq!(
@@ -390,27 +385,18 @@ mod tests {
         );
 
         let py_code = "import os\ndef hello():\n    pass";
-        assert_eq!(
-            LanguageDetector::from_content(py_code),
-            Language::Python
-        );
+        assert_eq!(LanguageDetector::from_content(py_code), Language::Python);
     }
 
     #[test]
     fn test_language_detector_combined() {
         let path = Path::new("test.rs");
         let content = "fn main() {}";
-        assert_eq!(
-            LanguageDetector::detect(path, content),
-            Language::Rust
-        );
+        assert_eq!(LanguageDetector::detect(path, content), Language::Rust);
 
         // Test fallback to content detection
         let path = Path::new("test.unknown");
         let content = "fn main() {}";
-        assert_eq!(
-            LanguageDetector::detect(path, content),
-            Language::Rust
-        );
+        assert_eq!(LanguageDetector::detect(path, content), Language::Rust);
     }
 }

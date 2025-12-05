@@ -66,11 +66,11 @@ fn prop_backup_metadata_preserved() {
             // Verify metadata fields are set correctly
             let path_matches = metadata.original_path == original_path;
             let backup_exists = metadata.backup_path.exists();
-            
+
             // Verify content hash matches
             let expected_hash = ContentVerifier::compute_hash(&content);
             let hash_matches = metadata.content_hash == expected_hash;
-            
+
             path_matches && backup_exists && hash_matches
         });
         prop_assert!(result);

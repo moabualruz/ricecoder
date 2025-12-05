@@ -79,7 +79,7 @@ impl SemanticCache {
     /// Get cached semantic information
     pub fn get(&self, uri: &str, input_hash: u64) -> Option<SemanticInfo> {
         let entries = self.entries.read().unwrap();
-        
+
         if let Some(entry) = entries.get(uri) {
             if entry.input_hash == input_hash {
                 debug!("Cache hit for {}", uri);
@@ -88,7 +88,7 @@ impl SemanticCache {
                 return Some(entry.value.clone());
             }
         }
-        
+
         let mut metrics = self.metrics.write().unwrap();
         metrics.misses += 1;
         None
@@ -97,29 +97,29 @@ impl SemanticCache {
     /// Store semantic information in cache
     pub fn put(&self, uri: String, input_hash: u64, value: SemanticInfo) {
         let estimated_size = self.estimate_size(&value);
-        
+
         // Check if we need to evict entries
         let mut current_size = self.current_size.write().unwrap();
         if *current_size + estimated_size > self.max_size {
             self.evict_oldest();
             *current_size = self.calculate_total_size();
         }
-        
+
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs();
-        
+
         let entry = CacheEntry {
             value,
             timestamp,
             input_hash,
         };
-        
+
         let mut entries = self.entries.write().unwrap();
         entries.insert(uri.clone(), entry);
         *current_size += estimated_size;
-        
+
         debug!("Cached semantic info for {}", uri);
     }
 
@@ -154,14 +154,15 @@ impl SemanticCache {
         let imports_size = info.imports.len() * 100;
         let definitions_size = info.definitions.len() * 100;
         let references_size = info.references.len() * 100;
-        
+
         symbols_size + imports_size + definitions_size + references_size
     }
 
     /// Calculate total cache size
     fn calculate_total_size(&self) -> usize {
         let entries = self.entries.read().unwrap();
-        entries.values()
+        entries
+            .values()
             .map(|entry| self.estimate_size(&entry.value))
             .sum()
     }
@@ -169,8 +170,9 @@ impl SemanticCache {
     /// Evict oldest cache entry
     fn evict_oldest(&self) {
         let mut entries = self.entries.write().unwrap();
-        
-        if let Some((oldest_uri, _)) = entries.iter()
+
+        if let Some((oldest_uri, _)) = entries
+            .iter()
             .min_by_key(|(_, entry)| entry.timestamp)
             .map(|(uri, entry)| (uri.clone(), entry.timestamp))
         {
@@ -206,7 +208,7 @@ impl AstCache {
     /// Get cached AST
     pub fn get(&self, uri: &str, input_hash: u64) -> Option<String> {
         let entries = self.entries.read().unwrap();
-        
+
         if let Some(entry) = entries.get(uri) {
             if entry.input_hash == input_hash {
                 debug!("AST cache hit for {}", uri);
@@ -215,7 +217,7 @@ impl AstCache {
                 return Some(entry.value.clone());
             }
         }
-        
+
         let mut metrics = self.metrics.write().unwrap();
         metrics.misses += 1;
         None
@@ -227,16 +229,16 @@ impl AstCache {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs();
-        
+
         let entry = CacheEntry {
             value,
             timestamp,
             input_hash,
         };
-        
+
         let mut entries = self.entries.write().unwrap();
         entries.insert(uri.clone(), entry);
-        
+
         debug!("Cached AST for {}", uri);
     }
 
@@ -292,7 +294,7 @@ impl SymbolIndexCache {
     /// Get cached symbol index
     pub fn get(&self, uri: &str, input_hash: u64) -> Option<HashMap<String, usize>> {
         let entries = self.entries.read().unwrap();
-        
+
         if let Some(entry) = entries.get(uri) {
             if entry.input_hash == input_hash {
                 debug!("Symbol index cache hit for {}", uri);
@@ -301,7 +303,7 @@ impl SymbolIndexCache {
                 return Some(entry.value.clone());
             }
         }
-        
+
         let mut metrics = self.metrics.write().unwrap();
         metrics.misses += 1;
         None
@@ -313,16 +315,16 @@ impl SymbolIndexCache {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs();
-        
+
         let entry = CacheEntry {
             value,
             timestamp,
             input_hash,
         };
-        
+
         let mut entries = self.entries.write().unwrap();
         entries.insert(uri.clone(), entry);
-        
+
         debug!("Cached symbol index for {}", uri);
     }
 
@@ -359,7 +361,7 @@ impl Default for SymbolIndexCache {
 pub fn hash_input(input: &str) -> u64 {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
-    
+
     let mut hasher = DefaultHasher::new();
     input.hash(&mut hasher);
     hasher.finish()
@@ -368,7 +370,7 @@ pub fn hash_input(input: &str) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{Symbol, SymbolKind, Position, Range};
+    use crate::types::{Position, Range, Symbol, SymbolKind};
 
     #[test]
     fn test_semantic_cache_hit() {
@@ -379,14 +381,14 @@ mod tests {
             SymbolKind::Function,
             Range::new(Position::new(0, 0), Position::new(0, 4)),
         ));
-        
+
         let hash = hash_input("test code");
         cache.put("file://test.rs".to_string(), hash, info.clone());
-        
+
         let cached = cache.get("file://test.rs", hash);
         assert!(cached.is_some());
         assert_eq!(cached.unwrap().symbols.len(), 1);
-        
+
         let metrics = cache.metrics();
         assert_eq!(metrics.hits, 1);
         assert_eq!(metrics.misses, 0);
@@ -396,14 +398,14 @@ mod tests {
     fn test_semantic_cache_miss() {
         let cache = SemanticCache::new();
         let info = SemanticInfo::new();
-        
+
         let hash = hash_input("test code");
         cache.put("file://test.rs".to_string(), hash, info);
-        
+
         // Try to get with different hash
         let cached = cache.get("file://test.rs", hash + 1);
         assert!(cached.is_none());
-        
+
         let metrics = cache.metrics();
         assert_eq!(metrics.hits, 0);
         assert_eq!(metrics.misses, 1);
@@ -413,15 +415,15 @@ mod tests {
     fn test_semantic_cache_invalidation() {
         let cache = SemanticCache::new();
         let info = SemanticInfo::new();
-        
+
         let hash = hash_input("test code");
         cache.put("file://test.rs".to_string(), hash, info);
-        
+
         cache.invalidate("file://test.rs");
-        
+
         let cached = cache.get("file://test.rs", hash);
         assert!(cached.is_none());
-        
+
         let metrics = cache.metrics();
         assert_eq!(metrics.invalidations, 1);
     }
@@ -430,10 +432,10 @@ mod tests {
     fn test_ast_cache() {
         let cache = AstCache::new();
         let ast = "fn main() {}".to_string();
-        
+
         let hash = hash_input("fn main() {}");
         cache.put("file://test.rs".to_string(), hash, ast.clone());
-        
+
         let cached = cache.get("file://test.rs", hash);
         assert_eq!(cached, Some(ast));
     }
@@ -443,10 +445,10 @@ mod tests {
         let cache = SymbolIndexCache::new();
         let mut index = HashMap::new();
         index.insert("main".to_string(), 0);
-        
+
         let hash = hash_input("fn main() {}");
         cache.put("file://test.rs".to_string(), hash, index.clone());
-        
+
         let cached = cache.get("file://test.rs", hash);
         assert_eq!(cached, Some(index));
     }
@@ -459,7 +461,7 @@ mod tests {
             invalidations: 0,
             avg_analysis_time_ms: 0.0,
         };
-        
+
         assert_eq!(metrics.hit_rate(), 80.0);
     }
 
@@ -467,12 +469,12 @@ mod tests {
     fn test_cache_clear() {
         let cache = SemanticCache::new();
         let info = SemanticInfo::new();
-        
+
         let hash = hash_input("test code");
         cache.put("file://test.rs".to_string(), hash, info);
-        
+
         cache.clear();
-        
+
         let cached = cache.get("file://test.rs", hash);
         assert!(cached.is_none());
     }

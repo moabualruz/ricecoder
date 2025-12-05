@@ -4,7 +4,7 @@
 //! Validates Requirements 3.1, 3.2, 3.5, 3.4, 3.6
 
 use proptest::prelude::*;
-use ricecoder_tui::{DiffWidget, DiffHunk, DiffLine, DiffLineType};
+use ricecoder_tui::{DiffHunk, DiffLine, DiffLineType, DiffWidget};
 
 // ============================================================================
 // Generators for Property Tests
@@ -62,14 +62,13 @@ fn arb_diff_hunk() -> impl Strategy<Value = DiffHunk> {
 
 /// Generate a diff widget with random hunks
 fn arb_diff_widget() -> impl Strategy<Value = DiffWidget> {
-    prop::collection::vec(arb_diff_hunk(), 0..20)
-        .prop_map(|hunks| {
-            let mut widget = DiffWidget::new();
-            for hunk in hunks {
-                widget.add_hunk(hunk);
-            }
-            widget
-        })
+    prop::collection::vec(arb_diff_hunk(), 0..20).prop_map(|hunks| {
+        let mut widget = DiffWidget::new();
+        for hunk in hunks {
+            widget.add_hunk(hunk);
+        }
+        widget
+    })
 }
 
 // ============================================================================

@@ -394,7 +394,10 @@ mod tests {
         // Most specific should win: exact match
         assert_eq!(matcher.resolve_conflicts(&patterns, "test_tool"), Some(3));
         // Next most specific: longer pattern
-        assert_eq!(matcher.resolve_conflicts(&patterns, "test_tool_extra"), Some(2));
+        assert_eq!(
+            matcher.resolve_conflicts(&patterns, "test_tool_extra"),
+            Some(2)
+        );
         // Less specific: shorter pattern
         assert_eq!(matcher.resolve_conflicts(&patterns, "test_other"), Some(1));
         // Least specific: wildcard

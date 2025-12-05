@@ -3,9 +3,9 @@
 //! This module provides adapter wrappers that allow existing language-specific code actions
 //! to be used as pluggable providers in the configuration-driven architecture.
 
+use crate::config::LanguageConfig;
 use crate::providers::{CodeActionProvider, ProviderResult};
 use crate::types::Diagnostic;
-use crate::config::LanguageConfig;
 
 /// Adapter for Rust code actions provider
 pub struct RustCodeActionAdapter {
@@ -37,7 +37,11 @@ impl CodeActionProvider for RustCodeActionAdapter {
         "rust"
     }
 
-    fn suggest_actions(&self, _diagnostic: &Diagnostic, _code: &str) -> ProviderResult<Vec<String>> {
+    fn suggest_actions(
+        &self,
+        _diagnostic: &Diagnostic,
+        _code: &str,
+    ) -> ProviderResult<Vec<String>> {
         // Rust-specific code action suggestions
         Ok(vec![])
     }
@@ -82,7 +86,11 @@ impl CodeActionProvider for TypeScriptCodeActionAdapter {
         "typescript"
     }
 
-    fn suggest_actions(&self, _diagnostic: &Diagnostic, _code: &str) -> ProviderResult<Vec<String>> {
+    fn suggest_actions(
+        &self,
+        _diagnostic: &Diagnostic,
+        _code: &str,
+    ) -> ProviderResult<Vec<String>> {
         // TypeScript-specific code action suggestions
         Ok(vec![])
     }
@@ -127,7 +135,11 @@ impl CodeActionProvider for PythonCodeActionAdapter {
         "python"
     }
 
-    fn suggest_actions(&self, _diagnostic: &Diagnostic, _code: &str) -> ProviderResult<Vec<String>> {
+    fn suggest_actions(
+        &self,
+        _diagnostic: &Diagnostic,
+        _code: &str,
+    ) -> ProviderResult<Vec<String>> {
         // Python-specific code action suggestions
         Ok(vec![])
     }

@@ -149,7 +149,10 @@ mod tests {
     fn test_permission_prompt_with_action() {
         let prompt = PermissionPrompt::new("test_tool".to_string())
             .with_action("Will execute test".to_string());
-        assert_eq!(prompt.action_description, Some("Will execute test".to_string()));
+        assert_eq!(
+            prompt.action_description,
+            Some("Will execute test".to_string())
+        );
     }
 
     #[test]
@@ -172,8 +175,14 @@ mod tests {
             .with_timeout(45);
 
         assert_eq!(prompt.tool_name, "my_tool");
-        assert_eq!(prompt.tool_description, Some("My tool description".to_string()));
-        assert_eq!(prompt.action_description, Some("Will do something".to_string()));
+        assert_eq!(
+            prompt.tool_description,
+            Some("My tool description".to_string())
+        );
+        assert_eq!(
+            prompt.action_description,
+            Some("Will do something".to_string())
+        );
         assert_eq!(prompt.timeout_seconds, 45);
     }
 }

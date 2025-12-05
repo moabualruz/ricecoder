@@ -17,9 +17,9 @@ pub mod progress_tracker;
 pub mod risk_scorer;
 pub mod rollback_actions;
 pub mod rollback_handler;
+pub mod step_action_handler;
 pub mod step_creator;
 pub mod step_executor;
-pub mod step_action_handler;
 pub mod test_runner;
 pub mod validation;
 
@@ -30,8 +30,9 @@ pub use file_operations::FileOperations;
 pub use manager::ExecutionManager;
 pub use models::{
     ComplexityLevel, ExecutionMode, ExecutionPlan, ExecutionResult as ExecutionResultData,
-    ExecutionState, ExecutionStatus, ExecutionStep, RiskFactor, RiskLevel, RiskScore, RollbackAction,
-    RollbackType, StepAction, StepResult, StepStatus, TestFailure, TestFramework, TestResults,
+    ExecutionState, ExecutionStatus, ExecutionStep, RiskFactor, RiskLevel, RiskScore,
+    RollbackAction, RollbackType, StepAction, StepResult, StepStatus, TestFailure, TestFramework,
+    TestResults,
 };
 pub use modes::{
     AutomaticModeExecutor, ChangeType, DryRunModeExecutor, DryRunSummary, ModeConfig,
@@ -42,8 +43,10 @@ pub use progress_tracker::{ProgressCallback, ProgressTracker, ProgressUpdate};
 pub use risk_scorer::ExecutionRiskScorer;
 pub use rollback_actions::{RestoreFileHandler, UndoCommandHandler};
 pub use rollback_handler::{RollbackHandler, RollbackResult};
+pub use step_action_handler::{
+    CommandHandler, CreateFileHandler, DeleteFileHandler, ModifyFileHandler, TestHandler,
+};
 pub use step_creator::StepCreator;
 pub use step_executor::StepExecutor;
-pub use step_action_handler::{CreateFileHandler, DeleteFileHandler, ModifyFileHandler, CommandHandler, TestHandler};
 pub use test_runner::TestRunner;
 pub use validation::ExecutionValidator;

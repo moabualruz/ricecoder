@@ -58,11 +58,15 @@ impl WorkflowParser {
     pub fn validate(workflow: &Workflow) -> WorkflowResult<()> {
         // Validate required fields
         if workflow.id.is_empty() {
-            return Err(WorkflowError::Invalid("Workflow id is required".to_string()));
+            return Err(WorkflowError::Invalid(
+                "Workflow id is required".to_string(),
+            ));
         }
 
         if workflow.name.is_empty() {
-            return Err(WorkflowError::Invalid("Workflow name is required".to_string()));
+            return Err(WorkflowError::Invalid(
+                "Workflow name is required".to_string(),
+            ));
         }
 
         if workflow.steps.is_empty() {
@@ -181,7 +185,11 @@ impl WorkflowParser {
             }
 
             // Check that parameter name is valid (alphanumeric, underscore, hyphen)
-            if !param.name.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-') {
+            if !param
+                .name
+                .chars()
+                .all(|c| c.is_alphanumeric() || c == '_' || c == '-')
+            {
                 return Err(WorkflowError::Invalid(format!(
                     "Invalid parameter name: {}. Must contain only alphanumeric characters, underscores, and hyphens",
                     param.name
@@ -526,5 +534,3 @@ config: {}
         });
     }
 }
-
-

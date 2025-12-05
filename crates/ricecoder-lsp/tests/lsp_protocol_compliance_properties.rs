@@ -7,7 +7,7 @@
 //! by testing that valid LSP messages produce valid responses and invalid messages are handled gracefully.
 
 use proptest::prelude::*;
-use ricecoder_lsp::transport::{JsonRpcRequest, JsonRpcResponse, JsonRpcNotification, LspMessage};
+use ricecoder_lsp::transport::{JsonRpcNotification, JsonRpcRequest, JsonRpcResponse, LspMessage};
 use serde_json::{json, Value};
 
 /// Strategy for generating valid JSON-RPC request IDs

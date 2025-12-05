@@ -25,15 +25,16 @@ impl NodeJsParser {
 
         debug!("Parsing Node.js dependencies from {:?}", package_json_path);
 
-        let content = std::fs::read_to_string(&package_json_path)
-            .map_err(|e| ResearchError::DependencyParsingFailed {
+        let content = std::fs::read_to_string(&package_json_path).map_err(|e| {
+            ResearchError::DependencyParsingFailed {
                 language: "Node.js".to_string(),
                 path: Some(package_json_path.clone()),
                 reason: format!("Failed to read package.json: {}", e),
-            })?;
+            }
+        })?;
 
-        let package_json: serde_json::Value = serde_json::from_str(&content)
-            .map_err(|e| ResearchError::DependencyParsingFailed {
+        let package_json: serde_json::Value =
+            serde_json::from_str(&content).map_err(|e| ResearchError::DependencyParsingFailed {
                 language: "Node.js".to_string(),
                 path: Some(package_json_path.clone()),
                 reason: format!("Failed to parse package.json: {}", e),
@@ -56,7 +57,10 @@ impl NodeJsParser {
         }
 
         // Parse dev dependencies
-        if let Some(deps) = package_json.get("devDependencies").and_then(|d| d.as_object()) {
+        if let Some(deps) = package_json
+            .get("devDependencies")
+            .and_then(|d| d.as_object())
+        {
             for (name, value) in deps {
                 if let Some(version) = value.as_str() {
                     dependencies.push(Dependency {
@@ -70,7 +74,10 @@ impl NodeJsParser {
         }
 
         // Parse peer dependencies
-        if let Some(deps) = package_json.get("peerDependencies").and_then(|d| d.as_object()) {
+        if let Some(deps) = package_json
+            .get("peerDependencies")
+            .and_then(|d| d.as_object())
+        {
             for (name, value) in deps {
                 if let Some(version) = value.as_str() {
                     dependencies.push(Dependency {

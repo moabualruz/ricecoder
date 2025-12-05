@@ -48,7 +48,8 @@ impl DependencyResolver {
 
             // Check if all dependencies are completed
             if let Some(step) = step_map.get(&step_id) {
-                let all_deps_completed = step.dependencies.iter().all(|dep| completed.contains(dep));
+                let all_deps_completed =
+                    step.dependencies.iter().all(|dep| completed.contains(dep));
 
                 if all_deps_completed {
                     order.push(step_id.clone());
@@ -56,7 +57,9 @@ impl DependencyResolver {
 
                     // Add steps that depend on this one
                     for other_step in &workflow.steps {
-                        if other_step.dependencies.contains(&step_id) && !completed.contains(&other_step.id) {
+                        if other_step.dependencies.contains(&step_id)
+                            && !completed.contains(&other_step.id)
+                        {
                             queue.push_back(other_step.id.clone());
                         }
                     }
@@ -126,7 +129,10 @@ impl DependencyResolver {
     ///
     /// Returns all steps that must be completed before the given step can execute,
     /// including transitive dependencies.
-    pub fn get_all_dependencies(workflow: &Workflow, step_id: &str) -> WorkflowResult<HashSet<String>> {
+    pub fn get_all_dependencies(
+        workflow: &Workflow,
+        step_id: &str,
+    ) -> WorkflowResult<HashSet<String>> {
         let mut all_deps = HashSet::new();
         let mut queue = VecDeque::new();
 
@@ -169,7 +175,10 @@ impl DependencyResolver {
     /// Get all steps that depend on a given step (reverse dependencies)
     ///
     /// Returns all steps that have the given step as a dependency (direct or transitive).
-    pub fn get_dependent_steps(workflow: &Workflow, step_id: &str) -> WorkflowResult<HashSet<String>> {
+    pub fn get_dependent_steps(
+        workflow: &Workflow,
+        step_id: &str,
+    ) -> WorkflowResult<HashSet<String>> {
         let mut dependents = HashSet::new();
 
         // Find all steps that directly depend on this step
@@ -276,14 +285,17 @@ impl DependencyResolver {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{AgentStep, ErrorAction, RiskFactors, StepConfig, StepType, WorkflowConfig, WorkflowStep};
+    use crate::models::{
+        AgentStep, ErrorAction, RiskFactors, StepConfig, StepType, WorkflowConfig, WorkflowStep,
+    };
 
     fn create_workflow_with_deps() -> Workflow {
         Workflow {
             id: "test-workflow".to_string(),
             name: "Test Workflow".to_string(),
             description: "A test workflow".to_string(),
-            parameters: vec![],steps: vec![
+            parameters: vec![],
+            steps: vec![
                 WorkflowStep {
                     id: "step1".to_string(),
                     name: "Step 1".to_string(),
@@ -296,7 +308,9 @@ mod tests {
                     },
                     dependencies: vec![],
                     approval_required: false,
-                    on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                    on_error: ErrorAction::Fail,
+                    risk_score: None,
+                    risk_factors: RiskFactors::default(),
                 },
                 WorkflowStep {
                     id: "step2".to_string(),
@@ -310,7 +324,9 @@ mod tests {
                     },
                     dependencies: vec!["step1".to_string()],
                     approval_required: false,
-                    on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                    on_error: ErrorAction::Fail,
+                    risk_score: None,
+                    risk_factors: RiskFactors::default(),
                 },
                 WorkflowStep {
                     id: "step3".to_string(),
@@ -324,7 +340,9 @@ mod tests {
                     },
                     dependencies: vec!["step1".to_string(), "step2".to_string()],
                     approval_required: false,
-                    on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                    on_error: ErrorAction::Fail,
+                    risk_score: None,
+                    risk_factors: RiskFactors::default(),
                 },
             ],
             config: WorkflowConfig {
@@ -386,7 +404,8 @@ mod tests {
 
         // step2 can execute after step1 is completed
         assert!(
-            DependencyResolver::can_execute_step(&workflow, &["step1".to_string()], "step2").unwrap()
+            DependencyResolver::can_execute_step(&workflow, &["step1".to_string()], "step2")
+                .unwrap()
         );
     }
 
@@ -400,7 +419,8 @@ mod tests {
         assert_eq!(ready[0], "step1");
 
         // After step1 completes, step2 is ready
-        let ready = DependencyResolver::get_ready_steps(&workflow, &["step1".to_string()], &[]).unwrap();
+        let ready =
+            DependencyResolver::get_ready_steps(&workflow, &["step1".to_string()], &[]).unwrap();
         assert_eq!(ready.len(), 1);
         assert_eq!(ready[0], "step2");
 
@@ -425,13 +445,11 @@ mod tests {
     #[test]
     fn test_validate_missing_dependency() {
         let mut workflow = create_workflow_with_deps();
-        workflow.steps[1].dependencies.push("non-existent".to_string());
+        workflow.steps[1]
+            .dependencies
+            .push("non-existent".to_string());
 
         let result = DependencyResolver::validate_dependencies(&workflow);
         assert!(result.is_err());
     }
 }
-
-
-
-

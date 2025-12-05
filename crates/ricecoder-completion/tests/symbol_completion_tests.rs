@@ -1,13 +1,13 @@
+use async_trait::async_trait;
 /// Tests for symbol completion suggestions
 /// Tests that symbol completions include variables, functions, types with proper details
 use ricecoder_completion::{
-    CompletionContext, CompletionEngine, CompletionItem, CompletionItemKind, Position,
-    GenericCompletionEngine, ProviderRegistry, Symbol, SymbolKind, Scope, ScopeKind,
-    Range, Type, RustCompletionProvider, TypeScriptCompletionProvider, PythonCompletionProvider,
-    GenericTextProvider, CompletionProvider,
+    CompletionContext, CompletionEngine, CompletionItem, CompletionItemKind, CompletionProvider,
+    GenericCompletionEngine, GenericTextProvider, Position, ProviderRegistry,
+    PythonCompletionProvider, Range, RustCompletionProvider, Scope, ScopeKind, Symbol, SymbolKind,
+    Type, TypeScriptCompletionProvider,
 };
 use std::sync::Arc;
-use async_trait::async_trait;
 
 /// Mock context analyzer that provides test symbols
 struct SymbolTestContextAnalyzer;
@@ -21,7 +21,7 @@ impl ricecoder_completion::ContextAnalyzer for SymbolTestContextAnalyzer {
         language: &str,
     ) -> ricecoder_completion::CompletionResult<CompletionContext> {
         let mut context = CompletionContext::new(language.to_string(), position, "".to_string());
-        
+
         // Add variable symbol with type
         context.available_symbols.push(Symbol {
             name: "my_var".to_string(),
@@ -273,8 +273,9 @@ async fn test_symbol_completion_constant() {
 #[tokio::test]
 async fn test_rust_provider_symbol_completions() {
     let provider = RustCompletionProvider;
-    let mut context = CompletionContext::new("rust".to_string(), Position::new(0, 0), "".to_string());
-    
+    let mut context =
+        CompletionContext::new("rust".to_string(), Position::new(0, 0), "".to_string());
+
     // Add test symbols
     context.available_symbols.push(Symbol {
         name: "test_var".to_string(),
@@ -295,7 +296,7 @@ async fn test_rust_provider_symbol_completions() {
 
     // Should have both symbols and keywords
     assert!(!completions.is_empty());
-    
+
     // Find the symbol completion
     let symbol_completion = completions
         .iter()
@@ -321,8 +322,12 @@ async fn test_rust_provider_symbol_completions() {
 #[tokio::test]
 async fn test_typescript_provider_symbol_completions() {
     let provider = TypeScriptCompletionProvider;
-    let mut context = CompletionContext::new("typescript".to_string(), Position::new(0, 0), "".to_string());
-    
+    let mut context = CompletionContext::new(
+        "typescript".to_string(),
+        Position::new(0, 0),
+        "".to_string(),
+    );
+
     // Add test symbols
     context.available_symbols.push(Symbol {
         name: "myFunction".to_string(),
@@ -343,7 +348,7 @@ async fn test_typescript_provider_symbol_completions() {
 
     // Should have both symbols and keywords
     assert!(!completions.is_empty());
-    
+
     // Find the symbol completion
     let symbol_completion = completions
         .iter()
@@ -360,8 +365,9 @@ async fn test_typescript_provider_symbol_completions() {
 #[tokio::test]
 async fn test_python_provider_symbol_completions() {
     let provider = PythonCompletionProvider;
-    let mut context = CompletionContext::new("python".to_string(), Position::new(0, 0), "".to_string());
-    
+    let mut context =
+        CompletionContext::new("python".to_string(), Position::new(0, 0), "".to_string());
+
     // Add test symbols
     context.available_symbols.push(Symbol {
         name: "my_class".to_string(),
@@ -382,7 +388,7 @@ async fn test_python_provider_symbol_completions() {
 
     // Should have both symbols and keywords
     assert!(!completions.is_empty());
-    
+
     // Find the symbol completion
     let symbol_completion = completions
         .iter()
@@ -396,8 +402,9 @@ async fn test_python_provider_symbol_completions() {
 #[tokio::test]
 async fn test_generic_provider_symbol_completions() {
     let provider = GenericTextProvider;
-    let mut context = CompletionContext::new("unknown".to_string(), Position::new(0, 0), "".to_string());
-    
+    let mut context =
+        CompletionContext::new("unknown".to_string(), Position::new(0, 0), "".to_string());
+
     // Add test symbols
     context.available_symbols.push(Symbol {
         name: "generic_var".to_string(),
@@ -418,7 +425,7 @@ async fn test_generic_provider_symbol_completions() {
 
     // Should have symbol completions
     assert!(!completions.is_empty());
-    
+
     // Find the symbol completion
     let symbol_completion = completions
         .iter()
@@ -444,10 +451,18 @@ async fn test_symbol_completion_all_kinds() {
         .expect("Failed to generate completions");
 
     // Should have all symbol types
-    assert!(completions.iter().any(|c| c.kind == CompletionItemKind::Variable));
-    assert!(completions.iter().any(|c| c.kind == CompletionItemKind::Function));
-    assert!(completions.iter().any(|c| c.kind == CompletionItemKind::Struct));
-    assert!(completions.iter().any(|c| c.kind == CompletionItemKind::Constant));
+    assert!(completions
+        .iter()
+        .any(|c| c.kind == CompletionItemKind::Variable));
+    assert!(completions
+        .iter()
+        .any(|c| c.kind == CompletionItemKind::Function));
+    assert!(completions
+        .iter()
+        .any(|c| c.kind == CompletionItemKind::Struct));
+    assert!(completions
+        .iter()
+        .any(|c| c.kind == CompletionItemKind::Constant));
 }
 
 #[tokio::test]

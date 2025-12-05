@@ -2,7 +2,7 @@
 //! Tests codebase-wide search, symbol lookup, and pattern matching
 //! **Validates: Requirements 1.7, 1.8, 1.9**
 
-use ricecoder_research::{SemanticIndex, Symbol, SymbolKind, SymbolReference, ReferenceKind};
+use ricecoder_research::{ReferenceKind, SemanticIndex, Symbol, SymbolKind, SymbolReference};
 use std::path::PathBuf;
 
 // ============================================================================
@@ -141,7 +141,7 @@ fn test_search_returns_symbol_metadata() {
 
     assert!(!results.is_empty());
     let result = &results[0];
-    
+
     assert_eq!(result.symbol.name, "UserService");
     assert_eq!(result.symbol.kind, SymbolKind::Class);
     assert_eq!(result.symbol.file.file_name().unwrap(), "user_service.rs");
@@ -155,7 +155,7 @@ fn test_search_returns_references() {
 
     assert!(!results.is_empty());
     let result = &results[0];
-    
+
     // References may be populated depending on implementation
     let _ = result.symbol.references;
 }
@@ -180,7 +180,7 @@ fn test_search_nonexistent_symbol() {
 #[test]
 fn test_search_case_sensitivity() {
     let index = create_sample_index();
-    
+
     let results_exact = index.search_by_name("UserService");
     let results_lower = index.search_by_name("userservice");
     let results_upper = index.search_by_name("USERSERVICE");
@@ -194,10 +194,11 @@ fn test_search_case_sensitivity() {
 #[test]
 fn test_search_by_symbol_kind() {
     let index = create_sample_index();
-    
+
     // Search for all functions
     let all_results = index.search_by_name("create");
-    let function_results: Vec<_> = all_results.iter()
+    let function_results: Vec<_> = all_results
+        .iter()
         .filter(|r| r.symbol.kind == SymbolKind::Function)
         .collect();
 
@@ -225,7 +226,7 @@ fn test_search_finds_all_references() {
     // Should find symbols matching the query
     let user_symbol = results.iter().find(|r| r.symbol.name == "User");
     assert!(user_symbol.is_some());
-    
+
     if let Some(result) = user_symbol {
         // References may be populated depending on implementation
         let _ = result.symbol.references;
@@ -239,9 +240,12 @@ fn test_search_tracks_reference_kinds() {
 
     assert!(!results.is_empty());
     let result = &results[0];
-    
+
     // Reference kinds may be tracked depending on implementation
-    let _ = result.symbol.references.iter()
+    let _ = result
+        .symbol
+        .references
+        .iter()
         .filter(|r| r.kind == ReferenceKind::Import)
         .collect::<Vec<_>>();
 }
@@ -249,7 +253,7 @@ fn test_search_tracks_reference_kinds() {
 #[test]
 fn test_search_consistency() {
     let index = create_sample_index();
-    
+
     // Search multiple times
     let results1 = index.search_by_name("UserService");
     let results2 = index.search_by_name("UserService");
@@ -258,7 +262,7 @@ fn test_search_consistency() {
     // Results should be identical
     assert_eq!(results1.len(), results2.len());
     assert_eq!(results2.len(), results3.len());
-    
+
     if !results1.is_empty() {
         assert_eq!(results1[0].symbol.name, results2[0].symbol.name);
         assert_eq!(results2[0].symbol.name, results3[0].symbol.name);
@@ -305,9 +309,8 @@ fn test_search_across_multiple_files() {
     let results = index.search_by_name("User");
 
     // Results should span multiple files
-    let files: std::collections::HashSet<_> = results.iter()
-        .map(|r| r.symbol.file.clone())
-        .collect();
+    let files: std::collections::HashSet<_> =
+        results.iter().map(|r| r.symbol.file.clone()).collect();
 
     assert!(files.len() > 1);
 }
@@ -319,7 +322,7 @@ fn test_search_preserves_symbol_location() {
 
     assert!(!results.is_empty());
     let result = &results[0];
-    
+
     // Location information should be preserved
     assert_eq!(result.symbol.line, 20);
     assert_eq!(result.symbol.column, 4);

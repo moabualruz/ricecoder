@@ -5,12 +5,12 @@
 //!
 //! Property: For any generated code, all code elements SHALL trace back to at least one requirement in the spec.
 
-use proptest::prelude::*;
-use ricecoder_generation::{SpecProcessor, GenerationPlanBuilder};
-use ricecoder_specs::models::{
-    Spec, Requirement, AcceptanceCriterion, Priority, SpecMetadata, SpecPhase, SpecStatus,
-};
 use chrono::Utc;
+use proptest::prelude::*;
+use ricecoder_generation::{GenerationPlanBuilder, SpecProcessor};
+use ricecoder_specs::models::{
+    AcceptanceCriterion, Priority, Requirement, Spec, SpecMetadata, SpecPhase, SpecStatus,
+};
 
 /// Strategy for generating valid requirement IDs
 fn requirement_id_strategy() -> impl Strategy<Value = String> {
@@ -19,8 +19,7 @@ fn requirement_id_strategy() -> impl Strategy<Value = String> {
 
 /// Strategy for generating valid user stories
 fn user_story_strategy() -> impl Strategy<Value = String> {
-    r"As a [a-z]{3,10}, I want [a-z]{3,20}, so that [a-z]{3,20}"
-        .prop_map(|s| s.to_string())
+    r"As a [a-z]{3,10}, I want [a-z]{3,20}, so that [a-z]{3,20}".prop_map(|s| s.to_string())
 }
 
 /// Strategy for generating acceptance criteria
@@ -49,12 +48,14 @@ fn requirement_strategy() -> impl Strategy<Value = Requirement> {
             Just(Priority::Could),
         ],
     )
-        .prop_map(|(id, user_story, acceptance_criteria, priority)| Requirement {
-            id,
-            user_story,
-            acceptance_criteria,
-            priority,
-        })
+        .prop_map(
+            |(id, user_story, acceptance_criteria, priority)| Requirement {
+                id,
+                user_story,
+                acceptance_criteria,
+                priority,
+            },
+        )
 }
 
 /// Strategy for generating specs

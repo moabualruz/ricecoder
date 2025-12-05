@@ -310,9 +310,7 @@ mod tests {
         manager.add_file("file1.rs".to_string()).unwrap();
         manager.add_file("file2.rs".to_string()).unwrap();
 
-        manager
-            .switch_project("/new/project".to_string())
-            .unwrap();
+        manager.switch_project("/new/project".to_string()).unwrap();
 
         let path = manager.get_project_path().unwrap();
         assert_eq!(path, Some("/new/project".to_string()));

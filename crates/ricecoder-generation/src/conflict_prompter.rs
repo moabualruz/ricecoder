@@ -126,7 +126,8 @@ impl ConflictPrompter {
             }
 
             // Otherwise, prompt for this conflict
-            let prompt_result = self.prompt_for_conflict(conflict, conflict_num, conflicts.len())?;
+            let prompt_result =
+                self.prompt_for_conflict(conflict, conflict_num, conflicts.len())?;
 
             results.push((
                 conflict.path.to_string_lossy().to_string(),
@@ -161,18 +162,9 @@ impl ConflictPrompter {
         println!("{}", "=".repeat(70));
 
         println!("\nConflict Summary:");
-        println!(
-            "  Added lines: {}",
-            conflict.diff.added_lines.len()
-        );
-        println!(
-            "  Removed lines: {}",
-            conflict.diff.removed_lines.len()
-        );
-        println!(
-            "  Modified lines: {}",
-            conflict.diff.modified_lines.len()
-        );
+        println!("  Added lines: {}", conflict.diff.added_lines.len());
+        println!("  Removed lines: {}", conflict.diff.removed_lines.len());
+        println!("  Modified lines: {}", conflict.diff.modified_lines.len());
 
         println!("\nFile sizes:");
         println!("  Original: {} bytes", conflict.old_content.len());

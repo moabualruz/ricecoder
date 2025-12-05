@@ -3,8 +3,8 @@
 //! This module provides session management operations including creation, deletion,
 //! renaming, and persistence of sessions.
 
-use crate::sessions::{Session, SessionWidget, SessionStatus};
-use anyhow::{Result, anyhow};
+use crate::sessions::{Session, SessionStatus, SessionWidget};
+use anyhow::{anyhow, Result};
 use std::collections::HashMap;
 
 /// Session manager for handling session lifecycle
@@ -137,7 +137,7 @@ impl SessionManager {
     pub fn add_message_to_current(&mut self, message: &str) -> Result<()> {
         if let Some(session) = self.widget.current_session_mut() {
             session.add_message();
-            
+
             // Update storage
             if let Some(data) = self.storage.get_mut(&session.id) {
                 data.content.push_str(message);
@@ -147,7 +147,7 @@ impl SessionManager {
                     .map(|d| d.as_secs())
                     .unwrap_or(0);
             }
-            
+
             Ok(())
         } else {
             Err(anyhow!("No active session"))
@@ -161,12 +161,20 @@ impl SessionManager {
 
     /// Get all session IDs
     pub fn all_session_ids(&self) -> Vec<String> {
-        self.widget.session_ids().iter().map(|s| s.to_string()).collect()
+        self.widget
+            .session_ids()
+            .iter()
+            .map(|s| s.to_string())
+            .collect()
     }
 
     /// Get all session names
     pub fn all_session_names(&self) -> Vec<String> {
-        self.widget.session_names().iter().map(|s| s.to_string()).collect()
+        self.widget
+            .session_names()
+            .iter()
+            .map(|s| s.to_string())
+            .collect()
     }
 
     /// Get session count
@@ -239,22 +247,25 @@ mod tests {
     #[test]
     fn test_create_session() {
         let mut manager = SessionManager::new();
-        
+
         let id = manager.create_session("Test Session".to_string()).unwrap();
-        
+
         assert!(id.starts_with("session-"));
         assert_eq!(manager.session_count(), 1);
-        assert_eq!(manager.current_session_name(), Some("Test Session".to_string()));
+        assert_eq!(
+            manager.current_session_name(),
+            Some("Test Session".to_string())
+        );
     }
 
     #[test]
     fn test_create_multiple_sessions() {
         let mut manager = SessionManager::new();
-        
+
         let id1 = manager.create_session("Session 1".to_string()).unwrap();
         let id2 = manager.create_session("Session 2".to_string()).unwrap();
         let id3 = manager.create_session("Session 3".to_string()).unwrap();
-        
+
         assert_eq!(manager.session_count(), 3);
         assert_ne!(id1, id2);
         assert_ne!(id2, id3);
@@ -263,10 +274,10 @@ mod tests {
     #[test]
     fn test_delete_session() {
         let mut manager = SessionManager::new();
-        
+
         let id = manager.create_session("Test Session".to_string()).unwrap();
         assert_eq!(manager.session_count(), 1);
-        
+
         manager.delete_session(&id).unwrap();
         assert_eq!(manager.session_count(), 0);
     }
@@ -274,7 +285,7 @@ mod tests {
     #[test]
     fn test_delete_nonexistent_session() {
         let mut manager = SessionManager::new();
-        
+
         let result = manager.delete_session("nonexistent");
         assert!(result.is_err());
     }
@@ -282,17 +293,17 @@ mod tests {
     #[test]
     fn test_rename_session() {
         let mut manager = SessionManager::new();
-        
+
         let id = manager.create_session("Old Name".to_string()).unwrap();
         manager.rename_session(&id, "New Name".to_string()).unwrap();
-        
+
         assert_eq!(manager.current_session_name(), Some("New Name".to_string()));
     }
 
     #[test]
     fn test_rename_nonexistent_session() {
         let mut manager = SessionManager::new();
-        
+
         let result = manager.rename_session("nonexistent", "New Name".to_string());
         assert!(result.is_err());
     }
@@ -300,17 +311,17 @@ mod tests {
     #[test]
     fn test_switch_session() {
         let mut manager = SessionManager::new();
-        
+
         let id1 = manager.create_session("Session 1".to_string()).unwrap();
         let id2 = manager.create_session("Session 2".to_string()).unwrap();
-        
+
         // After creating id2, it should be the current session
         assert_eq!(manager.current_session_id(), Some(id2.clone()));
-        
+
         // Switch to id1
         manager.switch_session(&id1).unwrap();
         assert_eq!(manager.current_session_id(), Some(id1.clone()));
-        
+
         // Switch back to id2
         manager.switch_session(&id2).unwrap();
         assert_eq!(manager.current_session_id(), Some(id2.clone()));
@@ -319,7 +330,7 @@ mod tests {
     #[test]
     fn test_switch_nonexistent_session() {
         let mut manager = SessionManager::new();
-        
+
         let result = manager.switch_session("nonexistent");
         assert!(result.is_err());
     }
@@ -327,10 +338,10 @@ mod tests {
     #[test]
     fn test_add_message_to_current() {
         let mut manager = SessionManager::new();
-        
+
         let id = manager.create_session("Test Session".to_string()).unwrap();
         manager.add_message_to_current("Hello").unwrap();
-        
+
         let content = manager.get_session_content(&id).unwrap();
         assert!(content.contains("Hello"));
     }
@@ -338,7 +349,7 @@ mod tests {
     #[test]
     fn test_add_message_no_session() {
         let mut manager = SessionManager::new();
-        
+
         let result = manager.add_message_to_current("Hello");
         assert!(result.is_err());
     }
@@ -346,10 +357,10 @@ mod tests {
     #[test]
     fn test_get_all_session_ids() {
         let mut manager = SessionManager::new();
-        
+
         let id1 = manager.create_session("Session 1".to_string()).unwrap();
         let id2 = manager.create_session("Session 2".to_string()).unwrap();
-        
+
         let ids = manager.all_session_ids();
         assert_eq!(ids.len(), 2);
         assert!(ids.contains(&id1));
@@ -359,10 +370,10 @@ mod tests {
     #[test]
     fn test_get_all_session_names() {
         let mut manager = SessionManager::new();
-        
+
         manager.create_session("Session 1".to_string()).unwrap();
         manager.create_session("Session 2".to_string()).unwrap();
-        
+
         let names = manager.all_session_names();
         assert_eq!(names.len(), 2);
         assert!(names.contains(&"Session 1".to_string()));
@@ -372,10 +383,10 @@ mod tests {
     #[test]
     fn test_mark_session_dirty() {
         let mut manager = SessionManager::new();
-        
+
         let id = manager.create_session("Test Session".to_string()).unwrap();
         manager.mark_session_dirty(&id).unwrap();
-        
+
         let session = manager.get_session(&id).unwrap();
         assert!(session.has_changes);
     }
@@ -383,11 +394,11 @@ mod tests {
     #[test]
     fn test_mark_session_clean() {
         let mut manager = SessionManager::new();
-        
+
         let id = manager.create_session("Test Session".to_string()).unwrap();
         manager.mark_session_dirty(&id).unwrap();
         manager.mark_session_clean(&id).unwrap();
-        
+
         let session = manager.get_session(&id).unwrap();
         assert!(!session.has_changes);
     }
@@ -395,12 +406,12 @@ mod tests {
     #[test]
     fn test_clear_all_sessions() {
         let mut manager = SessionManager::new();
-        
+
         manager.create_session("Session 1".to_string()).unwrap();
         manager.create_session("Session 2".to_string()).unwrap();
-        
+
         assert_eq!(manager.session_count(), 2);
-        
+
         manager.clear_all_sessions();
         assert_eq!(manager.session_count(), 0);
     }
@@ -408,11 +419,11 @@ mod tests {
     #[test]
     fn test_session_data_persistence() {
         let mut manager = SessionManager::new();
-        
+
         let id = manager.create_session("Test Session".to_string()).unwrap();
         manager.add_message_to_current("Message 1").unwrap();
         manager.add_message_to_current("Message 2").unwrap();
-        
+
         let data = manager.get_session_data(&id).unwrap();
         assert_eq!(data.name, "Test Session");
         assert!(data.content.contains("Message 1"));

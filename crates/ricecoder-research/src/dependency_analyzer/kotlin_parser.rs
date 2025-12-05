@@ -42,8 +42,8 @@ impl KotlinParser {
 
     /// Parses dependencies from build.gradle.kts
     fn parse_gradle_kts(&self, path: &Path) -> Result<Vec<Dependency>, ResearchError> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| ResearchError::DependencyParsingFailed {
+        let content =
+            std::fs::read_to_string(path).map_err(|e| ResearchError::DependencyParsingFailed {
                 language: "Kotlin".to_string(),
                 path: Some(path.to_path_buf()),
                 reason: format!("Failed to read build.gradle.kts: {}", e),
@@ -77,8 +77,8 @@ impl KotlinParser {
 
     /// Parses dependencies from pom.xml
     fn parse_pom(&self, path: &Path) -> Result<Vec<Dependency>, ResearchError> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| ResearchError::DependencyParsingFailed {
+        let content =
+            std::fs::read_to_string(path).map_err(|e| ResearchError::DependencyParsingFailed {
                 language: "Kotlin".to_string(),
                 path: Some(path.to_path_buf()),
                 reason: format!("Failed to read pom.xml: {}", e),

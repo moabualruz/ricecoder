@@ -42,15 +42,15 @@ impl PythonParser {
 
     /// Parses dependencies from pyproject.toml
     fn parse_pyproject(&self, path: &Path) -> Result<Vec<Dependency>, ResearchError> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| ResearchError::DependencyParsingFailed {
+        let content =
+            std::fs::read_to_string(path).map_err(|e| ResearchError::DependencyParsingFailed {
                 language: "Python".to_string(),
                 path: Some(path.to_path_buf()),
                 reason: format!("Failed to read pyproject.toml: {}", e),
             })?;
 
-        let pyproject: toml::Value = toml::from_str(&content)
-            .map_err(|e| ResearchError::DependencyParsingFailed {
+        let pyproject: toml::Value =
+            toml::from_str(&content).map_err(|e| ResearchError::DependencyParsingFailed {
                 language: "Python".to_string(),
                 path: Some(path.to_path_buf()),
                 reason: format!("Failed to parse pyproject.toml: {}", e),
@@ -71,7 +71,10 @@ impl PythonParser {
             }
 
             // Parse optional dependencies
-            if let Some(optional) = project.get("optional-dependencies").and_then(|o| o.as_table()) {
+            if let Some(optional) = project
+                .get("optional-dependencies")
+                .and_then(|o| o.as_table())
+            {
                 for (_group, deps) in optional {
                     if let Some(deps_array) = deps.as_array() {
                         for dep_str in deps_array {
@@ -100,7 +103,8 @@ impl PythonParser {
                                     is_dev: false,
                                 });
                             } else if let Some(table) = value.as_table() {
-                                if let Some(version) = table.get("version").and_then(|v| v.as_str()) {
+                                if let Some(version) = table.get("version").and_then(|v| v.as_str())
+                                {
                                     dependencies.push(Dependency {
                                         name: name.clone(),
                                         version: version.to_string(),
@@ -142,8 +146,8 @@ impl PythonParser {
 
     /// Parses dependencies from requirements.txt
     fn parse_requirements(&self, path: &Path) -> Result<Vec<Dependency>, ResearchError> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| ResearchError::DependencyParsingFailed {
+        let content =
+            std::fs::read_to_string(path).map_err(|e| ResearchError::DependencyParsingFailed {
                 language: "Python".to_string(),
                 path: Some(path.to_path_buf()),
                 reason: format!("Failed to read requirements.txt: {}", e),

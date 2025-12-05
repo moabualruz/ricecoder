@@ -2,9 +2,7 @@
 //! **Feature: ricecoder-sessions, Unit Tests: SessionStore**
 //! **Validates: Requirements 2.1, 2.2**
 
-use ricecoder_sessions::{
-    Session, SessionContext, SessionMode, SessionStore,
-};
+use ricecoder_sessions::{Session, SessionContext, SessionMode, SessionStore};
 use std::fs;
 use tempfile::TempDir;
 
@@ -198,7 +196,10 @@ async fn test_session_store_preserves_session_data() {
     let loaded = store.load(&session_id).await.unwrap();
 
     // Verify all data is preserved
-    assert_eq!(loaded.context.project_path, Some("/path/to/project".to_string()));
+    assert_eq!(
+        loaded.context.project_path,
+        Some("/path/to/project".to_string())
+    );
     assert_eq!(loaded.context.files.len(), 2);
     assert!(loaded.context.files.contains(&"file1.rs".to_string()));
     assert!(loaded.context.files.contains(&"file2.rs".to_string()));

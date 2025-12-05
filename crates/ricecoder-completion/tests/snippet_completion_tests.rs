@@ -1,13 +1,12 @@
+use async_trait::async_trait;
 /// Tests for snippet completion suggestions
 /// Tests that snippet completions include function templates, loop templates, and conditional templates
 use ricecoder_completion::{
-    CompletionContext, CompletionEngine, CompletionItem, CompletionItemKind, Position,
-    GenericCompletionEngine, ProviderRegistry, Symbol, SymbolKind, Scope, ScopeKind,
-    Range, RustCompletionProvider, TypeScriptCompletionProvider, PythonCompletionProvider,
-    CompletionProvider,
+    CompletionContext, CompletionEngine, CompletionItem, CompletionItemKind, CompletionProvider,
+    GenericCompletionEngine, Position, ProviderRegistry, PythonCompletionProvider, Range,
+    RustCompletionProvider, Scope, ScopeKind, Symbol, SymbolKind, TypeScriptCompletionProvider,
 };
 use std::sync::Arc;
-use async_trait::async_trait;
 
 /// Mock context analyzer for snippet tests
 struct SnippetTestContextAnalyzer;
@@ -20,14 +19,21 @@ impl ricecoder_completion::ContextAnalyzer for SnippetTestContextAnalyzer {
         position: Position,
         language: &str,
     ) -> ricecoder_completion::CompletionResult<CompletionContext> {
-        Ok(CompletionContext::new(language.to_string(), position, "".to_string()))
+        Ok(CompletionContext::new(
+            language.to_string(),
+            position,
+            "".to_string(),
+        ))
     }
 
     fn get_available_symbols(&self, context: &CompletionContext, _code: &str) -> Vec<Symbol> {
         context.available_symbols.clone()
     }
 
-    fn infer_expected_type(&self, _context: &CompletionContext) -> Option<ricecoder_completion::Type> {
+    fn infer_expected_type(
+        &self,
+        _context: &CompletionContext,
+    ) -> Option<ricecoder_completion::Type> {
         None
     }
 }
@@ -108,7 +114,11 @@ async fn test_rust_snippet_completions() {
 #[tokio::test]
 async fn test_typescript_snippet_completions() {
     let provider = TypeScriptCompletionProvider;
-    let context = CompletionContext::new("typescript".to_string(), Position::new(0, 0), "".to_string());
+    let context = CompletionContext::new(
+        "typescript".to_string(),
+        Position::new(0, 0),
+        "".to_string(),
+    );
 
     let completions = provider
         .generate_completions("", Position::new(0, 0), &context)
@@ -208,7 +218,11 @@ async fn test_rust_snippet_has_placeholders() {
 #[tokio::test]
 async fn test_typescript_snippet_has_placeholders() {
     let provider = TypeScriptCompletionProvider;
-    let context = CompletionContext::new("typescript".to_string(), Position::new(0, 0), "".to_string());
+    let context = CompletionContext::new(
+        "typescript".to_string(),
+        Position::new(0, 0),
+        "".to_string(),
+    );
 
     let completions = provider
         .generate_completions("", Position::new(0, 0), &context)
@@ -320,7 +334,11 @@ async fn test_rust_conditional_snippets() {
 #[tokio::test]
 async fn test_typescript_loop_snippets() {
     let provider = TypeScriptCompletionProvider;
-    let context = CompletionContext::new("typescript".to_string(), Position::new(0, 0), "".to_string());
+    let context = CompletionContext::new(
+        "typescript".to_string(),
+        Position::new(0, 0),
+        "".to_string(),
+    );
 
     let completions = provider
         .generate_completions("", Position::new(0, 0), &context)
@@ -390,7 +408,11 @@ async fn test_snippet_completion_score() {
         .collect();
 
     for snippet in snippets {
-        assert!(snippet.score > 0.0, "Snippet {} has no score", snippet.label);
+        assert!(
+            snippet.score > 0.0,
+            "Snippet {} has no score",
+            snippet.label
+        );
     }
 }
 

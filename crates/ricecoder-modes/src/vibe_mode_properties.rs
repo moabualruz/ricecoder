@@ -2,8 +2,8 @@
 
 #[cfg(test)]
 mod tests {
+    use crate::{Mode, ModeContext, Operation, VibeMode};
     use proptest::prelude::*;
-    use crate::{VibeMode, ModeContext, Operation, Mode};
 
     // Property 5: Vibe Mode Spec Bypass
     // **Feature: ricecoder-modes, Property 5: Vibe Mode Spec Bypass**
@@ -14,17 +14,17 @@ mod tests {
             input in ".*[a-zA-Z0-9 ]+.*"
         ) {
             let mode = VibeMode::new();
-            
+
             // Verify that Vibe Mode does not require specs
             assert!(!mode.constraints().require_specs);
-            
+
             // Verify that code generation is allowed
             assert!(mode.can_execute(&Operation::GenerateCode));
-            
+
             // Verify that natural language input is accepted
             let result = mode.accept_natural_language(&input);
             assert!(result.is_ok());
-            
+
             let code = result.unwrap();
             assert!(code.contains("Natural language input"));
             assert!(code.contains("without formal specs"));
@@ -41,16 +41,16 @@ mod tests {
         ) {
             let mode = VibeMode::new();
             let context = ModeContext::new("test-session".to_string());
-            
+
             // Process input and get response
             let response = tokio::runtime::Runtime::new()
                 .unwrap()
                 .block_on(mode.process(&input, &context))
                 .unwrap();
-            
+
             // Verify that warnings are included in suggestions
             assert!(!response.suggestions.is_empty());
-            
+
             // Verify that at least one suggestion contains a warning indicator
             let has_warning = response.suggestions.iter().any(|s| {
                 s.contains("⚠️") || s.contains("💡") || s.contains("Best Practice")
@@ -67,7 +67,7 @@ mod tests {
         ) {
             let mode = VibeMode::new();
             let capabilities = mode.capabilities();
-            
+
             // Verify that Vibe Mode has the expected capabilities
             assert!(capabilities.iter().any(|c| c.to_string() == "CodeGeneration"));
             assert!(capabilities.iter().any(|c| c.to_string() == "CodeModification"));
@@ -85,7 +85,7 @@ mod tests {
             _dummy in Just(())
         ) {
             let mode = VibeMode::new();
-            
+
             // Verify that disallowed operations are blocked
             assert!(!mode.can_execute(&Operation::ExecuteCommand));
             assert!(!mode.can_execute(&Operation::RunTests));
@@ -100,11 +100,11 @@ mod tests {
             _dummy in Just(())
         ) {
             let mode = VibeMode::new();
-            
+
             // Get warnings multiple times
             let warnings1 = mode.generate_warnings();
             let warnings2 = mode.generate_warnings();
-            
+
             // Verify that warnings are consistent
             assert_eq!(warnings1.len(), warnings2.len());
             for (w1, w2) in warnings1.iter().zip(warnings2.iter()) {
@@ -120,13 +120,13 @@ mod tests {
             code in ".*[a-zA-Z0-9 ]+.*"
         ) {
             let mode = VibeMode::new();
-            
+
             // Convert code to specs
             let result = mode.convert_to_specs(&code);
             assert!(result.is_ok());
-            
+
             let spec = result.unwrap();
-            
+
             // Verify that the original code is preserved in the spec
             assert!(spec.contains(&code));
         }

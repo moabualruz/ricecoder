@@ -339,7 +339,11 @@ impl Default for FormattingStyle {
 impl Default for ImportOrganization {
     fn default() -> Self {
         ImportOrganization {
-            order: vec![ImportGroup::Standard, ImportGroup::External, ImportGroup::Internal],
+            order: vec![
+                ImportGroup::Standard,
+                ImportGroup::External,
+                ImportGroup::Internal,
+            ],
             sort_within_group: true,
         }
     }
@@ -518,7 +522,11 @@ mod tests {
                     line_length: 100,
                 },
                 import_organization: ImportOrganization {
-                    order: vec![ImportGroup::Standard, ImportGroup::External, ImportGroup::Internal],
+                    order: vec![
+                        ImportGroup::Standard,
+                        ImportGroup::External,
+                        ImportGroup::Internal,
+                    ],
                     sort_within_group: true,
                 },
                 documentation_style: DocumentationStyle {

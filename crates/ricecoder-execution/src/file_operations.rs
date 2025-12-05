@@ -160,10 +160,7 @@ impl FileOperations {
 
         // Copy file to backup
         fs::copy(&resolved_path, &backup_path).map_err(|e| {
-            ExecutionError::StepFailed(format!(
-                "Failed to create backup for {}: {}",
-                path, e
-            ))
+            ExecutionError::StepFailed(format!("Failed to create backup for {}: {}", path, e))
         })?;
 
         info!(
@@ -263,9 +260,8 @@ impl FileOperations {
         }
 
         // Read the file
-        fs::read_to_string(&resolved_path).map_err(|e| {
-            ExecutionError::StepFailed(format!("Failed to read file {}: {}", path, e))
-        })
+        fs::read_to_string(&resolved_path)
+            .map_err(|e| ExecutionError::StepFailed(format!("Failed to read file {}: {}", path, e)))
     }
 
     /// Validate and resolve a path using PathResolver
@@ -328,7 +324,9 @@ impl FileOperations {
         let file_name = path
             .file_name()
             .ok_or_else(|| {
-                ExecutionError::ValidationError("Cannot create backup path for root directory".to_string())
+                ExecutionError::ValidationError(
+                    "Cannot create backup path for root directory".to_string(),
+                )
             })?
             .to_string_lossy()
             .to_string();

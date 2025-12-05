@@ -1,21 +1,22 @@
 //! Property-based tests for risk scoring
 //! **Feature: ricecoder-workflows, Property 13-17: Risk Scoring and Assessment**
 
-use proptest::prelude::*;
-use crate::models::{WorkflowStep, StepType, StepConfig, ErrorAction, AgentStep, RiskFactors, WorkflowState, WorkflowStatus, StepResult, StepStatus};
+use crate::models::{
+    AgentStep, ErrorAction, RiskFactors, StepConfig, StepResult, StepStatus, StepType,
+    WorkflowState, WorkflowStatus, WorkflowStep,
+};
 use crate::risk_scoring::RiskScorer;
 use crate::safety_constraints::SafetyConstraints;
 use chrono::Utc;
+use proptest::prelude::*;
 use std::collections::HashMap;
 
 // Strategy for generating risk factors
 fn risk_factors_strategy() -> impl Strategy<Value = RiskFactors> {
-    (0u8..=100, 0u8..=100, 0u8..=100).prop_map(|(impact, reversibility, complexity)| {
-        RiskFactors {
-            impact,
-            reversibility,
-            complexity,
-        }
+    (0u8..=100, 0u8..=100, 0u8..=100).prop_map(|(impact, reversibility, complexity)| RiskFactors {
+        impact,
+        reversibility,
+        complexity,
     })
 }
 
@@ -122,7 +123,7 @@ proptest! {
             prop_assert_eq!(score1, score2, "Identical factors should produce identical scores");
         }
 
-        // If step1 has significantly higher impact and significantly lower reversibility, 
+        // If step1 has significantly higher impact and significantly lower reversibility,
         // it should have higher or equal risk (accounting for complexity differences)
         if impact1 > impact2 + 20 && reversibility1 + 20 < reversibility2 {
             prop_assert!(

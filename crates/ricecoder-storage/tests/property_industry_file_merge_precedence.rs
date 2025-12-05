@@ -9,7 +9,7 @@
 
 use proptest::prelude::*;
 use ricecoder_storage::industry::{
-    AiderAdapter, AgentsAdapter, ClaudeAdapter, ClineAdapter, ContinueDevAdapter, CopilotAdapter,
+    AgentsAdapter, AiderAdapter, ClaudeAdapter, ClineAdapter, ContinueDevAdapter, CopilotAdapter,
     CursorAdapter, IndustryFileAdapter, IndustryFileDetector, KiroAdapter, WindsurfAdapter,
 };
 use std::fs;
@@ -117,7 +117,10 @@ fn create_industry_files(
 
     if combination.has_continue_dir {
         fs::create_dir(root.join(".continue"))?;
-        fs::write(root.join(".continue/config.json"), r#"{"models": ["gpt-4"]}"#)?;
+        fs::write(
+            root.join(".continue/config.json"),
+            r#"{"models": ["gpt-4"]}"#,
+        )?;
     }
 
     if combination.has_kiro_dir {

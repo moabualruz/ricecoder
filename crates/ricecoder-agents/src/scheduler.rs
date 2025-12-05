@@ -63,10 +63,7 @@ impl TaskDAG {
             .or_default()
             .push(depends_on.clone());
 
-        self.dependents
-            .entry(depends_on)
-            .or_default()
-            .push(task_id);
+        self.dependents.entry(depends_on).or_default().push(task_id);
     }
 
     /// Get tasks with no dependencies (can execute immediately)
@@ -80,18 +77,12 @@ impl TaskDAG {
 
     /// Get tasks that depend on a given task
     pub fn get_dependents(&self, task_id: &str) -> Vec<String> {
-        self.dependents
-            .get(task_id)
-            .cloned()
-            .unwrap_or_default()
+        self.dependents.get(task_id).cloned().unwrap_or_default()
     }
 
     /// Get dependencies for a task
     pub fn get_dependencies(&self, task_id: &str) -> Vec<String> {
-        self.dependencies
-            .get(task_id)
-            .cloned()
-            .unwrap_or_default()
+        self.dependencies.get(task_id).cloned().unwrap_or_default()
     }
 }
 
@@ -415,7 +406,10 @@ mod tests {
 
         let result = scheduler.detect_circular_dependencies_in_dag(&dag);
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Circular dependency"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Circular dependency"));
     }
 
     #[test]

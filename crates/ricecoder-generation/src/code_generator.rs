@@ -102,9 +102,8 @@ impl CodeGenerator {
             }
         }
 
-        Err(last_error.unwrap_or_else(|| {
-            GenerationError::GenerationFailed("Unknown error".to_string())
-        }))
+        Err(last_error
+            .unwrap_or_else(|| GenerationError::GenerationFailed("Unknown error".to_string())))
     }
 
     /// Internal implementation of code generation
@@ -212,9 +211,7 @@ impl CodeGenerator {
                         };
 
                         current_file = Some(GeneratedFile {
-                            path: file_path.unwrap_or_else(|| {
-                                format!("generated.{}", language)
-                            }),
+                            path: file_path.unwrap_or_else(|| format!("generated.{}", language)),
                             content: String::new(),
                             language,
                         });

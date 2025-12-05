@@ -4,7 +4,7 @@
 //! Returns empty results and logs warnings when unsupported languages are encountered.
 
 use super::{SemanticAnalyzer, SemanticResult};
-use crate::types::{Language, SemanticInfo, Symbol, Position};
+use crate::types::{Language, Position, SemanticInfo, Symbol};
 
 /// Fallback analyzer for unsupported languages
 pub struct FallbackAnalyzer;
@@ -99,14 +99,14 @@ mod tests {
     fn test_graceful_degradation() {
         let analyzer = FallbackAnalyzer::new();
         let code = "<?php echo 'hello'; ?>";
-        
+
         // Should not crash, just return empty results
         let info = analyzer.analyze(code).unwrap();
         assert!(info.symbols.is_empty());
-        
+
         let symbols = analyzer.extract_symbols(code).unwrap();
         assert!(symbols.is_empty());
-        
+
         let hover = analyzer.get_hover_info(code, Position::new(0, 0)).unwrap();
         assert!(hover.is_none());
     }

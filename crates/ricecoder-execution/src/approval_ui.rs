@@ -3,8 +3,8 @@
 //! Provides UI components for displaying approval requests and handling
 //! user decisions (approve/reject). Designed to integrate with the TUI.
 
-use crate::models::RiskLevel;
 use crate::approval::ApprovalSummary;
+use crate::models::RiskLevel;
 
 /// Approval UI state
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -331,9 +331,7 @@ mod tests {
     #[test]
     fn test_approval_ui_builder_missing_request_id() {
         let summary = create_test_summary();
-        let result = ApprovalUIBuilder::new()
-            .summary(summary)
-            .build();
+        let result = ApprovalUIBuilder::new().summary(summary).build();
 
         assert!(result.is_err());
     }

@@ -1,9 +1,9 @@
 // Configuration management
 // Adapted from automation/src/infrastructure/storage/config.rs
 
+use super::Command;
 use crate::error::{CliError, CliResult};
 use crate::output::OutputStyle;
-use super::Command;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -75,7 +75,10 @@ impl ConfigCommand {
 
         println!();
         let config_dir = Self::get_config_dir()?;
-        println!("{}", style.info(&format!("Config directory: {}", config_dir.display())));
+        println!(
+            "{}",
+            style.info(&format!("Config directory: {}", config_dir.display()))
+        );
 
         Ok(())
     }
@@ -91,8 +94,14 @@ impl ConfigCommand {
                 Ok(())
             }
             None => {
-                println!("{}", style.warning(&format!("Configuration key not found: {}", key)));
-                println!("{}", style.info("Run 'rice config' to see all available keys"));
+                println!(
+                    "{}",
+                    style.warning(&format!("Configuration key not found: {}", key))
+                );
+                println!(
+                    "{}",
+                    style.info("Run 'rice config' to see all available keys")
+                );
                 Ok(())
             }
         }
@@ -106,7 +115,10 @@ impl ConfigCommand {
         // TODO: Write to config file
 
         println!("{}", style.success(&format!("Set {} = {}", key, value)));
-        println!("{}", style.info("Configuration changes will take effect on next run"));
+        println!(
+            "{}",
+            style.info("Configuration changes will take effect on next run")
+        );
 
         Ok(())
     }

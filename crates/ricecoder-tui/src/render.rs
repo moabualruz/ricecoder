@@ -1,7 +1,7 @@
 //! Rendering logic for the TUI
 
 use crate::app::App;
-use crate::diff::{DiffWidget, DiffViewType, DiffLineType};
+use crate::diff::{DiffLineType, DiffViewType, DiffWidget};
 use crate::style::Theme;
 use ratatui::prelude::*;
 
@@ -196,12 +196,7 @@ impl Renderer {
     }
 
     /// Render diff widget based on view type
-    pub fn render_diff(
-        &self,
-        diff: &DiffWidget,
-        area: Rect,
-        theme: &Theme,
-    ) -> Vec<Line<'static>> {
+    pub fn render_diff(&self, diff: &DiffWidget, area: Rect, theme: &Theme) -> Vec<Line<'static>> {
         match diff.view_type {
             DiffViewType::Unified => self.render_diff_unified(diff, area, theme),
             DiffViewType::SideBySide => self.render_diff_side_by_side(diff, area, theme),
@@ -253,7 +248,11 @@ mod tests {
         let mut diff = DiffWidget::new();
 
         let mut hunk = DiffHunk::new("@@ -1,5 +1,6 @@");
-        hunk.add_line(DiffLine::new(DiffLineType::Unchanged, "let x = 5;").with_old_line_num(1).with_new_line_num(1));
+        hunk.add_line(
+            DiffLine::new(DiffLineType::Unchanged, "let x = 5;")
+                .with_old_line_num(1)
+                .with_new_line_num(1),
+        );
         hunk.add_line(DiffLine::new(DiffLineType::Added, "let y = 10;").with_new_line_num(2));
         hunk.add_line(DiffLine::new(DiffLineType::Removed, "let z = 15;").with_old_line_num(2));
 

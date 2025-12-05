@@ -144,15 +144,15 @@ pub use ghost_text::{
     GhostTextStyle,
 };
 pub use ghost_text_state::{
-    BasicGhostTextKeyHandler, BasicGhostTextStateManager, GhostTextKeyHandler,
-    GhostTextState, GhostTextStateManager, PartialAcceptanceMode,
+    BasicGhostTextKeyHandler, BasicGhostTextStateManager, GhostTextKeyHandler, GhostTextState,
+    GhostTextStateManager, PartialAcceptanceMode,
 };
 pub use history::{CompletionHistory, CompletionUsage};
 pub use language::{Language, LanguageDetector};
 pub use providers::{
-    CompletionProviderFactory, DartCompletionProvider, GenericTextProvider,
-    GoCompletionProvider, JavaCompletionProvider, KotlinCompletionProvider,
-    PythonCompletionProvider, RustCompletionProvider, TypeScriptCompletionProvider,
+    CompletionProviderFactory, DartCompletionProvider, GenericTextProvider, GoCompletionProvider,
+    JavaCompletionProvider, KotlinCompletionProvider, PythonCompletionProvider,
+    RustCompletionProvider, TypeScriptCompletionProvider,
 };
 pub use ranker::{AdvancedCompletionRanker, BasicCompletionRanker};
 pub use types::*;

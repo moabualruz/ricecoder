@@ -104,7 +104,12 @@ impl ModeSelectionMenu {
     /// Create a new mode selection menu
     pub fn new() -> Self {
         Self {
-            modes: vec![AppMode::Chat, AppMode::Command, AppMode::Diff, AppMode::Help],
+            modes: vec![
+                AppMode::Chat,
+                AppMode::Command,
+                AppMode::Diff,
+                AppMode::Help,
+            ],
             selected: 0,
             open: false,
             show_confirmation: false,
@@ -130,7 +135,10 @@ impl ModeSelectionMenu {
 
     /// Get the currently selected mode
     pub fn selected_mode(&self) -> AppMode {
-        self.modes.get(self.selected).copied().unwrap_or(AppMode::Chat)
+        self.modes
+            .get(self.selected)
+            .copied()
+            .unwrap_or(AppMode::Chat)
     }
 
     /// Move selection to next mode
@@ -496,7 +504,11 @@ impl ListWidget {
     /// Select all items
     pub fn select_all(&mut self) {
         if self.multi_select {
-            let indices: Vec<usize> = self.filtered_items().into_iter().map(|(idx, _)| idx).collect();
+            let indices: Vec<usize> = self
+                .filtered_items()
+                .into_iter()
+                .map(|(idx, _)| idx)
+                .collect();
             for idx in indices {
                 self.selected_items.insert(idx);
             }
@@ -592,7 +604,11 @@ pub struct DialogWidget {
 
 impl DialogWidget {
     /// Create a new dialog widget
-    pub fn new(dialog_type: DialogType, title: impl Into<String>, message: impl Into<String>) -> Self {
+    pub fn new(
+        dialog_type: DialogType,
+        title: impl Into<String>,
+        message: impl Into<String>,
+    ) -> Self {
         Self {
             dialog_type,
             title: title.into(),
@@ -1142,13 +1158,13 @@ mod tests {
     fn test_menu_widget_open_close() {
         let mut menu = MenuWidget::new();
         assert!(!menu.open);
-        
+
         menu.open();
         assert!(menu.open);
-        
+
         menu.close();
         assert!(!menu.open);
-        
+
         menu.toggle();
         assert!(menu.open);
     }
@@ -1329,7 +1345,11 @@ mod tests {
     #[test]
     fn test_list_widget_add_items() {
         let mut list = ListWidget::new();
-        let items = vec!["item1".to_string(), "item2".to_string(), "item3".to_string()];
+        let items = vec![
+            "item1".to_string(),
+            "item2".to_string(),
+            "item3".to_string(),
+        ];
         list.add_items(items);
 
         assert_eq!(list.item_count(), 3);
@@ -1726,10 +1746,10 @@ mod tests {
     fn test_mode_indicator_show_hide_capabilities() {
         let mut indicator = ModeIndicator::new(AppMode::Chat);
         assert!(!indicator.show_capabilities);
-        
+
         indicator.show_capabilities_enabled();
         assert!(indicator.show_capabilities);
-        
+
         indicator.hide_capabilities_enabled();
         assert!(!indicator.show_capabilities);
     }
@@ -1746,10 +1766,10 @@ mod tests {
     fn test_mode_selection_menu_open_close() {
         let mut menu = ModeSelectionMenu::new();
         assert!(!menu.open);
-        
+
         menu.open(AppMode::Chat);
         assert!(menu.open);
-        
+
         menu.close();
         assert!(!menu.open);
     }
@@ -1758,7 +1778,7 @@ mod tests {
     fn test_mode_selection_menu_navigation() {
         let mut menu = ModeSelectionMenu::new();
         menu.open(AppMode::Chat);
-        
+
         assert_eq!(menu.selected_mode(), AppMode::Chat);
         menu.select_next();
         assert_eq!(menu.selected_mode(), AppMode::Command);
@@ -1772,11 +1792,11 @@ mod tests {
     fn test_mode_selection_menu_wrap_around() {
         let mut menu = ModeSelectionMenu::new();
         menu.open(AppMode::Help);
-        
+
         assert_eq!(menu.selected_mode(), AppMode::Help);
         menu.select_next();
         assert_eq!(menu.selected_mode(), AppMode::Chat);
-        
+
         menu.select_prev();
         assert_eq!(menu.selected_mode(), AppMode::Help);
     }
@@ -1786,7 +1806,7 @@ mod tests {
         let mut menu = ModeSelectionMenu::new();
         menu.open(AppMode::Chat);
         menu.select_next();
-        
+
         let selected = menu.confirm_switch();
         assert_eq!(selected, AppMode::Command);
         assert!(!menu.open);

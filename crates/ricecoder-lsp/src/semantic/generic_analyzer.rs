@@ -3,9 +3,9 @@
 //! This module provides a language-agnostic semantic analyzer that delegates
 //! to language-specific providers registered in the provider registry.
 
-use crate::providers::{SemanticAnalyzerProvider, SemanticAnalyzerRegistry, ProviderResult};
-use crate::types::{Position, SemanticInfo, Symbol};
+use crate::providers::{ProviderResult, SemanticAnalyzerProvider, SemanticAnalyzerRegistry};
 use crate::semantic::{fallback_analyzer::FallbackAnalyzer, SemanticAnalyzer};
+use crate::types::{Position, SemanticInfo, Symbol};
 
 /// Generic semantic analyzer that delegates to pluggable providers
 pub struct GenericSemanticAnalyzer {
@@ -43,8 +43,12 @@ impl GenericSemanticAnalyzer {
             provider.analyze(code)
         } else {
             // Gracefully degrade to fallback analysis
-            tracing::debug!("No provider found for language '{}', using fallback", language);
-            self.fallback.analyze(code)
+            tracing::debug!(
+                "No provider found for language '{}', using fallback",
+                language
+            );
+            self.fallback
+                .analyze(code)
                 .map_err(|e| crate::providers::ProviderError::Error(e.to_string()))
         }
     }
@@ -55,20 +59,33 @@ impl GenericSemanticAnalyzer {
             provider.extract_symbols(code)
         } else {
             // Gracefully degrade to fallback analysis
-            tracing::debug!("No provider found for language '{}', using fallback", language);
-            self.fallback.extract_symbols(code)
+            tracing::debug!(
+                "No provider found for language '{}', using fallback",
+                language
+            );
+            self.fallback
+                .extract_symbols(code)
                 .map_err(|e| crate::providers::ProviderError::Error(e.to_string()))
         }
     }
 
     /// Get hover information using the appropriate provider or fallback
-    pub fn get_hover_info(&self, code: &str, language: &str, position: Position) -> ProviderResult<Option<String>> {
+    pub fn get_hover_info(
+        &self,
+        code: &str,
+        language: &str,
+        position: Position,
+    ) -> ProviderResult<Option<String>> {
         if let Some(provider) = self.registry.get(language) {
             provider.get_hover_info(code, position)
         } else {
             // Gracefully degrade to fallback analysis
-            tracing::debug!("No provider found for language '{}', using fallback", language);
-            self.fallback.get_hover_info(code, position)
+            tracing::debug!(
+                "No provider found for language '{}', using fallback",
+                language
+            );
+            self.fallback
+                .get_hover_info(code, position)
                 .map_err(|e| crate::providers::ProviderError::Error(e.to_string()))
         }
     }
@@ -114,7 +131,11 @@ mod tests {
             Ok(vec![])
         }
 
-        fn get_hover_info(&self, _code: &str, _position: Position) -> ProviderResult<Option<String>> {
+        fn get_hover_info(
+            &self,
+            _code: &str,
+            _position: Position,
+        ) -> ProviderResult<Option<String>> {
             Ok(Some("mock info".to_string()))
         }
     }

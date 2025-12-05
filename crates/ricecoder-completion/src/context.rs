@@ -567,7 +567,10 @@ impl TreeSitterContextAnalyzer {
             let trimmed = line.trim();
 
             // Variable declaration: let x = ...
-            if trimmed.starts_with("let ") || trimmed.starts_with("const ") || trimmed.starts_with("var ") {
+            if trimmed.starts_with("let ")
+                || trimmed.starts_with("const ")
+                || trimmed.starts_with("var ")
+            {
                 if let Some(name) = Self::extract_typescript_variable_name(trimmed) {
                     let kind = if trimmed.starts_with("const ") {
                         SymbolKind::Constant
@@ -586,7 +589,9 @@ impl TreeSitterContextAnalyzer {
             }
 
             // Function parameter (if in function scope)
-            if context.scope.kind == ScopeKind::Function && (trimmed.starts_with("function ") || trimmed.contains("=>")) {
+            if context.scope.kind == ScopeKind::Function
+                && (trimmed.starts_with("function ") || trimmed.contains("=>"))
+            {
                 if let Some(params) = Self::extract_typescript_function_params(trimmed) {
                     for param in params {
                         symbols.push(Symbol {
@@ -627,7 +632,11 @@ impl TreeSitterContextAnalyzer {
         };
 
         let name = name.trim();
-        if !name.is_empty() && name.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '$') {
+        if !name.is_empty()
+            && name
+                .chars()
+                .all(|c| c.is_alphanumeric() || c == '_' || c == '$')
+        {
             Some(name.to_string())
         } else {
             None
@@ -690,7 +699,11 @@ impl TreeSitterContextAnalyzer {
                     let before = &trimmed[..eq_pos];
                     let after = &trimmed[eq_pos + 1..eq_pos + 2];
 
-                    if after != "=" && !before.ends_with('!') && !before.ends_with('<') && !before.ends_with('>') {
+                    if after != "="
+                        && !before.ends_with('!')
+                        && !before.ends_with('<')
+                        && !before.ends_with('>')
+                    {
                         if let Some(name) = Self::extract_python_variable_name(before) {
                             symbols.push(Symbol {
                                 name: name.clone(),
@@ -772,10 +785,6 @@ impl TreeSitterContextAnalyzer {
         None
     }
 
-
-
-
-
     /// Parse code using tree-sitter
     fn parse_code(code: &str, language: &str) -> CompletionResult<tree_sitter::Tree> {
         let lang = Self::get_language(language).ok_or_else(|| {
@@ -833,75 +842,69 @@ impl TreeSitterContextAnalyzer {
             let node_type = node.kind();
 
             match language {
-                "rust" => {
-                    match node_type {
-                        "function_item" => {
-                            scope_kind = ScopeKind::Function;
-                            scope_name = Self::extract_name_rust(node, code);
-                            break;
-                        }
-                        "struct_item" => {
-                            scope_kind = ScopeKind::Struct;
-                            scope_name = Self::extract_name_rust(node, code);
-                            break;
-                        }
-                        "impl_item" => {
-                            scope_kind = ScopeKind::Impl;
-                            scope_name = Self::extract_name_rust(node, code);
-                            break;
-                        }
-                        "mod_item" => {
-                            scope_kind = ScopeKind::Module;
-                            scope_name = Self::extract_name_rust(node, code);
-                            break;
-                        }
-                        "block" => {
-                            scope_kind = ScopeKind::Block;
-                        }
-                        _ => {}
+                "rust" => match node_type {
+                    "function_item" => {
+                        scope_kind = ScopeKind::Function;
+                        scope_name = Self::extract_name_rust(node, code);
+                        break;
                     }
-                }
-                "typescript" | "javascript" => {
-                    match node_type {
-                        "function_declaration" | "function" => {
-                            scope_kind = ScopeKind::Function;
-                            scope_name = Self::extract_name_typescript(node, code);
-                            break;
-                        }
-                        "class_declaration" => {
-                            scope_kind = ScopeKind::Class;
-                            scope_name = Self::extract_name_typescript(node, code);
-                            break;
-                        }
-                        "method_definition" => {
-                            scope_kind = ScopeKind::Function;
-                            scope_name = Self::extract_name_typescript(node, code);
-                            break;
-                        }
-                        "block" => {
-                            scope_kind = ScopeKind::Block;
-                        }
-                        _ => {}
+                    "struct_item" => {
+                        scope_kind = ScopeKind::Struct;
+                        scope_name = Self::extract_name_rust(node, code);
+                        break;
                     }
-                }
-                "python" => {
-                    match node_type {
-                        "function_definition" => {
-                            scope_kind = ScopeKind::Function;
-                            scope_name = Self::extract_name_python(node, code);
-                            break;
-                        }
-                        "class_definition" => {
-                            scope_kind = ScopeKind::Class;
-                            scope_name = Self::extract_name_python(node, code);
-                            break;
-                        }
-                        "block" => {
-                            scope_kind = ScopeKind::Block;
-                        }
-                        _ => {}
+                    "impl_item" => {
+                        scope_kind = ScopeKind::Impl;
+                        scope_name = Self::extract_name_rust(node, code);
+                        break;
                     }
-                }
+                    "mod_item" => {
+                        scope_kind = ScopeKind::Module;
+                        scope_name = Self::extract_name_rust(node, code);
+                        break;
+                    }
+                    "block" => {
+                        scope_kind = ScopeKind::Block;
+                    }
+                    _ => {}
+                },
+                "typescript" | "javascript" => match node_type {
+                    "function_declaration" | "function" => {
+                        scope_kind = ScopeKind::Function;
+                        scope_name = Self::extract_name_typescript(node, code);
+                        break;
+                    }
+                    "class_declaration" => {
+                        scope_kind = ScopeKind::Class;
+                        scope_name = Self::extract_name_typescript(node, code);
+                        break;
+                    }
+                    "method_definition" => {
+                        scope_kind = ScopeKind::Function;
+                        scope_name = Self::extract_name_typescript(node, code);
+                        break;
+                    }
+                    "block" => {
+                        scope_kind = ScopeKind::Block;
+                    }
+                    _ => {}
+                },
+                "python" => match node_type {
+                    "function_definition" => {
+                        scope_kind = ScopeKind::Function;
+                        scope_name = Self::extract_name_python(node, code);
+                        break;
+                    }
+                    "class_definition" => {
+                        scope_kind = ScopeKind::Class;
+                        scope_name = Self::extract_name_python(node, code);
+                        break;
+                    }
+                    "block" => {
+                        scope_kind = ScopeKind::Block;
+                    }
+                    _ => {}
+                },
                 _ => {}
             }
 
@@ -1113,15 +1116,15 @@ impl TreeSitterContextAnalyzer {
     fn infer_rust_assignment_type(context: &CompletionContext) -> Option<Type> {
         // Look for patterns like "let x: Type = " or "let x: Type<T> = "
         // We need to find the line with the assignment and extract the type annotation
-        
+
         // For now, we'll use a simple pattern matching approach
         // In a full implementation, this would use the AST
-        
+
         // Check if we're in an assignment context by looking at the scope
         if context.scope.kind == ScopeKind::Function || context.scope.kind == ScopeKind::Block {
             // Try to infer from variable declarations with type annotations
             // This is a simplified implementation
-            
+
             // Common Rust types that might be inferred
             if context.prefix.contains("vec") || context.prefix.contains("Vec") {
                 return Some(Type::new("Vec".to_string()).array());
@@ -1136,14 +1139,14 @@ impl TreeSitterContextAnalyzer {
                 return Some(Type::new("Result".to_string()));
             }
         }
-        
+
         None
     }
 
     /// Infer TypeScript assignment type from type annotations
     fn infer_typescript_assignment_type(context: &CompletionContext) -> Option<Type> {
         // Look for patterns like "let x: Type = " or "const x: Type = "
-        
+
         // Common TypeScript types that might be inferred
         if context.prefix.contains("array") || context.prefix.contains("Array") {
             return Some(Type::new("Array".to_string()).array());
@@ -1160,14 +1163,14 @@ impl TreeSitterContextAnalyzer {
         if context.prefix.contains("map") || context.prefix.contains("Map") {
             return Some(Type::new("Map".to_string()));
         }
-        
+
         None
     }
 
     /// Infer Python assignment type from type hints
     fn infer_python_assignment_type(context: &CompletionContext) -> Option<Type> {
         // Look for patterns like "x: Type = " or "x: Type[T] = "
-        
+
         // Common Python types that might be inferred
         if context.prefix.contains("list") || context.prefix.contains("List") {
             return Some(Type::new("list".to_string()).array());
@@ -1184,7 +1187,7 @@ impl TreeSitterContextAnalyzer {
         if context.prefix.contains("tuple") || context.prefix.contains("Tuple") {
             return Some(Type::new("tuple".to_string()).array());
         }
-        
+
         None
     }
 
@@ -1213,7 +1216,7 @@ impl TreeSitterContextAnalyzer {
                 return Some(Type::new("&".to_string()));
             }
         }
-        
+
         None
     }
 
@@ -1235,7 +1238,7 @@ impl TreeSitterContextAnalyzer {
                 return Some(Type::new("any".to_string()));
             }
         }
-        
+
         None
     }
 
@@ -1257,7 +1260,7 @@ impl TreeSitterContextAnalyzer {
                 return Some(Type::new("bool".to_string()));
             }
         }
-        
+
         None
     }
 
@@ -1289,7 +1292,7 @@ impl TreeSitterContextAnalyzer {
                 return Some(Type::new("String".to_string()));
             }
         }
-        
+
         None
     }
 
@@ -1311,7 +1314,7 @@ impl TreeSitterContextAnalyzer {
                 return Some(Type::new("number".to_string()));
             }
         }
-        
+
         None
     }
 
@@ -1333,7 +1336,7 @@ impl TreeSitterContextAnalyzer {
                 return Some(Type::new("int".to_string()));
             }
         }
-        
+
         None
     }
 
@@ -1355,14 +1358,16 @@ impl TreeSitterContextAnalyzer {
         // Look for the most recent variable declaration with type annotation
         for line in code_before.lines().rev() {
             let trimmed = line.trim();
-            
+
             // Pattern: let x: Type = ...
-            if (trimmed.starts_with("let ") || trimmed.starts_with("let mut ")) && trimmed.contains(':') {
+            if (trimmed.starts_with("let ") || trimmed.starts_with("let mut "))
+                && trimmed.contains(':')
+            {
                 if let Some(type_str) = Self::extract_rust_type_annotation(trimmed) {
                     return Some(Self::parse_rust_type(&type_str));
                 }
             }
-            
+
             // Pattern: const X: Type = ...
             if trimmed.starts_with("const ") && trimmed.contains(':') {
                 if let Some(type_str) = Self::extract_rust_type_annotation(trimmed) {
@@ -1370,7 +1375,7 @@ impl TreeSitterContextAnalyzer {
                 }
             }
         }
-        
+
         None
     }
 
@@ -1393,30 +1398,30 @@ impl TreeSitterContextAnalyzer {
     /// Parse Rust type string into Type struct
     fn parse_rust_type(type_str: &str) -> Type {
         let type_str = type_str.trim();
-        
+
         // Handle Option<T>
         if type_str.starts_with("Option<") {
             let inner = &type_str[7..type_str.len() - 1];
             return Type::new(inner.to_string()).optional();
         }
-        
+
         // Handle Vec<T>
         if type_str.starts_with("Vec<") {
             let inner = &type_str[4..type_str.len() - 1];
             return Type::new(inner.to_string()).array();
         }
-        
+
         // Handle Result<T, E>
         if type_str.starts_with("Result<") {
             let inner = &type_str[7..type_str.len() - 1];
             return Type::new(inner.to_string());
         }
-        
+
         // Handle references
         if let Some(inner) = type_str.strip_prefix("&") {
             return Type::new(inner.to_string());
         }
-        
+
         // Simple type
         Type::new(type_str.to_string())
     }
@@ -1426,15 +1431,19 @@ impl TreeSitterContextAnalyzer {
         // Look for the most recent variable declaration with type annotation
         for line in code_before.lines().rev() {
             let trimmed = line.trim();
-            
+
             // Pattern: let x: Type = ...
-            if (trimmed.starts_with("let ") || trimmed.starts_with("const ") || trimmed.starts_with("var ")) && trimmed.contains(':') {
+            if (trimmed.starts_with("let ")
+                || trimmed.starts_with("const ")
+                || trimmed.starts_with("var "))
+                && trimmed.contains(':')
+            {
                 if let Some(type_str) = Self::extract_typescript_type_annotation(trimmed) {
                     return Some(Self::parse_typescript_type(&type_str));
                 }
             }
         }
-        
+
         None
     }
 
@@ -1457,24 +1466,24 @@ impl TreeSitterContextAnalyzer {
     /// Parse TypeScript type string into Type struct
     fn parse_typescript_type(type_str: &str) -> Type {
         let type_str = type_str.trim();
-        
+
         // Handle Array<T>
         if type_str.starts_with("Array<") {
             let inner = &type_str[6..type_str.len() - 1];
             return Type::new(inner.to_string()).array();
         }
-        
+
         // Handle T[]
         if let Some(inner) = type_str.strip_suffix("[]") {
             return Type::new(inner.to_string()).array();
         }
-        
+
         // Handle Promise<T>
         if type_str.starts_with("Promise<") {
             let inner = &type_str[8..type_str.len() - 1];
             return Type::new(inner.to_string());
         }
-        
+
         // Simple type
         Type::new(type_str.to_string())
     }
@@ -1484,12 +1493,12 @@ impl TreeSitterContextAnalyzer {
         // Look for the most recent variable declaration with type hint
         for line in code_before.lines().rev() {
             let trimmed = line.trim();
-            
+
             // Skip comments and empty lines
             if trimmed.is_empty() || trimmed.starts_with('#') {
                 continue;
             }
-            
+
             // Pattern: x: Type = ...
             if trimmed.contains(':') && trimmed.contains('=') {
                 if let Some(type_str) = Self::extract_python_type_annotation(trimmed) {
@@ -1497,7 +1506,7 @@ impl TreeSitterContextAnalyzer {
                 }
             }
         }
-        
+
         None
     }
 
@@ -1517,42 +1526,46 @@ impl TreeSitterContextAnalyzer {
     /// Parse Python type string into Type struct
     fn parse_python_type(type_str: &str) -> Type {
         let type_str = type_str.trim();
-        
+
         // Handle List[T]
         if type_str.starts_with("List[") {
             let inner = &type_str[5..type_str.len() - 1];
             return Type::new(inner.to_string()).array();
         }
-        
+
         // Handle list
         if type_str == "list" {
             return Type::new("list".to_string()).array();
         }
-        
+
         // Handle Dict[K, V]
         if type_str.starts_with("Dict[") {
             let inner = &type_str[5..type_str.len() - 1];
             return Type::new(inner.to_string());
         }
-        
+
         // Handle Optional[T]
         if type_str.starts_with("Optional[") {
             let inner = &type_str[9..type_str.len() - 1];
             return Type::new(inner.to_string()).optional();
         }
-        
+
         // Handle Tuple[T, ...]
         if type_str.starts_with("Tuple[") {
             let inner = &type_str[6..type_str.len() - 1];
             return Type::new(inner.to_string()).array();
         }
-        
+
         // Simple type
         Type::new(type_str.to_string())
     }
 
     /// Infer function return type from signature
-    pub fn infer_function_return_type(code: &str, position: Position, language: &str) -> Option<Type> {
+    pub fn infer_function_return_type(
+        code: &str,
+        position: Position,
+        language: &str,
+    ) -> Option<Type> {
         let byte_offset = Self::position_to_byte_offset(code, position);
         let code_before = &code[..byte_offset];
 
@@ -1569,7 +1582,7 @@ impl TreeSitterContextAnalyzer {
         // Look for the most recent function definition
         for line in code_before.lines().rev() {
             let trimmed = line.trim();
-            
+
             // Pattern: fn name(...) -> Type { ... }
             if trimmed.starts_with("fn ") && trimmed.contains("->") {
                 if let Some(return_type) = Self::extract_rust_return_type(trimmed) {
@@ -1577,7 +1590,7 @@ impl TreeSitterContextAnalyzer {
                 }
             }
         }
-        
+
         None
     }
 
@@ -1600,15 +1613,19 @@ impl TreeSitterContextAnalyzer {
         // Look for the most recent function definition
         for line in code_before.lines().rev() {
             let trimmed = line.trim();
-            
+
             // Pattern: function name(...): Type { ... } or async function name(...): Type { ... } or (...): Type => ...
-            if (trimmed.starts_with("function ") || trimmed.starts_with("async function ") || trimmed.contains("=>")) && trimmed.contains(':') {
+            if (trimmed.starts_with("function ")
+                || trimmed.starts_with("async function ")
+                || trimmed.contains("=>"))
+                && trimmed.contains(':')
+            {
                 if let Some(return_type) = Self::extract_typescript_return_type(trimmed) {
                     return Some(Self::parse_typescript_type(&return_type));
                 }
             }
         }
-        
+
         None
     }
 
@@ -1617,11 +1634,11 @@ impl TreeSitterContextAnalyzer {
         // Look for pattern: ): Type { or ): Type =>
         if let Some(paren_pos) = line.rfind(')') {
             let after_paren = &line[paren_pos..];
-            
+
             // Look for : Type pattern
             if let Some(colon_pos) = after_paren.find(':') {
                 let after_colon = &after_paren[colon_pos + 1..];
-                
+
                 // Find the end of the type (either { or =>)
                 let end_pos = if let Some(brace_pos) = after_colon.find('{') {
                     brace_pos
@@ -1631,7 +1648,7 @@ impl TreeSitterContextAnalyzer {
                     // No brace or arrow found, take until end of line
                     after_colon.len()
                 };
-                
+
                 let return_type = &after_colon[..end_pos];
                 return Some(return_type.trim().to_string());
             }
@@ -1644,7 +1661,7 @@ impl TreeSitterContextAnalyzer {
         // Look for the most recent function definition
         for line in code_before.lines().rev() {
             let trimmed = line.trim();
-            
+
             // Pattern: def name(...) -> Type: ...
             if trimmed.starts_with("def ") && trimmed.contains("->") {
                 if let Some(return_type) = Self::extract_python_return_type(trimmed) {
@@ -1652,7 +1669,7 @@ impl TreeSitterContextAnalyzer {
                 }
             }
         }
-        
+
         None
     }
 
@@ -1683,7 +1700,8 @@ impl GenericContextAnalyzer {
                 // Look for use statements
                 for line in code.lines() {
                     if line.trim().starts_with("use ") {
-                        if let Some(imported) = TreeSitterContextAnalyzer::extract_rust_import(line) {
+                        if let Some(imported) = TreeSitterContextAnalyzer::extract_rust_import(line)
+                        {
                             symbols.push(Symbol {
                                 name: imported.clone(),
                                 kind: SymbolKind::Module,
@@ -1703,7 +1721,9 @@ impl GenericContextAnalyzer {
                 // Look for import statements
                 for line in code.lines() {
                     if line.trim().starts_with("import ") {
-                        if let Some(imported) = TreeSitterContextAnalyzer::extract_typescript_import(line) {
+                        if let Some(imported) =
+                            TreeSitterContextAnalyzer::extract_typescript_import(line)
+                        {
                             symbols.push(Symbol {
                                 name: imported.clone(),
                                 kind: SymbolKind::Module,
@@ -1723,7 +1743,9 @@ impl GenericContextAnalyzer {
                 // Look for import statements
                 for line in code.lines() {
                     if line.trim().starts_with("import ") || line.trim().starts_with("from ") {
-                        if let Some(imported) = TreeSitterContextAnalyzer::extract_python_import(line) {
+                        if let Some(imported) =
+                            TreeSitterContextAnalyzer::extract_python_import(line)
+                        {
                             symbols.push(Symbol {
                                 name: imported.clone(),
                                 kind: SymbolKind::Module,
@@ -1751,13 +1773,19 @@ impl GenericContextAnalyzer {
 
         match context.language.as_str() {
             "rust" => {
-                symbols.extend(TreeSitterContextAnalyzer::collect_rust_scope_symbols(code, context));
+                symbols.extend(TreeSitterContextAnalyzer::collect_rust_scope_symbols(
+                    code, context,
+                ));
             }
             "typescript" | "javascript" => {
-                symbols.extend(TreeSitterContextAnalyzer::collect_typescript_scope_symbols(code, context));
+                symbols.extend(TreeSitterContextAnalyzer::collect_typescript_scope_symbols(
+                    code, context,
+                ));
             }
             "python" => {
-                symbols.extend(TreeSitterContextAnalyzer::collect_python_scope_symbols(code, context));
+                symbols.extend(TreeSitterContextAnalyzer::collect_python_scope_symbols(
+                    code, context,
+                ));
             }
             _ => {}
         }
@@ -1800,7 +1828,10 @@ impl ContextAnalyzer for GenericContextAnalyzer {
         symbols.extend(Self::get_builtin_symbols(&context.language));
 
         // Add symbols from imported modules
-        symbols.extend(Self::collect_imported_symbols_generic(code, &context.language));
+        symbols.extend(Self::collect_imported_symbols_generic(
+            code,
+            &context.language,
+        ));
 
         // Add symbols from the current scope
         symbols.extend(Self::collect_scope_symbols_generic(context, code));
@@ -1838,7 +1869,9 @@ impl GenericContextAnalyzer {
     fn infer_from_assignment_generic(context: &CompletionContext) -> Option<Type> {
         match context.language.as_str() {
             "rust" => TreeSitterContextAnalyzer::infer_rust_assignment_type(context),
-            "typescript" | "javascript" => TreeSitterContextAnalyzer::infer_typescript_assignment_type(context),
+            "typescript" | "javascript" => {
+                TreeSitterContextAnalyzer::infer_typescript_assignment_type(context)
+            }
             "python" => TreeSitterContextAnalyzer::infer_python_assignment_type(context),
             _ => None,
         }
@@ -1848,7 +1881,9 @@ impl GenericContextAnalyzer {
     fn infer_from_function_param_generic(context: &CompletionContext) -> Option<Type> {
         match context.language.as_str() {
             "rust" => TreeSitterContextAnalyzer::infer_rust_function_param_type(context),
-            "typescript" | "javascript" => TreeSitterContextAnalyzer::infer_typescript_function_param_type(context),
+            "typescript" | "javascript" => {
+                TreeSitterContextAnalyzer::infer_typescript_function_param_type(context)
+            }
             "python" => TreeSitterContextAnalyzer::infer_python_function_param_type(context),
             _ => None,
         }
@@ -1858,7 +1893,9 @@ impl GenericContextAnalyzer {
     fn infer_from_return_type_generic(context: &CompletionContext) -> Option<Type> {
         match context.language.as_str() {
             "rust" => TreeSitterContextAnalyzer::infer_rust_return_type(context),
-            "typescript" | "javascript" => TreeSitterContextAnalyzer::infer_typescript_return_type(context),
+            "typescript" | "javascript" => {
+                TreeSitterContextAnalyzer::infer_typescript_return_type(context)
+            }
             "python" => TreeSitterContextAnalyzer::infer_python_return_type(context),
             _ => None,
         }
@@ -1912,7 +1949,6 @@ impl GenericContextAnalyzer {
     fn get_builtin_symbols(language: &str) -> Vec<Symbol> {
         TreeSitterContextAnalyzer::get_builtin_symbols(language)
     }
-
 }
 
 #[cfg(test)]

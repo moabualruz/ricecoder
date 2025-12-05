@@ -3,18 +3,18 @@
 //! This module implements the core LSP server that handles initialization,
 //! shutdown, and request routing.
 
-use crate::types::{LspError, LspResult, ServerState, Position, Language};
-use crate::transport::{AsyncStdioTransport, JsonRpcError, JsonRpcResponse, LspMessage};
-use crate::hover::HoverProvider;
-use crate::diagnostics::{DiagnosticsEngine, DefaultDiagnosticsEngine};
 use crate::code_actions::{CodeActionsEngine, DefaultCodeActionsEngine};
 use crate::completion::CompletionHandler;
 use crate::config::CompletionConfig;
+use crate::diagnostics::{DefaultDiagnosticsEngine, DiagnosticsEngine};
+use crate::hover::HoverProvider;
+use crate::transport::{AsyncStdioTransport, JsonRpcError, JsonRpcResponse, LspMessage};
+use crate::types::{Language, LspError, LspResult, Position, ServerState};
+use ricecoder_completion::CompletionEngine;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::sync::Arc;
-use tracing::{info, warn, error, debug};
-use ricecoder_completion::CompletionEngine;
+use tracing::{debug, error, info, warn};
 
 /// Server capabilities
 #[derive(Debug, Clone)]
@@ -44,7 +44,6 @@ impl Default for ServerCapabilities {
 }
 
 impl ServerCapabilities {
-
     /// Convert to JSON
     pub fn to_json(&self) -> Value {
         json!({
@@ -360,12 +359,14 @@ impl LspServer {
         let line = position
             .get("line")
             .and_then(|v| v.as_u64())
-            .ok_or_else(|| LspError::InvalidParams("Missing line".to_string()))? as u32;
+            .ok_or_else(|| LspError::InvalidParams("Missing line".to_string()))?
+            as u32;
 
         let character = position
             .get("character")
             .and_then(|v| v.as_u64())
-            .ok_or_else(|| LspError::InvalidParams("Missing character".to_string()))? as u32;
+            .ok_or_else(|| LspError::InvalidParams("Missing character".to_string()))?
+            as u32;
 
         // Get document content
         let code = self
@@ -373,33 +374,33 @@ impl LspServer {
             .ok_or_else(|| LspError::InvalidParams(format!("Document not found: {}", uri)))?;
 
         // Get hover information
-        let hover_info = self.hover_provider.get_hover_info(code, Position::new(line, character));
+        let hover_info = self
+            .hover_provider
+            .get_hover_info(code, Position::new(line, character));
 
         // Convert to JSON response
         match hover_info {
-            Some(info) => {
-                Ok(json!({
-                    "contents": {
-                        "kind": match info.contents.kind {
-                            crate::types::MarkupKind::PlainText => "plaintext",
-                            crate::types::MarkupKind::Markdown => "markdown",
-                        },
-                        "value": info.contents.value,
+            Some(info) => Ok(json!({
+                "contents": {
+                    "kind": match info.contents.kind {
+                        crate::types::MarkupKind::PlainText => "plaintext",
+                        crate::types::MarkupKind::Markdown => "markdown",
                     },
-                    "range": info.range.map(|r| {
-                        json!({
-                            "start": {
-                                "line": r.start.line,
-                                "character": r.start.character,
-                            },
-                            "end": {
-                                "line": r.end.line,
-                                "character": r.end.character,
-                            },
-                        })
-                    }),
-                }))
-            }
+                    "value": info.contents.value,
+                },
+                "range": info.range.map(|r| {
+                    json!({
+                        "start": {
+                            "line": r.start.line,
+                            "character": r.start.character,
+                        },
+                        "end": {
+                            "line": r.end.line,
+                            "character": r.end.character,
+                        },
+                    })
+                }),
+            })),
             None => Ok(json!(null)),
         }
     }
@@ -430,7 +431,8 @@ impl LspServer {
         let language = self.detect_language(uri);
 
         // Generate diagnostics
-        let diagnostics = self.diagnostics_engine
+        let diagnostics = self
+            .diagnostics_engine
             .generate_diagnostics(code, language)
             .map_err(|e| LspError::InternalError(e.to_string()))?;
 
@@ -493,12 +495,14 @@ impl LspServer {
         let line = position
             .get("line")
             .and_then(|v| v.as_u64())
-            .ok_or_else(|| LspError::InvalidParams("Missing line".to_string()))? as u32;
+            .ok_or_else(|| LspError::InvalidParams("Missing line".to_string()))?
+            as u32;
 
         let character = position
             .get("character")
             .and_then(|v| v.as_u64())
-            .ok_or_else(|| LspError::InvalidParams("Missing character".to_string()))? as u32;
+            .ok_or_else(|| LspError::InvalidParams("Missing character".to_string()))?
+            as u32;
 
         // Get document content
         let code = self
@@ -509,10 +513,9 @@ impl LspServer {
         let language = self.detect_language(uri);
 
         // Get completion handler
-        let handler = self
-            .completion_handler
-            .as_ref()
-            .ok_or_else(|| LspError::InternalError("Completion engine not initialized".to_string()))?;
+        let handler = self.completion_handler.as_ref().ok_or_else(|| {
+            LspError::InternalError("Completion engine not initialized".to_string())
+        })?;
 
         // Generate completions
         let completions = handler
@@ -534,10 +537,9 @@ impl LspServer {
             return Ok(params);
         }
 
-        let handler = self
-            .completion_handler
-            .as_ref()
-            .ok_or_else(|| LspError::InternalError("Completion engine not initialized".to_string()))?;
+        let handler = self.completion_handler.as_ref().ok_or_else(|| {
+            LspError::InternalError("Completion engine not initialized".to_string())
+        })?;
 
         handler.handle_completion_resolve(&params).await
     }
@@ -578,8 +580,13 @@ impl LspServer {
         // Generate code actions for each diagnostic
         for diag_json in diagnostics_array {
             // Parse diagnostic from JSON
-            if let Ok(diagnostic) = serde_json::from_value::<crate::types::Diagnostic>(diag_json.clone()) {
-                match self.code_actions_engine.suggest_code_actions(&diagnostic, code) {
+            if let Ok(diagnostic) =
+                serde_json::from_value::<crate::types::Diagnostic>(diag_json.clone())
+            {
+                match self
+                    .code_actions_engine
+                    .suggest_code_actions(&diagnostic, code)
+                {
                     Ok(suggested_actions) => {
                         for action in suggested_actions {
                             actions.push(json!({
@@ -641,37 +648,35 @@ impl LspServer {
     /// Process a message
     async fn process_message(&mut self, message: LspMessage) -> LspResult<Option<Value>> {
         match message {
-            LspMessage::Request(req) => {
-                match req.method.as_str() {
-                    "initialize" => {
-                        let params = req.params.unwrap_or(json!({}));
-                        self.handle_initialize(params).await
-                    }
-                    "shutdown" => self.handle_shutdown().await,
-                    "textDocument/hover" => {
-                        let params = req.params.unwrap_or(json!({}));
-                        self.handle_hover(params).await
-                    }
-                    "textDocument/diagnostics" => {
-                        let params = req.params.unwrap_or(json!({}));
-                        self.handle_diagnostics(params).await
-                    }
-                    "textDocument/codeAction" => {
-                        let params = req.params.unwrap_or(json!({}));
-                        self.handle_code_action(params).await
-                    }
-                    "textDocument/completion" => {
-                        let params = req.params.unwrap_or(json!({}));
-                        self.handle_completion(params).await
-                    }
-                    "completionItem/resolve" => {
-                        let params = req.params.unwrap_or(json!({}));
-                        self.handle_completion_resolve(params).await
-                    }
-                    _ => Err(LspError::MethodNotFound(req.method)),
+            LspMessage::Request(req) => match req.method.as_str() {
+                "initialize" => {
+                    let params = req.params.unwrap_or(json!({}));
+                    self.handle_initialize(params).await
                 }
-                .map(Some)
+                "shutdown" => self.handle_shutdown().await,
+                "textDocument/hover" => {
+                    let params = req.params.unwrap_or(json!({}));
+                    self.handle_hover(params).await
+                }
+                "textDocument/diagnostics" => {
+                    let params = req.params.unwrap_or(json!({}));
+                    self.handle_diagnostics(params).await
+                }
+                "textDocument/codeAction" => {
+                    let params = req.params.unwrap_or(json!({}));
+                    self.handle_code_action(params).await
+                }
+                "textDocument/completion" => {
+                    let params = req.params.unwrap_or(json!({}));
+                    self.handle_completion(params).await
+                }
+                "completionItem/resolve" => {
+                    let params = req.params.unwrap_or(json!({}));
+                    self.handle_completion_resolve(params).await
+                }
+                _ => Err(LspError::MethodNotFound(req.method)),
             }
+            .map(Some),
             LspMessage::Notification(notif) => {
                 match notif.method.as_str() {
                     "initialized" => self.handle_initialized().await,
@@ -705,7 +710,7 @@ impl LspServer {
     /// Run the server
     pub async fn run(&mut self) -> LspResult<()> {
         info!("LSP server started");
-        
+
         loop {
             // Read message
             match self.transport.read_message().await {
@@ -722,7 +727,7 @@ impl LspServer {
                             debug!("Received response");
                         }
                     }
-                    
+
                     // Process message
                     match self.process_message(message.clone()).await {
                         Ok(Some(result)) => {
@@ -841,7 +846,9 @@ mod tests {
     fn test_error_handling_invalid_request() {
         let server = LspServer::new();
         // Server should be in Initializing state, so requests should fail
-        let result = tokio::runtime::Runtime::new().unwrap().block_on(server.handle_hover(json!({})));
+        let result = tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(server.handle_hover(json!({})));
         assert!(result.is_err());
     }
 
@@ -849,9 +856,11 @@ mod tests {
     fn test_error_handling_missing_params() {
         let mut server = LspServer::new();
         server.state = ServerState::Initialized;
-        
+
         // Missing textDocument parameter
-        let result = tokio::runtime::Runtime::new().unwrap().block_on(server.handle_hover(json!({})));
+        let result = tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(server.handle_hover(json!({})));
         assert!(result.is_err());
     }
 
@@ -887,12 +896,14 @@ mod tests {
     fn test_error_handling_document_not_found() {
         let mut server = LspServer::new();
         server.state = ServerState::Initialized;
-        
+
         // Try to get hover for non-existent document
-        let result = tokio::runtime::Runtime::new().unwrap().block_on(server.handle_hover(json!({
-            "textDocument": { "uri": "file://nonexistent.rs" },
-            "position": { "line": 0, "character": 0 }
-        })));
+        let result = tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(server.handle_hover(json!({
+                "textDocument": { "uri": "file://nonexistent.rs" },
+                "position": { "line": 0, "character": 0 }
+            })));
         assert!(result.is_err());
     }
 
@@ -900,15 +911,17 @@ mod tests {
     fn test_diagnostics_handler_integration() {
         let mut server = LspServer::new();
         server.state = ServerState::Initialized;
-        
+
         // Add a document
         server.set_document("file://test.rs".to_string(), "fn main() {}".to_string());
-        
+
         // Request diagnostics
-        let result = tokio::runtime::Runtime::new().unwrap().block_on(server.handle_diagnostics(json!({
-            "textDocument": { "uri": "file://test.rs" }
-        })));
-        
+        let result = tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(server.handle_diagnostics(json!({
+                "textDocument": { "uri": "file://test.rs" }
+            })));
+
         // Should succeed and return a JSON array
         assert!(result.is_ok());
         let response = result.unwrap();
@@ -919,16 +932,18 @@ mod tests {
     fn test_code_action_handler_integration() {
         let mut server = LspServer::new();
         server.state = ServerState::Initialized;
-        
+
         // Add a document
         server.set_document("file://test.rs".to_string(), "fn main() {}".to_string());
-        
+
         // Request code actions
-        let result = tokio::runtime::Runtime::new().unwrap().block_on(server.handle_code_action(json!({
-            "textDocument": { "uri": "file://test.rs" },
-            "context": { "diagnostics": [] }
-        })));
-        
+        let result = tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(server.handle_code_action(json!({
+                "textDocument": { "uri": "file://test.rs" },
+                "context": { "diagnostics": [] }
+            })));
+
         // Should succeed and return a JSON array
         assert!(result.is_ok());
         let response = result.unwrap();
@@ -939,16 +954,18 @@ mod tests {
     fn test_hover_handler_integration() {
         let mut server = LspServer::new();
         server.state = ServerState::Initialized;
-        
+
         // Add a document
         server.set_document("file://test.rs".to_string(), "fn main() {}".to_string());
-        
+
         // Request hover information
-        let result = tokio::runtime::Runtime::new().unwrap().block_on(server.handle_hover(json!({
-            "textDocument": { "uri": "file://test.rs" },
-            "position": { "line": 0, "character": 0 }
-        })));
-        
+        let result = tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(server.handle_hover(json!({
+                "textDocument": { "uri": "file://test.rs" },
+                "position": { "line": 0, "character": 0 }
+            })));
+
         // Should succeed (may return null if no symbol at position)
         assert!(result.is_ok());
     }
@@ -957,25 +974,29 @@ mod tests {
     fn test_diagnostics_with_language_detection() {
         let mut server = LspServer::new();
         server.state = ServerState::Initialized;
-        
+
         // Add Rust document
         server.set_document("file://test.rs".to_string(), "fn main() {}".to_string());
-        
+
         // Request diagnostics for Rust file
-        let result = tokio::runtime::Runtime::new().unwrap().block_on(server.handle_diagnostics(json!({
-            "textDocument": { "uri": "file://test.rs" }
-        })));
-        
+        let result = tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(server.handle_diagnostics(json!({
+                "textDocument": { "uri": "file://test.rs" }
+            })));
+
         assert!(result.is_ok());
-        
+
         // Add Python document
         server.set_document("file://test.py".to_string(), "def main(): pass".to_string());
-        
+
         // Request diagnostics for Python file
-        let result = tokio::runtime::Runtime::new().unwrap().block_on(server.handle_diagnostics(json!({
-            "textDocument": { "uri": "file://test.py" }
-        })));
-        
+        let result = tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(server.handle_diagnostics(json!({
+                "textDocument": { "uri": "file://test.py" }
+            })));
+
         assert!(result.is_ok());
     }
 }

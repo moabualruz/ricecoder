@@ -177,8 +177,12 @@ mod tests {
     #[test]
     fn test_list_all_commands() {
         let mut registry = CommandRegistry::new();
-        registry.register(CommandDefinition::new("cmd1", "Cmd1", "echo 1")).ok();
-        registry.register(CommandDefinition::new("cmd2", "Cmd2", "echo 2")).ok();
+        registry
+            .register(CommandDefinition::new("cmd1", "Cmd1", "echo 1"))
+            .ok();
+        registry
+            .register(CommandDefinition::new("cmd2", "Cmd2", "echo 2"))
+            .ok();
         assert_eq!(registry.list_all().len(), 2);
     }
 

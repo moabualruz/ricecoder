@@ -43,4 +43,6 @@ pub use manager::CommandManager;
 pub use output_injection::{OutputFormat, OutputInjectionConfig, OutputInjector};
 pub use registry::CommandRegistry;
 pub use template::TemplateProcessor;
-pub use types::{ArgumentType, CommandArgument, CommandContext, CommandDefinition, CommandExecutionResult};
+pub use types::{
+    ArgumentType, CommandArgument, CommandContext, CommandDefinition, CommandExecutionResult,
+};

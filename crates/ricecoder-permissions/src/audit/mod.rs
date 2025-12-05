@@ -1,11 +1,11 @@
 //! Audit logging module
 
-pub mod models;
 pub mod logger;
-pub mod storage;
+pub mod models;
 pub mod query;
+pub mod storage;
 
-pub use models::{AuditLogEntry, AuditAction, AuditResult};
 pub use logger::AuditLogger;
-pub use storage::AuditStorage;
+pub use models::{AuditAction, AuditLogEntry, AuditResult};
 pub use query::{AuditQuery, QueryFilter};
+pub use storage::AuditStorage;

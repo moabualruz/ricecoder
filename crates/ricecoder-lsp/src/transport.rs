@@ -7,8 +7,8 @@
 use crate::types::{LspError, LspResult};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::io::{self, BufRead, BufReader, Write};
 use std::collections::HashMap;
+use std::io::{self, BufRead, BufReader, Write};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt};
 
 /// JSON-RPC request message
@@ -181,8 +181,9 @@ impl LspMessage {
         }
         // Otherwise it's a notification (has method but no id)
         else if value.get("method").is_some() {
-            let notification: JsonRpcNotification = serde_json::from_value(value)
-                .map_err(|e| LspError::ParseError(format!("Failed to parse notification: {}", e)))?;
+            let notification: JsonRpcNotification = serde_json::from_value(value).map_err(|e| {
+                LspError::ParseError(format!("Failed to parse notification: {}", e))
+            })?;
             Ok(LspMessage::Notification(notification))
         } else {
             Err(LspError::InvalidRequest(
@@ -194,12 +195,15 @@ impl LspMessage {
     /// Serialize message to JSON
     pub fn to_json(&self) -> LspResult<String> {
         match self {
-            LspMessage::Request(req) => serde_json::to_string(req)
-                .map_err(|e| LspError::SerializationError(format!("Failed to serialize request: {}", e))),
-            LspMessage::Response(resp) => serde_json::to_string(resp)
-                .map_err(|e| LspError::SerializationError(format!("Failed to serialize response: {}", e))),
-            LspMessage::Notification(notif) => serde_json::to_string(notif)
-                .map_err(|e| LspError::SerializationError(format!("Failed to serialize notification: {}", e))),
+            LspMessage::Request(req) => serde_json::to_string(req).map_err(|e| {
+                LspError::SerializationError(format!("Failed to serialize request: {}", e))
+            }),
+            LspMessage::Response(resp) => serde_json::to_string(resp).map_err(|e| {
+                LspError::SerializationError(format!("Failed to serialize response: {}", e))
+            }),
+            LspMessage::Notification(notif) => serde_json::to_string(notif).map_err(|e| {
+                LspError::SerializationError(format!("Failed to serialize notification: {}", e))
+            }),
         }
     }
 }
@@ -418,7 +422,8 @@ mod tests {
 
     #[test]
     fn test_lsp_message_from_request_json() {
-        let json_str = r#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":1234}}"#;
+        let json_str =
+            r#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":1234}}"#;
         let msg = LspMessage::from_json(json_str).unwrap();
         match msg {
             LspMessage::Request(req) => {

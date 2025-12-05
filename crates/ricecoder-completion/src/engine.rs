@@ -169,8 +169,11 @@ impl CompletionEngine for GenericCompletionEngine {
             .await?;
 
         // Generate completions using language-specific provider if available
-        let mut completions = if let Some(provider) = self.provider_registry.get_provider(language) {
-            provider.generate_completions(code, position, &context).await?
+        let mut completions = if let Some(provider) = self.provider_registry.get_provider(language)
+        {
+            provider
+                .generate_completions(code, position, &context)
+                .await?
         } else {
             // Fall back to generic completion
             self.generator

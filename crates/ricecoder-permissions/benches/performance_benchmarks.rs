@@ -1,8 +1,7 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use ricecoder_permissions::{
-    PermissionLevel, ToolPermission, PermissionConfig, PermissionManager,
-    GlobMatcher, AuditLogger, AuditAction, AuditResult,
-    permission::PermissionChecker,
+    permission::PermissionChecker, AuditAction, AuditLogger, AuditResult, GlobMatcher,
+    PermissionConfig, PermissionLevel, PermissionManager, ToolPermission,
 };
 use std::sync::Arc;
 
@@ -39,10 +38,7 @@ fn benchmark_permission_check(c: &mut Criterion) {
             |b, _| {
                 b.iter(|| {
                     // Benchmark: Check permission for a tool
-                    let _ = manager.check_permission(
-                        black_box("tool_42"),
-                        black_box(None),
-                    );
+                    let _ = manager.check_permission(black_box("tool_42"), black_box(None));
                 });
             },
         );
@@ -78,10 +74,7 @@ fn benchmark_glob_pattern_matching(c: &mut Criterion) {
             |b, &pattern| {
                 b.iter(|| {
                     // Benchmark: Match pattern against tool name
-                    let _ = matcher.match_pattern(
-                        black_box(pattern),
-                        black_box("my_tool_name"),
-                    );
+                    let _ = matcher.match_pattern(black_box(pattern), black_box("my_tool_name"));
                 });
             },
         );
@@ -168,10 +161,7 @@ fn benchmark_audit_log_filtering(c: &mut Criterion) {
     group.bench_function("filter_by_tool", |b| {
         b.iter(|| {
             let entries = logger.entries().unwrap();
-            let filtered: Vec<_> = entries
-                .iter()
-                .filter(|e| e.tool == "tool_42")
-                .collect();
+            let filtered: Vec<_> = entries.iter().filter(|e| e.tool == "tool_42").collect();
             black_box(filtered);
         });
     });
@@ -211,10 +201,7 @@ fn benchmark_permission_manager_operations(c: &mut Criterion) {
 
     group.bench_function("check_permission", |b| {
         b.iter(|| {
-            let _ = manager.check_permission(
-                black_box("tool_42"),
-                black_box(None),
-            );
+            let _ = manager.check_permission(black_box("tool_42"), black_box(None));
         });
     });
 

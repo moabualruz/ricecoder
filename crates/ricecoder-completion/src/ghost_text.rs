@@ -36,10 +36,7 @@ impl GhostTextGenerator for BasicGhostTextGenerator {
     fn generate_ghost_text(&self, completion: &CompletionItem, position: Position) -> GhostText {
         // Ghost text starts at the current position and extends to the end of the inserted text
         let text = completion.insert_text.clone();
-        let end_position = Position::new(
-            position.line,
-            position.character + text.len() as u32,
-        );
+        let end_position = Position::new(position.line, position.character + text.len() as u32);
 
         GhostText::new(text, Range::new(position, end_position))
     }
@@ -61,10 +58,7 @@ impl GhostTextGenerator for BasicGhostTextGenerator {
             )
         } else {
             // Single line
-            Position::new(
-                position.line,
-                position.character + text.len() as u32,
-            )
+            Position::new(position.line, position.character + text.len() as u32)
         };
 
         GhostText::new(text, Range::new(position, end_position))

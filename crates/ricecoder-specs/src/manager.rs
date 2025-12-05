@@ -2,10 +2,10 @@
 
 use crate::error::SpecError;
 use crate::models::Spec;
-use crate::parsers::{YamlParser, MarkdownParser};
+use crate::parsers::{MarkdownParser, YamlParser};
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
 use std::fs;
+use std::path::{Path, PathBuf};
 
 /// Central coordinator for spec operations and lifecycle management
 pub struct SpecManager {
@@ -43,13 +43,16 @@ impl SpecManager {
     }
 
     /// Recursively discover specs in a directory
-    fn discover_specs_recursive(&mut self, path: &Path, specs: &mut Vec<Spec>) -> Result<(), SpecError> {
+    fn discover_specs_recursive(
+        &mut self,
+        path: &Path,
+        specs: &mut Vec<Spec>,
+    ) -> Result<(), SpecError> {
         if !path.is_dir() {
             return Ok(());
         }
 
-        let entries = fs::read_dir(path)
-            .map_err(SpecError::IoError)?;
+        let entries = fs::read_dir(path).map_err(SpecError::IoError)?;
 
         for entry in entries {
             let entry = entry.map_err(SpecError::IoError)?;
@@ -93,8 +96,7 @@ impl SpecManager {
         }
 
         // Read file content
-        let content = fs::read_to_string(path)
-            .map_err(SpecError::IoError)?;
+        let content = fs::read_to_string(path).map_err(SpecError::IoError)?;
 
         // Determine format and parse
         let spec = if let Some(ext) = path.extension() {
@@ -102,13 +104,16 @@ impl SpecManager {
             match ext_str.as_str() {
                 "yaml" | "yml" => YamlParser::parse(&content)?,
                 "md" => MarkdownParser::parse(&content)?,
-                _ => return Err(SpecError::InvalidFormat(
-                    format!("Unsupported file format: {}", ext_str)
-                )),
+                _ => {
+                    return Err(SpecError::InvalidFormat(format!(
+                        "Unsupported file format: {}",
+                        ext_str
+                    )))
+                }
             }
         } else {
             return Err(SpecError::InvalidFormat(
-                "File has no extension".to_string()
+                "File has no extension".to_string(),
             ));
         };
 
@@ -136,9 +141,12 @@ impl SpecManager {
             match ext_str.as_str() {
                 "yaml" | "yml" => YamlParser::serialize(spec)?,
                 "md" => MarkdownParser::serialize(spec)?,
-                _ => return Err(SpecError::InvalidFormat(
-                    format!("Unsupported file format: {}", ext_str)
-                )),
+                _ => {
+                    return Err(SpecError::InvalidFormat(format!(
+                        "Unsupported file format: {}",
+                        ext_str
+                    )))
+                }
             }
         } else {
             // Default to YAML
@@ -148,14 +156,12 @@ impl SpecManager {
         // Create parent directories if needed
         if let Some(parent) = path.parent() {
             if !parent.as_os_str().is_empty() {
-                fs::create_dir_all(parent)
-                    .map_err(SpecError::IoError)?;
+                fs::create_dir_all(parent).map_err(SpecError::IoError)?;
             }
         }
 
         // Write file
-        fs::write(path, content)
-            .map_err(SpecError::IoError)?;
+        fs::write(path, content).map_err(SpecError::IoError)?;
 
         // Update cache
         self.cache.insert(path.to_path_buf(), spec.clone());
@@ -210,7 +216,7 @@ mod tests {
     fn test_discover_specs_empty_directory() {
         let temp_dir = TempDir::new().unwrap();
         let mut manager = SpecManager::new();
-        
+
         let specs = manager.discover_specs(temp_dir.path()).unwrap();
         assert_eq!(specs.len(), 0);
     }
@@ -219,7 +225,7 @@ mod tests {
     fn test_discover_specs_nonexistent_directory() {
         let mut manager = SpecManager::new();
         let nonexistent = Path::new("/nonexistent/path/that/does/not/exist");
-        
+
         let specs = manager.discover_specs(nonexistent).unwrap();
         assert_eq!(specs.len(), 0);
     }
@@ -228,9 +234,9 @@ mod tests {
     fn test_save_and_load_yaml_spec() {
         let temp_dir = TempDir::new().unwrap();
         let spec_path = temp_dir.path().join("test.yaml");
-        
+
         let mut manager = SpecManager::new();
-        
+
         // Create a test spec
         let spec = Spec {
             id: "test-spec".to_string(),
@@ -248,11 +254,11 @@ mod tests {
             },
             inheritance: None,
         };
-        
+
         // Save the spec
         manager.save_spec(&spec, &spec_path).unwrap();
         assert!(spec_path.exists());
-        
+
         // Load the spec
         let loaded_spec = manager.load_spec(&spec_path).unwrap();
         assert_eq!(loaded_spec.id, spec.id);
@@ -264,9 +270,9 @@ mod tests {
     fn test_cache_invalidation() {
         let temp_dir = TempDir::new().unwrap();
         let spec_path = temp_dir.path().join("test.yaml");
-        
+
         let mut manager = SpecManager::new();
-        
+
         let spec = Spec {
             id: "test-spec".to_string(),
             name: "Test Spec".to_string(),
@@ -283,10 +289,10 @@ mod tests {
             },
             inheritance: None,
         };
-        
+
         manager.save_spec(&spec, &spec_path).unwrap();
         assert_eq!(manager.cache_size(), 1);
-        
+
         manager.invalidate_cache(&spec_path);
         assert_eq!(manager.cache_size(), 0);
     }
@@ -296,9 +302,9 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let spec_path1 = temp_dir.path().join("test1.yaml");
         let spec_path2 = temp_dir.path().join("test2.yaml");
-        
+
         let mut manager = SpecManager::new();
-        
+
         let spec = Spec {
             id: "test-spec".to_string(),
             name: "Test Spec".to_string(),
@@ -315,11 +321,11 @@ mod tests {
             },
             inheritance: None,
         };
-        
+
         manager.save_spec(&spec, &spec_path1).unwrap();
         manager.save_spec(&spec, &spec_path2).unwrap();
         assert_eq!(manager.cache_size(), 2);
-        
+
         manager.clear_cache();
         assert_eq!(manager.cache_size(), 0);
     }
@@ -328,9 +334,9 @@ mod tests {
     fn test_load_spec_caching() {
         let temp_dir = TempDir::new().unwrap();
         let spec_path = temp_dir.path().join("test.yaml");
-        
+
         let mut manager = SpecManager::new();
-        
+
         let spec = Spec {
             id: "test-spec".to_string(),
             name: "Test Spec".to_string(),
@@ -347,10 +353,10 @@ mod tests {
             },
             inheritance: None,
         };
-        
+
         manager.save_spec(&spec, &spec_path).unwrap();
         assert_eq!(manager.cache_size(), 1);
-        
+
         // Load again - should use cache
         let _loaded = manager.load_spec(&spec_path).unwrap();
         assert_eq!(manager.cache_size(), 1);
@@ -360,9 +366,9 @@ mod tests {
     fn test_save_creates_parent_directories() {
         let temp_dir = TempDir::new().unwrap();
         let spec_path = temp_dir.path().join("nested/deep/path/test.yaml");
-        
+
         let mut manager = SpecManager::new();
-        
+
         let spec = Spec {
             id: "test-spec".to_string(),
             name: "Test Spec".to_string(),
@@ -379,7 +385,7 @@ mod tests {
             },
             inheritance: None,
         };
-        
+
         manager.save_spec(&spec, &spec_path).unwrap();
         assert!(spec_path.exists());
     }
@@ -387,15 +393,15 @@ mod tests {
     #[test]
     fn test_discover_specs_recursive() {
         let temp_dir = TempDir::new().unwrap();
-        
+
         // Create nested directory structure
         let feature_dir = temp_dir.path().join("feature1");
         fs::create_dir(&feature_dir).unwrap();
         let task_dir = feature_dir.join("task1");
         fs::create_dir(&task_dir).unwrap();
-        
+
         let mut manager = SpecManager::new();
-        
+
         let spec = Spec {
             id: "test-spec".to_string(),
             name: "Test Spec".to_string(),
@@ -412,12 +418,18 @@ mod tests {
             },
             inheritance: None,
         };
-        
+
         // Save specs at different levels
-        manager.save_spec(&spec, &temp_dir.path().join("project.yaml")).unwrap();
-        manager.save_spec(&spec, &feature_dir.join("feature.yaml")).unwrap();
-        manager.save_spec(&spec, &task_dir.join("task.yaml")).unwrap();
-        
+        manager
+            .save_spec(&spec, &temp_dir.path().join("project.yaml"))
+            .unwrap();
+        manager
+            .save_spec(&spec, &feature_dir.join("feature.yaml"))
+            .unwrap();
+        manager
+            .save_spec(&spec, &task_dir.join("task.yaml"))
+            .unwrap();
+
         // Discover all specs
         let discovered = manager.discover_specs(temp_dir.path()).unwrap();
         assert_eq!(discovered.len(), 3);
@@ -427,9 +439,9 @@ mod tests {
     fn test_unsupported_file_format() {
         let temp_dir = TempDir::new().unwrap();
         let spec_path = temp_dir.path().join("test.txt");
-        
+
         let mut manager = SpecManager::new();
-        
+
         let spec = Spec {
             id: "test-spec".to_string(),
             name: "Test Spec".to_string(),
@@ -446,7 +458,7 @@ mod tests {
             },
             inheritance: None,
         };
-        
+
         let result = manager.save_spec(&spec, &spec_path);
         assert!(result.is_err());
     }

@@ -1,0 +1,28 @@
+[package]
+name = "ricecoder-hooks"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Event-driven hooks system for RiceCoder"
+
+[lib]
+name = "ricecoder_hooks"
+path = "src/lib.rs"
+
+[dependencies]
+ricecoder-storage = { path = "../ricecoder-storage" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
+regex = { workspace = true }
+chrono = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+tokio-test = { workspace = true }
+tempfile = { workspace = true }

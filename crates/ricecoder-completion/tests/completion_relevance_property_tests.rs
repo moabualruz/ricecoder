@@ -6,7 +6,6 @@
 /// Property: For any code context, top-ranked completion is relevant and applicable
 /// - Generate random code contexts and verify top completion relevance
 /// - Run 100+ iterations with various code patterns
-
 use proptest::prelude::*;
 use ricecoder_completion::*;
 use std::sync::Arc;
@@ -594,7 +593,11 @@ impl CompletionRanker for BasicCompletionRanker {
         _context: &CompletionContext,
     ) -> Vec<CompletionItem> {
         // Sort by score descending
-        items.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+        items.sort_by(|a, b| {
+            b.score
+                .partial_cmp(&a.score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         items
     }
 

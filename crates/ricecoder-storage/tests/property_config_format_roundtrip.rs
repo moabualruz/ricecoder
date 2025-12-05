@@ -52,7 +52,7 @@ proptest! {
             .expect("Failed to serialize to YAML");
         let deserialized = ConfigLoader::load_from_string(&yaml, ConfigFormat::Yaml, "test.yaml")
             .expect("Failed to deserialize from YAML");
-        
+
         prop_assert_eq!(config, deserialized);
     }
 
@@ -66,7 +66,7 @@ proptest! {
             .expect("Failed to serialize to TOML");
         let deserialized = ConfigLoader::load_from_string(&toml, ConfigFormat::Toml, "test.toml")
             .expect("Failed to deserialize from TOML");
-        
+
         prop_assert_eq!(config, deserialized);
     }
 
@@ -80,7 +80,7 @@ proptest! {
             .expect("Failed to serialize to JSON");
         let deserialized = ConfigLoader::load_from_string(&json, ConfigFormat::Json, "test.json")
             .expect("Failed to deserialize from JSON");
-        
+
         prop_assert_eq!(config, deserialized);
     }
 

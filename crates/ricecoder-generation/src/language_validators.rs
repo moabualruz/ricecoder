@@ -13,7 +13,11 @@ use tracing::debug;
 /// Trait for language-specific validators
 pub trait LanguageValidator: Send + Sync {
     /// Validates code for this language
-    fn validate(&self, content: &str, file_path: &str) -> Result<(Vec<ValidationError>, Vec<ValidationWarning>), String>;
+    fn validate(
+        &self,
+        content: &str,
+        file_path: &str,
+    ) -> Result<(Vec<ValidationError>, Vec<ValidationWarning>), String>;
 }
 
 /// Rust validator using cargo check and clippy
@@ -35,7 +39,11 @@ impl RustValidator {
             if line.contains("unsafe") && !line.trim().starts_with("//") {
                 // Check if there's a comment above
                 let has_comment = if line_num > 0 {
-                    content.lines().nth(line_num - 1).map(|l| l.trim().starts_with("//")).unwrap_or(false)
+                    content
+                        .lines()
+                        .nth(line_num - 1)
+                        .map(|l| l.trim().starts_with("//"))
+                        .unwrap_or(false)
                 } else {
                     false
                 };
@@ -101,7 +109,11 @@ impl Default for RustValidator {
 }
 
 impl LanguageValidator for RustValidator {
-    fn validate(&self, content: &str, file_path: &str) -> Result<(Vec<ValidationError>, Vec<ValidationWarning>), String> {
+    fn validate(
+        &self,
+        content: &str,
+        file_path: &str,
+    ) -> Result<(Vec<ValidationError>, Vec<ValidationWarning>), String> {
         debug!("Validating Rust code: {}", file_path);
 
         let errors = self.check_common_issues(content, file_path);
@@ -189,7 +201,11 @@ impl Default for TypeScriptValidator {
 }
 
 impl LanguageValidator for TypeScriptValidator {
-    fn validate(&self, content: &str, file_path: &str) -> Result<(Vec<ValidationError>, Vec<ValidationWarning>), String> {
+    fn validate(
+        &self,
+        content: &str,
+        file_path: &str,
+    ) -> Result<(Vec<ValidationError>, Vec<ValidationWarning>), String> {
         debug!("Validating TypeScript code: {}", file_path);
 
         let errors = self.check_common_issues(content, file_path);
@@ -279,7 +295,11 @@ impl Default for PythonValidator {
 }
 
 impl LanguageValidator for PythonValidator {
-    fn validate(&self, content: &str, file_path: &str) -> Result<(Vec<ValidationError>, Vec<ValidationWarning>), String> {
+    fn validate(
+        &self,
+        content: &str,
+        file_path: &str,
+    ) -> Result<(Vec<ValidationError>, Vec<ValidationWarning>), String> {
         debug!("Validating Python code: {}", file_path);
 
         let errors = self.check_common_issues(content, file_path);
@@ -347,7 +367,11 @@ impl Default for GoValidator {
 }
 
 impl LanguageValidator for GoValidator {
-    fn validate(&self, content: &str, file_path: &str) -> Result<(Vec<ValidationError>, Vec<ValidationWarning>), String> {
+    fn validate(
+        &self,
+        content: &str,
+        file_path: &str,
+    ) -> Result<(Vec<ValidationError>, Vec<ValidationWarning>), String> {
         debug!("Validating Go code: {}", file_path);
 
         let errors = self.check_common_issues(content, file_path);
@@ -390,7 +414,9 @@ impl JavaValidator {
         let mut warnings = Vec::new();
 
         for (line_num, line) in content.lines().enumerate() {
-            if (line.contains("List ") || line.contains("Map ") || line.contains("Set ")) && !line.contains("<") {
+            if (line.contains("List ") || line.contains("Map ") || line.contains("Set "))
+                && !line.contains("<")
+            {
                 warnings.push(ValidationWarning {
                     file: file_path.to_string(),
                     line: line_num + 1,
@@ -412,7 +438,11 @@ impl Default for JavaValidator {
 }
 
 impl LanguageValidator for JavaValidator {
-    fn validate(&self, content: &str, file_path: &str) -> Result<(Vec<ValidationError>, Vec<ValidationWarning>), String> {
+    fn validate(
+        &self,
+        content: &str,
+        file_path: &str,
+    ) -> Result<(Vec<ValidationError>, Vec<ValidationWarning>), String> {
         debug!("Validating Java code: {}", file_path);
 
         let errors = self.check_common_issues(content, file_path);

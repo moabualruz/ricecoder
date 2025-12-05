@@ -63,7 +63,10 @@ impl CodeQualityEnforcer {
     ///
     /// # Errors
     /// Returns `GenerationError` if quality enforcement fails
-    pub fn enforce(&self, files: Vec<GeneratedFile>) -> Result<Vec<GeneratedFile>, GenerationError> {
+    pub fn enforce(
+        &self,
+        files: Vec<GeneratedFile>,
+    ) -> Result<Vec<GeneratedFile>, GenerationError> {
         let mut enhanced_files = Vec::new();
 
         for file in files {
@@ -131,7 +134,9 @@ impl CodeQualityEnforcer {
             let line = lines[i];
 
             // Check if this is a public item without doc comments
-            if (line.contains("pub fn ") || line.contains("pub struct ") || line.contains("pub enum "))
+            if (line.contains("pub fn ")
+                || line.contains("pub struct ")
+                || line.contains("pub enum "))
                 && !line.trim().starts_with("///")
             {
                 // Check if previous line has doc comment
@@ -224,7 +229,9 @@ impl CodeQualityEnforcer {
             let line = lines[i];
 
             // Check if this is a public export without JSDoc
-            if (line.contains("export function ") || line.contains("export class ") || line.contains("export interface "))
+            if (line.contains("export function ")
+                || line.contains("export class ")
+                || line.contains("export interface "))
                 && !line.trim().starts_with("/**")
             {
                 // Check if previous line has JSDoc
@@ -239,7 +246,10 @@ impl CodeQualityEnforcer {
                     let item_name = if let Some(start) = line.find("export ") {
                         let after_export = &line[start + 7..];
                         if let Some(space_idx) = after_export.find(' ') {
-                            after_export[space_idx + 1..].split('(').next().unwrap_or("item")
+                            after_export[space_idx + 1..]
+                                .split('(')
+                                .next()
+                                .unwrap_or("item")
                         } else {
                             "item"
                         }
@@ -377,7 +387,9 @@ impl CodeQualityEnforcer {
         match language {
             "rust" => {
                 for line in content.lines() {
-                    if (line.contains("pub fn ") || line.contains("pub struct ") || line.contains("pub enum "))
+                    if (line.contains("pub fn ")
+                        || line.contains("pub struct ")
+                        || line.contains("pub enum "))
                         && !line.trim().starts_with("///")
                     {
                         issues.push(format!("Missing doc comment: {}", line.trim()));
@@ -426,7 +438,10 @@ impl CodeQualityEnforcer {
                 // Check for missing error handling
                 for (idx, line) in content.lines().enumerate() {
                     if line.contains("throw ") && !line.contains("Error") {
-                        issues.push(format!("Line {}: Generic throw without Error type", idx + 1));
+                        issues.push(format!(
+                            "Line {}: Generic throw without Error type",
+                            idx + 1
+                        ));
                     }
                 }
             }

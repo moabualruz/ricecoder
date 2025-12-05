@@ -25,15 +25,16 @@ impl PhpParser {
 
         debug!("Parsing PHP dependencies from {:?}", composer_json_path);
 
-        let content = std::fs::read_to_string(&composer_json_path)
-            .map_err(|e| ResearchError::DependencyParsingFailed {
+        let content = std::fs::read_to_string(&composer_json_path).map_err(|e| {
+            ResearchError::DependencyParsingFailed {
                 language: "PHP".to_string(),
                 path: Some(composer_json_path.clone()),
                 reason: format!("Failed to read composer.json: {}", e),
-            })?;
+            }
+        })?;
 
-        let composer_json: serde_json::Value = serde_json::from_str(&content)
-            .map_err(|e| ResearchError::DependencyParsingFailed {
+        let composer_json: serde_json::Value =
+            serde_json::from_str(&content).map_err(|e| ResearchError::DependencyParsingFailed {
                 language: "PHP".to_string(),
                 path: Some(composer_json_path.clone()),
                 reason: format!("Failed to parse composer.json: {}", e),

@@ -11,12 +11,10 @@ use std::sync::Arc;
 #[test]
 fn test_ollama_provider_registration_success() {
     let mut registry = ProviderRegistry::new();
-    let provider = Arc::new(
-        OllamaProvider::new("http://localhost:11434".to_string()).unwrap()
-    );
+    let provider = Arc::new(OllamaProvider::new("http://localhost:11434".to_string()).unwrap());
 
     let result = registry.register(provider);
-    
+
     assert!(result.is_ok());
     assert!(registry.has_provider("ollama"));
 }
@@ -26,15 +24,13 @@ fn test_ollama_provider_registration_success() {
 #[test]
 fn test_ollama_provider_discovery_by_id() {
     let mut registry = ProviderRegistry::new();
-    let provider = Arc::new(
-        OllamaProvider::new("http://localhost:11434".to_string()).unwrap()
-    );
+    let provider = Arc::new(OllamaProvider::new("http://localhost:11434".to_string()).unwrap());
 
     registry.register(provider).unwrap();
-    
+
     let discovered = registry.get("ollama");
     assert!(discovered.is_ok());
-    
+
     let discovered_provider = discovered.unwrap();
     assert_eq!(discovered_provider.id(), "ollama");
     assert_eq!(discovered_provider.name(), "Ollama");
@@ -45,15 +41,13 @@ fn test_ollama_provider_discovery_by_id() {
 #[test]
 fn test_ollama_provider_discovery_by_name() {
     let mut registry = ProviderRegistry::new();
-    let provider = Arc::new(
-        OllamaProvider::new("http://localhost:11434".to_string()).unwrap()
-    );
+    let provider = Arc::new(OllamaProvider::new("http://localhost:11434".to_string()).unwrap());
 
     registry.register(provider).unwrap();
-    
+
     let discovered = registry.get_by_name("Ollama");
     assert!(discovered.is_ok());
-    
+
     let discovered_provider = discovered.unwrap();
     assert_eq!(discovered_provider.id(), "ollama");
 }
@@ -63,7 +57,7 @@ fn test_ollama_provider_discovery_by_name() {
 #[test]
 fn test_ollama_provider_not_found_when_not_registered() {
     let registry = ProviderRegistry::new();
-    
+
     let result = registry.get("ollama");
     assert!(result.is_err());
 }
@@ -73,20 +67,19 @@ fn test_ollama_provider_not_found_when_not_registered() {
 #[test]
 fn test_multiple_providers_registration() {
     let mut registry = ProviderRegistry::new();
-    
-    let ollama_provider = Arc::new(
-        OllamaProvider::new("http://localhost:11434".to_string()).unwrap()
-    );
-    
+
+    let ollama_provider =
+        Arc::new(OllamaProvider::new("http://localhost:11434".to_string()).unwrap());
+
     // Create a mock provider for testing
     let mock_provider = Arc::new(MockProvider {
         id: "mock".to_string(),
         name: "Mock Provider".to_string(),
     });
-    
+
     registry.register(ollama_provider).unwrap();
     registry.register(mock_provider).unwrap();
-    
+
     assert_eq!(registry.provider_count(), 2);
     assert!(registry.has_provider("ollama"));
     assert!(registry.has_provider("mock"));
@@ -97,13 +90,11 @@ fn test_multiple_providers_registration() {
 #[test]
 fn test_ollama_provider_unregistration() {
     let mut registry = ProviderRegistry::new();
-    let provider = Arc::new(
-        OllamaProvider::new("http://localhost:11434".to_string()).unwrap()
-    );
+    let provider = Arc::new(OllamaProvider::new("http://localhost:11434".to_string()).unwrap());
 
     registry.register(provider).unwrap();
     assert!(registry.has_provider("ollama"));
-    
+
     let result = registry.unregister("ollama");
     assert!(result.is_ok());
     assert!(!registry.has_provider("ollama"));
@@ -114,7 +105,7 @@ fn test_ollama_provider_unregistration() {
 #[test]
 fn test_unregister_non_existent_provider_fails() {
     let mut registry = ProviderRegistry::new();
-    
+
     let result = registry.unregister("non-existent");
     assert!(result.is_err());
 }
@@ -124,22 +115,21 @@ fn test_unregister_non_existent_provider_fails() {
 #[test]
 fn test_list_all_registered_providers() {
     let mut registry = ProviderRegistry::new();
-    
-    let ollama_provider = Arc::new(
-        OllamaProvider::new("http://localhost:11434".to_string()).unwrap()
-    );
-    
+
+    let ollama_provider =
+        Arc::new(OllamaProvider::new("http://localhost:11434".to_string()).unwrap());
+
     let mock_provider = Arc::new(MockProvider {
         id: "mock".to_string(),
         name: "Mock Provider".to_string(),
     });
-    
+
     registry.register(ollama_provider).unwrap();
     registry.register(mock_provider).unwrap();
-    
+
     let all_providers = registry.list_all();
     assert_eq!(all_providers.len(), 2);
-    
+
     let ids: Vec<&str> = all_providers.iter().map(|p| p.id()).collect();
     assert!(ids.contains(&"ollama"));
     assert!(ids.contains(&"mock"));
@@ -150,15 +140,13 @@ fn test_list_all_registered_providers() {
 #[test]
 fn test_list_models_from_registered_provider() {
     let mut registry = ProviderRegistry::new();
-    let provider = Arc::new(
-        OllamaProvider::new("http://localhost:11434".to_string()).unwrap()
-    );
+    let provider = Arc::new(OllamaProvider::new("http://localhost:11434".to_string()).unwrap());
 
     registry.register(provider).unwrap();
-    
+
     let models = registry.list_models("ollama");
     assert!(models.is_ok());
-    
+
     let model_list = models.unwrap();
     assert!(!model_list.is_empty());
     assert!(model_list.iter().any(|m| m.id == "mistral"));
@@ -169,7 +157,7 @@ fn test_list_models_from_registered_provider() {
 #[test]
 fn test_list_models_from_non_existent_provider_fails() {
     let registry = ProviderRegistry::new();
-    
+
     let result = registry.list_models("non-existent");
     assert!(result.is_err());
 }
@@ -179,21 +167,20 @@ fn test_list_models_from_non_existent_provider_fails() {
 #[test]
 fn test_list_all_models_across_providers() {
     let mut registry = ProviderRegistry::new();
-    
-    let ollama_provider = Arc::new(
-        OllamaProvider::new("http://localhost:11434".to_string()).unwrap()
-    );
-    
+
+    let ollama_provider =
+        Arc::new(OllamaProvider::new("http://localhost:11434".to_string()).unwrap());
+
     let mock_provider = Arc::new(MockProvider {
         id: "mock".to_string(),
         name: "Mock Provider".to_string(),
     });
-    
+
     registry.register(ollama_provider).unwrap();
     registry.register(mock_provider).unwrap();
-    
+
     let all_models = registry.list_all_models();
-    
+
     // Should have models from Ollama provider
     assert!(!all_models.is_empty());
     assert!(all_models.iter().any(|m| m.provider == "ollama"));
@@ -205,13 +192,11 @@ fn test_list_all_models_across_providers() {
 fn test_provider_count() {
     let mut registry = ProviderRegistry::new();
     assert_eq!(registry.provider_count(), 0);
-    
-    let provider1 = Arc::new(
-        OllamaProvider::new("http://localhost:11434".to_string()).unwrap()
-    );
+
+    let provider1 = Arc::new(OllamaProvider::new("http://localhost:11434".to_string()).unwrap());
     registry.register(provider1).unwrap();
     assert_eq!(registry.provider_count(), 1);
-    
+
     let provider2 = Arc::new(MockProvider {
         id: "mock".to_string(),
         name: "Mock Provider".to_string(),
@@ -225,13 +210,11 @@ fn test_provider_count() {
 #[test]
 fn test_ollama_provider_registration_custom_url() {
     let mut registry = ProviderRegistry::new();
-    let provider = Arc::new(
-        OllamaProvider::new("http://custom-host:11434".to_string()).unwrap()
-    );
+    let provider = Arc::new(OllamaProvider::new("http://custom-host:11434".to_string()).unwrap());
 
     let result = registry.register(provider);
     assert!(result.is_ok());
-    
+
     let discovered = registry.get("ollama").unwrap();
     assert_eq!(discovered.id(), "ollama");
 }
@@ -241,9 +224,7 @@ fn test_ollama_provider_registration_custom_url() {
 #[test]
 fn test_ollama_provider_registration_default_endpoint() {
     let mut registry = ProviderRegistry::new();
-    let provider = Arc::new(
-        OllamaProvider::with_default_endpoint().unwrap()
-    );
+    let provider = Arc::new(OllamaProvider::with_default_endpoint().unwrap());
 
     let result = registry.register(provider);
     assert!(result.is_ok());
@@ -255,12 +236,10 @@ fn test_ollama_provider_registration_default_endpoint() {
 #[test]
 fn test_provider_metadata_after_registration() {
     let mut registry = ProviderRegistry::new();
-    let provider = Arc::new(
-        OllamaProvider::new("http://localhost:11434".to_string()).unwrap()
-    );
+    let provider = Arc::new(OllamaProvider::new("http://localhost:11434".to_string()).unwrap());
 
     registry.register(provider).unwrap();
-    
+
     let discovered = registry.get("ollama").unwrap();
     assert_eq!(discovered.id(), "ollama");
     assert_eq!(discovered.name(), "Ollama");
@@ -271,15 +250,13 @@ fn test_provider_metadata_after_registration() {
 #[test]
 fn test_provider_models_after_registration() {
     let mut registry = ProviderRegistry::new();
-    let provider = Arc::new(
-        OllamaProvider::new("http://localhost:11434".to_string()).unwrap()
-    );
+    let provider = Arc::new(OllamaProvider::new("http://localhost:11434".to_string()).unwrap());
 
     registry.register(provider).unwrap();
-    
+
     let discovered = registry.get("ollama").unwrap();
     let models = discovered.models();
-    
+
     assert!(!models.is_empty());
     assert!(models.iter().any(|m| m.provider == "ollama"));
 }
@@ -289,17 +266,14 @@ fn test_provider_models_after_registration() {
 #[test]
 fn test_re_register_provider_replaces_previous() {
     let mut registry = ProviderRegistry::new();
-    
-    let provider1 = Arc::new(
-        OllamaProvider::new("http://localhost:11434".to_string()).unwrap()
-    );
+
+    let provider1 = Arc::new(OllamaProvider::new("http://localhost:11434".to_string()).unwrap());
     registry.register(provider1).unwrap();
-    
-    let provider2 = Arc::new(
-        OllamaProvider::new("http://different-host:11434".to_string()).unwrap()
-    );
+
+    let provider2 =
+        Arc::new(OllamaProvider::new("http://different-host:11434".to_string()).unwrap());
     registry.register(provider2).unwrap();
-    
+
     // Should still have only one provider
     assert_eq!(registry.provider_count(), 1);
     assert!(registry.has_provider("ollama"));
@@ -310,7 +284,7 @@ fn test_re_register_provider_replaces_previous() {
 #[test]
 fn test_empty_registry_operations() {
     let registry = ProviderRegistry::new();
-    
+
     assert_eq!(registry.provider_count(), 0);
     assert!(!registry.has_provider("ollama"));
     assert!(registry.get("ollama").is_err());
@@ -323,15 +297,13 @@ fn test_empty_registry_operations() {
 #[test]
 fn test_provider_discovery_consistency() {
     let mut registry = ProviderRegistry::new();
-    let provider = Arc::new(
-        OllamaProvider::new("http://localhost:11434".to_string()).unwrap()
-    );
+    let provider = Arc::new(OllamaProvider::new("http://localhost:11434".to_string()).unwrap());
 
     registry.register(provider).unwrap();
-    
+
     let discovered1 = registry.get("ollama").unwrap();
     let discovered2 = registry.get("ollama").unwrap();
-    
+
     assert_eq!(discovered1.id(), discovered2.id());
     assert_eq!(discovered1.name(), discovered2.name());
 }
@@ -363,17 +335,25 @@ impl Provider for MockProvider {
         &self,
         _request: ricecoder_providers::ChatRequest,
     ) -> Result<ricecoder_providers::ChatResponse, ricecoder_providers::ProviderError> {
-        Err(ricecoder_providers::ProviderError::NotFound("Not implemented".to_string()))
+        Err(ricecoder_providers::ProviderError::NotFound(
+            "Not implemented".to_string(),
+        ))
     }
 
     async fn chat_stream(
         &self,
         _request: ricecoder_providers::ChatRequest,
     ) -> Result<ricecoder_providers::provider::ChatStream, ricecoder_providers::ProviderError> {
-        Err(ricecoder_providers::ProviderError::NotFound("Not implemented".to_string()))
+        Err(ricecoder_providers::ProviderError::NotFound(
+            "Not implemented".to_string(),
+        ))
     }
 
-    fn count_tokens(&self, _content: &str, _model: &str) -> Result<usize, ricecoder_providers::ProviderError> {
+    fn count_tokens(
+        &self,
+        _content: &str,
+        _model: &str,
+    ) -> Result<usize, ricecoder_providers::ProviderError> {
         Ok(0)
     }
 

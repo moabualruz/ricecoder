@@ -75,7 +75,11 @@ impl ParameterValidator {
             }
 
             // Check that parameter name is valid (alphanumeric, underscore, hyphen)
-            if !param.name.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-') {
+            if !param
+                .name
+                .chars()
+                .all(|c| c.is_alphanumeric() || c == '_' || c == '-')
+            {
                 return Err(WorkflowError::Invalid(format!(
                     "Invalid parameter name: {}. Must contain only alphanumeric characters, underscores, and hyphens",
                     param.name
@@ -143,9 +147,7 @@ impl ParameterValidator {
                         };
                         return Err(WorkflowError::Invalid(format!(
                             "Parameter '{}' has incorrect type. Expected {:?}, got {}",
-                            param_def.name,
-                            param_def.param_type,
-                            type_name
+                            param_def.name, param_def.param_type, type_name
                         )));
                     }
                 }
@@ -195,10 +197,7 @@ impl ParameterSubstitutor {
     ///
     /// Replaces all parameter references (${param_name}) with their values.
     /// Handles nested parameter references and validates all parameters are provided.
-    pub fn substitute(
-        value: &Value,
-        parameters: &HashMap<String, Value>,
-    ) -> WorkflowResult<Value> {
+    pub fn substitute(value: &Value, parameters: &HashMap<String, Value>) -> WorkflowResult<Value> {
         match value {
             Value::String(s) => Self::substitute_string(s, parameters),
             Value::Object(obj) => {
@@ -209,8 +208,10 @@ impl ParameterSubstitutor {
                 Ok(Value::Object(result))
             }
             Value::Array(arr) => {
-                let result: WorkflowResult<Vec<_>> =
-                    arr.iter().map(|v| Self::substitute(v, parameters)).collect();
+                let result: WorkflowResult<Vec<_>> = arr
+                    .iter()
+                    .map(|v| Self::substitute(v, parameters))
+                    .collect();
                 Ok(Value::Array(result?))
             }
             other => Ok(other.clone()),
@@ -248,7 +249,10 @@ impl ParameterSubstitutor {
                     let param_name = &new_result[actual_pos + 2..actual_end];
 
                     // Validate parameter name
-                    if !param_name.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-') {
+                    if !param_name
+                        .chars()
+                        .all(|c| c.is_alphanumeric() || c == '_' || c == '-')
+                    {
                         return Err(WorkflowError::Invalid(format!(
                             "Invalid parameter reference: ${{{}}}",
                             param_name
@@ -443,10 +447,7 @@ mod tests {
         params.insert("first".to_string(), json!("Alice"));
         params.insert("last".to_string(), json!("Smith"));
 
-        let result = ParameterSubstitutor::substitute(
-            &json!("${first} ${last}"),
-            &params,
-        );
+        let result = ParameterSubstitutor::substitute(&json!("${first} ${last}"), &params);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), json!("Alice Smith"));
     }

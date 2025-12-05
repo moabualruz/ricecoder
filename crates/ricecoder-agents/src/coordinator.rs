@@ -77,7 +77,9 @@ impl AgentCoordinator {
         aggregated.suggestions = deduplicated_suggestions;
 
         // Sort by severity
-        aggregated.findings.sort_by(|a, b| b.severity.cmp(&a.severity));
+        aggregated
+            .findings
+            .sort_by(|a, b| b.severity.cmp(&a.severity));
 
         Ok(aggregated)
     }
@@ -150,7 +152,7 @@ impl AgentCoordinator {
     }
 
     /// Resolve conflicts between findings
-    /// 
+    ///
     /// Conflicts occur when multiple agents report different findings for the same code location.
     /// This method applies severity-based prioritization to resolve conflicts:
     /// - Critical findings take precedence over Warning and Info
@@ -262,7 +264,10 @@ mod tests {
     #[test]
     fn test_aggregate_single_output() {
         let coordinator = AgentCoordinator::new();
-        let output = create_test_output_with_agent("agent1", vec![create_test_finding("f1", Severity::Warning)]);
+        let output = create_test_output_with_agent(
+            "agent1",
+            vec![create_test_finding("f1", Severity::Warning)],
+        );
 
         let result = coordinator.aggregate(vec![output]).unwrap();
         assert_eq!(result.findings.len(), 1);

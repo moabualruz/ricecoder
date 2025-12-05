@@ -111,7 +111,9 @@ impl StateManager {
     /// Pause workflow execution at current step
     pub fn pause_workflow(state: &mut WorkflowState) -> WorkflowResult<()> {
         // Can only pause if running or waiting for approval
-        if state.status != WorkflowStatus::Running && state.status != WorkflowStatus::WaitingApproval {
+        if state.status != WorkflowStatus::Running
+            && state.status != WorkflowStatus::WaitingApproval
+        {
             return Err(WorkflowError::StateError(format!(
                 "Cannot pause workflow in {:?} status",
                 state.status
@@ -158,8 +160,9 @@ impl StateManager {
     pub fn persist_state(state: &WorkflowState, path: &Path) -> WorkflowResult<()> {
         // Ensure parent directory exists
         if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)
-                .map_err(|e| WorkflowError::StateError(format!("Failed to create state directory: {}", e)))?;
+            std::fs::create_dir_all(parent).map_err(|e| {
+                WorkflowError::StateError(format!("Failed to create state directory: {}", e))
+            })?;
         }
 
         let yaml = serde_yaml::to_string(state)
@@ -175,8 +178,9 @@ impl StateManager {
     pub fn persist_state_json(state: &WorkflowState, path: &Path) -> WorkflowResult<()> {
         // Ensure parent directory exists
         if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)
-                .map_err(|e| WorkflowError::StateError(format!("Failed to create state directory: {}", e)))?;
+            std::fs::create_dir_all(parent).map_err(|e| {
+                WorkflowError::StateError(format!("Failed to create state directory: {}", e))
+            })?;
         }
 
         let json = serde_json::to_string_pretty(state)
@@ -281,7 +285,8 @@ mod tests {
             id: "test-workflow".to_string(),
             name: "Test Workflow".to_string(),
             description: "A test workflow".to_string(),
-            parameters: vec![],steps: vec![WorkflowStep {
+            parameters: vec![],
+            steps: vec![WorkflowStep {
                 id: "step1".to_string(),
                 name: "Step 1".to_string(),
                 step_type: StepType::Agent(crate::models::AgentStep {
@@ -293,7 +298,9 @@ mod tests {
                 },
                 dependencies: vec![],
                 approval_required: false,
-                on_error: ErrorAction::Fail, risk_score: None, risk_factors: RiskFactors::default(),
+                on_error: ErrorAction::Fail,
+                risk_score: None,
+                risk_factors: RiskFactors::default(),
             }],
             config: WorkflowConfig {
                 timeout_ms: None,
@@ -411,7 +418,11 @@ mod tests {
         let workflow = create_test_workflow();
         let mut state = StateManager::create_state(&workflow);
 
-        let available_steps = vec!["step1".to_string(), "step2".to_string(), "step3".to_string()];
+        let available_steps = vec![
+            "step1".to_string(),
+            "step2".to_string(),
+            "step3".to_string(),
+        ];
 
         // First step should be step1
         let next = StateManager::get_next_step_to_execute(&state, &available_steps);
@@ -457,7 +468,3 @@ mod tests {
         assert!(result.is_err());
     }
 }
-
-
-
-

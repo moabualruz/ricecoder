@@ -18,7 +18,10 @@ impl BasicCompletionRanker {
         }
     }
 
-    pub fn with_history(weights: RankingWeights, history: std::sync::Arc<crate::history::CompletionHistory>) -> Self {
+    pub fn with_history(
+        weights: RankingWeights,
+        history: std::sync::Arc<crate::history::CompletionHistory>,
+    ) -> Self {
         Self {
             weights,
             history: Some(history),
@@ -39,7 +42,9 @@ impl BasicCompletionRanker {
             .into_iter()
             .filter(|item| {
                 let filter_text = item.filter_text.as_ref().unwrap_or(&item.label);
-                filter_text.to_lowercase().starts_with(&prefix.to_lowercase())
+                filter_text
+                    .to_lowercase()
+                    .starts_with(&prefix.to_lowercase())
             })
             .collect()
     }
@@ -140,11 +145,9 @@ impl crate::engine::CompletionRanker for BasicCompletionRanker {
         }
 
         // Sort by score (descending), then by label (ascending) for stability
-        filtered.sort_by(|a, b| {
-            match b.score.partial_cmp(&a.score) {
-                Some(Ordering::Equal) | None => a.label.cmp(&b.label),
-                other => other.unwrap(),
-            }
+        filtered.sort_by(|a, b| match b.score.partial_cmp(&a.score) {
+            Some(Ordering::Equal) | None => a.label.cmp(&b.label),
+            other => other.unwrap(),
         });
 
         filtered
@@ -186,7 +189,10 @@ impl AdvancedCompletionRanker {
         }
     }
 
-    pub fn with_history(weights: RankingWeights, history: std::sync::Arc<crate::history::CompletionHistory>) -> Self {
+    pub fn with_history(
+        weights: RankingWeights,
+        history: std::sync::Arc<crate::history::CompletionHistory>,
+    ) -> Self {
         Self {
             basic_ranker: BasicCompletionRanker::with_history(weights, history),
         }
@@ -241,11 +247,9 @@ impl crate::engine::CompletionRanker for AdvancedCompletionRanker {
         }
 
         // Sort by score (descending), then by label (ascending)
-        filtered.sort_by(|a, b| {
-            match b.score.partial_cmp(&a.score) {
-                Some(Ordering::Equal) | None => a.label.cmp(&b.label),
-                other => other.unwrap(),
-            }
+        filtered.sort_by(|a, b| match b.score.partial_cmp(&a.score) {
+            Some(Ordering::Equal) | None => a.label.cmp(&b.label),
+            other => other.unwrap(),
         });
 
         filtered
@@ -269,9 +273,21 @@ mod tests {
     fn test_prefix_filter_exact_match() {
         let ranker = BasicCompletionRanker::default_weights();
         let items = vec![
-            CompletionItem::new("test".to_string(), CompletionItemKind::Variable, "test".to_string()),
-            CompletionItem::new("testing".to_string(), CompletionItemKind::Variable, "testing".to_string()),
-            CompletionItem::new("other".to_string(), CompletionItemKind::Variable, "other".to_string()),
+            CompletionItem::new(
+                "test".to_string(),
+                CompletionItemKind::Variable,
+                "test".to_string(),
+            ),
+            CompletionItem::new(
+                "testing".to_string(),
+                CompletionItemKind::Variable,
+                "testing".to_string(),
+            ),
+            CompletionItem::new(
+                "other".to_string(),
+                CompletionItemKind::Variable,
+                "other".to_string(),
+            ),
         ];
 
         let filtered = ranker.filter_by_prefix(items, "test");
@@ -284,9 +300,21 @@ mod tests {
     fn test_prefix_filter_case_insensitive() {
         let ranker = BasicCompletionRanker::default_weights();
         let items = vec![
-            CompletionItem::new("Test".to_string(), CompletionItemKind::Variable, "Test".to_string()),
-            CompletionItem::new("TEST".to_string(), CompletionItemKind::Variable, "TEST".to_string()),
-            CompletionItem::new("other".to_string(), CompletionItemKind::Variable, "other".to_string()),
+            CompletionItem::new(
+                "Test".to_string(),
+                CompletionItemKind::Variable,
+                "Test".to_string(),
+            ),
+            CompletionItem::new(
+                "TEST".to_string(),
+                CompletionItemKind::Variable,
+                "TEST".to_string(),
+            ),
+            CompletionItem::new(
+                "other".to_string(),
+                CompletionItemKind::Variable,
+                "other".to_string(),
+            ),
         ];
 
         let filtered = ranker.filter_by_prefix(items, "test");
@@ -297,8 +325,16 @@ mod tests {
     fn test_prefix_filter_empty_prefix() {
         let ranker = BasicCompletionRanker::default_weights();
         let items = vec![
-            CompletionItem::new("test".to_string(), CompletionItemKind::Variable, "test".to_string()),
-            CompletionItem::new("other".to_string(), CompletionItemKind::Variable, "other".to_string()),
+            CompletionItem::new(
+                "test".to_string(),
+                CompletionItemKind::Variable,
+                "test".to_string(),
+            ),
+            CompletionItem::new(
+                "other".to_string(),
+                CompletionItemKind::Variable,
+                "other".to_string(),
+            ),
         ];
 
         let filtered = ranker.filter_by_prefix(items, "");
@@ -345,11 +381,20 @@ mod tests {
     fn test_ranking_sorts_by_score() {
         let ranker = BasicCompletionRanker::default_weights();
         let items = vec![
-            CompletionItem::new("test".to_string(), CompletionItemKind::Variable, "test".to_string()),
-            CompletionItem::new("testing".to_string(), CompletionItemKind::Variable, "testing".to_string()),
+            CompletionItem::new(
+                "test".to_string(),
+                CompletionItemKind::Variable,
+                "test".to_string(),
+            ),
+            CompletionItem::new(
+                "testing".to_string(),
+                CompletionItemKind::Variable,
+                "testing".to_string(),
+            ),
         ];
 
-        let context = CompletionContext::new("rust".to_string(), Position::new(0, 0), "test".to_string());
+        let context =
+            CompletionContext::new("rust".to_string(), Position::new(0, 0), "test".to_string());
         let ranked = ranker.rank_completions(items, &context);
 
         // Both should match the prefix "test", but "test" is an exact match so should rank higher
@@ -361,12 +406,25 @@ mod tests {
     fn test_ranking_with_prefix() {
         let ranker = BasicCompletionRanker::default_weights();
         let items = vec![
-            CompletionItem::new("test".to_string(), CompletionItemKind::Variable, "test".to_string()),
-            CompletionItem::new("testing".to_string(), CompletionItemKind::Variable, "testing".to_string()),
-            CompletionItem::new("other".to_string(), CompletionItemKind::Variable, "other".to_string()),
+            CompletionItem::new(
+                "test".to_string(),
+                CompletionItemKind::Variable,
+                "test".to_string(),
+            ),
+            CompletionItem::new(
+                "testing".to_string(),
+                CompletionItemKind::Variable,
+                "testing".to_string(),
+            ),
+            CompletionItem::new(
+                "other".to_string(),
+                CompletionItemKind::Variable,
+                "other".to_string(),
+            ),
         ];
 
-        let context = CompletionContext::new("rust".to_string(), Position::new(0, 0), "test".to_string());
+        let context =
+            CompletionContext::new("rust".to_string(), Position::new(0, 0), "test".to_string());
         let ranked = ranker.rank_completions(items, &context);
 
         assert_eq!(ranked.len(), 2);
@@ -377,8 +435,16 @@ mod tests {
     fn test_advanced_ranker_fuzzy_filter() {
         let ranker = AdvancedCompletionRanker::default_weights();
         let items = vec![
-            CompletionItem::new("test_variable".to_string(), CompletionItemKind::Variable, "test_variable".to_string()),
-            CompletionItem::new("other".to_string(), CompletionItemKind::Variable, "other".to_string()),
+            CompletionItem::new(
+                "test_variable".to_string(),
+                CompletionItemKind::Variable,
+                "test_variable".to_string(),
+            ),
+            CompletionItem::new(
+                "other".to_string(),
+                CompletionItemKind::Variable,
+                "other".to_string(),
+            ),
         ];
 
         let filtered = ranker.fuzzy_filter(items, "tv");
@@ -389,10 +455,15 @@ mod tests {
     #[test]
     fn test_relevance_score_with_expected_type() {
         let ranker = BasicCompletionRanker::default_weights();
-        let mut item = CompletionItem::new("test".to_string(), CompletionItemKind::Variable, "test".to_string());
+        let mut item = CompletionItem::new(
+            "test".to_string(),
+            CompletionItemKind::Variable,
+            "test".to_string(),
+        );
         item = item.with_detail("String".to_string());
 
-        let mut context = CompletionContext::new("rust".to_string(), Position::new(0, 0), "".to_string());
+        let mut context =
+            CompletionContext::new("rust".to_string(), Position::new(0, 0), "".to_string());
         context.expected_type = Some(Type::new("String".to_string()));
 
         let score = ranker.score_relevance(&item, &context);
@@ -403,12 +474,25 @@ mod tests {
     fn test_ranking_stability() {
         let ranker = BasicCompletionRanker::default_weights();
         let items = vec![
-            CompletionItem::new("aaa".to_string(), CompletionItemKind::Variable, "aaa".to_string()),
-            CompletionItem::new("aab".to_string(), CompletionItemKind::Variable, "aab".to_string()),
-            CompletionItem::new("aac".to_string(), CompletionItemKind::Variable, "aac".to_string()),
+            CompletionItem::new(
+                "aaa".to_string(),
+                CompletionItemKind::Variable,
+                "aaa".to_string(),
+            ),
+            CompletionItem::new(
+                "aab".to_string(),
+                CompletionItemKind::Variable,
+                "aab".to_string(),
+            ),
+            CompletionItem::new(
+                "aac".to_string(),
+                CompletionItemKind::Variable,
+                "aac".to_string(),
+            ),
         ];
 
-        let context = CompletionContext::new("rust".to_string(), Position::new(0, 0), "aa".to_string());
+        let context =
+            CompletionContext::new("rust".to_string(), Position::new(0, 0), "aa".to_string());
         let ranked = ranker.rank_completions(items, &context);
 
         // Should be sorted by label when scores are equal
@@ -420,13 +504,22 @@ mod tests {
     #[test]
     fn test_frequency_scoring_with_history() {
         let history = std::sync::Arc::new(crate::history::CompletionHistory::new());
-        let ranker = BasicCompletionRanker::with_history(RankingWeights::default(), history.clone());
+        let ranker =
+            BasicCompletionRanker::with_history(RankingWeights::default(), history.clone());
 
         // Record some usages
-        history.record_usage("test".to_string(), "generic".to_string()).unwrap();
-        history.record_usage("test".to_string(), "generic".to_string()).unwrap();
+        history
+            .record_usage("test".to_string(), "generic".to_string())
+            .unwrap();
+        history
+            .record_usage("test".to_string(), "generic".to_string())
+            .unwrap();
 
-        let item = CompletionItem::new("test".to_string(), CompletionItemKind::Variable, "test".to_string());
+        let item = CompletionItem::new(
+            "test".to_string(),
+            CompletionItemKind::Variable,
+            "test".to_string(),
+        );
         let score = ranker.score_frequency(&item);
 
         // Score should be greater than default 0.5 due to frequency
@@ -436,7 +529,11 @@ mod tests {
     #[test]
     fn test_frequency_scoring_without_history() {
         let ranker = BasicCompletionRanker::default_weights();
-        let item = CompletionItem::new("test".to_string(), CompletionItemKind::Variable, "test".to_string());
+        let item = CompletionItem::new(
+            "test".to_string(),
+            CompletionItemKind::Variable,
+            "test".to_string(),
+        );
         let score = ranker.score_frequency(&item);
 
         // Should return default score when no history
@@ -446,18 +543,32 @@ mod tests {
     #[test]
     fn test_ranking_with_frequency_boost() {
         let history = std::sync::Arc::new(crate::history::CompletionHistory::new());
-        let ranker = BasicCompletionRanker::with_history(RankingWeights::default(), history.clone());
+        let ranker =
+            BasicCompletionRanker::with_history(RankingWeights::default(), history.clone());
 
         // Record usage for one item
-        history.record_usage("frequent".to_string(), "generic".to_string()).unwrap();
-        history.record_usage("frequent".to_string(), "generic".to_string()).unwrap();
+        history
+            .record_usage("frequent".to_string(), "generic".to_string())
+            .unwrap();
+        history
+            .record_usage("frequent".to_string(), "generic".to_string())
+            .unwrap();
 
         let items = vec![
-            CompletionItem::new("frequent".to_string(), CompletionItemKind::Variable, "frequent".to_string()),
-            CompletionItem::new("rare".to_string(), CompletionItemKind::Variable, "rare".to_string()),
+            CompletionItem::new(
+                "frequent".to_string(),
+                CompletionItemKind::Variable,
+                "frequent".to_string(),
+            ),
+            CompletionItem::new(
+                "rare".to_string(),
+                CompletionItemKind::Variable,
+                "rare".to_string(),
+            ),
         ];
 
-        let context = CompletionContext::new("rust".to_string(), Position::new(0, 0), "".to_string());
+        let context =
+            CompletionContext::new("rust".to_string(), Position::new(0, 0), "".to_string());
         let ranked = ranker.rank_completions(items, &context);
 
         // Frequent item should rank higher

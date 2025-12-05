@@ -3,7 +3,7 @@
 //! Provides semantic analysis for Python code using tree-sitter.
 
 use super::{SemanticAnalyzer, SemanticResult};
-use crate::types::{Language, SemanticInfo, Symbol, Position};
+use crate::types::{Language, Position, SemanticInfo, Symbol};
 
 /// Python semantic analyzer
 pub struct PythonAnalyzer;

@@ -5,19 +5,17 @@
 //! Integrates with ricecoder-storage for cross-platform path resolution and
 //! configuration hierarchy management.
 
-use super::types::{ConfigRegistry, LanguageConfig, ConfigResult};
 use super::loader::ConfigLoader;
-use crate::providers::{
-    SemanticAnalyzerRegistry, DiagnosticsRegistry, CodeActionRegistry,
-};
-use crate::semantic::adapters::{
-    RustAnalyzerAdapter, TypeScriptAnalyzerAdapter, PythonAnalyzerAdapter, FallbackAnalyzerAdapter,
+use super::types::{ConfigRegistry, ConfigResult, LanguageConfig};
+use crate::code_actions::adapters::{
+    PythonCodeActionAdapter, RustCodeActionAdapter, TypeScriptCodeActionAdapter,
 };
 use crate::diagnostics::adapters::{
-    RustDiagnosticsAdapter, TypeScriptDiagnosticsAdapter, PythonDiagnosticsAdapter,
+    PythonDiagnosticsAdapter, RustDiagnosticsAdapter, TypeScriptDiagnosticsAdapter,
 };
-use crate::code_actions::adapters::{
-    RustCodeActionAdapter, TypeScriptCodeActionAdapter, PythonCodeActionAdapter,
+use crate::providers::{CodeActionRegistry, DiagnosticsRegistry, SemanticAnalyzerRegistry};
+use crate::semantic::adapters::{
+    FallbackAnalyzerAdapter, PythonAnalyzerAdapter, RustAnalyzerAdapter, TypeScriptAnalyzerAdapter,
 };
 use ricecoder_storage::PathResolver;
 use std::path::PathBuf;
@@ -174,13 +172,19 @@ impl ConfigurationManager {
                     let mut diag_reg = self.diagnostics_registry.write().unwrap();
                     match language {
                         "rust" => {
-                            diag_reg.register(Box::new(RustDiagnosticsAdapter::with_config(config.clone())));
+                            diag_reg.register(Box::new(RustDiagnosticsAdapter::with_config(
+                                config.clone(),
+                            )));
                         }
                         "typescript" => {
-                            diag_reg.register(Box::new(TypeScriptDiagnosticsAdapter::with_config(config.clone())));
+                            diag_reg.register(Box::new(TypeScriptDiagnosticsAdapter::with_config(
+                                config.clone(),
+                            )));
                         }
                         "python" => {
-                            diag_reg.register(Box::new(PythonDiagnosticsAdapter::with_config(config.clone())));
+                            diag_reg.register(Box::new(PythonDiagnosticsAdapter::with_config(
+                                config.clone(),
+                            )));
                         }
                         _ => {}
                     }
@@ -191,13 +195,19 @@ impl ConfigurationManager {
                     let mut action_reg = self.code_action_registry.write().unwrap();
                     match language {
                         "rust" => {
-                            action_reg.register(Box::new(RustCodeActionAdapter::with_config(config.clone())));
+                            action_reg.register(Box::new(RustCodeActionAdapter::with_config(
+                                config.clone(),
+                            )));
                         }
                         "typescript" => {
-                            action_reg.register(Box::new(TypeScriptCodeActionAdapter::with_config(config.clone())));
+                            action_reg.register(Box::new(
+                                TypeScriptCodeActionAdapter::with_config(config.clone()),
+                            ));
                         }
                         "python" => {
-                            action_reg.register(Box::new(PythonCodeActionAdapter::with_config(config.clone())));
+                            action_reg.register(Box::new(PythonCodeActionAdapter::with_config(
+                                config.clone(),
+                            )));
                         }
                         _ => {}
                     }
@@ -237,7 +247,11 @@ impl ConfigurationManager {
     /// List all configured languages
     pub fn languages(&self) -> Vec<String> {
         let registry = self.config_registry.read().unwrap();
-        registry.languages().into_iter().map(|s| s.to_string()).collect()
+        registry
+            .languages()
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect()
     }
 
     /// Get configuration for a language
@@ -260,7 +274,12 @@ mod tests {
     #[test]
     fn test_configuration_manager_creation() {
         let manager = ConfigurationManager::new();
-        assert!(manager.config_registry.read().unwrap().languages().is_empty());
+        assert!(manager
+            .config_registry
+            .read()
+            .unwrap()
+            .languages()
+            .is_empty());
     }
 
     #[test]

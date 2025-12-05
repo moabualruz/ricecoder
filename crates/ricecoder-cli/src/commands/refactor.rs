@@ -1,7 +1,7 @@
 // Refactor code
 
-use crate::error::CliResult;
 use super::Command;
+use crate::error::CliResult;
 
 /// Refactor existing code
 pub struct RefactorCommand {

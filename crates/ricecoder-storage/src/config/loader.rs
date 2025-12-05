@@ -3,10 +3,10 @@
 //! This module provides loading of configuration files in YAML, TOML, and JSON formats.
 //! It automatically detects the format based on file extension.
 
+use super::Config;
 use crate::error::{StorageError, StorageResult};
 use crate::types::ConfigFormat;
 use std::path::Path;
-use super::Config;
 
 /// Configuration loader for multiple formats
 pub struct ConfigLoader;
@@ -19,22 +19,14 @@ impl ConfigLoader {
     pub fn load_from_file<P: AsRef<Path>>(path: P) -> StorageResult<Config> {
         let path = path.as_ref();
         let content = std::fs::read_to_string(path).map_err(|e| {
-            StorageError::io_error(
-                path.to_path_buf(),
-                crate::error::IoOperation::Read,
-                e,
-            )
+            StorageError::io_error(path.to_path_buf(), crate::error::IoOperation::Read, e)
         })?;
 
         let extension = path
             .extension()
             .and_then(|ext| ext.to_str())
             .ok_or_else(|| {
-                StorageError::parse_error(
-                    path.to_path_buf(),
-                    "unknown",
-                    "File has no extension",
-                )
+                StorageError::parse_error(path.to_path_buf(), "unknown", "File has no extension")
             })?;
 
         let format = ConfigFormat::from_extension(extension).ok_or_else(|| {
@@ -65,51 +57,33 @@ impl ConfigLoader {
     /// Parse YAML content
     fn parse_yaml<P: AsRef<Path>>(content: &str, path: P) -> StorageResult<Config> {
         let path = path.as_ref();
-        serde_yaml::from_str(content).map_err(|e| {
-            StorageError::parse_error(
-                path.to_path_buf(),
-                "YAML",
-                e.to_string(),
-            )
-        })
+        serde_yaml::from_str(content)
+            .map_err(|e| StorageError::parse_error(path.to_path_buf(), "YAML", e.to_string()))
     }
 
     /// Parse TOML content
     fn parse_toml<P: AsRef<Path>>(content: &str, path: P) -> StorageResult<Config> {
         let path = path.as_ref();
-        toml::from_str(content).map_err(|e| {
-            StorageError::parse_error(
-                path.to_path_buf(),
-                "TOML",
-                e.to_string(),
-            )
-        })
+        toml::from_str(content)
+            .map_err(|e| StorageError::parse_error(path.to_path_buf(), "TOML", e.to_string()))
     }
 
     /// Parse JSON content
     fn parse_json<P: AsRef<Path>>(content: &str, path: P) -> StorageResult<Config> {
         let path = path.as_ref();
-        serde_json::from_str(content).map_err(|e| {
-            StorageError::parse_error(
-                path.to_path_buf(),
-                "JSON",
-                e.to_string(),
-            )
-        })
+        serde_json::from_str(content)
+            .map_err(|e| StorageError::parse_error(path.to_path_buf(), "JSON", e.to_string()))
     }
 
     /// Serialize configuration to string in specified format
     pub fn serialize(config: &Config, format: ConfigFormat) -> StorageResult<String> {
         match format {
-            ConfigFormat::Yaml => serde_yaml::to_string(config).map_err(|e| {
-                StorageError::Internal(format!("Failed to serialize to YAML: {}", e))
-            }),
-            ConfigFormat::Toml => toml::to_string_pretty(config).map_err(|e| {
-                StorageError::Internal(format!("Failed to serialize to TOML: {}", e))
-            }),
-            ConfigFormat::Json => serde_json::to_string_pretty(config).map_err(|e| {
-                StorageError::Internal(format!("Failed to serialize to JSON: {}", e))
-            }),
+            ConfigFormat::Yaml => serde_yaml::to_string(config)
+                .map_err(|e| StorageError::Internal(format!("Failed to serialize to YAML: {}", e))),
+            ConfigFormat::Toml => toml::to_string_pretty(config)
+                .map_err(|e| StorageError::Internal(format!("Failed to serialize to TOML: {}", e))),
+            ConfigFormat::Json => serde_json::to_string_pretty(config)
+                .map_err(|e| StorageError::Internal(format!("Failed to serialize to JSON: {}", e))),
         }
     }
 
@@ -122,11 +96,7 @@ impl ConfigLoader {
         let path = path.as_ref();
         let content = Self::serialize(config, format)?;
         std::fs::write(path, content).map_err(|e| {
-            StorageError::io_error(
-                path.to_path_buf(),
-                crate::error::IoOperation::Write,
-                e,
-            )
+            StorageError::io_error(path.to_path_buf(), crate::error::IoOperation::Write, e)
         })
     }
 }
@@ -149,7 +119,10 @@ steering: []
 "#;
         let config = ConfigLoader::load_from_string(yaml_content, ConfigFormat::Yaml, "test.yaml")
             .expect("Failed to parse YAML");
-        assert_eq!(config.providers.default_provider, Some("openai".to_string()));
+        assert_eq!(
+            config.providers.default_provider,
+            Some("openai".to_string())
+        );
         assert_eq!(config.defaults.model, Some("gpt-4".to_string()));
     }
 
@@ -169,7 +142,10 @@ custom = {}
 "#;
         let config = ConfigLoader::load_from_string(toml_content, ConfigFormat::Toml, "test.toml")
             .expect("Failed to parse TOML");
-        assert_eq!(config.providers.default_provider, Some("openai".to_string()));
+        assert_eq!(
+            config.providers.default_provider,
+            Some("openai".to_string())
+        );
         assert_eq!(config.defaults.model, Some("gpt-4".to_string()));
     }
 
@@ -191,7 +167,10 @@ custom = {}
 }"#;
         let config = ConfigLoader::load_from_string(json_content, ConfigFormat::Json, "test.json")
             .expect("Failed to parse JSON");
-        assert_eq!(config.providers.default_provider, Some("openai".to_string()));
+        assert_eq!(
+            config.providers.default_provider,
+            Some("openai".to_string())
+        );
         assert_eq!(config.defaults.model, Some("gpt-4".to_string()));
     }
 
@@ -227,13 +206,12 @@ custom = {}
         let temp_dir = tempfile::TempDir::new().expect("Failed to create temp dir");
         let file_path = temp_dir.path().join("config.yaml");
         let config = Config::default();
-        
+
         ConfigLoader::save_to_file(&config, &file_path, ConfigFormat::Yaml)
             .expect("Failed to save config");
-        
-        let loaded = ConfigLoader::load_from_file(&file_path)
-            .expect("Failed to load config");
-        
+
+        let loaded = ConfigLoader::load_from_file(&file_path).expect("Failed to load config");
+
         assert_eq!(config, loaded);
     }
 
@@ -242,13 +220,12 @@ custom = {}
         let temp_dir = tempfile::TempDir::new().expect("Failed to create temp dir");
         let file_path = temp_dir.path().join("config.toml");
         let config = Config::default();
-        
+
         ConfigLoader::save_to_file(&config, &file_path, ConfigFormat::Toml)
             .expect("Failed to save config");
-        
-        let loaded = ConfigLoader::load_from_file(&file_path)
-            .expect("Failed to load config");
-        
+
+        let loaded = ConfigLoader::load_from_file(&file_path).expect("Failed to load config");
+
         assert_eq!(config, loaded);
     }
 
@@ -257,13 +234,12 @@ custom = {}
         let temp_dir = tempfile::TempDir::new().expect("Failed to create temp dir");
         let file_path = temp_dir.path().join("config.json");
         let config = Config::default();
-        
+
         ConfigLoader::save_to_file(&config, &file_path, ConfigFormat::Json)
             .expect("Failed to save config");
-        
-        let loaded = ConfigLoader::load_from_file(&file_path)
-            .expect("Failed to load config");
-        
+
+        let loaded = ConfigLoader::load_from_file(&file_path).expect("Failed to load config");
+
         assert_eq!(config, loaded);
     }
 }

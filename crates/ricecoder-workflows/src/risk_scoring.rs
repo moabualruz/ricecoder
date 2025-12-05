@@ -1,6 +1,8 @@
 //! Risk scoring and assessment for workflow steps
 
-use crate::models::{RiskAssessment, RiskAssessmentReport, WorkflowStep, WorkflowState, ApprovalDecisionRecord};
+use crate::models::{
+    ApprovalDecisionRecord, RiskAssessment, RiskAssessmentReport, WorkflowState, WorkflowStep,
+};
 use chrono::Utc;
 
 /// Risk score calculator for workflow steps
@@ -53,7 +55,8 @@ impl RiskScorer {
         let reversibility_contribution = ((100 - reversibility as u16) as f32) * 0.4;
         let complexity_contribution = (complexity as f32) * 0.2;
 
-        let score = (impact_contribution + reversibility_contribution + complexity_contribution) as u8;
+        let score =
+            (impact_contribution + reversibility_contribution + complexity_contribution) as u8;
         score.min(100)
     }
 
@@ -96,7 +99,9 @@ impl RiskScorer {
                 // In a real implementation, we would look up the actual approval decision
                 // For now, we mark it as approved if the step completed
                 if let Some(result) = state.step_results.get(&step.id) {
-                    if result.status == crate::models::StepStatus::Completed && assessment.approval_required {
+                    if result.status == crate::models::StepStatus::Completed
+                        && assessment.approval_required
+                    {
                         assessment.approval_decision = Some(ApprovalDecisionRecord {
                             approved: true,
                             timestamp: Utc::now(),
@@ -137,7 +142,7 @@ impl Default for RiskScorer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{StepConfig, StepType, ErrorAction, AgentStep, RiskFactors};
+    use crate::models::{AgentStep, ErrorAction, RiskFactors, StepConfig, StepType};
 
     fn create_test_step(id: &str, impact: u8, reversibility: u8, complexity: u8) -> WorkflowStep {
         WorkflowStep {
@@ -167,7 +172,11 @@ mod tests {
         let scorer = RiskScorer::new();
         let step = create_test_step("1", 10, 90, 10);
         let score = scorer.calculate_risk_score(&step);
-        assert!(score < 30, "Low risk step should have score < 30, got {}", score);
+        assert!(
+            score < 30,
+            "Low risk step should have score < 30, got {}",
+            score
+        );
     }
 
     #[test]
@@ -175,7 +184,11 @@ mod tests {
         let scorer = RiskScorer::new();
         let step = create_test_step("1", 90, 10, 90);
         let score = scorer.calculate_risk_score(&step);
-        assert!(score > 70, "High risk step should have score > 70, got {}", score);
+        assert!(
+            score > 70,
+            "High risk step should have score > 70, got {}",
+            score
+        );
     }
 
     #[test]
@@ -197,7 +210,7 @@ mod tests {
         let scorer = RiskScorer::with_threshold(70);
         assert!(!scorer.requires_approval(69));
         assert!(!scorer.requires_approval(70)); // 70 is not > 70, so no approval required
-        assert!(scorer.requires_approval(71));  // 71 > 70, so approval required
+        assert!(scorer.requires_approval(71)); // 71 > 70, so approval required
     }
 
     #[test]

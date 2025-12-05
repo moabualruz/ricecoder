@@ -3,7 +3,7 @@
 //! **Validates: Requirements 3.1**
 
 use proptest::prelude::*;
-use ricecoder_sessions::{ShareService, SharePermissions};
+use ricecoder_sessions::{SharePermissions, ShareService};
 
 proptest! {
     /// Property 7: Share Link Uniqueness

@@ -1,7 +1,7 @@
 //! Rust-specific diagnostic rules
 
-use crate::types::{Diagnostic, DiagnosticSeverity, Position, Range};
 use super::DiagnosticsResult;
+use crate::types::{Diagnostic, DiagnosticSeverity, Position, Range};
 
 /// Generate diagnostics for Rust code
 pub fn generate_rust_diagnostics(code: &str) -> DiagnosticsResult<Vec<Diagnostic>> {
@@ -68,11 +68,17 @@ fn check_unreachable_code(code: &str) -> Vec<Diagnostic> {
         let trimmed = line.trim();
 
         // Check for code after return/panic/unreachable
-        if trimmed.starts_with("return") || trimmed.starts_with("panic!") || trimmed.starts_with("unreachable!") {
+        if trimmed.starts_with("return")
+            || trimmed.starts_with("panic!")
+            || trimmed.starts_with("unreachable!")
+        {
             // Check if there's code on the same line after the statement
             if let Some(pos) = line.find("return") {
                 let after_return = &line[pos + 6..].trim();
-                if !after_return.is_empty() && !after_return.starts_with(';') && !after_return.starts_with("(") {
+                if !after_return.is_empty()
+                    && !after_return.starts_with(';')
+                    && !after_return.starts_with("(")
+                {
                     let range = Range::new(
                         Position::new(line_num as u32, (pos + 6) as u32),
                         Position::new(line_num as u32, line.len() as u32),
@@ -132,10 +138,16 @@ fn check_naming_conventions(code: &str) -> Vec<Diagnostic> {
                     let const_name = after_const[..colon_pos].trim();
 
                     // Check if name is not all uppercase
-                    if !const_name.chars().all(|c| c.is_uppercase() || c == '_' || c.is_numeric()) {
+                    if !const_name
+                        .chars()
+                        .all(|c| c.is_uppercase() || c == '_' || c.is_numeric())
+                    {
                         let range = Range::new(
                             Position::new(line_num as u32, (const_pos + 6) as u32),
-                            Position::new(line_num as u32, (const_pos + 6 + const_name.len()) as u32),
+                            Position::new(
+                                line_num as u32,
+                                (const_pos + 6 + const_name.len()) as u32,
+                            ),
                         );
 
                         let diagnostic = Diagnostic::new(

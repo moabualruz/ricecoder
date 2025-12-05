@@ -5,12 +5,12 @@
 //!
 //! Property: For any generation request, the pipeline SHALL execute in strict order: spec processing → plan generation → prompt building → code generation → validation → output writing, with no steps skipped or reordered.
 
-use proptest::prelude::*;
-use ricecoder_generation::{SpecProcessor, GenerationPlanBuilder};
-use ricecoder_specs::models::{
-    Spec, Requirement, AcceptanceCriterion, Priority, SpecMetadata, SpecPhase, SpecStatus,
-};
 use chrono::Utc;
+use proptest::prelude::*;
+use ricecoder_generation::{GenerationPlanBuilder, SpecProcessor};
+use ricecoder_specs::models::{
+    AcceptanceCriterion, Priority, Requirement, Spec, SpecMetadata, SpecPhase, SpecStatus,
+};
 
 /// Strategy for generating valid requirement IDs
 fn requirement_id_strategy() -> impl Strategy<Value = String> {
@@ -19,8 +19,7 @@ fn requirement_id_strategy() -> impl Strategy<Value = String> {
 
 /// Strategy for generating valid user stories
 fn user_story_strategy() -> impl Strategy<Value = String> {
-    r"As a [a-z]{3,10}, I want [a-z]{3,20}, so that [a-z]{3,20}"
-        .prop_map(|s| s.to_string())
+    r"As a [a-z]{3,10}, I want [a-z]{3,20}, so that [a-z]{3,20}".prop_map(|s| s.to_string())
 }
 
 /// Strategy for generating acceptance criteria
@@ -49,12 +48,14 @@ fn requirement_strategy() -> impl Strategy<Value = Requirement> {
             Just(Priority::Could),
         ],
     )
-        .prop_map(|(id, user_story, acceptance_criteria, priority)| Requirement {
-            id,
-            user_story,
-            acceptance_criteria,
-            priority,
-        })
+        .prop_map(
+            |(id, user_story, acceptance_criteria, priority)| Requirement {
+                id,
+                user_story,
+                acceptance_criteria,
+                priority,
+            },
+        )
 }
 
 /// Strategy for generating specs
@@ -97,7 +98,7 @@ proptest! {
     #[test]
     fn prop_spec_processing_before_plan_generation(spec in spec_strategy()) {
         let processor = SpecProcessor::new();
-        
+
         // Step 1: Process spec
         let plan = processor.process(&spec).expect("Failed to process spec");
 

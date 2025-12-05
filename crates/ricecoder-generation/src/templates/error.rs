@@ -94,7 +94,9 @@ impl PartialEq for BoilerplateError {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (BoilerplateError::NotFound(a), BoilerplateError::NotFound(b)) => a == b,
-            (BoilerplateError::InvalidStructure(a), BoilerplateError::InvalidStructure(b)) => a == b,
+            (BoilerplateError::InvalidStructure(a), BoilerplateError::InvalidStructure(b)) => {
+                a == b
+            }
             (
                 BoilerplateError::FileConflict {
                     path: path_a,
@@ -105,7 +107,9 @@ impl PartialEq for BoilerplateError {
                     reason: reason_b,
                 },
             ) => path_a == path_b && reason_a == reason_b,
-            (BoilerplateError::ValidationFailed(a), BoilerplateError::ValidationFailed(b)) => a == b,
+            (BoilerplateError::ValidationFailed(a), BoilerplateError::ValidationFailed(b)) => {
+                a == b
+            }
             (BoilerplateError::IoError(_), BoilerplateError::IoError(_)) => {
                 // IO errors can't be compared, so we consider them equal if both are IO errors
                 true

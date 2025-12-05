@@ -64,7 +64,9 @@ impl CompletionHistory {
     /// Record a completion usage
     pub fn record_usage(&self, label: String, language: String) -> CompletionResult<()> {
         let mut cache = self.usage_cache.write().map_err(|_| {
-            CompletionError::InternalError("Failed to acquire write lock on history cache".to_string())
+            CompletionError::InternalError(
+                "Failed to acquire write lock on history cache".to_string(),
+            )
         })?;
 
         let key = format!("{}:{}", language, label);
@@ -79,7 +81,9 @@ impl CompletionHistory {
     /// Get the frequency score for a completion (0.0 to 1.0)
     pub fn get_frequency_score(&self, label: &str, language: &str) -> CompletionResult<f32> {
         let cache = self.usage_cache.read().map_err(|_| {
-            CompletionError::InternalError("Failed to acquire read lock on history cache".to_string())
+            CompletionError::InternalError(
+                "Failed to acquire read lock on history cache".to_string(),
+            )
         })?;
 
         let key = format!("{}:{}", language, label);
@@ -97,7 +101,9 @@ impl CompletionHistory {
     /// Recent completions get higher scores
     pub fn get_recency_score(&self, label: &str, language: &str) -> CompletionResult<f32> {
         let cache = self.usage_cache.read().map_err(|_| {
-            CompletionError::InternalError("Failed to acquire read lock on history cache".to_string())
+            CompletionError::InternalError(
+                "Failed to acquire read lock on history cache".to_string(),
+            )
         })?;
 
         let key = format!("{}:{}", language, label);
@@ -148,10 +154,9 @@ impl CompletionHistory {
     pub fn load(&self) -> CompletionResult<()> {
         if let Some(path) = &self.history_path {
             if path.exists() {
-                let content = std::fs::read_to_string(path)
-                    .map_err(CompletionError::IoError)?;
-                let usages: Vec<CompletionUsage> = serde_json::from_str(&content)
-                    .map_err(CompletionError::SerializationError)?;
+                let content = std::fs::read_to_string(path).map_err(CompletionError::IoError)?;
+                let usages: Vec<CompletionUsage> =
+                    serde_json::from_str(&content).map_err(CompletionError::SerializationError)?;
 
                 let mut cache = self.usage_cache.write().map_err(|_| {
                     CompletionError::InternalError(
@@ -191,7 +196,9 @@ impl CompletionHistory {
     /// Clear all history
     pub fn clear(&self) -> CompletionResult<()> {
         let mut cache = self.usage_cache.write().map_err(|_| {
-            CompletionError::InternalError("Failed to acquire write lock on history cache".to_string())
+            CompletionError::InternalError(
+                "Failed to acquire write lock on history cache".to_string(),
+            )
         })?;
 
         cache.clear();
@@ -201,7 +208,9 @@ impl CompletionHistory {
     /// Get all usage records
     pub fn get_all_usages(&self) -> CompletionResult<Vec<CompletionUsage>> {
         let cache = self.usage_cache.read().map_err(|_| {
-            CompletionError::InternalError("Failed to acquire read lock on history cache".to_string())
+            CompletionError::InternalError(
+                "Failed to acquire read lock on history cache".to_string(),
+            )
         })?;
 
         Ok(cache.values().cloned().collect())
@@ -221,7 +230,9 @@ mod tests {
     #[test]
     fn test_record_usage() {
         let history = CompletionHistory::new();
-        assert!(history.record_usage("test".to_string(), "rust".to_string()).is_ok());
+        assert!(history
+            .record_usage("test".to_string(), "rust".to_string())
+            .is_ok());
     }
 
     #[test]
@@ -234,7 +245,9 @@ mod tests {
     #[test]
     fn test_frequency_score_after_usage() {
         let history = CompletionHistory::new();
-        history.record_usage("test".to_string(), "rust".to_string()).unwrap();
+        history
+            .record_usage("test".to_string(), "rust".to_string())
+            .unwrap();
         let score = history.get_frequency_score("test", "rust").unwrap();
         assert!(score > 0.0);
     }
@@ -243,7 +256,9 @@ mod tests {
     fn test_frequency_score_multiple_usages() {
         let history = CompletionHistory::new();
         for _ in 0..5 {
-            history.record_usage("test".to_string(), "rust".to_string()).unwrap();
+            history
+                .record_usage("test".to_string(), "rust".to_string())
+                .unwrap();
         }
         let score = history.get_frequency_score("test", "rust").unwrap();
         assert!(score > 0.0);
@@ -259,7 +274,9 @@ mod tests {
     #[test]
     fn test_recency_score_after_usage() {
         let history = CompletionHistory::new();
-        history.record_usage("test".to_string(), "rust".to_string()).unwrap();
+        history
+            .record_usage("test".to_string(), "rust".to_string())
+            .unwrap();
         let score = history.get_recency_score("test", "rust").unwrap();
         assert!(score > 0.9); // Should be very recent
     }
@@ -267,7 +284,9 @@ mod tests {
     #[test]
     fn test_combined_usage_score() {
         let history = CompletionHistory::new();
-        history.record_usage("test".to_string(), "rust".to_string()).unwrap();
+        history
+            .record_usage("test".to_string(), "rust".to_string())
+            .unwrap();
         let score = history.get_usage_score("test", "rust", 0.3, 0.2).unwrap();
         assert!(score > 0.0);
     }
@@ -275,7 +294,9 @@ mod tests {
     #[test]
     fn test_clear_history() {
         let history = CompletionHistory::new();
-        history.record_usage("test".to_string(), "rust".to_string()).unwrap();
+        history
+            .record_usage("test".to_string(), "rust".to_string())
+            .unwrap();
         history.clear().unwrap();
         let score = history.get_frequency_score("test", "rust").unwrap();
         assert_eq!(score, 0.0);
@@ -284,8 +305,12 @@ mod tests {
     #[test]
     fn test_get_all_usages() {
         let history = CompletionHistory::new();
-        history.record_usage("test1".to_string(), "rust".to_string()).unwrap();
-        history.record_usage("test2".to_string(), "rust".to_string()).unwrap();
+        history
+            .record_usage("test1".to_string(), "rust".to_string())
+            .unwrap();
+        history
+            .record_usage("test2".to_string(), "rust".to_string())
+            .unwrap();
         let usages = history.get_all_usages().unwrap();
         assert_eq!(usages.len(), 2);
     }
@@ -296,7 +321,9 @@ mod tests {
         let history_path = temp_dir.path().join("history.json");
 
         let history = CompletionHistory::with_path(history_path.clone());
-        history.record_usage("test".to_string(), "rust".to_string()).unwrap();
+        history
+            .record_usage("test".to_string(), "rust".to_string())
+            .unwrap();
         assert!(history.save().is_ok());
 
         let history2 = CompletionHistory::with_path(history_path);
@@ -306,4 +333,3 @@ mod tests {
         assert_eq!(usages[0].label, "test");
     }
 }
-

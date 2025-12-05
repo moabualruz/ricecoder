@@ -16,21 +16,21 @@ fn file_name_strategy() -> impl Strategy<Value = String> {
 
 /// Strategy for generating valid file content
 fn file_content_strategy() -> impl Strategy<Value = String> {
-    r"[a-zA-Z0-9 \n\t]*"
-        .prop_filter("Content should be valid", |s| !s.is_empty())
+    r"[a-zA-Z0-9 \n\t]*".prop_filter("Content should be valid", |s| !s.is_empty())
 }
 
 /// Strategy for generating file structures with unique names
 fn file_structure_strategy() -> impl Strategy<Value = Vec<(String, String)>> {
-    prop::collection::vec((file_name_strategy(), file_content_strategy()), 1..10)
-        .prop_map(|mut files| {
+    prop::collection::vec((file_name_strategy(), file_content_strategy()), 1..10).prop_map(
+        |mut files| {
             // Ensure unique file names by adding index
             for (i, (name, _)) in files.iter_mut().enumerate() {
                 let base = name.trim_end_matches(".txt");
                 *name = format!("{}_{}.txt", base, i);
             }
             files
-        })
+        },
+    )
 }
 
 /// Property 11: Relocation Round-Trip

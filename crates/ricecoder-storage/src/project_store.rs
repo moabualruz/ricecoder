@@ -89,9 +89,8 @@ impl ProjectStore {
         self.create_dir_if_not_exists(&resource_dir)?;
 
         // Write file
-        fs::write(&file_path, content).map_err(|e| {
-            StorageError::io_error(file_path.clone(), IoOperation::Write, e)
-        })?;
+        fs::write(&file_path, content)
+            .map_err(|e| StorageError::io_error(file_path.clone(), IoOperation::Write, e))?;
 
         Ok(file_path)
     }
@@ -105,9 +104,7 @@ impl ProjectStore {
         let resource_dir = self.resource_path(resource_type);
         let file_path = resource_dir.join(name);
 
-        fs::read(&file_path).map_err(|e| {
-            StorageError::io_error(file_path, IoOperation::Read, e)
-        })
+        fs::read(&file_path).map_err(|e| StorageError::io_error(file_path, IoOperation::Read, e))
     }
 
     /// List all resources of a type
@@ -119,14 +116,12 @@ impl ProjectStore {
         }
 
         let mut resources = Vec::new();
-        let entries = fs::read_dir(&resource_dir).map_err(|e| {
-            StorageError::io_error(resource_dir.clone(), IoOperation::Read, e)
-        })?;
+        let entries = fs::read_dir(&resource_dir)
+            .map_err(|e| StorageError::io_error(resource_dir.clone(), IoOperation::Read, e))?;
 
         for entry in entries {
-            let entry = entry.map_err(|e| {
-                StorageError::io_error(resource_dir.clone(), IoOperation::Read, e)
-            })?;
+            let entry = entry
+                .map_err(|e| StorageError::io_error(resource_dir.clone(), IoOperation::Read, e))?;
 
             let path = entry.path();
             if path.is_file() {
@@ -142,18 +137,13 @@ impl ProjectStore {
     }
 
     /// Delete a resource file
-    pub fn delete_resource(
-        &self,
-        resource_type: ResourceType,
-        name: &str,
-    ) -> StorageResult<()> {
+    pub fn delete_resource(&self, resource_type: ResourceType, name: &str) -> StorageResult<()> {
         let resource_dir = self.resource_path(resource_type);
         let file_path = resource_dir.join(name);
 
         if file_path.exists() {
-            fs::remove_file(&file_path).map_err(|e| {
-                StorageError::io_error(file_path, IoOperation::Delete, e)
-            })?;
+            fs::remove_file(&file_path)
+                .map_err(|e| StorageError::io_error(file_path, IoOperation::Delete, e))?;
         }
 
         Ok(())
@@ -185,9 +175,8 @@ impl ProjectStore {
     /// Create a directory if it doesn't exist
     fn create_dir_if_not_exists(&self, path: &Path) -> StorageResult<()> {
         if !path.exists() {
-            fs::create_dir_all(path).map_err(|e| {
-                StorageError::directory_creation_failed(path.to_path_buf(), e)
-            })?;
+            fs::create_dir_all(path)
+                .map_err(|e| StorageError::directory_creation_failed(path.to_path_buf(), e))?;
         }
         Ok(())
     }

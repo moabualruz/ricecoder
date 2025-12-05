@@ -52,11 +52,7 @@ impl PlanBuilder {
     ///
     /// # Errors
     /// Returns error if path is invalid
-    pub fn add_create_file_step(
-        mut self,
-        path: String,
-        content: String,
-    ) -> ExecutionResult<Self> {
+    pub fn add_create_file_step(mut self, path: String, content: String) -> ExecutionResult<Self> {
         // Validate path using PathResolver
         let _resolved = PathResolver::expand_home(Path::new(&path))
             .map_err(|e| ExecutionError::ValidationError(format!("Invalid path: {}", e)))?;
@@ -193,10 +189,7 @@ impl PlanBuilder {
         let estimated_duration = self.estimate_duration();
 
         // Determine if approval is required
-        let requires_approval = matches!(
-            risk_score.level,
-            RiskLevel::High | RiskLevel::Critical
-        );
+        let requires_approval = matches!(risk_score.level, RiskLevel::High | RiskLevel::Critical);
 
         let plan = ExecutionPlan {
             id: Uuid::new_v4().to_string(),

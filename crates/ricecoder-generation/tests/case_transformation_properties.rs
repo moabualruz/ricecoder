@@ -129,7 +129,7 @@ proptest! {
     ) {
         let pascal = CaseTransform::PascalCase.apply(&input);
         let lower_from_pascal = CaseTransform::LowerCase.apply(&pascal);
-        
+
         // The result should be all lowercase
         prop_assert!(lower_from_pascal.chars().all(|c| !c.is_uppercase() || !c.is_alphabetic()));
     }
@@ -142,7 +142,7 @@ proptest! {
     ) {
         let upper = CaseTransform::UpperCase.apply(&input);
         let lower = CaseTransform::LowerCase.apply(&input);
-        
+
         // Uppercase should have no lowercase letters
         prop_assert!(!upper.chars().any(|c| c.is_lowercase()));
         // Lowercase should have no uppercase letters
@@ -163,11 +163,11 @@ proptest! {
         let lower = CaseTransform::LowerCase.apply(&input);
 
         let input_len = input.len();
-        
+
         // For single-word lowercase input, most transforms should differ
         // (except lowercase which should be the same as input)
         prop_assert_eq!(lower, input);
-        
+
         // PascalCase should differ from camelCase for multi-word inputs
         // but for single word, PascalCase should capitalize first letter
         if input_len > 1 {
