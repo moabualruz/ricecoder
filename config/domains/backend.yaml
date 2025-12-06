@@ -1,0 +1,361 @@
+domain: backend
+name: "Backend Development Agent"
+description: "Specialized agent for backend development"
+
+capabilities:
+  - name: "API Design"
+    description: "Recommendations for REST, GraphQL, or gRPC API design patterns"
+    technologies:
+      - "REST"
+      - "GraphQL"
+      - "gRPC"
+
+  - name: "Architecture Guidance"
+    description: "Recommendations for microservices, monolithic, or serverless architectures"
+    technologies:
+      - "Microservices"
+      - "Monolithic"
+      - "Serverless"
+
+  - name: "Database Design"
+    description: "Recommendations for relational, NoSQL, or graph database selection and schema design"
+    technologies:
+      - "PostgreSQL"
+      - "MongoDB"
+      - "Neo4j"
+
+  - name: "Scalability"
+    description: "Recommendations for caching, load balancing, and horizontal scaling strategies"
+    technologies:
+      - "Redis"
+      - "Memcached"
+      - "Load Balancers"
+
+  - name: "Security"
+    description: "Recommendations for authentication, authorization, and data protection patterns"
+    technologies:
+      - "OAuth 2.0"
+      - "JWT"
+      - "TLS"
+
+  - name: "Observability"
+    description: "Recommendations for logging, metrics, and tracing implementation"
+    technologies:
+      - "ELK Stack"
+      - "Prometheus"
+      - "Jaeger"
+
+best_practices:
+  - title: "API Versioning"
+    description: "Maintain backward compatibility through API versioning"
+    technologies:
+      - "REST"
+      - "GraphQL"
+    implementation: "Use URL versioning (v1, v2) or header-based versioning"
+
+  - title: "Database Indexing"
+    description: "Optimize database performance through proper indexing"
+    technologies:
+      - "PostgreSQL"
+      - "MongoDB"
+    implementation: "Create indexes on frequently queried columns and relationships"
+
+  - title: "Caching Strategy"
+    description: "Implement effective caching to reduce database load"
+    technologies:
+      - "Redis"
+      - "Memcached"
+    implementation: "Use cache-aside pattern with appropriate TTLs"
+
+  - title: "Error Handling"
+    description: "Implement consistent error handling and reporting"
+    technologies:
+      - "REST"
+      - "GraphQL"
+      - "gRPC"
+    implementation: "Use standard HTTP status codes and error response formats"
+
+  - title: "Rate Limiting"
+    description: "Protect APIs from abuse through rate limiting"
+    technologies:
+      - "REST"
+      - "GraphQL"
+    implementation: "Implement token bucket or sliding window rate limiting"
+
+technology_recommendations:
+  - technology: "REST"
+    use_cases:
+      - "Web APIs"
+      - "Mobile backends"
+      - "Simple CRUD operations"
+    pros:
+      - "Simple and well-understood"
+      - "Stateless design"
+      - "Excellent caching support"
+    cons:
+      - "Over-fetching and under-fetching"
+      - "Versioning complexity"
+      - "Multiple requests for related data"
+    alternatives:
+      - "GraphQL"
+      - "gRPC"
+
+  - technology: "GraphQL"
+    use_cases:
+      - "Complex data queries"
+      - "Mobile-first applications"
+      - "Real-time data"
+    pros:
+      - "Precise data fetching"
+      - "Single endpoint"
+      - "Strong typing"
+    cons:
+      - "Steep learning curve"
+      - "Query complexity"
+      - "Caching challenges"
+    alternatives:
+      - "REST"
+      - "gRPC"
+
+  - technology: "gRPC"
+    use_cases:
+      - "Microservices communication"
+      - "High-performance systems"
+      - "Real-time streaming"
+    pros:
+      - "High performance"
+      - "Streaming support"
+      - "Language-agnostic"
+    cons:
+      - "Steep learning curve"
+      - "Browser support limitations"
+      - "Debugging complexity"
+    alternatives:
+      - "REST"
+      - "GraphQL"
+
+  - technology: "PostgreSQL"
+    use_cases:
+      - "Relational data"
+      - "ACID transactions"
+      - "Complex queries"
+    pros:
+      - "Reliable"
+      - "Feature-rich"
+      - "Open source"
+    cons:
+      - "Vertical scaling limitations"
+      - "Complex setup"
+    alternatives:
+      - "MySQL"
+      - "MariaDB"
+
+  - technology: "MongoDB"
+    use_cases:
+      - "Document storage"
+      - "Flexible schema"
+      - "Rapid development"
+    pros:
+      - "Flexible schema"
+      - "Horizontal scaling"
+      - "Easy to use"
+    cons:
+      - "No ACID transactions"
+      - "Higher memory usage"
+    alternatives:
+      - "CouchDB"
+      - "Firebase"
+
+  - technology: "Neo4j"
+    use_cases:
+      - "Graph data"
+      - "Relationship queries"
+      - "Recommendation engines"
+    pros:
+      - "Powerful graph queries"
+      - "Relationship performance"
+      - "Intuitive modeling"
+    cons:
+      - "Specialized use case"
+      - "Smaller ecosystem"
+    alternatives:
+      - "ArangoDB"
+      - "TigerGraph"
+
+  - technology: "Redis"
+    use_cases:
+      - "Caching"
+      - "Session storage"
+      - "Real-time analytics"
+    pros:
+      - "Lightning fast"
+      - "Versatile data structures"
+      - "Pub/Sub support"
+    cons:
+      - "In-memory only"
+      - "Data persistence complexity"
+    alternatives:
+      - "Memcached"
+      - "Hazelcast"
+
+  - technology: "Memcached"
+    use_cases:
+      - "Simple caching"
+      - "Session storage"
+      - "Object caching"
+    pros:
+      - "Simple and lightweight"
+      - "Fast"
+      - "Distributed"
+    cons:
+      - "Limited data structures"
+      - "No persistence"
+    alternatives:
+      - "Redis"
+      - "Hazelcast"
+
+  - technology: "Microservices"
+    use_cases:
+      - "Large applications"
+      - "Independent scaling"
+      - "Team autonomy"
+    pros:
+      - "Independent scaling"
+      - "Technology flexibility"
+      - "Team autonomy"
+    cons:
+      - "Operational complexity"
+      - "Network latency"
+      - "Data consistency challenges"
+    alternatives:
+      - "Monolithic"
+      - "Serverless"
+
+  - technology: "Monolithic"
+    use_cases:
+      - "Small to medium applications"
+      - "Simple deployments"
+      - "Rapid development"
+    pros:
+      - "Simple deployment"
+      - "Easier debugging"
+      - "Better performance"
+    cons:
+      - "Scaling limitations"
+      - "Technology lock-in"
+      - "Deployment coupling"
+    alternatives:
+      - "Microservices"
+      - "Serverless"
+
+  - technology: "Serverless"
+    use_cases:
+      - "Event-driven workloads"
+      - "Sporadic traffic"
+      - "Rapid prototyping"
+    pros:
+      - "No infrastructure management"
+      - "Auto-scaling"
+      - "Pay-per-use"
+    cons:
+      - "Cold start latency"
+      - "Vendor lock-in"
+      - "Debugging complexity"
+    alternatives:
+      - "Microservices"
+      - "Monolithic"
+
+  - technology: "OAuth 2.0"
+    use_cases:
+      - "Third-party authentication"
+      - "Delegated access"
+      - "Social login"
+    pros:
+      - "Industry standard"
+      - "Secure delegation"
+      - "Wide adoption"
+    cons:
+      - "Complex implementation"
+      - "Token management"
+    alternatives:
+      - "OpenID Connect"
+      - "SAML"
+
+  - technology: "JWT"
+    use_cases:
+      - "Stateless authentication"
+      - "API authentication"
+      - "Token-based auth"
+    pros:
+      - "Stateless"
+      - "Self-contained"
+      - "Cross-domain support"
+    cons:
+      - "Token revocation challenges"
+      - "Token size"
+    alternatives:
+      - "Session tokens"
+      - "OAuth 2.0"
+
+  - technology: "TLS"
+    use_cases:
+      - "Secure communication"
+      - "Data encryption"
+      - "HTTPS"
+    pros:
+      - "Industry standard"
+      - "Wide support"
+      - "Proven security"
+    cons:
+      - "Performance overhead"
+      - "Certificate management"
+    alternatives:
+      - "SSL"
+
+  - technology: "ELK Stack"
+    use_cases:
+      - "Log aggregation"
+      - "Log analysis"
+      - "Centralized logging"
+    pros:
+      - "Powerful search"
+      - "Real-time analysis"
+      - "Open source"
+    cons:
+      - "Resource intensive"
+      - "Complex setup"
+    alternatives:
+      - "Splunk"
+      - "Datadog"
+
+  - technology: "Prometheus"
+    use_cases:
+      - "Metrics collection"
+      - "System monitoring"
+      - "Alerting"
+    pros:
+      - "Time-series database"
+      - "Powerful queries"
+      - "Open source"
+    cons:
+      - "Pull-based model"
+      - "Limited long-term storage"
+    alternatives:
+      - "Grafana"
+      - "InfluxDB"
+
+  - technology: "Jaeger"
+    use_cases:
+      - "Distributed tracing"
+      - "Request tracing"
+      - "Performance analysis"
+    pros:
+      - "Distributed tracing"
+      - "OpenTelemetry support"
+      - "Open source"
+    cons:
+      - "Complex setup"
+      - "Storage requirements"
+    alternatives:
+      - "Zipkin"
+      - "Datadog"

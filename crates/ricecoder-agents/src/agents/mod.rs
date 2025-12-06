@@ -1,12 +1,18 @@
 //! Agent trait and implementations
 
+pub mod backend;
 pub mod code_review;
+pub mod devops;
+pub mod web;
 
 use crate::error::Result;
 use crate::models::{AgentInput, AgentMetrics, AgentOutput, ConfigSchema, TaskType};
 use async_trait::async_trait;
 
+pub use backend::BackendAgent;
 pub use code_review::CodeReviewAgent;
+pub use devops::DevOpsAgent;
+pub use web::WebAgent;
 
 /// Trait that all agents must implement
 ///

@@ -1,0 +1,303 @@
+# Domain Configuration Template
+# 
+# This template demonstrates all available configuration options for creating
+# a new domain agent. Copy this file to create a new domain configuration.
+#
+# File Location: config/domains/{domain-name}.yaml
+# Example: config/domains/mobile.yaml
+#
+# After creating a new domain configuration:
+# 1. The system will auto-discover it from config/domains/ directory
+# 2. Validate it against config/schemas/domain.schema.json
+# 3. Create a domain agent instance automatically
+# 4. Make it available for use without code changes
+#
+# For more information, see: projects/ricecoder.wiki/Custom-Domains.md
+
+# ============================================================================
+# REQUIRED FIELDS
+# ============================================================================
+
+# Domain identifier (lowercase, no spaces)
+# Used internally to reference this domain
+# Examples: "web", "backend", "devops", "mobile", "data-science"
+domain: "template"
+
+# Human-readable domain name
+# Displayed in UI and documentation
+name: "Template Domain"
+
+# Domain description
+# Explains what this domain covers and its purpose
+description: "This is a template domain configuration demonstrating all available options"
+
+# ============================================================================
+# CAPABILITIES SECTION
+# ============================================================================
+# 
+# Capabilities define what this domain agent can help with.
+# Each capability represents a major area of expertise.
+#
+# Structure:
+#   - name: Capability name (displayed in UI)
+#     description: What this capability covers
+#     technologies: List of technologies/tools this capability covers
+#
+# Requirements:
+#   - At least 1 capability required
+#   - Each capability must have at least 1 technology
+#   - Technology names should be specific (e.g., "React" not "Frontend")
+
+capabilities:
+  - name: "Capability 1"
+    description: "Description of what this capability covers"
+    technologies:
+      - "Technology A"
+      - "Technology B"
+      - "Technology C"
+
+  - name: "Capability 2"
+    description: "Another area of expertise for this domain"
+    technologies:
+      - "Technology D"
+      - "Technology E"
+
+# ============================================================================
+# BEST PRACTICES SECTION
+# ============================================================================
+#
+# Best practices are recommended approaches and patterns for this domain.
+# These are actionable recommendations that developers should follow.
+#
+# Structure:
+#   - title: Best practice name
+#     description: What this best practice is about
+#     technologies: Which technologies this applies to
+#     implementation: How to implement this best practice
+#
+# Requirements:
+#   - At least 1 best practice recommended
+#   - Implementation should be specific and actionable
+#   - Technologies should match those in capabilities
+
+best_practices:
+  - title: "Best Practice 1"
+    description: "Description of why this is a best practice"
+    technologies:
+      - "Technology A"
+      - "Technology B"
+    implementation: "Specific steps or patterns to follow for this best practice"
+
+  - title: "Best Practice 2"
+    description: "Another recommended approach"
+    technologies:
+      - "Technology C"
+    implementation: "How to implement this pattern in practice"
+
+# ============================================================================
+# TECHNOLOGY RECOMMENDATIONS SECTION
+# ============================================================================
+#
+# Technology recommendations provide detailed guidance on specific tools,
+# frameworks, or libraries. Each recommendation includes pros, cons, and
+# alternatives to help developers make informed decisions.
+#
+# Structure:
+#   - technology: Name of the technology
+#     use_cases: When to use this technology
+#     pros: Advantages of using this technology
+#     cons: Disadvantages or limitations
+#     alternatives: Other technologies that could be used instead
+#
+# Requirements:
+#   - At least 1 technology recommendation
+#   - Each technology should have at least 1 use case
+#   - Each technology should have at least 1 pro and 1 con
+#   - Alternatives should be realistic options
+
+technology_recommendations:
+  - technology: "Technology A"
+    use_cases:
+      - "Use case 1"
+      - "Use case 2"
+      - "Use case 3"
+    pros:
+      - "Advantage 1"
+      - "Advantage 2"
+      - "Advantage 3"
+    cons:
+      - "Limitation 1"
+      - "Limitation 2"
+    alternatives:
+      - "Alternative Technology 1"
+      - "Alternative Technology 2"
+
+  - technology: "Technology B"
+    use_cases:
+      - "Use case 1"
+      - "Use case 2"
+    pros:
+      - "Advantage 1"
+      - "Advantage 2"
+    cons:
+      - "Limitation 1"
+    alternatives:
+      - "Alternative Technology 1"
+
+# ============================================================================
+# OPTIONAL SECTIONS (Future Extensions)
+# ============================================================================
+#
+# The following sections are reserved for future extensions:
+#
+# patterns:
+#   - name: "Pattern Name"
+#     description: "Pattern description"
+#     technologies: ["Technology A", "Technology B"]
+#     use_cases: ["Use case 1", "Use case 2"]
+#
+# anti_patterns:
+#   - name: "Anti-Pattern Name"
+#     description: "Why this is an anti-pattern"
+#     technologies: ["Technology A"]
+#     why_avoid: "Reasons to avoid this pattern"
+#     better_alternative: "Recommended alternative"
+
+# ============================================================================
+# SCHEMA VALIDATION
+# ============================================================================
+#
+# This configuration is validated against config/schemas/domain.schema.json
+# before being loaded. Validation ensures:
+#
+# ✓ All required fields are present
+# ✓ Field types are correct (strings, arrays, etc.)
+# ✓ Technology lists are non-empty
+# ✓ No duplicate entries
+# ✓ Required fields in nested objects are present
+#
+# If validation fails, the domain will not be loaded and an error message
+# will be displayed indicating what needs to be fixed.
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+#
+# Example 1: Mobile Development Domain
+# See: projects/ricecoder/config/domains/mobile.yaml
+#
+# Example 2: Data Science Domain
+# See: projects/ricecoder/config/domains/data-science.yaml
+#
+# Example 3: Built-in Web Domain
+# See: projects/ricecoder/config/domains/web.yaml
+
+# ============================================================================
+# HOW TO USE THIS TEMPLATE
+# ============================================================================
+#
+# 1. Copy this file:
+#    cp config/domains/template.yaml config/domains/my-domain.yaml
+#
+# 2. Edit the file with your domain information:
+#    - Change "domain" to your domain identifier
+#    - Update "name" and "description"
+#    - Add your capabilities
+#    - Add best practices for your domain
+#    - Add technology recommendations
+#
+# 3. Validate your configuration:
+#    The system will automatically validate when it loads
+#
+# 4. Restart or reload the system:
+#    The new domain will be auto-discovered and available
+#
+# 5. Use your domain:
+#    Request assistance for your domain and the agent will provide recommendations
+
+# ============================================================================
+# TROUBLESHOOTING
+# ============================================================================
+#
+# Q: My domain is not being discovered
+# A: Check that:
+#    - File is in config/domains/ directory
+#    - File has .yaml extension
+#    - File is valid YAML syntax
+#    - Domain field is present and non-empty
+#
+# Q: I get a validation error
+# A: Check that:
+#    - All required fields are present
+#    - Technology lists are not empty
+#    - Field types match the schema
+#    - No duplicate technology names
+#
+# Q: Changes are not taking effect
+# A: The system supports hot-reload:
+#    - Save your changes to the YAML file
+#    - The system will detect the change
+#    - New requests will use the updated configuration
+#    - Existing requests continue with old configuration
+#
+# For more help, see: projects/ricecoder.wiki/Custom-Domains.md
+
+# ============================================================================
+# CONFIGURATION SCHEMA REFERENCE
+# ============================================================================
+#
+# Field: domain
+#   Type: string
+#   Required: yes
+#   Pattern: ^[a-z][a-z0-9-]*$
+#   Description: Domain identifier (lowercase, alphanumeric, hyphens)
+#
+# Field: name
+#   Type: string
+#   Required: yes
+#   Min length: 1
+#   Max length: 100
+#   Description: Human-readable domain name
+#
+# Field: description
+#   Type: string
+#   Required: yes
+#   Min length: 1
+#   Max length: 500
+#   Description: Domain description
+#
+# Field: capabilities
+#   Type: array of objects
+#   Required: yes
+#   Min items: 1
+#   Description: Domain capabilities
+#
+#   Nested fields:
+#     - name (string, required, 1-100 chars)
+#     - description (string, required, 1-500 chars)
+#     - technologies (array of strings, required, min 1 item)
+#
+# Field: best_practices
+#   Type: array of objects
+#   Required: yes
+#   Min items: 1
+#   Description: Best practices for this domain
+#
+#   Nested fields:
+#     - title (string, required, 1-100 chars)
+#     - description (string, required, 1-500 chars)
+#     - technologies (array of strings, required, min 1 item)
+#     - implementation (string, required, 1-1000 chars)
+#
+# Field: technology_recommendations
+#   Type: array of objects
+#   Required: yes
+#   Min items: 1
+#   Description: Technology recommendations
+#
+#   Nested fields:
+#     - technology (string, required, 1-100 chars)
+#     - use_cases (array of strings, required, min 1 item)
+#     - pros (array of strings, required, min 1 item)
+#     - cons (array of strings, required, min 1 item)
+#     - alternatives (array of strings, required, min 1 item)

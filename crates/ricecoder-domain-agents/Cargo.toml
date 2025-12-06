@@ -1,5 +1,5 @@
 [package]
-name = "ricecoder-agents"
+name = "ricecoder-domain-agents"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -12,14 +12,15 @@ tracing.workspace = true
 tokio.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+serde_yaml.workspace = true
 futures.workspace = true
 chrono.workspace = true
 uuid.workspace = true
 
 ricecoder-storage = { path = "../ricecoder-storage" }
+ricecoder-agents = { path = "../ricecoder-agents" }
 ricecoder-providers = { path = "../ricecoder-providers" }
 jsonschema.workspace = true
-serde_yaml.workspace = true
 
 [dev-dependencies]
 proptest.workspace = true

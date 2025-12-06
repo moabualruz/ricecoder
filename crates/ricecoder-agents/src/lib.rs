@@ -33,6 +33,7 @@
 
 pub mod agents;
 pub mod coordinator;
+pub mod domain;
 pub mod error;
 pub mod executor;
 pub mod metrics;
@@ -50,7 +51,7 @@ mod coordinator_properties;
 #[cfg(test)]
 mod orchestrator_properties;
 
-pub use agents::{Agent, CodeReviewAgent};
+pub use agents::{Agent, CodeReviewAgent, WebAgent};
 pub use coordinator::AgentCoordinator;
 pub use error::AgentError;
 pub use executor::{ExecutionConfig, ExecutionResult, ParallelExecutor};
