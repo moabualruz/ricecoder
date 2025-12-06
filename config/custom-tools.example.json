@@ -1,0 +1,151 @@
+{
+  "tools": [
+    {
+      "id": "calculate-sum",
+      "name": "Calculate Sum",
+      "description": "Add two numbers together",
+      "category": "math",
+      "parameters": [
+        {
+          "name": "a",
+          "type": "number",
+          "description": "First number",
+          "required": true
+        },
+        {
+          "name": "b",
+          "type": "number",
+          "description": "Second number",
+          "required": true
+        }
+      ],
+      "return_type": "number",
+      "handler": "math::sum"
+    },
+    {
+      "id": "calculate-product",
+      "name": "Calculate Product",
+      "description": "Multiply two numbers",
+      "category": "math",
+      "parameters": [
+        {
+          "name": "a",
+          "type": "number",
+          "description": "First number",
+          "required": true
+        },
+        {
+          "name": "b",
+          "type": "number",
+          "description": "Second number",
+          "required": true
+        }
+      ],
+      "return_type": "number",
+      "handler": "math::product"
+    },
+    {
+      "id": "format-json",
+      "name": "Format JSON",
+      "description": "Format and validate JSON",
+      "category": "validation",
+      "parameters": [
+        {
+          "name": "json",
+          "type": "string",
+          "description": "JSON string to format",
+          "required": true
+        },
+        {
+          "name": "indent",
+          "type": "number",
+          "description": "Indentation spaces",
+          "required": false,
+          "default": 2
+        }
+      ],
+      "return_type": "string",
+      "handler": "validation::format_json"
+    },
+    {
+      "id": "validate-email",
+      "name": "Validate Email",
+      "description": "Validate email address",
+      "category": "validation",
+      "parameters": [
+        {
+          "name": "email",
+          "type": "string",
+          "description": "Email address to validate",
+          "required": true
+        }
+      ],
+      "return_type": "object",
+      "handler": "validation::validate_email"
+    },
+    {
+      "id": "validate-url",
+      "name": "Validate URL",
+      "description": "Validate URL",
+      "category": "validation",
+      "parameters": [
+        {
+          "name": "url",
+          "type": "string",
+          "description": "URL to validate",
+          "required": true
+        }
+      ],
+      "return_type": "object",
+      "handler": "validation::validate_url"
+    },
+    {
+      "id": "uppercase",
+      "name": "Uppercase",
+      "description": "Convert text to uppercase",
+      "category": "text",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "string",
+          "description": "Text to convert",
+          "required": true
+        }
+      ],
+      "return_type": "string",
+      "handler": "text::uppercase"
+    },
+    {
+      "id": "lowercase",
+      "name": "Lowercase",
+      "description": "Convert text to lowercase",
+      "category": "text",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "string",
+          "description": "Text to convert",
+          "required": true
+        }
+      ],
+      "return_type": "string",
+      "handler": "text::lowercase"
+    },
+    {
+      "id": "reverse",
+      "name": "Reverse",
+      "description": "Reverse text",
+      "category": "text",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "string",
+          "description": "Text to reverse",
+          "required": true
+        }
+      ],
+      "return_type": "string",
+      "handler": "text::reverse"
+    }
+  ]
+}

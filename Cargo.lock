@@ -3041,6 +3041,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "ricecoder-mcp"
+version = "0.5.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "criterion",
+ "futures",
+ "proptest",
+ "ricecoder-agents",
+ "ricecoder-files",
+ "ricecoder-permissions",
+ "ricecoder-storage",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-test",
+ "tracing",
+]
+
+[[package]]
 name = "ricecoder-modes"
 version = "0.1.0"
 dependencies = [

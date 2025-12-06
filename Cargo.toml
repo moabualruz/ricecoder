@@ -25,6 +25,7 @@ members = [
     "crates/ricecoder-orchestration",
     "crates/ricecoder-domain-agents",
     "crates/ricecoder-learning",
+    "crates/ricecoder-mcp",
 ]
 resolver = "2"
 
