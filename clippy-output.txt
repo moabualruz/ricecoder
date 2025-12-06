@@ -1,0 +1,464 @@
+    Checking ricecoder-orchestration v0.1.0 (D:\work\Kiro Workspace\projects\ricecoder\crates\ricecoder-orchestration)
+error: unused import: `OrchestrationError`
+ --> crates\ricecoder-orchestration\src\managers\batch_executor.rs:4:20
+  |
+4 | use crate::error::{OrchestrationError, Result};
+  |                    ^^^^^^^^^^^^^^^^^^
+  |
+  = note: `-D unused-imports` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(unused_imports)]`
+
+error: method `from_str` can be confused for the standard trait method `std::str::FromStr::from_str`
+  --> crates\ricecoder-orchestration\src\analyzers\change_propagation.rs:34:5
+   |
+34 | /     pub fn from_str(s: &str) -> Self {
+35 | |         match s.to_lowercase().as_str() {
+36 | |             "api" => ChangeType::Api,
+37 | |             "dependency" => ChangeType::Dependency,
+...  |
+44 | |     }
+   | |_____^
+   |
+   = help: consider implementing the trait `std::str::FromStr` or choosing a less ambiguous method name
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#should_implement_trait
+   = note: `-D clippy::should-implement-trait` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::should_implement_trait)]`
+
+error: use of `or_insert_with` to construct default value
+   --> crates\ricecoder-orchestration\src\analyzers\change_propagation.rs:112:49
+    |
+112 |         self.dependents_map.entry(project_name).or_insert_with(Vec::new);
+    |                                                 ^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `or_default()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#unwrap_or_default
+    = note: `-D clippy::unwrap-or-default` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::unwrap_or_default)]`
+
+error: use of `or_insert_with` to construct default value
+   --> crates\ricecoder-orchestration\src\analyzers\change_propagation.rs:122:14
+    |
+122 |             .or_insert_with(Vec::new)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `or_default()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#unwrap_or_default
+
+error: use of `or_insert_with` to construct default value
+   --> crates\ricecoder-orchestration\src\analyzers\change_propagation.rs:139:14
+    |
+139 |             .or_insert_with(Vec::new)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `or_default()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#unwrap_or_default
+
+error: needlessly taken reference of left operand
+   --> crates\ricecoder-orchestration\src\analyzers\change_propagation.rs:291:23
+    |
+291 |             .find(|c| &c.id == change_id)?
+    |                       -----^^^^^^^^^^^^^
+    |                       |
+    |                       help: use the left value directly: `c.id`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#op_ref
+    = note: `-D clippy::op-ref` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::op_ref)]`
+
+error: use of `or_insert_with` to construct default value
+  --> crates\ricecoder-orchestration\src\analyzers\dependency_analyzer.rs:35:14
+   |
+35 |             .or_insert_with(Vec::new)
+   |              ^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `or_default()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#unwrap_or_default
+
+error: use of `or_insert_with` to construct default value
+   --> crates\ricecoder-orchestration\src\analyzers\dependency_analyzer.rs:248:46
+    |
+248 |                 adj_list.entry(from.clone()).or_insert_with(Vec::new).push(dep.to.clone());
+    |                                              ^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `or_default()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#unwrap_or_default
+
+error: use of `or_insert_with` to construct default value
+  --> crates\ricecoder-orchestration\src\analyzers\dependency_graph.rs:42:49
+   |
+42 |         self.adjacency_list.entry(name.clone()).or_insert_with(Vec::new);
+   |                                                 ^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `or_default()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#unwrap_or_default
+
+error: use of `or_insert_with` to construct default value
+  --> crates\ricecoder-orchestration\src\analyzers\dependency_graph.rs:43:49
+   |
+43 |         self.reverse_adjacency_list.entry(name).or_insert_with(Vec::new);
+   |                                                 ^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `or_default()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#unwrap_or_default
+
+error: this `if` statement can be collapsed
+  --> crates\ricecoder-orchestration\src\analyzers\dependency_graph.rs:58:9
+   |
+58 | /         if !self.allow_cycles {
+59 | |             if self.would_create_cycle(&dependency.from, &dependency.to) {
+60 | |                 return Err(OrchestrationError::CircularDependency(format!(
+61 | |                     "Adding dependency from {} to {} would create a cycle",
+...  |
+65 | |         }
+   | |_________^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#collapsible_if
+   = note: `-D clippy::collapsible-if` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::collapsible_if)]`
+help: collapse nested if block
+   |
+58 ~         if !self.allow_cycles
+59 ~             && self.would_create_cycle(&dependency.from, &dependency.to) {
+60 |                 return Err(OrchestrationError::CircularDependency(format!(
+...
+63 |                 )));
+64 ~             }
+   |
+
+error: use of `or_insert_with` to construct default value
+  --> crates\ricecoder-orchestration\src\analyzers\dependency_graph.rs:70:14
+   |
+70 |             .or_insert_with(Vec::new)
+   |              ^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `or_default()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#unwrap_or_default
+
+error: use of `or_insert_with` to construct default value
+  --> crates\ricecoder-orchestration\src\analyzers\dependency_graph.rs:75:14
+   |
+75 |             .or_insert_with(Vec::new)
+   |              ^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `or_default()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#unwrap_or_default
+
+error: you seem to want to iterate on a map's keys
+   --> crates\ricecoder-orchestration\src\analyzers\dependency_graph.rs:190:32
+    |
+190 |         for ((from, to), _) in &self.dependencies {
+    |                                ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#for_kv_map
+    = note: `-D clippy::for-kv-map` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::for_kv_map)]`
+help: use the corresponding method
+    |
+190 -         for ((from, to), _) in &self.dependencies {
+190 +         for (from, to) in self.dependencies.keys() {
+    |
+
+error: this block may be rewritten with the `?` operator
+   --> crates\ricecoder-orchestration\src\analyzers\dependency_graph.rs:207:13
+    |
+207 | /             if let Err(e) = self.detect_cycles() {
+208 | |                 return Err(e);
+209 | |             }
+    | |_____________^ help: replace it with: `self.detect_cycles()?`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#question_mark
+    = note: `-D clippy::question-mark` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::question_mark)]`
+
+error: use of `or_insert_with` to construct default value
+  --> crates\ricecoder-orchestration\src\analyzers\dependency_validator.rs:38:14
+   |
+38 |             .or_insert_with(Vec::new)
+   |              ^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `or_default()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#unwrap_or_default
+
+error: use of `or_insert_with` to construct default value
+  --> crates\ricecoder-orchestration\src\analyzers\impact_analyzer.rs:48:49
+   |
+48 |         self.dependents_map.entry(project_name).or_insert_with(Vec::new);
+   |                                                 ^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `or_default()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#unwrap_or_default
+
+error: use of `or_insert_with` to construct default value
+  --> crates\ricecoder-orchestration\src\analyzers\impact_analyzer.rs:58:56
+   |
+58 |         let dependents = self.dependents_map.entry(to).or_insert_with(Vec::new);
+   |                                                        ^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `or_default()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#unwrap_or_default
+
+error: this expression creates a reference which is immediately dereferenced by the compiler
+  --> crates\ricecoder-orchestration\src\analyzers\impact_analyzer.rs:72:56
+   |
+72 |         let impact_level = self.determine_impact_level(&change);
+   |                                                        ^^^^^^^ help: change this to: `change`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#needless_borrow
+   = note: `-D clippy::needless-borrow` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::needless_borrow)]`
+
+error: this expression creates a reference which is immediately dereferenced by the compiler
+  --> crates\ricecoder-orchestration\src\analyzers\impact_analyzer.rs:75:52
+   |
+75 |         let details = self.generate_impact_details(&change, &affected_projects);
+   |                                                    ^^^^^^^ help: change this to: `change`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#needless_borrow
+
+error: writing `&PathBuf` instead of `&Path` involves a new object where a slice will do
+  --> crates\ricecoder-orchestration\src\analyzers\project_detector.rs:21:38
+   |
+21 |     pub fn detect_project_type(path: &PathBuf) -> Option<String> {
+   |                                      ^^^^^^^^ help: change this to: `&Path`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#ptr_arg
+   = note: `-D clippy::ptr-arg` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::ptr_arg)]`
+
+error: writing `&PathBuf` instead of `&Path` involves a new object where a slice will do
+   --> crates\ricecoder-orchestration\src\analyzers\project_detector.rs:112:35
+    |
+112 |     fn extract_rust_version(path: &PathBuf) -> String {
+    |                                   ^^^^^^^^ help: change this to: `&Path`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#ptr_arg
+
+error: writing `&PathBuf` instead of `&Path` involves a new object where a slice will do
+   --> crates\ricecoder-orchestration\src\analyzers\project_detector.rs:141:37
+    |
+141 |     fn extract_nodejs_version(path: &PathBuf) -> String {
+    |                                     ^^^^^^^^ help: change this to: `&Path`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#ptr_arg
+
+error: writing `&PathBuf` instead of `&Path` involves a new object where a slice will do
+   --> crates\ricecoder-orchestration\src\analyzers\project_detector.rs:179:37
+    |
+179 |     fn extract_python_version(path: &PathBuf) -> String {
+    |                                     ^^^^^^^^ help: change this to: `&Path`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#ptr_arg
+
+error: writing `&PathBuf` instead of `&Path` involves a new object where a slice will do
+   --> crates\ricecoder-orchestration\src\analyzers\project_detector.rs:208:33
+    |
+208 |     fn extract_go_version(path: &PathBuf) -> String {
+    |                                 ^^^^^^^^ help: change this to: `&Path`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#ptr_arg
+
+error: writing `&PathBuf` instead of `&Path` involves a new object where a slice will do
+   --> crates\ricecoder-orchestration\src\analyzers\project_detector.rs:229:35
+    |
+229 |     fn extract_java_version(path: &PathBuf) -> String {
+    |                                   ^^^^^^^^ help: change this to: `&Path`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#ptr_arg
+
+error: writing `&PathBuf` instead of `&Path` involves a new object where a slice will do
+   --> crates\ricecoder-orchestration\src\analyzers\project_detector.rs:256:37
+    |
+256 |     fn extract_gradle_version(path: &PathBuf) -> String {
+    |                                     ^^^^^^^^ help: change this to: `&Path`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#ptr_arg
+
+error: implementation of inherent method `to_string(&self) -> String` for type `analyzers::version_validator::Version`
+  --> crates\ricecoder-orchestration\src\analyzers\version_validator.rs:50:5
+   |
+50 | /     pub fn to_string(&self) -> String {
+51 | |         format!("{}.{}.{}", self.major, self.minor, self.patch)
+52 | |     }
+   | |_____^
+   |
+   = help: implement trait `Display` for type `analyzers::version_validator::Version` instead
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#inherent_to_string
+   = note: `-D clippy::inherent-to-string` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::inherent_to_string)]`
+
+error: stripping a prefix manually
+   --> crates\ricecoder-orchestration\src\analyzers\version_validator.rs:106:42
+    |
+106 |             let version = Version::parse(&constraint_str[1..])?;
+    |                                          ^^^^^^^^^^^^^^^^^^^^
+    |
+note: the prefix was tested here
+   --> crates\ricecoder-orchestration\src\analyzers\version_validator.rs:105:9
+    |
+105 |         if constraint_str.starts_with('^') {
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#manual_strip
+    = note: `-D clippy::manual-strip` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::manual_strip)]`
+help: try using the `strip_prefix` method
+    |
+105 ~         if let Some(<stripped>) = constraint_str.strip_prefix('^') {
+106 ~             let version = Version::parse(<stripped>)?;
+    |
+
+error: stripping a prefix manually
+   --> crates\ricecoder-orchestration\src\analyzers\version_validator.rs:109:42
+    |
+109 |             let version = Version::parse(&constraint_str[1..])?;
+    |                                          ^^^^^^^^^^^^^^^^^^^^
+    |
+note: the prefix was tested here
+   --> crates\ricecoder-orchestration\src\analyzers\version_validator.rs:108:16
+    |
+108 |         } else if constraint_str.starts_with('~') {
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#manual_strip
+help: try using the `strip_prefix` method
+    |
+108 ~         } else if let Some(<stripped>) = constraint_str.strip_prefix('~') {
+109 ~             let version = Version::parse(<stripped>)?;
+    |
+
+error: stripping a prefix manually
+   --> crates\ricecoder-orchestration\src\analyzers\version_validator.rs:112:42
+    |
+112 |             let version = Version::parse(&constraint_str[2..])?;
+    |                                          ^^^^^^^^^^^^^^^^^^^^
+    |
+note: the prefix was tested here
+   --> crates\ricecoder-orchestration\src\analyzers\version_validator.rs:111:16
+    |
+111 |         } else if constraint_str.starts_with(">=") {
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#manual_strip
+help: try using the `strip_prefix` method
+    |
+111 ~         } else if let Some(<stripped>) = constraint_str.strip_prefix(">=") {
+112 ~             let version = Version::parse(<stripped>)?;
+    |
+
+error: stripping a prefix manually
+   --> crates\ricecoder-orchestration\src\analyzers\version_validator.rs:115:42
+    |
+115 |             let version = Version::parse(&constraint_str[1..])?;
+    |                                          ^^^^^^^^^^^^^^^^^^^^
+    |
+note: the prefix was tested here
+   --> crates\ricecoder-orchestration\src\analyzers\version_validator.rs:114:16
+    |
+114 |         } else if constraint_str.starts_with('<') {
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#manual_strip
+help: try using the `strip_prefix` method
+    |
+114 ~         } else if let Some(<stripped>) = constraint_str.strip_prefix('<') {
+115 ~             let version = Version::parse(<stripped>)?;
+    |
+
+error: implementation of inherent method `to_string(&self) -> String` for type `analyzers::version_validator::VersionConstraint`
+   --> crates\ricecoder-orchestration\src\analyzers\version_validator.rs:143:5
+    |
+143 | /     pub fn to_string(&self) -> String {
+144 | |         match self {
+145 | |             VersionConstraint::Exact(v) => v.to_string(),
+146 | |             VersionConstraint::Caret(v) => format!("^{}", v.to_string()),
+...   |
+154 | |     }
+    | |_____^
+    |
+    = help: implement trait `Display` for type `analyzers::version_validator::VersionConstraint` instead
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#inherent_to_string
+
+error: writing `&PathBuf` instead of `&Path` involves a new object where a slice will do
+   --> crates\ricecoder-orchestration\src\analyzers\workspace_scanner.rs:112:42
+    |
+112 |     async fn detect_project(&self, path: &PathBuf) -> Option<Project> {
+    |                                          ^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#ptr_arg
+help: change this to
+    |
+112 ~     async fn detect_project(&self, path: &Path) -> Option<Project> {
+113 |         // Check for Cargo.toml (Rust project)
+...
+120 |                     return Some(Project {
+121 ~                         path: path.to_path_buf(),
+122 |                         name: name_str.to_string(),
+...
+138 |                     return Some(Project {
+139 ~                         path: path.to_path_buf(),
+140 |                         name: name_str.to_string(),
+...
+156 |                     return Some(Project {
+157 ~                         path: path.to_path_buf(),
+    |
+
+error: redundant closure
+   --> crates\ricecoder-orchestration\src\managers\config_manager.rs:240:22
+    |
+240 |             .map_err(|e| crate::error::OrchestrationError::IoError(e))?;
+    |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the tuple variant itself: `crate::error::OrchestrationError::IoError`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#redundant_closure
+    = note: `-D clippy::redundant-closure` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::redundant_closure)]`
+
+error: you seem to be trying to use `match` for an equality check. Consider using `if`
+   --> crates\ricecoder-orchestration\src\managers\rules_validator.rs:290:13
+    |
+290 | /             match rule.rule_type {
+291 | |                 RuleType::NamingConvention => {
+292 | |                     if !self.is_valid_project_name(&project.name) {
+293 | |                         violations.push(RuleViolation {
+...   |
+305 | |                 _ => {}
+306 | |             }
+    | |_____________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#single_match
+    = note: `-D clippy::single-match` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::single_match)]`
+help: try
+    |
+290 ~             if rule.rule_type == RuleType::NamingConvention {
+291 +                 if !self.is_valid_project_name(&project.name) {
+292 +                     violations.push(RuleViolation {
+293 +                         rule_name: rule.name.clone(),
+294 +                         rule_type: rule.rule_type,
+295 +                         description: format!(
+296 +                             "Project name '{}' does not follow naming convention",
+297 +                             project.name
+298 +                         ),
+299 +                         affected_projects: vec![project.name.clone()],
+300 +                         severity: ViolationSeverity::Warning,
+301 +                     });
+302 +                 }
+303 +             }
+    |
+
+error: you seem to be trying to use `match` for an equality check. Consider using `if`
+   --> crates\ricecoder-orchestration\src\managers\rules_validator.rs:328:13
+    |
+328 | /             match rule.rule_type {
+329 | |                 RuleType::DependencyConstraint => {
+330 | |                     // Check if dependency creates a cycle
+331 | |                     if self.would_create_cycle(&dep.from, &dep.to) {
+...   |
+344 | |                 _ => {}
+345 | |             }
+    | |_____________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#single_match
+help: try
+    |
+328 ~             if rule.rule_type == RuleType::DependencyConstraint {
+329 +                 // Check if dependency creates a cycle
+330 +                 if self.would_create_cycle(&dep.from, &dep.to) {
+331 +                     violations.push(RuleViolation {
+332 +                         rule_name: rule.name.clone(),
+333 +                         rule_type: rule.rule_type,
+334 +                         description: format!(
+335 +                             "Dependency would create a cycle: {} -> {}",
+336 +                             dep.from, dep.to
+337 +                         ),
+338 +                         affected_projects: vec![dep.from.clone(), dep.to.clone()],
+339 +                         severity: ViolationSeverity::Error,
+340 +                     });
+341 +                 }
+342 +             }
+    |
+
+error: could not compile `ricecoder-orchestration` (lib) due to 37 previous errors

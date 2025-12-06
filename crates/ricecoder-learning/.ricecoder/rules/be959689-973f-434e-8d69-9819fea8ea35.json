@@ -1,0 +1,14 @@
+{
+  "id": "be959689-973f-434e-8d69-9819fea8ea35",
+  "scope": "Project",
+  "pattern": "function_promo_complete_workflow",
+  "action": "add_documentation",
+  "source": "Learned",
+  "created_at": "2025-12-06T11:31:50.194992400Z",
+  "updated_at": "2025-12-06T11:31:50.195107Z",
+  "version": 1,
+  "confidence": 0.5,
+  "usage_count": 0,
+  "success_rate": 0.0,
+  "metadata": {}
+}

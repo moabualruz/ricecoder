@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc ce907920e7d3cdf3beb7874148fb7eed2df63b6d775d56de8d1d433beee53226 # shrinks to project_rule = Rule { id: "96ed6b99-d38b-4651-82e6-12e1489b675e", scope: Project, pattern: "_", action: "a", source: Learned, created_at: 2025-12-06T11:11:44.844180200Z, updated_at: 2025-12-06T11:11:44.844180500Z, version: 1, confidence: 0.5, usage_count: 0, success_rate: 0.0, metadata: Object {} }, global_rules = [Rule { id: "4a21e08b-89cf-4b44-8026-03a6affb30be", scope: Global, pattern: "_", action: "a0", source: Learned, created_at: 2025-12-06T11:11:44.844187100Z, updated_at: 2025-12-06T11:11:44.844187300Z, version: 1, confidence: 0.5, usage_count: 0, success_rate: 0.0, metadata: Object {} }]
