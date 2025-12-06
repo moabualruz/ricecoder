@@ -1,6 +1,7 @@
 //! Batch execution of operations across multiple projects
 
 use crate::analyzers::DependencyGraph;
+#[allow(unused_imports)]
 use crate::error::{OrchestrationError, Result};
 use crate::models::{Operation, Project, Transaction, TransactionState};
 use std::collections::HashMap;

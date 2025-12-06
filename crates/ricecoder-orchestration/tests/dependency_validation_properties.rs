@@ -105,7 +105,7 @@ proptest! {
     #[test]
     fn prop_version_parsing_roundtrip(version_str in version_strategy()) {
         if let Ok(version) = Version::parse(&version_str) {
-            let roundtrip = version.to_string();
+            let roundtrip = version.version_string();
             prop_assert_eq!(version_str, roundtrip, "Version roundtrip should be consistent");
         }
     }
@@ -113,7 +113,7 @@ proptest! {
     #[test]
     fn prop_constraint_parsing_roundtrip(constraint_str in constraint_strategy()) {
         if let Ok(constraint) = VersionConstraint::parse(&constraint_str) {
-            let roundtrip = constraint.to_string();
+            let roundtrip = constraint.constraint_string();
             prop_assert_eq!(constraint_str, roundtrip, "Constraint roundtrip should be consistent");
         }
     }

@@ -47,7 +47,7 @@ impl Version {
     }
 
     /// Converts version to string
-    pub fn to_string(&self) -> String {
+    pub fn version_string(&self) -> String {
         format!("{}.{}.{}", self.major, self.minor, self.patch)
     }
 }
@@ -102,17 +102,17 @@ impl VersionConstraint {
             return Ok(VersionConstraint::Range(lower, upper));
         }
 
-        if constraint_str.starts_with('^') {
-            let version = Version::parse(&constraint_str[1..])?;
+        if let Some(version_str) = constraint_str.strip_prefix('^') {
+            let version = Version::parse(version_str)?;
             Ok(VersionConstraint::Caret(version))
-        } else if constraint_str.starts_with('~') {
-            let version = Version::parse(&constraint_str[1..])?;
+        } else if let Some(version_str) = constraint_str.strip_prefix('~') {
+            let version = Version::parse(version_str)?;
             Ok(VersionConstraint::Tilde(version))
-        } else if constraint_str.starts_with(">=") {
-            let version = Version::parse(&constraint_str[2..])?;
+        } else if let Some(version_str) = constraint_str.strip_prefix(">=") {
+            let version = Version::parse(version_str)?;
             Ok(VersionConstraint::GreaterOrEqual(version))
-        } else if constraint_str.starts_with('<') {
-            let version = Version::parse(&constraint_str[1..])?;
+        } else if let Some(version_str) = constraint_str.strip_prefix('<') {
+            let version = Version::parse(version_str)?;
             Ok(VersionConstraint::Less(version))
         } else {
             // Try to parse as exact version
@@ -140,15 +140,15 @@ impl VersionConstraint {
     }
 
     /// Converts constraint to string
-    pub fn to_string(&self) -> String {
+    pub fn constraint_string(&self) -> String {
         match self {
-            VersionConstraint::Exact(v) => v.to_string(),
-            VersionConstraint::Caret(v) => format!("^{}", v.to_string()),
-            VersionConstraint::Tilde(v) => format!("~{}", v.to_string()),
-            VersionConstraint::GreaterOrEqual(v) => format!(">={}", v.to_string()),
-            VersionConstraint::Less(v) => format!("<{}", v.to_string()),
+            VersionConstraint::Exact(v) => v.version_string(),
+            VersionConstraint::Caret(v) => format!("^{}", v.version_string()),
+            VersionConstraint::Tilde(v) => format!("~{}", v.version_string()),
+            VersionConstraint::GreaterOrEqual(v) => format!(">={}", v.version_string()),
+            VersionConstraint::Less(v) => format!("<{}", v.version_string()),
             VersionConstraint::Range(lower, upper) => {
-                format!(">={} <{}", lower.to_string(), upper.to_string())
+                format!(">={} <{}", lower.version_string(), upper.version_string())
             }
         }
     }

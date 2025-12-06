@@ -237,7 +237,7 @@ impl ConfigManager {
     async fn load_config_from_file(&self, path: &Path) -> Result<WorkspaceConfig> {
         let content = tokio::fs::read_to_string(path)
             .await
-            .map_err(|e| crate::error::OrchestrationError::IoError(e))?;
+            .map_err(crate::error::OrchestrationError::IoError)?;
 
         let config: WorkspaceConfig = serde_yaml::from_str(&content)?;
 

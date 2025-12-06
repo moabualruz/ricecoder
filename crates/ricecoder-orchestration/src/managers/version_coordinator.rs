@@ -91,7 +91,7 @@ impl VersionCoordinator {
     pub fn register_constraint(&mut self, project: &str, constraint: String) {
         self.version_constraints
             .entry(project.to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(constraint);
     }
 

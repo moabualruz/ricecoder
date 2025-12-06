@@ -45,7 +45,7 @@ impl ImpactAnalyzer {
     /// Adds a project to the analyzer
     pub fn add_project(&mut self, project_name: String) {
         self.projects.insert(project_name.clone());
-        self.dependents_map.entry(project_name).or_insert_with(Vec::new);
+        self.dependents_map.entry(project_name).or_default();
     }
 
     /// Adds a dependency relationship (from depends on to)
@@ -55,7 +55,7 @@ impl ImpactAnalyzer {
         self.projects.insert(to.clone());
 
         // Add to dependents map: if 'to' changes, 'from' is affected
-        let dependents = self.dependents_map.entry(to).or_insert_with(Vec::new);
+        let dependents = self.dependents_map.entry(to).or_default();
         
         // Only add if not already present (avoid duplicates)
         if !dependents.contains(&from) {
@@ -69,10 +69,10 @@ impl ImpactAnalyzer {
         let affected_projects = self.find_affected_projects(&change.project);
 
         // Determine impact level based on change type and breaking status
-        let impact_level = self.determine_impact_level(&change);
+        let impact_level = self.determine_impact_level(change);
 
         // Generate detailed impact information
-        let details = self.generate_impact_details(&change, &affected_projects);
+        let details = self.generate_impact_details(change, &affected_projects);
 
         Ok(ImpactReport {
             change_id: change.change_id.clone(),

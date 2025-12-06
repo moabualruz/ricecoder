@@ -32,7 +32,7 @@ impl DependencyAnalyzer {
     pub fn add_dependency(&mut self, dependency: ProjectDependency) {
         self.dependencies
             .entry(dependency.from.clone())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(dependency);
     }
 
@@ -245,7 +245,7 @@ impl DependencyAnalyzer {
         // Build adjacency list and calculate in-degrees
         for (from, deps) in &self.dependencies {
             for dep in deps {
-                adj_list.entry(from.clone()).or_insert_with(Vec::new).push(dep.to.clone());
+                adj_list.entry(from.clone()).or_default().push(dep.to.clone());
                 *in_degree.entry(dep.to.clone()).or_insert(0) += 1;
             }
         }

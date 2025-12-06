@@ -109,7 +109,7 @@ impl WorkspaceScanner {
     /// # Returns
     ///
     /// A Project if the directory is a valid project, None otherwise
-    async fn detect_project(&self, path: &PathBuf) -> Option<Project> {
+    async fn detect_project(&self, path: &std::path::Path) -> Option<Project> {
         // Check for Cargo.toml (Rust project)
         let cargo_toml = path.join("Cargo.toml");
         if cargo_toml.exists() {
@@ -118,7 +118,7 @@ impl WorkspaceScanner {
                     debug!("Detected Rust project: {}", name_str);
                     let version = self.extract_rust_version(&cargo_toml).await;
                     return Some(Project {
-                        path: path.clone(),
+                        path: path.to_path_buf(),
                         name: name_str.to_string(),
                         project_type: "rust".to_string(),
                         version,
@@ -136,7 +136,7 @@ impl WorkspaceScanner {
                     debug!("Detected Node.js project: {}", name_str);
                     let version = self.extract_nodejs_version(&package_json).await;
                     return Some(Project {
-                        path: path.clone(),
+                        path: path.to_path_buf(),
                         name: name_str.to_string(),
                         project_type: "nodejs".to_string(),
                         version,
@@ -154,7 +154,7 @@ impl WorkspaceScanner {
                     debug!("Detected Python project: {}", name_str);
                     let version = self.extract_python_version(&pyproject_toml).await;
                     return Some(Project {
-                        path: path.clone(),
+                        path: path.to_path_buf(),
                         name: name_str.to_string(),
                         project_type: "python".to_string(),
                         version,

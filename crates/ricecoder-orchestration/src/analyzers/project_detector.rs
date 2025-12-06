@@ -18,7 +18,7 @@ impl ProjectDetector {
     /// # Returns
     ///
     /// The project type as a string, or None if not detected
-    pub fn detect_project_type(path: &PathBuf) -> Option<String> {
+    pub fn detect_project_type(path: &std::path::Path) -> Option<String> {
         // Check for Cargo.toml (Rust project)
         if path.join("Cargo.toml").exists() {
             return Some("rust".to_string());
@@ -96,7 +96,7 @@ impl ProjectDetector {
     /// # Returns
     ///
     /// The version string, or "0.1.0" if extraction fails
-    fn extract_version(path: &PathBuf, project_type: &str) -> String {
+    fn extract_version(path: &std::path::Path, project_type: &str) -> String {
         match project_type {
             "rust" => Self::extract_rust_version(path),
             "nodejs" => Self::extract_nodejs_version(path),
@@ -109,7 +109,7 @@ impl ProjectDetector {
     }
 
     /// Extracts version from Cargo.toml
-    fn extract_rust_version(path: &PathBuf) -> String {
+    fn extract_rust_version(path: &std::path::Path) -> String {
         let cargo_toml = path.join("Cargo.toml");
         match std::fs::read_to_string(&cargo_toml) {
             Ok(content) => {
@@ -138,7 +138,7 @@ impl ProjectDetector {
     }
 
     /// Extracts version from package.json
-    fn extract_nodejs_version(path: &PathBuf) -> String {
+    fn extract_nodejs_version(path: &std::path::Path) -> String {
         let package_json = path.join("package.json");
         match std::fs::read_to_string(&package_json) {
             Ok(content) => {
@@ -176,7 +176,7 @@ impl ProjectDetector {
     }
 
     /// Extracts version from pyproject.toml
-    fn extract_python_version(path: &PathBuf) -> String {
+    fn extract_python_version(path: &std::path::Path) -> String {
         let pyproject_toml = path.join("pyproject.toml");
         match std::fs::read_to_string(&pyproject_toml) {
             Ok(content) => {
@@ -205,7 +205,7 @@ impl ProjectDetector {
     }
 
     /// Extracts version from go.mod
-    fn extract_go_version(path: &PathBuf) -> String {
+    fn extract_go_version(path: &std::path::Path) -> String {
         let go_mod = path.join("go.mod");
         match std::fs::read_to_string(&go_mod) {
             Ok(content) => {
@@ -226,7 +226,7 @@ impl ProjectDetector {
     }
 
     /// Extracts version from pom.xml
-    fn extract_java_version(path: &PathBuf) -> String {
+    fn extract_java_version(path: &std::path::Path) -> String {
         let pom_xml = path.join("pom.xml");
         match std::fs::read_to_string(&pom_xml) {
             Ok(content) => {
@@ -253,7 +253,7 @@ impl ProjectDetector {
     }
 
     /// Extracts version from build.gradle or build.gradle.kts
-    fn extract_gradle_version(path: &PathBuf) -> String {
+    fn extract_gradle_version(path: &std::path::Path) -> String {
         let gradle_file = if path.join("build.gradle.kts").exists() {
             path.join("build.gradle.kts")
         } else {

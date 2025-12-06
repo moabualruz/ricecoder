@@ -287,22 +287,17 @@ impl RulesValidator {
                 continue;
             }
 
-            match rule.rule_type {
-                RuleType::NamingConvention => {
-                    if !self.is_valid_project_name(&project.name) {
-                        violations.push(RuleViolation {
-                            rule_name: rule.name.clone(),
-                            rule_type: rule.rule_type,
-                            description: format!(
-                                "Project name '{}' does not follow naming convention",
-                                project.name
-                            ),
-                            affected_projects: vec![project.name.clone()],
-                            severity: ViolationSeverity::Warning,
-                        });
-                    }
-                }
-                _ => {}
+            if rule.rule_type == RuleType::NamingConvention && !self.is_valid_project_name(&project.name) {
+                violations.push(RuleViolation {
+                    rule_name: rule.name.clone(),
+                    rule_type: rule.rule_type,
+                    description: format!(
+                        "Project name '{}' does not follow naming convention",
+                        project.name
+                    ),
+                    affected_projects: vec![project.name.clone()],
+                    severity: ViolationSeverity::Warning,
+                });
             }
         }
 
@@ -325,23 +320,20 @@ impl RulesValidator {
                 continue;
             }
 
-            match rule.rule_type {
-                RuleType::DependencyConstraint => {
-                    // Check if dependency creates a cycle
-                    if self.would_create_cycle(&dep.from, &dep.to) {
-                        violations.push(RuleViolation {
-                            rule_name: rule.name.clone(),
-                            rule_type: rule.rule_type,
-                            description: format!(
-                                "Dependency would create a cycle: {} -> {}",
-                                dep.from, dep.to
-                            ),
-                            affected_projects: vec![dep.from.clone(), dep.to.clone()],
-                            severity: ViolationSeverity::Error,
-                        });
-                    }
+            if rule.rule_type == RuleType::DependencyConstraint {
+                // Check if dependency creates a cycle
+                if self.would_create_cycle(&dep.from, &dep.to) {
+                    violations.push(RuleViolation {
+                        rule_name: rule.name.clone(),
+                        rule_type: rule.rule_type,
+                        description: format!(
+                            "Dependency would create a cycle: {} -> {}",
+                            dep.from, dep.to
+                        ),
+                        affected_projects: vec![dep.from.clone(), dep.to.clone()],
+                        severity: ViolationSeverity::Error,
+                    });
                 }
-                _ => {}
             }
         }
 
@@ -383,10 +375,8 @@ impl RulesValidator {
         visited.insert(from.to_string());
 
         for dep in &self.workspace.dependencies {
-            if dep.from == from {
-                if self.has_path_recursive(&dep.to, to, visited) {
-                    return true;
-                }
+            if dep.from == from && self.has_path_recursive(&dep.to, to, visited) {
+                return true;
             }
         }
 

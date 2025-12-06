@@ -39,8 +39,8 @@ impl DependencyGraph {
     pub fn add_project(&mut self, project: Project) -> Result<()> {
         let name = project.name.clone();
         self.projects.insert(name.clone(), project);
-        self.adjacency_list.entry(name.clone()).or_insert_with(Vec::new);
-        self.reverse_adjacency_list.entry(name).or_insert_with(Vec::new);
+        self.adjacency_list.entry(name.clone()).or_default();
+        self.reverse_adjacency_list.entry(name).or_default();
         Ok(())
     }
 
@@ -55,24 +55,22 @@ impl DependencyGraph {
         }
 
         // Check for cycles if not allowed
-        if !self.allow_cycles {
-            if self.would_create_cycle(&dependency.from, &dependency.to) {
-                return Err(OrchestrationError::CircularDependency(format!(
-                    "Adding dependency from {} to {} would create a cycle",
-                    dependency.from, dependency.to
-                )));
-            }
+        if !self.allow_cycles && self.would_create_cycle(&dependency.from, &dependency.to) {
+            return Err(OrchestrationError::CircularDependency(format!(
+                "Adding dependency from {} to {} would create a cycle",
+                dependency.from, dependency.to
+            )));
         }
 
         // Add to adjacency lists
         self.adjacency_list
             .entry(dependency.from.clone())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(dependency.to.clone());
 
         self.reverse_adjacency_list
             .entry(dependency.to.clone())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(dependency.from.clone());
 
         // Store the dependency
@@ -187,7 +185,7 @@ impl DependencyGraph {
     /// Validates the graph consistency
     pub fn validate(&self) -> Result<()> {
         // Check that all dependencies reference existing projects
-        for ((from, to), _) in &self.dependencies {
+        for (from, to) in self.dependencies.keys() {
             if !self.projects.contains_key(from) {
                 return Err(OrchestrationError::DependencyValidationFailed(format!(
                     "Project '{}' not found",
@@ -204,9 +202,7 @@ impl DependencyGraph {
 
         // Check for cycles if not allowed
         if !self.allow_cycles {
-            if let Err(e) = self.detect_cycles() {
-                return Err(e);
-            }
+            self.detect_cycles()?;
         }
 
         Ok(())

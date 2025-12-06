@@ -31,6 +31,7 @@ pub enum ChangeType {
 
 impl ChangeType {
     /// Converts a string to a ChangeType
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Self {
         match s.to_lowercase().as_str() {
             "api" => ChangeType::Api,
@@ -109,7 +110,7 @@ impl ChangePropagationTracker {
     /// Adds a project to the tracker
     pub fn add_project(&mut self, project_name: String) {
         self.projects.insert(project_name.clone());
-        self.dependents_map.entry(project_name).or_insert_with(Vec::new);
+        self.dependents_map.entry(project_name).or_default();
     }
 
     /// Adds a dependency relationship (from depends on to)
@@ -119,7 +120,7 @@ impl ChangePropagationTracker {
 
         self.dependents_map
             .entry(to)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(from);
     }
 
@@ -136,7 +137,7 @@ impl ChangePropagationTracker {
         // Store the change
         self.changes_by_project
             .entry(change.project.clone())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(change.clone());
 
         // Store affected projects
@@ -288,7 +289,7 @@ impl ChangePropagationTracker {
         let change = self.changes_by_project
             .values()
             .flat_map(|changes| changes.iter())
-            .find(|c| &c.id == change_id)?
+            .find(|c| c.id == change_id)?
             .clone();
 
         let affected_projects = self.get_affected_projects(change_id);

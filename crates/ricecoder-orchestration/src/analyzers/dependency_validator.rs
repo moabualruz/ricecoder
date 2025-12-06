@@ -35,7 +35,7 @@ impl DependencyValidator {
     pub fn register_dependency(&mut self, dependency: ProjectDependency) {
         self.dependencies
             .entry(dependency.from.clone())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(dependency);
     }
 
