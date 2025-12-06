@@ -79,3 +79,4 @@ tmp/
 # Local history/backup folders created by some extensions
 .history/
 .local/
+clippy-*.txt
