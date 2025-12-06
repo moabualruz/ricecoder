@@ -1,0 +1,12 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 4552be42d177751ec8869d7bac20e03aa7a231cfa5f9ea554a10e6bdbb9f81b7 # shrinks to todos = [Todo { id: "_", title: "A", description: Some("Description for pending"), status: Pending, priority: Low }, Todo { id: "_", title: "a", description: Some("Description for pending"), status: Pending, priority: Low }]
+cc 0f005678a47edce52a9614597c6142a3f9561043163ccc07fb8ed1f175eeed56 # shrinks to todos_batch1 = [Todo { id: "-", title: "a", description: Some("Description for pending"), status: Pending, priority: Low }], todos_batch2 = [Todo { id: "-", title: "0", description: Some("Description for pending"), status: Pending, priority: Low }]
+cc 15f7882201906b40a3b7b72faaba2164ab01e4be7b00332c1dd49984793b48f1 # shrinks to todos = [Todo { id: "_-", title: "a", description: Some("Description for pending"), status: Pending, priority: Low }, Todo { id: "_-", title: "5 X  bjG1 yl E Q0eB", description: Some("Description for blocked"), status: Blocked, priority: Low }], filter_status = Some(Blocked), filter_priority = None
+cc b3d3c5fa084bed52f8d87ea1565fc2b31a74b03092f183fff1d4320d79619b82 # shrinks to todos = [Todo { id: "todo-298", title: "a", description: Some("Description for pending"), status: Pending, priority: Low }, Todo { id: "todo-298", title: "A", description: Some("Description for pending"), status: Pending, priority: Low }]
+cc 782754a62963a8cb523f7f13c20e7206c21cf83fcb6735211c07bded3cfea3c2 # shrinks to todos_batch1 = [Todo { id: "todo-26", title: "a", description: Some("Description for pending"), status: Pending, priority: Low }], todos_batch2 = [Todo { id: "todo-26", title: "A", description: Some("Description for pending"), status: Pending, priority: Low }]
+cc 908374b060f7be1d2d51480efc06fa7cd9a9dbd313792cee5cfc34b6b694272c # shrinks to todos = [Todo { id: "todo-629", title: "a", description: Some("Description for pending"), status: Pending, priority: Low }, Todo { id: "todo-629", title: "a", description: Some("Description for pending"), status: Pending, priority: Medium }], filter_status = None, filter_priority = None

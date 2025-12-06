@@ -26,6 +26,7 @@ members = [
     "crates/ricecoder-domain-agents",
     "crates/ricecoder-learning",
     "crates/ricecoder-mcp",
+    "crates/ricecoder-tools",
 ]
 resolver = "2"
 
@@ -80,3 +81,4 @@ tree-sitter-rust = "0.20"
 tree-sitter-typescript = "0.20"
 tree-sitter-python = "0.20"
 jsonschema = "0.18"
+url = "2.5"
