@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc dd6cf1f4eb1dd0ec1074ec33c4fe1cd54defc7338fb63d7e413cc698d727ce62 # shrinks to changes_data = [("a.rs", "\u{1680}", "\u{2028}")]

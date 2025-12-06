@@ -27,6 +27,7 @@ members = [
     "crates/ricecoder-learning",
     "crates/ricecoder-mcp",
     "crates/ricecoder-tools",
+    "crates/ricecoder-undo-redo",
 ]
 resolver = "2"
 

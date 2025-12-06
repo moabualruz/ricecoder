@@ -3311,6 +3311,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "ricecoder-undo-redo"
+version = "0.5.0"
+dependencies = [
+ "chrono",
+ "proptest",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-test",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "ricecoder-workflows"
 version = "0.5.0"
 dependencies = [
