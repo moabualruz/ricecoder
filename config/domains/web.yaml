@@ -1,0 +1,240 @@
+domain: web
+name: "Web Development Agent"
+description: "Specialized agent for web development"
+
+capabilities:
+  - name: "Frontend Framework Selection"
+    description: "Recommend frontend frameworks based on project needs"
+    technologies:
+      - "React"
+      - "Vue"
+      - "Angular"
+
+  - name: "Styling Guidance"
+    description: "Provide expertise on CSS, Tailwind CSS, styled-components"
+    technologies:
+      - "CSS"
+      - "Tailwind CSS"
+      - "styled-components"
+
+  - name: "Build Configuration"
+    description: "Guidance on Vite or Webpack configuration"
+    technologies:
+      - "Vite"
+      - "Webpack"
+
+  - name: "Testing Strategy"
+    description: "Recommendations for web testing frameworks"
+    technologies:
+      - "Jest"
+      - "Vitest"
+      - "Playwright"
+
+  - name: "Performance Optimization"
+    description: "Specific optimization recommendations for web applications"
+    technologies:
+      - "React"
+      - "Vue"
+      - "Angular"
+
+  - name: "Deployment Guidance"
+    description: "Recommendations for web deployment patterns and platforms"
+    technologies:
+      - "Vercel"
+      - "Netlify"
+      - "AWS"
+      - "Docker"
+
+best_practices:
+  - title: "Component-Based Architecture"
+    description: "Use component-based architecture for maintainability and reusability"
+    technologies:
+      - "React"
+      - "Vue"
+    implementation: "Break UI into small, reusable components with single responsibility"
+
+  - title: "Performance Optimization"
+    description: "Optimize bundle size and runtime performance"
+    technologies:
+      - "React"
+      - "Vue"
+      - "Angular"
+    implementation: "Use code splitting, lazy loading, and tree shaking"
+
+  - title: "Responsive Design"
+    description: "Design applications that work across all device sizes"
+    technologies:
+      - "CSS"
+      - "Tailwind CSS"
+    implementation: "Use mobile-first approach with media queries or utility classes"
+
+  - title: "Accessibility"
+    description: "Ensure applications are accessible to all users"
+    technologies:
+      - "React"
+      - "Vue"
+      - "Angular"
+    implementation: "Follow WCAG guidelines, use semantic HTML, test with screen readers"
+
+  - title: "State Management"
+    description: "Manage application state effectively"
+    technologies:
+      - "React"
+      - "Vue"
+    implementation: "Use appropriate state management solutions (Redux, Vuex, Pinia)"
+
+technology_recommendations:
+  - technology: "React"
+    use_cases:
+      - "Single Page Applications"
+      - "Complex UIs"
+      - "Real-time applications"
+    pros:
+      - "Large ecosystem"
+      - "Strong community"
+      - "Excellent tooling"
+    cons:
+      - "Steep learning curve"
+      - "JSX syntax"
+      - "Frequent updates"
+    alternatives:
+      - "Vue"
+      - "Angular"
+
+  - technology: "Vue"
+    use_cases:
+      - "Progressive enhancement"
+      - "Single Page Applications"
+      - "Rapid prototyping"
+    pros:
+      - "Easy to learn"
+      - "Excellent documentation"
+      - "Flexible"
+    cons:
+      - "Smaller ecosystem"
+      - "Less enterprise adoption"
+    alternatives:
+      - "React"
+      - "Angular"
+
+  - technology: "Angular"
+    use_cases:
+      - "Large-scale applications"
+      - "Enterprise projects"
+      - "Complex applications"
+    pros:
+      - "Full-featured framework"
+      - "Strong typing with TypeScript"
+      - "Enterprise support"
+    cons:
+      - "Steep learning curve"
+      - "Verbose syntax"
+      - "Heavier bundle size"
+    alternatives:
+      - "React"
+      - "Vue"
+
+  - technology: "Vite"
+    use_cases:
+      - "Modern web development"
+      - "Fast development experience"
+    pros:
+      - "Lightning fast HMR"
+      - "Optimized build"
+      - "Native ES modules"
+    cons:
+      - "Newer tool"
+      - "Less mature than Webpack"
+    alternatives:
+      - "Webpack"
+      - "Parcel"
+
+  - technology: "Webpack"
+    use_cases:
+      - "Complex bundling scenarios"
+      - "Legacy projects"
+    pros:
+      - "Mature and stable"
+      - "Highly configurable"
+      - "Large ecosystem"
+    cons:
+      - "Complex configuration"
+      - "Slower build times"
+    alternatives:
+      - "Vite"
+      - "Parcel"
+
+  - technology: "Jest"
+    use_cases:
+      - "Unit testing"
+      - "Integration testing"
+    pros:
+      - "Zero configuration"
+      - "Great documentation"
+      - "Snapshot testing"
+    cons:
+      - "Slower than alternatives"
+      - "Higher memory usage"
+    alternatives:
+      - "Vitest"
+      - "Mocha"
+
+  - technology: "Vitest"
+    use_cases:
+      - "Unit testing"
+      - "Fast test execution"
+    pros:
+      - "Lightning fast"
+      - "Vite integration"
+      - "Jest-compatible API"
+    cons:
+      - "Newer tool"
+      - "Smaller ecosystem"
+    alternatives:
+      - "Jest"
+      - "Mocha"
+
+  - technology: "Playwright"
+    use_cases:
+      - "End-to-end testing"
+      - "Cross-browser testing"
+    pros:
+      - "Cross-browser support"
+      - "Reliable automation"
+      - "Great debugging tools"
+    cons:
+      - "Heavier than Cypress"
+      - "Steeper learning curve"
+    alternatives:
+      - "Cypress"
+      - "Selenium"
+
+  - technology: "Tailwind CSS"
+    use_cases:
+      - "Rapid UI development"
+      - "Utility-first styling"
+    pros:
+      - "Rapid development"
+      - "Consistent design"
+      - "Small bundle size"
+    cons:
+      - "Learning curve"
+      - "HTML markup verbosity"
+    alternatives:
+      - "Bootstrap"
+      - "styled-components"
+
+  - technology: "styled-components"
+    use_cases:
+      - "Component-scoped styling"
+      - "Dynamic styling"
+    pros:
+      - "Component scoping"
+      - "Dynamic styling"
+      - "No class name conflicts"
+    cons:
+      - "Runtime overhead"
+      - "Larger bundle size"
+    alternatives:
+      - "Tailwind CSS"
+      - "CSS Modules"

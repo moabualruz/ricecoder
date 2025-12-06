@@ -1,0 +1,14 @@
+{
+  "id": "18c3ab71-fd8d-4ce5-9cc3-7727e9698c34",
+  "scope": "Project",
+  "pattern": "function_promo_complete_1765020813917271200",
+  "action": "add_documentation",
+  "source": "Learned",
+  "created_at": "2025-12-06T11:33:33.917290600Z",
+  "updated_at": "2025-12-06T11:33:33.917291600Z",
+  "version": 1,
+  "confidence": 0.5,
+  "usage_count": 0,
+  "success_rate": 0.0,
+  "metadata": {}
+}

@@ -1,0 +1,271 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Domain Agent Configuration Schema",
+  "description": "Schema for domain-specific agent configuration files",
+  "type": "object",
+  "required": [
+    "domain",
+    "name",
+    "description",
+    "capabilities"
+  ],
+  "properties": {
+    "domain": {
+      "type": "string",
+      "description": "Domain identifier (e.g., 'web', 'backend', 'devops')",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable agent name",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the agent and its purpose",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "capabilities": {
+      "type": "array",
+      "description": "List of capabilities this agent provides",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "technologies"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Capability name",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "description": "Capability description",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "technologies": {
+            "type": "array",
+            "description": "Technologies supported by this capability",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "best_practices": {
+      "type": "array",
+      "description": "List of best practices for this domain",
+      "default": [],
+      "items": {
+        "type": "object",
+        "required": [
+          "title",
+          "description",
+          "technologies",
+          "implementation"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Best practice title",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "description": "Best practice description",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "technologies": {
+            "type": "array",
+            "description": "Technologies this practice applies to",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          "implementation": {
+            "type": "string",
+            "description": "Implementation guidance",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "technology_recommendations": {
+      "type": "array",
+      "description": "List of technology recommendations",
+      "default": [],
+      "items": {
+        "type": "object",
+        "required": [
+          "technology",
+          "use_cases",
+          "pros",
+          "cons",
+          "alternatives"
+        ],
+        "properties": {
+          "technology": {
+            "type": "string",
+            "description": "Technology name",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "use_cases": {
+            "type": "array",
+            "description": "Use cases for this technology",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          },
+          "pros": {
+            "type": "array",
+            "description": "Advantages of this technology",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            }
+          },
+          "cons": {
+            "type": "array",
+            "description": "Disadvantages of this technology",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            }
+          },
+          "alternatives": {
+            "type": "array",
+            "description": "Alternative technologies",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "patterns": {
+      "type": "array",
+      "description": "List of design patterns for this domain",
+      "default": [],
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "technologies",
+          "use_cases"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Pattern name",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "description": "Pattern description",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "technologies": {
+            "type": "array",
+            "description": "Technologies this pattern applies to",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          "use_cases": {
+            "type": "array",
+            "description": "Use cases for this pattern",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "anti_patterns": {
+      "type": "array",
+      "description": "List of anti-patterns to avoid",
+      "default": [],
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "why_avoid",
+          "better_alternative"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Anti-pattern name",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "description": "Anti-pattern description",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "why_avoid": {
+            "type": "string",
+            "description": "Why this anti-pattern should be avoided",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "better_alternative": {
+            "type": "string",
+            "description": "Better alternative to use instead",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

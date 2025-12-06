@@ -1,0 +1,320 @@
+domain: devops
+name: "DevOps Agent"
+description: "Specialized agent for infrastructure and deployment"
+
+capabilities:
+  - name: "CI/CD Pipeline Setup"
+    description: "Recommendations for GitHub Actions, GitLab CI, or Jenkins"
+    technologies:
+      - "GitHub Actions"
+      - "GitLab CI"
+      - "Jenkins"
+
+  - name: "Infrastructure as Code"
+    description: "Recommendations for Terraform, CloudFormation, or Ansible"
+    technologies:
+      - "Terraform"
+      - "CloudFormation"
+      - "Ansible"
+
+  - name: "Containerization"
+    description: "Recommendations for Docker and Kubernetes configuration and orchestration"
+    technologies:
+      - "Docker"
+      - "Kubernetes"
+
+  - name: "Observability Infrastructure"
+    description: "Recommendations for monitoring, logging, and alerting infrastructure"
+    technologies:
+      - "Prometheus"
+      - "Grafana"
+      - "ELK Stack"
+
+  - name: "Security Scanning"
+    description: "Recommendations for vulnerability scanning and compliance automation"
+    technologies:
+      - "Trivy"
+      - "Snyk"
+      - "SonarQube"
+
+  - name: "Auto-Scaling"
+    description: "Recommendations for scaling policies and resource management"
+    technologies:
+      - "Kubernetes"
+      - "AWS Auto Scaling"
+      - "Docker Swarm"
+
+best_practices:
+  - title: "Infrastructure as Code"
+    description: "Manage infrastructure through version-controlled code"
+    technologies:
+      - "Terraform"
+      - "CloudFormation"
+    implementation: "Define all infrastructure in code, version control, and automate deployment"
+
+  - title: "Containerization Best Practices"
+    description: "Use containers for consistent deployment across environments"
+    technologies:
+      - "Docker"
+      - "Kubernetes"
+    implementation: "Create minimal images, use multi-stage builds, implement health checks"
+
+  - title: "CI/CD Pipeline Automation"
+    description: "Automate testing, building, and deployment processes"
+    technologies:
+      - "GitHub Actions"
+      - "GitLab CI"
+      - "Jenkins"
+    implementation: "Implement automated testing, build, and deployment stages in pipeline"
+
+  - title: "Observability and Monitoring"
+    description: "Implement comprehensive monitoring and logging"
+    technologies:
+      - "Prometheus"
+      - "Grafana"
+      - "ELK Stack"
+    implementation: "Collect metrics, logs, and traces; set up dashboards and alerts"
+
+  - title: "Security Scanning in CI/CD"
+    description: "Integrate security scanning into deployment pipeline"
+    technologies:
+      - "Trivy"
+      - "Snyk"
+      - "SonarQube"
+    implementation: "Scan dependencies, containers, and code for vulnerabilities before deployment"
+
+  - title: "Auto-Scaling Configuration"
+    description: "Configure automatic scaling based on metrics"
+    technologies:
+      - "Kubernetes"
+      - "AWS Auto Scaling"
+    implementation: "Set up scaling policies based on CPU, memory, or custom metrics"
+
+technology_recommendations:
+  - technology: "GitHub Actions"
+    use_cases:
+      - "GitHub-hosted CI/CD"
+      - "Automated testing"
+      - "Deployment automation"
+    pros:
+      - "Native GitHub integration"
+      - "Free for public repos"
+      - "Easy to set up"
+    cons:
+      - "Limited to GitHub"
+      - "Execution time limits"
+    alternatives:
+      - "GitLab CI"
+      - "Jenkins"
+
+  - technology: "GitLab CI"
+    use_cases:
+      - "GitLab-hosted CI/CD"
+      - "Self-hosted runners"
+      - "Complex pipelines"
+    pros:
+      - "Powerful pipeline features"
+      - "Self-hosted runners"
+      - "Integrated with GitLab"
+    cons:
+      - "Limited to GitLab"
+      - "Steeper learning curve"
+    alternatives:
+      - "GitHub Actions"
+      - "Jenkins"
+
+  - technology: "Jenkins"
+    use_cases:
+      - "Self-hosted CI/CD"
+      - "Complex pipelines"
+      - "Legacy systems"
+    pros:
+      - "Highly customizable"
+      - "Large plugin ecosystem"
+      - "Self-hosted"
+    cons:
+      - "Complex setup"
+      - "Maintenance overhead"
+      - "Older technology"
+    alternatives:
+      - "GitHub Actions"
+      - "GitLab CI"
+
+  - technology: "Terraform"
+    use_cases:
+      - "Infrastructure as Code"
+      - "Multi-cloud deployments"
+      - "Reproducible infrastructure"
+    pros:
+      - "Declarative syntax"
+      - "Multi-cloud support"
+      - "State management"
+    cons:
+      - "State management complexity"
+      - "Learning curve"
+    alternatives:
+      - "CloudFormation"
+      - "Ansible"
+
+  - technology: "CloudFormation"
+    use_cases:
+      - "AWS Infrastructure as Code"
+      - "AWS-specific deployments"
+    pros:
+      - "Native AWS integration"
+      - "No additional tools needed"
+      - "Good documentation"
+    cons:
+      - "AWS-only"
+      - "Verbose syntax"
+      - "Limited multi-cloud support"
+    alternatives:
+      - "Terraform"
+      - "Ansible"
+
+  - technology: "Ansible"
+    use_cases:
+      - "Configuration management"
+      - "Infrastructure automation"
+      - "Agentless automation"
+    pros:
+      - "Agentless"
+      - "Easy to learn"
+      - "Flexible"
+    cons:
+      - "Slower than alternatives"
+      - "Less suitable for IaC"
+    alternatives:
+      - "Terraform"
+      - "Chef"
+
+  - technology: "Docker"
+    use_cases:
+      - "Containerization"
+      - "Application packaging"
+      - "Development environments"
+    pros:
+      - "Lightweight containers"
+      - "Easy to use"
+      - "Large ecosystem"
+    cons:
+      - "Learning curve"
+      - "Security considerations"
+    alternatives:
+      - "Podman"
+      - "containerd"
+
+  - technology: "Kubernetes"
+    use_cases:
+      - "Container orchestration"
+      - "Microservices"
+      - "High availability"
+    pros:
+      - "Powerful orchestration"
+      - "Auto-scaling"
+      - "Self-healing"
+    cons:
+      - "Complex setup"
+      - "Steep learning curve"
+      - "Operational overhead"
+    alternatives:
+      - "Docker Swarm"
+      - "AWS ECS"
+
+  - technology: "Prometheus"
+    use_cases:
+      - "Metrics collection"
+      - "Monitoring"
+      - "Alerting"
+    pros:
+      - "Time-series database"
+      - "Powerful query language"
+      - "Easy to set up"
+    cons:
+      - "Limited long-term storage"
+      - "Requires additional tools"
+    alternatives:
+      - "Grafana Loki"
+      - "InfluxDB"
+
+  - technology: "Grafana"
+    use_cases:
+      - "Metrics visualization"
+      - "Dashboards"
+      - "Alerting"
+    pros:
+      - "Beautiful dashboards"
+      - "Multiple data sources"
+      - "Easy to use"
+    cons:
+      - "Requires data source"
+      - "Learning curve for advanced features"
+    alternatives:
+      - "Kibana"
+      - "Datadog"
+
+  - technology: "ELK Stack"
+    use_cases:
+      - "Log aggregation"
+      - "Log analysis"
+      - "Centralized logging"
+    pros:
+      - "Powerful search"
+      - "Scalable"
+      - "Open source"
+    cons:
+      - "Complex setup"
+      - "Resource intensive"
+      - "Operational overhead"
+    alternatives:
+      - "Splunk"
+      - "Datadog"
+
+  - technology: "Trivy"
+    use_cases:
+      - "Vulnerability scanning"
+      - "Container scanning"
+      - "CI/CD integration"
+    pros:
+      - "Fast scanning"
+      - "Easy to use"
+      - "Comprehensive database"
+    cons:
+      - "False positives"
+      - "Limited remediation guidance"
+    alternatives:
+      - "Snyk"
+      - "Grype"
+
+  - technology: "Snyk"
+    use_cases:
+      - "Vulnerability management"
+      - "Dependency scanning"
+      - "Container scanning"
+    pros:
+      - "Developer-friendly"
+      - "Remediation guidance"
+      - "Multiple scanning types"
+    cons:
+      - "Paid service"
+      - "Limited free tier"
+    alternatives:
+      - "Trivy"
+      - "Dependabot"
+
+  - technology: "SonarQube"
+    use_cases:
+      - "Code quality analysis"
+      - "Security scanning"
+      - "Technical debt tracking"
+    pros:
+      - "Comprehensive analysis"
+      - "Multiple languages"
+      - "Good reporting"
+    cons:
+      - "Complex setup"
+      - "Resource intensive"
+      - "Expensive for large teams"
+    alternatives:
+      - "CodeClimate"
+      - "Codacy"

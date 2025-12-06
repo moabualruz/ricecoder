@@ -22,11 +22,17 @@ members = [
     "crates/ricecoder-external-lsp",
     "crates/ricecoder-refactoring",
     "crates/ricecoder-keybinds",
+    "crates/ricecoder-orchestration",
+    "crates/ricecoder-domain-agents",
+    "crates/ricecoder-learning",
+    "crates/ricecoder-mcp",
+    "crates/ricecoder-tools",
+    "crates/ricecoder-undo-redo",
 ]
 resolver = "2"
 
 [workspace.package]
-version = "0.5.0"
+version = "0.6.0"
 edition = "2021"
 authors = ["RiceCoder Contributors"]
 license = "MIT"
@@ -75,3 +81,5 @@ tree-sitter = "0.20"
 tree-sitter-rust = "0.20"
 tree-sitter-typescript = "0.20"
 tree-sitter-python = "0.20"
+jsonschema = "0.18"
+url = "2.5"

@@ -1,0 +1,165 @@
+# MCP Servers Configuration Example
+# 
+# This file demonstrates how to configure MCP servers in RiceCoder.
+# Copy this file to .ricecoder/mcp-servers.yaml and customize for your setup.
+#
+# Location: .ricecoder/mcp-servers.yaml
+# Format: YAML
+
+servers:
+  # Example 1: Database Server
+  # Provides tools for querying and modifying databases
+  - id: database-server
+    name: Database Tools
+    command: uvx
+    args:
+      - database-mcp-server@latest
+    env:
+      DB_URL: postgresql://localhost/mydb
+      DB_USER: admin
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_POOL_SIZE: "10"
+      LOG_LEVEL: INFO
+    timeout_ms: 5000
+    auto_reconnect: true
+    max_retries: 3
+
+  # Example 2: API Service Server
+  # Provides tools for making HTTP requests to external APIs
+  - id: api-server
+    name: API Tools
+    command: node
+    args:
+      - ./api-server.js
+      - --port
+      - "3000"
+    env:
+      API_KEY: ${API_KEY}
+      API_URL: https://api.example.com
+      API_TIMEOUT: "10000"
+      LOG_LEVEL: INFO
+    timeout_ms: 10000
+    auto_reconnect: true
+    max_retries: 5
+
+  # Example 3: Python Server
+  # Provides tools from a Python MCP server
+  - id: python-server
+    name: Python Tools
+    command: python
+    args:
+      - -m
+      - mcp_server
+      - --config
+      - ./config.json
+    env:
+      PYTHONPATH: ./lib
+      LOG_LEVEL: INFO
+    timeout_ms: 5000
+    auto_reconnect: true
+    max_retries: 3
+
+  # Example 4: Custom Server
+  # Provides tools from a custom MCP server
+  - id: custom-server
+    name: Custom Tools
+    command: /usr/local/bin/custom-mcp-server
+    args:
+      - --config
+      - ./custom-config.yaml
+    env:
+      CONFIG_PATH: ./custom-config.yaml
+      DEBUG: "false"
+    timeout_ms: 5000
+    auto_reconnect: true
+    max_retries: 3
+
+# Configuration Notes:
+#
+# 1. id: Unique identifier for the server (used in tool IDs)
+#    Format: kebab-case
+#    Example: database-server, api-service, custom-tools
+#
+# 2. name: Display name for the server
+#    Format: Any string
+#    Example: Database Tools, API Service, Custom Tools
+#
+# 3. command: Executable to run
+#    Can be: absolute path, relative path, or command in PATH
+#    Examples: uvx, node, python, /usr/local/bin/server
+#
+# 4. args: Command-line arguments
+#    Format: Array of strings
+#    Example: [database-mcp-server@latest, --port, 8000]
+#
+# 5. env: Environment variables
+#    Format: Key-value pairs
+#    Supports: ${VAR_NAME} for environment variable references
+#    Example: DB_URL: postgresql://localhost/mydb
+#
+# 6. timeout_ms: Timeout for tool execution (milliseconds)
+#    Default: 5000
+#    Range: 1000 - 60000
+#
+# 7. auto_reconnect: Automatically reconnect on failure
+#    Default: true
+#    Options: true, false
+#
+# 8. max_retries: Maximum reconnection attempts
+#    Default: 3
+#    Range: 1 - 10
+#
+# Environment Variables:
+#
+# Use ${VAR_NAME} to reference environment variables:
+#   DB_PASSWORD: ${DB_PASSWORD}
+#   API_KEY: ${API_KEY}
+#
+# Set environment variables before running RiceCoder:
+#   export DB_PASSWORD=your_password
+#   export API_KEY=your_api_key
+#
+# Configuration Loading:
+#
+# Configurations are loaded from multiple sources in priority order:
+# 1. Project-level: .ricecoder/mcp-servers.yaml
+# 2. User-level: ~/.ricecoder/mcp-servers.yaml
+# 3. Built-in defaults: Minimal default configuration
+#
+# Later configurations override earlier ones.
+#
+# Hot-Reload:
+#
+# Configuration changes are automatically detected and applied:
+#   1. Edit .ricecoder/mcp-servers.yaml
+#   2. Changes are automatically applied
+#   3. Or manually trigger reload: ricecoder config reload
+#
+# Validation:
+#
+# Validate configuration before using:
+#   ricecoder config validate
+#
+# Troubleshooting:
+#
+# Server won't start:
+#   - Check command is in PATH: which uvx
+#   - Use absolute path: /usr/local/bin/uvx
+#   - Install command: pip install uv
+#
+# Connection timeout:
+#   - Increase timeout_ms: timeout_ms: 10000
+#   - Check server is running: ps aux | grep server
+#   - Check network connectivity
+#
+# Environment variable not set:
+#   - Set environment variable: export DB_PASSWORD=secret
+#   - Check variable is set: echo $DB_PASSWORD
+#   - Use default value: DB_PASSWORD: ${DB_PASSWORD:-default}
+#
+# See Also:
+#
+# - MCP Integration: https://github.com/moabualruz/ricecoder/wiki/MCP-Integration
+# - MCP Server Configuration: https://github.com/moabualruz/ricecoder/wiki/MCP-Server-Configuration
+# - MCP Database Server Example: https://github.com/moabualruz/ricecoder/wiki/MCP-Database-Server-Example
+# - MCP API Service Example: https://github.com/moabualruz/ricecoder/wiki/MCP-API-Service-Example

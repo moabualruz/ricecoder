@@ -18,6 +18,8 @@ uuid.workspace = true
 
 ricecoder-storage = { path = "../ricecoder-storage" }
 ricecoder-providers = { path = "../ricecoder-providers" }
+jsonschema.workspace = true
+serde_yaml.workspace = true
 
 [dev-dependencies]
 proptest.workspace = true

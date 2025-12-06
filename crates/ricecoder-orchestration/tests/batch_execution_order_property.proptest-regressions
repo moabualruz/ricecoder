@@ -1,0 +1,10 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 7b04345f55fa629bd590d61474ef2b7436d51d7b76eaf4bde608d0ce109f8af1 # shrinks to project_count = 3, dependency_probability = 0.28969761211868783
+cc 97df3d229bba248cdb98324c4fc31c06a0681ef1a922c7e5a74aa90e898c4a02 # shrinks to project_count = 3, dependency_probability = 0.2520667172861621
+cc 2cb764ff1c64b64bf1e33054994a061a0bc1bbd1903c85c2375973ff55b71b92 # shrinks to project_count = 5, dependency_probability = 0.20594169544752366
+cc 4505dc57459bb0f6f783c778b5a389c339ecc11f40057e6ba1fc2bc351fb0f29 # shrinks to project_count = 11, dependency_probability = 0.043991455923188566

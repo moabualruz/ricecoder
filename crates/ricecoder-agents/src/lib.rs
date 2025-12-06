@@ -33,6 +33,7 @@
 
 pub mod agents;
 pub mod coordinator;
+pub mod domain;
 pub mod error;
 pub mod executor;
 pub mod metrics;
@@ -40,6 +41,8 @@ pub mod models;
 pub mod orchestrator;
 pub mod registry;
 pub mod scheduler;
+pub mod tool_registry;
+pub mod tool_invokers;
 
 #[cfg(test)]
 mod scheduler_properties;
@@ -50,7 +53,7 @@ mod coordinator_properties;
 #[cfg(test)]
 mod orchestrator_properties;
 
-pub use agents::{Agent, CodeReviewAgent};
+pub use agents::{Agent, CodeReviewAgent, WebAgent};
 pub use coordinator::AgentCoordinator;
 pub use error::AgentError;
 pub use executor::{ExecutionConfig, ExecutionResult, ParallelExecutor};
@@ -62,3 +65,8 @@ pub use models::{
 pub use orchestrator::AgentOrchestrator;
 pub use registry::AgentRegistry;
 pub use scheduler::{AgentScheduler, ExecutionPhase, ExecutionSchedule, TaskDAG};
+pub use tool_registry::{ToolInvoker, ToolMetadata, ToolRegistry};
+pub use tool_invokers::{
+    PatchToolInvoker, TodoreadToolInvoker, TodowriteToolInvoker, WebfetchToolInvoker,
+    WebsearchToolInvoker,
+};

@@ -252,7 +252,8 @@ mod tests {
         assert!(metrics.end_time.is_some());
         assert!(metrics.success);
         assert!(metrics.error.is_none());
-        assert!(metrics.duration_ms() >= 0);
+        // Duration should be non-negative (always true for u64, but validates the function works)
+        let _ = metrics.duration_ms();
     }
 
     #[test]

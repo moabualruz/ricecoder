@@ -1,0 +1,281 @@
+# MCP Tool Permissions Configuration Example
+#
+# This file demonstrates how to configure tool permissions in RiceCoder.
+# Copy this file to .ricecoder/permissions.yaml and customize for your setup.
+#
+# Location: .ricecoder/permissions.yaml
+# Format: YAML
+
+permissions:
+  # ============================================================================
+  # TIER 1: Deny Dangerous Operations
+  # ============================================================================
+  
+  # Deny all system operations
+  - pattern: "system-*"
+    level: deny
+  
+  # Deny all admin operations
+  - pattern: "admin-*"
+    level: deny
+  
+  # ============================================================================
+  # TIER 2: Allow Safe Read Operations
+  # ============================================================================
+  
+  # Allow all database reads
+  - pattern: "database-read-*"
+    level: allow
+  
+  # Allow all API GET requests
+  - pattern: "api-get"
+    level: allow
+  
+  # Allow all file reads
+  - pattern: "file-read-*"
+    level: allow
+  
+  # Allow all math operations
+  - pattern: "calculate-*"
+    level: allow
+  
+  # Allow all validation operations
+  - pattern: "validate-*"
+    level: allow
+  
+  # Allow all text operations
+  - pattern: "format-*"
+    level: allow
+  
+  # ============================================================================
+  # TIER 3: Ask for Modification Operations
+  # ============================================================================
+  
+  # Ask for database writes
+  - pattern: "database-write-*"
+    level: ask
+  
+  - pattern: "database-insert"
+    level: ask
+  
+  - pattern: "database-update"
+    level: ask
+  
+  - pattern: "database-delete"
+    level: ask
+  
+  # Ask for API modifications
+  - pattern: "api-post"
+    level: ask
+  
+  - pattern: "api-put"
+    level: ask
+  
+  - pattern: "api-delete"
+    level: ask
+  
+  # Ask for file writes
+  - pattern: "file-write-*"
+    level: ask
+  
+  # ============================================================================
+  # TIER 4: Per-Agent Permission Overrides
+  # ============================================================================
+  
+  # Data processor agent: Allow database writes
+  - pattern: "database-write-*"
+    level: allow
+    agent_id: data-processor
+  
+  - pattern: "database-insert"
+    level: allow
+    agent_id: data-processor
+  
+  - pattern: "database-update"
+    level: allow
+    agent_id: data-processor
+  
+  # Code generator agent: Allow file writes
+  - pattern: "file-write-*"
+    level: allow
+    agent_id: code-generator
+  
+  # Code analyzer agent: Deny file writes
+  - pattern: "file-write-*"
+    level: deny
+    agent_id: code-analyzer
+  
+  # API integration agent: Allow API modifications
+  - pattern: "api-post"
+    level: allow
+    agent_id: api-integration
+  
+  - pattern: "api-put"
+    level: allow
+    agent_id: api-integration
+  
+  - pattern: "api-delete"
+    level: allow
+    agent_id: api-integration
+  
+  # ============================================================================
+  # TIER 5: Deny Everything Else
+  # ============================================================================
+  
+  # Deny all other tools
+  - pattern: "*"
+    level: deny
+
+# ============================================================================
+# Configuration Notes
+# ============================================================================
+#
+# 1. pattern: Tool ID pattern to match
+#    Supports wildcards:
+#      * matches any characters
+#      ? matches single character
+#      Exact match for specific tool ID
+#    Examples:
+#      database-*: All tools starting with "database-"
+#      *-read: All tools ending with "-read"
+#      *: All tools
+#      database-query: Exact match
+#
+# 2. level: Permission level for matching tools
+#    Options:
+#      allow: Execute without asking
+#      ask: Prompt user before executing
+#      deny: Reject execution
+#
+# 3. agent_id: Agent ID for per-agent permission override (optional)
+#    Omit for global permissions
+#    Examples:
+#      agent_id: code-generator
+#      agent_id: data-processor
+#
+# ============================================================================
+# Permission Levels
+# ============================================================================
+#
+# allow: Tool executes immediately without user confirmation
+#   Use case: Safe, frequently-used tools
+#   Example:
+#     - pattern: "database-read-*"
+#       level: allow
+#
+# ask: System prompts user before executing the tool
+#   Use case: Potentially risky operations that need confirmation
+#   Example:
+#     - pattern: "database-write-*"
+#       level: ask
+#
+# deny: Tool execution is rejected; agent cannot use the tool
+#   Use case: Dangerous operations that should never be automated
+#   Example:
+#     - pattern: "system-shutdown"
+#       level: deny
+#
+# ============================================================================
+# Rule Evaluation
+# ============================================================================
+#
+# Rules are evaluated in order; the first matching rule is applied.
+#
+# Example:
+#   1. Check rule 1: "dangerous-*" - No match
+#   2. Check rule 2: "database-read-*" - Match! → allow
+#
+# Per-agent rules are checked first, then global rules.
+#
+# ============================================================================
+# Per-Agent Permissions
+# ============================================================================
+#
+# Override global permissions for specific agents.
+#
+# Example:
+#   # Global: Ask for database writes
+#   - pattern: "database-write-*"
+#     level: ask
+#   
+#   # Per-agent: Allow for code-generator
+#   - pattern: "database-write-*"
+#     level: allow
+#     agent_id: code-generator
+#   
+#   # Per-agent: Deny for code-analyzer
+#   - pattern: "database-write-*"
+#     level: deny
+#     agent_id: code-analyzer
+#
+# When code-generator executes database-write-users:
+#   1. Check per-agent rules first
+#   2. Find: database-write-* with agent_id: code-generator → allow
+#
+# ============================================================================
+# Configuration Loading
+# ============================================================================
+#
+# Configurations are loaded from multiple sources in priority order:
+# 1. Project-level: .ricecoder/permissions.yaml
+# 2. User-level: ~/.ricecoder/permissions.yaml
+# 3. Built-in defaults: Allow all tools
+#
+# Later configurations override earlier ones.
+#
+# ============================================================================
+# Hot-Reload
+# ============================================================================
+#
+# Configuration changes are automatically detected and applied:
+#   1. Edit .ricecoder/permissions.yaml
+#   2. Changes are automatically applied
+#   3. Or manually trigger reload: ricecoder config reload
+#
+# ============================================================================
+# Validation
+# ============================================================================
+#
+# Validate configuration before using:
+#   ricecoder config validate
+#
+# ============================================================================
+# Checking Permissions
+# ============================================================================
+#
+# Check tool permission:
+#   ricecoder tools info database-query
+#
+# Check all permissions:
+#   ricecoder permissions list
+#
+# Test permission:
+#   ricecoder tools invoke database-query --dry-run
+#
+# ============================================================================
+# Best Practices
+# ============================================================================
+#
+# 1. Deny by Default
+#    Start with denying everything, then explicitly allow safe operations.
+#
+# 2. Use Specific Patterns
+#    Use specific patterns instead of broad wildcards.
+#
+# 3. Organize by Category
+#    Group permissions by tool category.
+#
+# 4. Use Per-Agent Permissions
+#    Override global permissions for specific agents.
+#
+# 5. Document Permissions
+#    Add comments explaining permission rules.
+#
+# ============================================================================
+# See Also
+# ============================================================================
+#
+# - MCP Integration: https://github.com/moabualruz/ricecoder/wiki/MCP-Integration
+# - MCP Permissions: https://github.com/moabualruz/ricecoder/wiki/MCP-Permissions
+# - MCP Server Configuration: https://github.com/moabualruz/ricecoder/wiki/MCP-Server-Configuration
+# - Custom Tool Definition: https://github.com/moabualruz/ricecoder/wiki/MCP-Custom-Tools

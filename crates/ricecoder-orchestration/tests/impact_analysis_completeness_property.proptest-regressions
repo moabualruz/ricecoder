@@ -1,0 +1,11 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc fc421bbc38003a3fe6f59aeb89678d77247ebac3068c98043fc5ba9195b1b245 # shrinks to project_names = ["a-0", "a-1"]
+cc eb6d0a8bcc3c39918d7aa6efcabd2ad2eaf8ee5cc99b5d3e535dd74001194002 # shrinks to project_names = ["a-0"], change_type = "config", is_breaking = true
+cc 1a0181f8412e22d6be20f4f30a9280b804936c7ce2a69297496ee87e653671f3 # shrinks to project_names = ["a-0", "a-1", "a-2", "a-3"]
+cc 664de3c72462fea09b0bb33b595fa03ba586e1629947a91d5300a6f9912a002d # shrinks to project_names = ["a-0", "a-1", "a-2", "a-3"], dependency_indices = [(2, 0), (0, 0), (2, 0)], changed_project_idx = 4
+cc 768fa169fdfd0a48b94098df76bb52e461230e58fa36b8964f7f799b7ce52dba # shrinks to project_names = ["a-0", "a-1", "a-2", "a-3"], dependency_indices = [(3, 2), (3, 2)], changed_project_idx = 2, change_type = "api", is_breaking = false
