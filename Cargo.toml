@@ -23,6 +23,8 @@ members = [
     "crates/ricecoder-refactoring",
     "crates/ricecoder-keybinds",
     "crates/ricecoder-orchestration",
+    "crates/ricecoder-domain-agents",
+    "crates/ricecoder-learning",
 ]
 resolver = "2"
 
@@ -76,3 +78,4 @@ tree-sitter = "0.20"
 tree-sitter-rust = "0.20"
 tree-sitter-typescript = "0.20"
 tree-sitter-python = "0.20"
+jsonschema = "0.18"
