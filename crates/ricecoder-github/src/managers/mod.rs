@@ -4,6 +4,8 @@
 
 pub mod code_review_agent;
 pub mod code_review_operations;
+pub mod dependency_manager;
+pub mod dependency_operations;
 pub mod discussion_manager;
 pub mod discussion_operations;
 pub mod documentation_generator;
@@ -27,6 +29,15 @@ pub use code_review_agent::{
 };
 pub use code_review_operations::{
     ApprovalCondition, CodeReviewMetrics, CodeReviewOperations, ConditionalApprovalResult,
+};
+pub use dependency_manager::{
+    Dependency, DependencyError, DependencyManager, DependencyScanResult, DependencyUpdatePrResult,
+    DependencyUpdateSuggestion, DependencyUpdateVerificationResult, UpdateReason, UpdateRiskLevel,
+    Vulnerability, VulnerabilitySeverity, VulnerabilityReport,
+};
+pub use dependency_operations::{
+    BuildVerificationResult, DependencyOperations, DependencyPinningResult, PinningConfig,
+    SecurityReport, UpdatePriority, UpdateRecommendation, VulnerabilityInfo,
 };
 pub use discussion_manager::{
     DiscussionCreationResult, DiscussionInsight, DiscussionManager, DiscussionResponse,

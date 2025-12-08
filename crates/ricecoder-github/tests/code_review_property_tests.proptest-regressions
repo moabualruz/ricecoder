@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 73feb5694755329fcb2c5a1b6eb0f7c8f5e87b04cca5534bc756dda2aaf9ac66 # shrinks to pr = PullRequest { id: 1, number: 123, title: "0", body: "a", branch: "feature/0", base: "main", status: Open, files: [FileChange { path: "a.rs", change_type: "added", additions: 235, deletions: 266 }, FileChange { path: "_.rs", change_type: "added", additions: 47, deletions: 454 }, FileChange { path: "0.rs", change_type: "added", additions: 39, deletions: 462 }, FileChange { path: "0.rs", change_type: "added", additions: 117, deletions: 384 }], created_at: 2025-12-08T19:31:33.145528900Z, updated_at: 2025-12-08T19:31:33.145529Z }
