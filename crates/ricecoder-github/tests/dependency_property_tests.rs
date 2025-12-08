@@ -144,10 +144,8 @@ fn property_54_dependency_update_verification() {
             .expect("Verification should succeed");
 
         // Property: Verification should return valid result
-        assert!(
-            verification.build_passed || !verification.build_passed,
-            "Build status should be deterministic"
-        );
+        // Build status should be deterministic (either passed or failed)
+        let _ = verification.build_passed;
 
         // Property: Status message should not be empty
         assert!(
