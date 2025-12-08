@@ -119,6 +119,10 @@ impl IssueManager {
         let requirement_pattern = Regex::new(r"##\s+Requirement\s+(\d+):\s*(.+)")
             .map_err(|e| GitHubError::invalid_input(format!("Regex error: {}", e)))?;
 
+        // Compile criteria pattern once outside the loop
+        let criteria_pattern = Regex::new(r"- \[.\]\s+(.+)")
+            .map_err(|e| GitHubError::invalid_input(format!("Regex error: {}", e)))?;
+
         let matches: Vec<_> = requirement_pattern.captures_iter(issue_body).collect();
 
         for (idx, req_match) in matches.iter().enumerate() {
@@ -143,9 +147,6 @@ impl IssueManager {
                 .to_string();
 
             // Extract acceptance criteria (lines starting with "- ")
-            let criteria_pattern = Regex::new(r"- \[.\]\s+(.+)")
-                .map_err(|e| GitHubError::invalid_input(format!("Regex error: {}", e)))?;
-
             let acceptance_criteria: Vec<String> = criteria_pattern
                 .captures_iter(req_content)
                 .filter_map(|cap| cap.get(1).map(|m| m.as_str().to_string()))
@@ -154,8 +155,6 @@ impl IssueManager {
             // Extract priority if present
             let priority = if req_content.contains("Priority: HIGH") {
                 "HIGH".to_string()
-            } else if req_content.contains("Priority: MEDIUM") {
-                "MEDIUM".to_string()
             } else {
                 "MEDIUM".to_string()
             };
@@ -232,6 +231,8 @@ impl IssueManager {
         };
 
         let progress_bar = self.create_progress_bar(update.progress_percentage);
+        let status_str = format!("{:?}", update.status);
+        let timestamp = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC");
 
         format!(
             "{} **Progress Update**\n\n\
@@ -240,10 +241,10 @@ impl IssueManager {
              {}\n\n\
              _Updated at: {}_",
             status_emoji,
-            format!("{:?}", update.status),
+            status_str,
             progress_bar,
             update.message,
-            chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC")
+            timestamp
         )
     }
 

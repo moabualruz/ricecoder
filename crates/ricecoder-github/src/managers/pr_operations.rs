@@ -94,7 +94,7 @@ impl PrReview {
 }
 
 /// PR update options
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct PrUpdateOptions {
     /// New title (optional)
     pub title: Option<String>,
@@ -104,17 +104,6 @@ pub struct PrUpdateOptions {
     pub state: Option<PrStatus>,
     /// Draft status (optional)
     pub draft: Option<bool>,
-}
-
-impl Default for PrUpdateOptions {
-    fn default() -> Self {
-        Self {
-            title: None,
-            body: None,
-            state: None,
-            draft: None,
-        }
-    }
 }
 
 impl PrUpdateOptions {

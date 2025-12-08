@@ -174,7 +174,7 @@ impl CodeReviewOperations {
             "Posting code review suggestion"
         );
 
-        let mut comment = format!("**Code Review Suggestion**\n\n");
+        let mut comment = "**Code Review Suggestion**\n\n".to_string();
         comment.push_str(&format!("File: `{}`\n", file_path));
 
         if let Some(line) = line_number {

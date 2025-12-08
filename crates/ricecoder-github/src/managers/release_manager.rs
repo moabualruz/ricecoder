@@ -85,23 +85,9 @@ impl SemanticVersion {
         })
     }
 
-    /// Convert to string representation
-    pub fn to_string(&self) -> String {
-        let mut version = format!("{}.{}.{}", self.major, self.minor, self.patch);
-        if let Some(prerelease) = &self.prerelease {
-            version.push('-');
-            version.push_str(prerelease);
-        }
-        if let Some(build) = &self.build {
-            version.push('+');
-            version.push_str(build);
-        }
-        version
-    }
-
     /// Convert to tag format (with 'v' prefix)
     pub fn to_tag(&self) -> String {
-        format!("v{}", self.to_string())
+        format!("v{}", self)
     }
 
     /// Increment major version
@@ -140,7 +126,16 @@ impl SemanticVersion {
 
 impl std::fmt::Display for SemanticVersion {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.to_string())
+        let mut version = format!("{}.{}.{}", self.major, self.minor, self.patch);
+        if let Some(prerelease) = &self.prerelease {
+            version.push('-');
+            version.push_str(prerelease);
+        }
+        if let Some(build) = &self.build {
+            version.push('+');
+            version.push_str(build);
+        }
+        write!(f, "{}", version)
     }
 }
 

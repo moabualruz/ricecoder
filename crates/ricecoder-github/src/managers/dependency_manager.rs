@@ -240,11 +240,11 @@ impl DependencyManager {
                 continue;
             };
 
-            let risk_level = if !dep.vulnerabilities.is_empty() {
+            let risk_level = if !dep.vulnerabilities.is_empty()
+                || dep.latest_version.as_ref().is_some_and(|v| is_major_version_bump(&dep.current_version, v))
+            {
                 UpdateRiskLevel::High
-            } else if dep.latest_version.as_ref().map_or(false, |v| is_major_version_bump(&dep.current_version, v)) {
-                UpdateRiskLevel::High
-            } else if dep.latest_version.as_ref().map_or(false, |v| is_minor_version_bump(&dep.current_version, v)) {
+            } else if dep.latest_version.as_ref().is_some_and(|v| is_minor_version_bump(&dep.current_version, v)) {
                 UpdateRiskLevel::Medium
             } else {
                 UpdateRiskLevel::Low
@@ -295,7 +295,7 @@ impl DependencyManager {
             for vuln in &dep.vulnerabilities {
                 vulnerabilities_by_severity
                     .entry(vuln.severity)
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(vuln.clone());
             }
         }

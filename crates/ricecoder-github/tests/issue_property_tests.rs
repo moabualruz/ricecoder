@@ -161,7 +161,7 @@ proptest! {
 
         prop_assert!(result.is_ok());
         let requirements = result.unwrap();
-        prop_assert!(requirements.len() >= 1);
+        prop_assert!(!requirements.is_empty());
     }
 
     /// **Feature: ricecoder-github, Property 7: Issue Requirement Extraction**

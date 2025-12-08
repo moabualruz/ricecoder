@@ -119,37 +119,39 @@ impl ActionsOperations {
         }
 
         // Build the comment body
+        let findings = summary
+            .key_findings
+            .iter()
+            .map(|f| format!("- {}", f))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let recommendations = if summary.recommendations.is_empty() {
+            "No recommendations".to_string()
+        } else {
+            summary
+                .recommendations
+                .iter()
+                .map(|r| format!("- {}", r))
+                .collect::<Vec<_>>()
+                .join("\n")
+        };
         let body = format!(
             "## CI Results\n\n\
-             **Status**: {}\n\n\
+             **Status**: {:?}\n\n\
              **Jobs**: {} total, {} passed, {} failed, {} skipped\n\n\
              **Duration**: {} seconds\n\n\
              ### Key Findings\n\
              {}\n\n\
              ### Recommendations\n\
              {}",
-            format!("{:?}", summary.status),
+            summary.status,
             summary.total_jobs,
             summary.passed_jobs,
             summary.failed_jobs,
             summary.skipped_jobs,
             summary.duration_seconds,
-            summary
-                .key_findings
-                .iter()
-                .map(|f| format!("- {}", f))
-                .collect::<Vec<_>>()
-                .join("\n"),
-            if summary.recommendations.is_empty() {
-                "No recommendations".to_string()
-            } else {
-                summary
-                    .recommendations
-                    .iter()
-                    .map(|r| format!("- {}", r))
-                    .collect::<Vec<_>>()
-                    .join("\n")
-            }
+            findings,
+            recommendations
         );
 
         Ok(CiResultComment {

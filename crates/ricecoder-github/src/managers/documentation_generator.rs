@@ -291,7 +291,7 @@ impl DocumentationGenerator {
             if self.readme_config.include_license {
                 readme.push_str("- [License](#license)\n");
             }
-            readme.push_str("\n");
+            readme.push('\n');
         }
 
         // Installation
@@ -314,7 +314,7 @@ impl DocumentationGenerator {
         // API Documentation
         if self.readme_config.include_api && !self.api_docs.is_empty() {
             readme.push_str("## API Documentation\n\n");
-            for (_, api_doc) in &self.api_docs {
+            for api_doc in self.api_docs.values() {
                 readme.push_str(&format!("### {}\n\n", api_doc.name));
                 readme.push_str(&format!("```rust\n{}\n```\n\n", api_doc.signature));
                 if !api_doc.documentation.is_empty() {

@@ -421,7 +421,7 @@ impl CodeReviewAgent {
         }
 
         // Apply custom rules
-        for (rule_name, _rule) in &self.standards.custom_rules {
+        for rule_name in self.standards.custom_rules.keys() {
             debug!(rule = rule_name, "Applying custom rule");
         }
 
@@ -572,17 +572,10 @@ impl CodeReviewAgent {
 
         // Determine approval
         let should_approve = self.should_approve(&result)?;
-        let approval_reason = if should_approve {
-            Some(format!(
-                "Code quality score is {} (minimum: {})",
-                result.quality_score, self.standards.min_quality_score
-            ))
-        } else {
-            Some(format!(
-                "Code quality score is {} (minimum: {})",
-                result.quality_score, self.standards.min_quality_score
-            ))
-        };
+        let approval_reason = Some(format!(
+            "Code quality score is {} (minimum: {})",
+            result.quality_score, self.standards.min_quality_score
+        ));
 
         result = result.set_approved(should_approve, approval_reason);
 
