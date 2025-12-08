@@ -265,6 +265,50 @@ pub enum SessionsSubcommand {
         #[arg(value_name = "ID")]
         id: String,
     },
+
+    /// Share a session with a shareable link
+    #[command(about = "Generate a shareable link for the current session")]
+    Share {
+        /// Expiration time in seconds (optional)
+        #[arg(long)]
+        expires_in: Option<u64>,
+
+        /// Exclude conversation history from share
+        #[arg(long)]
+        no_history: bool,
+
+        /// Exclude project context from share
+        #[arg(long)]
+        no_context: bool,
+    },
+
+    /// List all active shares
+    #[command(about = "List all active shares for the current user")]
+    ShareList,
+
+    /// Revoke a share
+    #[command(about = "Revoke a share by ID")]
+    ShareRevoke {
+        /// Share ID to revoke
+        #[arg(value_name = "SHARE_ID")]
+        share_id: String,
+    },
+
+    /// Show share information
+    #[command(about = "Show detailed information about a share")]
+    ShareInfo {
+        /// Share ID
+        #[arg(value_name = "SHARE_ID")]
+        share_id: String,
+    },
+
+    /// View a shared session
+    #[command(about = "View a shared session by share ID")]
+    ShareView {
+        /// Share ID to view
+        #[arg(value_name = "SHARE_ID")]
+        share_id: String,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -448,6 +492,31 @@ impl CommandRouter {
                     }
                     Some(SessionsSubcommand::Info { id }) => {
                         sessions::SessionsAction::Info { id: id.clone() }
+                    }
+                    Some(SessionsSubcommand::Share {
+                        expires_in,
+                        no_history,
+                        no_context,
+                    }) => sessions::SessionsAction::Share {
+                        expires_in: *expires_in,
+                        no_history: *no_history,
+                        no_context: *no_context,
+                    },
+                    Some(SessionsSubcommand::ShareList) => sessions::SessionsAction::ShareList,
+                    Some(SessionsSubcommand::ShareRevoke { share_id }) => {
+                        sessions::SessionsAction::ShareRevoke {
+                            share_id: share_id.clone(),
+                        }
+                    }
+                    Some(SessionsSubcommand::ShareInfo { share_id }) => {
+                        sessions::SessionsAction::ShareInfo {
+                            share_id: share_id.clone(),
+                        }
+                    }
+                    Some(SessionsSubcommand::ShareView { share_id }) => {
+                        sessions::SessionsAction::ShareView {
+                            share_id: share_id.clone(),
+                        }
                     }
                 };
                 let cmd = SessionsCommand::new(sessions_action);

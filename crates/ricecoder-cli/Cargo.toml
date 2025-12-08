@@ -33,11 +33,14 @@ dirs = { workspace = true }
 term_size = { workspace = true }
 atty = "0.2"
 regex = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
 ricecoder-storage = { path = "../ricecoder-storage" }
 ricecoder-commands = { path = "../ricecoder-commands" }
 ricecoder-tui = { path = "../ricecoder-tui" }
 ricecoder-lsp = { path = "../ricecoder-lsp" }
 ricecoder-hooks = { path = "../ricecoder-hooks" }
+ricecoder-sessions = { path = "../ricecoder-sessions" }
 
 [dev-dependencies]
 proptest = { workspace = true }
