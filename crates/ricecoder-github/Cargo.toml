@@ -18,6 +18,9 @@ reqwest = { workspace = true }
 async-trait = { workspace = true }
 futures = { workspace = true }
 regex = "1.10"
+hmac = "0.12"
+sha2 = "0.10"
+hex = "0.4"
 
 ricecoder-storage = { path = "../ricecoder-storage" }
 ricecoder-files = { path = "../ricecoder-files" }

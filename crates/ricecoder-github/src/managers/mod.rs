@@ -2,6 +2,9 @@
 //!
 //! Specialized managers for different GitHub operations
 
+pub mod actions_integration;
+pub mod actions_operations;
+pub mod branch_manager;
 pub mod code_review_agent;
 pub mod code_review_operations;
 pub mod dependency_manager;
@@ -22,7 +25,22 @@ pub mod project_operations;
 pub mod release_manager;
 pub mod release_operations;
 pub mod repository_analyzer;
+pub mod webhook_handler;
+pub mod webhook_operations;
 
+pub use actions_integration::{
+    ActionsIntegration, CiFailureDiagnostics, CiResultSummary, JobStep, WorkflowJob,
+    WorkflowRetryResult, WorkflowRun, WorkflowStatus, WorkflowStatusResult, WorkflowTriggerRequest,
+    WorkflowTriggerResult,
+};
+pub use actions_operations::{
+    ActionsOperations, CiResultComment, WorkflowConfig, WorkflowConfigResult,
+    WorkflowIterationResult,
+};
+pub use branch_manager::{
+    BranchCreationResult, BranchDeletionResult, BranchInfo, BranchLifecycleResult,
+    BranchManager, BranchProtection,
+};
 pub use code_review_agent::{
     CodeQualityIssue, CodeReviewAgent, CodeReviewResult, CodeReviewStandards,
     CodeReviewSuggestion, IssueSeverity,
@@ -85,4 +103,12 @@ pub use release_operations::{
 };
 pub use repository_analyzer::{
     CodebaseSummary, CodePattern, RepositoryAnalysis, RepositoryAnalyzer,
+};
+pub use webhook_handler::{
+    EventFilter, WebhookEvent, WebhookEventType, WebhookHandler, WebhookHandlerConfig,
+    WebhookProcessingResult, WorkflowTrigger,
+};
+pub use webhook_operations::{
+    WebhookErrorDetails, WebhookErrorHandlingResult, WebhookEventLogger, WebhookEventLogEntry,
+    WebhookEventStatistics, WebhookOperations, WebhookRetryConfig,
 };
