@@ -1,0 +1,29 @@
+[package]
+name = "ricecoder-github"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+tokio = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+tracing = { workspace = true }
+chrono = { workspace = true }
+octocrab = "0.32"
+reqwest = { workspace = true }
+async-trait = { workspace = true }
+futures = { workspace = true }
+regex = "1.10"
+
+ricecoder-storage = { path = "../ricecoder-storage" }
+ricecoder-files = { path = "../ricecoder-files" }
+
+[dev-dependencies]
+proptest = { workspace = true }
+tokio-test = { workspace = true }
+tempfile = { workspace = true }
+mockito = { workspace = true }

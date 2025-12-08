@@ -28,6 +28,7 @@ members = [
     "crates/ricecoder-mcp",
     "crates/ricecoder-tools",
     "crates/ricecoder-undo-redo",
+    "crates/ricecoder-github",
 ]
 resolver = "2"
 
@@ -83,3 +84,4 @@ tree-sitter-typescript = "0.20"
 tree-sitter-python = "0.20"
 jsonschema = "0.18"
 url = "2.5"
+octocrab = "0.32"

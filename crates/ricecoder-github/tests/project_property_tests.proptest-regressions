@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc d296955824b6cf024ab088670bdb58e3ca873eb37865276cfd6634607570a129 # shrinks to project_id = 1, project_name = "_", issue = Issue { id: 1, number: 1, title: "a", body: "a", labels: [], assignees: [], status: Open, created_at: 2025-12-08T15:31:08.665781Z, updated_at: 2025-12-08T15:31:08.665781500Z }
