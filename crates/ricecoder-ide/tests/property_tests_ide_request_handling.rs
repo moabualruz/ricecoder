@@ -246,7 +246,7 @@ proptest! {
             insert_text: insert_text.clone(),
         };
 
-        let formatted = ResponseFormatter::format_completions(&[item.clone()]);
+        let formatted = ResponseFormatter::format_completions(std::slice::from_ref(&item));
 
         // Verify formatting produces valid JSON
         prop_assert!(formatted.get("items").is_some(), "Formatted response should have items");

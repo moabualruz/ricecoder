@@ -385,7 +385,7 @@ mod tests {
 
         let result = provider.get_completions(&params).await;
         assert!(result.is_ok());
-        assert!(result.unwrap().len() > 0);
+        assert!(!result.unwrap().is_empty());
     }
 
     #[tokio::test]
@@ -410,7 +410,7 @@ mod tests {
 
         let result = provider.get_completions(&params).await;
         assert!(result.is_ok());
-        assert!(result.unwrap().len() > 0);
+        assert!(!result.unwrap().is_empty());
     }
 
     #[tokio::test]
@@ -436,7 +436,7 @@ mod tests {
 
         let result = provider.get_completions(&params).await;
         assert!(result.is_ok());
-        assert!(result.unwrap().len() > 0);
+        assert!(!result.unwrap().is_empty());
     }
 
     #[tokio::test]

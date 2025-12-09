@@ -1,6 +1,5 @@
 /// Editor-specific configuration module
 /// Handles loading and managing configuration for vim, neovim, and emacs
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;

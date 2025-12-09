@@ -207,7 +207,7 @@ mod tests {
         let result = provider.get_completions(&params).await;
         assert!(result.is_ok());
         let completions = result.unwrap();
-        assert!(completions.len() > 0);
+        assert!(!completions.is_empty());
         assert!(completions.iter().any(|c| c.label == "hello"));
     }
 
@@ -223,7 +223,7 @@ mod tests {
         let result = provider.get_diagnostics(&params).await;
         assert!(result.is_ok());
         let diagnostics = result.unwrap();
-        assert!(diagnostics.len() > 0);
+        assert!(!diagnostics.is_empty());
         assert!(diagnostics[0].severity == DiagnosticSeverity::Error);
     }
 
@@ -239,7 +239,7 @@ mod tests {
         let result = provider.get_diagnostics(&params).await;
         assert!(result.is_ok());
         let diagnostics = result.unwrap();
-        assert!(diagnostics.len() > 0);
+        assert!(!diagnostics.is_empty());
         assert!(diagnostics.iter().any(|d| d.message.contains("Trailing whitespace")));
     }
 

@@ -21,7 +21,7 @@ pub enum IdeType {
 
 impl IdeType {
     /// Parse IDE type from string
-    pub fn from_str(s: &str) -> Self {
+    pub fn parse(s: &str) -> Self {
         match s.to_lowercase().as_str() {
             "vscode" | "vs-code" | "vs_code" => IdeType::VsCode,
             "vim" | "neovim" | "nvim" => IdeType::Vim,
@@ -383,12 +383,12 @@ mod tests {
 
     #[test]
     fn test_ide_type_from_str() {
-        assert_eq!(IdeType::from_str("vscode"), IdeType::VsCode);
-        assert_eq!(IdeType::from_str("vs-code"), IdeType::VsCode);
-        assert_eq!(IdeType::from_str("vim"), IdeType::Vim);
-        assert_eq!(IdeType::from_str("neovim"), IdeType::Vim);
-        assert_eq!(IdeType::from_str("emacs"), IdeType::Emacs);
-        assert_eq!(IdeType::from_str("unknown"), IdeType::Unknown);
+        assert_eq!(IdeType::parse("vscode"), IdeType::VsCode);
+        assert_eq!(IdeType::parse("vs-code"), IdeType::VsCode);
+        assert_eq!(IdeType::parse("vim"), IdeType::Vim);
+        assert_eq!(IdeType::parse("neovim"), IdeType::Vim);
+        assert_eq!(IdeType::parse("emacs"), IdeType::Emacs);
+        assert_eq!(IdeType::parse("unknown"), IdeType::Unknown);
     }
 
     #[test]
