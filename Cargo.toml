@@ -5,12 +5,12 @@ edition.workspace = true
 publish = false
 
 [dependencies]
-ricecoder-lsp = { path = "crates/ricecoder-lsp" }
-ricecoder-storage = { path = "crates/ricecoder-storage" }
-ricecoder-refactoring = { path = "crates/ricecoder-refactoring" }
-ricecoder-generation = { path = "crates/ricecoder-generation" }
-ricecoder-learning = { path = "crates/ricecoder-learning" }
-ricecoder-tui = { path = "crates/ricecoder-tui" }
+ricecoder-lsp = { path = "crates/ricecoder-lsp", version = "0.1" }
+ricecoder-storage = { path = "crates/ricecoder-storage", version = "0.1" }
+ricecoder-refactoring = { path = "crates/ricecoder-refactoring", version = "0.1" }
+ricecoder-generation = { path = "crates/ricecoder-generation", version = "0.1" }
+ricecoder-learning = { path = "crates/ricecoder-learning", version = "0.1" }
+ricecoder-tui = { path = "crates/ricecoder-tui", version = "0.1" }
 tokio = { workspace = true }
 serde_json = { workspace = true }
 proptest = { workspace = true }
