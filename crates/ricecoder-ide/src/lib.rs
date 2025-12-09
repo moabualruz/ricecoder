@@ -44,6 +44,7 @@
 
 pub mod builtin_provider;
 pub mod config;
+pub mod config_hot_reload;
 pub mod configured_rules_provider;
 pub mod error;
 pub mod external_lsp_provider;
@@ -57,6 +58,7 @@ pub mod types;
 
 pub use builtin_provider::{PythonProvider, RustProvider, TypeScriptProvider};
 pub use config::ConfigManager;
+pub use config_hot_reload::ConfigHotReloadCoordinator;
 pub use configured_rules_provider::ConfiguredRulesProvider;
 pub use error::IdeError;
 pub use external_lsp_provider::ExternalLspProvider;

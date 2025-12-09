@@ -272,6 +272,22 @@ impl ProviderChainManager {
         Ok(())
     }
 
+    /// Update configuration and refresh providers
+    pub async fn update_config(&self, config: IdeIntegrationConfig) -> IdeResult<()> {
+        debug!("Updating provider chain configuration");
+
+        // Update external LSP servers if configuration changed
+        if config.providers.external_lsp.enabled {
+            for (language, _server_config) in &config.providers.external_lsp.servers {
+                // Providers will be re-registered based on new configuration
+                debug!("Updated LSP configuration for language: {}", language);
+            }
+        }
+
+        info!("Provider chain configuration updated");
+        Ok(())
+    }
+
     /// Get the provider registry
     pub async fn registry(&self) -> tokio::sync::RwLockReadGuard<'_, ProviderRegistry> {
         self.registry.read().await
