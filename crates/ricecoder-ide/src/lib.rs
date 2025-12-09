@@ -54,6 +54,7 @@ pub mod lsp_monitor;
 pub mod manager;
 pub mod provider;
 pub mod provider_chain;
+pub mod response_formatter;
 pub mod types;
 
 pub use builtin_provider::{PythonProvider, RustProvider, TypeScriptProvider};
@@ -68,4 +69,5 @@ pub use lsp_monitor::{LspMonitor, LspHealthStatus};
 pub use manager::IdeIntegrationManager;
 pub use provider::{IdeProvider, ProviderChain};
 pub use provider_chain::{ProviderChainManager, ProviderRegistry};
+pub use response_formatter::ResponseFormatter;
 pub use types::*;

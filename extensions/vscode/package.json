@@ -1,0 +1,130 @@
+{
+  "name": "ricecoder",
+  "displayName": "RiceCoder",
+  "description": "AI-powered code assistance with IDE integration",
+  "version": "0.1.0",
+  "publisher": "ricecoder",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "AI",
+    "Code Completion",
+    "Linters",
+    "Other"
+  ],
+  "keywords": [
+    "ai",
+    "code-generation",
+    "code-completion",
+    "lsp",
+    "refactoring"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ricecoder.chat",
+        "title": "RiceCoder: Chat",
+        "category": "RiceCoder"
+      },
+      {
+        "command": "ricecoder.review",
+        "title": "RiceCoder: Review Code",
+        "category": "RiceCoder"
+      },
+      {
+        "command": "ricecoder.generate",
+        "title": "RiceCoder: Generate Code",
+        "category": "RiceCoder"
+      },
+      {
+        "command": "ricecoder.refactor",
+        "title": "RiceCoder: Refactor",
+        "category": "RiceCoder"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "ricecoder.chat",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r",
+        "when": "editorTextFocus"
+      }
+    ],
+    "configuration": {
+      "title": "RiceCoder",
+      "properties": {
+        "ricecoder.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable RiceCoder extension"
+        },
+        "ricecoder.serverPort": {
+          "type": "number",
+          "default": 9000,
+          "description": "Port for RiceCoder server communication"
+        },
+        "ricecoder.serverHost": {
+          "type": "string",
+          "default": "localhost",
+          "description": "Host for RiceCoder server communication"
+        },
+        "ricecoder.completionEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable code completion provider"
+        },
+        "ricecoder.diagnosticsEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable diagnostics provider"
+        },
+        "ricecoder.hoverEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable hover provider"
+        },
+        "ricecoder.requestTimeout": {
+          "type": "number",
+          "default": 5000,
+          "description": "Request timeout in milliseconds"
+        },
+        "ricecoder.providerSelection": {
+          "type": "string",
+          "enum": [
+            "lsp-first",
+            "configured-rules",
+            "builtin",
+            "generic"
+          ],
+          "default": "lsp-first",
+          "description": "Provider selection strategy"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "vscode-jsonrpc": "^8.0.0"
+  }
+}

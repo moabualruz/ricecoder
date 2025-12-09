@@ -15,6 +15,11 @@ use tracing::debug;
 pub struct GenericProvider;
 
 impl GenericProvider {
+    /// Create a new generic provider
+    pub fn new() -> Self {
+        GenericProvider
+    }
+
     /// Extract words from context
     fn extract_words(text: &str) -> Vec<String> {
         text.split(|c: char| !c.is_alphanumeric() && c != '_')

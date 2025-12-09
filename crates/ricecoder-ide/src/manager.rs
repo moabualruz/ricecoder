@@ -1,18 +1,24 @@
 //! IDE Integration Manager
 
 use crate::error::{IdeError, IdeResult};
+use crate::provider_chain::ProviderChainManager;
 use crate::types::*;
+use std::sync::Arc;
 use tracing::{debug, info};
 
 /// IDE Integration Manager
 pub struct IdeIntegrationManager {
     config: IdeIntegrationConfig,
+    provider_chain: Arc<ProviderChainManager>,
 }
 
 impl IdeIntegrationManager {
     /// Create a new IDE Integration Manager
-    pub fn new(config: IdeIntegrationConfig) -> Self {
-        IdeIntegrationManager { config }
+    pub fn new(config: IdeIntegrationConfig, provider_chain: Arc<ProviderChainManager>) -> Self {
+        IdeIntegrationManager {
+            config,
+            provider_chain,
+        }
     }
 
     /// Handle completion request
@@ -38,8 +44,8 @@ impl IdeIntegrationManager {
             ));
         }
 
-        // Return empty completions for now (will be implemented with provider chain)
-        Ok(vec![])
+        // Route through provider chain
+        self.provider_chain.get_completions(params).await
     }
 
     /// Handle diagnostics request
@@ -65,8 +71,8 @@ impl IdeIntegrationManager {
             ));
         }
 
-        // Return empty diagnostics for now (will be implemented with provider chain)
-        Ok(vec![])
+        // Route through provider chain
+        self.provider_chain.get_diagnostics(params).await
     }
 
     /// Handle hover request
@@ -86,8 +92,8 @@ impl IdeIntegrationManager {
             ));
         }
 
-        // Return None for now (will be implemented with provider chain)
-        Ok(None)
+        // Route through provider chain
+        self.provider_chain.get_hover(params).await
     }
 
     /// Handle definition request
@@ -113,8 +119,8 @@ impl IdeIntegrationManager {
             ));
         }
 
-        // Return None for now (will be implemented with provider chain)
-        Ok(None)
+        // Route through provider chain
+        self.provider_chain.get_definition(params).await
     }
 
     /// Establish connection with IDE
@@ -202,6 +208,8 @@ impl IdeIntegrationManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::generic_provider::GenericProvider;
+    use crate::provider_chain::ProviderRegistry;
 
     fn create_test_config() -> IdeIntegrationConfig {
         IdeIntegrationConfig {
@@ -236,10 +244,17 @@ mod tests {
         }
     }
 
+    fn create_test_manager() -> IdeIntegrationManager {
+        let config = create_test_config();
+        let generic_provider = Arc::new(GenericProvider::new());
+        let registry = ProviderRegistry::new(generic_provider);
+        let provider_chain = Arc::new(crate::provider_chain::ProviderChainManager::new(registry));
+        IdeIntegrationManager::new(config, provider_chain)
+    }
+
     #[tokio::test]
     async fn test_handle_completion_request_valid() {
-        let config = create_test_config();
-        let manager = IdeIntegrationManager::new(config);
+        let manager = create_test_manager();
 
         let params = CompletionParams {
             language: "rust".to_string(),
@@ -257,8 +272,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_handle_completion_request_empty_language() {
-        let config = create_test_config();
-        let manager = IdeIntegrationManager::new(config);
+        let manager = create_test_manager();
 
         let params = CompletionParams {
             language: "".to_string(),
@@ -276,8 +290,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_handle_completion_request_empty_file_path() {
-        let config = create_test_config();
-        let manager = IdeIntegrationManager::new(config);
+        let manager = create_test_manager();
 
         let params = CompletionParams {
             language: "rust".to_string(),
@@ -294,9 +307,56 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_handle_diagnostics_request_valid() {
+        let manager = create_test_manager();
+
+        let params = DiagnosticsParams {
+            language: "rust".to_string(),
+            file_path: "src/main.rs".to_string(),
+            source: "fn test() {}".to_string(),
+        };
+
+        let result = manager.handle_diagnostics_request(&params).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_hover_request_valid() {
+        let manager = create_test_manager();
+
+        let params = HoverParams {
+            language: "rust".to_string(),
+            file_path: "src/main.rs".to_string(),
+            position: Position {
+                line: 10,
+                character: 5,
+            },
+        };
+
+        let result = manager.handle_hover_request(&params).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_definition_request_valid() {
+        let manager = create_test_manager();
+
+        let params = DefinitionParams {
+            language: "rust".to_string(),
+            file_path: "src/main.rs".to_string(),
+            position: Position {
+                line: 10,
+                character: 5,
+            },
+        };
+
+        let result = manager.handle_definition_request(&params).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
     async fn test_establish_vscode_connection() {
-        let config = create_test_config();
-        let manager = IdeIntegrationManager::new(config);
+        let manager = create_test_manager();
 
         let result = manager.establish_connection("vscode").await;
         assert!(result.is_ok());
@@ -304,8 +364,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_establish_vim_connection() {
-        let config = create_test_config();
-        let manager = IdeIntegrationManager::new(config);
+        let manager = create_test_manager();
 
         let result = manager.establish_connection("vim").await;
         assert!(result.is_ok());
@@ -313,8 +372,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_establish_emacs_connection() {
-        let config = create_test_config();
-        let manager = IdeIntegrationManager::new(config);
+        let manager = create_test_manager();
 
         let result = manager.establish_connection("emacs").await;
         assert!(result.is_ok());
@@ -322,8 +380,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_establish_unknown_ide_connection() {
-        let config = create_test_config();
-        let manager = IdeIntegrationManager::new(config);
+        let manager = create_test_manager();
 
         let result = manager.establish_connection("unknown").await;
         assert!(result.is_err());
@@ -331,8 +388,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_close_connection() {
-        let config = create_test_config();
-        let manager = IdeIntegrationManager::new(config);
+        let manager = create_test_manager();
 
         let result = manager.close_connection("vscode").await;
         assert!(result.is_ok());
