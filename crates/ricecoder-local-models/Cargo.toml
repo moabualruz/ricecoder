@@ -5,6 +5,9 @@ edition = "2021"
 authors = ["RiceCoder Contributors"]
 description = "Local model management for RiceCoder (Ollama integration)"
 license = "MIT"
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
 
 [lib]
 name = "ricecoder_local_models"
@@ -22,8 +25,8 @@ reqwest = { version = "0.11", features = ["json"] }
 futures = "0.3"
 chrono = { version = "0.4", features = ["serde"] }
 
-ricecoder-providers = { path = "../ricecoder-providers" }
-ricecoder-storage = { path = "../ricecoder-storage" }
+ricecoder-providers = { path = "../ricecoder-providers", version = "0" }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0" }
 
 [dev-dependencies]
 proptest = "1.4"
@@ -31,3 +34,7 @@ tokio-test = "0.4"
 tempfile = "3.8"
 mockito = "1.2"
 serial_test = "3.0"
+
+
+
+

@@ -1,9 +1,13 @@
 [package]
 name = "ricecoder-undo-redo"
+description = "Undo/redo system for state management"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
 
 [dependencies]
 uuid = { workspace = true }
@@ -18,3 +22,6 @@ tracing = { workspace = true }
 proptest = { workspace = true }
 tokio-test = { workspace = true }
 tempfile = { workspace = true }
+
+
+

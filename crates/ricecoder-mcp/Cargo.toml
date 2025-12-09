@@ -1,9 +1,13 @@
 [package]
 name = "ricecoder-mcp"
+description = "Model Context Protocol server implementation"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
 
 [dependencies]
 serde = { workspace = true }
@@ -18,10 +22,10 @@ anyhow = { workspace = true }
 chrono = { version = "0.4", features = ["serde"] }
 
 # For ricecoder integration
-ricecoder-storage = { path = "../ricecoder-storage" }
-ricecoder-permissions = { path = "../ricecoder-permissions" }
-ricecoder-agents = { path = "../ricecoder-agents" }
-ricecoder-files = { path = "../ricecoder-files" }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0" }
+ricecoder-permissions = { path = "../ricecoder-permissions", version = "0" }
+ricecoder-agents = { path = "../ricecoder-agents", version = "0" }
+ricecoder-files = { path = "../ricecoder-files", version = "0" }
 
 [dev-dependencies]
 proptest = { workspace = true }
@@ -32,3 +36,8 @@ criterion = { version = "0.5", features = ["html_reports"] }
 [[bench]]
 name = "performance_benchmarks"
 harness = false
+
+
+
+
+

@@ -2899,29 +2899,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ricecoder-agents"
-version = "0.6.0"
-dependencies = [
- "async-trait",
- "chrono",
- "futures",
- "jsonschema",
- "proptest",
- "ricecoder-providers",
- "ricecoder-storage",
- "serde",
- "serde_json",
- "serde_yaml",
- "tempfile",
- "thiserror 1.0.69",
- "tokio",
- "tokio-test",
- "tracing",
- "uuid",
-]
-
-[[package]]
-name = "ricecoder-cli"
+name = "ricecoder"
 version = "0.6.0"
 dependencies = [
  "anyhow",
@@ -2952,6 +2930,28 @@ dependencies = [
  "tokio-test",
  "tracing",
  "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
+name = "ricecoder-agents"
+version = "0.6.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "futures",
+ "jsonschema",
+ "proptest",
+ "ricecoder-providers",
+ "ricecoder-storage",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-test",
+ "tracing",
  "uuid",
 ]
 

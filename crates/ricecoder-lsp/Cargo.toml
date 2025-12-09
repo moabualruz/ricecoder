@@ -4,6 +4,9 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
 description = "Language Server Protocol integration for RiceCoder"
 
 [lib]
@@ -26,12 +29,16 @@ tree-sitter-typescript = "0.20"
 tree-sitter-python = "0.20"
 regex = { workspace = true }
 chrono = { workspace = true }
-ricecoder-storage = { path = "../ricecoder-storage" }
-ricecoder-completion = { path = "../ricecoder-completion" }
-ricecoder-refactoring = { path = "../ricecoder-refactoring" }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0" }
+ricecoder-completion = { path = "../ricecoder-completion", version = "0" }
+ricecoder-refactoring = { path = "../ricecoder-refactoring", version = "0" }
 
 [dev-dependencies]
 proptest = { workspace = true }
 tokio-test = { workspace = true }
 tempfile = { workspace = true }
 itertools = { workspace = true }
+
+
+
+

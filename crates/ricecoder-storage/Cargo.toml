@@ -5,6 +5,9 @@ edition = "2021"
 authors = ["RiceCoder Contributors"]
 description = "Storage and configuration management for RiceCoder"
 license = "MIT"
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
 
 [lib]
 name = "ricecoder_storage"
@@ -28,3 +31,4 @@ proptest = "1.4"
 tokio-test = "0.4"
 tempfile = "3.8"
 lazy_static = "1.4"
+

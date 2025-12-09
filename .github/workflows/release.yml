@@ -95,6 +95,8 @@ jobs:
         run: |
           mkdir -p release
           cp target/${{ matrix.target }}/release/ricecoder release/ricecoder
+          cp README.md release/README.md
+          cp LICENSE.md release/LICENSE.md
           chmod +x release/ricecoder
         working-directory: projects/ricecoder
 
@@ -103,6 +105,8 @@ jobs:
         run: |
           mkdir -p release
           copy target\${{ matrix.target }}\release\ricecoder.exe release\ricecoder.exe
+          copy README.md release\README.md
+          copy LICENSE.md release\LICENSE.md
         working-directory: projects/ricecoder
         shell: cmd
 
@@ -110,7 +114,7 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           cd release
-          tar czf ricecoder-${{ matrix.target }}.tar.gz ricecoder
+          tar czf ricecoder-${{ matrix.target }}.tar.gz ricecoder README.md LICENSE.md
           ls -lh ricecoder-${{ matrix.target }}.tar.gz
         working-directory: projects/ricecoder
 
@@ -118,7 +122,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           cd release
-          powershell -Command "Compress-Archive -Path ricecoder.exe -DestinationPath ricecoder-${{ matrix.target }}.zip"
+          powershell -Command "Compress-Archive -Path ricecoder.exe, README.md, LICENSE.md -DestinationPath ricecoder-${{ matrix.target }}.zip"
           dir ricecoder-${{ matrix.target }}.zip
         working-directory: projects/ricecoder
 

@@ -1,9 +1,13 @@
 [package]
 name = "ricecoder-generation"
+description = "Code generation engine with template support"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
 
 [dependencies]
 handlebars = "5.0"
@@ -18,9 +22,9 @@ tokio = { workspace = true }
 uuid = { version = "1.0", features = ["v4", "serde"] }
 futures = "0.3"
 chrono = { workspace = true }
-ricecoder-specs = { path = "../ricecoder-specs" }
-ricecoder-providers = { path = "../ricecoder-providers" }
-ricecoder-storage = { path = "../ricecoder-storage" }
+ricecoder-specs = { path = "../ricecoder-specs", version = "0" }
+ricecoder-providers = { path = "../ricecoder-providers", version = "0" }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0" }
 
 [dev-dependencies]
 proptest = { workspace = true }
@@ -28,3 +32,8 @@ tokio-test = { workspace = true }
 tempfile = { workspace = true }
 chrono = { workspace = true }
 lazy_static = "1.4"
+
+
+
+
+

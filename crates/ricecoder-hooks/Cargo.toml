@@ -4,6 +4,9 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
 description = "Event-driven hooks system for RiceCoder"
 
 [lib]
@@ -11,7 +14,7 @@ name = "ricecoder_hooks"
 path = "src/lib.rs"
 
 [dependencies]
-ricecoder-storage = { path = "../ricecoder-storage" }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
@@ -26,3 +29,7 @@ chrono = { workspace = true }
 proptest = { workspace = true }
 tokio-test = { workspace = true }
 tempfile = { workspace = true }
+
+
+
+

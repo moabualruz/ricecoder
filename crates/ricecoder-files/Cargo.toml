@@ -1,9 +1,13 @@
 [package]
 name = "ricecoder-files"
+description = "File system operations and management utilities"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
 
 [dependencies]
 tokio = { workspace = true }
@@ -22,3 +26,6 @@ fxhash = "0.2"
 proptest = { workspace = true }
 tokio-test = { workspace = true }
 tempfile = { workspace = true }
+
+
+

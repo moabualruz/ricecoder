@@ -1,9 +1,13 @@
 [package]
 name = "ricecoder-agents"
+description = "Multi-agent framework for specialized task execution"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
 
 [dependencies]
 async-trait.workspace = true
@@ -16,8 +20,8 @@ futures.workspace = true
 chrono.workspace = true
 uuid.workspace = true
 
-ricecoder-storage = { path = "../ricecoder-storage" }
-ricecoder-providers = { path = "../ricecoder-providers" }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0" }
+ricecoder-providers = { path = "../ricecoder-providers", version = "0" }
 jsonschema.workspace = true
 serde_yaml.workspace = true
 
@@ -25,3 +29,8 @@ serde_yaml.workspace = true
 proptest.workspace = true
 tokio-test.workspace = true
 tempfile.workspace = true
+
+
+
+
+

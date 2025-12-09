@@ -4,6 +4,9 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
 description = "External Language Server Protocol (LSP) integration for RiceCoder"
 
 [lib]
@@ -23,12 +26,16 @@ async-trait = { workspace = true }
 regex = { workspace = true }
 chrono = { workspace = true }
 dirs = "5.0"
-ricecoder-storage = { path = "../ricecoder-storage" }
-ricecoder-lsp = { path = "../ricecoder-lsp" }
-ricecoder-completion = { path = "../ricecoder-completion" }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0" }
+ricecoder-lsp = { path = "../ricecoder-lsp", version = "0" }
+ricecoder-completion = { path = "../ricecoder-completion", version = "0" }
 
 [dev-dependencies]
 proptest = { workspace = true }
 tokio-test = { workspace = true }
 tempfile = { workspace = true }
 itertools = { workspace = true }
+
+
+
+

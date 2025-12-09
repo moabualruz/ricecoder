@@ -4,6 +4,9 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
 description = "Code completion engine for RiceCoder with language-agnostic architecture"
 
 [lib]
@@ -26,10 +29,14 @@ tree-sitter-typescript = "0.20"
 tree-sitter-python = "0.20"
 regex = { workspace = true }
 chrono = { workspace = true }
-ricecoder-storage = { path = "../ricecoder-storage" }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0" }
 
 [dev-dependencies]
 proptest = { workspace = true }
 tokio-test = { workspace = true }
 tempfile = { workspace = true }
 itertools = { workspace = true }
+
+
+
+

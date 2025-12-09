@@ -39,6 +39,11 @@ version = "0.6.0"
 edition = "2021"
 authors = ["RiceCoder Contributors"]
 license = "MIT"
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
+keywords = ["ai", "coding", "assistant", "cli", "spec-driven"]
+categories = ["command-line-utilities", "development-tools"]
 
 [workspace.dependencies]
 serde = { version = "1.0", features = ["derive"] }

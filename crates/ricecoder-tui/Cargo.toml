@@ -4,6 +4,9 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
 description = "Terminal User Interface for RiceCoder"
 
 [[bin]]
@@ -29,9 +32,13 @@ colored = { workspace = true }
 dirs = { workspace = true }
 arboard = { workspace = true }
 chrono = { workspace = true }
-ricecoder-sessions = { path = "../ricecoder-sessions" }
+ricecoder-sessions = { path = "../ricecoder-sessions", version = "0" }
 
 [dev-dependencies]
 proptest = { workspace = true }
 tokio-test = { workspace = true }
 tempfile = { workspace = true }
+
+
+
+

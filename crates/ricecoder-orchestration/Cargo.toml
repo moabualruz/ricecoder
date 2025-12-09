@@ -5,6 +5,9 @@ edition = "2021"
 authors = ["RiceCoder Contributors"]
 description = "Multi-project orchestration and workspace management for RiceCoder"
 license = "MIT"
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
 
 [lib]
 name = "ricecoder_orchestration"
@@ -21,10 +24,14 @@ anyhow = "1.0"
 uuid = { version = "1.0", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 dirs = "5.0"
-ricecoder-storage = { path = "../ricecoder-storage" }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0" }
 
 [dev-dependencies]
 proptest = "1.4"
 tokio-test = "0.4"
 tempfile = "3.8"
 rand = "0.8"
+
+
+
+
