@@ -26,10 +26,6 @@ export class CompletionProvider implements vscode.CompletionItemProvider {
 				return null;
 			}
 
-			// Get the word at the current position
-			const wordRange = document.getWordRangeAtPosition(position);
-			const prefix = wordRange ? document.getText(wordRange) : '';
-
 			// Get context around the cursor
 			const lineStart = new vscode.Position(position.line, 0);
 			const lineEnd = new vscode.Position(position.line, position.character);
@@ -75,12 +71,13 @@ export class CompletionProvider implements vscode.CompletionItemProvider {
 		token: vscode.CancellationToken
 	): Promise<vscode.CompletionItem> {
 		try {
-			if (!this.client.isConnected() || !item.data) {
+			const itemWithData = item as vscode.CompletionItem & { data?: unknown };
+			if (!this.client.isConnected() || !itemWithData.data) {
 				return item;
 			}
 
 			// Request additional details from backend
-			const result = await this.client.request('completion/resolve', item.data);
+			const result = await this.client.request('completion/resolve', itemWithData.data);
 
 			if (token.isCancellationRequested) {
 				return item;
@@ -120,7 +117,7 @@ export class CompletionProvider implements vscode.CompletionItemProvider {
 				: undefined;
 			completionItem.sortText = data.sort_text ? String(data.sort_text) : undefined;
 			completionItem.filterText = data.filter_text ? String(data.filter_text) : undefined;
-			completionItem.data = data;
+			(completionItem as vscode.CompletionItem & { data?: unknown }).data = data;
 
 			// Handle snippet expansion
 			if (data.insert_text && String(data.insert_text).includes('$')) {

@@ -29,23 +29,39 @@
     "commands": [
       {
         "command": "ricecoder.chat",
-        "title": "RiceCoder: Chat",
-        "category": "RiceCoder"
+        "title": "Chat with RiceCoder",
+        "category": "RiceCoder",
+        "description": "Open chat interface to ask RiceCoder questions about your code"
       },
       {
         "command": "ricecoder.review",
-        "title": "RiceCoder: Review Code",
-        "category": "RiceCoder"
+        "title": "Review Code",
+        "category": "RiceCoder",
+        "description": "Get AI-powered code review and suggestions for the current file"
       },
       {
         "command": "ricecoder.generate",
-        "title": "RiceCoder: Generate Code",
-        "category": "RiceCoder"
+        "title": "Generate Code",
+        "category": "RiceCoder",
+        "description": "Generate code based on your description"
       },
       {
         "command": "ricecoder.refactor",
-        "title": "RiceCoder: Refactor",
-        "category": "RiceCoder"
+        "title": "Refactor Code",
+        "category": "RiceCoder",
+        "description": "Refactor selected code with various refactoring options"
+      },
+      {
+        "command": "ricecoder.help",
+        "title": "Show Commands",
+        "category": "RiceCoder",
+        "description": "Show all available RiceCoder commands"
+      },
+      {
+        "command": "ricecoder.shortcuts",
+        "title": "Show Keyboard Shortcuts",
+        "category": "RiceCoder",
+        "description": "Show all RiceCoder keyboard shortcuts"
       }
     ],
     "keybindings": [
@@ -53,9 +69,79 @@
         "command": "ricecoder.chat",
         "key": "ctrl+shift+r",
         "mac": "cmd+shift+r",
-        "when": "editorTextFocus"
+        "when": "editorTextFocus",
+        "description": "Open RiceCoder chat"
+      },
+      {
+        "command": "ricecoder.review",
+        "key": "ctrl+shift+e",
+        "mac": "cmd+shift+e",
+        "when": "editorTextFocus",
+        "description": "Review code with RiceCoder"
+      },
+      {
+        "command": "ricecoder.generate",
+        "key": "ctrl+shift+g",
+        "mac": "cmd+shift+g",
+        "when": "editorTextFocus",
+        "description": "Generate code with RiceCoder"
+      },
+      {
+        "command": "ricecoder.refactor",
+        "key": "ctrl+shift+f",
+        "mac": "cmd+shift+f",
+        "when": "editorTextFocus",
+        "description": "Refactor code with RiceCoder"
       }
     ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "ricecoder.chat",
+          "group": "ricecoder@1",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "ricecoder.review",
+          "group": "ricecoder@2",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "ricecoder.generate",
+          "group": "ricecoder@3",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "ricecoder.refactor",
+          "group": "ricecoder@4",
+          "when": "editorTextFocus && editorHasSelection"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "ricecoder.chat",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "ricecoder.review",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "ricecoder.generate",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "ricecoder.refactor",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "ricecoder.help"
+        },
+        {
+          "command": "ricecoder.shortcuts"
+        }
+      ]
+    },
     "configuration": {
       "title": "RiceCoder",
       "properties": {
@@ -67,12 +153,14 @@
         "ricecoder.serverPort": {
           "type": "number",
           "default": 9000,
-          "description": "Port for RiceCoder server communication"
+          "minimum": 1,
+          "maximum": 65535,
+          "description": "Port for RiceCoder server communication (1-65535)"
         },
         "ricecoder.serverHost": {
           "type": "string",
           "default": "localhost",
-          "description": "Host for RiceCoder server communication"
+          "description": "Host for RiceCoder server communication (e.g., localhost, 127.0.0.1, or hostname)"
         },
         "ricecoder.completionEnabled": {
           "type": "boolean",
@@ -92,7 +180,9 @@
         "ricecoder.requestTimeout": {
           "type": "number",
           "default": 5000,
-          "description": "Request timeout in milliseconds"
+          "minimum": 100,
+          "maximum": 300000,
+          "description": "Request timeout in milliseconds (100-300000)"
         },
         "ricecoder.providerSelection": {
           "type": "string",
@@ -103,7 +193,23 @@
             "generic"
           ],
           "default": "lsp-first",
-          "description": "Provider selection strategy"
+          "description": "Provider selection strategy: lsp-first (query LSP first), configured-rules (use YAML/JSON rules), builtin (use built-in providers), generic (use generic text-based features)"
+        },
+        "ricecoder.debugMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable debug mode for detailed logging"
+        },
+        "ricecoder.logLevel": {
+          "type": "string",
+          "enum": [
+            "error",
+            "warn",
+            "info",
+            "debug"
+          ],
+          "default": "info",
+          "description": "Log level: error, warn, info, or debug"
         }
       }
     }

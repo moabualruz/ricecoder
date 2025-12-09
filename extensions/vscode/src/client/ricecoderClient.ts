@@ -1,5 +1,6 @@
 import * as net from 'net';
 import { EventEmitter } from 'events';
+import { StreamingHandler } from './streamingHandler';
 
 /**
  * JSON-RPC request/response types
@@ -29,6 +30,19 @@ interface JsonRpcNotification {
 }
 
 /**
+ * Stream notification types
+ */
+interface StreamNotification extends JsonRpcNotification {
+	method: 'stream/chunk' | 'stream/complete' | 'stream/error';
+	params: {
+		stream_id: string;
+		chunk?: unknown;
+		chunks?: unknown[];
+		error?: string;
+	};
+}
+
+/**
  * RiceCoder client for JSON-RPC communication with the backend
  * 
  * Handles:
@@ -36,6 +50,7 @@ interface JsonRpcNotification {
  * - Request/response handling with timeouts
  * - Streaming responses for long-running operations
  * - Error handling and reconnection
+ * - Notification handling
  */
 export class RicecoderClient extends EventEmitter {
 	private socket: net.Socket | null = null;
@@ -50,12 +65,14 @@ export class RicecoderClient extends EventEmitter {
 	}> = new Map();
 	private buffer: string = '';
 	private connected: boolean = false;
+	private streamingHandler: StreamingHandler;
 
 	constructor(host: string, port: number, requestTimeout: number = 5000) {
 		super();
 		this.host = host;
 		this.port = port;
 		this.requestTimeout = requestTimeout;
+		this.streamingHandler = new StreamingHandler(this);
 	}
 
 	/**
@@ -204,10 +221,17 @@ export class RicecoderClient extends EventEmitter {
 	}
 
 	/**
-	 * Handle a JSON-RPC response
+	 * Handle a JSON-RPC response or notification
 	 */
-	private handleMessage(message: JsonRpcResponse): void {
-		const { id, result, error } = message;
+	private handleMessage(message: JsonRpcResponse | StreamNotification): void {
+		// Check if this is a notification (no id)
+		if (!('id' in message) || message.id === undefined) {
+			this.handleNotification(message as StreamNotification);
+			return;
+		}
+
+		const response = message as JsonRpcResponse;
+		const { id, result, error } = response;
 
 		const pending = this.pendingRequests.get(id);
 		if (!pending) {
@@ -222,6 +246,37 @@ export class RicecoderClient extends EventEmitter {
 			pending.reject(new Error(`${error.message} (code: ${error.code})`));
 		} else {
 			pending.resolve(result);
+		}
+	}
+
+	/**
+	 * Handle a JSON-RPC notification (no response expected)
+	 */
+	private handleNotification(notification: StreamNotification): void {
+		const { method, params } = notification;
+
+		switch (method) {
+			case 'stream/chunk':
+				if (params.stream_id && params.chunk !== undefined) {
+					this.streamingHandler.addChunk(params.stream_id, params.chunk);
+				}
+				break;
+
+			case 'stream/complete':
+				if (params.stream_id) {
+					this.streamingHandler.completeStream(params.stream_id);
+				}
+				break;
+
+			case 'stream/error':
+				if (params.stream_id && params.error) {
+					this.streamingHandler.errorStream(params.stream_id, new Error(params.error));
+				}
+				break;
+
+			default:
+				console.warn(`Received unknown notification: ${method}`);
+				this.emit('notification', { method, params });
 		}
 	}
 
@@ -251,5 +306,54 @@ export class RicecoderClient extends EventEmitter {
 	 */
 	setRequestTimeout(timeout: number): void {
 		this.requestTimeout = timeout;
+	}
+
+	/**
+	 * Get streaming handler for managing streaming responses
+	 */
+	getStreamingHandler(): StreamingHandler {
+		return this.streamingHandler;
+	}
+
+	/**
+	 * Start a streaming request
+	 */
+	async startStream(method: string, params?: unknown): Promise<string> {
+		return this.streamingHandler.startStream(method, params);
+	}
+
+	/**
+	 * Listen for stream chunks
+	 */
+	onStreamChunk(streamId: string, callback: (chunk: unknown) => void): void {
+		this.streamingHandler.onStreamChunk(streamId, callback);
+	}
+
+	/**
+	 * Listen for stream completion
+	 */
+	onStreamComplete(streamId: string, callback: (chunks: unknown[]) => void): void {
+		this.streamingHandler.onStreamComplete(streamId, callback);
+	}
+
+	/**
+	 * Listen for stream errors
+	 */
+	onStreamError(streamId: string, callback: (error: Error) => void): void {
+		this.streamingHandler.onStreamError(streamId, callback);
+	}
+
+	/**
+	 * Cancel a stream
+	 */
+	async cancelStream(streamId: string): Promise<void> {
+		return this.streamingHandler.cancelStream(streamId);
+	}
+
+	/**
+	 * Get combined text from stream chunks
+	 */
+	getStreamText(streamId: string): string {
+		return this.streamingHandler.getCombinedText(streamId);
 	}
 }

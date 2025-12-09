@@ -5,39 +5,48 @@ import { RicecoderClient } from '../client/ricecoderClient';
  * Command handler for RiceCoder commands
  * 
  * Registers and handles:
- * 1. Chat command - Open chat interface
- * 2. Review command - Review code
- * 3. Generate command - Generate code
- * 4. Refactor command - Refactor code
+ * 1. Chat command - Open chat interface (Ctrl+Shift+R / Cmd+Shift+R)
+ * 2. Review command - Review code (Ctrl+Shift+E / Cmd+Shift+E)
+ * 3. Generate command - Generate code (Ctrl+Shift+G / Cmd+Shift+G)
+ * 4. Refactor command - Refactor code (Ctrl+Shift+F / Cmd+Shift+F)
+ * 
+ * All commands are available in the command palette under the "RiceCoder" category
+ * and have keyboard shortcuts for quick access.
  */
 export class CommandHandler {
 	constructor(private client: RicecoderClient) {}
 
 	/**
 	 * Register all RiceCoder commands
+	 * 
+	 * Commands are registered with:
+	 * - Unique command IDs (ricecoder.*)
+	 * - Descriptive titles for command palette
+	 * - Keyboard shortcuts for quick access
+	 * - Context conditions (editorTextFocus)
 	 */
 	registerCommands(context: vscode.ExtensionContext): void {
-		// Chat command
-		const chatCommand = vscode.commands.registerCommand('ricecoder.chat', () => {
-			this.handleChatCommand();
+		// Chat command - Ctrl+Shift+R (Cmd+Shift+R on Mac)
+		const chatCommand = vscode.commands.registerCommand('ricecoder.chat', async () => {
+			await this.handleChatCommand();
 		});
 		context.subscriptions.push(chatCommand);
 
-		// Review command
-		const reviewCommand = vscode.commands.registerCommand('ricecoder.review', () => {
-			this.handleReviewCommand();
+		// Review command - Ctrl+Shift+E (Cmd+Shift+E on Mac)
+		const reviewCommand = vscode.commands.registerCommand('ricecoder.review', async () => {
+			await this.handleReviewCommand();
 		});
 		context.subscriptions.push(reviewCommand);
 
-		// Generate command
-		const generateCommand = vscode.commands.registerCommand('ricecoder.generate', () => {
-			this.handleGenerateCommand();
+		// Generate command - Ctrl+Shift+G (Cmd+Shift+G on Mac)
+		const generateCommand = vscode.commands.registerCommand('ricecoder.generate', async () => {
+			await this.handleGenerateCommand();
 		});
 		context.subscriptions.push(generateCommand);
 
-		// Refactor command
-		const refactorCommand = vscode.commands.registerCommand('ricecoder.refactor', () => {
-			this.handleRefactorCommand();
+		// Refactor command - Ctrl+Shift+F (Cmd+Shift+F on Mac)
+		const refactorCommand = vscode.commands.registerCommand('ricecoder.refactor', async () => {
+			await this.handleRefactorCommand();
 		});
 		context.subscriptions.push(refactorCommand);
 	}

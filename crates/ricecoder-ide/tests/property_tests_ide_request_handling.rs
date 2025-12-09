@@ -343,11 +343,11 @@ fn create_test_config() -> IdeIntegrationConfig {
             settings: serde_json::json!({}),
         }),
         terminal: Some(TerminalConfig {
-            vim: Some(VimConfig {
+            vim: Some(types::VimConfig {
                 enabled: true,
                 plugin_manager: "vim-plug".to_string(),
             }),
-            emacs: Some(EmacsConfig {
+            emacs: Some(types::EmacsConfig {
                 enabled: true,
                 package_manager: "use-package".to_string(),
             }),

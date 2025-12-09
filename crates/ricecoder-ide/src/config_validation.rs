@@ -5,7 +5,6 @@
 
 use crate::error::{IdeError, IdeResult};
 use crate::types::*;
-use std::collections::HashMap;
 use tracing::debug;
 
 /// Configuration validator for IDE integration
@@ -319,18 +318,10 @@ impl ConfigValidator {
             ));
         }
 
-        if config.port > 65535 {
-            return Err(IdeError::config_validation_error(format!(
-                "Configuration validation failed: VS Code port {} is out of valid range (1-65535).\n\
-                 \n\
-                 Remediation steps:\n\
-                 1. Use a port number between 1 and 65535\n\
-                 2. Example configuration:\n\
-                    vscode:\n\
-                      port: 8080",
-                config.port
-            )));
-        }
+        // Note: u16 max is 65535, so this check is not needed but kept for clarity
+        // if config.port > 65535 {
+        //     return Err(...);
+        // }
 
         // Validate features
         if config.features.is_empty() {
@@ -396,11 +387,6 @@ impl ConfigValidator {
             .map(|c| c.enabled)
             .unwrap_or(false)
             || config
-                .neovim
-                .as_ref()
-                .map(|c| c.enabled)
-                .unwrap_or(false)
-            || config
                 .emacs
                 .as_ref()
                 .map(|c| c.enabled)
@@ -414,7 +400,7 @@ impl ConfigValidator {
         if let Some(vim_config) = &config.vim {
             if vim_config.enabled && vim_config.plugin_manager.is_empty() {
                 return Err(IdeError::config_validation_error(
-                    "Configuration validation failed: Vim integration is enabled but plugin_manager is empty.\n\
+                    "Configuration validation failed: Vim/Neovim integration is enabled but plugin_manager is empty.\n\
                      \n\
                      Remediation steps:\n\
                      1. Specify a valid plugin manager\n\
@@ -422,31 +408,13 @@ impl ConfigValidator {
                         - vim-plug\n\
                         - vundle\n\
                         - pathogen\n\
+                        - packer (for neovim)\n\
+                        - lazy.nvim (for neovim)\n\
                      3. Example configuration:\n\
                         terminal:\n\
                           vim:\n\
                             enabled: true\n\
                             plugin_manager: vim-plug",
-                ));
-            }
-        }
-
-        if let Some(neovim_config) = &config.neovim {
-            if neovim_config.enabled && neovim_config.plugin_manager.is_empty() {
-                return Err(IdeError::config_validation_error(
-                    "Configuration validation failed: Neovim integration is enabled but plugin_manager is empty.\n\
-                     \n\
-                     Remediation steps:\n\
-                     1. Specify a valid plugin manager\n\
-                     2. Supported plugin managers:\n\
-                        - packer\n\
-                        - lazy.nvim\n\
-                        - vim-plug\n\
-                     3. Example configuration:\n\
-                        terminal:\n\
-                          neovim:\n\
-                            enabled: true\n\
-                            plugin_manager: lazy.nvim",
                 ));
             }
         }
@@ -478,6 +446,7 @@ impl ConfigValidator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::HashMap;
 
     fn create_valid_config() -> IdeIntegrationConfig {
         IdeIntegrationConfig {
@@ -619,19 +588,6 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_vscode_port_out_of_range() {
-        let mut config = create_valid_config();
-        config.vscode.as_mut().unwrap().port = 70000;
-
-        let result = ConfigValidator::validate_complete(&config);
-        assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("out of valid range"));
-    }
-
-    #[test]
     fn test_validate_empty_vscode_features() {
         let mut config = create_valid_config();
         config.vscode.as_mut().unwrap().features.clear();
@@ -691,7 +647,6 @@ mod tests {
                 enabled: true,
                 plugin_manager: String::new(),
             }),
-            neovim: None,
             emacs: None,
         });
 
@@ -704,11 +659,10 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_neovim_empty_plugin_manager() {
+    fn test_validate_vim_neovim_empty_plugin_manager() {
         let mut config = create_valid_config();
         config.terminal = Some(TerminalConfig {
-            vim: None,
-            neovim: Some(NeovimConfig {
+            vim: Some(VimConfig {
                 enabled: true,
                 plugin_manager: String::new(),
             }),
@@ -728,7 +682,6 @@ mod tests {
         let mut config = create_valid_config();
         config.terminal = Some(TerminalConfig {
             vim: None,
-            neovim: None,
             emacs: Some(EmacsConfig {
                 enabled: true,
                 package_manager: String::new(),
