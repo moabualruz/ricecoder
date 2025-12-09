@@ -80,3 +80,7 @@ tmp/
 .history/
 .local/
 clippy-*.txt
+out/
+dist/
+node_modules/
+*.vsix
