@@ -31,10 +31,13 @@ impl TeamManager {
             Arc::new(crate::rules::mocks::MockAnalyticsEngine),
         );
 
+        // Create AccessControlManager with default dependencies
+        let access_control = AccessControlManager::default();
+
         TeamManager {
             config_manager: Arc::new(TeamConfigManager::new()),
             rules_manager: Arc::new(rules_manager),
-            access_control: Arc::new(AccessControlManager::new()),
+            access_control: Arc::new(access_control),
             sync_service: Arc::new(SyncService::new()),
             analytics: Arc::new(AnalyticsDashboard::new()),
         }
