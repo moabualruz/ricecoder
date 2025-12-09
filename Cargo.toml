@@ -4,6 +4,17 @@ version.workspace = true
 edition.workspace = true
 publish = false
 
+[dependencies]
+ricecoder-lsp = { path = "crates/ricecoder-lsp" }
+ricecoder-storage = { path = "crates/ricecoder-storage" }
+ricecoder-refactoring = { path = "crates/ricecoder-refactoring" }
+ricecoder-generation = { path = "crates/ricecoder-generation" }
+ricecoder-learning = { path = "crates/ricecoder-learning" }
+tokio = { workspace = true }
+serde_json = { workspace = true }
+proptest = { workspace = true }
+tempfile = { workspace = true }
+
 [workspace]
 members = [
     "crates/ricecoder-storage",

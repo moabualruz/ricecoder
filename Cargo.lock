@@ -3189,7 +3189,14 @@ name = "ricecoder-integration-tests"
 version = "0.6.0"
 dependencies = [
  "proptest",
+ "ricecoder-generation",
+ "ricecoder-learning",
+ "ricecoder-lsp",
+ "ricecoder-refactoring",
+ "ricecoder-storage",
+ "serde_json",
  "tempfile",
+ "tokio",
 ]
 
 [[package]]
