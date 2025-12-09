@@ -1,0 +1,31 @@
+[package]
+name = "ricecoder-ide"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "IDE integration for RiceCoder with support for VS Code, vim, neovim, and emacs"
+
+[lib]
+name = "ricecoder_ide"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+jsonschema = { workspace = true }
+ricecoder-external-lsp = { path = "../ricecoder-external-lsp" }
+ricecoder-completion = { path = "../ricecoder-completion" }
+ricecoder-storage = { path = "../ricecoder-storage" }
+
+[dev-dependencies]
+proptest = { workspace = true }
+tokio-test = { workspace = true }
+tempfile = { workspace = true }

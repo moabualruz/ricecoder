@@ -30,6 +30,7 @@ members = [
     "crates/ricecoder-undo-redo",
     "crates/ricecoder-github",
     "crates/ricecoder-teams",
+    "crates/ricecoder-ide",
 ]
 resolver = "2"
 

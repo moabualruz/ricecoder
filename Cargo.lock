@@ -3163,6 +3163,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "ricecoder-ide"
+version = "0.6.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "jsonschema",
+ "proptest",
+ "ricecoder-completion",
+ "ricecoder-external-lsp",
+ "ricecoder-storage",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-test",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "ricecoder-keybinds"
 version = "0.1.0"
 dependencies = [
