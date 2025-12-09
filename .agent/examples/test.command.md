@@ -90,7 +90,7 @@ template: "cargo test {{test_filter}} -- --nocapture"
 
 ```
 $ ricecoder test
-   Compiling ricecoder v0.4.0
+   Compiling ricecoder v0.1.4
     Finished test [unoptimized + debuginfo] target(s) in 2.34s
      Running unittests src/lib.rs
 
@@ -105,7 +105,7 @@ test result: ok. 42 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
 
 ```
 $ ricecoder test parser
-   Compiling ricecoder v0.4.0
+   Compiling ricecoder v0.1.4
     Finished test [unoptimized + debuginfo] target(s) in 1.23s
      Running unittests src/lib.rs
 
@@ -121,7 +121,7 @@ test result: ok. 8 passed; 0 failed
 
 ```
 $ ricecoder test --coverage
-   Compiling ricecoder v0.4.0
+   Compiling ricecoder v0.1.4
     Finished test [unoptimized + debuginfo] target(s) in 2.34s
      Running unittests src/lib.rs
 

@@ -1,22 +1,22 @@
-# RiceCoder Beta v0.6.0 Release Notes
+# RiceCoder Alpha v0.1.6 Release Notes
 
 **Release Date**: December 6, 2025
 
-**Version**: 0.6.0-beta
+**Version**: 0.1.6-alpha
 
-**Status**: ✅ Beta Release - Infrastructure Features Complete
+**Status**: ✅ Alpha Release - Infrastructure Features Complete
 
 ---
 
 ## Overview
 
-Beta v0.6.0 introduces comprehensive infrastructure features that enable advanced multi-project operations, domain-specific intelligence, and personalized user experiences. This release focuses on scalability, extensibility, and intelligent automation through three major feature areas: **Orchestration**, **Domain-Specific Agents**, and **Learning Systems**.
+Alpha v0.1.6 introduces comprehensive infrastructure features that enable advanced multi-project operations, domain-specific intelligence, and personalized user experiences. This release focuses on scalability, extensibility, and intelligent automation through three major feature areas: **Orchestration**, **Domain-Specific Agents**, and **Learning Systems**.
 
 **Key Milestone**: All Phase 6 infrastructure features are production-ready and fully tested.
 
 ---
 
-## What's New in v0.6.0
+## What's New in v0.1.6
 
 ### 1. Multi-Project Orchestration 🎯
 
@@ -223,15 +223,15 @@ Model Context Protocol server integration for extensibility.
 
 ## Breaking Changes
 
-None. Beta v0.6.0 is fully backward compatible with v0.5.0.
+None. Beta v0.1.6 is fully backward compatible with v0.1.5.
 
 ---
 
 ## Migration Guide
 
-### From v0.5.0 to v0.6.0
+### From v0.1.5 to v0.1.6
 
-No migration required. Simply update to v0.6.0 and all features are available.
+No migration required. Simply update to v0.1.6 and all features are available.
 
 #### New Configuration Options
 
@@ -264,13 +264,13 @@ learning:
 
 ### None
 
-All known issues from v0.5.0 have been resolved. Please report any issues on GitHub.
+All known issues from v0.1.5 have been resolved. Please report any issues on GitHub.
 
 ---
 
 ## Deprecations
 
-None. All APIs from v0.5.0 remain fully supported.
+None. All APIs from v0.1.5 remain fully supported.
 
 ---
 
@@ -340,7 +340,7 @@ test result: ok. 1,550 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
 ### From Crates.io
 
 ```bash
-cargo install ricecoder --version 0.6.0-beta
+cargo install ricecoder --version 0.1.6-beta
 ```
 
 ### From Source
@@ -348,15 +348,15 @@ cargo install ricecoder --version 0.6.0-beta
 ```bash
 git clone https://github.com/moabualruz/ricecoder.git
 cd ricecoder
-git checkout v0.6.0-beta
+git checkout v0.1.6-beta
 cargo install --path .
 ```
 
 ### Docker
 
 ```bash
-docker pull ricecoder:0.6.0-beta
-docker run -it ricecoder:0.6.0-beta
+docker pull ricecoder:0.1.6-beta
+docker run -it ricecoder:0.1.6-beta
 ```
 
 ---
@@ -366,16 +366,16 @@ docker run -it ricecoder:0.6.0-beta
 ### For Existing Users
 
 1. **Backup Configuration**: `cp -r ~/.ricecoder ~/.ricecoder.backup`
-2. **Update RiceCoder**: `cargo install ricecoder --version 0.6.0-beta`
+2. **Update RiceCoder**: `cargo install ricecoder --version 0.1.6-beta`
 3. **Verify Installation**: `ricecoder --version`
 4. **Review New Features**: `ricecoder help`
 
 ### Rollback
 
-If you need to rollback to v0.5.0:
+If you need to rollback to v0.1.5:
 
 ```bash
-cargo install ricecoder --version 0.5.0-beta
+cargo install ricecoder --version 0.1.5-beta
 ```
 
 ---
@@ -393,7 +393,7 @@ Thank you to everyone who contributed to this release!
 
 ## Roadmap
 
-### Phase 7: Beta v0.7.0 (Weeks 29-32)
+### Phase 7: Beta v0.1.7 (Weeks 29-32)
 
 Integration features that complete the feature set:
 
@@ -463,18 +463,18 @@ RiceCoder is licensed under the MIT License. See [LICENSE](../LICENSE.md) for de
 
 | Version | Release Date | Status | Features |
 |---------|--------------|--------|----------|
-| v0.6.0-beta | Dec 6, 2025 | ✅ Current | Orchestration, Domain Agents, Learning |
-| v0.5.0-beta | Nov 28, 2025 | ✅ Previous | Refactoring, Markdown Config, Keybinds |
-| v0.4.0-beta | Nov 20, 2025 | ✅ Previous | Performance, Security, UX Polish |
-| v0.3.0-beta | Nov 12, 2025 | ✅ Previous | LSP, Completion, Hooks |
-| v0.2.0-beta | Nov 4, 2025 | ✅ Previous | Code Gen, Agents, Workflows |
-| v0.1.0-alpha | Oct 27, 2025 | ✅ Previous | Foundation features |
+| v0.1.6-beta | Dec 6, 2025 | ✅ Current | Orchestration, Domain Agents, Learning |
+| v0.1.5-beta | Nov 28, 2025 | ✅ Previous | Refactoring, Markdown Config, Keybinds |
+| v0.1.4-beta | Nov 20, 2025 | ✅ Previous | Performance, Security, UX Polish |
+| v0.1.3-beta | Nov 12, 2025 | ✅ Previous | LSP, Completion, Hooks |
+| v0.1.2-beta | Nov 4, 2025 | ✅ Previous | Code Gen, Agents, Workflows |
+| v0.1.1-alpha | Oct 27, 2025 | ✅ Previous | Foundation features |
 
 ---
 
 ## Next Steps
 
-1. **Update to v0.6.0**: Install the latest version
+1. **Update to v0.1.6**: Install the latest version
 2. **Explore New Features**: Try orchestration, domain agents, and learning
 3. **Provide Feedback**: Share your experience and suggestions
 4. **Contribute**: Help improve RiceCoder for everyone
@@ -483,7 +483,7 @@ RiceCoder is licensed under the MIT License. See [LICENSE](../LICENSE.md) for de
 
 ## Questions?
 
-Have questions about v0.6.0? Check out:
+Have questions about v0.1.6? Check out:
 
 - [FAQ](../ricecoder.wiki/FAQ.md)
 - [Troubleshooting Guide](../ricecoder.wiki/Troubleshooting.md)

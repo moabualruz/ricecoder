@@ -66,7 +66,7 @@ fn prop_installation_completeness() {
         // Simulate installation by creating a marker file
         // In real scenario, this would be the actual binary
         fs::create_dir_all(&install_path).unwrap();
-        fs::write(install_path.join("version.txt"), "0.6.0").unwrap();
+        fs::write(install_path.join("version.txt"), "0.1.6").unwrap();
 
         // Verify installation completeness
         // Property: After installation, ricecoder should be available
@@ -76,7 +76,7 @@ fn prop_installation_completeness() {
         // Verify we can read the version
         let version_content = fs::read_to_string(install_path.join("version.txt")).unwrap();
         assert!(!version_content.is_empty(), "Version content should not be empty");
-        assert!(version_content.contains("0.6.0"), "Version should match expected version");
+        assert!(version_content.contains("0.1.6"), "Version should match expected version");
     });
 }
 
@@ -124,7 +124,7 @@ fn prop_update_safety() {
 
         // Create initial installation with configuration
         fs::create_dir_all(&ricecoder_dir).unwrap();
-        fs::write(ricecoder_dir.join("version.txt"), "0.5.0").unwrap();
+        fs::write(ricecoder_dir.join("version.txt"), "0.1.5").unwrap();
         fs::write(ricecoder_dir.join("config.yaml"), original_config.clone()).unwrap();
 
         // Read original configuration
@@ -161,7 +161,7 @@ fn prop_cross_platform_execution() {
 
         // Create a marker file indicating successful binary creation
         let binary_path = binary_dir.join("ricecoder");
-        fs::write(&binary_path, "#!/bin/bash\necho 'ricecoder v0.6.0'").unwrap();
+        fs::write(&binary_path, "#!/bin/bash\necho 'ricecoder v0.1.6'").unwrap();
 
         // Verify binary exists and is accessible
         assert!(binary_path.exists(), "Binary should exist for platform: {}", platform);
@@ -190,12 +190,12 @@ fn prop_cross_platform_execution() {
 
         // Verify binary metadata for platform-specific requirements
         let metadata_path = binary_dir.join("ricecoder.metadata");
-        fs::write(&metadata_path, format!("platform: {}\nversion: 0.6.0\nexecutable: true", platform)).unwrap();
+        fs::write(&metadata_path, format!("platform: {}\nversion: 0.1.6\nexecutable: true", platform)).unwrap();
 
         let metadata = fs::read_to_string(&metadata_path).unwrap();
         assert!(metadata.contains(&platform), "Metadata should contain platform identifier");
         assert!(metadata.contains("executable: true"), "Binary should be marked as executable");
-        assert!(metadata.contains("0.6.0"), "Metadata should contain version");
+        assert!(metadata.contains("0.1.6"), "Metadata should contain version");
     });
 }
 
@@ -334,7 +334,7 @@ fn prop_release_pipeline_completeness() {
 
         // Create npm package marker
         let npm_marker = release_dir.join("npm-package.txt");
-        fs::write(&npm_marker, "ricecoder@0.6.0").unwrap();
+        fs::write(&npm_marker, "ricecoder@0.1.6").unwrap();
 
         // Verify all binaries exist
         for platform in &platforms {

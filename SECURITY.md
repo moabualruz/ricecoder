@@ -561,7 +561,7 @@ rice config rotate-key <provider>
 
 ### Q: Is RiceCoder suitable for production use?
 
-**A**: RiceCoder is currently in Beta (v0.4.0). Production use is not recommended until v1.0.0 is released.
+**A**: RiceCoder is currently in Beta (v0.1.4). Production use is not recommended until v1.0.0 is released.
 
 ### Q: How often are security updates released?
 

@@ -40,7 +40,7 @@ fn test_version_command_format_is_valid() {
 
 #[test]
 fn test_version_command_matches_cargo_version() {
-    // The version should match the Cargo.toml version (0.6.0)
+    // The version should match the Cargo.toml version (0.1.6)
     let cmd = VersionCommand::new();
     let result = cmd.execute();
 

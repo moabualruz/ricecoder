@@ -1,8 +1,8 @@
-# RiceCoder v0.6.0 - Installation Methods Release Notes
+# RiceCoder v0.1.6 - Installation Methods Release Notes
 
 **Release Date**: December 9, 2025
 
-**Version**: 0.6.0
+**Version**: 0.1.6-alpha
 
 **Status**: ✅ Release - Installation Methods Complete
 
@@ -72,7 +72,7 @@ docker run -it moabualruz/ricecoder:latest
 docker run -v $(pwd):/workspace moabualruz/ricecoder:latest chat
 
 # Specific version
-docker run -it moabualruz/ricecoder:0.6.0
+docker run -it moabualruz/ricecoder:0.1.6
 ```
 
 **Features**:
@@ -86,7 +86,7 @@ docker run -it moabualruz/ricecoder:0.6.0
 
 Download pre-compiled binaries directly from GitHub Releases:
 
-- [GitHub Releases](https://github.com/moabualruz/ricecoder/releases/tag/v0.6.0)
+- [GitHub Releases](https://github.com/moabualruz/ricecoder/releases/tag/v0.1.6)
 
 **Features**:
 - ✅ Pre-compiled for all platforms
@@ -135,19 +135,19 @@ RiceCoder is available for the following platforms and architectures:
 
 ### Direct Binary Downloads
 
-All binaries are available on [GitHub Releases](https://github.com/moabualruz/ricecoder/releases/tag/v0.6.0):
+All binaries are available on [GitHub Releases](https://github.com/moabualruz/ricecoder/releases/tag/v0.1.6):
 
 **Linux**:
-- [ricecoder-x86_64-unknown-linux-musl.tar.gz](https://github.com/moabualruz/ricecoder/releases/download/v0.6.0/ricecoder-x86_64-unknown-linux-musl.tar.gz)
-- [ricecoder-aarch64-unknown-linux-musl.tar.gz](https://github.com/moabualruz/ricecoder/releases/download/v0.6.0/ricecoder-aarch64-unknown-linux-musl.tar.gz)
+- [ricecoder-x86_64-unknown-linux-musl.tar.gz](https://github.com/moabualruz/ricecoder/releases/download/v0.1.6/ricecoder-x86_64-unknown-linux-musl.tar.gz)
+- [ricecoder-aarch64-unknown-linux-musl.tar.gz](https://github.com/moabualruz/ricecoder/releases/download/v0.1.6/ricecoder-aarch64-unknown-linux-musl.tar.gz)
 
 **macOS**:
-- [ricecoder-x86_64-apple-darwin.tar.gz](https://github.com/moabualruz/ricecoder/releases/download/v0.6.0/ricecoder-x86_64-apple-darwin.tar.gz)
-- [ricecoder-aarch64-apple-darwin.tar.gz](https://github.com/moabualruz/ricecoder/releases/download/v0.6.0/ricecoder-aarch64-apple-darwin.tar.gz)
+- [ricecoder-x86_64-apple-darwin.tar.gz](https://github.com/moabualruz/ricecoder/releases/download/v0.1.6/ricecoder-x86_64-apple-darwin.tar.gz)
+- [ricecoder-aarch64-apple-darwin.tar.gz](https://github.com/moabualruz/ricecoder/releases/download/v0.1.6/ricecoder-aarch64-apple-darwin.tar.gz)
 
 **Windows**:
-- [ricecoder-x86_64-pc-windows-msvc.zip](https://github.com/moabualruz/ricecoder/releases/download/v0.6.0/ricecoder-x86_64-pc-windows-msvc.zip)
-- [ricecoder-aarch64-pc-windows-msvc.zip](https://github.com/moabualruz/ricecoder/releases/download/v0.6.0/ricecoder-aarch64-pc-windows-msvc.zip)
+- [ricecoder-x86_64-pc-windows-msvc.zip](https://github.com/moabualruz/ricecoder/releases/download/v0.1.6/ricecoder-x86_64-pc-windows-msvc.zip)
+- [ricecoder-aarch64-pc-windows-msvc.zip](https://github.com/moabualruz/ricecoder/releases/download/v0.1.6/ricecoder-aarch64-pc-windows-msvc.zip)
 
 ### Checksum Verification
 
@@ -155,7 +155,7 @@ All binaries include SHA256 checksums for verification:
 
 ```bash
 # Download checksum file
-curl -O https://github.com/moabualruz/ricecoder/releases/download/v0.6.0/ricecoder-x86_64-unknown-linux-musl.tar.gz.sha256
+curl -O https://github.com/moabualruz/ricecoder/releases/download/v0.1.6/ricecoder-x86_64-unknown-linux-musl.tar.gz.sha256
 
 # Verify checksum
 sha256sum -c ricecoder-x86_64-unknown-linux-musl.tar.gz.sha256
@@ -210,7 +210,7 @@ docker run -v $(pwd):/workspace moabualruz/ricecoder:latest chat
 
 ### Manual Installation
 
-1. Download binary for your platform from [GitHub Releases](https://github.com/moabualruz/ricecoder/releases/tag/v0.6.0)
+1. Download binary for your platform from [GitHub Releases](https://github.com/moabualruz/ricecoder/releases/tag/v0.1.6)
 2. Extract archive:
    - Linux/macOS: `tar xzf ricecoder-*.tar.gz`
    - Windows: `unzip ricecoder-*.zip`
@@ -260,7 +260,7 @@ ricecoder chat
 
 ## Breaking Changes
 
-None. This release is fully backward compatible with v0.5.0.
+None. This release is fully backward compatible with v0.1.5.
 
 ---
 
@@ -349,7 +349,7 @@ All verification commands have been tested:
 
 ## Upgrade Instructions
 
-### From v0.5.0 to v0.6.0
+### From v0.1.5 to v0.1.6
 
 1. **Backup Configuration**: `cp -r ~/.ricecoder ~/.ricecoder.backup`
 2. **Update RiceCoder**: Use your preferred installation method
@@ -358,17 +358,17 @@ All verification commands have been tested:
 
 ### Rollback
 
-If you need to rollback to v0.5.0:
+If you need to rollback to v0.1.5:
 
 ```bash
 # Cargo
-cargo install ricecoder --version 0.5.0
+cargo install ricecoder --version 0.1.5
 
 # npm
-npm install -g ricecoder@0.5.0
+npm install -g ricecoder@0.1.5
 
 # Docker
-docker pull moabualruz/ricecoder:0.5.0
+docker pull moabualruz/ricecoder:0.1.5
 ```
 
 ---
@@ -386,7 +386,7 @@ Thank you to everyone who contributed to this release!
 
 ## Roadmap
 
-### Phase 7: v0.7.0 (Weeks 33-36)
+### Phase 7: v0.1.7 (Weeks 33-36)
 
 Integration features that complete the feature set:
 
@@ -435,12 +435,12 @@ RiceCoder is licensed under the MIT License. See [LICENSE](../LICENSE.md) for de
 
 | Version | Release Date | Status | Features |
 |---------|--------------|--------|----------|
-| v0.6.0 | Dec 9, 2025 | ✅ Current | Installation Methods |
-| v0.5.0 | Nov 28, 2025 | ✅ Previous | Refactoring, Markdown Config, Keybinds |
-| v0.4.0 | Nov 20, 2025 | ✅ Previous | Performance, Security, UX Polish |
-| v0.3.0 | Nov 12, 2025 | ✅ Previous | LSP, Completion, Hooks |
-| v0.2.0 | Nov 4, 2025 | ✅ Previous | Code Gen, Agents, Workflows |
-| v0.1.0 | Oct 27, 2025 | ✅ Previous | Foundation features |
+| v0.1.6 | Dec 9, 2025 | ✅ Current | Installation Methods |
+| v0.1.5 | Nov 28, 2025 | ✅ Previous | Refactoring, Markdown Config, Keybinds |
+| v0.1.4 | Nov 20, 2025 | ✅ Previous | Performance, Security, UX Polish |
+| v0.1.3 | Nov 12, 2025 | ✅ Previous | LSP, Completion, Hooks |
+| v0.1.2 | Nov 4, 2025 | ✅ Previous | Code Gen, Agents, Workflows |
+| v0.1.1 | Oct 27, 2025 | ✅ Previous | Foundation features |
 
 ---
 

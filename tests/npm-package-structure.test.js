@@ -169,7 +169,7 @@ describe('npm Package Structure', () => {
   test('package.json version matches expected format', () => {
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
     
-    // Version should be in semver format (e.g., 0.6.0)
+    // Version should be in semver format (e.g., 0.1.6)
     expect(packageJson.version).toMatch(/^\d+\.\d+\.\d+/);
   });
 

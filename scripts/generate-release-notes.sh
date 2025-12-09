@@ -5,7 +5,7 @@
 
 set -e
 
-VERSION="${1:-0.6.0}"
+VERSION="${1:-0.1.6}"
 RELEASE_DATE=$(date +"%B %d, %Y")
 OUTPUT_FILE="RELEASE_NOTES_v${VERSION}.md"
 

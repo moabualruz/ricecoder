@@ -1,6 +1,6 @@
 {
   "name": "ricecoder",
-  "version": "0.6.0",
+  "version": "0.1.6",
   "description": "Terminal-first, spec-driven coding assistant with research-first approach",
   "main": "index.js",
   "bin": {
