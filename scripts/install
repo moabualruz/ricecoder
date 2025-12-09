@@ -1,0 +1,55 @@
+#!/bin/bash
+
+################################################################################
+# RiceCoder Installation Wrapper
+#
+# This script detects the OS and calls the appropriate installation script.
+# Can be called directly via curl:
+#
+#   curl -fsSL https://raw.githubusercontent.com/moabualruz/ricecoder/main/scripts/install | bash
+#
+# Or locally:
+#
+#   ./scripts/install [OPTIONS]
+#
+# Options are passed through to the platform-specific script.
+#
+################################################################################
+
+set -euo pipefail
+
+# Detect OS
+OS="$(uname -s)"
+
+case "$OS" in
+    Linux|Darwin)
+        # For Linux and macOS, use the install.sh script
+        SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        
+        # If called via curl, SCRIPT_DIR won't be set correctly
+        # In that case, we need to download and run the script
+        if [[ ! -f "$SCRIPT_DIR/install.sh" ]]; then
+            # We're being piped via curl, download the script
+            TEMP_DIR=$(mktemp -d)
+            trap "rm -rf $TEMP_DIR" EXIT
+            
+            curl -fsSL https://raw.githubusercontent.com/moabualruz/ricecoder/main/scripts/install.sh -o "$TEMP_DIR/install.sh"
+            chmod +x "$TEMP_DIR/install.sh"
+            exec "$TEMP_DIR/install.sh" "$@"
+        else
+            # Local execution
+            exec "$SCRIPT_DIR/install.sh" "$@"
+        fi
+        ;;
+    MINGW*|MSYS*|CYGWIN*)
+        # Windows via Git Bash or similar
+        echo "Error: Use PowerShell or CMD for Windows installation"
+        echo "PowerShell: .\scripts\install.ps1"
+        echo "CMD:        scripts\install.bat"
+        exit 1
+        ;;
+    *)
+        echo "Error: Unsupported OS: $OS"
+        exit 1
+        ;;
+esac

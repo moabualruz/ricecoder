@@ -212,9 +212,9 @@ Easy installation through multiple channels and package managers.
 - **Apt**: `apt install ricecoder` (Ubuntu/Debian)
 - **Pacman**: `pacman -S ricecoder` (Arch Linux)
 - **Chocolatey**: `choco install ricecoder` (Windows)
-- **Docker**: `docker pull ricecoder:latest`
+- **Docker**: `docker pull moabualruz/ricecoder:latest`
 - **Binary**: Download pre-built binaries
-- **Curl**: `curl -fsSL https://install.ricecoder.dev | sh`
+- **Curl**: `curl -fsSL https://raw.githubusercontent.com/moabualruz/ricecoder/main/scripts/install | bash`
 
 #### Use Cases
 
@@ -229,15 +229,15 @@ sudo apt install ricecoder
 choco install ricecoder
 
 # Docker
-docker run -it ricecoder:latest
+docker run -it moabualruz/ricecoder:latest
 
-# Curl installer
-curl -fsSL https://install.ricecoder.dev | sh
+# Curl installer (build from source)
+curl -fsSL https://raw.githubusercontent.com/moabualruz/ricecoder/main/scripts/install | bash
 
 # From source
 git clone https://github.com/moabualruz/ricecoder.git
 cd ricecoder
-cargo install --path .
+./scripts/install.sh
 ```
 
 #### Benefits
