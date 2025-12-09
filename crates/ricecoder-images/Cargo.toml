@@ -1,0 +1,30 @@
+[package]
+name = "ricecoder-images"
+description = "Image support with drag-and-drop, analysis, caching, and terminal display"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
+
+[dependencies]
+ricecoder-storage = { path = "../ricecoder-storage" }
+ricecoder-providers = { path = "../ricecoder-providers" }
+ricecoder-files = { path = "../ricecoder-files" }
+image = "0.24"
+sha2 = { workspace = true }
+tokio = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_yaml = { workspace = true }
+async-trait = { workspace = true }
+tracing = { workspace = true }
+chrono = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+tokio-test = { workspace = true }
+tempfile = { workspace = true }

@@ -1,0 +1,15 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc c1fd3bf18504e1a974adb8761af7cb0183b4637562d5ca2b525b17ca21c377b8 # shrinks to original_width = 100, original_height = 112
+cc 1ea56e09251d99ba0848762d22a87b0d6aa720b70fee908d9853618ac51f0101 # shrinks to metadata = ImageMetadata { path: "/path/to/a.png", format: "png", size_bytes: 1, width: 100, height: 100, hash: "0a0000a0000aaaa00aa00aaaaa0aa0000aaa000000a0aaaa00a0000a000a0aaa" }
+cc 91336f72dc489db7a8f17b31c3c34f63530e37a30c4443d149892714aaa38101 # shrinks to metadata_list = [ImageMetadata { path: "/path/to/0.png", format: "png", size_bytes: 1, width: 100, height: 100, hash: "0aa0a00a00a0aa0a00a0aa0000000a0aaaa0a0aa0aaa0000aaaaaaa00aaa0aaa" }]
+cc 6c3f9eb57643fbf958b5b33d1b24fc1408a37125021bcf7c056435b60d742494 # shrinks to metadata = ImageMetadata { path: "/path/to/a.png", format: "png", size_bytes: 1, width: 100, height: 100, hash: "0000000a0000aa0a000aaa00a0a00a0a0aa0a0aaaaaaa000aa0a0aaa0a0aa000" }, max_width = 40, max_height = 15
+cc c9202aa8a066bfaf9bfa77a21067e1d494117fb9af98db7b782e516c3990cbe2 # shrinks to metadata_list = [ImageMetadata { path: "/path/to/a.png", format: "png", size_bytes: 1, width: 100, height: 100, hash: "00a0a000a000a0a00a0aa00a0000a0aaaa0aaa00000aaaa00aa0a0aa000a0aaa" }, ImageMetadata { path: "/path/to/a.png", format: "png", size_bytes: 1, width: 100, height: 100, hash: "0aaaa0000a0a000aa0000a00aa0a00aa0a0a00000a00a00a0a00a0000aaaa000" }]
+cc 7af2764a96f8761a6eb2e01df620f040fba725b04d2e2c1525d7b0096b01502d # shrinks to original_width = 3485, original_height = 144
+cc cf8efea8a139afb80ef2a11daece0b4d51778c5480e85197366066a15091bac8 # shrinks to original_width = 2241, original_height = 129
+cc b5d7fba8a4c3502c5db7b32943350e7412bf0185c02aaa5a932f20a7567c9706 # shrinks to original_width = 2721, original_height = 123
+cc f3677100b13e2115fcabdcaa20852f8c870283fd36367a839d3482e9d3c89902 # shrinks to original_width = 2741, original_height = 134

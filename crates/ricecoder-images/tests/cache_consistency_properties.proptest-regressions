@@ -1,0 +1,9 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc b4b2b4883f77726d5ed6d591d84b523c008d774aa13ce458dfb994565bbe1697 # shrinks to hash1 = "ad3cbb00b012ea76d0d7ee0ba670809a69f8baaa1eaadbc6dbae4ac6b28b533e", hash2 = "be5ac5b7ffefdd4a6fadd4194eb6fb48df8484b5b1a32b0dd15b67cbbc6c48ba", hash3 = "9ae6d08500ece3b23cb3c795ba1615f24ae52cd8fdc0f869e0d90ecbc8aebf11"
+cc 9166d5f7df0af529025a101e76dbe14f9817c7e218a6cf042a2cacb19280809d # shrinks to image_hash = "3c478edd078fb7b29160953834334d832e9a8d5cae34da2d8d834ffc56887634"
+cc 1918f4d7c057e6e1e66e76f4616b6a5940d231c28e0cdb5464d6e6c73538ffb0 # shrinks to hash1 = "a02ffee472d27eaa2eb15ab422b4e13a4d1af8fc13ccde00b5c7e078ad03aaaf", hash2 = "2534b40130e53bdb391bc1bc73fad7857ea8e1c62cc045b5c3fdccc19f7fc9ed"

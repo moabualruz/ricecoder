@@ -1,0 +1,41 @@
+# Image Support Configuration
+# 
+# This configuration file defines settings for image support in ricecoder,
+# including supported formats, display settings, caching, and analysis options.
+
+images:
+  # Supported image formats
+  formats:
+    supported:
+      - png
+      - jpg
+      - jpeg
+      - gif
+      - webp
+
+  # Display settings for terminal rendering
+  display:
+    # Maximum width for image display (characters)
+    max_width: 80
+    # Maximum height for image display (characters)
+    max_height: 30
+    # ASCII placeholder character for unsupported terminals
+    placeholder_char: "█"
+
+  # Cache settings for analysis results
+  cache:
+    # Enable caching of analysis results
+    enabled: true
+    # Cache TTL in seconds (24 hours = 86400)
+    ttl_seconds: 86400
+    # Maximum cache size in MB (LRU eviction when exceeded)
+    max_size_mb: 100
+
+  # Analysis settings for AI provider integration
+  analysis:
+    # Analysis timeout in seconds
+    timeout_seconds: 10
+    # Maximum image size for analysis in MB (larger images are optimized)
+    max_image_size_mb: 10
+    # Automatically optimize large images before sending to provider
+    optimize_large_images: true
