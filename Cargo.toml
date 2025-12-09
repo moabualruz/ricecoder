@@ -29,6 +29,7 @@ members = [
     "crates/ricecoder-tools",
     "crates/ricecoder-undo-redo",
     "crates/ricecoder-github",
+    "crates/ricecoder-teams",
 ]
 resolver = "2"
 

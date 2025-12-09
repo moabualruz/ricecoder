@@ -1,0 +1,29 @@
+[package]
+name = "ricecoder-teams"
+version = "0.1.0"
+edition = "2021"
+authors = ["RiceCoder Contributors"]
+description = "Team collaboration system for RiceCoder - shared standards, rule promotion, and access control"
+license = "MIT"
+
+[lib]
+name = "ricecoder_teams"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+thiserror = "1.0"
+tracing = "0.1"
+tokio = { version = "1.0", features = ["full"] }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+ricecoder-storage = { path = "../ricecoder-storage" }
+ricecoder-learning = { path = "../ricecoder-learning" }
+ricecoder-permissions = { path = "../ricecoder-permissions" }
+
+[dev-dependencies]
+proptest = "1.4"
+tokio-test = "0.4"
+tempfile = "3.8"
