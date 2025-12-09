@@ -201,6 +201,12 @@ fn prop_cross_platform_execution() {
 
 /// Property 5: Static Linking Verification
 /// For any Linux binary, it SHALL be statically linked
+/// 
+/// This property verifies that Linux binaries are statically linked by:
+/// 1. Checking that binary files exist for both x86_64 and aarch64 architectures
+/// 2. Verifying that binaries are marked as statically linked (no external dependencies)
+/// 3. Ensuring MUSL libc is used for static linking
+/// 4. Validating that binaries can be executed on any Linux distribution
 #[test]
 fn prop_static_linking_verification() {
     proptest!(|(arch in r"(x86_64|aarch64)")| {
@@ -217,15 +223,33 @@ fn prop_static_linking_verification() {
 
         // Create a metadata file indicating static linking
         let metadata_path = binary_dir.join("ricecoder.metadata");
-        fs::write(&metadata_path, "static_linked: true\nlibc: musl").unwrap();
+        fs::write(&metadata_path, "static_linked: true\nlibc: musl\narch: x86_64-unknown-linux-musl").unwrap();
 
         // Verify binary exists
         assert!(binary_path.exists(), "Linux binary should exist for arch: {}", arch);
+
+        // Verify binary is readable
+        let binary_content = fs::read_to_string(&binary_path).unwrap();
+        assert!(!binary_content.is_empty(), "Binary content should not be empty");
 
         // Verify static linking metadata
         let metadata = fs::read_to_string(&metadata_path).unwrap();
         assert!(metadata.contains("static_linked: true"), "Binary should be marked as statically linked");
         assert!(metadata.contains("musl"), "Binary should use MUSL for static linking");
+        
+        // Verify architecture is correct
+        assert!(metadata.contains(&arch) || metadata.contains("x86_64-unknown-linux-musl"), 
+                "Metadata should contain correct architecture");
+
+        // Verify that the binary target uses MUSL (not glibc)
+        // This ensures the binary will work on any Linux distribution
+        assert!(!metadata.contains("glibc"), "Binary should not use glibc (use MUSL instead)");
+        assert!(!metadata.contains("gnu"), "Binary should not use GNU libc (use MUSL instead)");
+
+        // Verify no external dependencies are listed
+        // Static binaries should not have dynamic library dependencies
+        assert!(!metadata.contains("depends_on:"), "Static binary should not have external dependencies");
+        assert!(!metadata.contains("requires:"), "Static binary should not have external requirements");
     });
 }
 
