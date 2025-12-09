@@ -1,0 +1,72 @@
+# RiceCoder Terminal Editor Configuration
+# This file configures vim, neovim, and emacs integration
+
+# Vim/Neovim configuration
+vim:
+  enabled: true
+  host: localhost
+  port: 9000
+  timeout_ms: 5000
+  
+  # Completion settings
+  completion:
+    enabled: true
+    max_items: 20
+    trigger_characters:
+      - "."
+      - ":"
+  
+  # Diagnostics settings
+  diagnostics:
+    enabled: true
+    show_on_change: true
+    min_severity: 1  # 1=error, 2=warning, 3=info
+  
+  # Hover settings
+  hover:
+    enabled: true
+    show_on_move: false
+    delay_ms: 500
+  
+  # Custom keybindings (optional)
+  keybindings:
+    completion: "<C-x><C-o>"
+    hover: "K"
+    goto_definition: "<C-]>"
+    goto_definition_split: "<C-w>]"
+    goto_definition_vsplit: "<C-w><C-]>"
+    show_diagnostics: "<C-e>"
+
+# Emacs configuration
+emacs:
+  enabled: true
+  host: localhost
+  port: 9000
+  timeout_ms: 5000
+  
+  # Completion settings
+  completion:
+    enabled: true
+    max_items: 20
+    trigger_characters:
+      - "."
+      - ":"
+  
+  # Diagnostics settings
+  diagnostics:
+    enabled: true
+    show_on_change: true
+    min_severity: 1  # 1=error, 2=warning, 3=info
+  
+  # Hover settings
+  hover:
+    enabled: true
+    show_on_move: false
+    delay_ms: 500
+  
+  # Custom keybindings (optional)
+  keybindings:
+    completion: "M-x completion-at-point"
+    hover: "C-c C-h"
+    goto_definition: "C-c C-d"
+    goto_definition_other_window: "C-c C-o"

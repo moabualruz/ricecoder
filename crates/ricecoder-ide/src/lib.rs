@@ -45,7 +45,9 @@
 pub mod builtin_provider;
 pub mod config;
 pub mod config_hot_reload;
+pub mod config_validation;
 pub mod configured_rules_provider;
+pub mod editor_config;
 pub mod error;
 pub mod external_lsp_provider;
 pub mod generic_provider;
@@ -60,7 +62,12 @@ pub mod types;
 pub use builtin_provider::{PythonProvider, RustProvider, TypeScriptProvider};
 pub use config::ConfigManager;
 pub use config_hot_reload::ConfigHotReloadCoordinator;
+pub use config_validation::ConfigValidator;
 pub use configured_rules_provider::ConfiguredRulesProvider;
+pub use editor_config::{
+    CompletionSettings, DiagnosticsSettings, EmacsConfig, EditorConfigError, HoverSettings,
+    TerminalEditorConfig, VimConfig,
+};
 pub use error::IdeError;
 pub use external_lsp_provider::ExternalLspProvider;
 pub use generic_provider::GenericProvider;
