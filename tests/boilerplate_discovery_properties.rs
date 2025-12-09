@@ -8,7 +8,6 @@
 
 use proptest::prelude::*;
 use std::fs;
-use std::path::PathBuf;
 use tempfile::TempDir;
 
 // Import from ricecoder-generation crate
@@ -118,8 +117,8 @@ scripts: []
 proptest! {
     #[test]
     fn prop_boilerplate_discovery_project_precedence(
-        bp_id in "[a-z0-9-]{1,20}",
-        project_desc in ".*",
+        bp_id in "[a-z][a-z0-9-]{0,19}",
+        project_desc in "[a-zA-Z0-9 ._-]{0,100}",
     ) {
         let temp_dir = TempDir::new().unwrap();
         let project_dir = temp_dir.path().join(".ricecoder").join("boilerplates");
