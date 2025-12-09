@@ -40,12 +40,37 @@ atty = "0.2"
 regex = { workspace = true }
 uuid = { workspace = true }
 chrono = { workspace = true }
-ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
+ricecoder-agents = { path = "../ricecoder-agents", version = "0.1" }
 ricecoder-commands = { path = "../ricecoder-commands", version = "0.1" }
-ricecoder-tui = { path = "../ricecoder-tui", version = "0.1" }
-ricecoder-lsp = { path = "../ricecoder-lsp", version = "0.1" }
+ricecoder-completion = { path = "../ricecoder-completion", version = "0.1" }
+ricecoder-domain-agents = { path = "../ricecoder-domain-agents", version = "0.1" }
+ricecoder-execution = { path = "../ricecoder-execution", version = "0.1" }
+ricecoder-external-lsp = { path = "../ricecoder-external-lsp", version = "0.1" }
+ricecoder-files = { path = "../ricecoder-files", version = "0.1" }
+ricecoder-generation = { path = "../ricecoder-generation", version = "0.1" }
+ricecoder-github = { path = "../ricecoder-github", version = "0.1" }
 ricecoder-hooks = { path = "../ricecoder-hooks", version = "0.1" }
+ricecoder-ide = { path = "../ricecoder-ide", version = "0.1" }
+ricecoder-images = { path = "../ricecoder-images", version = "0.1" }
+ricecoder-keybinds = { path = "../ricecoder-keybinds", version = "0.1" }
+ricecoder-learning = { path = "../ricecoder-learning", version = "0.1" }
+ricecoder-local-models = { path = "../ricecoder-local-models", version = "0.1" }
+ricecoder-lsp = { path = "../ricecoder-lsp", version = "0.1" }
+ricecoder-mcp = { path = "../ricecoder-mcp", version = "0.1" }
+ricecoder-modes = { path = "../ricecoder-modes", version = "0.1" }
+ricecoder-orchestration = { path = "../ricecoder-orchestration", version = "0.1" }
+ricecoder-permissions = { path = "../ricecoder-permissions", version = "0.1" }
+ricecoder-providers = { path = "../ricecoder-providers", version = "0.1" }
+ricecoder-refactoring = { path = "../ricecoder-refactoring", version = "0.1" }
+ricecoder-research = { path = "../ricecoder-research", version = "0.1" }
 ricecoder-sessions = { path = "../ricecoder-sessions", version = "0.1" }
+ricecoder-specs = { path = "../ricecoder-specs", version = "0.1" }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
+ricecoder-teams = { path = "../ricecoder-teams", version = "0.1" }
+ricecoder-tools = { path = "../ricecoder-tools", version = "0.1" }
+ricecoder-tui = { path = "../ricecoder-tui", version = "0.1" }
+ricecoder-undo-redo = { path = "../ricecoder-undo-redo", version = "0.1" }
+ricecoder-workflows = { path = "../ricecoder-workflows", version = "0.1" }
 
 [dev-dependencies]
 proptest = { workspace = true }
