@@ -11,6 +11,9 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{debug, info, warn};
 
+/// Type alias for availability change callback
+type AvailabilityCallback = Arc<dyn Fn(&str, bool) + Send + Sync>;
+
 /// LSP server health status
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LspHealthStatus {
@@ -29,7 +32,7 @@ pub struct LspMonitor {
     /// Current health status by language
     health_status: Arc<RwLock<HashMap<String, LspHealthStatus>>>,
     /// Availability change callbacks
-    availability_callbacks: Arc<RwLock<Vec<Arc<dyn Fn(&str, bool) + Send + Sync>>>>,
+    availability_callbacks: Arc<RwLock<Vec<AvailabilityCallback>>>,
 }
 
 impl LspMonitor {
@@ -50,7 +53,7 @@ impl LspMonitor {
     /// Register a callback for availability changes
     pub async fn on_availability_changed(
         &self,
-        callback: Arc<dyn Fn(&str, bool) + Send + Sync>,
+        callback: AvailabilityCallback,
     ) -> IdeResult<()> {
         debug!("Registering LSP availability change callback");
         let mut callbacks = self.availability_callbacks.write().await;

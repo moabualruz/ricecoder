@@ -13,6 +13,9 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::{debug, info, warn};
 
+/// Type alias for provider availability change callback
+type ProviderAvailabilityCallback = Box<dyn Fn(ProviderChange) + Send + Sync>;
+
 /// Provider registry for managing multiple providers
 pub struct ProviderRegistry {
     /// External LSP providers by language
@@ -123,7 +126,7 @@ impl ProviderRegistry {
 /// Provider chain manager that orchestrates the provider priority chain
 pub struct ProviderChainManager {
     registry: Arc<tokio::sync::RwLock<ProviderRegistry>>,
-    availability_callbacks: Arc<tokio::sync::RwLock<Vec<Box<dyn Fn(ProviderChange) + Send + Sync>>>>,
+    availability_callbacks: Arc<tokio::sync::RwLock<Vec<ProviderAvailabilityCallback>>>,
 }
 
 impl ProviderChainManager {

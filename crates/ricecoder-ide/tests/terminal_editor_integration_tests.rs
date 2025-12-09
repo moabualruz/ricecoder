@@ -1,5 +1,5 @@
-/// Integration tests for terminal editor integration
-/// Tests vim/neovim and emacs communication with ricecoder
+//! Integration tests for terminal editor integration
+//! Tests vim/neovim and emacs communication with ricecoder
 
 use ricecoder_ide::editor_config::{
     CompletionSettings, DiagnosticsSettings, EmacsConfig, HoverSettings, TerminalEditorConfig,
@@ -157,10 +157,11 @@ fn test_emacs_config_custom_keybindings() {
 
 #[test]
 fn test_vim_config_custom_host_and_port() {
-    let mut config = VimConfig::default();
-    
-    config.host = "192.168.1.1".to_string();
-    config.port = 8080;
+    let config = VimConfig {
+        host: "192.168.1.1".to_string(),
+        port: 8080,
+        ..Default::default()
+    };
     
     assert_eq!(config.host, "192.168.1.1");
     assert_eq!(config.port, 8080);
@@ -169,10 +170,11 @@ fn test_vim_config_custom_host_and_port() {
 
 #[test]
 fn test_emacs_config_custom_host_and_port() {
-    let mut config = EmacsConfig::default();
-    
-    config.host = "192.168.1.1".to_string();
-    config.port = 8080;
+    let config = EmacsConfig {
+        host: "192.168.1.1".to_string(),
+        port: 8080,
+        ..Default::default()
+    };
     
     assert_eq!(config.host, "192.168.1.1");
     assert_eq!(config.port, 8080);
@@ -241,11 +243,15 @@ fn test_terminal_editor_config_emacs_only() {
 
 #[test]
 fn test_terminal_editor_config_both_disabled() {
-    let mut vim_config = VimConfig::default();
-    vim_config.enabled = false;
+    let vim_config = VimConfig {
+        enabled: false,
+        ..Default::default()
+    };
     
-    let mut emacs_config = EmacsConfig::default();
-    emacs_config.enabled = false;
+    let emacs_config = EmacsConfig {
+        enabled: false,
+        ..Default::default()
+    };
     
     let config = TerminalEditorConfig {
         vim: Some(vim_config),
@@ -371,8 +377,10 @@ fn test_emacs_config_multiple_trigger_characters() {
 
 #[test]
 fn test_vim_config_high_timeout() {
-    let mut config = VimConfig::default();
-    config.timeout_ms = 30000; // 30 seconds
+    let config = VimConfig {
+        timeout_ms: 30000, // 30 seconds
+        ..Default::default()
+    };
     
     assert_eq!(config.timeout_ms, 30000);
     assert!(config.validate().is_ok());
@@ -380,8 +388,10 @@ fn test_vim_config_high_timeout() {
 
 #[test]
 fn test_emacs_config_high_timeout() {
-    let mut config = EmacsConfig::default();
-    config.timeout_ms = 30000; // 30 seconds
+    let config = EmacsConfig {
+        timeout_ms: 30000, // 30 seconds
+        ..Default::default()
+    };
     
     assert_eq!(config.timeout_ms, 30000);
     assert!(config.validate().is_ok());
