@@ -25,6 +25,8 @@ pub mod sessions;
 pub mod style;
 pub mod theme;
 pub mod theme_loader;
+pub mod theme_registry;
+pub mod theme_reset;
 pub mod widgets;
 
 // Re-export commonly used types
@@ -59,4 +61,6 @@ pub use sessions::{Session, SessionDisplayMode, SessionStatus, SessionWidget};
 pub use style::{ColorSupport, Theme};
 pub use theme::ThemeManager;
 pub use theme_loader::{ThemeLoader, ThemeYaml};
+pub use theme_registry::ThemeRegistry;
+pub use theme_reset::ThemeResetManager;
 pub use widgets::{ChatWidget, Message, MessageAuthor};

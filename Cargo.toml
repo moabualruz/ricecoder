@@ -10,6 +10,7 @@ ricecoder-storage = { path = "crates/ricecoder-storage" }
 ricecoder-refactoring = { path = "crates/ricecoder-refactoring" }
 ricecoder-generation = { path = "crates/ricecoder-generation" }
 ricecoder-learning = { path = "crates/ricecoder-learning" }
+ricecoder-tui = { path = "crates/ricecoder-tui" }
 tokio = { workspace = true }
 serde_json = { workspace = true }
 proptest = { workspace = true }

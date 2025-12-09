@@ -74,6 +74,16 @@ impl From<&Theme> for ThemeYaml {
 pub struct ThemeLoader;
 
 impl ThemeLoader {
+    /// Load a theme from a YAML string
+    pub fn load_from_string(content: &str) -> Result<Theme> {
+        let theme_yaml: ThemeYaml = serde_yaml::from_str(content)?;
+
+        // Validate theme
+        Self::validate_theme(&theme_yaml)?;
+
+        theme_yaml.to_theme()
+    }
+
     /// Load a theme from a YAML file
     pub fn load_from_file(path: &Path) -> Result<Theme> {
         if !path.exists() {
@@ -88,12 +98,7 @@ impl ThemeLoader {
         }
 
         let content = fs::read_to_string(path)?;
-        let theme_yaml: ThemeYaml = serde_yaml::from_str(&content)?;
-
-        // Validate theme
-        Self::validate_theme(&theme_yaml)?;
-
-        theme_yaml.to_theme()
+        Self::load_from_string(&content)
     }
 
     /// Save a theme to a YAML file
@@ -176,6 +181,26 @@ impl ThemeLoader {
 mod tests {
     use super::*;
     use tempfile::TempDir;
+
+    #[test]
+    fn test_load_from_string() {
+        let yaml_content = r#"name: test
+primary: '#0078ff'
+secondary: '#5ac8fa'
+accent: '#ff2d55'
+background: '#111827'
+foreground: '#f3f4f6'
+error: '#ef4444'
+warning: '#f59e0b'
+success: '#22c55e'
+"#;
+
+        let theme = ThemeLoader::load_from_string(yaml_content).unwrap();
+        assert_eq!(theme.name, "test");
+        assert_eq!(theme.primary.r, 0);
+        assert_eq!(theme.primary.g, 120);
+        assert_eq!(theme.primary.b, 255);
+    }
 
     #[test]
     fn test_theme_yaml_to_theme() {

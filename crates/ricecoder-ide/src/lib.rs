@@ -59,6 +59,7 @@ pub mod provider;
 pub mod provider_chain;
 pub mod provider_error_handling;
 pub mod response_formatter;
+pub mod themes;
 pub mod types;
 
 pub use builtin_provider::{PythonProvider, RustProvider, TypeScriptProvider};
@@ -83,4 +84,8 @@ pub use provider_error_handling::{
     ProviderErrorContext, ProviderErrorHandler, RecoveryStrategy,
 };
 pub use response_formatter::ResponseFormatter;
+pub use themes::{
+    Color, ColorSupport, IdeThemeConfig, IdeThemeIntegration, IdeThemeManager, Theme,
+    ThemeLoader, ThemeManager, ThemeRegistry, ThemeResetManager,
+};
 pub use types::*;
