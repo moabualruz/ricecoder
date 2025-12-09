@@ -3049,7 +3049,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-commands"
-version = "0.1.0"
+version = "0.1.71"
 dependencies = [
  "anyhow",
  "chrono",
@@ -3317,7 +3317,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-keybinds"
-version = "0.1.0"
+version = "0.1.71"
 dependencies = [
  "anyhow",
  "dirs",
@@ -3335,7 +3335,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-learning"
-version = "0.1.0"
+version = "0.1.71"
 dependencies = [
  "chrono",
  "dirs",
@@ -3357,7 +3357,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-local-models"
-version = "0.1.0"
+version = "0.1.71"
 dependencies = [
  "anyhow",
  "chrono",
@@ -3432,7 +3432,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-modes"
-version = "0.1.0"
+version = "0.1.71"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3451,7 +3451,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-orchestration"
-version = "0.1.0"
+version = "0.1.71"
 dependencies = [
  "anyhow",
  "chrono",
@@ -3570,7 +3570,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-sessions"
-version = "0.1.0"
+version = "0.1.71"
 dependencies = [
  "anyhow",
  "chrono",
@@ -3610,7 +3610,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-storage"
-version = "0.1.0"
+version = "0.1.71"
 dependencies = [
  "anyhow",
  "dirs",
@@ -3631,7 +3631,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-teams"
-version = "0.1.0"
+version = "0.1.71"
 dependencies = [
  "chrono",
  "proptest",
@@ -3651,7 +3651,7 @@ dependencies = [
 
 [[package]]
 name = "ricecoder-tools"
-version = "0.5.0"
+version = "0.1.71"
 dependencies = [
  "async-trait",
  "chrono",
