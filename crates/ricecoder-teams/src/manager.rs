@@ -251,7 +251,7 @@ impl TeamManager {
         }
 
         // Serialize team to YAML
-        let yaml_content = serde_yaml::to_string(team).map_err(|e| TeamError::YamlError(e))?;
+        let yaml_content = serde_yaml::to_string(team).map_err(TeamError::YamlError)?;
 
         // Write to file
         std::fs::write(&storage_path, yaml_content)
@@ -276,8 +276,7 @@ impl TeamManager {
         let yaml_content = std::fs::read_to_string(&storage_path)
             .map_err(|e| TeamError::StorageError(format!("Failed to read team file: {}", e)))?;
 
-        let team: Team =
-            serde_yaml::from_str(&yaml_content).map_err(|e| TeamError::YamlError(e))?;
+        let team: Team = serde_yaml::from_str(&yaml_content).map_err(TeamError::YamlError)?;
 
         tracing::debug!(team_id = %team_id, path = ?storage_path, "Team loaded successfully");
 

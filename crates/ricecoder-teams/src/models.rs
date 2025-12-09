@@ -39,13 +39,17 @@ impl TeamRole {
             TeamRole::Viewer => "viewer",
         }
     }
+}
 
-    pub fn from_str(s: &str) -> Option<Self> {
+impl std::str::FromStr for TeamRole {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         match s {
-            "admin" => Some(TeamRole::Admin),
-            "member" => Some(TeamRole::Member),
-            "viewer" => Some(TeamRole::Viewer),
-            _ => None,
+            "admin" => Ok(TeamRole::Admin),
+            "member" => Ok(TeamRole::Member),
+            "viewer" => Ok(TeamRole::Viewer),
+            _ => Err(format!("Invalid team role: {}", s)),
         }
     }
 }
@@ -127,13 +131,17 @@ impl RuleScope {
             RuleScope::Organization => "organization",
         }
     }
+}
 
-    pub fn from_str(s: &str) -> Option<Self> {
+impl std::str::FromStr for RuleScope {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         match s {
-            "project" => Some(RuleScope::Project),
-            "team" => Some(RuleScope::Team),
-            "organization" => Some(RuleScope::Organization),
-            _ => None,
+            "project" => Ok(RuleScope::Project),
+            "team" => Ok(RuleScope::Team),
+            "organization" => Ok(RuleScope::Organization),
+            _ => Err(format!("Invalid rule scope: {}", s)),
         }
     }
 }
@@ -324,10 +332,11 @@ updated_at: 2024-01-01T00:00:00Z
 
     #[test]
     fn test_team_role_from_str() {
-        assert_eq!(TeamRole::from_str("admin"), Some(TeamRole::Admin));
-        assert_eq!(TeamRole::from_str("member"), Some(TeamRole::Member));
-        assert_eq!(TeamRole::from_str("viewer"), Some(TeamRole::Viewer));
-        assert_eq!(TeamRole::from_str("invalid"), None);
+        use std::str::FromStr;
+        assert_eq!(TeamRole::from_str("admin"), Ok(TeamRole::Admin));
+        assert_eq!(TeamRole::from_str("member"), Ok(TeamRole::Member));
+        assert_eq!(TeamRole::from_str("viewer"), Ok(TeamRole::Viewer));
+        assert!(TeamRole::from_str("invalid").is_err());
     }
 
     #[test]
@@ -409,13 +418,14 @@ updated_at: 2024-01-01T00:00:00Z
 
     #[test]
     fn test_rule_scope_from_str() {
-        assert_eq!(RuleScope::from_str("project"), Some(RuleScope::Project));
-        assert_eq!(RuleScope::from_str("team"), Some(RuleScope::Team));
+        use std::str::FromStr;
+        assert_eq!(RuleScope::from_str("project"), Ok(RuleScope::Project));
+        assert_eq!(RuleScope::from_str("team"), Ok(RuleScope::Team));
         assert_eq!(
             RuleScope::from_str("organization"),
-            Some(RuleScope::Organization)
+            Ok(RuleScope::Organization)
         );
-        assert_eq!(RuleScope::from_str("invalid"), None);
+        assert!(RuleScope::from_str("invalid").is_err());
     }
 
     #[test]

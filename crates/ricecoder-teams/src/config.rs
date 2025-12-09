@@ -48,8 +48,7 @@ impl TeamConfigManager {
         }
 
         // Serialize standards to YAML
-        let yaml_content =
-            serde_yaml::to_string(&standards).map_err(|e| TeamError::YamlError(e))?;
+        let yaml_content = serde_yaml::to_string(&standards).map_err(TeamError::YamlError)?;
 
         // Write to file
         std::fs::write(&storage_path, yaml_content).map_err(|e| {
@@ -95,7 +94,7 @@ impl TeamConfigManager {
         })?;
 
         let standards: TeamStandards =
-            serde_yaml::from_str(&yaml_content).map_err(|e| TeamError::YamlError(e))?;
+            serde_yaml::from_str(&yaml_content).map_err(TeamError::YamlError)?;
 
         // Update cache
         let mut cache = self.standards_cache.write().await;

@@ -157,7 +157,7 @@ impl AccessControlManager {
         let entries = self
             .audit_logger
             .entries()
-            .map_err(|e| crate::error::TeamError::PermissionsError(e))?;
+            .map_err(crate::error::TeamError::PermissionsError)?;
 
         // Convert and filter entries for this team
         let team_entries: Vec<AuditLogEntry> = entries
