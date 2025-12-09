@@ -2,7 +2,7 @@
 name = "ricecoder-integration-tests"
 version.workspace = true
 edition.workspace = true
-publish = false
+publish = true
 
 [dependencies]
 ricecoder = { path = "crates/ricecoder-cli", version = "0.1" }
