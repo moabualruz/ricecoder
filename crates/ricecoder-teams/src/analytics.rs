@@ -1,5 +1,4 @@
 /// Analytics and metrics tracking
-
 use crate::error::Result;
 use crate::models::{AdoptionMetrics, EffectivenessMetrics, TeamAnalyticsReport};
 

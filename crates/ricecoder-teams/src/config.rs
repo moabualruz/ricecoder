@@ -1,5 +1,4 @@
 /// Team configuration management
-
 use crate::error::{Result, TeamError};
 use crate::models::{MergedStandards, StandardsOverride, TeamStandards};
 use chrono::Utc;
@@ -37,28 +36,20 @@ impl TeamConfigManager {
     }
 
     /// Store standards for a team using ricecoder-storage in YAML format
-    pub async fn store_standards(
-        &self,
-        team_id: &str,
-        standards: TeamStandards,
-    ) -> Result<()> {
+    pub async fn store_standards(&self, team_id: &str, standards: TeamStandards) -> Result<()> {
         // Resolve the storage path for team standards
         let storage_path = Self::resolve_team_standards_path(team_id)?;
 
         // Ensure parent directory exists
         if let Some(parent) = storage_path.parent() {
             std::fs::create_dir_all(parent).map_err(|e| {
-                TeamError::StorageError(format!(
-                    "Failed to create storage directory: {}",
-                    e
-                ))
+                TeamError::StorageError(format!("Failed to create storage directory: {}", e))
             })?;
         }
 
         // Serialize standards to YAML
-        let yaml_content = serde_yaml::to_string(&standards).map_err(|e| {
-            TeamError::YamlError(e)
-        })?;
+        let yaml_content =
+            serde_yaml::to_string(&standards).map_err(|e| TeamError::YamlError(e))?;
 
         // Write to file
         std::fs::write(&storage_path, yaml_content).map_err(|e| {
@@ -103,9 +94,8 @@ impl TeamConfigManager {
             TeamError::StorageError(format!("Failed to read standards file: {}", e))
         })?;
 
-        let standards: TeamStandards = serde_yaml::from_str(&yaml_content).map_err(|e| {
-            TeamError::YamlError(e)
-        })?;
+        let standards: TeamStandards =
+            serde_yaml::from_str(&yaml_content).map_err(|e| TeamError::YamlError(e))?;
 
         // Update cache
         let mut cache = self.standards_cache.write().await;
@@ -221,10 +211,7 @@ impl TeamConfigManager {
     /// Get change history for a team
     pub async fn get_change_history(&self, team_id: &str) -> Result<Vec<ChangeHistoryEntry>> {
         let history = self.change_history.read().await;
-        Ok(history
-            .get(team_id)
-            .cloned()
-            .unwrap_or_default())
+        Ok(history.get(team_id).cloned().unwrap_or_default())
     }
 
     // Helper functions
@@ -266,7 +253,9 @@ impl TeamConfigManager {
             merged.code_review_rules.extend(team.code_review_rules);
             merged.templates.extend(team.templates);
             merged.steering_docs.extend(team.steering_docs);
-            merged.compliance_requirements.extend(team.compliance_requirements);
+            merged
+                .compliance_requirements
+                .extend(team.compliance_requirements);
             merged.version = team.version;
             merged.updated_at = team.updated_at;
         }
@@ -276,7 +265,9 @@ impl TeamConfigManager {
             merged.code_review_rules.extend(project.code_review_rules);
             merged.templates.extend(project.templates);
             merged.steering_docs.extend(project.steering_docs);
-            merged.compliance_requirements.extend(project.compliance_requirements);
+            merged
+                .compliance_requirements
+                .extend(project.compliance_requirements);
             merged.version = project.version;
             merged.updated_at = project.updated_at;
         }
@@ -287,10 +278,7 @@ impl TeamConfigManager {
     }
 
     /// Validate overrides before applying
-    fn validate_overrides(
-        standards: &TeamStandards,
-        overrides: &StandardsOverride,
-    ) -> Result<()> {
+    fn validate_overrides(standards: &TeamStandards, overrides: &StandardsOverride) -> Result<()> {
         for override_id in &overrides.overridden_standards {
             let exists = standards
                 .code_review_rules

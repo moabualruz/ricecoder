@@ -1,7 +1,6 @@
 /// Property-based tests for hot-reload correctness
 /// **Feature: ricecoder-teams, Property 6: Hot-Reload Correctness**
 /// **Validates: Requirements 1.9, 1.10**
-
 use proptest::prelude::*;
 use ricecoder_teams::sync::SyncService;
 use std::time::Duration;

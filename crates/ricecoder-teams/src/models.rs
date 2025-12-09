@@ -1,5 +1,4 @@
 /// Data models for the team collaboration system
-
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -309,7 +308,8 @@ updated_at: 2024-01-01T00:00:00Z
     #[test]
     fn test_team_member_deserialization_from_json() {
         let json = r#"{"id":"member-1","name":"John Doe","email":"john@example.com","role":"Member","joined_at":"2024-01-01T00:00:00Z"}"#;
-        let member: TeamMember = serde_json::from_str(json).expect("Failed to deserialize from JSON");
+        let member: TeamMember =
+            serde_json::from_str(json).expect("Failed to deserialize from JSON");
         assert_eq!(member.id, "member-1");
         assert_eq!(member.name, "John Doe");
         assert_eq!(member.role, TeamRole::Member);
@@ -411,7 +411,10 @@ updated_at: 2024-01-01T00:00:00Z
     fn test_rule_scope_from_str() {
         assert_eq!(RuleScope::from_str("project"), Some(RuleScope::Project));
         assert_eq!(RuleScope::from_str("team"), Some(RuleScope::Team));
-        assert_eq!(RuleScope::from_str("organization"), Some(RuleScope::Organization));
+        assert_eq!(
+            RuleScope::from_str("organization"),
+            Some(RuleScope::Organization)
+        );
         assert_eq!(RuleScope::from_str("invalid"), None);
     }
 
@@ -498,18 +501,23 @@ updated_at: 2024-01-01T00:00:00Z
     fn test_round_trip_standards_json() {
         let original = create_test_standards();
         let json = serde_json::to_string(&original).expect("Failed to serialize");
-        let deserialized: TeamStandards = serde_json::from_str(&json).expect("Failed to deserialize");
+        let deserialized: TeamStandards =
+            serde_json::from_str(&json).expect("Failed to deserialize");
         assert_eq!(original.id, deserialized.id);
         assert_eq!(original.team_id, deserialized.team_id);
         assert_eq!(original.version, deserialized.version);
-        assert_eq!(original.code_review_rules.len(), deserialized.code_review_rules.len());
+        assert_eq!(
+            original.code_review_rules.len(),
+            deserialized.code_review_rules.len()
+        );
     }
 
     #[test]
     fn test_round_trip_standards_yaml() {
         let original = create_test_standards();
         let yaml = serde_yaml::to_string(&original).expect("Failed to serialize");
-        let deserialized: TeamStandards = serde_yaml::from_str(&yaml).expect("Failed to deserialize");
+        let deserialized: TeamStandards =
+            serde_yaml::from_str(&yaml).expect("Failed to deserialize");
         assert_eq!(original.id, deserialized.id);
         assert_eq!(original.team_id, deserialized.team_id);
         assert_eq!(original.version, deserialized.version);

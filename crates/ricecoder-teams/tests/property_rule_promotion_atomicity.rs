@@ -1,3 +1,4 @@
+use chrono::Utc;
 /// Property-based test for rule promotion atomicity
 ///
 /// **Feature: ricecoder-teams, Property 2: Rule Promotion Atomicity**
@@ -6,12 +7,10 @@
 /// Property: *For any* rule promotion from project to team level, the promotion SHALL either
 /// complete successfully with all team members notified, or fail completely with no partial
 /// state changes.
-
 use proptest::prelude::*;
 use ricecoder_teams::models::{RuleScope, SharedRule};
 use ricecoder_teams::rules::{mocks::*, SharedRulesManager};
 use std::sync::Arc;
-use chrono::Utc;
 
 /// Strategy for generating valid rule scopes for promotion
 fn rule_scope_strategy() -> impl Strategy<Value = (RuleScope, RuleScope)> {

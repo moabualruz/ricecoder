@@ -1,5 +1,4 @@
 /// Access control and permission management
-
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -12,6 +11,7 @@ use crate::models::{AuditLogEntry, TeamRole};
 /// Manages team member roles and permissions
 pub struct AccessControlManager {
     /// Permission manager for role-based access control
+    #[allow(dead_code)]
     permission_manager: Arc<PermissionManager>,
     /// Audit logger for tracking permission changes
     audit_logger: Arc<AuditLogger>,
@@ -21,10 +21,7 @@ pub struct AccessControlManager {
 
 impl AccessControlManager {
     /// Create a new AccessControlManager
-    pub fn new(
-        permission_manager: Arc<PermissionManager>,
-        audit_logger: Arc<AuditLogger>,
-    ) -> Self {
+    pub fn new(permission_manager: Arc<PermissionManager>, audit_logger: Arc<AuditLogger>) -> Self {
         AccessControlManager {
             permission_manager,
             audit_logger,
@@ -33,15 +30,12 @@ impl AccessControlManager {
     }
 
     /// Assign a role to a team member
-    pub async fn assign_role(
-        &self,
-        team_id: &str,
-        member_id: &str,
-        role: TeamRole,
-    ) -> Result<()> {
+    pub async fn assign_role(&self, team_id: &str, member_id: &str, role: TeamRole) -> Result<()> {
         // Store role in cache
         let mut roles = self.member_roles.write().await;
-        let team_roles = roles.entry(team_id.to_string()).or_insert_with(HashMap::new);
+        let team_roles = roles
+            .entry(team_id.to_string())
+            .or_insert_with(HashMap::new);
         team_roles.insert(member_id.to_string(), role);
 
         // Log the action
@@ -55,11 +49,9 @@ impl AccessControlManager {
         // Audit log entry
         let tool_name = format!("team:{}:assign_role", team_id);
         let context = format!("Assigned role {} to member {}", role.as_str(), member_id);
-        let _ = self.audit_logger.log_execution(
-            tool_name,
-            Some(member_id.to_string()),
-            Some(context),
-        );
+        let _ =
+            self.audit_logger
+                .log_execution(tool_name, Some(member_id.to_string()), Some(context));
 
         Ok(())
     }
@@ -149,11 +141,9 @@ impl AccessControlManager {
         // Audit log entry
         let tool_name = format!("team:{}:revoke_access", team_id);
         let context = format!("Revoked access for member {}", member_id);
-        let _ = self.audit_logger.log_execution(
-            tool_name,
-            Some(member_id.to_string()),
-            Some(context),
-        );
+        let _ =
+            self.audit_logger
+                .log_execution(tool_name, Some(member_id.to_string()), Some(context));
 
         Ok(())
     }
@@ -200,12 +190,7 @@ impl AccessControlManager {
     }
 
     /// Check if a member has a specific role
-    pub async fn has_role(
-        &self,
-        team_id: &str,
-        member_id: &str,
-        role: TeamRole,
-    ) -> Result<bool> {
+    pub async fn has_role(&self, team_id: &str, member_id: &str, role: TeamRole) -> Result<bool> {
         let member_role = self.get_member_role(team_id, member_id).await?;
         Ok(member_role == Some(role))
     }

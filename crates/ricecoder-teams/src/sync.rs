@@ -1,5 +1,4 @@
 /// Synchronization and hot-reload support
-
 use crate::error::{Result, TeamError};
 use ricecoder_storage::PathResolver;
 use std::collections::HashMap;
@@ -97,9 +96,8 @@ impl SyncService {
         }
 
         // Get current modification time
-        let metadata = std::fs::metadata(&storage_path).map_err(|e| {
-            TeamError::StorageError(format!("Failed to get file metadata: {}", e))
-        })?;
+        let metadata = std::fs::metadata(&storage_path)
+            .map_err(|e| TeamError::StorageError(format!("Failed to get file metadata: {}", e)))?;
 
         let modified_time = metadata.modified().map_err(|e| {
             TeamError::StorageError(format!("Failed to get modification time: {}", e))
@@ -197,10 +195,7 @@ impl SyncService {
     pub async fn notify_members(&self, team_id: &str, message: &str) -> Result<()> {
         let members = self.team_members.read().await;
 
-        let member_ids = members
-            .get(team_id)
-            .cloned()
-            .unwrap_or_default();
+        let member_ids = members.get(team_id).cloned().unwrap_or_default();
 
         if member_ids.is_empty() {
             tracing::warn!(

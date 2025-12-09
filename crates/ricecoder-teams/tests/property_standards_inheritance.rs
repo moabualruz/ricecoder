@@ -1,13 +1,12 @@
+use chrono::Utc;
 /// Property-based tests for standards inheritance
 /// **Feature: ricecoder-teams, Property 1: Standards Inheritance Consistency**
 /// **Validates: Requirements 1.6, 1.7**
-
 use proptest::prelude::*;
 use ricecoder_teams::config::TeamConfigManager;
 use ricecoder_teams::models::{
     CodeReviewRule, ComplianceRequirement, SteeringDoc, TeamStandards, Template,
 };
-use chrono::Utc;
 
 /// Strategy for generating random CodeReviewRule
 fn arb_code_review_rule() -> impl Strategy<Value = CodeReviewRule> {
@@ -43,26 +42,19 @@ fn arb_template() -> impl Strategy<Value = Template> {
 
 /// Strategy for generating random SteeringDoc
 fn arb_steering_doc() -> impl Strategy<Value = SteeringDoc> {
-    (
-        "[a-z0-9]{1,20}",
-        "[a-z0-9 ]{1,50}",
-        "[a-z0-9 ]{1,200}",
-    )
+    ("[a-z0-9]{1,20}", "[a-z0-9 ]{1,50}", "[a-z0-9 ]{1,200}")
         .prop_map(|(id, name, content)| SteeringDoc { id, name, content })
 }
 
 /// Strategy for generating random ComplianceRequirement
 fn arb_compliance_requirement() -> impl Strategy<Value = ComplianceRequirement> {
-    (
-        "[a-z0-9]{1,20}",
-        "[a-z0-9 ]{1,50}",
-        "[a-z0-9 ]{1,100}",
-    )
-        .prop_map(|(id, name, description)| ComplianceRequirement {
+    ("[a-z0-9]{1,20}", "[a-z0-9 ]{1,50}", "[a-z0-9 ]{1,100}").prop_map(|(id, name, description)| {
+        ComplianceRequirement {
             id,
             name,
             description,
-        })
+        }
+    })
 }
 
 /// Strategy for generating random TeamStandards
@@ -76,17 +68,19 @@ fn arb_team_standards(team_id: &str) -> impl Strategy<Value = TeamStandards> {
         prop::collection::vec(arb_compliance_requirement(), 0..3),
         1u32..10u32,
     )
-        .prop_map(move |(id, rules, templates, docs, compliance, version)| TeamStandards {
-            id,
-            team_id: team_id.clone(),
-            code_review_rules: rules,
-            templates,
-            steering_docs: docs,
-            compliance_requirements: compliance,
-            version,
-            created_at: Utc::now(),
-            updated_at: Utc::now(),
-        })
+        .prop_map(
+            move |(id, rules, templates, docs, compliance, version)| TeamStandards {
+                id,
+                team_id: team_id.clone(),
+                code_review_rules: rules,
+                templates,
+                steering_docs: docs,
+                compliance_requirements: compliance,
+                version,
+                created_at: Utc::now(),
+                updated_at: Utc::now(),
+            },
+        )
 }
 
 proptest! {
@@ -329,11 +323,9 @@ mod tests {
             updated_at: Utc::now(),
         };
 
-        let merged = TeamConfigManager::merge_standards_hierarchy(
-            Some(org),
-            Some(team),
-            Some(project),
-        ).expect("Merge should succeed");
+        let merged =
+            TeamConfigManager::merge_standards_hierarchy(Some(org), Some(team), Some(project))
+                .expect("Merge should succeed");
 
         // Should have all 3 rules
         assert_eq!(merged.code_review_rules.len(), 3);
@@ -360,11 +352,8 @@ mod tests {
             updated_at: Utc::now(),
         };
 
-        let merged = TeamConfigManager::merge_standards_hierarchy(
-            Some(org.clone()),
-            None,
-            None,
-        ).expect("Merge should succeed");
+        let merged = TeamConfigManager::merge_standards_hierarchy(Some(org.clone()), None, None)
+            .expect("Merge should succeed");
 
         // Should have only org rule
         assert_eq!(merged.code_review_rules.len(), 1);
@@ -374,11 +363,8 @@ mod tests {
 
     #[test]
     fn test_merge_standards_hierarchy_all_none() {
-        let merged = TeamConfigManager::merge_standards_hierarchy(
-            None,
-            None,
-            None,
-        ).expect("Merge should succeed");
+        let merged = TeamConfigManager::merge_standards_hierarchy(None, None, None)
+            .expect("Merge should succeed");
 
         // Should have default values
         assert_eq!(merged.code_review_rules.len(), 0);

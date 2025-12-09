@@ -1,5 +1,4 @@
 /// Shared rules management and promotion
-
 use crate::error::Result;
 use crate::models::{AdoptionMetrics, EffectivenessMetrics, RuleScope, SharedRule};
 use std::sync::Arc;
@@ -108,9 +107,10 @@ impl SharedRulesManager {
         // Validate rule before promotion (Requirement 2.4)
         let validation = self.validate_rule(&rule).await?;
         if !validation.is_valid {
-            return Err(crate::error::TeamError::RuleValidationFailed(
-                format!("Rule validation failed: {:?}", validation.errors),
-            ));
+            return Err(crate::error::TeamError::RuleValidationFailed(format!(
+                "Rule validation failed: {:?}",
+                validation.errors
+            )));
         }
 
         // Use ricecoder-learning RulePromoter for promotion logic (Requirement 2.1, 2.2)
@@ -263,7 +263,12 @@ pub mod mocks {
     pub struct MockRulePromoter;
 
     impl RulePromoter for MockRulePromoter {
-        fn promote(&self, _rule: &SharedRule, _from_scope: RuleScope, _to_scope: RuleScope) -> Result<()> {
+        fn promote(
+            &self,
+            _rule: &SharedRule,
+            _from_scope: RuleScope,
+            _to_scope: RuleScope,
+        ) -> Result<()> {
             Ok(())
         }
     }
@@ -340,7 +345,10 @@ mod tests {
         let manager = create_test_manager();
         let rule = create_test_rule();
 
-        let report = manager.validate_rule(&rule).await.expect("Validation failed");
+        let report = manager
+            .validate_rule(&rule)
+            .await
+            .expect("Validation failed");
         assert!(report.is_valid);
         assert_eq!(report.rule_id, "rule-1");
         assert!(report.errors.is_empty());

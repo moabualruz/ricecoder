@@ -9,7 +9,6 @@
 /// - ricecoder-storage: Configuration management and path resolution
 /// - ricecoder-learning: Rule promotion and analytics
 /// - ricecoder-permissions: Access control and audit logging
-
 pub mod access;
 pub mod analytics;
 pub mod config;
@@ -27,8 +26,8 @@ pub use error::{Result, TeamError};
 pub use manager::TeamManager;
 pub use models::{
     AdoptionMetrics, AuditLogEntry, CodeReviewRule, ComplianceRequirement, EffectivenessMetrics,
-    MergedStandards, RuleScope, SharedRule, StandardsOverride, Team, TeamAnalyticsReport,
-    TeamMember, TeamRole, TeamStandards, Template, SteeringDoc,
+    MergedStandards, RuleScope, SharedRule, StandardsOverride, SteeringDoc, Team,
+    TeamAnalyticsReport, TeamMember, TeamRole, TeamStandards, Template,
 };
 pub use rules::SharedRulesManager;
 pub use sync::SyncService;

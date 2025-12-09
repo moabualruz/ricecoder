@@ -1,5 +1,4 @@
 /// Error types for the team collaboration system
-
 use thiserror::Error;
 
 /// Result type for team operations

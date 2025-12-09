@@ -1,7 +1,6 @@
 /// Property test for audit trail completeness
 /// **Feature: ricecoder-teams, Property 4: Audit Trail Completeness**
 /// **Validates: Requirements 3.7, 3.8**
-
 use ricecoder_teams::TeamRole;
 
 #[tokio::test]

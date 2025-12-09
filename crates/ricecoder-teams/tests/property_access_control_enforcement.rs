@@ -1,7 +1,6 @@
 /// Property test for access control enforcement
 /// **Feature: ricecoder-teams, Property 3: Access Control Enforcement**
 /// **Validates: Requirements 3.2, 3.3, 3.4, 3.5**
-
 use ricecoder_teams::TeamRole;
 
 #[tokio::test]
@@ -40,18 +39,30 @@ async fn prop_access_control_enforces_permissions() {
     match role {
         TeamRole::Admin => {
             // Admin should have all permissions
-            assert!(has_permission, "Admin should have permission for action: {}", action);
+            assert!(
+                has_permission,
+                "Admin should have permission for action: {}",
+                action
+            );
         }
         TeamRole::Member => {
             // Member should have view and apply permissions
             if action == "view_standards" || action == "apply_standards" {
-                assert!(has_permission, "Member should have permission for action: {}", action);
+                assert!(
+                    has_permission,
+                    "Member should have permission for action: {}",
+                    action
+                );
             }
         }
         TeamRole::Viewer => {
             // Viewer should only have view permission
             if action == "view_standards" {
-                assert!(has_permission, "Viewer should have permission for action: {}", action);
+                assert!(
+                    has_permission,
+                    "Viewer should have permission for action: {}",
+                    action
+                );
             }
         }
     }

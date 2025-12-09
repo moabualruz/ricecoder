@@ -1,12 +1,10 @@
+use chrono::Utc;
 /// Unit tests for TeamConfigManager
 /// Tests configuration storage, retrieval, hierarchy merging, and override capability
-
 use ricecoder_teams::config::TeamConfigManager;
 use ricecoder_teams::models::{
-    CodeReviewRule, ComplianceRequirement, StandardsOverride, SteeringDoc, TeamStandards,
-    Template,
+    CodeReviewRule, ComplianceRequirement, StandardsOverride, SteeringDoc, TeamStandards, Template,
 };
-use chrono::Utc;
 
 /// Helper function to create test standards
 fn create_test_standards(team_id: &str, version: u32) -> TeamStandards {
@@ -184,9 +182,7 @@ async fn test_override_standards_removes_rules() {
     };
 
     // Apply override
-    let result = manager
-        .override_standards("project-1", overrides)
-        .await;
+    let result = manager.override_standards("project-1", overrides).await;
     assert!(result.is_ok(), "Should apply overrides successfully");
 
     // Verify rule was removed
@@ -219,10 +215,11 @@ async fn test_override_standards_invalid_target() {
     };
 
     // Apply override should fail
-    let result = manager
-        .override_standards("project-1", overrides)
-        .await;
-    assert!(result.is_err(), "Should fail for non-existent override target");
+    let result = manager.override_standards("project-1", overrides).await;
+    assert!(
+        result.is_err(),
+        "Should fail for non-existent override target"
+    );
 }
 
 #[tokio::test]
@@ -381,7 +378,10 @@ async fn test_standards_serialization_roundtrip() {
     assert_eq!(original.id, retrieved.id);
     assert_eq!(original.team_id, retrieved.team_id);
     assert_eq!(original.version, retrieved.version);
-    assert_eq!(original.code_review_rules.len(), retrieved.code_review_rules.len());
+    assert_eq!(
+        original.code_review_rules.len(),
+        retrieved.code_review_rules.len()
+    );
     assert_eq!(original.templates.len(), retrieved.templates.len());
     assert_eq!(original.steering_docs.len(), retrieved.steering_docs.len());
     assert_eq!(
