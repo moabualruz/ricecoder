@@ -1,6 +1,6 @@
 [package]
 name = "ricecoder-teams"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 authors = ["RiceCoder Contributors"]
 description = "Team collaboration system for RiceCoder - shared standards, rule promotion, and access control"

@@ -1,6 +1,6 @@
 [package]
 name = "ricecoder-sessions"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 authors = ["RiceCoder Contributors"]
 description = "Multi-session support with persistence, sharing, and background agents for RiceCoder"

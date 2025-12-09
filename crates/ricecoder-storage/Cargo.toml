@@ -1,6 +1,6 @@
 [package]
 name = "ricecoder-storage"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 authors = ["RiceCoder Contributors"]
 description = "Storage and configuration management for RiceCoder"

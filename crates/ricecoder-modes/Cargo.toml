@@ -1,6 +1,6 @@
 [package]
 name = "ricecoder-modes"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 authors = ["RiceCoder Contributors"]
 description = "Mode system for RiceCoder with Code, Ask, and Vibe modes"
