@@ -2,7 +2,7 @@
 name = "ricecoder-integration-tests"
 version.workspace = true
 edition.workspace = true
-publish = true
+publish = false
 
 [dependencies]
 ricecoder = { path = "crates/ricecoder-cli", version = "0.1" }
@@ -80,7 +80,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.1.71"
+version = "0.1.72"
 edition = "2021"
 authors = ["RiceCoder Contributors"]
 license = "MIT"
