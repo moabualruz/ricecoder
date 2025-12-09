@@ -10,7 +10,7 @@
 //! - Symbol index lookup returns correct results
 
 use proptest::prelude::*;
-use ricecoder_lsp::semantic::{SemanticAnalyzer, SemanticAnalyzerFactory, LanguageDetector};
+use ricecoder_lsp::semantic::{SemanticAnalyzerFactory, LanguageDetector};
 use ricecoder_lsp::types::Language;
 use std::path::Path;
 
@@ -202,7 +202,8 @@ fn prop_language_detection_from_extension_consistency() {
     proptest!(|(
         ext in r#"[a-z]{1,5}"#,
     )| {
-        let path = Path::new(&format!("test.{}", ext));
+        let filename = format!("test.{}", ext);
+        let path = Path::new(&filename);
 
         // Detect language multiple times
         let lang1 = LanguageDetector::from_extension(path);
@@ -310,7 +311,7 @@ fn prop_unsupported_language_graceful_degradation() {
 #[test]
 fn prop_semantic_analyzer_thread_safe() {
     proptest!(|(code in rust_code_strategy())| {
-        let analyzer = SemanticAnalyzerFactory::create(Language::Rust);
+        let _analyzer = SemanticAnalyzerFactory::create(Language::Rust);
 
         // Create multiple threads analyzing the same code
         let code1 = code.clone();

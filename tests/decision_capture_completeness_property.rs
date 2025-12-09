@@ -107,7 +107,7 @@ proptest! {
 
             // Verify capture succeeded
             prop_assert!(result.is_ok());
-            prop_assert_eq!(result.unwrap(), decision_id);
+            prop_assert_eq!(result.unwrap(), decision_id.clone());
 
             // Retrieve the decision
             let retrieved = logger.get_decision(&decision_id).await;
@@ -127,7 +127,8 @@ proptest! {
 
             // Verify timestamp is set
             prop_assert!(retrieved_decision.timestamp.timestamp() > 0);
-        });
+            Ok::<(), TestCaseError>(())
+        }).unwrap();
     }
 
     /// Property 1: Decision Capture Completeness (History)
@@ -151,9 +152,10 @@ proptest! {
             prop_assert_eq!(history.len(), decision_ids.len());
 
             for (i, decision_id) in decision_ids.iter().enumerate() {
-                prop_assert_eq!(history[i].id, *decision_id);
+                prop_assert_eq!(&history[i].id, decision_id);
             }
-        });
+            Ok::<(), TestCaseError>(())
+        }).unwrap();
     }
 
     /// Property 1: Decision Capture Completeness (By Type)
@@ -182,10 +184,11 @@ proptest! {
 
                 // Verify all filtered decisions have the correct type
                 for decision in filtered {
-                    prop_assert_eq!(decision.decision_type, decision_type);
+                    prop_assert_eq!(decision.decision_type, decision_type.clone());
                 }
             }
-        });
+            Ok::<(), TestCaseError>(())
+        }).unwrap();
     }
 
     /// Property 1: Decision Capture Completeness (By Context)
@@ -221,12 +224,13 @@ proptest! {
 
                     // Verify all filtered decisions have the correct context
                     for decision in filtered {
-                        prop_assert_eq!(decision.context.project_path, context.project_path);
-                        prop_assert_eq!(decision.context.file_path, context.file_path);
+                        prop_assert_eq!(decision.context.project_path, context.project_path.clone());
+                        prop_assert_eq!(decision.context.file_path, context.file_path.clone());
                     }
                 }
             }
-        });
+            Ok::<(), TestCaseError>(())
+        }).unwrap();
     }
 
     /// Property 1: Decision Capture Completeness (Replay)
@@ -250,9 +254,10 @@ proptest! {
             prop_assert_eq!(replayed.len(), decision_ids.len());
 
             for (i, decision_id) in decision_ids.iter().enumerate() {
-                prop_assert_eq!(replayed[i].id, *decision_id);
+                prop_assert_eq!(&replayed[i].id, decision_id);
             }
-        });
+            Ok::<(), TestCaseError>(())
+        }).unwrap();
     }
 
     /// Property 1: Decision Capture Completeness (Count)
@@ -273,7 +278,8 @@ proptest! {
             }
 
             prop_assert_eq!(logger.decision_count().await, decisions.len());
-        });
+            Ok::<(), TestCaseError>(())
+        }).unwrap();
     }
 
     /// Property 1: Decision Capture Completeness (Statistics)
@@ -315,6 +321,7 @@ proptest! {
             for (agent_type, expected_count) in expected_agent_counts {
                 prop_assert_eq!(stats.agent_types.get(&agent_type), Some(&expected_count));
             }
-        });
+            Ok::<(), TestCaseError>(())
+        }).unwrap();
     }
 }
