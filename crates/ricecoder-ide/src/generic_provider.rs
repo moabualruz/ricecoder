@@ -14,6 +14,12 @@ use tracing::debug;
 /// Generic text-based provider for any language
 pub struct GenericProvider;
 
+impl Default for GenericProvider {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GenericProvider {
     /// Create a new generic provider
     pub fn new() -> Self {

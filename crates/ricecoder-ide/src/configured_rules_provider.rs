@@ -214,7 +214,7 @@ impl ConfiguredRulesProvider {
                         let kind = item
                             .get("kind")
                             .and_then(|k| k.as_str())
-                            .and_then(|k| Self::parse_completion_kind(k))
+                            .and_then(Self::parse_completion_kind)
                             .unwrap_or(CompletionItemKind::Text);
                         let detail = item.get("detail").and_then(|d| d.as_str()).map(|s| s.to_string());
                         let documentation = item
@@ -260,7 +260,7 @@ impl ConfiguredRulesProvider {
                         let severity = item
                             .get("severity")
                             .and_then(|s| s.as_str())
-                            .and_then(|s| Self::parse_severity(s))
+                            .and_then(Self::parse_severity)
                             .unwrap_or(DiagnosticSeverity::Information);
                         let source = item
                             .get("source")

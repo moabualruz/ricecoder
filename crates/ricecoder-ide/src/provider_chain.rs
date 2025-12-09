@@ -278,7 +278,7 @@ impl ProviderChainManager {
 
         // Update external LSP servers if configuration changed
         if config.providers.external_lsp.enabled {
-            for (language, _server_config) in &config.providers.external_lsp.servers {
+            for language in config.providers.external_lsp.servers.keys() {
                 // Providers will be re-registered based on new configuration
                 debug!("Updated LSP configuration for language: {}", language);
             }

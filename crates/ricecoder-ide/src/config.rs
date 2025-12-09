@@ -9,6 +9,12 @@ use tracing::{debug, info};
 /// Configuration manager for IDE integration
 pub struct ConfigManager;
 
+impl Default for ConfigManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ConfigManager {
     /// Create a new configuration manager
     pub fn new() -> Self {

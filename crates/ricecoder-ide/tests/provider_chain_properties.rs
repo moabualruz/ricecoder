@@ -8,6 +8,7 @@ use ricecoder_ide::*;
 use std::sync::Arc;
 
 /// Mock provider for testing
+#[allow(dead_code)]
 struct MockProvider {
     name: String,
     language: String,

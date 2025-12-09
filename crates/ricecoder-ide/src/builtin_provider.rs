@@ -125,7 +125,7 @@ impl RustProvider {
     fn extract_variable_name(source: &str) -> Option<String> {
         if let Some(start) = source.find("let ") {
             let after_let = &source[start + 4..];
-            if let Some(end) = after_let.find(|c: char| c == ' ' || c == '=' || c == ':') {
+            if let Some(end) = after_let.find([' ', '=', ':']) {
                 return Some(after_let[..end].trim().to_string());
             }
         }
@@ -240,7 +240,7 @@ impl TypeScriptProvider {
     fn extract_variable_name(source: &str) -> Option<String> {
         if let Some(start) = source.find("const ") {
             let after_const = &source[start + 6..];
-            if let Some(end) = after_const.find(|c: char| c == ' ' || c == '=' || c == ':') {
+            if let Some(end) = after_const.find([' ', '=', ':']) {
                 return Some(after_const[..end].trim().to_string());
             }
         }
@@ -356,7 +356,7 @@ impl PythonProvider {
         if let Some(start) = source.find("import ") {
             let after_import = &source[start + 7..];
             let end = after_import
-                .find(|c: char| c == ' ' || c == '\n' || c == ';')
+                .find([' ', '\n', ';'])
                 .unwrap_or(after_import.len());
             if end > 0 {
                 return Some(after_import[..end].trim().to_string());

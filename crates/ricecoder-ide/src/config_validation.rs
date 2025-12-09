@@ -266,7 +266,7 @@ impl ConfigValidator {
         }
 
         // Validate language names
-        let valid_languages = vec!["rust", "typescript", "python"];
+        let valid_languages = ["rust", "typescript", "python"];
         for lang in &config.languages {
             if !valid_languages.contains(&lang.as_str()) {
                 return Err(IdeError::config_validation_error(format!(
@@ -349,7 +349,7 @@ impl ConfigValidator {
         }
 
         // Validate feature names
-        let valid_features = vec!["completion", "diagnostics", "hover", "definition"];
+        let valid_features = ["completion", "diagnostics", "hover", "definition"];
         for feature in &config.features {
             if !valid_features.contains(&feature.as_str()) {
                 return Err(IdeError::config_validation_error(format!(
