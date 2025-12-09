@@ -5,11 +5,8 @@
 ///
 /// **Feature: ricecoder-teams, Concurrent Operations Tests**
 /// **Validates: Requirements 2.1, 2.2, 3.7**
-
 use chrono::Utc;
-use ricecoder_teams::{
-    TeamManager, TeamMember, TeamRole, TeamStandards, SharedRule, RuleScope,
-};
+use ricecoder_teams::{RuleScope, SharedRule, TeamManager, TeamMember, TeamRole, TeamStandards};
 use std::sync::Arc;
 use tokio::task::JoinHandle;
 use uuid::Uuid;
@@ -158,7 +155,10 @@ async fn test_concurrent_rule_promotions_different_scopes() {
     let result2 = handle2.await.expect("Task 2 panicked");
 
     assert!(result1.is_ok(), "Project to Team promotion should succeed");
-    assert!(result2.is_ok(), "Team to Organization promotion should succeed");
+    assert!(
+        result2.is_ok(),
+        "Team to Organization promotion should succeed"
+    );
 }
 
 #[tokio::test]

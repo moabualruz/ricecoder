@@ -5,11 +5,8 @@
 ///
 /// **Feature: ricecoder-teams, Error Handling Tests**
 /// **Validates: Requirements 1.1-1.10, 2.1-2.9, 3.1-3.8**
-
 use chrono::Utc;
-use ricecoder_teams::{
-    TeamManager, TeamMember, TeamRole, TeamStandards, SharedRule, RuleScope,
-};
+use ricecoder_teams::{RuleScope, SharedRule, TeamManager, TeamMember, TeamRole, TeamStandards};
 use uuid::Uuid;
 
 /// Helper function to create a test team member
@@ -72,10 +69,7 @@ async fn test_error_on_duplicate_member_addition() {
     let result = manager.add_member(&team.id, member.clone()).await;
 
     // Should fail
-    assert!(
-        result.is_err(),
-        "Adding duplicate member should fail"
-    );
+    assert!(result.is_err(), "Adding duplicate member should fail");
 }
 
 #[tokio::test]
@@ -95,10 +89,7 @@ async fn test_error_on_remove_nonexistent_member() {
     let result = manager.remove_member(&team.id, &nonexistent_id).await;
 
     // Should fail
-    assert!(
-        result.is_err(),
-        "Removing nonexistent member should fail"
-    );
+    assert!(result.is_err(), "Removing nonexistent member should fail");
 }
 
 #[tokio::test]
@@ -111,10 +102,7 @@ async fn test_error_on_get_nonexistent_team() {
     let result = manager.get_team(&nonexistent_id).await;
 
     // Should fail
-    assert!(
-        result.is_err(),
-        "Getting nonexistent team should fail"
-    );
+    assert!(result.is_err(), "Getting nonexistent team should fail");
 }
 
 #[tokio::test]
@@ -129,10 +117,7 @@ async fn test_error_on_get_nonexistent_standards() {
     let result = config_manager.get_standards(&nonexistent_id).await;
 
     // Should fail
-    assert!(
-        result.is_err(),
-        "Getting nonexistent standards should fail"
-    );
+    assert!(result.is_err(), "Getting nonexistent standards should fail");
 }
 
 #[tokio::test]
@@ -303,7 +288,10 @@ async fn test_permission_check_for_different_roles() {
     let viewer = create_test_member("Charlie", "charlie@example.com", TeamRole::Viewer);
 
     let team = manager
-        .create_team("Permission Test Team", vec![admin.clone(), member.clone(), viewer.clone()])
+        .create_team(
+            "Permission Test Team",
+            vec![admin.clone(), member.clone(), viewer.clone()],
+        )
         .await
         .expect("Failed to create team");
 
@@ -430,9 +418,7 @@ async fn test_standards_storage_error_recovery() {
     let mut updated = standards.clone();
     updated.version = 2;
 
-    let result = config_manager
-        .store_standards(&team.id, updated)
-        .await;
+    let result = config_manager.store_standards(&team.id, updated).await;
 
     assert!(result.is_ok(), "Updated storage should succeed");
 

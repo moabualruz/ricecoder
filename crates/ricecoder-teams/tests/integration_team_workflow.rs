@@ -5,11 +5,8 @@
 ///
 /// **Feature: ricecoder-teams, Integration Tests**
 /// **Validates: Requirements 1.1-1.10, 2.1-2.9, 3.1-3.8**
-
 use chrono::Utc;
-use ricecoder_teams::{
-    TeamManager, TeamMember, TeamRole, TeamStandards, SharedRule, RuleScope,
-};
+use ricecoder_teams::{RuleScope, SharedRule, TeamManager, TeamMember, TeamRole, TeamStandards};
 use uuid::Uuid;
 
 /// Helper function to create a test team member
@@ -67,7 +64,10 @@ async fn test_complete_team_creation_and_standards_sharing_workflow() {
     let viewer = create_test_member("Charlie", "charlie@example.com", TeamRole::Viewer);
 
     let team = manager
-        .create_team("Engineering Team", vec![admin.clone(), member.clone(), viewer.clone()])
+        .create_team(
+            "Engineering Team",
+            vec![admin.clone(), member.clone(), viewer.clone()],
+        )
         .await
         .expect("Failed to create team");
 
@@ -110,7 +110,11 @@ async fn test_complete_team_creation_and_standards_sharing_workflow() {
             .await
             .expect("Failed to check permission");
 
-        assert!(has_access, "Member {} should have access to standards", member.id);
+        assert!(
+            has_access,
+            "Member {} should have access to standards",
+            member.id
+        );
     }
 }
 
@@ -304,7 +308,10 @@ async fn test_rule_promotion_chain_project_to_team_to_organization() {
     let result2 = rules_manager
         .promote_rule(team_rule, RuleScope::Team, RuleScope::Organization)
         .await;
-    assert!(result2.is_ok(), "Team to Organization promotion should succeed");
+    assert!(
+        result2.is_ok(),
+        "Team to Organization promotion should succeed"
+    );
 }
 
 #[tokio::test]
@@ -444,14 +451,16 @@ async fn test_project_level_override_of_inherited_standards() {
     let project_id = "project-override";
     let mut project_standards = create_test_standards(project_id);
     project_standards.version = 1;
-    
+
     // Add a code review rule to override
-    project_standards.code_review_rules.push(ricecoder_teams::CodeReviewRule {
-        id: "rule-1".to_string(),
-        name: "Test Rule".to_string(),
-        description: "A test rule to override".to_string(),
-        enabled: true,
-    });
+    project_standards
+        .code_review_rules
+        .push(ricecoder_teams::CodeReviewRule {
+            id: "rule-1".to_string(),
+            name: "Test Rule".to_string(),
+            description: "A test rule to override".to_string(),
+            enabled: true,
+        });
 
     config_manager
         .store_standards(project_id, project_standards.clone())
@@ -479,7 +488,10 @@ async fn test_project_level_override_of_inherited_standards() {
         .await
         .expect("Failed to retrieve updated standards");
 
-    assert_eq!(updated_standards.version, 2, "Version should be incremented");
+    assert_eq!(
+        updated_standards.version, 2,
+        "Version should be incremented"
+    );
 }
 
 #[tokio::test]
