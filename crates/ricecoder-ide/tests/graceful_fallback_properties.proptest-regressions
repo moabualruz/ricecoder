@@ -1,0 +1,9 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc a44353200b06e671aec71e06fe74bba7f3f178f021c97eb5c425a198007355bf # shrinks to (lsp_fails, rules_available, builtin_available) = (true, false, false)
+cc ba92c842facfd823649c04bd697d6be5f97100d8318606eac72d36c6d8953de6 # shrinks to (lsp_fails, rules_fails, builtin_fails) = (true, false, false)
+cc c5241316f49b06ce7135cdf4d967c0ef4b537b7aa9483d599980502c15b7e0bf # shrinks to (lsp_fails, rules_available, builtin_available) = (true, false, false)

@@ -42,14 +42,28 @@
 //! }
 //! ```
 
+pub mod builtin_provider;
 pub mod config;
+pub mod configured_rules_provider;
 pub mod error;
+pub mod external_lsp_provider;
+pub mod generic_provider;
+pub mod hot_reload;
+pub mod lsp_monitor;
 pub mod manager;
 pub mod provider;
+pub mod provider_chain;
 pub mod types;
 
+pub use builtin_provider::{PythonProvider, RustProvider, TypeScriptProvider};
 pub use config::ConfigManager;
+pub use configured_rules_provider::ConfiguredRulesProvider;
 pub use error::IdeError;
+pub use external_lsp_provider::ExternalLspProvider;
+pub use generic_provider::GenericProvider;
+pub use hot_reload::{HotReloadManager, ConfigChangeCallback, ProviderAvailabilityCallback};
+pub use lsp_monitor::{LspMonitor, LspHealthStatus};
 pub use manager::IdeIntegrationManager;
 pub use provider::{IdeProvider, ProviderChain};
+pub use provider_chain::{ProviderChainManager, ProviderRegistry};
 pub use types::*;
