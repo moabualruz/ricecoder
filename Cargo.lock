@@ -3185,6 +3185,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "ricecoder-integration-tests"
+version = "0.6.0"
+dependencies = [
+ "proptest",
+ "tempfile",
+]
+
+[[package]]
 name = "ricecoder-keybinds"
 version = "0.1.0"
 dependencies = [
