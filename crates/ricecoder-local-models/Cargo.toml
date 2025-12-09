@@ -25,8 +25,8 @@ reqwest = { version = "0.11", features = ["json"] }
 futures = "0.3"
 chrono = { version = "0.4", features = ["serde"] }
 
-ricecoder-providers = { path = "../ricecoder-providers", version = "0" }
-ricecoder-storage = { path = "../ricecoder-storage", version = "0" }
+ricecoder-providers = { path = "../ricecoder-providers", version = "0.1" }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
 
 [dev-dependencies]
 proptest = "1.4"

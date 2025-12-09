@@ -32,8 +32,8 @@ colored = { workspace = true }
 dirs = { workspace = true }
 arboard = { workspace = true }
 chrono = { workspace = true }
-ricecoder-sessions = { path = "../ricecoder-sessions", version = "0" }
-ricecoder-storage = { path = "../ricecoder-storage", version = "0" }
+ricecoder-sessions = { path = "../ricecoder-sessions", version = "0.1" }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
 
 [dev-dependencies]
 proptest = { workspace = true }

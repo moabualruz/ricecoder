@@ -20,8 +20,8 @@ futures.workspace = true
 chrono.workspace = true
 uuid.workspace = true
 
-ricecoder-storage = { path = "../ricecoder-storage", version = "0" }
-ricecoder-providers = { path = "../ricecoder-providers", version = "0" }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
+ricecoder-providers = { path = "../ricecoder-providers", version = "0.1" }
 jsonschema.workspace = true
 serde_yaml.workspace = true
 

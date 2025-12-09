@@ -29,7 +29,7 @@ tree-sitter-typescript = "0.20"
 tree-sitter-python = "0.20"
 regex = { workspace = true }
 chrono = { workspace = true }
-ricecoder-storage = { path = "../ricecoder-storage", version = "0" }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
 
 [dev-dependencies]
 proptest = { workspace = true }

@@ -25,7 +25,7 @@ uuid = { version = "1.0", features = ["v4", "serde"] }
 dirs = "5.0"
 regex = "1.10"
 md5 = "0.7"
-ricecoder-storage = { path = "../ricecoder-storage", version = "0" }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
 
 [dev-dependencies]
 proptest = "1.4"

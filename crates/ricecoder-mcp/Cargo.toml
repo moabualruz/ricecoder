@@ -22,10 +22,10 @@ anyhow = { workspace = true }
 chrono = { version = "0.4", features = ["serde"] }
 
 # For ricecoder integration
-ricecoder-storage = { path = "../ricecoder-storage", version = "0" }
-ricecoder-permissions = { path = "../ricecoder-permissions", version = "0" }
-ricecoder-agents = { path = "../ricecoder-agents", version = "0" }
-ricecoder-files = { path = "../ricecoder-files", version = "0" }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
+ricecoder-permissions = { path = "../ricecoder-permissions", version = "0.1" }
+ricecoder-agents = { path = "../ricecoder-agents", version = "0.1" }
+ricecoder-files = { path = "../ricecoder-files", version = "0.1" }
 
 [dev-dependencies]
 proptest = { workspace = true }

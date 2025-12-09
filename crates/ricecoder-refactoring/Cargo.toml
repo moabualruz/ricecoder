@@ -14,8 +14,8 @@ name = "ricecoder_refactoring"
 path = "src/lib.rs"
 
 [dependencies]
-ricecoder-storage = { path = "../ricecoder-storage", version = "0" }
-ricecoder-files = { path = "../ricecoder-files", version = "0" }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
+ricecoder-files = { path = "../ricecoder-files", version = "0.1" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }

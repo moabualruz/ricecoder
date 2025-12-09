@@ -21,7 +21,7 @@ pulldown-cmark = "0.9"
 tracing = { workspace = true }
 tokio = { workspace = true }
 async-trait = { workspace = true }
-ricecoder-storage = { path = "../ricecoder-storage", version = "0" }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
 
 [dev-dependencies]
 proptest = { workspace = true }

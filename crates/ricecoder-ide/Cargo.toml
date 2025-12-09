@@ -24,10 +24,10 @@ tokio = { workspace = true }
 anyhow = { workspace = true }
 async-trait = { workspace = true }
 jsonschema = { workspace = true }
-ricecoder-external-lsp = { path = "../ricecoder-external-lsp", version = "0" }
-ricecoder-completion = { path = "../ricecoder-completion", version = "0" }
-ricecoder-storage = { path = "../ricecoder-storage", version = "0" }
-ricecoder-tui = { path = "../ricecoder-tui", version = "0" }
+ricecoder-external-lsp = { path = "../ricecoder-external-lsp", version = "0.1" }
+ricecoder-completion = { path = "../ricecoder-completion", version = "0.1" }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
+ricecoder-tui = { path = "../ricecoder-tui", version = "0.1" }
 
 [dev-dependencies]
 proptest = { workspace = true }

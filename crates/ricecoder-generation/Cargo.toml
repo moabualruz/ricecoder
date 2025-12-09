@@ -22,9 +22,9 @@ tokio = { workspace = true }
 uuid = { version = "1.0", features = ["v4", "serde"] }
 futures = "0.3"
 chrono = { workspace = true }
-ricecoder-specs = { path = "../ricecoder-specs", version = "0" }
-ricecoder-providers = { path = "../ricecoder-providers", version = "0" }
-ricecoder-storage = { path = "../ricecoder-storage", version = "0" }
+ricecoder-specs = { path = "../ricecoder-specs", version = "0.1" }
+ricecoder-providers = { path = "../ricecoder-providers", version = "0.1" }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
 
 [dev-dependencies]
 proptest = { workspace = true }
