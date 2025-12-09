@@ -1,0 +1,2 @@
+# This directory will contain the ricecoder binary after npm install
+# The binary is downloaded and extracted by the postinstall script (scripts/install.js)

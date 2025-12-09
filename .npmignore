@@ -1,0 +1,45 @@
+# Build and development files
+target/
+.git/
+.github/
+.idea/
+.vscode/
+.agent/
+.kiro/
+.branding/
+
+# Rust files
+Cargo.toml
+Cargo.lock
+*.rs
+benches/
+crates/
+extensions/
+tests/
+
+# Documentation and config
+*.md
+!README.md
+!LICENSE.md
+.gitignore
+.env
+.env.example
+config/
+scripts/install.sh
+Dockerfile
+
+# Test and log files
+*.log
+test-results*
+undo-redo*
+
+# Temporary files
+.tmp/
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Node modules (shouldn't be included)
+node_modules/
+npm-debug.log

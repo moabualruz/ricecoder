@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc f8a191cc12a7edc53bb10b94f41f9901beac5c951f9f22229e42a5dcc88d6e54 # shrinks to ide_type = VsCode, key1 = "___", key2 = "___", value1 = "0", value2 = 0
+cc 3f2f666287193d95089a51d7d67f2fb7e02c230c8ffdc6ef0a872c00e6428e73 # shrinks to ide_type = Vim, content = " "

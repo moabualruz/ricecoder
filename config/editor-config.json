@@ -1,0 +1,64 @@
+{
+  "vim": {
+    "enabled": true,
+    "host": "localhost",
+    "port": 9000,
+    "timeout_ms": 5000,
+    "completion": {
+      "enabled": true,
+      "max_items": 20,
+      "trigger_characters": [
+        ".",
+        ":"
+      ]
+    },
+    "diagnostics": {
+      "enabled": true,
+      "show_on_change": true,
+      "min_severity": 1
+    },
+    "hover": {
+      "enabled": true,
+      "show_on_move": false,
+      "delay_ms": 500
+    },
+    "keybindings": {
+      "completion": "<C-x><C-o>",
+      "hover": "K",
+      "goto_definition": "<C-]>",
+      "goto_definition_split": "<C-w>]",
+      "goto_definition_vsplit": "<C-w><C-]>",
+      "show_diagnostics": "<C-e>"
+    }
+  },
+  "emacs": {
+    "enabled": true,
+    "host": "localhost",
+    "port": 9000,
+    "timeout_ms": 5000,
+    "completion": {
+      "enabled": true,
+      "max_items": 20,
+      "trigger_characters": [
+        ".",
+        ":"
+      ]
+    },
+    "diagnostics": {
+      "enabled": true,
+      "show_on_change": true,
+      "min_severity": 1
+    },
+    "hover": {
+      "enabled": true,
+      "show_on_move": false,
+      "delay_ms": 500
+    },
+    "keybindings": {
+      "completion": "M-x completion-at-point",
+      "hover": "C-c C-h",
+      "goto_definition": "C-c C-d",
+      "goto_definition_other_window": "C-c C-o"
+    }
+  }
+}

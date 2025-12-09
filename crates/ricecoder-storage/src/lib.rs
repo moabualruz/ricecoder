@@ -90,6 +90,7 @@ pub mod offline;
 pub mod project_store;
 pub mod refactoring;
 pub mod relocation;
+pub mod theme;
 pub mod types;
 
 // Re-export commonly used types
@@ -116,6 +117,7 @@ pub use offline::OfflineModeHandler;
 pub use project_store::ProjectStore;
 pub use refactoring::{get_builtin_refactoring_configs, get_refactoring_config};
 pub use relocation::RelocationService;
+pub use theme::{ThemePreference, ThemeStorage};
 pub use types::{
     ConfigFormat, DocumentFormat, ResourceType, StorageConfig, StorageMode, StorageState,
 };

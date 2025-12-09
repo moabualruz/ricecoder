@@ -1,10 +1,15 @@
 [package]
-name = "ricecoder-cli"
+name = "ricecoder"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
-description = "Command-line interface for RiceCoder"
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
+keywords = ["ai", "coding", "assistant", "cli", "spec-driven"]
+categories = ["command-line-utilities", "development-tools"]
+description = "Terminal-first, spec-driven coding assistant that understands your project before generating code"
 
 [[bin]]
 name = "rice"
@@ -33,13 +38,18 @@ dirs = { workspace = true }
 term_size = { workspace = true }
 atty = "0.2"
 regex = { workspace = true }
-ricecoder-storage = { path = "../ricecoder-storage" }
-ricecoder-commands = { path = "../ricecoder-commands" }
-ricecoder-tui = { path = "../ricecoder-tui" }
-ricecoder-lsp = { path = "../ricecoder-lsp" }
-ricecoder-hooks = { path = "../ricecoder-hooks" }
+uuid = { workspace = true }
+chrono = { workspace = true }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0" }
+ricecoder-commands = { path = "../ricecoder-commands", version = "0" }
+ricecoder-tui = { path = "../ricecoder-tui", version = "0" }
+ricecoder-lsp = { path = "../ricecoder-lsp", version = "0" }
+ricecoder-hooks = { path = "../ricecoder-hooks", version = "0" }
+ricecoder-sessions = { path = "../ricecoder-sessions", version = "0" }
 
 [dev-dependencies]
 proptest = { workspace = true }
 tokio-test = { workspace = true }
 tempfile = { workspace = true }
+
+

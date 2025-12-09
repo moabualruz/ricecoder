@@ -4,6 +4,9 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
 description = "Safe refactoring engine with impact analysis and rollback for RiceCoder"
 
 [lib]
@@ -11,8 +14,8 @@ name = "ricecoder_refactoring"
 path = "src/lib.rs"
 
 [dependencies]
-ricecoder-storage = { path = "../ricecoder-storage" }
-ricecoder-files = { path = "../ricecoder-files" }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0" }
+ricecoder-files = { path = "../ricecoder-files", version = "0" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
@@ -31,3 +34,7 @@ tree-sitter-python = { workspace = true }
 proptest = { workspace = true }
 tokio-test = { workspace = true }
 tempfile = { workspace = true }
+
+
+
+

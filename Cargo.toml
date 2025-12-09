@@ -1,3 +1,21 @@
+[package]
+name = "ricecoder-integration-tests"
+version.workspace = true
+edition.workspace = true
+publish = false
+
+[dependencies]
+ricecoder-lsp = { path = "crates/ricecoder-lsp" }
+ricecoder-storage = { path = "crates/ricecoder-storage" }
+ricecoder-refactoring = { path = "crates/ricecoder-refactoring" }
+ricecoder-generation = { path = "crates/ricecoder-generation" }
+ricecoder-learning = { path = "crates/ricecoder-learning" }
+ricecoder-tui = { path = "crates/ricecoder-tui" }
+tokio = { workspace = true }
+serde_json = { workspace = true }
+proptest = { workspace = true }
+tempfile = { workspace = true }
+
 [workspace]
 members = [
     "crates/ricecoder-storage",
@@ -28,14 +46,23 @@ members = [
     "crates/ricecoder-mcp",
     "crates/ricecoder-tools",
     "crates/ricecoder-undo-redo",
+    "crates/ricecoder-github",
+    "crates/ricecoder-teams",
+    "crates/ricecoder-ide",
+    "crates/ricecoder-images",
 ]
 resolver = "2"
 
 [workspace.package]
-version = "0.6.0"
+version = "0.1.71"
 edition = "2021"
 authors = ["RiceCoder Contributors"]
 license = "MIT"
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
+keywords = ["ai", "coding", "assistant", "cli", "spec-driven"]
+categories = ["command-line-utilities", "development-tools"]
 
 [workspace.dependencies]
 serde = { version = "1.0", features = ["derive"] }
@@ -83,3 +110,7 @@ tree-sitter-typescript = "0.20"
 tree-sitter-python = "0.20"
 jsonschema = "0.18"
 url = "2.5"
+octocrab = "0.32"
+[dev-dependencies]
+proptest = { workspace = true }
+tempfile = { workspace = true }

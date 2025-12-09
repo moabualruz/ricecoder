@@ -20,17 +20,17 @@ use std::time::Instant;
 fn code_size_strategy() -> impl Strategy<Value = (String, usize)> {
     prop_oneof![
         // Small files (< 1KB)
-        (1..1000).prop_map(|size| {
+        (1usize..1000).prop_map(|size| {
             let code = "fn main() {}\n".repeat(size / 13);
             (code, size)
         }),
         // Medium files (1KB - 10KB)
-        (1000..10000).prop_map(|size| {
+        (1000usize..10000).prop_map(|size| {
             let code = "fn function_name() { let x = 1; }\n".repeat(size / 34);
             (code, size)
         }),
         // Large files (10KB - 100KB)
-        (10000..100000).prop_map(|size| {
+        (10000usize..100000).prop_map(|size| {
             let code = "fn function_name() { let x = 1; let y = 2; }\n".repeat(size / 45);
             (code, size)
         }),

@@ -368,3 +368,180 @@ fn test_default_share_service() {
     let shares = service.list_shares().unwrap();
     assert_eq!(shares.len(), 0);
 }
+
+#[test]
+fn test_list_shares_for_session() {
+    let service = ShareService::new();
+    let session1 = create_test_session("session1");
+    let session2 = create_test_session("session2");
+    let permissions = create_test_permissions();
+
+    // Create multiple shares for session1
+    service
+        .generate_share_link(&session1.id, permissions.clone(), None)
+        .unwrap();
+    service
+        .generate_share_link(&session1.id, permissions.clone(), None)
+        .unwrap();
+
+    // Create a share for session2
+    service
+        .generate_share_link(&session2.id, permissions, None)
+        .unwrap();
+
+    // List shares for session1
+    let session1_shares = service.list_shares_for_session(&session1.id).unwrap();
+    assert_eq!(session1_shares.len(), 2);
+
+    // All shares should belong to session1
+    for share in &session1_shares {
+        assert_eq!(share.session_id, session1.id);
+    }
+
+    // List shares for session2
+    let session2_shares = service.list_shares_for_session(&session2.id).unwrap();
+    assert_eq!(session2_shares.len(), 1);
+    assert_eq!(session2_shares[0].session_id, session2.id);
+}
+
+#[test]
+fn test_list_shares_for_session_excludes_expired() {
+    let service = ShareService::new();
+    let session = create_test_session("test_session");
+    let permissions = create_test_permissions();
+
+    // Create a non-expiring share
+    service
+        .generate_share_link(&session.id, permissions.clone(), None)
+        .unwrap();
+
+    // Create an expiring share
+    service
+        .generate_share_link(&session.id, permissions, Some(Duration::seconds(-1)))
+        .unwrap();
+
+    // List shares for session
+    let shares = service.list_shares_for_session(&session.id).unwrap();
+
+    // Should only include the non-expired share
+    assert_eq!(shares.len(), 1);
+}
+
+#[test]
+fn test_list_shares_for_session_empty() {
+    let service = ShareService::new();
+    let session = create_test_session("test_session");
+
+    let shares = service.list_shares_for_session(&session.id).unwrap();
+    assert_eq!(shares.len(), 0);
+}
+
+#[test]
+fn test_invalidate_session_shares() {
+    let service = ShareService::new();
+    let session1 = create_test_session("session1");
+    let session2 = create_test_session("session2");
+    let permissions = create_test_permissions();
+
+    // Create multiple shares for session1
+    let share1 = service
+        .generate_share_link(&session1.id, permissions.clone(), None)
+        .unwrap();
+    let share2 = service
+        .generate_share_link(&session1.id, permissions.clone(), None)
+        .unwrap();
+
+    // Create a share for session2
+    let share3 = service
+        .generate_share_link(&session2.id, permissions, None)
+        .unwrap();
+
+    // Verify all shares exist
+    assert!(service.get_share(&share1.id).is_ok());
+    assert!(service.get_share(&share2.id).is_ok());
+    assert!(service.get_share(&share3.id).is_ok());
+
+    // Invalidate all shares for session1
+    let removed = service.invalidate_session_shares(&session1.id).unwrap();
+    assert_eq!(removed, 2);
+
+    // Shares for session1 should no longer exist
+    assert!(service.get_share(&share1.id).is_err());
+    assert!(service.get_share(&share2.id).is_err());
+
+    // Share for session2 should still exist
+    assert!(service.get_share(&share3.id).is_ok());
+}
+
+#[test]
+fn test_invalidate_session_shares_no_shares() {
+    let service = ShareService::new();
+    let session = create_test_session("test_session");
+
+    // Invalidate shares for session with no shares
+    let removed = service.invalidate_session_shares(&session.id).unwrap();
+    assert_eq!(removed, 0);
+}
+
+#[test]
+fn test_invalidate_session_shares_removes_all_session_shares() {
+    let service = ShareService::new();
+    let session = create_test_session("test_session");
+    let permissions = create_test_permissions();
+
+    // Create multiple shares for the session
+    service
+        .generate_share_link(&session.id, permissions.clone(), None)
+        .unwrap();
+    service
+        .generate_share_link(&session.id, permissions.clone(), None)
+        .unwrap();
+    service
+        .generate_share_link(&session.id, permissions, None)
+        .unwrap();
+
+    // Verify 3 shares exist for the session
+    let shares_before = service.list_shares_for_session(&session.id).unwrap();
+    assert_eq!(shares_before.len(), 3);
+
+    // Invalidate all shares for the session
+    let removed = service.invalidate_session_shares(&session.id).unwrap();
+    assert_eq!(removed, 3);
+
+    // Verify no shares exist for the session
+    let shares_after = service.list_shares_for_session(&session.id).unwrap();
+    assert_eq!(shares_after.len(), 0);
+}
+
+#[test]
+fn test_list_shares_for_session_filters_by_session_id() {
+    let service = ShareService::new();
+    let session1 = create_test_session("session1");
+    let session2 = create_test_session("session2");
+    let session3 = create_test_session("session3");
+    let permissions = create_test_permissions();
+
+    // Create shares for different sessions
+    service
+        .generate_share_link(&session1.id, permissions.clone(), None)
+        .unwrap();
+    service
+        .generate_share_link(&session2.id, permissions.clone(), None)
+        .unwrap();
+    service
+        .generate_share_link(&session2.id, permissions.clone(), None)
+        .unwrap();
+    service
+        .generate_share_link(&session3.id, permissions, None)
+        .unwrap();
+
+    // Verify filtering works correctly
+    let session1_shares = service.list_shares_for_session(&session1.id).unwrap();
+    assert_eq!(session1_shares.len(), 1);
+
+    let session2_shares = service.list_shares_for_session(&session2.id).unwrap();
+    assert_eq!(session2_shares.len(), 2);
+
+    let session3_shares = service.list_shares_for_session(&session3.id).unwrap();
+    assert_eq!(session3_shares.len(), 1);
+}

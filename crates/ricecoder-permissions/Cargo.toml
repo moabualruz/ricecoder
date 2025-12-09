@@ -1,9 +1,13 @@
 [package]
 name = "ricecoder-permissions"
+description = "Permission and access control management"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
 
 [dependencies]
 serde = { workspace = true }
@@ -22,3 +26,6 @@ criterion = { version = "0.5", features = ["html_reports"] }
 [[bench]]
 name = "performance_benchmarks"
 harness = false
+
+
+

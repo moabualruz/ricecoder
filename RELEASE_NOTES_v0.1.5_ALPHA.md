@@ -1,20 +1,20 @@
-# RiceCoder Beta v0.5.0 Release Notes
+# RiceCoder Alpha v0.1.5 Release Notes
 
 **Release Date**: December 5, 2025
 
-**Version**: 0.5.0-beta
+**Version**: 0.1.5-alpha
 
-**Status**: Beta Release - Foundation Features Complete
+**Status**: Alpha Release - Foundation Features Complete
 
 ---
 
 ## Overview
 
-RiceCoder Beta v0.5.0 completes Phase 5 of development, delivering foundation features that enable advanced capabilities in future releases. This release builds on the solid foundation of v0.4.0 with three critical new features.
+RiceCoder Alpha v0.1.5 completes Phase 5 of development, delivering foundation features that enable advanced capabilities in future releases. This release builds on the solid foundation of v0.1.4 with three critical new features.
 
 ---
 
-## What's New in v0.5.0
+## What's New in v0.1.5
 
 ### Phase 5: Foundation Features
 
@@ -111,18 +111,18 @@ RiceCoder Beta v0.5.0 completes Phase 5 of development, delivering foundation fe
 
 ## Breaking Changes
 
-None. This release is fully backward compatible with v0.4.0.
+None. This release is fully backward compatible with v0.1.4.
 
 ---
 
 ## Migration Guide
 
-### For v0.4.0 Users
+### For v0.1.4 Users
 
-No migration required. Simply update to v0.5.0 and enjoy the new features:
+No migration required. Simply update to v0.1.5 and enjoy the new features:
 
 ```bash
-cargo install ricecoder --version 0.5.0-beta
+cargo install ricecoder --version 0.1.5-beta
 ```
 
 ### New Features to Explore
@@ -160,12 +160,12 @@ cargo install ricecoder --version 0.5.0-beta
 
 ## Roadmap
 
-### Phase 6: Infrastructure Features (v0.6.0)
+### Phase 6: Infrastructure Features (v0.1.6)
 - **Orchestration**: Multi-project workspace management
 - **Domain-Specific Agents**: Specialized agents for different domains
 - **Learning System**: User interaction tracking and personalization
 
-### Phase 7: Integration Features (v0.7.0)
+### Phase 7: Integration Features (v0.1.7)
 - **GitHub Integration**: PR/Issue creation from conversations
 - **Conversation Sharing**: Export and share conversations
 - **Team Collaboration**: Team workspaces and shared knowledge base
@@ -192,7 +192,7 @@ We're actively gathering feedback from the community. Please report issues and f
 ### From Crates.io
 
 ```bash
-cargo install ricecoder --version 0.5.0-beta
+cargo install ricecoder --version 0.1.5-beta
 ```
 
 ### From Source
@@ -200,7 +200,7 @@ cargo install ricecoder --version 0.5.0-beta
 ```bash
 git clone https://github.com/moabualruz/ricecoder.git
 cd ricecoder
-git checkout v0.5.0-beta
+git checkout v0.1.5-beta
 cargo install --path projects/ricecoder
 ```
 
@@ -210,7 +210,7 @@ cargo install --path projects/ricecoder
 
 - **Getting Started**: https://github.com/moabualruz/ricecoder/wiki/Quick-Start
 - **User Guide**: https://github.com/moabualruz/ricecoder/wiki
-- **API Documentation**: https://docs.rs/ricecoder/0.5.0-beta
+- **API Documentation**: https://docs.rs/ricecoder/0.1.5-beta
 - **Architecture Guide**: https://github.com/moabualruz/ricecoder/wiki/Architecture-Overview
 
 ---
@@ -242,5 +242,5 @@ For support, questions, or feedback:
 ---
 
 *Release Date: December 5, 2025*
-*Version: 0.5.0-beta*
+*Version: 0.1.5-beta*
 *Status: Beta Release*

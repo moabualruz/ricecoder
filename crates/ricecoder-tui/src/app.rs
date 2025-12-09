@@ -5,6 +5,7 @@ use crate::accessibility::{
 };
 use crate::config::TuiConfig;
 use crate::event::{Event, EventLoop};
+use crate::image_integration::ImageIntegration;
 use crate::integration::WidgetIntegration;
 use crate::render::Renderer;
 use crate::style::Theme;
@@ -67,7 +68,7 @@ impl AppMode {
 }
 
 /// Chat state
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct ChatState {
     /// Messages in the conversation
     pub messages: Vec<String>,
@@ -75,6 +76,20 @@ pub struct ChatState {
     pub input: String,
     /// Whether streaming is active
     pub streaming: bool,
+    /// Current prompt context with text and images
+    /// Requirements: 1.4 - Add images to prompt context
+    pub prompt_context: crate::prompt_context::PromptContext,
+}
+
+impl Default for ChatState {
+    fn default() -> Self {
+        Self {
+            messages: Vec::new(),
+            input: String::new(),
+            streaming: false,
+            prompt_context: crate::prompt_context::PromptContext::new(),
+        }
+    }
 }
 
 /// Main application state
@@ -109,6 +124,12 @@ pub struct App {
     pub focus_manager: FocusManager,
     /// Provider integration for AI responses
     pub provider_integration: crate::provider_integration::ProviderIntegration,
+    /// Image integration for drag-and-drop and display
+    /// Requirements: 1.1 - Detect drag-and-drop event via crossterm
+    pub image_integration: ImageIntegration,
+    /// Image widget for displaying images in the terminal
+    /// Requirements: 5.1 - Display images in terminal using ricecoder-images ImageDisplay
+    pub image_widget: crate::image_widget::ImageWidget,
 }
 
 impl App {
@@ -156,6 +177,8 @@ impl App {
             keyboard_nav,
             focus_manager,
             provider_integration,
+            image_integration: ImageIntegration::new(),
+            image_widget: crate::image_widget::ImageWidget::new(),
         };
 
         Ok(app)
@@ -308,8 +331,91 @@ impl App {
             Event::Tick => {
                 // Handle tick event for periodic updates
             }
+            Event::DragDrop { paths } => {
+                tracing::debug!("Drag-and-drop event with {} files", paths.len());
+                // Handle drag-and-drop events
+                // Requirements: 1.1 - Pass drag-and-drop events to ricecoder-images handler
+                self.handle_drag_drop_event(paths)?;
+            }
         }
         Ok(())
+    }
+
+    /// Handle a drag-and-drop event with file paths
+    ///
+    /// # Arguments
+    ///
+    /// * `paths` - File paths from the drag-and-drop event
+    ///
+    /// # Requirements
+    ///
+    /// - Req 1.1: Pass drag-and-drop events to ricecoder-images handler
+    /// - Req 1.1: Handle file path extraction
+    /// - Req 1.1: Handle multiple files in single drag-and-drop
+    /// - Req 5.1: Add image preview to prompt context
+    /// - Req 5.2: Display images in chat interface
+    fn handle_drag_drop_event(&mut self, paths: std::vec::Vec<std::path::PathBuf>) -> Result<()> {
+        tracing::info!("Processing drag-and-drop event with {} files", paths.len());
+
+        // Pass to image integration
+        let (added, errors) = self.image_integration.handle_drag_drop_event(paths);
+
+        // Update image widget with added images
+        // Requirements: 5.1 - Add image preview to prompt context
+        if !added.is_empty() {
+            self.image_widget.add_images(added.clone());
+            tracing::info!("Updated image widget with {} images", added.len());
+
+            // Also add to prompt context
+            // Requirements: 1.4 - Add images to prompt context
+            self.chat.prompt_context.add_images(added.clone());
+            tracing::info!("Added {} images to prompt context", added.len());
+        }
+
+        // Log results
+        if !added.is_empty() {
+            tracing::info!("Added {} images to prompt context", added.len());
+            for path in &added {
+                tracing::debug!("Added image: {}", path.display());
+            }
+        }
+
+        if !errors.is_empty() {
+            tracing::warn!("Encountered {} errors processing drag-and-drop", errors.len());
+            for error in &errors {
+                tracing::debug!("Error: {}", error);
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Sync prompt context with current state
+    ///
+    /// # Requirements
+    ///
+    /// - Req 1.4: Add images to prompt context
+    /// - Req 5.1: Include images in message history
+    pub fn sync_prompt_context(&mut self) {
+        // Sync images from image_integration to prompt_context
+        let images = self.image_integration.get_images().to_vec();
+        self.chat.prompt_context.clear_images();
+        self.chat.prompt_context.add_images(images);
+
+        tracing::debug!(
+            "Synced prompt context: {} images",
+            self.chat.prompt_context.image_count()
+        );
+    }
+
+    /// Get the current prompt context
+    pub fn get_prompt_context(&self) -> &crate::prompt_context::PromptContext {
+        &self.chat.prompt_context
+    }
+
+    /// Get mutable access to the current prompt context
+    pub fn get_prompt_context_mut(&mut self) -> &mut crate::prompt_context::PromptContext {
+        &mut self.chat.prompt_context
     }
 
     /// Handle mode switching keyboard shortcuts

@@ -1,5 +1,6 @@
 //! Event handling for the TUI
 
+use std::path::PathBuf;
 use std::thread;
 use std::time::Duration;
 use tokio::sync::mpsc::UnboundedReceiver;
@@ -15,6 +16,9 @@ pub enum Event {
     Resize { width: u16, height: u16 },
     /// Tick event for periodic updates
     Tick,
+    /// Drag-and-drop event with file paths
+    /// Requirements: 1.1 - Detect drag-and-drop event via crossterm
+    DragDrop { paths: Vec<PathBuf> },
 }
 
 /// Keyboard event
@@ -89,12 +93,15 @@ pub enum MouseButton {
 pub struct EventLoop {
     /// Receiver for events
     rx: Option<UnboundedReceiver<Event>>,
+    /// Sender for events (used for drag-and-drop and other programmatic events)
+    tx: Option<tokio::sync::mpsc::UnboundedSender<Event>>,
 }
 
 impl EventLoop {
     /// Create a new event loop
     pub fn new() -> Self {
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let tx_clone = tx.clone();
 
         // Spawn a thread to handle terminal events
         thread::spawn(move || {
@@ -104,7 +111,7 @@ impl EventLoop {
 
             loop {
                 if last_tick.elapsed() >= tick_interval {
-                    let _ = tx.send(Event::Tick);
+                    let _ = tx_clone.send(Event::Tick);
                     last_tick = std::time::Instant::now();
                 }
 
@@ -113,7 +120,7 @@ impl EventLoop {
             }
         });
 
-        Self { rx: Some(rx) }
+        Self { rx: Some(rx), tx: Some(tx) }
     }
 
     /// Poll for the next event
@@ -123,6 +130,23 @@ impl EventLoop {
         } else {
             Ok(None)
         }
+    }
+
+    /// Send a drag-and-drop event with file paths
+    /// 
+    /// # Arguments
+    /// 
+    /// * `paths` - File paths from the drag-and-drop event
+    /// 
+    /// # Requirements
+    /// 
+    /// - Req 1.1: Create interface for receiving drag-and-drop events from ricecoder-tui
+    /// - Req 1.1: Implement file path extraction from events
+    pub fn send_drag_drop_event(&self, paths: Vec<PathBuf>) -> anyhow::Result<()> {
+        if let Some(tx) = self.tx.as_ref() {
+            tx.send(Event::DragDrop { paths })?;
+        }
+        Ok(())
     }
 }
 

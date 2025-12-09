@@ -166,6 +166,43 @@ impl ShareService {
 
         Ok(initial_count - shares.len())
     }
+
+    /// List all active shares for a specific session
+    pub fn list_shares_for_session(&self, session_id: &str) -> SessionResult<Vec<SessionShare>> {
+        let shares = self
+            .shares
+            .lock()
+            .map_err(|e| SessionError::StorageError(format!("Failed to lock shares: {}", e)))?;
+
+        let now = Utc::now();
+        let session_shares: Vec<SessionShare> = shares
+            .values()
+            .filter(|share| {
+                // Filter by session_id and include only non-expired shares
+                share.session_id == session_id
+                    && (share.expires_at.is_none()
+                        || share.expires_at.is_some_and(|exp| now <= exp))
+            })
+            .cloned()
+            .collect();
+
+        Ok(session_shares)
+    }
+
+    /// Invalidate all shares for a session when the session is deleted
+    pub fn invalidate_session_shares(&self, session_id: &str) -> SessionResult<usize> {
+        let mut shares = self
+            .shares
+            .lock()
+            .map_err(|e| SessionError::StorageError(format!("Failed to lock shares: {}", e)))?;
+
+        let initial_count = shares.len();
+
+        // Remove all shares associated with this session
+        shares.retain(|_, share| share.session_id != session_id);
+
+        Ok(initial_count - shares.len())
+    }
 }
 
 impl Default for ShareService {

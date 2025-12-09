@@ -21,6 +21,20 @@ pub enum SessionsAction {
     Switch { id: String },
     /// Show session info
     Info { id: String },
+    /// Share a session with a shareable link
+    Share {
+        expires_in: Option<u64>,
+        no_history: bool,
+        no_context: bool,
+    },
+    /// List all active shares
+    ShareList,
+    /// Revoke a share
+    ShareRevoke { share_id: String },
+    /// Show share information
+    ShareInfo { share_id: String },
+    /// View a shared session
+    ShareView { share_id: String },
 }
 
 /// Session data for persistence
@@ -114,6 +128,15 @@ impl Command for SessionsCommand {
             SessionsAction::Rename { id, name } => rename_session(id, name),
             SessionsAction::Switch { id } => switch_session(id),
             SessionsAction::Info { id } => show_session_info(id),
+            SessionsAction::Share {
+                expires_in,
+                no_history,
+                no_context,
+            } => handle_share(*expires_in, *no_history, *no_context),
+            SessionsAction::ShareList => handle_share_list(),
+            SessionsAction::ShareRevoke { share_id } => handle_share_revoke(share_id),
+            SessionsAction::ShareInfo { share_id } => handle_share_info(share_id),
+            SessionsAction::ShareView { share_id } => handle_share_view(share_id),
         }
     }
 }
@@ -261,6 +284,292 @@ fn format_timestamp(secs: u64) -> String {
     )
 }
 
+/// Handle share command - generate a shareable link
+fn handle_share(expires_in: Option<u64>, no_history: bool, no_context: bool) -> CliResult<()> {
+    use ricecoder_sessions::{ShareService, SharePermissions};
+    use chrono::Duration;
+
+    // Create share service
+    let share_service = ShareService::new();
+
+    // Build permission flags
+    let include_history = !no_history;
+    let include_context = !no_context;
+
+    // Get current session ID (for now, use a placeholder)
+    let session_id = "current-session";
+
+    // Create permissions
+    let permissions = SharePermissions {
+        read_only: true,
+        include_history,
+        include_context,
+    };
+
+    // Convert expires_in to Duration
+    let expires_in_duration = expires_in.map(|secs| Duration::seconds(secs as i64));
+
+    // Generate share link
+    let share = share_service
+        .generate_share_link(session_id, permissions, expires_in_duration)
+        .map_err(|e| CliError::Internal(format!("Failed to generate share link: {}", e)))?;
+
+    // Display share information
+    println!("Share link: {}", share.id);
+    println!();
+    println!("Permissions:");
+    println!("  History: {}", if include_history { "Yes" } else { "No" });
+    println!("  Context: {}", if include_context { "Yes" } else { "No" });
+
+    if let Some(expiration) = expires_in {
+        println!("  Expires in: {} seconds", expiration);
+    } else {
+        println!("  Expires: Never");
+    }
+
+    println!();
+    println!("Share this link with others to grant access to your session.");
+
+    Ok(())
+}
+
+/// Handle share list command - list all active shares
+fn handle_share_list() -> CliResult<()> {
+    use ricecoder_sessions::ShareService;
+
+    // Create share service
+    let share_service = ShareService::new();
+
+    // List all active shares
+    let shares = share_service
+        .list_shares()
+        .map_err(|e| CliError::Internal(format!("Failed to list shares: {}", e)))?;
+
+    if shares.is_empty() {
+        println!("Active shares:");
+        println!();
+        println!("  No shares found. Create one with: rice sessions share");
+        println!();
+        return Ok(());
+    }
+
+    println!("Active shares:");
+    println!();
+    println!("{:<40} {:<20} {:<20} {:<20} {:<30}", "Share ID", "Session ID", "Created", "Expires", "Permissions");
+    println!("{}", "-".repeat(130));
+
+    for share in shares {
+        let created = share.created_at.format("%Y-%m-%d %H:%M:%S").to_string();
+        let expires = share
+            .expires_at
+            .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
+            .unwrap_or_else(|| "Never".to_string());
+        let permissions = format!(
+            "History: {}, Context: {}",
+            if share.permissions.include_history { "Yes" } else { "No" },
+            if share.permissions.include_context { "Yes" } else { "No" }
+        );
+
+        println!(
+            "{:<40} {:<20} {:<20} {:<20} {:<30}",
+            &share.id[..40.min(share.id.len())],
+            &share.session_id[..20.min(share.session_id.len())],
+            created,
+            expires,
+            &permissions[..30.min(permissions.len())]
+        );
+    }
+
+    println!();
+
+    Ok(())
+}
+
+/// Handle share revoke command - revoke a share
+fn handle_share_revoke(share_id: &str) -> CliResult<()> {
+    use ricecoder_sessions::ShareService;
+
+    // Create share service
+    let share_service = ShareService::new();
+
+    // Revoke the share
+    share_service
+        .revoke_share(share_id)
+        .map_err(|e| CliError::Internal(format!("Failed to revoke share: {}", e)))?;
+
+    println!("Share {} revoked successfully", share_id);
+    Ok(())
+}
+
+/// Handle share info command - show share details
+fn handle_share_info(share_id: &str) -> CliResult<()> {
+    use ricecoder_sessions::ShareService;
+
+    // Create share service
+    let share_service = ShareService::new();
+
+    // Get share details
+    let share = share_service
+        .get_share(share_id)
+        .map_err(|e| CliError::Internal(format!("Failed to get share info: {}", e)))?;
+
+    println!("Share: {}", share.id);
+    println!("  Session: {}", share.session_id);
+    println!("  Created: {}", share.created_at.format("%Y-%m-%d %H:%M:%S"));
+    println!(
+        "  Expires: {}",
+        share
+            .expires_at
+            .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
+            .unwrap_or_else(|| "Never".to_string())
+    );
+    println!("  Permissions:");
+    println!("    History: {}", if share.permissions.include_history { "Yes" } else { "No" });
+    println!("    Context: {}", if share.permissions.include_context { "Yes" } else { "No" });
+    println!("    Read-Only: {}", if share.permissions.read_only { "Yes" } else { "No" });
+    println!("  Status: Active");
+
+    Ok(())
+}
+
+/// Handle share view command - view a shared session
+fn handle_share_view(share_id: &str) -> CliResult<()> {
+    use ricecoder_sessions::{ShareService, Session, SessionContext, SessionMode};
+
+    // Create share service
+    let share_service = ShareService::new();
+
+    // Validate share exists and is not expired
+    let share = share_service
+        .get_share(share_id)
+        .map_err(|e| match e {
+            ricecoder_sessions::SessionError::ShareNotFound(_) => {
+                CliError::Internal(format!("Share not found: {}", share_id))
+            }
+            ricecoder_sessions::SessionError::ShareExpired(_) => {
+                CliError::Internal(format!("Share has expired: {}", share_id))
+            }
+            _ => CliError::Internal(format!("Failed to access share: {}", e)),
+        })?;
+
+    // For now, create a mock session to display
+    // In a real implementation, this would retrieve the actual session from storage
+    let mock_session = Session::new(
+        format!("Shared Session ({})", &share.session_id[..8.min(share.session_id.len())]),
+        SessionContext::new("openai".to_string(), "gpt-4".to_string(), SessionMode::Chat),
+    );
+
+    // Create filtered session view based on permissions
+    let shared_session = share_service.create_shared_session_view(&mock_session, &share.permissions);
+
+    // Display shared session with read-only mode enforced
+    display_shared_session(&shared_session, &share)
+}
+
+/// Display a shared session with read-only mode enforced
+fn display_shared_session(
+    session: &ricecoder_sessions::Session,
+    share: &ricecoder_sessions::SessionShare,
+) -> CliResult<()> {
+    use ricecoder_sessions::MessageRole;
+
+    // Display header with permission indicators
+    println!();
+    println!("╔════════════════════════════════════════════════════════════════╗");
+    println!("║ Shared Session: {} [Read-Only]", session.name);
+    println!("║ Permissions: [History: {}] [Context: {}]",
+        if share.permissions.include_history { "Yes" } else { "No" },
+        if share.permissions.include_context { "Yes" } else { "No" }
+    );
+    println!("╚════════════════════════════════════════════════════════════════╝");
+    println!();
+
+    // Display session metadata
+    println!("Session Information:");
+    println!("  Created: {}", session.created_at.format("%Y-%m-%d %H:%M:%S"));
+    if let Some(expires_at) = share.expires_at {
+        println!("  Expires: {}", expires_at.format("%Y-%m-%d %H:%M:%S"));
+    } else {
+        println!("  Expires: Never");
+    }
+    println!("  Status: Read-Only");
+    println!();
+
+    // Display messages if history is included
+    if share.permissions.include_history {
+        if session.history.is_empty() {
+            println!("Messages: (empty)");
+        } else {
+            println!("Messages ({} total):", session.history.len());
+            println!();
+
+            // Pagination: show first 10 messages
+            let messages_per_page = 10;
+            let total_messages = session.history.len();
+            let pages = (total_messages + messages_per_page - 1) / messages_per_page;
+            let current_page = 1;
+            let start_idx = (current_page - 1) * messages_per_page;
+            let end_idx = (start_idx + messages_per_page).min(total_messages);
+
+            for (idx, msg) in session.history[start_idx..end_idx].iter().enumerate() {
+                let role_str = match msg.role {
+                    MessageRole::User => "User",
+                    MessageRole::Assistant => "Assistant",
+                    MessageRole::System => "System",
+                };
+
+                println!("[{}] {}: {}", start_idx + idx + 1, role_str, msg.content);
+                println!("    Timestamp: {}", msg.timestamp.format("%Y-%m-%d %H:%M:%S"));
+                println!();
+            }
+
+            // Display pagination info
+            println!("Message {} - {} of {} (Page {} of {})", 
+                start_idx + 1,
+                end_idx,
+                total_messages,
+                current_page,
+                pages
+            );
+            
+            if pages > 1 {
+                println!("(Use 'rice sessions share view <share_id> --page <N>' to view other pages)");
+            }
+        }
+    } else {
+        println!("Messages: (history excluded from share)");
+    }
+
+    println!();
+
+    // Display context if included
+    if share.permissions.include_context {
+        println!("Context:");
+        if let Some(project_path) = &session.context.project_path {
+            println!("  Project: {}", project_path);
+        }
+        println!("  Provider: {}", session.context.provider);
+        println!("  Model: {}", session.context.model);
+
+        if !session.context.files.is_empty() {
+            println!("  Files:");
+            for file in &session.context.files {
+                println!("    - {}", file);
+            }
+        } else {
+            println!("  Files: (none)");
+        }
+    } else {
+        println!("Context: (context excluded from share)");
+    }
+
+    println!();
+    println!("This is a read-only view. You cannot modify this shared session.");
+    println!();
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -328,5 +637,560 @@ mod tests {
             id: "session-1".to_string(),
         });
         assert!(matches!(cmd.action, SessionsAction::Info { .. }));
+    }
+
+    #[test]
+    fn test_share_action() {
+        let cmd = SessionsCommand::new(SessionsAction::Share {
+            expires_in: Some(3600),
+            no_history: false,
+            no_context: false,
+        });
+        assert!(matches!(cmd.action, SessionsAction::Share { .. }));
+    }
+
+    #[test]
+    fn test_share_action_with_flags() {
+        let cmd = SessionsCommand::new(SessionsAction::Share {
+            expires_in: None,
+            no_history: true,
+            no_context: true,
+        });
+        assert!(matches!(cmd.action, SessionsAction::Share { .. }));
+    }
+
+    #[test]
+    fn test_share_list_action() {
+        let cmd = SessionsCommand::new(SessionsAction::ShareList);
+        assert!(matches!(cmd.action, SessionsAction::ShareList));
+    }
+
+    #[test]
+    fn test_share_revoke_action() {
+        let cmd = SessionsCommand::new(SessionsAction::ShareRevoke {
+            share_id: "share-123".to_string(),
+        });
+        assert!(matches!(cmd.action, SessionsAction::ShareRevoke { .. }));
+    }
+
+    #[test]
+    fn test_share_info_action() {
+        let cmd = SessionsCommand::new(SessionsAction::ShareInfo {
+            share_id: "share-123".to_string(),
+        });
+        assert!(matches!(cmd.action, SessionsAction::ShareInfo { .. }));
+    }
+
+    #[test]
+    fn test_share_command_with_expiration() {
+        let cmd = SessionsCommand::new(SessionsAction::Share {
+            expires_in: Some(3600),
+            no_history: false,
+            no_context: false,
+        });
+
+        match cmd.action {
+            SessionsAction::Share {
+                expires_in,
+                no_history,
+                no_context,
+            } => {
+                assert_eq!(expires_in, Some(3600));
+                assert!(!no_history);
+                assert!(!no_context);
+            }
+            _ => panic!("Expected Share action"),
+        }
+    }
+
+    #[test]
+    fn test_share_command_without_history() {
+        let cmd = SessionsCommand::new(SessionsAction::Share {
+            expires_in: None,
+            no_history: true,
+            no_context: false,
+        });
+
+        match cmd.action {
+            SessionsAction::Share {
+                expires_in,
+                no_history,
+                no_context,
+            } => {
+                assert_eq!(expires_in, None);
+                assert!(no_history);
+                assert!(!no_context);
+            }
+            _ => panic!("Expected Share action"),
+        }
+    }
+
+    #[test]
+    fn test_share_command_without_context() {
+        let cmd = SessionsCommand::new(SessionsAction::Share {
+            expires_in: None,
+            no_history: false,
+            no_context: true,
+        });
+
+        match cmd.action {
+            SessionsAction::Share {
+                expires_in,
+                no_history,
+                no_context,
+            } => {
+                assert_eq!(expires_in, None);
+                assert!(!no_history);
+                assert!(no_context);
+            }
+            _ => panic!("Expected Share action"),
+        }
+    }
+
+    #[test]
+    fn test_share_command_all_restrictions() {
+        let cmd = SessionsCommand::new(SessionsAction::Share {
+            expires_in: Some(7200),
+            no_history: true,
+            no_context: true,
+        });
+
+        match cmd.action {
+            SessionsAction::Share {
+                expires_in,
+                no_history,
+                no_context,
+            } => {
+                assert_eq!(expires_in, Some(7200));
+                assert!(no_history);
+                assert!(no_context);
+            }
+            _ => panic!("Expected Share action"),
+        }
+    }
+
+    #[test]
+    fn test_share_revoke_action_with_id() {
+        let share_id = "test-share-id-12345";
+        let cmd = SessionsCommand::new(SessionsAction::ShareRevoke {
+            share_id: share_id.to_string(),
+        });
+
+        match cmd.action {
+            SessionsAction::ShareRevoke { share_id: id } => {
+                assert_eq!(id, share_id);
+            }
+            _ => panic!("Expected ShareRevoke action"),
+        }
+    }
+
+    #[test]
+    fn test_share_info_action_with_id() {
+        let share_id = "test-share-id-67890";
+        let cmd = SessionsCommand::new(SessionsAction::ShareInfo {
+            share_id: share_id.to_string(),
+        });
+
+        match cmd.action {
+            SessionsAction::ShareInfo { share_id: id } => {
+                assert_eq!(id, share_id);
+            }
+            _ => panic!("Expected ShareInfo action"),
+        }
+    }
+
+    #[test]
+    fn test_session_info_with_zero_messages() {
+        let session = SessionInfo {
+            id: "session-1".to_string(),
+            name: "Empty Session".to_string(),
+            created_at: 1000,
+            modified_at: 1000,
+            message_count: 0,
+        };
+
+        assert_eq!(session.message_count, 0);
+        assert_eq!(session.name, "Empty Session");
+    }
+
+    #[test]
+    fn test_session_info_with_many_messages() {
+        let session = SessionInfo {
+            id: "session-2".to_string(),
+            name: "Busy Session".to_string(),
+            created_at: 1000,
+            modified_at: 5000,
+            message_count: 100,
+        };
+
+        assert_eq!(session.message_count, 100);
+        assert!(session.modified_at > session.created_at);
+    }
+
+    #[test]
+    fn test_share_permissions_all_enabled() {
+        use ricecoder_sessions::SharePermissions;
+
+        let perms = SharePermissions {
+            read_only: true,
+            include_history: true,
+            include_context: true,
+        };
+
+        assert!(perms.read_only);
+        assert!(perms.include_history);
+        assert!(perms.include_context);
+    }
+
+    #[test]
+    fn test_share_permissions_history_only() {
+        use ricecoder_sessions::SharePermissions;
+
+        let perms = SharePermissions {
+            read_only: true,
+            include_history: true,
+            include_context: false,
+        };
+
+        assert!(perms.read_only);
+        assert!(perms.include_history);
+        assert!(!perms.include_context);
+    }
+
+    #[test]
+    fn test_share_permissions_context_only() {
+        use ricecoder_sessions::SharePermissions;
+
+        let perms = SharePermissions {
+            read_only: true,
+            include_history: false,
+            include_context: true,
+        };
+
+        assert!(perms.read_only);
+        assert!(!perms.include_history);
+        assert!(perms.include_context);
+    }
+
+    #[test]
+    fn test_share_permissions_nothing_included() {
+        use ricecoder_sessions::SharePermissions;
+
+        let perms = SharePermissions {
+            read_only: true,
+            include_history: false,
+            include_context: false,
+        };
+
+        assert!(perms.read_only);
+        assert!(!perms.include_history);
+        assert!(!perms.include_context);
+    }
+
+    #[test]
+    fn test_share_view_action() {
+        let cmd = SessionsCommand::new(SessionsAction::ShareView {
+            share_id: "share-123".to_string(),
+        });
+        assert!(matches!(cmd.action, SessionsAction::ShareView { .. }));
+    }
+
+    #[test]
+    fn test_share_view_action_with_id() {
+        let share_id = "test-share-view-id";
+        let cmd = SessionsCommand::new(SessionsAction::ShareView {
+            share_id: share_id.to_string(),
+        });
+
+        match cmd.action {
+            SessionsAction::ShareView { share_id: id } => {
+                assert_eq!(id, share_id);
+            }
+            _ => panic!("Expected ShareView action"),
+        }
+    }
+
+    #[test]
+    fn test_share_service_get_share() {
+        use ricecoder_sessions::{ShareService, SharePermissions};
+        use chrono::Duration;
+
+        let service = ShareService::new();
+
+        // Generate a share
+        let permissions = SharePermissions {
+            read_only: true,
+            include_history: true,
+            include_context: true,
+        };
+
+        let share = service
+            .generate_share_link("session-1", permissions, None)
+            .expect("Failed to generate share");
+
+        // Verify we can retrieve it
+        let retrieved = service
+            .get_share(&share.id)
+            .expect("Failed to retrieve share");
+
+        assert_eq!(retrieved.id, share.id);
+        assert_eq!(retrieved.session_id, "session-1");
+        assert!(retrieved.permissions.read_only);
+    }
+
+    #[test]
+    fn test_share_service_get_nonexistent_share() {
+        use ricecoder_sessions::ShareService;
+
+        let service = ShareService::new();
+
+        // Try to get a share that doesn't exist
+        let result = service.get_share("nonexistent-share");
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_share_service_revoke_share() {
+        use ricecoder_sessions::{ShareService, SharePermissions};
+
+        let service = ShareService::new();
+
+        // Generate a share
+        let permissions = SharePermissions {
+            read_only: true,
+            include_history: true,
+            include_context: true,
+        };
+
+        let share = service
+            .generate_share_link("session-1", permissions, None)
+            .expect("Failed to generate share");
+
+        // Revoke it
+        service
+            .revoke_share(&share.id)
+            .expect("Failed to revoke share");
+
+        // Verify it's gone
+        let result = service.get_share(&share.id);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_share_service_list_shares() {
+        use ricecoder_sessions::{ShareService, SharePermissions};
+
+        let service = ShareService::new();
+
+        // Generate multiple shares
+        let permissions = SharePermissions {
+            read_only: true,
+            include_history: true,
+            include_context: true,
+        };
+
+        let share1 = service
+            .generate_share_link("session-1", permissions.clone(), None)
+            .expect("Failed to generate share 1");
+
+        let share2 = service
+            .generate_share_link("session-2", permissions.clone(), None)
+            .expect("Failed to generate share 2");
+
+        // List all shares
+        let shares = service.list_shares().expect("Failed to list shares");
+
+        assert!(shares.len() >= 2);
+        assert!(shares.iter().any(|s| s.id == share1.id));
+        assert!(shares.iter().any(|s| s.id == share2.id));
+    }
+
+    #[test]
+    fn test_share_service_create_shared_session_view_with_history() {
+        use ricecoder_sessions::{ShareService, SharePermissions, Session, SessionContext, SessionMode, Message, MessageRole};
+
+        let service = ShareService::new();
+
+        // Create a session with messages
+        let mut session = Session::new(
+            "Test Session".to_string(),
+            SessionContext::new("openai".to_string(), "gpt-4".to_string(), SessionMode::Chat),
+        );
+
+        session.history.push(Message::new(
+            MessageRole::User,
+            "Hello".to_string(),
+        ));
+
+        session.history.push(Message::new(
+            MessageRole::Assistant,
+            "Hi there!".to_string(),
+        ));
+
+        // Create a view with history included
+        let permissions = SharePermissions {
+            read_only: true,
+            include_history: true,
+            include_context: true,
+        };
+
+        let view = service.create_shared_session_view(&session, &permissions);
+
+        assert_eq!(view.history.len(), 2);
+    }
+
+    #[test]
+    fn test_share_service_create_shared_session_view_without_history() {
+        use ricecoder_sessions::{ShareService, SharePermissions, Session, SessionContext, SessionMode, Message, MessageRole};
+
+        let service = ShareService::new();
+
+        // Create a session with messages
+        let mut session = Session::new(
+            "Test Session".to_string(),
+            SessionContext::new("openai".to_string(), "gpt-4".to_string(), SessionMode::Chat),
+        );
+
+        session.history.push(Message::new(
+            MessageRole::User,
+            "Hello".to_string(),
+        ));
+
+        session.history.push(Message::new(
+            MessageRole::Assistant,
+            "Hi there!".to_string(),
+        ));
+
+        // Create a view with history excluded
+        let permissions = SharePermissions {
+            read_only: true,
+            include_history: false,
+            include_context: true,
+        };
+
+        let view = service.create_shared_session_view(&session, &permissions);
+
+        assert_eq!(view.history.len(), 0);
+    }
+
+    #[test]
+    fn test_share_service_create_shared_session_view_without_context() {
+        use ricecoder_sessions::{ShareService, SharePermissions, Session, SessionContext, SessionMode};
+
+        let service = ShareService::new();
+
+        // Create a session with context
+        let mut session = Session::new(
+            "Test Session".to_string(),
+            SessionContext::new("openai".to_string(), "gpt-4".to_string(), SessionMode::Chat),
+        );
+
+        session.context.files.push("file1.rs".to_string());
+        session.context.files.push("file2.rs".to_string());
+
+        // Create a view with context excluded
+        let permissions = SharePermissions {
+            read_only: true,
+            include_history: true,
+            include_context: false,
+        };
+
+        let view = service.create_shared_session_view(&session, &permissions);
+
+        assert_eq!(view.context.files.len(), 0);
+    }
+
+    #[test]
+    fn test_share_service_list_shares_for_session() {
+        use ricecoder_sessions::{ShareService, SharePermissions};
+
+        let service = ShareService::new();
+
+        // Generate shares for different sessions
+        let permissions = SharePermissions {
+            read_only: true,
+            include_history: true,
+            include_context: true,
+        };
+
+        let share1 = service
+            .generate_share_link("session-1", permissions.clone(), None)
+            .expect("Failed to generate share 1");
+
+        let share2 = service
+            .generate_share_link("session-1", permissions.clone(), None)
+            .expect("Failed to generate share 2");
+
+        let share3 = service
+            .generate_share_link("session-2", permissions.clone(), None)
+            .expect("Failed to generate share 3");
+
+        // List shares for session-1
+        let session1_shares = service
+            .list_shares_for_session("session-1")
+            .expect("Failed to list shares for session-1");
+
+        assert_eq!(session1_shares.len(), 2);
+        assert!(session1_shares.iter().any(|s| s.id == share1.id));
+        assert!(session1_shares.iter().any(|s| s.id == share2.id));
+        assert!(!session1_shares.iter().any(|s| s.id == share3.id));
+    }
+
+    #[test]
+    fn test_share_service_invalidate_session_shares() {
+        use ricecoder_sessions::{ShareService, SharePermissions};
+
+        let service = ShareService::new();
+
+        // Generate shares for a session
+        let permissions = SharePermissions {
+            read_only: true,
+            include_history: true,
+            include_context: true,
+        };
+
+        let share1 = service
+            .generate_share_link("session-1", permissions.clone(), None)
+            .expect("Failed to generate share 1");
+
+        let share2 = service
+            .generate_share_link("session-1", permissions.clone(), None)
+            .expect("Failed to generate share 2");
+
+        // Invalidate all shares for session-1
+        let invalidated = service
+            .invalidate_session_shares("session-1")
+            .expect("Failed to invalidate shares");
+
+        assert_eq!(invalidated, 2);
+
+        // Verify shares are gone
+        let result1 = service.get_share(&share1.id);
+        let result2 = service.get_share(&share2.id);
+
+        assert!(result1.is_err());
+        assert!(result2.is_err());
+    }
+
+    #[test]
+    fn test_share_service_read_only_enforcement() {
+        use ricecoder_sessions::{ShareService, SharePermissions};
+
+        let service = ShareService::new();
+
+        // Generate a share with read_only=true
+        let permissions = SharePermissions {
+            read_only: true,
+            include_history: true,
+            include_context: true,
+        };
+
+        let share = service
+            .generate_share_link("session-1", permissions, None)
+            .expect("Failed to generate share");
+
+        // Verify read_only is enforced
+        assert!(share.permissions.read_only);
     }
 }

@@ -1,0 +1,9 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 8d32cfb0a30ee63a3878da9e027598daf45ef4072a39a425efc7ecd151310a0a # shrinks to theme_name = "dark"
+cc c1b7f8a7841f3f0f916a9eb9b1fbd013adbc9a458df70b62e8a7ac46864d25a1 # shrinks to theme_name = "dark"
+cc 632c38dc9f80094389d48b7edbb1afe5d7807934922243536a241b57e7b73d94 # shrinks to theme_name1 = "dracula", theme_name2 = "nord"

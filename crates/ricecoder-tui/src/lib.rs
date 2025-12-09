@@ -11,12 +11,15 @@ pub mod components;
 pub mod config;
 pub mod diff;
 pub mod event;
+pub mod image_integration;
+pub mod image_widget;
 pub mod input;
 pub mod integration;
 pub mod layout;
 pub mod markdown;
 pub mod performance;
 pub mod prompt;
+pub mod prompt_context;
 pub mod provider_integration;
 pub mod render;
 pub mod session_integration;
@@ -25,6 +28,8 @@ pub mod sessions;
 pub mod style;
 pub mod theme;
 pub mod theme_loader;
+pub mod theme_registry;
+pub mod theme_reset;
 pub mod widgets;
 
 // Re-export commonly used types
@@ -42,6 +47,8 @@ pub use components::{
 };
 pub use config::TuiConfig;
 pub use diff::{DiffHunk, DiffLine, DiffLineType, DiffViewType, DiffWidget};
+pub use image_integration::ImageIntegration;
+pub use image_widget::ImageWidget;
 pub use input::{ChatInputWidget, InputAnalyzer, Intent};
 pub use integration::{
     LayoutCoordinator, LayoutInfo, StateSynchronizer, WidgetContainer, WidgetIntegration,
@@ -52,6 +59,7 @@ pub use performance::{
     DiffRenderOptimizer, LazyLoadConfig, LazyMessageHistory, ThemeSwitchPerformance,
 };
 pub use prompt::{ContextIndicators, PromptConfig, PromptWidget};
+pub use prompt_context::PromptContext;
 pub use provider_integration::ProviderIntegration;
 pub use session_integration::SessionIntegration;
 pub use session_manager::{SessionData, SessionManager};
@@ -59,4 +67,6 @@ pub use sessions::{Session, SessionDisplayMode, SessionStatus, SessionWidget};
 pub use style::{ColorSupport, Theme};
 pub use theme::ThemeManager;
 pub use theme_loader::{ThemeLoader, ThemeYaml};
+pub use theme_registry::ThemeRegistry;
+pub use theme_reset::ThemeResetManager;
 pub use widgets::{ChatWidget, Message, MessageAuthor};

@@ -1,0 +1,63 @@
+{
+  "name": "ricecoder",
+  "version": "0.1.6",
+  "description": "Terminal-first, spec-driven coding assistant with research-first approach",
+  "main": "index.js",
+  "bin": {
+    "ricecoder": "./bin/ricecoder",
+    "rice": "./bin/ricecoder"
+  },
+  "scripts": {
+    "postinstall": "node scripts/install.js",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moabualruz/ricecoder.git"
+  },
+  "homepage": "https://github.com/moabualruz/ricecoder",
+  "bugs": {
+    "url": "https://github.com/moabualruz/ricecoder/issues"
+  },
+  "keywords": [
+    "ai",
+    "code-generation",
+    "refactoring",
+    "cli",
+    "rust",
+    "coding-assistant",
+    "spec-driven",
+    "terminal",
+    "tui",
+    "llm"
+  ],
+  "author": "RiceCoder Contributors",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "files": [
+    "bin",
+    "scripts",
+    "README.md",
+    "LICENSE.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.10"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}

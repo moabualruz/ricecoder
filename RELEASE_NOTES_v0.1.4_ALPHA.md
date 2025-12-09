@@ -1,22 +1,22 @@
-# RiceCoder Beta Release v0.4.0
+# RiceCoder Alpha Release v0.1.4
 
 **Release Date**: December 5, 2025
 
-**Status**: Beta Release (Extended Beta for community feedback)
+**Status**: Alpha Release (Extended Alpha for community feedback)
 
-**Version**: 0.4.0-beta
+**Version**: 0.1.4-alpha
 
 ---
 
 ## Overview
 
-RiceCoder v0.4.0 is a comprehensive Beta release that builds on the foundation of v0.3.0 with significant performance optimizations, security hardening, user experience improvements, and extensive documentation. This release represents the culmination of Phase 4 development and is ready for community testing and feedback.
+RiceCoder v0.1.4 is a comprehensive Alpha release that builds on the foundation of v0.1.3 with significant performance optimizations, security hardening, user experience improvements, and extensive documentation. This release represents the culmination of Phase 4 development and is ready for community testing and feedback.
 
-**Key Achievement**: All Phase 1, 2, 3, and 4 features are complete and validated. RiceCoder is now feature-complete for Beta with comprehensive testing, security audit, and performance optimization.
+**Key Achievement**: All Phase 1, 2, 3, and 4 features are complete and validated. RiceCoder is now feature-complete for Alpha with comprehensive testing, security audit, and performance optimization.
 
 ---
 
-## What's New in v0.4.0
+## What's New in v0.1.4
 
 ### Phase 4: Beta Polishing & Hardening
 
@@ -155,7 +155,7 @@ RiceCoder v0.4.0 is a comprehensive Beta release that builds on the foundation o
 
 ## Breaking Changes
 
-None. This is a backward-compatible release with v0.3.0.
+None. This is a backward-compatible release with v0.1.3.
 
 ---
 
@@ -167,7 +167,7 @@ None. All APIs remain stable.
 
 ## Known Limitations
 
-1. **Production Release Deferred**: v1.0.0 production release deferred to allow for extended community feedback during Beta v0.4.0
+1. **Production Release Deferred**: v1.0.0 production release deferred to allow for extended community feedback during Beta v0.1.4
 2. **External LSP Servers**: Limited to Tier 1 servers (rust-analyzer, typescript-language-server, pylsp) in this release
 3. **Platform Support**: Tested on Windows, macOS, and Linux (Ubuntu)
 4. **Memory Usage**: Large projects (>10,000 files) may require optimization
@@ -186,7 +186,7 @@ cargo build --release
 
 ### From Crates.io (Beta)
 ```bash
-cargo install ricecoder --version 0.4.0-beta
+cargo install ricecoder --version 0.1.4-beta
 ```
 
 ### Platform-Specific Guides
@@ -264,7 +264,7 @@ After community feedback integration:
 
 ## Contributors
 
-RiceCoder v0.4.0 was developed by the RiceCoder team with contributions from the community.
+RiceCoder v0.1.4 was developed by the RiceCoder team with contributions from the community.
 
 **Special Thanks**:
 - OpenCode team for inspiration and feature parity goals
@@ -288,7 +288,7 @@ RiceCoder is inspired by and aims to achieve feature parity with [OpenCode](http
 ## What's Next?
 
 ### For Users
-1. **Try RiceCoder**: Install v0.4.0 and explore the features
+1. **Try RiceCoder**: Install v0.1.4 and explore the features
 2. **Provide Feedback**: Report issues and suggest improvements
 3. **Join Community**: Connect with other users and contributors
 4. **Read Documentation**: Learn about all available features
@@ -303,10 +303,10 @@ RiceCoder is inspired by and aims to achieve feature parity with [OpenCode](http
 
 ## Release Timeline
 
-- **v0.1.0 (Alpha)**: Phase 1 - Foundation features ✅
-- **v0.2.0 (Beta)**: Phase 2 - Enhanced features ✅
-- **v0.3.0 (Beta)**: Phase 3 - MVP features ✅
-- **v0.4.0 (Beta)**: Phase 4 - Polished & hardened ✅ **← You are here**
+- **v0.1.1 (Alpha)**: Phase 1 - Foundation features ✅
+- **v0.1.2 (Beta)**: Phase 2 - Enhanced features ✅
+- **v0.1.3 (Beta)**: Phase 3 - MVP features ✅
+- **v0.1.4 (Beta)**: Phase 4 - Polished & hardened ✅ **← You are here**
 - **v1.0.0 (Production)**: Phase 5 - Production release 📋 (Post-Beta)
 
 ---

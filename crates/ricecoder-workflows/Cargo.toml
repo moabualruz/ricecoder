@@ -1,9 +1,13 @@
 [package]
 name = "ricecoder-workflows"
+description = "Workflow definition and execution framework"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
 
 [dependencies]
 serde = { workspace = true }
@@ -20,3 +24,6 @@ uuid = { workspace = true }
 proptest = { workspace = true }
 tempfile = { workspace = true }
 tokio-test = { workspace = true }
+
+
+
