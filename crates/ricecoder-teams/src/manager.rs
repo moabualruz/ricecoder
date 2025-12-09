@@ -23,9 +23,17 @@ pub struct TeamManager {
 impl TeamManager {
     /// Create a new TeamManager
     pub fn new() -> Self {
+        // Create SharedRulesManager with mock implementations
+        // TODO: Replace with actual ricecoder-learning implementations
+        let rules_manager = SharedRulesManager::new(
+            Arc::new(crate::rules::mocks::MockRulePromoter),
+            Arc::new(crate::rules::mocks::MockRuleValidator),
+            Arc::new(crate::rules::mocks::MockAnalyticsEngine),
+        );
+
         TeamManager {
             config_manager: Arc::new(TeamConfigManager::new()),
-            rules_manager: Arc::new(SharedRulesManager::new()),
+            rules_manager: Arc::new(rules_manager),
             access_control: Arc::new(AccessControlManager::new()),
             sync_service: Arc::new(SyncService::new()),
             analytics: Arc::new(AnalyticsDashboard::new()),
