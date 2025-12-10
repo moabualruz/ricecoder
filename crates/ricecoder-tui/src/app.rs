@@ -11,6 +11,8 @@ use crate::render::Renderer;
 use crate::style::Theme;
 use crate::theme::ThemeManager;
 use anyhow::Result;
+use ratatui::backend::CrosstermBackend;
+use ratatui::Terminal;
 
 /// Application mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -186,8 +188,44 @@ impl App {
 
     /// Run the application
     pub async fn run(&mut self) -> Result<()> {
+        use crossterm::{
+            execute,
+            terminal::{enable_raw_mode, disable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+            event::EnableMouseCapture,
+        };
+        use ratatui::prelude::*;
+        use std::io;
+
         tracing::info!("Starting RiceCoder TUI");
 
+        // Initialize terminal
+        let mut stdout = io::stdout();
+        enable_raw_mode()?;
+        execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+
+        // Create terminal backend
+        let backend = CrosstermBackend::new(stdout);
+        let mut terminal = Terminal::new(backend)?;
+        terminal.clear()?;
+
+        // Run the main event loop
+        let result = self.run_event_loop(&mut terminal).await;
+
+        // Restore terminal state
+        disable_raw_mode()?;
+        execute!(
+            terminal.backend_mut(),
+            LeaveAlternateScreen,
+            crossterm::event::DisableMouseCapture
+        )?;
+        terminal.show_cursor()?;
+
+        tracing::info!("RiceCoder TUI exited successfully");
+        result
+    }
+
+    /// Run the main event loop with terminal rendering
+    async fn run_event_loop(&mut self, terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>) -> Result<()> {
         // Main event loop
         while !self.should_exit {
             // Poll for events
@@ -195,11 +233,12 @@ impl App {
                 self.handle_event(event)?;
             }
 
-            // Render the UI
-            self.renderer.render(self)?;
+            // Render the UI using ratatui's terminal.draw() closure
+            terminal.draw(|f| {
+                self.renderer.render_frame(f, self);
+            })?;
         }
 
-        tracing::info!("RiceCoder TUI exited successfully");
         Ok(())
     }
 
