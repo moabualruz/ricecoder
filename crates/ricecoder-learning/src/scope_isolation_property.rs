@@ -43,6 +43,7 @@ mod tests {
     /// For any set of rules in different scopes, filtering by scope should return
     /// only rules from that scope, and rules from one scope should not interfere
     /// with rules from another scope unless they have the same pattern.
+    #[allow(unused_doc_comments)]
     proptest! {
         #[test]
         fn prop_scope_isolation_no_cross_scope_interference(

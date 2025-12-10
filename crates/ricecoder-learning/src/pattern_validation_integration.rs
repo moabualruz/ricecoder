@@ -120,7 +120,7 @@ mod tests {
         assert_eq!(patterns.len(), 1);
 
         // Store pattern
-        let pattern_id = patterns[0].id.clone();
+        let _pattern_id = patterns[0].id.clone();
         manager.store_pattern(patterns[0].clone()).await.unwrap();
 
         // Validate pattern
@@ -379,7 +379,7 @@ mod tests {
         let initial_confidence = initial_pattern.confidence;
 
         // Validate pattern and update confidence with a high validation score
-        let validation_result = manager
+        let _validation_result = manager
             .validate_pattern_comprehensive(&patterns[0])
             .await
             .unwrap();

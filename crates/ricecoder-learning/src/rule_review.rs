@@ -608,7 +608,7 @@ mod tests {
         );
 
         let rule1_id = rule1.id.clone();
-        let rule2_id = rule2.id.clone();
+        let _rule2_id = rule2.id.clone();
 
         manager.start_review(rule1);
         manager.start_review(rule2);

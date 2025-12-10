@@ -1709,7 +1709,7 @@ mod tests {
         let result = manager.request_rule_promotion(rule).await;
         assert!(result.is_ok());
 
-        let review = result.unwrap();
+        let _review = result.unwrap();
         assert_eq!(manager.pending_promotion_count().await, 1);
     }
 

@@ -913,7 +913,6 @@ mod tests {
     #[test]
     fn test_share_service_get_share() {
         use ricecoder_sessions::{ShareService, SharePermissions};
-        use chrono::Duration;
 
         let service = ShareService::new();
 

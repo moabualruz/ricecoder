@@ -179,6 +179,7 @@ impl PatternCapturer {
     }
 
     /// Check if two outputs are similar
+    #[allow(dead_code)]
     fn outputs_are_similar(&self, output1: &serde_json::Value, output2: &serde_json::Value) -> bool {
         // For now, use exact equality
         // In a more sophisticated implementation, this could use fuzzy matching
@@ -186,6 +187,7 @@ impl PatternCapturer {
     }
 
     /// Compute a hash of the input for grouping
+    #[allow(dead_code)]
     fn compute_input_hash(&self, input: &serde_json::Value) -> String {
         // Use JSON string representation as hash
         // In production, this could use a more sophisticated hashing strategy

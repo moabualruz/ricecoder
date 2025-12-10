@@ -51,6 +51,7 @@ mod tests {
     /// 2. The promoted rule is validated against existing global rules
     /// 3. Conflicts are detected before promotion
     /// 4. The promoted rule has the correct scope and source after promotion
+    #[allow(unused_doc_comments)]
     proptest! {
         #[test]
         fn prop_rule_promotion_does_not_create_conflicts(
@@ -100,6 +101,7 @@ mod tests {
     /// Property: Promoted rules maintain data integrity
     /// For any promoted rule, all original data should be preserved except for
     /// scope, source, and version which should be updated appropriately.
+    #[allow(unused_doc_comments)]
     proptest! {
         #[test]
         fn prop_promoted_rule_maintains_data_integrity(
@@ -133,6 +135,7 @@ mod tests {
     /// Property: Promotion history is accurate
     /// For any promotion, the promotion history should accurately record
     /// the promotion event with correct metadata.
+    #[allow(unused_doc_comments)]
     proptest! {
         #[test]
         fn prop_promotion_history_is_accurate(
@@ -159,6 +162,7 @@ mod tests {
     /// Property: Multiple promotions can be tracked independently
     /// For any set of promotions, each should be tracked independently
     /// in the promotion history.
+    #[allow(unused_doc_comments)]
     proptest! {
         #[test]
         fn prop_multiple_promotions_tracked_independently(
@@ -196,6 +200,7 @@ mod tests {
     /// Property: Pending promotions are isolated from history
     /// For any pending promotion, it should not appear in the promotion history
     /// until it is approved or rejected.
+    #[allow(unused_doc_comments)]
     proptest! {
         #[test]
         fn prop_pending_promotions_isolated_from_history(
@@ -231,6 +236,7 @@ mod tests {
     /// Property: Conflict detection is consistent
     /// For any set of rules, conflict detection should be consistent
     /// regardless of the order in which rules are checked.
+    #[allow(unused_doc_comments)]
     proptest! {
         #[test]
         fn prop_conflict_detection_is_consistent(
@@ -257,6 +263,7 @@ mod tests {
     /// Property: Validation prevents invalid promotions
     /// For any promoted rule, validation should ensure it doesn't conflict
     /// with existing global rules.
+    #[allow(unused_doc_comments)]
     proptest! {
         #[test]
         fn prop_validation_prevents_invalid_promotions(

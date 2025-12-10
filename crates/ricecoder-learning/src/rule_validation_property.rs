@@ -85,6 +85,7 @@ mod tests {
     /// Property 4: Valid rules are accepted
     ///
     /// For any valid rule, the validator SHALL accept it without errors.
+    #[allow(unused_doc_comments)]
     proptest! {
         #[test]
         fn prop_valid_rules_accepted(rule in valid_rule_strategy()) {

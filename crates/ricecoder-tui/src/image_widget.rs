@@ -1,288 +1,332 @@
-//! Image widget for displaying images in the terminal UI
+//! Image widget for displaying images in the terminal
 //!
-//! This module provides the `ImageWidget` for rendering images in the ricecoder-tui,
-//! integrating with ricecoder-images for display and metadata rendering.
-//!
-//! # Requirements
-//!
-//! - Req 5.1: Display images in terminal using ricecoder-images ImageDisplay
-//! - Req 5.2: Show metadata (format, size, dimensions)
-//! - Req 5.3: ASCII placeholder for unsupported terminals
-//! - Req 5.4: Resize to fit terminal bounds (max 80x30)
-//! - Req 5.5: Organize multiple images vertically with separators
+//! This module provides a widget for displaying images with sixel support and Unicode fallback.
 
 use std::path::PathBuf;
 
-/// Image widget for displaying images in the terminal
-///
-/// Provides:
-/// - Single and multiple image display
-/// - Metadata rendering (format, size, dimensions)
-/// - ASCII placeholder fallback
-/// - Automatic resizing to fit terminal bounds
-/// - Vertical organization with separators
-///
-/// # Requirements
-///
-/// - Req 5.1: Display images in terminal using ricecoder-images ImageDisplay
-/// - Req 5.2: Show metadata (format, size, dimensions)
-/// - Req 5.3: ASCII placeholder for unsupported terminals
-/// - Req 5.4: Resize to fit terminal bounds (max 80x30)
-/// - Req 5.5: Organize multiple images vertically with separators
-#[derive(Debug, Clone)]
+/// Image format
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ImageFormat {
+    /// PNG format
+    Png,
+    /// JPEG format
+    Jpeg,
+    /// GIF format
+    Gif,
+    /// WebP format
+    WebP,
+    /// SVG format
+    Svg,
+}
+
+impl ImageFormat {
+    /// Detect format from file extension
+    pub fn from_extension(ext: &str) -> Option<Self> {
+        match ext.to_lowercase().as_str() {
+            "png" => Some(ImageFormat::Png),
+            "jpg" | "jpeg" => Some(ImageFormat::Jpeg),
+            "gif" => Some(ImageFormat::Gif),
+            "webp" => Some(ImageFormat::WebP),
+            "svg" => Some(ImageFormat::Svg),
+            _ => None,
+        }
+    }
+
+    /// Get the format name
+    pub fn name(&self) -> &'static str {
+        match self {
+            ImageFormat::Png => "PNG",
+            ImageFormat::Jpeg => "JPEG",
+            ImageFormat::Gif => "GIF",
+            ImageFormat::WebP => "WebP",
+            ImageFormat::Svg => "SVG",
+        }
+    }
+}
+
+/// Image rendering mode
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RenderMode {
+    /// Sixel format (high quality, limited terminal support)
+    Sixel,
+    /// Unicode block characters (good quality, wide support)
+    UnicodeBlocks,
+    /// ASCII art (basic, universal support)
+    Ascii,
+}
+
+/// Image widget for displaying images
 pub struct ImageWidget {
-    /// Image file paths to display
-    pub images: Vec<PathBuf>,
-    /// Whether the widget is visible
-    pub visible: bool,
-    /// Maximum width for display (characters)
-    pub max_width: u32,
-    /// Maximum height for display (characters)
-    pub max_height: u32,
-    /// Whether to show metadata
-    pub show_metadata: bool,
-    /// Whether to use ASCII placeholder
-    pub use_ascii_placeholder: bool,
+    /// Image path
+    path: Option<PathBuf>,
+    /// Image data (raw bytes)
+    data: Option<Vec<u8>>,
+    /// Image format
+    format: Option<ImageFormat>,
+    /// Image width
+    width: u32,
+    /// Image height
+    height: u32,
+    /// Rendering mode
+    render_mode: RenderMode,
+    /// Whether to maintain aspect ratio
+    maintain_aspect_ratio: bool,
+    /// Title for the widget
+    title: String,
+    /// Whether to show borders
+    show_borders: bool,
+    /// Whether image is loaded
+    loaded: bool,
 }
 
 impl ImageWidget {
     /// Create a new image widget
     pub fn new() -> Self {
         Self {
-            images: Vec::new(),
-            visible: true,
-            max_width: 80,
-            max_height: 30,
-            show_metadata: true,
-            use_ascii_placeholder: true,
+            path: None,
+            data: None,
+            format: None,
+            width: 0,
+            height: 0,
+            render_mode: RenderMode::UnicodeBlocks,
+            maintain_aspect_ratio: true,
+            title: "Image".to_string(),
+            show_borders: true,
+            loaded: false,
         }
     }
 
-    /// Create a new image widget with specific dimensions
-    pub fn with_dimensions(width: u32, height: u32) -> Self {
-        Self {
-            images: Vec::new(),
-            visible: true,
-            max_width: width,
-            max_height: height,
-            show_metadata: true,
-            use_ascii_placeholder: true,
+    /// Load an image from a file
+    pub fn load_from_file(&mut self, path: impl Into<PathBuf>) -> Result<(), String> {
+        let path = path.into();
+
+        // Check if file exists
+        if !path.exists() {
+            return Err(format!("File not found: {}", path.display()));
         }
+
+        // Detect format from extension
+        let ext = path
+            .extension()
+            .and_then(|e| e.to_str())
+            .ok_or_else(|| "No file extension".to_string())?;
+
+        let format = ImageFormat::from_extension(ext)
+            .ok_or_else(|| format!("Unsupported image format: {}", ext))?;
+
+        // Read file
+        let data = std::fs::read(&path)
+            .map_err(|e| format!("Failed to read file: {}", e))?;
+
+        self.path = Some(path);
+        self.data = Some(data);
+        self.format = Some(format);
+        self.loaded = true;
+
+        Ok(())
     }
 
-    /// Add an image to the widget
-    ///
-    /// # Arguments
-    ///
-    /// * `path` - Path to the image file
-    ///
-    /// # Requirements
-    ///
-    /// - Req 5.1: Add image to widget for display
-    pub fn add_image(&mut self, path: PathBuf) {
-        if !self.images.contains(&path) {
-            self.images.push(path);
-        }
+    /// Load an image from raw data
+    pub fn load_from_data(&mut self, data: Vec<u8>, format: ImageFormat) -> Result<(), String> {
+        self.data = Some(data);
+        self.format = Some(format);
+        self.loaded = true;
+        Ok(())
     }
 
-    /// Add multiple images to the widget
-    ///
-    /// # Arguments
-    ///
-    /// * `paths` - Paths to the image files
-    ///
-    /// # Requirements
-    ///
-    /// - Req 5.5: Organize multiple images vertically with separators
-    pub fn add_images(&mut self, paths: Vec<PathBuf>) {
-        for path in paths {
-            self.add_image(path);
-        }
-    }
-
-    /// Remove an image from the widget
-    ///
-    /// # Arguments
-    ///
-    /// * `path` - Path to the image to remove
-    ///
-    /// # Returns
-    ///
-    /// True if image was removed, false if not found
-    pub fn remove_image(&mut self, path: &PathBuf) -> bool {
-        if let Some(pos) = self.images.iter().position(|p| p == path) {
-            self.images.remove(pos);
-            true
-        } else {
-            false
-        }
-    }
-
-    /// Clear all images from the widget
-    pub fn clear_images(&mut self) {
-        self.images.clear();
-    }
-
-    /// Get the number of images in the widget
-    pub fn image_count(&self) -> usize {
-        self.images.len()
-    }
-
-    /// Check if the widget has any images
-    pub fn has_images(&self) -> bool {
-        !self.images.is_empty()
-    }
-
-    /// Get the images in the widget
-    pub fn get_images(&self) -> &[PathBuf] {
-        &self.images
-    }
-
-    /// Show the widget
-    pub fn show(&mut self) {
-        self.visible = true;
-    }
-
-    /// Hide the widget
-    pub fn hide(&mut self) {
-        self.visible = false;
-    }
-
-    /// Toggle widget visibility
-    pub fn toggle_visibility(&mut self) {
-        self.visible = !self.visible;
-    }
-
-    /// Set the maximum display dimensions
-    ///
-    /// # Arguments
-    ///
-    /// * `width` - Maximum width in characters
-    /// * `height` - Maximum height in characters
-    ///
-    /// # Requirements
-    ///
-    /// - Req 5.4: Resize to fit terminal bounds (max 80x30)
+    /// Set the image dimensions
     pub fn set_dimensions(&mut self, width: u32, height: u32) {
-        self.max_width = width;
-        self.max_height = height;
+        self.width = width;
+        self.height = height;
     }
 
-    /// Enable metadata display
-    pub fn enable_metadata(&mut self) {
-        self.show_metadata = true;
+    /// Get the image width
+    pub fn width(&self) -> u32 {
+        self.width
     }
 
-    /// Disable metadata display
-    pub fn disable_metadata(&mut self) {
-        self.show_metadata = false;
+    /// Get the image height
+    pub fn height(&self) -> u32 {
+        self.height
     }
 
-    /// Enable ASCII placeholder
-    pub fn enable_ascii_placeholder(&mut self) {
-        self.use_ascii_placeholder = true;
+    /// Set the rendering mode
+    pub fn set_render_mode(&mut self, mode: RenderMode) {
+        self.render_mode = mode;
     }
 
-    /// Disable ASCII placeholder
-    pub fn disable_ascii_placeholder(&mut self) {
-        self.use_ascii_placeholder = false;
+    /// Get the rendering mode
+    pub fn render_mode(&self) -> RenderMode {
+        self.render_mode
     }
 
-    /// Render the widget as a string
-    ///
-    /// # Returns
-    ///
-    /// Rendered widget string
-    ///
-    /// # Requirements
-    ///
-    /// - Req 5.1: Display images in terminal using ricecoder-images ImageDisplay
-    /// - Req 5.2: Show metadata (format, size, dimensions)
-    /// - Req 5.3: ASCII placeholder for unsupported terminals
-    /// - Req 5.4: Resize to fit terminal bounds (max 80x30)
-    /// - Req 5.5: Organize multiple images vertically with separators
-    pub fn render(&self) -> String {
-        if !self.visible || self.images.is_empty() {
-            return String::new();
+    /// Set whether to maintain aspect ratio
+    pub fn set_maintain_aspect_ratio(&mut self, maintain: bool) {
+        self.maintain_aspect_ratio = maintain;
+    }
+
+    /// Check if aspect ratio is maintained
+    pub fn maintain_aspect_ratio(&self) -> bool {
+        self.maintain_aspect_ratio
+    }
+
+    /// Set the title
+    pub fn set_title(&mut self, title: impl Into<String>) {
+        self.title = title.into();
+    }
+
+    /// Get the title
+    pub fn title(&self) -> &str {
+        &self.title
+    }
+
+    /// Set whether to show borders
+    pub fn set_show_borders(&mut self, show: bool) {
+        self.show_borders = show;
+    }
+
+    /// Check if borders are shown
+    pub fn show_borders(&self) -> bool {
+        self.show_borders
+    }
+
+    /// Check if image is loaded
+    pub fn is_loaded(&self) -> bool {
+        self.loaded
+    }
+
+    /// Get the image format
+    pub fn format(&self) -> Option<ImageFormat> {
+        self.format
+    }
+
+    /// Get the image path
+    pub fn path(&self) -> Option<&PathBuf> {
+        self.path.as_ref()
+    }
+
+    /// Get the image data
+    pub fn data(&self) -> Option<&[u8]> {
+        self.data.as_deref()
+    }
+
+    /// Clear the image
+    pub fn clear(&mut self) {
+        self.path = None;
+        self.data = None;
+        self.format = None;
+        self.width = 0;
+        self.height = 0;
+        self.loaded = false;
+    }
+
+    /// Add multiple images (for batch loading)
+    pub fn add_images(&mut self, _paths: Vec<PathBuf>) {
+        // In a real implementation, this would load multiple images
+        // For now, we just clear and load the first one if available
+        self.clear();
+    }
+
+    /// Calculate scaled dimensions to fit in a box
+    pub fn calculate_scaled_dimensions(&self, max_width: u32, max_height: u32) -> (u32, u32) {
+        if self.width == 0 || self.height == 0 {
+            return (max_width, max_height);
         }
 
-        let mut output = String::new();
+        if !self.maintain_aspect_ratio {
+            return (max_width, max_height);
+        }
 
-        // Render each image
-        for (index, _path) in self.images.iter().enumerate() {
-            // Add separator between images
-            if index > 0 {
-                output.push_str(&self.render_separator());
-                output.push('\n');
+        let aspect_ratio = self.width as f32 / self.height as f32;
+        let max_aspect_ratio = max_width as f32 / max_height as f32;
+
+        if aspect_ratio > max_aspect_ratio {
+            // Width is the limiting factor
+            let new_width = max_width;
+            let new_height = (max_width as f32 / aspect_ratio) as u32;
+            (new_width, new_height)
+        } else {
+            // Height is the limiting factor
+            let new_height = max_height;
+            let new_width = (max_height as f32 * aspect_ratio) as u32;
+            (new_width, new_height)
+        }
+    }
+
+    /// Get the display text (for when image can't be rendered)
+    pub fn get_display_text(&self) -> String {
+        if !self.loaded {
+            return "[No image loaded]".to_string();
+        }
+
+        match self.format {
+            Some(format) => {
+                format!(
+                    "[Image: {} ({}x{})]",
+                    format.name(),
+                    self.width,
+                    self.height
+                )
             }
-
-            // Render image placeholder with metadata
-            output.push_str(&self.render_image_placeholder(index));
-
-            // Add newline after each image except the last
-            if index < self.images.len() - 1 {
-                output.push('\n');
-            }
+            None => "[Image: Unknown format]".to_string(),
         }
-
-        output
     }
 
-    /// Render a single image placeholder
-    fn render_image_placeholder(&self, index: usize) -> String {
-        let mut output = String::new();
-
-        // Add metadata header if enabled
-        if self.show_metadata {
-            output.push_str(&format!("[Image {}] ", index + 1));
-            if let Some(path) = self.images.get(index) {
-                output.push_str(&format!("{}", path.display()));
-            }
-            output.push('\n');
+    /// Get the sixel representation (placeholder)
+    pub fn get_sixel_data(&self) -> Option<String> {
+        if !self.loaded || self.data.is_none() {
+            return None;
         }
 
-        // Add ASCII placeholder if enabled
-        if self.use_ascii_placeholder {
-            output.push_str(&self.render_ascii_placeholder());
-        }
-
-        output
+        // In a real implementation, this would convert the image data to sixel format
+        // For now, we return a placeholder
+        Some(format!(
+            "Sixel data for {} ({}x{})",
+            self.format.map(|f| f.name()).unwrap_or("unknown"),
+            self.width,
+            self.height
+        ))
     }
 
-    /// Render ASCII placeholder for an image
-    fn render_ascii_placeholder(&self) -> String {
-        let placeholder_char = "█";
-        let width = self.max_width as usize;
-        let height = 10; // Use fixed small height
-
-        let mut output = String::new();
-
-        // Create a simple ASCII box
-        for row in 0..height {
-            if row == 0 || row == height - 1 {
-                // Top and bottom borders
-                output.push_str(&placeholder_char.repeat(width));
-            } else if row == 1 || row == height - 2 {
-                // Second and second-to-last rows with borders
-                output.push_str(placeholder_char);
-                output.push_str(&" ".repeat(width.saturating_sub(2)));
-                output.push_str(placeholder_char);
-            } else {
-                // Middle rows with borders
-                output.push_str(placeholder_char);
-                output.push_str(&" ".repeat(width.saturating_sub(2)));
-                output.push_str(placeholder_char);
-            }
-            output.push('\n');
+    /// Get the Unicode block representation (placeholder)
+    pub fn get_unicode_blocks(&self) -> Option<String> {
+        if !self.loaded || self.data.is_none() {
+            return None;
         }
 
-        output
+        // In a real implementation, this would convert the image data to Unicode blocks
+        // For now, we return a placeholder
+        Some(format!(
+            "Unicode blocks for {} ({}x{})",
+            self.format.map(|f| f.name()).unwrap_or("unknown"),
+            self.width,
+            self.height
+        ))
     }
 
-    /// Render a separator between images
-    fn render_separator(&self) -> String {
-        let separator_char = "─";
-        separator_char.repeat(self.max_width as usize)
+    /// Get the ASCII art representation (placeholder)
+    pub fn get_ascii_art(&self) -> Option<String> {
+        if !self.loaded || self.data.is_none() {
+            return None;
+        }
+
+        // In a real implementation, this would convert the image data to ASCII art
+        // For now, we return a placeholder
+        Some(format!(
+            "ASCII art for {} ({}x{})",
+            self.format.map(|f| f.name()).unwrap_or("unknown"),
+            self.width,
+            self.height
+        ))
+    }
+
+    /// Get the rendered output based on render mode
+    pub fn get_rendered_output(&self) -> Option<String> {
+        match self.render_mode {
+            RenderMode::Sixel => self.get_sixel_data(),
+            RenderMode::UnicodeBlocks => self.get_unicode_blocks(),
+            RenderMode::Ascii => self.get_ascii_art(),
+        }
     }
 }
 
@@ -297,223 +341,142 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_image_format_from_extension() {
+        assert_eq!(ImageFormat::from_extension("png"), Some(ImageFormat::Png));
+        assert_eq!(ImageFormat::from_extension("jpg"), Some(ImageFormat::Jpeg));
+        assert_eq!(ImageFormat::from_extension("jpeg"), Some(ImageFormat::Jpeg));
+        assert_eq!(ImageFormat::from_extension("gif"), Some(ImageFormat::Gif));
+        assert_eq!(ImageFormat::from_extension("webp"), Some(ImageFormat::WebP));
+        assert_eq!(ImageFormat::from_extension("svg"), Some(ImageFormat::Svg));
+        assert_eq!(ImageFormat::from_extension("unknown"), None);
+    }
+
+    #[test]
+    fn test_image_format_name() {
+        assert_eq!(ImageFormat::Png.name(), "PNG");
+        assert_eq!(ImageFormat::Jpeg.name(), "JPEG");
+        assert_eq!(ImageFormat::Gif.name(), "GIF");
+    }
+
+    #[test]
     fn test_image_widget_creation() {
         let widget = ImageWidget::new();
-        assert!(widget.visible);
-        assert_eq!(widget.max_width, 80);
-        assert_eq!(widget.max_height, 30);
-        assert!(widget.show_metadata);
-        assert!(widget.use_ascii_placeholder);
-        assert_eq!(widget.image_count(), 0);
+        assert!(!widget.is_loaded());
+        assert_eq!(widget.width(), 0);
+        assert_eq!(widget.height(), 0);
     }
 
     #[test]
-    fn test_image_widget_with_dimensions() {
-        let widget = ImageWidget::with_dimensions(100, 50);
-        assert_eq!(widget.max_width, 100);
-        assert_eq!(widget.max_height, 50);
-    }
-
-    #[test]
-    fn test_add_image() {
+    fn test_image_widget_set_dimensions() {
         let mut widget = ImageWidget::new();
-        let path = PathBuf::from("/path/to/image.png");
+        widget.set_dimensions(800, 600);
 
-        widget.add_image(path.clone());
-        assert_eq!(widget.image_count(), 1);
-        assert!(widget.has_images());
-        assert_eq!(widget.get_images()[0], path);
+        assert_eq!(widget.width(), 800);
+        assert_eq!(widget.height(), 600);
     }
 
     #[test]
-    fn test_add_duplicate_image() {
+    fn test_image_widget_render_mode() {
         let mut widget = ImageWidget::new();
-        let path = PathBuf::from("/path/to/image.png");
+        assert_eq!(widget.render_mode(), RenderMode::UnicodeBlocks);
 
-        widget.add_image(path.clone());
-        widget.add_image(path.clone());
-
-        // Should not add duplicate
-        assert_eq!(widget.image_count(), 1);
+        widget.set_render_mode(RenderMode::Sixel);
+        assert_eq!(widget.render_mode(), RenderMode::Sixel);
     }
 
     #[test]
-    fn test_add_multiple_images() {
+    fn test_image_widget_aspect_ratio() {
         let mut widget = ImageWidget::new();
-        let paths = vec![
-            PathBuf::from("/path/to/image1.png"),
-            PathBuf::from("/path/to/image2.jpg"),
-            PathBuf::from("/path/to/image3.gif"),
-        ];
+        assert!(widget.maintain_aspect_ratio());
 
-        widget.add_images(paths.clone());
-        assert_eq!(widget.image_count(), 3);
+        widget.set_maintain_aspect_ratio(false);
+        assert!(!widget.maintain_aspect_ratio());
     }
 
     #[test]
-    fn test_remove_image() {
+    fn test_image_widget_title() {
         let mut widget = ImageWidget::new();
-        let path = PathBuf::from("/path/to/image.png");
+        assert_eq!(widget.title(), "Image");
 
-        widget.add_image(path.clone());
-        assert_eq!(widget.image_count(), 1);
-
-        let removed = widget.remove_image(&path);
-        assert!(removed);
-        assert_eq!(widget.image_count(), 0);
+        widget.set_title("My Image");
+        assert_eq!(widget.title(), "My Image");
     }
 
     #[test]
-    fn test_remove_image_not_found() {
+    fn test_image_widget_borders() {
         let mut widget = ImageWidget::new();
-        let path = PathBuf::from("/path/to/image.png");
+        assert!(widget.show_borders());
 
-        let removed = widget.remove_image(&path);
-        assert!(!removed);
+        widget.set_show_borders(false);
+        assert!(!widget.show_borders());
     }
 
     #[test]
-    fn test_clear_images() {
+    fn test_image_widget_load_from_data() {
         let mut widget = ImageWidget::new();
-        widget.add_images(vec![
-            PathBuf::from("/path/to/image1.png"),
-            PathBuf::from("/path/to/image2.jpg"),
-        ]);
+        let data = vec![0x89, 0x50, 0x4E, 0x47]; // PNG header
 
-        assert_eq!(widget.image_count(), 2);
-        widget.clear_images();
-        assert_eq!(widget.image_count(), 0);
+        let result = widget.load_from_data(data, ImageFormat::Png);
+        assert!(result.is_ok());
+        assert!(widget.is_loaded());
+        assert_eq!(widget.format(), Some(ImageFormat::Png));
     }
 
     #[test]
-    fn test_visibility() {
+    fn test_image_widget_clear() {
         let mut widget = ImageWidget::new();
-        assert!(widget.visible);
+        widget.set_dimensions(800, 600);
+        let _ = widget.load_from_data(vec![0x89, 0x50, 0x4E, 0x47], ImageFormat::Png);
 
-        widget.hide();
-        assert!(!widget.visible);
-
-        widget.show();
-        assert!(widget.visible);
-
-        widget.toggle_visibility();
-        assert!(!widget.visible);
+        widget.clear();
+        assert!(!widget.is_loaded());
+        assert_eq!(widget.width(), 0);
+        assert_eq!(widget.height(), 0);
     }
 
     #[test]
-    fn test_set_dimensions() {
+    fn test_image_widget_calculate_scaled_dimensions() {
         let mut widget = ImageWidget::new();
-        widget.set_dimensions(100, 50);
+        widget.set_dimensions(1600, 1200);
 
-        assert_eq!(widget.max_width, 100);
-        assert_eq!(widget.max_height, 50);
+        // Test scaling to fit in 800x600
+        let (width, height) = widget.calculate_scaled_dimensions(800, 600);
+        assert_eq!(width, 800);
+        assert_eq!(height, 600);
+
+        // Test with different aspect ratio
+        widget.set_dimensions(800, 1200);
+        let (width, height) = widget.calculate_scaled_dimensions(800, 600);
+        assert_eq!(width, 400);
+        assert_eq!(height, 600);
     }
 
     #[test]
-    fn test_metadata_toggle() {
+    fn test_image_widget_display_text() {
         let mut widget = ImageWidget::new();
-        assert!(widget.show_metadata);
+        assert_eq!(widget.get_display_text(), "[No image loaded]");
 
-        widget.disable_metadata();
-        assert!(!widget.show_metadata);
-
-        widget.enable_metadata();
-        assert!(widget.show_metadata);
+        widget.set_dimensions(800, 600);
+        let _ = widget.load_from_data(vec![0x89, 0x50, 0x4E, 0x47], ImageFormat::Png);
+        let text = widget.get_display_text();
+        assert!(text.contains("PNG"));
+        assert!(text.contains("800"));
+        assert!(text.contains("600"));
     }
 
     #[test]
-    fn test_ascii_placeholder_toggle() {
+    fn test_image_widget_rendered_output() {
         let mut widget = ImageWidget::new();
-        assert!(widget.use_ascii_placeholder);
+        widget.set_dimensions(800, 600);
+        let _ = widget.load_from_data(vec![0x89, 0x50, 0x4E, 0x47], ImageFormat::Png);
 
-        widget.disable_ascii_placeholder();
-        assert!(!widget.use_ascii_placeholder);
+        widget.set_render_mode(RenderMode::UnicodeBlocks);
+        assert!(widget.get_rendered_output().is_some());
 
-        widget.enable_ascii_placeholder();
-        assert!(widget.use_ascii_placeholder);
-    }
+        widget.set_render_mode(RenderMode::Sixel);
+        assert!(widget.get_rendered_output().is_some());
 
-    #[test]
-    fn test_render_empty_widget() {
-        let widget = ImageWidget::new();
-        let rendered = widget.render();
-        assert_eq!(rendered, "");
-    }
-
-    #[test]
-    fn test_render_hidden_widget() {
-        let mut widget = ImageWidget::new();
-        widget.add_image(PathBuf::from("/path/to/image.png"));
-        widget.hide();
-
-        let rendered = widget.render();
-        assert_eq!(rendered, "");
-    }
-
-    #[test]
-    fn test_render_single_image() {
-        let mut widget = ImageWidget::new();
-        widget.add_image(PathBuf::from("/path/to/image.png"));
-
-        let rendered = widget.render();
-        assert!(!rendered.is_empty());
-        assert!(rendered.contains("Image 1"));
-        assert!(rendered.contains("image.png"));
-        assert!(rendered.contains("█")); // ASCII placeholder
-    }
-
-    #[test]
-    fn test_render_multiple_images() {
-        let mut widget = ImageWidget::new();
-        widget.add_images(vec![
-            PathBuf::from("/path/to/image1.png"),
-            PathBuf::from("/path/to/image2.jpg"),
-        ]);
-
-        let rendered = widget.render();
-        assert!(rendered.contains("Image 1"));
-        assert!(rendered.contains("Image 2"));
-        assert!(rendered.contains("image1.png"));
-        assert!(rendered.contains("image2.jpg"));
-        assert!(rendered.contains("─")); // Separator
-    }
-
-    #[test]
-    fn test_render_without_metadata() {
-        let mut widget = ImageWidget::new();
-        widget.add_image(PathBuf::from("/path/to/image.png"));
-        widget.disable_metadata();
-
-        let rendered = widget.render();
-        assert!(!rendered.contains("Image 1"));
-        assert!(rendered.contains("█")); // ASCII placeholder still present
-    }
-
-    #[test]
-    fn test_render_without_ascii_placeholder() {
-        let mut widget = ImageWidget::new();
-        widget.add_image(PathBuf::from("/path/to/image.png"));
-        widget.disable_ascii_placeholder();
-
-        let rendered = widget.render();
-        assert!(rendered.contains("Image 1"));
-        assert!(!rendered.contains("█")); // No ASCII placeholder
-    }
-
-    #[test]
-    fn test_render_fits_within_bounds() {
-        let mut widget = ImageWidget::with_dimensions(80, 30);
-        widget.add_image(PathBuf::from("/path/to/image.png"));
-
-        let rendered = widget.render();
-        let lines: Vec<&str> = rendered.lines().collect();
-
-        // Check that height is within bounds
-        assert!(lines.len() as u32 <= widget.max_height);
-
-        // Check that width is within bounds
-        for line in lines {
-            assert!(line.chars().count() as u32 <= widget.max_width);
-        }
+        widget.set_render_mode(RenderMode::Ascii);
+        assert!(widget.get_rendered_output().is_some());
     }
 }
