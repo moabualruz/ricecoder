@@ -4,7 +4,7 @@
 use super::Command;
 use crate::error::{CliError, CliResult};
 use crate::output::OutputStyle;
-use std::collections::HashMap;
+use ricecoder_storage::{ConfigLoader, PathResolver, Config};
 use std::path::PathBuf;
 
 /// Manage configuration
@@ -24,37 +24,16 @@ impl ConfigCommand {
         Self { action }
     }
 
-    /// Get the configuration directory path
+    /// Get the configuration directory path using PathResolver
     fn get_config_dir() -> CliResult<PathBuf> {
-        // Try to get from environment first
-        if let Ok(path) = std::env::var("RICECODER_HOME") {
-            return Ok(PathBuf::from(path));
-        }
-
-        // Fall back to home directory
-        if let Some(home) = dirs::home_dir() {
-            return Ok(home.join(".ricecoder"));
-        }
-
-        Err(CliError::Config(
-            "Could not determine configuration directory".to_string(),
-        ))
+        PathResolver::resolve_global_path()
+            .map_err(|e| CliError::Config(e.to_string()))
     }
 
-    /// Load configuration from file
-    fn load_config() -> CliResult<HashMap<String, String>> {
-        let mut config = HashMap::new();
-
-        // Default configuration values
-        config.insert("provider.default".to_string(), "openai".to_string());
-        config.insert("storage.mode".to_string(), "merged".to_string());
-        config.insert("chat.history".to_string(), "true".to_string());
-        config.insert("output.colors".to_string(), "auto".to_string());
-
-        // TODO: Load from config file if it exists
-        // config_dir/ricecoder.toml
-
-        Ok(config)
+    /// Load configuration from files using ConfigLoader
+    fn load_config() -> CliResult<Config> {
+        ConfigLoader::load_merged()
+            .map_err(|e| CliError::Config(e.to_string()))
     }
 
     /// List all configuration values
@@ -65,12 +44,38 @@ impl ConfigCommand {
         println!("{}", style.header("RiceCoder Configuration"));
         println!();
 
-        let mut keys: Vec<_> = config.keys().collect();
-        keys.sort();
+        // Display provider configuration
+        if let Some(provider) = &config.providers.default_provider {
+            println!("  {} = {}", style.code("provider.default"), provider);
+        } else {
+            println!("  {} = {}", style.code("provider.default"), "(not set)");
+        }
 
-        for key in keys {
-            let value = &config[key];
-            println!("  {} = {}", style.code(key), value);
+        // Display API keys (masked)
+        for (provider, key) in &config.providers.api_keys {
+            let masked = if key.is_empty() { "(not set)" } else { "***masked***" };
+            println!(
+                "  {} = {}",
+                style.code(&format!("providers.{}.api_key", provider)),
+                masked
+            );
+        }
+
+        // Display model configuration
+        if let Some(model) = &config.defaults.model {
+            println!("  {} = {}", style.code("defaults.model"), model);
+        } else {
+            println!("  {} = {}", style.code("defaults.model"), "(not set)");
+        }
+
+        // Display temperature if set
+        if let Some(temp) = config.defaults.temperature {
+            println!("  {} = {}", style.code("defaults.temperature"), temp);
+        }
+
+        // Display max tokens if set
+        if let Some(max_tokens) = config.defaults.max_tokens {
+            println!("  {} = {}", style.code("defaults.max_tokens"), max_tokens);
         }
 
         println!();
@@ -88,9 +93,29 @@ impl ConfigCommand {
         let style = OutputStyle::default();
         let config = Self::load_config()?;
 
-        match config.get(key) {
-            Some(value) => {
-                println!("{} = {}", style.code(key), value);
+        let value = match key {
+            "provider.default" => config.providers.default_provider.clone(),
+            "defaults.model" => config.defaults.model.clone(),
+            "defaults.temperature" => config.defaults.temperature.map(|t| t.to_string()),
+            "defaults.max_tokens" => config.defaults.max_tokens.map(|t| t.to_string()),
+            k if k.starts_with("providers.") && k.ends_with(".api_key") => {
+                // Extract provider name from key like "providers.openai.api_key"
+                let provider = k
+                    .strip_prefix("providers.")
+                    .and_then(|s| s.strip_suffix(".api_key"))
+                    .unwrap_or("");
+                config
+                    .providers
+                    .api_keys
+                    .get(provider)
+                    .map(|k| if k.is_empty() { "(not set)".to_string() } else { "***masked***".to_string() })
+            }
+            _ => None,
+        };
+
+        match value {
+            Some(v) => {
+                println!("{} = {}", style.code(key), v);
                 Ok(())
             }
             None => {
@@ -107,12 +132,55 @@ impl ConfigCommand {
         }
     }
 
-    /// Set a configuration value
+    /// Set a configuration value and persist it
     fn set_config(&self, key: &str, value: &str) -> CliResult<()> {
         let style = OutputStyle::default();
 
-        // TODO: Validate key format
-        // TODO: Write to config file
+        // Load current configuration
+        let mut config = Self::load_config()?;
+
+        // Update the configuration based on the key
+        match key {
+            "provider.default" => {
+                config.providers.default_provider = Some(value.to_string());
+            }
+            "defaults.model" => {
+                config.defaults.model = Some(value.to_string());
+            }
+            "defaults.temperature" => {
+                config.defaults.temperature = value.parse::<f32>().ok();
+            }
+            "defaults.max_tokens" => {
+                config.defaults.max_tokens = value.parse::<u32>().ok();
+            }
+            k if k.starts_with("providers.") && k.ends_with(".api_key") => {
+                // Extract provider name from key like "providers.openai.api_key"
+                let provider = k
+                    .strip_prefix("providers.")
+                    .and_then(|s| s.strip_suffix(".api_key"))
+                    .unwrap_or("");
+                if !provider.is_empty() {
+                    config.providers.api_keys.insert(provider.to_string(), value.to_string());
+                } else {
+                    return Err(CliError::Config(format!("Invalid key format: {}", key)));
+                }
+            }
+            _ => {
+                return Err(CliError::Config(format!("Unknown configuration key: {}", key)));
+            }
+        }
+
+        // Save to global config file
+        let config_dir = Self::get_config_dir()?;
+        let config_file = config_dir.join("ricecoder.yaml");
+
+        // Ensure config directory exists
+        std::fs::create_dir_all(&config_dir)
+            .map_err(|e| CliError::Config(format!("Failed to create config directory: {}", e)))?;
+
+        // Save configuration to file
+        ConfigLoader::save_to_file(&config, &config_file, ricecoder_storage::ConfigFormat::Yaml)
+            .map_err(|e| CliError::Config(e.to_string()))?;
 
         println!("{}", style.success(&format!("Set {} = {}", key, value)));
         println!(

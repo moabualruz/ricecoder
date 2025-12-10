@@ -1,0 +1,15 @@
+# RiceCoder Project Configuration
+# This file configures ricecoder for your project
+
+[project]
+name = "My Project"
+description = ""
+
+[providers]
+default = "other"
+
+[storage]
+mode = "merged"
+
+# For more configuration options, see:
+# https://github.com/moabualruz/ricecoder/wiki/docs/configuration

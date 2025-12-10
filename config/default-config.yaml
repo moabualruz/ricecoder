@@ -1,0 +1,163 @@
+# RiceCoder Default Configuration
+# This file is created on first run and placed in ~/Documents/.ricecoder/ricecoder.yaml
+# 
+# Configuration Priority (highest to lowest):
+# 1. Environment variable overrides (RICECODER_*)
+# 2. Project configuration (./.ricecoder/ricecoder.yaml)
+# 3. Global configuration (~/Documents/.ricecoder/ricecoder.yaml)
+# 4. Built-in defaults (this file)
+#
+# For more information, see: https://opencode.ai/docs/ricecoder/configuration
+
+---
+
+# Provider Configuration
+# Defines LLM providers and their settings
+providers:
+  # Default provider to use for chat and code generation
+  # Options: zen, openai, anthropic, ollama, lm-studio
+  default_provider: zen
+  
+  # API Keys for various providers
+  # Can be set via environment variables: RICECODER_<PROVIDER>_API_KEY
+  # Example: RICECODER_OPENAI_API_KEY=sk-...
+  api_keys:
+    # Zen provider API key (optional for free models)
+    # Get your key from: https://opencode.ai/account/api-keys
+    zen: ""
+    
+    # OpenAI API key (optional)
+    # Get your key from: https://platform.openai.com/api-keys
+    openai: ""
+    
+    # Anthropic API key (optional)
+    # Get your key from: https://console.anthropic.com/
+    anthropic: ""
+  
+  # Custom endpoints for providers (optional)
+  # Use this to point to self-hosted or alternative endpoints
+  endpoints:
+    # Zen provider endpoint (default: https://opencode.ai/zen/v1)
+    zen: "https://opencode.ai/zen/v1"
+    
+    # Ollama endpoint (default: http://localhost:11434)
+    # ollama: "http://localhost:11434"
+    
+    # LM Studio endpoint (default: http://localhost:1234)
+    # lm_studio: "http://localhost:1234"
+
+# Default Settings
+# These settings apply when not overridden by command-line flags or environment variables
+defaults:
+  # Default model to use for chat and code generation
+  # For Zen provider, use: zen/big-pickle, zen/small-pickle, etc.
+  # For OpenAI, use: gpt-4, gpt-3.5-turbo, etc.
+  # For Anthropic, use: claude-3-opus, claude-3-sonnet, etc.
+  # Leave empty to use provider's default
+  model: ""
+  
+  # Default temperature for LLM responses (0.0 - 2.0)
+  # Lower values (0.0-0.5) = more deterministic/focused
+  # Higher values (1.0-2.0) = more creative/varied
+  # Default: 0.7
+  temperature: 0.7
+  
+  # Default maximum tokens for LLM responses
+  # Limits the length of generated responses
+  # Leave empty for provider's default
+  max_tokens: null
+
+# TUI Configuration
+# Configures the terminal user interface
+tui:
+  # Theme name (default: dark)
+  # Options: dark, light, nord, dracula, monokai
+  theme: dark
+  
+  # Enable vim keybindings (default: false)
+  vim_mode: false
+  
+  # Enable mouse support (default: true)
+  mouse_enabled: true
+  
+  # Render performance settings
+  performance:
+    # Enable lazy loading of messages (default: true)
+    lazy_loading: true
+    
+    # Number of messages to load per chunk (default: 50)
+    chunk_size: 50
+    
+    # Enable syntax highlighting (default: true)
+    syntax_highlighting: true
+  
+  # Accessibility settings
+  accessibility:
+    # Enable screen reader support (default: false)
+    screen_reader_enabled: false
+    
+    # Enable animations (default: true)
+    animations_enabled: true
+
+# Output Configuration
+# Configures how output is displayed
+output:
+  # Output format (default: auto)
+  # Options: auto, plain, markdown, json
+  format: auto
+  
+  # Enable color output (default: true)
+  colors_enabled: true
+  
+  # Enable syntax highlighting in output (default: true)
+  syntax_highlighting: true
+  
+  # Wrap long lines (default: true)
+  wrap_lines: true
+
+# Logging Configuration
+# Configures logging behavior
+logging:
+  # Log level (default: info)
+  # Options: debug, info, warn, error
+  level: info
+  
+  # Enable file logging (default: false)
+  file_logging: false
+  
+  # Log file path (relative to global config directory)
+  # log_file: "ricecoder.log"
+
+# Feature Flags
+# Enable or disable experimental features
+features:
+  # Enable code generation (default: true)
+  code_generation: true
+  
+  # Enable refactoring (default: true)
+  refactoring: true
+  
+  # Enable code completion (default: true)
+  completion: true
+  
+  # Enable LSP integration (default: true)
+  lsp_integration: true
+
+# Custom Settings
+# Add custom settings here for extensions and plugins
+# custom:
+#   my_extension:
+#     setting1: value1
+#     setting2: value2
+
+# Environment Variable Substitution
+# You can use environment variables in configuration values
+# Syntax: ${VARIABLE_NAME}
+# Example: api_key: ${RICECODER_API_KEY}
+# If the variable is not set, it will be replaced with an empty string
+
+# Notes:
+# - Free models are available without an API key
+# - Model lists are fetched from provider APIs, not hardcoded
+# - Configuration is merged from multiple sources (see priority above)
+# - For more information, visit: https://opencode.ai/docs/ricecoder/

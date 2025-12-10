@@ -411,6 +411,31 @@ impl Default for ThemeManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+
+    // Mutex to ensure test isolation when modifying environment variables
+    static TEST_LOCK: Mutex<()> = Mutex::new(());
+
+    fn with_temp_home<F>(f: F)
+    where
+        F: FnOnce(),
+    {
+        let _guard = TEST_LOCK.lock().unwrap();
+        use tempfile::TempDir;
+
+        let temp_dir = TempDir::new().unwrap();
+        let old_home = std::env::var("RICECODER_HOME").ok();
+        std::env::set_var("RICECODER_HOME", temp_dir.path());
+
+        f();
+
+        // Restore environment
+        if let Some(home) = old_home {
+            std::env::set_var("RICECODER_HOME", home);
+        } else {
+            std::env::remove_var("RICECODER_HOME");
+        }
+    }
 
     #[test]
     fn test_theme_manager_creation() {
@@ -622,101 +647,77 @@ mod tests {
 
     #[test]
     fn test_load_from_storage() {
-        use tempfile::TempDir;
+        with_temp_home(|| {
+            // Save a preference
+            let pref = ricecoder_storage::ThemePreference {
+                current_theme: "light".to_string(),
+                last_updated: None,
+            };
+            ricecoder_storage::ThemeStorage::save_preference(&pref).unwrap();
 
-        let temp_dir = TempDir::new().unwrap();
-        std::env::set_var("RICECODER_HOME", temp_dir.path());
-
-        // Save a preference
-        let pref = ricecoder_storage::ThemePreference {
-            current_theme: "light".to_string(),
-            last_updated: None,
-        };
-        ricecoder_storage::ThemeStorage::save_preference(&pref).unwrap();
-
-        // Load it with theme manager
-        let manager = ThemeManager::new();
-        manager.load_from_storage().unwrap();
-        assert_eq!(manager.current().unwrap().name, "light");
-
-        std::env::remove_var("RICECODER_HOME");
+            // Load it with theme manager
+            let manager = ThemeManager::new();
+            manager.load_from_storage().unwrap();
+            assert_eq!(manager.current().unwrap().name, "light");
+        });
     }
 
     #[test]
     fn test_save_to_storage() {
-        use tempfile::TempDir;
+        with_temp_home(|| {
+            let manager = ThemeManager::new();
+            manager.switch_by_name("dracula").unwrap();
+            manager.save_to_storage().unwrap();
 
-        let temp_dir = TempDir::new().unwrap();
-        std::env::set_var("RICECODER_HOME", temp_dir.path());
-
-        let manager = ThemeManager::new();
-        manager.switch_by_name("dracula").unwrap();
-        manager.save_to_storage().unwrap();
-
-        // Verify it was saved
-        let loaded_pref = ricecoder_storage::ThemeStorage::load_preference().unwrap();
-        assert_eq!(loaded_pref.current_theme, "dracula");
-
-        std::env::remove_var("RICECODER_HOME");
+            // Verify it was saved
+            let loaded_pref = ricecoder_storage::ThemeStorage::load_preference().unwrap();
+            assert_eq!(loaded_pref.current_theme, "dracula");
+        });
     }
 
     #[test]
     fn test_save_custom_theme_to_storage() {
-        use tempfile::TempDir;
+        with_temp_home(|| {
+            let manager = ThemeManager::new();
+            manager.switch_by_name("monokai").unwrap();
+            manager.save_custom_theme_to_storage("my_custom").unwrap();
 
-        let temp_dir = TempDir::new().unwrap();
-        std::env::set_var("RICECODER_HOME", temp_dir.path());
-
-        let manager = ThemeManager::new();
-        manager.switch_by_name("monokai").unwrap();
-        manager.save_custom_theme_to_storage("my_custom").unwrap();
-
-        // Verify it was saved
-        assert!(ricecoder_storage::ThemeStorage::custom_theme_exists("my_custom").unwrap());
-
-        std::env::remove_var("RICECODER_HOME");
+            // Verify it was saved
+            assert!(ricecoder_storage::ThemeStorage::custom_theme_exists("my_custom").unwrap());
+        });
     }
 
     #[test]
     fn test_load_custom_themes_from_storage() {
-        use tempfile::TempDir;
+        with_temp_home(|| {
+            // Save some custom themes
+            ricecoder_storage::ThemeStorage::save_custom_theme(
+                "custom1",
+                "name: custom1\nprimary: \"#0078ff\"\nsecondary: \"#5ac8fa\"\naccent: \"#ff2d55\"\nbackground: \"#111827\"\nforeground: \"#f3f4f6\"\nerror: \"#ef4444\"\nwarning: \"#f59e0b\"\nsuccess: \"#22c55e\""
+            ).unwrap();
 
-        let temp_dir = TempDir::new().unwrap();
-        std::env::set_var("RICECODER_HOME", temp_dir.path());
+            let manager = ThemeManager::new();
+            let loaded = manager.load_custom_themes_from_storage().unwrap();
 
-        // Save some custom themes
-        ricecoder_storage::ThemeStorage::save_custom_theme(
-            "custom1",
-            "name: custom1\nprimary: \"#0078ff\"\nsecondary: \"#5ac8fa\"\naccent: \"#ff2d55\"\nbackground: \"#111827\"\nforeground: \"#f3f4f6\"\nerror: \"#ef4444\"\nwarning: \"#f59e0b\"\nsuccess: \"#22c55e\""
-        ).unwrap();
-
-        let manager = ThemeManager::new();
-        let loaded = manager.load_custom_themes_from_storage().unwrap();
-        assert_eq!(loaded.len(), 1);
-        assert!(loaded.contains(&"custom1".to_string()));
-
-        std::env::remove_var("RICECODER_HOME");
+            assert_eq!(loaded.len(), 1);
+            assert!(loaded.contains(&"custom1".to_string()));
+        });
     }
 
     #[test]
     fn test_delete_custom_theme_from_storage() {
-        use tempfile::TempDir;
+        with_temp_home(|| {
+            // Save a custom theme
+            ricecoder_storage::ThemeStorage::save_custom_theme(
+                "to_delete",
+                "name: to_delete\nprimary: \"#0078ff\"\nsecondary: \"#5ac8fa\"\naccent: \"#ff2d55\"\nbackground: \"#111827\"\nforeground: \"#f3f4f6\"\nerror: \"#ef4444\"\nwarning: \"#f59e0b\"\nsuccess: \"#22c55e\""
+            ).unwrap();
 
-        let temp_dir = TempDir::new().unwrap();
-        std::env::set_var("RICECODER_HOME", temp_dir.path());
+            let manager = ThemeManager::new();
+            manager.delete_custom_theme_from_storage("to_delete").unwrap();
 
-        // Save a custom theme
-        ricecoder_storage::ThemeStorage::save_custom_theme(
-            "to_delete",
-            "name: to_delete\nprimary: \"#0078ff\"\nsecondary: \"#5ac8fa\"\naccent: \"#ff2d55\"\nbackground: \"#111827\"\nforeground: \"#f3f4f6\"\nerror: \"#ef4444\"\nwarning: \"#f59e0b\"\nsuccess: \"#22c55e\""
-        ).unwrap();
-
-        let manager = ThemeManager::new();
-        manager.delete_custom_theme_from_storage("to_delete").unwrap();
-
-        // Verify it was deleted
-        assert!(!ricecoder_storage::ThemeStorage::custom_theme_exists("to_delete").unwrap());
-
-        std::env::remove_var("RICECODER_HOME");
+            // Verify it was deleted
+            assert!(!ricecoder_storage::ThemeStorage::custom_theme_exists("to_delete").unwrap());
+        });
     }
 }

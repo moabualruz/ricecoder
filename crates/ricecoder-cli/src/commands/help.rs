@@ -64,8 +64,8 @@ impl HelpCommand {
 
         println!("{}", style.section("Resources"));
         println!();
-        println!("{}", style.link("Documentation", "https://ricecoder.dev/docs"));
-        println!("{}", style.link("Examples", "https://ricecoder.dev/examples"));
+        println!("{}", style.link("Documentation", "https://github.com/moabualruz/ricecoder/wiki/docs"));
+        println!("{}", style.link("Examples", "https://github.com/moabualruz/ricecoder/wiki/examples"));
         println!("{}", style.link("GitHub", "https://github.com/ricecoder/ricecoder"));
         println!();
     }
@@ -234,9 +234,9 @@ impl HelpCommand {
 
         println!("{}", style.section("Learn More"));
         println!();
-        println!("{}", style.link("Full Documentation", "https://ricecoder.dev/docs"));
-        println!("{}", style.link("Examples", "https://ricecoder.dev/examples"));
-        println!("{}", style.link("Best Practices", "https://ricecoder.dev/docs/best-practices"));
+        println!("{}", style.link("Full Documentation", "https://github.com/moabualruz/ricecoder/wiki/docs"));
+        println!("{}", style.link("Examples", "https://github.com/moabualruz/ricecoder/wiki/examples"));
+        println!("{}", style.link("Best Practices", "https://github.com/moabualruz/ricecoder/wiki"));
         println!();
     }
 
@@ -253,7 +253,7 @@ impl HelpCommand {
         println!("A: Check your API key configuration:");
         println!("   1. Run: rice config show");
         println!("   2. Verify your API key is set correctly");
-        println!("   3. Check: https://ricecoder.dev/docs/providers");
+        println!("   3. Check: https://github.com/moabualruz/ricecoder/wiki");
         println!();
 
         println!("{}", style.header("Q: \"Configuration error: File not found\""));
@@ -267,7 +267,7 @@ impl HelpCommand {
         println!("A: Check your specification format:");
         println!("   1. Review the example: .agent/example-spec.md");
         println!("   2. Ensure all required sections are present");
-        println!("   3. Check: https://ricecoder.dev/docs/specifications");
+        println!("   3. Check: https://github.com/moabualruz/ricecoder/wiki");
         println!();
 
         println!("{}", style.header("Q: \"Network error: Connection refused\""));
@@ -282,7 +282,7 @@ impl HelpCommand {
         println!();
         println!("If you can't find the answer:");
         println!();
-        println!("{}", style.list_item("Check the documentation: https://ricecoder.dev/docs"));
+        println!("{}", style.list_item("Check the documentation: https://github.com/moabualruz/ricecoder/wiki/docs"));
         println!("{}", style.list_item("Search GitHub issues: https://github.com/ricecoder/ricecoder/issues"));
         println!("{}", style.list_item("Ask in discussions: https://github.com/ricecoder/ricecoder/discussions"));
         println!();

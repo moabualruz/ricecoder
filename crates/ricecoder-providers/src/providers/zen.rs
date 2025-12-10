@@ -116,17 +116,12 @@ impl HealthCheckCache {
 
 impl ZenProvider {
     /// Create a new Zen provider instance
-    pub fn new(api_key: String) -> Result<Self, ProviderError> {
-        if api_key.is_empty() {
-            return Err(ProviderError::ConfigError(
-                "Zen API key is required".to_string(),
-            ));
-        }
-
+    /// API key is optional for free models
+    pub fn new(api_key: Option<String>) -> Result<Self, ProviderError> {
         Ok(Self {
-            api_key,
+            api_key: api_key.unwrap_or_default(),
             client: Arc::new(Client::new()),
-            base_url: "https://api.opencode.ai/v1".to_string(),
+            base_url: "https://opencode.ai/zen/v1".to_string(),
             token_counter: Arc::new(TokenCounter::new()),
             models_cache: Arc::new(tokio::sync::Mutex::new(ModelCache::new())),
             health_check_cache: Arc::new(tokio::sync::Mutex::new(HealthCheckCache::new())),
@@ -134,15 +129,10 @@ impl ZenProvider {
     }
 
     /// Create a new Zen provider with a custom base URL
-    pub fn with_base_url(api_key: String, base_url: String) -> Result<Self, ProviderError> {
-        if api_key.is_empty() {
-            return Err(ProviderError::ConfigError(
-                "Zen API key is required".to_string(),
-            ));
-        }
-
+    /// API key is optional for free models
+    pub fn with_base_url(api_key: Option<String>, base_url: String) -> Result<Self, ProviderError> {
         Ok(Self {
-            api_key,
+            api_key: api_key.unwrap_or_default(),
             client: Arc::new(Client::new()),
             base_url,
             token_counter: Arc::new(TokenCounter::new()),
@@ -247,6 +237,7 @@ impl ZenProvider {
                                 input_per_1k_tokens: p.input_cost_per_1k,
                                 output_per_1k_tokens: p.output_cost_per_1k,
                             }),
+                            is_free: m.is_free,
                         })
                         .collect());
                 }
@@ -353,6 +344,31 @@ impl ZenProvider {
         // Approximation: 4 characters ≈ 1 token
         content.len().div_ceil(4)
     }
+
+    /// Get the appropriate endpoint for a given model type
+    /// 
+    /// Different model families use different endpoints:
+    /// - GPT models use `/v1/responses`
+    /// - Claude models use `/v1/messages`
+    /// - Generic models use `/v1/chat/completions`
+    /// 
+    /// # Arguments
+    /// * `model_id` - The model identifier (e.g., "gpt-4", "claude-3", "zen-gpt4")
+    /// 
+    /// # Returns
+    /// The endpoint path for the model type
+    pub fn endpoint_for_model(&self, model_id: &str) -> &'static str {
+        match model_id {
+            // OpenAI models use /responses endpoint
+            m if m.starts_with("gpt-") => "/responses",
+            // Anthropic Claude models use /messages endpoint
+            m if m.starts_with("claude-") => "/messages",
+            // Google Gemini models use /models endpoint
+            m if m.starts_with("gemini-") => "/models",
+            // Zen models and others default to /chat/completions
+            _ => "/chat/completions",
+        }
+    }
 }
 
 #[async_trait]
@@ -379,6 +395,7 @@ impl Provider for ZenProvider {
                     input_per_1k_tokens: 0.03,
                     output_per_1k_tokens: 0.06,
                 }),
+                is_free: false,
             },
             ModelInfo {
                 id: "zen-gpt4-turbo".to_string(),
@@ -395,6 +412,7 @@ impl Provider for ZenProvider {
                     input_per_1k_tokens: 0.01,
                     output_per_1k_tokens: 0.03,
                 }),
+                is_free: false,
             },
         ]
     }
@@ -628,6 +646,9 @@ struct ZenModel {
     capabilities: Vec<Capability>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pricing: Option<ZenPricing>,
+    /// Whether this model is free to use (no API key required)
+    #[serde(default)]
+    is_free: bool,
 }
 
 /// Zen API pricing info
@@ -656,31 +677,37 @@ mod tests {
 
     #[test]
     fn test_zen_provider_creation() {
-        let provider = ZenProvider::new("test-key".to_string());
+        let provider = ZenProvider::new(Some("test-key".to_string()));
+        assert!(provider.is_ok());
+    }
+
+    #[test]
+    fn test_zen_provider_creation_no_key() {
+        let provider = ZenProvider::new(None);
         assert!(provider.is_ok());
     }
 
     #[test]
     fn test_zen_provider_creation_empty_key() {
-        let provider = ZenProvider::new("".to_string());
-        assert!(provider.is_err());
+        let provider = ZenProvider::new(Some("".to_string()));
+        assert!(provider.is_ok());
     }
 
     #[test]
     fn test_zen_provider_id() {
-        let provider = ZenProvider::new("test-key".to_string()).unwrap();
+        let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
         assert_eq!(provider.id(), "zen");
     }
 
     #[test]
     fn test_zen_provider_name() {
-        let provider = ZenProvider::new("test-key".to_string()).unwrap();
+        let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
         assert_eq!(provider.name(), "OpenCode Zen");
     }
 
     #[test]
     fn test_zen_models() {
-        let provider = ZenProvider::new("test-key".to_string()).unwrap();
+        let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
         let models = provider.models();
         assert_eq!(models.len(), 2);
         assert!(models.iter().any(|m| m.id == "zen-gpt4"));
@@ -689,14 +716,14 @@ mod tests {
 
     #[test]
     fn test_token_counting() {
-        let provider = ZenProvider::new("test-key".to_string()).unwrap();
+        let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
         let tokens = provider.count_tokens("Hello, world!", "zen-gpt4").unwrap();
         assert!(tokens > 0);
     }
 
     #[test]
     fn test_token_counting_invalid_model() {
-        let provider = ZenProvider::new("test-key".to_string()).unwrap();
+        let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
         let result = provider.count_tokens("Hello, world!", "invalid-model");
         assert!(result.is_err());
     }
@@ -717,6 +744,7 @@ mod tests {
             context_window: 1000,
             capabilities: vec![],
             pricing: None,
+            is_free: false,
         }];
         cache.set(models.clone());
         let cached = cache.get();
@@ -741,7 +769,7 @@ mod tests {
 
     #[test]
     fn test_estimate_tokens() {
-        let provider = ZenProvider::new("test-key".to_string()).unwrap();
+        let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
         let tokens = provider.estimate_tokens("Hello, world!");
         // "Hello, world!" is 13 characters, so (13 + 3) / 4 = 4 tokens
         assert_eq!(tokens, 4);
@@ -749,16 +777,53 @@ mod tests {
 
     #[test]
     fn test_estimate_tokens_empty() {
-        let provider = ZenProvider::new("test-key".to_string()).unwrap();
+        let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
         let tokens = provider.estimate_tokens("");
         assert_eq!(tokens, 0);
     }
 
     #[test]
     fn test_estimate_tokens_single_char() {
-        let provider = ZenProvider::new("test-key".to_string()).unwrap();
+        let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
         let tokens = provider.estimate_tokens("a");
         // (1 + 3) / 4 = 1 token
         assert_eq!(tokens, 1);
+    }
+
+    #[test]
+    fn test_endpoint_for_gpt_model() {
+        let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
+        assert_eq!(provider.endpoint_for_model("gpt-4"), "/responses");
+        assert_eq!(provider.endpoint_for_model("gpt-3.5-turbo"), "/responses");
+        assert_eq!(provider.endpoint_for_model("gpt-4-turbo"), "/responses");
+    }
+
+    #[test]
+    fn test_endpoint_for_claude_model() {
+        let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
+        assert_eq!(provider.endpoint_for_model("claude-3"), "/messages");
+        assert_eq!(provider.endpoint_for_model("claude-3-opus"), "/messages");
+        assert_eq!(provider.endpoint_for_model("claude-2"), "/messages");
+    }
+
+    #[test]
+    fn test_endpoint_for_gemini_model() {
+        let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
+        assert_eq!(provider.endpoint_for_model("gemini-pro"), "/models");
+        assert_eq!(provider.endpoint_for_model("gemini-1.5"), "/models");
+    }
+
+    #[test]
+    fn test_endpoint_for_zen_model() {
+        let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
+        assert_eq!(provider.endpoint_for_model("zen-gpt4"), "/chat/completions");
+        assert_eq!(provider.endpoint_for_model("zen-gpt4-turbo"), "/chat/completions");
+    }
+
+    #[test]
+    fn test_endpoint_for_generic_model() {
+        let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
+        assert_eq!(provider.endpoint_for_model("unknown-model"), "/chat/completions");
+        assert_eq!(provider.endpoint_for_model("custom-model"), "/chat/completions");
     }
 }

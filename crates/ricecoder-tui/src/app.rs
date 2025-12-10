@@ -294,7 +294,7 @@ impl App {
     }
 
     /// Handle an event
-    fn handle_event(&mut self, event: Event) -> Result<()> {
+    pub fn handle_event(&mut self, event: Event) -> Result<()> {
         match event {
             Event::Key(key_event) => {
                 tracing::debug!("Key event: {:?}", key_event);

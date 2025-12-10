@@ -419,7 +419,7 @@ After Phase 7 completion:
 - **Documentation**: [RiceCoder Wiki](../ricecoder.wiki/)
 - **Issues**: [GitHub Issues](https://github.com/moabualruz/ricecoder/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/moabualruz/ricecoder/discussions)
-- **Email**: support@ricecoder.dev
+
 
 ### Reporting Bugs
 

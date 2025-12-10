@@ -19,6 +19,9 @@ pub struct ModelInfo {
     pub capabilities: Vec<Capability>,
     /// Optional pricing information
     pub pricing: Option<Pricing>,
+    /// Whether this model is free to use (no API key required)
+    #[serde(default)]
+    pub is_free: bool,
 }
 
 /// Model capabilities

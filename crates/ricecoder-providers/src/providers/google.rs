@@ -138,6 +138,7 @@ impl Provider for GoogleProvider {
                     input_per_1k_tokens: 0.075,
                     output_per_1k_tokens: 0.3,
                 }),
+                is_free: false,
             },
             ModelInfo {
                 id: "gemini-1.5-pro".to_string(),
@@ -154,6 +155,7 @@ impl Provider for GoogleProvider {
                     input_per_1k_tokens: 1.25,
                     output_per_1k_tokens: 5.0,
                 }),
+                is_free: false,
             },
             ModelInfo {
                 id: "gemini-1.5-flash".to_string(),
@@ -170,6 +172,7 @@ impl Provider for GoogleProvider {
                     input_per_1k_tokens: 0.075,
                     output_per_1k_tokens: 0.3,
                 }),
+                is_free: false,
             },
             ModelInfo {
                 id: "gemini-1.0-pro".to_string(),
@@ -181,6 +184,7 @@ impl Provider for GoogleProvider {
                     input_per_1k_tokens: 0.5,
                     output_per_1k_tokens: 1.5,
                 }),
+                is_free: false,
             },
         ]
     }

@@ -8,6 +8,7 @@
 
 use std::sync::Arc;
 use tracing::{debug, info};
+use crate::sync_utils::SafeLockable;
 
 /// Memory usage statistics
 #[derive(Debug, Clone, Copy)]
@@ -87,7 +88,7 @@ impl StringIntern {
 
     /// Intern a string (returns shared reference)
     pub fn intern(&self, s: &str) -> Arc<str> {
-        let mut map = self.strings.lock().unwrap();
+        let mut map = self.strings.safe_lock_or_default("StringIntern::intern");
         
         if let Some(interned) = map.get(s) {
             Arc::clone(interned)
@@ -100,12 +101,14 @@ impl StringIntern {
 
     /// Get statistics
     pub fn stats(&self) -> usize {
-        self.strings.lock().unwrap().len()
+        self.strings.safe_lock_or_default("StringIntern::stats").len()
     }
 
     /// Clear all interned strings
     pub fn clear(&self) {
-        self.strings.lock().unwrap().clear();
+        if let Some(mut map) = self.strings.safe_lock_optional("StringIntern::clear") {
+            map.clear();
+        }
     }
 }
 
@@ -132,26 +135,29 @@ impl<T: Send + Sync + 'static> ObjectPool<T> {
 
     /// Get object from pool or create new one
     pub fn get(&self) -> T {
-        let mut pool = self.pool.lock().unwrap();
+        let mut pool = self.pool.safe_lock_or_default("ObjectPool::get");
         pool.pop().unwrap_or_else(|| (self.factory)())
     }
 
     /// Return object to pool
     pub fn return_object(&self, obj: T) {
-        let mut pool = self.pool.lock().unwrap();
-        if pool.len() < 100 {  // Limit pool size
-            pool.push(obj);
+        if let Some(mut pool) = self.pool.safe_lock_optional("ObjectPool::return_object") {
+            if pool.len() < 100 {  // Limit pool size
+                pool.push(obj);
+            }
         }
     }
 
     /// Get pool size
     pub fn size(&self) -> usize {
-        self.pool.lock().unwrap().len()
+        self.pool.safe_lock_or_default("ObjectPool::size").len()
     }
 
     /// Clear pool
     pub fn clear(&self) {
-        self.pool.lock().unwrap().clear();
+        if let Some(mut pool) = self.pool.safe_lock_optional("ObjectPool::clear") {
+            pool.clear();
+        }
     }
 }
 

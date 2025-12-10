@@ -233,7 +233,7 @@ For support, questions, or feedback:
 
 - **GitHub Issues**: https://github.com/moabualruz/ricecoder/issues
 - **GitHub Discussions**: https://github.com/moabualruz/ricecoder/discussions
-- **Email**: support@ricecoder.dev
+
 
 ---
 

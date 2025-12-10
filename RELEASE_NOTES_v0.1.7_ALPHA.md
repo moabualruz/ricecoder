@@ -529,10 +529,9 @@ After Phase 8 completion:
 
 ### Getting Help
 
-- **Documentation**: [RiceCoder Wiki](../ricecoder.wiki/)
+- **Documentation**: [RiceCoder Wiki](https://github.com/moabualruz/ricecoder/wiki)
 - **Issues**: [GitHub Issues](https://github.com/moabualruz/ricecoder/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/moabualruz/ricecoder/discussions)
-- **Email**: support@ricecoder.dev
 
 ### Reporting Bugs
 

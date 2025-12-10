@@ -8,28 +8,32 @@ use ricecoder_providers::providers::ZenProvider;
 
 // Property 1: Provider Trait Implementation
 // For any ZenProvider method call with same input, behavior SHALL be consistent
-proptest! {
-    #[test]
-    fn prop_provider_id_is_consistent(api_key in "\\PC{1,100}") {
-        let provider = ZenProvider::new(api_key).unwrap();
+#[test]
+fn prop_provider_id_is_consistent() {
+    proptest!(|(api_key in "\\PC{1,100}")| {
+        let provider = ZenProvider::new(Some(api_key)).unwrap();
         let id1 = provider.id();
         let id2 = provider.id();
         prop_assert_eq!(id1, id2);
         prop_assert_eq!(id1, "zen");
-    }
+    });
+}
 
-    #[test]
-    fn prop_provider_name_is_consistent(api_key in "\\PC{1,100}") {
-        let provider = ZenProvider::new(api_key).unwrap();
+#[test]
+fn prop_provider_name_is_consistent() {
+    proptest!(|(api_key in "\\PC{1,100}")| {
+        let provider = ZenProvider::new(Some(api_key)).unwrap();
         let name1 = provider.name();
         let name2 = provider.name();
         prop_assert_eq!(name1, name2);
         prop_assert_eq!(name1, "OpenCode Zen");
-    }
+    });
+}
 
-    #[test]
-    fn prop_models_list_is_consistent(api_key in "\\PC{1,100}") {
-        let provider = ZenProvider::new(api_key).unwrap();
+#[test]
+fn prop_models_list_is_consistent() {
+    proptest!(|(api_key in "\\PC{1,100}")| {
+        let provider = ZenProvider::new(Some(api_key)).unwrap();
         let models1 = provider.models();
         let models2 = provider.models();
         prop_assert_eq!(models1.len(), models2.len());
@@ -38,11 +42,13 @@ proptest! {
             prop_assert_eq!(&m1.name, &m2.name);
             prop_assert_eq!(&m1.provider, &m2.provider);
         }
-    }
+    });
+}
 
-    #[test]
-    fn prop_models_have_valid_ids(api_key in "\\PC{1,100}") {
-        let provider = ZenProvider::new(api_key).unwrap();
+#[test]
+fn prop_models_have_valid_ids() {
+    proptest!(|(api_key in "\\PC{1,100}")| {
+        let provider = ZenProvider::new(Some(api_key)).unwrap();
         let models = provider.models();
         for model in models {
             prop_assert!(!model.id.is_empty());
@@ -50,11 +56,13 @@ proptest! {
             prop_assert_eq!(model.provider, "zen");
             prop_assert!(model.context_window > 0);
         }
-    }
+    });
+}
 
-    #[test]
-    fn prop_token_counting_returns_positive(api_key in "\\PC{1,100}", content in "\\PC{1,1000}") {
-        let provider = ZenProvider::new(api_key).unwrap();
+#[test]
+fn prop_token_counting_returns_positive() {
+    proptest!(|(api_key in "\\PC{1,100}", content in "\\PC{1,1000}")| {
+        let provider = ZenProvider::new(Some(api_key)).unwrap();
         let models = provider.models();
         if !models.is_empty() {
             let model_id = &models[0].id;
@@ -63,49 +71,62 @@ proptest! {
             let tokens = result.unwrap();
             prop_assert!(tokens > 0);
         }
-    }
+    });
+}
 
-    #[test]
-    fn prop_token_counting_invalid_model_fails(api_key in "\\PC{1,100}", content in "\\PC{1,1000}") {
-        let provider = ZenProvider::new(api_key).unwrap();
+#[test]
+fn prop_token_counting_invalid_model_fails() {
+    proptest!(|(api_key in "\\PC{1,100}", content in "\\PC{1,1000}")| {
+        let provider = ZenProvider::new(Some(api_key)).unwrap();
         let result = provider.count_tokens(&content, "invalid-model-xyz");
         prop_assert!(result.is_err());
-    }
-
-    #[test]
-    fn prop_empty_api_key_fails(api_key in "") {
-        let result = ZenProvider::new(api_key);
-        prop_assert!(result.is_err());
-    }
-
-    #[test]
-    fn prop_valid_api_key_succeeds(api_key in "\\PC{1,100}") {
-        let result = ZenProvider::new(api_key);
-        prop_assert!(result.is_ok());
-    }
+    });
 }
 
-// Property 2: Model Caching Correctness
-// For any valid cache, cached models SHALL be returned without API call
 #[test]
-fn test_model_cache_returns_same_models() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
-    let models1 = provider.models();
-    let models2 = provider.models();
-
-    assert_eq!(models1.len(), models2.len());
-    for (m1, m2) in models1.iter().zip(models2.iter()) {
-        assert_eq!(&m1.id, &m2.id);
-        assert_eq!(&m1.name, &m2.name);
-    }
+fn prop_no_api_key_succeeds() {
+    let result = ZenProvider::new(None);
+    assert!(result.is_ok());
 }
 
-// Property 3: Token Counting Accuracy
-// For any content, token count SHALL be within reasonable bounds
-proptest! {
-    #[test]
-    fn prop_token_count_scales_with_content(content in "\\PC{1,10000}") {
-        let provider = ZenProvider::new("test-key".to_string()).unwrap();
+#[test]
+fn prop_valid_api_key_succeeds() {
+    proptest!(|(api_key in "\\PC{1,100}")| {
+        let result = ZenProvider::new(Some(api_key));
+        prop_assert!(result.is_ok());
+    });
+}
+
+#[test]
+fn prop_model_ids_are_unique() {
+    proptest!(|(api_key in "\\PC{1,100}")| {
+        let provider = ZenProvider::new(Some(api_key)).unwrap();
+        let models = provider.models();
+
+        let mut ids = Vec::new();
+        for model in models {
+            prop_assert!(!ids.contains(&model.id), "Duplicate model ID: {}", model.id);
+            ids.push(model.id);
+        }
+    });
+}
+
+#[test]
+fn prop_provider_creation_with_various_keys() {
+    proptest!(|(api_key in "\\PC{1,500}")| {
+        let result = ZenProvider::new(Some(api_key));
+        prop_assert!(result.is_ok());
+
+        let provider = result.unwrap();
+        prop_assert_eq!(provider.id(), "zen");
+        prop_assert_eq!(provider.name(), "OpenCode Zen");
+    });
+}
+
+#[test]
+fn prop_token_count_scales_with_content() {
+    proptest!(|(content in "\\PC{1,10000}")| {
+        let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
         let models = provider.models();
         if !models.is_empty() {
             let model_id = &models[0].id;
@@ -120,14 +141,13 @@ proptest! {
             // Most tokenizers use roughly 1 token per 4 characters
             prop_assert!(tokens <= content.len());
         }
-    }
+    });
+}
 
-    #[test]
-    fn prop_longer_content_has_more_tokens(
-        content1 in "\\PC{1,100}",
-        content2 in "\\PC{100,1000}"
-    ) {
-        let provider = ZenProvider::new("test-key".to_string()).unwrap();
+#[test]
+fn prop_longer_content_has_more_tokens() {
+    proptest!(|(content1 in "\\PC{1,100}", content2 in "\\PC{100,1000}")| {
+        let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
         let models = provider.models();
         if !models.is_empty() {
             let model_id = &models[0].id;
@@ -140,15 +160,13 @@ proptest! {
             prop_assert!(tokens1 > 0);
             prop_assert!(tokens2 > 0);
         }
-    }
+    });
 }
 
-// Property 4: Authentication Persistence
-// For any valid API key, the provider should be usable consistently
-proptest! {
-    #[test]
-    fn prop_provider_usable_after_creation(api_key in "\\PC{1,100}") {
-        let provider = ZenProvider::new(api_key).unwrap();
+#[test]
+fn prop_provider_usable_after_creation() {
+    proptest!(|(api_key in "\\PC{1,100}")| {
+        let provider = ZenProvider::new(Some(api_key)).unwrap();
 
         // Provider should be usable multiple times
         let id1 = provider.id();
@@ -160,11 +178,13 @@ proptest! {
         prop_assert_eq!(name1, name2);
         prop_assert_eq!(id1, "zen");
         prop_assert_eq!(name1, "OpenCode Zen");
-    }
+    });
+}
 
-    #[test]
-    fn prop_multiple_operations_succeed(api_key in "\\PC{1,100}") {
-        let provider = ZenProvider::new(api_key).unwrap();
+#[test]
+fn prop_multiple_operations_succeed() {
+    proptest!(|(api_key in "\\PC{1,100}")| {
+        let provider = ZenProvider::new(Some(api_key)).unwrap();
 
         // Multiple operations should succeed
         let _ = provider.id();
@@ -178,14 +198,29 @@ proptest! {
         }
 
         prop_assert!(true);
+    });
+}
+
+// Property 2: Model Caching Correctness
+// For any valid cache, cached models SHALL be returned without API call
+#[test]
+fn test_model_cache_returns_same_models() {
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
+    let models1 = provider.models();
+    let models2 = provider.models();
+
+    assert_eq!(models1.len(), models2.len());
+    for (m1, m2) in models1.iter().zip(models2.iter()) {
+        assert_eq!(&m1.id, &m2.id);
+        assert_eq!(&m1.name, &m2.name);
     }
 }
 
-// Property 5: Health Check Reliability
+// Property 3: Health Check Reliability
 // For any health check, result should be consistent
 #[tokio::test]
 async fn test_health_check_returns_bool() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let result = provider.health_check().await;
 
     // Health check should return a result (either Ok or Err)
@@ -194,7 +229,7 @@ async fn test_health_check_returns_bool() {
 
 #[tokio::test]
 async fn test_health_check_consistency() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
 
     // First health check
     let result1 = provider.health_check().await;
@@ -215,33 +250,5 @@ async fn test_health_check_consistency() {
             // One succeeded and one failed - this could happen if cache expired
             // but within a short time it should be consistent
         }
-    }
-}
-
-// Additional property: Model IDs are unique
-proptest! {
-    #[test]
-    fn prop_model_ids_are_unique(api_key in "\\PC{1,100}") {
-        let provider = ZenProvider::new(api_key).unwrap();
-        let models = provider.models();
-
-        let mut ids = Vec::new();
-        for model in models {
-            prop_assert!(!ids.contains(&model.id), "Duplicate model ID: {}", model.id);
-            ids.push(model.id);
-        }
-    }
-}
-
-// Additional property: Provider creation with various API keys
-proptest! {
-    #[test]
-    fn prop_provider_creation_with_various_keys(api_key in "\\PC{1,500}") {
-        let result = ZenProvider::new(api_key);
-        prop_assert!(result.is_ok());
-
-        let provider = result.unwrap();
-        prop_assert_eq!(provider.id(), "zen");
-        prop_assert_eq!(provider.name(), "OpenCode Zen");
     }
 }

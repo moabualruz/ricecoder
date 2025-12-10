@@ -9,18 +9,39 @@ use std::io::{self, Write};
 pub struct InitCommand {
     pub project_path: Option<String>,
     pub interactive: bool,
+    pub provider: String,
+    pub model: Option<String>,
+    pub force: bool,
 }
 
 impl InitCommand {
     pub fn new(project_path: Option<String>) -> Self {
         Self {
             project_path,
-            interactive: true,
+            interactive: false,
+            provider: "zen".to_string(),
+            model: None,
+            force: false,
         }
     }
 
     pub fn with_interactive(mut self, interactive: bool) -> Self {
         self.interactive = interactive;
+        self
+    }
+
+    pub fn with_provider(mut self, provider: String) -> Self {
+        self.provider = provider;
+        self
+    }
+
+    pub fn with_model(mut self, model: Option<String>) -> Self {
+        self.model = model;
+        self
+    }
+
+    pub fn with_force(mut self, force: bool) -> Self {
+        self.force = force;
         self
     }
 
@@ -85,13 +106,14 @@ impl InitCommand {
         println!();
         println!("{}", style.section("Learn More"));
         println!();
-        println!("{}", style.link("Documentation", "https://ricecoder.dev/docs"));
-        println!("{}", style.link("Examples", "https://ricecoder.dev/examples"));
-        println!("{}", style.link("Troubleshooting", "https://ricecoder.dev/docs/troubleshooting"));
+        println!("{}", style.link("Documentation", "https://github.com/moabualruz/ricecoder/wiki/docs"));
+        println!("{}", style.link("Examples", "https://github.com/moabualruz/ricecoder/wiki/examples"));
+        println!("{}", style.link("Troubleshooting", "https://github.com/moabualruz/ricecoder/wiki"));
         println!();
     }
 
     /// Interactive setup wizard
+    /// Only runs when explicitly requested with -i flag AND in a TTY environment
     fn run_wizard(&self, _path: &str) -> CliResult<(String, String, String)> {
         self.show_welcome();
 
@@ -109,20 +131,22 @@ impl InitCommand {
         // Provider selection
         println!();
         println!("Available AI providers:");
-        println!("  1. OpenAI (GPT-4, GPT-3.5)");
-        println!("  2. Anthropic (Claude)");
-        println!("  3. Local (Ollama)");
-        println!("  4. Other");
+        println!("  1. Zen (OpenCode.ai - https://opencode.ai/zen/v1)");
+        println!("  2. OpenAI (GPT-4, GPT-3.5)");
+        println!("  3. Anthropic (Claude)");
+        println!("  4. Local (Ollama)");
+        println!("  5. Other");
         println!();
 
         let provider = loop {
-            let choice = self.prompt("Select provider (1-4)")?;
+            let choice = self.prompt("Select provider (1-5)")?;
             match choice.as_str() {
-                "1" => break "openai".to_string(),
-                "2" => break "anthropic".to_string(),
-                "3" => break "ollama".to_string(),
-                "4" => break "other".to_string(),
-                _ => println!("Please enter 1, 2, 3, or 4"),
+                "1" => break "zen".to_string(),
+                "2" => break "openai".to_string(),
+                "3" => break "anthropic".to_string(),
+                "4" => break "ollama".to_string(),
+                "5" => break "other".to_string(),
+                _ => println!("Please enter 1, 2, 3, 4, or 5"),
             }
         };
 
@@ -135,17 +159,44 @@ impl Command for InitCommand {
         let path = self.project_path.as_deref().unwrap_or(".");
         let style = OutputStyle::default();
 
-        // Run interactive wizard if enabled
-        let (project_name, project_description, provider) = if self.interactive {
+        // Check if configuration already exists
+        let config_path = format!("{}/.agent/ricecoder.toml", path);
+        let config_exists = std::path::Path::new(&config_path).exists();
+        
+        // If config exists and force flag is not set, skip creation but don't error
+        // This makes init idempotent - running it multiple times is safe
+        if config_exists && !self.force {
+            // Configuration already exists, nothing to do
+            println!("{}", style.info(&format!("Configuration already exists at {}", config_path)));
+            return Ok(());
+        }
+
+        // Auto-detect TTY for CI/CD environments
+        // Only run interactive wizard if:
+        // 1. User explicitly requested it with -i flag, AND
+        // 2. We're in a TTY environment (not CI/CD)
+        let is_tty = atty::is(atty::Stream::Stdin);
+        let should_run_wizard = self.interactive && is_tty;
+
+        // Run interactive wizard if enabled and in TTY
+        let (project_name, project_description, provider) = if should_run_wizard {
             self.run_wizard(path)?
         } else {
-            ("My Project".to_string(), String::new(), "openai".to_string())
+            // Use non-interactive defaults with command-line overrides
+            let provider = self.provider.clone();
+            ("My Project".to_string(), String::new(), provider)
         };
 
         // Create .agent/ directory structure
         std::fs::create_dir_all(format!("{}/.agent", path)).map_err(CliError::Io)?;
 
         // Create default configuration
+        let model_line = if let Some(model) = &self.model {
+            format!("model = \"{}\"\n", model)
+        } else {
+            String::new()
+        };
+
         let config_content = format!(
             r#"# RiceCoder Project Configuration
 # This file configures ricecoder for your project
@@ -156,14 +207,14 @@ description = "{}"
 
 [providers]
 default = "{}"
-
+{}
 [storage]
 mode = "merged"
 
 # For more configuration options, see:
-# https://ricecoder.dev/docs/configuration
+# https://github.com/moabualruz/ricecoder/wiki
 "#,
-            project_name, project_description, provider
+            project_name, project_description, provider, model_line
         );
 
         std::fs::write(format!("{}/.agent/ricecoder.toml", path), config_content)
@@ -204,7 +255,7 @@ Describe your data models here.
 - [ ] Task 2: Write tests
 - [ ] Task 3: Document
 
-For more information, see: https://ricecoder.dev/docs/specifications
+For more information, see: https://github.com/moabualruz/ricecoder/wiki
 "#;
 
         std::fs::write(format!("{}/.agent/example-spec.md", path), example_spec)
@@ -224,15 +275,15 @@ For more information, see: https://ricecoder.dev/docs/specifications
 
 ## Documentation
 
-- [RiceCoder Documentation](https://ricecoder.dev/docs)
-- [Configuration Guide](https://ricecoder.dev/docs/configuration)
-- [Specification Guide](https://ricecoder.dev/docs/specifications)
+- [RiceCoder Documentation](https://github.com/moabualruz/ricecoder/wiki/docs)
+- [Configuration Guide](https://github.com/moabualruz/ricecoder/wiki
+- [Specification Guide](https://github.com/moabualruz/ricecoder/wiki
 
 ## Support
 
 - [GitHub Issues](https://github.com/ricecoder/ricecoder/issues)
 - [Discussions](https://github.com/ricecoder/ricecoder/discussions)
-- [Troubleshooting](https://ricecoder.dev/docs/troubleshooting)
+- [Troubleshooting](https://github.com/moabualruz/ricecoder/wiki
 "#,
             project_name, project_description
         );

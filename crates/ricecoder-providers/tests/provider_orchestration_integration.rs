@@ -34,6 +34,7 @@ impl Provider for TestProvider {
                 context_window: 4096,
                 capabilities: vec![],
                 pricing: None,
+                is_free: true,
             },
             ModelInfo {
                 id: "model-2".to_string(),
@@ -42,6 +43,7 @@ impl Provider for TestProvider {
                 context_window: 8192,
                 capabilities: vec![],
                 pricing: None,
+                is_free: true,
             },
         ]
     }

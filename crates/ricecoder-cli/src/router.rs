@@ -11,15 +11,14 @@ use clap::{Parser, Subcommand};
 #[command(bin_name = "rice")]
 #[command(about = "Terminal-first, spec-driven coding assistant")]
 #[command(
-    long_about = "RiceCoder: A terminal-first, spec-driven coding assistant.\n\nGenerate code from specifications, refactor existing code, and get AI-powered code reviews.\n\nFor more information, visit: https://ricecoder.dev"
+    long_about = "RiceCoder: A terminal-first, spec-driven coding assistant.\n\nGenerate code from specifications, refactor existing code, and get AI-powered code reviews.\n\nFor more information, visit: https://github.com/moabualruz/ricecoder/wiki"
 )]
 #[command(version)]
 #[command(author = "RiceCoder Contributors")]
-#[command(arg_required_else_help = true)]
 #[command(disable_help_subcommand = true)]
 pub struct Cli {
     #[command(subcommand)]
-    pub command: Commands,
+    pub command: Option<Commands>,
 
     /// Enable verbose output
     #[arg(short, long, global = true)]
@@ -34,7 +33,7 @@ pub struct Cli {
     pub dry_run: bool,
 }
 
-#[derive(Subcommand, Debug)]
+#[derive(Subcommand, Debug, Clone)]
 pub enum Commands {
     /// Initialize a new ricecoder project
     #[command(about = "Initialize a new ricecoder project with default configuration")]
@@ -42,6 +41,22 @@ pub enum Commands {
         /// Project path (default: current directory)
         #[arg(value_name = "PATH")]
         path: Option<String>,
+
+        /// Enable interactive setup wizard
+        #[arg(short, long)]
+        interactive: bool,
+
+        /// AI provider to use (default: zen)
+        #[arg(long, default_value = "zen")]
+        provider: String,
+
+        /// Model to use
+        #[arg(long)]
+        model: Option<String>,
+
+        /// Force overwrite existing configuration
+        #[arg(long)]
+        force: bool,
     },
 
     /// Generate code from a specification
@@ -169,7 +184,7 @@ pub enum Commands {
     },
 }
 
-#[derive(Subcommand, Debug)]
+#[derive(Subcommand, Debug, Clone)]
 pub enum HooksSubcommand {
     /// List all hooks
     #[command(about = "List all registered hooks")]
@@ -216,7 +231,7 @@ pub enum HooksSubcommand {
     },
 }
 
-#[derive(Subcommand, Debug)]
+#[derive(Subcommand, Debug, Clone)]
 pub enum SessionsSubcommand {
     /// List all sessions
     #[command(about = "List all sessions")]
@@ -311,7 +326,7 @@ pub enum SessionsSubcommand {
     },
 }
 
-#[derive(Subcommand, Debug)]
+#[derive(Subcommand, Debug, Clone)]
 pub enum CustomSubcommand {
     /// List all available custom commands
     #[command(about = "Display all available custom commands")]
@@ -354,7 +369,7 @@ pub enum CustomSubcommand {
     },
 }
 
-#[derive(Subcommand, Debug)]
+#[derive(Subcommand, Debug, Clone)]
 pub enum ConfigSubcommand {
     /// List all configuration values
     #[command(about = "Display all configuration settings")]
@@ -397,9 +412,28 @@ impl CommandRouter {
 
     /// Execute a command
     pub fn execute(cli: &Cli) -> CliResult<()> {
-        match &cli.command {
-            Commands::Init { path } => {
-                let cmd = InitCommand::new(path.clone());
+        // Default to TUI if no command specified
+        let command = cli.command.clone().unwrap_or(Commands::Tui {
+            theme: None,
+            vim_mode: false,
+            config: None,
+            provider: None,
+            model: None,
+        });
+
+        match &command {
+            Commands::Init {
+                path,
+                interactive,
+                provider,
+                model,
+                force,
+            } => {
+                let cmd = InitCommand::new(path.clone())
+                    .with_interactive(*interactive)
+                    .with_provider(provider.clone())
+                    .with_model(model.clone())
+                    .with_force(*force);
                 cmd.execute()
             }
             Commands::Gen { spec } => {

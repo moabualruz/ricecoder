@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Installation scripts for all platforms (Linux, macOS, Windows)
 - Curl-based remote installation support
 - Comprehensive installation documentation
@@ -17,12 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Master CHANGELOG.md for Cargo compatibility
 
 ### Changed
+
 - Updated all installation URLs to use GitHub raw content
 - Improved installation documentation structure
 - Enhanced error messages in installation scripts
 
 ### Fixed
-- Removed references to non-existent install.ricecoder.dev domain
+
 - Fixed Docker image references to moabualruz/ricecoder:latest
 - Updated all installation examples across documentation
 
@@ -31,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.71] - 2025-12-09
 
 ### Added
+
 - Phase 8 wiki documentation updates
 - Installation methods documentation
 - Installation setup guide
@@ -38,11 +41,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Development roadmap documentation
 
 ### Changed
+
 - Updated project status dashboard
 - Enhanced wiki navigation
 - Improved documentation organization
 
 ### Fixed
+
 - Documentation link validation
 - Wiki page cross-references
 - Installation guide accuracy
@@ -99,24 +104,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Terminal display with ASCII fallback
 
 ### Changed
+
 - Improved TUI responsiveness
 - Enhanced error handling across all modules
 - Optimized memory usage for large projects
 - Refined user experience based on feedback
 
 ### Fixed
+
 - Terminal resize handling
 - Session persistence issues
 - Theme switching stability
 - Image caching edge cases
 
 ### Performance
+
 - Reduced startup time by 30%
 - Improved response time for code generation
 - Optimized memory usage for large codebases
 - Enhanced caching efficiency
 
 ### Security
+
 - Added input validation for all user inputs
 - Implemented secure session handling
 - Enhanced API key management
@@ -151,11 +160,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Adaptive behavior
 
 ### Changed
+
 - Improved agent composition
 - Enhanced workflow execution
 - Optimized domain detection
 
 ### Fixed
+
 - Agent initialization issues
 - Workflow state management
 - Learning system accuracy
@@ -195,11 +206,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Custom keybind management
 
 ### Changed
+
 - Improved tool integration
 - Enhanced refactoring accuracy
 - Optimized configuration loading
 
 ### Fixed
+
 - Tool execution reliability
 - Refactoring edge cases
 - Configuration parsing issues
@@ -248,23 +261,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Bug fixes and improvements
 
 ### Changed
+
 - Improved performance across all operations
 - Enhanced security measures
 - Better error handling
 - Improved documentation
 
 ### Fixed
+
 - Performance bottlenecks
 - Security vulnerabilities
 - UX issues
 - Documentation gaps
 
 ### Performance
+
 - 40% faster code generation
 - 50% reduced memory usage
 - 30% faster startup time
 
 ### Security
+
 - Fixed 15+ security issues
 - Implemented input validation
 - Enhanced API key handling
@@ -297,11 +314,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Custom hook creation
 
 ### Changed
+
 - Improved LSP performance
 - Enhanced completion accuracy
 - Optimized hook execution
 
 ### Fixed
+
 - LSP connection issues
 - Completion ranking bugs
 - Hook execution reliability
@@ -357,11 +376,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Permission-based filtering
 
 ### Changed
+
 - Improved agent coordination
 - Enhanced workflow execution
 - Better session management
 
 ### Fixed
+
 - Agent communication issues
 - Workflow state bugs
 - Session persistence problems
@@ -441,11 +462,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Configuration management
 
 ### Changed
+
 - Initial release
 - Foundation features
 - Core functionality
 
 ### Fixed
+
 - Initial bugs and issues
 
 ---
@@ -453,6 +476,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.0.1] - 2025-11-01
 
 ### Added
+
 - Initial project setup
 - Repository structure
 - Build configuration
@@ -556,7 +580,7 @@ See [GitHub Issues](https://github.com/moabualruz/ricecoder/issues) for historic
 
 ### Reporting Security Issues
 
-Please report security issues to: [security@ricecoder.dev](mailto:security@ricecoder.dev)
+Please report security issues to: [GitHub Security Advisories](https://github.com/moabualruz/ricecoder/security/advisories)
 
 Do not open public issues for security vulnerabilities.
 
@@ -615,11 +639,11 @@ Inspired by [Aider](https://github.com/paul-gauthier/aider), [OpenCode](https://
 
 ## Links
 
-- **Repository**: https://github.com/moabualruz/ricecoder
-- **Crates.io**: https://crates.io/crates/ricecoder
-- **Wiki**: https://github.com/moabualruz/ricecoder/wiki
-- **Issues**: https://github.com/moabualruz/ricecoder/issues
-- **Discussions**: https://github.com/moabualruz/ricecoder/discussions
+- **Repository**: <https://github.com/moabualruz/ricecoder>
+- **Crates.io**: <https://crates.io/crates/ricecoder>
+- **Wiki**: <https://github.com/moabualruz/ricecoder/wiki>
+- **Issues**: <https://github.com/moabualruz/ricecoder/issues>
+- **Discussions**: <https://github.com/moabualruz/ricecoder/discussions>
 
 ---
 

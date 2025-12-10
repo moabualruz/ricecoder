@@ -22,7 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced error messages in installation scripts
 
 ### Fixed
-- Removed references to non-existent install.ricecoder.dev domain
 - Fixed Docker image references to moabualruz/ricecoder:latest
 - Updated all installation examples across documentation
 
@@ -556,7 +555,7 @@ See [GitHub Issues](https://github.com/moabualruz/ricecoder/issues) for historic
 
 ### Reporting Security Issues
 
-Please report security issues to: [security@ricecoder.dev](mailto:security@ricecoder.dev)
+Please report security issues to: [GitHub Security Advisories](https://github.com/moabualruz/ricecoder/security/advisories)
 
 Do not open public issues for security vulnerabilities.
 

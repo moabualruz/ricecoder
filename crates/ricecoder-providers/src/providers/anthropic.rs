@@ -107,6 +107,7 @@ impl Provider for AnthropicProvider {
                     input_per_1k_tokens: 0.015,
                     output_per_1k_tokens: 0.075,
                 }),
+                is_free: false,
             },
             ModelInfo {
                 id: "claude-3-5-sonnet-20241022".to_string(),
@@ -118,6 +119,7 @@ impl Provider for AnthropicProvider {
                     input_per_1k_tokens: 0.003,
                     output_per_1k_tokens: 0.015,
                 }),
+                is_free: false,
             },
             ModelInfo {
                 id: "claude-3-5-haiku-20241022".to_string(),
@@ -129,6 +131,7 @@ impl Provider for AnthropicProvider {
                     input_per_1k_tokens: 0.0008,
                     output_per_1k_tokens: 0.004,
                 }),
+                is_free: false,
             },
             ModelInfo {
                 id: "claude-3-haiku-20240307".to_string(),
@@ -140,6 +143,7 @@ impl Provider for AnthropicProvider {
                     input_per_1k_tokens: 0.00025,
                     output_per_1k_tokens: 0.00125,
                 }),
+                is_free: false,
             },
         ]
     }

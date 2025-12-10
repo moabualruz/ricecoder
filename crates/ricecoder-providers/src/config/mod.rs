@@ -759,6 +759,7 @@ mod tests {
                     context_window: 8192,
                     capabilities: vec![],
                     pricing: None,
+                    is_free: false,
                 }]
             }
 
@@ -838,6 +839,7 @@ mod tests {
                     context_window: 4096,
                     capabilities: vec![],
                     pricing: None,
+                    is_free: false,
                 }]
             }
 

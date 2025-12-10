@@ -4,35 +4,37 @@ use ricecoder_providers::{Capability, ChatRequest, Provider, ZenProvider};
 
 #[test]
 fn test_zen_provider_creation_success() {
-    let provider = ZenProvider::new("test-key".to_string());
+    let provider = ZenProvider::new(Some("test-key".to_string()));
+    assert!(provider.is_ok());
+}
+
+#[test]
+fn test_zen_provider_creation_no_key() {
+    let provider = ZenProvider::new(None);
     assert!(provider.is_ok());
 }
 
 #[test]
 fn test_zen_provider_creation_empty_key() {
-    let provider = ZenProvider::new("".to_string());
-    assert!(provider.is_err());
-    match provider {
-        Err(e) => assert!(e.to_string().contains("API key is required")),
-        Ok(_) => panic!("Expected error for empty API key"),
-    }
+    let provider = ZenProvider::new(Some("".to_string()));
+    assert!(provider.is_ok());
 }
 
 #[test]
 fn test_zen_provider_id() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     assert_eq!(provider.id(), "zen");
 }
 
 #[test]
 fn test_zen_provider_name() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     assert_eq!(provider.name(), "OpenCode Zen");
 }
 
 #[test]
 fn test_zen_models_available() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let models = provider.models();
 
     assert_eq!(models.len(), 2);
@@ -42,7 +44,7 @@ fn test_zen_models_available() {
 
 #[test]
 fn test_zen_model_info_gpt4() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let models = provider.models();
 
     let gpt4 = models.iter().find(|m| m.id == "zen-gpt4").unwrap();
@@ -54,7 +56,7 @@ fn test_zen_model_info_gpt4() {
 
 #[test]
 fn test_zen_model_info_gpt4_turbo() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let models = provider.models();
 
     let gpt4_turbo = models.iter().find(|m| m.id == "zen-gpt4-turbo").unwrap();
@@ -65,7 +67,7 @@ fn test_zen_model_info_gpt4_turbo() {
 
 #[test]
 fn test_zen_token_counting_valid_model() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let tokens = provider.count_tokens("Hello, world!", "zen-gpt4");
 
     assert!(tokens.is_ok());
@@ -74,7 +76,7 @@ fn test_zen_token_counting_valid_model() {
 
 #[test]
 fn test_zen_token_counting_empty_content() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let tokens = provider.count_tokens("", "zen-gpt4");
 
     assert!(tokens.is_ok());
@@ -83,7 +85,7 @@ fn test_zen_token_counting_empty_content() {
 
 #[test]
 fn test_zen_token_counting_invalid_model() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let tokens = provider.count_tokens("Hello, world!", "invalid-model");
 
     assert!(tokens.is_err());
@@ -95,7 +97,7 @@ fn test_zen_token_counting_invalid_model() {
 
 #[test]
 fn test_zen_token_counting_consistency() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let content = "This is a test message for token counting";
 
     let tokens1 = provider.count_tokens(content, "zen-gpt4").unwrap();
@@ -106,7 +108,7 @@ fn test_zen_token_counting_consistency() {
 
 #[test]
 fn test_zen_token_counting_different_models() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let content = "Test content";
 
     let tokens_gpt4 = provider.count_tokens(content, "zen-gpt4").unwrap();
@@ -119,7 +121,7 @@ fn test_zen_token_counting_different_models() {
 
 #[test]
 fn test_zen_token_counting_longer_content() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let short = "Hello";
     let long = "Hello world, this is a much longer message with more content and words";
 
@@ -132,7 +134,7 @@ fn test_zen_token_counting_longer_content() {
 
 #[test]
 fn test_zen_token_counting_special_characters() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let simple = "hello";
     let with_special = "hello!!!???";
 
@@ -146,7 +148,7 @@ fn test_zen_token_counting_special_characters() {
 #[test]
 fn test_zen_with_base_url() {
     let provider = ZenProvider::with_base_url(
-        "test-key".to_string(),
+        Some("test-key".to_string()),
         "https://custom.opencode.ai/v1".to_string(),
     );
 
@@ -156,16 +158,16 @@ fn test_zen_with_base_url() {
 }
 
 #[test]
-fn test_zen_with_base_url_empty_key() {
+fn test_zen_with_base_url_no_key() {
     let provider =
-        ZenProvider::with_base_url("".to_string(), "https://custom.opencode.ai/v1".to_string());
+        ZenProvider::with_base_url(None, "https://custom.opencode.ai/v1".to_string());
 
-    assert!(provider.is_err());
+    assert!(provider.is_ok());
 }
 
 #[test]
 fn test_zen_models_have_capabilities() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let models = provider.models();
 
     for model in models {
@@ -176,7 +178,7 @@ fn test_zen_models_have_capabilities() {
 
 #[test]
 fn test_zen_models_have_pricing() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let models = provider.models();
 
     for model in models {
@@ -189,7 +191,7 @@ fn test_zen_models_have_pricing() {
 
 #[test]
 fn test_zen_gpt4_context_window() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let models = provider.models();
 
     let gpt4 = models.iter().find(|m| m.id == "zen-gpt4").unwrap();
@@ -198,7 +200,7 @@ fn test_zen_gpt4_context_window() {
 
 #[test]
 fn test_zen_gpt4_turbo_has_vision() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let models = provider.models();
 
     let gpt4_turbo = models.iter().find(|m| m.id == "zen-gpt4-turbo").unwrap();
@@ -207,7 +209,7 @@ fn test_zen_gpt4_turbo_has_vision() {
 
 #[test]
 fn test_zen_all_models_have_streaming() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let models = provider.models();
 
     for model in models {
@@ -221,7 +223,7 @@ fn test_zen_all_models_have_streaming() {
 
 #[test]
 fn test_zen_model_ids_are_unique() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let models = provider.models();
 
     let mut ids = Vec::new();
@@ -233,7 +235,7 @@ fn test_zen_model_ids_are_unique() {
 
 #[test]
 fn test_zen_models_consistency() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let models1 = provider.models();
     let models2 = provider.models();
 
@@ -248,7 +250,7 @@ fn test_zen_models_consistency() {
 
 #[test]
 fn test_zen_token_counting_scales_with_content() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let models = provider.models();
 
     if !models.is_empty() {
@@ -272,7 +274,7 @@ fn test_zen_token_counting_scales_with_content() {
 
 #[test]
 fn test_zen_token_counting_unicode() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let models = provider.models();
 
     if !models.is_empty() {
@@ -292,7 +294,7 @@ fn test_zen_token_counting_unicode() {
 
 #[test]
 fn test_zen_token_counting_multiline() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let models = provider.models();
 
     if !models.is_empty() {
@@ -312,7 +314,7 @@ fn test_zen_token_counting_multiline() {
 
 #[test]
 fn test_zen_token_counting_whitespace() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let models = provider.models();
 
     if !models.is_empty() {
@@ -335,8 +337,8 @@ fn test_zen_token_counting_whitespace() {
 
 #[test]
 fn test_zen_provider_multiple_instances() {
-    let provider1 = ZenProvider::new("key1".to_string()).unwrap();
-    let provider2 = ZenProvider::new("key2".to_string()).unwrap();
+    let provider1 = ZenProvider::new(Some("key1".to_string())).unwrap();
+    let provider2 = ZenProvider::new(Some("key2".to_string())).unwrap();
 
     // Both providers should work independently
     assert_eq!(provider1.id(), "zen");
@@ -351,7 +353,7 @@ fn test_zen_provider_multiple_instances() {
 
 #[test]
 fn test_zen_provider_id_consistency() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
 
     // ID should be consistent across multiple calls
     let id1 = provider.id();
@@ -365,7 +367,7 @@ fn test_zen_provider_id_consistency() {
 
 #[test]
 fn test_zen_provider_name_consistency() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
 
     // Name should be consistent across multiple calls
     let name1 = provider.name();
@@ -379,7 +381,7 @@ fn test_zen_provider_name_consistency() {
 
 #[test]
 fn test_zen_token_counting_numeric_content() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let models = provider.models();
 
     if !models.is_empty() {
@@ -394,7 +396,7 @@ fn test_zen_token_counting_numeric_content() {
 
 #[test]
 fn test_zen_token_counting_code_content() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let models = provider.models();
 
     if !models.is_empty() {
@@ -413,7 +415,7 @@ fn main() {
 
 #[test]
 fn test_zen_token_counting_json_content() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let models = provider.models();
 
     if !models.is_empty() {
@@ -428,7 +430,7 @@ fn test_zen_token_counting_json_content() {
 
 #[test]
 fn test_zen_models_all_have_valid_ids() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let models = provider.models();
 
     for model in models {
@@ -444,7 +446,7 @@ fn test_zen_models_all_have_valid_ids() {
 
 #[test]
 fn test_zen_models_pricing_values() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let models = provider.models();
 
     for model in models {
@@ -463,7 +465,7 @@ fn test_zen_models_pricing_values() {
 
 #[test]
 fn test_zen_token_counting_very_long_content() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let models = provider.models();
 
     if !models.is_empty() {
@@ -482,7 +484,7 @@ fn test_zen_token_counting_very_long_content() {
 
 #[tokio::test]
 async fn test_zen_health_check_returns_result() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let result = provider.health_check().await;
 
     // Health check should return a result (either Ok or Err)
@@ -491,7 +493,7 @@ async fn test_zen_health_check_returns_result() {
 
 #[test]
 fn test_zen_chat_request_invalid_model() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let _request = ChatRequest {
         model: "invalid-model".to_string(),
         messages: vec![],
@@ -517,7 +519,7 @@ fn test_zen_provider_with_various_api_keys() {
     ];
 
     for key in keys {
-        let provider = ZenProvider::new(key.to_string());
+        let provider = ZenProvider::new(Some(key.to_string()));
         assert!(
             provider.is_ok(),
             "Provider creation should succeed for key: {}",
@@ -532,7 +534,7 @@ fn test_zen_provider_with_various_api_keys() {
 
 #[test]
 fn test_zen_token_counting_boundary_values() {
-    let provider = ZenProvider::new("test-key".to_string()).unwrap();
+    let provider = ZenProvider::new(Some("test-key".to_string())).unwrap();
     let models = provider.models();
 
     if !models.is_empty() {

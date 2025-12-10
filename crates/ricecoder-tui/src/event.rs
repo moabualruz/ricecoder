@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::thread;
 use std::time::Duration;
 use tokio::sync::mpsc::UnboundedReceiver;
+use crossterm::event as crossterm_event;
 
 /// Event types for the TUI
 #[derive(Debug, Clone)]
@@ -99,6 +100,12 @@ pub struct EventLoop {
 
 impl EventLoop {
     /// Create a new event loop
+    /// 
+    /// Spawns a thread that polls for terminal events using crossterm with a 10ms timeout.
+    /// Converts crossterm events to RiceCoder Event types and sends them through an mpsc channel.
+    /// Also sends periodic Tick events every 250ms for UI updates.
+    /// 
+    /// Requirements: 1.2, 1.5, 1.6
     pub fn new() -> Self {
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
         let tx_clone = tx.clone();
@@ -107,20 +114,115 @@ impl EventLoop {
         thread::spawn(move || {
             // Tick event every 250ms
             let tick_interval = Duration::from_millis(250);
+            let poll_timeout = Duration::from_millis(10);
             let mut last_tick = std::time::Instant::now();
 
             loop {
-                if last_tick.elapsed() >= tick_interval {
-                    let _ = tx_clone.send(Event::Tick);
-                    last_tick = std::time::Instant::now();
+                // Poll for terminal events using crossterm with 10ms timeout
+                // Requirements: 1.5 - Use crossterm::event::poll() with 10ms timeout
+                if crossterm_event::poll(poll_timeout).unwrap_or(false) {
+                    // Read the event from crossterm
+                    // Requirements: 1.5 - Use crossterm::event::read() for event capture
+                    if let Ok(event) = crossterm_event::read() {
+                        let rice_event = Self::convert_crossterm_event(event);
+                        if let Some(e) = rice_event {
+                            if tx_clone.send(e).is_err() {
+                                // Channel closed, exit loop
+                                break;
+                            }
+                        }
+                    }
                 }
 
-                // TODO: Poll for actual terminal events with crossterm
-                thread::sleep(Duration::from_millis(10));
+                // Send tick event at regular intervals
+                if last_tick.elapsed() >= tick_interval {
+                    if tx_clone.send(Event::Tick).is_err() {
+                        // Channel closed, exit loop
+                        break;
+                    }
+                    last_tick = std::time::Instant::now();
+                }
             }
         });
 
         Self { rx: Some(rx), tx: Some(tx) }
+    }
+
+    /// Convert a crossterm event to a RiceCoder Event
+    /// 
+    /// Requirements: 1.2, 1.3, 1.4, 1.6
+    fn convert_crossterm_event(event: crossterm_event::Event) -> Option<Event> {
+        match event {
+            // Keyboard events
+            // Requirements: 1.2 - Convert crossterm::event::KeyEvent to Event::Key
+            crossterm_event::Event::Key(key) => {
+                Some(Event::Key(Self::convert_key_event(key)))
+            }
+            // Mouse events
+            // Requirements: 1.3 - Convert crossterm::event::MouseEvent to Event::Mouse
+            crossterm_event::Event::Mouse(mouse) => {
+                Some(Event::Mouse(Self::convert_mouse_event(mouse)))
+            }
+            // Resize events
+            // Requirements: 1.4 - Convert resize events to Event::Resize
+            crossterm_event::Event::Resize(width, height) => {
+                Some(Event::Resize { width, height })
+            }
+            // Ignore focus events
+            crossterm_event::Event::FocusGained | crossterm_event::Event::FocusLost => None,
+            // Ignore paste events (handle separately if needed)
+            crossterm_event::Event::Paste(_) => None,
+        }
+    }
+
+    /// Convert a crossterm KeyEvent to a RiceCoder KeyEvent
+    /// 
+    /// Requirements: 1.2 - Verify key codes and modifiers are mapped correctly
+    fn convert_key_event(key: crossterm_event::KeyEvent) -> KeyEvent {
+        let code = match key.code {
+            crossterm_event::KeyCode::Char(c) => KeyCode::Char(c),
+            crossterm_event::KeyCode::Enter => KeyCode::Enter,
+            crossterm_event::KeyCode::Esc => KeyCode::Esc,
+            crossterm_event::KeyCode::Tab => KeyCode::Tab,
+            crossterm_event::KeyCode::Backspace => KeyCode::Backspace,
+            crossterm_event::KeyCode::Delete => KeyCode::Delete,
+            crossterm_event::KeyCode::Up => KeyCode::Up,
+            crossterm_event::KeyCode::Down => KeyCode::Down,
+            crossterm_event::KeyCode::Left => KeyCode::Left,
+            crossterm_event::KeyCode::Right => KeyCode::Right,
+            crossterm_event::KeyCode::F(n) => KeyCode::F(n),
+            _ => KeyCode::Other,
+        };
+
+        let modifiers = KeyModifiers {
+            shift: key.modifiers.contains(crossterm_event::KeyModifiers::SHIFT),
+            ctrl: key.modifiers.contains(crossterm_event::KeyModifiers::CONTROL),
+            alt: key.modifiers.contains(crossterm_event::KeyModifiers::ALT),
+        };
+
+        KeyEvent { code, modifiers }
+    }
+
+    /// Convert a crossterm MouseEvent to a RiceCoder MouseEvent
+    /// 
+    /// Requirements: 1.3 - Verify mouse events are mapped correctly
+    fn convert_mouse_event(mouse: crossterm_event::MouseEvent) -> MouseEvent {
+        let button = match mouse.kind {
+            crossterm_event::MouseEventKind::Down(btn)
+            | crossterm_event::MouseEventKind::Up(btn)
+            | crossterm_event::MouseEventKind::Drag(btn) => match btn {
+                crossterm_event::MouseButton::Left => MouseButton::Left,
+                crossterm_event::MouseButton::Right => MouseButton::Right,
+                crossterm_event::MouseButton::Middle => MouseButton::Middle,
+            },
+            _ => MouseButton::Left,
+        };
+
+        MouseEvent {
+            x: mouse.column,
+            y: mouse.row,
+            button,
+        }
     }
 
     /// Poll for the next event

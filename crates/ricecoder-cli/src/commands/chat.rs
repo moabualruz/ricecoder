@@ -5,7 +5,7 @@ use super::Command;
 use crate::chat::ChatSession;
 use crate::error::{CliError, CliResult};
 use crate::output::OutputStyle;
-use ricecoder_storage::PathResolver;
+use ricecoder_storage::{ConfigLoader, PathResolver};
 
 /// Interactive chat mode
 pub struct ChatCommand {
@@ -23,27 +23,54 @@ impl ChatCommand {
         }
     }
 
-    /// Validate provider is supported
-    fn validate_provider(&self) -> CliResult<String> {
-        let provider = self.provider.as_deref().unwrap_or("openai");
-
-        // List of supported providers
-        let supported = ["openai", "anthropic", "local"];
-
-        if !supported.contains(&provider) {
-            return Err(CliError::Provider(format!(
-                "Unsupported provider: {}. Supported providers: {}",
-                provider,
-                supported.join(", ")
-            )));
+    /// Get provider from CLI args or configuration
+    pub fn get_provider(&self) -> CliResult<String> {
+        // If provider is specified via CLI, use it
+        if let Some(provider) = &self.provider {
+            return Ok(provider.clone());
         }
 
-        Ok(provider.to_string())
+        // Load configuration to get default provider
+        let config = ConfigLoader::load_merged()
+            .map_err(|e| CliError::Config(format!("Failed to load configuration: {}", e)))?;
+
+        // Use configured default provider or fall back to "zen"
+        Ok(config
+            .providers
+            .default_provider
+            .unwrap_or_else(|| "zen".to_string()))
     }
 
-    /// Validate model is specified or use default
-    fn get_model(&self) -> String {
-        self.model.as_deref().unwrap_or("gpt-4").to_string()
+    /// Validate provider is supported by checking ProviderRegistry
+    pub fn validate_provider(&self, provider: &str) -> CliResult<()> {
+        // For now, we accept any provider name as the ProviderRegistry
+        // will handle validation when the provider is actually used.
+        // This allows for extensibility without hardcoding provider lists.
+        if provider.is_empty() {
+            return Err(CliError::Provider(
+                "Provider name cannot be empty".to_string(),
+            ));
+        }
+
+        Ok(())
+    }
+
+    /// Get model from CLI args or configuration
+    pub fn get_model(&self) -> CliResult<String> {
+        // If model is specified via CLI, use it
+        if let Some(model) = &self.model {
+            return Ok(model.clone());
+        }
+
+        // Load configuration to get default model
+        let config = ConfigLoader::load_merged()
+            .map_err(|e| CliError::Config(format!("Failed to load configuration: {}", e)))?;
+
+        // Use configured default model or fall back to "zen/big-pickle"
+        Ok(config
+            .defaults
+            .model
+            .unwrap_or_else(|| "zen/big-pickle".to_string()))
     }
 
     /// Load project specs for context
@@ -127,9 +154,12 @@ impl Command for ChatCommand {
     fn execute(&self) -> CliResult<()> {
         let style = OutputStyle::default();
 
-        // Validate provider
-        let provider = self.validate_provider()?;
-        let model = self.get_model();
+        // Get provider from CLI args or configuration
+        let provider = self.get_provider()?;
+        self.validate_provider(&provider)?;
+
+        // Get model from CLI args or configuration
+        let model = self.get_model()?;
 
         println!("{}", style.section("Chat Configuration"));
         println!("{}", style.key_value("Provider", &provider));

@@ -58,26 +58,26 @@ impl CliError {
                 suggestion,
             } => {
                 format!(
-                    "❌ Command '{}' not found.\n\n💡 Did you mean: {}\n\n📚 Run 'rice help' for available commands.\n📖 Documentation: https://ricecoder.dev/docs/commands",
+                    "❌ Command '{}' not found.\n\n💡 Did you mean: {}\n\n📚 Run 'rice help' for available commands.\n📖 Documentation: https://github.com/moabualruz/ricecoder/wiki",
                     command, suggestion
                 )
             }
             CliError::InvalidArgument { message } => {
                 format!(
-                    "❌ Invalid argument: {}\n\n💡 Suggestion: Check the argument syntax and try again.\n\n📚 Run 'rice help' for usage information.\n📖 Documentation: https://ricecoder.dev/docs/cli-usage",
+                    "❌ Invalid argument: {}\n\n💡 Suggestion: Check the argument syntax and try again.\n\n📚 Run 'rice help' for usage information.\n📖 Documentation: https://github.com/moabualruz/ricecoder/wiki",
                     message
                 )
             }
             CliError::Io(e) => {
                 let suggestion = match e.kind() {
                     std::io::ErrorKind::NotFound => {
-                        "💡 Suggestion: Check that the file or directory exists.\n📖 Documentation: https://ricecoder.dev/docs/file-operations"
+                        "💡 Suggestion: Check that the file or directory exists.\n📖 Documentation: https://github.com/moabualruz/ricecoder/wiki"
                     }
                     std::io::ErrorKind::PermissionDenied => {
-                        "💡 Suggestion: Check file permissions or run with appropriate privileges.\n📖 Documentation: https://ricecoder.dev/docs/permissions"
+                        "💡 Suggestion: Check file permissions or run with appropriate privileges.\n📖 Documentation: https://github.com/moabualruz/ricecoder/wiki"
                     }
                     _ => {
-                        "💡 Suggestion: Check your file system and try again.\n📖 Documentation: https://ricecoder.dev/docs/troubleshooting"
+                        "💡 Suggestion: Check your file system and try again.\n📖 Documentation: https://github.com/moabualruz/ricecoder/wiki"
                     }
                 };
                 format!(
@@ -87,67 +87,67 @@ impl CliError {
             }
             CliError::Config(msg) => {
                 format!(
-                    "❌ Configuration error: {}\n\n💡 Suggestion: Run 'rice config' to check your configuration.\n\n📚 Common issues:\n  • Missing RICECODER_HOME environment variable\n  • Invalid configuration file format\n  • Missing required configuration fields\n\n📖 Documentation: https://ricecoder.dev/docs/configuration",
+                    "❌ Configuration error: {}\n\n💡 Suggestion: Run 'rice config' to check your configuration.\n\n📚 Common issues:\n  • Missing RICECODER_HOME environment variable\n  • Invalid configuration file format\n  • Missing required configuration fields\n\n📖 Documentation: https://github.com/moabualruz/ricecoder/wiki",
                     msg
                 )
             }
             CliError::Provider(msg) => {
                 format!(
-                    "❌ Provider error: {}\n\n💡 Suggestion: Check your provider configuration with 'rice config'.\n\n📚 Common issues:\n  • Invalid API key\n  • Provider service unavailable\n  • Network connectivity issues\n\n📖 Documentation: https://ricecoder.dev/docs/providers",
+                    "❌ Provider error: {}\n\n💡 Suggestion: Check your provider configuration with 'rice config'.\n\n📚 Common issues:\n  • Invalid API key\n  • Provider service unavailable\n  • Network connectivity issues\n\n📖 Documentation: https://github.com/moabualruz/ricecoder/wiki",
                     msg
                 )
             }
             CliError::Generation(msg) => {
                 format!(
-                    "❌ Code generation failed: {}\n\n💡 Suggestion: Check your specification and try again.\n\n📚 Common issues:\n  • Invalid specification format\n  • Missing required fields in specification\n  • Provider rate limit exceeded\n\n📖 Documentation: https://ricecoder.dev/docs/generation",
+                    "❌ Code generation failed: {}\n\n💡 Suggestion: Check your specification and try again.\n\n📚 Common issues:\n  • Invalid specification format\n  • Missing required fields in specification\n  • Provider rate limit exceeded\n\n📖 Documentation: https://github.com/moabualruz/ricecoder/wiki",
                     msg
                 )
             }
             CliError::Storage(msg) => {
                 format!(
-                    "❌ Storage error: {}\n\n💡 Suggestion: Check your storage configuration.\n\n📚 Common issues:\n  • Insufficient disk space\n  • Invalid storage path\n  • Permission issues\n\n📖 Documentation: https://ricecoder.dev/docs/storage",
+                    "❌ Storage error: {}\n\n💡 Suggestion: Check your storage configuration.\n\n📚 Common issues:\n  • Insufficient disk space\n  • Invalid storage path\n  • Permission issues\n\n📖 Documentation: https://github.com/moabualruz/ricecoder/wiki",
                     msg
                 )
             }
             CliError::Internal(msg) => {
                 format!(
-                    "❌ Internal error: {}\n\n💡 This is unexpected. Please report this issue.\n\n📚 How to report:\n  1. Run 'rice --verbose' to get more details\n  2. Include the output in your bug report\n  3. Visit: https://github.com/ricecoder/ricecoder/issues\n\n📖 Documentation: https://ricecoder.dev/docs/troubleshooting",
+                    "❌ Internal error: {}\n\n💡 This is unexpected. Please report this issue.\n\n📚 How to report:\n  1. Run 'rice --verbose' to get more details\n  2. Include the output in your bug report\n  3. Visit: https://github.com/ricecoder/ricecoder/issues\n\n📖 Documentation: https://github.com/moabualruz/ricecoder/wiki",
                     msg
                 )
             }
             CliError::FileNotFound { path } => {
                 format!(
-                    "❌ File not found: {}\n\n💡 Suggestion: Check that the file exists and the path is correct.\n\n📚 Common issues:\n  • Typo in file path\n  • File was deleted or moved\n  • Relative path is incorrect\n\n📖 Documentation: https://ricecoder.dev/docs/file-operations",
+                    "❌ File not found: {}\n\n💡 Suggestion: Check that the file exists and the path is correct.\n\n📚 Common issues:\n  • Typo in file path\n  • File was deleted or moved\n  • Relative path is incorrect\n\n📖 Documentation: https://github.com/moabualruz/ricecoder/wiki",
                     path
                 )
             }
             CliError::PermissionDenied { path } => {
                 format!(
-                    "❌ Permission denied: {}\n\n💡 Suggestion: Check file permissions or run with appropriate privileges.\n\n📚 To fix:\n  • Check file ownership: ls -l {}\n  • Change permissions: chmod u+r {}\n  • Or run with sudo (not recommended)\n\n📖 Documentation: https://ricecoder.dev/docs/permissions",
+                    "❌ Permission denied: {}\n\n💡 Suggestion: Check file permissions or run with appropriate privileges.\n\n📚 To fix:\n  • Check file ownership: ls -l {}\n  • Change permissions: chmod u+r {}\n  • Or run with sudo (not recommended)\n\n📖 Documentation: https://github.com/moabualruz/ricecoder/wiki",
                     path, path, path
                 )
             }
             CliError::InvalidConfigFormat { details } => {
                 format!(
-                    "❌ Invalid configuration format: {}\n\n💡 Suggestion: Check your configuration file syntax.\n\n📚 Supported formats:\n  • YAML (.yaml, .yml)\n  • TOML (.toml)\n  • JSON (.json)\n\n📖 Documentation: https://ricecoder.dev/docs/configuration-format",
+                    "❌ Invalid configuration format: {}\n\n💡 Suggestion: Check your configuration file syntax.\n\n📚 Supported formats:\n  • YAML (.yaml, .yml)\n  • TOML (.toml)\n  • JSON (.json)\n\n📖 Documentation: https://github.com/moabualruz/ricecoder/wiki",
                     details
                 )
             }
             CliError::MissingField { field } => {
                 format!(
-                    "❌ Missing required field: {}\n\n💡 Suggestion: Add the missing field to your configuration.\n\n📚 Required fields depend on your use case.\n\n📖 Documentation: https://ricecoder.dev/docs/configuration-reference",
+                    "❌ Missing required field: {}\n\n💡 Suggestion: Add the missing field to your configuration.\n\n📚 Required fields depend on your use case.\n\n📖 Documentation: https://github.com/moabualruz/ricecoder/wiki",
                     field
                 )
             }
             CliError::NetworkError { details } => {
                 format!(
-                    "❌ Network error: {}\n\n💡 Suggestion: Check your internet connection and try again.\n\n📚 Common issues:\n  • No internet connection\n  • Firewall blocking the connection\n  • Provider service is down\n\n📖 Documentation: https://ricecoder.dev/docs/network-troubleshooting",
+                    "❌ Network error: {}\n\n💡 Suggestion: Check your internet connection and try again.\n\n📚 Common issues:\n  • No internet connection\n  • Firewall blocking the connection\n  • Provider service is down\n\n📖 Documentation: https://github.com/moabualruz/ricecoder/wiki",
                     details
                 )
             }
             CliError::Timeout { operation } => {
                 format!(
-                    "❌ Timeout: {} took too long\n\n💡 Suggestion: Try again or increase the timeout.\n\n📚 Common issues:\n  • Slow internet connection\n  • Provider service is slow\n  • Large input data\n\n📖 Documentation: https://ricecoder.dev/docs/performance",
+                    "❌ Timeout: {} took too long\n\n💡 Suggestion: Try again or increase the timeout.\n\n📚 Common issues:\n  • Slow internet connection\n  • Provider service is slow\n  • Large input data\n\n📖 Documentation: https://github.com/moabualruz/ricecoder/wiki",
                     operation
                 )
             }

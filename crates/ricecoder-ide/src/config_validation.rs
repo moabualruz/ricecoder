@@ -56,7 +56,7 @@ impl ConfigValidator {
                         enabled: true\n\
                       builtin_providers:\n\
                         enabled: true\n\
-                 3. For more details, see: https://ricecoder.dev/docs/ide-integration/configuration",
+                 3. For more details, see: https://github.com/moabualruz/ricecoder/wiki",
             ));
         }
 
@@ -101,7 +101,7 @@ impl ConfigValidator {
                          args: []\n\
                          timeout_ms: 5000\n\
                  \n\
-                 For more details, see: https://ricecoder.dev/docs/ide-integration/lsp-configuration",
+                 For more details, see: https://github.com/moabualruz/ricecoder/wiki",
             ));
         }
 
@@ -163,7 +163,7 @@ impl ConfigValidator {
                       {}:\n\
                         command: <lsp-server-command>\n\
                  \n\
-                 For more details, see: https://ricecoder.dev/docs/ide-integration/lsp-servers",
+                 For more details, see: https://github.com/moabualruz/ricecoder/wiki",
                 language, language
             )));
         }
@@ -226,7 +226,7 @@ impl ConfigValidator {
                      enabled: true\n\
                      rules_path: config/ide-rules.yaml\n\
                  \n\
-                 For more details, see: https://ricecoder.dev/docs/ide-integration/custom-rules",
+                 For more details, see: https://github.com/moabualruz/ricecoder/wiki",
             ));
         }
 

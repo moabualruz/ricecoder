@@ -234,7 +234,7 @@ rice tui
 ### Community
 - **Discord**: [Join our community](https://discord.gg/ricecoder)
 - **Twitter**: [@ricecoder](https://twitter.com/ricecoder)
-- **Email**: support@ricecoder.dev
+
 
 ---
 

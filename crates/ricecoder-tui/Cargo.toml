@@ -32,6 +32,8 @@ colored = { workspace = true }
 dirs = { workspace = true }
 arboard = { workspace = true }
 chrono = { workspace = true }
+ctrlc = "3.4"
+atty = "0.2"
 ricecoder-sessions = { path = "../ricecoder-sessions", version = "0.1" }
 ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
 

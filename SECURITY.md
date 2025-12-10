@@ -79,7 +79,7 @@ If you discover a security vulnerability in RiceCoder, please report it responsi
 ### Reporting Process
 
 1. **Do NOT** create a public GitHub issue for security vulnerabilities
-2. **Email** security@ricecoder.dev with:
+2. **Use GitHub Security Advisories** at https://github.com/moabualruz/ricecoder/security/advisories with:
    - Description of the vulnerability
    - Steps to reproduce
    - Potential impact
@@ -557,7 +557,7 @@ rice config rotate-key <provider>
 
 ### Q: How do I report a security issue?
 
-**A**: Email security@ricecoder.dev with details. Do not create public GitHub issues for security vulnerabilities.
+**A**: Use GitHub Security Advisories at https://github.com/moabualruz/ricecoder/security/advisories with details. Do not create public GitHub issues for security vulnerabilities.
 
 ### Q: Is RiceCoder suitable for production use?
 
@@ -581,9 +581,9 @@ rice config rotate-key <provider>
 
 For security questions or concerns:
 
-- **Email**: security@ricecoder.dev
-- **GitHub**: [Report Issue](https://github.com/moabualruz/ricecoder/security/advisories)
-- **Discord**: [Security Channel](https://discord.gg/ricecoder)
+- **GitHub Security Advisories**: [Report Issue](https://github.com/moabualruz/ricecoder/security/advisories)
+- **GitHub Issues**: [Report Bug](https://github.com/moabualruz/ricecoder/issues)
+- **GitHub Discussions**: [Ask Questions](https://github.com/moabualruz/ricecoder/discussions)
 
 ---
 

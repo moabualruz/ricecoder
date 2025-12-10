@@ -73,7 +73,13 @@ impl CustomCommandsStorage {
             let path = entry.path();
 
             if path.is_file() {
-                let file_name = path.file_name().unwrap().to_string_lossy();
+                let file_name = match path.file_name() {
+                    Some(name) => name.to_string_lossy(),
+                    None => {
+                        eprintln!("Warning: Could not get file name for path: {:?}", path);
+                        continue;
+                    }
+                };
 
                 // Try to load as JSON or YAML
                 if file_name.ends_with(".json")

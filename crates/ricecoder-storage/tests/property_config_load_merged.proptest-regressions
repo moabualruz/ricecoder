@@ -1,0 +1,11 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 6b8ceec6c85102086c6c6c3b281c3abeecc1a1138e7412e98426c07108d8aad2 # shrinks to key = "_", var_name = "_", var_value = "_"
+cc f1f9a0260e6a5bb86c4d43916bce56722f5fe95d51c45053618d435905b4ebf2 # shrinks to _config = Config { providers: ProvidersConfig { api_keys: {}, endpoints: {}, default_provider: None }, defaults: DefaultsConfig { model: None, temperature: None, max_tokens: None }, steering: [], custom: {} }
+cc 78b15618f41177ed14afd8efcf1d6968a9e8b20d7f184a7aacfd014aeb2b221b # shrinks to provider = "a", var_name = "_", var_value = "a"
+cc 4e0c392fd7dffc028560509b5ded922450981fe0b4a4224e8465d88dace944ae # shrinks to var1_name = "A", var1_value = "an-n-", var2_name = "_", var2_value = "9"
+cc 0e90f701545916d59a3db2713e03245477b51e5147a5bb99f071d911e5b62c82 # shrinks to config = Config { providers: ProvidersConfig { api_keys: {}, endpoints: {}, default_provider: None }, defaults: DefaultsConfig { model: None, temperature: None, max_tokens: Some(126) }, steering: [], custom: {} }

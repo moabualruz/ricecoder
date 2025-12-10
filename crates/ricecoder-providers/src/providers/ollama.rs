@@ -235,6 +235,7 @@ impl OllamaProvider {
                 context_window: 8192,
                 capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
                 pricing: None,
+                is_free: true,
             },
             ModelInfo {
                 id: "neural-chat".to_string(),
@@ -243,6 +244,7 @@ impl OllamaProvider {
                 context_window: 4096,
                 capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
                 pricing: None,
+                is_free: true,
             },
             ModelInfo {
                 id: "llama2".to_string(),
@@ -251,6 +253,7 @@ impl OllamaProvider {
                 context_window: 4096,
                 capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
                 pricing: None,
+                is_free: true,
             },
         ]
     }
@@ -310,6 +313,7 @@ impl OllamaProvider {
                 context_window: 4096, // Default context window for local models
                 capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
                 pricing: None, // Local models have no pricing
+                is_free: true, // Local models are always free
             })
             .collect();
 
@@ -364,6 +368,7 @@ impl Provider for OllamaProvider {
                     context_window: 8192,
                     capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
                     pricing: None,
+                    is_free: true,
                 },
                 ModelInfo {
                     id: "neural-chat".to_string(),
@@ -372,6 +377,7 @@ impl Provider for OllamaProvider {
                     context_window: 4096,
                     capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
                     pricing: None,
+                    is_free: true,
                 },
                 ModelInfo {
                     id: "llama2".to_string(),
@@ -380,6 +386,7 @@ impl Provider for OllamaProvider {
                     context_window: 4096,
                     capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
                     pricing: None,
+                    is_free: true,
                 },
             ]
         } else {

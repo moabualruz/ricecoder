@@ -117,6 +117,7 @@ impl Provider for OpenAiProvider {
                     input_per_1k_tokens: 0.03,
                     output_per_1k_tokens: 0.06,
                 }),
+                is_free: false,
             },
             ModelInfo {
                 id: "gpt-4-turbo".to_string(),
@@ -133,6 +134,7 @@ impl Provider for OpenAiProvider {
                     input_per_1k_tokens: 0.01,
                     output_per_1k_tokens: 0.03,
                 }),
+                is_free: false,
             },
             ModelInfo {
                 id: "gpt-4o".to_string(),
@@ -149,6 +151,7 @@ impl Provider for OpenAiProvider {
                     input_per_1k_tokens: 0.005,
                     output_per_1k_tokens: 0.015,
                 }),
+                is_free: false,
             },
             ModelInfo {
                 id: "gpt-3.5-turbo".to_string(),
@@ -160,6 +163,7 @@ impl Provider for OpenAiProvider {
                     input_per_1k_tokens: 0.0005,
                     output_per_1k_tokens: 0.0015,
                 }),
+                is_free: false,
             },
         ]
     }
