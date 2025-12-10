@@ -49,24 +49,54 @@ async fn main() -> Result<()> {
 ///
 /// Requirements: 10.1 - Graceful shutdown on Ctrl+C
 async fn run_with_shutdown(app: &mut App, shutdown_flag: &Arc<AtomicBool>) -> Result<()> {
+    use crossterm::{
+        execute,
+        event::{EnableMouseCapture, DisableMouseCapture},
+        terminal::{EnterAlternateScreen, LeaveAlternateScreen},
+    };
+    use ratatui::backend::CrosstermBackend;
+    use ratatui::Terminal;
+    use std::io;
+
+    // Set up terminal
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+    terminal.clear()?;
+
     // Main event loop with shutdown check
-    while !app.should_exit {
-        // Check for shutdown signal
-        if shutdown_flag.load(Ordering::SeqCst) {
-            tracing::info!("Shutdown signal received, exiting gracefully");
-            app.should_exit = true;
-            break;
+    let result = async {
+        while !app.should_exit {
+            // Check for shutdown signal
+            if shutdown_flag.load(Ordering::SeqCst) {
+                tracing::info!("Shutdown signal received, exiting gracefully");
+                app.should_exit = true;
+                break;
+            }
+
+            // Poll for events
+            if let Some(event) = app.event_loop.poll().await? {
+                app.handle_event(event)?;
+            }
+
+            // Render the UI using the terminal
+            terminal.draw(|f| {
+                app.renderer.render_frame(f, app);
+            })?;
         }
 
-        // Poll for events
-        if let Some(event) = app.event_loop.poll().await? {
-            app.handle_event(event)?;
-        }
+        tracing::info!("RiceCoder TUI exited successfully");
+        Ok::<(), anyhow::Error>(())
+    }.await;
 
-        // Render the UI
-        app.renderer.render(app)?;
-    }
+    // Clean up terminal
+    execute!(
+        terminal.backend_mut(),
+        DisableMouseCapture,
+        LeaveAlternateScreen
+    )?;
+    terminal.show_cursor()?;
 
-    tracing::info!("RiceCoder TUI exited successfully");
-    Ok(())
+    result
 }

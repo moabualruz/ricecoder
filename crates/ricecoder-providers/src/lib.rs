@@ -15,6 +15,7 @@ pub mod providers;
 pub mod rate_limiter;
 pub mod redaction;
 pub mod security_headers;
+pub mod streaming;
 pub mod token_counter;
 
 // Re-export commonly used types
@@ -33,4 +34,5 @@ pub use providers::{
 pub use rate_limiter::{ExponentialBackoff, RateLimiterRegistry, TokenBucketLimiter};
 pub use redaction::{contains_sensitive_info, redact, Redacted, RedactionFilter};
 pub use security_headers::{SecurityHeadersBuilder, SecurityHeadersValidator};
+pub use streaming::{simulate_stream, simulate_word_stream, SimulatedStream, WordStream};
 pub use token_counter::{TokenCounter, TokenCounterTrait};

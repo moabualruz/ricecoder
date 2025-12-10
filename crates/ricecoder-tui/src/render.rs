@@ -15,9 +15,83 @@ impl Renderer {
     }
 
     /// Render the application
-    pub fn render(&self, _app: &App) -> anyhow::Result<()> {
-        // TODO: Implement rendering with ratatui
+    /// 
+    /// This method renders the entire TUI application using ratatui.
+    /// It sets up the layout and renders all widgets based on the current app state.
+    /// 
+    /// Note: This is a stateless render function that works with the terminal
+    /// managed by the main event loop. The terminal is initialized once in main.rs
+    /// and reused for all render calls.
+    /// 
+    /// Requirements: 1.2 - Render the TUI interface
+    pub fn render(&self, app: &App) -> anyhow::Result<()> {
+        // This is a placeholder that demonstrates the rendering structure.
+        // In a real implementation, this would be called from within a terminal.draw() closure.
+        // The actual rendering happens in the main event loop in main.rs.
+        
+        tracing::debug!(
+            "Rendering TUI - Mode: {}, Messages: {}, Input: {}",
+            app.current_mode_name(),
+            app.chat.messages.len(),
+            app.chat.input
+        );
+
         Ok(())
+    }
+
+    /// Render the UI frame using ratatui's Frame
+    /// 
+    /// This method is called from within the terminal.draw() closure in main.rs.
+    /// It handles all the actual rendering of widgets.
+    /// 
+    /// Requirements: 1.2 - Render the TUI interface
+    pub fn render_frame(&self, f: &mut ratatui::Frame, app: &App) {
+        // Get the available area
+        let area = f.size();
+
+        // Create the main layout
+        let chunks = Layout::default()
+            .direction(ratatui::layout::Direction::Vertical)
+            .constraints([
+                Constraint::Length(1),  // Mode indicator
+                Constraint::Min(5),      // Chat area
+                Constraint::Length(3),   // Input area
+            ])
+            .split(area);
+
+        // Render mode indicator
+        let mode_text = format!("Mode: {} | {}", app.current_mode_name(), app.current_mode_shortcut());
+        let mode_block = ratatui::widgets::Block::default()
+            .title("RiceCoder")
+            .borders(ratatui::widgets::Borders::BOTTOM);
+        let mode_paragraph = ratatui::widgets::Paragraph::new(mode_text)
+            .block(mode_block)
+            .style(Style::default().fg(Color::Cyan));
+        f.render_widget(mode_paragraph, chunks[0]);
+
+        // Render chat area
+        let chat_block = ratatui::widgets::Block::default()
+            .title("Chat")
+            .borders(ratatui::widgets::Borders::ALL);
+        let chat_text = if app.chat.messages.is_empty() {
+            "Welcome to RiceCoder TUI! Type your message below.".to_string()
+        } else {
+            app.chat.messages.join("\n")
+        };
+        let chat_paragraph = ratatui::widgets::Paragraph::new(chat_text)
+            .block(chat_block)
+            .wrap(ratatui::widgets::Wrap { trim: true });
+        f.render_widget(chat_paragraph, chunks[1]);
+
+        // Render input area
+        let input_block = ratatui::widgets::Block::default()
+            .title("Input")
+            .borders(ratatui::widgets::Borders::ALL);
+        let input_text = format!("> {}", app.chat.input);
+        let input_paragraph = ratatui::widgets::Paragraph::new(input_text)
+            .block(input_block)
+            .style(Style::default().fg(Color::Green));
+        f.render_widget(input_paragraph, chunks[2]);
     }
 
     /// Render a diff widget in unified view

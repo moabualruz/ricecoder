@@ -6,6 +6,8 @@ use crate::chat::ChatSession;
 use crate::error::{CliError, CliResult};
 use crate::output::OutputStyle;
 use ricecoder_storage::{ConfigLoader, PathResolver};
+use ricecoder_providers::provider::ProviderRegistry;
+use ricecoder_providers::models::ChatRequest;
 
 /// Interactive chat mode
 pub struct ChatCommand {
@@ -106,7 +108,7 @@ impl ChatCommand {
         Ok(kb)
     }
 
-    /// Process initial message
+    /// Process initial message by sending to provider and getting response
     fn process_initial_message(&self, message: &str, session: &mut ChatSession) -> CliResult<()> {
         let style = OutputStyle::default();
 
@@ -118,14 +120,126 @@ impl ChatCommand {
         println!("{}", message);
         println!("{}", style.info("Processing message..."));
 
-        // TODO: Send to AI provider and get response
-        let response = "This is a placeholder response. Full AI integration coming soon.";
-        session.add_message("assistant".to_string(), response.to_string());
+        // Send to AI provider and get response
+        let response = self.send_to_provider(message, session)?;
+        session.add_message("assistant".to_string(), response.clone());
 
-        println!("{}", style.success(response));
+        println!("{}", style.success(&response));
         println!();
 
         Ok(())
+    }
+
+    /// Send message to provider and get response
+    fn send_to_provider(&self, message: &str, session: &ChatSession) -> CliResult<String> {
+        // Create a runtime for async operations
+        let rt = tokio::runtime::Runtime::new()
+            .map_err(|e| CliError::Internal(format!("Failed to create runtime: {}", e)))?;
+
+        rt.block_on(self.send_to_provider_async(message, session))
+    }
+
+    /// Async version of send_to_provider
+    async fn send_to_provider_async(
+        &self,
+        _message: &str,
+        session: &ChatSession,
+    ) -> CliResult<String> {
+        use futures::stream::StreamExt;
+
+        // Create provider registry and register Zen provider
+        let mut registry = ProviderRegistry::new();
+
+        // Get API key from environment or use empty string for free models
+        let api_key = std::env::var("OPENCODE_API_KEY").ok();
+
+        // Create and register Zen provider
+        let zen_provider = ricecoder_providers::ZenProvider::new(api_key)
+            .map_err(|e| CliError::Provider(format!("Failed to create Zen provider: {}", e)))?;
+
+        registry
+            .register(std::sync::Arc::new(zen_provider))
+            .map_err(|e| CliError::Provider(format!("Failed to register provider: {}", e)))?;
+
+        // Get the provider
+        let provider = registry
+            .get(&session.provider)
+            .map_err(|e| CliError::Provider(format!("Provider not found: {}", e)))?;
+
+        // Create chat request with conversation history
+        let mut messages = Vec::new();
+        for msg in session.get_history() {
+            messages.push(ricecoder_providers::models::Message {
+                role: msg.role.clone(),
+                content: msg.content.clone(),
+            });
+        }
+
+        let request = ChatRequest {
+            model: session.model.clone(),
+            messages,
+            temperature: None,
+            max_tokens: None,
+            stream: true,
+        };
+
+        // Try streaming first, fall back to non-streaming if not supported
+        match provider.chat_stream(request.clone()).await {
+            Ok(mut stream) => {
+                // Consume the streaming response and collect all chunks
+                let mut full_response = String::new();
+                
+                while let Some(result) = stream.next().await {
+                    match result {
+                        Ok(chunk) => {
+                            // Display chunk in real-time
+                            print!("{}", chunk.content);
+                            std::io::Write::flush(&mut std::io::stdout())
+                                .map_err(|e| CliError::Internal(e.to_string()))?;
+                            full_response.push_str(&chunk.content);
+                        }
+                        Err(e) => {
+                            return Err(CliError::Provider(format!("Streaming error: {}", e)));
+                        }
+                    }
+                }
+                
+                Ok(full_response)
+            }
+            Err(_) => {
+                // Fall back to non-streaming if streaming is not supported
+                let mut request = request;
+                request.stream = false;
+                
+                let response = provider
+                    .chat(request)
+                    .await
+                    .map_err(|e| CliError::Provider(format!("Chat request failed: {}", e)))?;
+
+                Ok(response.content)
+            }
+        }
+    }
+
+    /// Create and initialize a provider for the chat session
+    async fn create_provider(&self) -> CliResult<std::sync::Arc<dyn ricecoder_providers::provider::Provider>> {
+        // Get API key from environment or use empty string for free models
+        let api_key = std::env::var("OPENCODE_API_KEY").ok();
+
+        // Create and return the appropriate provider based on configuration
+        match self.get_provider()?.as_str() {
+            "zen" => {
+                let zen_provider = ricecoder_providers::ZenProvider::new(api_key)
+                    .map_err(|e| CliError::Provider(format!("Failed to create Zen provider: {}", e)))?;
+                Ok(std::sync::Arc::new(zen_provider))
+            }
+            provider_name => {
+                Err(CliError::Provider(format!(
+                    "Unsupported provider: {}",
+                    provider_name
+                )))
+            }
+        }
     }
 
     /// Enter interactive chat loop
@@ -172,6 +286,13 @@ impl Command for ChatCommand {
 
         // Create chat session
         let mut session = ChatSession::new(provider, model);
+
+        // Create and initialize provider for the session
+        let rt = tokio::runtime::Runtime::new()
+            .map_err(|e| CliError::Internal(format!("Failed to create runtime: {}", e)))?;
+
+        let provider_instance = rt.block_on(self.create_provider())?;
+        session.set_provider(provider_instance);
 
         // Run chat loop
         self.run_chat_loop(&mut session)?;

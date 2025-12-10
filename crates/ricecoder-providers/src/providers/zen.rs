@@ -225,14 +225,14 @@ impl ZenProvider {
 
                     let zen_response: ZenListModelsResponse = resp.json().await?;
                     return Ok(zen_response
-                        .models
+                        .data
                         .into_iter()
                         .map(|m| ModelInfo {
-                            id: m.id,
-                            name: m.name,
+                            id: m.id.clone(),
+                            name: m.name.unwrap_or_else(|| m.id.clone()),
                             provider: "zen".to_string(),
-                            context_window: m.context_window,
-                            capabilities: m.capabilities,
+                            context_window: m.context_window.unwrap_or(4096),
+                            capabilities: m.capabilities.unwrap_or_default(),
                             pricing: m.pricing.map(|p| crate::models::Pricing {
                                 input_per_1k_tokens: p.input_cost_per_1k,
                                 output_per_1k_tokens: p.output_cost_per_1k,
@@ -369,6 +369,59 @@ impl ZenProvider {
             _ => "/chat/completions",
         }
     }
+
+    /// Parse Server-Sent Events (SSE) streaming response from Zen API
+    fn parse_streaming_response(
+        text: &str,
+        model: String,
+    ) -> Result<crate::provider::ChatStream, ProviderError> {
+        use futures::stream;
+
+        let lines: Vec<String> = text
+            .lines()
+            .filter(|line| !line.is_empty() && !line.starts_with(':'))
+            .map(|line| line.to_string())
+            .collect();
+
+        let stream = stream::iter(lines.into_iter().filter_map(move |line| {
+            if line.starts_with("data: ") {
+                let data = &line[6..];
+
+                // Check for stream end marker
+                if data == "[DONE]" {
+                    return None;
+                }
+
+                // Parse JSON chunk
+                match serde_json::from_str::<ZenStreamChunk>(data) {
+                    Ok(chunk) => {
+                        if let Some(choice) = chunk.choices.first() {
+                            if let Some(delta) = &choice.delta {
+                                if let Some(content) = &delta.content {
+                                    return Some(Ok(ChatResponse {
+                                        content: content.clone(),
+                                        model: model.clone(),
+                                        usage: TokenUsage {
+                                            prompt_tokens: 0,
+                                            completion_tokens: 0,
+                                            total_tokens: 0,
+                                        },
+                                        finish_reason: FinishReason::Stop,
+                                    }));
+                                }
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        warn!("Failed to parse streaming chunk: {}", e);
+                    }
+                }
+            }
+            None
+        }));
+
+        Ok(Box::new(stream))
+    }
 }
 
 #[async_trait]
@@ -432,14 +485,21 @@ impl Provider for ZenProvider {
             }
         };
 
-        // Validate model
+        // Validate model - handle both "model-id" and "provider/model-id" formats
         let model_id = &request.model;
-        if !models.iter().any(|m| m.id == *model_id) {
+        let model_name = if model_id.contains('/') {
+            // Extract model name from "provider/model-id" format
+            model_id.split('/').nth(1).unwrap_or(model_id.as_str())
+        } else {
+            model_id.as_str()
+        };
+
+        if !models.iter().any(|m| m.id == model_name) {
             return Err(ProviderError::InvalidModel(model_id.clone()));
         }
 
         let zen_request = ZenChatRequest {
-            model: request.model.clone(),
+            model: model_name.to_string(),
             messages: request
                 .messages
                 .iter()
@@ -517,12 +577,75 @@ impl Provider for ZenProvider {
 
     async fn chat_stream(
         &self,
-        _request: ChatRequest,
+        mut request: ChatRequest,
     ) -> Result<crate::provider::ChatStream, ProviderError> {
-        // Streaming support will be implemented in a future iteration
-        Err(ProviderError::ProviderError(
-            "Streaming not yet implemented for Zen".to_string(),
-        ))
+
+        // Enable streaming in the request
+        request.stream = true;
+
+        // Send streaming request to Zen API
+        let mut retries = 0;
+        let max_retries = 3;
+
+        loop {
+            debug!("Sending streaming chat request to Zen API (attempt {})", retries + 1);
+
+            let response = self
+                .client
+                .post(format!("{}/chat/completions", self.base_url))
+                .header("Authorization", self.get_auth_header())
+                .json(&request)
+                .timeout(Duration::from_secs(120))
+                .send()
+                .await;
+
+            match response {
+                Ok(resp) => {
+                    let status = resp.status();
+                    if !status.is_success() {
+                        let error_text = resp.text().await.unwrap_or_default();
+                        error!("Zen API error ({}): {}", status, error_text);
+
+                        return match status.as_u16() {
+                            401 => Err(ProviderError::AuthError),
+                            429 => {
+                                if retries < max_retries {
+                                    let backoff = Duration::from_secs(2_u64.pow(retries as u32));
+                                    warn!("Rate limited, retrying after {:?}", backoff);
+                                    tokio::time::sleep(backoff).await;
+                                    retries += 1;
+                                    continue;
+                                }
+                                Err(ProviderError::RateLimited(60))
+                            }
+                            _ => Err(ProviderError::ProviderError(format!(
+                                "Zen API error: {}",
+                                status
+                            ))),
+                        };
+                    }
+
+                    // Parse the streaming response
+                    let model = request.model.clone();
+                    let text = resp.text().await?;
+                    let stream = Self::parse_streaming_response(&text, model)?;
+                    return Ok(stream);
+                }
+                Err(e) => {
+                    error!("Zen API request failed: {}", e);
+
+                    if retries < max_retries {
+                        let backoff = Duration::from_secs(2_u64.pow(retries as u32));
+                        warn!("Request failed, retrying after {:?}", backoff);
+                        tokio::time::sleep(backoff).await;
+                        retries += 1;
+                        continue;
+                    }
+
+                    return Err(ProviderError::from(e));
+                }
+            }
+        }
     }
 
     fn count_tokens(&self, content: &str, model: &str) -> Result<usize, ProviderError> {
@@ -631,19 +754,33 @@ struct ZenUsage {
     total_tokens: usize,
 }
 
-/// Zen API models list response
+/// Zen API models list response (OpenAI-compatible format)
 #[derive(Debug, Deserialize)]
 struct ZenListModelsResponse {
-    models: Vec<ZenModel>,
+    #[allow(dead_code)]
+    object: String,
+    data: Vec<ZenModel>,
 }
 
 /// Zen API model info
 #[derive(Debug, Deserialize, Clone)]
 struct ZenModel {
     id: String,
-    name: String,
-    context_window: usize,
-    capabilities: Vec<Capability>,
+    #[serde(default)]
+    name: Option<String>,
+    #[serde(default)]
+    #[allow(dead_code)]
+    object: String,
+    #[serde(default)]
+    #[allow(dead_code)]
+    created: Option<i64>,
+    #[serde(default)]
+    #[allow(dead_code)]
+    owned_by: Option<String>,
+    #[serde(default)]
+    context_window: Option<usize>,
+    #[serde(default)]
+    capabilities: Option<Vec<Capability>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pricing: Option<ZenPricing>,
     /// Whether this model is free to use (no API key required)
@@ -669,6 +806,26 @@ struct ZenTokenCountRequest {
 #[derive(Debug, Deserialize)]
 struct ZenTokenCountResponse {
     token_count: usize,
+}
+
+/// Zen API streaming chunk (SSE format)
+#[derive(Debug, Deserialize)]
+struct ZenStreamChunk {
+    choices: Vec<ZenStreamChoice>,
+}
+
+/// Zen API streaming choice
+#[derive(Debug, Deserialize)]
+struct ZenStreamChoice {
+    delta: Option<ZenStreamDelta>,
+    #[allow(dead_code)]
+    finish_reason: Option<String>,
+}
+
+/// Zen API streaming delta (contains incremental content)
+#[derive(Debug, Deserialize)]
+struct ZenStreamDelta {
+    content: Option<String>,
 }
 
 #[cfg(test)]
