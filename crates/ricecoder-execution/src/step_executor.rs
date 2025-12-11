@@ -4,7 +4,7 @@
 //! step execution with progress reporting and error handling.
 
 use crate::error::{ExecutionError, ExecutionResult};
-use crate::models::{ExecutionPlan, ExecutionStep, StepAction, StepResult};
+use crate::models::{BatchExecutionConfig, BatchExecutionOutput, BatchExecutionResult, BatchExecutionSummary, CommandOutput, ExecutionPlan, ExecutionStep, StepAction, StepResult};
 use std::time::Instant;
 use tracing::{debug, error, info, warn};
 
@@ -99,6 +99,7 @@ impl StepExecutor {
                             success: false,
                             error: Some(e.to_string()),
                             duration: std::time::Duration::from_secs(0),
+                            output: None,
                         };
                         self.completed_steps.push(result);
                     } else {
@@ -129,26 +130,27 @@ impl StepExecutor {
     pub fn execute_step(&self, step: &ExecutionStep) -> ExecutionResult<StepResult> {
         let start_time = Instant::now();
 
-        let success = match &step.action {
+        let (success, output) = match &step.action {
             StepAction::CreateFile { path, content } => {
                 self.handle_create_file(path, content)?;
-                true
+                (true, None)
             }
             StepAction::ModifyFile { path, diff } => {
                 self.handle_modify_file(path, diff)?;
-                true
+                (true, None)
             }
             StepAction::DeleteFile { path } => {
                 self.handle_delete_file(path)?;
-                true
+                (true, None)
             }
             StepAction::RunCommand { command, args } => {
-                self.handle_run_command(command, args)?;
-                true
+                let cmd_output = self.handle_run_command(command, args)?;
+                let success = cmd_output.exit_code.map(|code| code == 0).unwrap_or(false);
+                (success, Some(cmd_output))
             }
             StepAction::RunTests { pattern } => {
                 self.handle_run_tests(pattern)?;
-                true
+                (true, None)
             }
         };
 
@@ -159,6 +161,7 @@ impl StepExecutor {
             success,
             error: None,
             duration,
+            output,
         })
     }
 
@@ -189,6 +192,7 @@ impl StepExecutor {
             success: true,
             error: None,
             duration: std::time::Duration::from_secs(0),
+            output: None,
         };
         self.completed_steps.push(result);
         info!(step_id = %step_id, "Step skipped");
@@ -245,35 +249,162 @@ impl StepExecutor {
     }
 
     /// Handle command execution
-    fn handle_run_command(&self, command: &str, args: &[String]) -> ExecutionResult<()> {
-        debug!(command = %command, args_count = args.len(), "Running command");
+    async fn handle_run_command_async(&self, command: &str, args: &[String]) -> ExecutionResult<CommandOutput> {
+        debug!(command = %command, args_count = args.len(), "Running command asynchronously");
 
-        // Use std::process::Command to execute the command
-        let mut cmd = std::process::Command::new(command);
-        cmd.args(args);
+        // Use async CommandHandler with default settings
+        let output = crate::step_action_handler::CommandHandler::handle_async(
+            command,
+            args,
+            Some(120_000), // 2 minute timeout
+            Some(true),    // Require confirmation for dangerous commands
+        ).await?;
 
-        let output = cmd.output().map_err(|e| {
-            ExecutionError::StepFailed(format!("Failed to execute command {}: {}", command, e))
-        })?;
+        Ok(output)
+    }
 
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(ExecutionError::StepFailed(format!(
-                "Command {} failed with exit code {:?}: {}",
-                command,
-                output.status.code(),
-                stderr
-            )));
-        }
+    // Keep synchronous version for compatibility
+    fn handle_run_command(&self, command: &str, args: &[String]) -> ExecutionResult<CommandOutput> {
+        // For now, use the synchronous version - will be updated to async later
+        crate::step_action_handler::CommandHandler::handle(command, args)
+    }
 
-        let stdout = String::from_utf8_lossy(&output.stdout);
+    /// Execute a batch of steps with progress tracking and error handling
+    pub async fn execute_batch(
+        &self,
+        steps: &[ExecutionStep],
+        config: &BatchExecutionConfig,
+    ) -> ExecutionResult<BatchExecutionOutput> {
+        let start_time = std::time::Instant::now();
+        let mut results = Vec::new();
+        let mut successful = 0;
+        let mut failed = 0;
+        let mut cancelled = false;
+
         info!(
-            command = %command,
-            output_len = stdout.len(),
-            "Command executed successfully"
+            "Starting batch execution of {} steps (concurrent: {}, continue_on_error: {})",
+            steps.len(),
+            config.max_concurrent,
+            config.continue_on_error
         );
 
-        Ok(())
+        // For now, implement sequential execution (max_concurrent = 1)
+        // TODO: Implement concurrent execution when max_concurrent > 1
+        for step in steps {
+            if cancelled {
+                break;
+            }
+
+            let step_start = std::time::Instant::now();
+            let step_result = self.execute_single_step_async(step).await;
+            let step_duration = step_start.elapsed().as_millis() as u64;
+
+            let batch_result = match step_result {
+                Ok(result) => {
+                    if result.success {
+                        successful += 1;
+                    } else {
+                        failed += 1;
+                        if !config.continue_on_error {
+                            cancelled = true;
+                        }
+                    }
+
+                    BatchExecutionResult {
+                        step_id: result.step_id.clone(),
+                        success: result.success,
+                        output: result.output,
+                        duration_ms: step_duration,
+                        error: result.error,
+                    }
+                }
+                Err(e) => {
+                    failed += 1;
+                    if !config.continue_on_error {
+                        cancelled = true;
+                    }
+
+                    BatchExecutionResult {
+                        step_id: step.id.clone(),
+                        success: false,
+                        output: None,
+                        duration_ms: step_duration,
+                        error: Some(e.to_string()),
+                    }
+                }
+            };
+
+            results.push(batch_result);
+
+            // Check for batch timeout
+            if let Some(batch_timeout) = config.batch_timeout_ms {
+                if start_time.elapsed().as_millis() as u64 > batch_timeout {
+                    warn!("Batch execution timed out after {}ms", batch_timeout);
+                    cancelled = true;
+                    break;
+                }
+            }
+        }
+
+        let total_duration = start_time.elapsed().as_millis() as u64;
+        let rolled_back = config.rollback_on_failure && failed > 0;
+
+        // TODO: Implement actual rollback logic when needed
+
+        let summary = BatchExecutionSummary {
+            total_steps: steps.len(),
+            successful,
+            failed,
+            total_duration_ms: total_duration,
+            cancelled,
+            rolled_back,
+        };
+
+        info!(
+            "Batch execution completed: {}/{} successful, {} failed, {}ms total",
+            successful, steps.len(), failed, total_duration
+        );
+
+        Ok(BatchExecutionOutput { results, summary })
+    }
+
+    /// Execute a single step asynchronously
+    async fn execute_single_step_async(&self, step: &ExecutionStep) -> ExecutionResult<StepResult> {
+        let start_time = std::time::Instant::now();
+
+        let (success, output) = match &step.action {
+            StepAction::CreateFile { path, content } => {
+                self.handle_create_file(path, content)?;
+                (true, None)
+            }
+            StepAction::ModifyFile { path, diff } => {
+                self.handle_modify_file(path, diff)?;
+                (true, None)
+            }
+            StepAction::DeleteFile { path } => {
+                self.handle_delete_file(path)?;
+                (true, None)
+            }
+            StepAction::RunCommand { command, args } => {
+                let cmd_output = self.handle_run_command_async(command, args).await?;
+                let success = cmd_output.exit_code.map(|code| code == 0).unwrap_or(false);
+                (success, Some(cmd_output))
+            }
+            StepAction::RunTests { pattern } => {
+                self.handle_run_tests(pattern)?;
+                (true, None)
+            }
+        };
+
+        let duration = start_time.elapsed();
+
+        Ok(StepResult {
+            step_id: step.id.clone(),
+            success,
+            error: None,
+            duration,
+            output,
+        })
     }
 
     /// Handle test execution

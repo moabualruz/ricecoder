@@ -24,6 +24,9 @@ futures = { workspace = true }
 ricecoder-workflows = { path = "../ricecoder-workflows", version = "0.1" }
 ricecoder-files = { path = "../ricecoder-files", version = "0.1" }
 ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
+tree-sitter = "0.20"
+tree-sitter-bash = "0.20"
+regex = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

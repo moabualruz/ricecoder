@@ -29,7 +29,8 @@ pub use error::{ExecutionError, ExecutionResult};
 pub use file_operations::FileOperations;
 pub use manager::ExecutionManager;
 pub use models::{
-    ComplexityLevel, ExecutionMode, ExecutionPlan, ExecutionResult as ExecutionResultData,
+    BatchExecutionConfig, BatchExecutionOutput, BatchExecutionResult, BatchExecutionSummary,
+    CommandOutput, ComplexityLevel, ExecutionMode, ExecutionPlan, ExecutionResult as ExecutionResultData,
     ExecutionState, ExecutionStatus, ExecutionStep, RiskFactor, RiskLevel, RiskScore,
     RollbackAction, RollbackType, StepAction, StepResult, StepStatus, TestFailure, TestFramework,
     TestResults,

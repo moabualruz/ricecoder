@@ -29,6 +29,14 @@ pub enum FileError {
     #[error("Backup failed: {0}")]
     BackupFailed(String),
 
+    /// Invalid path provided
+    #[error("Invalid path: {0}")]
+    InvalidPath(String),
+
+    /// File watcher error
+    #[error("File watcher error: {0}")]
+    WatcherError(String),
+
     /// Backup integrity check failed: hash mismatch
     #[error("Backup integrity check failed: hash mismatch")]
     BackupCorrupted,

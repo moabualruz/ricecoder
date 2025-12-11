@@ -12,8 +12,11 @@
 
 use crate::error::{ExecutionError, ExecutionResult};
 use crate::file_operations::FileOperations;
+use crate::models::CommandOutput;
 use std::process::Command;
-use tracing::{debug, error, info};
+use std::time::Duration;
+use tokio::time::timeout;
+use tracing::{debug, error, info, warn};
 
 /// Handles file creation actions
 pub struct CreateFileHandler;
@@ -87,48 +90,184 @@ impl DeleteFileHandler {
 pub struct CommandHandler;
 
 impl CommandHandler {
-    /// Execute a shell command
+    /// Execute a shell command with advanced features
     ///
     /// # Arguments
     /// * `command` - Command to execute
     /// * `args` - Command arguments
+    /// * `timeout_ms` - Optional timeout in milliseconds (default: 120000 = 2 minutes)
+    /// * `require_confirmation` - Whether to check for dangerous commands
+    ///
+    /// # Returns
+    /// Returns CommandOutput with stdout, stderr, and exit code
     ///
     /// # Errors
-    /// Returns error if command execution fails or returns non-zero exit code
-    pub fn handle(command: &str, args: &[String]) -> ExecutionResult<()> {
-        debug!(command = %command, args_count = args.len(), "Running command");
+    /// Returns error if command execution fails or dangerous command is detected
+    pub async fn handle_async(
+        command: &str,
+        args: &[String],
+        timeout_ms: Option<u64>,
+        require_confirmation: Option<bool>,
+    ) -> ExecutionResult<CommandOutput> {
+        debug!(command = %command, args_count = args.len(), "Running command asynchronously");
 
-        // Create and execute the command
+        // Check for dangerous commands if required
+        if require_confirmation.unwrap_or(false) {
+            Self::check_dangerous_command(command, args)?;
+        }
+
+        // Parse command with tree-sitter for validation
+        Self::validate_command_syntax(command, args)?;
+
+        // Execute command with timeout
+        let timeout_duration = Duration::from_millis(timeout_ms.unwrap_or(120_000)); // 2 minutes default
+
+        let result = timeout(timeout_duration, Self::execute_command_async(command, args)).await;
+
+        match result {
+            Ok(output_result) => output_result,
+            Err(_) => {
+                warn!(command = %command, timeout_ms = timeout_duration.as_millis(), "Command timed out");
+                Err(ExecutionError::StepFailed(format!(
+                    "Command '{}' timed out after {}ms",
+                    command,
+                    timeout_duration.as_millis()
+                )))
+            }
+        }
+    }
+
+    /// Legacy synchronous version for backward compatibility
+    pub fn handle(command: &str, args: &[String]) -> ExecutionResult<CommandOutput> {
+        // Run the async version on a blocking task
+        tokio::task::block_in_place(|| {
+            tokio::runtime::Handle::current().block_on(async {
+                Self::handle_async(command, args, None, Some(false)).await
+            })
+        })
+    }
+
+    /// Execute command asynchronously with streaming output
+    async fn execute_command_async(command: &str, args: &[String]) -> ExecutionResult<CommandOutput> {
+        use tokio::process::Command;
+        use std::process::Stdio;
+
         let mut cmd = Command::new(command);
-        cmd.args(args);
+        cmd.args(args)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
 
-        let output = cmd.output().map_err(|e| {
-            ExecutionError::StepFailed(format!("Failed to execute command {}: {}", command, e))
+        let start_time = std::time::Instant::now();
+
+        let mut child = cmd.spawn().map_err(|e| {
+            ExecutionError::StepFailed(format!("Failed to spawn command '{}': {}", command, e))
         })?;
 
-        // Check exit code
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            let exit_code = output.status.code().unwrap_or(-1);
+        // Wait for completion
+        let output = child.wait_with_output().await.map_err(|e| {
+            ExecutionError::StepFailed(format!("Failed to wait for command '{}': {}", command, e))
+        })?;
+
+        let duration = start_time.elapsed();
+
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        let exit_code = output.status.code();
+
+        let command_output = CommandOutput {
+            stdout,
+            stderr,
+            exit_code,
+        };
+
+        if output.status.success() {
+            info!(
+                command = %command,
+                duration_ms = duration.as_millis(),
+                output_len = command_output.stdout.len(),
+                "Command executed successfully"
+            );
+        } else {
+            let exit_code = exit_code.unwrap_or(-1);
             error!(
                 command = %command,
                 exit_code = exit_code,
-                stderr = %stderr,
+                duration_ms = duration.as_millis(),
+                stderr = %command_output.stderr,
                 "Command failed"
             );
-            return Err(ExecutionError::StepFailed(format!(
-                "Command {} failed with exit code {}: {}",
-                command, exit_code, stderr
+        }
+
+        Ok(command_output)
+    }
+
+    /// Check for dangerous command patterns
+    fn check_dangerous_command(command: &str, args: &[String]) -> ExecutionResult<()> {
+        let full_command = format!("{} {}", command, args.join(" "));
+
+        // Dangerous command patterns
+        let dangerous_patterns = [
+            // File system destruction
+            r"\brm\s+-rf\s+/?[^/]",  // rm -rf / or rm -rf /* (but allow rm -rf /tmp/something)
+            r"\brm\s+-rf\s+/\s*$",   // rm -rf /
+            r"\bdd\s+if=/dev/zero",  // dd if=/dev/zero (disk wiping)
+            r"\bmkfs\.",             // mkfs commands (filesystem formatting)
+            r"\bfdisk\s+.*\bdelete", // fdisk delete operations
+
+            // System control
+            r"\bshutdown\b",         // shutdown commands
+            r"\breboot\b",          // reboot commands
+            r"\bhalt\b",            // halt commands
+
+            // Privilege escalation
+            r"\bsudo\b",            // sudo usage
+            r"\bsu\b",              // su usage
+
+            // Network dangerous
+            r"\bcurl\s+.*\|\s*bash", // curl | bash patterns
+            r"\bwget\s+.*\|\s*bash", // wget | bash patterns
+
+            // Process killing
+            r"\bkill\s+-9\s+-1",    // kill -9 -1 (kill all processes)
+            r"\bpkill\s+-9\s+.*",   // pkill -9 patterns
+        ];
+
+        for pattern in &dangerous_patterns {
+            if regex::Regex::new(pattern).map_or(false, |re| re.is_match(&full_command)) {
+                return Err(ExecutionError::ValidationError(format!(
+                    "Dangerous command detected: '{}'. This command requires explicit confirmation.",
+                    full_command
+                )));
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Validate command syntax using tree-sitter
+    fn validate_command_syntax(command: &str, args: &[String]) -> ExecutionResult<()> {
+        let full_command = format!("{} {}", command, args.join(" "));
+
+        // Initialize tree-sitter parser
+        let mut parser = tree_sitter::Parser::new();
+        parser.set_language(tree_sitter_bash::language().into()).map_err(|e| {
+            ExecutionError::ValidationError(format!("Failed to load bash grammar: {}", e))
+        })?;
+
+        // Parse the command
+        let tree = parser.parse(&full_command, None).ok_or_else(|| {
+            ExecutionError::ValidationError("Failed to parse bash command".to_string())
+        })?;
+
+        // Check for syntax errors
+        if tree.root_node().has_error() {
+            return Err(ExecutionError::ValidationError(format!(
+                "Invalid bash syntax in command: '{}'",
+                full_command
             )));
         }
 
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        info!(
-            command = %command,
-            output_len = stdout.len(),
-            "Command executed successfully"
-        );
-
+        debug!(command = %full_command, "Command syntax validated successfully");
         Ok(())
     }
 }
@@ -319,17 +458,22 @@ mod tests {
     fn test_command_handler_success() {
         let result = CommandHandler::handle("echo", &["hello".to_string()]);
         assert!(result.is_ok());
+        let output = result.unwrap();
+        assert_eq!(output.exit_code, Some(0));
+        assert!(output.stdout.contains("hello"));
     }
 
     #[test]
     fn test_command_handler_failure() {
         let result = CommandHandler::handle("false", &[]);
-        assert!(result.is_err());
+        assert!(result.is_ok()); // Command executed, but failed
+        let output = result.unwrap();
+        assert_ne!(output.exit_code, Some(0));
     }
 
     #[test]
     fn test_command_handler_nonexistent() {
         let result = CommandHandler::handle("nonexistent_command_xyz", &[]);
-        assert!(result.is_err());
+        assert!(result.is_err()); // Command not found
     }
 }

@@ -193,6 +193,73 @@ pub struct StepResult {
     pub error: Option<String>,
     /// Duration of step execution
     pub duration: Duration,
+    /// Command output (stdout/stderr) if applicable
+    pub output: Option<CommandOutput>,
+}
+
+/// Output from command execution
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CommandOutput {
+    /// Standard output
+    pub stdout: String,
+    /// Standard error
+    pub stderr: String,
+    /// Exit code
+    pub exit_code: Option<i32>,
+}
+
+/// Batch execution configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BatchExecutionConfig {
+    /// Whether to continue on individual failures
+    pub continue_on_error: bool,
+    /// Maximum number of concurrent executions (default: 1 for sequential)
+    pub max_concurrent: usize,
+    /// Global timeout for the entire batch (optional)
+    pub batch_timeout_ms: Option<u64>,
+    /// Whether to rollback on failure
+    pub rollback_on_failure: bool,
+}
+
+/// Individual batch execution result
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BatchExecutionResult {
+    /// Step ID that was executed
+    pub step_id: String,
+    /// Whether this step succeeded
+    pub success: bool,
+    /// Command output (if applicable)
+    pub output: Option<CommandOutput>,
+    /// Execution duration in milliseconds
+    pub duration_ms: u64,
+    /// Error message (if failed)
+    pub error: Option<String>,
+}
+
+/// Batch execution summary
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BatchExecutionSummary {
+    /// Total number of steps executed
+    pub total_steps: usize,
+    /// Number of successful executions
+    pub successful: usize,
+    /// Number of failed executions
+    pub failed: usize,
+    /// Total execution time in milliseconds
+    pub total_duration_ms: u64,
+    /// Whether the batch was cancelled
+    pub cancelled: bool,
+    /// Whether rollback was performed
+    pub rolled_back: bool,
+}
+
+/// Complete batch execution result
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BatchExecutionOutput {
+    /// Results for each step
+    pub results: Vec<BatchExecutionResult>,
+    /// Execution summary
+    pub summary: BatchExecutionSummary,
 }
 
 /// Test results from running tests

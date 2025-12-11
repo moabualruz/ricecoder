@@ -56,6 +56,11 @@ async fn main() -> Result<()> {
     // Create and run the application
     let mut app = App::new()?;
 
+    // Initialize file watcher
+    if let Err(e) = app.init_file_watcher() {
+        tracing::warn!("Failed to initialize file watcher: {}", e);
+    }
+
     // Run the application with graceful shutdown support
     let result = run_with_shutdown(&mut app, &shutdown_flag, terminal_state.capabilities()).await;
 
@@ -113,6 +118,11 @@ async fn run_with_shutdown(app: &mut App, shutdown_flag: &Arc<AtomicBool>, capab
             // Poll for events
             if let Some(event) = app.event_loop.poll().await? {
                 app.handle_event(event)?;
+            }
+
+            // Process file watcher events
+            if let Err(e) = app.process_file_watcher_events() {
+                tracing::warn!("Failed to process file watcher events: {}", e);
             }
 
             // Render the UI using the terminal

@@ -1,0 +1,9 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc b392180b65da25743dd359e4f8dadd215fe8daf5d865b66255d95529724e407d # shrinks to empty_old = "", empty_new = "", whitespace_old = " ", unicode_old = "¡", unicode_new = "\u{80}"
+cc d191ea95b4141aeed5a3b25188202e05d60381aebae0d1eee34d397ec2dda6f3 # shrinks to content = "\u{feff}", target = "\u{feff}", replacement = "\u{b}"
+cc 4a64672c65d283cfea99e5d6642beb0fb0e5471fa3d4349277f4ba1fec25227a # shrinks to old_content = "A", new_content = "\0Ѩ\u{162fd}p.🕴\u{3a8a8}f\u{60b05}Ⱥ\t𞢞?\u{5}\u{1b}\u{88}\u{814be}`|\u{b}w\t뮌{I𩂠Ѩu-\u{b}\u{ff7c0}🕴\rf.O𪍡\r&\u{105890}$T*U𥴲{Ѩ=õ \u{93e34}𠨔\u{202e}=\u{597}\u{7ed3f})\u{47ca9}/\u{b0a41}<\u{eced2}\u{f4cae}\u{1b}\u{b6686}<\u{fde9f}:*:`Ⱥ\t\u{202e}\u{7}\u{42a12}\u{7999a}\u{f2a9b}:\u{83599}\u{f32cd}芘\u{6b64f}\"/¥Z$!\u{7df2f}%\u{1b}Ѩ�\0*Ѩ7¥\u{feff}𧴫Á&🕴\u{feff}\u{1a8e0}\u{a6ec9}/\u{84859}𤴠\u{5}#G=\u{5a07e}\u{feff}%Ѩ\u{b858a}\u{4}\t$%*:Q\u{202e}\"\u{cf723}(¡𫬚\u{aa225}{\"\u{5499b}\\[\u{4}\\Æ{\u{36443}-Ѩ\u{b}%{\"<\u{82}VѨ=\u{ffa8f}$2Z�\u{feff}.\u{1b}\t/\u{7b378}\r\u{87b20}\\\0🕴Ѩ몮7*\u{8}eB`!\t\"\u{a3309}$`\u{1b}\u{a4020}'\u{ebd3a}'*&%)\"(f1.$𬔺`#\r\u{e5cdf}\u{58c2a}&𠋦`\u{3a675}ퟀ7/\"\u{19fe7}[?\u{10de90}\u{774eb}/g\u{b}\u{48da9}\u{fd598}\r\u{feff}K{:$�î?\u{d7027}`Ѩ%Ѩ\u{1b}\"P\u{d307b}\u{e7a77}`\u{ec048}\u{ee98e}\u{423cb}\u{2}\u{1c8e9}\rl\u{ac135}+\0x/=`\t\"\u{1b}\u{202e}&𔇷\u{9434d}'$Ѩ\u{10e4c7}\u{1b}�\u{ddad7}$\u{6}\u{f3476}𭃬�H:R~\u{7fb92}\u{b}=&\t\t𘉯\"\u{ae666}<Z𰴸\0", file_name = "zdTtxt"

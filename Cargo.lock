@@ -3415,6 +3415,7 @@ dependencies = [
  "chrono",
  "futures",
  "proptest",
+ "regex",
  "ricecoder-files",
  "ricecoder-storage",
  "ricecoder-workflows",
@@ -3426,6 +3427,8 @@ dependencies = [
  "tokio",
  "tokio-test",
  "tracing",
+ "tree-sitter",
+ "tree-sitter-bash",
  "uuid",
 ]
 
@@ -3461,6 +3464,7 @@ dependencies = [
  "chrono",
  "fxhash",
  "git2",
+ "notify",
  "proptest",
  "serde",
  "serde_json",
@@ -4031,6 +4035,7 @@ dependencies = [
  "ratatui-textarea",
  "regex",
  "resvg 0.40.0",
+ "ricecoder-files",
  "ricecoder-help",
  "ricecoder-images",
  "ricecoder-sessions",
@@ -5281,6 +5286,16 @@ checksum = "e747b1f9b7b931ed39a548c1fae149101497de3c1fc8d9e18c62c1a66c683d3d"
 dependencies = [
  "cc",
  "regex",
+]
+
+[[package]]
+name = "tree-sitter-bash"
+version = "0.20.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "57da2032c37eb2ce29fd18df7d3b94355fec8d6d854d8f80934955df542b5906"
+dependencies = [
+ "cc",
+ "tree-sitter",
 ]
 
 [[package]]

@@ -136,6 +136,10 @@ pub struct App {
     pub help_dialog: ricecoder_help::HelpDialog,
     /// File picker widget for @ file references
     pub file_picker: crate::file_picker::FilePickerWidget,
+    /// File watcher for detecting external changes
+    pub file_watcher: Option<ricecoder_files::FileWatcher>,
+    /// File watcher event receiver
+    pub file_watcher_receiver: Option<tokio::sync::broadcast::Receiver<ricecoder_files::FileChangeBatch>>,
 }
 
 impl App {
@@ -187,6 +191,8 @@ impl App {
             image_widget: crate::image_widget::ImageWidget::new(),
             help_dialog: ricecoder_help::HelpDialog::default_ricecoder(),
             file_picker: crate::file_picker::FilePickerWidget::new(),
+            file_watcher: None,
+            file_watcher_receiver: None,
         };
 
         Ok(app)
@@ -241,101 +247,51 @@ impl App {
 
             // Render the UI using ratatui's terminal.draw() closure
             terminal.draw(|f| {
-                crate::render::Renderer::render_frame(f, self);
+                Renderer::render_frame(f, self);
             })?;
         }
 
         Ok(())
     }
 
-    /// Switch to a different mode
-    pub fn switch_mode(&mut self, mode: AppMode) {
-        if self.mode != mode {
-            tracing::info!("Switching mode from {:?} to {:?}", self.mode, mode);
-            self.previous_mode = self.mode;
-            self.mode = mode;
+    /// Initialize file watcher for the current working directory
+    pub fn init_file_watcher(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        let mut watcher = ricecoder_files::FileWatcher::new()?;
+        let cwd = std::env::current_dir()?;
 
-            // Notify widget integration of mode switch
-            if let Err(e) = self
-                .widget_integration
-                .on_mode_switch(self.previous_mode, self.mode)
-            {
-                tracing::error!("Failed to switch mode: {}", e);
-            }
-        }
-    }
+        watcher.watch(&cwd)?;
+        watcher.start()?;
 
-    /// Switch to the next mode in the cycle
-    pub fn next_mode(&mut self) {
-        let next = self.mode.next();
-        self.switch_mode(next);
-    }
+        let receiver = watcher.subscribe();
 
-    /// Switch to the previous mode in the cycle
-    pub fn previous_mode_switch(&mut self) {
-        let prev = self.mode.previous();
-        self.switch_mode(prev);
-    }
+        self.file_watcher = Some(watcher);
+        self.file_watcher_receiver = Some(receiver);
 
-    /// Toggle between current and previous mode
-    pub fn toggle_mode(&mut self) {
-        let prev = self.previous_mode;
-        self.switch_mode(prev);
-    }
-
-    /// Get the current mode display name
-    pub fn current_mode_name(&self) -> &'static str {
-        self.mode.display_name()
-    }
-
-    /// Get the current mode shortcut
-    pub fn current_mode_shortcut(&self) -> &'static str {
-        self.mode.shortcut()
-    }
-
-    /// Switch to a theme by name
-    pub fn switch_theme(&mut self, name: &str) -> Result<()> {
-        self.theme_manager.switch_by_name(name)?;
-        self.theme = self.theme_manager.current()?;
-        self.config.theme = name.to_string();
-        self.config.save()?;
-        tracing::info!("Switched to theme: {}", name);
+        tracing::info!("File watcher initialized for directory: {}", cwd.display());
         Ok(())
     }
 
-    /// Get available themes
-    pub fn available_themes(&self) -> Vec<&'static str> {
-        self.theme_manager.available_themes()
-    }
+    /// Process file watcher events
+    pub fn process_file_watcher_events(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        if let Some(receiver) = &mut self.file_watcher_receiver {
+            // Try to receive any pending events (non-blocking)
+            while let Ok(batch) = receiver.try_recv() {
+                tracing::debug!("Received file change batch with {} events", batch.count);
 
-    /// Get current theme name
-    pub fn current_theme_name(&self) -> Result<String> {
-        self.theme_manager.current_name()
-    }
+                // Update file picker with changes
+                self.file_picker.handle_file_changes(&batch.events);
 
-    /// Synchronize widget state
-    pub fn sync_widget_state(&mut self) {
-        // Create a temporary copy of app state for synchronization
-        let mode = self.mode;
+                // TODO: Handle conflicts with open files
+                // TODO: Update other UI components that show file information
+            }
+        }
 
-        // Sync state with widgets
-        self.widget_integration.widgets.prompt.context.mode = mode;
-        tracing::debug!("Widget state synchronized for mode: {:?}", mode);
-    }
+        // Process pending events in the watcher
+        if let Some(watcher) = &self.file_watcher {
+            watcher.process_pending_events()?;
+        }
 
-    /// Get the active widgets container
-    pub fn widgets(&self) -> &crate::integration::WidgetContainer {
-        &self.widget_integration.widgets
-    }
-
-    /// Get mutable access to the active widgets container
-    pub fn widgets_mut(&mut self) -> &mut crate::integration::WidgetContainer {
-        &mut self.widget_integration.widgets
-    }
-
-    /// Get the layout coordinator
-    pub fn layout(&self) -> &crate::integration::LayoutCoordinator {
-        &self.widget_integration.layout
+        Ok(())
     }
 
     /// Handle input submission
@@ -363,18 +319,6 @@ impl App {
             "/exit" | "/quit" => {
                 self.should_exit = true;
                 tracing::info!("Exit command received");
-            }
-            "/new" => {
-                // TODO: Create new session
-                tracing::info!("New session command");
-            }
-            "/sessions" => {
-                // TODO: List sessions
-                tracing::info!("List sessions command");
-            }
-            "/clear" => {
-                // TODO: Clear current session
-                tracing::info!("Clear session command");
             }
             _ => {
                 tracing::warn!("Unknown slash command: {}", command);
@@ -724,6 +668,36 @@ impl App {
         if key_event.code == crate::event::KeyCode::Tab && key_event.modifiers.alt {
             self.toggle_mode();
         }
+    }
+
+    /// Switch to a different application mode
+    pub fn switch_mode(&mut self, mode: AppMode) {
+        if self.mode != mode {
+            self.previous_mode = self.mode;
+            self.mode = mode;
+            tracing::info!("Switched to mode: {:?}", mode);
+        }
+    }
+
+    /// Cycle to the next mode
+    pub fn next_mode(&mut self) {
+        let next = match self.mode {
+            AppMode::Chat => AppMode::Command,
+            AppMode::Command => AppMode::Diff,
+            AppMode::Diff => AppMode::Help,
+            AppMode::Help => AppMode::Chat,
+        };
+        self.switch_mode(next);
+    }
+
+    /// Switch to the previous mode
+    pub fn previous_mode_switch(&mut self) {
+        self.switch_mode(self.previous_mode);
+    }
+
+    /// Toggle between current and previous mode
+    pub fn toggle_mode(&mut self) {
+        self.switch_mode(self.previous_mode);
     }
 
     /// Switch mode with accessibility announcement

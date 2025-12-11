@@ -21,6 +21,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 tracing = { workspace = true }
 fxhash = "0.2"
+notify = "6.1"
 
 [dev-dependencies]
 proptest = { workspace = true }

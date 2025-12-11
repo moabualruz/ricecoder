@@ -15,6 +15,7 @@ pub mod manager;
 pub mod models;
 pub mod transaction;
 pub mod verifier;
+pub mod watcher;
 pub mod writer;
 
 // Re-export public API
@@ -31,4 +32,5 @@ pub use models::{
 };
 pub use transaction::TransactionManager;
 pub use verifier::ContentVerifier;
+pub use watcher::{FileChangeBatch, FileChangeEvent, FileWatcher, WatcherConfig};
 pub use writer::SafeWriter;

@@ -70,7 +70,11 @@ pub struct FilePickerWidget {
     max_visible_items: usize,
     /// Scroll offset
     scroll_offset: usize,
-    /// Maximum file size to include (in bytes)
+    /// Recently modified files (for visual indicators)
+    recently_modified: HashSet<PathBuf>,
+    /// Files with external changes (for conflict detection)
+    externally_modified: HashSet<PathBuf>,
+    /// Maximum file size for inclusion (in bytes)
     max_file_size: u64,
 }
 
@@ -97,6 +101,8 @@ impl FilePickerWidget {
             max_visible_items: 15,
             scroll_offset: 0,
             max_file_size: 1024 * 1024, // 1MB default
+            recently_modified: HashSet::new(),
+            externally_modified: HashSet::new(),
         }
     }
 
@@ -246,6 +252,71 @@ impl FilePickerWidget {
         self.update_filtered_files();
         self.selected_indices.clear();
         self.scroll_offset = 0;
+    }
+
+    /// Handle file change events
+    pub fn handle_file_changes(&mut self, changes: &[ricecoder_files::FileChangeEvent]) {
+        for change in changes {
+            match change {
+                ricecoder_files::FileChangeEvent::Created(path) |
+                ricecoder_files::FileChangeEvent::Modified(path) => {
+                    // Mark as recently modified
+                    self.recently_modified.insert(path.clone());
+
+                    // If the file is in our current directory, refresh the list
+                    if let Ok(relative_path) = path.strip_prefix(&self.cwd) {
+                        if relative_path.components().count() <= 1 {
+                            // File is in current directory, refresh
+                            if self.visible {
+                                self.refresh_file_list();
+                                self.update_filtered_files();
+                            }
+                        }
+                    }
+                }
+                ricecoder_files::FileChangeEvent::Deleted(path) => {
+                    // Remove from recently modified if it was there
+                    self.recently_modified.remove(path);
+
+                    // If the file is in our current directory, refresh the list
+                    if let Ok(relative_path) = path.strip_prefix(&self.cwd) {
+                        if relative_path.components().count() <= 1 {
+                            if self.visible {
+                                self.refresh_file_list();
+                                self.update_filtered_files();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Mark files as externally modified (for conflict detection)
+    pub fn mark_externally_modified(&mut self, paths: &[PathBuf]) {
+        for path in paths {
+            self.externally_modified.insert(path.clone());
+        }
+    }
+
+    /// Clear external modification markers
+    pub fn clear_external_modifications(&mut self) {
+        self.externally_modified.clear();
+    }
+
+    /// Get files that have been externally modified
+    pub fn externally_modified_files(&self) -> Vec<PathBuf> {
+        self.externally_modified.iter().cloned().collect()
+    }
+
+    /// Check if a file has been recently modified
+    pub fn is_recently_modified(&self, path: &Path) -> bool {
+        self.recently_modified.contains(path)
+    }
+
+    /// Check if a file has been externally modified
+    pub fn is_externally_modified(&self, path: &Path) -> bool {
+        self.externally_modified.contains(path)
     }
 
     /// Confirm selection and return selected files with content
@@ -425,7 +496,7 @@ impl FilePickerWidget {
     }
 
     /// Render the file picker
-    pub fn render(&mut self, frame: &mut Frame, area: Rect) {
+    pub fn render(&self, frame: &mut Frame, area: Rect) {
         if !self.visible {
             return;
         }
@@ -521,8 +592,12 @@ impl FilePickerWidget {
                     spans.push(Span::styled("📄 ", Style::default().fg(Color::White)));
                 }
 
-                // Add warning indicators
-                if file_info.is_binary {
+                // Add status indicators
+                if self.is_externally_modified(&path) {
+                    spans.push(Span::styled("🔄 ", Style::default().fg(Color::Blue)));
+                } else if self.is_recently_modified(&path) {
+                    spans.push(Span::styled("✨ ", Style::default().fg(Color::Green)));
+                } else if file_info.is_binary {
                     spans.push(Span::styled("🔒 ", Style::default().fg(Color::Red)));
                 } else if file_info.is_too_large {
                     spans.push(Span::styled("⚠️ ", Style::default().fg(Color::Yellow)));
@@ -617,10 +692,27 @@ impl FilePickerWidget {
     /// Render footer
     fn render_footer(&self, frame: &mut Frame, area: Rect) {
         let selected_count = self.selected_indices.len();
-        let footer_text = if selected_count > 0 {
-            format!("Selected: {} files | Enter: Confirm | Esc: Cancel", selected_count)
-        } else {
+        let modified_count = self.recently_modified.len();
+        let external_count = self.externally_modified.len();
+
+        let mut footer_parts = Vec::new();
+
+        if selected_count > 0 {
+            footer_parts.push(format!("Selected: {} files", selected_count));
+        }
+
+        if modified_count > 0 {
+            footer_parts.push(format!("Modified: {} files", modified_count));
+        }
+
+        if external_count > 0 {
+            footer_parts.push(format!("External: {} files", external_count));
+        }
+
+        let footer_text = if footer_parts.is_empty() {
             "↑↓: Navigate | Space: Select | Enter: Confirm | Esc: Cancel".to_string()
+        } else {
+            format!("{} | Enter: Confirm | Esc: Cancel", footer_parts.join(" | "))
         };
 
         let footer = Paragraph::new(footer_text)

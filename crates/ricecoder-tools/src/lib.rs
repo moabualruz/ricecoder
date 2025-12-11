@@ -56,6 +56,7 @@ pub mod edit;
 pub mod error;
 pub mod patch;
 pub mod provider;
+pub mod read;
 pub mod result;
 pub mod search;
 pub mod todo;
@@ -65,6 +66,7 @@ pub mod webfetch;
 pub use edit::{BatchFileEditInput, BatchFileEditOutput, FileEditInput, FileEditOutput, FileEditTool};
 pub use error::ToolError;
 pub use provider::{Provider, ProviderRegistry};
+pub use read::{BatchFileReadInput, BatchFileReadOutput, ContentFilter, FileReadInput, FileReadOutput, FileReadResult, FileReadTool};
 pub use result::{ResultMetadata, ToolErrorInfo, ToolResult};
 pub use search::{SearchInput, SearchOutput, SearchResult, SearchTool};
 pub use todo::{
