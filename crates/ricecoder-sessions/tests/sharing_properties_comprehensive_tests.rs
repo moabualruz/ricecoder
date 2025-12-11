@@ -389,7 +389,7 @@ proptest! {
         prop_assert_eq!(shared_view.history.len(), session.history.len());
         for (original, shared) in session.history.iter().zip(shared_view.history.iter()) {
             prop_assert_eq!(&original.id, &shared.id);
-            prop_assert_eq!(&original.content, &shared.content);
+            prop_assert_eq!(&original.content(), &shared.content());
             prop_assert_eq!(original.role, shared.role);
         }
     }

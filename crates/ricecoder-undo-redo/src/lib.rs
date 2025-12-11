@@ -19,6 +19,6 @@ mod integration_tests;
 pub use change::{Change, ChangeTracker, ChangeType};
 pub use checkpoint::{Checkpoint, CheckpointManager};
 pub use error::UndoRedoError;
-pub use history::{HistoryEntry, HistoryManager};
+pub use history::{FileChangeInfo, HistoryConfig, HistoryEntry, HistoryManager};
 pub use models::ChangeValidator;
 pub use persistence::{HistorySnapshot, HistoryStore, StorageManager, StorageStats};

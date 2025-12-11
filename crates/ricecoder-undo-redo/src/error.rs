@@ -29,6 +29,10 @@ pub enum UndoRedoError {
     #[error("Validation error: {0}")]
     ValidationError(String),
 
+    /// Persistence error
+    #[error("Persistence error: {0}")]
+    PersistenceError(String),
+
     /// Serialization error
     #[error("Serialization error: {0}")]
     SerializationError(#[from] serde_json::Error),
@@ -57,5 +61,10 @@ impl UndoRedoError {
     /// Create a new ValidationError with context
     pub fn validation_error(msg: impl Into<String>) -> Self {
         Self::ValidationError(msg.into())
+    }
+
+    /// Create a new PersistenceError with context
+    pub fn persistence_error(msg: impl Into<String>) -> Self {
+        Self::PersistenceError(msg.into())
     }
 }

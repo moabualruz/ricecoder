@@ -1,8 +1,9 @@
 //! Session manager for lifecycle management and session switching
 
 use crate::error::{SessionError, SessionResult};
-use crate::models::{Session, SessionContext};
-use std::collections::HashMap;
+use crate::models::{Session, SessionContext, MessagePart};
+use std::collections::{HashMap, HashSet};
+use chrono::{Duration, Utc};
 
 /// Manages session lifecycle and switching
 #[derive(Debug, Clone)]
@@ -129,6 +130,165 @@ impl SessionManager {
     pub fn is_limit_reached(&self) -> bool {
         self.sessions.len() >= self.session_limit
     }
+
+    /// Generate a descriptive title for a session based on its content
+    pub fn generate_session_title(&self, session_id: &str) -> SessionResult<String> {
+        let session = self.get_session(session_id)?;
+
+        // If session already has a custom title, use it
+        if !session.name.is_empty() && session.name != "Untitled" {
+            return Ok(session.name.clone());
+        }
+
+        // Generate title based on message content
+        if session.history.is_empty() {
+            return Ok("Empty Session".to_string());
+        }
+
+        // Analyze the first few messages to determine the topic
+        let mut topics = Vec::new();
+        let mut tools_used = HashSet::new();
+
+        for message in session.history.iter().take(5) {
+            // Extract text content
+            for part in &message.parts {
+                match part {
+                    MessagePart::Text(text) => {
+                        // Simple keyword extraction (could be enhanced with NLP)
+                        let lower_text = text.to_lowercase();
+                        if lower_text.contains("error") || lower_text.contains("bug") || lower_text.contains("fix") {
+                            topics.push("Bug Fix");
+                        } else if lower_text.contains("feature") || lower_text.contains("implement") || lower_text.contains("add") {
+                            topics.push("Feature Development");
+                        } else if lower_text.contains("refactor") || lower_text.contains("clean") || lower_text.contains("optimize") {
+                            topics.push("Code Refactoring");
+                        } else if lower_text.contains("test") || lower_text.contains("testing") {
+                            topics.push("Testing");
+                        } else if lower_text.contains("documentation") || lower_text.contains("docs") || lower_text.contains("readme") {
+                            topics.push("Documentation");
+                        }
+                    }
+                    MessagePart::ToolInvocation(invocation) => {
+                        tools_used.insert(invocation.tool_name.clone());
+                    }
+                    MessagePart::ToolResult(result) => {
+                        tools_used.insert(result.tool_name.clone());
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        // Generate title based on analysis
+        let title = if !topics.is_empty() {
+            // Use the most common topic
+            let primary_topic = topics.into_iter().next().unwrap();
+            if tools_used.is_empty() {
+                format!("{} Session", primary_topic)
+            } else {
+                format!("{} with {}", primary_topic, tools_used.into_iter().next().unwrap())
+            }
+        } else if !tools_used.is_empty() {
+            format!("Tool Usage: {}", tools_used.into_iter().next().unwrap())
+        } else {
+            // Fallback: use first message content
+            let first_content = session.history[0].content();
+            if first_content.len() > 50 {
+                format!("{}...", &first_content[..47])
+            } else {
+                first_content
+            }
+        };
+
+        Ok(title)
+    }
+
+    /// Generate a comprehensive summary for a session
+    pub fn generate_session_summary(&self, session_id: &str) -> SessionResult<SessionSummary> {
+        let session = self.get_session(session_id)?;
+
+        let mut summary = SessionSummary {
+            session_id: session.id.clone(),
+            title: self.generate_session_title(session_id)?,
+            duration: session.updated_at.signed_duration_since(session.created_at),
+            message_count: session.history.len(),
+            topics: Vec::new(),
+            files_modified: HashSet::new(),
+            tools_used: HashSet::new(),
+            last_activity: session.updated_at,
+        };
+
+        // Analyze all messages for detailed summary
+        for message in &session.history {
+            // Extract topics and tools
+            for part in &message.parts {
+                match part {
+                    MessagePart::Text(text) => {
+                        let lower_text = text.to_lowercase();
+                        if lower_text.contains("error") || lower_text.contains("bug") || lower_text.contains("fix") {
+                            summary.topics.push("Bug Fixes".to_string());
+                        } else if lower_text.contains("feature") || lower_text.contains("implement") || lower_text.contains("add") {
+                            summary.topics.push("Feature Development".to_string());
+                        } else if lower_text.contains("refactor") || lower_text.contains("clean") || lower_text.contains("optimize") {
+                            summary.topics.push("Code Refactoring".to_string());
+                        } else if lower_text.contains("test") || lower_text.contains("testing") {
+                            summary.topics.push("Testing".to_string());
+                        } else if lower_text.contains("documentation") || lower_text.contains("docs") {
+                            summary.topics.push("Documentation".to_string());
+                        }
+                    }
+                    MessagePart::ToolInvocation(invocation) => {
+                        summary.tools_used.insert(invocation.tool_name.clone());
+                    }
+                    MessagePart::ToolResult(result) => {
+                        summary.tools_used.insert(result.tool_name.clone());
+                    }
+                    MessagePart::FileReference(file_ref) => {
+                        summary.files_modified.insert(file_ref.path.clone());
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        // Remove duplicates from topics
+        summary.topics.sort();
+        summary.topics.dedup();
+
+        Ok(summary)
+    }
+
+    /// Update session title (manual override)
+    pub fn update_session_title(&mut self, session_id: &str, title: String) -> SessionResult<()> {
+        let session = self.sessions.get_mut(session_id)
+            .ok_or_else(|| SessionError::NotFound(session_id.to_string()))?;
+
+        session.name = title;
+        session.updated_at = Utc::now();
+
+        Ok(())
+    }
+}
+
+/// Session summary information
+#[derive(Debug, Clone)]
+pub struct SessionSummary {
+    /// Session ID
+    pub session_id: String,
+    /// Generated or manual title
+    pub title: String,
+    /// Total session duration
+    pub duration: Duration,
+    /// Number of messages in the session
+    pub message_count: usize,
+    /// Topics discussed (derived from content)
+    pub topics: Vec<String>,
+    /// Files that were modified or referenced
+    pub files_modified: HashSet<std::path::PathBuf>,
+    /// Tools that were used
+    pub tools_used: HashSet<String>,
+    /// Last activity timestamp
+    pub last_activity: chrono::DateTime<Utc>,
 }
 
 #[cfg(test)]

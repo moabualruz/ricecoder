@@ -66,7 +66,7 @@ proptest! {
         prop_assert_eq!(imported.history.len(), session.history.len());
         for (original_msg, imported_msg) in session.history.iter().zip(imported.history.iter()) {
             prop_assert_eq!(original_msg.role, imported_msg.role);
-            prop_assert_eq!(&original_msg.content, &imported_msg.content);
+            prop_assert_eq!(&original_msg.content(), &imported_msg.content());
         }
 
         // Verify the imported session has a different ID

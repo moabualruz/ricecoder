@@ -334,7 +334,7 @@ mod tests {
 
         let session = integration.get_session(&session_id).unwrap();
         assert_eq!(session.history.len(), 1);
-        assert_eq!(session.history[0].content, "Hello");
+        assert_eq!(session.history[0].content(), "Hello");
     }
 
     #[test]

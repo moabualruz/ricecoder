@@ -229,7 +229,7 @@ mod tests {
 
         let session = router.get_session(&session_id).unwrap();
         assert_eq!(session.history.len(), 1);
-        assert_eq!(session.history[0].content, "Hello");
+        assert_eq!(session.history[0].content(), "Hello");
     }
 
     #[test]
@@ -305,8 +305,8 @@ mod tests {
 
         assert_eq!(s1.history.len(), 1);
         assert_eq!(s2.history.len(), 1);
-        assert_eq!(s1.history[0].content, "Message 1");
-        assert_eq!(s2.history[0].content, "Message 2");
+        assert_eq!(s1.history[0].content(), "Message 1");
+        assert_eq!(s2.history[0].content(), "Message 2");
     }
 
     #[test]

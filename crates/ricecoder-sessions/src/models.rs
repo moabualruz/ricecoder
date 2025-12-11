@@ -2,8 +2,115 @@
 
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::HashMap;
+use std::path::PathBuf;
 use uuid::Uuid;
+
+/// Different types of content that can be part of a message
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum MessagePart {
+    /// Plain text content
+    Text(String),
+    /// Reasoning or thinking content (can be collapsed)
+    Reasoning(String),
+    /// Tool invocation with parameters
+    ToolInvocation(ToolInvocationPart),
+    /// Result from a tool execution
+    ToolResult(ToolResultPart),
+    /// Reference to a file
+    FileReference(FileReferencePart),
+    /// Image content
+    Image(ImagePart),
+    /// Code block with syntax highlighting
+    Code(CodePart),
+    /// Error message
+    Error(String),
+}
+
+/// Tool invocation part
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ToolInvocationPart {
+    /// Name of the tool being invoked
+    pub tool_name: String,
+    /// Parameters passed to the tool
+    pub parameters: Value,
+    /// Current status of the tool invocation
+    pub status: ToolStatus,
+    /// When the tool was started
+    pub started_at: Option<DateTime<Utc>>,
+}
+
+/// Tool result part
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ToolResultPart {
+    /// Name of the tool that was executed
+    pub tool_name: String,
+    /// Result from the tool execution
+    pub result: Value,
+    /// Status of the tool execution
+    pub status: ToolStatus,
+    /// Duration of the tool execution in milliseconds
+    pub duration_ms: u64,
+    /// Error message if the tool failed
+    pub error: Option<String>,
+}
+
+/// File reference part
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FileReferencePart {
+    /// Path to the file
+    pub path: PathBuf,
+    /// Size of the file in bytes
+    pub size: u64,
+    /// Content of the file (if small enough)
+    pub content: Option<String>,
+    /// Specific line range being referenced
+    pub line_range: Option<(usize, usize)>,
+}
+
+/// Image part
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ImagePart {
+    /// Path to the image file (if saved locally)
+    pub path: Option<PathBuf>,
+    /// Raw image data
+    pub data: Option<Vec<u8>>,
+    /// MIME type of the image
+    pub mime_type: String,
+    /// Width of the image
+    pub width: Option<u32>,
+    /// Height of the image
+    pub height: Option<u32>,
+}
+
+/// Code part
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CodePart {
+    /// Programming language for syntax highlighting
+    pub language: String,
+    /// Code content
+    pub content: String,
+    /// Optional filename
+    pub filename: Option<String>,
+    /// Whether to show line numbers
+    pub line_numbers: bool,
+}
+
+/// Status of a tool execution
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+pub enum ToolStatus {
+    /// Tool is pending execution
+    Pending,
+    /// Tool is currently running
+    Running,
+    /// Tool completed successfully
+    Complete,
+    /// Tool execution failed
+    Error,
+    /// Tool execution was cancelled
+    Cancelled,
+}
 
 /// Represents a session with its context, history, and metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -103,8 +210,8 @@ pub struct Message {
     pub id: String,
     /// Role of the message sender
     pub role: MessageRole,
-    /// Message content
-    pub content: String,
+    /// Message content parts (replaces simple content field)
+    pub parts: Vec<MessagePart>,
     /// When the message was created
     pub timestamp: DateTime<Utc>,
     /// Additional metadata about the message
@@ -112,15 +219,117 @@ pub struct Message {
 }
 
 impl Message {
-    /// Create a new message
+    /// Create a new message with text content (backwards compatibility)
     pub fn new(role: MessageRole, content: String) -> Self {
         Self {
             id: Uuid::new_v4().to_string(),
             role,
-            content,
+            parts: vec![MessagePart::Text(content)],
             timestamp: Utc::now(),
             metadata: MessageMetadata::default(),
         }
+    }
+
+    /// Create a new empty message
+    pub fn new_empty(role: MessageRole) -> Self {
+        Self {
+            id: Uuid::new_v4().to_string(),
+            role,
+            parts: Vec::new(),
+            timestamp: Utc::now(),
+            metadata: MessageMetadata::default(),
+        }
+    }
+
+    /// Add text content to the message
+    pub fn add_text(&mut self, text: impl Into<String>) {
+        self.parts.push(MessagePart::Text(text.into()));
+    }
+
+    /// Add reasoning content to the message
+    pub fn add_reasoning(&mut self, reasoning: impl Into<String>) {
+        self.parts.push(MessagePart::Reasoning(reasoning.into()));
+    }
+
+    /// Add code content to the message
+    pub fn add_code(&mut self, language: impl Into<String>, content: impl Into<String>) {
+        self.parts.push(MessagePart::Code(CodePart {
+            language: language.into(),
+            content: content.into(),
+            filename: None,
+            line_numbers: true,
+        }));
+    }
+
+    /// Add tool invocation to the message
+    pub fn add_tool_invocation(&mut self, tool_name: impl Into<String>, parameters: Value) {
+        self.parts.push(MessagePart::ToolInvocation(ToolInvocationPart {
+            tool_name: tool_name.into(),
+            parameters,
+            status: ToolStatus::Pending,
+            started_at: None,
+        }));
+    }
+
+    /// Add tool result to the message
+    pub fn add_tool_result(&mut self, tool_name: impl Into<String>, result: Value, status: ToolStatus, duration_ms: u64) {
+        self.parts.push(MessagePart::ToolResult(ToolResultPart {
+            tool_name: tool_name.into(),
+            result,
+            status,
+            duration_ms,
+            error: None,
+        }));
+    }
+
+    /// Add error content to the message
+    pub fn add_error(&mut self, error: impl Into<String>) {
+        self.parts.push(MessagePart::Error(error.into()));
+    }
+
+    /// Get the primary text content (first text part, for backwards compatibility)
+    pub fn content(&self) -> String {
+        for part in &self.parts {
+            if let MessagePart::Text(text) = part {
+                return text.clone();
+            }
+        }
+        String::new()
+    }
+
+    /// Get all text content concatenated
+    pub fn full_content(&self) -> String {
+        let mut result = String::new();
+        for part in &self.parts {
+            match part {
+                MessagePart::Text(text) => {
+                    result.push_str(text);
+                    result.push('\n');
+                }
+                MessagePart::Code(code) => {
+                    result.push_str(&format!("```{}\n{}\n```\n", code.language, code.content));
+                }
+                MessagePart::Reasoning(reasoning) => {
+                    result.push_str(&format!("💭 {}\n", reasoning));
+                }
+                MessagePart::Error(error) => {
+                    result.push_str(&format!("❌ {}\n", error));
+                }
+                MessagePart::ToolInvocation(invocation) => {
+                    result.push_str(&format!("🔧 {}({})\n", invocation.tool_name, invocation.parameters));
+                }
+                MessagePart::ToolResult(result_part) => {
+                    result.push_str(&format!("✅ {}: {}\n", result_part.tool_name, result_part.result));
+                }
+                MessagePart::FileReference(file_ref) => {
+                    result.push_str(&format!("📁 {}\n", file_ref.path.display()));
+                }
+                MessagePart::Image(image) => {
+                    result.push_str(&format!("🖼️ {} ({}x{})\n", image.mime_type, image.width.unwrap_or(0), image.height.unwrap_or(0)));
+                }
+            }
+        }
+        result.trim_end().to_string()
     }
 }
 

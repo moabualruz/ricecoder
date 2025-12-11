@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 374086fbd7488792fc7a66893aebd2c860110665e23cffa6f7a4e4f0f26174bd # shrinks to changes = [Change { id: "144e0e90-d0f7-4a36-8d2a-9f2976de8249", timestamp: 2025-12-11T21:52:39.640434200Z, file_path: "A", before: "", after: "a", description: ".", change_type: Create }, Change { id: "c374ec62-0726-4908-bf4d-b0d06abc60b7", timestamp: 2025-12-11T21:52:39.640441200Z, file_path: "_", before: "", after: "A", description: "A", change_type: Create }], config = HistoryConfig { max_undo_stack_size: 10, max_redo_stack_size: 5, session_scoped: false, enable_persistence: false, persistence_dir: None }

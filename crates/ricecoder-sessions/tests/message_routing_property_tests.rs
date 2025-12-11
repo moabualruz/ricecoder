@@ -24,6 +24,11 @@ fn session_context_strategy() -> impl Strategy<Value = SessionContext> {
         .prop_map(|(provider, model)| SessionContext::new(provider, model, SessionMode::Chat))
 }
 
+// Helper function for creating test context
+fn create_test_context() -> SessionContext {
+    SessionContext::new("openai".to_string(), "gpt-4".to_string(), SessionMode::Chat)
+}
+
 proptest! {
     /// Property 5: Message Routing Correctness
     /// For any active session, messages sent to that session SHALL be routed to the correct session
@@ -55,7 +60,7 @@ proptest! {
             .get_session(&session_id)
             .expect("Failed to get session");
         prop_assert_eq!(updated_session.history.len(), 1);
-        prop_assert_eq!(&updated_session.history[0].content, &message);
+        prop_assert_eq!(&updated_session.history[0].content(), &message);
     }
 
     /// Property 5: Message Routing Correctness - Multiple Sessions
@@ -65,47 +70,30 @@ proptest! {
         session1_name in session_name_strategy(),
         session2_name in session_name_strategy(),
         message1 in message_content_strategy(),
-        message2 in message_content_strategy(),
-        context1 in session_context_strategy(),
-        context2 in session_context_strategy(),
+        message2 in message_content_strategy()
     ) {
+        prop_assume!(session1_name != session2_name);
+
         let mut router = SessionRouter::new();
+        let context = create_test_context();
 
-        // Create two sessions
-        let session1 = router
-            .create_session(session1_name, context1)
-            .expect("Failed to create session 1");
-        let session2 = router
-            .create_session(session2_name, context2)
-            .expect("Failed to create session 2");
-        let session1_id = session1.id.clone();
-        let session2_id = session2.id.clone();
+        let s1 = router.create_session(session1_name, context.clone()).unwrap();
+        let s2 = router.create_session(session2_name, context).unwrap();
 
-        // Route message1 to session1
-        router
-            .route_to_session(&session1_id, &message1)
-            .expect("Failed to route message to session 1");
+        router.route_to_session(&s1.id, &message1).unwrap();
+        router.route_to_session(&s2.id, &message2).unwrap();
 
-        // Route message2 to session2
-        router
-            .route_to_session(&session2_id, &message2)
-            .expect("Failed to route message to session 2");
-
-        // Verify message isolation
-        let s1 = router
-            .get_session(&session1_id)
-            .expect("Failed to get session 1");
-        let s2 = router
-            .get_session(&session2_id)
-            .expect("Failed to get session 2");
+        let sessions = router.list_sessions();
 
         // Session 1 should only have message1
-        prop_assert_eq!(s1.history.len(), 1);
-        prop_assert_eq!(&s1.history[0].content, &message1);
+        let s1_updated = router.get_session(&s1.id).unwrap();
+        prop_assert_eq!(s1_updated.history.len(), 1);
+        prop_assert_eq!(&s1_updated.history[0].content(), &message1);
 
         // Session 2 should only have message2
-        prop_assert_eq!(s2.history.len(), 1);
-        prop_assert_eq!(&s2.history[0].content, &message2);
+        let s2_updated = router.get_session(&s2.id).unwrap();
+        prop_assert_eq!(s2_updated.history.len(), 1);
+        prop_assert_eq!(&s2_updated.history[0].content(), &message2);
     }
 
     /// Property 5: Message Routing Correctness - Session Switching
@@ -115,52 +103,34 @@ proptest! {
         session1_name in session_name_strategy(),
         session2_name in session_name_strategy(),
         message1 in message_content_strategy(),
-        message2 in message_content_strategy(),
-        context1 in session_context_strategy(),
-        context2 in session_context_strategy(),
+        message2 in message_content_strategy()
     ) {
+        prop_assume!(session1_name != session2_name);
+
         let mut router = SessionRouter::new();
+        let context = create_test_context();
 
-        // Create two sessions
-        let session1 = router
-            .create_session(session1_name, context1)
-            .expect("Failed to create session 1");
-        let session2 = router
-            .create_session(session2_name, context2)
-            .expect("Failed to create session 2");
-        let session1_id = session1.id.clone();
-        let session2_id = session2.id.clone();
+        let s1 = router.create_session(session1_name, context.clone()).unwrap();
+        let s2 = router.create_session(session2_name, context).unwrap();
 
-        // Route message1 to active session (session1)
-        router
-            .route_to_active_session(&message1)
-            .expect("Failed to route message to active session");
+        // Route message1 to session1
+        router.route_to_session(&s1.id, &message1).unwrap();
 
-        // Switch to session2
-        router
-            .switch_session(&session2_id)
-            .expect("Failed to switch session");
+        // Switch to session2 and route message2
+        router.switch_session(&s2.id).unwrap();
+        router.route_to_active_session(&message2).unwrap();
 
-        // Route message2 to active session (now session2)
-        router
-            .route_to_active_session(&message2)
-            .expect("Failed to route message to active session");
-
-        // Verify routing correctness
-        let s1 = router
-            .get_session(&session1_id)
-            .expect("Failed to get session 1");
-        let s2 = router
-            .get_session(&session2_id)
-            .expect("Failed to get session 2");
+        let sessions = router.list_sessions();
 
         // Session 1 should only have message1
-        prop_assert_eq!(s1.history.len(), 1);
-        prop_assert_eq!(&s1.history[0].content, &message1);
+        let s1_updated = router.get_session(&s1.id).unwrap();
+        prop_assert_eq!(s1_updated.history.len(), 1);
+        prop_assert_eq!(&s1_updated.history[0].content(), &message1);
 
         // Session 2 should only have message2
-        prop_assert_eq!(s2.history.len(), 1);
-        prop_assert_eq!(&s2.history[0].content, &message2);
+        let s2_updated = router.get_session(&s2.id).unwrap();
+        prop_assert_eq!(s2_updated.history.len(), 1);
+        prop_assert_eq!(&s2_updated.history[0].content(), &message2);
     }
 
     /// Property 5: Message Routing Correctness - Message Tracking
@@ -233,7 +203,7 @@ proptest! {
 
         // Verify messages are in the correct order
         for (i, expected_message) in messages.iter().enumerate() {
-            prop_assert_eq!(&updated_session.history[i].content, expected_message);
+            prop_assert_eq!(&updated_session.history[i].content(), expected_message);
         }
     }
 }

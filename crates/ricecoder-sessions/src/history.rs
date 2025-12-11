@@ -73,7 +73,7 @@ impl HistoryManager {
         let query_lower = query.to_lowercase();
         self.messages
             .iter()
-            .filter(|m| m.content.to_lowercase().contains(&query_lower))
+            .filter(|m| m.content().to_lowercase().contains(&query_lower))
             .cloned()
             .collect()
     }

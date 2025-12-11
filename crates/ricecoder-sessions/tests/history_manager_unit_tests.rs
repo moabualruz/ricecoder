@@ -34,7 +34,7 @@ fn test_add_message() {
     assert_eq!(manager.message_count(), 1);
     let messages = manager.get_all_messages();
     assert_eq!(messages.len(), 1);
-    assert_eq!(messages[0].content, "Hello");
+    assert_eq!(messages[0].content(), "Hello");
 }
 
 #[test]
@@ -67,9 +67,9 @@ fn test_message_ordering_by_timestamp() {
     // Messages should be ordered by timestamp
     let messages = manager.get_all_messages();
     assert_eq!(messages.len(), 3);
-    assert_eq!(messages[0].content, "First");
-    assert_eq!(messages[1].content, "Second");
-    assert_eq!(messages[2].content, "Third");
+    assert_eq!(messages[0].content(), "First");
+    assert_eq!(messages[1].content(), "Second");
+    assert_eq!(messages[2].content(), "Third");
 }
 
 #[test]
@@ -85,9 +85,9 @@ fn test_get_recent_messages() {
 
     let recent = manager.get_recent_messages(3);
     assert_eq!(recent.len(), 3);
-    assert_eq!(recent[0].content, "Message 3");
-    assert_eq!(recent[1].content, "Message 4");
-    assert_eq!(recent[2].content, "Message 5");
+    assert_eq!(recent[0].content(), "Message 3");
+    assert_eq!(recent[1].content(), "Message 4");
+    assert_eq!(recent[2].content(), "Message 5");
 }
 
 #[test]
@@ -121,8 +121,8 @@ fn test_search_by_content() {
 
     let results = manager.search_by_content("hello");
     assert_eq!(results.len(), 2);
-    assert!(results.iter().any(|m| m.content == "Hello world"));
-    assert!(results.iter().any(|m| m.content == "Hello again"));
+    assert!(results.iter().any(|m| m.content() == "Hello world"));
+    assert!(results.iter().any(|m| m.content() == "Hello again"));
 }
 
 #[test]
@@ -163,7 +163,7 @@ fn test_search_by_content_partial_match() {
 
     let results = manager.search_by_content("quick");
     assert_eq!(results.len(), 1);
-    assert_eq!(results[0].content, "The quick brown fox");
+    assert_eq!(results[0].content(), "The quick brown fox");
 }
 
 #[test]
@@ -178,9 +178,9 @@ fn test_max_size_enforcement() {
     // Should only keep the last 3 messages
     assert_eq!(manager.message_count(), 3);
     let messages = manager.get_all_messages();
-    assert_eq!(messages[0].content, "Message 2");
-    assert_eq!(messages[1].content, "Message 3");
-    assert_eq!(messages[2].content, "Message 4");
+    assert_eq!(messages[0].content(), "Message 2");
+    assert_eq!(messages[1].content(), "Message 3");
+    assert_eq!(messages[2].content(), "Message 4");
 }
 
 #[test]
@@ -196,8 +196,8 @@ fn test_max_size_enforcement_multiple_adds() {
 
     assert_eq!(manager.message_count(), 2);
     let messages = manager.get_all_messages();
-    assert_eq!(messages[0].content, "Message 4");
-    assert_eq!(messages[1].content, "Message 5");
+    assert_eq!(messages[0].content(), "Message 4");
+    assert_eq!(messages[1].content(), "Message 5");
 }
 
 #[test]
@@ -233,9 +233,9 @@ fn test_get_all_messages_ordering() {
     let all_messages = manager.get_all_messages();
     assert_eq!(all_messages.len(), 3);
     // Should be ordered by timestamp (oldest first)
-    assert_eq!(all_messages[0].content, "First");
-    assert_eq!(all_messages[1].content, "Second");
-    assert_eq!(all_messages[2].content, "Third");
+    assert_eq!(all_messages[0].content(), "First");
+    assert_eq!(all_messages[1].content(), "Second");
+    assert_eq!(all_messages[2].content(), "Third");
 }
 
 #[test]
@@ -266,8 +266,8 @@ fn test_search_preserves_order() {
     let results = manager.search_by_content("hello");
     assert_eq!(results.len(), 2);
     // Results should be in chronological order
-    assert_eq!(results[0].content, "First hello");
-    assert_eq!(results[1].content, "Second hello");
+    assert_eq!(results[0].content(), "First hello");
+    assert_eq!(results[1].content(), "Second hello");
 }
 
 #[test]

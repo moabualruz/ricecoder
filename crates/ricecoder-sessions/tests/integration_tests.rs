@@ -616,12 +616,12 @@ async fn test_message_routing_prevents_cross_session_leakage() {
 
     // Session 1 should have 2 messages
     assert_eq!(session1_data.history.len(), 2);
-    assert!(session1_data.history[0].content.contains("session 1"));
-    assert!(session1_data.history[1].content.contains("session 1"));
+    assert!(session1_data.history[0].content().contains("session 1"));
+    assert!(session1_data.history[1].content().contains("session 1"));
 
     // Session 2 should have 1 message
     assert_eq!(session2_data.history.len(), 1);
-    assert!(session2_data.history[0].content.contains("session 2"));
+    assert!(session2_data.history[0].content().contains("session 2"));
 }
 
 // ============================================================================

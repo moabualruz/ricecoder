@@ -124,7 +124,7 @@ fn prop_session_persistence_roundtrip() {
                 i
             );
             prop_assert_eq!(
-                &loaded_msg.content, &original_msg.content,
+                &loaded_msg.content(), &original_msg.content(),
                 "Message {} content mismatch",
                 i
             );

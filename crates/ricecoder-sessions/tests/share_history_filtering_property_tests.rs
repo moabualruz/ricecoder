@@ -114,7 +114,7 @@ proptest! {
                 "Message ID should be preserved"
             );
             prop_assert_eq!(
-                &original.content, &shared.content,
+                &original.content(), &shared.content(),
                 "Message content should be preserved"
             );
             prop_assert_eq!(

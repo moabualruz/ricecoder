@@ -3,6 +3,8 @@
 use crate::change::Change;
 use crate::error::UndoRedoError;
 use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
+use std::path::PathBuf;
 
 /// Represents a single entry in the change history
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -13,6 +15,48 @@ pub struct HistoryEntry {
     pub index: usize,
     /// Whether this change is currently undone
     pub is_undone: bool,
+    /// Session ID this change belongs to (for session-scoped history)
+    pub session_id: Option<String>,
+}
+
+/// Configuration for history management
+#[derive(Debug, Clone)]
+pub struct HistoryConfig {
+    /// Maximum number of undo operations to keep
+    pub max_undo_stack_size: usize,
+    /// Maximum number of redo operations to keep
+    pub max_redo_stack_size: usize,
+    /// Whether to enable session-scoped history
+    pub session_scoped: bool,
+    /// Whether to enable persistence
+    pub enable_persistence: bool,
+    /// Directory for persistent storage
+    pub persistence_dir: Option<PathBuf>,
+}
+
+impl Default for HistoryConfig {
+    fn default() -> Self {
+        HistoryConfig {
+            max_undo_stack_size: 100,
+            max_redo_stack_size: 50,
+            session_scoped: false,
+            enable_persistence: false,
+            persistence_dir: None,
+        }
+    }
+}
+
+/// File change tracking information
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FileChangeInfo {
+    /// File path that was changed
+    pub file_path: PathBuf,
+    /// Type of change
+    pub change_type: crate::change::ChangeType,
+    /// Session ID (if session-scoped)
+    pub session_id: Option<String>,
+    /// Timestamp of change
+    pub timestamp: chrono::DateTime<chrono::Utc>,
 }
 
 impl HistoryEntry {
@@ -22,6 +66,7 @@ impl HistoryEntry {
             change,
             index,
             is_undone: false,
+            session_id: None,
         }
     }
 }
@@ -31,21 +76,57 @@ pub struct HistoryManager {
     undo_stack: Vec<Change>,
     redo_stack: Vec<Change>,
     all_changes: Vec<HistoryEntry>,
+    config: HistoryConfig,
+    /// Track changes by session (session_id -> changes)
+    session_changes: HashMap<String, Vec<HistoryEntry>>,
+    /// Track file changes for quick lookup
+    file_changes: HashMap<PathBuf, Vec<FileChangeInfo>>,
+    /// Current session ID (if session-scoped)
+    current_session_id: Option<String>,
 }
 
 impl HistoryManager {
-    /// Create a new history manager
+    /// Create a new history manager with default configuration
     pub fn new() -> Self {
+        Self::with_config(HistoryConfig::default())
+    }
+
+    /// Create a new history manager with custom configuration
+    pub fn with_config(config: HistoryConfig) -> Self {
         HistoryManager {
             undo_stack: Vec::new(),
             redo_stack: Vec::new(),
             all_changes: Vec::new(),
+            config,
+            session_changes: HashMap::new(),
+            file_changes: HashMap::new(),
+            current_session_id: None,
         }
+    }
+
+    /// Set the current session ID for session-scoped history
+    pub fn set_current_session(&mut self, session_id: String) {
+        self.current_session_id = Some(session_id);
+    }
+
+    /// Clear the current session
+    pub fn clear_current_session(&mut self) {
+        self.current_session_id = None;
     }
 
     /// Record a change in history
     pub fn record_change(&mut self, change: Change) -> Result<(), UndoRedoError> {
         change.validate()?;
+
+        // Enforce stack size limits
+        if self.undo_stack.len() >= self.config.max_undo_stack_size {
+            // Remove oldest undo entry
+            let removed = self.undo_stack.remove(0);
+            // Mark as removed in all_changes if found
+            if let Some(entry) = self.all_changes.iter_mut().find(|e| e.change.id == removed.id) {
+                entry.is_undone = true; // Mark as effectively undone
+            }
+        }
 
         // Add to undo stack
         self.undo_stack.push(change.clone());
@@ -55,7 +136,27 @@ impl HistoryManager {
 
         // Add to all_changes history
         let index = self.all_changes.len();
-        self.all_changes.push(HistoryEntry::new(change, index));
+        let session_id = self.current_session_id.clone();
+        let mut entry = HistoryEntry::new(change.clone(), index);
+        entry.session_id = session_id.clone();
+        self.all_changes.push(entry);
+
+        // Add to session-scoped history if enabled
+        if self.config.session_scoped {
+            if let Some(session_id) = &session_id {
+                let session_entry = HistoryEntry::new(change.clone(), index);
+                self.session_changes.entry(session_id.clone()).or_insert_with(Vec::new).push(session_entry);
+            }
+        }
+
+        // Track file changes
+        let file_change_info = FileChangeInfo {
+            file_path: PathBuf::from(change.file_path.clone()),
+            change_type: change.change_type,
+            session_id: session_id,
+            timestamp: change.timestamp,
+        };
+        self.file_changes.entry(file_change_info.file_path.clone()).or_insert_with(Vec::new).push(file_change_info);
 
         Ok(())
     }
@@ -101,6 +202,127 @@ impl HistoryManager {
     /// Check if undo is available
     pub fn can_undo(&self) -> bool {
         !self.undo_stack.is_empty()
+    }
+
+    /// Get changes for a specific session
+    pub fn get_session_changes(&self, session_id: &str) -> Vec<&HistoryEntry> {
+        self.session_changes.get(session_id)
+            .map(|changes| changes.iter().collect())
+            .unwrap_or_default()
+    }
+
+    /// Get changes for a specific file
+    pub fn get_file_changes(&self, file_path: &PathBuf) -> Vec<&FileChangeInfo> {
+        self.file_changes.get(file_path)
+            .map(|changes| changes.iter().collect())
+            .unwrap_or_default()
+    }
+
+    /// Get all files that have been changed
+    pub fn get_changed_files(&self) -> HashSet<PathBuf> {
+        self.file_changes.keys().cloned().collect()
+    }
+
+    /// Get undo stack size
+    pub fn undo_stack_size(&self) -> usize {
+        self.undo_stack.len()
+    }
+
+    /// Get redo stack size
+    pub fn redo_stack_size(&self) -> usize {
+        self.redo_stack.len()
+    }
+
+    /// Get total history size
+    pub fn total_history_size(&self) -> usize {
+        self.all_changes.len()
+    }
+
+    /// Clear all history
+    pub fn clear_history(&mut self) {
+        self.undo_stack.clear();
+        self.redo_stack.clear();
+        self.all_changes.clear();
+        self.session_changes.clear();
+        self.file_changes.clear();
+    }
+
+    /// Clear history for a specific session
+    pub fn clear_session_history(&mut self, session_id: &str) {
+        if let Some(session_changes) = self.session_changes.get_mut(session_id) {
+            session_changes.clear();
+        }
+        // Also remove from main history (simplified - in practice would need more sophisticated filtering)
+        self.all_changes.retain(|entry| entry.session_id.as_ref() != Some(&session_id.to_string()));
+    }
+
+    /// Save history to persistent storage (if enabled)
+    pub fn save_history(&self) -> Result<(), UndoRedoError> {
+        if !self.config.enable_persistence {
+            return Ok(());
+        }
+
+        if let Some(persistence_dir) = &self.config.persistence_dir {
+            std::fs::create_dir_all(persistence_dir)?;
+
+            // Save main history
+            let history_path = persistence_dir.join("history.json");
+            let history_data = serde_json::to_string(&self.all_changes)?;
+            std::fs::write(history_path, history_data)?;
+
+            // Save session changes
+            let session_path = persistence_dir.join("session_changes.json");
+            let session_data = serde_json::to_string(&self.session_changes)?;
+            std::fs::write(session_path, session_data)?;
+
+            // Save file changes
+            let file_path = persistence_dir.join("file_changes.json");
+            let file_data = serde_json::to_string(&self.file_changes)?;
+            std::fs::write(file_path, file_data)?;
+
+            Ok(())
+        } else {
+            Err(UndoRedoError::PersistenceError("Persistence directory not configured".to_string()))
+        }
+    }
+
+    /// Load history from persistent storage (if enabled)
+    pub fn load_history(&mut self) -> Result<(), UndoRedoError> {
+        if !self.config.enable_persistence {
+            return Ok(());
+        }
+
+        if let Some(persistence_dir) = &self.config.persistence_dir {
+            // Load main history
+            let history_path = persistence_dir.join("history.json");
+            if history_path.exists() {
+                let history_data = std::fs::read_to_string(history_path)?;
+                self.all_changes = serde_json::from_str(&history_data)?;
+            }
+
+            // Load session changes
+            let session_path = persistence_dir.join("session_changes.json");
+            if session_path.exists() {
+                let session_data = std::fs::read_to_string(session_path)?;
+                self.session_changes = serde_json::from_str(&session_data)?;
+            }
+
+            // Load file changes
+            let file_path = persistence_dir.join("file_changes.json");
+            if file_path.exists() {
+                let file_data = std::fs::read_to_string(file_path)?;
+                self.file_changes = serde_json::from_str(&file_data)?;
+            }
+
+            // Rebuild undo/redo stacks from loaded history (simplified - would need more sophisticated logic)
+            // For now, just clear stacks since we can't reliably reconstruct them
+            self.undo_stack.clear();
+            self.redo_stack.clear();
+
+            Ok(())
+        } else {
+            Err(UndoRedoError::PersistenceError("Persistence directory not configured".to_string()))
+        }
     }
 
     /// Check if redo is available

@@ -139,7 +139,7 @@ fn prop_search_results_ordered() {
         let query_lower = query.to_lowercase();
         for result in results.iter() {
             prop_assert!(
-                result.content.to_lowercase().contains(&query_lower),
+                result.content().to_lowercase().contains(&query_lower),
                 "Search result should contain the query"
             );
         }
