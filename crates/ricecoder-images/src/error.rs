@@ -32,6 +32,10 @@ pub enum ImageError {
     #[error("Display error: {0}")]
     DisplayError(String),
 
+    /// Banner rendering failed.
+    #[error("Banner error: {0}")]
+    BannerError(String),
+
     /// I/O error.
     #[error("I/O error: {0}")]
     IoError(#[from] std::io::Error),

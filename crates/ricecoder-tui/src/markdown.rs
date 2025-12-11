@@ -1,5 +1,18 @@
 //! Markdown rendering for the TUI
 
+use lazy_static::lazy_static;
+use syntect::easy::HighlightLines;
+use syntect::parsing::SyntaxSet;
+use syntect::highlighting::{ThemeSet, Style as SyntectStyle};
+use syntect::util::LinesWithEndings;
+use ratatui::prelude::*;
+use ratatui::style::Color;
+
+lazy_static! {
+    pub static ref SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();
+    pub static ref THEME_SET: ThemeSet = ThemeSet::load_defaults();
+}
+
 /// Markdown element types
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MarkdownElement {
@@ -19,6 +32,20 @@ pub enum MarkdownElement {
     ListItem(String),
     /// Link (text, url)
     Link(String, String),
+    /// Newline
+    Newline,
+}
+
+impl MarkdownElement {
+    /// Check if element is a block element
+    pub fn is_block(&self) -> bool {
+        matches!(
+            self,
+            MarkdownElement::Header(_, _)
+                | MarkdownElement::CodeBlock(_, _)
+                | MarkdownElement::ListItem(_)
+        )
+    }
 }
 
 /// Markdown parser
@@ -74,6 +101,7 @@ impl MarkdownParser {
             // Parse inline elements
             let parsed = Self::parse_inline(line);
             elements.extend(parsed);
+            elements.push(MarkdownElement::Newline);
             i += 1;
         }
 
@@ -234,12 +262,41 @@ impl MarkdownParser {
                     output.push_str(url);
                     output.push(')');
                 }
+                MarkdownElement::Newline => output.push('\n'),
             }
         }
 
         output
     }
+
+    /// Highlight code block using syntect
+    pub fn highlight(code: &str, lang: Option<&str>) -> Vec<Line<'static>> {
+        let ps = &SYNTAX_SET;
+        let ts = &THEME_SET;
+        let syntax = lang
+            .and_then(|l| ps.find_syntax_by_token(l))
+            .unwrap_or_else(|| ps.find_syntax_plain_text());
+        
+        // Use base16-ocean.dark as a safe default that usually exists
+        // In a real app, map app theme to syntect theme
+        let theme = &ts.themes["base16-ocean.dark"]; 
+        
+        let mut h = HighlightLines::new(syntax, theme);
+        let mut lines = Vec::new();
+        
+        for line in LinesWithEndings::from(code) {
+            let ranges: Vec<(SyntectStyle, &str)> = h.highlight_line(line, ps).unwrap();
+            let spans: Vec<Span> = ranges.into_iter().map(|(style, text)| {
+                let fg = Color::Rgb(style.foreground.r, style.foreground.g, style.foreground.b);
+                Span::styled(text.to_string(), Style::default().fg(fg))
+            }).collect();
+            lines.push(Line::from(spans));
+        }
+        
+        lines
+    }
 }
+
 
 #[cfg(test)]
 mod tests {

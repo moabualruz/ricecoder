@@ -38,6 +38,11 @@ impl Color {
         format!("#{:02x}{:02x}{:02x}", self.r, self.g, self.b)
     }
 
+    /// Convert to ratatui Color
+    pub fn to_ratatui(&self) -> ratatui::style::Color {
+        ratatui::style::Color::Rgb(self.r, self.g, self.b)
+    }
+
     /// Calculate relative luminance (WCAG formula)
     pub fn luminance(&self) -> f32 {
         let r = self.r as f32 / 255.0;
@@ -82,6 +87,59 @@ impl Color {
     /// Check if contrast ratio meets WCAG AAA standard (7:1 for normal text)
     pub fn meets_wcag_aaa(&self, other: &Color) -> bool {
         self.contrast_ratio(other) >= 7.0
+    }
+
+    /// Adapt color to the specified color support level
+    pub fn adapt(&self, support: ColorSupport) -> Self {
+        match support {
+            ColorSupport::TrueColor => *self,
+            ColorSupport::Color256 => self.to_ansi256(),
+            ColorSupport::Color16 => self.to_ansi16(),
+        }
+    }
+
+    /// Convert to nearest ANSI 256 color
+    pub fn to_ansi256(&self) -> Self {
+        // Simple 6x6x6 cube mapping for now
+        // A full implementation would use a lookup table or better algorithm
+        let r = (self.r as u16 * 5 / 255) as u8;
+        let g = (self.g as u16 * 5 / 255) as u8;
+        let b = (self.b as u16 * 5 / 255) as u8;
+        
+        // Map back to RGB for the struct
+        Self {
+            r: r * 51,
+            g: g * 51,
+            b: b * 51,
+        }
+    }
+
+    /// Convert to nearest ANSI 16 color
+    pub fn to_ansi16(&self) -> Self {
+        // Very basic mapping based on brightness and dominant channel
+        let brightness = self.r as u16 + self.g as u16 + self.b as u16;
+        
+        if brightness < 100 {
+            return Self::new(0, 0, 0); // Black
+        }
+        
+        if brightness > 600 {
+            return Self::new(255, 255, 255); // White
+        }
+        
+        if self.r > self.g && self.r > self.b {
+            Self::new(255, 0, 0) // Red
+        } else if self.g > self.r && self.g > self.b {
+            Self::new(0, 255, 0) // Green
+        } else if self.b > self.r && self.b > self.g {
+            Self::new(0, 0, 255) // Blue
+        } else if self.r > self.b && self.g > self.b {
+            Self::new(255, 255, 0) // Yellow
+        } else if self.r > self.g && self.b > self.g {
+            Self::new(255, 0, 255) // Magenta
+        } else {
+            Self::new(0, 255, 255) // Cyan
+        }
     }
 }
 
@@ -283,7 +341,7 @@ impl Theme {
     pub fn high_contrast() -> Self {
         Self {
             name: "high-contrast".to_string(),
-            primary: Color::new(255, 255, 255), // Pure white (high contrast on black)
+            primary: Color::new(255, 255, 255), // Pure white
             secondary: Color::new(255, 255, 0), // Pure yellow
             accent: Color::new(255, 0, 0),      // Pure red
             background: Color::new(0, 0, 0),    // Pure black
@@ -292,6 +350,405 @@ impl Theme {
             warning: Color::new(255, 255, 0),   // Pure yellow
             success: Color::new(0, 255, 0),     // Pure green
         }
+    }
+
+    /// Create Catppuccin Latte theme
+    pub fn catppuccin_latte() -> Self {
+        Self {
+            name: "catppuccin-latte".to_string(),
+            primary: Color::new(30, 102, 245),     // Blue
+            secondary: Color::new(114, 135, 253),  // Lavender
+            accent: Color::new(230, 69, 83),       // Maroon
+            background: Color::new(239, 241, 245), // Base
+            foreground: Color::new(76, 79, 105),   // Text
+            error: Color::new(210, 15, 57),        // Red
+            warning: Color::new(223, 142, 29),     // Yellow
+            success: Color::new(64, 160, 43),      // Green
+        }
+    }
+
+    /// Create Catppuccin Frappe theme
+    pub fn catppuccin_frappe() -> Self {
+        Self {
+            name: "catppuccin-frappe".to_string(),
+            primary: Color::new(140, 170, 238),    // Blue
+            secondary: Color::new(186, 194, 222),  // Lavender
+            accent: Color::new(234, 153, 156),     // Maroon
+            background: Color::new(48, 52, 70),    // Base
+            foreground: Color::new(198, 208, 245), // Text
+            error: Color::new(231, 130, 132),      // Red
+            warning: Color::new(229, 200, 144),    // Yellow
+            success: Color::new(166, 209, 137),    // Green
+        }
+    }
+
+    /// Create Catppuccin Macchiato theme
+    pub fn catppuccin_macchiato() -> Self {
+        Self {
+            name: "catppuccin-macchiato".to_string(),
+            primary: Color::new(138, 173, 244),    // Blue
+            secondary: Color::new(183, 189, 248),  // Lavender
+            accent: Color::new(238, 153, 160),     // Maroon
+            background: Color::new(36, 39, 58),    // Base
+            foreground: Color::new(202, 211, 245), // Text
+            error: Color::new(237, 135, 150),      // Red
+            warning: Color::new(238, 212, 159),    // Yellow
+            success: Color::new(166, 218, 149),    // Green
+        }
+    }
+
+    /// Create Catppuccin Mocha theme
+    pub fn catppuccin_mocha() -> Self {
+        Self {
+            name: "catppuccin-mocha".to_string(),
+            primary: Color::new(137, 180, 250),    // Blue
+            secondary: Color::new(180, 190, 254),  // Lavender
+            accent: Color::new(235, 160, 172),     // Maroon
+            background: Color::new(30, 30, 46),    // Base
+            foreground: Color::new(205, 214, 244), // Text
+            error: Color::new(243, 139, 168),      // Red
+            warning: Color::new(249, 226, 175),    // Yellow
+            success: Color::new(166, 227, 161),    // Green
+        }
+    }
+
+    /// Create Tokyo Night Storm theme
+    pub fn tokyo_night_storm() -> Self {
+        Self {
+            name: "tokyo-night-storm".to_string(),
+            primary: Color::new(122, 162, 247),    // Blue
+            secondary: Color::new(187, 154, 247),  // Purple
+            accent: Color::new(247, 118, 142),     // Red
+            background: Color::new(36, 40, 59),    // Storm Background
+            foreground: Color::new(192, 202, 245), // Foreground
+            error: Color::new(247, 118, 142),      // Red
+            warning: Color::new(224, 175, 104),    // Yellow
+            success: Color::new(158, 206, 106),    // Green
+        }
+    }
+
+    /// Create Tokyo Night Moon theme
+    pub fn tokyo_night_moon() -> Self {
+        Self {
+            name: "tokyo-night-moon".to_string(),
+            primary: Color::new(130, 170, 255),    // Blue
+            secondary: Color::new(192, 153, 255),  // Purple
+            accent: Color::new(255, 117, 127),     // Red
+            background: Color::new(34, 36, 54),    // Moon Background
+            foreground: Color::new(200, 208, 224), // Foreground
+            error: Color::new(255, 83, 112),       // Red
+            warning: Color::new(255, 199, 119),    // Yellow
+            success: Color::new(195, 232, 141),    // Green
+        }
+    }
+
+    /// Create Tokyo Night Day theme
+    pub fn tokyo_night_day() -> Self {
+        Self {
+            name: "tokyo-night-day".to_string(),
+            primary: Color::new(55, 96, 191),      // Blue
+            secondary: Color::new(152, 84, 241),   // Purple
+            accent: Color::new(245, 42, 101),      // Red
+            background: Color::new(225, 226, 231), // Day Background
+            foreground: Color::new(55, 96, 191),   // Foreground
+            error: Color::new(245, 42, 101),       // Red
+            warning: Color::new(140, 108, 62),     // Yellow
+            success: Color::new(88, 117, 57),      // Green
+        }
+    }
+
+    /// Create Tokyo Night Night theme
+    pub fn tokyo_night_night() -> Self {
+        Self {
+            name: "tokyo-night-night".to_string(),
+            primary: Color::new(122, 162, 247),    // Blue
+            secondary: Color::new(187, 154, 247),  // Purple
+            accent: Color::new(247, 118, 142),     // Red
+            background: Color::new(26, 27, 38),    // Night Background
+            foreground: Color::new(192, 202, 245), // Foreground
+            error: Color::new(247, 118, 142),      // Red
+            warning: Color::new(224, 175, 104),    // Yellow
+            success: Color::new(158, 206, 106),    // Green
+        }
+    }
+
+    /// Create Gruvbox Light theme
+    pub fn gruvbox_light() -> Self {
+        Self {
+            name: "gruvbox-light".to_string(),
+            primary: Color::new(7, 102, 120),      // Blue
+            secondary: Color::new(143, 63, 113),   // Purple
+            accent: Color::new(157, 0, 6),         // Red
+            background: Color::new(251, 241, 199), // Cream
+            foreground: Color::new(60, 56, 54),    // Dark Gray
+            error: Color::new(204, 36, 29),        // Red
+            warning: Color::new(215, 153, 33),     // Yellow
+            success: Color::new(152, 151, 26),     // Green
+        }
+    }
+
+    /// Create Gruvbox Dark theme
+    pub fn gruvbox_dark() -> Self {
+        Self {
+            name: "gruvbox-dark".to_string(),
+            primary: Color::new(131, 165, 152),    // Blue
+            secondary: Color::new(211, 134, 155),  // Purple
+            accent: Color::new(251, 73, 52),       // Red
+            background: Color::new(40, 40, 40),    // Dark Gray
+            foreground: Color::new(235, 219, 178), // Cream
+            error: Color::new(204, 36, 29),        // Red
+            warning: Color::new(250, 189, 47),     // Yellow
+            success: Color::new(184, 187, 38),     // Green
+        }
+    }
+
+    /// Create Solarized Light theme
+    pub fn solarized_light() -> Self {
+        Self {
+            name: "solarized-light".to_string(),
+            primary: Color::new(38, 139, 210),     // Blue
+            secondary: Color::new(211, 54, 130),   // Magenta
+            accent: Color::new(220, 50, 47),       // Red
+            background: Color::new(253, 246, 227), // Base3
+            foreground: Color::new(101, 123, 131), // Base00
+            error: Color::new(220, 50, 47),        // Red
+            warning: Color::new(181, 137, 0),      // Yellow
+            success: Color::new(133, 153, 0),      // Green
+        }
+    }
+
+    /// Create Solarized Dark theme
+    pub fn solarized_dark() -> Self {
+        Self {
+            name: "solarized-dark".to_string(),
+            primary: Color::new(38, 139, 210),     // Blue
+            secondary: Color::new(211, 54, 130),   // Magenta
+            accent: Color::new(220, 50, 47),       // Red
+            background: Color::new(0, 43, 54),     // Base03
+            foreground: Color::new(131, 148, 150), // Base0
+            error: Color::new(220, 50, 47),        // Red
+            warning: Color::new(181, 137, 0),      // Yellow
+            success: Color::new(133, 153, 0),      // Green
+        }
+    }
+
+    /// Create Everforest theme
+    pub fn everforest() -> Self {
+        Self {
+            name: "everforest".to_string(),
+            primary: Color::new(127, 187, 179),    // Blue
+            secondary: Color::new(211, 134, 155),  // Purple
+            accent: Color::new(230, 126, 128),     // Red
+            background: Color::new(43, 51, 57),    // Background
+            foreground: Color::new(211, 198, 170), // Foreground
+            error: Color::new(230, 126, 128),      // Red
+            warning: Color::new(219, 188, 127),    // Yellow
+            success: Color::new(167, 192, 128),    // Green
+        }
+    }
+
+    /// Create Kanagawa theme
+    pub fn kanagawa() -> Self {
+        Self {
+            name: "kanagawa".to_string(),
+            primary: Color::new(126, 156, 216),    // Blue
+            secondary: Color::new(149, 127, 184),  // Purple
+            accent: Color::new(232, 36, 36),       // Red
+            background: Color::new(31, 31, 40),    // Background
+            foreground: Color::new(220, 220, 170), // Foreground
+            error: Color::new(232, 36, 36),        // Red
+            warning: Color::new(255, 158, 59),     // Orange
+            success: Color::new(118, 148, 106),    // Green
+        }
+    }
+
+    /// Create Rose Pine theme
+    pub fn rose_pine() -> Self {
+        Self {
+            name: "rose-pine".to_string(),
+            primary: Color::new(156, 207, 216),    // Foam
+            secondary: Color::new(196, 167, 231),  // Iris
+            accent: Color::new(235, 111, 146),     // Love
+            background: Color::new(25, 23, 36),    // Base
+            foreground: Color::new(224, 222, 244), // Text
+            error: Color::new(235, 111, 146),      // Love
+            warning: Color::new(246, 193, 119),    // Gold
+            success: Color::new(49, 116, 143),     // Pine
+        }
+    }
+
+    /// Create Synthwave theme
+    pub fn synthwave() -> Self {
+        Self {
+            name: "synthwave".to_string(),
+            primary: Color::new(255, 113, 206),    // Neon Pink
+            secondary: Color::new(1, 205, 254),    // Neon Blue
+            accent: Color::new(5, 255, 161),       // Neon Green
+            background: Color::new(43, 33, 58),    // Dark Purple
+            foreground: Color::new(255, 255, 255), // White
+            error: Color::new(255, 0, 56),         // Red
+            warning: Color::new(255, 251, 150),    // Yellow
+            success: Color::new(185, 103, 255),    // Purple
+        }
+    }
+
+    /// Create Material theme
+    pub fn material() -> Self {
+        Self {
+            name: "material".to_string(),
+            primary: Color::new(130, 177, 255),    // Blue
+            secondary: Color::new(199, 146, 234),  // Purple
+            accent: Color::new(240, 98, 146),      // Pink
+            background: Color::new(38, 50, 56),    // Dark Blue Gray
+            foreground: Color::new(238, 255, 255), // White
+            error: Color::new(255, 83, 112),       // Red
+            warning: Color::new(255, 203, 107),    // Yellow
+            success: Color::new(195, 232, 141),    // Green
+        }
+    }
+
+    /// Create One Dark theme
+    pub fn one_dark() -> Self {
+        Self {
+            name: "one-dark".to_string(),
+            primary: Color::new(97, 175, 239),     // Blue
+            secondary: Color::new(198, 120, 221),  // Purple
+            accent: Color::new(224, 108, 117),     // Red
+            background: Color::new(40, 44, 52),    // Dark Gray
+            foreground: Color::new(171, 178, 191), // Light Gray
+            error: Color::new(224, 108, 117),      // Red
+            warning: Color::new(229, 192, 123),    // Yellow
+            success: Color::new(152, 195, 121),    // Green
+        }
+    }
+
+    /// Create One Light theme
+    pub fn one_light() -> Self {
+        Self {
+            name: "one-light".to_string(),
+            primary: Color::new(64, 120, 242),     // Blue
+            secondary: Color::new(166, 38, 164),   // Purple
+            accent: Color::new(228, 86, 73),       // Red
+            background: Color::new(250, 250, 250), // Light Gray
+            foreground: Color::new(56, 58, 66),    // Dark Gray
+            error: Color::new(228, 86, 73),        // Red
+            warning: Color::new(193, 132, 1),      // Yellow
+            success: Color::new(80, 161, 79),      // Green
+        }
+    }
+
+    /// Create Palenight theme
+    pub fn palenight() -> Self {
+        Self {
+            name: "palenight".to_string(),
+            primary: Color::new(130, 170, 255),    // Blue
+            secondary: Color::new(199, 146, 234),  // Purple
+            accent: Color::new(240, 113, 120),     // Red
+            background: Color::new(41, 45, 62),    // Dark Blue
+            foreground: Color::new(166, 172, 205), // Gray
+            error: Color::new(255, 83, 112),       // Red
+            warning: Color::new(255, 203, 107),    // Yellow
+            success: Color::new(195, 232, 141),    // Green
+        }
+    }
+
+    /// Create Aura theme
+    pub fn aura() -> Self {
+        Self {
+            name: "aura".to_string(),
+            primary: Color::new(130, 224, 170),    // Green
+            secondary: Color::new(162, 125, 245),  // Purple
+            accent: Color::new(246, 148, 255),     // Pink
+            background: Color::new(21, 20, 27),    // Dark
+            foreground: Color::new(237, 236, 238), // Light
+            error: Color::new(255, 103, 103),      // Red
+            warning: Color::new(255, 202, 133),    // Orange
+            success: Color::new(97, 255, 202),     // Green
+        }
+    }
+
+    /// Create Ayu theme
+    pub fn ayu() -> Self {
+        Self {
+            name: "ayu".to_string(),
+            primary: Color::new(57, 186, 230),     // Blue
+            secondary: Color::new(210, 166, 255),  // Purple
+            accent: Color::new(255, 51, 51),       // Red
+            background: Color::new(11, 14, 20),    // Dark
+            foreground: Color::new(191, 189, 182), // Light
+            error: Color::new(255, 51, 51),        // Red
+            warning: Color::new(255, 143, 64),     // Orange
+            success: Color::new(170, 217, 76),     // Green
+        }
+    }
+
+    /// Look up a theme by name
+    pub fn by_name(name: &str) -> Option<Self> {
+        match name.to_lowercase().as_str() {
+            "dark" => Some(Self::default()),
+            "light" => Some(Self::light()),
+            "monokai" => Some(Self::monokai()),
+            "dracula" => Some(Self::dracula()),
+            "nord" => Some(Self::nord()),
+            "high-contrast" => Some(Self::high_contrast()),
+            "catppuccin-latte" => Some(Self::catppuccin_latte()),
+            "catppuccin-frappe" => Some(Self::catppuccin_frappe()),
+            "catppuccin-macchiato" => Some(Self::catppuccin_macchiato()),
+            "catppuccin-mocha" => Some(Self::catppuccin_mocha()),
+            "tokyo-night-storm" => Some(Self::tokyo_night_storm()),
+            "tokyo-night-moon" => Some(Self::tokyo_night_moon()),
+            "tokyo-night-day" => Some(Self::tokyo_night_day()),
+            "tokyo-night-night" => Some(Self::tokyo_night_night()),
+            "gruvbox-light" => Some(Self::gruvbox_light()),
+            "gruvbox-dark" => Some(Self::gruvbox_dark()),
+            "solarized-light" => Some(Self::solarized_light()),
+            "solarized-dark" => Some(Self::solarized_dark()),
+            "everforest" => Some(Self::everforest()),
+            "kanagawa" => Some(Self::kanagawa()),
+            "rose-pine" => Some(Self::rose_pine()),
+            "synthwave" => Some(Self::synthwave()),
+            "material" => Some(Self::material()),
+            "one-dark" => Some(Self::one_dark()),
+            "one-light" => Some(Self::one_light()),
+            "palenight" => Some(Self::palenight()),
+            "aura" => Some(Self::aura()),
+            "ayu" => Some(Self::ayu()),
+            _ => None,
+        }
+    }
+
+    /// Get all available theme names
+    pub fn available_themes() -> Vec<&'static str> {
+        vec![
+            "dark",
+            "light",
+            "monokai",
+            "dracula",
+            "nord",
+            "high-contrast",
+            "catppuccin-latte",
+            "catppuccin-frappe",
+            "catppuccin-macchiato",
+            "catppuccin-mocha",
+            "tokyo-night-storm",
+            "tokyo-night-moon",
+            "tokyo-night-day",
+            "tokyo-night-night",
+            "gruvbox-light",
+            "gruvbox-dark",
+            "solarized-light",
+            "solarized-dark",
+            "everforest",
+            "kanagawa",
+            "rose-pine",
+            "synthwave",
+            "material",
+            "one-dark",
+            "one-light",
+            "palenight",
+            "aura",
+            "ayu",
+        ]
     }
 
     /// Detect terminal color capabilities
@@ -315,31 +772,6 @@ impl Theme {
 
         // Default to 256 color support
         ColorSupport::Color256
-    }
-
-    /// Get a theme by name
-    pub fn by_name(name: &str) -> Option<Self> {
-        match name.to_lowercase().as_str() {
-            "dark" => Some(Self::default()),
-            "light" => Some(Self::light()),
-            "monokai" => Some(Self::monokai()),
-            "dracula" => Some(Self::dracula()),
-            "nord" => Some(Self::nord()),
-            "high-contrast" => Some(Self::high_contrast()),
-            _ => None,
-        }
-    }
-
-    /// Get all available theme names
-    pub fn available_themes() -> Vec<&'static str> {
-        vec![
-            "dark",
-            "light",
-            "monokai",
-            "dracula",
-            "nord",
-            "high-contrast",
-        ]
     }
 
     /// Check if the theme meets WCAG AA contrast standards
@@ -371,6 +803,18 @@ impl Theme {
     /// Get contrast ratio between error color and background
     pub fn error_contrast(&self) -> f32 {
         self.error.contrast_ratio(&self.background)
+    }
+
+    /// Adapt the theme to terminal capabilities
+    pub fn adapt(&mut self, support: ColorSupport) {
+        self.primary = self.primary.adapt(support);
+        self.secondary = self.secondary.adapt(support);
+        self.accent = self.accent.adapt(support);
+        self.background = self.background.adapt(support);
+        self.foreground = self.foreground.adapt(support);
+        self.error = self.error.adapt(support);
+        self.warning = self.warning.adapt(support);
+        self.success = self.success.adapt(support);
     }
 }
 
@@ -481,6 +925,7 @@ mod tests {
         assert!(Theme::by_name("monokai").is_some());
         assert!(Theme::by_name("dracula").is_some());
         assert!(Theme::by_name("nord").is_some());
+        assert!(Theme::by_name("catppuccin-mocha").is_some());
         assert!(Theme::by_name("invalid").is_none());
     }
 
@@ -489,18 +934,20 @@ mod tests {
         assert!(Theme::by_name("DARK").is_some());
         assert!(Theme::by_name("Light").is_some());
         assert!(Theme::by_name("MONOKAI").is_some());
+        assert!(Theme::by_name("Catppuccin-Mocha").is_some());
     }
 
     #[test]
     fn test_available_themes() {
         let themes = Theme::available_themes();
-        assert_eq!(themes.len(), 6);
+        assert!(themes.len() >= 6);
         assert!(themes.contains(&"dark"));
         assert!(themes.contains(&"light"));
         assert!(themes.contains(&"monokai"));
         assert!(themes.contains(&"dracula"));
         assert!(themes.contains(&"nord"));
         assert!(themes.contains(&"high-contrast"));
+        assert!(themes.contains(&"catppuccin-mocha"));
     }
 
     #[test]

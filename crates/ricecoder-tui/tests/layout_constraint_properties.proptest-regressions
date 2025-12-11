@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 44b14c96ddbaa9b24c4ddb8bca194308684833e9640407aaba1b67063c3ed771 # shrinks to (width, height) = (40, 20), config = LayoutConfig { banner_height: 0, sidebar_width: 0, sidebar_enabled: false, input_height: 1, min_width: 40, min_height: 10, min_chat_width: 10, auto_hide_sidebar: false, auto_reduce_banner: false }

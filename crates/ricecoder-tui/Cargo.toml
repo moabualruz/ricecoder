@@ -36,6 +36,7 @@ ctrlc = "3.4"
 atty = "0.2"
 ricecoder-sessions = { path = "../ricecoder-sessions", version = "0.1" }
 ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
+ricecoder-images = { path = "../ricecoder-images", version = "0.1" }
 resvg = "0.40"
 usvg = "0.40"
 tiny-skia = "0.11"
@@ -43,11 +44,15 @@ image = "0.24"
 ratatui-textarea = "0.4"
 tui-tree-widget = "0.18"
 ratatui-image = "0.5"
+syntect = { workspace = true }
+lazy_static = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
 tokio-test = { workspace = true }
 tempfile = { workspace = true }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
+
 
 
 

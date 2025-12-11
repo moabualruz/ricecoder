@@ -15,6 +15,7 @@ pub mod handler;
 pub mod cache;
 pub mod analyzer;
 pub mod display;
+pub mod banner;
 pub mod provider_integration;
 pub mod token_counting;
 pub mod audit_logging;
@@ -29,6 +30,10 @@ pub use handler::ImageHandler;
 pub use cache::ImageCache;
 pub use analyzer::{ImageAnalyzer, AnalysisRetryContext};
 pub use display::ImageDisplay;
+pub use banner::{
+    BannerRenderer, BannerCache, BannerConfig, BannerOutput, 
+    TerminalCapabilities, ColorDepth, ThemeColors,
+};
 pub use provider_integration::{
     ImageData, ChatRequestWithImages, ProviderImageFormat, ImageAuditLogEntry,
 };

@@ -5,6 +5,7 @@
 
 pub mod accessibility;
 pub mod app;
+pub mod banner;
 pub mod clipboard;
 pub mod code_editor_widget;
 pub mod command_blocks;
@@ -46,6 +47,7 @@ pub use accessibility::{
     StateChangeEvent, TextAlternative,
 };
 pub use app::{App, AppMode};
+pub use banner::{BannerArea, BannerComponent, BannerComponentConfig};
 pub use clipboard::{ClipboardError, ClipboardManager, CopyFeedback, CopyOperation};
 pub use code_editor_widget::{CodeEditorWidget, CodeLine, Language, SyntaxTheme};
 pub use command_blocks::{Command, CommandBlock, CommandBlocksWidget, CommandStatus};
@@ -76,7 +78,7 @@ pub use session_integration::SessionIntegration;
 pub use session_manager::{SessionData, SessionManager};
 pub use sessions::{Session, SessionDisplayMode, SessionStatus, SessionWidget};
 pub use style::{ColorSupport, Theme};
-pub use terminal_state::TerminalState;
+pub use terminal_state::{ColorSupport as TerminalColorSupport, TerminalCapabilities, TerminalState, TerminalType};
 pub use textarea_widget::TextAreaWidget;
 pub use theme::ThemeManager;
 pub use theme_loader::{ThemeLoader, ThemeYaml};

@@ -2,8 +2,11 @@
 
 use crate::app::App;
 use crate::diff::{DiffLineType, DiffViewType, DiffWidget};
+use crate::markdown::{MarkdownParser, MarkdownElement};
 use crate::style::Theme;
+use crate::widgets::{Message, MessageAuthor, ToolStatus};
 use ratatui::prelude::*;
+
 
 /// Renderer for the TUI
 pub struct Renderer;
@@ -32,7 +35,7 @@ impl Renderer {
         tracing::debug!(
             "Rendering TUI - Mode: {}, Messages: {}, Input: {}",
             app.current_mode_name(),
-            app.chat.messages.len(),
+            app.widgets().chat.messages.len(),
             app.chat.input
         );
 
@@ -73,14 +76,171 @@ impl Renderer {
         let chat_block = ratatui::widgets::Block::default()
             .title("Chat")
             .borders(ratatui::widgets::Borders::ALL);
-        let chat_text = if app.chat.messages.is_empty() {
-            "Welcome to RiceCoder TUI! Type your message below.".to_string()
+            
+        let messages = &app.widgets().chat.messages;
+        let mut text_lines = Vec::new();
+        
+        if messages.is_empty() && app.widgets().chat.streaming_message.is_none() {
+            text_lines.push(Line::from("Welcome to RiceCoder TUI! Type your message below."));
         } else {
-            app.chat.messages.join("\n")
-        };
-        let chat_paragraph = ratatui::widgets::Paragraph::new(chat_text)
+            for msg in messages {
+                // Header: [HH:MM] Author
+                let time_str = msg.timestamp.format("%H:%M").to_string();
+                let author_str = match msg.author {
+                    MessageAuthor::User => "User",
+                    MessageAuthor::Assistant => "RiceCoder",
+                };
+                
+                let header_style = match msg.author {
+                    MessageAuthor::User => Style::default().fg(app.theme.primary.to_ratatui()).add_modifier(Modifier::BOLD),
+                    MessageAuthor::Assistant => Style::default().fg(app.theme.secondary.to_ratatui()).add_modifier(Modifier::BOLD),
+                };
+                
+                text_lines.push(Line::from(vec![
+                    Span::styled(format!("[{}] ", time_str), Style::default().fg(Color::DarkGray)),
+                    Span::styled(author_str, header_style),
+                ]));
+                
+                // Content
+                let base_style = match msg.author {
+                    MessageAuthor::User => Style::default().fg(app.theme.foreground.to_ratatui()),
+                    MessageAuthor::Assistant => Style::default().fg(app.theme.foreground.to_ratatui()),
+                };
+                
+                self.render_markdown(&msg.content, &app.theme, &mut text_lines, base_style);
+                
+                // Tool calls
+                for tool in &msg.tool_calls {
+                    let status_symbol = match tool.status {
+                        ToolStatus::Running => "⟳",
+                        ToolStatus::Success => "✓",
+                        ToolStatus::Error => "✗",
+                    };
+                    
+                    let status_style = match tool.status {
+                        ToolStatus::Running => Style::default().fg(Color::Yellow),
+                        ToolStatus::Success => Style::default().fg(Color::Green),
+                        ToolStatus::Error => Style::default().fg(Color::Red),
+                    };
+                    
+                    text_lines.push(Line::from(vec![
+                        Span::styled(format!("  {} Tool: ", status_symbol), status_style),
+                        Span::styled(&tool.name, Style::default().add_modifier(Modifier::BOLD)),
+                    ]));
+                    
+                    // Params
+                    text_lines.push(Line::from(vec![
+                        Span::styled("    Params: ", Style::default().fg(Color::DarkGray)),
+                        Span::styled(&tool.params, Style::default().fg(Color::Gray)),
+                    ]));
+                    
+                    // Output
+                    if let Some(output) = &tool.output {
+                        text_lines.push(Line::from(vec![
+                            Span::styled("    Result: ", Style::default().fg(Color::DarkGray)),
+                        ]));
+                        // Render output lines (indented)
+                        for line in output.lines().take(5) { 
+                             text_lines.push(Line::from(Span::styled(format!("      {}", line), Style::default().fg(Color::Gray))));
+                        }
+                        if output.lines().count() > 5 {
+                            text_lines.push(Line::from(Span::styled("      ... (output truncated)", Style::default().fg(Color::DarkGray).add_modifier(Modifier::ITALIC))));
+                        }
+                    }
+                    
+                    // Add small spacing between tools
+                    text_lines.push(Line::from(""));
+                }
+                
+                // Add spacing
+                text_lines.push(Line::from(""));
+            }
+            
+            // Render streaming message
+            if let Some(streaming) = &app.widgets().chat.streaming_message {
+                 // Header
+                 let author_str = "RiceCoder";
+                 let header_style = Style::default().fg(app.theme.secondary.to_ratatui()).add_modifier(Modifier::BOLD);
+                 
+                 text_lines.push(Line::from(vec![
+                     Span::styled("[Streaming] ", Style::default().fg(Color::Yellow)),
+                     Span::styled(author_str, header_style),
+                 ]));
+                 
+                 // Content
+                 let base_style = Style::default().fg(app.theme.foreground.to_ratatui());
+                 
+                 // Parse markdown for streaming content
+                 let elements = MarkdownParser::parse(&streaming.content);
+                 let mut current_line_spans = Vec::new();
+                 
+                 // Render elements similar to render_markdown but we keep the last line open
+                 for element in elements {
+                     if element.is_block() {
+                        if !current_line_spans.is_empty() {
+                            text_lines.push(Line::from(std::mem::take(&mut current_line_spans)));
+                        }
+                        
+                        match element {
+                            MarkdownElement::Header(level, text) => {
+                                let style = Style::default().fg(app.theme.accent.to_ratatui()).add_modifier(Modifier::BOLD);
+                                let prefix = "#".repeat(level as usize);
+                                text_lines.push(Line::from(Span::styled(format!("{} {}", prefix, text), style)));
+                            }
+                            MarkdownElement::CodeBlock(lang, code) => {
+                                let highlighted = MarkdownParser::highlight(&code, lang.as_deref());
+                                text_lines.extend(highlighted);
+                            }
+                            MarkdownElement::ListItem(text) => {
+                                text_lines.push(Line::from(vec![
+                                    Span::styled("• ", Style::default().fg(app.theme.secondary.to_ratatui())),
+                                    Span::raw(text),
+                                ]));
+                            }
+                            _ => {}
+                        }
+                     } else {
+                         match element {
+                            MarkdownElement::Text(text) => {
+                                current_line_spans.push(Span::styled(text, base_style));
+                            }
+                            MarkdownElement::Bold(text) => {
+                                current_line_spans.push(Span::styled(text, base_style.add_modifier(Modifier::BOLD)));
+                            }
+                            MarkdownElement::Italic(text) => {
+                                current_line_spans.push(Span::styled(text, base_style.add_modifier(Modifier::ITALIC)));
+                            }
+                            MarkdownElement::Code(text) => {
+                                current_line_spans.push(Span::styled(
+                                    text, 
+                                    Style::default().bg(Color::DarkGray).fg(Color::White)
+                                ));
+                            }
+                            MarkdownElement::Link(text, _url) => {
+                                current_line_spans.push(Span::styled(
+                                    text, 
+                                    Style::default().fg(Color::Blue).add_modifier(Modifier::UNDERLINED)
+                                ));
+                            }
+                            MarkdownElement::Newline => {
+                                text_lines.push(Line::from(std::mem::take(&mut current_line_spans)));
+                            }
+                            _ => {}
+                         }
+                     }
+                 }
+                 
+                 // Append cursor to the current line spans
+                 current_line_spans.push(Span::styled("█", Style::default().fg(app.theme.primary.to_ratatui())));
+                 text_lines.push(Line::from(current_line_spans));
+            }
+        }
+        
+        let chat_paragraph = ratatui::widgets::Paragraph::new(text_lines)
             .block(chat_block)
-            .wrap(ratatui::widgets::Wrap { trim: true });
+            .wrap(ratatui::widgets::Wrap { trim: true })
+            .scroll((app.widgets().chat.scroll as u16, 0));
+            
         f.render_widget(chat_paragraph, chunks[1]);
 
         // Render input area
@@ -93,6 +253,78 @@ impl Renderer {
             .style(Style::default().fg(Color::Green));
         f.render_widget(input_paragraph, chunks[2]);
     }
+
+    /// Helper to render markdown content
+    fn render_markdown(
+        &self, 
+        content: &str, 
+        theme: &Theme, 
+        text_lines: &mut Vec<Line>, 
+        base_style: Style
+    ) {
+        let elements = MarkdownParser::parse(content);
+        let mut current_line_spans = Vec::new();
+        
+        for element in elements {
+            if element.is_block() {
+                if !current_line_spans.is_empty() {
+                    text_lines.push(Line::from(std::mem::take(&mut current_line_spans)));
+                }
+                
+                match element {
+                    MarkdownElement::Header(level, text) => {
+                        let style = Style::default().fg(theme.accent.to_ratatui()).add_modifier(Modifier::BOLD);
+                        let prefix = "#".repeat(level as usize);
+                        text_lines.push(Line::from(Span::styled(format!("{} {}", prefix, text), style)));
+                    }
+                    MarkdownElement::CodeBlock(lang, code) => {
+                        let highlighted = MarkdownParser::highlight(&code, lang.as_deref());
+                        text_lines.extend(highlighted);
+                    }
+                    MarkdownElement::ListItem(text) => {
+                        text_lines.push(Line::from(vec![
+                            Span::styled("• ", Style::default().fg(theme.secondary.to_ratatui())),
+                            Span::raw(text),
+                        ]));
+                    }
+                    _ => {}
+                }
+            } else {
+                match element {
+                    MarkdownElement::Text(text) => {
+                        current_line_spans.push(Span::styled(text, base_style));
+                    }
+                    MarkdownElement::Bold(text) => {
+                        current_line_spans.push(Span::styled(text, base_style.add_modifier(Modifier::BOLD)));
+                    }
+                    MarkdownElement::Italic(text) => {
+                        current_line_spans.push(Span::styled(text, base_style.add_modifier(Modifier::ITALIC)));
+                    }
+                    MarkdownElement::Code(text) => {
+                        current_line_spans.push(Span::styled(
+                            text, 
+                            Style::default().bg(Color::DarkGray).fg(Color::White)
+                        ));
+                    }
+                    MarkdownElement::Link(text, _url) => {
+                        current_line_spans.push(Span::styled(
+                            text, 
+                            Style::default().fg(Color::Blue).add_modifier(Modifier::UNDERLINED)
+                        ));
+                    }
+                    MarkdownElement::Newline => {
+                        text_lines.push(Line::from(std::mem::take(&mut current_line_spans)));
+                    }
+                    _ => {}
+                }
+            }
+        }
+        
+        if !current_line_spans.is_empty() {
+            text_lines.push(Line::from(current_line_spans));
+        }
+    }
+
 
     /// Render a diff widget in unified view
     pub fn render_diff_unified(

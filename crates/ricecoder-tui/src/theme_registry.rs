@@ -19,13 +19,12 @@ impl ThemeRegistry {
     pub fn new() -> Self {
         let mut builtin = HashMap::new();
 
-        // Register all built-in themes
-        builtin.insert("dark".to_string(), Theme::default());
-        builtin.insert("light".to_string(), Theme::light());
-        builtin.insert("monokai".to_string(), Theme::monokai());
-        builtin.insert("dracula".to_string(), Theme::dracula());
-        builtin.insert("nord".to_string(), Theme::nord());
-        builtin.insert("high-contrast".to_string(), Theme::high_contrast());
+        // Register all built-in themes dynamically from Theme::available_themes()
+        for name in Theme::available_themes() {
+            if let Some(theme) = Theme::by_name(name) {
+                builtin.insert(name.to_string(), theme);
+            }
+        }
 
         Self {
             builtin_themes: Arc::new(builtin),
@@ -170,6 +169,7 @@ impl ThemeRegistry {
     }
 }
 
+
 impl Default for ThemeRegistry {
     fn default() -> Self {
         Self::new()
@@ -192,7 +192,7 @@ mod tests {
     #[test]
     fn test_registry_creation() {
         let registry = ThemeRegistry::new();
-        assert_eq!(registry.builtin_count(), 6);
+        assert_eq!(registry.builtin_count(), Theme::available_themes().len());
         assert_eq!(registry.custom_count().unwrap(), 0);
     }
 
@@ -248,14 +248,14 @@ mod tests {
         registry.register(custom).unwrap();
 
         let all = registry.list_all().unwrap();
-        assert_eq!(all.len(), 7); // 6 built-in + 1 custom
+        assert_eq!(all.len(), Theme::available_themes().len() + 1);
     }
 
     #[test]
     fn test_list_builtin_themes() {
         let registry = ThemeRegistry::new();
         let builtin = registry.list_builtin();
-        assert_eq!(builtin.len(), 6);
+        assert_eq!(builtin.len(), Theme::available_themes().len());
     }
 
     #[test]

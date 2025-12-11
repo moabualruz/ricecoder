@@ -15,6 +15,7 @@ ricecoder-external-lsp = { path = "crates/ricecoder-external-lsp", version = "0.
 ricecoder-files = { path = "crates/ricecoder-files", version = "0.1" }
 ricecoder-generation = { path = "crates/ricecoder-generation", version = "0.1" }
 ricecoder-github = { path = "crates/ricecoder-github", version = "0.1" }
+ricecoder-help = { path = "crates/ricecoder-help", version = "0.1" }
 ricecoder-hooks = { path = "crates/ricecoder-hooks", version = "0.1" }
 ricecoder-ide = { path = "crates/ricecoder-ide", version = "0.1" }
 ricecoder-images = { path = "crates/ricecoder-images", version = "0.1" }
@@ -36,6 +37,7 @@ ricecoder-teams = { path = "crates/ricecoder-teams", version = "0.1" }
 ricecoder-tools = { path = "crates/ricecoder-tools", version = "0.1" }
 ricecoder-tui = { path = "crates/ricecoder-tui", version = "0.1" }
 ricecoder-undo-redo = { path = "crates/ricecoder-undo-redo", version = "0.1" }
+ricecoder-vcs = { path = "crates/ricecoder-vcs", version = "0.1" }
 ricecoder-workflows = { path = "crates/ricecoder-workflows", version = "0.1" }
 tokio = { workspace = true }
 serde_json = { workspace = true }
@@ -72,7 +74,9 @@ members = [
     "crates/ricecoder-mcp",
     "crates/ricecoder-tools",
     "crates/ricecoder-undo-redo",
+    "crates/ricecoder-vcs",
     "crates/ricecoder-github",
+    "crates/ricecoder-help",
     "crates/ricecoder-teams",
     "crates/ricecoder-ide",
     "crates/ricecoder-images",

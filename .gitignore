@@ -84,3 +84,7 @@ out/
 dist/
 node_modules/
 *.vsix
+
+# Agent cache
+.agent/cache
+**/.agent/cache

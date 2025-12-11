@@ -3084,6 +3084,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "rctree"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3b42e27ef78c35d3998403c1d26f3efd9e135d3e5121b0a4845cc5cc27547f4f"
+
+[[package]]
 name = "redox_syscall"
 version = "0.5.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3208,6 +3214,23 @@ dependencies = [
 
 [[package]]
 name = "resvg"
+version = "0.37.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cadccb3d99a9efb8e5e00c16fbb732cbe400db2ec7fc004697ee7d97d86cf1f4"
+dependencies = [
+ "gif 0.12.0",
+ "jpeg-decoder",
+ "log",
+ "pico-args",
+ "png 0.17.16",
+ "rgb",
+ "svgtypes 0.13.0",
+ "tiny-skia",
+ "usvg 0.37.0",
+]
+
+[[package]]
+name = "resvg"
 version = "0.40.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "024e40e1ba7313fc315b1720298988c0cd6f8bfe3754b52838aafecebd11355a"
@@ -3218,9 +3241,9 @@ dependencies = [
  "pico-args",
  "png 0.17.16",
  "rgb",
- "svgtypes",
+ "svgtypes 0.14.0",
  "tiny-skia",
- "usvg",
+ "usvg 0.40.0",
 ]
 
 [[package]]
@@ -3504,6 +3527,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "ricecoder-help"
+version = "0.1.72"
+dependencies = [
+ "crossterm",
+ "proptest",
+ "ratatui 0.26.3",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio-test",
+ "tracing",
+]
+
+[[package]]
 name = "ricecoder-hooks"
 version = "0.1.72"
 dependencies = [
@@ -3553,6 +3591,7 @@ dependencies = [
  "chrono",
  "image 0.24.9",
  "proptest",
+ "resvg 0.37.0",
  "ricecoder-files",
  "ricecoder-providers",
  "ricecoder-storage",
@@ -3562,9 +3601,11 @@ dependencies = [
  "sha2",
  "tempfile",
  "thiserror 1.0.69",
+ "tiny-skia",
  "tokio",
  "tokio-test",
  "tracing",
+ "usvg 0.37.0",
 ]
 
 [[package]]
@@ -3582,6 +3623,7 @@ dependencies = [
  "ricecoder-files",
  "ricecoder-generation",
  "ricecoder-github",
+ "ricecoder-help",
  "ricecoder-hooks",
  "ricecoder-ide",
  "ricecoder-images",
@@ -3603,6 +3645,7 @@ dependencies = [
  "ricecoder-tools",
  "ricecoder-tui",
  "ricecoder-undo-redo",
+ "ricecoder-vcs",
  "ricecoder-workflows",
  "serde_json",
  "tempfile",
@@ -3980,16 +4023,19 @@ dependencies = [
  "ctrlc",
  "dirs",
  "image 0.24.9",
+ "lazy_static",
  "proptest",
  "ratatui 0.26.3",
  "ratatui-image",
  "ratatui-textarea",
- "resvg",
+ "resvg 0.40.0",
+ "ricecoder-images",
  "ricecoder-sessions",
  "ricecoder-storage",
  "serde",
  "serde_json",
  "serde_yaml",
+ "syntect",
  "tempfile",
  "thiserror 1.0.69",
  "tiny-skia",
@@ -3998,7 +4044,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "tui-tree-widget",
- "usvg",
+ "usvg 0.40.0",
 ]
 
 [[package]]
@@ -4015,6 +4061,21 @@ dependencies = [
  "tokio-test",
  "tracing",
  "uuid",
+]
+
+[[package]]
+name = "ricecoder-vcs"
+version = "0.1.72"
+dependencies = [
+ "chrono",
+ "git2",
+ "proptest",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio-test",
+ "tracing",
 ]
 
 [[package]]
@@ -4631,6 +4692,16 @@ name = "subtle"
 version = "2.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
+
+[[package]]
+name = "svgtypes"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e44e288cd960318917cbd540340968b90becc8bc81f171345d706e7a89d9d70"
+dependencies = [
+ "kurbo 0.9.5",
+ "siphasher",
+]
 
 [[package]]
 name = "svgtypes"
@@ -5401,6 +5472,21 @@ dependencies = [
 
 [[package]]
 name = "usvg"
+version = "0.37.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "38b0a51b72ab80ca511d126b77feeeb4fb1e972764653e61feac30adc161a756"
+dependencies = [
+ "base64 0.21.7",
+ "log",
+ "pico-args",
+ "usvg-parser",
+ "usvg-text-layout",
+ "usvg-tree",
+ "xmlwriter",
+]
+
+[[package]]
+name = "usvg"
 version = "0.40.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c04150a94f0bfc3b2c15d4e151524d14cd06765fc6641d8b1c59a248360d4474"
@@ -5418,12 +5504,58 @@ dependencies = [
  "simplecss",
  "siphasher",
  "strict-num",
- "svgtypes",
+ "svgtypes 0.14.0",
  "tiny-skia-path",
  "unicode-bidi",
  "unicode-script",
  "unicode-vo",
  "xmlwriter",
+]
+
+[[package]]
+name = "usvg-parser"
+version = "0.37.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9bd4e3c291f45d152929a31f0f6c819245e2921bfd01e7bd91201a9af39a2bdc"
+dependencies = [
+ "data-url",
+ "flate2",
+ "imagesize",
+ "kurbo 0.9.5",
+ "log",
+ "roxmltree 0.19.0",
+ "simplecss",
+ "siphasher",
+ "svgtypes 0.13.0",
+ "usvg-tree",
+]
+
+[[package]]
+name = "usvg-text-layout"
+version = "0.37.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d383a3965de199d7f96d4e11a44dd859f46e86de7f3dca9a39bf82605da0a37c"
+dependencies = [
+ "fontdb",
+ "kurbo 0.9.5",
+ "log",
+ "rustybuzz",
+ "unicode-bidi",
+ "unicode-script",
+ "unicode-vo",
+ "usvg-tree",
+]
+
+[[package]]
+name = "usvg-tree"
+version = "0.37.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8ee3d202ebdb97a6215604b8f5b4d6ef9024efd623cf2e373a6416ba976ec7d3"
+dependencies = [
+ "rctree",
+ "strict-num",
+ "svgtypes 0.13.0",
+ "tiny-skia-path",
 ]
 
 [[package]]
