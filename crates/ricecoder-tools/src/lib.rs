@@ -52,6 +52,7 @@
 //! }
 //! ```
 
+pub mod edit;
 pub mod error;
 pub mod patch;
 pub mod provider;
@@ -61,6 +62,7 @@ pub mod todo;
 pub mod webfetch;
 
 // Re-export commonly used types
+pub use edit::{BatchFileEditInput, BatchFileEditOutput, FileEditInput, FileEditOutput, FileEditTool};
 pub use error::ToolError;
 pub use provider::{Provider, ProviderRegistry};
 pub use result::{ResultMetadata, ToolErrorInfo, ToolResult};

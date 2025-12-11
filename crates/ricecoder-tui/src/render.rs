@@ -255,6 +255,9 @@ impl Renderer {
 
         // Render help dialog if visible
         app.help_dialog.render(f, area);
+
+        // Render file picker if visible
+        app.file_picker.render(f, area);
     }
 
     /// Helper to render markdown content

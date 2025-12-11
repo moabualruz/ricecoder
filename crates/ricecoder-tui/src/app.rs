@@ -134,6 +134,8 @@ pub struct App {
     pub image_widget: crate::image_widget::ImageWidget,
     /// Help dialog widget
     pub help_dialog: ricecoder_help::HelpDialog,
+    /// File picker widget for @ file references
+    pub file_picker: crate::file_picker::FilePickerWidget,
 }
 
 impl App {
@@ -184,6 +186,7 @@ impl App {
             image_integration: ImageIntegration::new(),
             image_widget: crate::image_widget::ImageWidget::new(),
             help_dialog: ricecoder_help::HelpDialog::default_ricecoder(),
+            file_picker: crate::file_picker::FilePickerWidget::new(),
         };
 
         Ok(app)
@@ -380,6 +383,100 @@ impl App {
         Ok(())
     }
 
+    /// Handle file picker key events
+    fn handle_file_picker_key(&mut self, key_event: crate::event::KeyEvent) -> Result<()> {
+        match key_event.code {
+            crate::event::KeyCode::Esc => {
+                self.file_picker.hide();
+            }
+            crate::event::KeyCode::Enter => {
+                match self.file_picker.confirm_selection() {
+                    Ok(selections) => {
+                        if !selections.is_empty() {
+                            self.handle_file_selections(selections);
+                        }
+                    }
+                    Err(e) => {
+                        tracing::error!("Failed to select files: {}", e);
+                    }
+                }
+            }
+            crate::event::KeyCode::Up => {
+                self.file_picker.navigate_up();
+            }
+            crate::event::KeyCode::Down => {
+                self.file_picker.navigate_down();
+            }
+            crate::event::KeyCode::Char(' ') => { // Space
+                self.file_picker.toggle_selection();
+            }
+            crate::event::KeyCode::Char(c) => {
+                if key_event.modifiers.ctrl && c == 'a' {
+                    self.file_picker.select_all();
+                } else {
+                    self.file_picker.input_char(c);
+                }
+            }
+            crate::event::KeyCode::Backspace => {
+                self.file_picker.backspace();
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+
+    /// Handle selected files from file picker
+    fn handle_file_selections(&mut self, selections: Vec<crate::file_picker::FileSelection>) {
+        use crate::file_picker::{FileSelectionStatus, FileInfo};
+
+        let mut included_files = Vec::new();
+        let mut warnings = Vec::new();
+
+        for selection in selections {
+            match selection.status {
+                FileSelectionStatus::Included => {
+                    if let Some(content) = selection.content {
+                        included_files.push((selection.path, content));
+                    }
+                }
+                FileSelectionStatus::Directory => {
+                    warnings.push(format!("Directory '{}' cannot be included", selection.path.display()));
+                }
+                FileSelectionStatus::BinaryFile => {
+                    warnings.push(format!("Binary file '{}' cannot be included", selection.path.display()));
+                }
+                FileSelectionStatus::TooLarge => {
+                    let size_mb = selection.info.size as f64 / (1024.0 * 1024.0);
+                    warnings.push(format!("File '{}' is too large ({:.1}MB)", selection.path.display(), size_mb));
+                }
+                FileSelectionStatus::Error(msg) => {
+                    warnings.push(format!("Error reading '{}': {}", selection.path.display(), msg));
+                }
+            }
+        }
+
+        // Include successful files in chat input
+        if !included_files.is_empty() {
+            let mut file_refs = Vec::new();
+            let file_count = included_files.len();
+
+            for (path, content) in included_files {
+                let file_ref = format!("@{}:\n```\n{}\n```\n", path.display(), content);
+                file_refs.push(file_ref);
+            }
+
+            let combined_refs = file_refs.join("\n");
+            self.chat.input.push_str(&combined_refs);
+
+            tracing::info!("Included {} files in chat input", file_count);
+        }
+
+        // Show warnings for failed inclusions
+        for warning in warnings {
+            tracing::warn!("{}", warning);
+        }
+    }
+
     /// Convert app KeyEvent to crossterm KeyEvent
     fn convert_to_crossterm_key(&self, key_event: crate::event::KeyEvent) -> crossterm::event::KeyEvent {
         use crossterm::event::{KeyCode as CKeyCode, KeyEvent as CKeyEvent, KeyModifiers as CKeyModifiers};
@@ -423,6 +520,14 @@ impl App {
             }
         }
 
+        // Handle file picker events if it's visible
+        if self.file_picker.is_visible() {
+            if let Event::Key(key_event) = &event {
+                self.handle_file_picker_key(*key_event)?;
+                return Ok(());
+            }
+        }
+
         match event {
             Event::Key(key_event) => {
                 tracing::debug!("Key event: {:?}", key_event);
@@ -440,6 +545,11 @@ impl App {
                 // Handle text input in chat mode
                 if self.mode == AppMode::Chat {
                     match key_event.code {
+                        crate::event::KeyCode::Char('@') => {
+                            // Show file picker when @ is typed
+                            self.file_picker.show();
+                            return Ok(());
+                        }
                         crate::event::KeyCode::Char(c) => {
                             self.chat.input.push(c);
                             return Ok(());

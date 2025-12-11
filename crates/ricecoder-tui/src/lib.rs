@@ -12,6 +12,7 @@ pub mod command_blocks;
 pub mod command_palette;
 pub mod components;
 pub mod executor;
+pub mod file_picker;
 pub mod config;
 pub mod diff;
 pub mod event;
@@ -60,6 +61,7 @@ pub use executor::{
     CommandParameter, CommandRegistry, CommandResult, ExecutionStatus, ParameterPromptHandler,
     ParameterType, ParameterValidation, validate_parameter,
 };
+pub use file_picker::FilePickerWidget;
 pub use components::{
     DialogType, DialogWidget, ListWidget, MenuWidget, ModeIndicator, ModeSelectionMenu,
     SplitViewWidget, TabWidget,
