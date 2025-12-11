@@ -43,12 +43,12 @@ impl Renderer {
     }
 
     /// Render the UI frame using ratatui's Frame
-    /// 
+    ///
     /// This method is called from within the terminal.draw() closure in main.rs.
     /// It handles all the actual rendering of widgets.
-    /// 
+    ///
     /// Requirements: 1.2 - Render the TUI interface
-    pub fn render_frame(&self, f: &mut ratatui::Frame, app: &App) {
+    pub fn render_frame(f: &mut ratatui::Frame, app: &mut App) {
         // Get the available area
         let area = f.size();
 
@@ -107,7 +107,7 @@ impl Renderer {
                     MessageAuthor::Assistant => Style::default().fg(app.theme.foreground.to_ratatui()),
                 };
                 
-                self.render_markdown(&msg.content, &app.theme, &mut text_lines, base_style);
+                Self::render_markdown(&msg.content, &app.theme, &mut text_lines, base_style);
                 
                 // Tool calls
                 for tool in &msg.tool_calls {
@@ -252,14 +252,16 @@ impl Renderer {
             .block(input_block)
             .style(Style::default().fg(Color::Green));
         f.render_widget(input_paragraph, chunks[2]);
+
+        // Render help dialog if visible
+        app.help_dialog.render(f, area);
     }
 
     /// Helper to render markdown content
     fn render_markdown(
-        &self, 
-        content: &str, 
-        theme: &Theme, 
-        text_lines: &mut Vec<Line>, 
+        content: &str,
+        theme: &Theme,
+        text_lines: &mut Vec<Line>,
         base_style: Style
     ) {
         let elements = MarkdownParser::parse(content);

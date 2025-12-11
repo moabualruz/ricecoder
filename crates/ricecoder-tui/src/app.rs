@@ -132,6 +132,8 @@ pub struct App {
     /// Image widget for displaying images in the terminal
     /// Requirements: 5.1 - Display images in terminal using ricecoder-images ImageDisplay
     pub image_widget: crate::image_widget::ImageWidget,
+    /// Help dialog widget
+    pub help_dialog: ricecoder_help::HelpDialog,
 }
 
 impl App {
@@ -181,6 +183,7 @@ impl App {
             provider_integration,
             image_integration: ImageIntegration::new(),
             image_widget: crate::image_widget::ImageWidget::new(),
+            help_dialog: ricecoder_help::HelpDialog::default_ricecoder(),
         };
 
         Ok(app)
@@ -235,7 +238,7 @@ impl App {
 
             // Render the UI using ratatui's terminal.draw() closure
             terminal.draw(|f| {
-                self.renderer.render_frame(f, self);
+                crate::render::Renderer::render_frame(f, self);
             })?;
         }
 
@@ -332,8 +335,94 @@ impl App {
         &self.widget_integration.layout
     }
 
+    /// Handle input submission
+    pub fn handle_input_submission(&mut self, input: &str) -> Result<()> {
+        // Check if input is a slash command
+        if input.starts_with('/') {
+            self.handle_slash_command(input)?;
+            return Ok(());
+        }
+
+        // Handle regular chat input
+        // TODO: Implement chat message sending
+        tracing::info!("Chat input: {}", input);
+
+        Ok(())
+    }
+
+    /// Handle slash commands
+    fn handle_slash_command(&mut self, command: &str) -> Result<()> {
+        match command {
+            "/help" => {
+                self.help_dialog.show();
+                tracing::info!("Showing help dialog");
+            }
+            "/exit" | "/quit" => {
+                self.should_exit = true;
+                tracing::info!("Exit command received");
+            }
+            "/new" => {
+                // TODO: Create new session
+                tracing::info!("New session command");
+            }
+            "/sessions" => {
+                // TODO: List sessions
+                tracing::info!("List sessions command");
+            }
+            "/clear" => {
+                // TODO: Clear current session
+                tracing::info!("Clear session command");
+            }
+            _ => {
+                tracing::warn!("Unknown slash command: {}", command);
+            }
+        }
+        Ok(())
+    }
+
+    /// Convert app KeyEvent to crossterm KeyEvent
+    fn convert_to_crossterm_key(&self, key_event: crate::event::KeyEvent) -> crossterm::event::KeyEvent {
+        use crossterm::event::{KeyCode as CKeyCode, KeyEvent as CKeyEvent, KeyModifiers as CKeyModifiers};
+
+        let code = match key_event.code {
+            crate::event::KeyCode::Char(c) => CKeyCode::Char(c),
+            crate::event::KeyCode::Enter => CKeyCode::Enter,
+            crate::event::KeyCode::Esc => CKeyCode::Esc,
+            crate::event::KeyCode::Tab => CKeyCode::Tab,
+            crate::event::KeyCode::Backspace => CKeyCode::Backspace,
+            crate::event::KeyCode::Delete => CKeyCode::Delete,
+            crate::event::KeyCode::Up => CKeyCode::Up,
+            crate::event::KeyCode::Down => CKeyCode::Down,
+            crate::event::KeyCode::Left => CKeyCode::Left,
+            crate::event::KeyCode::Right => CKeyCode::Right,
+            crate::event::KeyCode::F(n) => CKeyCode::F(n),
+            _ => CKeyCode::Null,
+        };
+
+        let modifiers = if key_event.modifiers.ctrl {
+            CKeyModifiers::CONTROL
+        } else if key_event.modifiers.shift {
+            CKeyModifiers::SHIFT
+        } else if key_event.modifiers.alt {
+            CKeyModifiers::ALT
+        } else {
+            CKeyModifiers::NONE
+        };
+
+        CKeyEvent::new(code, modifiers)
+    }
+
     /// Handle an event
     pub fn handle_event(&mut self, event: Event) -> Result<()> {
+        // Handle help dialog events first if it's visible
+        if self.help_dialog.is_visible() {
+            if let Event::Key(key_event) = &event {
+                let crossterm_key = self.convert_to_crossterm_key(*key_event);
+                let _ = self.help_dialog.handle_key(crossterm_key)?;
+                return Ok(());
+            }
+        }
+
         match event {
             Event::Key(key_event) => {
                 tracing::debug!("Key event: {:?}", key_event);
@@ -346,6 +435,29 @@ impl App {
                 if key_event.code == crate::event::KeyCode::Tab {
                     self.handle_tab_navigation(key_event.modifiers.shift);
                     return Ok(());
+                }
+
+                // Handle text input in chat mode
+                if self.mode == AppMode::Chat {
+                    match key_event.code {
+                        crate::event::KeyCode::Char(c) => {
+                            self.chat.input.push(c);
+                            return Ok(());
+                        }
+                        crate::event::KeyCode::Backspace => {
+                            self.chat.input.pop();
+                            return Ok(());
+                        }
+                        crate::event::KeyCode::Enter => {
+                            if !self.chat.input.is_empty() {
+                                let input = self.chat.input.clone();
+                                self.chat.input.clear();
+                                self.handle_input_submission(&input)?;
+                            }
+                            return Ok(());
+                        }
+                        _ => {}
+                    }
                 }
 
                 // Mode switching with keyboard shortcuts

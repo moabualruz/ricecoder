@@ -1,7 +1,7 @@
 //! RiceCoder TUI - Terminal User Interface entry point
 
 use anyhow::Result;
-use ricecoder_tui::{App, TerminalState};
+use ricecoder_tui::{render::Renderer, App, TerminalState};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
@@ -117,7 +117,7 @@ async fn run_with_shutdown(app: &mut App, shutdown_flag: &Arc<AtomicBool>, capab
 
             // Render the UI using the terminal
             terminal.draw(|f| {
-                app.renderer.render_frame(f, app);
+                Renderer::render_frame(f, app);
             })?;
         }
 

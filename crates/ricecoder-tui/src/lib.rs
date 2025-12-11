@@ -9,7 +9,9 @@ pub mod banner;
 pub mod clipboard;
 pub mod code_editor_widget;
 pub mod command_blocks;
+pub mod command_palette;
 pub mod components;
+pub mod executor;
 pub mod config;
 pub mod diff;
 pub mod event;
@@ -52,6 +54,12 @@ pub use banner::{BannerArea, BannerComponent, BannerComponentConfig};
 pub use clipboard::{ClipboardError, ClipboardManager, CopyFeedback, CopyOperation};
 pub use code_editor_widget::{CodeEditorWidget, CodeLine, Language, SyntaxTheme};
 pub use command_blocks::{Command, CommandBlock, CommandBlocksWidget, CommandStatus};
+pub use command_palette::{CommandPaletteWidget, PaletteCommand};
+pub use executor::{
+    CommandContext, CommandDefinition, CommandError, CommandExecutionResult, CommandExecutor,
+    CommandParameter, CommandRegistry, CommandResult, ExecutionStatus, ParameterPromptHandler,
+    ParameterType, ParameterValidation, validate_parameter,
+};
 pub use components::{
     DialogType, DialogWidget, ListWidget, MenuWidget, ModeIndicator, ModeSelectionMenu,
     SplitViewWidget, TabWidget,

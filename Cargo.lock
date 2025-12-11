@@ -4016,6 +4016,7 @@ version = "0.1.72"
 dependencies = [
  "anyhow",
  "arboard",
+ "async-trait",
  "atty",
  "chrono",
  "colored",
@@ -4028,7 +4029,9 @@ dependencies = [
  "ratatui 0.26.3",
  "ratatui-image",
  "ratatui-textarea",
+ "regex",
  "resvg 0.40.0",
+ "ricecoder-help",
  "ricecoder-images",
  "ricecoder-sessions",
  "ricecoder-storage",
@@ -4044,6 +4047,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "tui-tree-widget",
+ "unicode-width 0.1.14",
  "usvg 0.40.0",
 ]
 
