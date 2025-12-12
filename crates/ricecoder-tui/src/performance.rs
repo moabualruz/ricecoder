@@ -546,8 +546,1124 @@ impl<T> ContentCache<T> {
 #[derive(Debug, Clone)]
 pub struct CacheStats {
     pub entries: usize,
-    pub total_size_bytes: u64,
-    pub max_entries: usize,
+    pub max_size: usize,
+    pub size_bytes: u64,
+    pub hit_rate: f64,
+}
+
+/// Background job system for async processing
+#[derive(Debug)]
+pub struct JobQueue {
+    /// Job queue with priority ordering
+    queue: std::collections::BinaryHeap<Job>,
+    /// Active jobs being processed
+    active_jobs: std::collections::HashMap<JobId, ActiveJob>,
+    /// Job completion callbacks
+    completion_callbacks: std::collections::HashMap<JobId, Box<dyn Fn(JobResult) + Send + Sync>>,
+    /// Progress reporter for job progress tracking
+    progress_reporter: ProgressReporter,
+    /// Maximum concurrent jobs
+    max_concurrent: usize,
+    /// Job ID counter
+    next_id: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Job {
+    pub id: JobId,
+    pub priority: JobPriority,
+    pub task: JobTask,
+    pub created_at: std::time::Instant,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum JobPriority {
+    Low = 0,
+    Normal = 1,
+    High = 2,
+    Critical = 3,
+}
+
+#[derive(Debug, Clone)]
+pub enum JobTask {
+    /// Generic async function
+    Async(Box<dyn FnOnce() -> std::pin::Pin<Box<dyn std::future::Future<Output = JobResult> + Send>> + Send + Sync>),
+    /// File operation
+    FileOperation { path: std::path::PathBuf, operation: FileOperationType },
+    /// Network request
+    NetworkRequest { url: String, method: String },
+    /// Custom task with data
+    Custom { name: String, data: serde_json::Value },
+}
+
+#[derive(Debug, Clone)]
+pub enum FileOperationType {
+    Read,
+    Write(Vec<u8>),
+    Delete,
+    Copy(std::path::PathBuf),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct JobId(pub u64);
+
+#[derive(Debug)]
+pub struct ActiveJob {
+    pub job: Job,
+    pub handle: tokio::task::JoinHandle<JobResult>,
+    pub cancel_token: tokio::sync::CancellationToken,
+}
+
+#[derive(Debug, Clone)]
+pub enum JobResult {
+    Success(serde_json::Value),
+    Error(String),
+    Cancelled,
+}
+
+impl Ord for Job {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        // Higher priority first, then earlier creation time
+        other.priority.cmp(&self.priority)
+            .then_with(|| self.created_at.cmp(&other.created_at).reverse())
+    }
+}
+
+impl PartialOrd for Job {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl JobQueue {
+    /// Create a new job queue
+    pub fn new() -> Self {
+        Self {
+            queue: std::collections::BinaryHeap::new(),
+            active_jobs: std::collections::HashMap::new(),
+            completion_callbacks: std::collections::HashMap::new(),
+            progress_reporter: ProgressReporter::new(),
+            max_concurrent: 5,
+            next_id: 0,
+        }
+    }
+
+    /// Submit a job to the queue
+    pub fn submit_job(&mut self, task: JobTask, priority: JobPriority) -> JobId {
+        let id = JobId(self.next_id);
+        self.next_id += 1;
+
+        let job = Job {
+            id: id.clone(),
+            priority,
+            task,
+            created_at: std::time::Instant::now(),
+        };
+
+        self.queue.push(job);
+        id
+    }
+
+    /// Submit a job with completion callback
+    pub fn submit_job_with_callback<F>(&mut self, task: JobTask, priority: JobPriority, callback: F) -> JobId
+    where
+        F: Fn(JobResult) + Send + Sync + 'static,
+    {
+        let id = self.submit_job(task, priority);
+        self.completion_callbacks.insert(id.clone(), Box::new(callback));
+        id
+    }
+
+    /// Cancel a job
+    pub fn cancel_job(&mut self, job_id: &JobId) -> bool {
+        if let Some(active_job) = self.active_jobs.remove(job_id) {
+            active_job.cancel_token.cancel();
+            return true;
+        }
+        // Remove from queue if not yet started
+        self.queue.retain(|job| job.id != *job_id);
+        false
+    }
+
+    /// Process pending jobs (call this in an async context)
+    pub async fn process_jobs(&mut self) {
+        // Start new jobs up to the concurrency limit
+        while self.active_jobs.len() < self.max_concurrent {
+            if let Some(job) = self.queue.pop() {
+                self.start_job(job).await;
+            } else {
+                break;
+            }
+        }
+
+        // Clean up completed jobs
+        let mut completed_jobs = Vec::new();
+        for (job_id, active_job) in &self.active_jobs {
+            if active_job.handle.is_finished() {
+                completed_jobs.push(*job_id);
+            }
+        }
+
+        for job_id in completed_jobs {
+            if let Some(active_job) = self.active_jobs.remove(&job_id) {
+                let result = active_job.handle.await.unwrap_or(JobResult::Error("Task panicked".to_string()));
+
+                // Call completion callback if registered
+                if let Some(callback) = self.completion_callbacks.remove(&job_id) {
+                    callback(result);
+                }
+            }
+        }
+    }
+
+    /// Start a job execution
+    async fn start_job(&mut self, job: Job) {
+        let cancel_token = tokio::sync::CancellationToken::new();
+        let cancel_token_clone = cancel_token.clone();
+        let progress_reporter = &self.progress_reporter;
+        let job_id = job.id.clone();
+
+        let handle = tokio::spawn(async move {
+            tokio::select! {
+                result = Self::execute_job_task(job.task, progress_reporter, &job_id) => result,
+                _ = cancel_token_clone.cancelled() => JobResult::Cancelled,
+            }
+        });
+
+        let active_job = ActiveJob {
+            job,
+            handle,
+            cancel_token,
+        };
+
+        self.active_jobs.insert(active_job.job.id.clone(), active_job);
+    }
+
+    /// Execute a job task with progress reporting
+    async fn execute_job_task(task: JobTask, progress_reporter: &ProgressReporter, job_id: &JobId) -> JobResult {
+        let operation_id = format!("job_{}", job_id.0);
+
+        match task {
+            JobTask::Async(future_fn) => {
+                progress_reporter.create_tracker(&operation_id, 1);
+                let _ = progress_reporter.update_progress(&operation_id, 0, "Starting async operation");
+
+                let future = future_fn();
+                let result = future.await;
+
+                match &result {
+                    JobResult::Success(_) => {
+                        let _ = progress_reporter.update_progress(&operation_id, 1, "Async operation completed");
+                        let _ = progress_reporter.complete_operation(&operation_id, "Async operation finished");
+                    }
+                    JobResult::Error(msg) => {
+                        let _ = progress_reporter.fail_operation(&operation_id, msg);
+                    }
+                    JobResult::Cancelled => {
+                        let _ = progress_reporter.fail_operation(&operation_id, "Operation cancelled");
+                    }
+                }
+
+                result
+            }
+            JobTask::FileOperation { path, operation } => {
+                progress_reporter.create_tracker(&operation_id, 2);
+                let _ = progress_reporter.update_progress(&operation_id, 0, &format!("Starting file operation: {:?}", operation));
+
+                let result = Self::execute_file_operation(path.clone(), operation).await;
+
+                match &result {
+                    JobResult::Success(_) => {
+                        let _ = progress_reporter.update_progress(&operation_id, 1, "File operation in progress");
+                        let _ = progress_reporter.update_progress(&operation_id, 2, "File operation completed");
+                        let _ = progress_reporter.complete_operation(&operation_id, "File operation finished");
+                    }
+                    JobResult::Error(msg) => {
+                        let _ = progress_reporter.fail_operation(&operation_id, msg);
+                    }
+                    JobResult::Cancelled => {
+                        let _ = progress_reporter.fail_operation(&operation_id, "File operation cancelled");
+                    }
+                }
+
+                result
+            }
+            JobTask::NetworkRequest { url, method } => {
+                progress_reporter.create_tracker(&operation_id, 3);
+                let _ = progress_reporter.update_progress(&operation_id, 0, &format!("Starting {} request to {}", method, url));
+
+                let result = Self::execute_network_request(url.clone(), method).await;
+
+                match &result {
+                    JobResult::Success(_) => {
+                        let _ = progress_reporter.update_progress(&operation_id, 1, "Sending request");
+                        let _ = progress_reporter.update_progress(&operation_id, 2, "Processing response");
+                        let _ = progress_reporter.update_progress(&operation_id, 3, "Request completed");
+                        let _ = progress_reporter.complete_operation(&operation_id, "Network request finished");
+                    }
+                    JobResult::Error(msg) => {
+                        let _ = progress_reporter.fail_operation(&operation_id, msg);
+                    }
+                    JobResult::Cancelled => {
+                        let _ = progress_reporter.fail_operation(&operation_id, "Network request cancelled");
+                    }
+                }
+
+                result
+            }
+            JobTask::Custom { name, data } => {
+                progress_reporter.create_tracker(&operation_id, 2);
+                let _ = progress_reporter.update_progress(&operation_id, 0, &format!("Starting custom job: {}", name));
+
+                // Placeholder for custom job execution
+                tracing::info!("Executing custom job: {} with data: {:?}", name, data);
+                tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+
+                let _ = progress_reporter.update_progress(&operation_id, 1, "Processing custom job");
+                let _ = progress_reporter.update_progress(&operation_id, 2, "Custom job completed");
+                let _ = progress_reporter.complete_operation(&operation_id, "Custom job finished");
+
+                JobResult::Success(serde_json::json!({ "job": name, "completed": true }))
+            }
+        }
+    }
+
+    /// Execute file operations
+    async fn execute_file_operation(path: std::path::PathBuf, operation: FileOperationType) -> JobResult {
+        match operation {
+            FileOperationType::Read => {
+                match tokio::fs::read(&path).await {
+                    Ok(data) => JobResult::Success(serde_json::json!({
+                        "operation": "read",
+                        "path": path.to_string_lossy(),
+                        "size": data.len()
+                    })),
+                    Err(e) => JobResult::Error(format!("Failed to read file {}: {}", path.display(), e)),
+                }
+            }
+            FileOperationType::Write(data) => {
+                match tokio::fs::write(&path, data).await {
+                    Ok(()) => JobResult::Success(serde_json::json!({
+                        "operation": "write",
+                        "path": path.to_string_lossy()
+                    })),
+                    Err(e) => JobResult::Error(format!("Failed to write file {}: {}", path.display(), e)),
+                }
+            }
+            FileOperationType::Delete => {
+                match tokio::fs::remove_file(&path).await {
+                    Ok(()) => JobResult::Success(serde_json::json!({
+                        "operation": "delete",
+                        "path": path.to_string_lossy()
+                    })),
+                    Err(e) => JobResult::Error(format!("Failed to delete file {}: {}", path.display(), e)),
+                }
+            }
+            FileOperationType::Copy(dest) => {
+                match tokio::fs::copy(&path, &dest).await {
+                    Ok(bytes) => JobResult::Success(serde_json::json!({
+                        "operation": "copy",
+                        "from": path.to_string_lossy(),
+                        "to": dest.to_string_lossy(),
+                        "bytes": bytes
+                    })),
+                    Err(e) => JobResult::Error(format!("Failed to copy {} to {}: {}", path.display(), dest.display(), e)),
+                }
+            }
+        }
+    }
+
+    /// Execute network requests (placeholder)
+    async fn execute_network_request(url: String, method: String) -> JobResult {
+        // Placeholder for network request execution
+        tracing::info!("Executing network request: {} {}", method, url);
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+        JobResult::Success(serde_json::json!({
+            "method": method,
+            "url": url,
+            "status": "simulated"
+        }))
+    }
+
+    /// Get queue statistics
+    pub fn stats(&self) -> JobQueueStats {
+        JobQueueStats {
+            queued_jobs: self.queue.len(),
+            active_jobs: self.active_jobs.len(),
+            max_concurrent: self.max_concurrent,
+            total_submitted: self.next_id as usize,
+        }
+    }
+
+    /// Get progress reporter
+    pub fn progress_reporter(&self) -> &ProgressReporter {
+        &self.progress_reporter
+    }
+
+    /// Get mutable progress reporter
+    pub fn progress_reporter_mut(&mut self) -> &mut ProgressReporter {
+        &mut self.progress_reporter
+    }
+
+    /// Subscribe to progress updates for a job
+    pub fn subscribe_progress(&self, job_id: &JobId) -> Option<tokio::sync::broadcast::Receiver<ProgressUpdate>> {
+        let operation_id = format!("job_{}", job_id.0);
+        self.progress_reporter.subscribe(&operation_id)
+    }
+
+    /// Clean up completed progress trackers
+    pub fn cleanup_progress(&mut self) {
+        self.progress_reporter.cleanup_completed();
+    }
+}
+
+/// Job queue statistics
+#[derive(Debug, Clone)]
+pub struct JobQueueStats {
+    pub queued_jobs: usize,
+    pub active_jobs: usize,
+    pub max_concurrent: usize,
+    pub total_submitted: usize,
+}
+
+/// Progress reporting system for background operations
+#[derive(Debug)]
+pub struct ProgressReporter {
+    /// Progress channels for different operations
+    channels: std::collections::HashMap<String, tokio::sync::broadcast::Sender<ProgressUpdate>>,
+    /// Active progress trackers
+    trackers: std::collections::HashMap<String, ProgressTracker>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ProgressUpdate {
+    pub operation_id: String,
+    pub progress: f32, // 0.0 to 1.0
+    pub message: String,
+    pub status: ProgressStatus,
+    pub timestamp: std::time::Instant,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ProgressStatus {
+    Starting,
+    Running,
+    Paused,
+    Completed,
+    Failed(String),
+    Cancelled,
+}
+
+#[derive(Debug)]
+pub struct ProgressTracker {
+    pub operation_id: String,
+    pub total_steps: usize,
+    pub current_step: usize,
+    pub start_time: std::time::Instant,
+    pub status: ProgressStatus,
+    pub nested_trackers: Vec<ProgressTracker>,
+    pub parent_id: Option<String>,
+}
+
+impl ProgressReporter {
+    /// Create a new progress reporter
+    pub fn new() -> Self {
+        Self {
+            channels: std::collections::HashMap::new(),
+            trackers: std::collections::HashMap::new(),
+        }
+    }
+
+    /// Create a progress tracker for an operation
+    pub fn create_tracker(&mut self, operation_id: &str, total_steps: usize) -> &mut ProgressTracker {
+        let tracker = ProgressTracker {
+            operation_id: operation_id.to_string(),
+            total_steps,
+            current_step: 0,
+            start_time: std::time::Instant::now(),
+            status: ProgressStatus::Starting,
+            nested_trackers: Vec::new(),
+            parent_id: None,
+        };
+
+        self.trackers.insert(operation_id.to_string(), tracker);
+
+        // Create broadcast channel for this operation
+        let (tx, _) = tokio::sync::broadcast::channel(100);
+        self.channels.insert(operation_id.to_string(), tx);
+
+        self.trackers.get_mut(operation_id).unwrap()
+    }
+
+    /// Create a nested progress tracker
+    pub fn create_nested_tracker(&mut self, parent_id: &str, operation_id: &str, total_steps: usize) -> Option<&mut ProgressTracker> {
+        if let Some(parent_tracker) = self.trackers.get_mut(parent_id) {
+            let tracker = ProgressTracker {
+                operation_id: operation_id.to_string(),
+                total_steps,
+                current_step: 0,
+                start_time: std::time::Instant::now(),
+                status: ProgressStatus::Starting,
+                nested_trackers: Vec::new(),
+                parent_id: Some(parent_id.to_string()),
+            };
+
+            parent_tracker.nested_trackers.push(tracker);
+
+            // Create broadcast channel for nested operation
+            let (tx, _) = tokio::sync::broadcast::channel(100);
+            self.channels.insert(operation_id.to_string(), tx);
+
+            return parent_tracker.nested_trackers.last_mut();
+        }
+        None
+    }
+
+    /// Update progress for an operation
+    pub fn update_progress(&mut self, operation_id: &str, step: usize, message: &str) -> Result<(), String> {
+        if let Some(tracker) = self.trackers.get_mut(operation_id) {
+            tracker.current_step = step.min(tracker.total_steps);
+            tracker.status = ProgressStatus::Running;
+
+            let progress = if tracker.total_steps > 0 {
+                tracker.current_step as f32 / tracker.total_steps as f32
+            } else {
+                1.0
+            };
+
+            let update = ProgressUpdate {
+                operation_id: operation_id.to_string(),
+                progress,
+                message: message.to_string(),
+                status: tracker.status.clone(),
+                timestamp: std::time::Instant::now(),
+            };
+
+            // Send update via broadcast channel
+            if let Some(channel) = self.channels.get(operation_id) {
+                let _ = channel.send(update);
+            }
+
+            Ok(())
+        } else {
+            Err(format!("Progress tracker not found: {}", operation_id))
+        }
+    }
+
+    /// Mark operation as completed
+    pub fn complete_operation(&mut self, operation_id: &str, message: &str) -> Result<(), String> {
+        if let Some(tracker) = self.trackers.get_mut(operation_id) {
+            tracker.status = ProgressStatus::Completed;
+            tracker.current_step = tracker.total_steps;
+
+            let update = ProgressUpdate {
+                operation_id: operation_id.to_string(),
+                progress: 1.0,
+                message: message.to_string(),
+                status: tracker.status.clone(),
+                timestamp: std::time::Instant::now(),
+            };
+
+            if let Some(channel) = self.channels.get(operation_id) {
+                let _ = channel.send(update);
+            }
+
+            Ok(())
+        } else {
+            Err(format!("Progress tracker not found: {}", operation_id))
+        }
+    }
+
+    /// Mark operation as failed
+    pub fn fail_operation(&mut self, operation_id: &str, error: &str) -> Result<(), String> {
+        if let Some(tracker) = self.trackers.get_mut(operation_id) {
+            tracker.status = ProgressStatus::Failed(error.to_string());
+
+            let update = ProgressUpdate {
+                operation_id: operation_id.to_string(),
+                progress: tracker.current_step as f32 / tracker.total_steps as f32,
+                message: format!("Failed: {}", error),
+                status: tracker.status.clone(),
+                timestamp: std::time::Instant::now(),
+            };
+
+            if let Some(channel) = self.channels.get(operation_id) {
+                let _ = channel.send(update);
+            }
+
+            Ok(())
+        } else {
+            Err(format!("Progress tracker not found: {}", operation_id))
+        }
+    }
+
+    /// Subscribe to progress updates for an operation
+    pub fn subscribe(&self, operation_id: &str) -> Option<tokio::sync::broadcast::Receiver<ProgressUpdate>> {
+        self.channels.get(operation_id)
+            .map(|tx| tx.subscribe())
+    }
+
+    /// Get progress tracker for an operation
+    pub fn get_tracker(&self, operation_id: &str) -> Option<&ProgressTracker> {
+        self.trackers.get(operation_id)
+    }
+
+    /// Get all active trackers
+    pub fn active_trackers(&self) -> Vec<&ProgressTracker> {
+        self.trackers.values().filter(|t| t.status == ProgressStatus::Running).collect()
+    }
+
+    /// Clean up completed trackers
+    pub fn cleanup_completed(&mut self) {
+        let completed: Vec<String> = self.trackers.iter()
+            .filter(|(_, tracker)| {
+                matches!(tracker.status, ProgressStatus::Completed | ProgressStatus::Failed(_) | ProgressStatus::Cancelled)
+            })
+            .map(|(id, _)| id.clone())
+            .collect();
+
+        for id in completed {
+            self.trackers.remove(&id);
+            self.channels.remove(&id);
+        }
+    }
+
+    /// Get overall progress statistics
+    pub fn stats(&self) -> ProgressStats {
+        let total_trackers = self.trackers.len();
+        let active_trackers = self.active_trackers().len();
+        let completed_trackers = self.trackers.values()
+            .filter(|t| matches!(t.status, ProgressStatus::Completed))
+            .count();
+        let failed_trackers = self.trackers.values()
+            .filter(|t| matches!(t.status, ProgressStatus::Failed(_)))
+            .count();
+
+        ProgressStats {
+            total_trackers,
+            active_trackers,
+            completed_trackers,
+            failed_trackers,
+        }
+    }
+}
+
+/// Progress statistics
+#[derive(Debug, Clone)]
+pub struct ProgressStats {
+    pub total_trackers: usize,
+    pub active_trackers: usize,
+    pub completed_trackers: usize,
+    pub failed_trackers: usize,
+}
+
+/// Performance profiler for generating flame graphs and profiling data
+#[derive(Debug)]
+pub struct PerformanceProfiler {
+    /// Whether profiling is enabled
+    enabled: bool,
+    /// Profiling data collection
+    spans: Vec<ProfileSpan>,
+    /// Current active spans
+    active_spans: Vec<ProfileSpan>,
+    /// Maximum number of spans to keep
+    max_spans: usize,
+    /// Start time of profiling session
+    session_start: std::time::Instant,
+}
+
+#[derive(Debug, Clone)]
+pub struct ProfileSpan {
+    /// Span name/identifier
+    pub name: String,
+    /// Start time relative to session start
+    pub start_time: std::time::Duration,
+    /// Duration of the span
+    pub duration: std::time::Duration,
+    /// Parent span index (None for root spans)
+    pub parent_index: Option<usize>,
+    /// Thread ID where span was recorded
+    pub thread_id: u64,
+    /// Additional metadata
+    pub metadata: std::collections::HashMap<String, String>,
+}
+
+/// CPU usage monitor
+#[derive(Debug)]
+pub struct CpuMonitor {
+    /// CPU usage samples
+    samples: VecDeque<CpuSample>,
+    /// Maximum samples to keep
+    max_samples: usize,
+    /// Last CPU measurement time
+    last_measurement: std::time::Instant,
+}
+
+#[derive(Debug, Clone)]
+pub struct CpuSample {
+    pub timestamp: std::time::Instant,
+    pub user_percent: f64,
+    pub system_percent: f64,
+    pub total_percent: f64,
+    pub thread_count: usize,
+}
+
+/// Memory profiler for heap analysis
+#[derive(Debug)]
+pub struct MemoryProfiler {
+    /// Memory allocation samples
+    allocations: VecDeque<MemorySample>,
+    /// Maximum samples to keep
+    max_samples: usize,
+    /// Current memory statistics
+    current_stats: MemoryStats,
+}
+
+#[derive(Debug, Clone)]
+pub struct MemorySample {
+    pub timestamp: std::time::Instant,
+    pub allocated_bytes: u64,
+    pub deallocated_bytes: u64,
+    pub live_objects: usize,
+    pub heap_size: u64,
+}
+
+#[derive(Debug, Clone)]
+pub struct MemoryStats {
+    pub total_allocated: u64,
+    pub total_deallocated: u64,
+    pub current_live: usize,
+    pub peak_heap_size: u64,
+    pub allocation_count: u64,
+    pub deallocation_count: u64,
+}
+
+impl PerformanceProfiler {
+    /// Create a new performance profiler
+    pub fn new() -> Self {
+        Self {
+            enabled: false,
+            spans: Vec::new(),
+            active_spans: Vec::new(),
+            max_spans: 10000,
+            session_start: std::time::Instant::now(),
+        }
+    }
+
+    /// Enable profiling
+    pub fn enable(&mut self) {
+        self.enabled = true;
+        self.session_start = std::time::Instant::now();
+        self.spans.clear();
+        self.active_spans.clear();
+    }
+
+    /// Disable profiling
+    pub fn disable(&mut self) {
+        self.enabled = false;
+    }
+
+    /// Check if profiling is enabled
+    pub fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    /// Start a profiling span
+    pub fn start_span(&mut self, name: &str) -> Option<ProfileSpanHandle> {
+        if !self.enabled {
+            return None;
+        }
+
+        let span = ProfileSpan {
+            name: name.to_string(),
+            start_time: self.session_start.elapsed(),
+            duration: std::time::Duration::from_nanos(0),
+            parent_index: self.active_spans.last().map(|_| self.spans.len().saturating_sub(1)),
+            thread_id: get_current_thread_id(),
+            metadata: std::collections::HashMap::new(),
+        };
+
+        self.active_spans.push(span.clone());
+        Some(ProfileSpanHandle {
+            profiler: self as *mut PerformanceProfiler,
+            span_index: self.spans.len(),
+        })
+    }
+
+    /// End the current span
+    pub fn end_span(&mut self, handle: ProfileSpanHandle) {
+        if !self.enabled {
+            return;
+        }
+
+        if let Some(span) = self.active_spans.pop() {
+            let mut completed_span = span;
+            completed_span.duration = self.session_start.elapsed() - completed_span.start_time;
+
+            // Add metadata about duration
+            completed_span.metadata.insert(
+                "duration_ms".to_string(),
+                format!("{:.3}", completed_span.duration.as_millis())
+            );
+
+            self.spans.push(completed_span);
+
+            // Limit span count
+            if self.spans.len() > self.max_spans {
+                // Remove oldest spans (keep most recent)
+                let remove_count = self.spans.len() - self.max_spans;
+                self.spans.drain(0..remove_count);
+            }
+        }
+    }
+
+    /// Add metadata to current span
+    pub fn add_metadata(&mut self, key: &str, value: &str) {
+        if let Some(span) = self.active_spans.last_mut() {
+            span.metadata.insert(key.to_string(), value.to_string());
+        }
+    }
+
+    /// Generate flame graph data in folded format
+    pub fn generate_flame_graph(&self) -> String {
+        let mut lines = Vec::new();
+
+        for span in &self.spans {
+            // Build stack trace
+            let mut stack = Vec::new();
+            let mut current_index = Some(span.parent_index);
+
+            // Walk up the parent chain to build stack
+            while let Some(idx) = current_index {
+                if let Some(parent_span) = self.spans.get(idx) {
+                    stack.push(parent_span.name.clone());
+                    current_index = parent_span.parent_index;
+                } else {
+                    break;
+                }
+            }
+
+            stack.reverse();
+            stack.push(span.name.clone());
+
+            // Format: stack_trace samples
+            let stack_trace = stack.join(";");
+            let samples = span.duration.as_micros() as u64;
+
+            lines.push(format!("{} {}", stack_trace, samples));
+        }
+
+        lines.join("\n")
+    }
+
+    /// Get profiling statistics
+    pub fn stats(&self) -> ProfileStats {
+        let total_spans = self.spans.len();
+        let active_spans = self.active_spans.len();
+        let session_duration = self.session_start.elapsed();
+
+        let total_duration: std::time::Duration = self.spans.iter()
+            .map(|s| s.duration)
+            .sum();
+
+        let avg_span_duration = if total_spans > 0 {
+            total_duration / total_spans as u32
+        } else {
+            std::time::Duration::from_nanos(0)
+        };
+
+        ProfileStats {
+            enabled: self.enabled,
+            total_spans,
+            active_spans,
+            session_duration,
+            total_duration,
+            avg_span_duration,
+        }
+    }
+
+    /// Clear all profiling data
+    pub fn clear(&mut self) {
+        self.spans.clear();
+        self.active_spans.clear();
+        self.session_start = std::time::Instant::now();
+    }
+}
+
+/// RAII handle for profiling spans
+pub struct ProfileSpanHandle {
+    profiler: *mut PerformanceProfiler,
+    span_index: usize,
+}
+
+impl Drop for ProfileSpanHandle {
+    fn drop(&mut self) {
+        unsafe {
+            if let Some(profiler) = self.profiler.as_mut() {
+                profiler.end_span(ProfileSpanHandle {
+                    profiler: self.profiler,
+                    span_index: self.span_index,
+                });
+            }
+        }
+    }
+}
+
+/// Profiling statistics
+#[derive(Debug, Clone)]
+pub struct ProfileStats {
+    pub enabled: bool,
+    pub total_spans: usize,
+    pub active_spans: usize,
+    pub session_duration: std::time::Duration,
+    pub total_duration: std::time::Duration,
+    pub avg_span_duration: std::time::Duration,
+}
+
+impl CpuMonitor {
+    /// Create a new CPU monitor
+    pub fn new() -> Self {
+        Self {
+            samples: VecDeque::new(),
+            max_samples: 100,
+            last_measurement: std::time::Instant::now(),
+        }
+    }
+
+    /// Record a CPU usage sample
+    pub fn record_sample(&mut self, user_percent: f64, system_percent: f64, thread_count: usize) {
+        let sample = CpuSample {
+            timestamp: std::time::Instant::now(),
+            user_percent,
+            system_percent,
+            total_percent: user_percent + system_percent,
+            thread_count,
+        };
+
+        self.samples.push_back(sample);
+        if self.samples.len() > self.max_samples {
+            self.samples.pop_front();
+        }
+        self.last_measurement = std::time::Instant::now();
+    }
+
+    /// Get current CPU usage statistics
+    pub fn current_stats(&self) -> Option<CpuStats> {
+        self.samples.back().map(|sample| CpuStats {
+            user_percent: sample.user_percent,
+            system_percent: sample.system_percent,
+            total_percent: sample.total_percent,
+            thread_count: sample.thread_count,
+            timestamp: sample.timestamp,
+        })
+    }
+
+    /// Get CPU usage history
+    pub fn history(&self) -> Vec<&CpuSample> {
+        self.samples.iter().collect()
+    }
+
+    /// Calculate average CPU usage over recent samples
+    pub fn average_usage(&self, sample_count: usize) -> Option<CpuStats> {
+        let recent_samples: Vec<_> = self.samples.iter().rev().take(sample_count).collect();
+
+        if recent_samples.is_empty() {
+            return None;
+        }
+
+        let avg_user = recent_samples.iter().map(|s| s.user_percent).sum::<f64>() / recent_samples.len() as f64;
+        let avg_system = recent_samples.iter().map(|s| s.system_percent).sum::<f64>() / recent_samples.len() as f64;
+        let avg_total = avg_user + avg_system;
+        let avg_threads = recent_samples.iter().map(|s| s.thread_count).sum::<usize>() / recent_samples.len();
+
+        Some(CpuStats {
+            user_percent: avg_user,
+            system_percent: avg_system,
+            total_percent: avg_total,
+            thread_count: avg_threads,
+            timestamp: std::time::Instant::now(),
+        })
+    }
+}
+
+/// CPU usage statistics
+#[derive(Debug, Clone)]
+pub struct CpuStats {
+    pub user_percent: f64,
+    pub system_percent: f64,
+    pub total_percent: f64,
+    pub thread_count: usize,
+    pub timestamp: std::time::Instant,
+}
+
+impl MemoryProfiler {
+    /// Create a new memory profiler
+    pub fn new() -> Self {
+        Self {
+            allocations: VecDeque::new(),
+            max_samples: 1000,
+            current_stats: MemoryStats {
+                total_allocated: 0,
+                total_deallocated: 0,
+                current_live: 0,
+                peak_heap_size: 0,
+                allocation_count: 0,
+                deallocation_count: 0,
+            },
+        }
+    }
+
+    /// Record a memory allocation
+    pub fn record_allocation(&mut self, size: u64, heap_size: u64) {
+        self.current_stats.total_allocated += size;
+        self.current_stats.current_live += 1;
+        self.current_stats.allocation_count += 1;
+        self.current_stats.peak_heap_size = self.current_stats.peak_heap_size.max(heap_size);
+
+        let sample = MemorySample {
+            timestamp: std::time::Instant::now(),
+            allocated_bytes: size,
+            deallocated_bytes: 0,
+            live_objects: self.current_stats.current_live,
+            heap_size,
+        };
+
+        self.allocations.push_back(sample);
+        if self.allocations.len() > self.max_samples {
+            self.allocations.pop_front();
+        }
+    }
+
+    /// Record a memory deallocation
+    pub fn record_deallocation(&mut self, size: u64, heap_size: u64) {
+        self.current_stats.total_deallocated += size;
+        self.current_stats.current_live = self.current_stats.current_live.saturating_sub(1);
+        self.current_stats.deallocation_count += 1;
+
+        let sample = MemorySample {
+            timestamp: std::time::Instant::now(),
+            allocated_bytes: 0,
+            deallocated_bytes: size,
+            live_objects: self.current_stats.current_live,
+            heap_size,
+        };
+
+        self.allocations.push_back(sample);
+        if self.allocations.len() > self.max_samples {
+            self.allocations.pop_front();
+        }
+    }
+
+    /// Get current memory statistics
+    pub fn current_stats(&self) -> &MemoryStats {
+        &self.current_stats
+    }
+
+    /// Get memory allocation history
+    pub fn history(&self) -> Vec<&MemorySample> {
+        self.allocations.iter().collect()
+    }
+
+    /// Detect potential memory leaks
+    pub fn detect_leaks(&self) -> Vec<MemoryLeak> {
+        let mut leaks = Vec::new();
+
+        // Simple heuristic: if live objects keep increasing over time
+        let recent_samples: Vec<_> = self.allocations.iter().rev().take(10).collect();
+
+        if recent_samples.len() >= 5 {
+            let live_counts: Vec<_> = recent_samples.iter().map(|s| s.live_objects).collect();
+            let increasing = live_counts.windows(2).all(|w| w[1] >= w[0]);
+
+            if increasing && *live_counts.last().unwrap() > live_counts[0] * 2 {
+                leaks.push(MemoryLeak {
+                    severity: LeakSeverity::High,
+                    description: "Live object count steadily increasing".to_string(),
+                    live_objects: *live_counts.last().unwrap(),
+                    trend: "increasing".to_string(),
+                });
+            }
+        }
+
+        leaks
+    }
+}
+
+/// Memory leak detection result
+#[derive(Debug, Clone)]
+pub struct MemoryLeak {
+    pub severity: LeakSeverity,
+    pub description: String,
+    pub live_objects: usize,
+    pub trend: String,
+}
+
+/// Memory leak severity levels
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum LeakSeverity {
+    Low,
+    Medium,
+    High,
+    Critical,
+}
+
+/// Get current thread ID (simplified implementation)
+fn get_current_thread_id() -> u64 {
+    // In a real implementation, this would use thread::current().id()
+    // For now, return a simple counter or hash
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+
+    let mut hasher = DefaultHasher::new();
+    std::thread::current().id().hash(&mut hasher);
+    hasher.finish()
+}
+
+impl ProgressTracker {
+    /// Get current progress as a percentage (0.0 to 1.0)
+    pub fn progress(&self) -> f32 {
+        if self.total_steps == 0 {
+            return 1.0;
+        }
+        self.current_step as f32 / self.total_steps as f32
+    }
+
+    /// Get elapsed time
+    pub fn elapsed(&self) -> std::time::Duration {
+        self.start_time.elapsed()
+    }
+
+    /// Estimate remaining time based on current progress
+    pub fn estimated_remaining(&self) -> Option<std::time::Duration> {
+        if self.current_step == 0 || self.progress() >= 1.0 {
+            return None;
+        }
+
+        let elapsed = self.elapsed();
+        let progress = self.progress();
+        let total_estimated = elapsed.div_f32(progress);
+        let remaining = total_estimated.saturating_sub(elapsed);
+
+        Some(remaining)
+    }
+
+    /// Get combined progress including nested trackers
+    pub fn combined_progress(&self) -> f32 {
+        if self.nested_trackers.is_empty() {
+            return self.progress();
+        }
+
+        let self_weight = 0.5; // 50% weight for parent
+        let nested_weight = 0.5 / self.nested_trackers.len() as f32; // Equal weight for nested
+
+        let mut total_progress = self.progress() * self_weight;
+
+        for nested in &self.nested_trackers {
+            total_progress += nested.combined_progress() * nested_weight;
+        }
+
+        total_progress
+    }
 }
 
 /// Configurable history limits

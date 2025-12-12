@@ -167,6 +167,7 @@ pub use status_bar::{ConnectionStatus, InputMode, StatusBarWidget};
 pub use session_manager::{SessionData, SessionManager};
 pub use model::{AppModel, AppMessage, AppMode, CommandResult as TeaCommandResult, OperationId, StateDiff, StateChange, SessionState, CommandState, UiState, PendingOperation, Subscription, MessageBatch, MessagePriority, MessageBatchProcessor, MessageBatchStats};
 pub use tea::{ReactiveState, StateDebugger, StateSnapshot, StateChangeLog, StateDebugStats};
+pub use performance::{RenderPerformanceTracker, MemoryTracker, VirtualScrollManager, LazyMessageHistory, ContentCache, CacheStats, JobQueue, Job, JobPriority, JobTask, JobId, JobResult, JobQueueStats, ProgressReporter, ProgressUpdate, ProgressStatus, ProgressTracker, ProgressStats, PerformanceProfiler, ProfileSpan, ProfileSpanHandle, ProfileStats, CpuMonitor, CpuSample, CpuStats, MemoryProfiler, MemorySample, MemoryStats, MemoryLeak, LeakSeverity};
 pub use update::Command as TeaCommand;
 pub use view::view;
 pub use render_pipeline::{VirtualRenderer, VirtualList, VirtualScroll, LazyLoader, RenderBatch, RenderOperation, RenderPriority, VirtualNode, ComponentType};

@@ -294,13 +294,683 @@ impl ElementType {
     }
 }
 
-/// Screen reader announcer for state changes
+/// Screen reader announcer for state changes with ARIA-like support
 #[derive(Debug, Clone)]
 pub struct ScreenReaderAnnouncer {
     /// Whether announcements are enabled
     enabled: bool,
     /// Announcement history (for testing)
     history: Vec<Announcement>,
+    /// Live regions for dynamic content updates
+    live_regions: std::collections::HashMap<String, LiveRegion>,
+    /// Announcement queue for ordered delivery
+    announcement_queue: std::collections::VecDeque<Announcement>,
+    /// Priority-based announcement processing
+    processing_priority: bool,
+}
+
+/// Live region for dynamic content updates (ARIA live regions)
+#[derive(Debug, Clone)]
+pub struct LiveRegion {
+    pub id: String,
+    pub content: String,
+    pub aria_live: AriaLive,
+    pub aria_atomic: bool,
+    pub aria_relevant: AriaRelevant,
+    pub last_update: std::time::Instant,
+}
+
+/// ARIA live property values
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AriaLive {
+    Off,      // No announcements
+    Polite,   // Announce when user is idle
+    Assertive, // Announce immediately
+}
+
+/// ARIA relevant property values
+#[derive(Debug, Clone)]
+pub enum AriaRelevant {
+    Additions,      // Only additions
+    Removals,       // Only removals
+    Text,          // Text changes
+    All,           // All changes
+}
+
+/// ARIA-like semantic roles for UI elements
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AriaRole {
+    Banner,
+    Navigation,
+    Main,
+    Complementary,
+    ContentInfo,
+    Search,
+    Form,
+    Button,
+    Link,
+    Heading,
+    List,
+    ListItem,
+    Status,
+    Alert,
+    Dialog,
+    Menu,
+    MenuItem,
+    Tab,
+    TabPanel,
+    ProgressBar,
+    TextBox,
+    CheckBox,
+    Radio,
+    Slider,
+    SpinButton,
+}
+
+/// ARIA-like properties for accessibility
+#[derive(Debug, Clone)]
+pub struct AriaProperties {
+    pub role: Option<AriaRole>,
+    pub label: Option<String>,
+    pub description: Option<String>,
+    pub expanded: Option<bool>,
+    pub selected: Option<bool>,
+    pub checked: Option<bool>,
+    pub disabled: Option<bool>,
+    pub required: Option<bool>,
+    pub invalid: Option<bool>,
+    pub level: Option<u32>, // For headings
+    pub value_text: Option<String>,
+    pub value_min: Option<f64>,
+    pub value_max: Option<f64>,
+    pub value_now: Option<f64>,
+}
+
+impl Default for AriaProperties {
+    fn default() -> Self {
+        Self {
+            role: None,
+            label: None,
+            description: None,
+            expanded: None,
+            selected: None,
+            checked: None,
+            disabled: None,
+            required: None,
+            invalid: None,
+            level: None,
+            value_text: None,
+            value_min: None,
+            value_max: None,
+            value_now: None,
+        }
+    }
+}
+
+impl AriaProperties {
+    /// Create a new AriaProperties with a specific role
+    pub fn with_role(role: AriaRole) -> Self {
+        Self {
+            role: Some(role),
+            ..Default::default()
+        }
+    }
+
+    /// Set the label
+    pub fn with_label(mut self, label: impl Into<String>) -> Self {
+        self.label = Some(label.into());
+        self
+    }
+
+    /// Set the description
+    pub fn with_description(mut self, description: impl Into<String>) -> Self {
+        self.description = Some(description.into());
+        self
+    }
+
+    /// Generate screen reader description
+    pub fn screen_reader_description(&self) -> String {
+        let mut parts = Vec::new();
+
+        if let Some(role) = &self.role {
+            parts.push(format!("{:?}", role).to_lowercase().replace('_', " "));
+        }
+
+        if let Some(label) = &self.label {
+            parts.push(label.clone());
+        }
+
+        if let Some(description) = &self.description {
+            parts.push(description.clone());
+        }
+
+        if let Some(expanded) = self.expanded {
+            parts.push(if expanded { "expanded".to_string() } else { "collapsed".to_string() });
+        }
+
+        if let Some(selected) = self.selected {
+            if selected {
+                parts.push("selected".to_string());
+            }
+        }
+
+        if let Some(checked) = self.checked {
+            parts.push(if checked { "checked".to_string() } else { "unchecked".to_string() });
+        }
+
+        if let Some(disabled) = self.disabled {
+            if disabled {
+                parts.push("disabled".to_string());
+            }
+        }
+
+        if let Some(required) = self.required {
+            if required {
+                parts.push("required".to_string());
+            }
+        }
+
+        if let Some(invalid) = self.invalid {
+            if invalid {
+                parts.push("invalid".to_string());
+            }
+        }
+
+        if let Some(level) = self.level {
+            parts.push(format!("level {}", level));
+        }
+
+        if let Some(value_text) = &self.value_text {
+            parts.push(value_text.clone());
+        } else if let Some(value_now) = self.value_now {
+            if let (Some(min), Some(max)) = (self.value_min, self.value_max) {
+                parts.push(format!("{:.0}%", ((value_now - min) / (max - min)) * 100.0));
+            } else {
+                parts.push(format!("{:.0}", value_now));
+            }
+        }
+
+        parts.join(", ")
+    }
+}
+
+/// Semantic navigation manager for landmark and heading navigation
+#[derive(Debug)]
+pub struct SemanticNavigator {
+    /// Registered landmarks
+    landmarks: std::collections::HashMap<String, Landmark>,
+    /// Registered headings
+    headings: Vec<Heading>,
+    /// Current navigation position
+    current_position: NavigationPosition,
+}
+
+/// Landmark for semantic navigation
+#[derive(Debug, Clone)]
+pub struct Landmark {
+    pub id: String,
+    pub role: AriaRole,
+    pub label: String,
+    pub bounds: Option<ratatui::layout::Rect>,
+    pub accessible: bool,
+}
+
+/// Heading for semantic navigation
+#[derive(Debug, Clone)]
+pub struct Heading {
+    pub id: String,
+    pub level: u32,
+    pub text: String,
+    pub bounds: Option<ratatui::layout::Rect>,
+    pub accessible: bool,
+}
+
+/// Current navigation position
+#[derive(Debug, Clone)]
+pub enum NavigationPosition {
+    Landmark(String),
+    Heading(usize),
+    None,
+}
+
+/// Navigation direction
+#[derive(Debug, Clone, Copy)]
+pub enum NavigationDirection {
+    Next,
+    Previous,
+    First,
+    Last,
+}
+
+impl SemanticNavigator {
+    /// Create a new semantic navigator
+    pub fn new() -> Self {
+        Self {
+            landmarks: std::collections::HashMap::new(),
+            headings: Vec::new(),
+            current_position: NavigationPosition::None,
+        }
+    }
+
+    /// Register a landmark
+    pub fn register_landmark(&mut self, landmark: Landmark) {
+        self.landmarks.insert(landmark.id.clone(), landmark);
+    }
+
+    /// Register a heading
+    pub fn register_heading(&mut self, heading: Heading) {
+        self.headings.push(heading);
+        // Keep headings sorted by their position in the document
+        self.headings.sort_by_key(|h| h.bounds.map(|b| b.y).unwrap_or(0));
+    }
+
+    /// Unregister a landmark
+    pub fn unregister_landmark(&mut self, id: &str) {
+        self.landmarks.remove(id);
+    }
+
+    /// Unregister a heading
+    pub fn unregister_heading(&mut self, id: &str) {
+        self.headings.retain(|h| h.id != id);
+    }
+
+    /// Navigate to next landmark
+    pub fn next_landmark(&mut self) -> Option<&Landmark> {
+        let current_id = match &self.current_position {
+            NavigationPosition::Landmark(id) => Some(id.clone()),
+            _ => None,
+        };
+
+        let landmark_ids: Vec<String> = self.landmarks.keys().cloned().collect();
+        let next_id = if let Some(current) = current_id {
+            if let Some(pos) = landmark_ids.iter().position(|id| id == &current) {
+                let next_pos = (pos + 1) % landmark_ids.len();
+                landmark_ids.get(next_pos).cloned()
+            } else {
+                landmark_ids.first().cloned()
+            }
+        } else {
+            landmark_ids.first().cloned()
+        };
+
+        if let Some(id) = next_id {
+            self.current_position = NavigationPosition::Landmark(id.clone());
+            self.landmarks.get(&id)
+        } else {
+            None
+        }
+    }
+
+    /// Navigate to previous landmark
+    pub fn previous_landmark(&mut self) -> Option<&Landmark> {
+        let current_id = match &self.current_position {
+            NavigationPosition::Landmark(id) => Some(id.clone()),
+            _ => None,
+        };
+
+        let landmark_ids: Vec<String> = self.landmarks.keys().cloned().collect();
+        let prev_id = if let Some(current) = current_id {
+            if let Some(pos) = landmark_ids.iter().position(|id| id == &current) {
+                let prev_pos = if pos == 0 { landmark_ids.len() - 1 } else { pos - 1 };
+                landmark_ids.get(prev_pos).cloned()
+            } else {
+                landmark_ids.last().cloned()
+            }
+        } else {
+            landmark_ids.last().cloned()
+        };
+
+        if let Some(id) = prev_id {
+            self.current_position = NavigationPosition::Landmark(id.clone());
+            self.landmarks.get(&id)
+        } else {
+            None
+        }
+    }
+
+    /// Navigate to next heading
+    pub fn next_heading(&mut self) -> Option<&Heading> {
+        let current_idx = match &self.current_position {
+            NavigationPosition::Heading(idx) => Some(*idx),
+            _ => None,
+        };
+
+        let next_idx = if let Some(current) = current_idx {
+            if current + 1 < self.headings.len() {
+                current + 1
+            } else {
+                0
+            }
+        } else {
+            0
+        };
+
+        if let Some(heading) = self.headings.get(next_idx) {
+            self.current_position = NavigationPosition::Heading(next_idx);
+            Some(heading)
+        } else {
+            None
+        }
+    }
+
+    /// Navigate to previous heading
+    pub fn previous_heading(&mut self) -> Option<&Heading> {
+        let current_idx = match &self.current_position {
+            NavigationPosition::Heading(idx) => Some(*idx),
+            _ => None,
+        };
+
+        let prev_idx = if let Some(current) = current_idx {
+            if current > 0 {
+                current - 1
+            } else {
+                self.headings.len().saturating_sub(1)
+            }
+        } else {
+            self.headings.len().saturating_sub(1)
+        };
+
+        if let Some(heading) = self.headings.get(prev_idx) {
+            self.current_position = NavigationPosition::Heading(prev_idx);
+            Some(heading)
+        } else {
+            None
+        }
+    }
+
+    /// Navigate to next heading of specific level
+    pub fn next_heading_level(&mut self, level: u32) -> Option<&Heading> {
+        let current_idx = match &self.current_position {
+            NavigationPosition::Heading(idx) => Some(*idx),
+            _ => None,
+        };
+
+        let start_idx = current_idx.map(|i| i + 1).unwrap_or(0);
+
+        for (idx, heading) in self.headings.iter().enumerate().skip(start_idx) {
+            if heading.level == level {
+                self.current_position = NavigationPosition::Heading(idx);
+                return Some(heading);
+            }
+        }
+
+        // Wrap around to beginning
+        for (idx, heading) in self.headings.iter().enumerate() {
+            if heading.level == level {
+                self.current_position = NavigationPosition::Heading(idx);
+                return Some(heading);
+            }
+        }
+
+        None
+    }
+
+    /// Get all landmarks
+    pub fn landmarks(&self) -> &std::collections::HashMap<String, Landmark> {
+        &self.landmarks
+    }
+
+    /// Get all headings
+    pub fn headings(&self) -> &[Heading] {
+        &self.headings
+    }
+
+    /// Get current navigation position
+    pub fn current_position(&self) -> &NavigationPosition {
+        &self.current_position
+    }
+
+    /// Clear all registered elements
+    pub fn clear(&mut self) {
+        self.landmarks.clear();
+        self.headings.clear();
+        self.current_position = NavigationPosition::None;
+    }
+}
+
+impl Default for SemanticNavigator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Vim-like input mode manager
+#[derive(Debug, Clone)]
+pub struct VimModeManager {
+    /// Current input mode
+    current_mode: InputMode,
+    /// Previous mode (for switching back)
+    previous_mode: InputMode,
+    /// Mode-specific keybindings
+    mode_keybindings: std::collections::HashMap<InputMode, std::collections::HashMap<String, ModeAction>>,
+    /// Mode indicators
+    mode_indicators: std::collections::HashMap<InputMode, ModeIndicator>,
+}
+
+/// Input modes (vim-like)
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InputMode {
+    /// Normal mode (navigation and commands)
+    Normal,
+    /// Insert mode (text input)
+    Insert,
+    /// Visual mode (text selection)
+    Visual,
+    /// Command mode (ex commands)
+    Command,
+    /// Replace mode (replace text)
+    Replace,
+}
+
+/// Actions that can be performed in different modes
+#[derive(Debug, Clone)]
+pub enum ModeAction {
+    SwitchMode(InputMode),
+    ExecuteCommand(String),
+    MoveCursor(Movement),
+    InsertText(String),
+    DeleteText(DeleteOperation),
+    Custom(String),
+}
+
+/// Cursor movement operations
+#[derive(Debug, Clone)]
+pub enum Movement {
+    Left,
+    Right,
+    Up,
+    Down,
+    WordForward,
+    WordBackward,
+    LineStart,
+    LineEnd,
+    DocumentStart,
+    DocumentEnd,
+}
+
+/// Text deletion operations
+#[derive(Debug, Clone)]
+pub enum DeleteOperation {
+    Character,
+    Word,
+    Line,
+    Selection,
+}
+
+/// Mode indicator for UI display
+#[derive(Debug, Clone)]
+pub struct ModeIndicator {
+    pub text: String,
+    pub style: ModeIndicatorStyle,
+}
+
+/// Visual style for mode indicators
+#[derive(Debug, Clone)]
+pub enum ModeIndicatorStyle {
+    Normal,
+    Insert,
+    Visual,
+    Command,
+    Replace,
+}
+
+impl VimModeManager {
+    /// Create a new vim mode manager
+    pub fn new() -> Self {
+        let mut manager = Self {
+            current_mode: InputMode::Normal,
+            previous_mode: InputMode::Normal,
+            mode_keybindings: std::collections::HashMap::new(),
+            mode_indicators: std::collections::HashMap::new(),
+        };
+
+        manager.initialize_default_keybindings();
+        manager.initialize_mode_indicators();
+        manager
+    }
+
+    /// Initialize default keybindings for each mode
+    fn initialize_default_keybindings(&mut self) {
+        // Normal mode keybindings
+        let mut normal_bindings = std::collections::HashMap::new();
+        normal_bindings.insert("i".to_string(), ModeAction::SwitchMode(InputMode::Insert));
+        normal_bindings.insert("v".to_string(), ModeAction::SwitchMode(InputMode::Visual));
+        normal_bindings.insert(":".to_string(), ModeAction::SwitchMode(InputMode::Command));
+        normal_bindings.insert("R".to_string(), ModeAction::SwitchMode(InputMode::Replace));
+        normal_bindings.insert("h".to_string(), ModeAction::MoveCursor(Movement::Left));
+        normal_bindings.insert("j".to_string(), ModeAction::MoveCursor(Movement::Down));
+        normal_bindings.insert("k".to_string(), ModeAction::MoveCursor(Movement::Up));
+        normal_bindings.insert("l".to_string(), ModeAction::MoveCursor(Movement::Right));
+        normal_bindings.insert("w".to_string(), ModeAction::MoveCursor(Movement::WordForward));
+        normal_bindings.insert("b".to_string(), ModeAction::MoveCursor(Movement::WordBackward));
+        normal_bindings.insert("0".to_string(), ModeAction::MoveCursor(Movement::LineStart));
+        normal_bindings.insert("$".to_string(), ModeAction::MoveCursor(Movement::LineEnd));
+        normal_bindings.insert("gg".to_string(), ModeAction::MoveCursor(Movement::DocumentStart));
+        normal_bindings.insert("G".to_string(), ModeAction::MoveCursor(Movement::DocumentEnd));
+        normal_bindings.insert("x".to_string(), ModeAction::DeleteText(DeleteOperation::Character));
+        normal_bindings.insert("dw".to_string(), ModeAction::DeleteText(DeleteOperation::Word));
+        normal_bindings.insert("dd".to_string(), ModeAction::DeleteText(DeleteOperation::Line));
+
+        self.mode_keybindings.insert(InputMode::Normal, normal_bindings);
+
+        // Insert mode keybindings (minimal - mostly for escaping back to normal)
+        let mut insert_bindings = std::collections::HashMap::new();
+        insert_bindings.insert("Esc".to_string(), ModeAction::SwitchMode(InputMode::Normal));
+
+        self.mode_keybindings.insert(InputMode::Insert, insert_bindings);
+
+        // Visual mode keybindings
+        let mut visual_bindings = std::collections::HashMap::new();
+        visual_bindings.insert("Esc".to_string(), ModeAction::SwitchMode(InputMode::Normal));
+        visual_bindings.insert("d".to_string(), ModeAction::DeleteText(DeleteOperation::Selection));
+
+        self.mode_keybindings.insert(InputMode::Visual, visual_bindings);
+
+        // Command mode keybindings
+        let mut command_bindings = std::collections::HashMap::new();
+        command_bindings.insert("Esc".to_string(), ModeAction::SwitchMode(InputMode::Normal));
+        command_bindings.insert("Enter".to_string(), ModeAction::ExecuteCommand("execute_command".to_string()));
+
+        self.mode_keybindings.insert(InputMode::Command, command_bindings);
+    }
+
+    /// Initialize mode indicators
+    fn initialize_mode_indicators(&mut self) {
+        self.mode_indicators.insert(InputMode::Normal, ModeIndicator {
+            text: "NORMAL".to_string(),
+            style: ModeIndicatorStyle::Normal,
+        });
+
+        self.mode_indicators.insert(InputMode::Insert, ModeIndicator {
+            text: "INSERT".to_string(),
+            style: ModeIndicatorStyle::Insert,
+        });
+
+        self.mode_indicators.insert(InputMode::Visual, ModeIndicator {
+            text: "VISUAL".to_string(),
+            style: ModeIndicatorStyle::Visual,
+        });
+
+        self.mode_indicators.insert(InputMode::Command, ModeIndicator {
+            text: "COMMAND".to_string(),
+            style: ModeIndicatorStyle::Command,
+        });
+
+        self.mode_indicators.insert(InputMode::Replace, ModeIndicator {
+            text: "REPLACE".to_string(),
+            style: ModeIndicatorStyle::Replace,
+        });
+    }
+
+    /// Get current input mode
+    pub fn current_mode(&self) -> InputMode {
+        self.current_mode
+    }
+
+    /// Switch to a different input mode
+    pub fn switch_mode(&mut self, mode: InputMode) {
+        self.previous_mode = self.current_mode;
+        self.current_mode = mode;
+    }
+
+    /// Switch back to previous mode
+    pub fn switch_to_previous_mode(&mut self) {
+        std::mem::swap(&mut self.current_mode, &mut self.previous_mode);
+    }
+
+    /// Handle key input based on current mode
+    pub fn handle_key(&mut self, key: &str) -> Option<ModeAction> {
+        if let Some(bindings) = self.mode_keybindings.get(&self.current_mode) {
+            if let Some(action) = bindings.get(key) {
+                return Some(action.clone());
+            }
+        }
+        None
+    }
+
+    /// Add a custom keybinding for a mode
+    pub fn add_keybinding(&mut self, mode: InputMode, key: String, action: ModeAction) {
+        self.mode_keybindings.entry(mode).or_insert_with(std::collections::HashMap::new).insert(key, action);
+    }
+
+    /// Remove a keybinding
+    pub fn remove_keybinding(&mut self, mode: InputMode, key: &str) {
+        if let Some(bindings) = self.mode_keybindings.get_mut(&mode) {
+            bindings.remove(key);
+        }
+    }
+
+    /// Get mode indicator for current mode
+    pub fn current_mode_indicator(&self) -> Option<&ModeIndicator> {
+        self.mode_indicators.get(&self.current_mode)
+    }
+
+    /// Get all available keybindings for current mode
+    pub fn current_mode_keybindings(&self) -> Option<&std::collections::HashMap<String, ModeAction>> {
+        self.mode_keybindings.get(&self.current_mode)
+    }
+
+    /// Check if vim mode is enabled
+    pub fn is_vim_mode_enabled(&self) -> bool {
+        true // Always enabled when this manager is used
+    }
+
+    /// Get mode-specific help text
+    pub fn mode_help(&self) -> String {
+        match self.current_mode {
+            InputMode::Normal => "Normal mode: h/j/k/l to move, i to insert, v for visual, : for command".to_string(),
+            InputMode::Insert => "Insert mode: Type to insert text, Esc to return to normal mode".to_string(),
+            InputMode::Visual => "Visual mode: Select text, d to delete selection, Esc to exit".to_string(),
+            InputMode::Command => "Command mode: Type commands, Enter to execute, Esc to cancel".to_string(),
+            InputMode::Replace => "Replace mode: Type to replace text, Esc to return to normal mode".to_string(),
+        }
+    }
+}
+
+impl Default for VimModeManager {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 /// An announcement for screen readers
@@ -329,6 +999,9 @@ impl ScreenReaderAnnouncer {
         Self {
             enabled,
             history: Vec::new(),
+            live_regions: std::collections::HashMap::new(),
+            announcement_queue: std::collections::VecDeque::new(),
+            processing_priority: true,
         }
     }
 
@@ -439,6 +1112,112 @@ impl ScreenReaderAnnouncer {
         }
         let priority = if success { AnnouncementPriority::Normal } else { AnnouncementPriority::High };
         self.announce(message, priority);
+    }
+
+    /// Create or update a live region
+    pub fn update_live_region(&mut self, id: &str, content: &str, aria_live: AriaLive, atomic: bool, relevant: AriaRelevant) {
+        if !self.enabled {
+            return;
+        }
+
+        let region = LiveRegion {
+            id: id.to_string(),
+            content: content.to_string(),
+            aria_live,
+            aria_atomic: atomic,
+            aria_relevant: relevant,
+            last_update: std::time::Instant::now(),
+        };
+
+        let is_new = !self.live_regions.contains_key(id);
+        self.live_regions.insert(id.to_string(), region.clone());
+
+        // Announce live region updates based on ARIA live property
+        match aria_live {
+            AriaLive::Assertive => {
+                self.announce(format!("Live region {}: {}", id, content), AnnouncementPriority::High);
+            }
+            AriaLive::Polite => {
+                self.announce(format!("Live region {}: {}", id, content), AnnouncementPriority::Low);
+            }
+            AriaLive::Off => {
+                // No announcement for live=off
+            }
+        }
+
+        // Announce new live regions
+        if is_new {
+            self.announce(format!("Live region {} created", id), AnnouncementPriority::Low);
+        }
+    }
+
+    /// Remove a live region
+    pub fn remove_live_region(&mut self, id: &str) {
+        if self.live_regions.remove(id).is_some() {
+            self.announce(format!("Live region {} removed", id), AnnouncementPriority::Low);
+        }
+    }
+
+    /// Queue an announcement for later delivery
+    pub fn queue_announcement(&mut self, text: impl Into<String>, priority: AnnouncementPriority) {
+        let announcement = Announcement {
+            text: text.into(),
+            priority,
+        };
+        self.announcement_queue.push_back(announcement);
+    }
+
+    /// Process queued announcements
+    pub fn process_queue(&mut self) {
+        if !self.enabled {
+            self.announcement_queue.clear();
+            return;
+        }
+
+        // Process high priority announcements first if priority processing is enabled
+        if self.processing_priority {
+            let mut high_priority = Vec::new();
+            let mut normal_priority = Vec::new();
+            let mut low_priority = Vec::new();
+
+            while let Some(announcement) = self.announcement_queue.pop_front() {
+                match announcement.priority {
+                    AnnouncementPriority::High => high_priority.push(announcement),
+                    AnnouncementPriority::Normal => normal_priority.push(announcement),
+                    AnnouncementPriority::Low => low_priority.push(announcement),
+                }
+            }
+
+            // Process in priority order
+            for announcement in high_priority.into_iter().chain(normal_priority).chain(low_priority) {
+                self.announce(announcement.text, announcement.priority);
+            }
+        } else {
+            // Process in FIFO order
+            while let Some(announcement) = self.announcement_queue.pop_front() {
+                self.announce(announcement.text, announcement.priority);
+            }
+        }
+    }
+
+    /// Get all live regions
+    pub fn live_regions(&self) -> &std::collections::HashMap<String, LiveRegion> {
+        &self.live_regions
+    }
+
+    /// Get announcement queue length
+    pub fn queue_length(&self) -> usize {
+        self.announcement_queue.len()
+    }
+
+    /// Enable priority processing of announcements
+    pub fn enable_priority_processing(&mut self) {
+        self.processing_priority = true;
+    }
+
+    /// Disable priority processing of announcements
+    pub fn disable_priority_processing(&mut self) {
+        self.processing_priority = false;
     }
 }
 
@@ -1021,9 +1800,269 @@ impl KeyboardShortcutCustomizer {
                         key_code = Some(crossterm::event::KeyCode::Char(other.chars().next().unwrap()));
                     } else {
                         return Err(format!("Unknown key: {}", other));
-                    }
+        }
+    }
+}
+
+/// Keyboard shortcut help system
+#[derive(Debug)]
+pub struct KeyboardShortcutHelp {
+    /// Available shortcuts organized by category
+    shortcuts: std::collections::HashMap<String, Vec<KeyboardShortcut>>,
+    /// Current search filter
+    search_filter: String,
+    /// Filtered shortcuts based on search
+    filtered_shortcuts: Vec<(String, Vec<KeyboardShortcut>)>,
+}
+
+/// Keyboard shortcut definition
+#[derive(Debug, Clone)]
+pub struct KeyboardShortcut {
+    pub keys: String,
+    pub description: String,
+    pub category: String,
+    pub context: Option<String>, // Optional context (e.g., "when file is open")
+}
+
+impl KeyboardShortcutHelp {
+    /// Create a new keyboard shortcut help system
+    pub fn new() -> Self {
+        Self {
+            shortcuts: std::collections::HashMap::new(),
+            search_filter: String::new(),
+            filtered_shortcuts: Vec::new(),
+        }
+    }
+
+    /// Add a keyboard shortcut
+    pub fn add_shortcut(&mut self, shortcut: KeyboardShortcut) {
+        self.shortcuts.entry(shortcut.category.clone())
+            .or_insert_with(Vec::new)
+            .push(shortcut);
+        self.update_filtered_shortcuts();
+    }
+
+    /// Add multiple shortcuts
+    pub fn add_shortcuts(&mut self, shortcuts: Vec<KeyboardShortcut>) {
+        for shortcut in shortcuts {
+            self.add_shortcut(shortcut);
+        }
+    }
+
+    /// Remove shortcuts by category
+    pub fn remove_category(&mut self, category: &str) {
+        self.shortcuts.remove(category);
+        self.update_filtered_shortcuts();
+    }
+
+    /// Set search filter
+    pub fn set_search_filter(&mut self, filter: String) {
+        self.search_filter = filter;
+        self.update_filtered_shortcuts();
+    }
+
+    /// Get filtered shortcuts
+    pub fn filtered_shortcuts(&self) -> &[(String, Vec<KeyboardShortcut>)] {
+        &self.filtered_shortcuts
+    }
+
+    /// Get all shortcuts
+    pub fn all_shortcuts(&self) -> &std::collections::HashMap<String, Vec<KeyboardShortcut>> {
+        &self.shortcuts
+    }
+
+    /// Get shortcuts for a specific category
+    pub fn category_shortcuts(&self, category: &str) -> Option<&[KeyboardShortcut]> {
+        self.shortcuts.get(category).map(|v| v.as_slice())
+    }
+
+    /// Search shortcuts by description or keys
+    pub fn search(&self, query: &str) -> Vec<&KeyboardShortcut> {
+        let query_lower = query.to_lowercase();
+        self.shortcuts.values()
+            .flatten()
+            .filter(|shortcut|
+                shortcut.description.to_lowercase().contains(&query_lower) ||
+                shortcut.keys.to_lowercase().contains(&query_lower) ||
+                shortcut.category.to_lowercase().contains(&query_lower)
+            )
+            .collect()
+    }
+
+    /// Get context-sensitive shortcuts
+    pub fn context_shortcuts(&self, context: &str) -> Vec<&KeyboardShortcut> {
+        self.shortcuts.values()
+            .flatten()
+            .filter(|shortcut| {
+                shortcut.context.as_ref().map_or(true, |ctx| ctx == context)
+            })
+            .collect()
+    }
+
+    /// Generate help text for display
+    pub fn generate_help_text(&self, max_width: usize) -> Vec<String> {
+        let mut lines = Vec::new();
+
+        if !self.search_filter.is_empty() {
+            lines.push(format!("Search: {}", self.search_filter));
+            lines.push("".to_string());
+        }
+
+        for (category, shortcuts) in &self.filtered_shortcuts {
+            lines.push(format!("{}:", category.to_uppercase()));
+            lines.push("".to_string());
+
+            for shortcut in shortcuts {
+                let key_part = format!("  {:<15}", shortcut.keys);
+                let desc_part = if key_part.len() + shortcut.description.len() > max_width {
+                    format!("{}...", &shortcut.description[..max_width.saturating_sub(key_part.len() + 3)])
+                } else {
+                    shortcut.description.clone()
+                };
+
+                lines.push(format!("{}{}", key_part, desc_part));
+
+                if let Some(context) = &shortcut.context {
+                    lines.push(format!("    ({})", context));
                 }
             }
+
+            lines.push("".to_string());
+        }
+
+        lines
+    }
+
+    /// Clear all shortcuts
+    pub fn clear(&mut self) {
+        self.shortcuts.clear();
+        self.filtered_shortcuts.clear();
+        self.search_filter.clear();
+    }
+
+    /// Update filtered shortcuts based on search filter
+    fn update_filtered_shortcuts(&mut self) {
+        self.filtered_shortcuts.clear();
+
+        if self.search_filter.is_empty() {
+            // Show all categories
+            for (category, shortcuts) in &self.shortcuts {
+                self.filtered_shortcuts.push((category.clone(), shortcuts.clone()));
+            }
+        } else {
+            // Filter by search
+            let filter_lower = self.search_filter.to_lowercase();
+            for (category, shortcuts) in &self.shortcuts {
+                let filtered: Vec<KeyboardShortcut> = shortcuts.iter()
+                    .filter(|shortcut|
+                        shortcut.description.to_lowercase().contains(&filter_lower) ||
+                        shortcut.keys.to_lowercase().contains(&filter_lower) ||
+                        category.to_lowercase().contains(&filter_lower)
+                    )
+                    .cloned()
+                    .collect();
+
+                if !filtered.is_empty() {
+                    self.filtered_shortcuts.push((category.clone(), filtered));
+                }
+            }
+        }
+
+        // Sort categories alphabetically
+        self.filtered_shortcuts.sort_by(|a, b| a.0.cmp(&b.0));
+    }
+}
+
+impl Default for KeyboardShortcutHelp {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Initialize default keyboard shortcuts for RiceCoder
+pub fn initialize_default_shortcuts() -> Vec<KeyboardShortcut> {
+    vec![
+        // General shortcuts
+        KeyboardShortcut {
+            keys: "Ctrl+C".to_string(),
+            description: "Exit application".to_string(),
+            category: "General".to_string(),
+            context: None,
+        },
+        KeyboardShortcut {
+            keys: "Ctrl+Z".to_string(),
+            description: "Undo last action".to_string(),
+            category: "General".to_string(),
+            context: None,
+        },
+        KeyboardShortcut {
+            keys: "Ctrl+Y".to_string(),
+            description: "Redo last action".to_string(),
+            category: "General".to_string(),
+            context: None,
+        },
+        KeyboardShortcut {
+            keys: "Ctrl+S".to_string(),
+            description: "Save current file".to_string(),
+            category: "File".to_string(),
+            context: Some("when file is open".to_string()),
+        },
+        KeyboardShortcut {
+            keys: "Ctrl+O".to_string(),
+            description: "Open file".to_string(),
+            category: "File".to_string(),
+            context: None,
+        },
+        KeyboardShortcut {
+            keys: "Ctrl+N".to_string(),
+            description: "New file".to_string(),
+            category: "File".to_string(),
+            context: None,
+        },
+        KeyboardShortcut {
+            keys: "F1".to_string(),
+            description: "Show help".to_string(),
+            category: "Help".to_string(),
+            context: None,
+        },
+        KeyboardShortcut {
+            keys: "Ctrl+/".to_string(),
+            description: "Toggle comment".to_string(),
+            category: "Editing".to_string(),
+            context: Some("when text is selected".to_string()),
+        },
+        KeyboardShortcut {
+            keys: "Ctrl+F".to_string(),
+            description: "Find in file".to_string(),
+            category: "Search".to_string(),
+            context: Some("when file is open".to_string()),
+        },
+        KeyboardShortcut {
+            keys: "Ctrl+H".to_string(),
+            description: "Replace in file".to_string(),
+            category: "Search".to_string(),
+            context: Some("when file is open".to_string()),
+        },
+        KeyboardShortcut {
+            keys: "Ctrl+P".to_string(),
+            description: "Command palette".to_string(),
+            category: "Navigation".to_string(),
+            context: None,
+        },
+        KeyboardShortcut {
+            keys: "Ctrl+B".to_string(),
+            description: "Toggle sidebar".to_string(),
+            category: "View".to_string(),
+            context: None,
+        },
+        KeyboardShortcut {
+            keys: "F11".to_string(),
+            description: "Toggle fullscreen".to_string(),
+            category: "View".to_string(),
+            context: None,
+        },
+    ]
+}
         }
 
         match key_code {
