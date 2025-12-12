@@ -186,6 +186,7 @@ fn parse_markdown_entry(
         category: category.to_string(),
         description,
         is_default: false,
+        contexts: Vec::new(),
     })
 }
 

@@ -370,6 +370,103 @@ proptest! {
             assert!(found.is_default, "is_default flag should be set");
         }
     }
+
+    /// Property 8: Keybinding Context Isolation
+    /// For any set of keybinds with different contexts, key lookups SHALL respect context boundaries.
+    /// **Feature: ricecoder-keybinds, Property 8: Keybinding Context Isolation**
+    /// **Validates: Requirements 50.1, 50.2**
+    #[test]
+    fn prop_keybinding_context_isolation(
+        global_keybinds in prop::collection::vec(keybind_strategy(), 1..5),
+        input_keybinds in prop::collection::vec(keybind_strategy(), 1..5),
+        chat_keybinds in prop::collection::vec(keybind_strategy(), 1..5),
+        dialog_keybinds in prop::collection::vec(keybind_strategy(), 1..5),
+    ) {
+        use ricecoder_keybinds::{KeybindEngine, Context};
+
+        let mut engine = KeybindEngine::new();
+
+        // Create context-specific keybinds
+        let mut all_keybinds = Vec::new();
+
+        // Add global keybinds
+        for kb in &global_keybinds {
+            let mut global_kb = kb.clone();
+            global_kb.contexts = vec![Context::Global];
+            all_keybinds.push(global_kb);
+        }
+
+        // Add input keybinds
+        for kb in &input_keybinds {
+            let mut input_kb = kb.clone();
+            input_kb.contexts = vec![Context::Input];
+            all_keybinds.push(input_kb);
+        }
+
+        // Add chat keybinds
+        for kb in &chat_keybinds {
+            let mut chat_kb = kb.clone();
+            chat_kb.contexts = vec![Context::Chat];
+            all_keybinds.push(chat_kb);
+        }
+
+        // Add dialog keybinds
+        for kb in &dialog_keybinds {
+            let mut dialog_kb = kb.clone();
+            dialog_kb.contexts = vec![Context::Dialog];
+            all_keybinds.push(dialog_kb);
+        }
+
+        // Apply all keybinds
+        let _ = engine.apply_keybinds(all_keybinds);
+
+        // Test context isolation: same key in different contexts should return different actions
+        for global_kb in &global_keybinds {
+            if let Ok(key_combo) = global_kb.parse_key() {
+                // In global context, should find the global keybind
+                let global_action = engine.get_action_in_context(&key_combo, &Context::Global);
+                prop_assert_eq!(global_action, Some(global_kb.action_id.as_str()));
+
+                // In input context, should NOT find the global keybind (unless it also applies to input)
+                let input_action = engine.get_action_in_context(&key_combo, &Context::Input);
+                if !global_kb.applies_to_context(&Context::Input) {
+                    // If global keybind doesn't apply to input, input context should not find it
+                    prop_assert_ne!(input_action, Some(global_kb.action_id.as_str()),
+                        "Global keybind should not be found in input context unless it applies there");
+                }
+            }
+        }
+
+        // Test context hierarchy: more specific contexts should override general ones
+        for input_kb in &input_keybinds {
+            if let Ok(key_combo) = input_kb.parse_key() {
+                // Check if there's a conflicting global keybind with the same key
+                let conflicting_global = global_keybinds.iter().find(|gkb| {
+                    gkb.parse_key().ok() == Some(key_combo.clone())
+                });
+
+                if let Some(_) = conflicting_global {
+                    // With context hierarchy, input context should find the input keybind
+                    let input_action = engine.get_action_in_context(&key_combo, &Context::Input);
+                    prop_assert_eq!(input_action, Some(input_kb.action_id.as_str()),
+                        "Input context should prioritize input-specific keybinds");
+                }
+            }
+        }
+
+        // Test active contexts: multiple contexts should be searched in priority order
+        engine.set_context(Context::Input);
+        engine.push_context(Context::Dialog);
+
+        let active_contexts = engine.active_contexts();
+        prop_assert!(active_contexts.contains(&Context::Dialog), "Active contexts should include dialog");
+        prop_assert!(active_contexts.contains(&Context::Input), "Active contexts should include input");
+
+        // Dialog should have higher priority than input
+        let dialog_priority = Context::Dialog.priority();
+        let input_priority = Context::Input.priority();
+        prop_assert!(dialog_priority > input_priority, "Dialog should have higher priority than input");
+    }
 }
 
 #[cfg(test)]

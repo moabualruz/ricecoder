@@ -3,6 +3,7 @@
 //! This module provides configuration loading from multiple formats (YAML, TOML, JSON),
 //! environment variable overrides, and configuration merging with precedence rules.
 
+pub mod cli;
 pub mod documents;
 pub mod env;
 pub mod loader;
@@ -10,6 +11,7 @@ pub mod merge;
 pub mod modes;
 
 // Re-export commonly used types
+pub use cli::CliArgs;
 pub use documents::{Document, DocumentLoader};
 pub use env::EnvOverrides;
 pub use loader::ConfigLoader;

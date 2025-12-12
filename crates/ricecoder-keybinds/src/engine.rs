@@ -3,7 +3,8 @@
 use crate::conflict::ConflictDetector;
 use crate::error::EngineError;
 use crate::help::KeybindHelp;
-use crate::models::{Keybind, KeyCombo};
+use crate::merge::KeybindMerger;
+use crate::models::{Context, Keybind, KeyCombo};
 use crate::parser::ParserRegistry;
 use crate::persistence::KeybindPersistence;
 use crate::profile::ProfileManager;
@@ -15,6 +16,8 @@ pub struct KeybindEngine {
     registry: KeybindRegistry,
     profile_manager: ProfileManager,
     default_keybinds: Vec<Keybind>,
+    current_context: Context,
+    context_stack: Vec<Context>,
 }
 
 impl KeybindEngine {
@@ -24,6 +27,8 @@ impl KeybindEngine {
             registry: KeybindRegistry::new(),
             profile_manager: ProfileManager::new(),
             default_keybinds: Vec::new(),
+            current_context: Context::Global,
+            context_stack: Vec::new(),
         }
     }
 
@@ -55,7 +60,7 @@ impl KeybindEngine {
             self.create_profile("default", self.default_keybinds.clone())?;
             self.select_profile("default")?;
         } else {
-            // Apply defaults to current registry
+            // Apply defaults to current registry (no merging needed for defaults-only)
             self.apply_keybinds(self.default_keybinds.clone())?;
         }
 
@@ -106,9 +111,47 @@ impl KeybindEngine {
         Ok(())
     }
 
-    /// Get action for a key combination
+    /// Apply profile keybinds with merging against defaults
+    pub fn apply_profile_with_merge(&mut self, profile_keybinds: &[Keybind]) -> Result<(), EngineError> {
+        // Merge profile keybinds with defaults
+        let merge_result = KeybindMerger::merge_with_contexts(&self.default_keybinds, profile_keybinds)
+            .map_err(|e| EngineError::DefaultsLoadError(format!("Failed to merge keybinds: {}", e)))?;
+
+        // Log resolved conflicts
+        for conflict in &merge_result.resolved_conflicts {
+            tracing::info!(
+                "Resolved keybind conflict: {} in context {} - kept user binding",
+                conflict.key, conflict.context
+            );
+        }
+
+        // Log unresolved conflicts
+        for conflict in &merge_result.unresolved_conflicts {
+            tracing::warn!(
+                "Unresolved keybind conflict: {} in context {} - {}",
+                conflict.key, conflict.context, conflict.user.action_id
+            );
+        }
+
+        // Apply merged keybinds
+        self.apply_keybinds(merge_result.merged)?;
+
+        Ok(())
+    }
+
+    /// Get action for a key combination (legacy - uses current context)
     pub fn get_action(&self, key: &KeyCombo) -> Option<&str> {
-        self.registry.lookup_by_key(key)
+        self.get_action_in_context(key, &self.current_context)
+    }
+
+    /// Get action for a key combination in a specific context
+    pub fn get_action_in_context(&self, key: &KeyCombo, context: &Context) -> Option<&str> {
+        self.registry.lookup_by_key_in_context(key, context)
+    }
+
+    /// Get action for a key combination with context hierarchy
+    pub fn get_action_with_contexts(&self, key: &KeyCombo, contexts: &[Context]) -> Option<&str> {
+        self.registry.lookup_by_key_with_contexts(key, contexts)
     }
 
     /// Get keybind for an action
@@ -144,12 +187,16 @@ impl KeybindEngine {
     /// Select a profile and apply its keybinds immediately
     pub fn select_profile(&mut self, name: &str) -> Result<(), EngineError> {
         self.profile_manager.select_profile(name)?;
-        
-        // Apply the selected profile's keybinds immediately
-        let profile = self.profile_manager.get_active_profile()?;
-        let keybinds = profile.keybinds.clone();
-        self.apply_keybinds(keybinds)?;
-        
+
+        // Get the keybinds before applying (to avoid borrow checker issues)
+        let keybinds = {
+            let profile = self.profile_manager.get_active_profile()?;
+            profile.keybinds.clone()
+        };
+
+        // Apply the selected profile's keybinds with merging
+        self.apply_profile_with_merge(&keybinds)?;
+
         Ok(())
     }
 
@@ -172,6 +219,50 @@ impl KeybindEngine {
     /// Check if engine has keybinds
     pub fn has_keybinds(&self) -> bool {
         !self.registry.is_empty()
+    }
+
+    /// Get the current context
+    pub fn current_context(&self) -> &Context {
+        &self.current_context
+    }
+
+    /// Set the current context
+    pub fn set_context(&mut self, context: Context) {
+        self.current_context = context;
+    }
+
+    /// Push a context onto the stack (for modal contexts)
+    pub fn push_context(&mut self, context: Context) {
+        self.context_stack.push(self.current_context);
+        self.current_context = context;
+    }
+
+    /// Pop the top context from the stack
+    pub fn pop_context(&mut self) -> Option<Context> {
+        if let Some(previous) = self.context_stack.pop() {
+            self.current_context = previous;
+            Some(previous)
+        } else {
+            None
+        }
+    }
+
+    /// Get the context stack (for debugging)
+    pub fn context_stack(&self) -> &[Context] {
+        &self.context_stack
+    }
+
+    /// Get all contexts that should be searched (current + stack)
+    pub fn active_contexts(&self) -> Vec<Context> {
+        let mut contexts = vec![self.current_context];
+        contexts.extend(self.context_stack.iter().rev().copied());
+        contexts
+    }
+
+    /// Get action for a key combination using active contexts
+    pub fn get_action_with_active_contexts(&self, key: &KeyCombo) -> Option<&str> {
+        let contexts = self.active_contexts();
+        self.get_action_with_contexts(key, &contexts)
     }
 
     /// Validate keybinds for conflicts

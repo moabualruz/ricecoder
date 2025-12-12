@@ -162,6 +162,67 @@ impl FromStr for KeyCombo {
     }
 }
 
+/// UI context for keybindings
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Context {
+    /// Global context - applies everywhere
+    Global,
+    /// Input context - text input fields
+    Input,
+    /// Chat context - chat interface
+    Chat,
+    /// Dialog context - modal dialogs
+    Dialog,
+    /// Command palette context - command search
+    CommandPalette,
+}
+
+impl Context {
+    /// Get the priority of this context (higher = more specific)
+    pub fn priority(&self) -> u8 {
+        match self {
+            Context::Global => 0,
+            Context::Input => 1,
+            Context::Chat => 2,
+            Context::Dialog => 3,
+            Context::CommandPalette => 4,
+        }
+    }
+
+    /// Check if this context inherits from another context
+    pub fn inherits_from(&self, other: &Context) -> bool {
+        self.priority() >= other.priority()
+    }
+}
+
+impl fmt::Display for Context {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Context::Global => write!(f, "global"),
+            Context::Input => write!(f, "input"),
+            Context::Chat => write!(f, "chat"),
+            Context::Dialog => write!(f, "dialog"),
+            Context::CommandPalette => write!(f, "command_palette"),
+        }
+    }
+}
+
+impl FromStr for Context {
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "global" => Ok(Context::Global),
+            "input" => Ok(Context::Input),
+            "chat" => Ok(Context::Chat),
+            "dialog" => Ok(Context::Dialog),
+            "command_palette" | "commandpalette" => Ok(Context::CommandPalette),
+            _ => Err(ParseError::InvalidModifier(format!("Unknown context: {}", s))),
+        }
+    }
+}
+
 /// Represents a single keybind configuration
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Keybind {
@@ -171,6 +232,9 @@ pub struct Keybind {
     pub description: String,
     #[serde(default)]
     pub is_default: bool,
+    /// Contexts where this keybind applies (empty = global)
+    #[serde(default)]
+    pub contexts: Vec<Context>,
 }
 
 impl Keybind {
@@ -192,6 +256,25 @@ impl Keybind {
             category: category.into(),
             description: description.into(),
             is_default: false,
+            contexts: Vec::new(),
+        }
+    }
+
+    /// Create a new keybind with contexts
+    pub fn new_with_contexts(
+        action_id: impl Into<String>,
+        key: impl Into<String>,
+        category: impl Into<String>,
+        description: impl Into<String>,
+        contexts: Vec<Context>,
+    ) -> Self {
+        Keybind {
+            action_id: action_id.into(),
+            key: key.into(),
+            category: category.into(),
+            description: description.into(),
+            is_default: false,
+            contexts,
         }
     }
 
@@ -208,7 +291,55 @@ impl Keybind {
             category: category.into(),
             description: description.into(),
             is_default: true,
+            contexts: Vec::new(),
         }
+    }
+
+    /// Create a new default keybind with contexts
+    pub fn new_default_with_contexts(
+        action_id: impl Into<String>,
+        key: impl Into<String>,
+        category: impl Into<String>,
+        description: impl Into<String>,
+        contexts: Vec<Context>,
+    ) -> Self {
+        Keybind {
+            action_id: action_id.into(),
+            key: key.into(),
+            category: category.into(),
+            description: description.into(),
+            is_default: true,
+            contexts,
+        }
+    }
+
+    /// Check if this keybind applies to the given context
+    pub fn applies_to_context(&self, context: &Context) -> bool {
+        // If no contexts specified, applies to global
+        if self.contexts.is_empty() {
+            return *context == Context::Global;
+        }
+        // Check if the requested context is in our contexts
+        self.contexts.contains(context)
+    }
+
+    /// Check if this keybind applies to any of the given contexts
+    pub fn applies_to_any_context(&self, contexts: &[Context]) -> bool {
+        if self.contexts.is_empty() {
+            // Global keybind applies if global is in the list
+            return contexts.contains(&Context::Global);
+        }
+        // Check if any of our contexts match the requested contexts
+        self.contexts.iter().any(|ctx| contexts.contains(ctx))
+    }
+
+    /// Get the most specific context for this keybind
+    pub fn primary_context(&self) -> Context {
+        self.contexts
+            .iter()
+            .max_by_key(|ctx| ctx.priority())
+            .copied()
+            .unwrap_or(Context::Global)
     }
 }
 

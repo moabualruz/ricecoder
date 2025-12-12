@@ -82,6 +82,8 @@ pub enum ConfigFormat {
     Toml,
     /// JSON format (.json)
     Json,
+    /// JSONC format (.jsonc) - JSON with comments
+    Jsonc,
 }
 
 impl ConfigFormat {
@@ -91,6 +93,7 @@ impl ConfigFormat {
             ConfigFormat::Yaml => "yaml",
             ConfigFormat::Toml => "toml",
             ConfigFormat::Json => "json",
+            ConfigFormat::Jsonc => "jsonc",
         }
     }
 
@@ -100,6 +103,7 @@ impl ConfigFormat {
             "yaml" | "yml" => Some(ConfigFormat::Yaml),
             "toml" => Some(ConfigFormat::Toml),
             "json" => Some(ConfigFormat::Json),
+            "jsonc" => Some(ConfigFormat::Jsonc),
             _ => None,
         }
     }
@@ -169,6 +173,7 @@ mod tests {
         assert_eq!(ConfigFormat::Yaml.extension(), "yaml");
         assert_eq!(ConfigFormat::Toml.extension(), "toml");
         assert_eq!(ConfigFormat::Json.extension(), "json");
+        assert_eq!(ConfigFormat::Jsonc.extension(), "jsonc");
     }
 
     #[test]
@@ -188,6 +193,10 @@ mod tests {
         assert_eq!(
             ConfigFormat::from_extension("json"),
             Some(ConfigFormat::Json)
+        );
+        assert_eq!(
+            ConfigFormat::from_extension("jsonc"),
+            Some(ConfigFormat::Jsonc)
         );
         assert_eq!(ConfigFormat::from_extension("txt"), None);
     }

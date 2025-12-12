@@ -26,6 +26,9 @@ anyhow = "1.0"
 pulldown-cmark = "0.9"
 notify = "6.1"
 regex = "1.10"
+clap = { version = "4.0", features = ["derive"] }
+jsonc-parser = "0.26"
+jsonschema = "0.37"
 
 [dev-dependencies]
 proptest = "1.4"

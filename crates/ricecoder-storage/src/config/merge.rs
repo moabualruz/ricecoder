@@ -23,14 +23,16 @@ pub struct MergeDecision {
 impl ConfigMerger {
     /// Merge configurations with precedence rules
     ///
-    /// Precedence: env > project > legacy > global > defaults
+    /// Precedence: CLI > env > project > user > global > defaults
     ///
     /// Returns the merged configuration and a list of merge decisions for logging.
-    pub fn merge(
+    pub fn merge_with_cli(
         defaults: Config,
         global: Option<Config>,
+        user: Option<Config>,
         project: Option<Config>,
         env_overrides: Option<Config>,
+        cli_overrides: Option<Config>,
     ) -> (Config, Vec<MergeDecision>) {
         let mut decisions = Vec::new();
         let mut result = defaults;
@@ -40,14 +42,24 @@ impl ConfigMerger {
             Self::merge_into(&mut result, &global_config, "global", &mut decisions);
         }
 
-        // Apply project config (overrides global)
+        // Apply user config (overrides global)
+        if let Some(user_config) = user {
+            Self::merge_into(&mut result, &user_config, "user", &mut decisions);
+        }
+
+        // Apply project config (overrides user)
         if let Some(project_config) = project {
             Self::merge_into(&mut result, &project_config, "project", &mut decisions);
         }
 
-        // Apply environment overrides (highest priority)
+        // Apply environment overrides (overrides project)
         if let Some(env_config) = env_overrides {
             Self::merge_into(&mut result, &env_config, "environment", &mut decisions);
+        }
+
+        // Apply CLI overrides (highest priority)
+        if let Some(cli_config) = cli_overrides {
+            Self::merge_into(&mut result, &cli_config, "cli", &mut decisions);
         }
 
         // Log merge decisions
@@ -61,6 +73,20 @@ impl ConfigMerger {
         }
 
         (result, decisions)
+    }
+
+    /// Merge configurations with old precedence rules (for backward compatibility)
+    ///
+    /// Precedence: env > project > global > defaults
+    ///
+    /// Returns the merged configuration and a list of merge decisions for logging.
+    pub fn merge(
+        defaults: Config,
+        global: Option<Config>,
+        project: Option<Config>,
+        env_overrides: Option<Config>,
+    ) -> (Config, Vec<MergeDecision>) {
+        Self::merge_with_cli(defaults, global, None, project, env_overrides, None)
     }
 
     /// Merge one configuration into another
