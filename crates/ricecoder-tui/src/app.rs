@@ -4,6 +4,7 @@ use crate::accessibility::{
     FocusManager, KeyboardNavigationManager, ScreenReaderAnnouncer, StateChangeEvent,
 };
 use crate::config::TuiConfig;
+use crate::error_handling::{ErrorManager, RiceError, ErrorCategory, ErrorSeverity};
 use crate::event::{Event, EventLoop};
 use crate::image_integration::ImageIntegration;
 use crate::integration::WidgetIntegration;
@@ -108,6 +109,8 @@ pub struct App {
     pub shortcut_customizer: crate::KeyboardShortcutCustomizer,
     /// Screen reader announcer
     pub screen_reader: crate::ScreenReaderAnnouncer,
+    /// Progressive enhancement manager
+    pub progressive_enhancement: crate::ProgressiveEnhancement,
 }
 
 impl App {
@@ -157,6 +160,12 @@ impl App {
         let shortcut_customizer = crate::KeyboardShortcutCustomizer::new();
         let screen_reader = crate::ScreenReaderAnnouncer::new(true); // Enable by default
 
+        // Create error handling system
+        let error_manager = ErrorManager::new();
+
+        // Create progressive enhancement manager
+        let progressive_enhancement = crate::ProgressiveEnhancement::new(capabilities.clone());
+
         let app = Self {
             reactive_state,
             event_dispatcher,
@@ -171,6 +180,8 @@ impl App {
             high_contrast_themes,
             shortcut_customizer,
             screen_reader,
+            error_manager,
+            progressive_enhancement,
         };
 
         // Initialize virtual lists for large datasets
@@ -178,7 +189,14 @@ impl App {
 
         // Perform project bootstrap
         if let Err(e) = app.bootstrap_project().await {
-            tracing::warn!("Project bootstrap failed: {}", e);
+            // Handle bootstrap error with comprehensive error management
+            let _ = app.create_and_handle_error(
+                format!("Project bootstrap failed: {}", e),
+                ErrorCategory::System,
+                ErrorSeverity::Medium,
+                "app",
+                "bootstrap_project",
+            ).await;
             // Continue anyway - bootstrap failure shouldn't prevent app startup
         } else {
             tracing::info!("Project bootstrap completed successfully");
@@ -483,5 +501,67 @@ impl App {
     /// Check if high contrast mode is enabled
     pub fn is_high_contrast_mode(&self) -> bool {
         self.keyboard_nav.is_high_contrast()
+    }
+
+    /// Handle an error with the comprehensive error management system
+    pub async fn handle_error(&self, error: RiceError) -> Result<(), RiceError> {
+        self.error_manager.handle_error(error).await
+    }
+
+    /// Create and handle a new error
+    pub async fn create_and_handle_error(
+        &self,
+        message: impl Into<String>,
+        category: ErrorCategory,
+        severity: ErrorSeverity,
+        component: impl Into<String>,
+        operation: impl Into<String>,
+    ) -> Result<(), RiceError> {
+        let error = RiceError::new(message, category, severity, component, operation);
+        self.handle_error(error).await
+    }
+
+    /// Get error statistics
+    pub async fn get_error_stats(&self) -> std::collections::HashMap<ErrorCategory, usize> {
+        self.error_manager.get_error_stats().await
+    }
+
+    /// Check if the system is in an error state
+    pub async fn is_in_error_state(&self) -> bool {
+        self.error_manager.is_in_error_state().await
+    }
+
+    /// Export error logs for debugging
+    pub async fn export_error_logs(&self) -> String {
+        self.error_manager.logger.export_logs().await
+    }
+
+    /// Clear error logs
+    pub async fn clear_error_logs(&self) {
+        self.error_manager.logger.clear_logs().await;
+    }
+
+    /// Get crash reports
+    pub async fn get_crash_reports(&self) -> Vec<crate::error_handling::CrashReport> {
+        self.error_manager.crash_recovery.get_crash_reports().await
+    }
+
+    /// Auto-save application state for crash recovery
+    pub async fn auto_save_state(&self, key: &str, data: Vec<u8>) -> Result<(), RiceError> {
+        self.error_manager.crash_recovery.auto_save(key, data).await
+    }
+
+    /// Restore saved application state
+    pub async fn restore_saved_state(&self, key: &str) -> Option<Vec<u8>> {
+        self.error_manager.crash_recovery.restore_state(key).await
+    }
+
+    /// Execute operation with retry logic
+    pub async fn execute_with_retry<F, Fut, T>(&self, operation: F) -> Result<T, RiceError>
+    where
+        F: FnMut() -> Fut,
+        Fut: std::future::Future<Output = Result<T, RiceError>>,
+    {
+        self.error_manager.retry_mechanism.execute(operation).await
     }
 }

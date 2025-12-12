@@ -77,6 +77,12 @@ pub struct CapabilityOverrides {
     pub mouse_support: Option<bool>,
     /// Override sixel support detection
     pub sixel_support: Option<bool>,
+    /// Override kitty graphics support detection
+    pub kitty_graphics_support: Option<bool>,
+    /// Override iTerm2 inline images support detection
+    pub iterm2_inline_images_support: Option<bool>,
+    /// Override WezTerm multiplexer support detection
+    pub wezterm_multiplexer_support: Option<bool>,
     /// Override unicode support detection
     pub unicode_support: Option<bool>,
     /// Force reduced graphics mode
@@ -96,6 +102,12 @@ pub struct TerminalCapabilities {
     pub mouse_support: bool,
     /// Sixel graphics support
     pub sixel_support: bool,
+    /// Kitty graphics protocol support
+    pub kitty_graphics_support: bool,
+    /// iTerm2 inline images support
+    pub iterm2_inline_images_support: bool,
+    /// WezTerm multiplexer features support
+    pub wezterm_multiplexer_support: bool,
     /// Unicode support
     pub unicode_support: bool,
     /// Running in SSH session
@@ -145,6 +157,9 @@ impl TerminalCapabilities {
         let color_support = overrides.color_support.unwrap_or_else(|| Self::detect_color_support());
         let mouse_support = overrides.mouse_support.unwrap_or_else(|| Self::detect_mouse_support());
         let sixel_support = overrides.sixel_support.unwrap_or_else(|| Self::detect_sixel_support(&terminal_type));
+        let kitty_graphics_support = overrides.kitty_graphics_support.unwrap_or_else(|| Self::detect_kitty_graphics_support(&terminal_type));
+        let iterm2_inline_images_support = overrides.iterm2_inline_images_support.unwrap_or_else(|| Self::detect_iterm2_inline_images_support(&terminal_type));
+        let wezterm_multiplexer_support = overrides.wezterm_multiplexer_support.unwrap_or_else(|| Self::detect_wezterm_multiplexer_support(&terminal_type));
         let unicode_support = overrides.unicode_support.unwrap_or_else(|| Self::detect_unicode_support());
         let is_ssh = Self::detect_ssh_session();
         let (is_tmux, tmux_version) = Self::detect_tmux_session_with_version();
@@ -155,6 +170,9 @@ impl TerminalCapabilities {
             color_support,
             mouse_support,
             sixel_support,
+            kitty_graphics_support,
+            iterm2_inline_images_support,
+            wezterm_multiplexer_support,
             unicode_support,
             is_ssh,
             is_tmux,
@@ -169,6 +187,9 @@ impl TerminalCapabilities {
             color_support = ?capabilities.color_support,
             mouse_support = capabilities.mouse_support,
             sixel_support = capabilities.sixel_support,
+            kitty_graphics_support = capabilities.kitty_graphics_support,
+            iterm2_inline_images_support = capabilities.iterm2_inline_images_support,
+            wezterm_multiplexer_support = capabilities.wezterm_multiplexer_support,
             unicode_support = capabilities.unicode_support,
             is_ssh = capabilities.is_ssh,
             is_tmux = capabilities.is_tmux,
@@ -339,6 +360,27 @@ impl TerminalCapabilities {
         }
     }
 
+    /// Detect Kitty graphics protocol support
+    ///
+    /// Requirements: 4.1 - Detect graphics protocol support
+    fn detect_kitty_graphics_support(terminal_type: &TerminalType) -> bool {
+        matches!(terminal_type, TerminalType::Kitty)
+    }
+
+    /// Detect iTerm2 inline images support
+    ///
+    /// Requirements: 4.1 - Detect graphics protocol support
+    fn detect_iterm2_inline_images_support(terminal_type: &TerminalType) -> bool {
+        matches!(terminal_type, TerminalType::ITerm2)
+    }
+
+    /// Detect WezTerm multiplexer features support
+    ///
+    /// Requirements: 4.1 - Detect graphics protocol support
+    fn detect_wezterm_multiplexer_support(terminal_type: &TerminalType) -> bool {
+        matches!(terminal_type, TerminalType::WezTerm)
+    }
+
     /// Detect Unicode support
     ///
     /// Requirements: 4.1 - Detect feature support (mouse, sixel, Unicode)
@@ -469,7 +511,16 @@ impl TerminalCapabilities {
         
         // Enable sixel graphics if supported
         optimizations.insert("sixel_graphics".to_string(), self.sixel_support);
-        
+
+        // Enable Kitty graphics protocol if supported
+        optimizations.insert("kitty_graphics_protocol".to_string(), self.kitty_graphics_support);
+
+        // Enable iTerm2 inline images if supported
+        optimizations.insert("iterm2_inline_images".to_string(), self.iterm2_inline_images_support);
+
+        // Enable WezTerm multiplexer features if supported
+        optimizations.insert("wezterm_multiplexer".to_string(), self.wezterm_multiplexer_support);
+
         // Enable Unicode characters if supported
         optimizations.insert("unicode_chars".to_string(), self.unicode_support);
         

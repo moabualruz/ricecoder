@@ -15,6 +15,7 @@ pub mod config;
 pub mod diagnostics_widget;
 pub mod diff;
 pub mod error;
+pub mod error_handling;
 pub mod event;
 pub mod event_dispatcher;
 pub mod executor;
@@ -29,6 +30,7 @@ pub mod lsp_integration;
 pub mod markdown;
 pub mod performance;
 pub mod popup_widget;
+pub mod progressive_enhancement;
 pub mod prompt;
 pub mod prompt_context;
 pub mod project_bootstrap;
@@ -71,6 +73,10 @@ pub use error::{
     KeybindError, ProviderError, SessionError, StorageError, ToolError, TuiError,
     TuiResult,
 };
+pub use error_handling::{
+    ErrorBoundary, ErrorCategory, ErrorLogger, ErrorManager, ErrorSeverity, RecoveryStrategy,
+    RiceError, RetryMechanism, CrashRecovery, CrashReport, LogEntry as ErrorLogEntry, LogLevel as ErrorLogLevel,
+};
 pub use lsp_integration::{language_from_file_path, lsp_diagnostics_to_tui, lsp_hover_to_text};
 pub use command_palette::{CommandPaletteWidget, PaletteCommand};
 pub use executor::{
@@ -98,6 +104,9 @@ pub use performance::{
     DiffRenderOptimizer, LazyLoadConfig, LazyMessageHistory, ThemeSwitchPerformance,
 };
 pub use popup_widget::{PopupButton, PopupType, PopupWidget};
+pub use progressive_enhancement::{
+    ProgressiveEnhancement, FeatureLevel, FeatureToggles, RenderingStrategy,
+};
 pub use prompt::{ContextIndicators, PromptConfig, PromptWidget};
 pub use prompt_context::PromptContext;
 pub use provider_integration::ProviderIntegration;
