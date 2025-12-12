@@ -4640,6 +4640,7 @@ dependencies = [
  "crossterm 0.27.0",
  "ctrlc",
  "dirs",
+ "futures",
  "image 0.25.9",
  "lazy_static",
  "proptest",
@@ -4668,6 +4669,7 @@ dependencies = [
  "tiny-skia",
  "tokio",
  "tokio-test",
+ "tokio-util",
  "toml",
  "tracing",
  "tracing-subscriber",
@@ -4675,6 +4677,7 @@ dependencies = [
  "tui-tree-widget",
  "unicode-width 0.1.14",
  "usvg 0.40.0",
+ "uuid",
 ]
 
 [[package]]

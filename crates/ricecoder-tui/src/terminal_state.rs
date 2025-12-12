@@ -86,7 +86,7 @@ pub struct CapabilityOverrides {
 /// Terminal capabilities detected at startup
 ///
 /// Requirements: 4.1, 4.2 - Detect and adapt UI based on terminal capabilities
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TerminalCapabilities {
     /// Terminal type
     pub terminal_type: TerminalType,

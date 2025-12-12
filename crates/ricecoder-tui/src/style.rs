@@ -238,6 +238,7 @@ impl ProgressIndicator {
 
 /// Theme definition
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone, PartialEq)]
 pub struct Theme {
     /// Theme name
     pub name: String,

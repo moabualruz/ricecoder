@@ -12,9 +12,15 @@ use crate::style::Theme;
 use crate::terminal_state::TerminalCapabilities;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use crate::theme::ThemeManager;
+use crate::tea::PendingOperation;
 use anyhow::Result;
 use ratatui::backend::CrosstermBackend;
 use ratatui::Terminal;
+use ratatui::widgets::{Block, Borders, Paragraph};
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
+use ratatui::style::{Color, Style};
+use ratatui::text::Line;
+use ratatui::prelude::*;
 
 /// Application mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -71,88 +77,101 @@ impl AppMode {
     }
 }
 
-/// Chat state
-#[derive(Debug, Clone)]
-pub struct ChatState {
-    /// Messages in the conversation
-    pub messages: Vec<String>,
-    /// Current input
-    pub input: String,
-    /// Whether streaming is active
-    pub streaming: bool,
-    /// Current prompt context with text and images
-    /// Requirements: 1.4 - Add images to prompt context
-    pub prompt_context: crate::prompt_context::PromptContext,
-}
-
-impl Default for ChatState {
-    fn default() -> Self {
-        Self {
-            messages: Vec::new(),
-            input: String::new(),
-            streaming: false,
-            prompt_context: crate::prompt_context::PromptContext::new(),
-        }
-    }
-}
-
-/// Main application state
+/// Main application state - TEA Architecture Integration
 pub struct App {
-    /// Current application mode
-    pub mode: AppMode,
-    /// Previous application mode (for quick switching)
-    pub previous_mode: AppMode,
-    /// Chat state
-    pub chat: ChatState,
-    /// Theme manager for runtime theme switching
-    pub theme_manager: ThemeManager,
-    /// Current theme (cached from theme manager)
-    pub theme: Theme,
-    /// Application configuration
-    pub config: TuiConfig,
-    /// Whether the application should exit
-    pub should_exit: bool,
-    /// Event loop
-    pub event_loop: EventLoop,
-    /// Renderer
-    pub renderer: Renderer,
-    /// Mode-specific keybindings enabled
-    pub keybindings_enabled: bool,
-    /// Widget integration manager
-    pub widget_integration: WidgetIntegration,
-    /// Screen reader announcer for accessibility
-    pub screen_reader: ScreenReaderAnnouncer,
-    /// Keyboard navigation manager
-    pub keyboard_nav: KeyboardNavigationManager,
-    /// Focus manager for accessibility
-    pub focus_manager: FocusManager,
-    /// Provider integration for AI responses
-    pub provider_integration: crate::provider_integration::ProviderIntegration,
-    /// Image integration for drag-and-drop and display
-    /// Requirements: 1.1 - Detect drag-and-drop event via crossterm
-    pub image_integration: ImageIntegration,
-    /// Image widget for displaying images in the terminal
-    /// Requirements: 5.1 - Display images in terminal using ricecoder-images ImageDisplay
-    pub image_widget: crate::image_widget::ImageWidget,
-    /// Help dialog widget
-    pub help_dialog: ricecoder_help::HelpDialog,
-    /// File picker widget for @ file references
-    pub file_picker: crate::file_picker::FilePickerWidget,
-    /// File watcher for detecting external changes
-    pub file_watcher: Option<ricecoder_files::FileWatcher>,
-    /// File watcher event receiver
-    pub file_watcher_receiver: Option<tokio::sync::broadcast::Receiver<ricecoder_files::FileChangeBatch>>,
-    /// Session integration for managing sessions and token tracking
-    pub session_integration: crate::session_integration::SessionIntegration,
-    /// Project bootstrap for auto-detection and configuration
-    pub project_bootstrap: crate::project_bootstrap::ProjectBootstrap,
+    /// TEA reactive state manager
+    pub reactive_state: std::sync::Arc<tokio::sync::RwLock<crate::ReactiveState>>,
+    /// Event dispatcher for async event handling
+    pub event_dispatcher: crate::EventDispatcher,
+    /// Optimistic update manager
+    pub optimistic_updater: crate::OptimisticUpdater,
+    /// Loading state manager
+    pub loading_manager: crate::LoadingManager,
+    /// Virtual DOM renderer for efficient updates
+    pub virtual_renderer: crate::VirtualRenderer,
 }
 
 impl App {
-    /// Create a new application instance
+    /// Create a new application instance with TEA architecture
     pub async fn new() -> Result<Self> {
-        let config = TuiConfig::load()?;
-        Self::with_config(config).await
+        // Create initial TEA model
+        let initial_model = crate::AppModel::init(
+            crate::config::TuiConfig::default(),
+            &crate::theme::ThemeManager::new(),
+            crate::session_integration::SessionIntegration::new(10),
+            crate::project_bootstrap::ProjectBootstrap::new(
+                std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."))
+            ),
+            crate::integration::WidgetIntegration::new(),
+            crate::image_integration::ImageIntegration::new(),
+            crate::render::Renderer::new(),
+        );
+
+        // Create reactive state manager
+        let reactive_state = std::sync::Arc::new(tokio::sync::RwLock::new(
+            crate::ReactiveState::new(initial_model)
+        ));
+
+        // Create event dispatcher
+        let event_dispatcher = crate::EventDispatcher::new();
+
+        // Create optimistic updater
+        let optimistic_updater = crate::OptimisticUpdater::new();
+
+        // Create loading manager
+        let loading_manager = crate::LoadingManager::new();
+
+        // Create virtual renderer
+        let virtual_renderer = crate::VirtualRenderer::new();
+
+        let mut app = Self {
+            reactive_state,
+            event_dispatcher,
+            optimistic_updater,
+            loading_manager,
+            virtual_renderer,
+        };
+
+        // Perform project bootstrap
+        if let Err(e) = app.bootstrap_project().await {
+            tracing::warn!("Project bootstrap failed: {}", e);
+            // Continue anyway - bootstrap failure shouldn't prevent app startup
+        } else {
+            tracing::info!("Project bootstrap completed successfully");
+        }
+
+        Ok(app)
+    }
+
+    /// Bootstrap the project using TEA architecture
+    async fn bootstrap_project(&self) -> Result<()> {
+        // Dispatch bootstrap event
+        let event_id = self.event_dispatcher.dispatch_event(
+            crate::AppMessage::OperationStarted(PendingOperation {
+                id: "project_bootstrap".to_string(),
+                description: "Bootstrapping project".to_string(),
+                start_time: std::time::Instant::now(),
+                timeout: std::time::Duration::from_secs(30),
+            }),
+            crate::EventPriority::High,
+            crate::EventSource::System,
+        ).await?;
+
+        // Perform actual bootstrap
+        let reactive_state = self.reactive_state.read().await;
+        let model = reactive_state.current();
+
+        // TODO: Implement actual project bootstrap logic using TEA model
+        // For now, just mark as completed
+        drop(reactive_state);
+
+        self.event_dispatcher.dispatch_event(
+            crate::AppMessage::OperationCompleted(event_id),
+            crate::EventPriority::Normal,
+            crate::EventSource::System,
+        ).await?;
+
+        Ok(())
     }
 
     /// Create a new application instance with a specific configuration
@@ -221,7 +240,7 @@ impl App {
         Ok(app)
     }
 
-    /// Run the application
+    /// Run the application with TEA architecture
     pub async fn run(&mut self) -> Result<()> {
         use crossterm::{
             execute,
@@ -231,7 +250,7 @@ impl App {
         use ratatui::prelude::*;
         use std::io;
 
-        tracing::info!("Starting RiceCoder TUI");
+        tracing::info!("Starting RiceCoder TUI with TEA architecture");
 
         // Initialize terminal
         let mut stdout = io::stdout();
@@ -243,8 +262,17 @@ impl App {
         let mut terminal = Terminal::new(backend)?;
         terminal.clear()?;
 
-        // Run the main event loop
-        let result = self.run_event_loop(&mut terminal).await;
+        // Start event dispatcher
+        let reactive_state_clone = std::sync::Arc::clone(&self.reactive_state);
+        tokio::spawn(async move {
+            let dispatcher = crate::EventDispatcher::new();
+            if let Err(e) = dispatcher.run(reactive_state_clone).await {
+                tracing::error!("Event dispatcher error: {}", e);
+            }
+        });
+
+        // Run the main TEA event loop
+        let result = self.run_tea_event_loop(&mut terminal).await;
 
         // Restore terminal state
         disable_raw_mode()?;
@@ -259,666 +287,240 @@ impl App {
         result
     }
 
-    /// Run the main event loop with terminal rendering
-    async fn run_event_loop(&mut self, terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>) -> Result<()> {
-        // Main event loop
-        while !self.should_exit {
-            // Poll for events
-            if let Some(event) = self.event_loop.poll().await? {
-                self.handle_event(event)?;
+    /// Run the TEA-based event loop
+    async fn run_tea_event_loop(&mut self, terminal: &mut ratatui::Terminal<ratatui::backend::CrosstermBackend<std::io::Stdout>>) -> Result<()> {
+        use crossterm::event::{self as crossterm_event, Event as CrosstermEvent};
+
+        loop {
+            // Check if we should exit
+            {
+                let reactive_state = self.reactive_state.read().await;
+                let model = reactive_state.current();
+                // TODO: Check exit condition from model
             }
 
-            // Render the UI using ratatui's terminal.draw() closure
+            // Poll for terminal events
+            if crossterm::event::poll(std::time::Duration::from_millis(10))? {
+                if let CrosstermEvent::Key(key) = crossterm::event::read()? {
+                    // Convert crossterm event to TEA message
+                    let message = self.convert_key_to_message(key);
+
+                    // Dispatch event through TEA system
+                    self.event_dispatcher.dispatch_event(
+                        message,
+                        crate::EventPriority::Normal,
+                        crate::EventSource::UserInput,
+                    ).await?;
+                }
+            }
+
+            // Render the current state
             terminal.draw(|f| {
-                Renderer::render_frame(f, self);
+                self.render_frame(f);
             })?;
-        }
 
-        Ok(())
-    }
-
-    /// Initialize file watcher for the current working directory
-    pub fn init_file_watcher(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        let mut watcher = ricecoder_files::FileWatcher::new()?;
-        let cwd = std::env::current_dir()?;
-
-        watcher.watch(&cwd)?;
-        watcher.start()?;
-
-        let receiver = watcher.subscribe();
-
-        self.file_watcher = Some(watcher);
-        self.file_watcher_receiver = Some(receiver);
-
-        tracing::info!("File watcher initialized for directory: {}", cwd.display());
-        Ok(())
-    }
-
-    /// Process file watcher events
-    pub fn process_file_watcher_events(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        if let Some(receiver) = &mut self.file_watcher_receiver {
-            // Try to receive any pending events (non-blocking)
-            while let Ok(batch) = receiver.try_recv() {
-                tracing::debug!("Received file change batch with {} events", batch.count);
-
-                // Update file picker with changes
-                self.file_picker.handle_file_changes(&batch.events);
-
-                // TODO: Handle conflicts with open files
-                // TODO: Update other UI components that show file information
-            }
-        }
-
-        // Process pending events in the watcher
-        if let Some(watcher) = &self.file_watcher {
-            watcher.process_pending_events()?;
-        }
-
-        Ok(())
-    }
-
-    /// Handle input submission
-    pub fn handle_input_submission(&mut self, input: &str) -> Result<()> {
-        // Check if input is a slash command
-        if input.starts_with('/') {
-            self.handle_slash_command(input)?;
-            return Ok(());
-        }
-
-        // Handle regular chat input
-        // TODO: Implement chat message sending
-        tracing::info!("Chat input: {}", input);
-
-        Ok(())
-    }
-
-    /// Handle slash commands
-    fn handle_slash_command(&mut self, command: &str) -> Result<()> {
-        match command {
-            "/help" => {
-                self.help_dialog.show();
-                tracing::info!("Showing help dialog");
-            }
-            "/exit" | "/quit" => {
-                self.should_exit = true;
-                tracing::info!("Exit command received");
-            }
-            _ => {
-                tracing::warn!("Unknown slash command: {}", command);
-            }
-        }
-        Ok(())
-    }
-
-    /// Handle file picker key events
-    fn handle_file_picker_key(&mut self, key_event: KeyEvent) -> Result<()> {
-        match key_event.code {
-            KeyCode::Esc => {
-                self.file_picker.hide();
-            }
-            KeyCode::Enter => {
-                match self.file_picker.confirm_selection() {
-                    Ok(selections) => {
-                        if !selections.is_empty() {
-                            self.handle_file_selections(selections);
-                        }
-                    }
-                    Err(e) => {
-                        tracing::error!("Failed to select files: {}", e);
-                    }
-                }
-            }
-            KeyCode::Up => {
-                self.file_picker.navigate_up();
-            }
-            KeyCode::Down => {
-                self.file_picker.navigate_down();
-            }
-            KeyCode::Char(' ') => { // Space
-                self.file_picker.toggle_selection();
-            }
-            KeyCode::Char(c) => {
-                if key_event.modifiers.contains(crossterm::event::KeyModifiers::CONTROL) && c == 'a' {
-                    self.file_picker.select_all();
-                } else {
-                    self.file_picker.input_char(c);
-                }
-            }
-            KeyCode::Backspace => {
-                self.file_picker.backspace();
-            }
-            _ => {}
-        }
-        Ok(())
-    }
-
-    /// Handle selected files from file picker
-    fn handle_file_selections(&mut self, selections: Vec<crate::file_picker::FileSelection>) {
-        use crate::file_picker::{FileSelectionStatus, FileInfo};
-
-        let mut included_files = Vec::new();
-        let mut warnings = Vec::new();
-
-        for selection in selections {
-            match selection.status {
-                FileSelectionStatus::Included => {
-                    if let Some(content) = selection.content {
-                        included_files.push((selection.path, content));
-                    }
-                }
-                FileSelectionStatus::Directory => {
-                    warnings.push(format!("Directory '{}' cannot be included", selection.path.display()));
-                }
-                FileSelectionStatus::BinaryFile => {
-                    warnings.push(format!("Binary file '{}' cannot be included", selection.path.display()));
-                }
-                FileSelectionStatus::TooLarge => {
-                    let size_mb = selection.info.size as f64 / (1024.0 * 1024.0);
-                    warnings.push(format!("File '{}' is too large ({:.1}MB)", selection.path.display(), size_mb));
-                }
-                FileSelectionStatus::Error(msg) => {
-                    warnings.push(format!("Error reading '{}': {}", selection.path.display(), msg));
-                }
-            }
-        }
-
-        // Include successful files in chat input
-        if !included_files.is_empty() {
-            let mut file_refs = Vec::new();
-            let file_count = included_files.len();
-
-            for (path, content) in included_files {
-                let file_ref = format!("@{}:\n```\n{}\n```\n", path.display(), content);
-                file_refs.push(file_ref);
-            }
-
-            let combined_refs = file_refs.join("\n");
-            self.chat.input.push_str(&combined_refs);
-
-            tracing::info!("Included {} files in chat input", file_count);
-        }
-
-        // Show warnings for failed inclusions
-        for warning in warnings {
-            tracing::warn!("{}", warning);
+            // Small delay to prevent excessive CPU usage
+            tokio::time::sleep(std::time::Duration::from_millis(16)).await; // ~60 FPS
         }
     }
 
-    /// Convert app KeyEvent to crossterm KeyEvent
-    fn convert_to_crossterm_key(&self, key_event: KeyEvent) -> crossterm::event::KeyEvent {
-        use crossterm::event::{KeyCode as CKeyCode, KeyEvent as CKeyEvent, KeyModifiers as CKeyModifiers};
+    /// Convert crossterm key event to TEA message
+    fn convert_key_to_message(&self, key: crossterm::event::KeyEvent) -> crate::AppMessage {
+        // Handle global keybindings
+        if key.modifiers.contains(crossterm::event::KeyModifiers::CONTROL) {
+            match key.code {
+                crossterm::event::KeyCode::Char('1') => return crate::AppMessage::ModeChanged(crate::AppMode::Chat),
+                crossterm::event::KeyCode::Char('2') => return crate::AppMessage::ModeChanged(crate::AppMode::Command),
+                crossterm::event::KeyCode::Char('3') => return crate::AppMessage::ModeChanged(crate::AppMode::Diff),
+                crossterm::event::KeyCode::Char('4') => return crate::AppMessage::ModeChanged(crate::AppMode::Help),
+                crossterm::event::KeyCode::Char('c') => return crate::AppMessage::ExitRequested,
+                _ => {}
+            }
+        }
 
-        let code = match key_event.code {
-            KeyCode::Char(c) => CKeyCode::Char(c),
-            KeyCode::Enter => CKeyCode::Enter,
-            KeyCode::Esc => CKeyCode::Esc,
-            KeyCode::Tab => CKeyCode::Tab,
-            KeyCode::Backspace => CKeyCode::Backspace,
-            KeyCode::Delete => CKeyCode::Delete,
-            KeyCode::Up => CKeyCode::Up,
-            KeyCode::Down => CKeyCode::Down,
-            KeyCode::Left => CKeyCode::Left,
-            KeyCode::Right => CKeyCode::Right,
-            KeyCode::F(n) => CKeyCode::F(n),
-            _ => CKeyCode::Null,
+        // Convert to TEA KeyEvent
+        let tea_key = crate::event::KeyEvent {
+            code: match key.code {
+                crossterm::event::KeyCode::Char(c) => crate::event::KeyCode::Char(c),
+                crossterm::event::KeyCode::Enter => crate::event::KeyCode::Enter,
+                crossterm::event::KeyCode::Esc => crate::event::KeyCode::Esc,
+                crossterm::event::KeyCode::Backspace => crate::event::KeyCode::Backspace,
+                crossterm::event::KeyCode::Tab => crate::event::KeyCode::Tab,
+                _ => crate::event::KeyCode::Char(' '), // Default fallback
+            },
+            modifiers: crate::event::KeyModifiers {
+                ctrl: key.modifiers.contains(crossterm::event::KeyModifiers::CONTROL),
+                alt: key.modifiers.contains(crossterm::event::KeyModifiers::ALT),
+                shift: key.modifiers.contains(crossterm::event::KeyModifiers::SHIFT),
+            },
         };
 
-        let modifiers = if key_event.modifiers.contains(KeyModifiers::CONTROL) {
-            CKeyModifiers::CONTROL
-        } else if key_event.modifiers.contains(KeyModifiers::SHIFT) {
-            CKeyModifiers::SHIFT
-        } else if key_event.modifiers.contains(KeyModifiers::ALT) {
-            CKeyModifiers::ALT
-        } else {
-            CKeyModifiers::NONE
-        };
-
-        CKeyEvent::new(code, modifiers)
+        crate::AppMessage::KeyPress(tea_key)
     }
 
-    /// Handle an event
-    pub fn handle_event(&mut self, event: crate::event::Event) -> Result<()> {
-        // Handle help dialog events first if it's visible
-        if self.help_dialog.is_visible() {
-            if let Event::Key(key_event) = &event {
-                let crossterm_key = self.convert_to_crossterm_key(*key_event);
-                let _ = self.help_dialog.handle_key(crossterm_key)?;
-                return Ok(());
-            }
+    /// Render the current frame using TEA state
+    fn render_frame(&self, f: &mut ratatui::Frame) {
+        // Get current model from reactive state
+        let reactive_state = futures::executor::block_on(self.reactive_state.read());
+        let model = reactive_state.current();
+
+        // Render based on current mode
+        match model.mode {
+            crate::AppMode::Chat => self.render_chat_mode(f, model),
+            crate::AppMode::Command => self.render_command_mode(f, model),
+            crate::AppMode::Diff => self.render_diff_mode(f, model),
+            crate::AppMode::Help => self.render_help_mode(f, model),
         }
 
-        // Handle file picker events if it's visible
-        if self.file_picker.is_visible() {
-            if let Event::Key(key_event) = &event {
-                self.handle_file_picker_key(*key_event)?;
-                return Ok(());
-            }
-        }
-
-        match event {
-            Event::Key(key_event) => {
-                tracing::debug!("Key event: {:?}", key_event);
-                // Handle key events
-                if key_event.code == KeyCode::Esc {
-                    self.should_exit = true;
-                }
-
-                // Tab navigation for keyboard accessibility
-                if key_event.code == KeyCode::Tab {
-                    self.handle_tab_navigation(key_event.modifiers.contains(KeyModifiers::SHIFT));
-                    return Ok(());
-                }
-
-                // Handle text input in chat mode
-                if self.mode == AppMode::Chat {
-                    match key_event.code {
-                        KeyCode::Char('@') => {
-                            // Show file picker when @ is typed
-                            self.file_picker.show();
-                            return Ok(());
-                        }
-                        KeyCode::Char(c) => {
-                            self.chat.input.push(c);
-                            return Ok(());
-                        }
-                        KeyCode::Backspace => {
-                            self.chat.input.pop();
-                            return Ok(());
-                        }
-                        KeyCode::Enter => {
-                            if !self.chat.input.is_empty() {
-                                let input = self.chat.input.clone();
-                                self.chat.input.clear();
-                                self.handle_input_submission(&input)?;
-                            }
-                            return Ok(());
-                        }
-                        _ => {}
-                    }
-                }
-
-                // Mode switching with keyboard shortcuts
-                if self.keybindings_enabled {
-                    self.handle_mode_switching(key_event);
-                }
-            }
-            Event::Mouse(_mouse_event) => {
-                tracing::debug!("Mouse event");
-                // Handle mouse events
-            }
-            Event::Resize { width, height } => {
-                tracing::debug!("Resize event: {}x{}", width, height);
-                self.config.width = Some(width);
-                self.config.height = Some(height);
-
-                // Notify widget integration of resize
-                if let Err(e) = self.widget_integration.on_resize(width, height) {
-                    tracing::error!("Failed to handle resize: {}", e);
-                }
-            }
-            Event::Tick => {
-                // Handle tick event for periodic updates
-            }
-            Event::DragDrop { paths } => {
-                tracing::debug!("Drag-and-drop event with {} files", paths.len());
-                // Handle drag-and-drop events
-                // Requirements: 1.1 - Pass drag-and-drop events to ricecoder-images handler
-                self.handle_drag_drop_event(paths)?;
-            }
-        }
-        Ok(())
+        // Render loading indicators if any
+        self.render_loading_indicators(f);
     }
 
-    /// Handle a drag-and-drop event with file paths
-    ///
-    /// # Arguments
-    ///
-    /// * `paths` - File paths from the drag-and-drop event
-    ///
-    /// # Requirements
-    ///
-    /// - Req 1.1: Pass drag-and-drop events to ricecoder-images handler
-    /// - Req 1.1: Handle file path extraction
-    /// - Req 1.1: Handle multiple files in single drag-and-drop
-    /// - Req 5.1: Add image preview to prompt context
-    /// - Req 5.2: Display images in chat interface
-    fn handle_drag_drop_event(&mut self, paths: std::vec::Vec<std::path::PathBuf>) -> Result<()> {
-        tracing::info!("Processing drag-and-drop event with {} files", paths.len());
+    /// Render chat mode
+    fn render_chat_mode(&self, f: &mut ratatui::Frame, model: &crate::AppModel) {
+        use ratatui::prelude::*;
 
-        // Pass to image integration
-        let (added, errors) = self.image_integration.handle_drag_drop_event(paths);
+        let size = f.size();
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Min(3),  // Messages area
+                Constraint::Length(3), // Input area
+                Constraint::Length(1), // Status bar
+            ])
+            .split(size);
 
-        // Update image widget with added images
-        // Requirements: 5.1 - Add image preview to prompt context
-        if !added.is_empty() {
-            self.image_widget.add_images(added.clone());
-            tracing::info!("Updated image widget with {} images", added.len());
+        // Render messages area
+        let messages_block = Block::default()
+            .borders(Borders::ALL)
+            .title("Chat");
+        f.render_widget(messages_block, chunks[0]);
 
-            // Also add to prompt context
-            // Requirements: 1.4 - Add images to prompt context
-            self.chat.prompt_context.add_images(added.clone());
-            tracing::info!("Added {} images to prompt context", added.len());
-        }
+        // Render input area
+        let input_block = Block::default()
+            .borders(Borders::ALL)
+            .title("Input");
+        f.render_widget(input_block, chunks[1]);
 
-        // Log results
-        if !added.is_empty() {
-            tracing::info!("Added {} images to prompt context", added.len());
-            for path in &added {
-                tracing::debug!("Added image: {}", path.display());
-            }
-        }
-
-        if !errors.is_empty() {
-            tracing::warn!("Encountered {} errors processing drag-and-drop", errors.len());
-            for error in &errors {
-                tracing::debug!("Error: {}", error);
-            }
-        }
-
-        Ok(())
+        // Render status bar
+        self.render_status_bar(f, chunks[2], model);
     }
 
-    /// Sync prompt context with current state
-    ///
-    /// # Requirements
-    ///
-    /// - Req 1.4: Add images to prompt context
-    /// - Req 5.1: Include images in message history
-    pub fn sync_prompt_context(&mut self) {
-        // Sync images from image_integration to prompt_context
-        let images = self.image_integration.get_images().to_vec();
-        self.chat.prompt_context.clear_images();
-        self.chat.prompt_context.add_images(images);
+    /// Render command mode
+    fn render_command_mode(&self, f: &mut ratatui::Frame, model: &crate::AppModel) {
+        use ratatui::prelude::*;
 
-        tracing::debug!(
-            "Synced prompt context: {} images",
-            self.chat.prompt_context.image_count()
+        let size = f.size();
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Min(3),  // Command history
+                Constraint::Length(3), // Command input
+                Constraint::Length(1), // Status bar
+            ])
+            .split(size);
+
+        // Render command history
+        let history_block = Block::default()
+            .borders(Borders::ALL)
+            .title("Command History");
+        f.render_widget(history_block, chunks[0]);
+
+        // Render command input
+        let input_block = Block::default()
+            .borders(Borders::ALL)
+            .title("Command");
+        f.render_widget(input_block, chunks[1]);
+
+        // Render status bar
+        self.render_status_bar(f, chunks[2], model);
+    }
+
+    /// Render diff mode
+    fn render_diff_mode(&self, f: &mut ratatui::Frame, model: &crate::AppModel) {
+        use ratatui::prelude::*;
+
+        let size = f.size();
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .title("Diff View - Coming Soon");
+        f.render_widget(block, size);
+
+        // Render status bar at bottom
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Min(1), Constraint::Length(1)])
+            .split(size);
+        self.render_status_bar(f, chunks[1], model);
+    }
+
+    /// Render help mode
+    fn render_help_mode(&self, f: &mut ratatui::Frame, model: &crate::AppModel) {
+        use ratatui::prelude::*;
+
+        let size = f.size();
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .title("Help - Coming Soon");
+        f.render_widget(block, size);
+
+        // Render status bar at bottom
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Min(1), Constraint::Length(1)])
+            .split(size);
+        self.render_status_bar(f, chunks[1], model);
+    }
+
+    /// Render status bar
+    fn render_status_bar(&self, f: &mut ratatui::Frame, area: ratatui::prelude::Rect, model: &crate::AppModel) {
+        use ratatui::prelude::*;
+
+        let status_text = format!(
+            "Mode: {} | Sessions: {} | Tokens: {}",
+            model.mode.display_name(),
+            model.sessions.session_count,
+            model.sessions.total_tokens.total_tokens()
         );
+
+        let status_bar = Paragraph::new(status_text)
+            .style(Style::default().bg(Color::Blue).fg(Color::White))
+            .alignment(Alignment::Left);
+
+        f.render_widget(status_bar, area);
     }
 
-    /// Get the current prompt context
-    pub fn get_prompt_context(&self) -> &crate::prompt_context::PromptContext {
-        &self.chat.prompt_context
-    }
+    /// Render loading indicators
+    fn render_loading_indicators(&self, f: &mut ratatui::Frame) {
+        // Get active loadings
+        let loadings = futures::executor::block_on(self.loading_manager.get_active_loadings());
 
-    /// Get mutable access to the current prompt context
-    pub fn get_prompt_context_mut(&mut self) -> &mut crate::prompt_context::PromptContext {
-        &mut self.chat.prompt_context
-    }
-
-    /// Handle mode switching keyboard shortcuts
-    fn handle_mode_switching(&mut self, key_event: KeyEvent) {
-        // Ctrl+1: Chat mode
-        if key_event.modifiers.contains(KeyModifiers::CONTROL) && key_event.code == KeyCode::Char('1') {
-            self.switch_mode(AppMode::Chat);
+        if loadings.is_empty() {
             return;
         }
 
-        // Ctrl+2: Command mode
-        if key_event.modifiers.contains(KeyModifiers::CONTROL) && key_event.code == KeyCode::Char('2') {
-            self.switch_mode(AppMode::Command);
-            return;
-        }
+        // Render loading overlay
+        use ratatui::prelude::*;
 
-        // Ctrl+3: Diff mode
-        if key_event.modifiers.contains(KeyModifiers::CONTROL) && key_event.code == KeyCode::Char('3') {
-            self.switch_mode(AppMode::Diff);
-            return;
-        }
-
-        // Ctrl+4: Help mode
-        if key_event.modifiers.contains(KeyModifiers::CONTROL) && key_event.code == KeyCode::Char('4') {
-            self.switch_mode(AppMode::Help);
-            return;
-        }
-
-        // Ctrl+M: Cycle to next mode
-        if key_event.modifiers.contains(KeyModifiers::CONTROL) && key_event.code == KeyCode::Char('m') {
-            self.next_mode();
-            return;
-        }
-
-        // Ctrl+Shift+M: Cycle to previous mode
-        if key_event.modifiers.contains(KeyModifiers::CONTROL)
-            && key_event.modifiers.contains(KeyModifiers::SHIFT)
-            && key_event.code == KeyCode::Char('m')
-        {
-            self.previous_mode_switch();
-            return;
-        }
-
-        // Tab: Toggle between current and previous mode
-        if key_event.code == KeyCode::Tab && key_event.modifiers.contains(KeyModifiers::ALT) {
-            self.toggle_mode();
-        }
-    }
-
-    /// Switch to a different application mode
-    pub fn switch_mode(&mut self, mode: AppMode) {
-        if self.mode != mode {
-            self.previous_mode = self.mode;
-            self.mode = mode;
-            tracing::info!("Switched to mode: {:?}", mode);
-        }
-    }
-
-    /// Cycle to the next mode
-    pub fn next_mode(&mut self) {
-        let next = match self.mode {
-            AppMode::Chat => AppMode::Command,
-            AppMode::Command => AppMode::Diff,
-            AppMode::Diff => AppMode::Help,
-            AppMode::Help => AppMode::Chat,
+        let size = f.size();
+        let loading_text = if loadings.len() == 1 {
+            format!("Loading: {}", loadings[0].description)
+        } else {
+            format!("Loading {} operations...", loadings.len())
         };
-        self.switch_mode(next);
-    }
 
-    /// Switch to the previous mode
-    pub fn previous_mode_switch(&mut self) {
-        self.switch_mode(self.previous_mode);
-    }
+        let loading_widget = Paragraph::new(loading_text)
+            .style(Style::default().bg(Color::Yellow).fg(Color::Black))
+            .alignment(Alignment::Center);
 
-    /// Toggle between current and previous mode
-    pub fn toggle_mode(&mut self) {
-        self.switch_mode(self.previous_mode);
-    }
+        // Position at bottom of screen
+        let loading_area = Rect {
+            x: 0,
+            y: size.height.saturating_sub(1),
+            width: size.width,
+            height: 1,
+        };
 
-    /// Switch mode with accessibility announcement
-    pub fn switch_mode_with_announcement(&mut self, mode: AppMode) {
-        self.switch_mode(mode);
-
-        // Announce mode change if screen reader is enabled
-        if self.config.accessibility.screen_reader_enabled {
-            self.screen_reader
-                .announce_state_change("Mode", &format!("switched to {}", mode.display_name()));
-        }
-    }
-
-    /// Announce a message to screen readers
-    pub fn announce(&mut self, message: impl Into<String>) {
-        if self.config.accessibility.announcements_enabled {
-            use crate::accessibility::AnnouncementPriority;
-            self.screen_reader
-                .announce(message, AnnouncementPriority::Normal);
-        }
-    }
-
-    /// Announce an error to screen readers
-    pub fn announce_error(&mut self, message: impl Into<String>) {
-        if self.config.accessibility.announcements_enabled {
-            self.screen_reader.announce_error(message);
-        }
-    }
-
-    /// Announce a success to screen readers
-    pub fn announce_success(&mut self, message: impl Into<String>) {
-        if self.config.accessibility.announcements_enabled {
-            self.screen_reader.announce_success(message);
-        }
-    }
-
-    /// Enable or disable screen reader support
-    pub fn set_screen_reader_enabled(&mut self, enabled: bool) {
-        self.config.accessibility.screen_reader_enabled = enabled;
-        if enabled {
-            self.screen_reader.enable();
-        } else {
-            self.screen_reader.disable();
-        }
-    }
-
-    /// Enable or disable high contrast mode
-    pub fn set_high_contrast_enabled(&mut self, enabled: bool) {
-        self.config.accessibility.high_contrast_enabled = enabled;
-        if enabled {
-            // Switch to high contrast theme
-            if let Err(e) = self.theme_manager.switch_by_name("high-contrast") {
-                tracing::warn!("Failed to switch to high contrast theme: {}", e);
-            }
-        }
-    }
-
-    /// Handle Tab key for keyboard navigation
-    pub fn handle_tab_navigation(&mut self, shift: bool) {
-        if shift {
-            // Shift+Tab: Focus previous element
-            if let Some(focused) = self.keyboard_nav.focus_previous() {
-                if self.config.accessibility.screen_reader_enabled {
-                    self.screen_reader.announce(
-                        format!("Focused: {}", focused.full_description()),
-                        crate::accessibility::AnnouncementPriority::Normal,
-                    );
-                }
-            }
-        } else {
-            // Tab: Focus next element
-            if let Some(focused) = self.keyboard_nav.focus_next() {
-                if self.config.accessibility.screen_reader_enabled {
-                    self.screen_reader.announce(
-                        format!("Focused: {}", focused.full_description()),
-                        crate::accessibility::AnnouncementPriority::Normal,
-                    );
-                }
-            }
-        }
-    }
-
-    /// Get the currently focused element description
-    pub fn get_focused_element_description(&self) -> Option<String> {
-        self.keyboard_nav
-            .current_focus()
-            .map(|alt| alt.full_description())
-    }
-
-    /// Register an element for keyboard navigation
-    pub fn register_keyboard_element(
-        &mut self,
-        alternative: crate::accessibility::TextAlternative,
-    ) {
-        self.keyboard_nav.register_element(alternative);
-    }
-
-    /// Clear all keyboard navigation elements
-    pub fn clear_keyboard_elements(&mut self) {
-        self.keyboard_nav.clear();
-    }
-
-    /// Enable or disable animations
-    pub fn set_animations_enabled(&mut self, enabled: bool) {
-        self.config.accessibility.animations.enabled = enabled;
-        self.config.animations = enabled;
-
-        if self.config.accessibility.screen_reader_enabled {
-            let state = if enabled { "enabled" } else { "disabled" };
-            self.screen_reader.announce(
-                format!("Animations {}", state),
-                crate::accessibility::AnnouncementPriority::Normal,
-            );
-        }
-    }
-
-    /// Enable or disable reduce motion (for accessibility)
-    pub fn set_reduce_motion(&mut self, enabled: bool) {
-        self.config.accessibility.animations.reduce_motion = enabled;
-
-        if self.config.accessibility.screen_reader_enabled {
-            let state = if enabled { "enabled" } else { "disabled" };
-            self.screen_reader.announce(
-                format!("Reduce motion {}", state),
-                crate::accessibility::AnnouncementPriority::Normal,
-            );
-        }
-    }
-
-    /// Set animation speed multiplier
-    pub fn set_animation_speed(&mut self, speed: f32) {
-        let clamped_speed = speed.clamp(0.1, 2.0);
-        self.config.accessibility.animations.speed = clamped_speed;
-
-        if self.config.accessibility.screen_reader_enabled {
-            self.screen_reader.announce(
-                format!("Animation speed set to {:.1}x", clamped_speed),
-                crate::accessibility::AnnouncementPriority::Normal,
-            );
-        }
-    }
-
-    /// Check if animations should be displayed
-    pub fn should_animate(&self) -> bool {
-        self.config.accessibility.animations.should_animate()
-    }
-
-    /// Get animation duration in milliseconds
-    pub fn animation_duration_ms(&self, base_ms: u32) -> u32 {
-        self.config.accessibility.animations.duration_ms(base_ms)
-    }
-
-    /// Announce a state change
-    pub fn announce_state_change(&mut self, event: StateChangeEvent) {
-        if self.config.accessibility.announcements_enabled {
-            self.screen_reader
-                .announce(event.announcement_text(), event.priority);
-        }
-    }
-
-    /// Set focus to an element and announce it
-    pub fn set_focus_with_announcement(&mut self, element_id: impl Into<String>) {
-        let id = element_id.into();
-        self.focus_manager.set_focus(&id);
-
-        if self.config.accessibility.screen_reader_enabled {
-            self.screen_reader.announce(
-                format!("Focus moved to {}", id),
-                crate::accessibility::AnnouncementPriority::Normal,
-            );
-        }
-    }
-
-    /// Restore previous focus
-    pub fn restore_focus(&mut self) {
-        if let Some(element_id) = self.focus_manager.restore_focus() {
-            if self.config.accessibility.screen_reader_enabled {
-                self.screen_reader.announce(
-                    format!("Focus restored to {}", element_id),
-                    crate::accessibility::AnnouncementPriority::Normal,
-                );
-            }
-        }
-    }
-
-    /// Announce an operation status
-    pub fn announce_operation_status(&mut self, operation: &str, status: &str) {
-        if self.config.accessibility.announcements_enabled {
-            let priority = if status.contains("error") || status.contains("failed") {
-                crate::accessibility::AnnouncementPriority::High
-            } else if status.contains("success") || status.contains("complete") {
-                crate::accessibility::AnnouncementPriority::Normal
-            } else {
-                crate::accessibility::AnnouncementPriority::Low
-            };
-
-            self.screen_reader
-                .announce(format!("{}: {}", operation, status), priority);
-        }
+        f.render_widget(loading_widget, loading_area);
     }
 }
