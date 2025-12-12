@@ -640,6 +640,19 @@ impl Default for ConfigManager {
     }
 }
 
+impl TuiConfig {
+    /// Save configuration to YAML file
+    pub fn save_yaml(&self) -> Result<()> {
+        self.validate()?; // Validate before saving
+
+        let config_path = Self::yaml_config_path()?;
+
+        // Create parent directories if they don't exist
+        if let Some(parent) = config_path.parent() {
+            fs::create_dir_all(parent)
+                .map_err(|e| anyhow::anyhow!("Failed to create config directory {}: {}", parent.display(), e))?;
+        }
+
         let yaml_content = serde_yaml::to_string(self)
             .map_err(|e| anyhow::anyhow!("Failed to serialize config to YAML: {}", e))?;
 

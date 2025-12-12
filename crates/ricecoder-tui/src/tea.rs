@@ -220,7 +220,6 @@ impl ReactiveState {
             debugger: StateDebugger::new(),
         }
     }
-    }
 
     /// Apply a message and return the state diff
     pub fn update(&mut self, message: AppMessage) -> Result<StateDiff, String> {
@@ -371,7 +370,6 @@ impl ReactiveState {
             Err(format!("Snapshot at index {} not found", index))
         }
     }
-}
 
     /// Undo last change
     pub fn undo(&mut self) -> Result<StateDiff, String> {

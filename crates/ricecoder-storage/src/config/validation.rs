@@ -7,7 +7,7 @@ use crate::config::Config;
 use crate::error::{StorageError, StorageResult};
 use serde_json::Value;
 use std::collections::HashMap;
-use jsonschema::{Draft, JSONSchema};
+use jsonschema::Validator;
 
 /// Configuration validation error
 #[derive(Debug, Clone)]
@@ -27,7 +27,7 @@ impl std::error::Error for ValidationError {}
 
 /// Configuration validator with schema support
 pub struct ConfigValidator {
-    schemas: HashMap<String, JSONSchema>,
+    schemas: HashMap<String, Validator>,
 }
 
 impl ConfigValidator {
@@ -40,9 +40,7 @@ impl ConfigValidator {
 
     /// Add a JSON schema for validation
     pub fn add_schema(&mut self, name: String, schema: Value) -> StorageResult<()> {
-        let compiled_schema = JSONSchema::options()
-            .with_draft(Draft::Draft7)
-            .compile(&schema)
+        let compiled_schema = jsonschema::validator_for(&schema)
             .map_err(|e| StorageError::ConfigValidation {
                 errors: vec![format!("Invalid schema '{}': {}", name, e)],
             })?;
@@ -75,10 +73,8 @@ impl ConfigValidator {
         if let Some(schema) = self.schemas.get("providers") {
             let providers_value = serde_json::to_value(&config.providers)
                 .map_err(|e| StorageError::Internal(format!("Failed to serialize providers: {}", e)))?;
-            if let Err(validation_errors) = schema.validate(&providers_value) {
-                for error in validation_errors {
-                    errors.push(format!("providers.{}: {}", error.instance_path, error.to_string()));
-                }
+            if let Err(validation_error) = schema.validate(&providers_value) {
+                errors.push(format!("providers validation failed: {}", validation_error));
             }
         }
 
@@ -86,10 +82,8 @@ impl ConfigValidator {
         if let Some(schema) = self.schemas.get("defaults") {
             let defaults_value = serde_json::to_value(&config.defaults)
                 .map_err(|e| StorageError::Internal(format!("Failed to serialize defaults: {}", e)))?;
-            if let Err(validation_errors) = schema.validate(&defaults_value) {
-                for error in validation_errors {
-                    errors.push(format!("defaults.{}: {}", error.instance_path, error.to_string()));
-                }
+            if let Err(validation_error) = schema.validate(&defaults_value) {
+                errors.push(format!("defaults validation failed: {}", validation_error));
             }
         }
 
@@ -97,10 +91,8 @@ impl ConfigValidator {
         if let Some(schema) = self.schemas.get("steering") {
             let steering_value = serde_json::to_value(&config.steering)
                 .map_err(|e| StorageError::Internal(format!("Failed to serialize steering: {}", e)))?;
-            if let Err(validation_errors) = schema.validate(&steering_value) {
-                for error in validation_errors {
-                    errors.push(format!("steering{}: {}", error.instance_path, error.to_string()));
-                }
+            if let Err(validation_error) = schema.validate(&steering_value) {
+                errors.push(format!("steering validation failed: {}", validation_error));
             }
         }
 
@@ -288,23 +280,22 @@ impl ConfigMigration for V1_0ToV1_1Migration {
     }
 
     fn migrate(&self, config: &mut Config) -> StorageResult<()> {
-        // Add new fields that were introduced in v1.1
-        if config.defaults.top_p.is_none() {
-            config.defaults.top_p = Some(1.0);
-        }
-        if config.defaults.frequency_penalty.is_none() {
-            config.defaults.frequency_penalty = Some(0.0);
-        }
-        if config.defaults.presence_penalty.is_none() {
-            config.defaults.presence_penalty = Some(0.0);
+        // Migration logic for v1.0 to v1.1
+        // Since the actual config structure is simpler, we'll just validate
+        // that existing values are reasonable
+
+        // Ensure temperature is within valid range
+        if let Some(temp) = config.defaults.temperature {
+            if !(0.0..=2.0).contains(&temp) {
+                config.defaults.temperature = Some(temp.clamp(0.0, 2.0));
+            }
         }
 
-        // Ensure all steering rules have priority and enabled fields
-        for rule in &mut config.steering {
-            if rule.priority == 0 {
-                rule.priority = 50; // Default priority
+        // Ensure max_tokens is reasonable
+        if let Some(max_tokens) = config.defaults.max_tokens {
+            if max_tokens == 0 {
+                config.defaults.max_tokens = Some(4096); // Default reasonable value
             }
-            // enabled field is already defaulted in the struct
         }
 
         Ok(())
@@ -323,10 +314,10 @@ impl ConfigMigration for V1_1ToV1_2Migration {
         from_version == "1.1" && to_version == "1.2"
     }
 
-    fn migrate(&self, config: &mut Config) -> StorageResult<()> {
-        // Rename any deprecated field names
-        // For example, if we had "api_key" instead of "api_keys"
-        // This is a placeholder for actual field renames
+    fn migrate(&self, _config: &mut Config) -> StorageResult<()> {
+        // Migration logic for v1.1 to v1.2
+        // Currently no field renames needed, but this could be extended
+        // for future migrations
 
         Ok(())
     }

@@ -640,8 +640,8 @@ impl PluginRegistry {
         self.plugins.values().map(|p| p.as_ref()).collect()
     }
 }
-    }
 
+impl PluginRegistry {
     /// Register a plugin
     pub fn register<P: Plugin + 'static>(&mut self, plugin: P) -> TuiResult<()> {
         let id = plugin.id();
@@ -930,8 +930,9 @@ impl PluginManager {
             active_plugins: RwLock::new(HashMap::new()),
             extensions: RwLock::new(ExtensionManager::new()),
         }
-    }
+}
 
+impl PluginManager {
     /// Register a plugin
     pub async fn register_plugin<P: Plugin + 'static>(&self, plugin: P) -> TuiResult<PluginId> {
         let id = plugin.id();
@@ -1456,6 +1457,7 @@ impl Default for PluginManager {
             std::env::temp_dir().join("ricecoder-plugins"),
         )
     }
+}
 }
 
 /// Placeholder plugin implementation for discovered plugins
