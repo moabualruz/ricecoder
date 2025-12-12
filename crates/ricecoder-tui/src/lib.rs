@@ -35,6 +35,7 @@ pub mod prompt;
 pub mod prompt_context;
 pub mod project_bootstrap;
 pub mod provider_integration;
+pub mod real_time_updates;
 pub mod render;
 pub mod render_pipeline;
 pub mod scrollview_widget;
@@ -106,6 +107,10 @@ pub use performance::{
 pub use popup_widget::{PopupButton, PopupType, PopupWidget};
 pub use progressive_enhancement::{
     ProgressiveEnhancement, FeatureLevel, FeatureToggles, RenderingStrategy,
+};
+pub use real_time_updates::{
+    RealTimeUpdates, RealTimeStream, StreamData, StreamType, OperationStatus,
+    OperationInfo, ProgressIndicator, RealTimeStats,
 };
 pub use prompt::{ContextIndicators, PromptConfig, PromptWidget};
 pub use prompt_context::PromptContext;

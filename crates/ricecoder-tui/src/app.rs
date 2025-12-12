@@ -113,6 +113,8 @@ pub struct App {
     pub error_manager: ErrorManager,
     /// Progressive enhancement manager
     pub progressive_enhancement: crate::ProgressiveEnhancement,
+    /// Real-time updates coordinator
+    pub real_time_updates: crate::RealTimeUpdates,
 }
 
 impl App {
@@ -171,6 +173,9 @@ impl App {
         // Create progressive enhancement manager
         let progressive_enhancement = crate::ProgressiveEnhancement::new(capabilities);
 
+        // Create real-time updates coordinator
+        let real_time_updates = crate::RealTimeUpdates::new(error_manager.clone());
+
         let app = Self {
             reactive_state,
             event_dispatcher,
@@ -187,6 +192,7 @@ impl App {
             screen_reader,
             error_manager,
             progressive_enhancement,
+            real_time_updates,
         };
 
         // Initialize virtual lists for large datasets
@@ -603,5 +609,35 @@ impl App {
     /// Force a specific feature level (for testing)
     pub fn force_feature_level(&mut self, level: crate::FeatureLevel) {
         self.progressive_enhancement.force_feature_level(level);
+    }
+
+    /// Get real-time updates coordinator
+    pub fn real_time_updates(&self) -> &crate::RealTimeUpdates {
+        &self.real_time_updates
+    }
+
+    /// Create a new real-time stream
+    pub async fn create_stream(&self, operation_id: String, stream_type: crate::StreamType, name: String, description: String) -> std::sync::Arc<crate::RealTimeStream> {
+        self.real_time_updates.create_stream(operation_id, stream_type, name, description).await
+    }
+
+    /// Get active real-time streams
+    pub async fn active_streams(&self) -> Vec<std::sync::Arc<crate::RealTimeStream>> {
+        self.real_time_updates.active_streams().await
+    }
+
+    /// Get real-time statistics
+    pub async fn real_time_stats(&self) -> crate::RealTimeStats {
+        self.real_time_updates.get_statistics().await
+    }
+
+    /// Cancel all streams of a specific type
+    pub async fn cancel_streams_by_type(&self, stream_type: crate::StreamType) {
+        self.real_time_updates.cancel_by_type(stream_type).await;
+    }
+
+    /// Start processing real-time updates (should be called in a separate task)
+    pub async fn start_real_time_processing(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        self.real_time_updates.process_updates().await
     }
 }

@@ -580,6 +580,7 @@ impl ErrorLogger {
 }
 
 /// Global error manager that coordinates all error handling
+#[derive(Clone)]
 pub struct ErrorManager {
     pub boundaries: HashMap<String, Box<dyn std::any::Any + Send + Sync>>,
     pub crash_recovery: CrashRecovery,
