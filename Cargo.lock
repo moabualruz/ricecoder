@@ -4679,6 +4679,7 @@ dependencies = [
  "unicode-width 0.1.14",
  "usvg 0.40.0",
  "uuid",
+ "walkdir",
 ]
 
 [[package]]

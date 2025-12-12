@@ -67,6 +67,10 @@ pub enum TuiError {
     #[error("Clipboard error: {0}")]
     Clipboard(#[from] ClipboardError),
 
+    /// Plugin system errors
+    #[error("Plugin error: {message}")]
+    Plugin { message: String },
+
     /// Terminal/Crossterm errors
     #[error("Terminal error: {message}")]
     Terminal { message: String },
@@ -154,10 +158,6 @@ pub enum TuiError {
     /// Version compatibility errors
     #[error("Version error: {message}")]
     Version { message: String },
-
-    /// Plugin/extension errors
-    #[error("Plugin error: {message}")]
-    Plugin { message: String },
 
     /// Generic internal errors
     #[error("Internal error: {message}")]

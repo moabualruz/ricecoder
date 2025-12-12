@@ -401,12 +401,16 @@ impl LiveDataSynchronizer {
         *self.file_watcher.write().await = Some(watcher);
 
         tokio::spawn(async move {
+            let mut pending_events = Vec::new();
+            let mut debounce_timer = None;
+
             loop {
                 tokio::select! {
                     _ = cancellation_token.cancelled() => break,
                     result = rx.recv() => {
                         match result {
                             Some(Ok(event)) => {
+                                // Collect events for debouncing
                                 for path in event.paths {
                                     let change_type = match event.kind {
                                         notify::EventKind::Create(_) => FileChangeType::Created,
@@ -421,7 +425,20 @@ impl LiveDataSynchronizer {
                                         timestamp: Instant::now(),
                                     };
 
-                                    let _ = update_sender.send(LiveDataEvent::FileChanged(file_event));
+                                    pending_events.push(file_event);
+                                }
+
+                                // Start debounce timer if not already running
+                                if debounce_timer.is_none() {
+                                    let update_sender_clone = update_sender.clone();
+                                    debounce_timer = Some(tokio::spawn(async move {
+                                        tokio::time::sleep(Duration::from_millis(100)).await; // 100ms debounce
+                                        // Send all pending events
+                                        for event in &pending_events {
+                                            let _ = update_sender_clone.send(LiveDataEvent::FileChanged(event.clone()));
+                                        }
+                                        pending_events.clear();
+                                    }));
                                 }
                             }
                             Some(Err(e)) => {
@@ -429,6 +446,10 @@ impl LiveDataSynchronizer {
                             }
                             None => break,
                         }
+                    }
+                    // Handle debounce timer completion
+                    Some(_) = async { if let Some(timer) = &mut debounce_timer { timer.await } else { std::future::pending().await } }, if debounce_timer.is_some() => {
+                        debounce_timer = None;
                     }
                 }
             }

@@ -55,6 +55,7 @@ pub mod theme_reset;
 pub mod tree_widget;
 pub mod vcs_integration;
 pub mod widgets;
+pub mod plugins;
 
 // Re-export commonly used types
 pub use accessibility::{
@@ -80,6 +81,10 @@ pub use error_handling::{
     RiceError, RetryMechanism, CrashRecovery, CrashReport, LogEntry as ErrorLogEntry, LogLevel as ErrorLogLevel,
 };
 pub use lsp_integration::{language_from_file_path, lsp_diagnostics_to_tui, lsp_hover_to_text};
+pub use plugins::{
+    Plugin, PluginContext, PluginId, PluginManager, PluginMessage, PluginMetadata, PluginRegistry,
+    PluginSandbox, PluginState,
+};
 pub use command_palette::{CommandPaletteWidget, PaletteCommand};
 pub use executor::{
     CommandContext, CommandDefinition, CommandError, CommandExecutionResult, CommandExecutor,
