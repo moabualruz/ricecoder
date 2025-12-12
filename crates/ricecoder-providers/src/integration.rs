@@ -1,14 +1,14 @@
-//! Provider integration for the TUI
+//! Provider integration utilities
 //!
-//! This module provides integration with the ricecoder-providers crate,
-//! enabling the TUI to send messages to AI providers and stream responses.
+//! This module provides utilities for integrating with AI providers,
+//! including configuration management and streaming support.
 
-use anyhow::Result;
+use crate::error::ProviderError;
 
 /// Streaming response handler
 pub type StreamHandler = Box<dyn Fn(String) + Send + Sync>;
 
-/// Provider integration for TUI
+/// Provider integration utilities
 pub struct ProviderIntegration {
     /// Current provider name
     pub current_provider: Option<String>,
@@ -141,20 +141,16 @@ impl ProviderIntegration {
     }
 
     /// Validate provider and model combination
-    pub fn validate(&self) -> Result<()> {
+    pub fn validate(&self) -> Result<(), ProviderError> {
         if let Some(provider) = self.provider() {
             if !Self::available_providers().contains(&provider) {
-                return Err(anyhow::anyhow!("Unknown provider: {}", provider));
+                return Err(ProviderError::NotFound(provider.to_string()));
             }
 
             if let Some(model) = self.model() {
                 let available = Self::available_models_for_provider(provider);
                 if !available.contains(&model) {
-                    return Err(anyhow::anyhow!(
-                        "Model {} not available for provider {}",
-                        model,
-                        provider
-                    ));
+                    return Err(ProviderError::InvalidModel(model.to_string()));
                 }
             }
         }

@@ -36,6 +36,7 @@ fn config_strategy() -> impl Strategy<Value = Config> {
                     max_tokens: tokens,
                 },
                 steering: Vec::new(),
+                tui: Default::default(),
                 custom: HashMap::new(),
             }
         })

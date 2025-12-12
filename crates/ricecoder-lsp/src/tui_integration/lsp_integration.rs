@@ -3,7 +3,7 @@
 //! This module provides integration between LSP servers and the TUI diagnostics system,
 //! converting LSP diagnostic responses into TUI-compatible diagnostic items.
 
-use crate::diagnostics_widget::{DiagnosticItem, DiagnosticSeverity, DiagnosticRelatedInformation, DiagnosticLocation};
+use super::diagnostics_widget::{DiagnosticItem, DiagnosticSeverity, DiagnosticRelatedInformation, DiagnosticLocation};
 use serde_json::Value;
 use std::collections::HashMap;
 

@@ -132,6 +132,8 @@ impl MCPConfigLoader {
                 .map_err(|e| Error::ConfigError(format!("Failed to parse YAML: {}", e))),
             ConfigFormat::Json => serde_json::from_str(content)
                 .map_err(|e| Error::ConfigError(format!("Failed to parse JSON: {}", e))),
+            ConfigFormat::Jsonc => serde_json::from_str(content)
+                .map_err(|e| Error::ConfigError(format!("Failed to parse JSONC: {}", e))),
             ConfigFormat::Toml => Err(Error::ConfigError(
                 "TOML format is not supported for MCP configuration".to_string(),
             )),

@@ -646,7 +646,7 @@ mod tests {
                 chat_widget: crate::widgets::ChatWidget::new(),
                 help_dialog: ricecoder_help::HelpDialog::default_ricecoder(),
                 file_picker_visible: false,
-                config: crate::config::TuiConfig::default(),
+                config: ricecoder_storage::TuiConfig::default(),
             },
             pending_operations: std::collections::HashMap::new(),
             subscriptions: vec![],

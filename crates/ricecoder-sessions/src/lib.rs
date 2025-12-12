@@ -10,9 +10,11 @@ pub mod history;
 pub mod manager;
 pub mod models;
 pub mod router;
+pub mod session_integration;
 pub mod share;
 pub mod store;
 pub mod token_estimator;
+pub mod tui_session_manager;
 
 // Re-export commonly used types
 pub use background_agent::BackgroundAgentManager;
@@ -27,8 +29,10 @@ pub use models::{
     ToolResultPart, ToolStatus,
 };
 pub use router::SessionRouter;
+pub use session_integration::SessionIntegration;
 pub use share::{SessionShare, SharePermissions, ShareService};
 pub use store::SessionStore;
 pub use token_estimator::{
     TokenEstimate, TokenEstimator, TokenLimitStatus, TokenUsage, TokenUsageTracker,
 };
+pub use tui_session_manager::{TuiSessionManager, TuiSessionData};

@@ -1,29 +1,28 @@
 [package]
-name = "ricecoder-vcs"
+name = "ricecoder-themes"
 version.workspace = true
 edition = "2021"
 authors = ["RiceCoder Contributors"]
-description = "VCS integration for RiceCoder TUI"
+description = "Theme management system for RiceCoder"
 license = "MIT"
 repository = "https://github.com/moabualruz/ricecoder"
 homepage = "https://github.com/moabualruz/ricecoder"
 documentation = "https://github.com/moabualruz/ricecoder/wiki"
 
 [lib]
-name = "ricecoder_vcs"
+name = "ricecoder_themes"
 path = "src/lib.rs"
 
 [dependencies]
-git2 = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+serde_yaml = "0.9"
 thiserror = "1.0"
 tracing = "0.1"
-chrono = { version = "0.4", features = ["serde"] }
 tokio = { workspace = true }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
 
 [dev-dependencies]
 proptest = "1.4"
 tokio-test = "0.4"
 tempfile = "3.8"
-

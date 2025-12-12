@@ -35,6 +35,9 @@ pub struct Config {
     /// Steering rules
     #[serde(default)]
     pub steering: Vec<SteeringRule>,
+    /// TUI-specific configuration
+    #[serde(default)]
+    pub tui: TuiConfig,
     /// Additional custom settings
     #[serde(default)]
     pub custom: HashMap<String, serde_json::Value>,
@@ -75,6 +78,65 @@ pub struct SteeringRule {
     pub format: crate::types::DocumentFormat,
 }
 
+/// TUI-specific configuration
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct TuiConfig {
+    /// Theme name
+    pub theme: String,
+    /// Enable animations
+    pub animations: bool,
+    /// Enable mouse support
+    pub mouse: bool,
+    /// Terminal width
+    pub width: Option<u16>,
+    /// Terminal height
+    pub height: Option<u16>,
+    /// Accessibility configuration
+    #[serde(default)]
+    pub accessibility: TuiAccessibilityConfig,
+    /// Enable vim keybindings
+    #[serde(default)]
+    pub vim_mode: bool,
+}
+
+/// TUI accessibility configuration
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct TuiAccessibilityConfig {
+    /// Enable screen reader support
+    pub screen_reader_enabled: bool,
+    /// Enable high contrast mode
+    pub high_contrast_mode: bool,
+    /// Disable animations for accessibility
+    pub disable_animations: bool,
+    /// Focus indicator intensity
+    pub focus_indicator_intensity: u8,
+}
+
+impl Default for TuiConfig {
+    fn default() -> Self {
+        Self {
+            theme: "dark".to_string(),
+            animations: true,
+            mouse: true,
+            width: None,
+            height: None,
+            accessibility: TuiAccessibilityConfig::default(),
+            vim_mode: false,
+        }
+    }
+}
+
+impl Default for TuiAccessibilityConfig {
+    fn default() -> Self {
+        Self {
+            screen_reader_enabled: false,
+            high_contrast_mode: false,
+            disable_animations: false,
+            focus_indicator_intensity: 3,
+        }
+    }
+}
+
 impl Default for Config {
     fn default() -> Self {
         Config {
@@ -89,6 +151,7 @@ impl Default for Config {
                 max_tokens: None,
             },
             steering: Vec::new(),
+            tui: TuiConfig::default(),
             custom: HashMap::new(),
         }
     }

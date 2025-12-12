@@ -187,6 +187,17 @@ impl SessionManager {
         Ok(self.token_estimator.check_token_limits(usage.total_tokens, &usage.model))
     }
 
+    /// Estimate tokens for content using the active session's model
+    pub fn estimate_tokens_for_active_session(&mut self, content: &str) -> SessionResult<crate::token_estimator::TokenEstimate> {
+        let session = self.get_active_session()?;
+        self.token_estimator.estimate_tokens(content, Some(&session.context.model))
+    }
+
+    /// Estimate tokens for content using a specific model
+    pub fn estimate_tokens_with_model(&mut self, content: &str, model: &str) -> SessionResult<crate::token_estimator::TokenEstimate> {
+        self.token_estimator.estimate_tokens(content, Some(model))
+    }
+
     /// Generate a descriptive title for a session based on its content
     pub fn generate_session_title(&self, session_id: &str) -> SessionResult<String> {
         let session = self.get_session(session_id)?;

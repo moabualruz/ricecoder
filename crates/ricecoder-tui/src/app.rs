@@ -3,7 +3,7 @@
 use crate::accessibility::{
     FocusManager, KeyboardNavigationManager, ScreenReaderAnnouncer, StateChangeEvent,
 };
-use crate::config::TuiConfig;
+use ricecoder_storage::TuiConfig;
 use crate::error_handling::{ErrorManager, RiceError, ErrorCategory, ErrorSeverity};
 use crate::event::{Event, EventLoop};
 use crate::image_integration::ImageIntegration;
@@ -129,7 +129,7 @@ impl App {
 
         // Create initial TEA model
         let initial_model = crate::AppModel::init(
-            crate::config::TuiConfig::default(),
+            TuiConfig::default(),
             &crate::theme::ThemeManager::new(),
             crate::session_integration::SessionIntegration::new(10),
             crate::project_bootstrap::ProjectBootstrap::new(

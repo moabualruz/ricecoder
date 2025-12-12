@@ -47,6 +47,7 @@ pub mod refactoring;
 pub mod semantic;
 pub mod server;
 pub mod transport;
+pub mod tui_integration;
 pub mod types;
 
 // Re-export public API
@@ -68,4 +69,9 @@ pub use proxy::{ExternalLspClient, LspProxy};
 pub use refactoring::RefactoringHandler;
 pub use semantic::SemanticAnalyzer;
 pub use server::LspServer;
+pub use tui_integration::{
+    DiagnosticDetailWidget, DiagnosticItem, DiagnosticLocation, DiagnosticRelatedInformation,
+    DiagnosticSeverity, DiagnosticsWidget, HoverWidget, language_from_file_path,
+    lsp_diagnostics_to_tui, lsp_hover_to_text,
+};
 pub use types::{CodeAction, Diagnostic, HoverInfo, Position, Range};

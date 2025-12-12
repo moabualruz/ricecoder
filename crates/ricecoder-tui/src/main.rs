@@ -1,7 +1,8 @@
 //! RiceCoder TUI - Terminal User Interface entry point
 
 use anyhow::Result;
-use ricecoder_tui::{config::TuiConfig, performance::RenderPerformanceTracker, render::Renderer, App, TerminalState};
+use ricecoder_tui::{performance::RenderPerformanceTracker, render::Renderer, App, TerminalState};
+use ricecoder_storage::TuiConfig;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};

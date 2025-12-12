@@ -4,7 +4,7 @@
 //! immutable state management with structural sharing and reactive updates.
 
 use crate::accessibility::{FocusManager, KeyboardNavigationManager, ScreenReaderAnnouncer};
-use crate::config::TuiConfig;
+use ricecoder_storage::TuiConfig;
 use crate::event::Event;
 use crate::image_integration::ImageIntegration;
 use crate::integration::WidgetIntegration;
@@ -740,7 +740,7 @@ mod tests {
                 chat_widget: ChatWidget::new(),
                 help_dialog: HelpDialog::default_ricecoder(),
                 file_picker_visible: false,
-                config: crate::config::TuiConfig::default(),
+                config: TuiConfig::default(),
             },
 
             pending_operations: std::collections::HashMap::new(),

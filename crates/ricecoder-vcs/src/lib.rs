@@ -30,12 +30,14 @@ pub mod error;
 pub mod git;
 pub mod repository;
 pub mod status;
+pub mod tui_integration;
 pub mod types;
 
 pub use error::{VcsError, Result};
 pub use git::GitRepository;
 pub use repository::Repository;
 pub use status::{FileStatus, ModificationIndicator, RepositoryStatus};
+pub use tui_integration::{VcsStatus, VcsIntegration};
 pub use types::{Branch, ModifiedFile};
 
 #[cfg(test)]

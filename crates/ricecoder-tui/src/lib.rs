@@ -11,8 +11,7 @@ pub mod code_editor_widget;
 pub mod command_blocks;
 pub mod command_palette;
 pub mod components;
-pub mod config;
-pub mod diagnostics_widget;
+
 pub mod diff;
 pub mod error;
 pub mod error_handling;
@@ -26,7 +25,6 @@ pub mod input;
 pub mod integration;
 pub mod layout;
 pub mod logger_widget;
-pub mod lsp_integration;
 pub mod markdown;
 pub mod performance;
 pub mod popup_widget;
@@ -34,7 +32,7 @@ pub mod progressive_enhancement;
 pub mod prompt;
 pub mod prompt_context;
 pub mod project_bootstrap;
-pub mod provider_integration;
+
 pub mod reactive_ui_updates;
 pub mod real_time_updates;
 pub mod render;
@@ -53,7 +51,6 @@ pub mod theme_loader;
 pub mod theme_registry;
 pub mod theme_reset;
 pub mod tree_widget;
-pub mod vcs_integration;
 pub mod widgets;
 pub mod plugins;
 pub mod monitoring;
@@ -70,7 +67,7 @@ pub use banner::{BannerArea, BannerComponent, BannerComponentConfig};
 pub use clipboard::{ClipboardError, ClipboardManager, CopyFeedback, CopyOperation};
 pub use code_editor_widget::{CodeEditorWidget, CodeLine, Language, SyntaxTheme};
 pub use command_blocks::{Command, CommandBlock, CommandBlocksWidget, CommandStatus};
-pub use diagnostics_widget::{
+pub use ricecoder_lsp::tui_integration::{
     DiagnosticDetailWidget, DiagnosticItem, DiagnosticSeverity, DiagnosticsWidget, HoverWidget,
 };
 pub use error::{
@@ -81,7 +78,7 @@ pub use error_handling::{
     ErrorBoundary, ErrorCategory, ErrorLogger, ErrorManager, ErrorSeverity, RecoveryStrategy,
     RiceError, RetryMechanism, CrashRecovery, CrashReport, LogEntry as ErrorLogEntry, LogLevel as ErrorLogLevel,
 };
-pub use lsp_integration::{language_from_file_path, lsp_diagnostics_to_tui, lsp_hover_to_text};
+pub use ricecoder_lsp::tui_integration::{language_from_file_path, lsp_diagnostics_to_tui, lsp_hover_to_text};
 pub use plugins::{
     Plugin, PluginContext, PluginId, PluginManager, PluginMessage, PluginMetadata, PluginRegistry,
     PluginSandbox, PluginState,
@@ -102,7 +99,7 @@ pub use components::{
     DialogType, DialogWidget, ListWidget, MenuWidget, ModeIndicator, ModeSelectionMenu,
     SplitViewWidget, TabWidget,
 };
-pub use config::TuiConfig;
+// TuiConfig is now exported from ricecoder-storage
 pub use diff::{DiffHunk, DiffLine, DiffLineType, DiffViewType, DiffWidget};
 pub use image_integration::ImageIntegration;
 pub use image_widget::{ImageFormat, ImageWidget, RenderMode};
@@ -131,7 +128,7 @@ pub use real_time_updates::{
 };
 pub use prompt::{ContextIndicators, PromptConfig, PromptWidget};
 pub use prompt_context::PromptContext;
-pub use provider_integration::ProviderIntegration;
+// ProviderIntegration is now exported from ricecoder-providers
 pub use scrollview_widget::ScrollViewWidget;
 pub use session_integration::SessionIntegration;
 pub use status_bar::{ConnectionStatus, InputMode, StatusBarWidget};
@@ -144,7 +141,8 @@ pub use style::{ColorSupport, Theme};
 pub use terminal_state::{ColorSupport as TerminalColorSupport, TerminalCapabilities, TerminalState, TerminalType};
 pub use textarea_widget::TextAreaWidget;
 pub use theme::ThemeManager;
-pub use vcs_integration::{StatusBarVcsExt, VcsIntegration, VcsStatus};
+pub use ricecoder_vcs::tui_integration::{VcsIntegration, VcsStatus};
+pub use status_bar::StatusBarVcsExt;
 pub use theme_loader::{ThemeLoader, ThemeYaml};
 pub use theme_registry::ThemeRegistry;
 pub use theme_reset::ThemeResetManager;

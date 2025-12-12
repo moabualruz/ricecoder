@@ -4,8 +4,7 @@
 //! enabling display of comprehensive VCS information including repository status, branch info,
 //! and modification indicators.
 
-use crate::status_bar::StatusBarWidget;
-use ricecoder_vcs::{GitRepository, RepositoryStatus, Result as VcsResult, Repository};
+use crate::{GitRepository, RepositoryStatus, Result as VcsResult, Repository};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -55,11 +54,11 @@ impl VcsStatus {
             branch: Some(status.current_branch.name.clone()),
             status_summary: Some(status.summary()),
             has_changes: status.uncommitted_changes > 0,
-            staged_count: status.staged_count,
-            modified_count: status.modified_count,
-            untracked_count: status.untracked_count,
+            staged_count: status.staged_files,
+            modified_count: status.uncommitted_changes,
+            untracked_count: status.untracked_files,
             has_conflicts: status.has_conflicts,
-            ahead_behind: status.ahead_behind,
+            ahead_behind: None, // TODO: Add ahead/behind tracking to RepositoryStatus
         }
     }
 
@@ -137,35 +136,7 @@ impl VcsIntegration {
         self.status_rx.clone()
     }
 
-    /// Apply VCS status to status bar widget
-    pub fn apply_to_status_bar(&self, mut status_bar: StatusBarWidget) -> StatusBarWidget {
-        let vcs_status = self.get_status();
 
-        // Set basic branch info
-        status_bar.git_branch = vcs_status.branch;
-
-        // Add VCS status indicators if there are changes
-        if vcs_status.is_in_repo() {
-            // Add status summary to recording status (reuse existing field)
-            if vcs_status.has_changes {
-                status_bar.recording_status = vcs_status.status_summary;
-            }
-
-            // Add ahead/behind info to search status
-            if let Some((ahead, behind)) = vcs_status.ahead_behind {
-                if ahead > 0 || behind > 0 {
-                    status_bar.search_status = Some(format!("↑{} ↓{}", ahead, behind));
-                }
-            }
-
-            // Add conflict indicator to selection status
-            if vcs_status.has_conflicts {
-                status_bar.selection_status = Some("CONFLICTS".to_string());
-            }
-        }
-
-        status_bar
-    }
 
     /// Get VCS status summary for display
     pub fn get_status_summary(&self) -> Option<String> {
@@ -267,17 +238,7 @@ impl Default for VcsIntegration {
     }
 }
 
-/// Extension trait for StatusBarWidget to add VCS integration
-pub trait StatusBarVcsExt {
-    /// Set VCS integration
-    fn with_vcs_integration(self, vcs: &VcsIntegration) -> Self;
-}
 
-impl StatusBarVcsExt for StatusBarWidget {
-    fn with_vcs_integration(self, vcs: &VcsIntegration) -> Self {
-        vcs.apply_to_status_bar(self)
-    }
-}
 
 #[cfg(test)]
 mod tests {

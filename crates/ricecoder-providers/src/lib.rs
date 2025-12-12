@@ -9,6 +9,7 @@ pub mod cache;
 pub mod config;
 pub mod error;
 pub mod health_check;
+pub mod integration;
 pub mod models;
 pub mod provider;
 pub mod providers;
@@ -24,6 +25,7 @@ pub use audit_log::{AuditEventType, AuditLogger, AuditLogEntry};
 pub use cache::ProviderCache;
 pub use error::ProviderError;
 pub use health_check::{HealthCheckCache, HealthCheckResult};
+pub use integration::ProviderIntegration;
 pub use models::{
     Capability, ChatRequest, ChatResponse, FinishReason, Message, ModelInfo, TokenUsage,
 };

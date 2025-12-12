@@ -443,3 +443,41 @@ impl Widget for StatusBarWidget {
         line.render(inner_area, buf);
     }
 }
+
+/// Extension trait for StatusBarWidget to add VCS integration
+pub trait StatusBarVcsExt {
+    /// Set VCS integration
+    fn with_vcs_integration(self, vcs: &ricecoder_vcs::tui_integration::VcsIntegration) -> Self;
+}
+
+impl StatusBarVcsExt for StatusBarWidget {
+    fn with_vcs_integration(self, vcs: &ricecoder_vcs::tui_integration::VcsIntegration) -> Self {
+        let vcs_status = vcs.get_status();
+        let mut status_bar = self;
+
+        // Set basic branch info
+        status_bar.git_branch = vcs_status.branch.clone();
+
+        // Add VCS status indicators if there are changes
+        if vcs_status.is_in_repo() {
+            // Add status summary to recording status (reuse existing field)
+            if vcs_status.has_changes {
+                status_bar.recording_status = vcs_status.status_summary.clone();
+            }
+
+            // Add ahead/behind info to search status
+            if let Some((ahead, behind)) = vcs_status.ahead_behind {
+                if ahead > 0 || behind > 0 {
+                    status_bar.search_status = Some(format!("↑{} ↓{}", ahead, behind));
+                }
+            }
+
+            // Add conflict indicator to selection status
+            if vcs_status.has_conflicts {
+                status_bar.selection_status = Some("CONFLICTS".to_string());
+            }
+        }
+
+        status_bar
+    }
+}

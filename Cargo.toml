@@ -80,7 +80,7 @@ members = [
     "crates/ricecoder-teams",
     "crates/ricecoder-ide",
     "crates/ricecoder-images",
-]
+    ]
 resolver = "2"
 
 [workspace.package]

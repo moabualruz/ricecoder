@@ -102,6 +102,7 @@ pub use cache_implementations::{
 pub use completion::{get_builtin_completion_configs, get_completion_config};
 pub use config::{
     Config, ConfigLoader, ConfigMerger, DocumentLoader, EnvOverrides, StorageModeHandler,
+    TuiConfig, TuiAccessibilityConfig,
 };
 pub use config_cache::ConfigCache;
 pub use error::{IoOperation, StorageError, StorageResult};

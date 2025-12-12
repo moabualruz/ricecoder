@@ -79,13 +79,14 @@ impl DiagnosticItem {
         line: usize,
         column: usize,
     ) -> Self {
+        let file_path = file_path.into();
         Self {
-            id: format!("{}:{}:{}", file_path.into(), line, column),
+            id: format!("{}:{}:{}", file_path, line, column),
             severity,
             message: message.into(),
             source: None,
             code: None,
-            file_path: file_path.into(),
+            file_path,
             line,
             column,
             end_line: None,

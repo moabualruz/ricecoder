@@ -336,6 +336,7 @@ impl ConfigConflictResolver {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::{ProvidersConfig, DefaultsConfig};
     use tempfile::tempdir;
 
     #[tokio::test]
@@ -359,6 +360,7 @@ mod tests {
                 max_tokens: Some(100),
             },
             steering: vec![],
+            tui: Default::default(),
             custom: HashMap::new(),
         };
 
@@ -374,6 +376,7 @@ mod tests {
                 max_tokens: Some(200),
             },
             steering: vec![],
+            tui: Default::default(),
             custom: HashMap::new(),
         };
 

@@ -4336,6 +4336,7 @@ dependencies = [
  "chrono",
  "itertools 0.12.1",
  "proptest",
+ "ratatui 0.29.0",
  "regex",
  "ricecoder-completion",
  "ricecoder-refactoring",
@@ -4657,6 +4658,7 @@ dependencies = [
  "ricecoder-help",
  "ricecoder-images",
  "ricecoder-keybinds",
+ "ricecoder-lsp",
  "ricecoder-providers",
  "ricecoder-research",
  "ricecoder-sessions",
@@ -4710,6 +4712,7 @@ dependencies = [
  "serde_json",
  "tempfile",
  "thiserror 1.0.69",
+ "tokio",
  "tokio-test",
  "tracing",
 ]
