@@ -8,25 +8,46 @@ pub mod app;
 pub mod banner;
 pub mod clipboard;
 pub mod code_editor_widget;
+pub mod command_blocks;
+pub mod command_palette;
+pub mod components;
 pub mod config;
 pub mod diagnostics_widget;
+pub mod diff;
 pub mod error;
+pub mod event;
+pub mod executor;
 pub mod file_picker;
-pub mod help;
+pub mod image_integration;
 pub mod image_widget;
-pub mod keybinds;
+pub mod input;
+pub mod integration;
+pub mod layout;
+pub mod logger_widget;
 pub mod lsp_integration;
+pub mod markdown;
+pub mod performance;
+pub mod popup_widget;
+pub mod prompt;
+pub mod prompt_context;
+pub mod project_bootstrap;
+pub mod provider_integration;
+pub mod render;
 pub mod scrollview_widget;
+pub mod session_integration;
+pub mod session_manager;
+pub mod sessions;
 pub mod status_bar;
+pub mod style;
+pub mod terminal_state;
 pub mod textarea_widget;
-pub mod vcs_integration;
 pub mod theme;
 pub mod theme_loader;
 pub mod theme_registry;
 pub mod theme_reset;
 pub mod tree_widget;
+pub mod vcs_integration;
 pub mod widgets;
-pub mod project_bootstrap;
 
 // Re-export commonly used types
 pub use accessibility::{
@@ -43,7 +64,7 @@ pub use diagnostics_widget::{
     DiagnosticDetailWidget, DiagnosticItem, DiagnosticSeverity, DiagnosticsWidget, HoverWidget,
 };
 pub use error::{
-    ClipboardError, KeybindError, ProviderError, SessionError, StorageError, ToolError, TuiError,
+    KeybindError, ProviderError, SessionError, StorageError, ToolError, TuiError,
     TuiResult,
 };
 pub use lsp_integration::{language_from_file_path, lsp_diagnostics_to_tui, lsp_hover_to_text};
@@ -78,7 +99,7 @@ pub use prompt_context::PromptContext;
 pub use provider_integration::ProviderIntegration;
 pub use scrollview_widget::ScrollViewWidget;
 pub use session_integration::SessionIntegration;
-pub use status_bar::{ConnectionStatus, InputMode, StatusBarWidget, TokenUsage};
+pub use status_bar::{ConnectionStatus, InputMode, StatusBarWidget};
 pub use session_manager::{SessionData, SessionManager};
 pub use sessions::{Session, SessionDisplayMode, SessionStatus, SessionWidget};
 pub use style::{ColorSupport, Theme};

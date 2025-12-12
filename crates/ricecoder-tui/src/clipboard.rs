@@ -231,7 +231,7 @@ impl ClipboardManager {
     }
 
     /// Legacy static method for backward compatibility
-    pub fn copy_text(text: &str) -> Result<(), ClipboardError> {
+    pub fn copy_text_static(text: &str) -> Result<(), ClipboardError> {
         Self::new().copy_text(text)
     }
 
@@ -340,15 +340,15 @@ impl ClipboardManager {
     }
 
     /// Legacy static methods for backward compatibility
-    pub fn copy_command_block(command: &str, output: &str, status: &str) -> Result<(), ClipboardError> {
+    pub fn copy_command_block_static(command: &str, output: &str, status: &str) -> Result<(), ClipboardError> {
         Self::new().copy_command_block(command, output, status)
     }
 
-    pub fn copy_command_output(output: &str) -> Result<(), ClipboardError> {
+    pub fn copy_command_output_static(output: &str) -> Result<(), ClipboardError> {
         Self::new().copy_command_output(output)
     }
 
-    pub fn copy_command_text(command: &str) -> Result<(), ClipboardError> {
+    pub fn copy_command_text_static(command: &str) -> Result<(), ClipboardError> {
         Self::new().copy_command_text(command)
     }
 }
@@ -416,7 +416,7 @@ impl CopyOperation {
 
     /// Execute the copy operation
     pub fn execute(&mut self) -> Result<(), ClipboardError> {
-        match ClipboardManager::copy_text(&self.content) {
+        match ClipboardManager::copy_text_static(&self.content) {
             Ok(()) => {
                 self.feedback = Some(CopyFeedback::Success);
                 self.feedback_frame = 0;
@@ -520,7 +520,7 @@ mod tests {
     #[test]
     fn test_clipboard_manager_copy_text() {
         // This test will only work if clipboard is available
-        let result = ClipboardManager::copy_text("test content");
+        let result = ClipboardManager::copy_text_static("test content");
         // We don't assert here because clipboard might not be available in test environment
         // Just verify the function doesn't panic
         let _ = result;

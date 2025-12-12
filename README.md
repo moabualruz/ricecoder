@@ -23,6 +23,9 @@ RiceCoder (`rice`) is a terminal-first, spec-driven coding assistant that unders
 - **🔒 Offline-First** - Local models via Ollama for privacy and offline work
 - **🤖 Multi-Agent** - Specialized agents for different tasks
 - **🎨 Multi-Provider** - OpenAI, Anthropic, Ollama, and more
+- **📊 Token Tracking** - Real-time token usage monitoring with cost estimation
+- **🚀 Project Bootstrap** - Automatic project detection and configuration
+- **🎯 Session Management** - Persistent sessions with token-aware message handling
 
 ---
 

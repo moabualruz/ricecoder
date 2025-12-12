@@ -13,7 +13,7 @@ use tokio::sync::watch;
 use tokio::time;
 
 /// VCS status information for display in status bar
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct VcsStatus {
     /// Current branch name
     pub branch: Option<String>,

@@ -41,6 +41,8 @@ ricecoder-files = { path = "../ricecoder-files", version = "0.1" }
 ricecoder-help = { path = "../ricecoder-help", version = "0.1" }
 ricecoder-keybinds = { path = "../ricecoder-keybinds", version = "0.1" }
 ricecoder-providers = { path = "../ricecoder-providers", version = "0.1" }
+ricecoder-research = { path = "../ricecoder-research", version = "0.1" }
+ricecoder-completion = { path = "../ricecoder-completion", version = "0.1" }
 ricecoder-vcs = { path = "../ricecoder-vcs", version = "0.1" }
 resvg = "0.40"
 usvg = "0.40"
@@ -58,6 +60,7 @@ lazy_static = { workspace = true }
 unicode-width = "0.1"
 async-trait = { workspace = true }
 regex = "1.10"
+toml = "0.8"
 
 [dev-dependencies]
 proptest = { workspace = true }

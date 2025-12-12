@@ -10,6 +10,7 @@ use crate::integration::WidgetIntegration;
 use crate::render::Renderer;
 use crate::style::Theme;
 use crate::terminal_state::TerminalCapabilities;
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use crate::theme::ThemeManager;
 use anyhow::Result;
 use ratatui::backend::CrosstermBackend;
@@ -350,12 +351,12 @@ impl App {
     }
 
     /// Handle file picker key events
-    fn handle_file_picker_key(&mut self, key_event: crate::event::KeyEvent) -> Result<()> {
+    fn handle_file_picker_key(&mut self, key_event: KeyEvent) -> Result<()> {
         match key_event.code {
-            crate::event::KeyCode::Esc => {
+            KeyCode::Esc => {
                 self.file_picker.hide();
             }
-            crate::event::KeyCode::Enter => {
+            KeyCode::Enter => {
                 match self.file_picker.confirm_selection() {
                     Ok(selections) => {
                         if !selections.is_empty() {
@@ -367,23 +368,23 @@ impl App {
                     }
                 }
             }
-            crate::event::KeyCode::Up => {
+            KeyCode::Up => {
                 self.file_picker.navigate_up();
             }
-            crate::event::KeyCode::Down => {
+            KeyCode::Down => {
                 self.file_picker.navigate_down();
             }
-            crate::event::KeyCode::Char(' ') => { // Space
+            KeyCode::Char(' ') => { // Space
                 self.file_picker.toggle_selection();
             }
-            crate::event::KeyCode::Char(c) => {
-                if key_event.modifiers.ctrl && c == 'a' {
+            KeyCode::Char(c) => {
+                if key_event.modifiers.contains(crossterm::event::KeyModifiers::CONTROL) && c == 'a' {
                     self.file_picker.select_all();
                 } else {
                     self.file_picker.input_char(c);
                 }
             }
-            crate::event::KeyCode::Backspace => {
+            KeyCode::Backspace => {
                 self.file_picker.backspace();
             }
             _ => {}
@@ -444,29 +445,29 @@ impl App {
     }
 
     /// Convert app KeyEvent to crossterm KeyEvent
-    fn convert_to_crossterm_key(&self, key_event: crate::event::KeyEvent) -> crossterm::event::KeyEvent {
+    fn convert_to_crossterm_key(&self, key_event: KeyEvent) -> crossterm::event::KeyEvent {
         use crossterm::event::{KeyCode as CKeyCode, KeyEvent as CKeyEvent, KeyModifiers as CKeyModifiers};
 
         let code = match key_event.code {
-            crate::event::KeyCode::Char(c) => CKeyCode::Char(c),
-            crate::event::KeyCode::Enter => CKeyCode::Enter,
-            crate::event::KeyCode::Esc => CKeyCode::Esc,
-            crate::event::KeyCode::Tab => CKeyCode::Tab,
-            crate::event::KeyCode::Backspace => CKeyCode::Backspace,
-            crate::event::KeyCode::Delete => CKeyCode::Delete,
-            crate::event::KeyCode::Up => CKeyCode::Up,
-            crate::event::KeyCode::Down => CKeyCode::Down,
-            crate::event::KeyCode::Left => CKeyCode::Left,
-            crate::event::KeyCode::Right => CKeyCode::Right,
-            crate::event::KeyCode::F(n) => CKeyCode::F(n),
+            KeyCode::Char(c) => CKeyCode::Char(c),
+            KeyCode::Enter => CKeyCode::Enter,
+            KeyCode::Esc => CKeyCode::Esc,
+            KeyCode::Tab => CKeyCode::Tab,
+            KeyCode::Backspace => CKeyCode::Backspace,
+            KeyCode::Delete => CKeyCode::Delete,
+            KeyCode::Up => CKeyCode::Up,
+            KeyCode::Down => CKeyCode::Down,
+            KeyCode::Left => CKeyCode::Left,
+            KeyCode::Right => CKeyCode::Right,
+            KeyCode::F(n) => CKeyCode::F(n),
             _ => CKeyCode::Null,
         };
 
-        let modifiers = if key_event.modifiers.ctrl {
+        let modifiers = if key_event.modifiers.contains(KeyModifiers::CONTROL) {
             CKeyModifiers::CONTROL
-        } else if key_event.modifiers.shift {
+        } else if key_event.modifiers.contains(KeyModifiers::SHIFT) {
             CKeyModifiers::SHIFT
-        } else if key_event.modifiers.alt {
+        } else if key_event.modifiers.contains(KeyModifiers::ALT) {
             CKeyModifiers::ALT
         } else {
             CKeyModifiers::NONE
@@ -476,7 +477,7 @@ impl App {
     }
 
     /// Handle an event
-    pub fn handle_event(&mut self, event: Event) -> Result<()> {
+    pub fn handle_event(&mut self, event: crate::event::Event) -> Result<()> {
         // Handle help dialog events first if it's visible
         if self.help_dialog.is_visible() {
             if let Event::Key(key_event) = &event {
@@ -498,33 +499,33 @@ impl App {
             Event::Key(key_event) => {
                 tracing::debug!("Key event: {:?}", key_event);
                 // Handle key events
-                if key_event.code == crate::event::KeyCode::Esc {
+                if key_event.code == KeyCode::Esc {
                     self.should_exit = true;
                 }
 
                 // Tab navigation for keyboard accessibility
-                if key_event.code == crate::event::KeyCode::Tab {
-                    self.handle_tab_navigation(key_event.modifiers.shift);
+                if key_event.code == KeyCode::Tab {
+                    self.handle_tab_navigation(key_event.modifiers.contains(KeyModifiers::SHIFT));
                     return Ok(());
                 }
 
                 // Handle text input in chat mode
                 if self.mode == AppMode::Chat {
                     match key_event.code {
-                        crate::event::KeyCode::Char('@') => {
+                        KeyCode::Char('@') => {
                             // Show file picker when @ is typed
                             self.file_picker.show();
                             return Ok(());
                         }
-                        crate::event::KeyCode::Char(c) => {
+                        KeyCode::Char(c) => {
                             self.chat.input.push(c);
                             return Ok(());
                         }
-                        crate::event::KeyCode::Backspace => {
+                        KeyCode::Backspace => {
                             self.chat.input.pop();
                             return Ok(());
                         }
-                        crate::event::KeyCode::Enter => {
+                        KeyCode::Enter => {
                             if !self.chat.input.is_empty() {
                                 let input = self.chat.input.clone();
                                 self.chat.input.clear();
@@ -646,48 +647,48 @@ impl App {
     }
 
     /// Handle mode switching keyboard shortcuts
-    fn handle_mode_switching(&mut self, key_event: crate::event::KeyEvent) {
+    fn handle_mode_switching(&mut self, key_event: KeyEvent) {
         // Ctrl+1: Chat mode
-        if key_event.modifiers.ctrl && key_event.code == crate::event::KeyCode::Char('1') {
+        if key_event.modifiers.contains(KeyModifiers::CONTROL) && key_event.code == KeyCode::Char('1') {
             self.switch_mode(AppMode::Chat);
             return;
         }
 
         // Ctrl+2: Command mode
-        if key_event.modifiers.ctrl && key_event.code == crate::event::KeyCode::Char('2') {
+        if key_event.modifiers.contains(KeyModifiers::CONTROL) && key_event.code == KeyCode::Char('2') {
             self.switch_mode(AppMode::Command);
             return;
         }
 
         // Ctrl+3: Diff mode
-        if key_event.modifiers.ctrl && key_event.code == crate::event::KeyCode::Char('3') {
+        if key_event.modifiers.contains(KeyModifiers::CONTROL) && key_event.code == KeyCode::Char('3') {
             self.switch_mode(AppMode::Diff);
             return;
         }
 
         // Ctrl+4: Help mode
-        if key_event.modifiers.ctrl && key_event.code == crate::event::KeyCode::Char('4') {
+        if key_event.modifiers.contains(KeyModifiers::CONTROL) && key_event.code == KeyCode::Char('4') {
             self.switch_mode(AppMode::Help);
             return;
         }
 
         // Ctrl+M: Cycle to next mode
-        if key_event.modifiers.ctrl && key_event.code == crate::event::KeyCode::Char('m') {
+        if key_event.modifiers.contains(KeyModifiers::CONTROL) && key_event.code == KeyCode::Char('m') {
             self.next_mode();
             return;
         }
 
         // Ctrl+Shift+M: Cycle to previous mode
-        if key_event.modifiers.ctrl
-            && key_event.modifiers.shift
-            && key_event.code == crate::event::KeyCode::Char('m')
+        if key_event.modifiers.contains(KeyModifiers::CONTROL)
+            && key_event.modifiers.contains(KeyModifiers::SHIFT)
+            && key_event.code == KeyCode::Char('m')
         {
             self.previous_mode_switch();
             return;
         }
 
         // Tab: Toggle between current and previous mode
-        if key_event.code == crate::event::KeyCode::Tab && key_event.modifiers.alt {
+        if key_event.code == KeyCode::Tab && key_event.modifiers.contains(KeyModifiers::ALT) {
             self.toggle_mode();
         }
     }

@@ -113,6 +113,8 @@ impl Default for StatusBarWidget {
             project_name: None,
             working_directory: std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
             git_branch: None,
+            vcs_status: None,
+            vcs_ahead_behind: None,
             token_usage: None,
             input_mode: InputMode::Insert,
             recording_status: None,

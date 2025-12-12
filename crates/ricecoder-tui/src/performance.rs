@@ -499,11 +499,13 @@ impl<T> ContentCache<T> {
 
         // Remove old entries if cache is full
         while cache.len() >= self.max_size {
-            if let Some((key_to_remove, _)) = cache
+            let key_to_remove = cache
                 .iter()
                 .min_by_key(|(_, item)| (item.access_count, item.last_accessed))
-            {
-                if let Some(removed_item) = cache.remove(key_to_remove) {
+                .map(|(key, _)| key.clone());
+
+            if let Some(key) = key_to_remove {
+                if let Some(removed_item) = cache.remove(&key) {
                     self.current_size.fetch_sub(removed_item.size_bytes, Ordering::Relaxed);
                 }
             } else {

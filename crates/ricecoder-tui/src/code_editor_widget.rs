@@ -37,6 +37,8 @@ pub enum Language {
     Go,
     /// Java
     Java,
+    /// Kotlin
+    Kotlin,
     /// C/C++
     C,
     /// Shell/Bash
@@ -53,8 +55,20 @@ pub enum Language {
     Html,
     /// CSS
     Css,
+    /// PHP
+    Php,
+    /// Ruby
+    Ruby,
+    /// Swift
+    Swift,
+    /// Scala
+    Scala,
+    /// C++
+    Cpp,
     /// Plain text
     PlainText,
+    /// Unknown
+    Unknown,
 }
 
 impl Language {

@@ -148,7 +148,8 @@ impl SessionIntegration {
 
     /// Record completion tokens for AI responses
     pub fn record_completion_tokens(&mut self, tokens: usize) -> Result<(), String> {
-        if let Some(session_id) = self.manager.active_session_id() {
+        let session_id = self.manager.active_session_id();
+        if let Some(session_id) = session_id {
             self.manager.record_completion_tokens(session_id, tokens)
                 .map_err(|e| e.to_string())?;
         }

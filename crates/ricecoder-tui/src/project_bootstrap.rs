@@ -4,7 +4,8 @@
 //! and integration initialization when RiceCoder starts in a project directory.
 
 use crate::error::TuiResult;
-use ricecoder_research::{ProjectAnalyzer, ProjectType, Language};
+use crate::code_editor_widget::Language;
+use ricecoder_research::{ProjectAnalyzer, ProjectType};
 use ricecoder_storage::ConfigLoader;
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
@@ -127,7 +128,7 @@ impl ProjectBootstrap {
                || self.working_directory.join("build.gradle").exists() {
             Ok(Language::Java)
         } else if self.working_directory.join("composer.json").exists() {
-            Ok(Language::PHP)
+            Ok(Language::Php)
         } else {
             Ok(Language::Unknown)
         }
@@ -370,11 +371,19 @@ impl ProjectInfo {
             Language::Java => "Java",
             Language::C => "C",
             Language::Cpp => "C++",
-            Language::PHP => "PHP",
+            Language::Php => "PHP",
             Language::Ruby => "Ruby",
             Language::Swift => "Swift",
-            Language::Kotlin => "Kotlin",
             Language::Scala => "Scala",
+            Language::Shell => "Shell",
+            Language::Kotlin => "Kotlin",
+            Language::Yaml => "YAML",
+            Language::Json => "JSON",
+            Language::Markdown => "Markdown",
+            Language::Sql => "SQL",
+            Language::Html => "HTML",
+            Language::Css => "CSS",
+            Language::PlainText => "Plain Text",
             Language::Unknown => "Unknown",
         }
     }
@@ -424,4 +433,4 @@ version = "0.1.0"
 
         assert_eq!(result.primary_language, Language::TypeScript);
     }
-}</content>
+}
