@@ -120,6 +120,27 @@ impl ImageCache {
         }
     }
 
+    /// Create a new image cache with a temporary directory (for testing).
+    ///
+    /// # Arguments
+    ///
+    /// * `temp_dir` - Temporary directory path
+    ///
+    /// # Errors
+    ///
+    /// Returns error if cache directory cannot be created
+    pub fn with_temp_dir(temp_dir: &std::path::Path) -> ImageResult<Self> {
+        let cache_dir = temp_dir.join("images");
+        let cache_manager = CacheManager::new(&cache_dir)
+            .map_err(|e| ImageError::CacheError(format!("Failed to create cache manager: {}", e)))?;
+
+        Ok(Self {
+            cache_manager,
+            ttl_seconds: 86400, // 24 hours
+            max_size_mb: 100,   // 100 MB
+        })
+    }
+
     /// Cache an analysis result.
     ///
     /// # Arguments

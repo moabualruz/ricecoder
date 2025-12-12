@@ -4,6 +4,7 @@
 //! **Validates: Requirements 3.1, 3.2, 3.4, 3.5**
 
 use proptest::prelude::*;
+use tempfile::tempdir;
 use ricecoder_images::{ImageAnalysisResult, ImageCache};
 use std::thread;
 use std::time::Duration;
@@ -85,8 +86,9 @@ fn prop_cache_hit_returns_same_result() {
 #[test]
 fn prop_cache_key_consistency() {
     proptest!(|(image_hash in image_hash_strategy())| {
-        // Use a single cache instance to avoid directory conflicts
-        let cache = ImageCache::new().expect("Failed to create cache");
+        // Use a temporary directory for the cache to avoid conflicts
+        let temp_dir = tempdir().expect("Failed to create temp dir");
+        let cache = ImageCache::with_temp_dir(temp_dir.path()).expect("Failed to create cache");
         
         // Create same result
         let result = ImageAnalysisResult::new(
@@ -122,7 +124,9 @@ fn prop_cache_key_consistency() {
 #[test]
 fn prop_cache_miss_for_uncached_images() {
     proptest!(|(image_hash in image_hash_strategy())| {
-        let cache = ImageCache::new().expect("Failed to create cache");
+        // Use a temporary directory for the cache to avoid conflicts
+        let temp_dir = tempdir().expect("Failed to create temp dir");
+        let cache = ImageCache::with_temp_dir(temp_dir.path()).expect("Failed to create cache");
         
         // Try to get a non-existent image
         let result = cache.get(&image_hash)

@@ -8,6 +8,7 @@ use ricecoder_providers::{
     ChatRequest, ChatResponse, ConnectionState, HealthCheckCache, ModelInfo, Provider, ProviderError,
     ProviderManager, ProviderRegistry, ProviderStatus, TokenUsage,
 };
+use futures::Stream;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -21,6 +22,17 @@ struct StatefulMockProvider {
 
 #[async_trait::async_trait]
 impl Provider for StatefulMockProvider {
+    async fn chat_stream(&self, _request: ChatRequest) -> Result<Box<dyn Stream<Item = Result<ChatResponse, ProviderError>> + Send + Unpin>, ProviderError> {
+        todo!()
+    }
+
+    fn count_tokens(&self, _text: &str, _model: &str) -> Result<usize, ProviderError> {
+        todo!()
+    }
+
+    async fn health_check(&self) -> Result<bool, ProviderError> {
+        todo!()
+    }
     fn id(&self) -> &str {
         &self.id
     }
@@ -131,7 +143,8 @@ proptest! {
                 stream: false,
             };
 
-            let result = futures::executor::block_on(manager.chat_with_provider(&provider, request));
+            let provider_arc: Arc<dyn Provider> = provider.clone();
+            let result = futures::executor::block_on(manager.chat_with_provider(&provider_arc, request));
 
             // Verify that the result matches the expected state
             if expected_connected {
@@ -182,7 +195,7 @@ proptest! {
             // Verify the status was updated correctly
             if let Some(status) = manager.get_provider_status("status_test_provider") {
                 prop_assert_eq!(status.state, new_state, "State should be updated correctly");
-                prop_assert_eq!(status.error_message, error_msg, "Error message should match");
+                prop_assert_eq!(&status.error_message, &error_msg, "Error message should match");
                 prop_assert!(status.last_checked.is_some(), "Last checked should be set");
             } else {
                 prop_assert!(false, "Provider status should exist after update");

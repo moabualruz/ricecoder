@@ -1,7 +1,0 @@
-{
-  "data": "{\"image_hash\":\"hash123_test_1765375615446766800\",\"analysis\":\"This is a test image\",\"provider\":\"openai\",\"timestamp\":\"2025-12-10T14:06:55.446773200Z\",\"tokens_used\":100}",
-  "created_at": 1765375615,
-  "strategy": {
-    "ttl": 86400
-  }
-}
