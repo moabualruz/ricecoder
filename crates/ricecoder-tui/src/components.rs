@@ -336,6 +336,389 @@ macro_rules! impl_component {
     };
 }
 
+/// Typed event system for component communication
+#[derive(Debug, Clone)]
+pub enum ComponentEvent {
+    /// Mouse events
+    Mouse(MouseEvent),
+    /// Keyboard events
+    Keyboard(KeyboardEvent),
+    /// Focus events
+    Focus(FocusEvent),
+    /// Component-specific events
+    Custom(CustomEvent),
+    /// State change events
+    StateChange(StateChangeEvent),
+}
+
+/// Mouse event data
+#[derive(Debug, Clone)]
+pub struct MouseEvent {
+    pub x: u16,
+    pub y: u16,
+    pub button: Option<MouseButton>,
+    pub modifiers: KeyModifiers,
+}
+
+/// Keyboard event data
+#[derive(Debug, Clone)]
+pub struct KeyboardEvent {
+    pub key: KeyCode,
+    pub modifiers: KeyModifiers,
+}
+
+/// Focus event data
+#[derive(Debug, Clone)]
+pub enum FocusEvent {
+    Gained,
+    Lost,
+    Moved { from: ComponentId, to: ComponentId },
+}
+
+/// Custom event data
+#[derive(Debug, Clone)]
+pub struct CustomEvent {
+    pub event_type: String,
+    pub data: serde_json::Value,
+}
+
+/// State change event data
+#[derive(Debug, Clone)]
+pub struct StateChangeEvent {
+    pub component_id: ComponentId,
+    pub property: String,
+    pub old_value: serde_json::Value,
+    pub new_value: serde_json::Value,
+}
+
+/// Mouse button enumeration
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MouseButton {
+    Left,
+    Right,
+    Middle,
+}
+
+/// Key modifiers
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct KeyModifiers {
+    pub ctrl: bool,
+    pub alt: bool,
+    pub shift: bool,
+}
+
+/// Key codes
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum KeyCode {
+    Char(char),
+    Enter,
+    Esc,
+    Tab,
+    Backspace,
+    Delete,
+    Up,
+    Down,
+    Left,
+    Right,
+    Home,
+    End,
+    PageUp,
+    PageDown,
+    F1,
+    F2,
+    F3,
+    F4,
+    F5,
+    F6,
+    F7,
+    F8,
+    F9,
+    F10,
+    F11,
+    F12,
+}
+
+/// Event propagation control
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EventPropagation {
+    /// Continue propagating the event
+    Continue,
+    /// Stop event propagation
+    Stop,
+    /// Consume the event (don't propagate further)
+    Consume,
+}
+
+/// Event handler result
+#[derive(Debug, Clone)]
+pub struct EventResult {
+    pub propagation: EventPropagation,
+    pub handled: bool,
+    pub data: Option<serde_json::Value>,
+}
+
+/// Enhanced component trait with typed event system
+pub trait EventComponent: Component {
+    /// Handle a typed event with bubbling support
+    fn handle_event(&mut self, event: &ComponentEvent, context: &EventContext) -> EventResult;
+
+    /// Check if component can handle a specific event type
+    fn can_handle_event(&self, event_type: &ComponentEvent) -> bool {
+        // Default implementation accepts all events
+        let _ = event_type;
+        true
+    }
+
+    /// Get event bubbling priority (higher numbers bubble first)
+    fn event_priority(&self) -> i32 {
+        0
+    }
+}
+
+/// Event context for event handling
+#[derive(Debug, Clone)]
+pub struct EventContext {
+    pub timestamp: std::time::Instant,
+    pub target: ComponentId,
+    pub current_target: ComponentId,
+    pub event_phase: EventPhase,
+    pub propagation_path: Vec<ComponentId>,
+}
+
+/// Event phases for bubbling
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EventPhase {
+    /// Event is being captured (trickling down)
+    Capture,
+    /// Event is at target
+    Target,
+    /// Event is bubbling up
+    Bubble,
+}
+
+/// Event dispatcher for managing event flow
+pub struct EventDispatcher {
+    components: std::collections::HashMap<ComponentId, Box<dyn EventComponent>>,
+    event_queue: std::collections::VecDeque<(ComponentEvent, EventContext)>,
+    max_queue_size: usize,
+}
+
+impl EventDispatcher {
+    /// Create a new event dispatcher
+    pub fn new() -> Self {
+        Self {
+            components: std::collections::HashMap::new(),
+            event_queue: std::collections::VecDeque::new(),
+            max_queue_size: 1000,
+        }
+    }
+
+    /// Register an event component
+    pub fn register_component(&mut self, component: Box<dyn EventComponent>) {
+        let id = component.id();
+        self.components.insert(id, component);
+    }
+
+    /// Unregister an event component
+    pub fn unregister_component(&mut self, id: &ComponentId) -> Option<Box<dyn EventComponent>> {
+        self.components.remove(id)
+    }
+
+    /// Dispatch an event with bubbling
+    pub async fn dispatch_event(&mut self, event: ComponentEvent, target_id: ComponentId) -> Vec<EventResult> {
+        let mut results = Vec::new();
+
+        // Build propagation path (simplified - in practice would build full component tree)
+        let propagation_path = vec![target_id.clone()];
+
+        // Create event context
+        let context = EventContext {
+            timestamp: std::time::Instant::now(),
+            target: target_id.clone(),
+            current_target: target_id.clone(),
+            event_phase: EventPhase::Target,
+            propagation_path: propagation_path.clone(),
+        };
+
+        // Handle event at target
+        if let Some(component) = self.components.get_mut(&target_id) {
+            if component.can_handle_event(&event) {
+                let result = component.handle_event(&event, &context);
+                results.push(result);
+
+                // If event was consumed, stop propagation
+                if let Some(last_result) = results.last() {
+                    if last_result.propagation == EventPropagation::Consume {
+                        return results;
+                    }
+                }
+            }
+        }
+
+        // Bubble up to parent components (simplified - would need component tree)
+        // In a real implementation, this would traverse up the component hierarchy
+
+        results
+    }
+
+    /// Queue an event for later processing
+    pub fn queue_event(&mut self, event: ComponentEvent, target: ComponentId) {
+        if self.event_queue.len() < self.max_queue_size {
+            let context = EventContext {
+                timestamp: std::time::Instant::now(),
+                target: target.clone(),
+                current_target: target.clone(),
+                event_phase: EventPhase::Target,
+                propagation_path: vec![target],
+            };
+            self.event_queue.push_back((event, context));
+        } else {
+            tracing::warn!("Event queue full, dropping event");
+        }
+    }
+
+    /// Process queued events
+    pub async fn process_queue(&mut self) -> Vec<Vec<EventResult>> {
+        let mut all_results = Vec::new();
+
+        while let Some((event, context)) = self.event_queue.pop_front() {
+            let results = self.dispatch_event(event, context.target).await;
+            all_results.push(results);
+        }
+
+        all_results
+    }
+
+    /// Get queue size
+    pub fn queue_size(&self) -> usize {
+        self.event_queue.len()
+    }
+
+    /// Clear event queue
+    pub fn clear_queue(&mut self) {
+        self.event_queue.clear();
+    }
+
+    /// Convert AppMessage to ComponentEvent
+    pub fn app_message_to_event(message: &AppMessage) -> Option<ComponentEvent> {
+        match message {
+            AppMessage::KeyPress(key) => {
+                let key_code = match key.code {
+                    crossterm::event::KeyCode::Char(c) => KeyCode::Char(c),
+                    crossterm::event::KeyCode::Enter => KeyCode::Enter,
+                    crossterm::event::KeyCode::Esc => KeyCode::Esc,
+                    crossterm::event::KeyCode::Tab => KeyCode::Tab,
+                    crossterm::event::KeyCode::Backspace => KeyCode::Backspace,
+                    crossterm::event::KeyCode::Delete => KeyCode::Delete,
+                    crossterm::event::KeyCode::Up => KeyCode::Up,
+                    crossterm::event::KeyCode::Down => KeyCode::Down,
+                    crossterm::event::KeyCode::Left => KeyCode::Left,
+                    crossterm::event::KeyCode::Right => KeyCode::Right,
+                    crossterm::event::KeyCode::Home => KeyCode::Home,
+                    crossterm::event::KeyCode::End => KeyCode::End,
+                    crossterm::event::KeyCode::PageUp => KeyCode::PageUp,
+                    crossterm::event::KeyCode::PageDown => KeyCode::PageDown,
+                    crossterm::event::KeyCode::F(n) => match n {
+                        1 => KeyCode::F1,
+                        2 => KeyCode::F2,
+                        3 => KeyCode::F3,
+                        4 => KeyCode::F4,
+                        5 => KeyCode::F5,
+                        6 => KeyCode::F6,
+                        7 => KeyCode::F7,
+                        8 => KeyCode::F8,
+                        9 => KeyCode::F9,
+                        10 => KeyCode::F10,
+                        11 => KeyCode::F11,
+                        12 => KeyCode::F12,
+                        _ => return None,
+                    },
+                    _ => return None,
+                };
+
+                let modifiers = KeyModifiers {
+                    ctrl: key.modifiers.contains(crossterm::event::KeyModifiers::CONTROL),
+                    alt: key.modifiers.contains(crossterm::event::KeyModifiers::ALT),
+                    shift: key.modifiers.contains(crossterm::event::KeyModifiers::SHIFT),
+                };
+
+                Some(ComponentEvent::Keyboard(KeyboardEvent { key: key_code, modifiers }))
+            }
+            AppMessage::MouseEvent(mouse) => {
+                let button = match mouse.kind {
+                    crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Left) => Some(MouseButton::Left),
+                    crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Right) => Some(MouseButton::Right),
+                    crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Middle) => Some(MouseButton::Middle),
+                    _ => None,
+                };
+
+                let modifiers = KeyModifiers {
+                    ctrl: mouse.modifiers.contains(crossterm::event::KeyModifiers::CONTROL),
+                    alt: mouse.modifiers.contains(crossterm::event::KeyModifiers::ALT),
+                    shift: mouse.modifiers.contains(crossterm::event::KeyModifiers::SHIFT),
+                };
+
+                Some(ComponentEvent::Mouse(MouseEvent {
+                    x: mouse.column,
+                    y: mouse.row,
+                    button,
+                    modifiers,
+                }))
+            }
+            _ => None,
+        }
+    }
+}
+
+impl Default for EventDispatcher {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Macro to implement EventComponent for a type
+#[macro_export]
+macro_rules! impl_event_component {
+    ($type:ty) => {
+        impl EventComponent for $type {
+            fn handle_event(&mut self, event: &ComponentEvent, _context: &EventContext) -> EventResult {
+                // Default implementation - delegate to existing update method if available
+                // This is a simplified implementation
+                let handled = match event {
+                    ComponentEvent::Keyboard(key_event) => {
+                        // Convert back to AppMessage for compatibility
+                        let message = match key_event.key {
+                            KeyCode::Char(c) => AppMessage::KeyPress(crossterm::event::KeyEvent::new(
+                                crossterm::event::KeyCode::Char(c),
+                                // Convert modifiers back
+                                if key_event.modifiers.ctrl { crossterm::event::KeyModifiers::CONTROL }
+                                else if key_event.modifiers.alt { crossterm::event::KeyModifiers::ALT }
+                                else if key_event.modifiers.shift { crossterm::event::KeyModifiers::SHIFT }
+                                else { crossterm::event::KeyModifiers::empty() }
+                            )),
+                            // Add other key mappings as needed
+                            _ => return EventResult {
+                                propagation: EventPropagation::Continue,
+                                handled: false,
+                                data: None,
+                            },
+                        };
+
+                        self.update(&message, &AppModel::default()) // Simplified - would need real model
+                    }
+                    _ => false,
+                };
+
+                EventResult {
+                    propagation: if handled { EventPropagation::Consume } else { EventPropagation::Continue },
+                    handled,
+                    data: None,
+                }
+            }
+        }
+    };
+}
+
 /// Mode indicator component
 #[derive(Debug, Clone)]
 pub struct ModeIndicator {

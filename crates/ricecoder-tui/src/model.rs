@@ -337,6 +337,181 @@ pub struct StateDiff {
     pub changes: Vec<StateChange>,
 }
 
+/// Message batch for efficient processing
+#[derive(Clone, Debug)]
+pub struct MessageBatch {
+    pub messages: Vec<AppMessage>,
+    pub priority: MessagePriority,
+    pub timestamp: std::time::Instant,
+}
+
+/// Message priority levels
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum MessagePriority {
+    /// Low priority - can be delayed
+    Low = 0,
+    /// Normal priority - default processing
+    Normal = 1,
+    /// High priority - process immediately
+    High = 2,
+    /// Critical priority - process before all others
+    Critical = 3,
+}
+
+/// Message batch processor for efficient TEA updates
+pub struct MessageBatchProcessor {
+    batches: std::collections::VecDeque<MessageBatch>,
+    max_batch_size: usize,
+    batch_timeout: std::time::Duration,
+    last_process_time: std::time::Instant,
+}
+
+impl MessageBatchProcessor {
+    /// Create a new message batch processor
+    pub fn new() -> Self {
+        Self {
+            batches: std::collections::VecDeque::new(),
+            max_batch_size: 10, // Process up to 10 messages at once
+            batch_timeout: std::time::Duration::from_millis(16), // ~60 FPS
+            last_process_time: std::time::Instant::now(),
+        }
+    }
+
+    /// Add a message to be batched
+    pub fn add_message(&mut self, message: AppMessage, priority: MessagePriority) {
+        // Check if we should start a new batch or add to existing
+        if let Some(last_batch) = self.batches.back_mut() {
+            if last_batch.messages.len() < self.max_batch_size &&
+               last_batch.priority == priority {
+                // Add to existing batch
+                last_batch.messages.push(message);
+                return;
+            }
+        }
+
+        // Create new batch
+        let batch = MessageBatch {
+            messages: vec![message],
+            priority,
+            timestamp: std::time::Instant::now(),
+        };
+
+        // Insert based on priority (higher priority first)
+        let insert_pos = self.batches.iter()
+            .position(|b| b.priority < priority)
+            .unwrap_or(self.batches.len());
+
+        self.batches.insert(insert_pos, batch);
+    }
+
+    /// Process pending message batches
+    pub fn process_batches<F>(&mut self, mut processor: F) -> Vec<(AppMessage, AppModel)>
+    where
+        F: FnMut(&AppMessage, &AppModel) -> AppModel,
+    {
+        let mut results = Vec::new();
+        let now = std::time::Instant::now();
+
+        // Process high and critical priority batches immediately
+        while let Some(batch) = self.batches.front() {
+            if batch.priority >= MessagePriority::High {
+                let batch = self.batches.pop_front().unwrap();
+                let mut current_model = None;
+
+                for message in batch.messages {
+                    let new_model = if let Some(ref model) = current_model {
+                        processor(&message, model)
+                    } else {
+                        // For the first message, we'd need the current model
+                        // This is a simplified implementation
+                        continue;
+                    };
+                    current_model = Some(new_model);
+                    results.push((message, current_model.clone().unwrap()));
+                }
+            } else {
+                break;
+            }
+        }
+
+        // Process normal/low priority batches if timeout exceeded
+        if now.duration_since(self.last_process_time) >= self.batch_timeout {
+            while let Some(batch) = self.batches.pop_front() {
+                let mut current_model = None;
+
+                for message in batch.messages {
+                    let new_model = if let Some(ref model) = current_model {
+                        processor(&message, model)
+                    } else {
+                        continue;
+                    };
+                    current_model = Some(new_model);
+                    results.push((message, current_model.clone().unwrap()));
+                }
+
+                // Don't process too many batches at once to avoid blocking
+                if results.len() >= self.max_batch_size {
+                    break;
+                }
+            }
+
+            self.last_process_time = now;
+        }
+
+        results
+    }
+
+    /// Check if there are pending batches to process
+    pub fn has_pending_batches(&self) -> bool {
+        !self.batches.is_empty()
+    }
+
+    /// Get the number of pending messages
+    pub fn pending_message_count(&self) -> usize {
+        self.batches.iter().map(|b| b.messages.len()).sum()
+    }
+
+    /// Clear all pending batches
+    pub fn clear(&mut self) {
+        self.batches.clear();
+    }
+
+    /// Get batch statistics
+    pub fn stats(&self) -> MessageBatchStats {
+        let total_messages = self.pending_message_count();
+        let batch_count = self.batches.len();
+        let avg_batch_size = if batch_count > 0 {
+            total_messages as f64 / batch_count as f64
+        } else {
+            0.0
+        };
+
+        MessageBatchStats {
+            total_messages,
+            batch_count,
+            avg_batch_size,
+            priority_distribution: self.priority_distribution(),
+        }
+    }
+
+    fn priority_distribution(&self) -> std::collections::HashMap<MessagePriority, usize> {
+        let mut dist = std::collections::HashMap::new();
+        for batch in &self.batches {
+            *dist.entry(batch.priority).or_insert(0) += batch.messages.len();
+        }
+        dist
+    }
+}
+
+/// Statistics for message batch processing
+#[derive(Debug, Clone)]
+pub struct MessageBatchStats {
+    pub total_messages: usize,
+    pub batch_count: usize,
+    pub avg_batch_size: f64,
+    pub priority_distribution: std::collections::HashMap<MessagePriority, usize>,
+}
+
 impl StateDiff {
     /// Check if a specific change occurred
     pub fn has_change(&self, change: &StateChange) -> bool {

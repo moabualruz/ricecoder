@@ -103,8 +103,13 @@ pub use error::{
 // LSP integration moved to ricecoder-lsp crate
 // pub use ricecoder_lsp::tui_integration::{language_from_file_path, lsp_diagnostics_to_tui, lsp_hover_to_text};
 pub use plugins::{
-    Plugin, PluginContext, PluginId, PluginManager, PluginMessage, PluginMetadata, PluginRegistry,
-    PluginSandbox, PluginState,
+    Plugin, PluginId, PluginMetadata, PluginContext, PluginMessage, PluginRegistry,
+    PluginState, PluginManifest, DiscoveredPlugin, PluginManager, PluginSandbox,
+    PluginSecurityPolicy, PluginOperation, RateLimiter,
+    // Enhanced plugin architecture
+    EnhancedPluginRegistry, UiComponentPlugin, CommandPlugin, ThemePlugin,
+    PluginCapability, PluginVersion, EnhancedPluginMetadata,
+    PluginCommand, PluginTheme, CommandResult, ThemePluginImpl, ThemeMarketplace, MarketplaceTheme,
 };
 pub use monitoring::{
     MonitoringSystem, PerformanceMonitor, UsageAnalytics, MetricsCollector,
@@ -119,7 +124,10 @@ pub use executor::{
 };
 pub use file_picker::FilePickerWidget;
 pub use components::{
-    Component, ComponentId, ComponentRegistry, ComponentEvent, FocusDirection, FocusResult,
+    Component, ComponentId, ComponentRegistry, ComponentEvent as ComponentLifecycleEvent, FocusDirection, FocusResult,
+    // Event system
+    EventComponent, ComponentEvent, MouseEvent, KeyboardEvent, FocusEvent, CustomEvent, StateChangeEvent,
+    MouseButton, KeyModifiers, KeyCode, EventPropagation, EventResult, EventContext, EventPhase, EventDispatcher,
     DialogType, DialogWidget, ListWidget, MenuWidget, ModeIndicator, ModeSelectionMenu,
     SplitViewWidget, TabWidget,
 };
@@ -157,7 +165,8 @@ pub use scrollview_widget::ScrollViewWidget;
 pub use session_integration::SessionIntegration;
 pub use status_bar::{ConnectionStatus, InputMode, StatusBarWidget};
 pub use session_manager::{SessionData, SessionManager};
-pub use model::{AppModel, AppMessage, AppMode, CommandResult as TeaCommandResult, OperationId, StateDiff, StateChange, SessionState, CommandState, UiState, PendingOperation, Subscription};
+pub use model::{AppModel, AppMessage, AppMode, CommandResult as TeaCommandResult, OperationId, StateDiff, StateChange, SessionState, CommandState, UiState, PendingOperation, Subscription, MessageBatch, MessagePriority, MessageBatchProcessor, MessageBatchStats};
+pub use tea::{ReactiveState, StateDebugger, StateSnapshot, StateChangeLog, StateDebugStats};
 pub use update::Command as TeaCommand;
 pub use view::view;
 pub use render_pipeline::{VirtualRenderer, VirtualList, VirtualScroll, LazyLoader, RenderBatch, RenderOperation, RenderPriority, VirtualNode, ComponentType};

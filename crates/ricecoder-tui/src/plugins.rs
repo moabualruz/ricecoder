@@ -5,6 +5,7 @@
 
 use crate::error::TuiResult;
 use crate::tea::{AppMessage, AppModel};
+use crate::Component;
 use ratatui::prelude::*;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -12,6 +13,8 @@ use tokio::sync::RwLock;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use walkdir::WalkDir;
+use std::any::Any;
+use std::sync::Arc;
 
 /// Unique identifier for a plugin
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -64,6 +67,75 @@ pub enum PluginMessage {
     StateUpdate(String),
     /// Plugin error
     Error(String),
+    /// Custom message with string payload
+    Custom(String),
+    /// JSON message
+    Json(serde_json::Value),
+    /// Binary message
+    Binary(Vec<u8>),
+}
+
+/// Plugin capabilities for enhanced functionality
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum PluginCapability {
+    /// Can provide UI components
+    UiComponent,
+    /// Can provide commands
+    Command,
+    /// Can provide themes
+    Theme,
+    /// Can handle file types
+    FileHandler,
+    /// Can provide keyboard shortcuts
+    Keybinding,
+    /// Can provide accessibility features
+    Accessibility,
+    /// Can provide integrations
+    Integration,
+}
+
+/// Plugin version information
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PluginVersion {
+    pub major: u32,
+    pub minor: u32,
+    pub patch: u32,
+}
+
+impl std::fmt::Display for PluginVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}.{}.{}", self.major, self.minor, self.patch)
+    }
+}
+
+/// Enhanced plugin metadata
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnhancedPluginMetadata {
+    pub base: PluginMetadata,
+    pub version: PluginVersion,
+    pub license: Option<String>,
+    pub min_tui_version: Option<PluginVersion>,
+    pub max_tui_version: Option<PluginVersion>,
+    pub capabilities: Vec<PluginCapability>,
+}
+
+/// Plugin lifecycle states
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PluginState {
+    /// Plugin is loaded but not initialized
+    Loaded,
+    /// Plugin is initializing
+    Initializing,
+    /// Plugin is active and running
+    Active,
+    /// Plugin is suspended
+    Suspended,
+    /// Plugin encountered an error
+    Error,
+    /// Plugin is unloading
+    Unloading,
+    /// Plugin is unloaded
+    Unloaded,
 }
 
 /// Core plugin trait that all plugins must implement
@@ -113,19 +185,461 @@ pub trait Plugin: Send + Sync {
         let _ = config;
         Ok(())
     }
+
+    /// Get enhanced plugin metadata
+    fn enhanced_metadata(&self) -> EnhancedPluginMetadata {
+        EnhancedPluginMetadata {
+            base: self.metadata(),
+            version: PluginVersion { major: 1, minor: 0, patch: 0 },
+            license: None,
+            min_tui_version: None,
+            max_tui_version: None,
+            capabilities: vec![],
+        }
+    }
 }
 
-/// Plugin registry for managing available plugins
+/// UI Component plugin trait for plugins that provide UI components
+#[async_trait::async_trait]
+pub trait UiComponentPlugin: Plugin {
+    /// Render the plugin's UI component
+    fn render_component(&self, frame: &mut Frame, area: Rect, model: &AppModel);
+
+    /// Handle input events for the component
+    fn handle_component_input(&mut self, message: &AppMessage, model: &AppModel) -> bool;
+
+    /// Get the component's preferred size
+    fn preferred_size(&self) -> Option<(u16, u16)> {
+        None
+    }
+
+    /// Check if component is currently focused
+    fn is_component_focused(&self) -> bool {
+        false
+    }
+}
+
+/// Command plugin trait for plugins that provide commands
+#[async_trait::async_trait]
+pub trait CommandPlugin: Plugin {
+    /// Get available commands
+    fn available_commands(&self) -> Vec<PluginCommand>;
+
+    /// Execute a command
+    async fn execute_command(&mut self, command: &str, args: &[String], context: &PluginContext) -> TuiResult<CommandResult>;
+}
+
+/// Theme plugin trait for plugins that provide themes
+#[async_trait::async_trait]
+pub trait ThemePlugin: Plugin {
+    /// Get available themes
+    fn available_themes(&self) -> Vec<PluginTheme>;
+
+    /// Apply a theme
+    async fn apply_theme(&mut self, theme_id: &str) -> TuiResult<()>;
+}
+
+/// Plugin command definition
+#[derive(Debug, Clone)]
+pub struct PluginCommand {
+    pub name: String,
+    pub description: String,
+    pub usage: String,
+    pub examples: Vec<String>,
+}
+
+/// Plugin theme definition
+#[derive(Debug, Clone)]
+pub struct PluginTheme {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub theme_data: serde_json::Value,
+    pub author: String,
+    pub version: String,
+    pub tags: Vec<String>,
+}
+
+/// Theme plugin implementation
+#[derive(Debug, Clone)]
+pub struct ThemePluginImpl {
+    metadata: EnhancedPluginMetadata,
+    themes: Vec<PluginTheme>,
+    active_theme: Option<String>,
+}
+
+impl ThemePluginImpl {
+    /// Create a new theme plugin
+    pub fn new(id: &str, name: &str) -> Self {
+        Self {
+            metadata: EnhancedPluginMetadata {
+                base: PluginMetadata {
+                    id: PluginId::from(id),
+                    name: name.to_string(),
+                    version: "1.0.0".to_string(),
+                    description: format!("Theme plugin: {}", name),
+                    author: "Unknown".to_string(),
+                    homepage: None,
+                    repository: None,
+                },
+                version: PluginVersion { major: 1, minor: 0, patch: 0 },
+                license: Some("MIT".to_string()),
+                min_tui_version: None,
+                max_tui_version: None,
+                capabilities: vec![PluginCapability::Theme],
+            },
+            themes: Vec::new(),
+            active_theme: None,
+        }
+    }
+
+    /// Add a theme to the plugin
+    pub fn add_theme(&mut self, theme: PluginTheme) {
+        self.themes.push(theme);
+    }
+
+    /// Load themes from a directory
+    pub fn load_themes_from_dir(&mut self, dir_path: &std::path::Path) -> TuiResult<()> {
+        if !dir_path.exists() {
+            return Ok(());
+        }
+
+        for entry in std::fs::read_dir(dir_path)? {
+            let entry = entry?;
+            let path = entry.path();
+
+            if path.extension().and_then(|s| s.to_str()) == Some("yaml") ||
+               path.extension().and_then(|s| s.to_str()) == Some("yml") {
+                match self.load_theme_from_file(&path) {
+                    Ok(theme) => self.add_theme(theme),
+                    Err(e) => tracing::warn!("Failed to load theme from {}: {}", path.display(), e),
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Load a single theme from a YAML file
+    fn load_theme_from_file(&self, file_path: &std::path::Path) -> TuiResult<PluginTheme> {
+        let content = std::fs::read_to_string(file_path)?;
+        let theme_data: serde_json::Value = serde_yaml::from_str(&content)?;
+
+        // Extract theme metadata from the YAML
+        let id = file_path.file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("unknown")
+            .to_string();
+
+        let name = theme_data.get("name")
+            .and_then(|v| v.as_str())
+            .unwrap_or(&id)
+            .to_string();
+
+        let description = theme_data.get("description")
+            .and_then(|v| v.as_str())
+            .unwrap_or("A theme")
+            .to_string();
+
+        let author = theme_data.get("author")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Unknown")
+            .to_string();
+
+        let version = theme_data.get("version")
+            .and_then(|v| v.as_str())
+            .unwrap_or("1.0.0")
+            .to_string();
+
+        let tags = theme_data.get("tags")
+            .and_then(|v| v.as_array())
+            .map(|arr| arr.iter()
+                .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                .collect())
+            .unwrap_or_default();
+
+        Ok(PluginTheme {
+            id,
+            name,
+            description,
+            theme_data,
+            author,
+            version,
+            tags,
+        })
+    }
+
+    /// Validate a theme
+    pub fn validate_theme(&self, theme: &PluginTheme) -> TuiResult<()> {
+        // Check required fields
+        if theme.id.is_empty() {
+            return Err(crate::error::TuiError::Plugin("Theme ID cannot be empty".to_string()));
+        }
+
+        if theme.name.is_empty() {
+            return Err(crate::error::TuiError::Plugin("Theme name cannot be empty".to_string()));
+        }
+
+        // Validate theme data structure (basic check)
+        if !theme.theme_data.is_object() {
+            return Err(crate::error::TuiError::Plugin("Theme data must be a JSON object".to_string()));
+        }
+
+        Ok(())
+    }
+}
+
+impl Plugin for ThemePluginImpl {
+    fn metadata(&self) -> &PluginMetadata {
+        &self.metadata.base
+    }
+
+    async fn initialize(&mut self, context: &PluginContext) -> TuiResult<()> {
+        // Load themes from plugin data directory
+        let themes_dir = context.data_dir.join("themes");
+        self.load_themes_from_dir(&themes_dir)?;
+
+        // Validate all loaded themes
+        for theme in &self.themes {
+            self.validate_theme(theme)?;
+        }
+
+        tracing::info!("Theme plugin {} initialized with {} themes",
+                      self.metadata().name, self.themes.len());
+        Ok(())
+    }
+
+    async fn handle_message(&mut self, message: &PluginMessage) -> Vec<PluginMessage> {
+        match message {
+            PluginMessage::Custom(msg) if msg.starts_with("activate_theme:") => {
+                let theme_id = msg.trim_start_matches("activate_theme:");
+                if let Some(theme) = self.themes.iter().find(|t| t.id == theme_id) {
+                    self.active_theme = Some(theme_id.to_string());
+                    vec![PluginMessage::Custom(format!("theme_activated:{}", theme_id))]
+                } else {
+                    vec![PluginMessage::Error(format!("Theme not found: {}", theme_id))]
+                }
+            }
+            _ => vec![],
+        }
+    }
+
+    async fn render(&self, area: Rect, model: &AppModel) -> TuiResult<Vec<Line>> {
+        let mut lines = Vec::new();
+
+        lines.push(Line::from(format!("🎨 {} - {} themes",
+                                    self.metadata().name,
+                                    self.themes.len())));
+
+        if let Some(active) = &self.active_theme {
+            lines.push(Line::from(format!("Active theme: {}", active)));
+        }
+
+        lines.push(Line::from(""));
+        lines.push(Line::from("Available themes:"));
+
+        for theme in &self.themes {
+            let active_marker = if self.active_theme.as_ref() == Some(&theme.id) {
+                " ✓"
+            } else {
+                ""
+            };
+            lines.push(Line::from(format!("  • {} - {}{}",
+                                        theme.name, theme.description, active_marker)));
+        }
+
+        Ok(lines)
+    }
+
+    async fn cleanup(&mut self) -> TuiResult<()> {
+        self.themes.clear();
+        self.active_theme = None;
+        Ok(())
+    }
+}
+
+impl ThemePlugin for ThemePluginImpl {
+    fn available_themes(&self) -> Vec<PluginTheme> {
+        self.themes.clone()
+    }
+
+    async fn apply_theme(&mut self, theme_id: &str) -> TuiResult<()> {
+        if let Some(theme) = self.themes.iter().find(|t| t.id == theme_id) {
+            self.active_theme = Some(theme_id.to_string());
+            // In a real implementation, this would apply the theme to the TUI
+            tracing::info!("Applied theme: {}", theme.name);
+            Ok(())
+        } else {
+            Err(crate::error::TuiError::Plugin(format!("Theme not found: {}", theme_id)))
+        }
+    }
+}
+
+impl EventComponent for ThemePluginImpl {
+    fn handle_event(&mut self, event: &ComponentEvent, _context: &EventContext) -> EventResult {
+        match event {
+            ComponentEvent::Keyboard(key_event) if key_event.key == KeyCode::Enter => {
+                // Cycle through themes
+                let current_idx = self.active_theme.as_ref()
+                    .and_then(|id| self.themes.iter().position(|t| t.id == *id))
+                    .unwrap_or(0);
+
+                let next_idx = (current_idx + 1) % self.themes.len();
+                if let Some(next_theme) = self.themes.get(next_idx) {
+                    self.active_theme = Some(next_theme.id.clone());
+                    EventResult {
+                        propagation: EventPropagation::Consume,
+                        handled: true,
+                        data: Some(serde_json::json!({
+                            "action": "theme_changed",
+                            "theme_id": next_theme.id,
+                            "theme_name": next_theme.name
+                        })),
+                    }
+                } else {
+                    EventResult {
+                        propagation: EventPropagation::Continue,
+                        handled: false,
+                        data: None,
+                    }
+                }
+            }
+            _ => EventResult {
+                propagation: EventPropagation::Continue,
+                handled: false,
+                data: None,
+            },
+        }
+    }
+}
+
+/// Command execution result
+#[derive(Debug, Clone)]
+pub enum CommandResult {
+    Success(String),
+    Error(String),
+    Output(String),
+}
+
+/// Enhanced plugin registry for managing different plugin types
 #[derive(Debug)]
-pub struct PluginRegistry {
+pub struct EnhancedPluginRegistry {
     plugins: HashMap<PluginId, Box<dyn Plugin>>,
+    ui_components: HashMap<PluginId, Box<dyn UiComponentPlugin>>,
+    command_plugins: HashMap<PluginId, Box<dyn CommandPlugin>>,
+    theme_plugins: HashMap<PluginId, Box<dyn ThemePlugin>>,
+    plugin_states: HashMap<PluginId, PluginState>,
 }
 
+impl EnhancedPluginRegistry {
+    pub fn new() -> Self {
+        Self {
+            plugins: HashMap::new(),
+            ui_components: HashMap::new(),
+            command_plugins: HashMap::new(),
+            theme_plugins: HashMap::new(),
+            plugin_states: HashMap::new(),
+        }
+    }
+
+    /// Register a generic plugin
+    pub fn register_plugin(&mut self, plugin: Box<dyn Plugin>) -> TuiResult<()> {
+        let id = plugin.id();
+        self.plugins.insert(id.clone(), plugin);
+        self.plugin_states.insert(id, PluginState::Loaded);
+        Ok(())
+    }
+
+    /// Register a UI component plugin
+    pub fn register_ui_component(&mut self, component: Box<dyn UiComponentPlugin>) -> TuiResult<()> {
+        let id = component.id();
+        self.register_plugin(component.clone_box())?;
+        self.ui_components.insert(id, component);
+        Ok(())
+    }
+
+    /// Register a command plugin
+    pub fn register_command_plugin(&mut self, plugin: Box<dyn CommandPlugin>) -> TuiResult<()> {
+        let id = plugin.id();
+        self.register_plugin(plugin.clone_box())?;
+        self.command_plugins.insert(id, plugin);
+        Ok(())
+    }
+
+    /// Register a theme plugin
+    pub fn register_theme_plugin(&mut self, plugin: Box<dyn ThemePlugin>) -> TuiResult<()> {
+        let id = plugin.id();
+        self.register_plugin(plugin.clone_box())?;
+        self.theme_plugins.insert(id, plugin);
+        Ok(())
+    }
+
+    pub fn unregister(&mut self, id: &PluginId) -> Option<Box<dyn Plugin>> {
+        self.ui_components.remove(id);
+        self.command_plugins.remove(id);
+        self.theme_plugins.remove(id);
+        self.plugin_states.remove(id);
+        self.plugins.remove(id)
+    }
+
+    pub fn get(&self, id: &PluginId) -> Option<&dyn Plugin> {
+        self.plugins.get(id).map(|p| p.as_ref())
+    }
+
+    pub fn get_state(&self, id: &PluginId) -> Option<PluginState> {
+        self.plugin_states.get(id).copied()
+    }
+
+    pub fn set_state(&mut self, id: PluginId, state: PluginState) {
+        self.plugin_states.insert(id, state);
+    }
+
+    pub fn all_plugins(&self) -> Vec<&dyn Plugin> {
+        self.plugins.values().map(|p| p.as_ref()).collect()
+    }
+
+    pub fn ui_components(&self) -> Vec<&dyn UiComponentPlugin> {
+        self.ui_components.values().map(|p| p.as_ref()).collect()
+    }
+
+    pub fn command_plugins(&self) -> Vec<&dyn CommandPlugin> {
+        self.command_plugins.values().map(|p| p.as_ref()).collect()
+    }
+
+    pub fn theme_plugins(&self) -> Vec<&dyn ThemePlugin> {
+        self.theme_plugins.values().map(|p| p.as_ref()).collect()
+    }
+}
+
+// Keep the original PluginRegistry for backward compatibility
 impl PluginRegistry {
     pub fn new() -> Self {
         Self {
             plugins: HashMap::new(),
         }
+    }
+
+    pub fn register(&mut self, plugin: Box<dyn Plugin>) {
+        let id = plugin.id();
+        self.plugins.insert(id, plugin);
+    }
+
+    pub fn unregister(&mut self, id: &PluginId) -> Option<Box<dyn Plugin>> {
+        self.plugins.remove(id)
+    }
+
+    pub fn get(&self, id: &PluginId) -> Option<&dyn Plugin> {
+        self.plugins.get(id).map(|p| p.as_ref())
+    }
+
+    pub fn get_mut(&mut self, id: &PluginId) -> Option<&mut dyn Plugin> {
+        self.plugins.get_mut(id).map(|p| p.as_mut())
+    }
+
+    pub fn all(&self) -> Vec<&dyn Plugin> {
+        self.plugins.values().map(|p| p.as_ref()).collect()
+    }
+}
     }
 
     /// Register a plugin
@@ -1002,5 +1516,171 @@ impl Plugin for PlaceholderPlugin {
     async fn cleanup(&mut self) -> TuiResult<()> {
         tracing::info!("Cleaning up placeholder plugin: {}", self.name());
         Ok(())
+    }
+}
+
+/// Theme marketplace for discovering and installing themes
+#[derive(Debug)]
+pub struct ThemeMarketplace {
+    registry: EnhancedPluginRegistry,
+    marketplace_url: Option<String>,
+    installed_themes: std::collections::HashMap<String, PluginTheme>,
+    available_themes: Vec<MarketplaceTheme>,
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct MarketplaceTheme {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub author: String,
+    pub version: String,
+    pub download_url: String,
+    pub tags: Vec<String>,
+    pub preview_image: Option<String>,
+    pub rating: Option<f32>,
+    pub downloads: Option<u32>,
+}
+
+impl ThemeMarketplace {
+    /// Create a new theme marketplace
+    pub fn new() -> Self {
+        Self {
+            registry: EnhancedPluginRegistry::new(),
+            marketplace_url: Some("https://api.example.com/themes".to_string()),
+            installed_themes: std::collections::HashMap::new(),
+            available_themes: Vec::new(),
+        }
+    }
+
+    /// Discover available themes from the marketplace
+    pub async fn discover_themes(&mut self) -> TuiResult<()> {
+        // In a real implementation, this would fetch from the marketplace API
+        // For now, simulate some available themes
+        self.available_themes = vec![
+            MarketplaceTheme {
+                id: "dracula-pro".to_string(),
+                name: "Dracula Pro".to_string(),
+                description: "Professional Dracula theme with enhanced colors".to_string(),
+                author: "Dracula Team".to_string(),
+                version: "2.1.0".to_string(),
+                download_url: "https://example.com/themes/dracula-pro.zip".to_string(),
+                tags: vec!["dark".to_string(), "professional".to_string()],
+                preview_image: Some("https://example.com/previews/dracula-pro.png".to_string()),
+                rating: Some(4.8),
+                downloads: Some(15420),
+            },
+            MarketplaceTheme {
+                id: "nord-extended".to_string(),
+                name: "Nord Extended".to_string(),
+                description: "Extended Nord theme with additional color variants".to_string(),
+                author: "Nord Theme".to_string(),
+                version: "1.3.2".to_string(),
+                download_url: "https://example.com/themes/nord-extended.zip".to_string(),
+                tags: vec!["cold".to_string(), "arctic".to_string(), "extended".to_string()],
+                preview_image: Some("https://example.com/previews/nord-extended.png".to_string()),
+                rating: Some(4.6),
+                downloads: Some(8920),
+            },
+        ];
+
+        Ok(())
+    }
+
+    /// Install a theme from the marketplace
+    pub async fn install_theme(&mut self, theme_id: &str) -> TuiResult<()> {
+        let marketplace_theme = self.available_themes.iter()
+            .find(|t| t.id == theme_id)
+            .ok_or_else(|| crate::error::TuiError::Plugin(format!("Theme not found in marketplace: {}", theme_id)))?
+            .clone();
+
+        // In a real implementation, this would download and extract the theme
+        // For now, simulate installation by creating a theme plugin
+        let mut theme_plugin = ThemePluginImpl::new(&marketplace_theme.id, &marketplace_theme.name);
+
+        // Create a plugin theme from marketplace data
+        let plugin_theme = PluginTheme {
+            id: marketplace_theme.id.clone(),
+            name: marketplace_theme.name.clone(),
+            description: marketplace_theme.description.clone(),
+            theme_data: serde_json::json!({
+                "name": marketplace_theme.name,
+                "author": marketplace_theme.author,
+                "version": marketplace_theme.version,
+                "description": marketplace_theme.description,
+                "tags": marketplace_theme.tags,
+                // Add default theme colors (would be in the downloaded theme)
+                "colors": {
+                    "background": "#282a36",
+                    "foreground": "#f8f8f2",
+                    "primary": "#bd93f9",
+                    "secondary": "#6272a4",
+                    "accent": "#ffb86c"
+                }
+            }),
+            author: marketplace_theme.author.clone(),
+            version: marketplace_theme.version.clone(),
+            tags: marketplace_theme.tags.clone(),
+        };
+
+        theme_plugin.add_theme(plugin_theme.clone());
+
+        // Register the theme plugin
+        self.registry.register_theme_plugin(Box::new(theme_plugin))?;
+
+        // Mark as installed
+        self.installed_themes.insert(theme_id.to_string(), plugin_theme);
+
+        tracing::info!("Installed theme: {}", marketplace_theme.name);
+        Ok(())
+    }
+
+    /// Uninstall a theme
+    pub async fn uninstall_theme(&mut self, theme_id: &str) -> TuiResult<()> {
+        if self.installed_themes.remove(theme_id).is_some() {
+            self.registry.unregister(&PluginId::from(theme_id.to_string()));
+            tracing::info!("Uninstalled theme: {}", theme_id);
+            Ok(())
+        } else {
+            Err(crate::error::TuiError::Plugin(format!("Theme not installed: {}", theme_id)))
+        }
+    }
+
+    /// Get installed themes
+    pub fn installed_themes(&self) -> Vec<&PluginTheme> {
+        self.installed_themes.values().collect()
+    }
+
+    /// Get available themes from marketplace
+    pub fn available_themes(&self) -> &[MarketplaceTheme] {
+        &self.available_themes
+    }
+
+    /// Search themes by query
+    pub fn search_themes(&self, query: &str) -> Vec<&MarketplaceTheme> {
+        let query_lower = query.to_lowercase();
+        self.available_themes.iter()
+            .filter(|theme|
+                theme.name.to_lowercase().contains(&query_lower) ||
+                theme.description.to_lowercase().contains(&query_lower) ||
+                theme.tags.iter().any(|tag| tag.to_lowercase().contains(&query_lower))
+            )
+            .collect()
+    }
+
+    /// Get theme plugin registry
+    pub fn registry(&self) -> &EnhancedPluginRegistry {
+        &self.registry
+    }
+
+    /// Get theme plugin registry mutably
+    pub fn registry_mut(&mut self) -> &mut EnhancedPluginRegistry {
+        &mut self.registry
+    }
+}
+
+impl Default for ThemeMarketplace {
+    fn default() -> Self {
+        Self::new()
     }
 }
