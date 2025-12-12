@@ -143,24 +143,26 @@ pub struct App {
     pub file_watcher_receiver: Option<tokio::sync::broadcast::Receiver<ricecoder_files::FileChangeBatch>>,
     /// Session integration for managing sessions and token tracking
     pub session_integration: crate::session_integration::SessionIntegration,
+    /// Project bootstrap for auto-detection and configuration
+    pub project_bootstrap: crate::project_bootstrap::ProjectBootstrap,
 }
 
 impl App {
     /// Create a new application instance
-    pub fn new() -> Result<Self> {
+    pub async fn new() -> Result<Self> {
         let config = TuiConfig::load()?;
-        Self::with_config(config)
+        Self::with_config(config).await
     }
 
     /// Create a new application instance with a specific configuration
-    pub fn with_config(config: TuiConfig) -> Result<Self> {
+    pub async fn with_config(config: TuiConfig) -> Result<Self> {
         // Use default capabilities for backward compatibility
         let capabilities = TerminalCapabilities::detect();
-        Self::with_capabilities(config, &capabilities)
+        Self::with_capabilities(config, &capabilities).await
     }
 
     /// Create a new application instance with terminal capabilities
-    pub fn with_capabilities(config: TuiConfig, capabilities: &TerminalCapabilities) -> Result<Self> {
+    pub async fn with_capabilities(config: TuiConfig, capabilities: &TerminalCapabilities) -> Result<Self> {
         let theme_manager = ThemeManager::new();
 
         // Load theme from config
@@ -204,7 +206,16 @@ impl App {
             file_watcher: None,
             file_watcher_receiver: None,
             session_integration: crate::session_integration::SessionIntegration::new(10), // Allow up to 10 sessions
+            project_bootstrap: crate::project_bootstrap::ProjectBootstrap::new(std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."))),
         };
+
+        // Perform project bootstrap
+        if let Err(e) = app.project_bootstrap.bootstrap().await {
+            tracing::warn!("Project bootstrap failed: {}", e);
+            // Continue anyway - bootstrap failure shouldn't prevent app startup
+        } else {
+            tracing::info!("Project bootstrap completed successfully");
+        }
 
         Ok(app)
     }

@@ -55,7 +55,7 @@ async fn main() -> Result<()> {
     .expect("Error setting Ctrl+C handler");
 
     // Create and run the application with detected capabilities
-    let mut app = App::with_capabilities(TuiConfig::load()?, terminal_state.capabilities())?;
+    let mut app = App::with_capabilities(TuiConfig::load()?, terminal_state.capabilities()).await?;
 
     // Initialize file watcher
     if let Err(e) = app.init_file_watcher() {

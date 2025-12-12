@@ -26,6 +26,7 @@ pub mod theme_registry;
 pub mod theme_reset;
 pub mod tree_widget;
 pub mod widgets;
+pub mod project_bootstrap;
 
 // Re-export commonly used types
 pub use accessibility::{
@@ -90,3 +91,4 @@ pub use theme_registry::ThemeRegistry;
 pub use theme_reset::ThemeResetManager;
 pub use tree_widget::{TreeNode, TreeWidget};
 pub use widgets::{ChatWidget, Message, MessageAuthor};
+pub use project_bootstrap::{ProjectBootstrap, BootstrapResult, ProjectInfo};
