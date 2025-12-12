@@ -302,6 +302,82 @@ impl TuiConfig {
     }
 }
 
+/// Predefined configuration presets
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConfigPreset {
+    /// Developer-friendly settings
+    Developer,
+    /// Accessibility optimized
+    Accessibility,
+    /// Minimal, clean interface
+    Minimal,
+    /// Presentation optimized
+    Presentation,
+}
+
+impl std::fmt::Display for ConfigPreset {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ConfigPreset::Developer => write!(f, "Developer"),
+            ConfigPreset::Accessibility => write!(f, "Accessibility"),
+            ConfigPreset::Minimal => write!(f, "Minimal"),
+            ConfigPreset::Presentation => write!(f, "Presentation"),
+        }
+    }
+}
+
+/// Runtime configuration changes that can be applied without restart
+#[derive(Debug, Clone, Default)]
+pub struct RuntimeConfigChanges {
+    /// New theme name to switch to
+    pub theme_name: Option<String>,
+    /// Enable/disable vim mode
+    pub vim_mode: Option<bool>,
+    /// Enable/disable screen reader support
+    pub screen_reader_enabled: Option<bool>,
+    /// Enable/disable high contrast mode
+    pub high_contrast_enabled: Option<bool>,
+    /// Font size multiplier for accessibility
+    pub font_size_multiplier: Option<f32>,
+}
+
+impl RuntimeConfigChanges {
+    /// Create a new runtime config changes instance
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set theme change
+    pub fn with_theme(mut self, theme_name: impl Into<String>) -> Self {
+        self.theme_name = Some(theme_name.into());
+        self
+    }
+
+    /// Set vim mode change
+    pub fn with_vim_mode(mut self, enabled: bool) -> Self {
+        self.vim_mode = Some(enabled);
+        self
+    }
+
+    /// Set screen reader change
+    pub fn with_screen_reader(mut self, enabled: bool) -> Self {
+        self.screen_reader_enabled = Some(enabled);
+        self
+    }
+
+    /// Set high contrast change
+    pub fn with_high_contrast(mut self, enabled: bool) -> Self {
+        self.high_contrast_enabled = Some(enabled);
+        self
+    }
+
+    /// Set font size multiplier
+    pub fn with_font_size(mut self, multiplier: f32) -> Self {
+        self.font_size_multiplier = Some(multiplier);
+        self
+    }
+}
+
 /// Configuration manager with hot-reload support
 pub struct ConfigManager {
     /// Current configuration
@@ -439,6 +515,122 @@ impl ConfigManager {
             watcher.stop().await?;
         }
         Ok(())
+    }
+
+    /// Apply runtime configuration changes
+    pub async fn apply_runtime_changes(&mut self, changes: RuntimeConfigChanges) -> Result<()> {
+        let mut config = self.config.read().await.clone();
+
+        // Apply theme changes
+        if let Some(theme_name) = changes.theme_name {
+            config.theme = theme_name;
+        }
+
+        // Apply vim mode changes
+        if let Some(vim_mode) = changes.vim_mode {
+            config.vim_mode = vim_mode;
+        }
+
+        // Apply accessibility changes
+        if let Some(screen_reader) = changes.screen_reader_enabled {
+            config.accessibility.screen_reader_enabled = screen_reader;
+        }
+
+        if let Some(high_contrast) = changes.high_contrast_enabled {
+            config.accessibility.high_contrast_enabled = high_contrast;
+        }
+
+        if let Some(font_size) = changes.font_size_multiplier {
+            config.accessibility.font_size_multiplier = font_size;
+        }
+
+        // Validate the updated config
+        config.validate()?;
+
+        // Update the config
+        *self.config.write().await = config.clone();
+
+        // Call change callback if set
+        if let Some(callback) = &self.change_callback {
+            callback(config);
+        }
+
+        Ok(())
+    }
+
+    /// Get current theme name
+    pub async fn current_theme(&self) -> String {
+        self.config.read().await.theme.clone()
+    }
+
+    /// Get current vim mode setting
+    pub async fn vim_mode_enabled(&self) -> bool {
+        self.config.read().await.vim_mode
+    }
+
+    /// Get current accessibility settings
+    pub async fn accessibility_settings(&self) -> AccessibilityConfig {
+        self.config.read().await.accessibility.clone()
+    }
+
+    /// Apply a configuration preset
+    pub async fn apply_preset(&mut self, preset: ConfigPreset) -> Result<()> {
+        let changes = match preset {
+            ConfigPreset::Developer => RuntimeConfigChanges::new()
+                .with_theme("dracula")
+                .with_vim_mode(true)
+                .with_screen_reader(false)
+                .with_high_contrast(false)
+                .with_font_size(1.0),
+            ConfigPreset::Accessibility => RuntimeConfigChanges::new()
+                .with_theme("high-contrast-light")
+                .with_vim_mode(false)
+                .with_screen_reader(true)
+                .with_high_contrast(true)
+                .with_font_size(1.5),
+            ConfigPreset::Minimal => RuntimeConfigChanges::new()
+                .with_theme("dark")
+                .with_vim_mode(false)
+                .with_screen_reader(false)
+                .with_high_contrast(false)
+                .with_font_size(1.0),
+            ConfigPreset::Presentation => RuntimeConfigChanges::new()
+                .with_theme("solarized-light")
+                .with_vim_mode(false)
+                .with_screen_reader(false)
+                .with_high_contrast(false)
+                .with_font_size(1.2),
+        };
+
+        self.apply_runtime_changes(changes).await
+    }
+
+    /// Get available configuration presets
+    pub fn available_presets() -> Vec<(ConfigPreset, &'static str)> {
+        vec![
+            (ConfigPreset::Developer, "Developer-friendly settings with dark theme and vim mode"),
+            (ConfigPreset::Accessibility, "High contrast and screen reader optimized"),
+            (ConfigPreset::Minimal, "Clean, minimal interface"),
+            (ConfigPreset::Presentation, "Light theme optimized for presentations"),
+        ]
+    }
+
+    /// Get current preset (best match)
+    pub async fn current_preset(&self) -> Option<ConfigPreset> {
+        let config = self.config.read().await;
+
+        // Try to match against presets
+        if config.theme == "dracula" && config.vim_mode && !config.accessibility.screen_reader_enabled {
+            Some(ConfigPreset::Developer)
+        } else if config.theme == "high-contrast-light" && config.accessibility.screen_reader_enabled && config.accessibility.high_contrast_enabled {
+            Some(ConfigPreset::Accessibility)
+        } else if config.theme == "dark" && !config.vim_mode && !config.accessibility.screen_reader_enabled {
+            Some(ConfigPreset::Minimal)
+        } else if config.theme == "solarized-light" && !config.vim_mode && !config.accessibility.screen_reader_enabled {
+            Some(ConfigPreset::Presentation)
+        } else {
+            None
+        }
     }
 }
 

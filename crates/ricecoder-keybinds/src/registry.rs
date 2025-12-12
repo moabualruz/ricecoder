@@ -134,6 +134,35 @@ impl KeybindRegistry {
         self.by_action.is_empty()
     }
 
+    /// Unregister a keybind by action ID
+    pub fn unregister(&mut self, action_id: &str) -> Result<(), RegistryError> {
+        if let Some(keybind) = self.by_action.remove(action_id) {
+            // Remove from key mappings
+            let key_combo = keybind.parse_key().map_err(|e| {
+                RegistryError::InvalidActionIdFormat(format!("Invalid key: {}", e))
+            })?;
+            let key_str = key_combo.to_string();
+
+            if keybind.contexts.is_empty() {
+                self.by_key_global.remove(&key_str);
+            } else {
+                for context in &keybind.contexts {
+                    self.by_key_context.remove(&(context.clone(), key_str.clone()));
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Update an existing keybind
+    pub fn update(&mut self, action_id: &str, new_keybind: Keybind) -> Result<(), RegistryError> {
+        // First unregister the old keybind
+        self.unregister(action_id)?;
+
+        // Then register the new one
+        self.register(new_keybind)
+    }
+
     /// Clear all keybinds
     pub fn clear(&mut self) {
         self.by_action.clear();

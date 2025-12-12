@@ -89,8 +89,15 @@ impl ConfigLoader {
         // Substitute environment variables in config values
         Self::substitute_env_vars(&mut merged)?;
 
-        // TODO: Add schema validation when JSONSchema type is available
-        // For now, skip validation
+        // Apply configuration migrations if needed
+        // TODO: Load version information from config and apply migrations
+
+        // Validate configuration against schemas
+        if !self.skip_validation {
+            let mut validator = crate::config::validation::ConfigValidator::new();
+            validator.load_builtin_schemas()?;
+            validator.validate(&merged)?;
+        }
 
         Ok(merged)
     }

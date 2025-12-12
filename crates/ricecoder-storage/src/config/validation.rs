@@ -7,6 +7,7 @@ use crate::config::Config;
 use crate::error::{StorageError, StorageResult};
 use serde_json::Value;
 use std::collections::HashMap;
+use jsonschema::{Draft, JSONSchema};
 
 /// Configuration validation error
 #[derive(Debug, Clone)]
@@ -26,7 +27,7 @@ impl std::error::Error for ValidationError {}
 
 /// Configuration validator with schema support
 pub struct ConfigValidator {
-    schemas: HashMap<String, Value>,
+    schemas: HashMap<String, JSONSchema>,
 }
 
 impl ConfigValidator {
@@ -38,8 +39,32 @@ impl ConfigValidator {
     }
 
     /// Add a JSON schema for validation
-    pub fn add_schema(&mut self, name: String, schema: Value) {
-        self.schemas.insert(name, schema);
+    pub fn add_schema(&mut self, name: String, schema: Value) -> StorageResult<()> {
+        let compiled_schema = JSONSchema::options()
+            .with_draft(Draft::Draft7)
+            .compile(&schema)
+            .map_err(|e| StorageError::ConfigValidation {
+                errors: vec![format!("Invalid schema '{}': {}", name, e)],
+            })?;
+        self.schemas.insert(name, compiled_schema);
+        Ok(())
+    }
+
+    /// Load built-in schemas
+    pub fn load_builtin_schemas(&mut self) -> StorageResult<()> {
+        // Load provider schema
+        let provider_schema = Self::get_provider_schema();
+        self.add_schema("providers".to_string(), provider_schema)?;
+
+        // Load defaults schema
+        let defaults_schema = Self::get_defaults_schema();
+        self.add_schema("defaults".to_string(), defaults_schema)?;
+
+        // Load steering schema
+        let steering_schema = Self::get_steering_schema();
+        self.add_schema("steering".to_string(), steering_schema)?;
+
+        Ok(())
     }
 
     /// Validate a configuration against all registered schemas
@@ -47,124 +72,263 @@ impl ConfigValidator {
         let mut errors = Vec::new();
 
         // Validate providers configuration
-        if let Err(e) = self.validate_providers(&config.providers) {
-            errors.extend(e);
+        if let Some(schema) = self.schemas.get("providers") {
+            let providers_value = serde_json::to_value(&config.providers)
+                .map_err(|e| StorageError::Internal(format!("Failed to serialize providers: {}", e)))?;
+            if let Err(validation_errors) = schema.validate(&providers_value) {
+                for error in validation_errors {
+                    errors.push(format!("providers.{}: {}", error.instance_path, error.to_string()));
+                }
+            }
         }
 
         // Validate defaults configuration
-        if let Err(e) = self.validate_defaults(&config.defaults) {
-            errors.extend(e);
+        if let Some(schema) = self.schemas.get("defaults") {
+            let defaults_value = serde_json::to_value(&config.defaults)
+                .map_err(|e| StorageError::Internal(format!("Failed to serialize defaults: {}", e)))?;
+            if let Err(validation_errors) = schema.validate(&defaults_value) {
+                for error in validation_errors {
+                    errors.push(format!("defaults.{}: {}", error.instance_path, error.to_string()));
+                }
+            }
         }
 
         // Validate steering rules
-        if let Err(e) = self.validate_steering(&config.steering) {
-            errors.extend(e);
+        if let Some(schema) = self.schemas.get("steering") {
+            let steering_value = serde_json::to_value(&config.steering)
+                .map_err(|e| StorageError::Internal(format!("Failed to serialize steering: {}", e)))?;
+            if let Err(validation_errors) = schema.validate(&steering_value) {
+                for error in validation_errors {
+                    errors.push(format!("steering{}: {}", error.instance_path, error.to_string()));
+                }
+            }
         }
 
         if !errors.is_empty() {
-            return Err(StorageError::ConfigValidation {
-                errors: errors.into_iter().map(|e| e.to_string()).collect(),
-            });
+            return Err(StorageError::ConfigValidation { errors });
         }
 
         Ok(())
     }
 
-    /// Validate providers configuration
-    fn validate_providers(&self, providers: &crate::config::ProvidersConfig) -> Result<(), Vec<ValidationError>> {
-        let mut errors = Vec::new();
+    /// Get JSON schema for providers configuration
+    fn get_provider_schema() -> Value {
+        serde_json::json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "type": "object",
+            "properties": {
+                "default_provider": {
+                    "type": ["string", "null"],
+                    "enum": ["openai", "anthropic", "ollama", "google", null]
+                },
+                "api_keys": {
+                    "type": "object",
+                    "patternProperties": {
+                        ".*": {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "API key must not be empty"
+                        }
+                    }
+                },
+                "endpoints": {
+                    "type": "object",
+                    "patternProperties": {
+                        ".*": {
+                            "type": "string",
+                            "pattern": "^https?://",
+                            "description": "Endpoint must be a valid HTTP/HTTPS URL"
+                        }
+                    }
+                }
+            },
+            "required": ["api_keys", "endpoints"],
+            "additionalProperties": false
+        })
+    }
 
-        // Validate API keys format (should not be empty)
-        for (provider, key) in &providers.api_keys {
-            if key.trim().is_empty() {
-                errors.push(ValidationError {
-                    field: format!("providers.api_keys.{}", provider),
-                    message: "API key cannot be empty".to_string(),
-                    value: Some(serde_json::Value::String(key.clone())),
-                });
+    /// Get JSON schema for defaults configuration
+    fn get_defaults_schema() -> Value {
+        serde_json::json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "type": "object",
+            "properties": {
+                "model": {
+                    "type": ["string", "null"],
+                    "minLength": 1
+                },
+                "temperature": {
+                    "type": ["number", "null"],
+                    "minimum": 0.0,
+                    "maximum": 2.0
+                },
+                "max_tokens": {
+                    "type": ["integer", "null"],
+                    "minimum": 1
+                },
+                "top_p": {
+                    "type": ["number", "null"],
+                    "minimum": 0.0,
+                    "maximum": 1.0
+                },
+                "frequency_penalty": {
+                    "type": ["number", "null"],
+                    "minimum": -2.0,
+                    "maximum": 2.0
+                },
+                "presence_penalty": {
+                    "type": ["number", "null"],
+                    "minimum": -2.0,
+                    "maximum": 2.0
+                }
+            },
+            "additionalProperties": false
+        })
+    }
+
+    /// Get JSON schema for steering rules
+    fn get_steering_schema() -> Value {
+        serde_json::json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Rule name cannot be empty"
+                    },
+                    "content": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Rule content cannot be empty"
+                    },
+                    "priority": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 100
+                    },
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "conditions": {
+                        "type": "object",
+                        "additionalProperties": true
+                    }
+                },
+                "required": ["name", "content"],
+                "additionalProperties": false
             }
-        }
+        })
+    }
+}
 
-        // Validate endpoints format
-        for (provider, endpoint) in &providers.endpoints {
-            if !endpoint.starts_with("http://") && !endpoint.starts_with("https://") {
-                errors.push(ValidationError {
-                    field: format!("providers.endpoints.{}", provider),
-                    message: "Endpoint must start with http:// or https://".to_string(),
-                    value: Some(serde_json::Value::String(endpoint.clone())),
-                });
-            }
-        }
+/// Configuration migration manager
+pub struct ConfigMigrationManager {
+    migrations: Vec<Box<dyn ConfigMigration>>,
+}
 
-        if errors.is_empty() {
-            Ok(())
-        } else {
-            Err(errors)
+impl ConfigMigrationManager {
+    /// Create a new migration manager
+    pub fn new() -> Self {
+        Self {
+            migrations: Vec::new(),
         }
     }
 
-    /// Validate defaults configuration
-    fn validate_defaults(&self, defaults: &crate::config::DefaultsConfig) -> Result<(), Vec<ValidationError>> {
-        let mut errors = Vec::new();
-
-        // Validate temperature range
-        if let Some(temp) = defaults.temperature {
-            if !(0.0..=2.0).contains(&temp) {
-                errors.push(ValidationError {
-                    field: "defaults.temperature".to_string(),
-                    message: "Temperature must be between 0.0 and 2.0".to_string(),
-                    value: Some(serde_json::Number::from_f64(temp as f64).unwrap().into()),
-                });
-            }
-        }
-
-        // Validate max tokens
-        if let Some(max_tokens) = defaults.max_tokens {
-            if max_tokens == 0 {
-                errors.push(ValidationError {
-                    field: "defaults.max_tokens".to_string(),
-                    message: "Max tokens must be greater than 0".to_string(),
-                    value: Some(serde_json::Value::Number(max_tokens.into())),
-                });
-            }
-        }
-
-        if errors.is_empty() {
-            Ok(())
-        } else {
-            Err(errors)
-        }
+    /// Add a migration
+    pub fn add_migration(&mut self, migration: Box<dyn ConfigMigration>) {
+        self.migrations.push(migration);
     }
 
-    /// Validate steering rules
-    fn validate_steering(&self, steering: &[crate::config::SteeringRule]) -> Result<(), Vec<ValidationError>> {
-        let mut errors = Vec::new();
+    /// Load built-in migrations
+    pub fn load_builtin_migrations(&mut self) {
+        // Migration from v1.0 to v1.1: Add new fields with defaults
+        self.add_migration(Box::new(V1_0ToV1_1Migration));
 
-        for (i, rule) in steering.iter().enumerate() {
-            // Validate rule name
-            if rule.name.trim().is_empty() {
-                errors.push(ValidationError {
-                    field: format!("steering[{}].name", i),
-                    message: "Rule name cannot be empty".to_string(),
-                    value: Some(serde_json::Value::String(rule.name.clone())),
-                });
-            }
+        // Migration from v1.1 to v1.2: Rename fields
+        self.add_migration(Box::new(V1_1ToV1_2Migration));
+    }
 
-            // Validate rule content
-            if rule.content.trim().is_empty() {
-                errors.push(ValidationError {
-                    field: format!("steering[{}].content", i),
-                    message: "Rule content cannot be empty".to_string(),
-                    value: Some(serde_json::Value::String(rule.content.clone())),
-                });
+    /// Apply all applicable migrations to a configuration
+    pub fn migrate(&self, config: &mut Config, from_version: &str, to_version: &str) -> StorageResult<()> {
+        for migration in &self.migrations {
+            if migration.applies_to(from_version, to_version) {
+                migration.migrate(config)?;
+                tracing::info!("Applied migration: {}", migration.name());
             }
         }
+        Ok(())
+    }
+}
 
-        if errors.is_empty() {
-            Ok(())
-        } else {
-            Err(errors)
+/// Trait for configuration migrations
+pub trait ConfigMigration {
+    /// Name of the migration
+    fn name(&self) -> &str;
+
+    /// Check if this migration applies to the version transition
+    fn applies_to(&self, from_version: &str, to_version: &str) -> bool;
+
+    /// Apply the migration to the configuration
+    fn migrate(&self, config: &mut Config) -> StorageResult<()>;
+}
+
+/// Migration from v1.0 to v1.1: Add new fields with defaults
+struct V1_0ToV1_1Migration;
+
+impl ConfigMigration for V1_0ToV1_1Migration {
+    fn name(&self) -> &str {
+        "v1.0 -> v1.1: Add new fields with defaults"
+    }
+
+    fn applies_to(&self, from_version: &str, to_version: &str) -> bool {
+        from_version == "1.0" && to_version == "1.1"
+    }
+
+    fn migrate(&self, config: &mut Config) -> StorageResult<()> {
+        // Add new fields that were introduced in v1.1
+        if config.defaults.top_p.is_none() {
+            config.defaults.top_p = Some(1.0);
         }
+        if config.defaults.frequency_penalty.is_none() {
+            config.defaults.frequency_penalty = Some(0.0);
+        }
+        if config.defaults.presence_penalty.is_none() {
+            config.defaults.presence_penalty = Some(0.0);
+        }
+
+        // Ensure all steering rules have priority and enabled fields
+        for rule in &mut config.steering {
+            if rule.priority == 0 {
+                rule.priority = 50; // Default priority
+            }
+            // enabled field is already defaulted in the struct
+        }
+
+        Ok(())
+    }
+}
+
+/// Migration from v1.1 to v1.2: Rename fields
+struct V1_1ToV1_2Migration;
+
+impl ConfigMigration for V1_1ToV1_2Migration {
+    fn name(&self) -> &str {
+        "v1.1 -> v1.2: Rename deprecated fields"
+    }
+
+    fn applies_to(&self, from_version: &str, to_version: &str) -> bool {
+        from_version == "1.1" && to_version == "1.2"
+    }
+
+    fn migrate(&self, config: &mut Config) -> StorageResult<()> {
+        // Rename any deprecated field names
+        // For example, if we had "api_key" instead of "api_keys"
+        // This is a placeholder for actual field renames
+
+        Ok(())
     }
 }
 
