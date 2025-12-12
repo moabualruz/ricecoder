@@ -131,12 +131,13 @@ pub enum AppMessage {
     KeyPress(KeyEvent),
     MouseEvent(MouseEvent),
     Resize { width: u16, height: u16 },
+    Scroll { delta: isize },
 
     // UI Events
     ModeChanged(AppMode),
     ThemeChanged(Theme),
     FocusChanged(String),
-    TeaCommandPaletteToggled,
+    CommandPaletteToggled,
 
     // Session Events
     SessionCreated(String),
@@ -149,9 +150,9 @@ pub enum AppMessage {
     FilePickerOpened,
     FilePickerClosed,
 
-    // TeaCommand Events
-    TeaCommandExecuted(String),
-    TeaCommandCompleted(TeaCommandResult),
+    // Command Events
+    CommandExecuted(String),
+    CommandCompleted(TeaCommandResult),
 
     // Async Events
     OperationStarted(PendingOperation),
@@ -243,10 +244,11 @@ impl AppModel {
             AppMessage::KeyPress(key) => self.handle_key_press(key),
             AppMessage::MouseEvent(mouse) => self.handle_mouse_event(mouse),
             AppMessage::Resize { width, height } => self.handle_resize(width, height),
+            AppMessage::Scroll { delta } => self.handle_scroll(delta),
             AppMessage::ModeChanged(mode) => self.handle_mode_change(mode),
             AppMessage::ThemeChanged(theme) => self.handle_theme_change(theme),
             AppMessage::FocusChanged(element) => self.handle_focus_change(element),
-            AppMessage::TeaCommandPaletteToggled => self.handle_command_palette_toggle(),
+            AppMessage::CommandPaletteToggled => self.handle_command_palette_toggle(),
             AppMessage::SessionCreated(id) => self.handle_session_created(id),
             AppMessage::SessionActivated(id) => self.handle_session_activated(id),
             AppMessage::SessionClosed(id) => self.handle_session_closed(id),
@@ -254,8 +256,8 @@ impl AppModel {
             AppMessage::FileChanged(batch) => self.handle_file_changed(batch),
             AppMessage::FilePickerOpened => self.handle_file_picker_opened(),
             AppMessage::FilePickerClosed => self.handle_file_picker_closed(),
-            AppMessage::TeaCommandExecuted(cmd) => self.handle_command_executed(cmd),
-            AppMessage::TeaCommandCompleted(result) => self.handle_command_completed(result),
+            AppMessage::CommandExecuted(cmd) => self.handle_command_executed(cmd),
+            AppMessage::CommandCompleted(result) => self.handle_command_completed(result),
             AppMessage::OperationStarted(op) => self.handle_operation_started(op),
             AppMessage::OperationCompleted(id) => self.handle_operation_completed(id),
             AppMessage::OperationFailed(id, error) => self.handle_operation_failed(id, error),
@@ -364,6 +366,12 @@ impl AppModel {
         new_state.terminal_caps.width = width;
         new_state.terminal_caps.height = height;
         (new_state, vec![])
+    }
+
+    fn handle_scroll(self, _delta: isize) -> (Self, Vec<TeaCommand>) {
+        // Scroll handling is done at the App level, not in the TEA model
+        // The App will handle scrolling the virtual lists directly
+        (self, vec![])
     }
 
     fn handle_mode_change(mut self, mode: AppMode) -> (Self, Vec<TeaCommand>) {
