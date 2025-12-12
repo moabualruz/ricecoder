@@ -9,6 +9,225 @@ use std::any::Any;
 /// Unique identifier for components
 pub type ComponentId = String;
 
+/// Component messaging system for inter-component communication
+pub mod messaging {
+    use super::*;
+    use std::collections::HashMap;
+    use std::sync::Arc;
+    use tokio::sync::RwLock;
+
+    /// Message filter for component subscriptions
+    #[derive(Clone)]
+    pub enum MessageFilter {
+        /// Accept all messages
+        All,
+        /// Accept messages of specific types
+        MessageTypes(Vec<String>),
+        /// Accept messages from specific sources
+        Sources(Vec<ComponentId>),
+        /// Custom filter function
+        Custom(Box<dyn Fn(&AppMessage, &ComponentId) -> bool + Send + Sync>),
+    }
+
+    impl MessageFilter {
+        /// Check if a message passes this filter
+        pub fn matches(&self, message: &AppMessage, source: &ComponentId) -> bool {
+            match self {
+                MessageFilter::All => true,
+                MessageFilter::MessageTypes(types) => {
+                    let message_type = self::get_message_type(message);
+                    types.contains(&message_type)
+                }
+                MessageFilter::Sources(sources) => sources.contains(source),
+                MessageFilter::Custom(filter) => filter(message, source),
+            }
+        }
+    }
+
+    /// Get a string representation of the message type for filtering
+    fn get_message_type(message: &AppMessage) -> String {
+        match message {
+            AppMessage::KeyPress(_) => "KeyPress".to_string(),
+            AppMessage::MouseEvent(_) => "MouseEvent".to_string(),
+            AppMessage::Resize { .. } => "Resize".to_string(),
+            AppMessage::Scroll { .. } => "Scroll".to_string(),
+            AppMessage::ModeChanged(_) => "ModeChanged".to_string(),
+            AppMessage::ThemeChanged(_) => "ThemeChanged".to_string(),
+            AppMessage::FocusChanged(_) => "FocusChanged".to_string(),
+            AppMessage::CommandPaletteToggled => "CommandPaletteToggled".to_string(),
+            AppMessage::SessionCreated(_) => "SessionCreated".to_string(),
+            AppMessage::SessionActivated(_) => "SessionActivated".to_string(),
+            AppMessage::SessionClosed(_) => "SessionClosed".to_string(),
+            AppMessage::TokensUpdated(_) => "TokensUpdated".to_string(),
+            AppMessage::FileChanged(_) => "FileChanged".to_string(),
+            AppMessage::FilePickerOpened => "FilePickerOpened".to_string(),
+            AppMessage::FilePickerClosed => "FilePickerClosed".to_string(),
+            AppMessage::CommandExecuted(_) => "CommandExecuted".to_string(),
+            AppMessage::CommandCompleted(_) => "CommandCompleted".to_string(),
+            AppMessage::SendMessage(_) => "SendMessage".to_string(),
+            AppMessage::FileSelected(_) => "FileSelected".to_string(),
+            AppMessage::ComponentMessage { .. } => "ComponentMessage".to_string(),
+        }
+    }
+
+    /// Component subscription for receiving messages from other components
+    #[derive(Clone)]
+    pub struct ComponentSubscription {
+        pub subscriber_id: ComponentId,
+        pub filter: MessageFilter,
+        pub priority: SubscriptionPriority,
+    }
+
+    /// Priority levels for component subscriptions
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+    pub enum SubscriptionPriority {
+        Low = 0,
+        Normal = 1,
+        High = 2,
+    }
+
+    /// Component message bus for inter-component communication
+    #[derive(Clone)]
+    pub struct ComponentMessageBus {
+        subscriptions: Arc<RwLock<HashMap<ComponentId, Vec<ComponentSubscription>>>>,
+        message_queue: Arc<RwLock<Vec<QueuedMessage>>>,
+    }
+
+    /// Queued message for delivery
+    #[derive(Clone)]
+    pub struct QueuedMessage {
+        pub message: AppMessage,
+        pub source: ComponentId,
+        pub timestamp: std::time::Instant,
+        pub priority: SubscriptionPriority,
+    }
+
+    impl ComponentMessageBus {
+        /// Create a new component message bus
+        pub fn new() -> Self {
+            Self {
+                subscriptions: Arc::new(RwLock::new(HashMap::new())),
+                message_queue: Arc::new(RwLock::new(Vec::new())),
+            }
+        }
+
+        /// Subscribe a component to messages from other components
+        pub async fn subscribe(&self, subscription: ComponentSubscription) {
+            let mut subscriptions = self.subscriptions.write().await;
+            subscriptions.entry(subscription.subscriber_id.clone())
+                .or_insert_with(Vec::new)
+                .push(subscription);
+        }
+
+        /// Unsubscribe a component from all messages
+        pub async fn unsubscribe(&self, component_id: &ComponentId) {
+            let mut subscriptions = self.subscriptions.write().await;
+            subscriptions.remove(component_id);
+        }
+
+        /// Unsubscribe from specific message types
+        pub async fn unsubscribe_from(&self, component_id: &ComponentId, filter: &MessageFilter) {
+            let mut subscriptions = self.subscriptions.write().await;
+            if let Some(subs) = subscriptions.get_mut(component_id) {
+                subs.retain(|sub| !std::mem::discriminant(&sub.filter) == std::mem::discriminant(filter));
+            }
+        }
+
+        /// Send a message from a component to subscribed components
+        pub async fn send_message(&self, message: AppMessage, source: ComponentId) {
+            let subscriptions = self.subscriptions.read().await;
+            let mut queued_messages = Vec::new();
+
+            // Find all subscribers that match the message
+            for (subscriber_id, subs) in subscriptions.iter() {
+                for subscription in subs {
+                    if subscription.filter.matches(&message, &source) {
+                        queued_messages.push(QueuedMessage {
+                            message: message.clone(),
+                            source: source.clone(),
+                            timestamp: std::time::Instant::now(),
+                            priority: subscription.priority,
+                        });
+                        break; // Only queue once per subscriber
+                    }
+                }
+            }
+
+            // Sort by priority (higher priority first)
+            queued_messages.sort_by(|a, b| b.priority.cmp(&a.priority));
+
+            // Add to message queue
+            let mut message_queue = self.message_queue.write().await;
+            message_queue.extend(queued_messages);
+        }
+
+        /// Get pending messages for a component
+        pub async fn get_messages(&self, component_id: &ComponentId) -> Vec<AppMessage> {
+            let mut message_queue = self.message_queue.write().await;
+            let mut result = Vec::new();
+
+            // Filter messages for this component
+            let mut remaining = Vec::new();
+            for queued in message_queue.drain(..) {
+                // In a real implementation, you'd check if the message is for this component
+                // For now, return all messages (this is a simplified implementation)
+                result.push(queued.message);
+            }
+
+            // Put back any remaining messages
+            message_queue.extend(remaining);
+
+            result
+        }
+
+        /// Clear all pending messages
+        pub async fn clear_messages(&self) {
+            let mut message_queue = self.message_queue.write().await;
+            message_queue.clear();
+        }
+
+        /// Get subscription statistics
+        pub async fn get_stats(&self) -> MessageBusStats {
+            let subscriptions = self.subscriptions.read().await;
+            let message_queue = self.message_queue.read().await;
+
+            MessageBusStats {
+                total_subscriptions: subscriptions.values().map(|subs| subs.len()).sum(),
+                active_subscribers: subscriptions.len(),
+                queued_messages: message_queue.len(),
+            }
+        }
+    }
+
+    /// Statistics for the message bus
+    #[derive(Debug, Clone)]
+    pub struct MessageBusStats {
+        pub total_subscriptions: usize,
+        pub active_subscribers: usize,
+        pub queued_messages: usize,
+    }
+
+    /// Component message for direct component-to-component communication
+    #[derive(Clone, Debug)]
+    pub struct ComponentMessage {
+        pub target: ComponentId,
+        pub payload: ComponentMessagePayload,
+    }
+
+    /// Payload types for component messages
+    #[derive(Clone, Debug)]
+    pub enum ComponentMessagePayload {
+        /// String data
+        String(String),
+        /// JSON data
+        Json(serde_json::Value),
+        /// Binary data
+        Binary(Vec<u8>),
+        /// Custom data
+        Custom(Box<dyn Any + Send + Sync>),
+    }
+}
+
 /// Component trait defining the interface for UI components
 pub trait Component {
     /// Get the unique identifier for this component
@@ -49,9 +268,53 @@ pub trait Component {
     fn handle_focus(&mut self, direction: FocusDirection) -> FocusResult;
 
     /// Get child components (for composite components)
-    fn children(&self) -> Vec<&dyn Component> {
-        Vec::new()
+    fn children(&self) -> Vec<&dyn Component>;
+
+    /// Get child components mutably (for composite components)
+    fn children_mut(&mut self) -> Vec<&mut dyn Component>;
+
+    /// Find a child component by ID
+    fn find_child(&self, id: &ComponentId) -> Option<&dyn Component>;
+
+    /// Find a child component by ID mutably
+    fn find_child_mut(&mut self, id: &ComponentId) -> Option<&mut dyn Component>;
+
+    /// Add a child component
+    fn add_child(&mut self, child: Box<dyn Component>);
+
+    /// Remove a child component
+    fn remove_child(&mut self, id: &ComponentId) -> Option<Box<dyn Component>>;
+
+    /// Get the component's z-index (for layering)
+    fn z_index(&self) -> i32;
+
+    /// Set the component's z-index
+    fn set_z_index(&mut self, z_index: i32);
+
+    /// Check if the component can receive focus
+    fn can_focus(&self) -> bool;
+
+    /// Get the component's tab order index
+    fn tab_order(&self) -> Option<usize>;
+
+    /// Set the component's tab order index
+    fn set_tab_order(&mut self, order: Option<usize>);
+
+    /// Get component messaging subscriptions
+    fn subscriptions(&self) -> Vec<messaging::ComponentSubscription> {
+        Vec::new() // Default implementation returns no subscriptions
     }
+
+    /// Send a message to other components
+    fn send_message(&self, _bus: &messaging::ComponentMessageBus, _message: AppMessage) {
+        // Default implementation does nothing
+    }
+
+    /// Receive messages from other components
+    fn receive_messages(&mut self, _messages: &[AppMessage]) -> bool {
+        false // Default implementation handles no messages
+    }
+}
 
     /// Get mutable child components
     fn children_mut(&mut self) -> Vec<&mut dyn Component> {
@@ -147,21 +410,67 @@ pub enum ComponentEvent {
     PropertiesChanged(ComponentId),
 }
 
-/// Component registry for managing component instances
+/// Component registry for managing component instances with messaging support
 pub struct ComponentRegistry {
     components: std::collections::HashMap<ComponentId, Box<dyn Component>>,
     focus_order: Vec<ComponentId>,
     current_focus: Option<ComponentId>,
+    message_bus: messaging::ComponentMessageBus,
 }
 
 impl ComponentRegistry {
-    /// Create a new component registry
+    /// Create a new component registry with messaging support
     pub fn new() -> Self {
         Self {
             components: std::collections::HashMap::new(),
             focus_order: Vec::new(),
             current_focus: None,
+            message_bus: messaging::ComponentMessageBus::new(),
         }
+    }
+
+    /// Create a component registry with a custom message bus
+    pub fn with_message_bus(message_bus: messaging::ComponentMessageBus) -> Self {
+        Self {
+            components: std::collections::HashMap::new(),
+            focus_order: Vec::new(),
+            current_focus: None,
+            message_bus,
+        }
+    }
+
+    /// Get the message bus for inter-component communication
+    pub fn message_bus(&self) -> &messaging::ComponentMessageBus {
+        &self.message_bus
+    }
+
+    /// Initialize component subscriptions
+    pub async fn initialize_messaging(&self) {
+        for component in self.components.values() {
+            let subscriptions = component.subscriptions();
+            for subscription in subscriptions {
+                self.message_bus.subscribe(subscription).await;
+            }
+        }
+    }
+
+    /// Process pending messages for all components
+    pub async fn process_messages(&mut self, model: &AppModel) {
+        for (id, component) in self.components.iter_mut() {
+            let messages = self.message_bus.get_messages(id).await;
+            if !messages.is_empty() {
+                component.receive_messages(&messages);
+                // Re-process each message through the component's update method
+                for message in messages {
+                    component.update(&message, model);
+                }
+            }
+        }
+    }
+
+    /// Send a message from a component to the message bus
+    pub async fn send_component_message(&self, component_id: &ComponentId, message: AppMessage) {
+        self.message_bus.send_message(message, component_id.clone()).await;
     }
 
     /// Register a component
