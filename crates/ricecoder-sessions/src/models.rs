@@ -344,6 +344,16 @@ pub enum MessageRole {
     System,
 }
 
+impl std::fmt::Display for MessageRole {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MessageRole::User => write!(f, "user"),
+            MessageRole::Assistant => write!(f, "assistant"),
+            MessageRole::System => write!(f, "system"),
+        }
+    }
+}
+
 /// Metadata about a message
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct MessageMetadata {

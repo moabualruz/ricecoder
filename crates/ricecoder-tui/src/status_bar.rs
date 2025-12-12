@@ -11,6 +11,7 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, Borders, Widget},
 };
+use ricecoder_sessions::{TokenUsage, TokenLimitStatus};
 use std::path::PathBuf;
 
 /// Status bar widget for displaying application status
@@ -79,12 +80,7 @@ impl ConnectionStatus {
     }
 }
 
-/// Token usage information
-#[derive(Debug, Clone)]
-pub struct TokenUsage {
-    pub used: usize,
-    pub limit: Option<usize>,
-}
+// Token usage information is now imported from ricecoder-sessions
 
 /// Input mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -313,17 +309,41 @@ impl StatusBarWidget {
             }
         }
 
-        // Token usage
+        // Token usage with warning indicators
         if let Some(usage) = &self.token_usage {
-            let usage_text = if let Some(limit) = usage.limit {
-                format!("{}/{}", usage.used, limit)
+            let percentage = if usage.token_limit > 0 {
+                (usage.total_tokens as f64 / usage.token_limit as f64) * 100.0
             } else {
-                format!("{}", usage.used)
+                0.0
             };
+
+            let status = if percentage >= 90.0 {
+                TokenLimitStatus::Critical
+            } else if percentage >= 75.0 {
+                TokenLimitStatus::Warning
+            } else {
+                TokenLimitStatus::Normal
+            };
+
+            let usage_text = format!("{} {}/{} ({:.1}%)",
+                status.symbol(),
+                usage.total_tokens,
+                usage.token_limit,
+                percentage
+            );
+
+            let color = match status {
+                TokenLimitStatus::Normal => Color::Green,
+                TokenLimitStatus::Warning => Color::Yellow,
+                TokenLimitStatus::Critical => Color::Red,
+                TokenLimitStatus::Unknown => Color::Gray,
+            };
+
             spans.push(Span::styled(
                 format!("Tokens: {}", usage_text),
-                Style::default().fg(Color::Magenta),
+                Style::default().fg(color),
             ));
+            spans.push(Span::raw(" "));
         }
 
         spans

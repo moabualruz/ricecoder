@@ -12,6 +12,7 @@ pub mod models;
 pub mod router;
 pub mod share;
 pub mod store;
+pub mod token_estimator;
 
 // Re-export commonly used types
 pub use background_agent::BackgroundAgentManager;
@@ -28,3 +29,6 @@ pub use models::{
 pub use router::SessionRouter;
 pub use share::{SessionShare, SharePermissions, ShareService};
 pub use store::SessionStore;
+pub use token_estimator::{
+    TokenEstimate, TokenEstimator, TokenLimitStatus, TokenUsage, TokenUsageTracker,
+};

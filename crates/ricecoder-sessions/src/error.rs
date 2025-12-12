@@ -56,4 +56,8 @@ pub enum SessionError {
     /// Background agent error
     #[error("Background agent error: {0}")]
     AgentError(String),
+
+    /// Token estimation error
+    #[error("Token estimation error: {0}")]
+    TokenEstimation(String),
 }
