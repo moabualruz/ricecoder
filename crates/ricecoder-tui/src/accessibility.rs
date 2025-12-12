@@ -64,6 +64,12 @@ pub struct AccessibilityConfig {
     /// Animation configuration
     #[serde(default)]
     pub animations: AnimationConfig,
+    /// Font size multiplier (1.0 = normal, 1.5 = 150%, etc.)
+    pub font_size_multiplier: f32,
+    /// Enable large click targets
+    pub large_click_targets: bool,
+    /// Enable auto-advance for forms
+    pub auto_advance: bool,
 }
 
 impl Default for AccessibilityConfig {
@@ -75,7 +81,55 @@ impl Default for AccessibilityConfig {
             announcements_enabled: true,
             focus_indicator: FocusIndicatorStyle::Bracket,
             animations: AnimationConfig::default(),
+            font_size_multiplier: 1.0,
+            large_click_targets: false,
+            auto_advance: false,
         }
+    }
+}
+
+impl AccessibilityConfig {
+    /// Enable accessibility features
+    pub fn enable(&mut self) {
+        self.screen_reader_enabled = true;
+        self.high_contrast_enabled = true;
+        self.announcements_enabled = true;
+        self.animations.reduce_motion = true;
+        self.large_click_targets = true;
+    }
+
+    /// Disable accessibility features
+    pub fn disable(&mut self) {
+        self.screen_reader_enabled = false;
+        self.high_contrast_enabled = false;
+        self.announcements_enabled = false;
+        self.animations.reduce_motion = false;
+        self.large_click_targets = false;
+    }
+
+    /// Set font size multiplier for accessibility
+    pub fn set_font_size_multiplier(&mut self, multiplier: f32) {
+        self.font_size_multiplier = multiplier.clamp(1.0, 2.0);
+    }
+
+    /// Enable large click targets for motor accessibility
+    pub fn enable_large_click_targets(&mut self) {
+        self.large_click_targets = true;
+    }
+
+    /// Enable auto-advance for forms
+    pub fn enable_auto_advance(&mut self) {
+        self.auto_advance = true;
+    }
+
+    /// Check if large text is enabled (WCAG 2.1 AA requires 1.5x normal)
+    pub fn is_large_text(&self) -> bool {
+        self.font_size_multiplier >= 1.5
+    }
+
+    /// Get effective font size
+    pub fn effective_font_size(&self, base_size: u16) -> u16 {
+        ((base_size as f32) * self.font_size_multiplier) as u16
     }
 }
 
