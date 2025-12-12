@@ -109,6 +109,8 @@ pub struct App {
     pub shortcut_customizer: crate::KeyboardShortcutCustomizer,
     /// Screen reader announcer
     pub screen_reader: crate::ScreenReaderAnnouncer,
+    /// Comprehensive error handling system
+    pub error_manager: ErrorManager,
     /// Progressive enhancement manager
     pub progressive_enhancement: crate::ProgressiveEnhancement,
 }
@@ -116,6 +118,9 @@ pub struct App {
 impl App {
     /// Create a new application instance with TEA architecture
     pub async fn new() -> Result<Self> {
+        // Detect terminal capabilities for progressive enhancement
+        let capabilities = crate::TerminalCapabilities::detect();
+
         // Create initial TEA model
         let initial_model = crate::AppModel::init(
             crate::config::TuiConfig::default(),
@@ -164,7 +169,7 @@ impl App {
         let error_manager = ErrorManager::new();
 
         // Create progressive enhancement manager
-        let progressive_enhancement = crate::ProgressiveEnhancement::new(capabilities.clone());
+        let progressive_enhancement = crate::ProgressiveEnhancement::new(capabilities);
 
         let app = Self {
             reactive_state,
@@ -563,5 +568,40 @@ impl App {
         Fut: std::future::Future<Output = Result<T, RiceError>>,
     {
         self.error_manager.retry_mechanism.execute(operation).await
+    }
+
+    /// Get progressive enhancement manager
+    pub fn progressive_enhancement(&self) -> &crate::ProgressiveEnhancement {
+        &self.progressive_enhancement
+    }
+
+    /// Check if a feature is enabled based on terminal capabilities
+    pub fn is_feature_enabled(&self, feature: &str) -> bool {
+        self.progressive_enhancement.is_feature_enabled(feature)
+    }
+
+    /// Get the current feature level
+    pub fn feature_level(&self) -> crate::FeatureLevel {
+        self.progressive_enhancement.feature_level()
+    }
+
+    /// Get the current rendering strategy
+    pub fn rendering_strategy(&self) -> crate::RenderingStrategy {
+        self.progressive_enhancement.rendering_strategy()
+    }
+
+    /// Check if we should use reduced functionality mode
+    pub fn should_use_reduced_mode(&self) -> bool {
+        self.progressive_enhancement.should_use_reduced_mode()
+    }
+
+    /// Get capability description for debugging
+    pub fn get_capability_description(&self) -> String {
+        self.progressive_enhancement.get_capability_description()
+    }
+
+    /// Force a specific feature level (for testing)
+    pub fn force_feature_level(&mut self, level: crate::FeatureLevel) {
+        self.progressive_enhancement.force_feature_level(level);
     }
 }

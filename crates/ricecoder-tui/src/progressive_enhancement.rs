@@ -124,17 +124,15 @@ impl ProgressiveEnhancement {
                 }
             }
             TerminalType::ITerm2 | TerminalType::WindowsTerminal => {
-                if capabilities.color_support >= ColorSupport::Ansi256 {
-                    FeatureLevel::Enhanced
-                } else {
-                    FeatureLevel::Basic
+                match capabilities.color_support {
+                    ColorSupport::TrueColor | ColorSupport::Ansi256 => FeatureLevel::Enhanced,
+                    _ => FeatureLevel::Basic,
                 }
             }
             TerminalType::Xterm | TerminalType::Alacritty | TerminalType::Foot => {
-                if capabilities.color_support >= ColorSupport::Ansi16 {
-                    FeatureLevel::Basic
-                } else {
-                    FeatureLevel::Minimal
+                match capabilities.color_support {
+                    ColorSupport::TrueColor | ColorSupport::Ansi256 | ColorSupport::Ansi16 => FeatureLevel::Basic,
+                    _ => FeatureLevel::Minimal,
                 }
             }
             _ => {
@@ -342,8 +340,8 @@ impl ProgressiveEnhancement {
     pub fn supports_rendering_strategy(&self, strategy: RenderingStrategy) -> bool {
         match strategy {
             RenderingStrategy::TextOnly => true, // Always supported
-            RenderingStrategy::AnsiBasic => self.capabilities.color_support >= ColorSupport::Ansi16,
-            RenderingStrategy::AnsiEnhanced => self.capabilities.color_support >= ColorSupport::Ansi256,
+            RenderingStrategy::AnsiBasic => matches!(self.capabilities.color_support, ColorSupport::Ansi16 | ColorSupport::Ansi256 | ColorSupport::TrueColor),
+            RenderingStrategy::AnsiEnhanced => matches!(self.capabilities.color_support, ColorSupport::Ansi256 | ColorSupport::TrueColor),
             RenderingStrategy::TrueColor => self.capabilities.color_support == ColorSupport::TrueColor,
             RenderingStrategy::GraphicsProtocol => {
                 self.capabilities.sixel_support ||
@@ -521,5 +519,4 @@ mod tests {
         pe.force_feature_level(original_level);
         assert_eq!(pe.feature_level(), original_level);
     }
-}</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-tui/src/progressive_enhancement.rs
+}
