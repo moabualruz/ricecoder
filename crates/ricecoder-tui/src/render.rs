@@ -59,6 +59,7 @@ impl Renderer {
                 Constraint::Length(1),  // Mode indicator
                 Constraint::Min(5),      // Chat area
                 Constraint::Length(3),   // Input area
+                Constraint::Length(1),   // Status bar
             ])
             .split(area);
 
@@ -136,6 +137,18 @@ impl Renderer {
 
         // Render file picker if visible
         app.file_picker.render(f, area);
+
+        // Render status bar with token usage
+        let token_usage = app.session_integration.get_active_session_token_usage();
+        let status_bar = crate::status_bar::StatusBarWidget::new()
+            .with_provider("RiceCoder") // TODO: Get from provider integration
+            .with_model("gpt-4") // TODO: Get from provider integration
+            .with_connection_status(crate::status_bar::ConnectionStatus::Connected) // TODO: Get from provider integration
+            .with_session_name("default") // TODO: Get current session name
+            .with_message_count(app.chat.messages.len())
+            .with_token_usage(token_usage)
+            .with_input_mode(crate::status_bar::InputMode::Insert);
+        f.render_widget(status_bar, chunks[3]);
     }
 
     /// Helper to render markdown content

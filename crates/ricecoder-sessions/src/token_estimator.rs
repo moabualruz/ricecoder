@@ -41,6 +41,7 @@ pub struct TokenUsage {
 }
 
 /// Token estimator with caching and model support
+#[derive(Debug)]
 pub struct TokenEstimator {
     /// Cached tokenizers by model
     tokenizers: HashMap<String, Arc<CoreBPE>>,

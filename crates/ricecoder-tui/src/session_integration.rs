@@ -5,7 +5,7 @@
 //! and session switching is routed correctly.
 
 use crate::sessions::{Session as TuiSession, SessionStatus as TuiSessionStatus, SessionWidget};
-use ricecoder_sessions::{Session, SessionManager, SessionStatus as CoreSessionStatus};
+use ricecoder_sessions::{Session, SessionManager, SessionStatus as CoreSessionStatus, TokenUsage};
 
 /// Integrates core session management with TUI display
 pub struct SessionIntegration {
@@ -98,7 +98,6 @@ impl SessionIntegration {
 
     /// Delete a session from the manager
     pub fn delete_session(&mut self, session_id: &str) -> Result<(), String> {
-        // Delete from the core manager
         self.manager
             .delete_session(session_id)
             .map_err(|e| e.to_string())?;
@@ -106,6 +105,53 @@ impl SessionIntegration {
         // Sync the widget to reflect the change
         self.sync_to_widget();
 
+        Ok(())
+    }
+
+    /// Get token usage for the active session
+    /// This should be called to populate the status bar with token information
+    pub fn get_active_session_token_usage(&self) -> Option<TokenUsage> {
+        self.manager.get_active_session_token_usage().ok()
+    }
+
+    /// Send a user message and track token usage
+    pub fn send_user_message(&mut self, content: &str) -> Result<(), String> {
+        // For now, create a simple session if none exists
+        if self.manager.list_sessions().is_empty() {
+            let context = ricecoder_sessions::SessionContext::new(
+                "openai".to_string(),
+                "gpt-4".to_string(),
+                ricecoder_sessions::SessionMode::Chat,
+            );
+            self.create_session("Default Session".to_string(), context)?;
+        }
+
+        // Get active session
+        let session = self.manager.get_active_session()
+            .map_err(|e| e.to_string())?;
+
+        // Estimate tokens for the message
+        let token_estimate = self.manager.token_estimator.estimate_tokens(content, Some(&session.context.model))
+            .map_err(|e| e.to_string())?;
+
+        // Record prompt tokens
+        if let Some(session_id) = self.manager.active_session_id() {
+            self.manager.record_prompt_tokens(session_id, token_estimate.tokens)
+                .map_err(|e| e.to_string())?;
+        }
+
+        // TODO: Actually add the message to the session history
+        // For now, this is a placeholder
+
+        Ok(())
+    }
+
+    /// Record completion tokens for AI responses
+    pub fn record_completion_tokens(&mut self, tokens: usize) -> Result<(), String> {
+        if let Some(session_id) = self.manager.active_session_id() {
+            self.manager.record_completion_tokens(session_id, tokens)
+                .map_err(|e| e.to_string())?;
+        }
         Ok(())
     }
 

@@ -2,11 +2,12 @@
 
 use crate::error::{SessionError, SessionResult};
 use crate::models::{Session, SessionContext, MessagePart};
+use crate::token_estimator::{TokenEstimator, TokenUsageTracker};
 use std::collections::{HashMap, HashSet};
 use chrono::{Duration, Utc};
 
 /// Manages session lifecycle and switching
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct SessionManager {
     /// All sessions indexed by ID
     sessions: HashMap<String, Session>,
@@ -14,6 +15,10 @@ pub struct SessionManager {
     active_session_id: Option<String>,
     /// Maximum number of concurrent sessions
     session_limit: usize,
+    /// Token estimator for tracking usage
+    token_estimator: TokenEstimator,
+    /// Token usage trackers per session
+    token_trackers: HashMap<String, TokenUsageTracker>,
 }
 
 impl SessionManager {
@@ -23,6 +28,8 @@ impl SessionManager {
             sessions: HashMap::new(),
             active_session_id: None,
             session_limit,
+            token_estimator: TokenEstimator::new(),
+            token_trackers: HashMap::new(),
         }
     }
 
@@ -41,6 +48,10 @@ impl SessionManager {
 
         let session = Session::new(name, context);
         let session_id = session.id.clone();
+
+        // Create token usage tracker for this session
+        let tracker = self.token_estimator.create_usage_tracker(&session.context.model)?;
+        self.token_trackers.insert(session_id.clone(), tracker);
 
         self.sessions.insert(session_id.clone(), session.clone());
 
@@ -129,6 +140,51 @@ impl SessionManager {
     /// Check if session limit is reached
     pub fn is_limit_reached(&self) -> bool {
         self.sessions.len() >= self.session_limit
+    }
+
+    /// Record token usage for a prompt message
+    pub fn record_prompt_tokens(&mut self, session_id: &str, tokens: usize) -> SessionResult<()> {
+        if let Some(tracker) = self.token_trackers.get_mut(session_id) {
+            tracker.record_prompt(tokens);
+            Ok(())
+        } else {
+            Err(SessionError::NotFound(format!("Token tracker for session {} not found", session_id)))
+        }
+    }
+
+    /// Record token usage for a completion message
+    pub fn record_completion_tokens(&mut self, session_id: &str, tokens: usize) -> SessionResult<()> {
+        if let Some(tracker) = self.token_trackers.get_mut(session_id) {
+            tracker.record_completion(tokens);
+            Ok(())
+        } else {
+            Err(SessionError::NotFound(format!("Token tracker for session {} not found", session_id)))
+        }
+    }
+
+    /// Get token usage for a session
+    pub fn get_session_token_usage(&self, session_id: &str) -> SessionResult<crate::token_estimator::TokenUsage> {
+        if let Some(tracker) = self.token_trackers.get(session_id) {
+            Ok(tracker.current_usage())
+        } else {
+            Err(SessionError::NotFound(format!("Token tracker for session {} not found", session_id)))
+        }
+    }
+
+    /// Get token usage for the active session
+    pub fn get_active_session_token_usage(&self) -> SessionResult<crate::token_estimator::TokenUsage> {
+        let session_id = self
+            .active_session_id
+            .as_ref()
+            .ok_or(SessionError::Invalid("No active session".to_string()))?;
+
+        self.get_session_token_usage(session_id)
+    }
+
+    /// Check if a session is approaching token limits
+    pub fn check_session_token_limits(&self, session_id: &str) -> SessionResult<crate::token_estimator::TokenLimitStatus> {
+        let usage = self.get_session_token_usage(session_id)?;
+        Ok(self.token_estimator.check_token_limits(usage.total_tokens, &usage.model))
     }
 
     /// Generate a descriptive title for a session based on its content

@@ -2,11 +2,12 @@
 
 use crate::error::{SessionError, SessionResult};
 use crate::models::{Message, MessageRole, Session, SessionContext};
+use crate::token_estimator::{TokenEstimator, TokenUsageTracker};
 use std::collections::HashMap;
 
 /// Routes messages to the appropriate session
 /// Manages active session state and ensures messages are routed to the correct session
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct SessionRouter {
     /// All sessions indexed by ID
     sessions: HashMap<String, Session>,
@@ -14,6 +15,10 @@ pub struct SessionRouter {
     active_session_id: Option<String>,
     /// Tracks which session each message belongs to
     message_session_map: HashMap<String, String>, // message_id -> session_id
+    /// Token estimator for tracking usage
+    token_estimator: TokenEstimator,
+    /// Token usage trackers per session
+    token_trackers: HashMap<String, TokenUsageTracker>,
 }
 
 impl SessionRouter {
@@ -23,6 +28,8 @@ impl SessionRouter {
             sessions: HashMap::new(),
             active_session_id: None,
             message_session_map: HashMap::new(),
+            token_estimator: TokenEstimator::new(),
+            token_trackers: HashMap::new(),
         }
     }
 
@@ -34,6 +41,10 @@ impl SessionRouter {
     ) -> SessionResult<Session> {
         let session = Session::new(name, context);
         let session_id = session.id.clone();
+
+        // Create token usage tracker for this session
+        let tracker = self.token_estimator.create_usage_tracker(&session.context.model)?;
+        self.token_trackers.insert(session_id.clone(), tracker);
 
         self.sessions.insert(session_id.clone(), session.clone());
 
@@ -59,12 +70,22 @@ impl SessionRouter {
             .get_mut(&session_id)
             .ok_or(SessionError::NotFound(session_id.clone()))?;
 
-        // Create a message and add it to the session history
-        let message = Message::new(MessageRole::User, message_content.to_string());
+        // Estimate tokens for the message
+        let token_estimate = self.token_estimator.estimate_tokens(message_content, Some(&session.context.model))?;
+
+        // Create a message with token count and add it to the session history
+        let mut message = Message::new(MessageRole::User, message_content.to_string());
+        message.metadata.tokens = Some(token_estimate.tokens);
+
         let message_id = message.id.clone();
 
         session.history.push(message);
         session.updated_at = chrono::Utc::now();
+
+        // Track token usage
+        if let Some(tracker) = self.token_trackers.get_mut(&session_id) {
+            tracker.record_prompt(token_estimate.tokens);
+        }
 
         // Track which session this message belongs to
         self.message_session_map
@@ -85,12 +106,22 @@ impl SessionRouter {
             .get_mut(session_id)
             .ok_or(SessionError::NotFound(session_id.to_string()))?;
 
-        // Create a message and add it to the session history
-        let message = Message::new(MessageRole::User, message_content.to_string());
+        // Estimate tokens for the message
+        let token_estimate = self.token_estimator.estimate_tokens(message_content, Some(&session.context.model))?;
+
+        // Create a message with token count and add it to the session history
+        let mut message = Message::new(MessageRole::User, message_content.to_string());
+        message.metadata.tokens = Some(token_estimate.tokens);
+
         let message_id = message.id.clone();
 
         session.history.push(message);
         session.updated_at = chrono::Utc::now();
+
+        // Track token usage
+        if let Some(tracker) = self.token_trackers.get_mut(session_id) {
+            tracker.record_prompt(token_estimate.tokens);
+        }
 
         // Track which session this message belongs to
         self.message_session_map
@@ -138,6 +169,58 @@ impl SessionRouter {
     /// List all sessions
     pub fn list_sessions(&self) -> Vec<Session> {
         self.sessions.values().cloned().collect()
+    }
+
+    /// Record an AI completion response for token tracking
+    pub fn record_completion(&mut self, session_id: &str, completion_text: &str) -> SessionResult<()> {
+        let session = self
+            .sessions
+            .get(session_id)
+            .ok_or(SessionError::NotFound(session_id.to_string()))?;
+
+        // Estimate tokens for the completion
+        let token_estimate = self.token_estimator.estimate_tokens(completion_text, Some(&session.context.model))?;
+
+        // Create completion message and add to session history
+        let mut message = Message::new(MessageRole::Assistant, completion_text.to_string());
+        message.metadata.tokens = Some(token_estimate.tokens);
+
+        if let Some(session) = self.sessions.get_mut(session_id) {
+            session.history.push(message);
+            session.updated_at = chrono::Utc::now();
+        }
+
+        // Track token usage
+        if let Some(tracker) = self.token_trackers.get_mut(session_id) {
+            tracker.record_completion(token_estimate.tokens);
+        }
+
+        Ok(())
+    }
+
+    /// Get token usage for a session
+    pub fn get_session_token_usage(&self, session_id: &str) -> SessionResult<crate::token_estimator::TokenUsage> {
+        let tracker = self.token_trackers
+            .get(session_id)
+            .ok_or(SessionError::NotFound(format!("Token tracker for session {} not found", session_id)))?;
+
+        Ok(tracker.current_usage())
+    }
+
+    /// Get token usage for the active session
+    pub fn get_active_session_token_usage(&self) -> SessionResult<crate::token_estimator::TokenUsage> {
+        let session_id = self
+            .active_session_id
+            .as_ref()
+            .ok_or(SessionError::Invalid("No active session".to_string()))?;
+
+        self.get_session_token_usage(session_id)
+    }
+
+    /// Check if a session is approaching token limits
+    pub fn check_session_token_limits(&self, session_id: &str) -> SessionResult<crate::token_estimator::TokenLimitStatus> {
+        let usage = self.get_session_token_usage(session_id)?;
+        Ok(self.token_estimator.check_token_limits(usage.total_tokens, &usage.model))
     }
 
     /// Get which session a message belongs to

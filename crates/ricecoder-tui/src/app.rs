@@ -141,6 +141,8 @@ pub struct App {
     pub file_watcher: Option<ricecoder_files::FileWatcher>,
     /// File watcher event receiver
     pub file_watcher_receiver: Option<tokio::sync::broadcast::Receiver<ricecoder_files::FileChangeBatch>>,
+    /// Session integration for managing sessions and token tracking
+    pub session_integration: crate::session_integration::SessionIntegration,
 }
 
 impl App {
@@ -201,6 +203,7 @@ impl App {
             file_picker: crate::file_picker::FilePickerWidget::new(),
             file_watcher: None,
             file_watcher_receiver: None,
+            session_integration: crate::session_integration::SessionIntegration::new(10), // Allow up to 10 sessions
         };
 
         Ok(app)
