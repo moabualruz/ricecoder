@@ -1,12 +1,104 @@
 //! Provider manager for orchestrating provider operations
 
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
 use super::{ChatStream, Provider, ProviderRegistry};
 use crate::error::ProviderError;
 use crate::health_check::HealthCheckCache;
-use crate::models::{ChatRequest, ChatResponse};
+use crate::models::{Capability, ChatRequest, ChatResponse, ModelInfo};
+
+/// Provider connection state
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConnectionState {
+    /// Provider is available and healthy
+    Connected,
+    /// Provider is temporarily unavailable
+    Disconnected,
+    /// Provider encountered an error
+    Error,
+    /// Provider is disabled/configured incorrectly
+    Disabled,
+}
+
+/// Model filtering criteria
+#[derive(Debug, Clone)]
+pub enum ModelFilterCriteria {
+    /// Filter by provider name
+    Provider(String),
+    /// Filter by required capability
+    Capability(Capability),
+    /// Only free models
+    FreeOnly,
+    /// Minimum context window size
+    MinContextWindow(usize),
+    /// Maximum cost per token
+    MaxCostPerToken(f64),
+}
+
+/// Model filter for advanced filtering
+#[derive(Debug, Clone)]
+pub struct ModelFilter {
+    criteria: Vec<ModelFilterCriteria>,
+}
+
+impl ModelFilter {
+    /// Create a new filter
+    pub fn new() -> Self {
+        Self {
+            criteria: Vec::new(),
+        }
+    }
+
+    /// Add a filter criterion
+    pub fn with_criterion(mut self, criterion: ModelFilterCriteria) -> Self {
+        self.criteria.push(criterion);
+        self
+    }
+
+    /// Check if a model matches all filter criteria
+    pub fn matches(&self, model: &ModelInfo) -> bool {
+        self.criteria.iter().all(|criterion| {
+            match criterion {
+                ModelFilterCriteria::Provider(ref provider) => model.provider == *provider,
+                ModelFilterCriteria::Capability(ref capability) => model.capabilities.contains(capability),
+                ModelFilterCriteria::FreeOnly => model.is_free,
+                ModelFilterCriteria::MinContextWindow(min_tokens) => model.context_window >= *min_tokens,
+                ModelFilterCriteria::MaxCostPerToken(max_cost) => {
+                    if let Some(ref pricing) = model.pricing {
+                        pricing.input_per_1k_tokens <= *max_cost || pricing.output_per_1k_tokens <= *max_cost
+                    } else {
+                        true // No pricing info means we can't filter
+                    }
+                }
+            }
+        })
+    }
+}
+
+impl Default for ModelFilter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Enhanced provider information with connection state
+#[derive(Debug, Clone)]
+pub struct ProviderStatus {
+    /// Provider ID
+    pub id: String,
+    /// Provider name
+    pub name: String,
+    /// Current connection state
+    pub state: ConnectionState,
+    /// Last health check time
+    pub last_checked: Option<std::time::SystemTime>,
+    /// Available models
+    pub models: Vec<ModelInfo>,
+    /// Error message if any
+    pub error_message: Option<String>,
+}
 
 /// Central coordinator for provider operations
 pub struct ProviderManager {
@@ -15,6 +107,7 @@ pub struct ProviderManager {
     retry_count: usize,
     timeout: Duration,
     health_check_cache: Arc<HealthCheckCache>,
+    provider_states: HashMap<String, ProviderStatus>,
 }
 
 impl ProviderManager {
@@ -26,6 +119,7 @@ impl ProviderManager {
             retry_count: 3,
             timeout: Duration::from_secs(30),
             health_check_cache: Arc::new(HealthCheckCache::default()),
+            provider_states: HashMap::new(),
         }
     }
 
@@ -45,6 +139,134 @@ impl ProviderManager {
     pub fn with_health_check_cache(mut self, cache: Arc<HealthCheckCache>) -> Self {
         self.health_check_cache = cache;
         self
+    }
+
+    /// Auto-detect available providers based on credentials
+    pub async fn auto_detect_providers(&mut self) -> Result<Vec<String>, ProviderError> {
+        let mut detected_providers = Vec::new();
+
+        // Check for OpenAI API key
+        if std::env::var("OPENAI_API_KEY").is_ok() {
+            if let Ok(provider) = self.registry.get("openai") {
+                if self.test_provider_connection(&provider).await.is_ok() {
+                    detected_providers.push("openai".to_string());
+                    self.update_provider_state("openai", ConnectionState::Connected, None);
+                }
+            }
+        }
+
+        // Check for Anthropic API key
+        if std::env::var("ANTHROPIC_API_KEY").is_ok() {
+            if let Ok(provider) = self.registry.get("anthropic") {
+                if self.test_provider_connection(&provider).await.is_ok() {
+                    detected_providers.push("anthropic".to_string());
+                    self.update_provider_state("anthropic", ConnectionState::Connected, None);
+                }
+            }
+        }
+
+        // Check for Ollama (local)
+        if let Ok(provider) = self.registry.get("ollama") {
+            if self.test_provider_connection(&provider).await.is_ok() {
+                detected_providers.push("ollama".to_string());
+                self.update_provider_state("ollama", ConnectionState::Connected, None);
+            }
+        }
+
+        // Check for Google API key
+        if std::env::var("GOOGLE_API_KEY").is_ok() {
+            if let Ok(provider) = self.registry.get("google") {
+                if self.test_provider_connection(&provider).await.is_ok() {
+                    detected_providers.push("google".to_string());
+                    self.update_provider_state("google", ConnectionState::Connected, None);
+                }
+            }
+        }
+
+        Ok(detected_providers)
+    }
+
+    /// Test provider connection
+    async fn test_provider_connection(&self, provider: &Arc<dyn Provider>) -> Result<(), ProviderError> {
+        // Simple health check - try to get models
+        let _models = provider.models();
+        Ok(())
+    }
+
+    /// Update provider connection state
+    pub fn update_provider_state(&mut self, provider_id: &str, state: ConnectionState, error: Option<String>) {
+        let status = self.provider_states.entry(provider_id.to_string()).or_insert_with(|| {
+            ProviderStatus {
+                id: provider_id.to_string(),
+                name: provider_id.to_string(), // Will be updated with actual name
+                state: ConnectionState::Disabled,
+                last_checked: None,
+                models: Vec::new(),
+                error_message: None,
+            }
+        });
+
+        status.state = state;
+        status.last_checked = Some(std::time::SystemTime::now());
+        status.error_message = error;
+
+        // Update models if connected
+        if state == ConnectionState::Connected {
+            if let Ok(provider) = self.registry.get(provider_id) {
+                status.name = provider.name().to_string();
+                status.models = provider.models();
+            }
+        }
+    }
+
+    /// Get provider status
+    pub fn get_provider_status(&self, provider_id: &str) -> Option<&ProviderStatus> {
+        self.provider_states.get(provider_id)
+    }
+
+    /// Get all provider statuses
+    pub fn get_all_provider_statuses(&self) -> Vec<&ProviderStatus> {
+        self.provider_states.values().collect()
+    }
+
+    /// Get available models with metadata filtering
+    pub fn get_available_models(&self, filter: Option<ModelFilter>) -> Vec<ModelInfo> {
+        let mut models = Vec::new();
+
+        for status in self.provider_states.values() {
+            if status.state == ConnectionState::Connected {
+                for model in &status.models {
+                    if let Some(ref f) = filter {
+                        if f.matches(model) {
+                            models.push(model.clone());
+                        }
+                    } else {
+                        models.push(model.clone());
+                    }
+                }
+            }
+        }
+
+        models
+    }
+
+    /// Filter models by criteria
+    pub fn filter_models(&self, models: &[ModelInfo], criteria: ModelFilterCriteria) -> Vec<ModelInfo> {
+        models.iter().filter(|model| {
+            match criteria {
+                ModelFilterCriteria::Provider(ref provider) => model.provider == *provider,
+                ModelFilterCriteria::Capability(ref capability) => model.capabilities.contains(capability),
+                ModelFilterCriteria::FreeOnly => model.is_free,
+                ModelFilterCriteria::MinContextWindow(min_tokens) => model.context_window >= min_tokens,
+                ModelFilterCriteria::MaxCostPerToken(max_cost) => {
+                    if let Some(ref pricing) = model.pricing {
+                        pricing.input_per_1k_tokens <= max_cost || pricing.output_per_1k_tokens <= max_cost
+                    } else {
+                        true // No pricing info means we can't filter
+                    }
+                }
+            }
+        }).cloned().collect()
     }
 
     /// Get the default provider

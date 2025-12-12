@@ -27,6 +27,7 @@ pub use health_check::{HealthCheckCache, HealthCheckResult};
 pub use models::{
     Capability, ChatRequest, ChatResponse, FinishReason, Message, ModelInfo, TokenUsage,
 };
+pub use provider::manager::{ConnectionState, ModelFilter, ModelFilterCriteria, ProviderStatus};
 pub use provider::{Provider, ProviderManager, ProviderRegistry};
 pub use providers::{
     AnthropicProvider, GoogleProvider, OllamaProvider, OpenAiProvider, ZenProvider,
