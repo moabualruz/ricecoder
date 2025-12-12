@@ -46,6 +46,9 @@ ratatui = "0.29"
 ratatui-textarea = "0.4"
 tui-tree-widget = "0.18"
 ratatui-image = "8.0"
+ratatui-explorer = "0.2"
+tui-scrollview = "0.5"
+
 syntect = { workspace = true }
 lazy_static = { workspace = true }
 unicode-width = "0.1"

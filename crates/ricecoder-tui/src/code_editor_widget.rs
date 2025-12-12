@@ -3,7 +3,13 @@
 //! This module provides a code display widget with syntax highlighting support for
 //! multiple programming languages.
 
-
+use ratatui::{
+    buffer::Buffer,
+    layout::Rect,
+    style::{Color, Style},
+    text::{Line, Span},
+    widgets::{Block, Borders, Paragraph, Widget},
+};
 
 /// Syntax highlighting theme
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -137,7 +143,7 @@ impl CodeLine {
 
 /// Code editor widget for displaying code with syntax highlighting
 pub struct CodeEditorWidget {
-    /// Code lines
+    /// Code lines for display
     lines: Vec<CodeLine>,
     /// Current language
     language: Language,
@@ -384,6 +390,55 @@ impl CodeEditorWidget {
 impl Default for CodeEditorWidget {
     fn default() -> Self {
         Self::new(Language::PlainText)
+    }
+}
+
+impl Widget for &CodeEditorWidget {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let mut block = Block::default().title(self.title.as_str());
+
+        if self.show_borders {
+            block = block.borders(Borders::ALL);
+        }
+
+        let inner_area = block.inner(area);
+        block.render(area, buf);
+
+        // For now, render as simple text. In a full implementation, this would
+        // include syntax highlighting using syntect or similar
+        let visible_lines = self.visible_lines(inner_area.height as usize);
+
+        for (i, line) in visible_lines.iter().enumerate() {
+            if i >= inner_area.height as usize {
+                break;
+            }
+
+            let mut style = Style::default();
+            if Some(line.line_number - 1) == self.selected_line {
+                style = style.bg(Color::Blue).fg(Color::White);
+            } else if line.highlighted {
+                style = style.bg(Color::Yellow).fg(Color::Black);
+            }
+
+            let content = if self.show_line_numbers {
+                format!("{:4} | {}", line.line_number, line.content)
+            } else {
+                line.content.clone()
+            };
+
+            let span = Span::styled(content, style);
+            let line_widget = Line::from(span);
+            let paragraph = Paragraph::new(line_widget).style(style);
+
+            let line_area = Rect {
+                x: inner_area.x,
+                y: inner_area.y + i as u16,
+                width: inner_area.width,
+                height: 1,
+            };
+
+            paragraph.render(line_area, buf);
+        }
     }
 }
 

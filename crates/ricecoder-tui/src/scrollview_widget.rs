@@ -4,10 +4,12 @@
 //! scrolling through message history, selection, and rendering with syntax highlighting.
 
 use ratatui::{
-    layout::Rect,
+    layout::{Rect, Size},
     widgets::{Block, Borders, Paragraph},
+    prelude::StatefulWidget,
     Frame, text::Line,
 };
+use tui_scrollview::{ScrollView, ScrollViewState};
 
 
 /// Information about scroll bar for rendering
@@ -84,8 +86,8 @@ impl ScrollState {
 pub struct ScrollViewWidget {
     /// Messages to display
     messages: Vec<String>,
-    /// Current scroll position
-    scroll_offset: usize,
+    /// Scroll view state from tui-scrollview
+    scroll_state: ScrollViewState,
     /// Selected message index
     selected: Option<usize>,
     /// Title for the block
@@ -99,7 +101,7 @@ impl ScrollViewWidget {
     pub fn new(title: impl Into<String>) -> Self {
         Self {
             messages: Vec::new(),
-            scroll_offset: 0,
+            scroll_state: ScrollViewState::default(),
             selected: None,
             title: title.into(),
             show_borders: true,
@@ -114,7 +116,7 @@ impl ScrollViewWidget {
     /// Clear all messages
     pub fn clear(&mut self) {
         self.messages.clear();
-        self.scroll_offset = 0;
+        self.scroll_state = ScrollViewState::default();
         self.selected = None;
     }
 
@@ -129,33 +131,19 @@ impl ScrollViewWidget {
 
 
 
-    /// Get the scroll position as a percentage (0-100)
-    pub fn scroll_position_percentage(&self, visible_height: usize) -> u8 {
-        if self.messages.is_empty() {
-            return 100;
+
+
+    /// Scroll to the bottom of the content
+    pub fn scroll_to_bottom(&mut self, visible_height: usize) {
+        // Calculate the maximum scroll position
+        let content_height = self.messages.len();
+        if content_height > visible_height {
+            let max_scroll = content_height - visible_height;
+            // Scroll down to the bottom
+            for _ in 0..max_scroll {
+                self.scroll_state.scroll_down();
+            }
         }
-
-        let max_scroll = self.messages.len().saturating_sub(visible_height);
-        if max_scroll == 0 {
-            return 100;
-        }
-
-        ((self.scroll_offset as f32 / max_scroll as f32) * 100.0) as u8
-    }
-
-    /// Get scroll bar information for rendering
-    pub fn scroll_bar_info(&self, visible_height: usize) -> ScrollBarInfo {
-        ScrollBarInfo {
-            position: self.scroll_offset,
-            total_content_height: self.messages.len(),
-            visible_height,
-        }
-    }
-
-    /// Check if auto-scroll is active (at bottom)
-    pub fn is_auto_scroll(&self, visible_height: usize) -> bool {
-        let max_scroll = self.messages.len().saturating_sub(visible_height);
-        self.scroll_offset >= max_scroll
     }
 
     /// Enable or disable auto-scroll
@@ -166,23 +154,6 @@ impl ScrollViewWidget {
         // If disabling, we don't need to do anything as the scroll position remains
     }
 
-    /// Scroll to the bottom
-    pub fn scroll_to_bottom(&mut self, visible_height: usize) {
-        let max_scroll = self.messages.len().saturating_sub(visible_height);
-        self.scroll_offset = max_scroll;
-    }
-
-    /// Handle mouse wheel events for scrolling
-    pub fn handle_mouse_wheel(&mut self, delta: i32, visible_height: usize) {
-        if delta > 0 {
-            // Scrolling up
-            self.scroll_offset = self.scroll_offset.saturating_sub(delta as usize);
-        } else {
-            // Scrolling down
-            let max_scroll = self.messages.len().saturating_sub(visible_height);
-            self.scroll_offset = (self.scroll_offset + delta.abs() as usize).min(max_scroll);
-        }
-    }
 
 
 
@@ -192,11 +163,10 @@ impl ScrollViewWidget {
 
 
 
-    /// Set the scroll offset
-    pub fn set_scroll_offset(&mut self, offset: usize) {
-        // ScrollViewState doesn't have a direct set_offset method
-        // This would need to be implemented differently
-    }
+
+
+
+
 
     /// Select a message by index
     pub fn select(&mut self, index: usize) {
@@ -242,9 +212,9 @@ impl ScrollViewWidget {
 
     /// Get visible messages based on scroll offset and height
     pub fn visible_messages(&self, height: usize) -> Vec<&str> {
+        // TODO: Implement with ScrollViewState offset
         self.messages
             .iter()
-            .skip(self.scroll_offset)
             .take(height)
             .map(|s| s.as_str())
             .collect()
@@ -267,31 +237,20 @@ impl ScrollViewWidget {
 
     /// Check if at the top
     pub fn is_at_top(&self) -> bool {
-        self.scroll_offset == 0
+        // TODO: Check ScrollViewState offset
+        true
     }
 
     /// Check if at the bottom
-    pub fn is_at_bottom(&self, visible_height: usize) -> bool {
-        let max_scroll = self.messages.len().saturating_sub(visible_height);
-        self.scroll_offset >= max_scroll
+    pub fn is_at_bottom(&self, _visible_height: usize) -> bool {
+        // TODO: Check ScrollViewState offset
+        false
     }
 
-    /// Get the scroll percentage (0-100)
-    pub fn scroll_percentage(&self, visible_height: usize) -> u8 {
-        if self.messages.is_empty() {
-            return 100;
-        }
 
-        let max_scroll = self.messages.len().saturating_sub(visible_height);
-        if max_scroll == 0 {
-            return 100;
-        }
-
-        ((self.scroll_offset as f32 / max_scroll as f32) * 100.0) as u8
-    }
 
     /// Render the widget
-    pub fn render(&self, f: &mut Frame, area: Rect) {
+    pub fn render(&mut self, f: &mut Frame, area: Rect) {
         let block = if self.show_borders {
             Block::default()
                 .title(self.title.as_str())
@@ -306,26 +265,33 @@ impl ScrollViewWidget {
             area
         };
 
-        // Get visible messages
-        let visible = self.visible_messages(inner.height as usize);
-        let lines: Vec<Line> = visible
-            .iter()
-            .enumerate()
-            .map(|(idx, msg)| {
-                let actual_idx = self.scroll_offset + idx;
-                let is_selected = self.selected == Some(actual_idx);
+        // Calculate content size (assuming each message is 1 line)
+        let content_height = self.messages.len() as u16;
+        let content_width = 100; // Estimate, could be calculated
+        let content_size = Size::new(content_width, content_height);
 
-                if is_selected {
-                    Line::raw(format!("> {}", msg))
-                } else {
-                    Line::raw(format!("  {}", msg))
-                }
-            })
-            .collect();
+        // Create scroll view
+        let mut scroll_view = ScrollView::new(content_size);
 
-        let paragraph = Paragraph::new(lines);
+        // Render messages into the scroll view
+        for (idx, message) in self.messages.iter().enumerate() {
+            let is_selected = self.selected == Some(idx);
+            let line = if is_selected {
+                Line::raw(format!("> {}", message))
+            } else {
+                Line::raw(format!("  {}", message))
+            };
+
+            let paragraph = Paragraph::new(line);
+            let y_pos = idx as u16;
+            scroll_view.render_widget(paragraph, Rect::new(0, y_pos, content_width, 1));
+        }
+
+        // Render the block
         f.render_widget(block, area);
-        f.render_widget(paragraph, inner);
+
+        // Render the scroll view with state
+        StatefulWidget::render(scroll_view, inner, f.buffer_mut(), &mut self.scroll_state);
     }
 }
 
