@@ -13,7 +13,8 @@ use crate::style::Theme;
 use crate::terminal_state::TerminalCapabilities;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use crate::theme::ThemeManager;
-use crate::tea::PendingOperation;
+use crate::model::PendingOperation;
+use crate::tea::ReactiveState;
 use anyhow::Result;
 use ratatui::backend::CrosstermBackend;
 use ratatui::Terminal;
@@ -84,7 +85,7 @@ impl AppMode {
 /// Main application state - TEA Architecture Integration
 pub struct App {
     /// TEA reactive state manager
-    pub reactive_state: std::sync::Arc<tokio::sync::RwLock<crate::ReactiveState>>,
+    pub reactive_state: std::sync::Arc<tokio::sync::RwLock<ReactiveState>>,
     /// Event dispatcher for async event handling
     pub event_dispatcher: crate::EventDispatcher,
     /// Optimistic update manager
@@ -142,7 +143,7 @@ impl App {
 
         // Create reactive state manager
         let reactive_state = std::sync::Arc::new(tokio::sync::RwLock::new(
-            crate::ReactiveState::new(initial_model)
+            ReactiveState::new(initial_model)
         ));
 
         // Create event dispatcher

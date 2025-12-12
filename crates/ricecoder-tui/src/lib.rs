@@ -1,11 +1,29 @@
-//! RiceCoder Terminal User Interface (TUI)
+//! RiceCoder Terminal User Interface (TUI) - Pure UI Layer
 //!
 //! This crate provides a beautiful, responsive terminal user interface for RiceCoder
-//! with support for chat interface, code diffing, theming, and interactive components.
+//! built with [ratatui](https://github.com/ratatui-org/ratatui). **Important**: This crate
+//! contains only UI components and has been architecturally separated from business logic.
+//!
+//! ## Architecture
+//!
+//! After the TUI isolation refactoring:
+//! - ✅ **UI Components**: Widgets, layouts, themes, input handling
+//! - ✅ **Terminal Management**: Rendering, accessibility, cross-platform support
+//! - ❌ **Business Logic**: Session management moved to `ricecoder-sessions`
+//! - ❌ **AI Integration**: Provider logic moved to `ricecoder-providers`
+//! - ❌ **LSP Features**: Language support moved to `ricecoder-lsp`
+//!
+//! ## Dependencies
+//!
+//! `ricecoder-tui` only depends on infrastructure crates and has no business logic dependencies.
+//! Business logic is injected through interfaces or dependency injection patterns.
 
 pub mod accessibility;
 pub mod app;
 pub mod banner;
+pub mod model;
+pub mod update;
+pub mod view;
 pub mod clipboard;
 pub mod code_editor_widget;
 pub mod command_blocks;
@@ -136,8 +154,11 @@ pub use scrollview_widget::ScrollViewWidget;
 pub use session_integration::SessionIntegration;
 pub use status_bar::{ConnectionStatus, InputMode, StatusBarWidget};
 pub use session_manager::{SessionData, SessionManager};
-pub use tea::{AppModel, AppMessage, AppMode, TeaCommand, TeaCommandResult, OperationId, ReactiveState, StateDiff, StateChange};
+pub use model::{AppModel, AppMessage, AppMode, CommandResult as TeaCommandResult, OperationId, StateDiff, StateChange, SessionState, CommandState, UiState, PendingOperation, Subscription};
+pub use update::Command as TeaCommand;
+pub use view::view;
 pub use render_pipeline::{VirtualRenderer, VirtualList, VirtualScroll, LazyLoader, RenderBatch, RenderOperation, RenderPriority, VirtualNode, ComponentType};
+pub use event::{event_to_message};
 pub use event_dispatcher::{EventDispatcher, EventEnvelope, EventPriority, EventResult, EventSource, EventBatch, BatchType, EventStats, OptimisticUpdater, OptimisticUpdate, LoadingManager, LoadingState};
 pub use sessions::{Session, SessionDisplayMode, SessionStatus, SessionWidget};
 pub use style::{ColorSupport, Theme};

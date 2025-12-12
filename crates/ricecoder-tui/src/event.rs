@@ -5,6 +5,7 @@ use std::thread;
 use std::time::Duration;
 use tokio::sync::mpsc::UnboundedReceiver;
 use crossterm::event as crossterm_event;
+use crate::model::AppMessage;
 
 /// Event types for the TUI
 #[derive(Debug, Clone)]
@@ -255,5 +256,61 @@ impl EventLoop {
 impl Default for EventLoop {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Convert RiceCoder Event to TEA AppMessage
+pub fn event_to_message(event: Event) -> AppMessage {
+    match event {
+        Event::Key(key) => AppMessage::KeyPress(crossterm::event::KeyEvent::new(
+            match key.code {
+                KeyCode::Char(c) => crossterm::event::KeyCode::Char(c),
+                KeyCode::Enter => crossterm::event::KeyCode::Enter,
+                KeyCode::Esc => crossterm::event::KeyCode::Esc,
+                KeyCode::Tab => crossterm::event::KeyCode::Tab,
+                KeyCode::Backspace => crossterm::event::KeyCode::Backspace,
+                KeyCode::Delete => crossterm::event::KeyCode::Delete,
+                KeyCode::Up => crossterm::event::KeyCode::Up,
+                KeyCode::Down => crossterm::event::KeyCode::Down,
+                KeyCode::Left => crossterm::event::KeyCode::Left,
+                KeyCode::Right => crossterm::event::KeyCode::Right,
+                KeyCode::Home => crossterm::event::KeyCode::Home,
+                KeyCode::End => crossterm::event::KeyCode::End,
+                KeyCode::PageUp => crossterm::event::KeyCode::PageUp,
+                KeyCode::PageDown => crossterm::event::KeyCode::PageDown,
+                KeyCode::F1 => crossterm::event::KeyCode::F(1),
+                KeyCode::F2 => crossterm::event::KeyCode::F(2),
+                KeyCode::F3 => crossterm::event::KeyCode::F(3),
+                KeyCode::F4 => crossterm::event::KeyCode::F(4),
+                KeyCode::F5 => crossterm::event::KeyCode::F(5),
+                KeyCode::F6 => crossterm::event::KeyCode::F(6),
+                KeyCode::F7 => crossterm::event::KeyCode::F(7),
+                KeyCode::F8 => crossterm::event::KeyCode::F(8),
+                KeyCode::F9 => crossterm::event::KeyCode::F(9),
+                KeyCode::F10 => crossterm::event::KeyCode::F(10),
+                KeyCode::F11 => crossterm::event::KeyCode::F(11),
+                KeyCode::F12 => crossterm::event::KeyCode::F(12),
+                _ => crossterm::event::KeyCode::Null,
+            },
+            match key.modifiers {
+                KeyModifiers { ctrl: true, alt: false, shift: false } => crossterm::event::KeyModifiers::CONTROL,
+                KeyModifiers { ctrl: false, alt: true, shift: false } => crossterm::event::KeyModifiers::ALT,
+                KeyModifiers { ctrl: false, alt: false, shift: true } => crossterm::event::KeyModifiers::SHIFT,
+                _ => crossterm::event::KeyModifiers::empty(),
+            },
+        )),
+        Event::Mouse(mouse) => AppMessage::MouseEvent(crossterm::event::MouseEvent {
+            kind: crossterm::event::MouseEventKind::Moved,
+            column: mouse.x,
+            row: mouse.y,
+            modifiers: crossterm::event::KeyModifiers::empty(),
+        }),
+        Event::Resize { width, height } => AppMessage::Resize { width, height },
+        Event::Tick => AppMessage::Tick,
+        Event::DragDrop { .. } => {
+            // For now, ignore drag-drop events in TEA
+            // Could be handled in future by adding a new AppMessage variant
+            AppMessage::Tick
+        }
     }
 }

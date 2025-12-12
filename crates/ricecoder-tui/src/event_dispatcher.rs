@@ -3,7 +3,9 @@
 //! This module implements a centralized event dispatcher with async handling,
 //! debouncing, batching, and optimistic updates for the Elm Architecture.
 
-use crate::tea::{AppMessage, AppModel, ReactiveState, TeaCommand};
+use crate::model::{AppMessage, AppModel};
+use crate::tea::ReactiveState;
+use crate::update::Command as TeaCommand;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{mpsc, oneshot, RwLock};

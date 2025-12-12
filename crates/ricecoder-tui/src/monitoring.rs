@@ -4,6 +4,7 @@
 //! performance metrics, usage analytics, and system observability.
 
 use crate::error::TuiResult;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};

@@ -1,8 +1,25 @@
-//! RiceCoder Storage and Configuration Module
+//! RiceCoder Storage and Configuration Infrastructure
 //!
-//! This module provides storage and configuration management for RiceCoder,
-//! including global and project-local knowledge bases, configuration loading,
-//! and data persistence.
+//! This crate provides the foundational storage and configuration management infrastructure
+//! for RiceCoder. It serves as the central point for configuration loading, data persistence,
+//! and cross-cutting concerns like caching and preferences.
+//!
+//! ## Features
+//!
+//! - **Configuration Management**: YAML/JSONC configuration with environment variable overrides
+//! - **Hierarchical Settings**: Project > user > defaults configuration loading
+//! - **Hot Reload**: Configuration changes applied without restart
+//! - **Type-Safe Config**: Strongly typed configuration structures with validation
+//! - **Caching**: High-performance caching with TTL and invalidation strategies
+//! - **Data Persistence**: Structured storage and retrieval of application data
+//! - **File Watching**: Automatic detection of configuration file changes
+//! - **User Preferences**: Persistent user preference management
+//!
+//! ## Architecture
+//!
+//! `ricecoder-storage` serves as the infrastructure layer that all other RiceCoder crates
+//! can depend on for configuration and data persistence needs. It has no business logic
+//! dependencies and focuses solely on storage and configuration concerns.
 //!
 //! # Modules
 //!
