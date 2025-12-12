@@ -5,7 +5,7 @@
 //! and modification indicators.
 
 use crate::status_bar::StatusBarWidget;
-use ricecoder_vcs::{GitRepository, RepositoryStatus, Result as VcsResult};
+use ricecoder_vcs::{GitRepository, RepositoryStatus, Result as VcsResult, Repository};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;

@@ -280,6 +280,8 @@ pub struct ChatWidget {
     pub show_action_menu: bool,
     /// Selected action in menu
     pub selected_action: Option<usize>,
+    /// Reactive update subscription (for automatic UI updates)
+    pub reactive_subscription: Option<tokio::sync::broadcast::Receiver<(crate::reactive_ui_updates::UpdateType, crate::tea::StateDiff)>>,
 }
 
 impl ChatWidget {
@@ -296,6 +298,7 @@ impl ChatWidget {
             copy_operation: None,
             show_action_menu: false,
             selected_action: None,
+            reactive_subscription: None,
         }
     }
 
@@ -364,6 +367,7 @@ impl ChatWidget {
         self.copy_operation = None;
         self.show_action_menu = false;
         self.selected_action = None;
+        // Note: reactive_subscription is preserved during clear
     }
 
     /// Update available actions for selected message
@@ -610,6 +614,54 @@ impl ChatWidget {
             .as_ref()
             .map(|op| op.is_feedback_visible())
             .unwrap_or(false)
+    }
+
+    /// Subscribe to reactive UI updates for automatic re-rendering
+    pub fn subscribe_to_reactive_updates(&mut self, receiver: tokio::sync::broadcast::Receiver<(crate::reactive_ui_updates::UpdateType, crate::tea::StateDiff)>) {
+        self.reactive_subscription = Some(receiver);
+    }
+
+    /// Process any pending reactive updates
+    pub async fn process_reactive_updates(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        if let Some(ref mut rx) = self.reactive_subscription {
+            // Collect all pending updates first to avoid borrow issues
+            let mut updates = Vec::new();
+            while let Ok(update) = rx.try_recv() {
+                updates.push(update);
+            }
+
+            // Process each update
+            for (update_type, diff) in updates {
+                self.handle_reactive_update(update_type, diff).await?;
+            }
+        }
+        Ok(())
+    }
+
+    /// Handle a reactive update
+    async fn handle_reactive_update(&mut self, update_type: crate::reactive_ui_updates::UpdateType, diff: crate::tea::StateDiff) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        // For chat widget, react to message-related state changes
+        for change in &diff.changes {
+            match change {
+                crate::tea::StateChange::MessagesUpdated => {
+                    // Messages have changed, widget will re-render automatically
+                    tracing::debug!("Chat widget reacting to messages update");
+                }
+                crate::tea::StateChange::StreamingStarted => {
+                    self.start_streaming();
+                }
+                crate::tea::StateChange::StreamingToken(token) => {
+                    self.append_token(token);
+                }
+                crate::tea::StateChange::StreamingFinished => {
+                    self.finish_streaming();
+                }
+                _ => {
+                    // Other changes don't affect chat widget directly
+                }
+            }
+        }
+        Ok(())
     }
 }
 

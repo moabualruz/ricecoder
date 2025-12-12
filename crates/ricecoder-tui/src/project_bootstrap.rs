@@ -53,7 +53,7 @@ impl ProjectBootstrap {
     /// Bootstrap the project by detecting type and loading configurations
     pub async fn bootstrap(&mut self) -> TuiResult<BootstrapResult> {
         if self.bootstrapped {
-            return Err(crate::error::TuiError::InvalidState(
+            return Err(crate::error::TuiError::config(
                 "Project already bootstrapped".to_string()
             ));
         }
@@ -276,7 +276,7 @@ impl ProjectBootstrap {
             let config_path = ricecoder_config.join("config.yaml");
             if config_path.exists() {
                 if let Ok(config_content) = tokio::fs::read_to_string(&config_path).await {
-                    if let Ok(config) = serde_yaml::from_str(&config_content) {
+                    if let Ok(config) = serde_yaml::from_str::<serde_yaml::Value>(&config_content) {
                         configs.insert("ricecoder_project".to_string(), serde_json::to_value(config).unwrap_or_default());
                     }
                 }
@@ -287,7 +287,7 @@ impl ProjectBootstrap {
     }
 
     /// Initialize integrations based on project type and language
-    async fn initialize_integrations(&self, project_type: &ProjectType, language: &Language) -> TuiResult<Vec<String>> {
+    async fn initialize_integrations(&self, _project_type: &ProjectType, language: &Language) -> TuiResult<Vec<String>> {
         let mut integrations = Vec::new();
 
         // Language-specific integrations

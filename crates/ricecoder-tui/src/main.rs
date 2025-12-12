@@ -131,6 +131,11 @@ async fn run_with_shutdown(app: &mut App, shutdown_flag: &Arc<AtomicBool>, capab
                 tracing::warn!("Failed to process file watcher events: {}", e);
             }
 
+            // Process reactive UI updates
+            if let Err(e) = app.process_reactive_updates().await {
+                tracing::warn!("Failed to process reactive updates: {}", e);
+            }
+
             // Render the UI using the terminal
             terminal.draw(|f| {
                 Renderer::render_frame(f, app);

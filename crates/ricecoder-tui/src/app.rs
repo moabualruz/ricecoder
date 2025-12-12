@@ -115,6 +115,10 @@ pub struct App {
     pub progressive_enhancement: crate::ProgressiveEnhancement,
     /// Real-time updates coordinator
     pub real_time_updates: crate::RealTimeUpdates,
+    /// Reactive UI coordinator
+    pub reactive_ui: crate::ReactiveUICoordinator,
+    /// Chat widget for reactive updates
+    pub chat: crate::widgets::ChatWidget,
 }
 
 impl App {
@@ -131,7 +135,7 @@ impl App {
             crate::project_bootstrap::ProjectBootstrap::new(
                 std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."))
             ),
-            crate::integration::WidgetIntegration::new(),
+            crate::integration::WidgetIntegration::new(80, 24),
             crate::image_integration::ImageIntegration::new(),
             crate::render::Renderer::new(),
         );
@@ -176,7 +180,26 @@ impl App {
         // Create real-time updates coordinator
         let real_time_updates = crate::RealTimeUpdates::new(error_manager.clone());
 
-        let app = Self {
+        // Create chat widget
+        let chat = crate::widgets::ChatWidget::new();
+
+        // Create reactive UI coordinator
+        let reactive_ui = crate::ReactiveUICoordinator::new(
+            Arc::clone(&reactive_state),
+            real_time_updates,
+            error_manager.clone(),
+        );
+
+        // Start reactive systems
+        reactive_ui.start().await.map_err(|e| RiceError::new(
+            format!("Failed to start reactive UI: {}", e),
+            ErrorCategory::System,
+            ErrorSeverity::High,
+            "app",
+            "new",
+        ))?;
+
+        let mut app = Self {
             reactive_state,
             event_dispatcher,
             optimistic_updater,
@@ -193,25 +216,29 @@ impl App {
             error_manager,
             progressive_enhancement,
             real_time_updates,
+            reactive_ui,
+            chat,
         };
 
-        // Initialize virtual lists for large datasets
-        app.initialize_virtual_lists().await;
+        // Subscribe chat widget to reactive updates for automatic UI updates
+        let reactive_receiver = app.reactive_ui.reactive_renderer().subscribe();
+        app.chat.subscribe_to_reactive_updates(reactive_receiver);
 
+        // TODO: Implement project bootstrap
         // Perform project bootstrap
-        if let Err(e) = app.bootstrap_project().await {
-            // Handle bootstrap error with comprehensive error management
-            let _ = app.create_and_handle_error(
-                format!("Project bootstrap failed: {}", e),
-                ErrorCategory::System,
-                ErrorSeverity::Medium,
-                "app",
-                "bootstrap_project",
-            ).await;
-            // Continue anyway - bootstrap failure shouldn't prevent app startup
-        } else {
-            tracing::info!("Project bootstrap completed successfully");
-        }
+        // if let Err(e) = app.bootstrap_project().await {
+        //     // Handle bootstrap error with comprehensive error management
+        //     let _ = app.create_and_handle_error(
+        //         format!("Project bootstrap failed: {}", e),
+        //         ErrorCategory::System,
+        //         ErrorSeverity::Medium,
+        //         "app",
+        //         "bootstrap_project",
+        //     ).await;
+        //     // Continue anyway - bootstrap failure shouldn't prevent app startup
+        // } else {
+        //     tracing::info!("Project bootstrap completed successfully");
+        // }
 
         Ok(app)
     }
@@ -259,7 +286,7 @@ impl App {
         }
 
         // Get loaded chat messages for virtual list
-        let chat_messages = if let Some(loaded) = chat_loaded.try_read() {
+        let chat_messages = if let Ok(loaded) = chat_loaded.try_read() {
             loaded.clone()
         } else {
             vec![
@@ -316,7 +343,7 @@ impl App {
         }
 
         // Get loaded commands for virtual list
-        let command_history = if let Some(loaded) = command_loaded.try_read() {
+        let command_history = if let Ok(loaded) = command_loaded.try_read() {
             loaded.clone()
         } else {
             model.commands.command_history.clone()
@@ -332,8 +359,8 @@ impl App {
             },
         ));
 
-        // Register focusable elements for keyboard navigation
-        self.register_focusable_elements();
+        // TODO: Register focusable elements for keyboard navigation
+        // self.register_focusable_elements();
     }
 
     /// Scroll chat messages
@@ -408,7 +435,7 @@ impl App {
 
                 // Update virtual list with new data
                 if let Some(virtual_list) = &mut self.chat_virtual_list {
-                    let loaded_messages = loader.loaded_items().clone();
+                    let loaded_messages = loader.loaded_items().clone().to_vec();
                     virtual_list.update_items(loaded_messages);
                 }
 
@@ -432,7 +459,7 @@ impl App {
 
                 // Update virtual list with new data
                 if let Some(virtual_list) = &mut self.command_virtual_list {
-                    let loaded_commands = loader.loaded_items().clone();
+                    let loaded_commands = loader.loaded_items().clone().to_vec();
                     virtual_list.update_items(loaded_commands);
                 }
 
@@ -639,5 +666,16 @@ impl App {
     /// Start processing real-time updates (should be called in a separate task)
     pub async fn start_real_time_processing(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         self.real_time_updates.process_updates().await
+    }
+
+    /// Process reactive UI updates in the main event loop
+    pub async fn process_reactive_updates(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        // Process reactive updates for chat widget
+        self.chat.process_reactive_updates().await?;
+
+        // Force render any batched reactive updates
+        self.reactive_ui.reactive_renderer().force_render().await;
+
+        Ok(())
     }
 }

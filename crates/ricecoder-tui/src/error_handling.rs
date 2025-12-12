@@ -529,7 +529,7 @@ impl ErrorLogger {
         let filters = self.filters.read().await;
 
         logs.iter()
-            .filter(|entry| {
+            .filter(|_entry| {
                 category_filter
                     .map(|cat| filters.get(&cat).copied().unwrap_or(true))
                     .unwrap_or(true)
@@ -551,7 +551,7 @@ impl ErrorLogger {
 
         for log in logs.iter() {
             output.push_str(&format!(
-                "[{}] {} - {}: {}\n",
+                "[{}] {} - {:?}: {}\n",
                 log.timestamp.elapsed().as_secs(),
                 log.level,
                 log.error.category,

@@ -89,7 +89,6 @@ pub struct SessionState {
 }
 
 /// TeaCommand state
-#[derive(Clone)]
 #[derive(Clone, Debug, PartialEq)]
 pub struct TeaCommandState {
     pub command_history: Vec<String>,
@@ -589,7 +588,7 @@ impl AppModel {
 }
 
 /// State change enumeration for efficient diffing
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum StateChange {
     Mode(AppMode),
     Theme,
@@ -598,6 +597,10 @@ pub enum StateChange {
     FilePicker,
     TokenUsage,
     SessionCount,
+    MessagesUpdated,
+    StreamingStarted,
+    StreamingToken(String),
+    StreamingFinished,
 }
 
 /// State diff for targeted re-renders

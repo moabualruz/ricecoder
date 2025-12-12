@@ -35,6 +35,7 @@ pub mod prompt;
 pub mod prompt_context;
 pub mod project_bootstrap;
 pub mod provider_integration;
+pub mod reactive_ui_updates;
 pub mod real_time_updates;
 pub mod render;
 pub mod render_pipeline;
@@ -107,6 +108,11 @@ pub use performance::{
 pub use popup_widget::{PopupButton, PopupType, PopupWidget};
 pub use progressive_enhancement::{
     ProgressiveEnhancement, FeatureLevel, FeatureToggles, RenderingStrategy,
+};
+pub use reactive_ui_updates::{
+    ReactiveRenderer, LiveDataSynchronizer, ReactiveUICoordinator, LiveDataEvent,
+    FileChangeEvent, FileChangeType, SessionSyncEvent, SessionChangeType,
+    ConflictResolution, ConflictInfo, ConflictType, UpdateType, UpdatePriority,
 };
 pub use real_time_updates::{
     RealTimeUpdates, RealTimeStream, StreamData, StreamType, OperationStatus,

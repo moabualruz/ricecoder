@@ -64,6 +64,7 @@ async-trait = { workspace = true }
 regex = "1.10"
 toml = "0.8"
 uuid = { version = "1.0", features = ["v4"] }
+notify = "6.1"
 
 [dev-dependencies]
 proptest = { workspace = true }
