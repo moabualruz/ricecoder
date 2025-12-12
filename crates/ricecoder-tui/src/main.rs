@@ -1,9 +1,10 @@
 //! RiceCoder TUI - Terminal User Interface entry point
 
 use anyhow::Result;
-use ricecoder_tui::{config::TuiConfig, render::Renderer, App, TerminalState};
+use ricecoder_tui::{config::TuiConfig, performance::RenderPerformanceTracker, render::Renderer, App, TerminalState};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -105,9 +106,14 @@ async fn run_with_shutdown(app: &mut App, shutdown_flag: &Arc<AtomicBool>, capab
     let mut terminal = Terminal::new(backend)?;
     terminal.clear()?;
 
-    // Main event loop with shutdown check
+    // Initialize performance tracker for 60 FPS target
+    let mut perf_tracker = RenderPerformanceTracker::new();
+
+    // Main event loop with shutdown check and 60 FPS optimization
     let result = async {
         while !app.should_exit {
+            let frame_start = Instant::now();
+
             // Check for shutdown signal
             if shutdown_flag.load(Ordering::SeqCst) {
                 tracing::info!("Shutdown signal received, exiting gracefully");
@@ -115,7 +121,7 @@ async fn run_with_shutdown(app: &mut App, shutdown_flag: &Arc<AtomicBool>, capab
                 break;
             }
 
-            // Poll for events
+            // Poll for events (non-blocking)
             if let Some(event) = app.event_loop.poll().await? {
                 app.handle_event(event)?;
             }
@@ -129,6 +135,27 @@ async fn run_with_shutdown(app: &mut App, shutdown_flag: &Arc<AtomicBool>, capab
             terminal.draw(|f| {
                 Renderer::render_frame(f, app);
             })?;
+
+            // Record frame time for performance tracking
+            let frame_time = frame_start.elapsed();
+            perf_tracker.record_frame(frame_time);
+
+            // Log performance warnings if not meeting 60 FPS target
+            if !perf_tracker.is_meeting_target() && perf_tracker.frame_count % 60 == 0 {
+                let metrics = perf_tracker.metrics();
+                tracing::warn!(
+                    "Performance warning: {:.1} FPS (target: 60 FPS), avg frame time: {:.1}ms",
+                    metrics.current_fps,
+                    metrics.average_frame_time_ms
+                );
+            }
+
+            // Throttle to ~60 FPS to prevent excessive CPU usage
+            // Only sleep if we rendered faster than target frame time
+            let target_frame_time = Duration::from_millis(16); // ~60 FPS
+            if frame_time < target_frame_time {
+                tokio::time::sleep(target_frame_time - frame_time).await;
+            }
         }
 
         tracing::info!("RiceCoder TUI exited successfully");

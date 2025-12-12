@@ -41,6 +41,10 @@ pub use command_blocks::{Command, CommandBlock, CommandBlocksWidget, CommandStat
 pub use diagnostics_widget::{
     DiagnosticDetailWidget, DiagnosticItem, DiagnosticSeverity, DiagnosticsWidget, HoverWidget,
 };
+pub use error::{
+    ClipboardError, KeybindError, ProviderError, SessionError, StorageError, ToolError, TuiError,
+    TuiResult,
+};
 pub use lsp_integration::{language_from_file_path, lsp_diagnostics_to_tui, lsp_hover_to_text};
 pub use command_palette::{CommandPaletteWidget, PaletteCommand};
 pub use executor::{

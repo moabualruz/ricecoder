@@ -4639,6 +4639,8 @@ dependencies = [
  "ricecoder-files",
  "ricecoder-help",
  "ricecoder-images",
+ "ricecoder-keybinds",
+ "ricecoder-providers",
  "ricecoder-sessions",
  "ricecoder-storage",
  "ricecoder-vcs",
