@@ -56,7 +56,8 @@ pub mod widgets;
 pub use accessibility::{
     AccessibilityConfig, AnimationConfig, Announcement, AnnouncementPriority, ElementType,
     FocusIndicatorStyle, FocusManager, KeyboardNavigationManager, ScreenReaderAnnouncer,
-    StateChangeEvent, TextAlternative,
+    StateChangeEvent, TextAlternative, EnhancedKeyboardNavigation, HighContrastThemeManager,
+    KeyboardShortcutCustomizer,
 };
 pub use app::App;
 pub use banner::{BannerArea, BannerComponent, BannerComponentConfig};

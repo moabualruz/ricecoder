@@ -9,6 +9,8 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use crate::tea::AppMessage;
+use ratatui::style::{Color, Modifier, Style};
 
 /// Animation configuration
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -469,6 +471,438 @@ impl KeyboardNavigationManager {
     }
 }
 
+/// Enhanced keyboard navigation with WCAG compliance
+#[derive(Debug, Clone)]
+pub struct EnhancedKeyboardNavigation {
+    /// Base keyboard navigation manager
+    base_nav: KeyboardNavigationManager,
+    /// Focus ring style for visual indicators
+    focus_ring_style: Style,
+    /// High contrast mode
+    high_contrast: bool,
+    /// Logical tab order (element IDs in navigation order)
+    tab_order: Vec<String>,
+    /// Current focus index in tab order
+    current_focus_index: Option<usize>,
+    /// Focus history for back navigation
+    focus_history: Vec<String>,
+}
+
+impl EnhancedKeyboardNavigation {
+    pub fn new() -> Self {
+        Self {
+            base_nav: KeyboardNavigationManager::new(),
+            focus_ring_style: Style::default().fg(Color::White).add_modifier(Modifier::REVERSED),
+            high_contrast: false,
+            tab_order: Vec::new(),
+            current_focus_index: None,
+            focus_history: Vec::new(),
+        }
+    }
+
+    /// Register an element for keyboard navigation
+    pub fn register_element(&mut self, element_id: String, alternative: TextAlternative) {
+        self.base_nav.register_element(alternative);
+        self.tab_order.push(element_id);
+    }
+
+    /// Navigate to next focusable element (Tab)
+    pub fn tab_next(&mut self) -> Option<AppMessage> {
+        if self.tab_order.is_empty() {
+            return None;
+        }
+
+        let next_index = match self.current_focus_index {
+            None => 0,
+            Some(current) => (current + 1) % self.tab_order.len(),
+        };
+
+        self.set_focus_by_index(next_index)
+    }
+
+    /// Navigate to previous focusable element (Shift+Tab)
+    pub fn tab_previous(&mut self) -> Option<AppMessage> {
+        if self.tab_order.is_empty() {
+            return None;
+        }
+
+        let prev_index = match self.current_focus_index {
+            None => self.tab_order.len() - 1,
+            Some(0) => self.tab_order.len() - 1,
+            Some(current) => current - 1,
+        };
+
+        self.set_focus_by_index(prev_index)
+    }
+
+    /// Set focus by tab order index
+    fn set_focus_by_index(&mut self, index: usize) -> Option<AppMessage> {
+        if index >= self.tab_order.len() {
+            return None;
+        }
+
+        let element_id = &self.tab_order[index];
+
+        // Update focus history
+        if let Some(current_idx) = self.current_focus_index {
+            if let Some(current_id) = self.tab_order.get(current_idx) {
+                self.focus_history.push(current_id.clone());
+                // Keep only last 10 items
+                if self.focus_history.len() > 10 {
+                    self.focus_history.remove(0);
+                }
+            }
+        }
+
+        self.current_focus_index = Some(index);
+        self.base_nav.focus(element_id);
+
+        Some(AppMessage::FocusChanged(element_id.clone()))
+    }
+
+    /// Get current focused element
+    pub fn current_focus(&self) -> Option<&TextAlternative> {
+        self.base_nav.current_focus()
+    }
+
+    /// Get focus ring style
+    pub fn focus_ring_style(&self) -> Style {
+        if self.high_contrast {
+            Style::default().fg(Color::Black).bg(Color::White)
+        } else {
+            self.focus_ring_style
+        }
+    }
+
+    /// Set high contrast mode
+    pub fn set_high_contrast(&mut self, enabled: bool) {
+        self.high_contrast = enabled;
+    }
+
+    /// Check if high contrast is enabled
+    pub fn is_high_contrast(&self) -> bool {
+        self.high_contrast
+    }
+
+    /// Get tab order for debugging
+    pub fn tab_order(&self) -> &[String] {
+        &self.tab_order
+    }
+}
+
+/// High contrast theme manager
+#[derive(Debug, Clone)]
+pub struct HighContrastThemeManager {
+    /// Available high contrast themes
+    themes: HashMap<String, crate::style::Theme>,
+    /// Current theme name
+    current_theme: String,
+}
+
+impl HighContrastThemeManager {
+    pub fn new() -> Self {
+        let mut themes = HashMap::new();
+
+        // Create high contrast themes
+        themes.insert("high-contrast-dark".to_string(), Self::create_dark_high_contrast_theme());
+        themes.insert("high-contrast-light".to_string(), Self::create_light_high_contrast_theme());
+        themes.insert("high-contrast-yellow-blue".to_string(), Self::create_yellow_blue_theme());
+
+        Self {
+            themes,
+            current_theme: "high-contrast-dark".to_string(),
+        }
+    }
+
+    /// Get current high contrast theme
+    pub fn current_theme(&self) -> &crate::style::Theme {
+        self.themes.get(&self.current_theme).unwrap_or_else(|| {
+            self.themes.get("high-contrast-dark").unwrap()
+        })
+    }
+
+    /// Set current theme
+    pub fn set_theme(&mut self, theme_name: String) -> bool {
+        if self.themes.contains_key(&theme_name) {
+            self.current_theme = theme_name;
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Get available theme names
+    pub fn available_themes(&self) -> Vec<String> {
+        self.themes.keys().cloned().collect()
+    }
+
+    /// Create dark high contrast theme
+    fn create_dark_high_contrast_theme() -> crate::style::Theme {
+        crate::style::Theme {
+            name: "High Contrast Dark".to_string(),
+            primary: Color::White,
+            secondary: Color::BrightWhite,
+            background: Color::Black,
+            foreground: Color::White,
+            accent: Color::BrightWhite,
+            error: Color::BrightRed,
+            warning: Color::BrightYellow,
+            success: Color::BrightGreen,
+            info: Color::BrightBlue,
+            muted: Color::Gray,
+            border: Color::White,
+        }
+    }
+
+    /// Create light high contrast theme
+    fn create_light_high_contrast_theme() -> crate::style::Theme {
+        crate::style::Theme {
+            name: "High Contrast Light".to_string(),
+            primary: Color::Black,
+            secondary: Color::BrightBlack,
+            background: Color::White,
+            foreground: Color::Black,
+            accent: Color::BrightBlack,
+            error: Color::Red,
+            warning: Color::DarkYellow,
+            success: Color::DarkGreen,
+            info: Color::DarkBlue,
+            muted: Color::DarkGray,
+            border: Color::Black,
+        }
+    }
+
+    /// Create yellow-on-blue high contrast theme (for specific visual needs)
+    fn create_yellow_blue_theme() -> crate::style::Theme {
+        crate::style::Theme {
+            name: "Yellow on Blue".to_string(),
+            primary: Color::BrightYellow,
+            secondary: Color::Yellow,
+            background: Color::Blue,
+            foreground: Color::BrightYellow,
+            accent: Color::BrightWhite,
+            error: Color::BrightRed,
+            warning: Color::BrightWhite,
+            success: Color::BrightGreen,
+            info: Color::BrightCyan,
+            muted: Color::Cyan,
+            border: Color::BrightYellow,
+        }
+    }
+}
+
+/// Keyboard shortcut customizer
+#[derive(Debug, Clone)]
+pub struct KeyboardShortcutCustomizer {
+    /// Default shortcuts
+    defaults: HashMap<String, Vec<crossterm::event::KeyEvent>>,
+    /// User customizations
+    customizations: HashMap<String, Vec<crossterm::event::KeyEvent>>,
+    /// Conflicts checker
+    conflicts: HashMap<Vec<crossterm::event::KeyEvent>, Vec<String>>,
+}
+
+impl KeyboardShortcutCustomizer {
+    pub fn new() -> Self {
+        let mut defaults = HashMap::new();
+
+        // Define default shortcuts
+        defaults.insert("mode.chat".to_string(), vec![
+            crossterm::event::KeyEvent {
+                code: crossterm::event::KeyCode::Char('1'),
+                modifiers: crossterm::event::KeyModifiers::CONTROL,
+                kind: crossterm::event::KeyEventKind::Press,
+                state: crossterm::event::KeyEventState::empty(),
+            }
+        ]);
+
+        defaults.insert("mode.command".to_string(), vec![
+            crossterm::event::KeyEvent {
+                code: crossterm::event::KeyCode::Char('2'),
+                modifiers: crossterm::event::KeyModifiers::CONTROL,
+                kind: crossterm::event::KeyEventKind::Press,
+                state: crossterm::event::KeyEventState::empty(),
+            }
+        ]);
+
+        defaults.insert("focus.next".to_string(), vec![
+            crossterm::event::KeyEvent {
+                code: crossterm::event::KeyCode::Tab,
+                modifiers: crossterm::event::KeyModifiers::empty(),
+                kind: crossterm::event::KeyEventKind::Press,
+                state: crossterm::event::KeyEventState::empty(),
+            }
+        ]);
+
+        defaults.insert("focus.previous".to_string(), vec![
+            crossterm::event::KeyEvent {
+                code: crossterm::event::KeyCode::Tab,
+                modifiers: crossterm::event::KeyModifiers::SHIFT,
+                kind: crossterm::event::KeyEventKind::Press,
+                state: crossterm::event::KeyEventState::empty(),
+            }
+        ]);
+
+        Self {
+            defaults,
+            customizations: HashMap::new(),
+            conflicts: HashMap::new(),
+        }
+    }
+
+    /// Get shortcut for action
+    pub fn get_shortcut(&self, action: &str) -> Option<&Vec<crossterm::event::KeyEvent>> {
+        self.customizations.get(action)
+            .or_else(|| self.defaults.get(action))
+    }
+
+    /// Set custom shortcut for action
+    pub fn set_shortcut(&mut self, action: String, keys: Vec<crossterm::event::KeyEvent>) -> Result<(), String> {
+        // Check for conflicts
+        for (existing_keys, actions) in &self.conflicts {
+            if existing_keys == &keys {
+                return Err(format!("Shortcut conflicts with: {}", actions.join(", ")));
+            }
+        }
+
+        // Remove old shortcut from conflicts
+        if let Some(old_keys) = self.customizations.get(&action) {
+            if let Some(actions) = self.conflicts.get_mut(old_keys) {
+                actions.retain(|a| a != &action);
+                if actions.is_empty() {
+                    self.conflicts.remove(old_keys);
+                }
+            }
+        }
+
+        // Add new shortcut
+        self.customizations.insert(action.clone(), keys.clone());
+        self.conflicts.entry(keys).or_insert_with(Vec::new).push(action);
+
+        Ok(())
+    }
+
+    /// Reset shortcut to default
+    pub fn reset_shortcut(&mut self, action: &str) {
+        if let Some(keys) = self.customizations.remove(action) {
+            if let Some(actions) = self.conflicts.get_mut(&keys) {
+                actions.retain(|a| a != action);
+                if actions.is_empty() {
+                    self.conflicts.remove(&keys);
+                }
+            }
+        }
+    }
+
+    /// Get all available actions
+    pub fn available_actions(&self) -> Vec<String> {
+        let mut actions: Vec<String> = self.defaults.keys().cloned().collect();
+        actions.sort();
+        actions
+    }
+
+    /// Export shortcuts configuration
+    pub fn export_config(&self) -> HashMap<String, Vec<String>> {
+        let mut config = HashMap::new();
+
+        for (action, keys) in &self.customizations {
+            let key_strings: Vec<String> = keys.iter().map(|k| self.key_to_string(k)).collect();
+            config.insert(action.clone(), key_strings);
+        }
+
+        config
+    }
+
+    /// Import shortcuts configuration
+    pub fn import_config(&mut self, config: HashMap<String, Vec<String>>) -> Result<(), String> {
+        for (action, key_strings) in config {
+            let keys: Result<Vec<crossterm::event::KeyEvent>, String> = key_strings.iter()
+                .map(|s| self.string_to_key(s))
+                .collect();
+
+            match keys {
+                Ok(k) => {
+                    self.set_shortcut(action, k)?;
+                }
+                Err(e) => return Err(format!("Invalid key format: {}", e)),
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Convert key event to string representation
+    fn key_to_string(&self, key: &crossterm::event::KeyEvent) -> String {
+        let mut parts = Vec::new();
+
+        if key.modifiers.contains(crossterm::event::KeyModifiers::CONTROL) {
+            parts.push("Ctrl".to_string());
+        }
+        if key.modifiers.contains(crossterm::event::KeyModifiers::ALT) {
+            parts.push("Alt".to_string());
+        }
+        if key.modifiers.contains(crossterm::event::KeyModifiers::SHIFT) {
+            parts.push("Shift".to_string());
+        }
+
+        let key_part = match key.code {
+            crossterm::event::KeyCode::Char(c) => c.to_string().to_uppercase(),
+            crossterm::event::KeyCode::Enter => "Enter".to_string(),
+            crossterm::event::KeyCode::Esc => "Escape".to_string(),
+            crossterm::event::KeyCode::Backspace => "Backspace".to_string(),
+            crossterm::event::KeyCode::Tab => "Tab".to_string(),
+            crossterm::event::KeyCode::Up => "Up".to_string(),
+            crossterm::event::KeyCode::Down => "Down".to_string(),
+            crossterm::event::KeyCode::Left => "Left".to_string(),
+            crossterm::event::KeyCode::Right => "Right".to_string(),
+            _ => "Unknown".to_string(),
+        };
+
+        parts.push(key_part);
+        parts.join("+")
+    }
+
+    /// Convert string representation to key event
+    fn string_to_key(&self, s: &str) -> Result<crossterm::event::KeyEvent, String> {
+        let parts: Vec<&str> = s.split('+').collect();
+        let mut modifiers = crossterm::event::KeyModifiers::empty();
+        let mut key_code = None;
+
+        for part in parts {
+            match part.to_lowercase().as_str() {
+                "ctrl" => modifiers.insert(crossterm::event::KeyModifiers::CONTROL),
+                "alt" => modifiers.insert(crossterm::event::KeyModifiers::ALT),
+                "shift" => modifiers.insert(crossterm::event::KeyModifiers::SHIFT),
+                "enter" => key_code = Some(crossterm::event::KeyCode::Enter),
+                "escape" | "esc" => key_code = Some(crossterm::event::KeyCode::Esc),
+                "backspace" => key_code = Some(crossterm::event::KeyCode::Backspace),
+                "tab" => key_code = Some(crossterm::event::KeyCode::Tab),
+                "up" => key_code = Some(crossterm::event::KeyCode::Up),
+                "down" => key_code = Some(crossterm::event::KeyCode::Down),
+                "left" => key_code = Some(crossterm::event::KeyCode::Left),
+                "right" => key_code = Some(crossterm::event::KeyCode::Right),
+                other => {
+                    if other.len() == 1 {
+                        key_code = Some(crossterm::event::KeyCode::Char(other.chars().next().unwrap()));
+                    } else {
+                        return Err(format!("Unknown key: {}", other));
+                    }
+                }
+            }
+        }
+
+        match key_code {
+            Some(code) => Ok(crossterm::event::KeyEvent {
+                code,
+                modifiers,
+                kind: crossterm::event::KeyEventKind::Press,
+                state: crossterm::event::KeyEventState::empty(),
+            }),
+            None => Err("No key code specified".to_string()),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -644,5 +1078,76 @@ mod tests {
         manager.set_focus("btn1");
         manager.clear_focus();
         assert!(manager.focused_element.is_none());
+    }
+
+    #[test]
+    fn test_enhanced_keyboard_navigation() {
+        let mut nav = super::EnhancedKeyboardNavigation::new();
+
+        nav.register_element("btn1".to_string(), TextAlternative::new("btn1", "Button 1", ElementType::Button));
+        nav.register_element("btn2".to_string(), TextAlternative::new("btn2", "Button 2", ElementType::Button));
+
+        // Test tab navigation
+        let _ = nav.tab_next();
+        assert_eq!(nav.current_focus().map(|alt| alt.id.as_str()), Some("btn1"));
+
+        let _ = nav.tab_next();
+        assert_eq!(nav.current_focus().map(|alt| alt.id.as_str()), Some("btn2"));
+
+        // Test wrap around
+        let _ = nav.tab_next();
+        assert_eq!(nav.current_focus().map(|alt| alt.id.as_str()), Some("btn1"));
+    }
+
+    #[test]
+    fn test_high_contrast_theme_manager() {
+        let manager = super::HighContrastThemeManager::new();
+
+        let themes = manager.available_themes();
+        assert!(themes.contains(&"high-contrast-dark".to_string()));
+        assert!(themes.contains(&"high-contrast-light".to_string()));
+        assert!(themes.contains(&"high-contrast-yellow-blue".to_string()));
+
+        let theme = manager.current_theme();
+        assert_eq!(theme.name, "High Contrast Dark");
+    }
+
+    #[test]
+    fn test_keyboard_shortcut_customizer() {
+        let mut customizer = super::KeyboardShortcutCustomizer::new();
+
+        // Test default shortcuts
+        let shortcut = customizer.get_shortcut("mode.chat");
+        assert!(shortcut.is_some());
+
+        // Test custom shortcut
+        let custom_keys = vec![crossterm::event::KeyEvent {
+            code: crossterm::event::KeyCode::Char('x'),
+            modifiers: crossterm::event::KeyModifiers::CONTROL,
+            kind: crossterm::event::KeyEventKind::Press,
+            state: crossterm::event::KeyEventState::empty(),
+        }];
+
+        assert!(customizer.set_shortcut("test.action".to_string(), custom_keys.clone()).is_ok());
+        assert_eq!(customizer.get_shortcut("test.action"), Some(&custom_keys));
+    }
+
+    #[test]
+    fn test_keyboard_shortcut_key_conversion() {
+        let customizer = super::KeyboardShortcutCustomizer::new();
+
+        let key = crossterm::event::KeyEvent {
+            code: crossterm::event::KeyCode::Char('a'),
+            modifiers: crossterm::event::KeyModifiers::CONTROL,
+            kind: crossterm::event::KeyEventKind::Press,
+            state: crossterm::event::KeyEventState::empty(),
+        };
+
+        let key_string = customizer.key_to_string(&key);
+        assert_eq!(key_string, "Ctrl+A");
+
+        let converted_back = customizer.string_to_key(&key_string);
+        assert!(converted_back.is_ok());
+        assert_eq!(converted_back.unwrap().code, crossterm::event::KeyCode::Char('a'));
     }
 }

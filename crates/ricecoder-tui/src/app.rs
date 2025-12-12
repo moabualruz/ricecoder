@@ -100,6 +100,14 @@ pub struct App {
     pub chat_lazy_loader: Option<crate::LazyLoader<String>>,
     /// Lazy loader for command history
     pub command_lazy_loader: Option<crate::LazyLoader<String>>,
+    /// Enhanced keyboard navigation manager
+    pub keyboard_nav: crate::EnhancedKeyboardNavigation,
+    /// High contrast theme manager
+    pub high_contrast_themes: crate::HighContrastThemeManager,
+    /// Keyboard shortcut customizer
+    pub shortcut_customizer: crate::KeyboardShortcutCustomizer,
+    /// Screen reader announcer
+    pub screen_reader: crate::ScreenReaderAnnouncer,
 }
 
 impl App {
@@ -143,6 +151,12 @@ impl App {
         let chat_lazy_loader = None;
         let command_lazy_loader = None;
 
+        // Create accessibility components
+        let keyboard_nav = crate::EnhancedKeyboardNavigation::new();
+        let high_contrast_themes = crate::HighContrastThemeManager::new();
+        let shortcut_customizer = crate::KeyboardShortcutCustomizer::new();
+        let screen_reader = crate::ScreenReaderAnnouncer::new(true); // Enable by default
+
         let app = Self {
             reactive_state,
             event_dispatcher,
@@ -153,6 +167,10 @@ impl App {
             command_virtual_list,
             chat_lazy_loader,
             command_lazy_loader,
+            keyboard_nav,
+            high_contrast_themes,
+            shortcut_customizer,
+            screen_reader,
         };
 
         // Initialize virtual lists for large datasets
@@ -167,37 +185,6 @@ impl App {
         }
 
         Ok(app)
-    }
-
-    /// Bootstrap the project using TEA architecture
-    async fn bootstrap_project(&self) -> Result<()> {
-        // Dispatch bootstrap event
-        let event_id = self.event_dispatcher.dispatch_event(
-            crate::AppMessage::OperationStarted(PendingOperation {
-                id: "project_bootstrap".to_string(),
-                description: "Bootstrapping project".to_string(),
-                start_time: std::time::Instant::now(),
-                timeout: std::time::Duration::from_secs(30),
-            }),
-            crate::EventPriority::High,
-            crate::EventSource::System,
-        ).await?;
-
-        // Perform actual bootstrap
-        let reactive_state = self.reactive_state.read().await;
-        let model = reactive_state.current();
-
-        // TODO: Implement actual project bootstrap logic using TEA model
-        // For now, just mark as completed
-        drop(reactive_state);
-
-        self.event_dispatcher.dispatch_event(
-            crate::AppMessage::OperationCompleted(event_id),
-            crate::EventPriority::Normal,
-            crate::EventSource::System,
-        ).await?;
-
-        Ok(())
     }
 
     /// Initialize virtual lists and lazy loaders for large datasets
@@ -315,6 +302,9 @@ impl App {
                 alignment: Alignment::Left,
             },
         ));
+
+        // Register focusable elements for keyboard navigation
+        self.register_focusable_elements();
     }
 
     /// Scroll chat messages
@@ -442,5 +432,56 @@ impl App {
         let command_progress = self.command_lazy_loader.as_ref().map(|l| l.progress());
 
         (chat_progress, command_progress)
+    }
+
+    /// Get pending screen reader announcements
+    pub async fn get_screen_reader_announcements(&self) -> Vec<crate::Announcement> {
+        self.screen_reader.get_announcements().await
+    }
+
+    /// Clear screen reader announcements
+    pub async fn clear_screen_reader_announcements(&self) {
+        self.screen_reader.clear_announcements().await;
+    }
+
+    /// Enable/disable screen reader
+    pub fn set_screen_reader_enabled(&mut self, enabled: bool) {
+        self.screen_reader.set_enabled(enabled);
+    }
+
+    /// Check if screen reader is enabled
+    pub fn is_screen_reader_enabled(&self) -> bool {
+        self.screen_reader.is_enabled()
+    }
+
+    /// Switch to high contrast theme
+    pub fn set_high_contrast_theme(&mut self, theme_name: String) -> bool {
+        if self.high_contrast_themes.set_theme(theme_name) {
+            // Also enable high contrast mode in keyboard navigation
+            self.keyboard_nav.set_high_contrast(true);
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Get current high contrast theme
+    pub fn get_current_high_contrast_theme(&self) -> &crate::style::Theme {
+        self.high_contrast_themes.current_theme()
+    }
+
+    /// Get available high contrast themes
+    pub fn get_available_high_contrast_themes(&self) -> Vec<String> {
+        self.high_contrast_themes.available_themes()
+    }
+
+    /// Enable/disable high contrast mode
+    pub fn set_high_contrast_mode(&mut self, enabled: bool) {
+        self.keyboard_nav.set_high_contrast(enabled);
+    }
+
+    /// Check if high contrast mode is enabled
+    pub fn is_high_contrast_mode(&self) -> bool {
+        self.keyboard_nav.is_high_contrast()
     }
 }
