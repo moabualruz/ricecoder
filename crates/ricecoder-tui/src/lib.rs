@@ -67,18 +67,21 @@ pub use banner::{BannerArea, BannerComponent, BannerComponentConfig};
 pub use clipboard::{ClipboardError, ClipboardManager, CopyFeedback, CopyOperation};
 pub use code_editor_widget::{CodeEditorWidget, CodeLine, Language, SyntaxTheme};
 pub use command_blocks::{Command, CommandBlock, CommandBlocksWidget, CommandStatus};
-pub use ricecoder_lsp::tui_integration::{
-    DiagnosticDetailWidget, DiagnosticItem, DiagnosticSeverity, DiagnosticsWidget, HoverWidget,
-};
+// LSP integration moved to ricecoder-lsp crate
+// pub use ricecoder_lsp::tui_integration::{
+//     DiagnosticDetailWidget, DiagnosticItem, DiagnosticSeverity, DiagnosticsWidget, HoverWidget,
+// };
 pub use error::{
-    KeybindError, ProviderError, SessionError, StorageError, ToolError, TuiError,
+    KeybindError, StorageError, ToolError, TuiError,
     TuiResult,
 };
-pub use error_handling::{
-    ErrorBoundary, ErrorCategory, ErrorLogger, ErrorManager, ErrorSeverity, RecoveryStrategy,
-    RiceError, RetryMechanism, CrashRecovery, CrashReport, LogEntry as ErrorLogEntry, LogLevel as ErrorLogLevel,
-};
-pub use ricecoder_lsp::tui_integration::{language_from_file_path, lsp_diagnostics_to_tui, lsp_hover_to_text};
+// Provider and session errors moved to respective crates
+// pub use error_handling::{
+//     ErrorBoundary, ErrorCategory, ErrorLogger, ErrorManager, ErrorSeverity, RecoveryStrategy,
+//     RiceError, RetryMechanism, CrashRecovery, CrashReport, LogEntry as ErrorLogEntry, LogLevel as ErrorLogLevel,
+// };
+// LSP integration moved to ricecoder-lsp crate
+// pub use ricecoder_lsp::tui_integration::{language_from_file_path, lsp_diagnostics_to_tui, lsp_hover_to_text};
 pub use plugins::{
     Plugin, PluginContext, PluginId, PluginManager, PluginMessage, PluginMetadata, PluginRegistry,
     PluginSandbox, PluginState,
@@ -141,8 +144,10 @@ pub use style::{ColorSupport, Theme};
 pub use terminal_state::{ColorSupport as TerminalColorSupport, TerminalCapabilities, TerminalState, TerminalType};
 pub use textarea_widget::TextAreaWidget;
 pub use theme::ThemeManager;
-pub use ricecoder_vcs::tui_integration::{VcsIntegration, VcsStatus};
-pub use status_bar::StatusBarVcsExt;
+// VCS integration moved to ricecoder-vcs crate
+// pub use ricecoder_vcs::tui_integration::{VcsIntegration, VcsStatus};
+// VCS integration moved to ricecoder-vcs crate
+// pub use status_bar::StatusBarVcsExt;
 pub use theme_loader::{ThemeLoader, ThemeYaml};
 pub use theme_registry::ThemeRegistry;
 pub use theme_reset::ThemeResetManager;

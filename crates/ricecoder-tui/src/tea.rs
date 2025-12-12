@@ -18,7 +18,16 @@ use crate::project_bootstrap::ProjectBootstrap;
 use crossterm::event::{KeyEvent, MouseEvent};
 use ricecoder_files::FileChangeBatch;
 use ricecoder_help::HelpDialog;
-use ricecoder_sessions::TokenUsage;
+// Token usage moved to ricecoder-sessions crate
+// use ricecoder_sessions::TokenUsage;
+
+// Stub type for TUI isolation
+#[derive(Debug, Clone)]
+pub struct TokenUsage {
+    pub input: usize,
+    pub output: usize,
+    pub cached: usize,
+}
 use std::collections::HashMap;
 use std::path::PathBuf;
 

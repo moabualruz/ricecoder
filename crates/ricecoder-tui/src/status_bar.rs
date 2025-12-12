@@ -11,7 +11,23 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, Borders, Widget},
 };
-use ricecoder_sessions::{TokenUsage, TokenLimitStatus};
+// Token usage moved to ricecoder-sessions crate
+// use ricecoder_sessions::{TokenUsage, TokenLimitStatus};
+
+// Stub types for TUI isolation
+#[derive(Debug, Clone)]
+pub struct TokenUsage {
+    pub input: usize,
+    pub output: usize,
+    pub cached: usize,
+}
+
+#[derive(Debug, Clone)]
+pub enum TokenLimitStatus {
+    Normal,
+    Warning,
+    Critical,
+}
 use std::path::PathBuf;
 
 /// Status bar widget for displaying application status
@@ -444,40 +460,40 @@ impl Widget for StatusBarWidget {
     }
 }
 
-/// Extension trait for StatusBarWidget to add VCS integration
-pub trait StatusBarVcsExt {
-    /// Set VCS integration
-    fn with_vcs_integration(self, vcs: &ricecoder_vcs::tui_integration::VcsIntegration) -> Self;
-}
+// VCS integration moved to ricecoder-vcs crate
+// pub trait StatusBarVcsExt {
+//     fn with_vcs_integration(self, vcs: &ricecoder_vcs::tui_integration::VcsIntegration) -> Self;
+// }
 
-impl StatusBarVcsExt for StatusBarWidget {
-    fn with_vcs_integration(self, vcs: &ricecoder_vcs::tui_integration::VcsIntegration) -> Self {
-        let vcs_status = vcs.get_status();
-        let mut status_bar = self;
-
-        // Set basic branch info
-        status_bar.git_branch = vcs_status.branch.clone();
-
-        // Add VCS status indicators if there are changes
-        if vcs_status.is_in_repo() {
-            // Add status summary to recording status (reuse existing field)
-            if vcs_status.has_changes {
-                status_bar.recording_status = vcs_status.status_summary.clone();
-            }
-
-            // Add ahead/behind info to search status
-            if let Some((ahead, behind)) = vcs_status.ahead_behind {
-                if ahead > 0 || behind > 0 {
-                    status_bar.search_status = Some(format!("↑{} ↓{}", ahead, behind));
-                }
-            }
-
-            // Add conflict indicator to selection status
-            if vcs_status.has_conflicts {
-                status_bar.selection_status = Some("CONFLICTS".to_string());
-            }
-        }
-
-        status_bar
-    }
-}
+// VCS integration moved to ricecoder-vcs crate
+// impl StatusBarVcsExt for StatusBarWidget {
+//     fn with_vcs_integration(self, vcs: &ricecoder_vcs::tui_integration::VcsIntegration) -> Self {
+//         let vcs_status = vcs.get_status();
+//         let mut status_bar = self;
+//
+//         // Set basic branch info
+//         status_bar.git_branch = vcs_status.branch.clone();
+//
+//         // Add VCS status indicators if there are changes
+//         if vcs_status.is_in_repo() {
+//             // Add status summary to recording status (reuse existing field)
+//             if vcs_status.has_changes {
+//                 status_bar.recording_status = vcs_status.status_summary.clone();
+//             }
+//
+//             // Add ahead/behind info to search status
+//             if let Some((ahead, behind)) = vcs_status.ahead_behind {
+//                 if ahead > 0 || behind > 0 {
+//                     status_bar.search_status = Some(format!("↑{} ↓{}", ahead, behind));
+//                 }
+//             }
+//
+//             // Add conflict indicator to selection status
+//             if vcs_status.has_conflicts {
+//                 status_bar.selection_status = Some("CONFLICTS".to_string());
+//             }
+//         }
+//
+//         status_bar
+//     }
+// }

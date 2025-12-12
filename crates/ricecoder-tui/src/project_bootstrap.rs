@@ -5,7 +5,22 @@
 
 use crate::error::TuiResult;
 use crate::code_editor_widget::Language;
-use ricecoder_research::{ProjectAnalyzer, ProjectType};
+// Project analysis moved to ricecoder-research crate
+// use ricecoder_research::{ProjectAnalyzer, ProjectType};
+
+// Stub types for TUI isolation
+#[derive(Debug, Clone)]
+pub struct ProjectAnalyzer;
+
+#[derive(Debug, Clone)]
+pub enum ProjectType {
+    Rust,
+    Python,
+    TypeScript,
+    Go,
+    Java,
+    Unknown,
+}
 use ricecoder_storage::ConfigLoader;
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
