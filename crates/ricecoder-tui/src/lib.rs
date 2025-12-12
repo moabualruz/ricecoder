@@ -56,6 +56,7 @@ pub mod tree_widget;
 pub mod vcs_integration;
 pub mod widgets;
 pub mod plugins;
+pub mod monitoring;
 
 // Re-export commonly used types
 pub use accessibility::{
@@ -84,6 +85,11 @@ pub use lsp_integration::{language_from_file_path, lsp_diagnostics_to_tui, lsp_h
 pub use plugins::{
     Plugin, PluginContext, PluginId, PluginManager, PluginMessage, PluginMetadata, PluginRegistry,
     PluginSandbox, PluginState,
+};
+pub use monitoring::{
+    MonitoringSystem, PerformanceMonitor, UsageAnalytics, MetricsCollector,
+    PerformanceProfiler, UserExperienceMetrics, MonitoringReport, PerformanceReport,
+    AnalyticsReport, UserExperienceReport, AnonymousStatistics,
 };
 pub use command_palette::{CommandPaletteWidget, PaletteCommand};
 pub use executor::{
