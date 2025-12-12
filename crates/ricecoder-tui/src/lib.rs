@@ -21,6 +21,7 @@
 pub mod accessibility;
 pub mod app;
 pub mod banner;
+pub mod config;
 pub mod model;
 pub mod update;
 pub mod view;
@@ -82,6 +83,7 @@ pub use accessibility::{
 };
 pub use app::App;
 pub use banner::{BannerArea, BannerComponent, BannerComponentConfig};
+pub use config::{TuiConfig, ConfigManager};
 pub use clipboard::{ClipboardError, ClipboardManager, CopyFeedback, CopyOperation};
 pub use code_editor_widget::{CodeEditorWidget, CodeLine, Language, SyntaxTheme};
 pub use command_blocks::{Command, CommandBlock, CommandBlocksWidget, CommandStatus};

@@ -12,8 +12,8 @@
 //!
 //! Configuration is loaded in the following priority order (highest to lowest):
 //! 1. Runtime overrides (CLI flags, environment variables)
-//! 2. Project-level config (`.ricecoder/config.yaml`)
-//! 3. User-level config (`~/.ricecoder/config.yaml`)
+//! 2. Project-level config (`.ricecoder/config.yaml`, `.ricecoder/config.json`, `.ricecoder/config.toml`)
+//! 3. User-level config (`~/.ricecoder/tui.yaml`, `~/.ricecoder/tui.json`, `~/.ricecoder/tui.toml`)
 //! 4. Built-in defaults
 //!
 //! # Examples
@@ -59,7 +59,12 @@
 use crate::accessibility::AccessibilityConfig;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use serde_json;
+use toml;
+use std::fs;
 use std::path::PathBuf;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
 /// TUI configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -105,22 +110,487 @@ impl Default for TuiConfig {
 }
 
 impl TuiConfig {
-    /// Load configuration from file
+    /// Load configuration from file with full hierarchy
     pub fn load() -> Result<Self> {
-        // TODO: Load from config file if it exists
-        Ok(Self::default())
+        Self::load_with_hierarchy()
     }
 
-    /// Save configuration to file
-    pub fn save(&self) -> Result<()> {
-        // TODO: Save to config file
+    /// Load configuration with full hierarchy and merging
+    pub fn load_with_hierarchy() -> Result<Self> {
+        Self::load_with_hierarchy_and_overrides(None)
+    }
+
+    /// Load configuration with full hierarchy and runtime overrides
+    pub fn load_with_hierarchy_and_overrides(runtime_overrides: Option<&TuiConfig>) -> Result<Self> {
+        // Start with defaults
+        let mut config = Self::default();
+
+        // Load user-level config (lowest priority except defaults)
+        if let Ok(user_config) = Self::load_user_config() {
+            config = config.merge(user_config);
+        }
+
+        // Load project-level config (higher priority)
+        if let Ok(project_config) = Self::load_project_config() {
+            config = config.merge(project_config);
+        }
+
+        // Apply runtime overrides (highest priority)
+        if let Some(overrides) = runtime_overrides {
+            config = config.merge(overrides.clone());
+        }
+
+        // Load environment variable overrides
+        if let Ok(env_config) = Self::load_from_env() {
+            config = config.merge(env_config);
+        }
+
+        config.validate()?;
+        Ok(config)
+    }
+
+    /// Load user-level configuration
+    pub fn load_user_config() -> Result<Self> {
+        // Try user config files in priority order
+        let yaml_config = Self::load_yaml();
+        if yaml_config.is_ok() {
+            return yaml_config;
+        }
+
+        let json_config = Self::load_json();
+        if json_config.is_ok() {
+            return json_config;
+        }
+
+        Self::load_toml()
+    }
+
+    /// Load project-level configuration
+    pub fn load_project_config() -> Result<Self> {
+        // Look for project config in current directory and parent directories
+        let mut current_dir = std::env::current_dir()?;
+
+        loop {
+            let config_paths = [
+                current_dir.join(".ricecoder").join("config.yaml"),
+                current_dir.join(".ricecoder").join("config.json"),
+                current_dir.join(".ricecoder").join("config.toml"),
+                current_dir.join(".ricecoder").join("tui.yaml"),
+                current_dir.join(".ricecoder").join("tui.json"),
+                current_dir.join(".ricecoder").join("tui.toml"),
+            ];
+
+            for path in &config_paths {
+                if path.exists() {
+                    let content = fs::read_to_string(path)
+                        .map_err(|e| anyhow::anyhow!("Failed to read project config {}: {}", path.display(), e))?;
+
+                    let config = match path.extension().and_then(|s| s.to_str()) {
+                        Some("yaml") | Some("yml") => serde_yaml::from_str(&content),
+                        Some("json") => serde_json::from_str(&content),
+                        Some("toml") => toml::from_str(&content),
+                        _ => continue,
+                    }.map_err(|e| anyhow::anyhow!("Failed to parse project config {}: {}", path.display(), e))?;
+
+                    return Ok(config);
+                }
+            }
+
+            // Move up one directory
+            if !current_dir.pop() {
+                break;
+            }
+        }
+
+        Err(anyhow::anyhow!("No project configuration found"))
+    }
+
+    /// Load configuration from environment variables
+    pub fn load_from_env() -> Result<Self> {
+        let mut config = Self::default();
+
+        // Check for environment variable overrides
+        if let Ok(theme) = std::env::var("RICECODER_THEME") {
+            config.theme = theme;
+        }
+
+        if let Ok(animations) = std::env::var("RICECODER_ANIMATIONS") {
+            config.animations = animations.parse().unwrap_or(true);
+        }
+
+        if let Ok(mouse) = std::env::var("RICECODER_MOUSE") {
+            config.mouse = mouse.parse().unwrap_or(true);
+        }
+
+        if let Ok(vim_mode) = std::env::var("RICECODER_VIM_MODE") {
+            config.vim_mode = vim_mode.parse().unwrap_or(false);
+        }
+
+        Ok(config)
+    }
+
+    /// Merge two configurations (self takes precedence over other)
+    pub fn merge(mut self, other: Self) -> Self {
+        // Only override if values are not default
+        if !other.theme.is_empty() && other.theme != Self::default().theme {
+            self.theme = other.theme;
+        }
+
+        // For boolean values, any explicit setting overrides
+        if other.animations != Self::default().animations {
+            self.animations = other.animations;
+        }
+
+        if other.mouse != Self::default().mouse {
+            self.mouse = other.mouse;
+        }
+
+        // Merge optional values
+        if other.width.is_some() {
+            self.width = other.width;
+        }
+
+        if other.height.is_some() {
+            self.height = other.height;
+        }
+
+        // Merge accessibility config
+        self.accessibility = self.accessibility.merge(other.accessibility);
+
+        // Merge provider settings
+        if other.provider.is_some() {
+            self.provider = other.provider;
+        }
+
+        if other.model.is_some() {
+            self.model = other.model;
+        }
+
+        if other.vim_mode != Self::default().vim_mode {
+            self.vim_mode = other.vim_mode;
+        }
+
+        self
+    }
+
+    /// Validate configuration values
+    pub fn validate(&self) -> Result<()> {
+        // Validate theme name (should be non-empty)
+        if self.theme.trim().is_empty() {
+            return Err(anyhow::anyhow!("Theme name cannot be empty"));
+        }
+
+        // Validate terminal dimensions if specified
+        if let Some(width) = self.width {
+            if width == 0 {
+                return Err(anyhow::anyhow!("Terminal width must be greater than 0"));
+            }
+        }
+
+        if let Some(height) = self.height {
+            if height == 0 {
+                return Err(anyhow::anyhow!("Terminal height must be greater than 0"));
+            }
+        }
+
+        // Validate accessibility config
+        if self.accessibility.font_size_multiplier < 1.0 || self.accessibility.font_size_multiplier > 2.0 {
+            return Err(anyhow::anyhow!("Font size multiplier must be between 1.0 and 2.0"));
+        }
+
+        Ok(())
+    }
+}
+
+/// Configuration manager with hot-reload support
+pub struct ConfigManager {
+    /// Current configuration
+    config: Arc<RwLock<TuiConfig>>,
+    /// Configuration file watcher
+    watcher: Option<crate::reactive_ui_updates::FileWatcher>,
+    /// Callback for configuration changes
+    change_callback: Option<Box<dyn Fn(TuiConfig) + Send + Sync>>,
+}
+
+impl ConfigManager {
+    /// Create a new configuration manager
+    pub fn new() -> Self {
+        Self {
+            config: Arc::new(RwLock::new(TuiConfig::default())),
+            watcher: None,
+            change_callback: None,
+        }
+    }
+
+    /// Load configuration and start watching for changes
+    pub async fn load_and_watch(&mut self) -> Result<()> {
+        // Load initial configuration
+        let config = TuiConfig::load_with_hierarchy()?;
+        *self.config.write().await = config.clone();
+
+        // Start watching configuration files
+        self.start_watching().await?;
+
         Ok(())
     }
 
-    /// Get the config file path
-    pub fn config_path() -> Result<PathBuf> {
+    /// Get current configuration
+    pub async fn get_config(&self) -> TuiConfig {
+        self.config.read().await.clone()
+    }
+
+    /// Set configuration change callback
+    pub fn set_change_callback<F>(&mut self, callback: F)
+    where
+        F: Fn(TuiConfig) + Send + Sync + 'static,
+    {
+        self.change_callback = Some(Box::new(callback));
+    }
+
+    /// Manually reload configuration
+    pub async fn reload(&mut self) -> Result<()> {
+        let new_config = TuiConfig::load_with_hierarchy()?;
+
+        // Check if configuration actually changed
+        let current_config = self.config.read().await;
+        if *current_config != new_config {
+            drop(current_config); // Release read lock
+            *self.config.write().await = new_config.clone();
+
+            // Call change callback if set
+            if let Some(callback) = &self.change_callback {
+                callback(new_config);
+            }
+
+            tracing::info!("Configuration reloaded");
+        }
+
+        Ok(())
+    }
+
+    /// Start watching configuration files for changes
+    async fn start_watching(&mut self) -> Result<()> {
+        let file_watcher = crate::reactive_ui_updates::FileWatcher::new();
+
+        // Watch all possible configuration file locations
+        let config_paths = vec![
+            TuiConfig::yaml_config_path()?,
+            TuiConfig::json_config_path()?,
+            TuiConfig::toml_config_path()?,
+        ];
+
+        for path in config_paths {
+            if let Some(parent) = path.parent() {
+                if parent.exists() {
+                    file_watcher.watch_path(path.clone(), false).await
+                        .map_err(|e| anyhow::anyhow!("Failed to watch config path {}: {}", path.display(), e))?;
+                }
+            }
+        }
+
+        // Set up change handler
+        let config_arc = Arc::clone(&self.config);
+        let callback = self.change_callback.take();
+
+        file_watcher.set_change_handler(move |changes| {
+            let config_arc = Arc::clone(&config_arc);
+            let callback = callback.clone();
+
+            tokio::spawn(async move {
+                // Check if any configuration files changed
+                let config_files_changed = changes.iter().any(|change| {
+                    let path_str = change.path.to_string_lossy();
+                    path_str.contains("ricecoder") &&
+                    (path_str.ends_with(".yaml") ||
+                     path_str.ends_with(".yml") ||
+                     path_str.ends_with(".json") ||
+                     path_str.ends_with(".toml"))
+                });
+
+                if config_files_changed {
+                    match TuiConfig::load_with_hierarchy() {
+                        Ok(new_config) => {
+                            let mut config = config_arc.write().await;
+                            if *config != new_config {
+                                *config = new_config.clone();
+
+                                if let Some(callback) = &callback {
+                                    callback(new_config);
+                                }
+
+                                tracing::info!("Configuration hot-reloaded");
+                            }
+                        }
+                        Err(e) => {
+                            tracing::error!("Failed to reload configuration: {}", e);
+                        }
+                    }
+                }
+            });
+        }).await;
+
+        self.watcher = Some(file_watcher);
+        Ok(())
+    }
+
+    /// Stop watching configuration files
+    pub async fn stop_watching(&mut self) -> Result<()> {
+        if let Some(watcher) = self.watcher.take() {
+            watcher.stop().await?;
+        }
+        Ok(())
+    }
+}
+
+impl Default for ConfigManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+        let yaml_content = serde_yaml::to_string(self)
+            .map_err(|e| anyhow::anyhow!("Failed to serialize config to YAML: {}", e))?;
+
+        fs::write(&config_path, yaml_content)
+            .map_err(|e| anyhow::anyhow!("Failed to write YAML config file {}: {}", config_path.display(), e))?;
+
+        Ok(())
+    }
+
+    /// Save configuration to JSON file
+    pub fn save_json(&self) -> Result<()> {
+        self.validate()?; // Validate before saving
+
+        let config_path = Self::json_config_path()?;
+
+        // Create parent directories if they don't exist
+        if let Some(parent) = config_path.parent() {
+            fs::create_dir_all(parent)
+                .map_err(|e| anyhow::anyhow!("Failed to create config directory {}: {}", parent.display(), e))?;
+        }
+
+        let json_content = serde_json::to_string_pretty(self)
+            .map_err(|e| anyhow::anyhow!("Failed to serialize config to JSON: {}", e))?;
+
+        fs::write(&config_path, json_content)
+            .map_err(|e| anyhow::anyhow!("Failed to write JSON config file {}: {}", config_path.display(), e))?;
+
+        Ok(())
+    }
+
+    /// Save configuration to TOML file
+    pub fn save_toml(&self) -> Result<()> {
+        self.validate()?; // Validate before saving
+
+        let config_path = Self::toml_config_path()?;
+
+        // Create parent directories if they don't exist
+        if let Some(parent) = config_path.parent() {
+            fs::create_dir_all(parent)
+                .map_err(|e| anyhow::anyhow!("Failed to create config directory {}: {}", parent.display(), e))?;
+        }
+
+        let toml_content = toml::to_string_pretty(self)
+            .map_err(|e| anyhow::anyhow!("Failed to serialize config to TOML: {}", e))?;
+
+        fs::write(&config_path, toml_content)
+            .map_err(|e| anyhow::anyhow!("Failed to write TOML config file {}: {}", config_path.display(), e))?;
+
+        Ok(())
+    }
+
+    /// Save configuration to file (YAML format by default)
+    pub fn save(&self) -> Result<()> {
+        self.save_yaml()
+    }
+
+    /// Get the YAML config file path
+    pub fn yaml_config_path() -> Result<PathBuf> {
         let config_dir = dirs::config_dir()
             .ok_or_else(|| anyhow::anyhow!("Could not determine config directory"))?;
         Ok(config_dir.join("ricecoder").join("tui.yaml"))
+    }
+
+    /// Get the JSON config file path
+    pub fn json_config_path() -> Result<PathBuf> {
+        let config_dir = dirs::config_dir()
+            .ok_or_else(|| anyhow::anyhow!("Could not determine config directory"))?;
+        Ok(config_dir.join("ricecoder").join("tui.json"))
+    }
+
+    /// Get the TOML config file path
+    pub fn toml_config_path() -> Result<PathBuf> {
+        let config_dir = dirs::config_dir()
+            .ok_or_else(|| anyhow::anyhow!("Could not determine config directory"))?;
+        Ok(config_dir.join("ricecoder").join("tui.toml"))
+    }
+
+    /// Get the config file path (YAML > JSON > TOML precedence)
+    pub fn config_path() -> Result<PathBuf> {
+        let yaml_path = Self::yaml_config_path()?;
+        if yaml_path.exists() {
+            return Ok(yaml_path);
+        }
+
+        let json_path = Self::json_config_path()?;
+        if json_path.exists() {
+            return Ok(json_path);
+        }
+
+        Self::toml_config_path()
+    }
+
+    /// Load configuration from YAML file
+    pub fn load_yaml() -> Result<Self> {
+        let config_path = Self::yaml_config_path()?;
+
+        if config_path.exists() {
+            let content = fs::read_to_string(&config_path)
+                .map_err(|e| anyhow::anyhow!("Failed to read YAML config file {}: {}", config_path.display(), e))?;
+
+            let config: TuiConfig = serde_yaml::from_str(&content)
+                .map_err(|e| anyhow::anyhow!("Failed to parse YAML config file {}: {}", config_path.display(), e))?;
+
+            config.validate()?;
+            Ok(config)
+        } else {
+            Ok(Self::default())
+        }
+    }
+
+    /// Load configuration from JSON file
+    pub fn load_json() -> Result<Self> {
+        let config_path = Self::json_config_path()?;
+
+        if config_path.exists() {
+            let content = fs::read_to_string(&config_path)
+                .map_err(|e| anyhow::anyhow!("Failed to read JSON config file {}: {}", config_path.display(), e))?;
+
+            let config: TuiConfig = serde_json::from_str(&content)
+                .map_err(|e| anyhow::anyhow!("Failed to parse JSON config file {}: {}", config_path.display(), e))?;
+
+            config.validate()?;
+            Ok(config)
+        } else {
+            Ok(Self::default())
+        }
+    }
+
+    /// Load configuration from TOML file
+    pub fn load_toml() -> Result<Self> {
+        let config_path = Self::toml_config_path()?;
+
+        if config_path.exists() {
+            let content = fs::read_to_string(&config_path)
+                .map_err(|e| anyhow::anyhow!("Failed to read TOML config file {}: {}", config_path.display(), e))?;
+
+            let config: TuiConfig = toml::from_str(&content)
+                .map_err(|e| anyhow::anyhow!("Failed to parse TOML config file {}: {}", config_path.display(), e))?;
+
+            config.validate()?;
+            Ok(config)
+        } else {
+            Ok(Self::default())
+        }
     }
 }

@@ -131,6 +131,40 @@ impl AccessibilityConfig {
     pub fn effective_font_size(&self, base_size: u16) -> u16 {
         ((base_size as f32) * self.font_size_multiplier) as u16
     }
+
+    /// Merge two accessibility configurations (self takes precedence over other)
+    pub fn merge(mut self, other: Self) -> Self {
+        // Only override if values are not default
+        if other.screen_reader_enabled != Self::default().screen_reader_enabled {
+            self.screen_reader_enabled = other.screen_reader_enabled;
+        }
+
+        if other.high_contrast_enabled != Self::default().high_contrast_enabled {
+            self.high_contrast_enabled = other.high_contrast_enabled;
+        }
+
+        if other.animations_disabled != Self::default().animations_disabled {
+            self.animations_disabled = other.animations_disabled;
+        }
+
+        if other.announcements_enabled != Self::default().announcements_enabled {
+            self.announcements_enabled = other.announcements_enabled;
+        }
+
+        if other.font_size_multiplier != Self::default().font_size_multiplier {
+            self.font_size_multiplier = other.font_size_multiplier;
+        }
+
+        if other.large_click_targets != Self::default().large_click_targets {
+            self.large_click_targets = other.large_click_targets;
+        }
+
+        if other.auto_advance != Self::default().auto_advance {
+            self.auto_advance = other.auto_advance;
+        }
+
+        self
+    }
 }
 
 /// Focus indicator style for keyboard navigation
