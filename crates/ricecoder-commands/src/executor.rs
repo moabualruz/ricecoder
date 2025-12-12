@@ -1,276 +1,601 @@
-use crate::error::{CommandError, Result};
-use crate::template::TemplateProcessor;
-use crate::types::{CommandContext, CommandDefinition, CommandExecutionResult};
+//! Command execution system with parameter handling, validation, and error management
+//!
+//! This module provides a comprehensive command execution framework that supports:
+//! - Parameter prompting and autocomplete
+//! - Command validation and error handling
+//! - Asynchronous command execution
+//! - Command result processing
+
 use std::collections::HashMap;
-use std::process::Command;
-use std::time::Instant;
+use std::sync::Arc;
+use tokio::sync::RwLock;
+use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
-/// Command executor for running shell commands
-pub struct CommandExecutor;
+/// Result type for command execution
+pub type CommandResult<T> = Result<T, CommandError>;
 
-impl CommandExecutor {
-    /// Execute a command with the given context
-    pub fn execute(
-        command_def: &CommandDefinition,
-        context: &CommandContext,
-    ) -> Result<CommandExecutionResult> {
-        // Validate that the command is enabled
-        if !command_def.enabled {
-            return Err(CommandError::ExecutionFailed(format!(
-                "Command is disabled: {}",
-                command_def.id
-            )));
-        }
+/// Errors that can occur during command execution
+#[derive(Debug, Error)]
+pub enum CommandError {
+    #[error("Command not found: {0}")]
+    CommandNotFound(String),
 
-        // Process the command template with arguments
-        let processed_command =
-            TemplateProcessor::process(&command_def.command, &context.arguments)?;
+    #[error("Invalid parameters: {0}")]
+    InvalidParameters(String),
 
-        // Start timing
-        let start = Instant::now();
+    #[error("Command execution failed: {0}")]
+    ExecutionFailed(String),
 
-        // Execute the command
-        let output = if cfg!(target_os = "windows") {
-            Command::new("cmd")
-                .args(["/C", &processed_command])
-                .current_dir(&context.cwd)
-                .envs(&context.env)
-                .output()
-                .map_err(|e| CommandError::ExecutionFailed(e.to_string()))?
-        } else {
-            Command::new("sh")
-                .args(["-c", &processed_command])
-                .current_dir(&context.cwd)
-                .envs(&context.env)
-                .output()
-                .map_err(|e| CommandError::ExecutionFailed(e.to_string()))?
-        };
+    #[error("Command validation failed: {0}")]
+    ValidationFailed(String),
 
-        let duration = start.elapsed();
+    #[error("Command cancelled")]
+    Cancelled,
 
-        // Extract output
-        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-        let exit_code = output.status.code().unwrap_or(-1);
+    #[error("Command timeout")]
+    Timeout,
 
-        // Check for timeout
-        if command_def.timeout_seconds > 0 && duration.as_secs() > command_def.timeout_seconds {
-            return Err(CommandError::ExecutionFailed(format!(
-                "Command execution timed out after {} seconds",
-                command_def.timeout_seconds
-            )));
-        }
+    #[error("Permission denied: {0}")]
+    PermissionDenied(String),
 
-        Ok(CommandExecutionResult::new(&command_def.id, exit_code)
-            .with_stdout(stdout)
-            .with_stderr(stderr)
-            .with_duration(duration.as_millis() as u64))
-    }
+    #[error("Internal error: {0}")]
+    InternalError(String),
+}
 
-    /// Execute a command and return only the output
-    pub fn execute_and_get_output(
-        command_def: &CommandDefinition,
-        context: &CommandContext,
-    ) -> Result<String> {
-        let result = Self::execute(command_def, context)?;
+/// Command parameter definition
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CommandParameter {
+    /// Parameter name
+    pub name: String,
+    /// Parameter type
+    pub param_type: ParameterType,
+    /// Human-readable description
+    pub description: String,
+    /// Whether the parameter is required
+    pub required: bool,
+    /// Default value (if any)
+    pub default_value: Option<String>,
+    /// Validation rules
+    pub validation: Option<ParameterValidation>,
+    /// Autocomplete options (if applicable)
+    pub autocomplete: Option<Vec<String>>,
+}
 
-        if result.success {
-            Ok(result.stdout)
-        } else {
-            Err(CommandError::ExecutionFailed(format!(
-                "Command failed with exit code {}: {}",
-                result.exit_code, result.stderr
-            )))
-        }
-    }
+/// Parameter type definitions
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ParameterType {
+    String,
+    Integer,
+    Float,
+    Boolean,
+    Choice(Vec<String>),
+    FilePath,
+    DirectoryPath,
+    Url,
+}
 
-    /// Execute a command and return both stdout and stderr
-    pub fn execute_and_get_all_output(
-        command_def: &CommandDefinition,
-        context: &CommandContext,
-    ) -> Result<(String, String)> {
-        let result = Self::execute(command_def, context)?;
-        Ok((result.stdout, result.stderr))
-    }
+/// Parameter validation rules
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ParameterValidation {
+    /// Minimum length for strings
+    pub min_length: Option<usize>,
+    /// Maximum length for strings
+    pub max_length: Option<usize>,
+    /// Regular expression pattern
+    pub pattern: Option<String>,
+    /// Minimum value for numbers
+    pub min_value: Option<f64>,
+    /// Maximum value for numbers
+    pub max_value: Option<f64>,
+    /// Custom validation function name
+    pub custom_validator: Option<String>,
+}
 
-    /// Validate command arguments against the command definition
-    pub fn validate_arguments(
-        command_def: &CommandDefinition,
-        arguments: &HashMap<String, String>,
-    ) -> Result<()> {
-        for arg_def in &command_def.arguments {
-            if arg_def.required && !arguments.contains_key(&arg_def.name) {
-                return Err(CommandError::InvalidArgument(format!(
-                    "Missing required argument: {}",
-                    arg_def.name
-                )));
-            }
+/// Command definition
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CommandDefinition {
+    /// Unique command name
+    pub name: String,
+    /// Human-readable display name
+    pub display_name: String,
+    /// Command description
+    pub description: String,
+    /// Command category
+    pub category: String,
+    /// Command parameters
+    pub parameters: Vec<CommandParameter>,
+    /// Whether the command requires confirmation
+    pub requires_confirmation: bool,
+    /// Confirmation message
+    pub confirmation_message: Option<String>,
+    /// Execution timeout in seconds
+    pub timeout_seconds: Option<u64>,
+    /// Required permissions
+    pub permissions: Vec<String>,
+}
 
-            if let Some(value) = arguments.get(&arg_def.name) {
-                // Validate against pattern if provided
-                if let Some(pattern) = &arg_def.validation_pattern {
-                    let regex = regex::Regex::new(pattern)?;
-                    if !regex.is_match(value) {
-                        return Err(CommandError::InvalidArgument(format!(
-                            "Argument '{}' does not match pattern: {}",
-                            arg_def.name, pattern
-                        )));
-                    }
-                }
-            }
-        }
+/// Command execution context
+#[derive(Debug, Clone)]
+pub struct CommandContext {
+    /// Current working directory
+    pub cwd: std::path::PathBuf,
+    /// Environment variables
+    pub env: HashMap<String, String>,
+    /// User information
+    pub user: Option<String>,
+    /// Session information
+    pub session_id: Option<String>,
+    /// Additional context data
+    pub data: HashMap<String, serde_json::Value>,
+}
 
-        Ok(())
-    }
+/// Command execution result
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CommandExecutionResult {
+    /// Command that was executed
+    pub command: String,
+    /// Parameters used
+    pub parameters: HashMap<String, String>,
+    /// Execution status
+    pub status: ExecutionStatus,
+    /// Result output
+    pub output: Option<String>,
+    /// Error message (if failed)
+    pub error: Option<String>,
+    /// Execution time in milliseconds
+    pub execution_time_ms: u64,
+    /// Timestamp of execution
+    pub executed_at: chrono::DateTime<chrono::Utc>,
+}
 
-    /// Build a context with default values for missing arguments
-    pub fn build_context_with_defaults(
-        command_def: &CommandDefinition,
-        mut arguments: HashMap<String, String>,
-        cwd: String,
-    ) -> Result<CommandContext> {
-        // Fill in default values for missing arguments
-        for arg_def in &command_def.arguments {
-            if !arguments.contains_key(&arg_def.name) {
-                if let Some(default) = &arg_def.default {
-                    arguments.insert(arg_def.name.clone(), default.clone());
-                }
-            }
-        }
+/// Execution status
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum ExecutionStatus {
+    Success,
+    Failed,
+    Cancelled,
+    Timeout,
+}
 
-        Ok(CommandContext {
-            cwd,
-            env: std::env::vars().collect(),
-            arguments,
-        })
-    }
+/// Command enum for different command types
+#[derive(Debug, Clone)]
+pub enum Command {
+    Save,
+    Open(String),
+    Search(String),
+    Custom(String),
+}
+
+/// Command result
+#[derive(Debug, Clone)]
+pub struct CommandResult {
+    pub success: bool,
+    pub output: String,
+    pub error: Option<String>,
+}
+
+/// Command executor trait
+pub trait CommandExecutor {
+    /// Execute a command
+    fn execute(&mut self, command: Command) -> Result<CommandResult, CommandError>;
+
+    /// Get command history
+    fn get_command_history(&self) -> Vec<&Command>;
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{ArgumentType, CommandArgument};
 
-    #[test]
-    fn test_validate_arguments_success() {
-        let mut cmd = CommandDefinition::new("test", "Test", "echo {{name}}");
-        cmd.arguments.push(
-            CommandArgument::new("name", ArgumentType::String)
-                .with_required(true)
-                .with_description("User name"),
-        );
+    struct MockCommandExecutor {
+        history: Vec<Command>,
+    }
 
-        let mut args = HashMap::new();
-        args.insert("name".to_string(), "Alice".to_string());
+    impl MockCommandExecutor {
+        fn new() -> Self {
+            Self { history: Vec::new() }
+        }
+    }
 
-        assert!(CommandExecutor::validate_arguments(&cmd, &args).is_ok());
+    impl CommandExecutor for MockCommandExecutor {
+        fn execute(&mut self, command: Command) -> Result<CommandResult, CommandError> {
+            self.history.push(command);
+            Ok(CommandResult {
+                success: true,
+                output: "Mock output".to_string(),
+                error: None,
+            })
+        }
+
+        fn get_command_history(&self) -> Vec<&Command> {
+            self.history.iter().collect()
+        }
     }
 
     #[test]
-    fn test_validate_arguments_missing_required() {
-        let mut cmd = CommandDefinition::new("test", "Test", "echo {{name}}");
-        cmd.arguments.push(
-            CommandArgument::new("name", ArgumentType::String)
-                .with_required(true)
-                .with_description("User name"),
-        );
+    fn test_command_execution() {
+        let mut executor = MockCommandExecutor::new();
+        let command = Command::Save;
 
-        let args = HashMap::new();
-        assert!(CommandExecutor::validate_arguments(&cmd, &args).is_err());
-    }
-
-    #[test]
-    fn test_validate_arguments_with_pattern() {
-        let mut cmd = CommandDefinition::new("test", "Test", "echo {{email}}");
-        cmd.arguments.push(
-            CommandArgument::new("email", ArgumentType::String)
-                .with_required(true)
-                .with_validation_pattern(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"),
-        );
-
-        let mut args = HashMap::new();
-        args.insert("email".to_string(), "invalid-email".to_string());
-        assert!(CommandExecutor::validate_arguments(&cmd, &args).is_err());
-
-        args.insert("email".to_string(), "test@example.com".to_string());
-        assert!(CommandExecutor::validate_arguments(&cmd, &args).is_ok());
-    }
-
-    #[test]
-    fn test_build_context_with_defaults() {
-        let mut cmd = CommandDefinition::new("test", "Test", "echo {{name}}");
-        cmd.arguments.push(
-            CommandArgument::new("name", ArgumentType::String)
-                .with_default("Guest")
-                .with_description("User name"),
-        );
-
-        let args = HashMap::new();
-        let context =
-            CommandExecutor::build_context_with_defaults(&cmd, args, ".".to_string()).unwrap();
-
-        assert_eq!(context.arguments.get("name").unwrap(), "Guest");
-    }
-
-    #[test]
-    fn test_build_context_override_defaults() {
-        let mut cmd = CommandDefinition::new("test", "Test", "echo {{name}}");
-        cmd.arguments.push(
-            CommandArgument::new("name", ArgumentType::String)
-                .with_default("Guest")
-                .with_description("User name"),
-        );
-
-        let mut args = HashMap::new();
-        args.insert("name".to_string(), "Alice".to_string());
-        let context =
-            CommandExecutor::build_context_with_defaults(&cmd, args, ".".to_string()).unwrap();
-
-        assert_eq!(context.arguments.get("name").unwrap(), "Alice");
-    }
-
-    #[test]
-    fn test_execute_simple_command() {
-        let cmd = CommandDefinition::new("test", "Test", "echo hello");
-        let context = CommandContext {
-            cwd: ".".to_string(),
-            env: std::env::vars().collect(),
-            arguments: HashMap::new(),
-        };
-
-        let result = CommandExecutor::execute(&cmd, &context).unwrap();
+        let result = executor.execute(command).unwrap();
         assert!(result.success);
-        assert!(result.stdout.contains("hello"));
+        assert_eq!(result.output, "Mock output");
     }
 
     #[test]
-    fn test_execute_disabled_command() {
-        let mut cmd = CommandDefinition::new("test", "Test", "echo hello");
-        cmd.enabled = false;
+    fn test_command_history() {
+        let mut executor = MockCommandExecutor::new();
 
-        let context = CommandContext {
-            cwd: ".".to_string(),
-            env: std::env::vars().collect(),
-            arguments: HashMap::new(),
-        };
+        executor.execute(Command::Save).unwrap();
+        executor.execute(Command::Custom("test".to_string())).unwrap();
 
-        assert!(CommandExecutor::execute(&cmd, &context).is_err());
+        let history = executor.get_command_history();
+        assert_eq!(history.len(), 2);
+        assert!(matches!(history[0], Command::Save));
+        assert!(matches!(history[1], Command::Custom(_)));
+    }
+}
+
+/// Command registry and executor
+pub struct CommandRegistry {
+    /// Registered commands
+    commands: HashMap<String, CommandDefinition>,
+    /// Command executors
+    executors: HashMap<String, Arc<dyn CommandExecutor>>,
+    /// Parameter prompt handler
+    prompt_handler: Option<Arc<dyn ParameterPromptHandler>>,
+}
+
+impl CommandRegistry {
+    /// Create a new command registry
+    pub fn new() -> Self {
+        Self {
+            commands: HashMap::new(),
+            executors: HashMap::new(),
+            prompt_handler: None,
+        }
+    }
+
+    /// Register a command
+    pub fn register_command(
+        &mut self,
+        definition: CommandDefinition,
+        executor: Arc<dyn CommandExecutor>,
+    ) {
+        let command_name = definition.name.clone();
+        self.commands.insert(command_name.clone(), definition);
+        self.executors.insert(command_name, executor);
+    }
+
+    /// Get a command definition
+    pub fn get_command(&self, name: &str) -> Option<&CommandDefinition> {
+        self.commands.get(name)
+    }
+
+    /// List all commands
+    pub fn list_commands(&self) -> Vec<&CommandDefinition> {
+        self.commands.values().collect()
+    }
+
+    /// List commands by category
+    pub fn list_commands_by_category(&self, category: &str) -> Vec<&CommandDefinition> {
+        self.commands
+            .values()
+            .filter(|cmd| cmd.category == category)
+            .collect()
+    }
+
+    /// Set parameter prompt handler
+    pub fn set_prompt_handler(&mut self, handler: Arc<dyn ParameterPromptHandler>) {
+        self.prompt_handler = Some(handler);
+    }
+
+    /// Execute a command with parameter prompting
+    pub async fn execute_command(
+        &self,
+        command_name: &str,
+        initial_params: HashMap<String, String>,
+        context: &CommandContext,
+    ) -> CommandResult<CommandExecutionResult> {
+        let definition = self.commands.get(command_name)
+            .ok_or_else(|| CommandError::CommandNotFound(command_name.to_string()))?;
+
+        let executor = self.executors.get(command_name)
+            .ok_or_else(|| CommandError::CommandNotFound(command_name.to_string()))?;
+
+        // Collect all parameters (initial + prompted)
+        let mut all_params = initial_params;
+
+        // Prompt for missing required parameters
+        for param in &definition.parameters {
+            if param.required && !all_params.contains_key(&param.name) {
+                if let Some(prompt_handler) = &self.prompt_handler {
+                    let value = prompt_handler.prompt_parameter(param, context).await?;
+                    all_params.insert(param.name.clone(), value);
+                } else {
+                    return Err(CommandError::InvalidParameters(
+                        format!("Missing required parameter: {}", param.name)
+                    ));
+                }
+            }
+        }
+
+        // Validate parameters
+        executor.validate_parameters(command_name, &all_params)?;
+
+        // Check confirmation if required
+        if definition.requires_confirmation {
+            if let Some(prompt_handler) = &self.prompt_handler {
+                let default_message = format!("Execute command '{}'?", command_name);
+                let message = definition.confirmation_message
+                    .as_ref()
+                    .unwrap_or(&default_message);
+
+                if !prompt_handler.confirm_execution(message, context).await? {
+                    return Ok(CommandExecutionResult {
+                        command: command_name.to_string(),
+                        parameters: all_params,
+                        status: ExecutionStatus::Cancelled,
+                        output: None,
+                        error: None,
+                        execution_time_ms: 0,
+                        executed_at: chrono::Utc::now(),
+                    });
+                }
+            }
+        }
+
+        // Execute the command
+        let start_time = std::time::Instant::now();
+        let result = executor.execute(command_name, all_params.clone(), context).await;
+        let execution_time = start_time.elapsed().as_millis() as u64;
+
+        match result {
+            Ok(mut execution_result) => {
+                execution_result.execution_time_ms = execution_time;
+                Ok(execution_result)
+            }
+            Err(e) => {
+                // Create error result
+                Ok(CommandExecutionResult {
+                    command: command_name.to_string(),
+                    parameters: all_params,
+                    status: ExecutionStatus::Failed,
+                    output: None,
+                    error: Some(e.to_string()),
+                    execution_time_ms: execution_time,
+                    executed_at: chrono::Utc::now(),
+                })
+            }
+        }
+    }
+
+    /// Get autocomplete suggestions
+    pub async fn get_autocomplete(
+        &self,
+        command: &str,
+        parameter: &str,
+        partial_value: &str,
+        context: &CommandContext,
+    ) -> CommandResult<Vec<String>> {
+        if let Some(executor) = self.executors.get(command) {
+            executor.get_autocomplete(command, parameter, partial_value, context).await
+        } else {
+            Ok(Vec::new())
+        }
+    }
+}
+
+/// Parameter prompt handler trait
+#[async_trait::async_trait]
+pub trait ParameterPromptHandler: Send + Sync {
+    /// Prompt user for a parameter value
+    async fn prompt_parameter(
+        &self,
+        parameter: &CommandParameter,
+        context: &CommandContext,
+    ) -> CommandResult<String>;
+
+    /// Ask for execution confirmation
+    async fn confirm_execution(
+        &self,
+        message: &str,
+        context: &CommandContext,
+    ) -> CommandResult<bool>;
+}
+
+/// Default parameter validation
+pub fn validate_parameter(
+    param: &CommandParameter,
+    value: &str,
+) -> CommandResult<()> {
+    // Check required
+    if param.required && value.trim().is_empty() {
+        return Err(CommandError::InvalidParameters(
+            format!("Parameter '{}' is required", param.name)
+        ));
+    }
+
+    // Type-specific validation
+    match &param.param_type {
+        ParameterType::Integer => {
+            if value.parse::<i64>().is_err() {
+                return Err(CommandError::InvalidParameters(
+                    format!("Parameter '{}' must be an integer", param.name)
+                ));
+            }
+        }
+        ParameterType::Float => {
+            if value.parse::<f64>().is_err() {
+                return Err(CommandError::InvalidParameters(
+                    format!("Parameter '{}' must be a number", param.name)
+                ));
+            }
+        }
+        ParameterType::Boolean => {
+            let lower = value.to_lowercase();
+            if !matches!(lower.as_str(), "true" | "false" | "1" | "0" | "yes" | "no") {
+                return Err(CommandError::InvalidParameters(
+                    format!("Parameter '{}' must be a boolean (true/false)", param.name)
+                ));
+            }
+        }
+        ParameterType::Choice(options) => {
+            if !options.contains(&value.to_string()) {
+                return Err(CommandError::InvalidParameters(
+                    format!("Parameter '{}' must be one of: {:?}", param.name, options)
+                ));
+            }
+        }
+        ParameterType::Url => {
+            if !value.starts_with("http://") && !value.starts_with("https://") {
+                return Err(CommandError::InvalidParameters(
+                    format!("Parameter '{}' must be a valid URL", param.name)
+                ));
+            }
+        }
+        _ => {} // Other types are validated as strings
+    }
+
+    // Custom validation rules
+    if let Some(validation) = &param.validation {
+        if let Some(min_len) = validation.min_length {
+            if value.len() < min_len {
+                return Err(CommandError::InvalidParameters(
+                    format!("Parameter '{}' must be at least {} characters", param.name, min_len)
+                ));
+            }
+        }
+
+        if let Some(max_len) = validation.max_length {
+            if value.len() > max_len {
+                return Err(CommandError::InvalidParameters(
+                    format!("Parameter '{}' must be at most {} characters", param.name, max_len)
+                ));
+            }
+        }
+
+        if let Some(pattern) = &validation.pattern {
+            let regex = regex::Regex::new(pattern)
+                .map_err(|_| CommandError::ValidationFailed(
+                    format!("Invalid regex pattern for parameter '{}'", param.name)
+                ))?;
+
+            if !regex.is_match(value) {
+                return Err(CommandError::InvalidParameters(
+                    format!("Parameter '{}' does not match required pattern", param.name)
+                ));
+            }
+        }
+
+        // Numeric validation
+        if matches!(param.param_type, ParameterType::Integer | ParameterType::Float) {
+            if let Ok(num) = value.parse::<f64>() {
+                if let Some(min_val) = validation.min_value {
+                    if num < min_val {
+                        return Err(CommandError::InvalidParameters(
+                            format!("Parameter '{}' must be at least {}", param.name, min_val)
+                        ));
+                    }
+                }
+
+                if let Some(max_val) = validation.max_value {
+                    if num > max_val {
+                        return Err(CommandError::InvalidParameters(
+                            format!("Parameter '{}' must be at most {}", param.name, max_val)
+                        ));
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct MockExecutor;
+
+    #[async_trait::async_trait]
+    impl CommandExecutor for MockExecutor {
+        async fn execute(
+            &self,
+            command: &str,
+            parameters: HashMap<String, String>,
+            _context: &CommandContext,
+        ) -> CommandResult<CommandExecutionResult> {
+            Ok(CommandExecutionResult {
+                command: command.to_string(),
+                parameters,
+                status: ExecutionStatus::Success,
+                output: Some("Command executed successfully".to_string()),
+                error: None,
+                execution_time_ms: 100,
+                executed_at: chrono::Utc::now(),
+            })
+        }
+
+        fn validate_parameters(
+            &self,
+            _command: &str,
+            _parameters: &HashMap<String, String>,
+        ) -> CommandResult<()> {
+            Ok(())
+        }
+
+        async fn get_autocomplete(
+            &self,
+            _command: &str,
+            _parameter: &str,
+            _partial_value: &str,
+            _context: &CommandContext,
+        ) -> CommandResult<Vec<String>> {
+            Ok(vec!["option1".to_string(), "option2".to_string()])
+        }
     }
 
     #[test]
-    fn test_execute_with_template() {
-        let cmd = CommandDefinition::new("test", "Test", "echo {{message}}");
-        let mut args = HashMap::new();
-        args.insert("message".to_string(), "Hello World".to_string());
-
-        let context = CommandContext {
-            cwd: ".".to_string(),
-            env: std::env::vars().collect(),
-            arguments: args,
+    fn test_parameter_validation() {
+        let param = CommandParameter {
+            name: "test".to_string(),
+            param_type: ParameterType::Integer,
+            description: "Test parameter".to_string(),
+            required: true,
+            default_value: None,
+            validation: None,
+            autocomplete: None,
         };
 
-        let result = CommandExecutor::execute(&cmd, &context).unwrap();
-        assert!(result.success);
-        assert!(result.stdout.contains("Hello World"));
+        // Valid integer
+        assert!(validate_parameter(&param, "42").is_ok());
+
+        // Invalid integer
+        assert!(validate_parameter(&param, "not_a_number").is_err());
+    }
+
+    #[test]
+    fn test_command_registry() {
+        let mut registry = CommandRegistry::new();
+
+        let cmd_def = CommandDefinition {
+            name: "test".to_string(),
+            display_name: "Test Command".to_string(),
+            description: "A test command".to_string(),
+            category: "Test".to_string(),
+            parameters: vec![],
+            requires_confirmation: false,
+            confirmation_message: None,
+            timeout_seconds: None,
+            permissions: vec![],
+        };
+
+        registry.register_command(cmd_def.clone(), Arc::new(MockExecutor));
+
+        assert!(registry.get_command("test").is_some());
+        assert_eq!(registry.list_commands().len(), 1);
     }
 }

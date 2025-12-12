@@ -32,7 +32,7 @@ pub mod dialog;
 pub mod error;
 pub mod search;
 
-pub use content::{HelpCategory, HelpContent, HelpItem};
+pub use content::{HelpCategory, HelpContent, HelpItem, HelpSystem};
 pub use dialog::HelpDialog;
 pub use error::{HelpError, Result};
 pub use search::HelpSearch;

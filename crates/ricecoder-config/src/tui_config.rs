@@ -56,13 +56,92 @@
 //!   disable_animations: false
 //! ```
 
-use crate::accessibility::AccessibilityConfig;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use toml;
 use std::fs;
 use std::path::PathBuf;
+
+/// Focus indicator style
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum FocusIndicatorStyle {
+    /// Underline
+    Underline,
+    /// Border
+    Border,
+    /// Background color
+    Background,
+    /// None
+    None,
+}
+
+impl Default for FocusIndicatorStyle {
+    fn default() -> Self {
+        Self::Border
+    }
+}
+
+/// Animation configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AnimationConfig {
+    /// Enable fade transitions
+    pub fade_enabled: bool,
+    /// Transition duration in milliseconds
+    pub transition_duration: u32,
+    /// Enable slide animations
+    pub slide_enabled: bool,
+}
+
+impl Default for AnimationConfig {
+    fn default() -> Self {
+        Self {
+            fade_enabled: true,
+            transition_duration: 200,
+            slide_enabled: true,
+        }
+    }
+}
+
+/// Accessibility configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccessibilityConfig {
+    /// Enable screen reader support
+    pub screen_reader_enabled: bool,
+    /// Enable high contrast mode
+    pub high_contrast_enabled: bool,
+    /// Disable animations
+    pub animations_disabled: bool,
+    /// Enable state announcements
+    pub announcements_enabled: bool,
+    /// Focus indicator style
+    pub focus_indicator: FocusIndicatorStyle,
+    /// Animation configuration
+    #[serde(default)]
+    pub animations: AnimationConfig,
+    /// Font size multiplier (1.0 = normal, 1.5 = 150%, etc.)
+    pub font_size_multiplier: f32,
+    /// Enable large click targets
+    pub large_click_targets: bool,
+    /// Enable auto-advance for forms
+    pub auto_advance: bool,
+}
+
+impl Default for AccessibilityConfig {
+    fn default() -> Self {
+        Self {
+            screen_reader_enabled: false,
+            high_contrast_enabled: false,
+            animations_disabled: false,
+            announcements_enabled: true,
+            focus_indicator: FocusIndicatorStyle::default(),
+            animations: AnimationConfig::default(),
+            font_size_multiplier: 1.0,
+            large_click_targets: false,
+            auto_advance: false,
+        }
+    }
+}
 use std::sync::Arc;
 use tokio::sync::RwLock;
 

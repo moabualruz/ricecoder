@@ -25,7 +25,7 @@ pub use engine::{KeybindEngine, ValidationResult};
 pub use error::{EngineError, ParseError, PersistenceError, ProfileError, RegistryError};
 pub use help::{KeybindHelp, Page};
 pub use merge::{KeybindMerger, MergeConflict, MergeResult};
-pub use models::{Context, Key, Keybind, KeyCombo, Modifier};
+pub use models::{Context, Key, Keybind, KeyCombo, KeybindManager, Modifier};
 pub use parser::{JsonKeybindParser, KeybindParser, MarkdownKeybindParser, ParserRegistry};
 pub use persistence::{FileSystemPersistence, KeybindPersistence};
 pub use profile::{Profile, ProfileManager};

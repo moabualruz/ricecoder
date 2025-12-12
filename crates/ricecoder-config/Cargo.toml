@@ -1,16 +1,16 @@
 [package]
-name = "ricecoder-themes"
+name = "ricecoder-config"
 version.workspace = true
 edition = "2021"
 authors = ["RiceCoder Contributors"]
-description = "Theme management system for RiceCoder"
+description = "Configuration management system for RiceCoder"
 license = "MIT"
 repository = "https://github.com/moabualruz/ricecoder"
 homepage = "https://github.com/moabualruz/ricecoder"
 documentation = "https://github.com/moabualruz/ricecoder/wiki"
 
 [lib]
-name = "ricecoder_themes"
+name = "ricecoder_config"
 path = "src/lib.rs"
 
 [dependencies]
@@ -22,11 +22,9 @@ thiserror = "1.0"
 tracing = "0.1"
 tokio = { workspace = true }
 anyhow = { workspace = true }
-chrono = { workspace = true }
-ratatui = "0.29"
-syntect = { workspace = true }
+config = "0.14"
 dirs = { workspace = true }
-ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
+notify = "6.1"
 
 [dev-dependencies]
 proptest = "1.4"

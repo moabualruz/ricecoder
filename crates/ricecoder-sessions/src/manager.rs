@@ -63,6 +63,11 @@ impl SessionManager {
         Ok(session)
     }
 
+    /// Close a session (alias for delete_session for interface compatibility)
+    pub fn close_session(&mut self, session_id: &str) -> SessionResult<()> {
+        self.delete_session(session_id)
+    }
+
     /// Delete a session
     pub fn delete_session(&mut self, session_id: &str) -> SessionResult<()> {
         if !self.sessions.contains_key(session_id) {
@@ -448,5 +453,21 @@ mod tests {
 
         let sessions = manager.list_sessions();
         assert_eq!(sessions.len(), 2);
+    }
+
+    #[test]
+    fn test_close_session() {
+        let mut manager = SessionManager::new(5);
+        let context = create_test_context();
+
+        let session = manager
+            .create_session("Test Session".to_string(), context)
+            .unwrap();
+
+        // Close session (should work same as delete)
+        manager.close_session(&session.id).unwrap();
+
+        assert_eq!(manager.session_count(), 0);
+        assert!(manager.get_session(&session.id).is_err());
     }
 }

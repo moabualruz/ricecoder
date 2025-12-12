@@ -1,6 +1,6 @@
 //! Theme registry for managing built-in and custom themes
 
-use crate::style::Theme;
+use crate::types::Theme;
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};

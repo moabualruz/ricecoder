@@ -7,10 +7,12 @@ pub mod error;
 pub mod loader;
 pub mod manager;
 pub mod registry;
+pub mod reset;
 pub mod types;
 
 pub use error::{ThemeError, Result};
 pub use loader::ThemeLoader;
 pub use manager::ThemeManager;
 pub use registry::ThemeRegistry;
-pub use types::{Theme, ThemeConfig, ThemeMetadata};
+pub use reset::ThemeResetManager;
+pub use types::{Theme, ThemeConfig, ThemeMetadata, ThemeManager as ThemeManagerTrait, ThemeError as ThemeErrorType};

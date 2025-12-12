@@ -1,6 +1,7 @@
 //! Theme reset manager for resetting themes to defaults
 
-use crate::style::{Color, Theme};
+use ratatui::style::Color;
+use crate::types::Theme;
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
 use std::sync::Arc;

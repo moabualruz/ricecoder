@@ -1,6 +1,7 @@
 //! Custom theme loading from YAML files
 
-use crate::style::{Color, Theme, ColorSupport};
+use ratatui::style::{Color, Color as ColorSupport};
+use crate::types::Theme;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;

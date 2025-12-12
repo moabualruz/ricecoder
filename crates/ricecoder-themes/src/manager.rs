@@ -1,10 +1,11 @@
 //! Theme management for the TUI
 
 use ricecoder_storage::TuiConfig;
-use crate::style::{Color, Theme, ColorSupport};
-use crate::theme_loader::ThemeLoader;
-use crate::theme_registry::ThemeRegistry;
-use crate::theme_reset::ThemeResetManager;
+use ratatui::style::{Color, Color as ColorSupport};
+use crate::types::{Theme, ThemeManager as ThemeManagerTrait, ThemeError};
+use crate::loader::ThemeLoader;
+use crate::registry::ThemeRegistry;
+use crate::reset::ThemeResetManager;
 use anyhow::Result;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -434,6 +435,26 @@ impl ThemeManager {
 impl Default for ThemeManager {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl ThemeManagerTrait for ThemeManager {
+    fn load_theme(&mut self, name: &str) -> Result<(), ThemeError> {
+        if let Some(theme) = self.registry.get(name) {
+            let mut current = self.current_theme.lock().map_err(|e| ThemeError::Parse(format!("Lock error: {}", e)))?;
+            *current = theme.clone();
+            Ok(())
+        } else {
+            Err(ThemeError::NotFound(name.to_string()))
+        }
+    }
+
+    fn get_theme(&self, name: &str) -> Option<&Theme> {
+        self.registry.get(name).as_ref()
+    }
+
+    fn list_themes(&self) -> Vec<String> {
+        self.registry.list_all().unwrap_or_default()
     }
 }
 

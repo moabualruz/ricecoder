@@ -4606,6 +4606,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "ricecoder-themes"
+version = "0.1.72"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "dirs",
+ "proptest",
+ "ratatui 0.29.0",
+ "ricecoder-storage",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "syntect",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-test",
+ "toml",
+ "tracing",
+]
+
+[[package]]
 name = "ricecoder-tools"
 version = "0.1.72"
 dependencies = [

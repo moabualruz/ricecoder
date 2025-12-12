@@ -33,10 +33,11 @@ pub mod components;
 
 pub mod diff;
 pub mod error;
-pub mod error_handling;
 pub mod event;
 pub mod event_dispatcher;
-pub mod executor;
+// executor moved to ricecoder-commands
+// help moved to ricecoder-help
+// keybinds moved to ricecoder-keybinds
 pub mod file_picker;
 pub mod image_integration;
 pub mod image_widget;
@@ -57,9 +58,7 @@ pub mod real_time_updates;
 pub mod render;
 pub mod render_pipeline;
 pub mod scrollview_widget;
-pub mod session_integration;
-pub mod session_manager;
-pub mod sessions;
+// Session modules moved to ricecoder-sessions crate
 pub mod status_bar;
 pub mod style;
 pub mod tea;
@@ -117,11 +116,7 @@ pub use monitoring::{
     AnalyticsReport, UserExperienceReport, AnonymousStatistics,
 };
 pub use command_palette::{CommandPaletteWidget, PaletteCommand};
-pub use executor::{
-    CommandContext, CommandDefinition, CommandError, CommandExecutionResult, CommandExecutor,
-    CommandParameter, CommandRegistry, CommandResult, ExecutionStatus, ParameterPromptHandler,
-    ParameterType, ParameterValidation, validate_parameter,
-};
+// executor exports moved to ricecoder-commands
 pub use file_picker::FilePickerWidget;
 pub use components::{
     Component, ComponentId, ComponentRegistry, ComponentEvent as ComponentLifecycleEvent, FocusDirection, FocusResult,
@@ -162,18 +157,7 @@ pub use prompt::{ContextIndicators, PromptConfig, PromptWidget};
 pub use prompt_context::PromptContext;
 // ProviderIntegration is now exported from ricecoder-providers
 pub use scrollview_widget::ScrollViewWidget;
-pub use session_integration::SessionIntegration;
-pub use status_bar::{ConnectionStatus, InputMode, StatusBarWidget};
-pub use session_manager::{SessionData, SessionManager};
-pub use model::{AppModel, AppMessage, AppMode, CommandResult as TeaCommandResult, OperationId, StateDiff, StateChange, SessionState, CommandState, UiState, PendingOperation, Subscription, MessageBatch, MessagePriority, MessageBatchProcessor, MessageBatchStats};
-pub use tea::{ReactiveState, StateDebugger, StateSnapshot, StateChangeLog, StateDebugStats};
-pub use performance::{RenderPerformanceTracker, MemoryTracker, VirtualScrollManager, LazyMessageHistory, ContentCache, CacheStats, JobQueue, Job, JobPriority, JobTask, JobId, JobResult, JobQueueStats, ProgressReporter, ProgressUpdate, ProgressStatus, ProgressTracker, ProgressStats, PerformanceProfiler, ProfileSpan, ProfileSpanHandle, ProfileStats, CpuMonitor, CpuSample, CpuStats, MemoryProfiler, MemorySample, MemoryStats, MemoryLeak, LeakSeverity};
-pub use update::Command as TeaCommand;
-pub use view::view;
-pub use render_pipeline::{VirtualRenderer, VirtualList, VirtualScroll, LazyLoader, RenderBatch, RenderOperation, RenderPriority, VirtualNode, ComponentType};
-pub use event::{event_to_message};
-pub use event_dispatcher::{EventDispatcher, EventEnvelope, EventPriority, EventResult, EventSource, EventBatch, BatchType, EventStats, OptimisticUpdater, OptimisticUpdate, LoadingManager, LoadingState};
-pub use sessions::{Session, SessionDisplayMode, SessionStatus, SessionWidget};
+// Session exports moved to ricecoder-sessions crate
 pub use style::{ColorSupport, Theme};
 pub use terminal_state::{ColorSupport as TerminalColorSupport, TerminalCapabilities, TerminalState, TerminalType};
 pub use textarea_widget::TextAreaWidget;

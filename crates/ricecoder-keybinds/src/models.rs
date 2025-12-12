@@ -343,6 +343,16 @@ impl Keybind {
     }
 }
 
+/// Keybind manager trait for managing keybindings
+pub trait KeybindManager {
+    /// Bind an action to a key combination
+    fn bind(&mut self, action: String, key_combo: KeyCombo) -> Result<(), crate::error::RegistryError>;
+    /// Get the key binding for an action
+    fn get_binding(&self, action: &str) -> Option<&Keybind>;
+    /// Resolve an action from a key combination
+    fn resolve_action(&self, key_combo: &KeyCombo, context: &Context) -> Option<&str>;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -385,5 +395,60 @@ mod tests {
 
         let kb = Keybind::new_default("editor.undo", "Ctrl+Z", "editing", "Undo");
         assert!(kb.is_default);
+    }
+
+    #[test]
+    fn test_keybind_manager_trait() {
+        struct MockKeybindManager {
+            bindings: std::collections::HashMap<String, Keybind>,
+        }
+
+        impl MockKeybindManager {
+            fn new() -> Self {
+                Self {
+                    bindings: std::collections::HashMap::new(),
+                }
+            }
+        }
+
+        impl KeybindManager for MockKeybindManager {
+            fn bind(&mut self, action: String, key_combo: KeyCombo) -> Result<(), crate::error::RegistryError> {
+                let keybind = Keybind::new(action.clone(), key_combo.to_string(), "test", "Test action");
+                self.bindings.insert(action, keybind);
+                Ok(())
+            }
+
+            fn get_binding(&self, action: &str) -> Option<&Keybind> {
+                self.bindings.get(action)
+            }
+
+            fn resolve_action(&self, key_combo: &KeyCombo, _context: &Context) -> Option<&str> {
+                for (action, keybind) in &self.bindings {
+                    if keybind.parse_key().ok().as_ref() == Some(key_combo) {
+                        return Some(action);
+                    }
+                }
+                None
+            }
+        }
+
+        let mut manager = MockKeybindManager::new();
+        let combo = KeyCombo::from_str("Ctrl+S").unwrap();
+
+        // Test binding
+        manager.bind("save".to_string(), combo.clone()).unwrap();
+
+        // Test getting binding
+        let binding = manager.get_binding("save");
+        assert!(binding.is_some());
+        assert_eq!(binding.unwrap().action_id, "save");
+
+        // Test resolving action
+        let action = manager.resolve_action(&combo, &Context::Global);
+        assert_eq!(action, Some("save"));
+
+        // Test non-existent action
+        let action = manager.resolve_action(&KeyCombo::from_str("Ctrl+X").unwrap(), &Context::Global);
+        assert!(action.is_none());
     }
 }

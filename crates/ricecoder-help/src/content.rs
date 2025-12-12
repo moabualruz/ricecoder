@@ -317,6 +317,31 @@ impl Default for HelpContent {
     }
 }
 
+/// Help system trait for managing help content
+pub trait HelpSystem {
+    /// Get a help topic by name
+    fn get_topic(&self, topic: &str) -> Option<&HelpItem>;
+    /// Search help topics
+    fn search_topics(&self, query: &str) -> Vec<&HelpItem>;
+}
+
+impl HelpSystem for HelpContent {
+    fn get_topic(&self, topic: &str) -> Option<&HelpItem> {
+        for category in &self.categories {
+            for item in &category.items {
+                if item.title == topic {
+                    return Some(item);
+                }
+            }
+        }
+        None
+    }
+
+    fn search_topics(&self, query: &str) -> Vec<&HelpItem> {
+        self.search(query).into_iter().map(|(_, item)| item).collect()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -411,5 +436,36 @@ mod tests {
         
         // Should have Commands category
         assert!(help.get_category("Commands").is_some());
+    }
+
+    #[test]
+    fn test_help_system_get_topic() {
+        let help = HelpContent::default_ricecoder_help();
+
+        // Test getting existing topic
+        let topic = help.get_topic("Welcome to RiceCoder");
+        assert!(topic.is_some());
+        assert_eq!(topic.unwrap().title, "Welcome to RiceCoder");
+
+        // Test getting non-existent topic
+        let topic = help.get_topic("Non-existent Topic");
+        assert!(topic.is_none());
+    }
+
+    #[test]
+    fn test_help_system_search_topics() {
+        let help = HelpContent::default_ricecoder_help();
+
+        // Test searching for existing content
+        let results = help.search_topics("help");
+        assert!(!results.is_empty());
+
+        // Should find the help command
+        let help_command = results.iter().find(|item| item.title == "/help");
+        assert!(help_command.is_some());
+
+        // Test searching for non-existent content
+        let results = help.search_topics("nonexistentquery");
+        assert!(results.is_empty());
     }
 }
