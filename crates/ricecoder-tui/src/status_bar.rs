@@ -32,6 +32,10 @@ pub struct StatusBarWidget {
     pub working_directory: PathBuf,
     /// Git branch (if in git repository)
     pub git_branch: Option<String>,
+    /// VCS status summary (e.g., "1S 2M 1U")
+    pub vcs_status: Option<String>,
+    /// Ahead/behind counts relative to remote
+    pub vcs_ahead_behind: Option<(usize, usize)>,
     /// Token usage information
     pub token_usage: Option<TokenUsage>,
     /// Current input mode
@@ -177,6 +181,18 @@ impl StatusBarWidget {
         self
     }
 
+    /// Set VCS status summary
+    pub fn with_vcs_status(mut self, status: Option<String>) -> Self {
+        self.vcs_status = status;
+        self
+    }
+
+    /// Set VCS ahead/behind counts
+    pub fn with_vcs_ahead_behind(mut self, ahead_behind: Option<(usize, usize)>) -> Self {
+        self.vcs_ahead_behind = ahead_behind;
+        self
+    }
+
     /// Set token usage
     pub fn with_token_usage(mut self, usage: Option<TokenUsage>) -> Self {
         self.token_usage = usage;
@@ -263,13 +279,38 @@ impl StatusBarWidget {
         spans.push(Span::styled(dir_short, Style::default().fg(Color::Gray)));
         spans.push(Span::raw(" "));
 
-        // Git branch
+        // Git branch and VCS status
         if let Some(branch) = &self.git_branch {
-            spans.push(Span::styled(
-                format!("({})", branch),
-                Style::default().fg(Color::Green),
-            ));
+            let mut branch_text = format!("({}", branch);
+
+            // Add VCS status if available
+            if let Some(status) = &self.vcs_status {
+                branch_text.push_str(&format!(" {})", status));
+            } else {
+                branch_text.push(')');
+            }
+
+            let color = if self.vcs_status.is_some() {
+                Color::Yellow // Yellow if there are changes
+            } else {
+                Color::Green // Green if clean
+            };
+
+            spans.push(Span::styled(branch_text, Style::default().fg(color)));
             spans.push(Span::raw(" "));
+        }
+
+        // VCS ahead/behind info
+        if let Some((ahead, behind)) = self.vcs_ahead_behind {
+            if ahead > 0 || behind > 0 {
+                let ahead_text = if ahead > 0 { format!("↑{}", ahead) } else { String::new() };
+                let behind_text = if behind > 0 { format!("↓{}", behind) } else { String::new() };
+                spans.push(Span::styled(
+                    format!("{}{}", ahead_text, behind_text),
+                    Style::default().fg(Color::Cyan),
+                ));
+                spans.push(Span::raw(" "));
+            }
         }
 
         // Token usage

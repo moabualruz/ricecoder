@@ -4641,6 +4641,7 @@ dependencies = [
  "ricecoder-images",
  "ricecoder-sessions",
  "ricecoder-storage",
+ "ricecoder-vcs",
  "serde",
  "serde_json",
  "serde_yaml",
