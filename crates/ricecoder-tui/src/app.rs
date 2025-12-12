@@ -9,6 +9,7 @@ use crate::image_integration::ImageIntegration;
 use crate::integration::WidgetIntegration;
 use crate::render::Renderer;
 use crate::style::Theme;
+use crate::terminal_state::TerminalCapabilities;
 use crate::theme::ThemeManager;
 use anyhow::Result;
 use ratatui::backend::CrosstermBackend;
@@ -151,6 +152,13 @@ impl App {
 
     /// Create a new application instance with a specific configuration
     pub fn with_config(config: TuiConfig) -> Result<Self> {
+        // Use default capabilities for backward compatibility
+        let capabilities = TerminalCapabilities::detect();
+        Self::with_capabilities(config, &capabilities)
+    }
+
+    /// Create a new application instance with terminal capabilities
+    pub fn with_capabilities(config: TuiConfig, capabilities: &TerminalCapabilities) -> Result<Self> {
         let theme_manager = ThemeManager::new();
 
         // Load theme from config
@@ -188,7 +196,7 @@ impl App {
             focus_manager,
             provider_integration,
             image_integration: ImageIntegration::new(),
-            image_widget: crate::image_widget::ImageWidget::new(),
+            image_widget: crate::image_widget::ImageWidget::new(capabilities),
             help_dialog: ricecoder_help::HelpDialog::default_ricecoder(),
             file_picker: crate::file_picker::FilePickerWidget::new(),
             file_watcher: None,

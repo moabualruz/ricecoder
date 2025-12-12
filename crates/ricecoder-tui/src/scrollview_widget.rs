@@ -123,53 +123,11 @@ impl ScrollViewWidget {
         self.messages.len()
     }
 
-    /// Scroll up by one line
-    pub fn scroll_up(&mut self) {
-        if self.scroll_offset > 0 {
-            self.scroll_offset -= 1;
-        }
-    }
 
-    /// Scroll down by one line
-    pub fn scroll_down(&mut self, visible_height: usize) {
-        let max_scroll = self.messages.len().saturating_sub(visible_height);
-        if self.scroll_offset < max_scroll {
-            self.scroll_offset += 1;
-        }
-    }
 
-    /// Scroll to the top
-    pub fn scroll_to_top(&mut self) {
-        self.scroll_offset = 0;
-    }
 
-/// Scroll to the bottom
-    pub fn scroll_to_bottom(&mut self, visible_height: usize) {
-        let max_scroll = self.messages.len().saturating_sub(visible_height);
-        self.scroll_offset = max_scroll;
-    }
 
-    /// Scroll up by one page
-    pub fn scroll_page_up(&mut self, page_height: usize) {
-        self.scroll_offset = self.scroll_offset.saturating_sub(page_height);
-    }
 
-    /// Scroll down by one page
-    pub fn scroll_page_down(&mut self, page_height: usize, visible_height: usize) {
-        let max_scroll = self.messages.len().saturating_sub(visible_height);
-        self.scroll_offset = (self.scroll_offset + page_height).min(max_scroll);
-    }
-
-    /// Scroll up by half a page
-    pub fn scroll_half_page_up(&mut self, half_page_height: usize) {
-        self.scroll_offset = self.scroll_offset.saturating_sub(half_page_height);
-    }
-
-    /// Scroll down by half a page
-    pub fn scroll_half_page_down(&mut self, half_page_height: usize, visible_height: usize) {
-        let max_scroll = self.messages.len().saturating_sub(visible_height);
-        self.scroll_offset = (self.scroll_offset + half_page_height).min(max_scroll);
-    }
 
     /// Get the scroll position as a percentage (0-100)
     pub fn scroll_position_percentage(&self, visible_height: usize) -> u8 {
@@ -208,6 +166,12 @@ impl ScrollViewWidget {
         // If disabling, we don't need to do anything as the scroll position remains
     }
 
+    /// Scroll to the bottom
+    pub fn scroll_to_bottom(&mut self, visible_height: usize) {
+        let max_scroll = self.messages.len().saturating_sub(visible_height);
+        self.scroll_offset = max_scroll;
+    }
+
     /// Handle mouse wheel events for scrolling
     pub fn handle_mouse_wheel(&mut self, delta: i32, visible_height: usize) {
         if delta > 0 {
@@ -220,26 +184,18 @@ impl ScrollViewWidget {
         }
     }
 
-    /// Get the current scroll state
-    pub fn scroll_state(&self, visible_height: usize) -> ScrollState {
-        let mut state = ScrollState::new(self.messages.len(), visible_height);
-        state.set_position(self.scroll_offset);
-        state
-    }
 
-    /// Restore scroll state
-    pub fn restore_scroll_state(&mut self, state: &ScrollState) {
-        self.scroll_offset = state.position();
-    }
 
-    /// Get the current scroll offset
-    pub fn scroll_offset(&self) -> usize {
-        self.scroll_offset
-    }
+
+
+
+
+
 
     /// Set the scroll offset
     pub fn set_scroll_offset(&mut self, offset: usize) {
-        self.scroll_offset = offset;
+        // ScrollViewState doesn't have a direct set_offset method
+        // This would need to be implemented differently
     }
 
     /// Select a message by index

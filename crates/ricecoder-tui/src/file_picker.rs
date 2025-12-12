@@ -11,6 +11,7 @@ use ratatui::{
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph},
     Frame,
 };
+
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
@@ -158,6 +159,26 @@ impl FilePickerWidget {
             .collect()
     }
 
+    /// Get file information for a path
+    fn get_file_info(&self, path: &Path) -> FileInfo {
+        let metadata = path.metadata().ok();
+        let size = metadata.as_ref().map(|m| m.len()).unwrap_or(0);
+        let is_too_large = size > self.max_file_size;
+
+        // Simple binary detection (check for null bytes in first 512 bytes)
+        let is_binary = if let Ok(content) = std::fs::read(path) {
+            content.len() >= 512 && content[..512].contains(&0)
+        } else {
+            false
+        };
+
+        FileInfo {
+            size,
+            is_binary,
+            is_too_large,
+        }
+    }
+
     /// Handle character input for search
     pub fn input_char(&mut self, c: char) {
         self.search_query.push(c);
@@ -172,51 +193,6 @@ impl FilePickerWidget {
         self.update_filtered_files();
         self.selected_indices.clear();
         self.scroll_offset = 0;
-    }
-
-    /// Navigate up
-    pub fn navigate_up(&mut self) {
-        if self.filtered_files.is_empty() {
-            return;
-        }
-
-        // If no selection, select last item
-        if self.selected_indices.is_empty() {
-            let last_idx = self.filtered_files.len().saturating_sub(1);
-            self.selected_indices.insert(last_idx);
-            self.adjust_scroll(last_idx);
-            return;
-        }
-
-        // Move to previous item
-        let current = *self.selected_indices.iter().next().unwrap();
-        if current > 0 {
-            self.selected_indices.clear();
-            self.selected_indices.insert(current - 1);
-            self.adjust_scroll(current - 1);
-        }
-    }
-
-    /// Navigate down
-    pub fn navigate_down(&mut self) {
-        if self.filtered_files.is_empty() {
-            return;
-        }
-
-        // If no selection, select first item
-        if self.selected_indices.is_empty() {
-            self.selected_indices.insert(0);
-            self.adjust_scroll(0);
-            return;
-        }
-
-        // Move to next item
-        let current = *self.selected_indices.iter().next().unwrap();
-        if current + 1 < self.filtered_files.len() {
-            self.selected_indices.clear();
-            self.selected_indices.insert(current + 1);
-            self.adjust_scroll(current + 1);
-        }
     }
 
     /// Toggle selection of current item
@@ -252,6 +228,63 @@ impl FilePickerWidget {
         self.update_filtered_files();
         self.selected_indices.clear();
         self.scroll_offset = 0;
+    }
+
+    /// Confirm selection and return selected files
+    pub fn confirm_selection(&mut self) -> Result<Vec<FileSelection>, FilePickerError> {
+        let selected_files = self.selected_files_with_info();
+        let mut results = Vec::new();
+
+        for (path, info) in selected_files {
+            let selection = if info.is_too_large {
+                FileSelection {
+                    path,
+                    content: None,
+                    info,
+                    status: FileSelectionStatus::TooLarge,
+                }
+            } else if info.is_binary {
+                FileSelection {
+                    path,
+                    content: None,
+                    info,
+                    status: FileSelectionStatus::BinaryFile,
+                }
+            } else {
+                // Try to read file content
+                match self.read_file_content(&path) {
+                    Ok(content) => FileSelection {
+                        path,
+                        content: Some(content),
+                        info,
+                        status: FileSelectionStatus::Included,
+                    },
+                    Err(e) => FileSelection {
+                        path,
+                        content: None,
+                        info,
+                        status: FileSelectionStatus::Error(e.to_string()),
+                    },
+                }
+            };
+            results.push(selection);
+        }
+
+        self.hide();
+        Ok(results)
+    }
+
+    /// Read file content with size limits
+    fn read_file_content(&self, path: &Path) -> Result<String, FilePickerError> {
+        let content = std::fs::read_to_string(path)
+            .map_err(|e| FilePickerError::ReadError(e.to_string()))?;
+
+        // Double-check size limit
+        if content.len() as u64 > self.max_file_size {
+            return Err(FilePickerError::FileTooLarge);
+        }
+
+        Ok(content)
     }
 
     /// Handle file change events
@@ -319,71 +352,6 @@ impl FilePickerWidget {
         self.externally_modified.contains(path)
     }
 
-    /// Confirm selection and return selected files with content
-    pub fn confirm_selection(&mut self) -> Result<Vec<FileSelection>, FilePickerError> {
-        let selected = self.selected_files_with_info();
-        let mut results = Vec::new();
-
-        for (path, info) in selected {
-            let selection = if path.is_dir() {
-                // Directories are not included as content
-                FileSelection {
-                    path,
-                    content: None,
-                    info,
-                    status: FileSelectionStatus::Directory,
-                }
-            } else if info.is_binary {
-                FileSelection {
-                    path,
-                    content: None,
-                    info,
-                    status: FileSelectionStatus::BinaryFile,
-                }
-            } else if info.is_too_large {
-                FileSelection {
-                    path,
-                    content: None,
-                    info,
-                    status: FileSelectionStatus::TooLarge,
-                }
-            } else {
-                // Try to read file content
-                match self.read_file_content(&path) {
-                    Ok(content) => FileSelection {
-                        path,
-                        content: Some(content),
-                        info,
-                        status: FileSelectionStatus::Included,
-                    },
-                    Err(e) => FileSelection {
-                        path,
-                        content: None,
-                        info,
-                        status: FileSelectionStatus::Error(e.to_string()),
-                    },
-                }
-            };
-            results.push(selection);
-        }
-
-        self.hide();
-        Ok(results)
-    }
-
-    /// Read file content with size limits
-    fn read_file_content(&self, path: &Path) -> Result<String, FilePickerError> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| FilePickerError::ReadError(e.to_string()))?;
-
-        // Double-check size limit
-        if content.len() as u64 > self.max_file_size {
-            return Err(FilePickerError::FileTooLarge);
-        }
-
-        Ok(content)
-    }
-
     /// Refresh the file list from current directory
     fn refresh_file_list(&mut self) {
         self.filtered_files.clear();
@@ -422,35 +390,6 @@ impl FilePickerWidget {
         });
     }
 
-    /// Get file information including size and binary detection
-    fn get_file_info(&self, path: &Path) -> FileInfo {
-        let mut size = 0;
-        let mut is_binary = false;
-
-        if path.is_file() {
-            // Get file size
-            if let Ok(metadata) = std::fs::metadata(path) {
-                size = metadata.len();
-            }
-
-            // Check if file is binary by reading first 512 bytes
-            if let Ok(content) = std::fs::read(path) {
-                // Check for null bytes or non-ASCII characters
-                let sample = &content[..content.len().min(512)];
-                is_binary = sample.iter().any(|&b| b == 0) ||
-                           sample.iter().any(|&b| b < 32 && b != 9 && b != 10 && b != 13);
-            }
-        }
-
-        let is_too_large = size > self.max_file_size;
-
-        FileInfo {
-            size,
-            is_binary,
-            is_too_large,
-        }
-    }
-
     /// Update filtered files based on search query
     fn update_filtered_files(&mut self) {
         if self.search_query.is_empty() {
@@ -486,6 +425,53 @@ impl FilePickerWidget {
         });
     }
 
+
+
+    /// Navigate up
+    pub fn navigate_up(&mut self) {
+        if self.filtered_files.is_empty() {
+            return;
+        }
+
+        // If no selection, select last item
+        if self.selected_indices.is_empty() {
+            let last_idx = self.filtered_files.len().saturating_sub(1);
+            self.selected_indices.insert(last_idx);
+            self.adjust_scroll(last_idx);
+            return;
+        }
+
+        // Move to previous item
+        let current = *self.selected_indices.iter().next().unwrap();
+        if current > 0 {
+            self.selected_indices.clear();
+            self.selected_indices.insert(current - 1);
+            self.adjust_scroll(current - 1);
+        }
+    }
+
+    /// Navigate down
+    pub fn navigate_down(&mut self) {
+        if self.filtered_files.is_empty() {
+            return;
+        }
+
+        // If no selection, select first item
+        if self.selected_indices.is_empty() {
+            self.selected_indices.insert(0);
+            self.adjust_scroll(0);
+            return;
+        }
+
+        // Move to next item
+        let current = *self.selected_indices.iter().next().unwrap();
+        if current + 1 < self.filtered_files.len() {
+            self.selected_indices.clear();
+            self.selected_indices.insert(current + 1);
+            self.adjust_scroll(current + 1);
+        }
+    }
+
     /// Adjust scroll to keep selected item visible
     fn adjust_scroll(&mut self, selected_idx: usize) {
         if selected_idx < self.scroll_offset {
@@ -495,14 +481,16 @@ impl FilePickerWidget {
         }
     }
 
+
+
     /// Render the file picker
-    pub fn render(&self, frame: &mut Frame, area: Rect) {
+    pub fn render(&mut self, f: &mut Frame, area: Rect) {
         if !self.visible {
             return;
         }
 
         // Clear the area
-        frame.render_widget(Clear, area);
+        f.render_widget(Clear, area);
 
         // Create main layout
         let popup_area = self.centered_rect(80, 80, area);
@@ -512,9 +500,9 @@ impl FilePickerWidget {
             .borders(Borders::ALL)
             .border_style(Style::default().fg(Color::Cyan));
 
-        frame.render_widget(main_block, popup_area);
+        f.render_widget(main_block, popup_area);
 
-        let inner_area = popup_area.inner(&Margin {
+        let inner_area = popup_area.inner(Margin {
             horizontal: 1,
             vertical: 1,
         });
@@ -530,13 +518,13 @@ impl FilePickerWidget {
             .split(inner_area);
 
         // Render search input
-        self.render_search_input(frame, chunks[0]);
+        self.render_search_input(f, chunks[0]);
 
         // Render file list
-        self.render_file_list(frame, chunks[1]);
+        self.render_file_list(f, chunks[1]);
 
         // Render footer
-        self.render_footer(frame, chunks[2]);
+        self.render_footer(f, chunks[2]);
     }
 
     /// Render search input

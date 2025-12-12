@@ -314,7 +314,7 @@ impl HelpDialog {
         
         frame.render_widget(main_block, popup_area);
         
-        let inner_area = popup_area.inner(&Margin {
+        let inner_area = popup_area.inner(Margin {
             horizontal: 1,
             vertical: 1,
         });

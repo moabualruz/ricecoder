@@ -210,7 +210,7 @@ impl CommandPaletteWidget {
             .border_style(Style::default().fg(Color::Cyan));
         frame.render_widget(block, overlay_area);
 
-        let inner_area = overlay_area.inner(&Margin {
+        let inner_area = overlay_area.inner(Margin {
             vertical: 1,
             horizontal: 1,
         });

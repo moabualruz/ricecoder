@@ -1,7 +1,7 @@
 //! RiceCoder TUI - Terminal User Interface entry point
 
 use anyhow::Result;
-use ricecoder_tui::{render::Renderer, App, TerminalState};
+use ricecoder_tui::{config::TuiConfig, render::Renderer, App, TerminalState};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
@@ -53,8 +53,8 @@ async fn main() -> Result<()> {
     })
     .expect("Error setting Ctrl+C handler");
 
-    // Create and run the application
-    let mut app = App::new()?;
+    // Create and run the application with detected capabilities
+    let mut app = App::with_capabilities(TuiConfig::load()?, terminal_state.capabilities())?;
 
     // Initialize file watcher
     if let Err(e) = app.init_file_watcher() {

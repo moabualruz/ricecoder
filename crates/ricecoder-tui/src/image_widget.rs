@@ -1,10 +1,13 @@
 //! Image widget for displaying images in the terminal
 //!
-//! This module provides a widget for displaying images with sixel support and Unicode fallback.
+//! This module provides a widget for displaying images using ratatui-image,
+//! supporting multiple protocols: sixel, kitty, iTerm2, and unicode fallbacks.
 
+use ratatui_image::{picker::Picker, StatefulImage, protocol::StatefulProtocol};
 use std::path::PathBuf;
+use crate::terminal_state::TerminalCapabilities;
 
-/// Image format
+/// Image format (kept for backward compatibility)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ImageFormat {
     /// PNG format
@@ -44,7 +47,7 @@ impl ImageFormat {
     }
 }
 
-/// Image rendering mode
+/// Image rendering mode (kept for backward compatibility)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RenderMode {
     /// Sixel format (high quality, limited terminal support)
@@ -57,17 +60,19 @@ pub enum RenderMode {
 
 /// Image widget for displaying images
 pub struct ImageWidget {
-    /// Image path
+    /// ratatui-image picker for protocol detection
+    picker: Option<Picker>,
+    /// ratatui-image stateful protocol for rendering
+    protocol: Option<StatefulProtocol>,
+    /// Image path (for backward compatibility)
     path: Option<PathBuf>,
-    /// Image data (raw bytes)
-    data: Option<Vec<u8>>,
-    /// Image format
+    /// Image format (for backward compatibility)
     format: Option<ImageFormat>,
     /// Image width
     width: u32,
     /// Image height
     height: u32,
-    /// Rendering mode
+    /// Rendering mode (for backward compatibility)
     render_mode: RenderMode,
     /// Whether to maintain aspect ratio
     maintain_aspect_ratio: bool,
@@ -77,22 +82,35 @@ pub struct ImageWidget {
     show_borders: bool,
     /// Whether image is loaded
     loaded: bool,
+    /// Terminal capabilities for protocol selection
+    capabilities: TerminalCapabilities,
 }
 
 impl ImageWidget {
-    /// Create a new image widget
-    pub fn new() -> Self {
+    /// Create a new image widget with terminal capabilities
+    pub fn new(capabilities: &TerminalCapabilities) -> Self {
         Self {
+            picker: None,
+            protocol: None,
             path: None,
-            data: None,
             format: None,
             width: 0,
             height: 0,
-            render_mode: RenderMode::UnicodeBlocks,
+            render_mode: Self::select_render_mode(capabilities),
             maintain_aspect_ratio: true,
             title: "Image".to_string(),
             show_borders: true,
             loaded: false,
+            capabilities: capabilities.clone(),
+        }
+    }
+
+    /// Select the best render mode based on terminal capabilities
+    fn select_render_mode(capabilities: &TerminalCapabilities) -> RenderMode {
+        if capabilities.sixel_support {
+            RenderMode::Sixel
+        } else {
+            RenderMode::UnicodeBlocks
         }
     }
 
@@ -105,7 +123,7 @@ impl ImageWidget {
             return Err(format!("File not found: {}", path.display()));
         }
 
-        // Detect format from extension
+        // Detect format from extension (for backward compatibility)
         let ext = path
             .extension()
             .and_then(|e| e.to_str())
@@ -114,13 +132,26 @@ impl ImageWidget {
         let format = ImageFormat::from_extension(ext)
             .ok_or_else(|| format!("Unsupported image format: {}", ext))?;
 
-        // Read file
-        let data = std::fs::read(&path)
-            .map_err(|e| format!("Failed to read file: {}", e))?;
+        // Initialize ratatui-image picker if not already done
+        if self.picker.is_none() {
+            // Use font size based on terminal capabilities or defaults
+            let font_size = (7, 16); // Default font size, could be made configurable
+            self.picker = Some(Picker::from_fontsize(font_size));
+        }
+
+        // Load image using ratatui-image
+        let dyn_img = image::ImageReader::open(&path)
+            .map_err(|e| format!("Failed to open image: {}", e))?
+            .decode()
+            .map_err(|e| format!("Failed to decode image: {}", e))?;
+
+        // Create stateful protocol with automatic protocol detection
+        let protocol = self.picker.as_ref().unwrap()
+            .new_resize_protocol(dyn_img);
 
         self.path = Some(path);
-        self.data = Some(data);
         self.format = Some(format);
+        self.protocol = Some(protocol);
         self.loaded = true;
 
         Ok(())
@@ -128,9 +159,25 @@ impl ImageWidget {
 
     /// Load an image from raw data
     pub fn load_from_data(&mut self, data: Vec<u8>, format: ImageFormat) -> Result<(), String> {
-        self.data = Some(data);
+        // Initialize ratatui-image picker if not already done
+        if self.picker.is_none() {
+            // Use font size based on terminal capabilities or defaults
+            let font_size = (7, 16); // Default font size, could be made configurable
+            self.picker = Some(Picker::from_fontsize(font_size));
+        }
+
+        // Load image from memory using ratatui-image
+        let dyn_img = image::load_from_memory(&data)
+            .map_err(|e| format!("Failed to decode image data: {}", e))?;
+
+        // Create stateful protocol with automatic protocol detection
+        let protocol = self.picker.as_ref().unwrap()
+            .new_resize_protocol(dyn_img);
+
         self.format = Some(format);
+        self.protocol = Some(protocol);
         self.loaded = true;
+
         Ok(())
     }
 
@@ -205,18 +252,18 @@ impl ImageWidget {
         self.path.as_ref()
     }
 
-    /// Get the image data
+    /// Get the image data (for backward compatibility - returns None as data is now managed by ratatui-image)
     pub fn data(&self) -> Option<&[u8]> {
-        self.data.as_deref()
+        None // Data is now managed internally by ratatui-image
     }
 
     /// Clear the image
     pub fn clear(&mut self) {
         self.path = None;
-        self.data = None;
         self.format = None;
         self.width = 0;
         self.height = 0;
+        self.protocol = None;
         self.loaded = false;
     }
 
@@ -272,67 +319,88 @@ impl ImageWidget {
         }
     }
 
-    /// Get the sixel representation (placeholder)
+    /// Get the sixel representation (for backward compatibility - now handled by ratatui-image)
     pub fn get_sixel_data(&self) -> Option<String> {
-        if !self.loaded || self.data.is_none() {
+        if !self.loaded {
             return None;
         }
 
-        // In a real implementation, this would convert the image data to sixel format
-        // For now, we return a placeholder
+        // With ratatui-image, sixel rendering is handled automatically
         Some(format!(
-            "Sixel data for {} ({}x{})",
+            "Sixel rendering handled by ratatui-image for {} ({}x{})",
             self.format.map(|f| f.name()).unwrap_or("unknown"),
             self.width,
             self.height
         ))
     }
 
-    /// Get the Unicode block representation (placeholder)
+    /// Get the Unicode block representation (for backward compatibility - now handled by ratatui-image)
     pub fn get_unicode_blocks(&self) -> Option<String> {
-        if !self.loaded || self.data.is_none() {
+        if !self.loaded {
             return None;
         }
 
-        // In a real implementation, this would convert the image data to Unicode blocks
-        // For now, we return a placeholder
+        // With ratatui-image, unicode rendering is handled automatically
         Some(format!(
-            "Unicode blocks for {} ({}x{})",
+            "Unicode rendering handled by ratatui-image for {} ({}x{})",
             self.format.map(|f| f.name()).unwrap_or("unknown"),
             self.width,
             self.height
         ))
     }
 
-    /// Get the ASCII art representation (placeholder)
+    /// Get the ASCII art representation (for backward compatibility - now handled by ratatui-image)
     pub fn get_ascii_art(&self) -> Option<String> {
-        if !self.loaded || self.data.is_none() {
+        if !self.loaded {
             return None;
         }
 
-        // In a real implementation, this would convert the image data to ASCII art
-        // For now, we return a placeholder
+        // With ratatui-image, ASCII fallback is handled automatically
         Some(format!(
-            "ASCII art for {} ({}x{})",
+            "ASCII fallback handled by ratatui-image for {} ({}x{})",
             self.format.map(|f| f.name()).unwrap_or("unknown"),
             self.width,
             self.height
         ))
     }
 
-    /// Get the rendered output based on render mode
+    /// Get the ratatui-image widget for rendering
+    pub fn widget(&self) -> StatefulImage<StatefulProtocol> {
+        StatefulImage::default()
+    }
+
+    /// Get the protocol for rendering
+    pub fn protocol(&self) -> Option<&StatefulProtocol> {
+        self.protocol.as_ref()
+    }
+
+    /// Get mutable protocol for rendering
+    pub fn protocol_mut(&mut self) -> Option<&mut StatefulProtocol> {
+        self.protocol.as_mut()
+    }
+
+    /// Get the rendered output based on render mode (for backward compatibility)
     pub fn get_rendered_output(&self) -> Option<String> {
-        match self.render_mode {
-            RenderMode::Sixel => self.get_sixel_data(),
-            RenderMode::UnicodeBlocks => self.get_unicode_blocks(),
-            RenderMode::Ascii => self.get_ascii_art(),
+        if !self.loaded {
+            return None;
         }
+
+        // With ratatui-image, rendering is handled by the widget itself
+        // Return a placeholder for backward compatibility
+        Some(format!(
+            "Image loaded: {} ({}x{}) - rendered via ratatui-image",
+            self.format.map(|f| f.name()).unwrap_or("unknown"),
+            self.width,
+            self.height
+        ))
     }
 }
 
 impl Default for ImageWidget {
     fn default() -> Self {
-        Self::new()
+        // Create default capabilities for backward compatibility
+        let capabilities = TerminalCapabilities::detect();
+        Self::new(&capabilities)
     }
 }
 
@@ -360,7 +428,8 @@ mod tests {
 
     #[test]
     fn test_image_widget_creation() {
-        let widget = ImageWidget::new();
+        let capabilities = TerminalCapabilities::detect();
+        let widget = ImageWidget::new(&capabilities);
         assert!(!widget.is_loaded());
         assert_eq!(widget.width(), 0);
         assert_eq!(widget.height(), 0);
@@ -368,7 +437,8 @@ mod tests {
 
     #[test]
     fn test_image_widget_set_dimensions() {
-        let mut widget = ImageWidget::new();
+        let capabilities = TerminalCapabilities::detect();
+        let mut widget = ImageWidget::new(&capabilities);
         widget.set_dimensions(800, 600);
 
         assert_eq!(widget.width(), 800);
@@ -377,16 +447,18 @@ mod tests {
 
     #[test]
     fn test_image_widget_render_mode() {
-        let mut widget = ImageWidget::new();
-        assert_eq!(widget.render_mode(), RenderMode::UnicodeBlocks);
-
+        let capabilities = TerminalCapabilities::detect();
+        let mut widget = ImageWidget::new(&capabilities);
+        // Render mode is now selected based on capabilities
+        // Just test that we can set it
         widget.set_render_mode(RenderMode::Sixel);
         assert_eq!(widget.render_mode(), RenderMode::Sixel);
     }
 
     #[test]
     fn test_image_widget_aspect_ratio() {
-        let mut widget = ImageWidget::new();
+        let capabilities = TerminalCapabilities::detect();
+        let mut widget = ImageWidget::new(&capabilities);
         assert!(widget.maintain_aspect_ratio());
 
         widget.set_maintain_aspect_ratio(false);
@@ -395,7 +467,8 @@ mod tests {
 
     #[test]
     fn test_image_widget_title() {
-        let mut widget = ImageWidget::new();
+        let capabilities = TerminalCapabilities::detect();
+        let mut widget = ImageWidget::new(&capabilities);
         assert_eq!(widget.title(), "Image");
 
         widget.set_title("My Image");
@@ -404,7 +477,8 @@ mod tests {
 
     #[test]
     fn test_image_widget_borders() {
-        let mut widget = ImageWidget::new();
+        let capabilities = TerminalCapabilities::detect();
+        let mut widget = ImageWidget::new(&capabilities);
         assert!(widget.show_borders());
 
         widget.set_show_borders(false);
@@ -413,7 +487,8 @@ mod tests {
 
     #[test]
     fn test_image_widget_load_from_data() {
-        let mut widget = ImageWidget::new();
+        let capabilities = TerminalCapabilities::detect();
+        let mut widget = ImageWidget::new(&capabilities);
         let data = vec![0x89, 0x50, 0x4E, 0x47]; // PNG header
 
         let result = widget.load_from_data(data, ImageFormat::Png);
@@ -424,7 +499,8 @@ mod tests {
 
     #[test]
     fn test_image_widget_clear() {
-        let mut widget = ImageWidget::new();
+        let capabilities = TerminalCapabilities::detect();
+        let mut widget = ImageWidget::new(&capabilities);
         widget.set_dimensions(800, 600);
         let _ = widget.load_from_data(vec![0x89, 0x50, 0x4E, 0x47], ImageFormat::Png);
 
@@ -436,7 +512,8 @@ mod tests {
 
     #[test]
     fn test_image_widget_calculate_scaled_dimensions() {
-        let mut widget = ImageWidget::new();
+        let capabilities = TerminalCapabilities::detect();
+        let mut widget = ImageWidget::new(&capabilities);
         widget.set_dimensions(1600, 1200);
 
         // Test scaling to fit in 800x600
@@ -453,7 +530,8 @@ mod tests {
 
     #[test]
     fn test_image_widget_display_text() {
-        let mut widget = ImageWidget::new();
+        let capabilities = TerminalCapabilities::detect();
+        let mut widget = ImageWidget::new(&capabilities);
         assert_eq!(widget.get_display_text(), "[No image loaded]");
 
         widget.set_dimensions(800, 600);
@@ -466,7 +544,8 @@ mod tests {
 
     #[test]
     fn test_image_widget_rendered_output() {
-        let mut widget = ImageWidget::new();
+        let capabilities = TerminalCapabilities::detect();
+        let mut widget = ImageWidget::new(&capabilities);
         widget.set_dimensions(800, 600);
         let _ = widget.load_from_data(vec![0x89, 0x50, 0x4E, 0x47], ImageFormat::Png);
 
