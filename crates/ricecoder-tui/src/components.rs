@@ -1,6 +1,340 @@
-//! Interactive UI components
+//! Interactive UI components and Component Architecture for TEA
 
 use crate::app::AppMode;
+use crate::model::{AppMessage, AppModel};
+use ratatui::layout::Rect;
+use ratatui::Frame;
+use std::any::Any;
+
+/// Unique identifier for components
+pub type ComponentId = String;
+
+/// Component trait defining the interface for UI components
+pub trait Component {
+    /// Get the unique identifier for this component
+    fn id(&self) -> ComponentId;
+
+    /// Render the component to the given frame and area
+    fn render(&self, frame: &mut Frame, area: Rect, model: &AppModel);
+
+    /// Handle an incoming message and return updated component state
+    /// Returns true if the component handled the message, false otherwise
+    fn update(&mut self, message: &AppMessage, model: &AppModel) -> bool;
+
+    /// Get the component's focus state
+    fn is_focused(&self) -> bool;
+
+    /// Set the component's focus state
+    fn set_focused(&mut self, focused: bool);
+
+    /// Get the component's visibility state
+    fn is_visible(&self) -> bool;
+
+    /// Set the component's visibility state
+    fn set_visible(&mut self, visible: bool);
+
+    /// Get the component's enabled state
+    fn is_enabled(&self) -> bool;
+
+    /// Set the component's enabled state
+    fn set_enabled(&mut self, enabled: bool);
+
+    /// Get the component's bounding rectangle
+    fn bounds(&self) -> Rect;
+
+    /// Set the component's bounding rectangle
+    fn set_bounds(&mut self, bounds: Rect);
+
+    /// Handle focus events (tab, shift+tab, etc.)
+    fn handle_focus(&mut self, direction: FocusDirection) -> FocusResult;
+
+    /// Get child components (for composite components)
+    fn children(&self) -> Vec<&dyn Component> {
+        Vec::new()
+    }
+
+    /// Get mutable child components
+    fn children_mut(&mut self) -> Vec<&mut dyn Component> {
+        Vec::new()
+    }
+
+    /// Find a child component by ID
+    fn find_child(&self, id: &str) -> Option<&dyn Component> {
+        self.children().into_iter().find(|c| c.id() == id)
+    }
+
+    /// Find a mutable child component by ID
+    fn find_child_mut(&mut self, id: &str) -> Option<&mut dyn Component> {
+        self.children_mut().into_iter().find(|c| c.id() == id)
+    }
+
+    /// Get component properties as a dynamic type
+    fn properties(&self) -> &dyn Any {
+        &()
+    }
+
+    /// Set component properties from a dynamic type
+    fn set_properties(&mut self, _properties: Box<dyn Any>) {
+        // Default implementation does nothing
+    }
+
+    /// Validate component state
+    fn validate(&self) -> Result<(), String> {
+        Ok(())
+    }
+
+    /// Clone the component as a trait object
+    fn clone_box(&self) -> Box<dyn Component>;
+
+    /// Get component type name for debugging
+    fn type_name(&self) -> &'static str {
+        std::any::type_name::<Self>()
+    }
+}
+
+/// Focus direction for keyboard navigation
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FocusDirection {
+    /// Move focus forward (Tab)
+    Forward,
+    /// Move focus backward (Shift+Tab)
+    Backward,
+    /// Move focus to first element
+    First,
+    /// Move focus to last element
+    Last,
+    /// Move focus to next element in specific direction
+    Next,
+    /// Move focus to previous element in specific direction
+    Previous,
+}
+
+/// Result of focus handling
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FocusResult {
+    /// Focus was handled successfully
+    Handled,
+    /// Focus moved to another component
+    Moved(ComponentId),
+    /// Focus could not be moved (at boundary)
+    Boundary,
+    /// Focus handling failed
+    Failed(String),
+}
+
+/// Component lifecycle events
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ComponentEvent {
+    /// Component was created
+    Created(ComponentId),
+    /// Component was destroyed
+    Destroyed(ComponentId),
+    /// Component gained focus
+    Focused(ComponentId),
+    /// Component lost focus
+    Unfocused(ComponentId),
+    /// Component became visible
+    Shown(ComponentId),
+    /// Component became hidden
+    Hidden(ComponentId),
+    /// Component was enabled
+    Enabled(ComponentId),
+    /// Component was disabled
+    Disabled(ComponentId),
+    /// Component bounds changed
+    BoundsChanged(ComponentId, Rect),
+    /// Component properties changed
+    PropertiesChanged(ComponentId),
+}
+
+/// Component registry for managing component instances
+pub struct ComponentRegistry {
+    components: std::collections::HashMap<ComponentId, Box<dyn Component>>,
+    focus_order: Vec<ComponentId>,
+    current_focus: Option<ComponentId>,
+}
+
+impl ComponentRegistry {
+    /// Create a new component registry
+    pub fn new() -> Self {
+        Self {
+            components: std::collections::HashMap::new(),
+            focus_order: Vec::new(),
+            current_focus: None,
+        }
+    }
+
+    /// Register a component
+    pub fn register(&mut self, component: Box<dyn Component>) {
+        let id = component.id().clone();
+        self.components.insert(id.clone(), component);
+        self.focus_order.push(id);
+    }
+
+    /// Unregister a component
+    pub fn unregister(&mut self, id: &str) -> Option<Box<dyn Component>> {
+        if let Some(pos) = self.focus_order.iter().position(|x| x == id) {
+            self.focus_order.remove(pos);
+        }
+        if self.current_focus.as_ref() == Some(&id.to_string()) {
+            self.current_focus = None;
+        }
+        self.components.remove(id)
+    }
+
+    /// Get a component by ID
+    pub fn get(&self, id: &str) -> Option<&dyn Component> {
+        self.components.get(id).map(|c| c.as_ref())
+    }
+
+    /// Get a mutable component by ID
+    pub fn get_mut(&mut self, id: &str) -> Option<&mut dyn Component> {
+        self.components.get_mut(id).map(|c| c.as_mut())
+    }
+
+    /// Get all components
+    pub fn all(&self) -> Vec<&dyn Component> {
+        self.components.values().map(|c| c.as_ref()).collect()
+    }
+
+    /// Get all mutable components
+    pub fn all_mut(&mut self) -> Vec<&mut dyn Component> {
+        self.components.values_mut().map(|c| c.as_mut()).collect()
+    }
+
+    /// Set focus to a specific component
+    pub fn set_focus(&mut self, id: Option<&str>) {
+        // Unfocus current component
+        if let Some(current_id) = &self.current_focus {
+            if let Some(component) = self.components.get_mut(current_id) {
+                component.set_focused(false);
+            }
+        }
+
+        // Focus new component
+        self.current_focus = id.map(|s| s.to_string());
+        if let Some(new_id) = &self.current_focus {
+            if let Some(component) = self.components.get_mut(new_id) {
+                component.set_focused(true);
+            }
+        }
+    }
+
+    /// Move focus in the specified direction
+    pub fn move_focus(&mut self, direction: FocusDirection) -> FocusResult {
+        let current_index = match &self.current_focus {
+            Some(id) => self.focus_order.iter().position(|x| x == id),
+            None => None,
+        };
+
+        let new_index = match direction {
+            FocusDirection::Forward => {
+                match current_index {
+                    Some(idx) => Some((idx + 1) % self.focus_order.len()),
+                    None => Some(0),
+                }
+            }
+            FocusDirection::Backward => {
+                match current_index {
+                    Some(idx) => Some(if idx == 0 { self.focus_order.len() - 1 } else { idx - 1 }),
+                    None => Some(self.focus_order.len().saturating_sub(1)),
+                }
+            }
+            FocusDirection::First => Some(0),
+            FocusDirection::Last => Some(self.focus_order.len().saturating_sub(1)),
+            _ => current_index,
+        };
+
+        if let Some(idx) = new_index {
+            if let Some(new_id) = self.focus_order.get(idx) {
+                self.set_focus(Some(new_id));
+                return FocusResult::Moved(new_id.clone());
+            }
+        }
+
+        FocusResult::Boundary
+    }
+
+    /// Get the currently focused component
+    pub fn focused(&self) -> Option<&dyn Component> {
+        self.current_focus.as_ref()
+            .and_then(|id| self.components.get(id))
+            .map(|c| c.as_ref())
+    }
+
+    /// Get the currently focused component ID
+    pub fn focused_id(&self) -> Option<&str> {
+        self.current_focus.as_deref()
+    }
+
+    /// Update all components with a message
+    pub fn update_all(&mut self, message: &AppMessage, model: &AppModel) -> Vec<ComponentId> {
+        let mut updated = Vec::new();
+        for (id, component) in &mut self.components {
+            if component.update(message, model) {
+                updated.push(id.clone());
+            }
+        }
+        updated
+    }
+
+    /// Render all visible components
+    pub fn render_all(&self, frame: &mut Frame, model: &AppModel) {
+        for component in self.components.values() {
+            if component.is_visible() && component.is_enabled() {
+                let bounds = component.bounds();
+                component.render(frame, bounds, model);
+            }
+        }
+    }
+
+    /// Validate all components
+    pub fn validate_all(&self) -> Result<(), Vec<(ComponentId, String)>> {
+        let mut errors = Vec::new();
+        for (id, component) in &self.components {
+            if let Err(e) = component.validate() {
+                errors.push((id.clone(), e));
+            }
+        }
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
+        }
+    }
+}
+
+impl Default for ComponentRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Helper trait for cloning components
+pub trait ComponentClone {
+    fn clone_box(&self) -> Box<dyn Component>;
+}
+
+impl<T> ComponentClone for T
+where
+    T: 'static + Component + Clone,
+{
+    fn clone_box(&self) -> Box<dyn Component> {
+        Box::new(self.clone())
+    }
+}
+
+/// Macro to implement Component for a type
+#[macro_export]
+macro_rules! impl_component {
+    ($type:ty) => {
+        impl Component for $type {
+            fn clone_box(&self) -> Box<dyn Component> {
+                Box::new(self.clone())
+            }
+        }
+    };
+}
 
 /// Mode indicator component
 #[derive(Debug, Clone)]

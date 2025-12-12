@@ -43,6 +43,16 @@ pub struct CommandPaletteWidget {
     visible: bool,
     /// Maximum number of visible items
     max_visible_items: usize,
+
+    // Component trait fields
+    /// Unique component identifier
+    id: crate::ComponentId,
+    /// Whether the component is focused
+    focused: bool,
+    /// Whether the component is enabled
+    enabled: bool,
+    /// Component bounds
+    bounds: ratatui::layout::Rect,
 }
 
 impl Default for CommandPaletteWidget {
@@ -61,7 +71,30 @@ impl CommandPaletteWidget {
             filtered_commands: Vec::new(),
             visible: false,
             max_visible_items: 10,
+
+            // Component trait fields
+            id: "command-palette".to_string(),
+            focused: false,
+            enabled: true,
+            bounds: ratatui::layout::Rect::new(0, 0, 80, 20),
         }
+    }
+
+    /// Show the command palette
+    pub fn show(&mut self) {
+        self.visible = true;
+        self.focused = true;
+        self.query.clear();
+        self.selected_index = 0;
+        self.update_filtered_commands();
+    }
+
+    /// Hide the command palette
+    pub fn hide(&mut self) {
+        self.visible = false;
+        self.focused = false;
+        self.query.clear();
+        self.selected_index = 0;
     }
 
     /// Add a command to the palette
@@ -333,6 +366,196 @@ impl CommandPaletteWidget {
         }
 
         result
+    }
+}
+
+impl crate::Component for CommandPaletteWidget {
+    fn id(&self) -> crate::ComponentId {
+        self.id.clone()
+    }
+
+    fn render(&self, frame: &mut ratatui::Frame, area: ratatui::layout::Rect, _model: &crate::AppModel) {
+        if !self.visible {
+            return;
+        }
+
+        // Clear the background
+        frame.render_widget(Clear, area);
+
+        // Create the main layout
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(3), // Search input
+                Constraint::Min(5),    // Command list
+            ])
+            .split(area);
+
+        // Render search input
+        let search_text = if self.query.is_empty() {
+            Span::styled("Type to search commands...", Style::default().fg(Color::Gray))
+        } else {
+            Span::raw(&self.query)
+        };
+
+        let search_block = Block::default()
+            .title("Command Palette")
+            .borders(Borders::ALL);
+
+        let search_paragraph = Paragraph::new(Line::from(search_text))
+            .block(search_block);
+
+        frame.render_widget(search_paragraph, chunks[0]);
+
+        // Render command list
+        let mut list_items = Vec::new();
+        for (idx, (command, matches)) in self.filtered_commands.iter().enumerate() {
+            let mut spans = Vec::new();
+
+            // Highlight matching characters
+            let mut last_end = 0;
+            for &(start, end) in matches {
+                // Add non-matching text before this match
+                if start > last_end {
+                    spans.push(Span::raw(&command.display_name[last_end..start]));
+                }
+                // Add matching text with highlight
+                spans.push(Span::styled(
+                    &command.display_name[start..end],
+                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+                ));
+                last_end = end;
+            }
+
+            // Add remaining text
+            if last_end < command.display_name.len() {
+                spans.push(Span::raw(&command.display_name[last_end..]));
+            }
+
+            // Add description and shortcut
+            let mut line_spans = spans;
+            line_spans.push(Span::raw(" - "));
+            line_spans.push(Span::styled(&command.description, Style::default().fg(Color::Gray)));
+
+            if let Some(shortcut) = &command.shortcut {
+                line_spans.push(Span::raw(" ("));
+                line_spans.push(Span::styled(shortcut, Style::default().fg(Color::Cyan)));
+                line_spans.push(Span::raw(")"));
+            }
+
+            let style = if idx == self.selected_index {
+                Style::default().bg(Color::Blue).fg(Color::White)
+            } else {
+                Style::default()
+            };
+
+            list_items.push(ListItem::new(Line::from(line_spans)).style(style));
+        }
+
+        let list = List::new(list_items)
+            .block(Block::default().borders(Borders::ALL));
+
+        frame.render_widget(list, chunks[1]);
+    }
+
+    fn update(&mut self, message: &crate::AppMessage, _model: &crate::AppModel) -> bool {
+        if !self.visible {
+            return false;
+        }
+
+        match message {
+            crate::AppMessage::KeyPress(key) => {
+                match key.code {
+                    crossterm::event::KeyCode::Esc => {
+                        self.hide();
+                        return true;
+                    }
+                    crossterm::event::KeyCode::Enter => {
+                        // Execute selected command
+                        if let Some((command, _)) = self.filtered_commands.get(self.selected_index) {
+                            // TODO: Execute command
+                            tracing::info!("Executing command: {}", command.name);
+                            self.hide();
+                            return true;
+                        }
+                    }
+                    crossterm::event::KeyCode::Up => {
+                        if self.selected_index > 0 {
+                            self.selected_index -= 1;
+                        }
+                        return true;
+                    }
+                    crossterm::event::KeyCode::Down => {
+                        if self.selected_index < self.filtered_commands.len().saturating_sub(1) {
+                            self.selected_index += 1;
+                        }
+                        return true;
+                    }
+                    crossterm::event::KeyCode::Char(c) => {
+                        self.query.push(c);
+                        self.update_filtered_commands();
+                        self.selected_index = 0;
+                        return true;
+                    }
+                    crossterm::event::KeyCode::Backspace => {
+                        self.query.pop();
+                        self.update_filtered_commands();
+                        self.selected_index = 0;
+                        return true;
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
+        false
+    }
+
+    fn is_focused(&self) -> bool {
+        self.focused
+    }
+
+    fn set_focused(&mut self, focused: bool) {
+        self.focused = focused;
+    }
+
+    fn is_visible(&self) -> bool {
+        self.visible
+    }
+
+    fn set_visible(&mut self, visible: bool) {
+        self.visible = visible;
+    }
+
+    fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    fn set_enabled(&mut self, enabled: bool) {
+        self.enabled = enabled;
+    }
+
+    fn bounds(&self) -> ratatui::layout::Rect {
+        self.bounds
+    }
+
+    fn set_bounds(&mut self, bounds: ratatui::layout::Rect) {
+        self.bounds = bounds;
+    }
+
+    fn handle_focus(&mut self, _direction: crate::FocusDirection) -> crate::FocusResult {
+        crate::FocusResult::Handled
+    }
+
+    fn validate(&self) -> Result<(), String> {
+        if self.selected_index >= self.filtered_commands.len() && !self.filtered_commands.is_empty() {
+            return Err("Selected index out of bounds".to_string());
+        }
+        Ok(())
+    }
+
+    fn clone_box(&self) -> Box<dyn crate::Component> {
+        Box::new(self.clone())
     }
 }
 

@@ -305,6 +305,53 @@ impl ScreenReaderAnnouncer {
     pub fn is_enabled(&self) -> bool {
         self.enabled
     }
+
+    /// Generate ARIA-like label for an element
+    pub fn generate_aria_label(&self, element_id: &str, base_label: &str, state_info: Option<&str>) -> String {
+        let mut label = base_label.to_string();
+        if let Some(state) = state_info {
+            label.push_str(&format!(", {}", state));
+        }
+        label
+    }
+
+    /// Generate ARIA-like description for an element
+    pub fn generate_aria_description(&self, element_id: &str, description: &str, instructions: Option<&str>) -> String {
+        let mut desc = description.to_string();
+        if let Some(instr) = instructions {
+            desc.push_str(&format!(". {}", instr));
+        }
+        desc
+    }
+
+    /// Announce focus changes with ARIA-like information
+    pub fn announce_focus_change(&mut self, element_id: &str, element_type: &str, element_label: &str) {
+        self.announce(
+            format!("Focused {}: {}", element_type, element_label),
+            AnnouncementPriority::Normal,
+        );
+    }
+
+    /// Announce navigation context
+    pub fn announce_navigation_context(&mut self, context: &str, position: Option<(usize, usize)>) {
+        let message = if let Some((current, total)) = position {
+            format!("{}: item {} of {}", context, current + 1, total)
+        } else {
+            context.to_string()
+        };
+        self.announce(message, AnnouncementPriority::Low);
+    }
+
+    /// Announce completion status
+    pub fn announce_completion(&mut self, operation: &str, success: bool, details: Option<&str>) {
+        let status = if success { "completed" } else { "failed" };
+        let mut message = format!("{} {}", operation, status);
+        if let Some(details) = details {
+            message.push_str(&format!(": {}", details));
+        }
+        let priority = if success { AnnouncementPriority::Normal } else { AnnouncementPriority::High };
+        self.announce(message, priority);
+    }
 }
 
 /// State change event for announcements

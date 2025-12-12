@@ -281,7 +281,19 @@ pub struct ChatWidget {
     /// Selected action in menu
     pub selected_action: Option<usize>,
     /// Reactive update subscription (for automatic UI updates)
-    pub reactive_subscription: Option<tokio::sync::broadcast::Receiver<(crate::reactive_ui_updates::UpdateType, crate::tea::StateDiff)>>,
+    pub reactive_subscription: Option<tokio::sync::broadcast::Receiver<(crate::reactive_ui_updates::UpdateType, crate::StateDiff)>>,
+
+    // Component trait fields
+    /// Unique component identifier
+    id: crate::ComponentId,
+    /// Whether the component is focused
+    focused: bool,
+    /// Whether the component is visible
+    visible: bool,
+    /// Whether the component is enabled
+    enabled: bool,
+    /// Component bounds
+    bounds: ratatui::layout::Rect,
 }
 
 impl ChatWidget {
@@ -299,6 +311,13 @@ impl ChatWidget {
             show_action_menu: false,
             selected_action: None,
             reactive_subscription: None,
+
+            // Component trait fields
+            id: "chat-widget".to_string(),
+            focused: false,
+            visible: true,
+            enabled: true,
+            bounds: ratatui::layout::Rect::new(0, 0, 80, 24),
         }
     }
 
@@ -662,6 +681,129 @@ impl ChatWidget {
             }
         }
         Ok(())
+    }
+}
+
+impl crate::Component for ChatWidget {
+    fn id(&self) -> crate::ComponentId {
+        self.id.clone()
+    }
+
+    fn render(&self, frame: &mut ratatui::Frame, area: ratatui::layout::Rect, _model: &crate::AppModel) {
+        // Use existing render logic
+        // For now, just render a placeholder - in a real implementation,
+        // this would call the existing render methods
+        use ratatui::widgets::{Block, Borders, Paragraph};
+        use ratatui::text::Line;
+
+        let content = vec![
+            Line::from("Chat Widget - Component Architecture"),
+            Line::from(format!("Messages: {}", self.messages.len())),
+            Line::from(format!("Input: {}", self.input)),
+            Line::from(format!("Focused: {}", self.focused)),
+            Line::from(format!("Streaming: {}", self.is_streaming)),
+        ];
+
+        let block = Block::default()
+            .title("Chat")
+            .borders(Borders::ALL);
+
+        let paragraph = Paragraph::new(content)
+            .block(block);
+
+        frame.render_widget(paragraph, area);
+    }
+
+    fn update(&mut self, message: &crate::AppMessage, _model: &crate::AppModel) -> bool {
+        // Handle component-specific messages
+        match message {
+            crate::AppMessage::KeyPress(key) => {
+                if self.focused {
+                    // Handle keyboard input for chat widget
+                    match key.code {
+                        crossterm::event::KeyCode::Char(c) => {
+                            self.input.push(c);
+                            true
+                        }
+                        crossterm::event::KeyCode::Backspace => {
+                            self.input.pop();
+                            true
+                        }
+                        crossterm::event::KeyCode::Enter => {
+                            if !self.input.is_empty() {
+                                // Add message to chat
+                                // TODO: Implement proper message handling
+                                self.input.clear();
+                            }
+                            true
+                        }
+                        _ => false,
+                    }
+                } else {
+                    false
+                }
+            }
+            _ => false,
+        }
+    }
+
+    fn is_focused(&self) -> bool {
+        self.focused
+    }
+
+    fn set_focused(&mut self, focused: bool) {
+        self.focused = focused;
+    }
+
+    fn is_visible(&self) -> bool {
+        self.visible
+    }
+
+    fn set_visible(&mut self, visible: bool) {
+        self.visible = visible;
+    }
+
+    fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    fn set_enabled(&mut self, enabled: bool) {
+        self.enabled = enabled;
+    }
+
+    fn bounds(&self) -> ratatui::layout::Rect {
+        self.bounds
+    }
+
+    fn set_bounds(&mut self, bounds: ratatui::layout::Rect) {
+        self.bounds = bounds;
+    }
+
+    fn handle_focus(&mut self, direction: crate::FocusDirection) -> crate::FocusResult {
+        use crate::FocusDirection;
+        match direction {
+            FocusDirection::Forward | FocusDirection::Next => {
+                // Chat widget handles focus internally
+                crate::FocusResult::Handled
+            }
+            _ => crate::FocusResult::Handled,
+        }
+    }
+
+    fn validate(&self) -> Result<(), String> {
+        if self.scroll > self.messages.len() {
+            return Err("Scroll offset exceeds message count".to_string());
+        }
+        if let Some(selected) = self.selected {
+            if selected >= self.messages.len() {
+                return Err("Selected message index out of bounds".to_string());
+            }
+        }
+        Ok(())
+    }
+
+    fn clone_box(&self) -> Box<dyn crate::Component> {
+        Box::new(self.clone())
     }
 }
 

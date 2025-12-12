@@ -117,6 +117,7 @@ pub use executor::{
 };
 pub use file_picker::FilePickerWidget;
 pub use components::{
+    Component, ComponentId, ComponentRegistry, ComponentEvent, FocusDirection, FocusResult,
     DialogType, DialogWidget, ListWidget, MenuWidget, ModeIndicator, ModeSelectionMenu,
     SplitViewWidget, TabWidget,
 };

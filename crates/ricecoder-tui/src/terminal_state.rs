@@ -83,6 +83,12 @@ pub struct CapabilityOverrides {
     pub iterm2_inline_images_support: Option<bool>,
     /// Override WezTerm multiplexer support detection
     pub wezterm_multiplexer_support: Option<bool>,
+    /// Override unicode placeholder support detection
+    pub unicode_placeholder_support: Option<bool>,
+    /// Override block graphics support detection
+    pub block_graphics_support: Option<bool>,
+    /// Override ANSI art support detection
+    pub ansi_art_support: Option<bool>,
     /// Override unicode support detection
     pub unicode_support: Option<bool>,
     /// Force reduced graphics mode
@@ -108,6 +114,12 @@ pub struct TerminalCapabilities {
     pub iterm2_inline_images_support: bool,
     /// WezTerm multiplexer features support
     pub wezterm_multiplexer_support: bool,
+    /// Unicode placeholder protocol support (for inline images)
+    pub unicode_placeholder_support: bool,
+    /// Block graphics support (for ASCII art fallbacks)
+    pub block_graphics_support: bool,
+    /// ANSI art support (for simple image rendering)
+    pub ansi_art_support: bool,
     /// Unicode support
     pub unicode_support: bool,
     /// Running in SSH session
@@ -160,6 +172,9 @@ impl TerminalCapabilities {
         let kitty_graphics_support = overrides.kitty_graphics_support.unwrap_or_else(|| Self::detect_kitty_graphics_support(&terminal_type));
         let iterm2_inline_images_support = overrides.iterm2_inline_images_support.unwrap_or_else(|| Self::detect_iterm2_inline_images_support(&terminal_type));
         let wezterm_multiplexer_support = overrides.wezterm_multiplexer_support.unwrap_or_else(|| Self::detect_wezterm_multiplexer_support(&terminal_type));
+        let unicode_placeholder_support = overrides.unicode_placeholder_support.unwrap_or_else(|| Self::detect_unicode_placeholder_support(&terminal_type));
+        let block_graphics_support = overrides.block_graphics_support.unwrap_or_else(|| Self::detect_block_graphics_support());
+        let ansi_art_support = overrides.ansi_art_support.unwrap_or_else(|| Self::detect_ansi_art_support());
         let unicode_support = overrides.unicode_support.unwrap_or_else(|| Self::detect_unicode_support());
         let is_ssh = Self::detect_ssh_session();
         let (is_tmux, tmux_version) = Self::detect_tmux_session_with_version();
@@ -173,6 +188,9 @@ impl TerminalCapabilities {
             kitty_graphics_support,
             iterm2_inline_images_support,
             wezterm_multiplexer_support,
+            unicode_placeholder_support,
+            block_graphics_support,
+            ansi_art_support,
             unicode_support,
             is_ssh,
             is_tmux,
@@ -190,6 +208,9 @@ impl TerminalCapabilities {
             kitty_graphics_support = capabilities.kitty_graphics_support,
             iterm2_inline_images_support = capabilities.iterm2_inline_images_support,
             wezterm_multiplexer_support = capabilities.wezterm_multiplexer_support,
+            unicode_placeholder_support = capabilities.unicode_placeholder_support,
+            block_graphics_support = capabilities.block_graphics_support,
+            ansi_art_support = capabilities.ansi_art_support,
             unicode_support = capabilities.unicode_support,
             is_ssh = capabilities.is_ssh,
             is_tmux = capabilities.is_tmux,
@@ -381,6 +402,45 @@ impl TerminalCapabilities {
         matches!(terminal_type, TerminalType::WezTerm)
     }
 
+    /// Detect Unicode placeholder protocol support
+    ///
+    /// Requirements: 4.1 - Detect graphics protocol support
+    fn detect_unicode_placeholder_support(terminal_type: &TerminalType) -> bool {
+        // Unicode placeholders work in most modern terminals
+        matches!(terminal_type,
+            TerminalType::Xterm |
+            TerminalType::ITerm2 |
+            TerminalType::WezTerm |
+            TerminalType::Kitty |
+            TerminalType::Alacritty |
+            TerminalType::WindowsTerminal |
+            TerminalType::VSCode |
+            TerminalType::Hyper |
+            TerminalType::Tabby |
+            TerminalType::Foot |
+            TerminalType::Rio |
+            TerminalType::Warp
+        )
+    }
+
+    /// Detect block graphics support
+    ///
+    /// Requirements: 4.1 - Detect graphics protocol support
+    fn detect_block_graphics_support() -> bool {
+        // Block graphics are supported by most terminals
+        // They use Unicode block characters for simple graphics
+        true
+    }
+
+    /// Detect ANSI art support
+    ///
+    /// Requirements: 4.1 - Detect graphics protocol support
+    fn detect_ansi_art_support() -> bool {
+        // ANSI art uses color codes and ASCII characters
+        // Supported by all terminals that support colors
+        true
+    }
+
     /// Detect Unicode support
     ///
     /// Requirements: 4.1 - Detect feature support (mouse, sixel, Unicode)
@@ -520,6 +580,15 @@ impl TerminalCapabilities {
 
         // Enable WezTerm multiplexer features if supported
         optimizations.insert("wezterm_multiplexer".to_string(), self.wezterm_multiplexer_support);
+
+        // Enable Unicode placeholder protocol if supported
+        optimizations.insert("unicode_placeholder_protocol".to_string(), self.unicode_placeholder_support);
+
+        // Enable block graphics if supported
+        optimizations.insert("block_graphics".to_string(), self.block_graphics_support);
+
+        // Enable ANSI art if supported
+        optimizations.insert("ansi_art".to_string(), self.ansi_art_support);
 
         // Enable Unicode characters if supported
         optimizations.insert("unicode_chars".to_string(), self.unicode_support);

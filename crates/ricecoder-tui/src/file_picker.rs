@@ -70,6 +70,16 @@ pub struct FilePickerWidget {
     externally_modified: HashSet<PathBuf>,
     /// Maximum file size for inclusion (in bytes)
     max_file_size: u64,
+
+    // Component trait fields
+    /// Unique component identifier
+    id: crate::ComponentId,
+    /// Whether the component is focused
+    focused: bool,
+    /// Whether the component is enabled
+    enabled: bool,
+    /// Component bounds
+    bounds: ratatui::layout::Rect,
 }
 
 /// File information for selection decisions
@@ -95,7 +105,25 @@ impl FilePickerWidget {
             max_file_size: 1024 * 1024, // 1MB default
             recently_modified: HashSet::new(),
             externally_modified: HashSet::new(),
+
+            // Component trait fields
+            id: "file-picker".to_string(),
+            focused: false,
+            enabled: true,
+            bounds: ratatui::layout::Rect::new(0, 0, 80, 25),
         }
+    }
+
+    /// Show the file picker
+    pub fn show(&mut self) {
+        self.visible = true;
+        self.focused = true;
+    }
+
+    /// Hide the file picker
+    pub fn hide(&mut self) {
+        self.visible = false;
+        self.focused = false;
     }
 
     /// Set the maximum file size for inclusion
@@ -349,6 +377,118 @@ impl FilePickerWidget {
                 Constraint::Percentage((100 - percent_x) / 2),
             ])
             .split(popup_layout[1])[1]
+    }
+}
+
+impl crate::Component for FilePickerWidget {
+    fn id(&self) -> crate::ComponentId {
+        self.id.clone()
+    }
+
+    fn render(&self, frame: &mut ratatui::Frame, area: ratatui::layout::Rect, _model: &crate::AppModel) {
+        if !self.visible {
+            return;
+        }
+
+        // Clear the background
+        frame.render_widget(Clear, area);
+
+        // Use the existing render method
+        // For now, create a simple placeholder render
+        let block = Block::default()
+            .title("File Picker")
+            .borders(Borders::ALL);
+
+        let content = vec![
+            Line::from("File Picker - Component Architecture"),
+            Line::from(""),
+            Line::from("Navigate with arrow keys, Enter to select"),
+            Line::from("Esc to cancel"),
+            Line::from(""),
+            Line::from("Current directory: (placeholder)"),
+        ];
+
+        let paragraph = Paragraph::new(content)
+            .block(block)
+            .wrap(ratatui::widgets::Wrap { trim: true });
+
+        frame.render_widget(paragraph, area);
+    }
+
+    fn update(&mut self, message: &crate::AppMessage, _model: &crate::AppModel) -> bool {
+        if !self.visible {
+            return false;
+        }
+
+        match message {
+            crate::AppMessage::KeyPress(key) => {
+                match key.code {
+                    crossterm::event::KeyCode::Esc => {
+                        self.hide();
+                        return true;
+                    }
+                    crossterm::event::KeyCode::Enter => {
+                        // TODO: Handle file selection
+                        self.hide();
+                        return true;
+                    }
+                    _ => {
+                        // TODO: Handle navigation keys for file explorer
+                        // For now, just consume the event
+                        return true;
+                    }
+                }
+            }
+            _ => {}
+        }
+        false
+    }
+
+    fn is_focused(&self) -> bool {
+        self.focused
+    }
+
+    fn set_focused(&mut self, focused: bool) {
+        self.focused = focused;
+    }
+
+    fn is_visible(&self) -> bool {
+        self.visible
+    }
+
+    fn set_visible(&mut self, visible: bool) {
+        self.visible = visible;
+    }
+
+    fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    fn set_enabled(&mut self, enabled: bool) {
+        self.enabled = enabled;
+    }
+
+    fn bounds(&self) -> ratatui::layout::Rect {
+        self.bounds
+    }
+
+    fn set_bounds(&mut self, bounds: ratatui::layout::Rect) {
+        self.bounds = bounds;
+    }
+
+    fn handle_focus(&mut self, _direction: crate::FocusDirection) -> crate::FocusResult {
+        crate::FocusResult::Handled
+    }
+
+    fn validate(&self) -> Result<(), String> {
+        // TODO: Add validation logic for file picker state
+        Ok(())
+    }
+
+    fn clone_box(&self) -> Box<dyn crate::Component> {
+        // Note: FilePickerWidget contains non-cloneable fields (FileExplorer)
+        // For now, return a new instance
+        Box::new(Self::new())
     }
 }
 

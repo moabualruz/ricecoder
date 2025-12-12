@@ -336,6 +336,35 @@ impl ProgressiveEnhancement {
         RenderingStrategy::TextOnly
     }
 
+    /// Get the next fallback strategy when the current one fails
+    pub fn get_fallback_strategy(&self, feature: &str, current_strategy: RenderingStrategy) -> Option<RenderingStrategy> {
+        if let Some(strategies) = self.fallback_strategies.get(feature) {
+            let mut found_current = false;
+            for strategy in strategies {
+                if found_current {
+                    if self.supports_rendering_strategy(*strategy) {
+                        return Some(*strategy);
+                    }
+                } else if *strategy == current_strategy {
+                    found_current = true;
+                }
+            }
+        }
+        None
+    }
+
+    /// Get all supported strategies for a feature in order of preference
+    pub fn get_supported_strategies(&self, feature: &str) -> Vec<RenderingStrategy> {
+        if let Some(strategies) = self.fallback_strategies.get(feature) {
+            strategies.iter()
+                .filter(|strategy| self.supports_rendering_strategy(**strategy))
+                .cloned()
+                .collect()
+        } else {
+            vec![RenderingStrategy::TextOnly]
+        }
+    }
+
     /// Check if the terminal supports a specific rendering strategy
     pub fn supports_rendering_strategy(&self, strategy: RenderingStrategy) -> bool {
         match strategy {
@@ -347,7 +376,10 @@ impl ProgressiveEnhancement {
                 self.capabilities.sixel_support ||
                 self.capabilities.kitty_graphics_support ||
                 self.capabilities.iterm2_inline_images_support ||
-                self.capabilities.wezterm_multiplexer_support
+                self.capabilities.wezterm_multiplexer_support ||
+                self.capabilities.unicode_placeholder_support ||
+                self.capabilities.block_graphics_support ||
+                self.capabilities.ansi_art_support
             }
         }
     }
