@@ -59,6 +59,18 @@ impl PathResolver {
         ))
     }
 
+    /// Resolve the user storage path (~/.ricecoder/)
+    pub fn resolve_user_path() -> StorageResult<PathBuf> {
+        if let Some(home_dir) = dirs::home_dir() {
+            let ricecoder_path = home_dir.join(".ricecoder");
+            Ok(ricecoder_path)
+        } else {
+            Err(StorageError::path_resolution_error(
+                "Could not determine home directory",
+            ))
+        }
+    }
+
     /// Resolve the project storage path (./.agent/)
     pub fn resolve_project_path() -> PathBuf {
         PathBuf::from(".agent")

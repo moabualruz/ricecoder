@@ -6,17 +6,21 @@
 pub mod cli;
 pub mod documents;
 pub mod env;
+pub mod hot_reload;
 pub mod loader;
 pub mod merge;
 pub mod modes;
+pub mod validation;
 
 // Re-export commonly used types
 pub use cli::CliArgs;
 pub use documents::{Document, DocumentLoader};
 pub use env::EnvOverrides;
+pub use hot_reload::{ConfigWatcher, HotReloadManager};
 pub use loader::ConfigLoader;
 pub use merge::ConfigMerger;
 pub use modes::StorageModeHandler;
+pub use validation::{ConfigValidator, ValidationError, ConfigBackupManager};
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

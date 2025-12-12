@@ -87,6 +87,7 @@ pub mod lsp;
 pub mod manager;
 pub mod markdown_config;
 pub mod offline;
+pub mod preferences;
 pub mod project_store;
 pub mod refactoring;
 pub mod relocation;
@@ -114,6 +115,7 @@ pub use markdown_config::{
     ParsedMarkdown, YamlParser,
 };
 pub use offline::OfflineModeHandler;
+pub use preferences::{PreferencesManager, UserPreferences};
 pub use project_store::ProjectStore;
 pub use refactoring::{get_builtin_refactoring_configs, get_refactoring_config};
 pub use relocation::RelocationService;

@@ -67,6 +67,22 @@ pub enum StorageError {
     /// Internal error
     #[error("Internal error: {0}")]
     Internal(String),
+
+    /// File watching errors
+    #[error("File watching error: {0}")]
+    FileWatch(#[from] notify::Error),
+
+    /// YAML serialization errors
+    #[error("YAML error: {0}")]
+    Yaml(#[from] serde_yaml::Error),
+
+    /// Configuration validation errors
+    #[error("Configuration validation failed: {errors:?}")]
+    ConfigValidation { errors: Vec<String> },
+
+    /// Resource not found
+    #[error("Resource not found: {0}")]
+    NotFound(String),
 }
 
 /// IO operation type for error context

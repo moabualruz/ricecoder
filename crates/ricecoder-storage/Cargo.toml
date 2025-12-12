@@ -29,6 +29,7 @@ regex = "1.10"
 clap = { version = "4.0", features = ["derive"] }
 jsonc-parser = "0.26"
 jsonschema = "0.37"
+chrono = { version = "0.4", features = ["serde"] }
 
 [dev-dependencies]
 proptest = "1.4"
