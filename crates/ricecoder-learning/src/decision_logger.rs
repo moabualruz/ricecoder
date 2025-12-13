@@ -41,7 +41,7 @@ impl DecisionLogger {
         let mut context_index = self.context_index.write().await;
         context_index
             .entry(context_key)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(index);
 
         Ok(decision_id)

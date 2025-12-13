@@ -111,7 +111,7 @@ impl ConflictResolver {
         for rule in rules {
             pattern_groups
                 .entry(rule.pattern.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(rule.clone());
         }
 

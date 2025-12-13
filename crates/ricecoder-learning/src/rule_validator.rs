@@ -2,7 +2,6 @@
 ///
 /// Validates rules before storage to ensure they meet syntax, structure,
 /// and consistency requirements.
-
 use crate::error::{LearningError, Result};
 use crate::models::Rule;
 use regex::Regex;
@@ -303,7 +302,7 @@ impl ValidationReport {
     pub fn add_error(&mut self, field: &str, message: String) {
         self.errors
             .entry(field.to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(message);
     }
 
@@ -311,7 +310,7 @@ impl ValidationReport {
     pub fn add_warning(&mut self, field: &str, message: String) {
         self.warnings
             .entry(field.to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(message);
     }
 

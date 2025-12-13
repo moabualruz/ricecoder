@@ -2,7 +2,6 @@
 ///
 /// Detects deviations from established architectural patterns and warns
 /// about architectural drift.
-
 use crate::error::{LearningError, Result};
 use crate::intent_tracker::{ArchitecturalDecision, DriftDetection};
 use crate::models::LearnedPattern;

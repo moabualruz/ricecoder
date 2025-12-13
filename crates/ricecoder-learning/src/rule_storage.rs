@@ -82,7 +82,7 @@ impl RuleStorage {
         let file_path = self.get_rule_file_path(&rule_id)?;
 
         let json = serde_json::to_string_pretty(&rule)
-            .map_err(|e| LearningError::SerializationError(e))?;
+            .map_err(LearningError::SerializationError)?;
 
         fs::write(&file_path, json)
             .await
@@ -122,7 +122,7 @@ impl RuleStorage {
             .map_err(|e| LearningError::RuleStorageFailed(format!("Failed to read rule file: {}", e)))?;
 
         let rule: Rule = serde_json::from_str(&json)
-            .map_err(|e| LearningError::SerializationError(e))?;
+            .map_err(LearningError::SerializationError)?;
 
         // Update cache
         {
@@ -160,7 +160,7 @@ impl RuleStorage {
         {
             let path = entry.path();
 
-            if path.extension().map_or(false, |ext| ext == "json") {
+            if path.extension().is_some_and(|ext| ext == "json") {
                 match fs::read_to_string(&path).await {
                     Ok(json) => match serde_json::from_str::<Rule>(&json) {
                         Ok(rule) => {
@@ -329,7 +329,7 @@ impl RuleStorage {
         let rules = self.list_rules().await?;
         Ok(rules
             .into_iter()
-            .filter(|r| r.metadata.get(key).map_or(false, |v| v == value))
+            .filter(|r| r.metadata.get(key).is_some_and(|v| v == value))
             .collect())
     }
 

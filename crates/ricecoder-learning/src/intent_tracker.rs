@@ -2,7 +2,6 @@
 ///
 /// Tracks architectural decisions and patterns over time, detecting evolution
 /// and drift from established architectural patterns.
-
 use crate::error::{LearningError, Result};
 use crate::models::{LearnedPattern, PatternExample};
 use chrono::{DateTime, Utc};
@@ -197,7 +196,7 @@ impl IntentTracker {
         for decision in self.decisions.values() {
             decisions_by_type
                 .entry(decision.decision_type.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(decision);
         }
 

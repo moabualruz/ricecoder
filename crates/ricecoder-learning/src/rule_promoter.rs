@@ -338,7 +338,7 @@ impl RulePromoter {
         previous_version: Option<Rule>,
         global_rules: &[Rule],
     ) -> Result<RuleReview> {
-        let conflicts = ConflictResolver::find_conflicts(&[rule.clone()])
+        let conflicts = ConflictResolver::find_conflicts(std::slice::from_ref(&rule))
             .into_iter()
             .filter(|(r1, r2)| {
                 global_rules.iter().any(|gr| {

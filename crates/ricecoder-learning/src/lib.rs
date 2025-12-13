@@ -3,7 +3,6 @@
 /// This crate provides the learning system for RiceCoder, which captures user decisions
 /// and converts them into reusable rules. The system supports multiple learning scopes
 /// (global, project, session) and enables rule promotion across scopes.
-
 pub mod analytics_engine;
 pub mod confidence_score_property;
 pub mod conflict_resolver;

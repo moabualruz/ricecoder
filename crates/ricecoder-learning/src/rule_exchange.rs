@@ -44,26 +44,26 @@ impl RuleExport {
     /// Serialize to JSON string
     pub fn to_json(&self) -> Result<String> {
         serde_json::to_string_pretty(self)
-            .map_err(|e| LearningError::SerializationError(e))
+            .map_err(LearningError::SerializationError)
     }
 
     /// Deserialize from JSON string
     pub fn from_json(json: &str) -> Result<Self> {
         serde_json::from_str(json)
-            .map_err(|e| LearningError::SerializationError(e))
+            .map_err(LearningError::SerializationError)
     }
 
     /// Write to file
     pub fn write_to_file(&self, path: &Path) -> Result<()> {
         let json = self.to_json()?;
         std::fs::write(path, json)
-            .map_err(|e| LearningError::IoError(e))
+            .map_err(LearningError::IoError)
     }
 
     /// Read from file
     pub fn read_from_file(path: &Path) -> Result<Self> {
         let json = std::fs::read_to_string(path)
-            .map_err(|e| LearningError::IoError(e))?;
+            .map_err(LearningError::IoError)?;
         Self::from_json(&json)
     }
 }

@@ -237,7 +237,7 @@ impl RuleApplicationEngine {
     /// Validate that a rule can be applied to a context
     pub fn validate_rule_application(rule: &Rule, context: &GenerationContext) -> Result<()> {
         // Validate that the pattern is valid JSON or a simple string
-        if let Err(_) = serde_json::from_str::<Value>(&rule.pattern) {
+        if serde_json::from_str::<Value>(&rule.pattern).is_err() {
             // If not JSON, check if it's a simple string pattern
             if rule.pattern.is_empty() {
                 return Err(LearningError::RuleApplicationFailed(

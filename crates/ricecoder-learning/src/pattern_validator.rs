@@ -112,7 +112,7 @@ impl PatternValidator {
         // Combined confidence recommendation
         let confidence = (validation_factor * 0.5) + (occurrence_factor * 0.25) + (match_factor * 0.25);
 
-        confidence.min(1.0).max(0.0)
+        confidence.clamp(0.0, 1.0)
     }
 
     /// Validate multiple patterns

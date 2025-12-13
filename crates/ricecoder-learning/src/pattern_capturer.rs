@@ -39,7 +39,7 @@ impl PatternCapturer {
         for decision in decisions {
             decisions_by_type
                 .entry(decision.decision_type.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(decision);
         }
 
@@ -73,7 +73,7 @@ impl PatternCapturer {
                 .unwrap_or_else(|_| "unknown".to_string());
             input_groups
                 .entry(input_key)
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(decision);
         }
 
@@ -175,7 +175,7 @@ impl PatternCapturer {
         // Combined confidence
         let confidence = (output_consistency * 0.7) + (occurrence_factor * 0.3);
 
-        Ok(confidence.min(1.0).max(0.0))
+        Ok(confidence.clamp(0.0, 1.0))
     }
 
     /// Check if two outputs are similar
