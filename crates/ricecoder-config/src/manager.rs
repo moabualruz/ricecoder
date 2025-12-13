@@ -2,7 +2,7 @@
 
 use crate::error::{ConfigError, Result};
 use crate::types::{AppConfig, ConfigManager as ConfigManagerTrait};
-use config::{Config, ConfigError as ConfigLibError, Environment, File};
+use config::{Config, Environment, File};
 use std::path::PathBuf;
 
 /// Configuration manager
@@ -41,7 +41,7 @@ impl ConfigManager {
 
 impl ConfigManagerTrait for ConfigManager {
     fn load_config(&mut self) -> Result<AppConfig> {
-        let mut builder = Config::builder()
+        let builder = Config::builder()
             .add_source(File::from(self.config_path.clone()).required(false))
             .add_source(Environment::with_prefix(&self.env_prefix));
 

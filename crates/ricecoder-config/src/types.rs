@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Main application configuration
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub struct AppConfig {
     /// Editor configuration
     pub editor: EditorConfig,
@@ -44,7 +44,7 @@ pub struct UiConfig {
 }
 
 /// Keybinding configuration
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub struct KeybindConfig {
     /// Custom keybindings
     pub custom: std::collections::HashMap<String, String>,
@@ -59,16 +59,7 @@ pub struct ThemeConfig {
     pub overrides: std::collections::HashMap<String, serde_json::Value>,
 }
 
-impl Default for AppConfig {
-    fn default() -> Self {
-        Self {
-            editor: EditorConfig::default(),
-            ui: UiConfig::default(),
-            keybinds: KeybindConfig::default(),
-            theme: ThemeConfig::default(),
-        }
-    }
-}
+
 
 impl Default for EditorConfig {
     fn default() -> Self {
@@ -93,13 +84,7 @@ impl Default for UiConfig {
     }
 }
 
-impl Default for KeybindConfig {
-    fn default() -> Self {
-        Self {
-            custom: std::collections::HashMap::new(),
-        }
-    }
-}
+
 
 impl Default for ThemeConfig {
     fn default() -> Self {

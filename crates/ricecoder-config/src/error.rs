@@ -1,6 +1,6 @@
 //! Configuration error types
 
-use thiserror::Error;
+
 
 /// Configuration result type
 pub type Result<T> = std::result::Result<T, ConfigError>;

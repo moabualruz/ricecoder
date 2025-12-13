@@ -64,11 +64,12 @@ use std::fs;
 use std::path::PathBuf;
 
 /// Focus indicator style
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub enum FocusIndicatorStyle {
     /// Underline
     Underline,
     /// Border
+    #[default]
     Border,
     /// Background color
     Background,
@@ -76,11 +77,7 @@ pub enum FocusIndicatorStyle {
     None,
 }
 
-impl Default for FocusIndicatorStyle {
-    fn default() -> Self {
-        Self::Border
-    }
-}
+
 
 /// Animation configuration
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -545,6 +542,7 @@ impl ConfigManager {
     }
 
     /// Start watching configuration files for changes (TODO: implement)
+    #[allow(dead_code)]
     async fn start_watching(&mut self) -> Result<()> {
         // File watching not implemented yet
         Ok(())
