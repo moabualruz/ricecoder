@@ -406,8 +406,8 @@ impl ThemeManager {
     }
 
     /// Adapt the current theme to terminal capabilities
-    pub fn adapt_to_terminal(&self, support: ColorSupport) -> Result<()> {
-        let mut current = self
+    pub fn adapt_to_terminal(&self, _support: ColorSupport) -> Result<()> {
+        let current = self
             .current_theme
             .lock()
             .map_err(|e| anyhow::anyhow!("Failed to lock theme: {}", e))?;
