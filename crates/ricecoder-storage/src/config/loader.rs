@@ -19,6 +19,12 @@ pub struct ConfigLoader {
     skip_validation: bool,
 }
 
+impl Default for ConfigLoader {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ConfigLoader {
     /// Create a new configuration loader
     pub fn new() -> Self {
@@ -70,11 +76,7 @@ impl ConfigLoader {
         EnvOverrides::apply(&mut env_config);
 
         // Apply CLI overrides (highest priority)
-        let cli_config = if let Some(ref cli_args) = self.cli_args {
-            Some(Self::cli_args_to_config(cli_args))
-        } else {
-            None
-        };
+        let cli_config = self.cli_args.as_ref().map(Self::cli_args_to_config);
 
         // Merge all configurations with proper precedence: CLI > Env > Project > User > Global > Defaults
         let (mut merged, _decisions) = ConfigMerger::merge_with_cli(
@@ -204,9 +206,7 @@ impl ConfigLoader {
 
         if let Some(ref api_key) = cli_args.api_key {
             // For CLI args, we assume the provider is the default or specified
-            let provider = cli_args.provider.as_ref()
-                .map(|s| s.as_str())
-                .unwrap_or("openai");
+            let provider = cli_args.provider.as_deref().unwrap_or("openai");
             config.providers.api_keys.insert(provider.to_string(), api_key.clone());
         }
 

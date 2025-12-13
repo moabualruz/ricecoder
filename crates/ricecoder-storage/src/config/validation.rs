@@ -216,6 +216,12 @@ impl ConfigValidator {
     }
 }
 
+impl Default for ConfigValidator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Configuration migration manager
 pub struct ConfigMigrationManager {
     migrations: Vec<Box<dyn ConfigMigration>>,
@@ -252,6 +258,12 @@ impl ConfigMigrationManager {
             }
         }
         Ok(())
+    }
+}
+
+impl Default for ConfigMigrationManager {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

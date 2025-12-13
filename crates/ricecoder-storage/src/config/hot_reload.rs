@@ -4,7 +4,7 @@
 //! validation, migration, and conflict resolution.
 
 use crate::config::{Config, ConfigLoader, ConfigValidator};
-use crate::error::{StorageError, StorageResult};
+use crate::error::StorageResult;
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -188,28 +188,25 @@ impl HotReloadManager {
     pub async fn process_events(&mut self) -> StorageResult<()> {
         // Non-blocking event processing
         while let Ok(event) = self.event_receiver.try_recv() {
-            match event {
-                ConfigChangeEvent::FileModified { path, .. } => {
-                    tracing::info!("Configuration file changed: {}", path.display());
+            if let ConfigChangeEvent::FileModified { path, .. } = event {
+                tracing::info!("Configuration file changed: {}", path.display());
 
-                    // Attempt to reload configuration
-                    match self.reload_config().await {
-                        Ok(new_config) => {
-                            tracing::info!("Configuration reloaded successfully");
-                            // Additional processing could be done here
-                            let _ = new_config;
-                        }
-                        Err(e) => {
-                            tracing::error!("Failed to reload configuration: {}", e);
-                            let _ = self.watcher.event_sender.send(ConfigChangeEvent::ReloadFailed {
-                                path,
-                                error: e.to_string(),
-                            });
-                        }
+                // Attempt to reload configuration
+                match self.reload_config().await {
+                    Ok(new_config) => {
+                        tracing::info!("Configuration reloaded successfully");
+                        // Additional processing could be done here
+                        let _ = new_config;
+                    }
+                    Err(e) => {
+                        tracing::error!("Failed to reload configuration: {}", e);
+                        let _ = self.watcher.event_sender.send(ConfigChangeEvent::ReloadFailed {
+                            path,
+                            error: e.to_string(),
+                        });
                     }
                 }
-                _ => {} // Other events are handled elsewhere
-            }
+            } // Other events are handled elsewhere
         }
 
         Ok(())

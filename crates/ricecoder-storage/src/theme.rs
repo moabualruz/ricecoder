@@ -210,7 +210,7 @@ impl ThemeStorage {
             })?;
 
             let path = entry.path();
-            if path.extension().map_or(false, |ext| ext == "yaml") {
+            if path.extension().is_some_and(|ext| ext == "yaml") {
                 if let Some(file_stem) = path.file_stem() {
                     if let Some(theme_name) = file_stem.to_str() {
                         themes.push(theme_name.to_string());

@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 /// CLI arguments that can override configuration values
-#[derive(Parser, Debug, Clone, Serialize, Deserialize)]
+#[derive(Parser, Debug, Clone, Serialize, Deserialize, Default)]
 #[command(name = "ricecoder")]
 #[command(about = "AI-powered development tool")]
 pub struct CliArgs {
@@ -69,26 +69,7 @@ pub struct CliArgs {
     pub experimental: bool,
 }
 
-impl Default for CliArgs {
-    fn default() -> Self {
-        Self {
-            config: None,
-            provider: None,
-            model: None,
-            api_key: None,
-            temperature: None,
-            max_tokens: None,
-            theme: None,
-            verbose: false,
-            log_level: None,
-            no_telemetry: false,
-            project_dir: None,
-            user_config_dir: None,
-            skip_validation: false,
-            experimental: false,
-        }
-    }
-}
+
 
 impl CliArgs {
     /// Parse CLI arguments

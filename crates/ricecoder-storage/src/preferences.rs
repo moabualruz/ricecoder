@@ -3,7 +3,7 @@
 //! This module provides storage and retrieval of user preferences that persist
 //! across sessions, separate from the main configuration.
 
-use crate::error::{StorageError, StorageResult};
+use crate::error::StorageResult;
 use crate::manager::PathResolver;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -11,7 +11,7 @@ use std::path::PathBuf;
 use tokio::sync::RwLock;
 
 /// User preferences structure
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub struct UserPreferences {
     /// UI preferences
     pub ui: UiPreferences,
@@ -27,18 +27,7 @@ pub struct UserPreferences {
     pub custom: HashMap<String, serde_json::Value>,
 }
 
-impl Default for UserPreferences {
-    fn default() -> Self {
-        Self {
-            ui: UiPreferences::default(),
-            editor: EditorPreferences::default(),
-            terminal: TerminalPreferences::default(),
-            keybindings: KeybindingPreferences::default(),
-            themes: ThemePreferences::default(),
-            custom: HashMap::new(),
-        }
-    }
-}
+
 
 /// UI-related preferences
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -207,6 +196,7 @@ impl Default for ThemePreferences {
 }
 
 /// User preferences manager
+#[allow(dead_code)]
 pub struct PreferencesManager {
     preferences: RwLock<UserPreferences>,
     preferences_file: PathBuf,
@@ -254,6 +244,7 @@ impl PreferencesManager {
     }
 
     /// Save preferences to file
+    #[allow(dead_code)]
     async fn save_preferences(&self, preferences: &UserPreferences) -> StorageResult<()> {
         use tokio::fs;
 
