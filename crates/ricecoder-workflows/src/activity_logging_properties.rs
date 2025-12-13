@@ -2,27 +2,7 @@
 //! **Feature: ricecoder-workflows, Property 12: Activity Logging**
 //! **Validates: Requirements 2.6**
 
-#[cfg(test)]
-mod tests {
-    use crate::{ActivityLogger, ActivityType};
-    use proptest::prelude::*;
 
-    // Strategy for generating activity types
-    fn activity_type_strategy() -> impl Strategy<Value = ActivityType> {
-        prop_oneof![
-            Just(ActivityType::WorkflowStarted),
-            Just(ActivityType::WorkflowCompleted),
-            Just(ActivityType::WorkflowFailed),
-            Just(ActivityType::StepStarted),
-            Just(ActivityType::StepCompleted),
-            Just(ActivityType::StepFailed),
-            Just(ActivityType::StepSkipped),
-            Just(ActivityType::ApprovalRequested),
-            Just(ActivityType::ApprovalGranted),
-            Just(ActivityType::ApprovalDenied),
-            Just(ActivityType::Error),
-        ]
-    }
 
     // Strategy for generating step IDs
     fn step_id_strategy() -> impl Strategy<Value = Option<String>> {
