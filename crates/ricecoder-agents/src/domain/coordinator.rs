@@ -163,7 +163,7 @@ impl DomainCoordinator {
         for response in responses {
             by_domain
                 .entry(response.domain.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(response);
         }
 
@@ -234,7 +234,7 @@ impl DomainCoordinator {
             for rec in recommendations {
                 by_domain
                     .entry(rec.domain.clone())
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(rec);
             }
 
@@ -272,7 +272,7 @@ impl DomainCoordinator {
         for rec in recommendations {
             by_domain
                 .entry(rec.domain.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(rec);
         }
 

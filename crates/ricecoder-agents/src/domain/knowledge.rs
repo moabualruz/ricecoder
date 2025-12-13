@@ -50,7 +50,7 @@ impl KnowledgeBase {
 
         practices
             .entry(domain.to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(practice);
 
         Ok(())
@@ -93,7 +93,7 @@ impl KnowledgeBase {
 
         recommendations
             .entry(domain.to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(recommendation);
 
         Ok(())
@@ -155,7 +155,7 @@ impl KnowledgeBase {
 
         patterns
             .entry(domain.to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(pattern);
 
         Ok(())
@@ -194,7 +194,7 @@ impl KnowledgeBase {
 
         anti_patterns
             .entry(domain.to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(anti_pattern);
 
         Ok(())
