@@ -265,17 +265,26 @@ impl<T> VirtualList<T> {
         end.saturating_sub(start)
     }
 
+    /// Scroll by a delta amount
+    pub fn scroll_by(&mut self, delta: isize) {
+        let (start, end) = self.visible_range;
+        let new_start = if delta > 0 {
+            start.saturating_add(delta as usize)
+        } else {
+            start.saturating_sub((-delta) as usize)
+        };
+
+        // Ensure we don't scroll past the bounds
+        let new_start = new_start.min(self.items.len().saturating_sub(end - start));
+        let new_end = new_start + (end - start);
+
+        self.visible_range = (new_start, new_end);
+    }
+
     /// Update items in the list
     pub fn update_items(&mut self, items: Vec<T>) {
         self.items = items;
-        // Adjust visible range if needed
-        let total_items = self.items.len();
-        if self.visible_range.1 > total_items {
-            self.visible_range.1 = total_items;
-        }
-        if self.visible_range.0 >= self.visible_range.1 && total_items > 0 {
-            self.visible_range.0 = self.visible_range.1.saturating_sub(1);
-        }
+        self.total_height = self.items.len() as u16 * self.item_height;
     }
 }
 

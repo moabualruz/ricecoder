@@ -257,6 +257,12 @@ pub struct Theme {
     pub warning: Color,
     /// Success color
     pub success: Color,
+    /// Info color
+    pub info: Color,
+    /// Muted color
+    pub muted: Color,
+    /// Border color
+    pub border: Color,
 }
 
 impl Default for Theme {
@@ -272,6 +278,9 @@ impl Default for Theme {
             error: Color::new(239, 68, 68),        // Red
             warning: Color::new(245, 158, 11),     // Amber
             success: Color::new(34, 197, 94),      // Green
+            info: Color::new(59, 130, 246),        // Blue
+            muted: Color::new(107, 114, 128),      // Gray
+            border: Color::new(75, 85, 99),        // Dark gray
         }
     }
 }

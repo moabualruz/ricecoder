@@ -4,7 +4,7 @@
 //! in response to messages. All functions are pure and return new state instances.
 
 use crate::model::*;
-use crate::style::Theme;
+use ricecoder_themes::Theme;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 /// Commands that produce side effects
@@ -172,7 +172,7 @@ impl AppModel {
         (new_state, vec![])
     }
 
-    fn handle_theme_change(mut self, theme: Theme) -> (Self, Vec<Command>) {
+    fn handle_theme_change(mut self, theme: ricecoder_themes::Theme) -> (Self, Vec<Command>) {
         let mut new_state = self;
         new_state.theme = theme;
         (new_state, vec![])

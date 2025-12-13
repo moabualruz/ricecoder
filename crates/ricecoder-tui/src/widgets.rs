@@ -259,6 +259,7 @@ pub enum MessageAction {
 }
 
 /// Chat widget for displaying conversations
+#[derive(Debug, Clone, PartialEq)]
 pub struct ChatWidget {
     /// Messages in the chat
     pub messages: Vec<Message>,
@@ -319,6 +320,11 @@ impl ChatWidget {
             enabled: true,
             bounds: ratatui::layout::Rect::new(0, 0, 80, 24),
         }
+    }
+
+    /// Get the current input content
+    pub fn input_content(&self) -> String {
+        self.input.clone()
     }
 
     /// Start streaming a new message

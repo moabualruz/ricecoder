@@ -131,18 +131,6 @@ impl FilePickerWidget {
         self.max_file_size = max_size;
     }
 
-    /// Show the file picker
-    pub fn show(&mut self) {
-        self.visible = true;
-        // FileExplorer doesn't need explicit refresh
-    }
-
-    /// Hide the file picker
-    pub fn hide(&mut self) {
-        self.visible = false;
-        self.selected_indices.clear();
-    }
-
     /// Check if the picker is visible
     pub fn is_visible(&self) -> bool {
         self.visible

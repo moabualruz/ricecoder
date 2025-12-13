@@ -11,7 +11,7 @@ use crate::widgets::ChatWidget;
 use ricecoder_help::HelpDialog;
 
 // Stub type for TUI isolation - TokenUsage moved to ricecoder-sessions
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct TokenUsage {
     pub input_tokens: usize,
     pub output_tokens: usize,
@@ -268,6 +268,7 @@ impl AppModel {
 
 /// Messages that can update the application state
 #[derive(Clone)]
+#[derive(Debug)]
 pub enum AppMessage {
     // User Input
     KeyPress(crossterm::event::KeyEvent),
@@ -308,6 +309,7 @@ pub enum AppMessage {
 
 /// Result of a command execution
 #[derive(Clone)]
+#[derive(Debug)]
 pub struct CommandResult {
     pub command: String,
     pub success: bool,
@@ -346,7 +348,7 @@ pub struct MessageBatch {
 }
 
 /// Message priority levels
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum MessagePriority {
     /// Low priority - can be delayed
     Low = 0,

@@ -142,19 +142,6 @@ impl CommandPaletteWidget {
             .map(|(cmd, _)| cmd)
     }
 
-    /// Show the command palette
-    pub fn show(&mut self) {
-        self.visible = true;
-        self.query.clear();
-        self.selected_index = 0;
-        self.update_filtered_commands();
-    }
-
-    /// Hide the command palette
-    pub fn hide(&mut self) {
-        self.visible = false;
-    }
-
     /// Check if the palette is visible
     pub fn is_visible(&self) -> bool {
         self.visible

@@ -14,14 +14,7 @@ use ricecoder_storage::TuiConfig;
 use crate::style::Theme;
 use crate::terminal_state::TerminalCapabilities;
 
-impl AppModel {
-    /// Pure update function - delegates to update module
-    pub fn update(self, message: AppMessage) -> (Self, Vec<Command>) {
-        self.update(message)
-    }
-
 // StateDiff and StateChange are now in model.rs
-}
 
 /// Reactive state manager with change tracking, message batching, and debugging
 #[derive(Debug)]

@@ -3,6 +3,7 @@
 use crate::accessibility::{
     FocusManager, KeyboardNavigationManager, ScreenReaderAnnouncer, StateChangeEvent,
 };
+use crate::components::Component;
 use ricecoder_storage::TuiConfig;
 use crate::error_handling::{ErrorManager, RiceError, ErrorCategory, ErrorSeverity};
 use crate::event::{Event, EventLoop};
@@ -115,7 +116,7 @@ pub struct App {
     /// Progressive enhancement manager
     pub progressive_enhancement: crate::ProgressiveEnhancement,
     /// Real-time updates coordinator
-    pub real_time_updates: crate::RealTimeUpdates,
+    pub real_time_updates: Arc<crate::RealTimeUpdates>,
     /// Reactive UI coordinator
     pub reactive_ui: crate::ReactiveUICoordinator,
     /// Chat widget for reactive updates
@@ -131,7 +132,7 @@ impl App {
         // Create initial TEA model
         let initial_model = crate::AppModel::init(
             TuiConfig::default(),
-            crate::Theme::default(),
+            ricecoder_themes::Theme::default(),
             crate::terminal_state::TerminalCapabilities::detect(),
         );
 
@@ -173,7 +174,7 @@ impl App {
         let progressive_enhancement = crate::ProgressiveEnhancement::new(capabilities);
 
         // Create real-time updates coordinator
-        let real_time_updates = crate::RealTimeUpdates::new(error_manager.clone());
+        let real_time_updates = Arc::new(crate::RealTimeUpdates::new(error_manager.clone()));
 
         // Create chat widget
         let chat = crate::widgets::ChatWidget::new();
@@ -181,7 +182,7 @@ impl App {
         // Create reactive UI coordinator
         let reactive_ui = crate::ReactiveUICoordinator::new(
             Arc::clone(&reactive_state),
-            real_time_updates,
+            Arc::clone(&real_time_updates),
             error_manager.clone(),
         );
 
@@ -393,7 +394,7 @@ impl App {
     /// Load more chat messages if needed
     pub async fn load_more_chat_messages(&mut self) {
         if let Some(loader) = &mut self.chat_lazy_loader {
-            if !(loader.is_loading().await) && !(loader.is_fully_loaded().await) {
+            if !(loader.is_loading()) && !(loader.is_fully_loaded()) {
                 // Start loading
                 self.loading_manager.start_loading(
                     "chat_messages".to_string(),
@@ -417,7 +418,7 @@ impl App {
     /// Load more command history if needed
     pub async fn load_more_commands(&mut self) {
         if let Some(loader) = &mut self.command_lazy_loader {
-            if !(loader.is_loading().await) && !(loader.is_fully_loaded().await) {
+            if !(loader.is_loading()) && !(loader.is_fully_loaded()) {
                 // Start loading
                 self.loading_manager.start_loading(
                     "command_history".to_string(),
@@ -608,7 +609,7 @@ impl App {
     }
 
     /// Get real-time updates coordinator
-    pub fn real_time_updates(&self) -> &crate::RealTimeUpdates {
+    pub fn real_time_updates(&self) -> &Arc<crate::RealTimeUpdates> {
         &self.real_time_updates
     }
 

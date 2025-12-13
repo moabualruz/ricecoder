@@ -88,7 +88,7 @@ pub struct RealTimeStream {
 impl RealTimeStream {
     /// Create a new real-time stream
     pub fn new(operation_id: String, stream_type: StreamType, name: String, description: String) -> Self {
-        let (tx, rx) = mpsc::unbounded_channel();
+        let (tx, mut rx) = mpsc::unbounded_channel();
         let (broadcast_tx, broadcast_rx) = broadcast::channel(100);
 
         // Forward messages from mpsc to broadcast

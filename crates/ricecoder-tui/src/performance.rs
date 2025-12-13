@@ -606,6 +606,12 @@ pub enum FileOperationType {
     Copy(std::path::PathBuf),
 }
 
+#[derive(Debug, Clone)]
+pub enum JobOutput {
+    Data(Vec<u8>),
+    None,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JobId(pub u64);
 
@@ -719,15 +725,21 @@ impl JobQueue {
     }
 
     /// Start a job execution
-    async fn start_job(&mut self, job: Job) {
+    async fn start_job(&mut self, mut job: Job) {
         let cancel_token = CancellationToken::new();
         let cancel_token_clone = cancel_token.clone();
         let progress_reporter = Arc::clone(&self.progress_reporter);
         let job_id = job.id.clone();
 
+        // Take the task out of the job, leaving a dummy task
+        let task = std::mem::replace(&mut job.task, JobTask::Custom {
+            name: "completed".to_string(),
+            data: serde_json::Value::Null,
+        });
+
         let handle = tokio::spawn(async move {
             tokio::select! {
-                result = Self::execute_job_task(job.task, progress_reporter, &job_id) => result,
+                result = Self::execute_job_task(task, progress_reporter, &job_id) => result,
                 _ = cancel_token_clone.cancelled() => JobResult::Cancelled,
             }
         });
@@ -749,29 +761,43 @@ impl JobQueue {
                 let future = future_fn();
                 future.await
             }
-            JobTask::File(operation) => {
+            JobTask::FileOperation { path, operation } => {
                 match operation {
-                    FileOperation::Read(path) => {
+                    FileOperationType::Read => {
                         match tokio::fs::read(&path).await {
-                            Ok(data) => JobResult::Success(JobOutput::Data(data)),
+                            Ok(data) => JobResult::Success(serde_json::Value::String(String::from_utf8_lossy(&data).to_string())),
                             Err(e) => JobResult::Error(format!("Failed to read file {}: {}", path.display(), e)),
                         }
                     }
-                    FileOperation::Write(path, data) => {
+                    FileOperationType::Write(data) => {
                         match tokio::fs::write(&path, &data).await {
-                            Ok(_) => JobResult::Success(JobOutput::None),
+                            Ok(_) => JobResult::Success(serde_json::Value::Null),
                             Err(e) => JobResult::Error(format!("Failed to write file {}: {}", path.display(), e)),
+                        }
+                    }
+                    FileOperationType::Delete => {
+                        match tokio::fs::remove_file(&path).await {
+                            Ok(_) => JobResult::Success(serde_json::Value::Null),
+                            Err(e) => JobResult::Error(format!("Failed to delete file {}: {}", path.display(), e)),
+                        }
+                    }
+                    FileOperationType::Copy(dest) => {
+                        match tokio::fs::copy(&path, &dest).await {
+                            Ok(_) => JobResult::Success(serde_json::Value::Null),
+                            Err(e) => JobResult::Error(format!("Failed to copy file {} to {}: {}", path.display(), dest.display(), e)),
                         }
                     }
                 }
             }
-            JobTask::Network { method: _, url: _, body: _ } => {
+            JobTask::NetworkRequest { url, method } => {
                 // TODO: Implement actual network request
                 tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-                JobResult::Success(JobOutput::Data(b"Network request completed".to_vec()))
+                JobResult::Success(serde_json::Value::String("Network request completed".to_string()))
             }
-            JobTask::Custom { name: _, task_fn } => {
-                task_fn().await
+            JobTask::Custom { name, data } => {
+                // TODO: Implement custom task execution
+                tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+                JobResult::Success(serde_json::Value::String(format!("Custom task '{}' completed", name)))
             }
         }
     }

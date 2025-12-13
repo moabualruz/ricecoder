@@ -346,7 +346,8 @@ impl LiveDataSynchronizer {
     pub async fn watch_path(&self, path: PathBuf, recursive: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mode = if recursive { RecursiveMode::Recursive } else { RecursiveMode::NonRecursive };
 
-        if let Some(watcher) = self.file_watcher.read().await.as_ref() {
+        let mut watcher_guard = self.file_watcher.write().await;
+        if let Some(watcher) = watcher_guard.as_mut() {
             watcher.watch(&path, mode)?;
             self.watched_paths.write().await.insert(path);
         }
@@ -356,7 +357,8 @@ impl LiveDataSynchronizer {
 
     /// Stop watching a path
     pub async fn unwatch_path(&self, path: &Path) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        if let Some(watcher) = self.file_watcher.read().await.as_ref() {
+        let mut watcher_guard = self.file_watcher.write().await;
+        if let Some(watcher) = watcher_guard.as_mut() {
             watcher.unwatch(path)?;
             self.watched_paths.write().await.remove(path);
         }
@@ -414,12 +416,14 @@ impl LiveDataSynchronizer {
                             Some(Ok(event)) => {
                                 // Collect events for debouncing
                                 for path in event.paths {
-                                    let change_type = match event.kind {
-                                        notify::EventKind::Create(_) => FileChangeType::Created,
-                                        notify::EventKind::Modify(_) => FileChangeType::Modified,
-                                        notify::EventKind::Remove(_) => FileChangeType::Deleted,
-                                        notify::EventKind::Other => continue,
-                                    };
+                                     let change_type = match event.kind {
+                                         notify::EventKind::Create(_) => FileChangeType::Created,
+                                         notify::EventKind::Modify(_) => FileChangeType::Modified,
+                                         notify::EventKind::Remove(_) => FileChangeType::Deleted,
+                                         notify::EventKind::Access(_) => continue, // Skip access events
+                                         notify::EventKind::Any => continue, // Skip any events
+                                         notify::EventKind::Other => continue,
+                                     };
 
                                     let file_event = FileChangeEvent {
                                         path,
@@ -433,13 +437,13 @@ impl LiveDataSynchronizer {
                                 // Start debounce timer if not already running
                                 if debounce_timer.is_none() {
                                     let update_sender_clone = update_sender.clone();
+                                    let pending_events_clone = pending_events.clone();
                                     debounce_timer = Some(tokio::spawn(async move {
                                         tokio::time::sleep(Duration::from_millis(100)).await; // 100ms debounce
                                         // Send all pending events
-                                        for event in &pending_events {
+                                        for event in &pending_events_clone {
                                             let _ = update_sender_clone.send(LiveDataEvent::FileChanged(event.clone()));
                                         }
-                                        pending_events.clear();
                                     }));
                                 }
                             }
@@ -450,7 +454,7 @@ impl LiveDataSynchronizer {
                         }
                     }
                     // Handle debounce timer completion
-                    Some(_) = async { if let Some(timer) = &mut debounce_timer { timer.await } else { std::future::pending().await } }, if debounce_timer.is_some() => {
+                    Some(_) = async { if let Some(timer) = &mut debounce_timer { let _ = timer.await; Some(()) } else { Some(()) } }, if debounce_timer.is_some() => {
                         debounce_timer = None;
                     }
                 }
@@ -548,7 +552,7 @@ impl ReactiveUICoordinator {
     /// Create a new reactive UI coordinator
     pub fn new(
         reactive_state: Arc<RwLock<ReactiveState>>,
-        real_time_updates: RealTimeUpdates,
+        real_time_updates: Arc<RealTimeUpdates>,
         error_manager: ErrorManager,
     ) -> Self {
         let reactive_renderer = ReactiveRenderer::new(

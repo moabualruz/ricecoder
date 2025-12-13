@@ -46,8 +46,8 @@ pub struct PluginMetadata {
 
 /// Plugin context provided during initialization
 #[derive(Debug)]
-pub struct PluginContext {
-    pub app_model: AppModel,
+pub struct PluginContext<'a> {
+    pub app_model: &'a AppModel,
     pub config_dir: PathBuf,
     pub data_dir: PathBuf,
     pub temp_dir: PathBuf,
@@ -147,7 +147,7 @@ pub trait Plugin: Send + Sync {
     }
 
     /// Initialize the plugin with context
-    async fn initialize(&mut self, context: &PluginContext) -> TuiResult<()>;
+    async fn initialize<'a>(&mut self, context: &PluginContext<'a>) -> TuiResult<()>;
 
     /// Handle an incoming message
     async fn handle_message(&mut self, message: &PluginMessage) -> Vec<PluginMessage>;
@@ -356,22 +356,23 @@ impl ThemePluginImpl {
     pub fn validate_theme(&self, theme: &PluginTheme) -> TuiResult<()> {
         // Check required fields
         if theme.id.is_empty() {
-            return Err(crate::error::TuiError::Plugin("Theme ID cannot be empty".to_string()));
+            return Err(crate::error::TuiError::Plugin { message: "Theme ID cannot be empty".to_string() });
         }
 
         if theme.name.is_empty() {
-            return Err(crate::error::TuiError::Plugin("Theme name cannot be empty".to_string()));
+            return Err(crate::error::TuiError::Plugin { message: "Theme name cannot be empty".to_string() });
         }
 
         // Validate theme data structure (basic check)
         if !theme.theme_data.is_object() {
-            return Err(crate::error::TuiError::Plugin("Theme data must be a JSON object".to_string()));
+            return Err(crate::error::TuiError::Plugin { message: "Theme data must be a JSON object".to_string() });
         }
 
         Ok(())
     }
 }
 
+#[async_trait::async_trait]
 impl Plugin for ThemePluginImpl {
     fn id(&self) -> PluginId {
         "theme".into()
@@ -388,7 +389,7 @@ impl Plugin for ThemePluginImpl {
         self.metadata.base.clone()
     }
 
-    async fn initialize(&mut self, context: &PluginContext) -> TuiResult<()> {
+    async fn initialize<'a>(&mut self, context: &PluginContext<'a>) -> TuiResult<()> {
         // Load themes from plugin data directory
         let themes_dir = context.data_dir.join("themes");
         self.load_themes_from_dir(&themes_dir)?;
@@ -452,6 +453,7 @@ impl Plugin for ThemePluginImpl {
     }
 }
 
+#[async_trait::async_trait]
 impl ThemePlugin for ThemePluginImpl {
     fn available_themes(&self) -> Vec<PluginTheme> {
         self.themes.clone()
@@ -464,7 +466,7 @@ impl ThemePlugin for ThemePluginImpl {
             tracing::info!("Applied theme: {}", theme.name);
             Ok(())
         } else {
-            Err(crate::error::TuiError::Plugin(format!("Theme not found: {}", theme_id)))
+            Err(crate::error::TuiError::Plugin { message: format!("Theme not found: {}", theme_id) })
         }
     }
 }
@@ -576,44 +578,17 @@ pub struct PluginRegistry {
 }
 
 // Keep the original PluginRegistry for backward compatibility
-impl PluginRegistry {
-    pub fn new() -> Self {
-        Self {
-            plugins: HashMap::new(),
-        }
-    }
 
-    pub fn register(&mut self, plugin: Box<dyn Plugin>) {
-        let id = plugin.id();
-        self.plugins.insert(id, plugin);
-    }
-
-    pub fn unregister(&mut self, id: &PluginId) -> Option<Box<dyn Plugin>> {
-        self.plugins.remove(id)
-    }
-
-    pub fn get(&self, id: &PluginId) -> Option<&dyn Plugin> {
-        self.plugins.get(id).map(|p| p.as_ref())
-    }
-
-    pub fn get_mut(&mut self, id: &PluginId) -> Option<&mut dyn Plugin> {
-        self.plugins.get_mut(id).map(|p| p.as_mut())
-    }
-
-    pub fn all(&self) -> Vec<&dyn Plugin> {
-        self.plugins.values().map(|p| p.as_ref()).collect()
-    }
-}
 
 impl PluginRegistry {
     /// Register a plugin
     pub fn register<P: Plugin + 'static>(&mut self, plugin: P) -> TuiResult<()> {
         let id = plugin.id();
         if self.plugins.contains_key(&id) {
-            return Err(crate::error::TuiError::Plugin(format!(
+            return Err(crate::error::TuiError::Plugin { message: format!(
                 "Plugin with ID '{}' already registered",
                 id.0
-            )));
+            ) });
         }
         self.plugins.insert(id, Box::new(plugin));
         Ok(())
@@ -622,10 +597,10 @@ impl PluginRegistry {
     /// Unregister a plugin
     pub fn unregister(&mut self, id: &PluginId) -> TuiResult<()> {
         if self.plugins.remove(id).is_none() {
-            return Err(crate::error::TuiError::Plugin(format!(
+            return Err(crate::error::TuiError::Plugin { message: format!(
                 "Plugin with ID '{}' not found",
                 id.0
-            )));
+            ) });
         }
         Ok(())
     }
@@ -717,14 +692,14 @@ impl PluginSandbox {
                 self.validate_file_access(path)?;
             }
             PluginOperation::NetworkAccess => {
-                return Err(crate::error::TuiError::Plugin(
-                    "Network access not allowed for plugins".to_string()
-                ));
+                return Err(crate::error::TuiError::Plugin {
+                    message: "Network access not allowed for plugins".to_string()
+                });
             }
             PluginOperation::SystemCommand => {
-                return Err(crate::error::TuiError::Plugin(
-                    "System commands not allowed for plugins".to_string()
-                ));
+                return Err(crate::error::TuiError::Plugin {
+                    message: "System commands not allowed for plugins".to_string()
+                });
             }
         }
         Ok(())
@@ -740,20 +715,20 @@ impl PluginSandbox {
         });
 
         if !is_allowed {
-            return Err(crate::error::TuiError::Plugin(format!(
+            return Err(crate::error::TuiError::Plugin { message: format!(
                 "Plugin attempted to access unauthorized path: {}",
                 path.display()
-            )));
+            ) });
         }
 
         // Check file size if it exists
         if let Ok(metadata) = std::fs::metadata(path) {
             let size_mb = metadata.len() / (1024 * 1024);
             if size_mb > self.max_file_size_mb as u64 {
-                return Err(crate::error::TuiError::Plugin(format!(
+                return Err(crate::error::TuiError::Plugin { message: format!(
                     "Plugin attempted to access file larger than {}MB limit: {}",
                     self.max_file_size_mb, path.display()
-                )));
+                ) });
             }
         }
 
@@ -767,9 +742,9 @@ impl PluginSandbox {
             for permission in permissions {
                 match permission.as_str() {
                     "network" | "system" | "admin" => {
-                        return Err(crate::error::TuiError::Plugin(format!(
+                        return Err(crate::error::TuiError::Plugin { message: format!(
                             "Plugin requests dangerous permission: {}", permission
-                        )));
+                        ) });
                     }
                     "filesystem" | "config" => {
                         // These are allowed but logged
@@ -785,9 +760,9 @@ impl PluginSandbox {
         // Validate entry point exists and is safe
         let entry_path = PathBuf::from(&manifest.entry_point);
         if entry_path.is_absolute() || entry_path.starts_with("..") {
-            return Err(crate::error::TuiError::Plugin(format!(
+            return Err(crate::error::TuiError::Plugin { message: format!(
                 "Plugin entry point contains unsafe path: {}", manifest.entry_point
-            )));
+            ) });
         }
 
         Ok(())
@@ -990,7 +965,7 @@ impl PluginManager {
     }
 
     /// Render all active plugins
-    pub async fn render_plugins(&self, area: Rect, model: &AppModel) -> TuiResult<Vec<Line<'static>>> {
+    pub async fn render_plugins(&self, area: Rect, model: &AppModel) -> TuiResult<Vec<Line>> {
         let registry = self.registry.read().await;
         let active_plugins = self.active_plugins.read().await;
 
@@ -998,11 +973,14 @@ impl PluginManager {
         for (id, state) in &*active_plugins {
             if *state == PluginState::Active {
                 if let Some(plugin) = registry.get(id) {
-                    let lines = plugin.render(area, model).await?;
+                    // Clone the plugin to avoid lifetime issues
+                    let plugin_clone = plugin.clone();
+                    let lines = plugin_clone.render(area, model).await?;
                     all_lines.extend(lines);
                 }
             }
         }
+
         Ok(all_lines)
     }
 
@@ -1461,7 +1439,7 @@ impl Plugin for PlaceholderPlugin {
         }
     }
 
-    async fn initialize(&mut self, _context: &PluginContext) -> TuiResult<()> {
+    async fn initialize<'a>(&mut self, _context: &PluginContext<'a>) -> TuiResult<()> {
         tracing::info!("Initializing placeholder plugin: {}", self.name());
         Ok(())
     }
@@ -1555,7 +1533,7 @@ impl ThemeMarketplace {
     pub async fn install_theme(&mut self, theme_id: &str) -> TuiResult<()> {
         let marketplace_theme = self.available_themes.iter()
             .find(|t| t.id == theme_id)
-            .ok_or_else(|| crate::error::TuiError::Plugin(format!("Theme not found in marketplace: {}", theme_id)))?
+            .ok_or_else(|| crate::error::TuiError::Plugin { message: format!("Theme not found in marketplace: {}", theme_id) })?
             .clone();
 
         // In a real implementation, this would download and extract the theme
@@ -1606,7 +1584,7 @@ impl ThemeMarketplace {
             tracing::info!("Uninstalled theme: {}", theme_id);
             Ok(())
         } else {
-            Err(crate::error::TuiError::Plugin(format!("Theme not installed: {}", theme_id)))
+            Err(crate::error::TuiError::Plugin { message: format!("Theme not installed: {}", theme_id) })
         }
     }
 

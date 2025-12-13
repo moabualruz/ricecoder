@@ -159,7 +159,7 @@ where
     }
 
     /// Get visible items for rendering
-    pub fn visible_items(&self) -> Vec<VirtualNode> {
+    pub fn visible_items(&mut self) -> Vec<VirtualNode> {
         let start = self.scroll.offset;
         let end = (start + self.scroll.visible_items).min(self.scroll.total_items);
 

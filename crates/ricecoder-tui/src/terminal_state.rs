@@ -714,4 +714,28 @@ impl Drop for TerminalState {
     }
 }
 
+impl Default for TerminalCapabilities {
+    fn default() -> Self {
+        Self {
+            terminal_type: TerminalType::Unknown,
+            color_support: ColorSupport::Ansi16,
+            mouse_support: false,
+            sixel_support: false,
+            kitty_graphics_support: false,
+            iterm2_inline_images_support: false,
+            wezterm_multiplexer_support: false,
+            unicode_placeholder_support: false,
+            block_graphics_support: true,
+            ansi_art_support: true,
+            unicode_support: true,
+            is_ssh: false,
+            is_tmux: false,
+            tmux_version: None,
+            size: (80, 24),
+            overrides_applied: CapabilityOverrides::default(),
+        }
+    }
+}
+
+
 

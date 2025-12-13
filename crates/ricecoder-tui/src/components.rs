@@ -500,8 +500,10 @@ impl ComponentRegistry {
 
     /// Move focus in the specified direction
     pub fn move_focus(&mut self, direction: FocusDirection) -> FocusResult {
-        let current_index = match &self.current_focus {
-            Some(id) => self.focus_order.iter().position(|x| x == id),
+        // Get current focus index without holding a reference to self
+        let current_focus_id = self.current_focus.clone();
+        let current_index = match current_focus_id {
+            Some(ref id) => self.focus_order.iter().position(|x| x == id),
             None => None,
         };
 
@@ -524,9 +526,10 @@ impl ComponentRegistry {
         };
 
         if let Some(idx) = new_index {
-            if let Some(new_id) = self.focus_order.get(idx) {
-                self.set_focus(Some(new_id));
-                return FocusResult::Moved(new_id.clone());
+            if idx < self.focus_order.len() {
+                let new_id = self.focus_order[idx].clone();
+                self.set_focus(Some(&new_id));
+                return FocusResult::Moved(new_id);
             }
         }
 

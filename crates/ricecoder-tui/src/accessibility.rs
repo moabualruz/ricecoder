@@ -203,7 +203,7 @@ impl FocusIndicatorStyle {
 }
 
 /// Text alternative for visual elements
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TextAlternative {
     /// Unique identifier for the element
     pub id: String,
@@ -295,7 +295,7 @@ impl ElementType {
 }
 
 /// Screen reader announcer for state changes with ARIA-like support
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ScreenReaderAnnouncer {
     /// Whether announcements are enabled
     enabled: bool,
@@ -310,7 +310,7 @@ pub struct ScreenReaderAnnouncer {
 }
 
 /// Live region for dynamic content updates (ARIA live regions)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct LiveRegion {
     pub id: String,
     pub content: String,
@@ -748,7 +748,7 @@ pub struct VimModeManager {
 }
 
 /// Input modes (vim-like)
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum InputMode {
     /// Normal mode (navigation and commands)
     Normal,
@@ -975,6 +975,7 @@ impl Default for VimModeManager {
 
 /// An announcement for screen readers
 #[derive(Debug, Clone)]
+#[derive(PartialEq)]
 pub struct Announcement {
     /// The announcement text
     pub text: String,
@@ -1260,7 +1261,7 @@ impl StateChangeEvent {
 }
 
 /// Focus management for accessibility
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct FocusManager {
     /// Currently focused element
     pub focused_element: Option<String>,
@@ -1295,7 +1296,7 @@ impl FocusManager {
 }
 
 /// Keyboard navigation manager
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct KeyboardNavigationManager {
     /// Currently focused element ID
     pub focused_element: Option<String>,
@@ -1554,17 +1555,17 @@ impl HighContrastThemeManager {
     fn create_dark_high_contrast_theme() -> crate::style::Theme {
         crate::style::Theme {
             name: "High Contrast Dark".to_string(),
-            primary: Color::White,
-            secondary: Color::BrightWhite,
-            background: Color::Black,
-            foreground: Color::White,
-            accent: Color::BrightWhite,
-            error: Color::BrightRed,
-            warning: Color::BrightYellow,
-            success: Color::BrightGreen,
-            info: Color::BrightBlue,
-            muted: Color::Gray,
-            border: Color::White,
+            primary: crate::style::Color::new(255, 255, 255),     // White
+            secondary: crate::style::Color::new(255, 255, 255),   // BrightWhite
+            background: crate::style::Color::new(0, 0, 0),        // Black
+            foreground: crate::style::Color::new(255, 255, 255),  // White
+            accent: crate::style::Color::new(255, 255, 255),      // BrightWhite
+            error: crate::style::Color::new(255, 0, 0),           // BrightRed
+            warning: crate::style::Color::new(255, 255, 0),       // BrightYellow
+            success: crate::style::Color::new(0, 255, 0),         // BrightGreen
+            info: crate::style::Color::new(0, 0, 255),            // BrightBlue
+            muted: crate::style::Color::new(128, 128, 128),       // Gray
+            border: crate::style::Color::new(255, 255, 255),      // White
         }
     }
 
@@ -1572,17 +1573,17 @@ impl HighContrastThemeManager {
     fn create_light_high_contrast_theme() -> crate::style::Theme {
         crate::style::Theme {
             name: "High Contrast Light".to_string(),
-            primary: Color::Black,
-            secondary: Color::BrightBlack,
-            background: Color::White,
-            foreground: Color::Black,
-            accent: Color::BrightBlack,
-            error: Color::Red,
-            warning: Color::DarkYellow,
-            success: Color::DarkGreen,
-            info: Color::DarkBlue,
-            muted: Color::DarkGray,
-            border: Color::Black,
+            primary: crate::style::Color::new(0, 0, 0),           // Black
+            secondary: crate::style::Color::new(0, 0, 0),         // BrightBlack
+            background: crate::style::Color::new(255, 255, 255),  // White
+            foreground: crate::style::Color::new(0, 0, 0),        // Black
+            accent: crate::style::Color::new(0, 0, 0),            // BrightBlack
+            error: crate::style::Color::new(255, 0, 0),           // Red
+            warning: crate::style::Color::new(128, 128, 0),       // DarkYellow
+            success: crate::style::Color::new(0, 128, 0),         // DarkGreen
+            info: crate::style::Color::new(0, 0, 128),            // DarkBlue
+            muted: crate::style::Color::new(64, 64, 64),          // DarkGray
+            border: crate::style::Color::new(0, 0, 0),            // Black
         }
     }
 
@@ -1590,17 +1591,17 @@ impl HighContrastThemeManager {
     fn create_yellow_blue_theme() -> crate::style::Theme {
         crate::style::Theme {
             name: "Yellow on Blue".to_string(),
-            primary: Color::BrightYellow,
-            secondary: Color::Yellow,
-            background: Color::Blue,
-            foreground: Color::BrightYellow,
-            accent: Color::BrightWhite,
-            error: Color::BrightRed,
-            warning: Color::BrightWhite,
-            success: Color::BrightGreen,
-            info: Color::BrightCyan,
-            muted: Color::Cyan,
-            border: Color::BrightYellow,
+            primary: crate::style::Color::new(255, 255, 0),       // BrightYellow
+            secondary: crate::style::Color::new(255, 255, 0),     // Yellow
+            background: crate::style::Color::new(0, 0, 255),      // Blue
+            foreground: crate::style::Color::new(255, 255, 0),    // BrightYellow
+            accent: crate::style::Color::new(255, 255, 255),      // BrightWhite
+            error: crate::style::Color::new(255, 0, 0),           // BrightRed
+            warning: crate::style::Color::new(255, 255, 255),     // BrightWhite
+            success: crate::style::Color::new(0, 255, 0),         // BrightGreen
+            info: crate::style::Color::new(0, 255, 255),          // BrightCyan
+            muted: crate::style::Color::new(0, 255, 255),         // Cyan
+            border: crate::style::Color::new(255, 255, 0),        // BrightYellow
         }
     }
 }
@@ -2074,6 +2075,111 @@ pub fn initialize_default_shortcuts() -> Vec<KeyboardShortcut> {
             }),
             None => Err("No key code specified".to_string()),
         }
+    }
+}
+
+impl crate::Component for ScreenReaderAnnouncer {
+    fn id(&self) -> crate::ComponentId {
+        "screen_reader".to_string()
+    }
+
+    fn render(&self, _frame: &mut ratatui::Frame, _area: ratatui::layout::Rect, _model: &crate::AppModel) {
+        // Screen reader doesn't render visually
+    }
+
+    fn update(&mut self, _message: &crate::AppMessage, _model: &crate::AppModel) -> bool {
+        // Screen reader doesn't handle messages directly
+        false
+    }
+
+    fn is_focused(&self) -> bool {
+        false
+    }
+
+    fn set_focused(&mut self, _focused: bool) {
+        // Screen reader doesn't have focus
+    }
+
+    fn is_visible(&self) -> bool {
+        true
+    }
+
+    fn set_visible(&mut self, _visible: bool) {
+        // Screen reader visibility is controlled by enabled state
+    }
+
+    fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    fn set_enabled(&mut self, enabled: bool) {
+        self.enabled = enabled;
+    }
+
+    fn bounds(&self) -> ratatui::layout::Rect {
+        ratatui::layout::Rect::default()
+    }
+
+    fn set_bounds(&mut self, _bounds: ratatui::layout::Rect) {
+        // Screen reader doesn't have bounds
+    }
+
+    fn handle_focus(&mut self, _direction: crate::components::FocusDirection) -> crate::components::FocusResult {
+        crate::components::FocusResult::Handled
+    }
+
+    fn children(&self) -> Vec<&dyn crate::Component> {
+        Vec::new()
+    }
+
+    fn children_mut(&mut self) -> Vec<&mut dyn crate::Component> {
+        Vec::new()
+    }
+
+    fn find_child(&self, _id: &crate::ComponentId) -> Option<&dyn crate::Component> {
+        None
+    }
+
+    fn find_child_mut(&mut self, _id: &crate::ComponentId) -> Option<&mut dyn crate::Component> {
+        None
+    }
+
+    fn add_child(&mut self, _child: Box<dyn crate::Component>) {
+        // Screen reader doesn't have children
+    }
+
+    fn remove_child(&mut self, _id: &crate::ComponentId) -> Option<Box<dyn crate::Component>> {
+        None
+    }
+
+    fn z_index(&self) -> i32 {
+        0
+    }
+
+    fn set_z_index(&mut self, _z_index: i32) {
+        // Screen reader doesn't have z-index
+    }
+
+    fn can_focus(&self) -> bool {
+        false
+    }
+
+    fn tab_order(&self) -> Option<usize> {
+        None
+    }
+
+    fn set_tab_order(&mut self, _order: Option<usize>) {
+        // Screen reader doesn't participate in tab order
+    }
+
+    fn clone_box(&self) -> Box<dyn crate::Component> {
+        Box::new(ScreenReaderAnnouncer {
+            enabled: self.enabled,
+            history: self.history.clone(),
+            live_regions: self.live_regions.clone(),
+            announcement_queue: self.announcement_queue.clone(),
+            processing_priority: self.processing_priority,
+        })
     }
 }
 
