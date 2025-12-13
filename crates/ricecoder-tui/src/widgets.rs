@@ -636,7 +636,7 @@ impl ChatWidget {
     }
 
     /// Subscribe to reactive UI updates for automatic re-rendering
-    pub fn subscribe_to_reactive_updates(&mut self, receiver: tokio::sync::broadcast::Receiver<(crate::reactive_ui_updates::UpdateType, crate::tea::StateDiff)>) {
+    pub fn subscribe_to_reactive_updates(&mut self, receiver: tokio::sync::broadcast::Receiver<(crate::reactive_ui_updates::UpdateType, crate::StateDiff)>) {
         self.reactive_subscription = Some(receiver);
     }
 
@@ -658,21 +658,21 @@ impl ChatWidget {
     }
 
     /// Handle a reactive update
-    async fn handle_reactive_update(&mut self, update_type: crate::reactive_ui_updates::UpdateType, diff: crate::tea::StateDiff) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn handle_reactive_update(&mut self, update_type: crate::reactive_ui_updates::UpdateType, diff: crate::StateDiff) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // For chat widget, react to message-related state changes
         for change in &diff.changes {
             match change {
-                crate::tea::StateChange::MessagesUpdated => {
+                crate::model::StateChange::MessagesUpdated => {
                     // Messages have changed, widget will re-render automatically
                     tracing::debug!("Chat widget reacting to messages update");
                 }
-                crate::tea::StateChange::StreamingStarted => {
+                crate::model::StateChange::StreamingStarted => {
                     self.start_streaming();
                 }
-                crate::tea::StateChange::StreamingToken(token) => {
+                crate::model::StateChange::StreamingToken(token) => {
                     self.append_token(token);
                 }
-                crate::tea::StateChange::StreamingFinished => {
+                crate::model::StateChange::StreamingFinished => {
                     self.finish_streaming();
                 }
                 _ => {
@@ -804,6 +804,50 @@ impl crate::Component for ChatWidget {
 
     fn clone_box(&self) -> Box<dyn crate::Component> {
         Box::new(self.clone())
+    }
+
+    fn children(&self) -> Vec<&dyn crate::Component> {
+        Vec::new()
+    }
+
+    fn children_mut(&mut self) -> Vec<&mut dyn crate::Component> {
+        Vec::new()
+    }
+
+    fn find_child(&self, _id: &crate::ComponentId) -> Option<&dyn crate::Component> {
+        None
+    }
+
+    fn find_child_mut(&mut self, _id: &crate::ComponentId) -> Option<&mut dyn crate::Component> {
+        None
+    }
+
+    fn add_child(&mut self, _child: Box<dyn crate::Component>) {
+        // Chat widget doesn't support children
+    }
+
+    fn remove_child(&mut self, _id: &crate::ComponentId) -> Option<Box<dyn crate::Component>> {
+        None
+    }
+
+    fn z_index(&self) -> i32 {
+        0 // Normal z-index for main content
+    }
+
+    fn set_z_index(&mut self, _z_index: i32) {
+        // z-index is fixed for chat widget
+    }
+
+    fn can_focus(&self) -> bool {
+        true
+    }
+
+    fn tab_order(&self) -> Option<usize> {
+        Some(0)
+    }
+
+    fn set_tab_order(&mut self, _order: Option<usize>) {
+        // Tab order is fixed
     }
 }
 

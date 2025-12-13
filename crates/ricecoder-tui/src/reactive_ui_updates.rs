@@ -7,7 +7,9 @@
 //! - Conflict resolution for concurrent edits
 
 use crate::error_handling::{ErrorManager, RiceError, ErrorCategory, ErrorSeverity};
-use crate::tea::{AppModel, StateDiff, StateChange, ReactiveState};
+use crate::model::{AppModel, StateChange};
+use crate::tea::ReactiveState;
+use crate::StateDiff;
 use crate::real_time_updates::{RealTimeUpdates, StreamData, StreamType};
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use std::collections::{HashMap, HashSet};

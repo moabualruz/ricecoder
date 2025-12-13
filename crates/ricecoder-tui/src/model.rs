@@ -148,7 +148,7 @@ impl AppModel {
             ui: UiState {
                 focus_manager: FocusManager::new(),
                 keyboard_nav: KeyboardNavigationManager::new(),
-                screen_reader: ScreenReaderAnnouncer::new(),
+                screen_reader: ScreenReaderAnnouncer::new(false),
                 chat_widget: ChatWidget::new(),
                 help_dialog: HelpDialog::default_ricecoder(),
                 file_picker_visible: false,

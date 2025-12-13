@@ -15,7 +15,7 @@ use ratatui::{
 };
 
 /// Main view function - pure function that renders UI based on model state
-pub fn view<B: Backend>(frame: &mut Frame<B>, model: &AppModel) {
+pub fn view(frame: &mut Frame, model: &AppModel) {
     let size = frame.size();
 
     // Create main layout with header, main content, and status
@@ -39,7 +39,7 @@ pub fn view<B: Backend>(frame: &mut Frame<B>, model: &AppModel) {
 }
 
 /// Render the header area
-fn render_header<B: Backend>(frame: &mut Frame<B>, area: Rect, model: &AppModel) {
+fn render_header(frame: &mut Frame, area: Rect, model: &AppModel) {
     let banner_text = vec![
         Line::from(vec![
             Span::styled("🍚 RiceCoder", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
@@ -62,7 +62,7 @@ fn render_header<B: Backend>(frame: &mut Frame<B>, area: Rect, model: &AppModel)
 }
 
 /// Render the main content area with sidebar
-fn render_main_area<B: Backend>(frame: &mut Frame<B>, area: Rect, model: &AppModel) {
+fn render_main_area(frame: &mut Frame, area: Rect, model: &AppModel) {
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
@@ -79,7 +79,7 @@ fn render_main_area<B: Backend>(frame: &mut Frame<B>, area: Rect, model: &AppMod
 }
 
 /// Render the sidebar
-fn render_sidebar<B: Backend>(frame: &mut Frame<B>, area: Rect, model: &AppModel) {
+fn render_sidebar(frame: &mut Frame, area: Rect, model: &AppModel) {
     let sidebar_content = vec![
         Line::from(vec![
             Span::styled("📁 Sessions", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
@@ -112,7 +112,7 @@ fn render_sidebar<B: Backend>(frame: &mut Frame<B>, area: Rect, model: &AppModel
 }
 
 /// Render the main content area based on current mode
-fn render_main_content<B: Backend>(frame: &mut Frame<B>, area: Rect, model: &AppModel) {
+fn render_main_content(frame: &mut Frame, area: Rect, model: &AppModel) {
     match model.mode {
         AppMode::Chat => render_chat_mode(frame, area, model),
         AppMode::Command => render_command_mode(frame, area, model),
@@ -122,7 +122,7 @@ fn render_main_content<B: Backend>(frame: &mut Frame<B>, area: Rect, model: &App
 }
 
 /// Render chat mode interface
-fn render_chat_mode<B: Backend>(frame: &mut Frame<B>, area: Rect, model: &AppModel) {
+fn render_chat_mode(frame: &mut Frame, area: Rect, model: &AppModel) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -149,7 +149,7 @@ fn render_chat_mode<B: Backend>(frame: &mut Frame<B>, area: Rect, model: &AppMod
 }
 
 /// Render command mode interface
-fn render_command_mode<B: Backend>(frame: &mut Frame<B>, area: Rect, model: &AppModel) {
+fn render_command_mode(frame: &mut Frame, area: Rect, model: &AppModel) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -171,7 +171,7 @@ fn render_command_mode<B: Backend>(frame: &mut Frame<B>, area: Rect, model: &App
 }
 
 /// Render diff mode interface
-fn render_diff_mode<B: Backend>(frame: &mut Frame<B>, area: Rect, _model: &AppModel) {
+fn render_diff_mode(frame: &mut Frame, area: Rect, _model: &AppModel) {
     let diff_text = vec![
         Line::from("Diff mode - Coming soon..."),
         Line::from(""),
@@ -186,7 +186,7 @@ fn render_diff_mode<B: Backend>(frame: &mut Frame<B>, area: Rect, _model: &AppMo
 }
 
 /// Render help mode interface
-fn render_help_mode<B: Backend>(frame: &mut Frame<B>, area: Rect, model: &AppModel) {
+fn render_help_mode(frame: &mut Frame, area: Rect, model: &AppModel) {
     let help_content = model.ui.help_dialog.render_content();
     let help_widget = Paragraph::new(help_content)
         .block(Block::default().borders(Borders::ALL).title("Help"))
@@ -196,7 +196,7 @@ fn render_help_mode<B: Backend>(frame: &mut Frame<B>, area: Rect, model: &AppMod
 }
 
 /// Render chat messages area
-fn render_chat_messages<B: Backend>(frame: &mut Frame<B>, area: Rect, _model: &AppModel) {
+fn render_chat_messages(frame: &mut Frame, area: Rect, _model: &AppModel) {
     // TODO: Implement actual chat message rendering
     // For now, show placeholder content
     let messages = vec![
@@ -216,7 +216,7 @@ fn render_chat_messages<B: Backend>(frame: &mut Frame<B>, area: Rect, _model: &A
 }
 
 /// Render chat input area
-fn render_chat_input<B: Backend>(frame: &mut Frame<B>, area: Rect, model: &AppModel) {
+fn render_chat_input(frame: &mut Frame, area: Rect, model: &AppModel) {
     let input_text = if model.ui.chat_widget.input_content().is_empty() {
         "Type your message here...".to_string()
     } else {
@@ -231,7 +231,7 @@ fn render_chat_input<B: Backend>(frame: &mut Frame<B>, area: Rect, model: &AppMo
 }
 
 /// Render command history area
-fn render_command_history<B: Backend>(frame: &mut Frame<B>, area: Rect, model: &AppModel) {
+fn render_command_history(frame: &mut Frame, area: Rect, model: &AppModel) {
     let history_lines: Vec<Line> = model.commands.command_history
         .iter()
         .rev() // Show most recent first
@@ -247,7 +247,7 @@ fn render_command_history<B: Backend>(frame: &mut Frame<B>, area: Rect, model: &
 }
 
 /// Render command input area
-fn render_command_input<B: Backend>(frame: &mut Frame<B>, area: Rect, model: &AppModel) {
+fn render_command_input(frame: &mut Frame, area: Rect, model: &AppModel) {
     let input_text = if model.commands.current_command.is_empty() {
         "$ ".to_string()
     } else {
@@ -262,7 +262,7 @@ fn render_command_input<B: Backend>(frame: &mut Frame<B>, area: Rect, model: &Ap
 }
 
 /// Render command palette overlay
-fn render_command_palette_overlay<B: Backend>(frame: &mut Frame<B>, area: Rect, _model: &AppModel) {
+fn render_command_palette_overlay(frame: &mut Frame, area: Rect, _model: &AppModel) {
     let palette_area = centered_rect(60, 20, area);
 
     // Clear the background
@@ -288,7 +288,7 @@ fn render_command_palette_overlay<B: Backend>(frame: &mut Frame<B>, area: Rect, 
 }
 
 /// Render file picker overlay
-fn render_file_picker_overlay<B: Backend>(frame: &mut Frame<B>, area: Rect, _model: &AppModel) {
+fn render_file_picker_overlay(frame: &mut Frame, area: Rect, _model: &AppModel) {
     let picker_area = centered_rect(70, 25, area);
 
     // Clear the background
@@ -313,7 +313,7 @@ fn render_file_picker_overlay<B: Backend>(frame: &mut Frame<B>, area: Rect, _mod
 }
 
 /// Render status bar
-fn render_status_bar<B: Backend>(frame: &mut Frame<B>, area: Rect, model: &AppModel) {
+fn render_status_bar(frame: &mut Frame, area: Rect, model: &AppModel) {
     let status_parts = vec![
         Span::styled(model.mode.display_name(), Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
         Span::raw(" | "),

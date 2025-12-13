@@ -9,7 +9,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use crate::tea::AppMessage;
+use crate::model::AppMessage;
 use ratatui::style::{Color, Modifier, Style};
 
 /// Animation configuration

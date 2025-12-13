@@ -3,7 +3,7 @@
 //! This module implements a high-performance rendering system with virtual DOM diffing,
 //! targeted re-renders, and virtualization for optimal performance.
 
-use crate::tea::{AppModel, StateDiff, StateChange};
+use crate::model::{AppModel, StateChange};
 use ratatui::prelude::*;
 use ratatui::widgets::Borders;
 use std::collections::HashMap;

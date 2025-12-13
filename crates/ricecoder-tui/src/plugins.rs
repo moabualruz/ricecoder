@@ -4,7 +4,7 @@
 //! to customize and extend the TUI functionality.
 
 use crate::error::TuiResult;
-use crate::tea::{AppMessage, AppModel};
+use crate::model::{AppMessage, AppModel};
 use crate::Component;
 use ratatui::prelude::*;
 use std::collections::HashMap;
@@ -45,9 +45,9 @@ pub struct PluginMetadata {
 }
 
 /// Plugin context provided during initialization
-#[derive(Debug)]
-pub struct PluginContext<'a> {
-    pub app_model: &'a AppModel,
+#[derive(Debug, Clone)]
+pub struct PluginContext {
+    pub app_model: AppModel,
     pub config_dir: PathBuf,
     pub data_dir: PathBuf,
     pub temp_dir: PathBuf,
@@ -119,24 +119,7 @@ pub struct EnhancedPluginMetadata {
     pub capabilities: Vec<PluginCapability>,
 }
 
-/// Plugin lifecycle states
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PluginState {
-    /// Plugin is loaded but not initialized
-    Loaded,
-    /// Plugin is initializing
-    Initializing,
-    /// Plugin is active and running
-    Active,
-    /// Plugin is suspended
-    Suspended,
-    /// Plugin encountered an error
-    Error,
-    /// Plugin is unloading
-    Unloading,
-    /// Plugin is unloaded
-    Unloaded,
-}
+
 
 /// Core plugin trait that all plugins must implement
 #[async_trait::async_trait]
@@ -164,7 +147,7 @@ pub trait Plugin: Send + Sync {
     }
 
     /// Initialize the plugin with context
-    async fn initialize(&mut self, context: &PluginContext) -> TuiResult<()>;
+    async fn initialize(&mut self, context: PluginContext) -> TuiResult<()>;
 
     /// Handle an incoming message
     async fn handle_message(&mut self, message: &PluginMessage) -> Vec<PluginMessage>;
@@ -241,7 +224,7 @@ pub trait ThemePlugin: Plugin {
 
 /// Plugin command definition
 #[derive(Debug, Clone)]
-pub struct PluginCommand {
+pub struct PluginCommandInfo {
     pub name: String,
     pub description: String,
     pub usage: String,
@@ -390,11 +373,11 @@ impl ThemePluginImpl {
 }
 
 impl Plugin for ThemePluginImpl {
-    fn metadata(&self) -> &PluginMetadata {
-        &self.metadata.base
+    fn metadata(&self) -> PluginMetadata {
+        self.metadata.base.clone()
     }
 
-    async fn initialize(&mut self, context: &PluginContext) -> TuiResult<()> {
+    async fn initialize(&mut self, context: PluginContext) -> TuiResult<()> {
         // Load themes from plugin data directory
         let themes_dir = context.data_dir.join("themes");
         self.load_themes_from_dir(&themes_dir)?;
@@ -475,43 +458,7 @@ impl ThemePlugin for ThemePluginImpl {
     }
 }
 
-impl EventComponent for ThemePluginImpl {
-    fn handle_event(&mut self, event: &ComponentEvent, _context: &EventContext) -> EventResult {
-        match event {
-            ComponentEvent::Keyboard(key_event) if key_event.key == KeyCode::Enter => {
-                // Cycle through themes
-                let current_idx = self.active_theme.as_ref()
-                    .and_then(|id| self.themes.iter().position(|t| t.id == *id))
-                    .unwrap_or(0);
 
-                let next_idx = (current_idx + 1) % self.themes.len();
-                if let Some(next_theme) = self.themes.get(next_idx) {
-                    self.active_theme = Some(next_theme.id.clone());
-                    EventResult {
-                        propagation: EventPropagation::Consume,
-                        handled: true,
-                        data: Some(serde_json::json!({
-                            "action": "theme_changed",
-                            "theme_id": next_theme.id,
-                            "theme_name": next_theme.name
-                        })),
-                    }
-                } else {
-                    EventResult {
-                        propagation: EventPropagation::Continue,
-                        handled: false,
-                        data: None,
-                    }
-                }
-            }
-            _ => EventResult {
-                propagation: EventPropagation::Continue,
-                handled: false,
-                data: None,
-            },
-        }
-    }
-}
 
 /// Command execution result
 #[derive(Debug, Clone)]
@@ -609,6 +556,12 @@ impl EnhancedPluginRegistry {
     pub fn theme_plugins(&self) -> Vec<&dyn ThemePlugin> {
         self.theme_plugins.values().map(|p| p.as_ref()).collect()
     }
+}
+
+/// Basic plugin registry for backward compatibility
+#[derive(Debug)]
+pub struct PluginRegistry {
+    plugins: HashMap<PluginId, Box<dyn Plugin>>,
 }
 
 // Keep the original PluginRegistry for backward compatibility
@@ -932,7 +885,6 @@ impl PluginManager {
         }
 }
 
-impl PluginManager {
     /// Register a plugin
     pub async fn register_plugin<P: Plugin + 'static>(&self, plugin: P) -> TuiResult<PluginId> {
         let id = plugin.id();
@@ -961,13 +913,13 @@ impl PluginManager {
         active_plugins.insert(id.clone(), PluginState::Initializing);
 
         let context = PluginContext {
-            app_model: model,
+            app_model: model.clone(),
             config_dir: self.config_dir.clone(),
             data_dir: self.data_dir.clone(),
             temp_dir: self.temp_dir.clone(),
         };
 
-        match plugin.initialize(&context).await {
+        match plugin.initialize(context).await {
             Ok(()) => {
                 active_plugins.insert(id.clone(), PluginState::Active);
                 tracing::info!("Plugin '{}' initialized successfully", plugin.name());
@@ -1346,7 +1298,7 @@ pub trait ThemeExtension: Send + Sync {
 
 /// Plugin-defined theme
 #[derive(Debug, Clone)]
-pub struct PluginTheme {
+pub struct PluginThemeExtension {
     pub name: String,
     pub theme: crate::Theme,
 }
@@ -1458,7 +1410,6 @@ impl Default for PluginManager {
         )
     }
 }
-}
 
 /// Placeholder plugin implementation for discovered plugins
 /// In a real implementation, this would be replaced by dynamically loaded plugin code
@@ -1499,7 +1450,7 @@ impl Plugin for PlaceholderPlugin {
         }
     }
 
-    async fn initialize(&mut self, _context: &PluginContext) -> TuiResult<()> {
+    async fn initialize(&mut self, _context: PluginContext) -> TuiResult<()> {
         tracing::info!("Initializing placeholder plugin: {}", self.name());
         Ok(())
     }

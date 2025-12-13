@@ -9,6 +9,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
+use crate::CancellationToken;
 
 /// Configuration for lazy loading
 #[derive(Debug, Clone)]
@@ -611,7 +612,7 @@ pub struct JobId(pub u64);
 pub struct ActiveJob {
     pub job: Job,
     pub handle: tokio::task::JoinHandle<JobResult>,
-    pub cancel_token: tokio::sync::CancellationToken,
+    pub cancel_token: CancellationToken,
 }
 
 #[derive(Debug, Clone)]
@@ -718,7 +719,7 @@ impl JobQueue {
 
     /// Start a job execution
     async fn start_job(&mut self, job: Job) {
-        let cancel_token = tokio::sync::CancellationToken::new();
+        let cancel_token = CancellationToken::new();
         let cancel_token_clone = cancel_token.clone();
         let progress_reporter = &self.progress_reporter;
         let job_id = job.id.clone();

@@ -26,7 +26,7 @@ impl AppModel {
 
     /// Pure update function - delegates to update module
     pub fn update(self, message: AppMessage) -> (Self, Vec<Command>) {
-        crate::update::AppModel::update(self, message)
+        self.update(message)
     }
 
 // StateDiff and StateChange are now in model.rs
@@ -387,6 +387,11 @@ impl ReactiveState {
         !self.history.is_empty()
     }
 
+    /// Get the current application model
+    pub fn current(&self) -> &AppModel {
+        &self.current
+    }
+
     /// Get state at specific history index
     pub fn state_at(&self, index: usize) -> Option<&AppModel> {
         if index == 0 {
@@ -396,6 +401,3 @@ impl ReactiveState {
         }
     }
 }
-
-
-

@@ -314,6 +314,14 @@ pub trait Component {
     fn receive_messages(&mut self, _messages: &[AppMessage]) -> bool {
         false // Default implementation handles no messages
     }
+
+    /// Validate the component's current state
+    fn validate(&self) -> Result<(), String> {
+        Ok(()) // Default implementation assumes valid state
+    }
+
+    /// Clone the component into a Box
+    fn clone_box(&self) -> Box<dyn Component>;
 }
 
 /// Focus direction for keyboard navigation
@@ -599,6 +607,10 @@ where
 macro_rules! impl_component {
     ($type:ty) => {
         impl Component for $type {
+            fn validate(&self) -> Result<(), String> {
+                Ok(())
+            }
+
             fn clone_box(&self) -> Box<dyn Component> {
                 Box::new(self.clone())
             }
@@ -608,7 +620,7 @@ macro_rules! impl_component {
 
 /// Typed event system for component communication
 #[derive(Debug, Clone)]
-pub enum ComponentEvent {
+pub enum InputEvent {
     /// Mouse events
     Mouse(MouseEvent),
     /// Keyboard events
@@ -730,10 +742,10 @@ pub struct EventResult {
 /// Enhanced component trait with typed event system
 pub trait EventComponent: Component {
     /// Handle a typed event with bubbling support
-    fn handle_event(&mut self, event: &ComponentEvent, context: &EventContext) -> EventResult;
+    fn handle_event(&mut self, event: &InputEvent, context: &EventContext) -> EventResult;
 
     /// Check if component can handle a specific event type
-    fn can_handle_event(&self, event_type: &ComponentEvent) -> bool {
+    fn can_handle_event(&self, event_type: &InputEvent) -> bool {
         // Default implementation accepts all events
         let _ = event_type;
         true

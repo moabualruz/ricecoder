@@ -32,6 +32,7 @@ pub mod components;
 
 pub mod diff;
 pub mod error;
+pub mod error_handling;
 pub mod event;
 pub mod event_dispatcher;
 pub mod providers;
@@ -62,6 +63,7 @@ pub mod scrollview_widget;
 pub mod status_bar;
 pub mod style;
 pub mod tea;
+pub mod theme;
 pub mod terminal_state;
 pub mod textarea_widget;
 // Theme modules moved to ricecoder-themes crate
@@ -70,6 +72,7 @@ pub mod textarea_widget;
 // pub mod theme_registry;
 // pub mod theme_reset;
 pub mod tree_widget;
+pub mod ui_components;
 pub mod widgets;
 pub mod plugins;
 pub mod monitoring;
@@ -78,12 +81,14 @@ pub mod monitoring;
 pub use accessibility::{
     AccessibilityConfig, AnimationConfig, Announcement, AnnouncementPriority, ElementType,
     FocusIndicatorStyle, FocusManager, KeyboardNavigationManager, ScreenReaderAnnouncer,
-    StateChangeEvent, TextAlternative, EnhancedKeyboardNavigation, HighContrastThemeManager,
+    TextAlternative, EnhancedKeyboardNavigation, HighContrastThemeManager,
     KeyboardShortcutCustomizer,
 };
 pub use app::App;
+pub use model::{AppModel, AppMessage, AppMode};
+pub use model::StateDiff;
 pub use banner::{BannerArea, BannerComponent, BannerComponentConfig};
-pub use config::{TuiConfig, ConfigManager};
+pub use ricecoder_storage::config::TuiConfig;
 pub use clipboard::{ClipboardError, ClipboardManager, CopyFeedback, CopyOperation};
 pub use code_editor_widget::{CodeEditorWidget, CodeLine, Language, SyntaxTheme};
 pub use command_blocks::{Command, CommandBlock, CommandBlocksWidget, CommandStatus};
@@ -103,9 +108,9 @@ pub use error::{
 // LSP integration moved to ricecoder-lsp crate
 // pub use ricecoder_lsp::tui_integration::{language_from_file_path, lsp_diagnostics_to_tui, lsp_hover_to_text};
 pub use plugins::{
-    Plugin, PluginId, PluginMetadata, PluginContext, PluginMessage, PluginRegistry,
-    PluginState, PluginManifest, DiscoveredPlugin, PluginManager, PluginSandbox,
-    PluginSecurityPolicy, PluginOperation, RateLimiter,
+    Plugin, PluginId, PluginMetadata, PluginContext, PluginMessage,
+    PluginManifest, DiscoveredPlugin, PluginManager, PluginSandbox,
+    PluginOperation, RateLimiter,
     // Enhanced plugin architecture
     EnhancedPluginRegistry, UiComponentPlugin, CommandPlugin, ThemePlugin,
     PluginCapability, PluginVersion, EnhancedPluginMetadata,
@@ -122,7 +127,7 @@ pub use file_picker::FilePickerWidget;
 pub use components::{
     Component, ComponentId, ComponentRegistry, ComponentEvent as ComponentLifecycleEvent, FocusDirection, FocusResult,
     // Event system
-    EventComponent, ComponentEvent, MouseEvent, KeyboardEvent, FocusEvent, CustomEvent, StateChangeEvent,
+    EventComponent, InputEvent, MouseEvent, KeyboardEvent, FocusEvent, CustomEvent, StateChangeEvent,
     MouseButton, KeyModifiers, KeyCode, EventPropagation, EventResult, EventContext, EventPhase, EventDispatcher,
     DialogType, DialogWidget, ListWidget, MenuWidget, ModeIndicator, ModeSelectionMenu,
     SplitViewWidget, TabWidget,
@@ -170,6 +175,8 @@ pub use textarea_widget::TextAreaWidget;
 // theme_loader, theme_registry, theme_reset moved to ricecoder-themes
 pub use tree_widget::{TreeNode, TreeWidget};
 pub use widgets::{ChatWidget, Message, MessageAuthor};
+pub use ui_components::{OptimisticUpdater, LoadingManager, VirtualRenderer, VirtualList, VirtualNode, LazyLoader, VirtualContent, VirtualStyle};
+pub use tokio_util::sync::CancellationToken;
 pub use project_bootstrap::{ProjectBootstrap, BootstrapResult, ProjectInfo};
 // TODO: Re-enable provider exports once provider interfaces are implemented
 // pub use providers::{

@@ -131,14 +131,8 @@ impl App {
         // Create initial TEA model
         let initial_model = crate::AppModel::init(
             TuiConfig::default(),
-            &crate::theme::ThemeManager::new(),
-            crate::session_integration::SessionIntegration::new(10),
-            crate::project_bootstrap::ProjectBootstrap::new(
-                std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."))
-            ),
-            crate::integration::WidgetIntegration::new(80, 24),
-            crate::image_integration::ImageIntegration::new(),
-            crate::render::Renderer::new(),
+            crate::Theme::default(),
+            crate::terminal_state::TerminalCapabilities::detect(),
         );
 
         // Create reactive state manager
@@ -156,7 +150,7 @@ impl App {
         let loading_manager = crate::LoadingManager::new();
 
         // Create virtual renderer
-        let virtual_renderer = crate::VirtualRenderer::new();
+        let virtual_renderer = crate::VirtualRenderer::new((80, 24));
 
         // Create virtual lists (will be initialized with data later)
         let chat_virtual_list = None;
@@ -269,22 +263,13 @@ impl App {
         let chat_loaded = Arc::new(RwLock::new(Vec::new()));
         let chat_loaded_clone = Arc::clone(&chat_loaded);
 
-        self.chat_lazy_loader = Some(crate::LazyLoader::new(
-            all_chat_messages,
-            5, // Load 5 messages at a time
-            move |batch| {
-                let loaded = chat_loaded_clone.clone();
-                tokio::spawn(async move {
-                    let mut loaded = loaded.blocking_write();
-                    loaded.extend(batch);
-                });
-            },
-        ));
+        // TODO: Fix LazyLoader initialization
+        // self.chat_lazy_loader = Some(crate::LazyLoader::new(/* loader function */));
 
-        // Load initial batch of chat messages
-        if let Some(loader) = &mut self.chat_lazy_loader {
-            loader.load_next_batch().await;
-        }
+        // TODO: Load initial batch of chat messages
+        // if let Some(loader) = &mut self.chat_lazy_loader {
+        //     loader.load_next_batch().await;
+        // }
 
         // Get loaded chat messages for virtual list
         let chat_messages = if let Ok(loaded) = chat_loaded.try_read() {
@@ -299,11 +284,7 @@ impl App {
         // Initialize chat virtual list
         self.chat_virtual_list = Some(crate::VirtualList::new(
             chat_messages,
-            10, // Show 10 messages at a time
-            |message: &String, _index: usize| crate::VirtualNode::Paragraph {
-                text: message.clone(),
-                alignment: Alignment::Left,
-            },
+            1, // Item height
         ));
 
         // Create sample command history (would come from actual data source)
@@ -326,22 +307,13 @@ impl App {
         let command_loaded = Arc::new(RwLock::new(Vec::new()));
         let command_loaded_clone = Arc::clone(&command_loaded);
 
-        self.command_lazy_loader = Some(crate::LazyLoader::new(
-            all_commands,
-            4, // Load 4 commands at a time
-            move |batch| {
-                let loaded = command_loaded_clone.clone();
-                tokio::spawn(async move {
-                    let mut loaded = loaded.blocking_write();
-                    loaded.extend(batch);
-                });
-            },
-        ));
+        // TODO: Fix LazyLoader initialization
+        // self.command_lazy_loader = Some(crate::LazyLoader::new(/* loader function */));
 
-        // Load initial batch of commands
-        if let Some(loader) = &mut self.command_lazy_loader {
-            loader.load_next_batch().await;
-        }
+        // TODO: Load initial batch of commands
+        // if let Some(loader) = &mut self.command_lazy_loader {
+        //     loader.load_next_batch().await;
+        // }
 
         // Get loaded commands for virtual list
         let command_history = if let Ok(loaded) = command_loaded.try_read() {
@@ -353,11 +325,7 @@ impl App {
         // Initialize command virtual list
         self.command_virtual_list = Some(crate::VirtualList::new(
             command_history,
-            15, // Show 15 commands at a time
-            |command: &String, _index: usize| crate::VirtualNode::Paragraph {
-                text: format!("$ {}", command),
-                alignment: Alignment::Left,
-            },
+            1, // Item height
         ));
 
         // TODO: Register focusable elements for keyboard navigation
@@ -383,7 +351,7 @@ impl App {
         // Check chat messages
         if let Some(virtual_list) = &self.chat_virtual_list {
             let (offset, total) = virtual_list.scroll_position();
-            let visible_items = virtual_list.scroll.visible_items;
+            let visible_items = virtual_list.visible_items_count();
 
             if offset + visible_items >= total.saturating_sub(5) && self.can_load_more_chat() {
                 self.load_more_chat_messages().await;
@@ -393,7 +361,7 @@ impl App {
         // Check command history
         if let Some(virtual_list) = &self.command_virtual_list {
             let (offset, total) = virtual_list.scroll_position();
-            let visible_items = virtual_list.scroll.visible_items;
+            let visible_items = virtual_list.visible_items_count();
 
             if offset + visible_items >= total.saturating_sub(3) && self.can_load_more_commands() {
                 self.load_more_commands().await;
@@ -425,14 +393,14 @@ impl App {
     /// Load more chat messages if needed
     pub async fn load_more_chat_messages(&mut self) {
         if let Some(loader) = &mut self.chat_lazy_loader {
-            if !loader.is_loading() && !loader.is_fully_loaded() {
+            if !(loader.is_loading().await) && !(loader.is_fully_loaded().await) {
                 // Start loading
                 self.loading_manager.start_loading(
                     "chat_messages".to_string(),
                     "Loading more messages...".to_string(),
                 ).await;
 
-                loader.load_next_batch().await;
+                // loader.load_next_batch().await;
 
                 // Update virtual list with new data
                 if let Some(virtual_list) = &mut self.chat_virtual_list {
@@ -449,14 +417,14 @@ impl App {
     /// Load more command history if needed
     pub async fn load_more_commands(&mut self) {
         if let Some(loader) = &mut self.command_lazy_loader {
-            if !loader.is_loading() && !loader.is_fully_loaded() {
+            if !(loader.is_loading().await) && !(loader.is_fully_loaded().await) {
                 // Start loading
                 self.loading_manager.start_loading(
                     "command_history".to_string(),
                     "Loading command history...".to_string(),
                 ).await;
 
-                loader.load_next_batch().await;
+                // loader.load_next_batch().await;
 
                 // Update virtual list with new data
                 if let Some(virtual_list) = &mut self.command_virtual_list {
@@ -492,13 +460,13 @@ impl App {
     }
 
     /// Get pending screen reader announcements
-    pub async fn get_screen_reader_announcements(&self) -> Vec<crate::Announcement> {
-        self.screen_reader.get_announcements().await
+    pub fn get_screen_reader_announcements(&self) -> Vec<crate::Announcement> {
+        self.screen_reader.announcements().to_vec()
     }
 
     /// Clear screen reader announcements
-    pub async fn clear_screen_reader_announcements(&self) {
-        self.screen_reader.clear_announcements().await;
+    pub fn clear_screen_reader_announcements(&mut self) {
+        self.screen_reader.clear_history();
     }
 
     /// Enable/disable screen reader

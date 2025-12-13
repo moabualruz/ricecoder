@@ -7,7 +7,8 @@
 //! - Retry logic for network failures
 //! - Error logging and debugging support
 
-use crate::tea::{AppMessage, AppModel, ReactiveState};
+use crate::model::{AppMessage, AppModel};
+use crate::tea::ReactiveState;
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::Arc;

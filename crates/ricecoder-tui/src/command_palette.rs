@@ -557,6 +557,50 @@ impl crate::Component for CommandPaletteWidget {
     fn clone_box(&self) -> Box<dyn crate::Component> {
         Box::new(self.clone())
     }
+
+    fn children(&self) -> Vec<&dyn crate::Component> {
+        Vec::new()
+    }
+
+    fn children_mut(&mut self) -> Vec<&mut dyn crate::Component> {
+        Vec::new()
+    }
+
+    fn find_child(&self, _id: &crate::ComponentId) -> Option<&dyn crate::Component> {
+        None
+    }
+
+    fn find_child_mut(&mut self, _id: &crate::ComponentId) -> Option<&mut dyn crate::Component> {
+        None
+    }
+
+    fn add_child(&mut self, _child: Box<dyn crate::Component>) {
+        // Command palette doesn't support children
+    }
+
+    fn remove_child(&mut self, _id: &crate::ComponentId) -> Option<Box<dyn crate::Component>> {
+        None
+    }
+
+    fn z_index(&self) -> i32 {
+        100 // High z-index for overlay
+    }
+
+    fn set_z_index(&mut self, _z_index: i32) {
+        // z-index is fixed for command palette
+    }
+
+    fn can_focus(&self) -> bool {
+        true
+    }
+
+    fn tab_order(&self) -> Option<usize> {
+        Some(1)
+    }
+
+    fn set_tab_order(&mut self, _order: Option<usize>) {
+        // Tab order is fixed
+    }
 }
 
 /// Fuzzy matching function

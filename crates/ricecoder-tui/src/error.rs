@@ -387,23 +387,7 @@ pub enum KeybindError {
 }
 
 // Conversion implementations
-impl From<ricecoder_providers::ProviderError> for ProviderError {
-    fn from(err: ricecoder_providers::ProviderError) -> Self {
-        match err {
-            ricecoder_providers::ProviderError::NotFound(s) => ProviderError::NotFound(s),
-            ricecoder_providers::ProviderError::AuthError => ProviderError::AuthError,
-            ricecoder_providers::ProviderError::RateLimited(d) => ProviderError::RateLimited(d),
-            ricecoder_providers::ProviderError::ContextTooLarge(a, b) => ProviderError::ContextTooLarge(a, b),
-            ricecoder_providers::ProviderError::NetworkError => ProviderError::NetworkError,
-            ricecoder_providers::ProviderError::ProviderError(s) => ProviderError::ProviderError(s),
-            ricecoder_providers::ProviderError::ConfigError(s) => ProviderError::ConfigError(s),
-            ricecoder_providers::ProviderError::InvalidModel(s) => ProviderError::InvalidModel(s),
-            ricecoder_providers::ProviderError::ModelNotAvailable(s) => ProviderError::ModelNotAvailable(s),
-            ricecoder_providers::ProviderError::SerializationError(s) => ProviderError::SerializationError(s),
-            ricecoder_providers::ProviderError::Internal(s) => ProviderError::Internal(s),
-        }
-    }
-}
+
 
 impl From<ricecoder_storage::StorageError> for StorageError {
     fn from(err: ricecoder_storage::StorageError) -> Self {
