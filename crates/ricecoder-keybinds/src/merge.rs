@@ -68,14 +68,14 @@ impl KeybindMerger {
                 // Global keybind
                 key_context_map
                     .entry((keybind.key.clone(), Context::Global))
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(keybind);
             } else {
                 // Context-specific keybinds
                 for &context in &keybind.contexts {
                     key_context_map
                         .entry((keybind.key.clone(), context))
-                        .or_insert_with(Vec::new)
+                        .or_default()
                         .push(keybind);
                 }
             }

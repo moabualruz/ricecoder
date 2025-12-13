@@ -91,7 +91,7 @@ impl KeybindRegistry {
         let key_str = key.to_string();
 
         // First try context-specific lookup
-        if let Some(action_id) = self.by_key_context.get(&(context.clone(), key_str.clone())) {
+        if let Some(action_id) = self.by_key_context.get(&(*context, key_str.clone())) {
             return Some(action_id.as_str());
         }
 
@@ -106,11 +106,11 @@ impl KeybindRegistry {
 
         // Sort contexts by priority (highest first)
         let mut sorted_contexts = contexts.to_vec();
-        sorted_contexts.sort_by(|a, b| b.priority().cmp(&a.priority()));
+        sorted_contexts.sort_by_key(|b| std::cmp::Reverse(b.priority()));
 
         // Try context-specific lookups in priority order
         for context in &sorted_contexts {
-            if let Some(action_id) = self.by_key_context.get(&(context.clone(), key_str.clone())) {
+        if let Some(action_id) = self.by_key_context.get(&(*context, key_str.clone())) {
                 return Some(action_id.as_str());
             }
         }
@@ -147,7 +147,7 @@ impl KeybindRegistry {
                 self.by_key_global.remove(&key_str);
             } else {
                 for context in &keybind.contexts {
-                    self.by_key_context.remove(&(context.clone(), key_str.clone()));
+                    self.by_key_context.remove(&(*context, key_str.clone()));
                 }
             }
         }
