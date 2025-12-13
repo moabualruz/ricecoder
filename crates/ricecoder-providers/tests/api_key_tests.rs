@@ -3,6 +3,7 @@ use ricecoder_providers::*;
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::ApiKeyConfig;
 
     #[test]
     fn test_new_api_key_manager() {
@@ -85,7 +86,7 @@ mod tests {
         };
         manager.register_config("openai".to_string(), config);
 
-        assert!(manager.configs.contains_key("openai"));
+        assert!(manager.configured_providers().contains(&"openai".to_string()));
     }
 
     #[test]

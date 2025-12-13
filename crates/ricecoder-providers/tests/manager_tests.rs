@@ -4,6 +4,8 @@ use ricecoder_providers::*;
 mod tests {
     use super::*;
     use crate::models::{ChatResponse, FinishReason, TokenUsage};
+    use crate::provider::ChatStream;
+    use std::sync::Arc;
 
     struct MockProvider {
         id: String,

@@ -7,6 +7,8 @@ mod tests {
     use crate::models::{ChatResponse, FinishReason, TokenUsage};
     use crate::provider::Provider;
     use async_trait::async_trait;
+    use std::sync::Arc;
+    use std::time::Duration;
 
     struct MockHealthyProvider;
 

@@ -3,6 +3,7 @@ use ricecoder_providers::*;
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::redaction::get_redaction_filter;
 
     #[test]
     fn test_redact_openai_key() {

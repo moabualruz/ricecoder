@@ -3,6 +3,10 @@ use ricecoder_providers::*;
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::ConfigurationManager;
+    use crate::models::{ProviderSettings, ProviderConfig, DefaultsConfig};
+    use std::collections::HashMap;
+    use std::path::PathBuf;
 
     #[test]
     fn test_new_configuration_manager() {
