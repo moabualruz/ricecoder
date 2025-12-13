@@ -1,12 +1,14 @@
 # ricecoder-specs
 
-Specification parsing and management
+**Purpose**: Specification parsing and management system for processing YAML/JSON specs and managing development workflows in RiceCoder
 
 ## Features
 
-- Feature 1
-- Feature 2
-- Feature 3
+- **YAML/JSON Spec Parsing**: Robust parsing of specification files with validation
+- **Spec Validation**: Comprehensive validation against schemas and business rules
+- **Workflow Management**: Specification-driven development workflow orchestration
+- **Template Processing**: Dynamic spec template processing with variable substitution
+- **Integration APIs**: APIs for other crates to consume and utilize specifications
 
 ## Installation
 
@@ -19,10 +21,18 @@ ricecoder-specs = "0.1"
 
 ## Usage
 
-```rust
-use ricecoder_specs::*;
+### Basic Usage
 
-// Your code here
+```rust
+use ricecoder_specs::{SpecParser, SpecValidator};
+
+// Parse a YAML specification
+let parser = SpecParser::new();
+let spec = parser.parse_yaml(include_str!("example_spec.yaml"))?;
+
+// Validate the specification
+let validator = SpecValidator::new();
+validator.validate(&spec)?;
 ```
 
 ## Documentation

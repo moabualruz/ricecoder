@@ -6,11 +6,11 @@
 //! - Asynchronous command execution
 //! - Command result processing
 
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::RwLock;
-use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use tokio::sync::RwLock;
 
 /// Result type for command execution
 pub type CommandResult<T> = Result<T, CommandError>;
@@ -158,8 +158,6 @@ pub enum ExecutionStatus {
     Timeout,
 }
 
-
-
 /// Command executor trait
 #[async_trait::async_trait]
 pub trait CommandExecutor: Send + Sync {
@@ -187,8 +185,6 @@ pub trait CommandExecutor: Send + Sync {
         context: &CommandContext,
     ) -> CommandResult<Vec<String>>;
 }
-
-
 
 /// Command registry and executor
 pub struct CommandRegistry {
@@ -251,10 +247,14 @@ impl CommandRegistry {
         initial_params: HashMap<String, String>,
         context: &CommandContext,
     ) -> CommandResult<CommandExecutionResult> {
-        let definition = self.commands.get(command_name)
+        let definition = self
+            .commands
+            .get(command_name)
             .ok_or_else(|| CommandError::CommandNotFound(command_name.to_string()))?;
 
-        let executor = self.executors.get(command_name)
+        let executor = self
+            .executors
+            .get(command_name)
             .ok_or_else(|| CommandError::CommandNotFound(command_name.to_string()))?;
 
         // Collect all parameters (initial + prompted)
@@ -267,9 +267,10 @@ impl CommandRegistry {
                     let value = prompt_handler.prompt_parameter(param, context).await?;
                     all_params.insert(param.name.clone(), value);
                 } else {
-                    return Err(CommandError::InvalidParameters(
-                        format!("Missing required parameter: {}", param.name)
-                    ));
+                    return Err(CommandError::InvalidParameters(format!(
+                        "Missing required parameter: {}",
+                        param.name
+                    )));
                 }
             }
         }
@@ -281,7 +282,8 @@ impl CommandRegistry {
         if definition.requires_confirmation {
             if let Some(prompt_handler) = &self.prompt_handler {
                 let default_message = format!("Execute command '{}'?", command_name);
-                let message = definition.confirmation_message
+                let message = definition
+                    .confirmation_message
                     .as_ref()
                     .unwrap_or(&default_message);
 
@@ -301,7 +303,9 @@ impl CommandRegistry {
 
         // Execute the command
         let start_time = std::time::Instant::now();
-        let result = executor.execute(command_name, all_params.clone(), context).await;
+        let result = executor
+            .execute(command_name, all_params.clone(), context)
+            .await;
         let execution_time = start_time.elapsed().as_millis() as u64;
 
         match result {
@@ -333,7 +337,9 @@ impl CommandRegistry {
         context: &CommandContext,
     ) -> CommandResult<Vec<String>> {
         if let Some(executor) = self.executors.get(command) {
-            executor.get_autocomplete(command, parameter, partial_value, context).await
+            executor
+                .get_autocomplete(command, parameter, partial_value, context)
+                .await
         } else {
             Ok(Vec::new())
         }
@@ -359,53 +365,56 @@ pub trait ParameterPromptHandler: Send + Sync {
 }
 
 /// Default parameter validation
-pub fn validate_parameter(
-    param: &CommandParameter,
-    value: &str,
-) -> CommandResult<()> {
+pub fn validate_parameter(param: &CommandParameter, value: &str) -> CommandResult<()> {
     // Check required
     if param.required && value.trim().is_empty() {
-        return Err(CommandError::InvalidParameters(
-            format!("Parameter '{}' is required", param.name)
-        ));
+        return Err(CommandError::InvalidParameters(format!(
+            "Parameter '{}' is required",
+            param.name
+        )));
     }
 
     // Type-specific validation
     match &param.param_type {
         ParameterType::Integer => {
             if value.parse::<i64>().is_err() {
-                return Err(CommandError::InvalidParameters(
-                    format!("Parameter '{}' must be an integer", param.name)
-                ));
+                return Err(CommandError::InvalidParameters(format!(
+                    "Parameter '{}' must be an integer",
+                    param.name
+                )));
             }
         }
         ParameterType::Float => {
             if value.parse::<f64>().is_err() {
-                return Err(CommandError::InvalidParameters(
-                    format!("Parameter '{}' must be a number", param.name)
-                ));
+                return Err(CommandError::InvalidParameters(format!(
+                    "Parameter '{}' must be a number",
+                    param.name
+                )));
             }
         }
         ParameterType::Boolean => {
             let lower = value.to_lowercase();
             if !matches!(lower.as_str(), "true" | "false" | "1" | "0" | "yes" | "no") {
-                return Err(CommandError::InvalidParameters(
-                    format!("Parameter '{}' must be a boolean (true/false)", param.name)
-                ));
+                return Err(CommandError::InvalidParameters(format!(
+                    "Parameter '{}' must be a boolean (true/false)",
+                    param.name
+                )));
             }
         }
         ParameterType::Choice(options) => {
             if !options.contains(&value.to_string()) {
-                return Err(CommandError::InvalidParameters(
-                    format!("Parameter '{}' must be one of: {:?}", param.name, options)
-                ));
+                return Err(CommandError::InvalidParameters(format!(
+                    "Parameter '{}' must be one of: {:?}",
+                    param.name, options
+                )));
             }
         }
         ParameterType::Url => {
             if !value.starts_with("http://") && !value.starts_with("https://") {
-                return Err(CommandError::InvalidParameters(
-                    format!("Parameter '{}' must be a valid URL", param.name)
-                ));
+                return Err(CommandError::InvalidParameters(format!(
+                    "Parameter '{}' must be a valid URL",
+                    param.name
+                )));
             }
         }
         _ => {} // Other types are validated as strings
@@ -415,49 +424,59 @@ pub fn validate_parameter(
     if let Some(validation) = &param.validation {
         if let Some(min_len) = validation.min_length {
             if value.len() < min_len {
-                return Err(CommandError::InvalidParameters(
-                    format!("Parameter '{}' must be at least {} characters", param.name, min_len)
-                ));
+                return Err(CommandError::InvalidParameters(format!(
+                    "Parameter '{}' must be at least {} characters",
+                    param.name, min_len
+                )));
             }
         }
 
         if let Some(max_len) = validation.max_length {
             if value.len() > max_len {
-                return Err(CommandError::InvalidParameters(
-                    format!("Parameter '{}' must be at most {} characters", param.name, max_len)
-                ));
+                return Err(CommandError::InvalidParameters(format!(
+                    "Parameter '{}' must be at most {} characters",
+                    param.name, max_len
+                )));
             }
         }
 
         if let Some(pattern) = &validation.pattern {
-            let regex = regex::Regex::new(pattern)
-                .map_err(|_| CommandError::ValidationFailed(
-                    format!("Invalid regex pattern for parameter '{}'", param.name)
-                ))?;
+            let regex = regex::Regex::new(pattern).map_err(|_| {
+                CommandError::ValidationFailed(format!(
+                    "Invalid regex pattern for parameter '{}'",
+                    param.name
+                ))
+            })?;
 
             if !regex.is_match(value) {
-                return Err(CommandError::InvalidParameters(
-                    format!("Parameter '{}' does not match required pattern", param.name)
-                ));
+                return Err(CommandError::InvalidParameters(format!(
+                    "Parameter '{}' does not match required pattern",
+                    param.name
+                )));
             }
         }
 
         // Numeric validation
-        if matches!(param.param_type, ParameterType::Integer | ParameterType::Float) {
+        if matches!(
+            param.param_type,
+            ParameterType::Integer | ParameterType::Float
+        ) {
             if let Ok(num) = value.parse::<f64>() {
                 if let Some(min_val) = validation.min_value {
                     if num < min_val {
-                        return Err(CommandError::InvalidParameters(
-                            format!("Parameter '{}' must be at least {}", param.name, min_val)
-                        ));
+                        return Err(CommandError::InvalidParameters(format!(
+                            "Parameter '{}' must be at least {}",
+                            param.name, min_val
+                        )));
                     }
                 }
 
                 if let Some(max_val) = validation.max_value {
                     if num > max_val {
-                        return Err(CommandError::InvalidParameters(
-                            format!("Parameter '{}' must be at most {}", param.name, max_val)
-                        ));
+                        return Err(CommandError::InvalidParameters(format!(
+                            "Parameter '{}' must be at most {}",
+                            param.name, max_val
+                        )));
                     }
                 }
             }
@@ -466,4 +485,3 @@ pub fn validate_parameter(
 
     Ok(())
 }
-

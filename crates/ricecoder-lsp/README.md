@@ -1,6 +1,10 @@
-# RiceCoder LSP Integration
+# ricecoder-lsp
 
-Language Server Protocol (LSP) integration for RiceCoder, providing semantic code analysis, diagnostics, code actions, and hover information across multiple programming languages.
+**Purpose**: Language Server Protocol integration providing semantic code analysis, diagnostics, and code intelligence for RiceCoder
+
+## Overview
+
+`ricecoder-lsp` implements a Language Server Protocol server that enables semantic understanding of code across multiple programming languages. It provides comprehensive code intelligence features including diagnostics, code actions, hover information, and symbol analysis.
 
 ## Overview
 
@@ -66,7 +70,74 @@ The `ricecoder-lsp` crate implements a Language Server Protocol server that enab
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## API Documentation
+### Dependencies
+- **Core LSP**: `lsp-types` for protocol definitions
+- **Parsing**: `tree-sitter` for AST analysis
+- **Async**: `tokio` for async operations
+- **Infrastructure**: `ricecoder-storage` for caching and configuration
+
+### Integration Points
+- **TUI**: Provides code intelligence for the terminal interface
+- **Completion**: Supplies semantic completion data
+- **Refactoring**: Enables language-aware refactoring operations
+- **External LSP**: Can proxy to external language servers
+
+## Installation
+
+Add to your `Cargo.toml`:
+
+```toml
+[dependencies]
+ricecoder-lsp = "0.1"
+```
+
+## Usage
+
+### Basic Usage
+
+```rust
+use ricecoder_lsp::LspServer;
+
+// Create and run LSP server
+let mut server = LspServer::new();
+server.run().await?;
+```
+
+### Advanced Usage
+
+```rust
+use ricecoder_lsp::semantic::{SemanticAnalyzer, RustAnalyzer};
+
+// Create language-specific analyzer
+let analyzer = RustAnalyzer::new();
+
+// Analyze code for symbols and diagnostics
+let semantic_info = analyzer.analyze(code)?;
+let symbols = analyzer.extract_symbols(code)?;
+```
+
+## Configuration
+
+LSP behavior can be configured via environment variables:
+
+```yaml
+lsp:
+  cache_size_mb: 100
+  analysis_timeout_ms: 5000
+  log_level: info
+  languages:
+    rust:
+      enabled: true
+      diagnostics: true
+    typescript:
+      enabled: true
+      diagnostics: true
+    python:
+      enabled: true
+      diagnostics: true
+```
+
+## API Reference
 
 ### LSP Server Interface
 

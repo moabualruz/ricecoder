@@ -1,6 +1,6 @@
 <div align="center">
 
- <img src=".branding/banner.svg" alt="OpenCode logo">
+ <img src=".branding/banner.svg" alt="rice[oder logo">
 
 **Plan. Think. Code.**
 

@@ -1,12 +1,14 @@
 # ricecoder-local-models
 
-Local model management for RiceCoder (Ollama integration)
+**Purpose**: Local model management providing Ollama integration and offline AI capabilities for RiceCoder
 
 ## Features
 
-- Feature 1
-- Feature 2
-- Feature 3
+- **Ollama Integration**: Seamless integration with Ollama for running local AI models
+- **Model Management**: Download, update, and manage multiple local models
+- **Offline Capability**: Full functionality without internet connectivity for local models
+- **Performance Optimization**: Efficient model loading and memory management
+- **Fallback Support**: Automatic fallback to remote models when local models unavailable
 
 ## Installation
 
@@ -19,10 +21,24 @@ ricecoder-local-models = "0.1"
 
 ## Usage
 
-```rust
-use ricecoder_local_models::*;
+### Basic Usage
 
-// Your code here
+```rust
+use ricecoder_local_models::{OllamaManager, LocalModel};
+
+// Initialize Ollama manager
+let manager = OllamaManager::new("http://localhost:11434").await?;
+
+// List available models
+let models = manager.list_models().await?;
+for model in models {
+    println!("Available model: {}", model.name);
+}
+
+// Run inference with a local model
+let model = LocalModel::new("llama2");
+let response = manager.generate(&model, "Explain Rust ownership").await?;
+println!("Response: {}", response.text);
 ```
 
 ## Documentation

@@ -11,7 +11,9 @@ mod tests {
 
     impl MockCommandExecutor {
         fn new() -> Self {
-            Self { history: Vec::new() }
+            Self {
+                history: Vec::new(),
+            }
         }
     }
 
@@ -45,7 +47,9 @@ mod tests {
         let mut executor = MockCommandExecutor::new();
 
         executor.execute(Command::Save).unwrap();
-        executor.execute(Command::Custom("test".to_string())).unwrap();
+        executor
+            .execute(Command::Custom("test".to_string()))
+            .unwrap();
 
         let history = executor.get_command_history();
         assert_eq!(history.len(), 2);

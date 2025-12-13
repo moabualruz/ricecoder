@@ -6,8 +6,6 @@
 # 2. Project configuration (./.ricecoder/ricecoder.yaml)
 # 3. Global configuration (~/Documents/.ricecoder/ricecoder.yaml)
 # 4. Built-in defaults (this file)
-#
-# For more information, see: https://opencode.ai/docs/ricecoder/configuration
 
 ---
 
@@ -160,4 +158,3 @@ features:
 # - Free models are available without an API key
 # - Model lists are fetched from provider APIs, not hardcoded
 # - Configuration is merged from multiple sources (see priority above)
-# - For more information, visit: https://opencode.ai/docs/ricecoder/

@@ -1,6 +1,6 @@
 # ricecoder-storage
 
-Configuration and Storage Infrastructure for RiceCoder
+**Purpose**: Configuration and storage infrastructure providing hierarchical settings management, data persistence, and caching for RiceCoder
 
 ## Overview
 

@@ -283,5 +283,3 @@ impl Default for CommandRegistry {
         Self::with_builtin_commands()
     }
 }
-
-

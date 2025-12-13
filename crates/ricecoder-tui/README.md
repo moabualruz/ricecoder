@@ -1,6 +1,6 @@
 # ricecoder-tui
 
-Terminal User Interface for RiceCoder - Pure UI Layer
+**Purpose**: Terminal user interface providing beautiful, responsive UI components and user interaction handling for RiceCoder
 
 ## Overview
 
@@ -47,7 +47,18 @@ ricecoder-help = { path = "../ricecoder-help", version = "0.1" }
 ricecoder-keybinds = { path = "../ricecoder-keybinds", version = "0.1" }
 ```
 
+## Installation
+
+Add to your `Cargo.toml`:
+
+```toml
+[dependencies]
+ricecoder-tui = "0.1"
+```
+
 ## Usage
+
+### Basic Usage
 
 ```rust
 use ricecoder_tui::{App, Theme, LayoutConfig};
@@ -58,6 +69,113 @@ let mut app = App::new(config);
 // Business logic is injected via interfaces
 // (session management, providers, etc. are handled externally)
 ```
+
+### Advanced Usage
+
+```rust
+use ricecoder_tui::{App, ThemeManager, KeybindManager};
+
+// Create with custom theme and keybindings
+let theme_manager = ThemeManager::new();
+let keybind_manager = KeybindManager::new();
+
+let mut app = App::with_managers(config, theme_manager, keybind_manager);
+
+// Handle application events
+while let Some(event) = app.next_event().await {
+    match event {
+        Event::Key(key) => app.handle_key(key),
+        Event::Resize(width, height) => app.handle_resize(width, height),
+        Event::Quit => break,
+    }
+}
+```
+
+## Configuration
+
+TUI configuration options:
+
+```yaml
+tui:
+  theme: "tokyo-night"
+  vim_mode: true
+  sidebar_width: 30
+  max_scrollback: 10000
+  accessibility:
+    screen_reader: true
+    high_contrast: false
+  keybindings:
+    custom:
+      - key: "ctrl+c"
+        action: "copy"
+```
+
+## API Reference
+
+### Key Types
+
+- **`App`**: Main TUI application structure
+- **`ThemeManager`**: Theme loading and management
+- **`LayoutConfig`**: Layout configuration and constraints
+- **`Component`**: Base trait for UI components
+- **`Event`**: TUI events (keyboard, mouse, resize)
+- **`Widget`**: Reusable UI widgets
+
+### Key Functions
+
+- **`App::new()`**: Create new TUI application
+- **`App::with_managers()`**: Create app with custom managers
+- **`ThemeManager::load_theme()`**: Load theme by name
+- **`Component::render()`**: Render component to terminal
+- **`Component::handle_event()`**: Handle user input events
+
+## Error Handling
+
+```rust
+use ricecoder_tui::TuiError;
+
+match result {
+    Ok(()) => println!("TUI operation successful"),
+    Err(TuiError::ThemeNotFound(name)) => eprintln!("Theme '{}' not found", name),
+    Err(TuiError::InvalidLayout(msg)) => eprintln!("Layout error: {}", msg),
+    Err(TuiError::TerminalError(msg)) => eprintln!("Terminal error: {}", msg),
+    Err(TuiError::AccessibilityError(msg)) => eprintln!("Accessibility error: {}", msg),
+}
+```
+
+## Testing
+
+Run the comprehensive test suite:
+
+```bash
+# Run all tests
+cargo test -p ricecoder-tui
+
+# Run performance benchmarks
+cargo bench -p ricecoder-tui
+
+# Run accessibility tests
+cargo test -p ricecoder-tui accessibility
+
+# Test with different terminal sizes
+cargo test -p ricecoder-tui layout
+```
+
+Key test areas:
+- Component rendering and interaction
+- Theme loading and application
+- Layout responsiveness
+- Accessibility compliance
+- Cross-platform compatibility
+- Performance benchmarks
+
+## Performance
+
+- **Rendering**: 60 FPS target with efficient diff-based updates
+- **Memory**: Minimal memory footprint, streaming large content
+- **Layout**: Responsive layout calculations, cached when possible
+- **Themes**: Fast theme switching with precompiled styles
+- **Input**: Low-latency input handling with debouncing
 
 ## Integration
 
@@ -94,6 +212,8 @@ When adding new features to `ricecoder-tui`:
 2. **Use interfaces**: Accept data through parameters/interfaces
 3. **Test thoroughly**: Ensure accessibility and cross-platform compatibility
 4. **Document clearly**: Update this README for any new modules
+5. **Performance**: Maintain 60 FPS rendering target
+6. **Accessibility**: Follow WCAG guidelines for screen readers
 
 ## License
 

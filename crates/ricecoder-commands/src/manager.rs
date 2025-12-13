@@ -2,7 +2,9 @@ use crate::config::ConfigManager;
 use crate::error::{CommandError, Result};
 use crate::output_injection::{OutputInjectionConfig, OutputInjector};
 use crate::registry::CommandRegistry;
-use crate::types::{ArgumentType, CommandArgument, CommandContext, CommandDefinition, CommandExecutionResult};
+use crate::types::{
+    ArgumentType, CommandArgument, CommandContext, CommandDefinition, CommandExecutionResult,
+};
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -277,8 +279,9 @@ impl CommandManager {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
 
-        let output = cmd.output()
-            .map_err(|e| CommandError::ExecutionError(format!("Failed to execute command: {}", e)))?;
+        let output = cmd.output().map_err(|e| {
+            CommandError::ExecutionError(format!("Failed to execute command: {}", e))
+        })?;
 
         let duration = start_time.elapsed().as_millis() as u64;
 
@@ -297,5 +300,3 @@ impl CommandManager {
         })
     }
 }
-
-

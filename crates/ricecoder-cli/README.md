@@ -1,6 +1,6 @@
 <div align="center">
 
- <img src="https://github.com/moabualruz/ricecoder/raw/main/.branding/banner.svg" alt="OpenCode logo">
+  <img src="https://github.com/moabualruz/ricecoder/raw/main/.branding/banner.svg" alt="rice[oder logo">
 
 **Plan. Think. Code.**
 
@@ -397,7 +397,113 @@ rice gen --spec my-feature
 rice review src/main.rs
 ```
 
-For detailed setup instructions, see [Installation Setup Guide](https://github.com/moabualruz/ricecoder/wiki/Installation-Setup).
+---
+
+## Usage
+
+### Basic Usage
+
+```rust
+use ricecoder_cli::Cli;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Parse command line arguments
+    let cli = Cli::parse();
+
+    // Execute command
+    cli.run()
+}
+```
+
+### Programmatic Usage
+
+```rust
+use ricecoder_cli::{Cli, Commands};
+
+// Create CLI instance programmatically
+let cli = Cli {
+    command: Some(Commands::Chat {
+        interactive: true,
+        model: Some("gpt-4".to_string()),
+    }),
+    global_opts: GlobalOpts {
+        verbose: true,
+        config: None,
+    },
+};
+
+// Execute
+cli.run()?;
+```
+
+## Configuration
+
+RiceCoder supports multiple configuration sources:
+
+```yaml
+# Global configuration (~/.ricecoder/config.yaml)
+ricecoder:
+  providers:
+    openai:
+      api_key: "${OPENAI_API_KEY}"
+      default_model: "gpt-4"
+  ui:
+    theme: "tokyo-night"
+    vim_mode: true
+  sessions:
+    auto_save: true
+```
+
+## API Reference
+
+### Key Types
+
+- **`Cli`**: Main CLI structure with command parsing
+- **`Commands`**: Enum of all available commands
+- **`GlobalOpts`**: Global command-line options
+- **`App`**: Main application orchestrator
+
+### Key Functions
+
+- **`Cli::parse()`**: Parse command-line arguments
+- **`Cli::run()`**: Execute the parsed command
+- **`App::new()`**: Create new application instance
+- **`App::run()`**: Run the main application loop
+
+## Error Handling
+
+```rust
+use ricecoder_cli::CliError;
+
+match result {
+    Ok(()) => println!("Command executed successfully"),
+    Err(CliError::ConfigError(msg)) => eprintln!("Configuration error: {}", msg),
+    Err(CliError::CommandError(msg)) => eprintln!("Command execution error: {}", msg),
+    Err(CliError::ProviderError(msg)) => eprintln!("AI provider error: {}", msg),
+}
+```
+
+## Testing
+
+Run the CLI test suite:
+
+```bash
+# Run all CLI tests
+cargo test -p ricecoder-cli
+
+# Test command parsing
+cargo test -p ricecoder-cli command_parsing
+
+# Test integration scenarios
+cargo test -p ricecoder-cli integration
+```
+
+## Performance
+
+- **Startup**: Fast initialization with lazy component loading
+- **Memory**: Efficient memory usage with component pooling
+- **Commands**: Optimized command routing and execution
+- **Configuration**: Cached configuration with hot reload support
 
 ---
 
