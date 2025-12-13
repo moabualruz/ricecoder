@@ -121,6 +121,8 @@ pub struct VirtualScroll {
     pub item_height: usize,
     /// Cached rendered items
     pub cache: HashMap<usize, VirtualNode>,
+    /// Maximum cache size
+    pub cache_limit: usize,
 }
 
 /// Virtual list component for large datasets
@@ -152,6 +154,7 @@ where
                 offset: 0,
                 item_height: 1,
                 cache: HashMap::new(),
+                cache_limit: visible_items * 2,
             },
             render_fn: Box::new(render_fn),
             cache_limit: visible_items * 2, // Cache 2x visible items
@@ -269,8 +272,8 @@ impl VirtualRenderer {
         self.previous_tree = self.current_tree.clone();
         self.current_tree = Some(new_tree.clone());
 
-        let operations = if let Some(prev) = &self.previous_tree {
-            self.diff_trees(prev, &new_tree)
+        let operations = if let Some(prev) = self.previous_tree.clone() {
+            self.diff_trees(&prev, &new_tree)
         } else {
             vec![RenderOperation::FullRender]
         };
@@ -288,7 +291,7 @@ impl VirtualRenderer {
     }
 
     /// Diff two virtual DOM trees and return minimal operations
-    fn diff_trees(&self, old_tree: &VirtualNode, new_tree: &VirtualNode) -> Vec<RenderOperation> {
+    fn diff_trees(&mut self, old_tree: &VirtualNode, new_tree: &VirtualNode) -> Vec<RenderOperation> {
         let mut operations = Vec::new();
 
         match (old_tree, new_tree) {
@@ -328,6 +331,7 @@ impl VirtualRenderer {
 
     /// Batch render operations for efficiency
     pub fn batch_operations(&mut self, operations: Vec<RenderOperation>, priority: RenderPriority) {
+        let operations_len = operations.len() as u64;
         let batch = RenderBatch {
             operations,
             priority,
@@ -335,7 +339,7 @@ impl VirtualRenderer {
         };
 
         self.batch_queue.push(batch);
-        self.metrics.batched_operations += operations.len() as u64;
+        self.metrics.batched_operations += operations_len;
     }
 
     /// Process pending render batches

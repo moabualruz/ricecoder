@@ -4,23 +4,13 @@
 //! and integration initialization when RiceCoder starts in a project directory.
 
 use crate::error::TuiResult;
-use crate::code_editor_widget::Language;
 // Project analysis moved to ricecoder-research crate
-// use ricecoder_research::{ProjectAnalyzer, ProjectType};
+// use ricecoder_research::{ProjectAnalyzer, ProjectType, Language};
 
-// Stub types for TUI isolation
-#[derive(Debug, Clone)]
-pub struct ProjectAnalyzer;
+// Use the proper project analyzer from ricecoder-research
+pub use ricecoder_research::{ProjectAnalyzer, models::{ProjectType, Language}};
 
-#[derive(Debug, Clone)]
-pub enum ProjectType {
-    Rust,
-    Python,
-    TypeScript,
-    Go,
-    Java,
-    Unknown,
-}
+
 use ricecoder_storage::ConfigLoader;
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
@@ -145,7 +135,7 @@ impl ProjectBootstrap {
         } else if self.working_directory.join("composer.json").exists() {
             Ok(Language::Php)
         } else {
-            Ok(Language::Unknown)
+            Ok(Language::Other("Unknown".to_string()))
         }
     }
 
@@ -381,25 +371,15 @@ impl ProjectInfo {
             Language::Rust => "Rust",
             Language::Python => "Python",
             Language::TypeScript => "TypeScript",
-            Language::JavaScript => "JavaScript",
             Language::Go => "Go",
             Language::Java => "Java",
-            Language::C => "C",
-            Language::Cpp => "C++",
+            Language::Kotlin => "Kotlin",
+            Language::CSharp => "C#",
             Language::Php => "PHP",
             Language::Ruby => "Ruby",
             Language::Swift => "Swift",
-            Language::Scala => "Scala",
-            Language::Shell => "Shell",
-            Language::Kotlin => "Kotlin",
-            Language::Yaml => "YAML",
-            Language::Json => "JSON",
-            Language::Markdown => "Markdown",
-            Language::Sql => "SQL",
-            Language::Html => "HTML",
-            Language::Css => "CSS",
-            Language::PlainText => "Plain Text",
-            Language::Unknown => "Unknown",
+            Language::Dart => "Dart",
+            Language::Other(ref s) => s.as_str(),
         }
     }
 }

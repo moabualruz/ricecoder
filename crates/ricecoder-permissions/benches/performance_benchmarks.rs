@@ -30,7 +30,7 @@ fn benchmark_permission_check(c: &mut Criterion) {
             ));
         }
 
-        let manager = PermissionManager::new(Arc::new(config));
+        let agent = AgentExecutor::new("test-agent".to_string(), Arc::new(config));
 
         group.bench_with_input(
             BenchmarkId::from_parameter(num_permissions),
@@ -38,7 +38,7 @@ fn benchmark_permission_check(c: &mut Criterion) {
             |b, _| {
                 b.iter(|| {
                     // Benchmark: Check permission for a tool
-                    let _ = manager.check_permission(black_box("tool_42"), black_box(None));
+                    let _ = agent.check_permission(black_box("tool_42"));
                 });
             },
         );
@@ -197,11 +197,15 @@ fn benchmark_permission_manager_operations(c: &mut Criterion) {
         ));
     }
 
-    let manager = PermissionManager::new(Arc::new(config));
+    let permissions = manager.get_all_permissions().unwrap();
 
     group.bench_function("check_permission", |b| {
         b.iter(|| {
-            let _ = manager.check_permission(black_box("tool_42"), black_box(None));
+            let _ = PermissionChecker::check_permission(
+                &permissions,
+                black_box(None),
+                black_box(PermissionLevel::Deny),
+            );
         });
     });
 

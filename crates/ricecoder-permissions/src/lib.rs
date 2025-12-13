@@ -12,7 +12,7 @@ pub mod prompt;
 pub mod storage;
 
 pub use agent::{AgentExecutionResult, AgentExecutor};
-pub use audit::{AuditLogEntry, AuditLogger};
+pub use audit::{AuditAction, AuditLogEntry, AuditLogger, AuditResult};
 pub use error::{Error, Result};
 pub use glob_matcher::GlobMatcher;
 pub use permission::{PermissionConfig, PermissionLevel, PermissionManager, ToolPermission};

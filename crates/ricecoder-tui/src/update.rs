@@ -52,6 +52,9 @@ impl AppModel {
             AppMessage::OperationStarted(op) => self.handle_operation_started(op),
             AppMessage::OperationCompleted(id) => self.handle_operation_completed(id),
             AppMessage::OperationFailed(id, error) => self.handle_operation_failed(id, error),
+            AppMessage::SendMessage(msg) => self.handle_send_message(msg),
+            AppMessage::FileSelected(path) => self.handle_file_selected(path),
+            AppMessage::ComponentMessage { component_id, message } => self.handle_component_message(component_id, message),
             AppMessage::Tick => self.handle_tick(),
             AppMessage::ExitRequested => self.handle_exit_requested(),
         }
@@ -154,8 +157,7 @@ impl AppModel {
     fn handle_resize(mut self, width: u16, height: u16) -> (Self, Vec<Command>) {
         // Update terminal capabilities
         let mut new_state = self;
-        new_state.terminal_caps.width = width;
-        new_state.terminal_caps.height = height;
+        new_state.terminal_caps.size = (width, height);
         (new_state, vec![])
     }
 
@@ -271,6 +273,21 @@ impl AppModel {
 
     fn handle_exit_requested(self) -> (Self, Vec<Command>) {
         (self, vec![Command::Exit])
+    }
+
+    fn handle_send_message(self, _message: String) -> (Self, Vec<Command>) {
+        // TODO: Implement send message handling
+        (self, vec![])
+    }
+
+    fn handle_file_selected(self, _path: String) -> (Self, Vec<Command>) {
+        // TODO: Implement file selected handling
+        (self, vec![])
+    }
+
+    fn handle_component_message(self, _component_id: String, _message: String) -> (Self, Vec<Command>) {
+        // TODO: Implement component message handling
+        (self, vec![])
     }
 }
 

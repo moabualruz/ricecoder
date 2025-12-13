@@ -39,6 +39,34 @@ pub enum ErrorCategory {
     System,
 }
 
+impl std::fmt::Display for ErrorCategory {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ErrorCategory::Network => write!(f, "Network"),
+            ErrorCategory::FileSystem => write!(f, "FileSystem"),
+            ErrorCategory::Configuration => write!(f, "Configuration"),
+            ErrorCategory::Authentication => write!(f, "Authentication"),
+            ErrorCategory::Validation => write!(f, "Validation"),
+            ErrorCategory::Rendering => write!(f, "Rendering"),
+            ErrorCategory::State => write!(f, "State"),
+            ErrorCategory::ExternalService => write!(f, "ExternalService"),
+            ErrorCategory::UserInput => write!(f, "UserInput"),
+            ErrorCategory::System => write!(f, "System"),
+        }
+    }
+}
+
+impl std::fmt::Display for ErrorSeverity {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ErrorSeverity::Low => write!(f, "Low"),
+            ErrorSeverity::Medium => write!(f, "Medium"),
+            ErrorSeverity::High => write!(f, "High"),
+            ErrorSeverity::Critical => write!(f, "Critical"),
+        }
+    }
+}
+
 /// Comprehensive error type with context and recovery suggestions
 #[derive(Debug, Clone)]
 pub struct RiceError {
@@ -288,6 +316,7 @@ where
 }
 
 /// Crash recovery system with auto-save
+#[derive(Clone)]
 pub struct CrashRecovery {
     auto_save_interval: Duration,
     last_save: Arc<RwLock<Option<Instant>>>,
@@ -391,6 +420,7 @@ impl CrashRecovery {
 }
 
 /// Retry mechanism with exponential backoff
+#[derive(Clone)]
 pub struct RetryMechanism {
     max_attempts: u32,
     base_delay: Duration,
@@ -445,6 +475,7 @@ impl RetryMechanism {
 }
 
 /// Error logger with categorization and filtering
+#[derive(Clone)]
 pub struct ErrorLogger {
     logs: Arc<RwLock<Vec<LogEntry>>>,
     max_entries: usize,
@@ -581,13 +612,24 @@ impl ErrorLogger {
 }
 
 /// Global error manager that coordinates all error handling
-#[derive(Clone)]
 pub struct ErrorManager {
     pub boundaries: HashMap<String, Box<dyn std::any::Any + Send + Sync>>,
     pub crash_recovery: CrashRecovery,
     pub retry_mechanism: RetryMechanism,
     pub logger: ErrorLogger,
     pub error_counts: Arc<RwLock<HashMap<ErrorCategory, usize>>>,
+}
+
+impl Clone for ErrorManager {
+    fn clone(&self) -> Self {
+        Self {
+            boundaries: HashMap::new(), // Can't clone Box<dyn Any>, so start empty
+            crash_recovery: self.crash_recovery.clone(),
+            retry_mechanism: self.retry_mechanism.clone(),
+            logger: self.logger.clone(),
+            error_counts: Arc::clone(&self.error_counts),
+        }
+    }
 }
 
 impl ErrorManager {

@@ -24,7 +24,7 @@ pub enum Event {
 }
 
 /// Keyboard event
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct KeyEvent {
     /// Key code
     pub code: KeyCode,
@@ -52,14 +52,21 @@ pub enum KeyCode {
     Down,
     Left,
     Right,
+    /// Navigation keys
+    Home,
+    End,
+    PageUp,
+    PageDown,
     /// Function keys
     F(u8),
+    /// Individual function keys for convenience
+    F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
     /// Other keys
     Other,
 }
 
 /// Key modifiers
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct KeyModifiers {
     /// Shift key
     pub shift: bool,
@@ -70,7 +77,7 @@ pub struct KeyModifiers {
 }
 
 /// Mouse event
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MouseEvent {
     /// X coordinate
     pub x: u16,
@@ -290,6 +297,7 @@ pub fn event_to_message(event: Event) -> AppMessage {
                 KeyCode::F10 => crossterm::event::KeyCode::F(10),
                 KeyCode::F11 => crossterm::event::KeyCode::F(11),
                 KeyCode::F12 => crossterm::event::KeyCode::F(12),
+                KeyCode::F(n) => crossterm::event::KeyCode::F(n),
                 _ => crossterm::event::KeyCode::Null,
             },
             match key.modifiers {

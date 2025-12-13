@@ -259,7 +259,6 @@ pub enum MessageAction {
 }
 
 /// Chat widget for displaying conversations
-#[derive(Debug, Clone, PartialEq)]
 pub struct ChatWidget {
     /// Messages in the chat
     pub messages: Vec<Message>,
@@ -687,6 +686,61 @@ impl ChatWidget {
             }
         }
         Ok(())
+    }
+}
+
+impl Clone for ChatWidget {
+    fn clone(&self) -> Self {
+        Self {
+            messages: self.messages.clone(),
+            input: self.input.clone(),
+            scroll: self.scroll,
+            selected: self.selected,
+            available_actions: self.available_actions.clone(),
+            streaming_message: self.streaming_message.clone(),
+            is_streaming: self.is_streaming,
+            copy_operation: self.copy_operation.clone(),
+            show_action_menu: self.show_action_menu,
+            selected_action: self.selected_action,
+            reactive_subscription: None, // Can't clone Receiver
+            id: self.id.clone(),
+            focused: self.focused,
+            enabled: self.enabled,
+            visible: self.visible,
+            bounds: self.bounds,
+        }
+    }
+}
+
+impl std::fmt::Debug for ChatWidget {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ChatWidget")
+            .field("messages", &self.messages.len())
+            .field("input", &self.input)
+            .field("scroll", &self.scroll)
+            .field("selected", &self.selected)
+            .field("is_streaming", &self.is_streaming)
+            .field("show_action_menu", &self.show_action_menu)
+            .field("focused", &self.focused)
+            .field("enabled", &self.enabled)
+            .finish()
+    }
+}
+
+impl PartialEq for ChatWidget {
+    fn eq(&self, other: &Self) -> bool {
+        self.input == other.input
+            && self.scroll == other.scroll
+            && self.selected == other.selected
+            && self.available_actions == other.available_actions
+            && self.is_streaming == other.is_streaming
+            && self.show_action_menu == other.show_action_menu
+            && self.selected_action == other.selected_action
+            && self.id == other.id
+            && self.focused == other.focused
+            && self.enabled == other.enabled
+            && self.visible == other.visible
+            && self.bounds == other.bounds
     }
 }
 

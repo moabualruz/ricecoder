@@ -128,9 +128,12 @@ pub use components::{
     Component, ComponentId, ComponentRegistry, ComponentEvent as ComponentLifecycleEvent, FocusDirection, FocusResult,
     // Event system
     EventComponent, InputEvent, MouseEvent, KeyboardEvent, FocusEvent, CustomEvent, StateChangeEvent,
-    MouseButton, KeyModifiers, KeyCode, EventPropagation, EventResult, EventContext, EventPhase, EventDispatcher,
+    EventPropagation, EventResult, EventContext, EventPhase, EventDispatcher,
     DialogType, DialogWidget, ListWidget, MenuWidget, ModeIndicator, ModeSelectionMenu,
     SplitViewWidget, TabWidget,
+};
+pub use event::{
+    KeyEvent, MouseEvent as EventMouseEvent, KeyCode, KeyModifiers, MouseButton,
 };
 // TuiConfig is now exported from ricecoder-storage
 pub use diff::{DiffHunk, DiffLine, DiffLineType, DiffViewType, DiffWidget};

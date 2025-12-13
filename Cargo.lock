@@ -4829,6 +4829,7 @@ dependencies = [
  "ricecoder-help",
  "ricecoder-images",
  "ricecoder-keybinds",
+ "ricecoder-research",
  "ricecoder-storage",
  "ricecoder-themes",
  "serde",

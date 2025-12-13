@@ -45,7 +45,7 @@
 //! };
 //! ```
 
-use crate::app::AppMode;
+use crate::model::AppMode;
 use crate::style::Color;
 
 /// Context indicators for the prompt

@@ -7,6 +7,7 @@ mod tests {
         AgentStep, ErrorAction, RiskFactors, StepConfig, StepStatus, StepType, WorkflowConfig,
         WorkflowStep,
     };
+    use serde_json::Value;
 
     fn create_test_workflow() -> Workflow {
         Workflow {
@@ -97,7 +98,7 @@ mod tests {
     #[test]
     fn test_parse_value_number() {
         let value = ConditionEvaluator::parse_value("42");
-        assert_eq!(value.as_i64(), Some(42));
+        assert_eq!(value, Value::Number(serde_json::Number::from(42)));
     }
 
     #[test]

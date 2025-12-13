@@ -51,6 +51,18 @@ pub struct TokenEstimator {
     default_model: String,
 }
 
+impl TokenEstimator {
+    /// Get the default model
+    pub fn default_model(&self) -> &str {
+        &self.default_model
+    }
+
+    /// Get the pricing information
+    pub fn pricing(&self) -> &HashMap<String, ModelPricing> {
+        &self.pricing
+    }
+}
+
 /// Pricing information for a model
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelPricing {

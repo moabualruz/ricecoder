@@ -3,7 +3,8 @@
 //! This module handles wiring all widgets together, managing state synchronization,
 //! and coordinating layout between different UI components.
 
-use crate::app::{App, AppMode};
+use crate::app::App;
+use crate::model::AppMode;
 use crate::components::{DialogWidget, ListWidget, MenuWidget, SplitViewWidget, TabWidget};
 use crate::diff::DiffWidget;
 use crate::layout::Rect;
@@ -298,9 +299,10 @@ impl StateSynchronizer {
     }
 
     /// Synchronize app state across all widgets
-    pub fn sync_app_state(app: &App, widgets: &mut WidgetContainer) {
+    pub async fn sync_app_state(app: &App, widgets: &mut WidgetContainer) {
         // Update all widgets based on app state
-        match app.mode {
+        let mode = app.reactive_state.read().await.current().mode;
+        match mode {
             AppMode::Chat => {
                 Self::sync_chat_to_prompt(&widgets.chat, &mut widgets.prompt);
             }
@@ -337,9 +339,9 @@ impl WidgetIntegration {
     }
 
     /// Initialize widgets for the app
-    pub fn initialize(&mut self, app: &App) -> Result<()> {
+    pub async fn initialize(&mut self, app: &App) -> Result<()> {
         // Initialize prompt with context
-        self.widgets.prompt.context.mode = app.mode;
+        self.widgets.prompt.context.mode = app.reactive_state.read().await.current().mode;
         self.widgets.prompt.context.project_name = Some("ricecoder".to_string());
 
         // Initialize chat widget
@@ -405,8 +407,8 @@ impl WidgetIntegration {
     }
 
     /// Synchronize state across all widgets
-    pub fn sync_state(&mut self, app: &App) {
-        StateSynchronizer::sync_app_state(app, &mut self.widgets);
+    pub async fn sync_state(&mut self, app: &App) {
+        StateSynchronizer::sync_app_state(app, &mut self.widgets).await;
     }
 
     /// Get layout for current mode

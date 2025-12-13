@@ -8,12 +8,29 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 /// Optimistic update manager for responsive UI
-#[derive(Debug, Clone)]
 pub struct OptimisticUpdater {
     /// Pending optimistic updates
     pending_updates: Arc<RwLock<HashMap<String, OptimisticUpdate>>>,
     /// Rollback strategies
     rollback_strategies: HashMap<String, Box<dyn Fn() + Send + Sync>>,
+}
+
+impl std::fmt::Debug for OptimisticUpdater {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("OptimisticUpdater")
+            .field("pending_updates", &self.pending_updates)
+            .field("rollback_strategies", &format!("<{} strategies>", self.rollback_strategies.len()))
+            .finish()
+    }
+}
+
+impl Clone for OptimisticUpdater {
+    fn clone(&self) -> Self {
+        Self {
+            pending_updates: Arc::clone(&self.pending_updates),
+            rollback_strategies: HashMap::new(), // Can't clone Box<dyn Fn>, so start empty
+        }
+    }
 }
 
 impl OptimisticUpdater {
@@ -150,7 +167,8 @@ impl VirtualRenderer {
 
     /// Render to buffer
     pub fn render(&self) -> ratatui::buffer::Buffer {
-        let mut buffer = ratatui::buffer::Buffer::empty(self.viewport);
+        let rect = ratatui::layout::Rect::new(0, 0, self.viewport.0, self.viewport.1);
+        let mut buffer = ratatui::buffer::Buffer::empty(rect);
 
         if let Some(ref root) = self.root {
             self.render_node(root, &mut buffer, 0, 0);
@@ -289,7 +307,6 @@ impl<T> VirtualList<T> {
 }
 
 /// Lazy loader for on-demand content loading
-#[derive(Debug, Clone)]
 pub struct LazyLoader<T> {
     /// Loading function
     loader: Arc<dyn Fn() -> T + Send + Sync>,
@@ -297,6 +314,26 @@ pub struct LazyLoader<T> {
     cache: Arc<RwLock<Option<T>>>,
     /// Loading state
     loading: Arc<RwLock<bool>>,
+}
+
+impl<T> std::fmt::Debug for LazyLoader<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("LazyLoader")
+            .field("loader", &"<function>")
+            .field("cache", &"<cache>")
+            .field("loading", &self.loading)
+            .finish()
+    }
+}
+
+impl<T> Clone for LazyLoader<T> {
+    fn clone(&self) -> Self {
+        Self {
+            loader: Arc::clone(&self.loader),
+            cache: Arc::clone(&self.cache),
+            loading: Arc::clone(&self.loading),
+        }
+    }
 }
 
 impl<T> LazyLoader<T>

@@ -4,6 +4,7 @@
 //! All state transitions are pure functions that return new state instances.
 
 use crate::accessibility::{FocusManager, KeyboardNavigationManager, ScreenReaderAnnouncer};
+use crate::components::Component;
 use ricecoder_storage::TuiConfig;
 use ricecoder_themes::Theme;
 use crate::terminal_state::TerminalCapabilities;
@@ -100,7 +101,7 @@ pub struct UiState {
     pub keyboard_nav: KeyboardNavigationManager,
     pub screen_reader: ScreenReaderAnnouncer,
     pub chat_widget: ChatWidget,
-    pub help_dialog: HelpDialog,
+    // pub help_dialog: HelpDialog, // Temporarily removed due to trait bounds
     pub file_picker_visible: bool,
     pub config: TuiConfig,
 }
@@ -150,7 +151,7 @@ impl AppModel {
                 keyboard_nav: KeyboardNavigationManager::new(),
                 screen_reader: ScreenReaderAnnouncer::new(false),
                 chat_widget: ChatWidget::new(),
-                help_dialog: HelpDialog::default_ricecoder(),
+                // help_dialog: HelpDialog::default_ricecoder(), // Temporarily removed
                 file_picker_visible: false,
                 config,
             },
@@ -302,6 +303,15 @@ pub enum AppMessage {
     OperationCompleted(OperationId),
     OperationFailed(OperationId, String),
 
+    // Chat Events
+    SendMessage(String),
+
+    // File Events
+    FileSelected(String),
+
+    // Component Events
+    ComponentMessage { component_id: String, message: String },
+
     // System Events
     Tick,
     ExitRequested,
@@ -361,6 +371,7 @@ pub enum MessagePriority {
 }
 
 /// Message batch processor for efficient TEA updates
+#[derive(Debug)]
 pub struct MessageBatchProcessor {
     batches: std::collections::VecDeque<MessageBatch>,
     max_batch_size: usize,
@@ -377,6 +388,16 @@ impl MessageBatchProcessor {
             batch_timeout: std::time::Duration::from_millis(16), // ~60 FPS
             last_process_time: std::time::Instant::now(),
         }
+    }
+
+    /// Get the current batch timeout
+    pub fn batch_timeout(&self) -> std::time::Duration {
+        self.batch_timeout
+    }
+
+    /// Set the batch timeout
+    pub fn set_batch_timeout(&mut self, timeout: std::time::Duration) {
+        self.batch_timeout = timeout;
     }
 
     /// Add a message to be batched

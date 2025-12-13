@@ -104,8 +104,9 @@ impl UserExperienceMetrics {
         if times.is_empty() {
             None
         } else {
+            let len = times.len();
             let total: Duration = times.into_iter().sum();
-            Some(total / times.len() as u32)
+            Some(total / len as u32)
         }
     }
 
@@ -805,7 +806,7 @@ impl MetricsCollector {
 }
 
 /// Performance report
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct PerformanceReport {
     pub current_fps: Option<f64>,
     pub average_render_time: Option<Duration>,
@@ -816,7 +817,7 @@ pub struct PerformanceReport {
 }
 
 /// Analytics report
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct AnalyticsReport {
     pub total_actions: usize,
     pub unique_actions: usize,
@@ -841,7 +842,7 @@ pub struct ProfileSession {
     memory_samples: Vec<(Instant, usize)>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CompletedProfile {
     pub name: String,
     pub total_duration: Duration,
@@ -998,7 +999,7 @@ fn get_memory_usage() -> Option<usize> {
 }
 
 /// User experience report
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize)]
 pub struct UserExperienceReport {
     pub average_response_times: HashMap<String, Duration>,
     pub error_rates: HashMap<String, f64>,
@@ -1008,7 +1009,7 @@ pub struct UserExperienceReport {
 }
 
 /// Complete monitoring report
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize)]
 pub struct MonitoringReport {
     pub performance: PerformanceReport,
     pub analytics: AnalyticsReport,

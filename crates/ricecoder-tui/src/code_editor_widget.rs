@@ -102,6 +102,7 @@ impl Language {
             Language::TypeScript => "TypeScript",
             Language::Go => "Go",
             Language::Java => "Java",
+            Language::Kotlin => "Kotlin",
             Language::C => "C/C++",
             Language::Shell => "Shell",
             Language::Yaml => "YAML",
@@ -110,6 +111,12 @@ impl Language {
             Language::Sql => "SQL",
             Language::Html => "HTML",
             Language::Css => "CSS",
+            Language::Php => "PHP",
+            Language::Ruby => "Ruby",
+            Language::Swift => "Swift",
+            Language::Scala => "Scala",
+            Language::Cpp => "C++",
+            Language::Unknown => "Unknown",
             Language::PlainText => "Plain Text",
         }
     }

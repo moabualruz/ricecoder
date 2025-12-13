@@ -329,7 +329,7 @@ pub enum AriaLive {
 }
 
 /// ARIA relevant property values
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum AriaRelevant {
     Additions,      // Only additions
     Removals,       // Only removals

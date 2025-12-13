@@ -565,7 +565,7 @@ impl ReactiveUICoordinator {
         Self {
             reactive_renderer,
             live_synchronizer,
-            real_time_updates: Arc::new(real_time_updates),
+            real_time_updates,
             error_manager,
             is_running: Arc::new(RwLock::new(false)),
         }

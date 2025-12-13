@@ -213,8 +213,8 @@ mod tests {
         let mut theme = Theme::default();
 
         // Modify colors
-        theme.primary = Color::new(255, 0, 0);
-        theme.error = Color::new(0, 255, 0);
+        theme.primary = Color::Rgb(255, 0, 0);
+        theme.error = Color::Rgb(0, 255, 0);
 
         // Reset colors
         manager.reset_colors(&mut theme).unwrap();
@@ -231,8 +231,8 @@ mod tests {
         let mut theme = Theme::light();
 
         // Modify theme
-        theme.primary = Color::new(255, 0, 0);
-        theme.background = Color::new(100, 100, 100);
+        theme.primary = Color::Rgb(255, 0, 0);
+        theme.background = Color::Rgb(100, 100, 100);
 
         // Reset theme
         manager.reset_theme(&mut theme).unwrap();
@@ -256,7 +256,7 @@ mod tests {
         let original_name = theme.name.clone();
 
         // Modify theme
-        theme.primary = Color::new(255, 0, 0);
+        theme.primary = Color::Rgb(255, 0, 0);
 
         // Reset theme
         manager.reset_theme(&mut theme).unwrap();
@@ -342,7 +342,7 @@ mod tests {
         let default_primary = manager.get_default_color("nord", "primary").unwrap();
 
         // Modify primary color
-        theme.primary = Color::new(255, 0, 0);
+        theme.primary = Color::Rgb(255, 0, 0);
         assert_ne!(theme.primary, default_primary);
 
         // Reset primary color
@@ -433,14 +433,14 @@ mod tests {
             let mut theme = manager.get_builtin_theme(&theme_name).unwrap();
 
             // Modify all colors
-            theme.primary = Color::new(255, 0, 0);
-            theme.secondary = Color::new(0, 255, 0);
-            theme.accent = Color::new(0, 0, 255);
-            theme.background = Color::new(100, 100, 100);
-            theme.foreground = Color::new(200, 200, 200);
-            theme.error = Color::new(255, 128, 128);
-            theme.warning = Color::new(255, 255, 128);
-            theme.success = Color::new(128, 255, 128);
+            theme.primary = Color::Rgb(255, 0, 0);
+            theme.secondary = Color::Rgb(0, 255, 0);
+            theme.accent = Color::Rgb(0, 0, 255);
+            theme.background = Color::Rgb(100, 100, 100);
+            theme.foreground = Color::Rgb(200, 200, 200);
+            theme.error = Color::Rgb(255, 128, 128);
+            theme.warning = Color::Rgb(255, 255, 128);
+            theme.success = Color::Rgb(128, 255, 128);
 
             // Reset colors
             manager.reset_colors(&mut theme).unwrap();

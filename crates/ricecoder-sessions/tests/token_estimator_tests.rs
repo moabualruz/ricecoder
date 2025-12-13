@@ -7,8 +7,8 @@ mod tests {
     #[test]
     fn test_token_estimator_creation() {
         let estimator = TokenEstimator::new();
-        assert_eq!(estimator.default_model, "gpt-3.5-turbo");
-        assert!(!estimator.pricing.is_empty());
+        assert_eq!(estimator.default_model(), "gpt-3.5-turbo");
+        assert!(!estimator.pricing().is_empty());
     }
 
     #[test]

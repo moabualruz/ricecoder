@@ -17,7 +17,6 @@ pub mod messaging {
     use tokio::sync::RwLock;
 
     /// Message filter for component subscriptions
-    #[derive(Clone)]
     pub enum MessageFilter {
         /// Accept all messages
         All,
@@ -64,14 +63,18 @@ pub mod messaging {
             AppMessage::FilePickerClosed => "FilePickerClosed".to_string(),
             AppMessage::CommandExecuted(_) => "CommandExecuted".to_string(),
             AppMessage::CommandCompleted(_) => "CommandCompleted".to_string(),
+            AppMessage::OperationStarted(_) => "OperationStarted".to_string(),
+            AppMessage::OperationCompleted(_) => "OperationCompleted".to_string(),
+            AppMessage::OperationFailed(_, _) => "OperationFailed".to_string(),
             AppMessage::SendMessage(_) => "SendMessage".to_string(),
             AppMessage::FileSelected(_) => "FileSelected".to_string(),
             AppMessage::ComponentMessage { .. } => "ComponentMessage".to_string(),
+            AppMessage::Tick => "Tick".to_string(),
+            AppMessage::ExitRequested => "ExitRequested".to_string(),
         }
     }
 
     /// Component subscription for receiving messages from other components
-    #[derive(Clone)]
     pub struct ComponentSubscription {
         pub subscriber_id: ComponentId,
         pub filter: MessageFilter,
@@ -215,7 +218,7 @@ pub mod messaging {
     }
 
     /// Payload types for component messages
-    #[derive(Clone, Debug)]
+    #[derive(Debug)]
     pub enum ComponentMessagePayload {
         /// String data
         String(String),
@@ -225,6 +228,17 @@ pub mod messaging {
         Binary(Vec<u8>),
         /// Custom data
         Custom(Box<dyn Any + Send + Sync>),
+    }
+
+    impl Clone for ComponentMessagePayload {
+        fn clone(&self) -> Self {
+            match self {
+                Self::String(s) => Self::String(s.clone()),
+                Self::Json(j) => Self::Json(j.clone()),
+                Self::Binary(b) => Self::Binary(b.clone()),
+                Self::Custom(_) => Self::String("Custom payload (not cloneable)".to_string()), // Can't clone Box<dyn Any>
+            }
+        }
     }
 }
 
@@ -377,6 +391,10 @@ pub enum ComponentEvent {
     BoundsChanged(ComponentId, Rect),
     /// Component properties changed
     PropertiesChanged(ComponentId),
+    /// Keyboard input event
+    Keyboard(crate::event::KeyEvent),
+    /// Mouse input event
+    Mouse(crate::event::MouseEvent),
 }
 
 /// Component registry for managing component instances with messaging support
@@ -466,7 +484,7 @@ impl ComponentRegistry {
     }
 
     /// Get a mutable component by ID
-    pub fn get_mut(&mut self, id: &str) -> Option<&mut dyn Component> {
+    pub fn get_mut(&mut self, id: &str) -> Option<&mut dyn Component + '_> {
         self.components.get_mut(id).map(|c| c.as_mut())
     }
 
@@ -641,15 +659,15 @@ pub enum InputEvent {
 pub struct MouseEvent {
     pub x: u16,
     pub y: u16,
-    pub button: Option<MouseButton>,
-    pub modifiers: KeyModifiers,
+    pub button: Option<crate::event::MouseButton>,
+    pub modifiers: crate::event::KeyModifiers,
 }
 
 /// Keyboard event data
 #[derive(Debug, Clone)]
 pub struct KeyboardEvent {
-    pub key: KeyCode,
-    pub modifiers: KeyModifiers,
+    pub key: crate::event::KeyCode,
+    pub modifiers: crate::event::KeyModifiers,
 }
 
 /// Focus event data
@@ -676,52 +694,7 @@ pub struct StateChangeEvent {
     pub new_value: serde_json::Value,
 }
 
-/// Mouse button enumeration
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum MouseButton {
-    Left,
-    Right,
-    Middle,
-}
 
-/// Key modifiers
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub struct KeyModifiers {
-    pub ctrl: bool,
-    pub alt: bool,
-    pub shift: bool,
-}
-
-/// Key codes
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum KeyCode {
-    Char(char),
-    Enter,
-    Esc,
-    Tab,
-    Backspace,
-    Delete,
-    Up,
-    Down,
-    Left,
-    Right,
-    Home,
-    End,
-    PageUp,
-    PageDown,
-    F1,
-    F2,
-    F3,
-    F4,
-    F5,
-    F6,
-    F7,
-    F8,
-    F9,
-    F10,
-    F11,
-    F12,
-}
 
 /// Event propagation control
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -889,66 +862,63 @@ impl EventDispatcher {
         match message {
             AppMessage::KeyPress(key) => {
                 let key_code = match key.code {
-                    crossterm::event::KeyCode::Char(c) => KeyCode::Char(c),
-                    crossterm::event::KeyCode::Enter => KeyCode::Enter,
-                    crossterm::event::KeyCode::Esc => KeyCode::Esc,
-                    crossterm::event::KeyCode::Tab => KeyCode::Tab,
-                    crossterm::event::KeyCode::Backspace => KeyCode::Backspace,
-                    crossterm::event::KeyCode::Delete => KeyCode::Delete,
-                    crossterm::event::KeyCode::Up => KeyCode::Up,
-                    crossterm::event::KeyCode::Down => KeyCode::Down,
-                    crossterm::event::KeyCode::Left => KeyCode::Left,
-                    crossterm::event::KeyCode::Right => KeyCode::Right,
-                    crossterm::event::KeyCode::Home => KeyCode::Home,
-                    crossterm::event::KeyCode::End => KeyCode::End,
-                    crossterm::event::KeyCode::PageUp => KeyCode::PageUp,
-                    crossterm::event::KeyCode::PageDown => KeyCode::PageDown,
+                    crossterm::event::KeyCode::Char(c) => crate::event::KeyCode::Char(c),
+                    crossterm::event::KeyCode::Enter => crate::event::KeyCode::Enter,
+                    crossterm::event::KeyCode::Esc => crate::event::KeyCode::Esc,
+                    crossterm::event::KeyCode::Tab => crate::event::KeyCode::Tab,
+                    crossterm::event::KeyCode::Backspace => crate::event::KeyCode::Backspace,
+                    crossterm::event::KeyCode::Delete => crate::event::KeyCode::Delete,
+                    crossterm::event::KeyCode::Up => crate::event::KeyCode::Up,
+                    crossterm::event::KeyCode::Down => crate::event::KeyCode::Down,
+                    crossterm::event::KeyCode::Left => crate::event::KeyCode::Left,
+                    crossterm::event::KeyCode::Right => crate::event::KeyCode::Right,
+                    crossterm::event::KeyCode::Home => crate::event::KeyCode::Home,
+                    crossterm::event::KeyCode::End => crate::event::KeyCode::End,
+                    crossterm::event::KeyCode::PageUp => crate::event::KeyCode::PageUp,
+                    crossterm::event::KeyCode::PageDown => crate::event::KeyCode::PageDown,
                     crossterm::event::KeyCode::F(n) => match n {
-                        1 => KeyCode::F1,
-                        2 => KeyCode::F2,
-                        3 => KeyCode::F3,
-                        4 => KeyCode::F4,
-                        5 => KeyCode::F5,
-                        6 => KeyCode::F6,
-                        7 => KeyCode::F7,
-                        8 => KeyCode::F8,
-                        9 => KeyCode::F9,
-                        10 => KeyCode::F10,
-                        11 => KeyCode::F11,
-                        12 => KeyCode::F12,
+                        1 => crate::event::KeyCode::F1,
+                        2 => crate::event::KeyCode::F2,
+                        3 => crate::event::KeyCode::F3,
+                        4 => crate::event::KeyCode::F4,
+                        5 => crate::event::KeyCode::F5,
+                        6 => crate::event::KeyCode::F6,
+                        7 => crate::event::KeyCode::F7,
+                        8 => crate::event::KeyCode::F8,
+                        9 => crate::event::KeyCode::F9,
+                        10 => crate::event::KeyCode::F10,
+                        11 => crate::event::KeyCode::F11,
+                        12 => crate::event::KeyCode::F12,
                         _ => return None,
                     },
                     _ => return None,
                 };
 
-                let modifiers = KeyModifiers {
+                let modifiers = crate::event::KeyModifiers {
                     ctrl: key.modifiers.contains(crossterm::event::KeyModifiers::CONTROL),
                     alt: key.modifiers.contains(crossterm::event::KeyModifiers::ALT),
                     shift: key.modifiers.contains(crossterm::event::KeyModifiers::SHIFT),
                 };
 
-                Some(ComponentEvent::Keyboard(KeyboardEvent { key: key_code, modifiers }))
+                Some(ComponentEvent::Keyboard(crate::event::KeyEvent { code: key_code, modifiers }))
             }
             AppMessage::MouseEvent(mouse) => {
                 let button = match mouse.kind {
-                    crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Left) => Some(MouseButton::Left),
-                    crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Right) => Some(MouseButton::Right),
-                    crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Middle) => Some(MouseButton::Middle),
+                    crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Left) => Some(crate::event::MouseButton::Left),
+                    crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Right) => Some(crate::event::MouseButton::Right),
+                    crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Middle) => Some(crate::event::MouseButton::Middle),
                     _ => None,
                 };
 
-                let modifiers = KeyModifiers {
-                    ctrl: mouse.modifiers.contains(crossterm::event::KeyModifiers::CONTROL),
-                    alt: mouse.modifiers.contains(crossterm::event::KeyModifiers::ALT),
-                    shift: mouse.modifiers.contains(crossterm::event::KeyModifiers::SHIFT),
-                };
-
-                Some(ComponentEvent::Mouse(MouseEvent {
-                    x: mouse.column,
-                    y: mouse.row,
-                    button,
-                    modifiers,
-                }))
+                if let Some(button) = button {
+                    Some(ComponentEvent::Mouse(crate::event::MouseEvent {
+                        x: mouse.column,
+                        y: mouse.row,
+                        button,
+                    }))
+                } else {
+                    None
+                }
             }
             _ => None,
         }
@@ -973,7 +943,7 @@ macro_rules! impl_event_component {
                     ComponentEvent::Keyboard(key_event) => {
                         // Convert back to AppMessage for compatibility
                         let message = match key_event.key {
-                            KeyCode::Char(c) => AppMessage::KeyPress(crossterm::event::KeyEvent::new(
+                            crate::event::KeyCode::Char(c) => AppMessage::KeyPress(crossterm::event::KeyEvent::new(
                                 crossterm::event::KeyCode::Char(c),
                                 // Convert modifiers back
                                 if key_event.modifiers.ctrl { crossterm::event::KeyModifiers::CONTROL }

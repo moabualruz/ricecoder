@@ -186,8 +186,16 @@ fn render_diff_mode(frame: &mut Frame, area: Rect, _model: &AppModel) {
 }
 
 /// Render help mode interface
-fn render_help_mode(frame: &mut Frame, area: Rect, model: &AppModel) {
-    let help_content = model.ui.help_dialog.render_content();
+fn render_help_mode(frame: &mut Frame, area: Rect, _model: &AppModel) {
+    let help_content = "RiceCoder Help\n\n\
+        Ctrl+C - Exit application\n\
+        Ctrl+S - Save current file\n\
+        Ctrl+O - Open file\n\
+        Ctrl+N - New file\n\
+        F1 - Show this help\n\
+        \n\
+        For more detailed help, please refer to the documentation.";
+
     let help_widget = Paragraph::new(help_content)
         .block(Block::default().borders(Borders::ALL).title("Help"))
         .wrap(Wrap { trim: true });
@@ -328,7 +336,7 @@ fn render_status_bar(frame: &mut Frame, area: Rect, model: &AppModel) {
         ),
         Span::raw(" | "),
         Span::styled(
-            format!("Size: {}x{}", model.terminal_caps.width, model.terminal_caps.height),
+            format!("Size: {}x{}", model.terminal_caps.size.0, model.terminal_caps.size.1),
             Style::default().fg(Color::Cyan)
         ),
     ];

@@ -20,6 +20,8 @@ pub struct TokenUsage {
     pub input: usize,
     pub output: usize,
     pub cached: usize,
+    pub token_limit: usize,
+    pub total_tokens: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -27,6 +29,18 @@ pub enum TokenLimitStatus {
     Normal,
     Warning,
     Critical,
+    Unknown,
+}
+
+impl TokenLimitStatus {
+    pub fn symbol(&self) -> &'static str {
+        match self {
+            TokenLimitStatus::Normal => "✓",
+            TokenLimitStatus::Warning => "⚠",
+            TokenLimitStatus::Critical => "✗",
+            TokenLimitStatus::Unknown => "?",
+        }
+    }
 }
 use std::path::PathBuf;
 

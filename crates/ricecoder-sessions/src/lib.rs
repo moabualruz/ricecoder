@@ -35,6 +35,6 @@ pub use session_integration::SessionIntegration;
 pub use share::{SessionShare, SharePermissions, ShareService};
 pub use store::SessionStore;
 pub use token_estimator::{
-    TokenEstimate, TokenEstimator, TokenLimitStatus, TokenUsage, TokenUsageTracker,
+    ModelPricing, TokenEstimate, TokenEstimator, TokenLimitStatus, TokenUsage, TokenUsageTracker,
 };
 pub use tui_session_manager::{TuiSessionManager, TuiSessionData};

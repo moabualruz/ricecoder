@@ -212,10 +212,13 @@ impl ReactiveState {
         }
 
         let previous = self.current.clone();
-        let (new_state, _commands) = self.current.update(message.clone());
+        let (new_state, _commands) = self.current.clone().update(message.clone());
 
         // Validate the new state
         new_state.validate()?;
+
+        // Update current state
+        self.current = new_state.clone();
 
         // Calculate diff
         let diff = new_state.diff(&self.current);
@@ -249,7 +252,7 @@ impl ReactiveState {
 
         let results = self.message_processor.process_batches(|message, model| {
             // Apply the message to create a new model
-            let (new_model, _) = model.update(message.clone());
+            let (new_model, _) = model.clone().update(message.clone());
             new_model
         });
 
@@ -284,13 +287,13 @@ impl ReactiveState {
     /// Force process all pending batches immediately
     pub fn flush_batches(&mut self) -> Result<Vec<StateDiff>, String> {
         // Temporarily reduce batch timeout to force processing
-        let original_timeout = self.message_processor.batch_timeout;
-        self.message_processor.batch_timeout = std::time::Duration::from_nanos(1);
+        let original_timeout = self.message_processor.batch_timeout();
+        self.message_processor.set_batch_timeout(std::time::Duration::from_nanos(1));
 
         let result = self.process_batches();
 
         // Restore original timeout
-        self.message_processor.batch_timeout = original_timeout;
+        self.message_processor.set_batch_timeout(original_timeout);
 
         result
     }

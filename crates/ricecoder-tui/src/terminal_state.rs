@@ -15,7 +15,7 @@ use std::{env, io, collections::HashMap};
 /// Terminal color support levels
 ///
 /// Requirements: 4.1 - Detect color support (16, 256, true color)
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ColorSupport {
     /// No color support
     None,
@@ -69,7 +69,7 @@ pub enum TerminalType {
 /// Configuration overrides for terminal capabilities
 ///
 /// Requirements: 4.3 - Support capability override via configuration
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct CapabilityOverrides {
     /// Override color support detection
     pub color_support: Option<ColorSupport>,

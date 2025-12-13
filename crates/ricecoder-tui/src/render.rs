@@ -34,7 +34,7 @@ impl Renderer {
         
         tracing::debug!(
             "Rendering TUI - Mode: {}, Messages: {}, Input: {}",
-            app.mode.display_name(),
+            app.reactive_state.blocking_read().current().mode.display_name(),
             app.chat.messages.len(),
             app.chat.input
         );
@@ -64,7 +64,7 @@ impl Renderer {
             .split(area);
 
         // Render mode indicator
-        let mode_text = format!("Mode: {}", app.mode.display_name());
+        let mode_text = format!("Mode: {}", app.reactive_state.blocking_read().current().mode.display_name());
         let mode_block = ratatui::widgets::Block::default()
             .title("RiceCoder")
             .borders(ratatui::widgets::Borders::BOTTOM);
@@ -88,9 +88,9 @@ impl Renderer {
                 // Simple message rendering - just show the message text
                 let author_str = if i % 2 == 0 { "User" } else { "RiceCoder" };
                 let author_style = if i % 2 == 0 {
-                    Style::default().fg(app.theme.primary.to_ratatui()).add_modifier(Modifier::BOLD)
+                    Style::default().fg(app.reactive_state.blocking_read().current().theme.primary).add_modifier(Modifier::BOLD)
                 } else {
-                    Style::default().fg(app.theme.secondary.to_ratatui()).add_modifier(Modifier::BOLD)
+                    Style::default().fg(app.reactive_state.blocking_read().current().theme.secondary).add_modifier(Modifier::BOLD)
                 };
 
                 text_lines.push(Line::from(Span::styled(
@@ -100,13 +100,13 @@ impl Renderer {
 
                 // Render message content as simple text
                 let content_style = if i % 2 == 0 {
-                    Style::default().fg(app.theme.primary.to_ratatui())
+                    Style::default().fg(app.reactive_state.blocking_read().current().theme.primary)
                 } else {
-                    Style::default().fg(app.theme.secondary.to_ratatui())
+                    Style::default().fg(app.reactive_state.blocking_read().current().theme.secondary)
                 };
 
                 // Split message into lines and render
-                for line in msg.lines() {
+                for line in msg.content.lines() {
                     text_lines.push(Line::from(Span::styled(line.to_string(), content_style)));
                 }
 
@@ -132,14 +132,14 @@ impl Renderer {
             .style(Style::default().fg(Color::Green));
         f.render_widget(input_paragraph, chunks[2]);
 
-        // Render help dialog if visible
-        app.help_dialog.render(f, area);
+        // TODO: Render help dialog if visible - needs integration
+        // app.help_dialog.render(f, area);
 
-        // Render file picker if visible
-        app.file_picker.render(f, area);
+        // TODO: Render file picker if visible - needs integration
+        // app.file_picker.render(f, area);
 
-        // Render status bar with token usage
-        let token_usage = app.session_integration.get_active_session_token_usage();
+        // TODO: Render status bar with token usage - needs session integration
+        let token_usage = Default::default(); // Placeholder
         let status_bar = crate::status_bar::StatusBarWidget::new()
             .with_provider("RiceCoder") // TODO: Get from provider integration
             .with_model("gpt-4") // TODO: Get from provider integration

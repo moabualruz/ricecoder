@@ -554,7 +554,6 @@ pub struct CacheStats {
 }
 
 /// Background job system for async processing
-#[derive(Debug)]
 pub struct JobQueue {
     /// Job queue with priority ordering
     queue: std::collections::BinaryHeap<Job>,
@@ -570,12 +569,47 @@ pub struct JobQueue {
     next_id: u64,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+impl std::fmt::Debug for JobQueue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("JobQueue")
+            .field("queue", &self.queue)
+            .field("active_jobs", &self.active_jobs)
+            .field("completion_callbacks", &format!("<{} callbacks>", self.completion_callbacks.len()))
+            .field("progress_reporter", &"<progress_reporter>")
+            .field("max_concurrent", &self.max_concurrent)
+            .field("next_id", &self.next_id)
+            .finish()
+    }
+}
+
+#[derive(Debug)]
 pub struct Job {
     pub id: JobId,
     pub priority: JobPriority,
     pub task: JobTask,
     pub created_at: std::time::Instant,
+}
+
+impl PartialEq for Job {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
+impl Eq for Job {}
+
+impl PartialOrd for Job {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Job {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        // Higher priority first, then by creation time (older first)
+        other.priority.cmp(&self.priority)
+            .then_with(|| self.created_at.cmp(&other.created_at))
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -586,7 +620,6 @@ pub enum JobPriority {
     Critical = 3,
 }
 
-#[derive(Debug, Clone)]
 pub enum JobTask {
     /// Generic async function
     Async(Box<dyn FnOnce() -> std::pin::Pin<Box<dyn std::future::Future<Output = JobResult> + Send>> + Send + Sync>),
@@ -596,6 +629,23 @@ pub enum JobTask {
     NetworkRequest { url: String, method: String },
     /// Custom task with data
     Custom { name: String, data: serde_json::Value },
+}
+
+impl std::fmt::Debug for JobTask {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            JobTask::Async(_) => write!(f, "JobTask::Async(<function>)"),
+            JobTask::FileOperation { path, operation } => {
+                write!(f, "JobTask::FileOperation {{ path: {:?}, operation: {:?} }}", path, operation)
+            }
+            JobTask::NetworkRequest { url, method } => {
+                write!(f, "JobTask::NetworkRequest {{ url: {:?}, method: {:?} }}", url, method)
+            }
+            JobTask::Custom { name, data } => {
+                write!(f, "JobTask::Custom {{ name: {:?}, data: <json> }}", name)
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -629,19 +679,7 @@ pub enum JobResult {
     Cancelled,
 }
 
-impl Ord for Job {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        // Higher priority first, then earlier creation time
-        other.priority.cmp(&self.priority)
-            .then_with(|| self.created_at.cmp(&other.created_at).reverse())
-    }
-}
 
-impl PartialOrd for Job {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
 
 impl JobQueue {
     /// Create a new job queue
@@ -875,8 +913,8 @@ impl JobQueue {
     }
 
     /// Get mutable progress reporter
-    pub fn progress_reporter_mut(&mut self) -> &mut ProgressReporter {
-        &mut self.progress_reporter
+    pub fn progress_reporter_mut(&mut self) -> &Arc<RwLock<ProgressReporter>> {
+        &self.progress_reporter
     }
 
     /// Subscribe to progress updates for a job
@@ -1307,7 +1345,7 @@ impl PerformanceProfiler {
         for span in &self.spans {
             // Build stack trace
             let mut stack = Vec::new();
-            let mut current_index = Some(span.parent_index);
+            let mut current_index = span.parent_index;
 
             // Walk up the parent chain to build stack
             while let Some(idx) = current_index {

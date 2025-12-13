@@ -298,6 +298,9 @@ impl Theme {
             error: Color::new(220, 38, 38),        // Red
             warning: Color::new(217, 119, 6),      // Amber
             success: Color::new(22, 163, 74),      // Green
+            info: Color::new(59, 130, 246),        // Blue
+            muted: Color::new(107, 114, 128),      // Gray
+            border: Color::new(209, 213, 219),     // Light gray
         }
     }
 
@@ -313,6 +316,9 @@ impl Theme {
             error: Color::new(249, 38, 114),       // Magenta
             warning: Color::new(253, 151, 31),     // Orange
             success: Color::new(166, 226, 46),     // Green
+            info: Color::new(102, 217, 239),       // Cyan
+            muted: Color::new(117, 113, 94),       // Dark gray
+            border: Color::new(85, 85, 85),        // Medium gray
         }
     }
 
@@ -328,6 +334,9 @@ impl Theme {
             error: Color::new(255, 85, 85),        // Red
             warning: Color::new(241, 250, 140),    // Yellow
             success: Color::new(80, 250, 123),     // Green
+            info: Color::new(139, 233, 253),       // Cyan
+            muted: Color::new(98, 114, 164),       // Gray
+            border: Color::new(68, 71, 90),        // Dark gray
         }
     }
 
@@ -343,6 +352,9 @@ impl Theme {
             error: Color::new(191, 97, 106),       // Aurora 5
             warning: Color::new(235, 203, 139),    // Aurora 3
             success: Color::new(163, 190, 140),    // Aurora 1
+            info: Color::new(136, 192, 208),       // Frost 1
+            muted: Color::new(76, 86, 106),        // Polar night 2
+            border: Color::new(59, 66, 82),        // Polar night 1
         }
     }
 
@@ -358,6 +370,9 @@ impl Theme {
             error: Color::new(255, 0, 0),       // Pure red
             warning: Color::new(255, 255, 0),   // Pure yellow
             success: Color::new(0, 255, 0),     // Pure green
+            info: Color::new(255, 255, 255),    // Pure white
+            muted: Color::new(128, 128, 128),   // Gray
+            border: Color::new(255, 255, 255),  // Pure white
         }
     }
 
@@ -373,6 +388,9 @@ impl Theme {
             error: Color::new(210, 15, 57),        // Red
             warning: Color::new(223, 142, 29),     // Yellow
             success: Color::new(64, 160, 43),      // Green
+            info: Color::new(30, 102, 245),        // Blue
+            muted: Color::new(186, 194, 222),      // Subtle
+            border: Color::new(186, 194, 222),     // Subtle
         }
     }
 
@@ -388,6 +406,9 @@ impl Theme {
             error: Color::new(231, 130, 132),      // Red
             warning: Color::new(229, 200, 144),    // Yellow
             success: Color::new(166, 209, 137),    // Green
+            info: Color::new(140, 170, 238),       // Blue
+            muted: Color::new(108, 112, 134),      // Subtle
+            border: Color::new(108, 112, 134),     // Subtle
         }
     }
 
@@ -403,6 +424,9 @@ impl Theme {
             error: Color::new(237, 135, 150),      // Red
             warning: Color::new(238, 212, 159),    // Yellow
             success: Color::new(166, 218, 149),    // Green
+            info: Color::new(138, 173, 244),       // Blue
+            muted: Color::new(110, 115, 141),      // Subtle
+            border: Color::new(110, 115, 141),     // Subtle
         }
     }
 
@@ -418,6 +442,9 @@ impl Theme {
             error: Color::new(243, 139, 168),      // Red
             warning: Color::new(249, 226, 175),    // Yellow
             success: Color::new(166, 227, 161),    // Green
+            info: Color::new(137, 180, 250),       // Blue
+            muted: Color::new(108, 112, 134),      // Subtle
+            border: Color::new(108, 112, 134),     // Subtle
         }
     }
 
@@ -433,6 +460,9 @@ impl Theme {
             error: Color::new(247, 118, 142),      // Red
             warning: Color::new(224, 175, 104),    // Yellow
             success: Color::new(158, 206, 106),    // Green
+            info: Color::new(122, 162, 247),       // Blue
+            muted: Color::new(65, 72, 88),         // Comment
+            border: Color::new(65, 72, 88),        // Comment
         }
     }
 
@@ -448,6 +478,9 @@ impl Theme {
             error: Color::new(255, 83, 112),       // Red
             warning: Color::new(255, 199, 119),    // Yellow
             success: Color::new(195, 232, 141),    // Green
+            info: Color::new(130, 170, 255),       // Blue
+            muted: Color::new(69, 71, 90),         // Comment
+            border: Color::new(69, 71, 90),        // Comment
         }
     }
 
@@ -463,6 +496,9 @@ impl Theme {
             error: Color::new(245, 42, 101),       // Red
             warning: Color::new(140, 108, 62),     // Yellow
             success: Color::new(88, 117, 57),      // Green
+            info: Color::new(55, 96, 191),         // Blue
+            muted: Color::new(147, 154, 165),      // Comment
+            border: Color::new(147, 154, 165),     // Comment
         }
     }
 
@@ -478,6 +514,9 @@ impl Theme {
             error: Color::new(247, 118, 142),      // Red
             warning: Color::new(224, 175, 104),    // Yellow
             success: Color::new(158, 206, 106),    // Green
+            info: Color::new(122, 162, 247),       // Blue
+            muted: Color::new(65, 72, 88),         // Comment
+            border: Color::new(65, 72, 88),        // Comment
         }
     }
 
@@ -493,6 +532,9 @@ impl Theme {
             error: Color::new(204, 36, 29),        // Red
             warning: Color::new(215, 153, 33),     // Yellow
             success: Color::new(152, 151, 26),     // Green
+            info: Color::new(7, 102, 120),         // Blue
+            muted: Color::new(146, 131, 116),      // Gray
+            border: Color::new(146, 131, 116),     // Gray
         }
     }
 
@@ -508,6 +550,9 @@ impl Theme {
             error: Color::new(204, 36, 29),        // Red
             warning: Color::new(250, 189, 47),     // Yellow
             success: Color::new(184, 187, 38),     // Green
+            info: Color::new(131, 165, 152),       // Blue
+            muted: Color::new(80, 73, 69),         // Gray
+            border: Color::new(80, 73, 69),        // Gray
         }
     }
 
@@ -523,6 +568,9 @@ impl Theme {
             error: Color::new(220, 50, 47),        // Red
             warning: Color::new(181, 137, 0),      // Yellow
             success: Color::new(133, 153, 0),      // Green
+            info: Color::new(38, 139, 210),        // Blue
+            muted: Color::new(147, 161, 161),      // Base1
+            border: Color::new(147, 161, 161),     // Base1
         }
     }
 
@@ -538,6 +586,9 @@ impl Theme {
             error: Color::new(220, 50, 47),        // Red
             warning: Color::new(181, 137, 0),      // Yellow
             success: Color::new(133, 153, 0),      // Green
+            info: Color::new(38, 139, 210),        // Blue
+            muted: Color::new(88, 110, 117),       // Base01
+            border: Color::new(88, 110, 117),      // Base01
         }
     }
 
@@ -553,6 +604,9 @@ impl Theme {
             error: Color::new(230, 126, 128),      // Red
             warning: Color::new(219, 188, 127),    // Yellow
             success: Color::new(167, 192, 128),    // Green
+            info: Color::new(127, 187, 179),       // Blue
+            muted: Color::new(122, 135, 142),      // Gray
+            border: Color::new(122, 135, 142),     // Gray
         }
     }
 
@@ -568,6 +622,9 @@ impl Theme {
             error: Color::new(232, 36, 36),        // Red
             warning: Color::new(255, 158, 59),     // Orange
             success: Color::new(118, 148, 106),    // Green
+            info: Color::new(126, 156, 216),       // Blue
+            muted: Color::new(98, 114, 164),       // Gray
+            border: Color::new(98, 114, 164),      // Gray
         }
     }
 
@@ -583,6 +640,9 @@ impl Theme {
             error: Color::new(235, 111, 146),      // Love
             warning: Color::new(246, 193, 119),    // Gold
             success: Color::new(49, 116, 143),     // Pine
+            info: Color::new(156, 207, 216),       // Foam
+            muted: Color::new(144, 140, 170),      // Subtle
+            border: Color::new(144, 140, 170),     // Subtle
         }
     }
 
@@ -598,6 +658,9 @@ impl Theme {
             error: Color::new(255, 0, 56),         // Red
             warning: Color::new(255, 251, 150),    // Yellow
             success: Color::new(185, 103, 255),    // Purple
+            info: Color::new(255, 113, 206),       // Neon Pink
+            muted: Color::new(128, 128, 128),      // Gray
+            border: Color::new(128, 128, 128),     // Gray
         }
     }
 
@@ -613,6 +676,9 @@ impl Theme {
             error: Color::new(255, 83, 112),       // Red
             warning: Color::new(255, 203, 107),    // Yellow
             success: Color::new(195, 232, 141),    // Green
+            info: Color::new(130, 177, 255),       // Blue
+            muted: Color::new(121, 134, 203),      // Light Blue
+            border: Color::new(121, 134, 203),     // Light Blue
         }
     }
 
@@ -628,6 +694,9 @@ impl Theme {
             error: Color::new(224, 108, 117),      // Red
             warning: Color::new(229, 192, 123),    // Yellow
             success: Color::new(152, 195, 121),    // Green
+            info: Color::new(97, 175, 239),        // Blue
+            muted: Color::new(92, 99, 112),        // Gray
+            border: Color::new(92, 99, 112),       // Gray
         }
     }
 
@@ -643,6 +712,9 @@ impl Theme {
             error: Color::new(228, 86, 73),        // Red
             warning: Color::new(193, 132, 1),      // Yellow
             success: Color::new(80, 161, 79),      // Green
+            info: Color::new(64, 120, 242),        // Blue
+            muted: Color::new(197, 200, 198),      // Gray
+            border: Color::new(197, 200, 198),     // Gray
         }
     }
 
@@ -658,6 +730,9 @@ impl Theme {
             error: Color::new(255, 83, 112),       // Red
             warning: Color::new(255, 203, 107),    // Yellow
             success: Color::new(195, 232, 141),    // Green
+            info: Color::new(130, 170, 255),       // Blue
+            muted: Color::new(99, 109, 131),       // Gray
+            border: Color::new(99, 109, 131),      // Gray
         }
     }
 
@@ -673,6 +748,9 @@ impl Theme {
             error: Color::new(255, 103, 103),      // Red
             warning: Color::new(255, 202, 133),    // Orange
             success: Color::new(97, 255, 202),     // Green
+            info: Color::new(130, 224, 170),       // Green
+            muted: Color::new(108, 111, 133),      // Gray
+            border: Color::new(108, 111, 133),     // Gray
         }
     }
 
@@ -688,6 +766,9 @@ impl Theme {
             error: Color::new(255, 51, 51),        // Red
             warning: Color::new(255, 143, 64),     // Orange
             success: Color::new(170, 217, 76),     // Green
+            info: Color::new(57, 186, 230),        // Blue
+            muted: Color::new(92, 103, 115),       // Gray
+            border: Color::new(92, 103, 115),      // Gray
         }
     }
 

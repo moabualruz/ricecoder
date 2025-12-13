@@ -41,7 +41,7 @@ impl ConditionEvaluator {
     /// - "step_id.output.count > 5"
     ///
     /// Returns true if the condition is satisfied, false otherwise.
-    fn evaluate_expression(
+    pub fn evaluate_expression(
         expression: &str,
         workflow: &Workflow,
         state: &WorkflowState,
@@ -98,7 +98,7 @@ impl ConditionEvaluator {
     }
 
     /// Evaluate equality comparison
-    fn evaluate_equality(
+    pub fn evaluate_equality(
         left: &str,
         right: &str,
         workflow: &Workflow,
@@ -111,7 +111,7 @@ impl ConditionEvaluator {
     }
 
     /// Evaluate greater than comparison
-    fn evaluate_greater_than(
+    pub fn evaluate_greater_than(
         left: &str,
         right: &str,
         workflow: &Workflow,
@@ -277,7 +277,7 @@ impl ConditionEvaluator {
     }
 
     /// Parse a literal value (e.g., "5", "'completed'", "true")
-    fn parse_value(value_str: &str) -> Value {
+    pub fn parse_value(value_str: &str) -> Value {
         let trimmed = value_str.trim();
 
         // Handle string literals (quoted)
