@@ -45,7 +45,7 @@ pub struct PluginMetadata {
 }
 
 /// Plugin context provided during initialization
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PluginContext {
     pub app_model: AppModel,
     pub config_dir: PathBuf,
@@ -147,7 +147,7 @@ pub trait Plugin: Send + Sync {
     }
 
     /// Initialize the plugin with context
-    async fn initialize(&mut self, context: PluginContext) -> TuiResult<()>;
+    async fn initialize(&mut self, context: &PluginContext) -> TuiResult<()>;
 
     /// Handle an incoming message
     async fn handle_message(&mut self, message: &PluginMessage) -> Vec<PluginMessage>;
@@ -373,11 +373,22 @@ impl ThemePluginImpl {
 }
 
 impl Plugin for ThemePluginImpl {
+    fn id(&self) -> PluginId {
+        "theme".into()
+    }
+
+    fn name(&self) -> &str {
+        "Theme Plugin"
+    }
+
+    fn version(&self) -> &str {
+        "1.0.0"
+    }
     fn metadata(&self) -> PluginMetadata {
         self.metadata.base.clone()
     }
 
-    async fn initialize(&mut self, context: PluginContext) -> TuiResult<()> {
+    async fn initialize(&mut self, context: &PluginContext) -> TuiResult<()> {
         // Load themes from plugin data directory
         let themes_dir = context.data_dir.join("themes");
         self.load_themes_from_dir(&themes_dir)?;
@@ -913,13 +924,13 @@ impl PluginManager {
         active_plugins.insert(id.clone(), PluginState::Initializing);
 
         let context = PluginContext {
-            app_model: model.clone(),
+            app_model: model,
             config_dir: self.config_dir.clone(),
             data_dir: self.data_dir.clone(),
             temp_dir: self.temp_dir.clone(),
         };
 
-        match plugin.initialize(context).await {
+        match plugin.initialize(&context).await {
             Ok(()) => {
                 active_plugins.insert(id.clone(), PluginState::Active);
                 tracing::info!("Plugin '{}' initialized successfully", plugin.name());
@@ -1450,7 +1461,7 @@ impl Plugin for PlaceholderPlugin {
         }
     }
 
-    async fn initialize(&mut self, _context: PluginContext) -> TuiResult<()> {
+    async fn initialize(&mut self, _context: &PluginContext) -> TuiResult<()> {
         tracing::info!("Initializing placeholder plugin: {}", self.name());
         Ok(())
     }

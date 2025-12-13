@@ -203,5 +203,4 @@ When working with `ricecoder-modes`:
 
 ## License
 
-MIT</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-modes/README.md
+MIT

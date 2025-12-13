@@ -232,5 +232,4 @@ When working with `ricecoder-images`:
 
 ## License
 
-MIT</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-images/README.md
+MIT

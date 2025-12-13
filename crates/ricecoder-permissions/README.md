@@ -257,5 +257,4 @@ When working with `ricecoder-permissions`:
 
 ## License
 
-MIT</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-permissions/README.md
+MIT

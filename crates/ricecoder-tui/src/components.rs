@@ -129,7 +129,7 @@ pub mod messaging {
         pub async fn unsubscribe_from(&self, component_id: &ComponentId, filter: &MessageFilter) {
             let mut subscriptions = self.subscriptions.write().await;
             if let Some(subs) = subscriptions.get_mut(component_id) {
-                subs.retain(|sub| !std::mem::discriminant(&sub.filter) == std::mem::discriminant(filter));
+                subs.retain(|sub| std::mem::discriminant(&sub.filter) != std::mem::discriminant(filter));
             }
         }
 
@@ -781,7 +781,7 @@ pub enum EventPhase {
 /// Event dispatcher for managing event flow
 pub struct EventDispatcher {
     components: std::collections::HashMap<ComponentId, Box<dyn EventComponent>>,
-    event_queue: std::collections::VecDeque<(ComponentEvent, EventContext)>,
+    event_queue: std::collections::VecDeque<(InputEvent, EventContext)>,
     max_queue_size: usize,
 }
 
@@ -807,7 +807,7 @@ impl EventDispatcher {
     }
 
     /// Dispatch an event with bubbling
-    pub async fn dispatch_event(&mut self, event: ComponentEvent, target_id: ComponentId) -> Vec<EventResult> {
+    pub async fn dispatch_event(&mut self, event: InputEvent, target_id: ComponentId) -> Vec<EventResult> {
         let mut results = Vec::new();
 
         // Build propagation path (simplified - in practice would build full component tree)
@@ -844,7 +844,7 @@ impl EventDispatcher {
     }
 
     /// Queue an event for later processing
-    pub fn queue_event(&mut self, event: ComponentEvent, target: ComponentId) {
+    pub fn queue_event(&mut self, event: InputEvent, target: ComponentId) {
         if self.event_queue.len() < self.max_queue_size {
             let context = EventContext {
                 timestamp: std::time::Instant::now(),

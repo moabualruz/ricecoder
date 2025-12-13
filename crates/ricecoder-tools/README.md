@@ -250,5 +250,4 @@ When working with `ricecoder-tools`:
 
 ## License
 
-MIT</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-tools/README.md
+MIT

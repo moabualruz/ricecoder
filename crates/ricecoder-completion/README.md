@@ -217,5 +217,4 @@ When working with `ricecoder-completion`:
 
 ## License
 
-MIT</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-completion/README.md
+MIT

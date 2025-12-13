@@ -15,15 +15,6 @@ use crate::style::Theme;
 use crate::terminal_state::TerminalCapabilities;
 
 impl AppModel {
-    /// Create initial application state
-    pub fn init(
-        config: TuiConfig,
-        theme: Theme,
-        terminal_caps: TerminalCapabilities,
-    ) -> Self {
-        crate::model::AppModel::init(config, theme, terminal_caps)
-    }
-
     /// Pure update function - delegates to update module
     pub fn update(self, message: AppMessage) -> (Self, Vec<Command>) {
         self.update(message)

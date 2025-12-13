@@ -236,5 +236,4 @@ When working with `ricecoder-files`:
 
 ## License
 
-MIT</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-files/README.md
+MIT

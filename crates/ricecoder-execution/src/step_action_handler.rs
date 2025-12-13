@@ -233,7 +233,7 @@ impl CommandHandler {
         ];
 
         for pattern in &dangerous_patterns {
-            if regex::Regex::new(pattern).is_some_and(|re| re.is_match(&full_command)) {
+            if regex::Regex::new(pattern).is_ok_and(|re| re.is_match(&full_command)) {
                 return Err(ExecutionError::ValidationError(format!(
                     "Dangerous command detected: '{}'. This command requires explicit confirmation.",
                     full_command

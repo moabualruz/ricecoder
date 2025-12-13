@@ -221,5 +221,4 @@ When working with `ricecoder-learning`:
 
 ## License
 
-MIT</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-learning/README.md
+MIT

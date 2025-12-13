@@ -175,7 +175,8 @@ pub use textarea_widget::TextAreaWidget;
 // theme_loader, theme_registry, theme_reset moved to ricecoder-themes
 pub use tree_widget::{TreeNode, TreeWidget};
 pub use widgets::{ChatWidget, Message, MessageAuthor};
-pub use ui_components::{OptimisticUpdater, LoadingManager, VirtualRenderer, VirtualList, VirtualNode, LazyLoader, VirtualContent, VirtualStyle};
+pub use ui_components::{OptimisticUpdater, LoadingManager, VirtualRenderer, VirtualList, VirtualNode, VirtualContent, VirtualStyle};
+pub use render_pipeline::LazyLoader;
 pub use tokio_util::sync::CancellationToken;
 pub use project_bootstrap::{ProjectBootstrap, BootstrapResult, ProjectInfo};
 // TODO: Re-enable provider exports once provider interfaces are implemented

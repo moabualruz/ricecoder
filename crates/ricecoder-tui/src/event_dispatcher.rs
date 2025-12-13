@@ -226,6 +226,7 @@ impl EventDispatcher {
         let event_tx = self.event_tx.clone();
         let key_clone = key.clone();
         let debounced_clone = Arc::clone(&self.debounced_events);
+        let message_clone = message.clone();
 
         let timer_handle = tokio::spawn(async move {
             tokio::time::sleep(delay).await;
@@ -240,7 +241,7 @@ impl EventDispatcher {
             let id = format!("debounced_{}", uuid::Uuid::new_v4());
             let envelope = EventEnvelope {
                 id,
-                message,
+                message: message_clone,
                 priority,
                 timestamp: Instant::now(),
                 source,

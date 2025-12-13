@@ -205,5 +205,4 @@ When working with `ricecoder-workflows`:
 
 ## License
 
-MIT</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-workflows/README.md
+MIT

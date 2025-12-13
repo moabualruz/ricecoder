@@ -215,5 +215,4 @@ When working with `ricecoder-execution`:
 
 ## License
 
-MIT</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-execution/README.md
+MIT

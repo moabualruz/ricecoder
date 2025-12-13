@@ -220,5 +220,4 @@ When working with `ricecoder-teams`:
 
 ## License
 
-MIT</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-teams/README.md
+MIT
