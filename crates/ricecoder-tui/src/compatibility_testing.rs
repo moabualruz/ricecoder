@@ -500,5 +500,4 @@ mod comprehensive_compatibility_validation {
         // you would test error handling in different terminal environments
         assert!(true); // Placeholder assertion
     }
-}</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-tui/src/compatibility_testing.rs
+}

@@ -21,7 +21,6 @@
 pub mod accessibility;
 pub mod app;
 pub mod banner;
-pub mod config;
 pub mod model;
 pub mod update;
 pub mod view;
@@ -35,6 +34,7 @@ pub mod diff;
 pub mod error;
 pub mod event;
 pub mod event_dispatcher;
+pub mod providers;
 // executor moved to ricecoder-commands
 // help moved to ricecoder-help
 // keybinds moved to ricecoder-keybinds
@@ -64,10 +64,11 @@ pub mod style;
 pub mod tea;
 pub mod terminal_state;
 pub mod textarea_widget;
-pub mod theme;
-pub mod theme_loader;
-pub mod theme_registry;
-pub mod theme_reset;
+// Theme modules moved to ricecoder-themes crate
+// pub mod theme;
+// pub mod theme_loader;
+// pub mod theme_registry;
+// pub mod theme_reset;
 pub mod tree_widget;
 pub mod widgets;
 pub mod plugins;
@@ -161,14 +162,17 @@ pub use scrollview_widget::ScrollViewWidget;
 pub use style::{ColorSupport, Theme};
 pub use terminal_state::{ColorSupport as TerminalColorSupport, TerminalCapabilities, TerminalState, TerminalType};
 pub use textarea_widget::TextAreaWidget;
-pub use theme::ThemeManager;
+// theme::ThemeManager moved to ricecoder-themes
 // VCS integration moved to ricecoder-vcs crate
 // pub use ricecoder_vcs::tui_integration::{VcsIntegration, VcsStatus};
 // VCS integration moved to ricecoder-vcs crate
 // pub use status_bar::StatusBarVcsExt;
-pub use theme_loader::{ThemeLoader, ThemeYaml};
-pub use theme_registry::ThemeRegistry;
-pub use theme_reset::ThemeResetManager;
+// theme_loader, theme_registry, theme_reset moved to ricecoder-themes
 pub use tree_widget::{TreeNode, TreeWidget};
 pub use widgets::{ChatWidget, Message, MessageAuthor};
 pub use project_bootstrap::{ProjectBootstrap, BootstrapResult, ProjectInfo};
+// TODO: Re-enable provider exports once provider interfaces are implemented
+// pub use providers::{
+//     ProviderFactory, ThemeProvider, ConfigProvider, SessionProvider,
+//     CommandProvider, HelpProvider, KeybindProvider,
+// };

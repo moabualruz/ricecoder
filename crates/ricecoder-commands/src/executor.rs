@@ -158,30 +158,34 @@ pub enum ExecutionStatus {
     Timeout,
 }
 
-/// Command enum for different command types
-#[derive(Debug, Clone)]
-pub enum Command {
-    Save,
-    Open(String),
-    Search(String),
-    Custom(String),
-}
 
-/// Command result
-#[derive(Debug, Clone)]
-pub struct CommandResult {
-    pub success: bool,
-    pub output: String,
-    pub error: Option<String>,
-}
 
 /// Command executor trait
-pub trait CommandExecutor {
-    /// Execute a command
-    fn execute(&mut self, command: Command) -> Result<CommandResult, CommandError>;
+#[async_trait::async_trait]
+pub trait CommandExecutor: Send + Sync {
+    /// Execute a command with the given parameters
+    async fn execute(
+        &self,
+        command: &str,
+        parameters: HashMap<String, String>,
+        context: &CommandContext,
+    ) -> CommandResult<CommandExecutionResult>;
 
-    /// Get command history
-    fn get_command_history(&self) -> Vec<&Command>;
+    /// Validate command parameters
+    fn validate_parameters(
+        &self,
+        command: &str,
+        parameters: &HashMap<String, String>,
+    ) -> CommandResult<()>;
+
+    /// Get autocomplete suggestions for a parameter
+    async fn get_autocomplete(
+        &self,
+        command: &str,
+        parameter: &str,
+        partial_value: &str,
+        context: &CommandContext,
+    ) -> CommandResult<Vec<String>>;
 }
 
 #[cfg(test)]

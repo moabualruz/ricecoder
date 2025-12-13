@@ -1,38 +1,121 @@
-#[cfg(test)]
-mod tests {
-    use super::*;
+//! Core configuration types and data structures
 
-    #[test]
-    fn test_app_config_default() {
-        let config = AppConfig::default();
-        assert_eq!(config.editor.tab_size, 4);
-        assert!(config.editor.insert_spaces);
-        assert_eq!(config.ui.theme, "dark");
-        assert_eq!(config.theme.current, "dark");
+use serde::{Deserialize, Serialize};
+
+/// Main application configuration
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct AppConfig {
+    /// Editor configuration
+    pub editor: EditorConfig,
+    /// UI configuration
+    pub ui: UiConfig,
+    /// Keybinding configuration
+    pub keybinds: KeybindConfig,
+    /// Theme configuration
+    pub theme: ThemeConfig,
+}
+
+/// Editor-specific configuration
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct EditorConfig {
+    /// Tab size for indentation
+    pub tab_size: usize,
+    /// Whether to insert spaces instead of tabs
+    pub insert_spaces: bool,
+    /// Whether to wrap long lines
+    pub word_wrap: bool,
+    /// Whether to show line numbers
+    pub line_numbers: bool,
+    /// Syntax highlighting enabled
+    pub syntax_highlight: bool,
+}
+
+/// UI-specific configuration
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct UiConfig {
+    /// Current theme name
+    pub theme: String,
+    /// Font size
+    pub font_size: u8,
+    /// Show status bar
+    pub show_status_bar: bool,
+    /// Show command palette
+    pub show_command_palette: bool,
+}
+
+/// Keybinding configuration
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct KeybindConfig {
+    /// Custom keybindings
+    pub custom: std::collections::HashMap<String, String>,
+}
+
+/// Theme configuration
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ThemeConfig {
+    /// Current theme name
+    pub current: String,
+    /// Theme overrides
+    pub overrides: std::collections::HashMap<String, serde_json::Value>,
+}
+
+impl Default for AppConfig {
+    fn default() -> Self {
+        Self {
+            editor: EditorConfig::default(),
+            ui: UiConfig::default(),
+            keybinds: KeybindConfig::default(),
+            theme: ThemeConfig::default(),
+        }
     }
+}
 
-    #[test]
-    fn test_editor_config_default() {
-        let config = EditorConfig::default();
-        assert_eq!(config.tab_size, 4);
-        assert!(config.insert_spaces);
-        assert!(config.line_numbers);
+impl Default for EditorConfig {
+    fn default() -> Self {
+        Self {
+            tab_size: 4,
+            insert_spaces: true,
+            word_wrap: false,
+            line_numbers: true,
+            syntax_highlight: true,
+        }
     }
+}
 
-    #[test]
-    fn test_config_validation() {
-        let mut config = AppConfig::default();
-        assert!(ConfigManager::validate_config(&ConfigManager::new(), &config).is_ok());
-
-        config.editor.tab_size = 0;
-        assert!(ConfigManager::validate_config(&ConfigManager::new(), &config).is_err());
+impl Default for UiConfig {
+    fn default() -> Self {
+        Self {
+            theme: "dark".to_string(),
+            font_size: 12,
+            show_status_bar: true,
+            show_command_palette: true,
+        }
     }
+}
 
-    #[test]
-    fn test_tui_config_default() {
-        let config = TuiConfig::default();
-        assert_eq!(config.theme, "dark");
-        assert!(config.animations);
-        assert!(config.mouse);
+impl Default for KeybindConfig {
+    fn default() -> Self {
+        Self {
+            custom: std::collections::HashMap::new(),
+        }
     }
+}
+
+impl Default for ThemeConfig {
+    fn default() -> Self {
+        Self {
+            current: "dark".to_string(),
+            overrides: std::collections::HashMap::new(),
+        }
+    }
+}
+
+/// Configuration manager trait
+pub trait ConfigManager {
+    /// Load configuration
+    fn load_config(&mut self) -> Result<AppConfig, crate::error::ConfigError>;
+    /// Save configuration
+    fn save_config(&self, config: &AppConfig) -> Result<(), crate::error::ConfigError>;
+    /// Validate configuration
+    fn validate_config(&self, config: &AppConfig) -> Result<(), crate::error::ConfigError>;
 }

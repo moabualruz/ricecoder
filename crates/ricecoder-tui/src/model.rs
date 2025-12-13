@@ -5,7 +5,7 @@
 
 use crate::accessibility::{FocusManager, KeyboardNavigationManager, ScreenReaderAnnouncer};
 use ricecoder_storage::TuiConfig;
-use crate::style::Theme;
+use ricecoder_themes::Theme;
 use crate::terminal_state::TerminalCapabilities;
 use crate::widgets::ChatWidget;
 use ricecoder_help::HelpDialog;
@@ -29,7 +29,7 @@ pub struct AppModel {
     // UI State
     pub mode: AppMode,
     pub previous_mode: AppMode,
-    pub theme: Theme,
+    pub theme: ricecoder_themes::Theme,
     pub terminal_caps: TerminalCapabilities,
 
     // Domain State

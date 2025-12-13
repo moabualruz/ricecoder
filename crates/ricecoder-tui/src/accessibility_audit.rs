@@ -477,5 +477,4 @@ mod accessibility_audit {
         assert_eq!(config1.high_contrast_enabled, config2.high_contrast_enabled);
         assert_eq!(config1.font_size_multiplier, config2.font_size_multiplier);
     }
-}</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-tui/src/accessibility_audit.rs
+}

@@ -64,7 +64,7 @@ use std::fs;
 use std::path::PathBuf;
 
 /// Focus indicator style
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum FocusIndicatorStyle {
     /// Underline
     Underline,
@@ -83,7 +83,7 @@ impl Default for FocusIndicatorStyle {
 }
 
 /// Animation configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct AnimationConfig {
     /// Enable fade transitions
     pub fade_enabled: bool,
@@ -104,7 +104,7 @@ impl Default for AnimationConfig {
 }
 
 /// Accessibility configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct AccessibilityConfig {
     /// Enable screen reader support
     pub screen_reader_enabled: bool,
@@ -142,11 +142,30 @@ impl Default for AccessibilityConfig {
         }
     }
 }
+
+impl AccessibilityConfig {
+    /// Merge another accessibility config into this one
+    pub fn merge(mut self, other: AccessibilityConfig) -> Self {
+        // For now, just take the other config. In a real implementation,
+        // you'd merge non-default values.
+        self.screen_reader_enabled = other.screen_reader_enabled;
+        self.high_contrast_enabled = other.high_contrast_enabled;
+        self.animations_disabled = other.animations_disabled;
+        self.announcements_enabled = other.announcements_enabled;
+        self.focus_indicator = other.focus_indicator;
+        self.animations = other.animations;
+        self.font_size_multiplier = other.font_size_multiplier;
+        self.large_click_targets = other.large_click_targets;
+        self.auto_advance = other.auto_advance;
+        self
+    }
+}
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
 /// TUI configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(PartialEq)]
 pub struct TuiConfig {
     /// Theme name
     pub theme: String,
@@ -264,12 +283,15 @@ impl TuiConfig {
                     let content = fs::read_to_string(path)
                         .map_err(|e| anyhow::anyhow!("Failed to read project config {}: {}", path.display(), e))?;
 
-                    let config = match path.extension().and_then(|s| s.to_str()) {
-                        Some("yaml") | Some("yml") => serde_yaml::from_str(&content),
-                        Some("json") => serde_json::from_str(&content),
-                        Some("toml") => toml::from_str(&content),
+                    let config: TuiConfig = match path.extension().and_then(|s| s.to_str()) {
+                        Some("yaml") | Some("yml") => serde_yaml::from_str(&content)
+                            .map_err(|e| anyhow::anyhow!("Failed to parse YAML config {}: {}", path.display(), e))?,
+                        Some("json") => serde_json::from_str(&content)
+                            .map_err(|e| anyhow::anyhow!("Failed to parse JSON config {}: {}", path.display(), e))?,
+                        Some("toml") => toml::from_str(&content)
+                            .map_err(|e| anyhow::anyhow!("Failed to parse TOML config {}: {}", path.display(), e))?,
                         _ => continue,
-                    }.map_err(|e| anyhow::anyhow!("Failed to parse project config {}: {}", path.display(), e))?;
+                    };
 
                     return Ok(config);
                 }
@@ -462,7 +484,7 @@ pub struct ConfigManager {
     /// Current configuration
     config: Arc<RwLock<TuiConfig>>,
     /// Configuration file watcher
-    watcher: Option<crate::reactive_ui_updates::FileWatcher>,
+    // watcher: Option<crate::reactive_ui_updates::FileWatcher>, // TODO: implement file watching
     /// Callback for configuration changes
     change_callback: Option<Box<dyn Fn(TuiConfig) + Send + Sync>>,
 }
@@ -472,19 +494,18 @@ impl ConfigManager {
     pub fn new() -> Self {
         Self {
             config: Arc::new(RwLock::new(TuiConfig::default())),
-            watcher: None,
             change_callback: None,
         }
     }
 
-    /// Load configuration and start watching for changes
+    /// Load configuration (watching not implemented yet)
     pub async fn load_and_watch(&mut self) -> Result<()> {
         // Load initial configuration
         let config = TuiConfig::load_with_hierarchy()?;
         *self.config.write().await = config.clone();
 
-        // Start watching configuration files
-        self.start_watching().await?;
+        // TODO: Start watching configuration files
+        // self.start_watching().await?;
 
         Ok(())
     }
@@ -523,76 +544,15 @@ impl ConfigManager {
         Ok(())
     }
 
-    /// Start watching configuration files for changes
+    /// Start watching configuration files for changes (TODO: implement)
     async fn start_watching(&mut self) -> Result<()> {
-        let file_watcher = crate::reactive_ui_updates::FileWatcher::new();
-
-        // Watch all possible configuration file locations
-        let config_paths = vec![
-            TuiConfig::yaml_config_path()?,
-            TuiConfig::json_config_path()?,
-            TuiConfig::toml_config_path()?,
-        ];
-
-        for path in config_paths {
-            if let Some(parent) = path.parent() {
-                if parent.exists() {
-                    file_watcher.watch_path(path.clone(), false).await
-                        .map_err(|e| anyhow::anyhow!("Failed to watch config path {}: {}", path.display(), e))?;
-                }
-            }
-        }
-
-        // Set up change handler
-        let config_arc = Arc::clone(&self.config);
-        let callback = self.change_callback.take();
-
-        file_watcher.set_change_handler(move |changes| {
-            let config_arc = Arc::clone(&config_arc);
-            let callback = callback.clone();
-
-            tokio::spawn(async move {
-                // Check if any configuration files changed
-                let config_files_changed = changes.iter().any(|change| {
-                    let path_str = change.path.to_string_lossy();
-                    path_str.contains("ricecoder") &&
-                    (path_str.ends_with(".yaml") ||
-                     path_str.ends_with(".yml") ||
-                     path_str.ends_with(".json") ||
-                     path_str.ends_with(".toml"))
-                });
-
-                if config_files_changed {
-                    match TuiConfig::load_with_hierarchy() {
-                        Ok(new_config) => {
-                            let mut config = config_arc.write().await;
-                            if *config != new_config {
-                                *config = new_config.clone();
-
-                                if let Some(callback) = &callback {
-                                    callback(new_config);
-                                }
-
-                                tracing::info!("Configuration hot-reloaded");
-                            }
-                        }
-                        Err(e) => {
-                            tracing::error!("Failed to reload configuration: {}", e);
-                        }
-                    }
-                }
-            });
-        }).await;
-
-        self.watcher = Some(file_watcher);
+        // File watching not implemented yet
         Ok(())
     }
 
-    /// Stop watching configuration files
+    /// Stop watching configuration files (TODO: implement)
     pub async fn stop_watching(&mut self) -> Result<()> {
-        if let Some(watcher) = self.watcher.take() {
-            watcher.stop().await?;
-        }
+        // File watching not implemented yet
         Ok(())
     }
 

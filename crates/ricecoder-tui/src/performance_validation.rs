@@ -414,5 +414,4 @@ mod comprehensive_performance_validation {
         assert!(elapsed < Duration::from_secs(5),
                "Concurrent performance test took too long: {:?}", elapsed);
     }
-}</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-tui/src/performance_validation.rs
+}

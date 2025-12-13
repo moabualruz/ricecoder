@@ -1,9 +1,8 @@
 use crate::config::ConfigManager;
-use crate::error::Result;
-use crate::executor::CommandExecutor;
+use crate::error::{CommandError, Result};
 use crate::output_injection::{OutputInjectionConfig, OutputInjector};
 use crate::registry::CommandRegistry;
-use crate::types::{CommandDefinition, CommandExecutionResult};
+use crate::types::{ArgumentType, CommandArgument, CommandContext, CommandDefinition, CommandExecutionResult};
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -58,13 +57,13 @@ impl CommandManager {
         let command = self.registry.get(command_id)?;
 
         // Validate arguments
-        CommandExecutor::validate_arguments(&command, &arguments)?;
+        self.validate_arguments(&command, &arguments)?;
 
         // Build context with defaults
-        let context = CommandExecutor::build_context_with_defaults(&command, arguments, cwd)?;
+        let context = self.build_context_with_defaults(&command, arguments, cwd)?;
 
         // Execute the command
-        CommandExecutor::execute(&command, &context)
+        self.execute_command(&command, &context)
     }
 
     /// Execute a command and get injected output
@@ -132,6 +131,170 @@ impl CommandManager {
     pub fn reload_from_file<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
         self.registry = ConfigManager::load_from_file(path)?;
         Ok(())
+    }
+
+    /// Validate command arguments
+    fn validate_arguments(
+        &self,
+        command: &CommandDefinition,
+        arguments: &HashMap<String, String>,
+    ) -> Result<()> {
+        for arg in &command.arguments {
+            let value = arguments.get(&arg.name);
+
+            // Check required arguments
+            if arg.required && (value.is_none() || value.unwrap().trim().is_empty()) {
+                return Err(CommandError::ValidationError(format!(
+                    "Required argument '{}' is missing or empty",
+                    arg.name
+                )));
+            }
+
+            // Validate argument type and pattern if value is provided
+            if let Some(val) = value {
+                self.validate_argument_value(arg, val)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Validate a single argument value
+    fn validate_argument_value(&self, arg: &CommandArgument, value: &str) -> Result<()> {
+        // Type validation
+        match arg.arg_type {
+            ArgumentType::String => {
+                // String validation - just check length if pattern exists
+                if let Some(pattern) = &arg.validation_pattern {
+                    let regex = regex::Regex::new(pattern).map_err(|_| {
+                        CommandError::ValidationError(format!(
+                            "Invalid regex pattern for argument '{}'",
+                            arg.name
+                        ))
+                    })?;
+                    if !regex.is_match(value) {
+                        return Err(CommandError::ValidationError(format!(
+                            "Argument '{}' does not match required pattern",
+                            arg.name
+                        )));
+                    }
+                }
+            }
+            ArgumentType::Number => {
+                if value.parse::<f64>().is_err() {
+                    return Err(CommandError::ValidationError(format!(
+                        "Argument '{}' must be a valid number",
+                        arg.name
+                    )));
+                }
+            }
+            ArgumentType::Boolean => {
+                let lower = value.to_lowercase();
+                if !matches!(lower.as_str(), "true" | "false" | "1" | "0" | "yes" | "no") {
+                    return Err(CommandError::ValidationError(format!(
+                        "Argument '{}' must be a boolean value",
+                        arg.name
+                    )));
+                }
+            }
+            ArgumentType::Path => {
+                // For now, just check it's not empty - could add path validation later
+                if value.trim().is_empty() {
+                    return Err(CommandError::ValidationError(format!(
+                        "Argument '{}' cannot be empty",
+                        arg.name
+                    )));
+                }
+            }
+            ArgumentType::Choice(ref options) => {
+                if !options.contains(&value.to_string()) {
+                    return Err(CommandError::ValidationError(format!(
+                        "Argument '{}' must be one of: {:?}",
+                        arg.name, options
+                    )));
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Build execution context with default values
+    fn build_context_with_defaults(
+        &self,
+        command: &CommandDefinition,
+        mut arguments: HashMap<String, String>,
+        cwd: String,
+    ) -> Result<CommandContext> {
+        // Fill in default values for missing arguments
+        for arg in &command.arguments {
+            if !arguments.contains_key(&arg.name) {
+                if let Some(default) = &arg.default {
+                    arguments.insert(arg.name.clone(), default.clone());
+                }
+            }
+        }
+
+        Ok(CommandContext {
+            cwd,
+            env: std::env::vars().collect(),
+            arguments,
+        })
+    }
+
+    /// Execute a command with the given context
+    fn execute_command(
+        &self,
+        command: &CommandDefinition,
+        context: &CommandContext,
+    ) -> Result<CommandExecutionResult> {
+        use std::process::{Command, Stdio};
+        use std::time::Instant;
+
+        let start_time = Instant::now();
+
+        // Substitute arguments in the command template
+        let mut command_str = command.command.clone();
+        for (key, value) in &context.arguments {
+            let placeholder = format!("{{{{{}}}}}", key);
+            command_str = command_str.replace(&placeholder, value);
+        }
+
+        // Execute the command
+        let mut cmd = if cfg!(target_os = "windows") {
+            let mut c = Command::new("cmd");
+            c.args(["/C", &command_str]);
+            c
+        } else {
+            let mut c = Command::new("sh");
+            c.args(["-c", &command_str]);
+            c
+        };
+
+        cmd.current_dir(&context.cwd)
+            .env_clear()
+            .envs(&context.env)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+
+        let output = cmd.output()
+            .map_err(|e| CommandError::ExecutionError(format!("Failed to execute command: {}", e)))?;
+
+        let duration = start_time.elapsed().as_millis() as u64;
+
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        let exit_code = output.status.code().unwrap_or(-1);
+        let success = output.status.success();
+
+        Ok(CommandExecutionResult {
+            command_id: command.id.clone(),
+            exit_code,
+            stdout,
+            stderr,
+            success,
+            duration_ms: duration,
+        })
     }
 }
 

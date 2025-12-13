@@ -33,6 +33,15 @@ pub enum CommandError {
     #[error("Regex error: {0}")]
     RegexError(#[from] regex::Error),
 
+    #[error("Validation error: {0}")]
+    ValidationError(String),
+
+    #[error("Command timeout")]
+    Timeout,
+
+    #[error("Execution error: {0}")]
+    ExecutionError(String),
+
     #[error("Other error: {0}")]
     Other(String),
 }

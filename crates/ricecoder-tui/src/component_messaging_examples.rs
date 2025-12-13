@@ -297,5 +297,4 @@ mod messaging_tests {
             assert_eq!(stats.queued_messages, 1);
         });
     }
-}</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-tui/src/component_messaging_examples.rs
+}

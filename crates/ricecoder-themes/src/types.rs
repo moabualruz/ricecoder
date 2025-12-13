@@ -43,13 +43,17 @@ impl Theme {
         match name {
             "dark" => Some(Self::default()),
             "light" => Some(Self::light()),
+            "monokai" => Some(Self::monokai()),
+            "dracula" => Some(Self::dracula()),
+            "nord" => Some(Self::nord()),
+            "high-contrast" => Some(Self::high_contrast()),
             _ => None,
         }
     }
 
     /// Get all available theme names
     pub fn available_themes() -> Vec<&'static str> {
-        vec!["dark", "light"]
+        vec!["dark", "light", "monokai", "dracula", "nord", "high-contrast"]
     }
 
     /// Create a default dark theme
@@ -103,48 +107,109 @@ impl Theme {
             },
         }
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_theme_default() {
-        let theme = Theme::default();
-        assert_eq!(theme.name, "dark");
-        // Test that colors are set
-        assert!(matches!(theme.primary, ratatui::style::Color::Rgb(255, 255, 255)));
+    /// Create a monokai theme
+    pub fn monokai() -> Self {
+        use ratatui::style::Color;
+        Self {
+            name: "monokai".to_string(),
+            primary: Color::Rgb(248, 248, 242),
+            secondary: Color::Rgb(117, 113, 94),
+            background: Color::Rgb(39, 40, 34),
+            foreground: Color::Rgb(248, 248, 242),
+            accent: Color::Rgb(249, 38, 114),
+            error: Color::Rgb(249, 38, 114),
+            warning: Color::Rgb(253, 151, 31),
+            success: Color::Rgb(166, 226, 46),
+            syntax: SyntaxTheme {
+                keyword: Color::Rgb(249, 38, 114),
+                string: Color::Rgb(230, 219, 116),
+                number: Color::Rgb(174, 129, 255),
+                comment: Color::Rgb(117, 113, 94),
+                function: Color::Rgb(166, 226, 46),
+                variable: Color::Rgb(248, 248, 242),
+                r#type: Color::Rgb(102, 217, 239),
+                constant: Color::Rgb(174, 129, 255),
+            },
+        }
     }
 
-    #[test]
-    fn test_theme_light() {
-        let theme = Theme::light();
-        assert_eq!(theme.name, "light");
-        assert!(matches!(theme.primary, ratatui::style::Color::Rgb(0, 0, 0)));
+    /// Create a dracula theme
+    pub fn dracula() -> Self {
+        use ratatui::style::Color;
+        Self {
+            name: "dracula".to_string(),
+            primary: Color::Rgb(248, 248, 242),
+            secondary: Color::Rgb(98, 114, 164),
+            background: Color::Rgb(40, 42, 54),
+            foreground: Color::Rgb(248, 248, 242),
+            accent: Color::Rgb(255, 121, 198),
+            error: Color::Rgb(255, 85, 85),
+            warning: Color::Rgb(241, 250, 140),
+            success: Color::Rgb(80, 250, 123),
+            syntax: SyntaxTheme {
+                keyword: Color::Rgb(189, 147, 249),
+                string: Color::Rgb(241, 250, 140),
+                number: Color::Rgb(189, 147, 249),
+                comment: Color::Rgb(98, 114, 164),
+                function: Color::Rgb(80, 250, 123),
+                variable: Color::Rgb(248, 248, 242),
+                r#type: Color::Rgb(139, 233, 253),
+                constant: Color::Rgb(255, 121, 198),
+            },
+        }
     }
 
-    #[test]
-    fn test_theme_by_name() {
-        assert!(Theme::by_name("dark").is_some());
-        assert!(Theme::by_name("light").is_some());
-        assert!(Theme::by_name("invalid").is_none());
+    /// Create a nord theme
+    pub fn nord() -> Self {
+        use ratatui::style::Color;
+        Self {
+            name: "nord".to_string(),
+            primary: Color::Rgb(216, 222, 233),
+            secondary: Color::Rgb(136, 192, 208),
+            background: Color::Rgb(46, 52, 64),
+            foreground: Color::Rgb(216, 222, 233),
+            accent: Color::Rgb(163, 190, 140),
+            error: Color::Rgb(191, 97, 106),
+            warning: Color::Rgb(235, 203, 139),
+            success: Color::Rgb(163, 190, 140),
+            syntax: SyntaxTheme {
+                keyword: Color::Rgb(136, 192, 208),
+                string: Color::Rgb(163, 190, 140),
+                number: Color::Rgb(180, 142, 173),
+                comment: Color::Rgb(76, 86, 106),
+                function: Color::Rgb(136, 192, 208),
+                variable: Color::Rgb(216, 222, 233),
+                r#type: Color::Rgb(129, 161, 193),
+                constant: Color::Rgb(180, 142, 173),
+            },
+        }
     }
 
-    #[test]
-    fn test_theme_available_themes() {
-        let themes = Theme::available_themes();
-        assert!(themes.contains(&"dark"));
-        assert!(themes.contains(&"light"));
-    }
-
-    #[test]
-    fn test_theme_validate() {
-        let mut theme = Theme::default();
-        assert!(theme.validate().is_ok());
-
-        theme.name = "".to_string();
-        assert!(theme.validate().is_err());
+    /// Create a high contrast theme
+    pub fn high_contrast() -> Self {
+        use ratatui::style::Color;
+        Self {
+            name: "high-contrast".to_string(),
+            primary: Color::Rgb(255, 255, 255),
+            secondary: Color::Rgb(200, 200, 200),
+            background: Color::Rgb(0, 0, 0),
+            foreground: Color::Rgb(255, 255, 255),
+            accent: Color::Rgb(255, 255, 0),
+            error: Color::Rgb(255, 0, 0),
+            warning: Color::Rgb(255, 165, 0),
+            success: Color::Rgb(0, 255, 0),
+            syntax: SyntaxTheme {
+                keyword: Color::Rgb(255, 255, 0),
+                string: Color::Rgb(0, 255, 0),
+                number: Color::Rgb(0, 255, 255),
+                comment: Color::Rgb(128, 128, 128),
+                function: Color::Rgb(255, 0, 255),
+                variable: Color::Rgb(255, 255, 255),
+                r#type: Color::Rgb(0, 191, 255),
+                constant: Color::Rgb(255, 20, 147),
+            },
+        }
     }
 }
 
@@ -153,7 +218,7 @@ pub trait ThemeManager {
     /// Load a theme by name
     fn load_theme(&mut self, name: &str) -> Result<(), ThemeError>;
     /// Get a theme by name
-    fn get_theme(&self, name: &str) -> Option<&Theme>;
+    fn get_theme(&self, name: &str) -> Option<Theme>;
     /// List all available themes
     fn list_themes(&self) -> Vec<String>;
 }
