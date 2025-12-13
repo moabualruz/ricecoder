@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 02c6aecb724c8006ced17982b0f9ed8b68d5ea5961ae6d11cf8a4b212e082677 # shrinks to global_keybinds = [Keybind { action_id: "a", key: "aa", category: "a", description: " ", is_default: false, contexts: [] }, Keybind { action_id: "a", key: "a", category: "a", description: "a", is_default: false, contexts: [] }], input_keybinds = [Keybind { action_id: "a", key: "a", category: "a", description: " ", is_default: false, contexts: [] }], chat_keybinds = [Keybind { action_id: "a", key: "a", category: "a", description: " ", is_default: false, contexts: [] }], dialog_keybinds = [Keybind { action_id: "a", key: "a", category: "a", description: " ", is_default: false, contexts: [] }]

@@ -1,4 +1,5 @@
 use ricecoder_keybinds::*;
+use std::str::FromStr;
 
 #[test]
 fn test_modifier_from_str() {
