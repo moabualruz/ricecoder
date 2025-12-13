@@ -1,18 +1,6 @@
-//! Compatibility testing across different environments
-//!
-//! This module tests compatibility with:
-//! - Different terminal types and capabilities
-//! - Progressive enhancement features
-//! - Configuration compatibility across versions
-//! - Cross-platform compatibility
-
-use crate::progressive_enhancement::*;
-use crate::terminal_state::*;
-use crate::config::*;
+use ricecoder_tui::*;
 use std::collections::HashMap;
 
-/// Terminal compatibility tests
-#[cfg(test)]
 mod terminal_compatibility_tests {
     use super::*;
 
@@ -157,8 +145,6 @@ mod terminal_compatibility_tests {
     }
 }
 
-/// Configuration compatibility tests
-#[cfg(test)]
 mod configuration_compatibility_tests {
     use super::*;
 
@@ -263,8 +249,6 @@ mouse: false
     }
 }
 
-/// Cross-platform compatibility tests
-#[cfg(test)]
 mod cross_platform_compatibility_tests {
     use super::*;
 
@@ -301,8 +285,6 @@ mod cross_platform_compatibility_tests {
     }
 }
 
-/// SSH and TMUX compatibility tests
-#[cfg(test)]
 mod remote_session_compatibility_tests {
     use super::*;
 
@@ -364,8 +346,6 @@ mod remote_session_compatibility_tests {
     }
 }
 
-/// Comprehensive compatibility validation
-#[cfg(test)]
 mod comprehensive_compatibility_validation {
     use super::*;
 
