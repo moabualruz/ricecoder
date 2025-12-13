@@ -6,7 +6,6 @@
 
 use crate::error::ToolError;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::path::Path;
 
 /// Input for file edit operations
