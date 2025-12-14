@@ -1,0 +1,76 @@
+[package]
+name = "ricecoder-di"
+description = "Dependency injection container for RiceCoder"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
+
+[dependencies]
+async-trait.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+
+ricecoder-sessions = { path = "../ricecoder-sessions", version = "0.1" }
+ricecoder-providers = { path = "../ricecoder-providers", version = "0.1" }
+ricecoder-agents = { path = "../ricecoder-agents", version = "0.1" }
+ricecoder-storage = { path = "../ricecoder-storage", version = "0.1", optional = true }
+ricecoder-research = { path = "../ricecoder-research", version = "0.1", optional = true }
+ricecoder-workflows = { path = "../ricecoder-workflows", version = "0.1", optional = true }
+ricecoder-execution = { path = "../ricecoder-execution", version = "0.1", optional = true }
+ricecoder-mcp = { path = "../ricecoder-mcp", version = "0.1", optional = true }
+ricecoder-tools = { path = "../ricecoder-tools", version = "0.1", optional = true }
+ricecoder-config = { path = "../ricecoder-config", version = "0.1", optional = true }
+ricecoder-activity-log = { path = "../ricecoder-activity-log", version = "0.1", optional = true }
+ricecoder-orchestration = { path = "../ricecoder-orchestration", version = "0.1", optional = true }
+ricecoder-specs = { path = "../ricecoder-specs", version = "0.1", optional = true }
+ricecoder-undo-redo = { path = "../ricecoder-undo-redo", version = "0.1", optional = true }
+ricecoder-vcs = { path = "../ricecoder-vcs", version = "0.1", optional = true }
+ricecoder-permissions = { path = "../ricecoder-permissions", version = "0.1", optional = true }
+ricecoder-security = { path = "../ricecoder-security", version = "0.1", optional = true }
+ricecoder-cache = { path = "../ricecoder-cache", version = "0.1", optional = true }
+ricecoder-domain = { path = "../ricecoder-domain", version = "0.1", optional = true }
+ricecoder-learning = { path = "../ricecoder-learning", version = "0.1", optional = true }
+ricecoder-industry = { path = "../ricecoder-industry", version = "0.1", optional = true }
+ricecoder-safety = { path = "../ricecoder-safety", version = "0.1", optional = true }
+ricecoder-files = { path = "../ricecoder-files", version = "0.1", optional = true }
+ricecoder-themes = { path = "../ricecoder-themes", version = "0.1", optional = true }
+ricecoder-images = { path = "../ricecoder-images", version = "0.1", optional = true }
+
+[features]
+default = []
+storage = ["ricecoder-storage"]
+research = ["ricecoder-research"]
+workflows = ["ricecoder-workflows"]
+execution = ["ricecoder-execution"]
+mcp = ["ricecoder-mcp"]
+tools = ["ricecoder-tools"]
+config = ["ricecoder-config"]
+activity-log = ["ricecoder-activity-log"]
+orchestration = ["ricecoder-orchestration"]
+specs = ["ricecoder-specs"]
+undo-redo = ["ricecoder-undo-redo"]
+vcs = ["ricecoder-vcs"]
+permissions = ["ricecoder-permissions"]
+security = ["ricecoder-security"]
+cache = ["ricecoder-cache"]
+domain = ["ricecoder-domain"]
+learning = ["ricecoder-learning"]
+industry = ["ricecoder-industry"]
+safety = ["ricecoder-safety"]
+files = ["ricecoder-files"]
+themes = ["ricecoder-themes"]
+images = ["ricecoder-images"]
+full = ["storage", "research", "workflows", "execution", "mcp", "tools", "config", "activity-log", "orchestration", "specs", "undo-redo", "vcs", "permissions", "security", "cache", "domain", "learning", "industry", "safety", "files", "themes", "images"]
+
+[dev-dependencies]
+proptest.workspace = true
+tokio-test.workspace = true
+tempfile.workspace = true

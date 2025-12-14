@@ -1,12 +1,14 @@
 // RiceCoder CLI Entry Point
 
-use ricecoder_cli::output;
+use ricecoder_cli::{output, lifecycle};
 use ricecoder_cli::router::CommandRouter;
 use ricecoder_storage::{FirstRunHandler, PathResolver};
 use std::path::Path;
 use std::fs;
+use tokio::signal;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     // Check for multi-call binary pattern
     let binary_name = std::env::args().next().and_then(|s| {
         Path::new(&s)
@@ -36,8 +38,55 @@ fn main() {
         std::process::exit(1);
     }
 
+    // Initialize DI container
+    if let Err(e) = ricecoder_cli::di::initialize_di_container() {
+        output::print_error(&format!("DI container initialization failed: {}", e));
+        std::process::exit(1);
+    }
+
+    // Initialize lifecycle manager
+    let lifecycle_manager = lifecycle::initialize_lifecycle_manager();
+
+    // Initialize all components
+    if let Err(e) = lifecycle_manager.initialize_all().await {
+        output::print_error(&format!("Component initialization failed: {}", e));
+        std::process::exit(1);
+    }
+
+    // Start all components
+    if let Err(e) = lifecycle_manager.start_all().await {
+        output::print_error(&format!("Component startup failed: {}", e));
+        std::process::exit(1);
+    }
+
+    // Set up graceful shutdown handler
+    let shutdown_handle = tokio::spawn(async move {
+        match signal::ctrl_c().await {
+            Ok(()) => {
+                println!("\nReceived shutdown signal, stopping components...");
+                if let Err(e) = lifecycle_manager.stop_all().await {
+                    eprintln!("Error during shutdown: {}", e);
+                }
+            }
+            Err(e) => {
+                eprintln!("Error setting up signal handler: {}", e);
+            }
+        }
+    });
+
     // Route and execute command
-    if let Err(e) = CommandRouter::route() {
+    let result = CommandRouter::route();
+
+    // Stop components before exiting
+    if let Err(e) = lifecycle_manager.stop_all().await {
+        output::print_error(&format!("Component shutdown failed: {}", e));
+    }
+
+    // Cancel shutdown handler
+    shutdown_handle.abort();
+
+    // Exit with appropriate code
+    if let Err(e) = result {
         output::print_error(&e.user_message());
         std::process::exit(1);
     }

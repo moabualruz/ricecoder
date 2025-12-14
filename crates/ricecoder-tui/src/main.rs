@@ -585,6 +585,27 @@ impl CleanupResource for PerformanceTrackerCleanup {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Initialize DI container first
+    if let Err(e) = ricecoder_tui::di::initialize_di_container() {
+        eprintln!("DI container initialization failed: {}", e);
+        std::process::exit(1);
+    }
+
+    // Initialize TUI lifecycle manager
+    let lifecycle_manager = ricecoder_tui::lifecycle::initialize_tui_lifecycle_manager();
+
+    // Initialize all TUI components
+    if let Err(e) = lifecycle_manager.initialize_all().await {
+        eprintln!("TUI component initialization failed: {}", e);
+        std::process::exit(1);
+    }
+
+    // Start all TUI components
+    if let Err(e) = lifecycle_manager.start_all().await {
+        eprintln!("TUI component startup failed: {}", e);
+        std::process::exit(1);
+    }
+
     // Initialize tracing
     tracing_subscriber::fmt::init();
 
@@ -691,6 +712,11 @@ async fn main() -> Result<()> {
     // Requirements: 10.2, 10.3 - Restore terminal on normal exit, Ctrl+C, and error exit
     if let Err(e) = terminal_state.restore() {
         tracing::error!("Failed to restore terminal state: {}", e);
+    }
+
+    // Stop TUI components first
+    if let Err(e) = lifecycle_manager.stop_all().await {
+        tracing::error!("Error stopping TUI components: {}", e);
     }
 
     // Perform graceful shutdown with resource cleanup

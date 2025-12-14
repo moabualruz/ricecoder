@@ -29,6 +29,8 @@ pub mod code_editor_widget;
 pub mod command_blocks;
 pub mod command_palette;
 pub mod components;
+pub mod di;
+pub mod lifecycle;
 
 pub mod diff;
 pub mod error;

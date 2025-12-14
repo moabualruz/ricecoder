@@ -40,7 +40,7 @@ impl ProvidersCommand {
         Self { action }
     }
 
-    /// Get provider use cases (create them if needed)
+    /// Get provider use cases from DI container
     fn get_use_cases(&self) -> CliResult<(
         Arc<ProviderSwitchingUseCase>,
         Arc<ProviderPerformanceUseCase>,
@@ -49,20 +49,24 @@ impl ProvidersCommand {
         Arc<ProviderHealthUseCase>,
         Arc<ProviderCommunityUseCase>,
     )> {
-        // For now, create the infrastructure components here
-        // In a real application, these would be injected from a DI container
-        let registry = ricecoder_providers::provider::ProviderRegistry::new();
-        let provider_manager = Arc::new(ricecoder_providers::provider::manager::ProviderManager::new(
-            registry,
-            "openai".to_string(), // default provider
-        ));
+        // Get services from DI container
+        let switching = crate::di::get_service::<ProviderSwitchingUseCase>()
+            .ok_or_else(|| CliError::Internal("ProviderSwitchingUseCase not available in DI container".to_string()))?;
 
-        let switching = Arc::new(ProviderSwitchingUseCase::new(provider_manager.clone()));
-        let performance = Arc::new(ProviderPerformanceUseCase::new(provider_manager.clone()));
-        let failover = Arc::new(ProviderFailoverUseCase::new(provider_manager.clone()));
-        let models = Arc::new(ProviderModelUseCase::new(provider_manager.clone()));
-        let health = Arc::new(ProviderHealthUseCase::new(provider_manager.clone()));
-        let community = Arc::new(ProviderCommunityUseCase::new(provider_manager));
+        let performance = crate::di::get_service::<ProviderPerformanceUseCase>()
+            .ok_or_else(|| CliError::Internal("ProviderPerformanceUseCase not available in DI container".to_string()))?;
+
+        let failover = crate::di::get_service::<ProviderFailoverUseCase>()
+            .ok_or_else(|| CliError::Internal("ProviderFailoverUseCase not available in DI container".to_string()))?;
+
+        let models = crate::di::get_service::<ProviderModelUseCase>()
+            .ok_or_else(|| CliError::Internal("ProviderModelUseCase not available in DI container".to_string()))?;
+
+        let health = crate::di::get_service::<ProviderHealthUseCase>()
+            .ok_or_else(|| CliError::Internal("ProviderHealthUseCase not available in DI container".to_string()))?;
+
+        let community = crate::di::get_service::<ProviderCommunityUseCase>()
+            .ok_or_else(|| CliError::Internal("ProviderCommunityUseCase not available in DI container".to_string()))?;
 
         Ok((switching, performance, failover, models, health, community))
     }

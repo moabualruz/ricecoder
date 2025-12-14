@@ -51,25 +51,14 @@ impl SessionsCommand {
         Self { action }
     }
 
-    /// Get session use cases (create them if needed)
+    /// Get session use cases from DI container
     fn get_use_cases(&self) -> CliResult<(Arc<SessionLifecycleUseCase>, Arc<SessionSharingUseCase>)> {
-        // For now, create the infrastructure components here
-        // In a real application, these would be injected from a DI container
-        let session_store = Arc::new(ricecoder_sessions::SessionStore::new()
-            .map_err(|e| CliError::Internal(format!("Failed to create session store: {}", e)))?);
+        // Get services from DI container
+        let session_lifecycle = crate::di::get_service::<SessionLifecycleUseCase>()
+            .ok_or_else(|| CliError::Internal("SessionLifecycleUseCase not available in DI container".to_string()))?;
 
-        let session_manager = Arc::new(ricecoder_sessions::SessionManager::new(10)); // max 10 sessions
-
-        let session_lifecycle = Arc::new(SessionLifecycleUseCase::new(
-            session_manager.clone(),
-            session_store.clone(),
-        ));
-
-        let share_service = Arc::new(ricecoder_sessions::ShareService::new());
-        let session_sharing = Arc::new(SessionSharingUseCase::new(
-            share_service,
-            session_store,
-        ));
+        let session_sharing = crate::di::get_service::<SessionSharingUseCase>()
+            .ok_or_else(|| CliError::Internal("SessionSharingUseCase not available in DI container".to_string()))?;
 
         Ok((session_lifecycle, session_sharing))
     }

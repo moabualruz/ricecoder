@@ -39,6 +39,7 @@ term_size = { workspace = true }
 atty = "0.2"
 regex = { workspace = true }
 ricecoder-agents = { path = "../ricecoder-agents", version = "0.1" }
+ricecoder-di = { path = "../ricecoder-di", version = "0.1" }
 uuid = { workspace = true }
 chrono = { workspace = true }
 futures = { workspace = true }
