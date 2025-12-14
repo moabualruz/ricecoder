@@ -86,6 +86,7 @@ members = [
     "crates/ricecoder-images",
     "crates/ricecoder-themes",
     "crates/ricecoder-config",
+    "crates/ricecoder-industry",
 ]
 resolver = "2"
 

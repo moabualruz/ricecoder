@@ -1,0 +1,45 @@
+[package]
+name = "ricecoder-industry"
+version.workspace = true
+edition = "2021"
+authors = ["RiceCoder Contributors"]
+description = "Enterprise integrations and OAuth authentication for RiceCoder"
+license = "MIT"
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
+keywords = ["enterprise", "oauth", "authentication", "integrations", "security"]
+
+[lib]
+name = "ricecoder_industry"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+tracing = "0.1"
+tokio = { version = "1.0", features = ["full"] }
+reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+oauth2 = "4.4"
+url = "2.5"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+async-trait = "0.1"
+base64 = "0.21"
+sha2 = "0.10"
+hmac = "0.12"
+jwt = "0.16"
+anyhow = "1.0"
+futures = "0.3"
+regex = "1.10"
+
+# RiceCoder internal dependencies
+ricecoder-security = { path = "../ricecoder-security", version = "0.1" }
+ricecoder-domain = { path = "../ricecoder-domain", version = "0.1" }
+
+[dev-dependencies]
+proptest = "1.4"
+tokio-test = "0.4"
+mockito = "1.2"
+tempfile = "3.8"
