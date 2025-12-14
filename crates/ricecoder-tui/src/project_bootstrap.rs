@@ -366,7 +366,7 @@ impl ProjectInfo {
     }
 
     /// Get display name for language
-    pub fn language_display(&self) -> &'static str {
+    pub fn language_display(&self) -> &str {
         match self.primary_language {
             Language::Rust => "Rust",
             Language::Python => "Python",

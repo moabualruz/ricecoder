@@ -399,7 +399,7 @@ pub enum ComponentEvent {
 
 /// Component registry for managing component instances with messaging support
 pub struct ComponentRegistry {
-    components: std::collections::HashMap<ComponentId, Box<dyn Component>>,
+    components: std::collections::HashMap<ComponentId, Box<dyn Component + 'static>>,
     focus_order: Vec<ComponentId>,
     current_focus: Option<ComponentId>,
     message_bus: messaging::ComponentMessageBus,
@@ -484,17 +484,17 @@ impl ComponentRegistry {
     }
 
     /// Get a mutable component by ID
-    pub fn get_mut(&mut self, id: &str) -> Option<&mut dyn Component + '_> {
-        self.components.get_mut(id).map(|c| c.as_mut())
+    pub fn get_mut(&mut self, id: &str) -> Option<&mut (dyn Component + 'static)> {
+        self.components.get_mut(id).map(move |c| c.as_mut())
     }
 
     /// Get all components
-    pub fn all(&self) -> Vec<&dyn Component> {
+    pub fn all(&self) -> Vec<&(dyn Component + 'static)> {
         self.components.values().map(|c| c.as_ref()).collect()
     }
 
     /// Get all mutable components
-    pub fn all_mut(&mut self) -> Vec<&mut dyn Component> {
+    pub fn all_mut(&mut self) -> Vec<&mut (dyn Component + 'static)> {
         self.components.values_mut().map(|c| c.as_mut()).collect()
     }
 
