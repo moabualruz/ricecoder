@@ -38,10 +38,10 @@ dirs = { workspace = true }
 term_size = { workspace = true }
 atty = "0.2"
 regex = { workspace = true }
+ricecoder-agents = { path = "../ricecoder-agents", version = "0.1" }
 uuid = { workspace = true }
 chrono = { workspace = true }
 futures = { workspace = true }
-ricecoder-agents = { path = "../ricecoder-agents", version = "0.1" }
 ricecoder-commands = { path = "../ricecoder-commands", version = "0.1" }
 ricecoder-completion = { path = "../ricecoder-completion", version = "0.1" }
 ricecoder-domain-agents = { path = "../ricecoder-domain-agents", version = "0.1" }

@@ -152,6 +152,13 @@ pub enum Commands {
         action: Option<SessionsSubcommand>,
     },
 
+    /// Manage AI providers
+    #[command(about = "Manage AI providers and their configurations")]
+    Providers {
+        #[command(subcommand)]
+        action: Option<ProvidersSubcommand>,
+    },
+
     /// Manage Model Context Protocol servers and tools
     #[command(about = "Manage Model Context Protocol (MCP) servers and tools")]
     Mcp {
@@ -330,6 +337,73 @@ pub enum SessionsSubcommand {
         /// Share ID to view
         #[arg(value_name = "SHARE_ID")]
         share_id: String,
+    },
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum ProvidersSubcommand {
+    /// List all available providers
+    #[command(about = "List all configured providers and their status")]
+    List,
+
+    /// Switch to a specific provider
+    #[command(about = "Switch to a specific AI provider")]
+    Switch {
+        /// Provider ID
+        #[arg(value_name = "PROVIDER_ID")]
+        provider_id: String,
+    },
+
+    /// Show provider status
+    #[command(about = "Show status of a specific provider or current provider")]
+    Status {
+        /// Provider ID (optional, shows current if not specified)
+        #[arg(value_name = "PROVIDER_ID")]
+        provider_id: Option<String>,
+    },
+
+    /// Show provider performance metrics
+    #[command(about = "Show performance metrics for providers")]
+    Performance {
+        /// Provider ID (optional, shows all if not specified)
+        #[arg(value_name = "PROVIDER_ID")]
+        provider_id: Option<String>,
+    },
+
+    /// Check provider health
+    #[command(about = "Check health status of providers")]
+    Health {
+        /// Provider ID (optional, checks all if not specified)
+        #[arg(value_name = "PROVIDER_ID")]
+        provider_id: Option<String>,
+    },
+
+    /// List available models
+    #[command(about = "List available models for providers")]
+    Models {
+        /// Provider ID (optional, shows all providers if not specified)
+        #[arg(value_name = "PROVIDER_ID")]
+        provider_id: Option<String>,
+
+        /// Filter models (free, chat, completion)
+        #[arg(short, long)]
+        filter: Option<String>,
+    },
+
+    /// Show failover provider
+    #[command(about = "Show failover provider for a failing provider")]
+    Failover {
+        /// Provider ID
+        #[arg(value_name = "PROVIDER_ID")]
+        provider_id: String,
+    },
+
+    /// Show community analytics
+    #[command(about = "Show community provider analytics")]
+    Community {
+        /// Provider ID (optional, shows popular providers if not specified)
+        #[arg(value_name = "PROVIDER_ID")]
+        provider_id: Option<String>,
     },
 }
 
@@ -634,6 +708,37 @@ impl CommandRouter {
                 let cmd = SessionsCommand::new(sessions_action);
                 cmd.execute()
             }
+            Commands::Providers { action } => {
+                let providers_action = match action {
+                    Some(ProvidersSubcommand::List) | None => providers::ProvidersAction::List,
+                    Some(ProvidersSubcommand::Switch { provider_id }) => {
+                        providers::ProvidersAction::Switch { provider_id: provider_id.clone() }
+                    }
+                    Some(ProvidersSubcommand::Status { provider_id }) => {
+                        providers::ProvidersAction::Status { provider_id: provider_id.clone() }
+                    }
+                    Some(ProvidersSubcommand::Performance { provider_id }) => {
+                        providers::ProvidersAction::Performance { provider_id: provider_id.clone() }
+                    }
+                    Some(ProvidersSubcommand::Health { provider_id }) => {
+                        providers::ProvidersAction::Health { provider_id: provider_id.clone() }
+                    }
+                    Some(ProvidersSubcommand::Models { provider_id, filter }) => {
+                        providers::ProvidersAction::Models {
+                            provider_id: provider_id.clone(),
+                            filter: filter.clone(),
+                        }
+                    }
+                    Some(ProvidersSubcommand::Failover { provider_id }) => {
+                        providers::ProvidersAction::Failover { provider_id: provider_id.clone() }
+                    }
+                    Some(ProvidersSubcommand::Community { provider_id }) => {
+                        providers::ProvidersAction::Community { provider_id: provider_id.clone() }
+                    }
+                };
+                let cmd = ProvidersCommand::new(providers_action);
+                cmd.execute()
+            }
             Commands::Mcp { action } => {
                 let mcp_action = match action {
                     Some(McpSubcommand::List) | None => mcp::McpAction::List,
@@ -708,7 +813,7 @@ impl CommandRouter {
 
     /// Find similar command for suggestions
     pub fn find_similar(command: &str) -> Option<String> {
-        let commands = ["init", "gen", "chat", "refactor", "review", "config", "mcp", "tui"];
+        let commands = ["init", "gen", "chat", "refactor", "review", "config", "sessions", "providers", "mcp", "tui"];
 
         // Simple similarity check: commands that start with same letter
         commands

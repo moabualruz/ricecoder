@@ -5,6 +5,18 @@
 
 use crate::error::AgentError;
 use crate::mcp_integration::{ExternalToolBackend, ExternalToolIntegrationService, ToolExecutionResult};
+use ricecoder_sessions::{
+    Session, SessionContext, SessionManager, SessionMode, SessionRouter, SessionStore,
+    SharePermissions, ShareService, SessionError, Message, MessageRole, BackgroundAgentManager,
+    SessionPerformanceMonitor, TokenUsageTracker,
+};
+use ricecoder_providers::{
+    provider::manager::{ModelFilter, ModelFilterCriteria, ProviderManager, ProviderStatus},
+    models::{Capability, ModelInfo},
+    performance_monitor::{PerformanceSummary, ProviderMetrics},
+    curation::SelectionConstraints,
+    community::ProviderAnalytics,
+};
 use serde_json::json;
 use std::sync::Arc;
 use tracing::{debug, error, info, warn};
@@ -120,7 +132,7 @@ impl ExecuteExternalToolUseCase {
         );
 
         // Check if tool integration is ready
-        if !self.tool_integration.is_ready().await {
+        if !Arc::as_ref(&self.tool_integration).is_ready().await {
             warn!("Tool integration service is not ready");
             return Err(AgentError::ExecutionFailed(
                 "Tool integration service not configured".to_string(),
@@ -128,7 +140,7 @@ impl ExecuteExternalToolUseCase {
         }
 
         // Execute the tool through the integration service
-        let result = self.tool_integration
+        let result = Arc::as_ref(&self.tool_integration)
             .execute_tool(tool_name, parameters, session_id)
             .await?;
 
@@ -173,7 +185,7 @@ impl ConfigureToolBackendUseCase {
         );
 
         let backend = ExternalToolBackend::mcp(server_command, server_args);
-        self.tool_integration
+        Arc::as_ref(&self.tool_integration)
             .configure_backend(server_name.clone(), backend)
             .await?;
 
@@ -192,7 +204,7 @@ impl ConfigureToolBackendUseCase {
         debug!(server_name = %server_name, "Configuring mock MCP backend");
 
         let backend = ExternalToolBackend::mcp_default();
-        self.tool_integration
+        Arc::as_ref(&self.tool_integration)
             .configure_backend(server_name.clone(), backend)
             .await?;
 
@@ -220,8 +232,8 @@ impl ConfigureToolBackendUseCase {
     /// Get current configuration status
     pub async fn get_configuration_status(&self) -> serde_json::Value {
         json!({
-            "configured_backends": self.tool_integration.get_configured_backends().await,
-            "ready": self.tool_integration.is_ready().await
+            "configured_backends": Arc::as_ref(&self.tool_integration).get_configured_backends().await,
+            "ready": Arc::as_ref(&self.tool_integration).is_ready().await
         })
     }
 }
@@ -239,13 +251,13 @@ impl ToolManagementUseCase {
 
     /// List all configured backends
     pub async fn list_backends(&self) -> Vec<String> {
-        self.tool_integration.get_configured_backends().await
+        Arc::as_ref(&self.tool_integration).get_configured_backends().await
     }
 
     /// Check if tool integration is operational
     pub async fn health_check(&self) -> serde_json::Value {
-        let is_ready = self.tool_integration.is_ready().await;
-        let backends = self.tool_integration.get_configured_backends().await;
+        let is_ready = Arc::as_ref(&self.tool_integration).is_ready().await;
+        let backends = Arc::as_ref(&self.tool_integration).get_configured_backends().await;
 
         json!({
             "healthy": is_ready,
@@ -264,7 +276,7 @@ impl ToolManagementUseCase {
         let mut results = Vec::new();
 
         for (tool_name, parameters) in tools {
-            let result = self.tool_integration
+            let result = Arc::as_ref(&self.tool_integration)
                 .execute_tool(&tool_name, parameters, session_id.clone())
                 .await?;
 
@@ -275,5 +287,457 @@ impl ToolManagementUseCase {
         }
 
         Ok(results)
+    }
+}
+
+/// Use case for managing session lifecycle
+pub struct SessionLifecycleUseCase {
+    session_manager: Arc<SessionManager>,
+    session_store: Arc<SessionStore>,
+}
+
+impl SessionLifecycleUseCase {
+    /// Create a new session lifecycle use case
+    pub fn new(
+        session_manager: Arc<SessionManager>,
+        session_store: Arc<SessionStore>,
+    ) -> Self {
+        Self {
+            session_manager,
+            session_store,
+        }
+    }
+
+    /// Create a new session
+    pub async fn create_session(
+        &self,
+        name: String,
+        context: SessionContext,
+    ) -> Result<String, AgentError> {
+        debug!(name = %name, "Creating new session");
+
+        // Create session directly (SessionManager requires mutable access which is complex with Arc)
+        // For now, create session and save to store
+        let session = Session::new(name, context);
+        let session_id = session.id.clone();
+
+        // Save to store for persistence
+        self.session_store.save(&session).await
+            .map_err(|e| AgentError::Internal(format!("Failed to save session: {}", e)))?;
+
+        info!(session_id = %session_id, "Session created successfully");
+        Ok(session_id)
+    }
+
+    /// Load an existing session
+    pub async fn load_session(&self, session_id: &str) -> Result<Session, AgentError> {
+        debug!(session_id = %session_id, "Loading session");
+
+        let session = self.session_store.load(session_id).await
+            .map_err(|e| AgentError::Internal(format!("Failed to load session: {}", e)))?;
+
+        info!(session_id = %session_id, "Session loaded successfully");
+        Ok(session)
+    }
+
+    /// Save a session
+    pub async fn save_session(&self, session: &Session) -> Result<(), AgentError> {
+        debug!(session_id = %session.id, "Saving session");
+
+        self.session_store.save(session).await
+            .map_err(|e| AgentError::Internal(format!("Failed to save session: {}", e)))?;
+
+        info!(session_id = %session.id, "Session saved successfully");
+        Ok(())
+    }
+
+    /// Delete a session
+    pub async fn delete_session(&self, session_id: &str) -> Result<(), AgentError> {
+        debug!(session_id = %session_id, "Deleting session");
+
+        self.session_store.delete(session_id).await
+            .map_err(|e| AgentError::Internal(format!("Failed to delete session: {}", e)))?;
+
+        info!(session_id = %session_id, "Session deleted successfully");
+        Ok(())
+    }
+
+    /// List all sessions
+    pub async fn list_sessions(&self) -> Result<Vec<Session>, AgentError> {
+        debug!("Listing all sessions");
+
+        let sessions = self.session_store.list().await
+            .map_err(|e| AgentError::Internal(format!("Failed to list sessions: {}", e)))?;
+
+        info!(count = sessions.len(), "Retrieved session list");
+        Ok(sessions)
+    }
+}
+
+/// Use case for session sharing and access control
+pub struct SessionSharingUseCase {
+    share_service: Arc<ShareService>,
+    session_store: Arc<SessionStore>,
+}
+
+impl SessionSharingUseCase {
+    /// Create a new session sharing use case
+    pub fn new(
+        share_service: Arc<ShareService>,
+        session_store: Arc<SessionStore>,
+    ) -> Self {
+        Self {
+            share_service,
+            session_store,
+        }
+    }
+
+    /// Create a shareable link for a session
+    pub async fn create_share_link(
+        &self,
+        session_id: &str,
+        permissions: SharePermissions,
+        expires_in_seconds: Option<u64>,
+    ) -> Result<String, AgentError> {
+        debug!(session_id = %session_id, permissions = ?permissions, "Creating share link");
+
+        // Convert duration
+        let expires_in = expires_in_seconds.map(|secs| chrono::Duration::seconds(secs as i64));
+
+        // Create share link
+        let share = self.share_service.generate_share_link(session_id, permissions, expires_in)
+            .map_err(|e| AgentError::Internal(format!("Failed to create share link: {}", e)))?;
+
+        info!(session_id = %session_id, share_id = %share.id, "Share link created successfully");
+        Ok(share.id)
+    }
+
+    /// Access a shared session
+    pub async fn access_shared_session(&self, share_id: &str) -> Result<Session, AgentError> {
+        debug!(share_id = %share_id, "Accessing shared session");
+
+        // Get share information
+        let share = self.share_service.get_share(share_id)
+            .map_err(|e| AgentError::Internal(format!("Failed to get share: {}", e)))?;
+
+        // Load the session
+        let session = self.session_store.load(&share.session_id).await
+            .map_err(|e| AgentError::Internal(format!("Failed to load shared session: {}", e)))?;
+
+        // Apply permission filters
+        let filtered_session = self.share_service.create_shared_session_view(&session, &share.permissions);
+
+        info!(share_id = %share_id, session_id = %share.session_id, "Shared session accessed successfully");
+        Ok(filtered_session)
+    }
+
+    /// Revoke a share link
+    pub async fn revoke_share_link(&self, share_id: &str) -> Result<(), AgentError> {
+        debug!(share_id = %share_id, "Revoking share link");
+
+        self.share_service.revoke_share(share_id)
+            .map_err(|e| AgentError::Internal(format!("Failed to revoke share: {}", e)))?;
+
+        info!(share_id = %share_id, "Share link revoked successfully");
+        Ok(())
+    }
+
+    /// List all active shares
+    pub async fn list_active_shares(&self) -> Result<Vec<ricecoder_sessions::SessionShare>, AgentError> {
+        debug!("Listing active shares");
+
+        let shares = self.share_service.list_shares()
+            .map_err(|e| AgentError::Internal(format!("Failed to list shares: {}", e)))?;
+
+        info!(count = shares.len(), "Retrieved active shares list");
+        Ok(shares)
+    }
+
+    /// Get share information
+    pub async fn get_share_info(&self, share_id: &str) -> Result<ricecoder_sessions::SessionShare, AgentError> {
+        debug!(share_id = %share_id, "Getting share information");
+
+        let share = self.share_service.get_share(share_id)
+            .map_err(|e| AgentError::Internal(format!("Failed to get share info: {}", e)))?;
+
+        Ok(share)
+    }
+}
+
+/// Use case for session state management
+pub struct SessionStateManagementUseCase {
+    session_manager: Arc<SessionManager>,
+}
+
+impl SessionStateManagementUseCase {
+    /// Create a new session state management use case
+    pub fn new(session_manager: Arc<SessionManager>) -> Self {
+        Self { session_manager }
+    }
+
+    /// Get token usage for a session
+    pub async fn get_token_usage(&self, session_id: &str) -> Result<ricecoder_sessions::TokenUsage, AgentError> {
+        debug!(session_id = %session_id, "Getting token usage");
+
+        let usage = self.session_manager.get_session_token_usage(session_id)
+            .map_err(|e| AgentError::Internal(format!("Failed to get token usage: {}", e)))?;
+
+        Ok(usage)
+    }
+
+    /// Check if session is within token limits
+    pub async fn check_token_limits(&self, session_id: &str) -> Result<ricecoder_sessions::TokenLimitStatus, AgentError> {
+        debug!(session_id = %session_id, "Checking token limits");
+
+        let status = self.session_manager.check_session_token_limits(session_id)
+            .map_err(|e| AgentError::Internal(format!("Failed to check token limits: {}", e)))?;
+
+        Ok(status)
+    }
+}
+
+/// Use case for provider switching and management
+pub struct ProviderSwitchingUseCase {
+    provider_manager: Arc<ProviderManager>,
+}
+
+impl ProviderSwitchingUseCase {
+    /// Create a new provider switching use case
+    pub fn new(provider_manager: Arc<ProviderManager>) -> Self {
+        Self { provider_manager }
+    }
+
+    /// Switch to a specific provider
+    pub async fn switch_provider(&self, provider_id: &str) -> Result<(), AgentError> {
+        debug!(provider_id = %provider_id, "Switching to provider");
+
+        // Check if provider exists and is available
+        let provider = Arc::as_ref(&self.provider_manager).get_provider(provider_id)
+            .map_err(|e| AgentError::Internal(format!("Provider not found: {}", e)))?;
+
+        // Check provider health
+        let is_healthy = Arc::as_ref(&self.provider_manager).health_check(provider_id).await
+            .map_err(|e| AgentError::Internal(format!("Health check failed: {}", e)))?;
+
+        if !is_healthy {
+            return Err(AgentError::Internal(format!("Provider {} is not healthy", provider_id)));
+        }
+
+        info!(provider_id = %provider_id, "Successfully switched to provider");
+        Ok(())
+    }
+
+    /// Get the current default provider
+    pub fn get_current_provider(&self) -> Result<String, AgentError> {
+        let provider = Arc::as_ref(&self.provider_manager).default_provider()
+            .map_err(|e| AgentError::Internal(format!("Failed to get default provider: {}", e)))?;
+
+        Ok(provider.id().to_string())
+    }
+
+    /// List all available providers with their status
+    pub fn list_available_providers(&self) -> Vec<ProviderStatus> {
+        Arc::as_ref(&self.provider_manager).get_all_provider_statuses()
+            .into_iter()
+            .cloned()
+            .collect()
+    }
+
+    /// Get provider status
+    pub fn get_provider_status(&self, provider_id: &str) -> Option<ProviderStatus> {
+        Arc::as_ref(&self.provider_manager).get_provider_status(provider_id).cloned()
+    }
+
+    /// Auto-detect available providers
+    pub async fn auto_detect_providers(&self) -> Result<Vec<String>, AgentError> {
+        // Note: This requires mutable access to ProviderManager, so we'd need to modify
+        // the architecture to support this. For now, return an error.
+        Err(AgentError::Internal("Auto-detection requires mutable provider manager access".to_string()))
+    }
+}
+
+/// Use case for provider performance monitoring
+pub struct ProviderPerformanceUseCase {
+    provider_manager: Arc<ProviderManager>,
+}
+
+impl ProviderPerformanceUseCase {
+    /// Create a new provider performance use case
+    pub fn new(provider_manager: Arc<ProviderManager>) -> Self {
+        Self { provider_manager }
+    }
+
+    /// Get performance summary for a provider
+    pub fn get_provider_performance(&self, provider_id: &str) -> Option<ProviderMetrics> {
+        Arc::as_ref(&self.provider_manager).performance_monitor().get_metrics(provider_id)
+    }
+
+    /// Get performance summary for all providers
+    pub fn get_all_provider_performance(&self) -> PerformanceSummary {
+        Arc::as_ref(&self.provider_manager).performance_monitor().get_performance_summary()
+    }
+
+    /// Get providers sorted by performance
+    pub fn get_providers_by_performance(&self) -> Vec<(String, f64)> {
+        let all_metrics = Arc::as_ref(&self.provider_manager).performance_monitor().get_all_metrics();
+        let mut providers: Vec<_> = all_metrics.into_iter()
+            .map(|(id, metrics)| (id, metrics.avg_response_time_ms))
+            .collect();
+
+        // Sort by response time (lower is better)
+        providers.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
+        providers
+    }
+}
+
+/// Use case for provider failover and optimization
+pub struct ProviderFailoverUseCase {
+    provider_manager: Arc<ProviderManager>,
+}
+
+impl ProviderFailoverUseCase {
+    /// Create a new provider failover use case
+    pub fn new(provider_manager: Arc<ProviderManager>) -> Self {
+        Self { provider_manager }
+    }
+
+    /// Get failover provider for a failing provider
+    pub fn get_failover_provider(&self, current_provider_id: &str) -> Option<String> {
+        Arc::as_ref(&self.provider_manager).get_failover_provider(current_provider_id)
+    }
+
+    /// Check if a provider should be avoided
+    pub fn should_avoid_provider(&self, provider_id: &str) -> bool {
+        Arc::as_ref(&self.provider_manager).should_avoid_provider(provider_id)
+    }
+
+    /// Select the best provider based on constraints
+    pub fn select_best_provider(&self, constraints: Option<SelectionConstraints>) -> Option<String> {
+        Arc::as_ref(&self.provider_manager).select_best_provider(constraints.as_ref())
+    }
+
+    /// Select the best provider for specific model capabilities
+    pub fn select_best_provider_for_capabilities(&self, capabilities: &[Capability], constraints: Option<SelectionConstraints>) -> Option<String> {
+        Arc::as_ref(&self.provider_manager).select_best_provider_for_model(capabilities, constraints.as_ref())
+    }
+
+    /// Get providers sorted by quality
+    pub fn get_providers_by_quality(&self, provider_ids: &[String]) -> Vec<(String, f64)> {
+        Arc::as_ref(&self.provider_manager).get_providers_by_quality(provider_ids)
+    }
+}
+
+/// Use case for provider model management
+pub struct ProviderModelUseCase {
+    provider_manager: Arc<ProviderManager>,
+}
+
+impl ProviderModelUseCase {
+    /// Create a new provider model use case
+    pub fn new(provider_manager: Arc<ProviderManager>) -> Self {
+        Self { provider_manager }
+    }
+
+    /// Get available models with optional filtering
+    pub fn get_available_models(&self, filter: Option<ModelFilter>) -> Vec<ModelInfo> {
+        Arc::as_ref(&self.provider_manager).get_available_models(filter)
+    }
+
+    /// Filter models by specific criteria
+    pub fn filter_models(&self, models: &[ModelInfo], criteria: ModelFilterCriteria) -> Vec<ModelInfo> {
+        Arc::as_ref(&self.provider_manager).filter_models(models, criteria)
+    }
+
+    /// Get models for a specific provider
+    pub fn get_provider_models(&self, provider_id: &str) -> Result<Vec<ModelInfo>, AgentError> {
+        let status = Arc::as_ref(&self.provider_manager).get_provider_status(provider_id)
+            .ok_or_else(|| AgentError::Internal(format!("Provider {} not found", provider_id)))?;
+
+        Ok(status.models.clone())
+    }
+
+    /// Find models with specific capabilities
+    pub fn find_models_with_capabilities(&self, capabilities: &[Capability]) -> Vec<ModelInfo> {
+        let all_models = self.get_available_models(None);
+        all_models.into_iter()
+            .filter(|model| capabilities.iter().all(|cap| model.capabilities.contains(cap)))
+            .collect()
+    }
+}
+
+/// Use case for provider health monitoring
+pub struct ProviderHealthUseCase {
+    provider_manager: Arc<ProviderManager>,
+}
+
+impl ProviderHealthUseCase {
+    /// Create a new provider health use case
+    pub fn new(provider_manager: Arc<ProviderManager>) -> Self {
+        Self { provider_manager }
+    }
+
+    /// Check health of a specific provider
+    pub async fn check_provider_health(&self, provider_id: &str) -> Result<bool, AgentError> {
+        Arc::as_ref(&self.provider_manager).health_check(provider_id).await
+            .map_err(|e| AgentError::Internal(format!("Health check failed: {}", e)))
+    }
+
+    /// Check health of all providers
+    pub async fn check_all_provider_health(&self) -> Vec<(String, Result<bool, AgentError>)> {
+        let results = Arc::as_ref(&self.provider_manager).health_check_all().await;
+        results.into_iter()
+            .map(|(id, result)| {
+                let mapped_result = result.map_err(|e| AgentError::Internal(format!("Health check failed: {}", e)));
+                (id, mapped_result)
+            })
+            .collect()
+    }
+
+    /// Invalidate health check cache for a provider
+    pub async fn invalidate_provider_health_cache(&self, provider_id: &str) {
+        Arc::as_ref(&self.provider_manager).invalidate_health_check(provider_id).await;
+    }
+
+    /// Invalidate all health check caches
+    pub async fn invalidate_all_health_caches(&self) {
+        Arc::as_ref(&self.provider_manager).invalidate_all_health_checks().await;
+    }
+}
+
+/// Use case for community provider features
+pub struct ProviderCommunityUseCase {
+    provider_manager: Arc<ProviderManager>,
+}
+
+impl ProviderCommunityUseCase {
+    /// Create a new provider community use case
+    pub fn new(provider_manager: Arc<ProviderManager>) -> Self {
+        Self { provider_manager }
+    }
+
+    /// Get community quality metrics for a provider
+    pub fn get_community_quality_metrics(&self, provider_id: &str) -> Option<ricecoder_providers::community::CommunityQualityMetrics> {
+        Arc::as_ref(&self.provider_manager).get_community_quality_metrics(provider_id)
+    }
+
+    /// Get popular providers from community
+    pub fn get_popular_providers(&self, limit: usize) -> Vec<(String, u64)> {
+        Arc::as_ref(&self.provider_manager).get_popular_providers(limit)
+    }
+
+    /// Get providers ranked by community quality
+    pub fn get_providers_by_community_quality(&self, limit: usize) -> Vec<(String, f64)> {
+        Arc::as_ref(&self.provider_manager).get_providers_by_community_quality(limit)
+    }
+
+    /// Get provider analytics
+    pub fn get_provider_analytics(&self, provider_id: &str) -> Option<ProviderAnalytics> {
+        Arc::as_ref(&self.provider_manager).get_provider_analytics(provider_id).cloned()
+    }
+
+    /// Submit a provider configuration to the community
+    pub fn submit_community_config(&self, config: ricecoder_providers::community::CommunityProviderConfig) -> Result<String, AgentError> {
+        // Note: This requires mutable access, so we'd need to modify the architecture
+        Err(AgentError::Internal("Community config submission requires mutable provider manager access".to_string()))
     }
 }

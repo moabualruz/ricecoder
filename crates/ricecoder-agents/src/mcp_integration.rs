@@ -416,6 +416,17 @@ pub struct AuditEntry {
     pub execution_time_ms: Option<u64>,
 }
 
+impl ExternalToolIntegrationService {
+    /// Create a new external tool integration service
+    pub fn new() -> Self {
+        Self {
+            tool_invoker: ExtensibleToolInvoker::new(),
+            configured_backends: RwLock::new(Vec::new()),
+            security_config: McpSecurityConfig::default(),
+            audit_log: RwLock::new(Vec::new()),
+        }
+    }
+
     /// Check if the operation is allowed based on security configuration
     async fn check_security(&self, server: &str, tool: &str, session_id: Option<&str>) -> Result<(), AgentError> {
         // Check if authentication is required
@@ -559,7 +570,78 @@ pub struct AuditEntry {
     pub fn get_security_config(&self) -> &McpSecurityConfig {
         &self.security_config
     }
-}
+
+    /// Check if tool integration is ready
+    pub async fn is_ready(&self) -> bool {
+        self.tool_invoker.has_backend().await
+    }
+
+    /// Execute a tool
+    pub async fn execute_tool(
+        &self,
+        tool_name: &str,
+        parameters: serde_json::Value,
+        session_id: Option<String>,
+    ) -> Result<serde_json::Value, AgentError> {
+        let start_time = std::time::Instant::now();
+
+        if !self.tool_invoker.has_backend().await {
+            self.log_audit("no_backend", "unknown", Some(tool_name), session_id.as_deref(), false, Some("No tool backend configured".to_string()), None).await;
+            return Err(AgentError::ExecutionFailed("No tool backend configured".to_string()));
+        }
+
+        // Security checks
+        self.check_security("unknown", tool_name, session_id.as_deref()).await?;
+
+        // Validate input parameters against security rules
+        self.validate_parameters(tool_name, &parameters)?;
+
+        let input = json!({
+            "tool_name": tool_name,
+            "parameters": parameters,
+            "backend_config": {
+                "session_id": session_id,
+                "timeout_seconds": self.security_config.max_execution_time_secs
+            }
+        });
+
+        // Execute with retry logic
+        let result = self.execute_with_retry(tool_name, input).await;
+
+        let execution_time = start_time.elapsed().as_millis() as u64;
+
+        // Log audit entry
+        let success = result.is_ok();
+        let error_msg = result.as_ref().err().map(|e| e.to_string());
+        self.log_audit("tool_execution", "unknown", Some(tool_name), session_id.as_deref(), success, error_msg, Some(execution_time)).await;
+
+        result
+    }
+
+    /// Configure a backend
+    pub async fn configure_backend(
+        &self,
+        name: String,
+        backend: ExternalToolBackend,
+    ) -> Result<(), AgentError> {
+        // Configure the backend in the tool invoker
+        self.tool_invoker.configure_backend(backend).await
+            .map_err(|e| AgentError::ExecutionFailed(format!("Failed to configure backend '{}': {}", name, e)))?;
+
+        // Track configured backends
+        let mut configured = self.configured_backends.write().await;
+        if !configured.contains(&name) {
+            configured.push(name.clone());
+        }
+
+        Ok(())
+    }
+
+    /// Get list of configured backends
+    pub async fn get_configured_backends(&self) -> Vec<String> {
+        self.configured_backends.read().await.clone()
+    }
+
     /// Execute tool with retry logic and error classification
     async fn execute_with_retry(
         &self,
@@ -673,6 +755,22 @@ pub struct AuditEntry {
         error_lower.contains("server unavailable") ||
         error_lower.contains("rate limit") ||
         error_lower.contains("too many requests")
+    }
+}
+
+impl Default for McpSecurityConfig {
+    fn default() -> Self {
+        Self {
+            require_authentication: false,
+            allowed_commands: Vec::new(), // Empty means allow all
+            tool_permissions: HashMap::new(),
+            audit_logging: true,
+            max_execution_time_secs: 300, // 5 minutes
+            rate_limit: Some(RateLimitConfig {
+                requests_per_minute: 60,
+                max_concurrent: 5,
+            }),
+        }
     }
 }
 

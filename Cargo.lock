@@ -4651,6 +4651,7 @@ dependencies = [
  "proptest",
  "reqwest 0.11.27",
  "ricecoder-providers",
+ "ricecoder-sessions",
  "ricecoder-storage",
  "rust-mcp-sdk",
  "serde",

@@ -66,7 +66,12 @@ pub use models::{
 };
 pub use mcp_integration::{ExternalToolBackend, ExternalToolIntegrationService, ToolExecutionResult, ToolExecutor};
 pub use orchestrator::AgentOrchestrator;
-pub use use_cases::{ExecuteExternalToolUseCase, ConfigureToolBackendUseCase, ToolManagementUseCase};
+pub use use_cases::{
+    ExecuteExternalToolUseCase, ConfigureToolBackendUseCase, ToolManagementUseCase,
+    SessionLifecycleUseCase, SessionSharingUseCase, SessionStateManagementUseCase,
+    ProviderSwitchingUseCase, ProviderPerformanceUseCase, ProviderFailoverUseCase,
+    ProviderModelUseCase, ProviderHealthUseCase, ProviderCommunityUseCase,
+};
 pub use registry::AgentRegistry;
 pub use scheduler::{AgentScheduler, ExecutionPhase, ExecutionSchedule, TaskDAG};
 pub use tool_registry::{ToolInvoker, ToolMetadata, ToolRegistry};
