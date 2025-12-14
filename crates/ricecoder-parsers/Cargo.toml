@@ -1,0 +1,33 @@
+[package]
+name = "ricecoder-parsers"
+version = "0.1.0"
+edition = "2021"
+description = "AST parsing and syntax tree analysis for multiple programming languages"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+# Core dependencies
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tokio = { workspace = true }
+async-trait = { workspace = true }
+
+# Language-specific parsers
+tree-sitter = "0.20"
+tree-sitter-rust = "0.20"
+tree-sitter-python = "0.20"
+tree-sitter-typescript = "0.20"
+tree-sitter-go = "0.20"
+
+# Performance and caching
+ricecoder-cache = { path = "../ricecoder-cache", version = "0.1" }
+
+# Error handling
+anyhow = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+criterion = { version = "0.5", features = ["html_reports"] }
+tempfile = { workspace = true }

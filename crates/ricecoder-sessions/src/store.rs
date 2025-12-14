@@ -2,9 +2,11 @@
 
 use crate::error::{SessionError, SessionResult};
 use crate::models::Session;
+use chrono::{DateTime, Utc};
 use std::fs;
 use std::path::{Path, PathBuf};
-use tracing::{debug, error, info};
+use std::time::{Duration, SystemTime};
+use tracing::{debug, error, info, warn};
 
 /// Manages session persistence to disk
 #[derive(Debug, Clone)]
@@ -205,6 +207,243 @@ impl SessionStore {
     pub fn archive_dir(&self) -> &Path {
         &self.archive_dir
     }
+
+    /// Clean up old sessions based on age
+    pub async fn cleanup_old_sessions(&self, max_age: Duration) -> SessionResult<usize> {
+        let mut cleaned_count = 0;
+        let cutoff_time = Utc::now() - chrono::Duration::from_std(max_age).unwrap();
+
+        // Get all session files
+        let entries = fs::read_dir(&self.sessions_dir)?;
+
+        for entry in entries {
+            let entry = entry?;
+            let path = entry.path();
+
+            if path.is_file() && path.extension().map_or(false, |ext| ext == "json") {
+                // Check file modification time
+                if let Ok(metadata) = entry.metadata() {
+                    if let Ok(modified) = metadata.modified() {
+                        if let Ok(modified_datetime) = DateTime::<Utc>::try_from(modified) {
+                            if modified_datetime < cutoff_time {
+                                if let Some(file_name) = path.file_stem() {
+                                    if let Some(session_id) = file_name.to_str() {
+                                        match self.delete(session_id).await {
+                                            Ok(_) => {
+                                                cleaned_count += 1;
+                                                debug!("Cleaned up old session: {}", session_id);
+                                            }
+                                            Err(e) => {
+                                                warn!("Failed to clean up session {}: {}", session_id, e);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        info!("Cleaned up {} old sessions", cleaned_count);
+        Ok(cleaned_count)
+    }
+
+    /// Clean up sessions that haven't been accessed recently
+    pub async fn cleanup_stale_sessions(&self, stale_threshold: Duration) -> SessionResult<usize> {
+        let mut cleaned_count = 0;
+        let cutoff_time = Utc::now() - chrono::Duration::from_std(stale_threshold).unwrap();
+
+        // Get all session files
+        let entries = fs::read_dir(&self.sessions_dir)?;
+
+        for entry in entries {
+            let entry = entry?;
+            let path = entry.path();
+
+            if path.is_file() && path.extension().map_or(false, |ext| ext == "json") {
+                // Load session and check last activity
+                if let Some(file_name) = path.file_stem() {
+                    if let Some(session_id) = file_name.to_str() {
+                        match self.load(session_id).await {
+                            Ok(session) => {
+                                // Check if session has been inactive too long
+                                if session.updated_at < cutoff_time {
+                                    match self.delete(session_id).await {
+                                        Ok(_) => {
+                                            cleaned_count += 1;
+                                            debug!("Cleaned up stale session: {}", session_id);
+                                        }
+                                        Err(e) => {
+                                            warn!("Failed to clean up stale session {}: {}", session_id, e);
+                                        }
+                                    }
+                                }
+                            }
+                            Err(SessionError::NotFound(_)) => {
+                                // Session file doesn't exist, which is fine for cleanup
+                            }
+                            Err(e) => {
+                                warn!("Error loading session {} for cleanup: {}", session_id, e);
+                                // Try to remove potentially corrupted file
+                                if fs::remove_file(&path).is_ok() {
+                                    cleaned_count += 1;
+                                    debug!("Cleaned up corrupted session file: {}", session_id);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        info!("Cleaned up {} stale sessions", cleaned_count);
+        Ok(cleaned_count)
+    }
+
+    /// Perform comprehensive garbage collection
+    pub async fn garbage_collect(&self, config: &GarbageCollectionConfig) -> SessionResult<GarbageCollectionResult> {
+        let mut result = GarbageCollectionResult::default();
+
+        // Clean up old sessions
+        if let Some(max_age) = config.max_session_age {
+            result.old_sessions_cleaned = self.cleanup_old_sessions(max_age).await?;
+        }
+
+        // Clean up stale sessions
+        if let Some(stale_threshold) = config.stale_session_threshold {
+            result.stale_sessions_cleaned = self.cleanup_stale_sessions(stale_threshold).await?;
+        }
+
+        // Clean up archive files
+        if let Some(archive_max_age) = config.max_archive_age {
+            result.archive_files_cleaned = self.cleanup_old_archive_files(archive_max_age)?;
+        }
+
+        // Check current storage usage
+        result.current_session_count = self.count_sessions()?;
+        result.current_archive_count = self.count_archive_files()?;
+        result.total_size_bytes = self.calculate_total_size()?;
+
+        info!("Garbage collection completed: {:?}", result);
+        Ok(result)
+    }
+
+    /// Clean up old archive files
+    fn cleanup_old_archive_files(&self, max_age: Duration) -> SessionResult<usize> {
+        let mut cleaned_count = 0;
+        let cutoff_time = SystemTime::now() - max_age;
+
+        let entries = fs::read_dir(&self.archive_dir)?;
+
+        for entry in entries {
+            let entry = entry?;
+            let path = entry.path();
+
+            if path.is_file() {
+                if let Ok(metadata) = entry.metadata() {
+                    if let Ok(modified) = metadata.modified() {
+                        if modified < cutoff_time {
+                            if fs::remove_file(&path).is_ok() {
+                                cleaned_count += 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(cleaned_count)
+    }
+
+    /// Count current sessions
+    fn count_sessions(&self) -> SessionResult<usize> {
+        let entries = fs::read_dir(&self.sessions_dir)?;
+        let count = entries
+            .filter_map(|entry| entry.ok())
+            .filter(|entry| {
+                entry.path().is_file() &&
+                entry.path().extension().map_or(false, |ext| ext == "json")
+            })
+            .count();
+        Ok(count)
+    }
+
+    /// Count archive files
+    fn count_archive_files(&self) -> SessionResult<usize> {
+        let entries = fs::read_dir(&self.archive_dir)?;
+        let count = entries
+            .filter_map(|entry| entry.ok())
+            .filter(|entry| entry.path().is_file())
+            .count();
+        Ok(count)
+    }
+
+    /// Calculate total storage size
+    fn calculate_total_size(&self) -> SessionResult<u64> {
+        let mut total_size = 0u64;
+
+        // Sum session files
+        let session_entries = fs::read_dir(&self.sessions_dir)?;
+        for entry in session_entries {
+            if let Ok(entry) = entry {
+                if let Ok(metadata) = entry.metadata() {
+                    total_size += metadata.len();
+                }
+            }
+        }
+
+        // Sum archive files
+        let archive_entries = fs::read_dir(&self.archive_dir)?;
+        for entry in archive_entries {
+            if let Ok(entry) = entry {
+                if let Ok(metadata) = entry.metadata() {
+                    total_size += metadata.len();
+                }
+            }
+        }
+
+        Ok(total_size)
+    }
+}
+
+/// Configuration for garbage collection
+#[derive(Debug, Clone)]
+pub struct GarbageCollectionConfig {
+    /// Maximum age for sessions before cleanup
+    pub max_session_age: Option<Duration>,
+    /// Threshold for considering sessions stale (no activity)
+    pub stale_session_threshold: Option<Duration>,
+    /// Maximum age for archive files
+    pub max_archive_age: Option<Duration>,
+}
+
+impl Default for GarbageCollectionConfig {
+    fn default() -> Self {
+        Self {
+            max_session_age: Some(Duration::from_secs(30 * 24 * 60 * 60)), // 30 days
+            stale_session_threshold: Some(Duration::from_secs(7 * 24 * 60 * 60)), // 7 days
+            max_archive_age: Some(Duration::from_secs(90 * 24 * 60 * 60)), // 90 days
+        }
+    }
+}
+
+/// Result of garbage collection operation
+#[derive(Debug, Clone, Default)]
+pub struct GarbageCollectionResult {
+    /// Number of old sessions cleaned up
+    pub old_sessions_cleaned: usize,
+    /// Number of stale sessions cleaned up
+    pub stale_sessions_cleaned: usize,
+    /// Number of old archive files cleaned up
+    pub archive_files_cleaned: usize,
+    /// Current number of active sessions
+    pub current_session_count: usize,
+    /// Current number of archive files
+    pub current_archive_count: usize,
+    /// Total storage size in bytes
+    pub total_size_bytes: u64,
 }
 
 impl Default for SessionStore {

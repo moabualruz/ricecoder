@@ -9,6 +9,7 @@ pub mod error;
 pub mod history;
 pub mod manager;
 pub mod models;
+pub mod performance_monitor;
 pub mod router;
 pub mod session_integration;
 pub mod session_manager;
@@ -32,8 +33,9 @@ pub use models::{
 };
 pub use router::SessionRouter;
 pub use session_integration::SessionIntegration;
-pub use share::{SessionShare, SharePermissions, ShareService};
-pub use store::SessionStore;
+pub use performance_monitor::{SessionMetrics, SessionPerformanceMonitor, SessionPerformanceSummary};
+pub use share::{SessionShare, SharePermissions, ShareService, ShareAnalyticsData};
+pub use store::{GarbageCollectionConfig, GarbageCollectionResult, SessionStore};
 pub use token_estimator::{
     ModelPricing, TokenEstimate, TokenEstimator, TokenLimitStatus, TokenUsage, TokenUsageTracker,
 };

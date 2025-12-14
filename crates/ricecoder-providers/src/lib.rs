@@ -6,11 +6,14 @@
 pub mod api_key;
 pub mod audit_log;
 pub mod cache;
+pub mod community;
 pub mod config;
+pub mod curation;
 pub mod error;
 pub mod health_check;
 pub mod integration;
 pub mod models;
+pub mod performance_monitor;
 pub mod provider;
 pub mod providers;
 pub mod rate_limiter;
@@ -28,6 +31,17 @@ pub use health_check::{HealthCheckCache, HealthCheckResult};
 pub use integration::ProviderIntegration;
 pub use models::{
     Capability, ChatRequest, ChatResponse, FinishReason, Message, ModelInfo, TokenUsage,
+};
+pub use performance_monitor::{
+    PerformanceSummary, PerformanceThresholds, ProviderMetrics, ProviderPerformanceMonitor,
+};
+pub use community::{
+    CommunityProviderConfig, CommunityProviderRegistry, ContributionMetadata,
+    ContributionReview, ContributionStatus, ProviderAnalytics, ProviderUpdate,
+    ProviderUsage, UpdateType,
+};
+pub use curation::{
+    CurationConfig, ProviderCurator, QualityScore, ReliabilityStatus, SelectionConstraints,
 };
 pub use provider::manager::{ConnectionState, ModelFilter, ModelFilterCriteria, ProviderStatus};
 pub use provider::{Provider, ProviderManager, ProviderRegistry};

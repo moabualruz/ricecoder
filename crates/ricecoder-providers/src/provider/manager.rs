@@ -5,9 +5,12 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use super::{ChatStream, Provider, ProviderRegistry};
+use crate::community::{CommunityProviderRegistry, ProviderUsage};
+use crate::curation::{CurationConfig, ProviderCurator, SelectionConstraints};
 use crate::error::ProviderError;
 use crate::health_check::HealthCheckCache;
-use crate::models::{Capability, ChatRequest, ChatResponse, ModelInfo};
+use crate::models::{Capability, ChatRequest, ChatResponse, ModelInfo, TokenUsage};
+use crate::performance_monitor::ProviderPerformanceMonitor;
 
 /// Provider connection state
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -108,11 +111,17 @@ pub struct ProviderManager {
     timeout: Duration,
     health_check_cache: Arc<HealthCheckCache>,
     provider_states: HashMap<String, ProviderStatus>,
+    performance_monitor: Arc<ProviderPerformanceMonitor>,
+    curator: ProviderCurator,
+    community_registry: CommunityProviderRegistry,
 }
 
 impl ProviderManager {
     /// Create a new provider manager
     pub fn new(registry: ProviderRegistry, default_provider_id: String) -> Self {
+        let performance_monitor = Arc::new(ProviderPerformanceMonitor::default());
+        let curator = ProviderCurator::default(performance_monitor.clone());
+
         Self {
             registry,
             default_provider_id,
@@ -120,6 +129,9 @@ impl ProviderManager {
             timeout: Duration::from_secs(30),
             health_check_cache: Arc::new(HealthCheckCache::default()),
             provider_states: HashMap::new(),
+            performance_monitor,
+            curator,
+            community_registry: CommunityProviderRegistry::new(),
         }
     }
 
@@ -280,22 +292,44 @@ impl ProviderManager {
     }
 
     /// Send a chat request with retry logic
-    pub async fn chat(&self, request: ChatRequest) -> Result<ChatResponse, ProviderError> {
+    pub async fn chat(&mut self, request: ChatRequest) -> Result<ChatResponse, ProviderError> {
         let provider = self.default_provider()?;
         self.chat_with_provider(&provider, request).await
     }
 
     /// Send a chat request to a specific provider with retry logic
     pub async fn chat_with_provider(
-        &self,
+        &mut self,
         provider: &Arc<dyn Provider>,
         request: ChatRequest,
     ) -> Result<ChatResponse, ProviderError> {
+        let provider_id = provider.id();
         let mut last_error = None;
+        let start_time = std::time::Instant::now();
 
         for attempt in 0..=self.retry_count {
             match tokio::time::timeout(self.timeout, provider.chat(request.clone())).await {
-                Ok(Ok(response)) => return Ok(response),
+                Ok(Ok(response)) => {
+                    let response_time_ms = start_time.elapsed().as_millis() as u64;
+                    let tokens_used = response.usage.total_tokens as u64;
+                    let cost = self.calculate_cost(provider_id, &Some(response.usage.clone()));
+
+                    self.performance_monitor.record_success(provider_id, response_time_ms, tokens_used, cost);
+                    self.curator.record_success(provider_id);
+
+                    // Record community analytics
+                    let usage = ProviderUsage {
+                        success: true,
+                        tokens_used,
+                        cost,
+                        response_time_ms,
+                        model: request.model.clone(),
+                        error_type: None,
+                    };
+                    self.community_registry.record_usage(provider_id, usage);
+
+                    return Ok(response);
+                }
                 Ok(Err(e)) => {
                     last_error = Some(e);
                     if attempt < self.retry_count {
@@ -314,8 +348,23 @@ impl ProviderManager {
             }
         }
 
-        Err(last_error
-            .unwrap_or_else(|| ProviderError::ProviderError("Failed after retries".to_string())))
+        // Record failure
+        let response_time_ms = start_time.elapsed().as_millis() as u64;
+        self.performance_monitor.record_failure(provider_id, response_time_ms);
+        self.curator.record_failure(provider_id);
+
+        // Record community analytics for failure
+        let usage = ProviderUsage {
+            success: false,
+            tokens_used: 0, // No tokens used on failure
+            cost: 0.0,
+            response_time_ms,
+            model: request.model.clone(),
+            error_type: Some("request_failed".to_string()),
+        };
+        self.community_registry.record_usage(provider_id, usage);
+
+        Err(last_error.unwrap_or_else(|| ProviderError::ProviderError("All retry attempts failed".to_string())))
     }
 
     /// Stream a chat response
@@ -375,6 +424,166 @@ impl ProviderManager {
     /// Get mutable registry
     pub fn registry_mut(&mut self) -> &mut ProviderRegistry {
         &mut self.registry
+    }
+
+    /// Calculate cost for a request based on token usage and model pricing
+    fn calculate_cost(&self, provider_id: &str, usage: &Option<TokenUsage>) -> f64 {
+        if let Some(usage) = usage {
+            // Get provider to find model pricing
+            if let Ok(provider) = self.registry.get(provider_id) {
+                let models = provider.models();
+                // For now, we assume the model from the response, but we could enhance this
+                // to track which model was actually used per request
+                // This is a simplified implementation - in practice, we'd need to know
+                // which specific model was used for accurate pricing
+                if let Some(model) = models.first() {
+                    if let Some(ref pricing) = model.pricing {
+                        let input_cost = (usage.prompt_tokens as f64 / 1000.0) * pricing.input_per_1k_tokens;
+                        let output_cost = (usage.completion_tokens as f64 / 1000.0) * pricing.output_per_1k_tokens;
+                        return input_cost + output_cost;
+                    }
+                }
+            }
+        }
+        0.0 // No usage info or pricing available
+    }
+
+    /// Get the performance monitor for external access
+    pub fn performance_monitor(&self) -> &Arc<ProviderPerformanceMonitor> {
+        &self.performance_monitor
+    }
+
+    /// Get the provider curator for external access
+    pub fn curator(&self) -> &ProviderCurator {
+        &self.curator
+    }
+
+    /// Get mutable access to the curator
+    pub fn curator_mut(&mut self) -> &mut ProviderCurator {
+        &mut self.curator
+    }
+
+    /// Select the best provider based on quality scores and constraints
+    pub fn select_best_provider(&self, constraints: Option<&SelectionConstraints>) -> Option<String> {
+        let available_providers: Vec<String> = self.provider_states.keys().cloned().collect();
+        self.curator.select_best_provider(&available_providers, constraints)
+    }
+
+    /// Select the best provider for a specific model requirement
+    pub fn select_best_provider_for_model(&self, required_capabilities: &[Capability], constraints: Option<&SelectionConstraints>) -> Option<String> {
+        let mut suitable_providers = Vec::new();
+
+        for (provider_id, status) in &self.provider_states {
+            if status.state == ConnectionState::Connected {
+                // Check if provider has models with required capabilities
+                let has_suitable_model = status.models.iter().any(|model|
+                    required_capabilities.iter().all(|cap| model.capabilities.contains(cap))
+                );
+
+                if has_suitable_model {
+                    suitable_providers.push(provider_id.clone());
+                }
+            }
+        }
+
+        self.curator.select_best_provider(&suitable_providers, constraints)
+    }
+
+    /// Update quality scores for all providers
+    pub fn update_provider_quality_scores(&mut self) {
+        let mut provider_models = HashMap::new();
+
+        for (provider_id, status) in &self.provider_states {
+            if status.state == ConnectionState::Connected {
+                provider_models.insert(provider_id.clone(), status.models.clone());
+            }
+        }
+
+        self.curator.update_quality_scores(&provider_models);
+    }
+
+    /// Get providers sorted by quality for a given set of providers
+    pub fn get_providers_by_quality(&self, provider_ids: &[String]) -> Vec<(String, f64)> {
+        self.curator.get_providers_by_quality(provider_ids)
+    }
+
+    /// Check if a provider should be avoided due to reliability issues
+    pub fn should_avoid_provider(&self, provider_id: &str) -> bool {
+        if let Some(tracker) = self.curator.get_reliability_tracker(provider_id) {
+            tracker.should_avoid(self.curator.config())
+        } else {
+            false
+        }
+    }
+
+    /// Get automatic failover provider if current provider is failing
+    pub fn get_failover_provider(&self, current_provider_id: &str) -> Option<String> {
+        if self.should_avoid_provider(current_provider_id) {
+            // Find alternative providers
+            let alternatives: Vec<String> = self.provider_states
+                .iter()
+                .filter(|(id, status)| {
+                    *id != current_provider_id &&
+                    status.state == ConnectionState::Connected &&
+                    !self.should_avoid_provider(id)
+                })
+                .map(|(id, _)| id.clone())
+                .collect();
+
+            self.curator.select_best_provider(&alternatives, None)
+        } else {
+            None
+        }
+    }
+
+    /// Get the community registry for external access
+    pub fn community_registry(&self) -> &CommunityProviderRegistry {
+        &self.community_registry
+    }
+
+    /// Get mutable access to the community registry
+    pub fn community_registry_mut(&mut self) -> &mut CommunityProviderRegistry {
+        &mut self.community_registry
+    }
+
+    /// Load community configurations for providers
+    pub fn load_community_configs(&mut self) -> Result<(), ProviderError> {
+        // Load approved community configurations and register them
+        for config in self.community_registry.get_all_approved_configs() {
+            // Check if we already have this provider
+            if self.registry.get(&config.provider_id).is_err() {
+                // For now, we would need to create a provider instance from the config
+                // This is a simplified implementation - in practice, you'd need to
+                // instantiate the appropriate provider type based on the config
+                println!("Would load community config for provider: {}", config.provider_id);
+            }
+        }
+        Ok(())
+    }
+
+    /// Get community quality metrics for a provider
+    pub fn get_community_quality_metrics(&self, provider_id: &str) -> Option<crate::community::CommunityQualityMetrics> {
+        self.community_registry.get_community_quality_metrics(provider_id)
+    }
+
+    /// Get popular providers from community analytics
+    pub fn get_popular_providers(&self, limit: usize) -> Vec<(String, u64)> {
+        self.community_registry.get_popular_providers(limit)
+    }
+
+    /// Get providers ranked by community quality
+    pub fn get_providers_by_community_quality(&self, limit: usize) -> Vec<(String, f64)> {
+        self.community_registry.get_providers_by_community_quality(limit)
+    }
+
+    /// Submit a provider configuration to the community
+    pub fn submit_community_config(&mut self, config: crate::community::CommunityProviderConfig) -> Result<String, ProviderError> {
+        self.community_registry.submit_contribution(config)
+    }
+
+    /// Get provider analytics
+    pub fn get_provider_analytics(&self, provider_id: &str) -> Option<&crate::community::ProviderAnalytics> {
+        self.community_registry.get_analytics(provider_id)
     }
 }
 

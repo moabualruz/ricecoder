@@ -20,11 +20,16 @@ pub mod metadata;
 pub mod permissions;
 pub mod permissions_integration;
 pub mod registry;
+pub mod protocol_validation;
+pub mod registry;
+pub mod server_management;
 pub mod storage_integration;
+pub mod tool_execution;
+pub mod tool_orchestration;
+pub mod transport;
 
 pub use agent_integration::{
-    AgentToolCapabilities, ToolDiscovery, ToolExecutionContext, ToolExecutionResult,
-    ToolInvoker, ToolWorkflowIntegration,
+    AgentToolCapabilities, ToolDiscovery, ToolInvoker, ToolWorkflowIntegration,
 };
 pub use client::MCPClient;
 pub use config::{MCPConfig, MCPConfigLoader};
@@ -49,4 +54,23 @@ pub use permissions_integration::{
 pub use registry::ToolRegistry;
 pub use storage_integration::{
     JsonToolRegistryStorage, ToolRegistryCache, ToolRegistryPersistence, ToolRegistryStorage,
+};
+pub use protocol_validation::{
+    MCPComplianceChecker, MCPErrorHandler, MCPProtocolValidator,
+};
+pub use server_management::{
+    AuthConfig, AuthType, DiscoveryResult, FileSystemDiscoveryProvider, ServerConfig,
+    ServerHealth, ServerManager, ServerRegistration, ServerState,
+};
+pub use tool_execution::{
+    MCPToolExecutor, ToolExecutionContext, ToolExecutionResult, ToolExecutionStats,
+    ToolExecutor, ToolResultProcessor,
+};
+pub use tool_orchestration::{
+    PipelineExecutionContext, PipelineExecutionResult, PipelineStats, PipelineStep,
+    ToolOrchestrator, ToolPipeline,
+};
+pub use transport::{
+    HTTPTransport, MCPMessage, MCPRequest, MCPResponse, MCPNotification, MCPError, MCPErrorData,
+    MCPTransport, SSETransport, StdioTransport, TransportConfig, TransportFactory, TransportType,
 };

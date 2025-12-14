@@ -59,6 +59,8 @@ members = [
      "crates/ricecoder-research",
      "crates/ricecoder-security",
      "crates/ricecoder-agents",
+     "crates/ricecoder-cache",
+     "crates/ricecoder-parsers",
      "crates/ricecoder-workflows",
     "crates/ricecoder-execution",
     "crates/ricecoder-sessions",

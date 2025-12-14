@@ -127,6 +127,7 @@ impl Error {
             Error::OutputValidationError(_) => "OutputValidationError",
             Error::NamingConflict(_) => "NamingConflict",
             Error::ConnectionError(_) => "ConnectionError",
+            Error::TimeoutError(_) => "TimeoutError",
             Error::SerializationError(_) => "SerializationError",
             Error::StorageError(_) => "StorageError",
             Error::IoError(_) => "IoError",
