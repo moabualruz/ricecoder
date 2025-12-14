@@ -54,6 +54,10 @@ impl AppModel {
             AppMessage::OperationFailed(id, error) => self.handle_operation_failed(id, error),
             AppMessage::SendMessage(msg) => self.handle_send_message(msg),
             AppMessage::FileSelected(path) => self.handle_file_selected(path),
+            AppMessage::McpServerAdded(server) => self.handle_mcp_server_added(server),
+            AppMessage::McpServerRemoved(server) => self.handle_mcp_server_removed(server),
+            AppMessage::McpToolExecuted { server, tool, result } => self.handle_mcp_tool_executed(server, tool, result),
+            AppMessage::McpToolExecutionFailed { server, tool, error } => self.handle_mcp_tool_execution_failed(server, tool, error),
             AppMessage::ComponentMessage { component_id, message } => self.handle_component_message(component_id, message),
             AppMessage::Tick => self.handle_tick(),
             AppMessage::ExitRequested => self.handle_exit_requested(),
@@ -282,6 +286,26 @@ impl AppModel {
 
     fn handle_file_selected(self, _path: String) -> (Self, Vec<Command>) {
         // TODO: Implement file selected handling
+        (self, vec![])
+    }
+
+    fn handle_mcp_server_added(self, server_name: String) -> (Self, Vec<Command>) {
+        // TODO: Implement MCP server added handling
+        (self, vec![])
+    }
+
+    fn handle_mcp_server_removed(self, server_name: String) -> (Self, Vec<Command>) {
+        // TODO: Implement MCP server removed handling
+        (self, vec![])
+    }
+
+    fn handle_mcp_tool_executed(self, server: String, tool: String, result: serde_json::Value) -> (Self, Vec<Command>) {
+        // TODO: Implement MCP tool executed handling
+        (self, vec![])
+    }
+
+    fn handle_mcp_tool_execution_failed(self, server: String, tool: String, error: String) -> (Self, Vec<Command>) {
+        // TODO: Implement MCP tool execution failed handling
         (self, vec![])
     }
 

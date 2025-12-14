@@ -37,6 +37,18 @@ pub enum AgentError {
     #[error("Invalid input: {0}")]
     InvalidInput(String),
 
+    /// Authentication required
+    #[error("Authentication required")]
+    AuthenticationRequired,
+
+    /// Permission denied
+    #[error("Permission denied: {0}")]
+    PermissionDenied(String),
+
+    /// Validation error
+    #[error("Validation error: {0}")]
+    ValidationError(String),
+
     /// Internal error
     #[error("Internal error: {0}")]
     Internal(String),

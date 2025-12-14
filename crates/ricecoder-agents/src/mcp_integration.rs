@@ -8,6 +8,7 @@ use crate::error::AgentError;
 use crate::tool_invokers::{ExtensibleToolInvoker, ToolBackend};
 use crate::tool_registry::ToolInvoker;
 use serde_json::json;
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{debug, error, info, warn};
@@ -328,6 +329,67 @@ impl ToolExecutor for MCPToolExecutor {
     }
 }
 
+/// MCP Security Configuration
+#[derive(Clone, Debug)]
+pub struct McpSecurityConfig {
+    /// Whether to require authentication for MCP operations
+    pub require_authentication: bool,
+    /// Allowed server commands (whitelist)
+    pub allowed_commands: Vec<String>,
+    /// Tool execution permissions
+    pub tool_permissions: HashMap<String, ToolPermission>,
+    /// Audit logging enabled
+    pub audit_logging: bool,
+    /// Maximum execution time per tool (seconds)
+    pub max_execution_time_secs: u64,
+    /// Rate limiting configuration
+    pub rate_limit: Option<RateLimitConfig>,
+}
+
+/// Tool permission configuration
+#[derive(Clone, Debug)]
+pub struct ToolPermission {
+    /// Whether the tool is allowed to execute
+    pub allowed: bool,
+    /// Required authentication level
+    pub auth_level: AuthLevel,
+    /// Parameter validation rules
+    pub parameter_validation: ParameterValidation,
+}
+
+/// Authentication level required
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum AuthLevel {
+    /// No authentication required
+    None,
+    /// Basic authentication
+    Basic,
+    /// Session-based authentication
+    Session,
+    /// Admin-level authentication
+    Admin,
+}
+
+/// Parameter validation rules
+#[derive(Clone, Debug)]
+pub struct ParameterValidation {
+    /// Maximum parameter size (bytes)
+    pub max_size: usize,
+    /// Allowed parameter types
+    pub allowed_types: Vec<String>,
+    /// Custom validation rules
+    pub custom_rules: Vec<String>,
+}
+
+/// Rate limiting configuration
+#[derive(Clone, Debug)]
+pub struct RateLimitConfig {
+    /// Maximum requests per minute
+    pub requests_per_minute: u32,
+    /// Maximum concurrent executions
+    pub max_concurrent: u32,
+}
+
 /// External Tool Integration Service
 ///
 /// Application service that manages external tool execution backends
@@ -336,136 +398,168 @@ impl ToolExecutor for MCPToolExecutor {
 pub struct ExternalToolIntegrationService {
     tool_invoker: ExtensibleToolInvoker,
     configured_backends: RwLock<Vec<String>>,
+    security_config: McpSecurityConfig,
+    audit_log: RwLock<Vec<AuditEntry>>,
 }
 
-impl ExternalToolIntegrationService {
-    /// Create a new external tool integration service
-    pub fn new() -> Self {
-        Self {
-            tool_invoker: ExtensibleToolInvoker::new(),
-            configured_backends: RwLock::new(Vec::new()),
-        }
-    }
+/// Audit log entry for MCP operations
+#[derive(Clone, Debug)]
+pub struct AuditEntry {
+    pub timestamp: u64,
+    pub operation: String,
+    pub server: String,
+    pub tool: Option<String>,
+    pub user: Option<String>,
+    pub session_id: Option<String>,
+    pub success: bool,
+    pub error_message: Option<String>,
+    pub execution_time_ms: Option<u64>,
+}
 
-    /// Configure an external tool backend
-    pub async fn configure_backend(
-        &self,
-        backend_name: String,
-        backend: impl ToolBackend + Send + Sync + 'static,
-    ) -> Result<(), AgentError> {
-        // Configure the tool invoker with the backend
-        self.tool_invoker.configure_backend(backend).await
-            .map_err(|e| AgentError::ExecutionFailed(e))?;
-
-        // Track configured backends
-        let mut backends = self.configured_backends.write().await;
-        if !backends.contains(&backend_name) {
-            backends.push(backend_name.clone());
+    /// Check if the operation is allowed based on security configuration
+    async fn check_security(&self, server: &str, tool: &str, session_id: Option<&str>) -> Result<(), AgentError> {
+        // Check if authentication is required
+        if self.security_config.require_authentication && session_id.is_none() {
+            self.log_audit("authentication_required", server, Some(tool), session_id, false, Some("Authentication required".to_string()), None).await;
+            return Err(AgentError::AuthenticationRequired);
         }
 
-        info!(backend_name = %backend_name, "External tool backend configured successfully");
-        Ok(())
-    }
-
-    /// Execute a tool through the configured backend
-    pub async fn execute_tool(
-        &self,
-        tool_name: &str,
-        parameters: serde_json::Value,
-        session_id: Option<String>,
-    ) -> Result<serde_json::Value, AgentError> {
-        if !self.tool_invoker.has_backend().await {
-            return Err(AgentError::ExecutionFailed("No tool backend configured".to_string()));
-        }
-
-        // Validate input parameters
-        self.validate_tool_parameters(tool_name, &parameters)?;
-
-        let input = json!({
-            "tool_name": tool_name,
-            "parameters": parameters,
-            "backend_config": {
-                "session_id": session_id,
-                "timeout_seconds": 30
+        // Check tool permissions
+        if let Some(permission) = self.security_config.tool_permissions.get(tool) {
+            if !permission.allowed {
+                self.log_audit("tool_not_allowed", server, Some(tool), session_id, false, Some("Tool execution not allowed".to_string()), None).await;
+                return Err(AgentError::PermissionDenied("Tool execution not allowed".to_string()));
             }
-        });
 
-        // Execute with retry logic
-        self.execute_with_retry(tool_name, input).await
-    }
-
-    /// Get list of configured backends
-    pub async fn get_configured_backends(&self) -> Vec<String> {
-        self.configured_backends.read().await.clone()
-    }
-
-    /// Check if tool integration is ready
-    pub async fn is_ready(&self) -> bool {
-        self.tool_invoker.has_backend().await
-    }
-
-    /// Get integration status
-    pub async fn get_status(&self) -> serde_json::Value {
-        let configured_backends = self.get_configured_backends().await;
-        let is_ready = self.is_ready().await;
-
-        json!({
-            "ready": is_ready,
-            "configured_backends": configured_backends.len(),
-            "backend_names": configured_backends
-        })
-    }
-
-    /// Validate tool parameters before execution
-    fn validate_tool_parameters(&self, tool_name: &str, parameters: &serde_json::Value) -> Result<(), AgentError> {
-        // Basic validation - tool name should not be empty
-        if tool_name.trim().is_empty() {
-            return Err(AgentError::ExecutionFailed(
-                "Tool name cannot be empty".to_string(),
-            ));
-        }
-
-        // Validate parameters is an object
-        if !parameters.is_object() {
-            return Err(AgentError::ExecutionFailed(
-                "Tool parameters must be a JSON object".to_string(),
-            ));
-        }
-
-        // Check for potentially dangerous parameters
-        if let Some(obj) = parameters.as_object() {
-            for (key, value) in obj {
-                // Warn about potentially sensitive parameters
-                if key.to_lowercase().contains("password") ||
-                   key.to_lowercase().contains("secret") ||
-                   key.to_lowercase().contains("token") {
-                    warn!(
-                        tool_name = %tool_name,
-                        parameter = %key,
-                        "Potentially sensitive parameter detected in tool execution"
-                    );
-                }
-
-                // Validate parameter values are reasonable
-                if let Some(str_val) = value.as_str() {
-                    if str_val.len() > 10000 { // 10KB limit
-                        return Err(AgentError::ExecutionFailed(
-                            format!("Parameter '{}' value too large ({} bytes)", key, str_val.len()),
-                        ));
+            // Check authentication level
+            match permission.auth_level {
+                AuthLevel::None => {}
+                AuthLevel::Basic | AuthLevel::Session => {
+                    if session_id.is_none() {
+                        self.log_audit("insufficient_auth", server, Some(tool), session_id, false, Some("Insufficient authentication level".to_string()), None).await;
+                        return Err(AgentError::AuthenticationRequired);
                     }
                 }
+                AuthLevel::Admin => {
+                    // TODO: Check admin privileges
+                    self.log_audit("admin_required", server, Some(tool), session_id, false, Some("Admin privileges required".to_string()), None).await;
+                    return Err(AgentError::PermissionDenied("Admin privileges required".to_string()));
+                }
             }
         }
 
         Ok(())
     }
 
-    /// Configure an HTTP API backend
-    pub async fn configure_http_backend(&self, name: String, base_url: String) -> Result<(), AgentError> {
-        let backend = ExternalToolBackend::http_api(base_url);
-        self.configure_backend(name, backend).await
+    /// Validate tool parameters against security rules
+    fn validate_parameters(&self, tool: &str, parameters: &serde_json::Value) -> Result<(), AgentError> {
+        if let Some(permission) = self.security_config.tool_permissions.get(tool) {
+            let param_size = serde_json::to_string(parameters).map(|s| s.len()).unwrap_or(0);
+
+            if param_size > permission.parameter_validation.max_size {
+                return Err(AgentError::ValidationError(format!(
+                    "Parameter size {} exceeds maximum allowed size {}",
+                    param_size, permission.parameter_validation.max_size
+                )));
+            }
+
+            // Validate parameter types
+            self.validate_parameter_types(parameters, &permission.parameter_validation.allowed_types)?;
+        }
+
+        Ok(())
     }
 
+    /// Validate parameter types recursively
+    fn validate_parameter_types(&self, value: &serde_json::Value, allowed_types: &[String]) -> Result<(), AgentError> {
+        let value_type = match value {
+            serde_json::Value::Null => "null",
+            serde_json::Value::Bool(_) => "boolean",
+            serde_json::Value::Number(_) => "number",
+            serde_json::Value::String(_) => "string",
+            serde_json::Value::Array(_) => "array",
+            serde_json::Value::Object(_) => "object",
+        };
+
+        if !allowed_types.contains(&value_type.to_string()) {
+            return Err(AgentError::ValidationError(format!(
+                "Parameter type '{}' is not allowed. Allowed types: {:?}",
+                value_type, allowed_types
+            )));
+        }
+
+        // Recursively validate nested structures
+        match value {
+            serde_json::Value::Array(arr) => {
+                for item in arr {
+                    self.validate_parameter_types(item, allowed_types)?;
+                }
+            }
+            serde_json::Value::Object(obj) => {
+                for (_, val) in obj {
+                    self.validate_parameter_types(val, allowed_types)?;
+                }
+            }
+            _ => {}
+        }
+
+        Ok(())
+    }
+
+    /// Log audit entry
+    async fn log_audit(
+        &self,
+        operation: &str,
+        server: &str,
+        tool: Option<&str>,
+        session_id: Option<&str>,
+        success: bool,
+        error_message: Option<String>,
+        execution_time_ms: Option<u64>,
+    ) {
+        if !self.security_config.audit_logging {
+            return;
+        }
+
+        let entry = AuditEntry {
+            timestamp: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs(),
+            operation: operation.to_string(),
+            server: server.to_string(),
+            tool: tool.map(|s| s.to_string()),
+            user: None, // TODO: Add user context
+            session_id: session_id.map(|s| s.to_string()),
+            success,
+            error_message,
+            execution_time_ms,
+        };
+
+        let mut audit_log = self.audit_log.write().await;
+        audit_log.push(entry);
+
+        // Keep only last 1000 entries
+        if audit_log.len() > 1000 {
+            audit_log.drain(0..100);
+        }
+    }
+
+    /// Get audit log
+    pub async fn get_audit_log(&self) -> Vec<AuditEntry> {
+        self.audit_log.read().await.clone()
+    }
+
+    /// Update security configuration
+    pub fn update_security_config(&mut self, config: McpSecurityConfig) {
+        self.security_config = config;
+    }
+
+    /// Get current security configuration
+    pub fn get_security_config(&self) -> &McpSecurityConfig {
+        &self.security_config
+    }
+}
     /// Execute tool with retry logic and error classification
     async fn execute_with_retry(
         &self,

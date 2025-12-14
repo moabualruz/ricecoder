@@ -36,6 +36,7 @@ pub struct AppModel {
     // Domain State
     pub sessions: SessionState,
     pub commands: CommandState,
+    pub mcp: McpState,
     pub ui: UiState,
 
     // Async State
@@ -52,6 +53,8 @@ pub enum AppMode {
     Command,
     /// Diff mode for reviewing code changes
     Diff,
+    /// MCP mode for Model Context Protocol tools
+    Mcp,
     /// Help mode
     Help,
 }
@@ -63,6 +66,7 @@ impl AppMode {
             AppMode::Chat => "Chat",
             AppMode::Command => "Command",
             AppMode::Diff => "Diff",
+            AppMode::Mcp => "MCP",
             AppMode::Help => "Help",
         }
     }
@@ -73,6 +77,7 @@ impl AppMode {
             AppMode::Chat => "Ctrl+1",
             AppMode::Command => "Ctrl+2",
             AppMode::Diff => "Ctrl+3",
+            AppMode::Mcp => "Ctrl+4",
             AppMode::Help => "Ctrl+4",
         }
     }
@@ -104,6 +109,45 @@ pub struct UiState {
     // pub help_dialog: HelpDialog, // Temporarily removed due to trait bounds
     pub file_picker_visible: bool,
     pub config: TuiConfig,
+}
+
+/// MCP state for managing Model Context Protocol servers and tools
+#[derive(Clone, Debug, PartialEq)]
+pub struct McpState {
+    pub servers: Vec<McpServerInfo>,
+    pub available_tools: Vec<McpToolInfo>,
+    pub selected_server: Option<String>,
+    pub execution_history: Vec<McpExecutionRecord>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct McpServerInfo {
+    pub name: String,
+    pub command: String,
+    pub args: Vec<String>,
+    pub enabled: bool,
+    pub health_status: String,
+    pub last_health_check: Option<u64>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct McpToolInfo {
+    pub server_name: String,
+    pub tool_name: String,
+    pub description: String,
+    pub input_schema: serde_json::Value,
+    pub output_schema: serde_json::Value,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct McpExecutionRecord {
+    pub server: String,
+    pub tool: String,
+    pub parameters: serde_json::Value,
+    pub result: Option<serde_json::Value>,
+    pub error: Option<String>,
+    pub timestamp: u64,
+    pub execution_time_ms: u64,
 }
 
 /// Pending asynchronous operation
@@ -144,6 +188,13 @@ impl AppModel {
                 command_history: Vec::new(),
                 current_command: String::new(),
                 command_palette_visible: false,
+            },
+
+            mcp: McpState {
+                servers: Vec::new(),
+                available_tools: Vec::new(),
+                selected_server: None,
+                execution_history: Vec::new(),
             },
 
             ui: UiState {
@@ -308,6 +359,12 @@ pub enum AppMessage {
 
     // File Events
     FileSelected(String),
+
+    // MCP Events
+    McpServerAdded(String),
+    McpServerRemoved(String),
+    McpToolExecuted { server: String, tool: String, result: serde_json::Value },
+    McpToolExecutionFailed { server: String, tool: String, error: String },
 
     // Component Events
     ComponentMessage { component_id: String, message: String },

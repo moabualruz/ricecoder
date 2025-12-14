@@ -152,6 +152,13 @@ pub enum Commands {
         action: Option<SessionsSubcommand>,
     },
 
+    /// Manage Model Context Protocol servers and tools
+    #[command(about = "Manage Model Context Protocol (MCP) servers and tools")]
+    Mcp {
+        #[command(subcommand)]
+        action: Option<McpSubcommand>,
+    },
+
     /// Start the Language Server Protocol server
     #[command(about = "Start the Language Server Protocol server for IDE integration")]
     Lsp {
@@ -324,6 +331,77 @@ pub enum SessionsSubcommand {
         #[arg(value_name = "SHARE_ID")]
         share_id: String,
     },
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum McpSubcommand {
+    /// List configured MCP servers
+    #[command(about = "List all configured MCP servers")]
+    List,
+
+    /// Add a new MCP server
+    #[command(about = "Add a new MCP server configuration")]
+    Add {
+        /// Server name
+        #[arg(value_name = "NAME")]
+        name: String,
+
+        /// Server command
+        #[arg(value_name = "COMMAND")]
+        command: String,
+
+        /// Additional arguments for the server command
+        #[arg(value_name = "ARGS")]
+        args: Vec<String>,
+    },
+
+    /// Remove an MCP server
+    #[command(about = "Remove an MCP server configuration")]
+    Remove {
+        /// Server name
+        #[arg(value_name = "NAME")]
+        name: String,
+    },
+
+    /// Show MCP server information
+    #[command(about = "Show detailed information about an MCP server")]
+    Info {
+        /// Server name
+        #[arg(value_name = "NAME")]
+        name: String,
+    },
+
+    /// Test MCP server connection
+    #[command(about = "Test connection to an MCP server")]
+    Test {
+        /// Server name
+        #[arg(value_name = "NAME")]
+        name: String,
+    },
+
+    /// List available tools from MCP servers
+    #[command(about = "List all available tools from configured MCP servers")]
+    Tools,
+
+    /// Execute a tool from an MCP server
+    #[command(about = "Execute a tool from an MCP server")]
+    Execute {
+        /// Server name
+        #[arg(value_name = "SERVER")]
+        server: String,
+
+        /// Tool name
+        #[arg(value_name = "TOOL")]
+        tool: String,
+
+        /// Tool parameters as JSON
+        #[arg(value_name = "PARAMETERS")]
+        parameters: String,
+    },
+
+    /// Show MCP system status
+    #[command(about = "Show overall MCP system status and health")]
+    Status,
 }
 
 #[derive(Subcommand, Debug, Clone)]
@@ -556,6 +634,40 @@ impl CommandRouter {
                 let cmd = SessionsCommand::new(sessions_action);
                 cmd.execute()
             }
+            Commands::Mcp { action } => {
+                let mcp_action = match action {
+                    Some(McpSubcommand::List) | None => mcp::McpAction::List,
+                    Some(McpSubcommand::Add { name, command, args }) => {
+                        mcp::McpAction::Add {
+                            name: name.clone(),
+                            command: command.clone(),
+                            args: args.clone(),
+                        }
+                    }
+                    Some(McpSubcommand::Remove { name }) => {
+                        mcp::McpAction::Remove { name: name.clone() }
+                    }
+                    Some(McpSubcommand::Info { name }) => {
+                        mcp::McpAction::Info { name: name.clone() }
+                    }
+                    Some(McpSubcommand::Test { name }) => {
+                        mcp::McpAction::Test { name: name.clone() }
+                    }
+                    Some(McpSubcommand::Tools) => mcp::McpAction::Tools,
+                    Some(McpSubcommand::Execute { server, tool, parameters }) => {
+                        let params: serde_json::Value = serde_json::from_str(parameters)
+                            .map_err(|e| CliError::Internal(format!("Invalid JSON parameters: {}", e)))?;
+                        mcp::McpAction::Execute {
+                            server: server.clone(),
+                            tool: tool.clone(),
+                            parameters: params,
+                        }
+                    }
+                    Some(McpSubcommand::Status) => mcp::McpAction::Status,
+                };
+                let cmd = McpCommand::new(mcp_action);
+                cmd.execute()
+            }
             Commands::Lsp {
                 log_level,
                 port,
@@ -596,7 +708,7 @@ impl CommandRouter {
 
     /// Find similar command for suggestions
     pub fn find_similar(command: &str) -> Option<String> {
-        let commands = ["init", "gen", "chat", "refactor", "review", "config", "tui"];
+        let commands = ["init", "gen", "chat", "refactor", "review", "config", "mcp", "tui"];
 
         // Simple similarity check: commands that start with same letter
         commands
