@@ -1,0 +1,36 @@
+[package]
+name = "ricecoder-safety"
+version.workspace = true
+edition = "2021"
+authors = ["RiceCoder Contributors"]
+description = "Enterprise-grade security constraints and risk analysis for RiceCoder"
+license = "MIT"
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
+keywords = ["security", "safety", "risk", "constraints", "validation", "enterprise"]
+
+[lib]
+name = "ricecoder_safety"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+tracing = "0.1"
+tokio = { version = "1.0", features = ["full"] }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+async-trait = "0.1"
+regex = "1.10"
+futures = "0.3"
+
+# RiceCoder internal dependencies
+ricecoder-security = { path = "../ricecoder-security", version = "0.1" }
+ricecoder-activity-log = { path = "../ricecoder-activity-log", version = "0.1" }
+
+[dev-dependencies]
+proptest = "1.4"
+tokio-test = "0.4"
+tempfile = "3.8"

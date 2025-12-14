@@ -87,6 +87,8 @@ members = [
     "crates/ricecoder-themes",
     "crates/ricecoder-config",
     "crates/ricecoder-industry",
+    "crates/ricecoder-activity-log",
+    "crates/ricecoder-safety",
 ]
 resolver = "2"
 

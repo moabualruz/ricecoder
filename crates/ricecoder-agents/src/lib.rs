@@ -36,6 +36,7 @@ pub mod coordinator;
 pub mod domain;
 pub mod error;
 pub mod executor;
+pub mod mcp_integration;
 pub mod metrics;
 pub mod models;
 pub mod orchestrator;
@@ -43,6 +44,7 @@ pub mod registry;
 pub mod scheduler;
 pub mod tool_registry;
 pub mod tool_invokers;
+pub mod use_cases;
 
 #[cfg(test)]
 mod scheduler_properties;
@@ -62,11 +64,13 @@ pub use models::{
     AgentConfig, AgentInput, AgentMetadata, AgentMetrics, AgentOutput, AgentTask, Finding,
     Severity, Suggestion, TaskScope, TaskTarget, TaskType,
 };
+pub use mcp_integration::{ExternalToolBackend, ExternalToolIntegrationService, ToolExecutionResult, ToolExecutor};
 pub use orchestrator::AgentOrchestrator;
+pub use use_cases::{ExecuteExternalToolUseCase, ConfigureToolBackendUseCase, ToolManagementUseCase};
 pub use registry::AgentRegistry;
 pub use scheduler::{AgentScheduler, ExecutionPhase, ExecutionSchedule, TaskDAG};
 pub use tool_registry::{ToolInvoker, ToolMetadata, ToolRegistry};
 pub use tool_invokers::{
-    PatchToolInvoker, TodoreadToolInvoker, TodowriteToolInvoker, WebfetchToolInvoker,
-    WebsearchToolInvoker,
+    ExtensibleToolInvoker, PatchToolInvoker, TodoreadToolInvoker, TodowriteToolInvoker, ToolBackend,
+    WebfetchToolInvoker, WebsearchToolInvoker,
 };

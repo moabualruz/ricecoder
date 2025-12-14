@@ -210,6 +210,97 @@ pub struct WorkflowState {
     pub updated_at: DateTime<Utc>,
 }
 
+impl WorkflowState {
+    /// Create a new workflow state
+    pub fn new(workflow: &Workflow) -> Self {
+        Self {
+            workflow_id: workflow.id.clone(),
+            status: WorkflowStatus::Pending,
+            current_step: None,
+            completed_steps: Vec::new(),
+            step_results: HashMap::new(),
+            started_at: Utc::now(),
+            updated_at: Utc::now(),
+        }
+    }
+
+    /// Update workflow state to running
+    pub fn start_workflow(&mut self) {
+        self.status = WorkflowStatus::Running;
+        self.started_at = Utc::now();
+        self.updated_at = Utc::now();
+    }
+
+    /// Mark a step as started
+    pub fn start_step(&mut self, step_id: String) {
+        self.current_step = Some(step_id.clone());
+        self.step_results.insert(
+            step_id,
+            StepResult {
+                status: StepStatus::Running,
+                output: None,
+                error: None,
+                duration_ms: 0,
+            },
+        );
+        self.updated_at = Utc::now();
+    }
+
+    /// Mark a step as completed
+    pub fn complete_step(&mut self, step_id: String, output: Option<serde_json::Value>, duration_ms: u64) {
+        if let Some(result) = self.step_results.get_mut(&step_id) {
+            result.status = StepStatus::Completed;
+            result.output = output;
+            result.duration_ms = duration_ms;
+        }
+        self.completed_steps.push(step_id);
+        self.current_step = None;
+        self.updated_at = Utc::now();
+    }
+
+    /// Mark a step as failed
+    pub fn fail_step(&mut self, step_id: String, error: String, duration_ms: u64) {
+        if let Some(result) = self.step_results.get_mut(&step_id) {
+            result.status = StepStatus::Failed;
+            result.error = Some(error);
+            result.duration_ms = duration_ms;
+        }
+        self.updated_at = Utc::now();
+    }
+
+    /// Pause workflow execution
+    pub fn pause_workflow(&mut self) {
+        self.status = WorkflowStatus::Paused;
+        self.updated_at = Utc::now();
+    }
+
+    /// Resume workflow execution
+    pub fn resume_workflow(&mut self) {
+        self.status = WorkflowStatus::Running;
+        self.updated_at = Utc::now();
+    }
+
+    /// Cancel workflow execution
+    pub fn cancel_workflow(&mut self) {
+        self.status = WorkflowStatus::Cancelled;
+        self.updated_at = Utc::now();
+    }
+
+    /// Complete workflow execution
+    pub fn complete_workflow(&mut self) {
+        self.status = WorkflowStatus::Completed;
+        self.current_step = None;
+        self.updated_at = Utc::now();
+    }
+
+    /// Fail workflow execution
+    pub fn fail_workflow(&mut self) {
+        self.status = WorkflowStatus::Failed;
+        self.current_step = None;
+        self.updated_at = Utc::now();
+    }
+}
+
 /// Workflow execution status
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 pub enum WorkflowStatus {

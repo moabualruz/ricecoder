@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 use tree_sitter::{Language as TSLanguage, Parser};
 
 /// Tracks symbol references across files
+#[derive(Debug)]
 pub struct ReferenceTracker;
 
 /// Result of reference tracking

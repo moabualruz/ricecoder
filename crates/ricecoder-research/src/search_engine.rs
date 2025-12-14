@@ -6,6 +6,7 @@ use regex::Regex;
 use std::collections::HashMap;
 
 /// Search engine for code search
+#[derive(Debug)]
 pub struct SearchEngine {
     index: SemanticIndex,
 }

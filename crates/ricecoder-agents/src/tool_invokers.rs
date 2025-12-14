@@ -5,7 +5,9 @@
 
 use crate::tool_registry::{ToolInvoker, ToolMetadata};
 use serde_json::json;
-use tracing::{debug, info};
+use std::sync::Arc;
+use tokio::sync::RwLock;
+use tracing::{debug, info, warn};
 
 /// Webfetch tool invoker
 ///
@@ -403,6 +405,104 @@ impl ToolInvoker for WebsearchToolInvoker {
             available: true,
         }
     }
+}
+
+/// Extensible tool invoker
+///
+/// A generic tool invoker that can be configured with different backends
+/// including MCP servers, external APIs, and custom implementations.
+pub struct ExtensibleToolInvoker {
+    backend: Arc<RwLock<Option<Box<dyn ToolBackend + Send + Sync>>>>,
+}
+
+impl ExtensibleToolInvoker {
+    /// Create a new extensible tool invoker
+    pub fn new() -> Self {
+        Self {
+            backend: Arc::new(RwLock::new(None)),
+        }
+    }
+
+    /// Configure the tool backend
+    pub async fn configure_backend<T: ToolBackend + Send + Sync + 'static>(
+        &self,
+        backend: T,
+    ) -> Result<(), String> {
+        let mut backend_slot = self.backend.write().await;
+        *backend_slot = Some(Box::new(backend));
+        Ok(())
+    }
+
+    /// Check if a backend is configured
+    pub async fn has_backend(&self) -> bool {
+        let backend = self.backend.read().await;
+        backend.is_some()
+    }
+}
+
+#[async_trait::async_trait]
+impl ToolInvoker for ExtensibleToolInvoker {
+    async fn invoke(&self, input: serde_json::Value) -> Result<serde_json::Value, String> {
+        debug!("Invoking extensible tool");
+
+        let backend = self.backend.read().await;
+        let backend = backend.as_ref().ok_or_else(|| "No tool backend configured".to_string())?;
+
+        backend.invoke_tool(input).await
+    }
+
+    fn metadata(&self) -> ToolMetadata {
+        ToolMetadata {
+            id: "extensible".to_string(),
+            name: "Extensible Tool Invoker".to_string(),
+            description: "Execute tools through configurable backends (MCP, APIs, etc.)".to_string(),
+            input_schema: json!({
+                "type": "object",
+                "properties": {
+                    "tool_name": {
+                        "type": "string",
+                        "description": "Name of the tool to execute"
+                    },
+                    "parameters": {
+                        "type": "object",
+                        "description": "Parameters to pass to the tool"
+                    },
+                    "backend_config": {
+                        "type": "object",
+                        "description": "Backend-specific configuration"
+                    }
+                },
+                "required": ["tool_name"]
+            }),
+            output_schema: json!({
+                "type": "object",
+                "properties": {
+                    "success": { "type": "boolean" },
+                    "result": { "type": "object" },
+                    "error": { "type": "string" },
+                    "execution_time_ms": { "type": "integer" },
+                    "metadata": {
+                        "type": "object",
+                        "properties": {
+                            "provider": { "type": "string" },
+                            "backend": { "type": "string" }
+                        }
+                    }
+                }
+            }),
+            available: true,
+        }
+    }
+}
+
+/// Tool backend trait for extensible tool execution
+#[async_trait::async_trait]
+pub trait ToolBackend {
+    /// Invoke a tool with the given input
+    async fn invoke_tool(&self, input: serde_json::Value) -> Result<serde_json::Value, String>;
+
+    /// Get backend-specific metadata
+    fn backend_metadata(&self) -> serde_json::Value;
 }
 
 #[cfg(test)]

@@ -24,6 +24,12 @@ ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
 ricecoder-providers = { path = "../ricecoder-providers", version = "0.1" }
 jsonschema.workspace = true
 serde_yaml.workspace = true
+reqwest = { version = "0.11", features = ["json"] }
+rust-mcp-sdk = { version = "0.7", features = ["client", "stdio"], optional = true }
+
+[features]
+default = []
+mcp = ["rust-mcp-sdk"]
 
 [dev-dependencies]
 proptest.workspace = true
