@@ -4,6 +4,10 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
+// Re-export DetectedPattern when patterns feature is enabled
+#[cfg(feature = "patterns")]
+pub use ricecoder_patterns::DetectedPattern;
+
 // ============================================================================
 // Project Analysis Models
 // ============================================================================
@@ -42,6 +46,42 @@ pub enum ProjectType {
     Monorepo,
     /// Unknown project type
     Unknown,
+}
+
+// ============================================================================
+// Pattern Detection Models (when patterns feature is disabled)
+// ============================================================================
+
+/// Category of detected pattern
+#[cfg(not(feature = "patterns"))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PatternCategory {
+    /// Architectural pattern
+    Architectural,
+    /// Design pattern
+    Design,
+    /// Coding idiom
+    Coding,
+    /// Testing pattern
+    Testing,
+    /// Configuration pattern
+    Configuration,
+}
+
+/// Detected pattern in the codebase (fallback when patterns feature is disabled)
+#[cfg(not(feature = "patterns"))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DetectedPattern {
+    /// Pattern name
+    pub name: String,
+    /// Pattern category
+    pub category: PatternCategory,
+    /// Confidence score (0.0 to 1.0)
+    pub confidence: f32,
+    /// Locations where pattern was detected
+    pub locations: Vec<PathBuf>,
+    /// Pattern description
+    pub description: String,
 }
 
 /// Programming language
@@ -97,35 +137,7 @@ pub struct ProjectStructure {
     pub entry_points: Vec<PathBuf>,
 }
 
-/// Detected pattern in the codebase
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DetectedPattern {
-    /// Pattern name
-    pub name: String,
-    /// Pattern category
-    pub category: PatternCategory,
-    /// Confidence score (0.0 to 1.0)
-    pub confidence: f32,
-    /// Locations where pattern was detected
-    pub locations: Vec<PathBuf>,
-    /// Pattern description
-    pub description: String,
-}
 
-/// Category of detected pattern
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum PatternCategory {
-    /// Architectural pattern
-    Architectural,
-    /// Design pattern
-    Design,
-    /// Coding idiom
-    Coding,
-    /// Testing pattern
-    Testing,
-    /// Configuration pattern
-    Configuration,
-}
 
 /// Project dependency
 #[derive(Debug, Clone, Serialize, Deserialize)]

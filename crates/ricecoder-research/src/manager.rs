@@ -8,6 +8,10 @@ use crate::relevance_scorer::RelevanceScorer;
 use crate::search_engine::SearchEngine;
 use crate::semantic_index::SemanticIndex;
 use crate::standards_detector::StandardsDetector;
+#[cfg(feature = "parsers")]
+use ricecoder_parsers::Parser;
+#[cfg(feature = "patterns")]
+use ricecoder_patterns::PatternDetector;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
@@ -15,9 +19,9 @@ use tracing::{debug, info, warn};
 
 /// Central coordinator for core research operations
 ///
-/// The ResearchManager orchestrates core analysis components and manages the research lifecycle.
+// The ResearchManager orchestrates core analysis components and manages the research lifecycle.
 /// It provides the main public API for research queries with MCP integration.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ResearchManager {
     /// Project analyzer for detecting project type and structure
     project_analyzer: Arc<ProjectAnalyzer>,
@@ -31,12 +35,19 @@ pub struct ResearchManager {
     reference_tracker: Arc<ReferenceTracker>,
     /// Relevance scorer for ranking results
     relevance_scorer: Arc<RelevanceScorer>,
+    /// Parser for code analysis (optional until ricecoder-parsers is stable)
+    #[cfg(feature = "parsers")]
+    parser: Option<Arc<dyn Parser>>,
+    /// Pattern detector for architectural and design patterns (optional until ricecoder-patterns is stable)
+    #[cfg(feature = "patterns")]
+    pattern_detector: Option<Arc<PatternDetector>>,
 }
 
 impl ResearchManager {
     /// Create a new ResearchManager with default configuration
     pub fn new() -> Self {
         let semantic_index = Arc::new(SemanticIndex::new());
+
         ResearchManager {
             project_analyzer: Arc::new(ProjectAnalyzer::new()),
             standards_detector: Arc::new(StandardsDetector::new()),
@@ -44,6 +55,30 @@ impl ResearchManager {
             search_engine: Arc::new(SearchEngine::new((*semantic_index).clone())),
             reference_tracker: Arc::new(ReferenceTracker),
             relevance_scorer: Arc::new(RelevanceScorer::new()),
+            #[cfg(feature = "parsers")]
+            parser: None,
+            #[cfg(feature = "patterns")]
+            pattern_detector: None,
+        }
+    }
+
+    /// Create a new ResearchManager with parser support
+    #[cfg(feature = "parsers")]
+    pub fn with_parser(parser: Arc<dyn Parser>) -> Self {
+        let semantic_index = Arc::new(SemanticIndex::new());
+        #[cfg(feature = "patterns")]
+        let pattern_detector = Arc::new(PatternDetector::new(Arc::clone(&parser)));
+
+        ResearchManager {
+            project_analyzer: Arc::new(ProjectAnalyzer::new()),
+            standards_detector: Arc::new(StandardsDetector::new()),
+            semantic_index: Arc::clone(&semantic_index),
+            search_engine: Arc::new(SearchEngine::new((*semantic_index).clone())),
+            reference_tracker: Arc::new(ReferenceTracker),
+            relevance_scorer: Arc::new(RelevanceScorer::new()),
+            parser: Some(parser),
+            #[cfg(feature = "patterns")]
+            pattern_detector: Some(pattern_detector),
         }
     }
 
@@ -63,6 +98,10 @@ impl ResearchManager {
             search_engine: Arc::new(search_engine),
             reference_tracker: Arc::new(reference_tracker),
             relevance_scorer: Arc::new(relevance_scorer),
+            #[cfg(feature = "parsers")]
+            parser: None,
+            #[cfg(feature = "patterns")]
+            pattern_detector: None,
         }
     }
 
@@ -108,24 +147,39 @@ impl ResearchManager {
         })?;
         debug!("Found {} source directories", structure.source_dirs.len());
 
-        // 3. Detect standards and conventions
-        debug!("Step 3: Detecting standards and conventions");
+        // 3. Detect patterns
+        debug!("Step 3: Detecting architectural and design patterns");
+        #[cfg(feature = "patterns")]
+        let patterns = if let Some(detector) = &self.pattern_detector {
+            detector.detect(root).await.unwrap_or_default()
+        } else {
+            debug!("Pattern detector not available, skipping pattern detection");
+            vec![]
+        };
+        #[cfg(not(feature = "patterns"))]
+        let patterns = {
+            debug!("Pattern detection feature not enabled, skipping pattern detection");
+            vec![]
+        };
+        debug!("Detected {} patterns", patterns.len());
+
+        // 4. Detect standards and conventions
+        debug!("Step 4: Detecting standards and conventions");
         let standards = self.standards_detector.detect(&[root]).unwrap_or_default();
         debug!("Detected standards profile");
 
-        // 4. Build semantic index
-        debug!("Step 4: Building semantic index");
+        // 5. Build semantic index
+        debug!("Step 5: Building semantic index");
         // Initialize semantic index (would be populated during indexing)
-        let _semantic_index = &self.semantic_index;
 
-        // 5. Build final context with core information
-        debug!("Step 5: Building project context");
+        // 6. Build final context with core information
+        debug!("Step 6: Building project context");
         let context = ProjectContext {
             project_type,
             languages: vec![], // Would be populated by project analyzer
             frameworks: vec![], // Would be populated by project analyzer
             structure,
-            patterns: vec![], // Patterns moved to separate crate
+            patterns,
             dependencies: vec![], // Dependencies moved to separate crate
             architectural_intent: crate::models::ArchitecturalIntent {
                 style: crate::models::ArchitecturalStyle::Unknown,
@@ -177,6 +231,18 @@ impl ResearchManager {
     /// Get reference tracker
     pub fn reference_tracker(&self) -> &ReferenceTracker {
         &self.reference_tracker
+    }
+
+    /// Get parser (if available)
+    #[cfg(feature = "parsers")]
+    pub fn parser(&self) -> Option<&Arc<dyn Parser>> {
+        self.parser.as_ref()
+    }
+
+    /// Get pattern detector (if available)
+    #[cfg(feature = "patterns")]
+    pub fn pattern_detector(&self) -> Option<&Arc<PatternDetector>> {
+        self.pattern_detector.as_ref()
     }
 }
 

@@ -23,14 +23,15 @@ regex = "1.10"
 walkdir = "2.5"
 ignore = "0.4"
 rayon = "1.8"
-tree-sitter = "0.20"
-tree-sitter-rust = "0.20"
-tree-sitter-typescript = "0.20"
-tree-sitter-python = "0.20"
-tree-sitter-go = "0.20"
-tree-sitter-java = "0.20"
+ricecoder-parsers = { path = "../ricecoder-parsers", version = "0.1", optional = true }
+ricecoder-patterns = { path = "../ricecoder-patterns", version = "0.1", optional = true }
 fxhash = "0.2"
 lru = "0.12"
+
+[features]
+default = []
+parsers = ["ricecoder-parsers"]
+patterns = ["ricecoder-patterns"]
 
 [dev-dependencies]
 proptest = { workspace = true }

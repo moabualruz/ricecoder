@@ -4,6 +4,7 @@ use crate::error::ResearchError;
 use crate::models::{Language, ReferenceKind, SymbolReference};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+#[cfg(feature = "parsers")]
 use tree_sitter::{Language as TSLanguage, Parser};
 
 /// Tracks symbol references across files
@@ -19,6 +20,7 @@ pub struct ReferenceTrackingResult {
     pub references_by_file: HashMap<PathBuf, Vec<SymbolReference>>,
 }
 
+#[cfg(feature = "parsers")]
 impl ReferenceTracker {
     /// Track symbol references in a source file
     ///
@@ -31,23 +33,25 @@ impl ReferenceTracker {
     /// # Returns
     /// A vector of symbol references found in the file
     pub fn track_references(
-        path: &Path,
-        language: &Language,
-        content: &str,
-        known_symbols: &HashMap<String, String>,
+        _path: &Path,
+        _language: &Language,
+        _content: &str,
+        _known_symbols: &HashMap<String, String>,
     ) -> Result<Vec<SymbolReference>, ResearchError> {
-        let mut parser = Parser::new();
-        let ts_language = Self::get_tree_sitter_language(language)?;
-        parser
-            .set_language(ts_language)
-            .map_err(|_| ResearchError::AnalysisFailed {
-                reason: format!("Failed to set language for {:?}", language),
-                context: "Reference tracking requires a valid tree-sitter language parser"
-                    .to_string(),
-            })?;
+        #[cfg(feature = "parsers")]
+        {
+            let mut parser = Parser::new();
+            let ts_language = Self::get_tree_sitter_language(_language)?;
+            parser
+                .set_language(ts_language)
+                .map_err(|_| ResearchError::AnalysisFailed {
+                    reason: format!("Failed to set language for {:?}", _language),
+                    context: "Reference tracking requires a valid tree-sitter language parser"
+                        .to_string(),
+                })?;
 
-        let tree = parser.parse(content, None)
-            .ok_or_else(|| ResearchError::AnalysisFailed {
+            let tree = parser.parse(_content, None)
+                .ok_or_else(|| ResearchError::AnalysisFailed {
                 reason: "Failed to parse file".to_string(),
                 context: "Tree-sitter parser could not generate an abstract syntax tree for reference tracking".to_string(),
             })?;
@@ -66,9 +70,16 @@ impl ReferenceTracker {
         )?;
 
         Ok(references)
+        }
+        #[cfg(not(feature = "parsers"))]
+        {
+            // Return empty references when parsers are not available
+            Ok(Vec::new())
+        }
     }
 
     /// Recursively track references from AST nodes
+    #[cfg(feature = "parsers")]
     fn track_references_recursive(
         node: &tree_sitter::Node,
         content: &str,
@@ -99,196 +110,23 @@ impl ReferenceTracker {
 
         Ok(())
     }
+}
 
-    /// Extract a single reference from a node if it represents a symbol reference
-    fn extract_reference_from_node(
-        node: &tree_sitter::Node,
-        content: &str,
-        path: &Path,
-        language: &Language,
-        known_symbols: &HashMap<String, String>,
-    ) -> Option<SymbolReference> {
-        match language {
-            Language::Rust => Self::extract_rust_reference(node, content, path, known_symbols),
-            Language::TypeScript => {
-                Self::extract_typescript_reference(node, content, path, known_symbols)
-            }
-            Language::Python => Self::extract_python_reference(node, content, path, known_symbols),
-            Language::Go => Self::extract_go_reference(node, content, path, known_symbols),
-            Language::Java => Self::extract_java_reference(node, content, path, known_symbols),
-            _ => None,
-        }
-    }
-
-    /// Extract references from Rust code
-    fn extract_rust_reference(
-        node: &tree_sitter::Node,
-        content: &str,
-        path: &Path,
-        known_symbols: &HashMap<String, String>,
-    ) -> Option<SymbolReference> {
-        let kind_str = node.kind();
-
-        // Check for identifier usage (not definition)
-        if kind_str != "identifier" {
-            return None;
-        }
-
-        let name = node.utf8_text(content.as_bytes()).ok()?.to_string();
-
-        // Check if this identifier refers to a known symbol
-        let symbol_id = known_symbols.get(&name)?.clone();
-
-        let line = Self::get_line_from_byte_offset(content, node.start_byte());
-
-        Some(SymbolReference {
-            symbol_id,
-            file: path.to_path_buf(),
-            line,
-            kind: ReferenceKind::Usage,
-        })
-    }
-
-    /// Extract references from TypeScript/JavaScript code
-    fn extract_typescript_reference(
-        node: &tree_sitter::Node,
-        content: &str,
-        path: &Path,
-        known_symbols: &HashMap<String, String>,
-    ) -> Option<SymbolReference> {
-        let kind_str = node.kind();
-
-        // Check for identifier usage
-        if kind_str != "identifier" && kind_str != "type_identifier" {
-            return None;
-        }
-
-        let name = node.utf8_text(content.as_bytes()).ok()?.to_string();
-
-        // Check if this identifier refers to a known symbol
-        let symbol_id = known_symbols.get(&name)?.clone();
-
-        let line = Self::get_line_from_byte_offset(content, node.start_byte());
-
-        Some(SymbolReference {
-            symbol_id,
-            file: path.to_path_buf(),
-            line,
-            kind: ReferenceKind::Usage,
-        })
-    }
-
-    /// Extract references from Python code
-    fn extract_python_reference(
-        node: &tree_sitter::Node,
-        content: &str,
-        path: &Path,
-        known_symbols: &HashMap<String, String>,
-    ) -> Option<SymbolReference> {
-        let kind_str = node.kind();
-
-        // Check for identifier usage
-        if kind_str != "identifier" {
-            return None;
-        }
-
-        let name = node.utf8_text(content.as_bytes()).ok()?.to_string();
-
-        // Check if this identifier refers to a known symbol
-        let symbol_id = known_symbols.get(&name)?.clone();
-
-        let line = Self::get_line_from_byte_offset(content, node.start_byte());
-
-        Some(SymbolReference {
-            symbol_id,
-            file: path.to_path_buf(),
-            line,
-            kind: ReferenceKind::Usage,
-        })
-    }
-
-    /// Extract references from Go code
-    fn extract_go_reference(
-        node: &tree_sitter::Node,
-        content: &str,
-        path: &Path,
-        known_symbols: &HashMap<String, String>,
-    ) -> Option<SymbolReference> {
-        let kind_str = node.kind();
-
-        // Check for identifier usage
-        if kind_str != "identifier" {
-            return None;
-        }
-
-        let name = node.utf8_text(content.as_bytes()).ok()?.to_string();
-
-        // Check if this identifier refers to a known symbol
-        let symbol_id = known_symbols.get(&name)?.clone();
-
-        let line = Self::get_line_from_byte_offset(content, node.start_byte());
-
-        Some(SymbolReference {
-            symbol_id,
-            file: path.to_path_buf(),
-            line,
-            kind: ReferenceKind::Usage,
-        })
-    }
-
-    /// Extract references from Java code
-    fn extract_java_reference(
-        node: &tree_sitter::Node,
-        content: &str,
-        path: &Path,
-        known_symbols: &HashMap<String, String>,
-    ) -> Option<SymbolReference> {
-        let kind_str = node.kind();
-
-        // Check for identifier usage
-        if kind_str != "identifier" {
-            return None;
-        }
-
-        let name = node.utf8_text(content.as_bytes()).ok()?.to_string();
-
-        // Check if this identifier refers to a known symbol
-        let symbol_id = known_symbols.get(&name)?.clone();
-
-        let line = Self::get_line_from_byte_offset(content, node.start_byte());
-
-        Some(SymbolReference {
-            symbol_id,
-            file: path.to_path_buf(),
-            line,
-            kind: ReferenceKind::Usage,
-        })
-    }
-
-    /// Get tree-sitter language for a programming language
-    fn get_tree_sitter_language(language: &Language) -> Result<TSLanguage, ResearchError> {
-        match language {
-            Language::Rust => Ok(tree_sitter_rust::language()),
-            Language::TypeScript => Ok(tree_sitter_typescript::language_typescript()),
-            Language::Python => Ok(tree_sitter_python::language()),
-            Language::Go => Ok(tree_sitter_go::language()),
-            Language::Java => Ok(tree_sitter_java::language()),
-            _ => Err(ResearchError::AnalysisFailed {
-                reason: format!("Unsupported language for reference tracking: {:?}", language),
-                context: "Reference tracking is only supported for Rust, TypeScript, Python, Go, and Java".to_string(),
-            }),
-        }
-    }
-
-    /// Calculate line number from byte offset
-    fn get_line_from_byte_offset(content: &str, byte_offset: usize) -> usize {
-        let prefix = &content[..byte_offset.min(content.len())];
-        // Count newlines to get the line number (1-indexed)
-        prefix.matches('\n').count() + 1
+#[cfg(not(feature = "parsers"))]
+impl ReferenceTracker {
+    /// Track symbol references in a source file (disabled when parsers feature is not enabled)
+    pub fn track_references(
+        _path: &Path,
+        _language: &Language,
+        _content: &str,
+        _known_symbols: &HashMap<String, String>,
+    ) -> Result<Vec<SymbolReference>, ResearchError> {
+        // Return empty references when parsers are not available
+        Ok(Vec::new())
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "parsers"))]
 mod tests {
     use super::*;
 

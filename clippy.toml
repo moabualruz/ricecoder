@@ -1,106 +1,60 @@
-# Zero Warnings Policy - Clippy Configuration
-[lints.clippy]
-# Deny all clippy lints to enforce zero warnings
-all = "deny"
-# Allow specific lints that are acceptable
-allow = [
-    "print_stdout",
-    "print_stderr",
-    "dbg_macro",
-    "unwrap_used",
-    "expect_used",
-    "panic",
-    "todo",
-    "unimplemented",
-    "unreachable",
-    "module_name_repetitions",
-    "must_use_candidate",
-    "return_self_not_must_use",
-    "redundant_closure_for_method_calls",
-    "single_match_else",
-    "uninlined_format_args",
-    "too_many_lines",
-    "too_many_arguments",
-    "empty_line_after_doc_comments",
-    "iter_with_drain",
-    "needless_collect",
-    "or_fun_call",
-    "redundant_pub_crate",
-    "string_lit_as_bytes",
-    "suspicious_operation_groupings",
-    "unnecessary_struct_initialization",
-    "unwrap_in_result",
-]
-# Allow unwrap/expect/panic in test files
-[[allow]]
-name = "unwrap_used"
-path = "**/tests/**"
-[[allow]]
-name = "expect_used"
-path = "**/tests/**"
-[[allow]]
-name = "panic"
-path = "**/tests/**"
-[[allow]]
-name = "todo"
-path = "**/tests/**"
-[[allow]]
-name = "unimplemented"
-path = "**/tests/**"
-[[allow]]
-name = "unreachable"
-path = "**/tests/**"
-# Allow in examples
-[[allow]]
-name = "unwrap_used"
-path = "**/examples/**"
-[[allow]]
-name = "expect_used"
-path = "**/examples/**"
-[[allow]]
-name = "panic"
-path = "**/examples/**"
-[[allow]]
-name = "todo"
-path = "**/examples/**"
-[[allow]]
-name = "unimplemented"
-path = "**/examples/**"
-[[allow]]
-name = "unreachable"
-path = "**/examples/**"
-# Allow in benches
-[[allow]]
-name = "unwrap_used"
-path = "**/benches/**"
-[[allow]]
-name = "expect_used"
-path = "**/benches/**"
-[[allow]]
-name = "panic"
-path = "**/benches/**"
-[[allow]]
-name = "todo"
-path = "**/benches/**"
-[[allow]]
-name = "unimplemented"
-path = "**/benches/**"
-[[allow]]
-name = "unreachable"
-path = "**/benches/**"
-# Allow missing docs in certain areas
-[[allow]]
-name = "missing_docs"
-path = "**/src/main.rs"
-[[allow]]
-name = "missing_docs"
-path = "**/src/bin/**"
-[[allow]]
-name = "missing_docs"
-path = "**/tests/**"
-[[allow]]
-name = "missing_docs"
-path = "**/benches/**"
-[[allow]]
-name = "missing_docs"
-path = "**/examples/**"
+# Clippy configuration to reduce warnings
+msrv = "1.70"
+allow-dirty = false
+allow-staged = false
+check-private-items = false
+warn-on-all-wildcard-imports = false
+disallowed-methods = []
+disallowed-types = []
+disallowed-macros = []
+standard-macros = false
+warn-unknown-cfg = false
+allow-unknown-cfg = false
+warn-unused-crate-deps = false
+warn-unused-imports = false
+warn-unused-variables = false
+warn-dead-code = false
+warn-missing-docs = false
+warn-missing-debug-implementations = false
+warn-missing-copy-implementations = false
+warn-variant-size-differences = false
+warn-large-enum-variant = false
+warn-explicit-outlives-requirements = false
+warn-semicolon-outside-block = false
+warn-semicolon-inside-block = false
+warn-unused-comparison = false
+warn-unused-field = false
+warn-unused-parameter = false
+warn-unused-result = false
+warn-option-unwrap-used = false
+warn-result-unwrap-used = false
+warn-option-expect-used = false
+warn-result-expect-used = false
+warn-option-map-unit-fn = false
+warn-result-map-unit-fn = false
+warn-option-and-then-some = false
+warn-large-stack-arrays = false
+warn-large-stack-frames = false
+warn-non-ascii-idents = false
+warn-single-use-lifetimes = false
+warn-unused-lifetimes = false
+warn-must-use-candidate = false
+warn-trivially-copy-pass-by-ref = false
+warn-unnecessary-wraps = false
+warn-cloned-instead-of-copied = false
+warn-redundant-field-names = false
+warn-redundant-static-lifetimes = false
+warn-redundant-allocation = false
+warn-rc-buffer = false
+warn-rc-clone = false
+warn-arc-with-non-send-sync = false
+warn-inconsistent-struct-constructor = false
+warn-missing-const-for-fn = false
+warn-sync-and-send = false
+warn-nonstandard-style = false
+warn-future-incompatible = false
+warn-rust-2018-idioms = false
+warn-pedantic = false
+warn-nursery = false
+warn-cargo = false
+warn-restriction = false

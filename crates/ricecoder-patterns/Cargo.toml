@@ -1,0 +1,36 @@
+[package]
+name = "ricecoder-patterns"
+version = "0.1.0"
+edition = "2021"
+description = "Code pattern detection and architectural analysis for RiceCoder"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+# Core dependencies
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tokio = { workspace = true }
+async-trait = { workspace = true }
+
+# Parsing and analysis (optional for now due to compilation issues)
+ricecoder-parsers = { path = "../ricecoder-parsers", version = "0.1", optional = true }
+
+# Performance and caching
+ricecoder-cache = { path = "../ricecoder-cache", version = "0.1" }
+
+# Error handling
+anyhow = { workspace = true }
+
+# File system utilities
+walkdir = "2.5"
+
+[features]
+default = []
+parsing = ["ricecoder-parsers"]
+
+[dev-dependencies]
+proptest = { workspace = true }
+tokio-test = { workspace = true }
+tempfile = { workspace = true }
