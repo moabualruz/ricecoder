@@ -1,0 +1,106 @@
+# Zero Warnings Policy - Clippy Configuration
+[lints.clippy]
+# Deny all clippy lints to enforce zero warnings
+all = "deny"
+# Allow specific lints that are acceptable
+allow = [
+    "print_stdout",
+    "print_stderr",
+    "dbg_macro",
+    "unwrap_used",
+    "expect_used",
+    "panic",
+    "todo",
+    "unimplemented",
+    "unreachable",
+    "module_name_repetitions",
+    "must_use_candidate",
+    "return_self_not_must_use",
+    "redundant_closure_for_method_calls",
+    "single_match_else",
+    "uninlined_format_args",
+    "too_many_lines",
+    "too_many_arguments",
+    "empty_line_after_doc_comments",
+    "iter_with_drain",
+    "needless_collect",
+    "or_fun_call",
+    "redundant_pub_crate",
+    "string_lit_as_bytes",
+    "suspicious_operation_groupings",
+    "unnecessary_struct_initialization",
+    "unwrap_in_result",
+]
+# Allow unwrap/expect/panic in test files
+[[allow]]
+name = "unwrap_used"
+path = "**/tests/**"
+[[allow]]
+name = "expect_used"
+path = "**/tests/**"
+[[allow]]
+name = "panic"
+path = "**/tests/**"
+[[allow]]
+name = "todo"
+path = "**/tests/**"
+[[allow]]
+name = "unimplemented"
+path = "**/tests/**"
+[[allow]]
+name = "unreachable"
+path = "**/tests/**"
+# Allow in examples
+[[allow]]
+name = "unwrap_used"
+path = "**/examples/**"
+[[allow]]
+name = "expect_used"
+path = "**/examples/**"
+[[allow]]
+name = "panic"
+path = "**/examples/**"
+[[allow]]
+name = "todo"
+path = "**/examples/**"
+[[allow]]
+name = "unimplemented"
+path = "**/examples/**"
+[[allow]]
+name = "unreachable"
+path = "**/examples/**"
+# Allow in benches
+[[allow]]
+name = "unwrap_used"
+path = "**/benches/**"
+[[allow]]
+name = "expect_used"
+path = "**/benches/**"
+[[allow]]
+name = "panic"
+path = "**/benches/**"
+[[allow]]
+name = "todo"
+path = "**/benches/**"
+[[allow]]
+name = "unimplemented"
+path = "**/benches/**"
+[[allow]]
+name = "unreachable"
+path = "**/benches/**"
+# Allow missing docs in certain areas
+[[allow]]
+name = "missing_docs"
+path = "**/src/main.rs"
+[[allow]]
+name = "missing_docs"
+path = "**/src/bin/**"
+[[allow]]
+name = "missing_docs"
+path = "**/tests/**"
+[[allow]]
+name = "missing_docs"
+path = "**/benches/**"
+[[allow]]
+name = "missing_docs"
+path = "**/examples/**"
