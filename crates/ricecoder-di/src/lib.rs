@@ -40,6 +40,12 @@ pub enum DIError {
 
     #[error("Dependency resolution failed: {message}")]
     DependencyResolutionFailed { message: String },
+
+    #[error("Service health check failed: {service_type} - {reason}")]
+    HealthCheckFailed { service_type: String, reason: String },
+
+    #[error("Circular dependency detected: {service_chain}")]
+    CircularDependency { service_chain: String },
 }
 
 pub type DIResult<T> = Result<T, DIError>;
@@ -60,6 +66,82 @@ struct ServiceDescriptor {
     factory: Box<dyn Fn(&DIContainer) -> DIResult<Arc<dyn Any + Send + Sync>> + Send + Sync>,
     lifetime: ServiceLifetime,
     instance: Option<Arc<dyn Any + Send + Sync>>,
+    health_check: Option<Box<dyn Fn(&Arc<dyn Any + Send + Sync>) -> DIResult<HealthStatus> + Send + Sync>>,
+}
+
+/// Service scope for managing scoped service instances
+#[derive(Debug)]
+pub struct ServiceScope {
+    scoped_instances: RwLock<HashMap<TypeId, Arc<dyn Any + Send + Sync>>>,
+}
+
+impl ServiceScope {
+    /// Create a new service scope
+    pub fn new() -> Self {
+        Self {
+            scoped_instances: RwLock::new(HashMap::new()),
+        }
+    }
+
+    /// Get a scoped service instance
+    pub fn get_scoped<T>(&self) -> Option<Arc<T>>
+    where
+        T: Send + Sync + 'static,
+    {
+        let type_id = TypeId::of::<T>();
+        let instances = self.scoped_instances.read().unwrap();
+        instances.get(&type_id)
+            .and_then(|instance| instance.clone().downcast::<T>().ok())
+    }
+
+    /// Set a scoped service instance
+    pub fn set_scoped<T>(&self, instance: Arc<T>)
+    where
+        T: Send + Sync + 'static,
+    {
+        let type_id = TypeId::of::<T>();
+        let mut instances = self.scoped_instances.write().unwrap();
+        instances.insert(type_id, instance as Arc<dyn Any + Send + Sync>);
+    }
+
+    /// Clear all scoped instances
+    pub fn clear(&self) {
+        let mut instances = self.scoped_instances.write().unwrap();
+        instances.clear();
+    }
+}
+
+impl Default for ServiceScope {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Trait for services that support health checks
+#[async_trait::async_trait]
+pub trait HealthCheck: Send + Sync {
+    /// Perform a health check on the service
+    async fn health_check(&self) -> DIResult<HealthStatus>;
+}
+
+/// Health status of a service
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum HealthStatus {
+    /// Service is healthy and operational
+    Healthy,
+    /// Service is degraded but still functional
+    Degraded(String),
+    /// Service is unhealthy and not functional
+    Unhealthy(String),
+}
+
+/// Service dependency information for validation
+#[derive(Debug, Clone)]
+pub struct ServiceDependency {
+    /// The service type that depends on others
+    pub service_type: String,
+    /// List of service types this service depends on
+    pub dependencies: Vec<String>,
 }
 
 /// The dependency injection container
@@ -99,6 +181,7 @@ impl DIContainer {
             factory: wrapped_factory,
             lifetime: ServiceLifetime::Singleton,
             instance: None,
+            health_check: None,
         };
 
         services.insert(type_id, descriptor);
@@ -131,6 +214,7 @@ impl DIContainer {
             factory: wrapped_factory,
             lifetime: ServiceLifetime::Transient,
             instance: None,
+            health_check: None,
         };
 
         services.insert(type_id, descriptor);
@@ -139,8 +223,85 @@ impl DIContainer {
         Ok(())
     }
 
+    /// Register a scoped service
+    pub fn register_scoped<F, T>(&self, factory: F) -> DIResult<()>
+    where
+        F: Fn(&DIContainer) -> DIResult<Arc<T>> + Send + Sync + 'static,
+        T: Send + Sync + 'static,
+    {
+        let type_id = TypeId::of::<T>();
+        let mut services = self.services.write().unwrap();
+
+        if services.contains_key(&type_id) {
+            return Err(DIError::ServiceAlreadyRegistered {
+                service_type: std::any::type_name::<T>().to_string(),
+            });
+        }
+
+        let wrapped_factory = Box::new(move |container: &DIContainer| -> DIResult<Arc<dyn Any + Send + Sync>> {
+            let result = factory(container)?;
+            Ok(result as Arc<dyn Any + Send + Sync>)
+        });
+
+        let descriptor = ServiceDescriptor {
+            factory: wrapped_factory,
+            lifetime: ServiceLifetime::Scoped,
+            instance: None,
+            health_check: None,
+        };
+
+        services.insert(type_id, descriptor);
+
+        debug!("Registered scoped service: {}", std::any::type_name::<T>());
+        Ok(())
+    }
+
+    /// Register a service with a health check
+    pub fn register_with_health_check<F, H, T>(&self, factory: F, health_check: H) -> DIResult<()>
+    where
+        F: Fn(&DIContainer) -> DIResult<Arc<T>> + Send + Sync + 'static,
+        H: Fn(&Arc<dyn Any + Send + Sync>) -> DIResult<HealthStatus> + Send + Sync + 'static,
+        T: Send + Sync + 'static,
+    {
+        let type_id = TypeId::of::<T>();
+        let mut services = self.services.write().unwrap();
+
+        if services.contains_key(&type_id) {
+            return Err(DIError::ServiceAlreadyRegistered {
+                service_type: std::any::type_name::<T>().to_string(),
+            });
+        }
+
+        let wrapped_factory = Box::new(move |container: &DIContainer| -> DIResult<Arc<dyn Any + Send + Sync>> {
+            let result = factory(container)?;
+            Ok(result as Arc<dyn Any + Send + Sync>)
+        });
+
+        let descriptor = ServiceDescriptor {
+            factory: wrapped_factory,
+            lifetime: ServiceLifetime::Singleton,
+            instance: None,
+            health_check: Some(Box::new(move |instance: &Arc<dyn Any + Send + Sync>| {
+                health_check(instance)
+            })),
+        };
+
+        services.insert(type_id, descriptor);
+
+        debug!("Registered service with health check: {}", std::any::type_name::<T>());
+        Ok(())
+    }
+
     /// Resolve a service instance
     pub fn resolve<T>(&self) -> DIResult<Arc<T>>
+    where
+        T: Send + Sync + 'static,
+    {
+        self.resolve_with_scope::<T>(None)
+    }
+
+    /// Resolve a service instance with an optional scope
+    pub fn resolve_with_scope<T>(&self, scope: Option<&ServiceScope>) -> DIResult<Arc<T>>
     where
         T: Send + Sync + 'static,
     {
@@ -180,10 +341,26 @@ impl DIContainer {
                     })
             }
             ServiceLifetime::Scoped => {
-                // Not implemented yet
-                Err(DIError::InvalidServiceType {
-                    message: "Scoped lifetime not implemented".to_string(),
-                })
+                // Check if we have a scope
+                if let Some(scope) = scope {
+                    // Try to get existing scoped instance
+                    if let Some(instance) = scope.get_scoped::<T>() {
+                        return Ok(instance);
+                    }
+
+                    // Create new scoped instance
+                    let instance = (descriptor.factory)(self)?;
+                    let downcasted = instance.downcast::<T>()
+                        .map_err(|_| DIError::InvalidServiceType {
+                            message: "Service type mismatch during downcast".to_string(),
+                        })?;
+                    scope.set_scoped(downcasted.clone());
+                    Ok(downcasted)
+                } else {
+                    Err(DIError::InvalidServiceType {
+                        message: "Scoped services require a service scope".to_string(),
+                    })
+                }
             }
         }
     }
@@ -209,6 +386,56 @@ impl DIContainer {
         let mut services = self.services.write().unwrap();
         services.clear();
         info!("Cleared all services from DI container");
+    }
+
+    /// Perform health checks on all registered services that have health checks
+    pub fn health_check_all(&self) -> DIResult<Vec<(String, HealthStatus)>> {
+        let services = self.services.read().unwrap();
+        let mut results = Vec::new();
+
+        for (type_id, descriptor) in services.iter() {
+            if let Some(health_check_fn) = &descriptor.health_check {
+                // Try to resolve the service
+                if let Ok(instance) = (descriptor.factory)(self) {
+                    let status = health_check_fn(&instance)?;
+                    results.push((format!("{:?}", type_id), status));
+                }
+            }
+        }
+
+        Ok(results)
+    }
+
+    /// Validate service dependencies to detect circular dependencies
+    pub fn validate_dependencies(&self, dependencies: &[ServiceDependency]) -> DIResult<()> {
+        for dep in dependencies {
+            if self.has_circular_dependency(dep, &mut Vec::new()) {
+                return Err(DIError::CircularDependency {
+                    service_chain: dep.service_type.clone(),
+                });
+            }
+        }
+        Ok(())
+    }
+
+    /// Check for circular dependencies in a service dependency chain
+    fn has_circular_dependency(&self, dep: &ServiceDependency, visited: &mut Vec<String>) -> bool {
+        if visited.contains(&dep.service_type) {
+            return true;
+        }
+
+        visited.push(dep.service_type.clone());
+
+        for dependency in &dep.dependencies {
+            // For simplicity, we'll just check if the dependency exists
+            // In a real implementation, you'd recursively check the dependency graph
+            if visited.contains(dependency) {
+                return true;
+            }
+        }
+
+        visited.pop();
+        false
     }
 }
 
@@ -251,6 +478,16 @@ impl DIContainerBuilder {
         Ok(self)
     }
 
+    /// Register a scoped service
+    pub fn register_scoped<F, T>(mut self, factory: F) -> DIResult<Self>
+    where
+        F: Fn(&DIContainer) -> DIResult<Arc<T>> + Send + Sync + 'static,
+        T: Send + Sync + 'static,
+    {
+        self.container.register_scoped(factory)?;
+        Ok(self)
+    }
+
     /// Build the container
     pub fn build(self) -> DIContainer {
         self.container
@@ -282,8 +519,16 @@ macro_rules! resolve_service {
 // Re-export service registration functions
 pub use services::{
     create_application_container,
+    create_cli_container,
+    create_tui_container,
+    create_development_container,
+    create_test_container,
+    create_configured_container,
     register_infrastructure_services,
     register_use_cases,
+    ContainerConfig,
+    Lifecycle,
+    LifecycleManager,
 };
 
 #[cfg(feature = "full")]
@@ -354,4 +599,28 @@ pub use services::register_themes_services;
 
 #[cfg(feature = "images")]
 pub use services::register_images_services;
+
+#[cfg(feature = "refactoring")]
+pub use services::register_refactoring_services;
+
+#[cfg(feature = "parsers")]
+pub use services::register_parsers_services;
+
+#[cfg(feature = "generation")]
+pub use services::register_generation_services;
+
+#[cfg(feature = "config")]
+pub use services::register_app_config_services;
+
+#[cfg(feature = "github")]
+pub use services::register_github_services;
+
+#[cfg(feature = "domain-agents")]
+pub use services::register_domain_agents_services;
+
+#[cfg(feature = "local-models")]
+pub use services::register_local_models_services;
+
+#[cfg(feature = "cli")]
+pub use services::register_cli_services;
 

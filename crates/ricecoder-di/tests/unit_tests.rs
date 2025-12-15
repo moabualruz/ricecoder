@@ -1,4 +1,5 @@
 //! Unit tests for the DI container core functionality
+use std::sync::Arc;
 
 use ricecoder_di::*;
 

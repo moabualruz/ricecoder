@@ -38,6 +38,7 @@ pub mod global_store;
 pub mod manager;
 pub mod project_store;
 pub mod session;
+pub mod theme;
 pub mod types;
 
 // Re-export commonly used types
@@ -56,6 +57,7 @@ pub use global_store::GlobalStore;
 pub use manager::{PathResolver, StorageManager};
 pub use project_store::ProjectStore;
 pub use session::{SessionData, SessionManager, SessionState};
+pub use theme::{ThemePreference, ThemeStorage};
 pub use types::{
     ConfigFormat, DocumentFormat, ResourceType, StorageConfig, StorageMode, StorageState,
 };

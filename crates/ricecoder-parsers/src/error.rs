@@ -40,6 +40,14 @@ pub enum ParserError {
 /// Result type for parser operations
 pub type ParserResult<T> = std::result::Result<T, ParserError>;
 
+/// Warning severity levels
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub enum WarningSeverity {
+    Info,
+    Warning,
+    Error,
+}
+
 /// Parser warnings (non-fatal issues)
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ParserWarning {

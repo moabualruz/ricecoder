@@ -26,6 +26,7 @@ RiceCoder (`rice`) is a terminal-first, spec-driven coding assistant that unders
 - **📊 Token Tracking** - Real-time token usage monitoring with cost estimation
 - **🚀 Project Bootstrap** - Automatic project detection and configuration
 - **🎯 Session Management** - Persistent sessions with token-aware message handling
+- **🔧 Dependency Injection** - Modular architecture with service container for clean component wiring
 
 ---
 

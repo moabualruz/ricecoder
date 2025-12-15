@@ -229,8 +229,7 @@ impl ConfigLoader {
     ///
     /// Automatically detects format based on file extension.
     /// Supports YAML (.yaml, .yml), TOML (.toml), and JSON (.json) formats.
-    pub fn load_from_file<P: AsRef<Path>>(path: P) -> StorageResult<Config> {
-        let path = path.as_ref();
+    pub fn load_from_file(path: &Path) -> StorageResult<Config> {
         let content = std::fs::read_to_string(path).map_err(|e| {
             StorageError::io_error(path.to_path_buf(), crate::error::IoOperation::Read, e)
         })?;
@@ -254,12 +253,11 @@ impl ConfigLoader {
     }
 
     /// Load configuration from a string with specified format
-    pub fn load_from_string<P: AsRef<Path>>(
+    pub fn load_from_string(
         content: &str,
         format: ConfigFormat,
-        path: P,
+        path: &Path,
     ) -> StorageResult<Config> {
-        let path = path.as_ref();
         match format {
             ConfigFormat::Yaml => Self::parse_yaml(content, path),
             ConfigFormat::Toml => Self::parse_toml(content, path),
@@ -269,30 +267,26 @@ impl ConfigLoader {
     }
 
     /// Parse YAML content
-    fn parse_yaml<P: AsRef<Path>>(content: &str, path: P) -> StorageResult<Config> {
-        let path = path.as_ref();
+    fn parse_yaml(content: &str, path: &Path) -> StorageResult<Config> {
         serde_yaml::from_str(content)
             .map_err(|e| StorageError::parse_error(path.to_path_buf(), "YAML", e.to_string()))
     }
 
     /// Parse TOML content
-    fn parse_toml<P: AsRef<Path>>(content: &str, path: P) -> StorageResult<Config> {
-        let path = path.as_ref();
+    fn parse_toml(content: &str, path: &Path) -> StorageResult<Config> {
         toml::from_str(content)
             .map_err(|e| StorageError::parse_error(path.to_path_buf(), "TOML", e.to_string()))
     }
 
     /// Parse JSON content
-    fn parse_json<P: AsRef<Path>>(content: &str, path: P) -> StorageResult<Config> {
-        let path = path.as_ref();
+    fn parse_json(content: &str, path: &Path) -> StorageResult<Config> {
         serde_json::from_str(content)
             .map_err(|e| StorageError::parse_error(path.to_path_buf(), "JSON", e.to_string()))
     }
 
     /// Parse JSONC content (JSON with comments)
     /// TODO: Implement proper JSONC parsing with comment stripping
-    fn parse_jsonc<P: AsRef<Path>>(content: &str, path: P) -> StorageResult<Config> {
-        let path = path.as_ref();
+    fn parse_jsonc(content: &str, path: &Path) -> StorageResult<Config> {
         // For now, treat JSONC as regular JSON (comments not supported yet)
         serde_json::from_str(content)
             .map_err(|e| StorageError::parse_error(path.to_path_buf(), "JSONC", e.to_string()))
@@ -313,12 +307,11 @@ impl ConfigLoader {
     }
 
     /// Save configuration to a file
-    pub fn save_to_file<P: AsRef<Path>>(
+    pub fn save_to_file(
         config: &Config,
-        path: P,
+        path: &Path,
         format: ConfigFormat,
     ) -> StorageResult<()> {
-        let path = path.as_ref();
         let content = Self::serialize(config, format)?;
         std::fs::write(path, content).map_err(|e| {
             StorageError::io_error(path.to_path_buf(), crate::error::IoOperation::Write, e)

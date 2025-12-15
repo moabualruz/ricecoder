@@ -23,8 +23,7 @@ impl DocumentLoader {
     ///
     /// Automatically detects format based on file extension.
     /// Supports YAML (.yaml, .yml) and Markdown (.md, .markdown) formats.
-    pub fn load_from_file<P: AsRef<Path>>(path: P) -> StorageResult<Document> {
-        let path = path.as_ref();
+    pub fn load_from_file(path: &Path) -> StorageResult<Document> {
         let content = std::fs::read_to_string(path).map_err(|e| {
             StorageError::io_error(path.to_path_buf(), crate::error::IoOperation::Read, e)
         })?;
@@ -53,8 +52,7 @@ impl DocumentLoader {
     }
 
     /// Save a document to a file
-    pub fn save_to_file<P: AsRef<Path>>(document: &Document, path: P) -> StorageResult<()> {
-        let path = path.as_ref();
+    pub fn save_to_file(document: &Document, path: &Path) -> StorageResult<()> {
         std::fs::write(path, &document.content).map_err(|e| {
             StorageError::io_error(path.to_path_buf(), crate::error::IoOperation::Write, e)
         })

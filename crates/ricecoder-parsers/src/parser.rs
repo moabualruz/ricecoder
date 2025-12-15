@@ -8,7 +8,7 @@ use tokio::sync::RwLock;
 use crate::error::{ParserError, ParserResult, ParserWarning};
 use crate::languages::{Language, LanguageRegistry, LanguageSupport};
 use crate::types::{ASTNode, NodeType, Position, Range, SyntaxTree};
-use ricecoder_cache::{Cache, CacheConfig};
+use ricecoder_cache::{Cache, CacheConfig, CacheEntry};
 
 /// Parser configuration
 #[derive(Debug, Clone)]
@@ -119,11 +119,6 @@ impl Parser {
 
         // Parse with timeout (simplified - actual timeout would require async parsing)
         let tree = support.parse(source, &self.config)?;
-            Ok(result) => result?,
-            Err(_) => return Err(ParserError::ParseError {
-                message: format!("Parse timeout after {} seconds", self.config.max_parse_time_seconds),
-            }),
-        };
 
         let mut tree = if let Some(path) = file_path {
             tree.with_file_path(path.to_string())
@@ -325,10 +320,8 @@ pub mod tree_sitter_support {
         }
     }
 
-}
-
-#[async_trait]
-impl LanguageSupport for tree_sitter_support::TreeSitterSupport {
+    #[async_trait]
+    impl LanguageSupport for TreeSitterSupport {
         fn language(&self) -> Language {
             self.language.clone()
         }
@@ -364,6 +357,8 @@ impl LanguageSupport for tree_sitter_support::TreeSitterSupport {
 
             Ok(syntax_tree)
         }
+    }
+}
     }
 
 /// Create tree-sitter supports for supported languages
