@@ -1,0 +1,1 @@
+cd D:\work\kiro-workspace\projects\ricecoder && cargo check -p ricecoder-sessions

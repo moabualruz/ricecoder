@@ -16,6 +16,7 @@ use openidconnect::{
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use url::Url;
+use uuid;
 
 use crate::{audit::AuditLogger, SecurityError, Result};
 
@@ -156,7 +157,7 @@ impl OAuthClient {
             token_type: token_result.token_type().as_ref().to_string(),
             expires_in: token_result.expires_in().map(|d| d.as_secs()),
             refresh_token: token_result.refresh_token().map(|t| t.secret().clone()),
-            scope: token_result.scopes().map(|s| s.join(" ")),
+            scope: token_result.scopes().map(|s| s.iter().map(|scope| scope.as_str()).collect::<Vec<_>>().join(" ")),
             id_token: None, // OAuth 2.0 doesn't have ID tokens
         };
 
@@ -217,12 +218,12 @@ impl OidcClient {
             auth_request = auth_request.add_scope(OidcScope::new(scope.clone()));
         }
 
-        let (auth_url, csrf_token) = auth_request.url();
+        let (auth_url, csrf_token, returned_nonce) = auth_request.url();
 
         // Store nonce for later verification
         self.nonces.insert(csrf_token.secret().clone(), nonce.clone());
 
-        Ok((auth_url, csrf_token, nonce))
+        Ok((auth_url, csrf_token, returned_nonce))
     }
 
     /// Exchange authorization code for tokens (OIDC)
@@ -246,7 +247,6 @@ impl OidcClient {
         let token_result = client
             .exchange_code(AuthorizationCode::new(code.to_string()))
             .set_pkce_verifier(pkce_verifier)
-            .set_nonce(nonce)
             .request_async(oidc_http_client)
             .await
             .map_err(|e| SecurityError::Validation {
@@ -283,7 +283,7 @@ impl OidcClient {
             token_type: token_result.token_type().as_ref().to_string(),
             expires_in: token_result.expires_in().map(|d| d.as_secs()),
             refresh_token: token_result.refresh_token().map(|t| t.secret().clone()),
-            scope: token_result.scopes().map(|s| s.join(" ")),
+            scope: token_result.scopes().map(|s| s.iter().map(|scope| scope.as_str()).collect::<Vec<_>>().join(" ")),
             id_token: Some(id_token.to_string()),
         };
 

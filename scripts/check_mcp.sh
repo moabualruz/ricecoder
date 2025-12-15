@@ -1,0 +1,1 @@
+cargo check -p ricecoder-mcp

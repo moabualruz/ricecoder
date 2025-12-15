@@ -5,7 +5,7 @@ use crate::coding::CodingPatternDetector;
 use crate::error::{PatternError, PatternResult};
 use crate::models::{DetectedPattern, PatternDetectionConfig};
 #[cfg(feature = "parsing")]
-use ricecoder_parsers::{Parser, SyntaxTree};
+use ricecoder_parsers::{CodeParser, SyntaxTree};
 use std::path::Path;
 #[cfg(feature = "parsing")]
 use std::sync::Arc;
@@ -21,13 +21,13 @@ pub struct PatternDetector {
     config: PatternDetectionConfig,
     /// Parser for code analysis (optional)
     #[cfg(feature = "parsing")]
-    parser: Arc<dyn Parser>,
+    parser: Arc<dyn CodeParser>,
 }
 
 impl PatternDetector {
     /// Create a new pattern detector with default configuration
     #[cfg(feature = "parsing")]
-    pub fn new(parser: Arc<dyn Parser>) -> Self {
+    pub fn new(parser: Arc<dyn CodeParser>) -> Self {
         Self {
             architectural_detector: ArchitecturalPatternDetector::new(),
             coding_detector: CodingPatternDetector::with_parser(Arc::clone(&parser)),
@@ -38,7 +38,7 @@ impl PatternDetector {
 
     /// Create a new pattern detector with custom configuration
     #[cfg(feature = "parsing")]
-    pub fn with_config(parser: Arc<dyn Parser>, config: PatternDetectionConfig) -> Self {
+    pub fn with_config(parser: Arc<dyn CodeParser>, config: PatternDetectionConfig) -> Self {
         Self {
             architectural_detector: ArchitecturalPatternDetector::new(),
             coding_detector: CodingPatternDetector::with_parser(Arc::clone(&parser)),
@@ -187,7 +187,7 @@ mod tests {
     // Mock parser for testing
     struct MockParser;
 
-    impl Parser for MockParser {
+    impl CodeParser for MockParser {
         fn parse(&self, _content: &str) -> Result<SyntaxTree, ParserError> {
             Ok(SyntaxTree {
                 root: ricecoder_parsers::ASTNode {

@@ -21,7 +21,7 @@ pub mod types;
 
 pub use error::{ParserError, ParserResult};
 pub use languages::{Language, LanguageSupport};
-pub use parser::{Parser, ParserConfig, ParseResult};
+pub use parser::{CodeParser, Parser, ParserConfig, ParseResult};
 pub use traversal::{NodeVisitor, TreeWalker, VisitorResult};
 pub use types::{ASTNode, SyntaxTree, Position, Range, NodeType};
 

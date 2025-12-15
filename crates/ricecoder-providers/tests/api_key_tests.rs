@@ -1,9 +1,6 @@
 use ricecoder_providers::*;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::models::ApiKeyConfig;
+use ricecoder_providers::models::ApiKeyConfig;
 
     #[test]
     fn test_new_api_key_manager() {
@@ -182,4 +179,3 @@ mod tests {
 
         std::env::remove_var("TEST_PRECEDENCE_KEY");
     }
-}

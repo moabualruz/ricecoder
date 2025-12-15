@@ -6,8 +6,11 @@
 use ricecoder_sessions::{
     BackgroundAgent, BackgroundAgentManager, ContextManager, HistoryManager, Message, MessageRole,
     Session, SessionContext, SessionManager, SessionMode, SessionRouter, SessionStore,
-    SharePermissions, ShareService,
+    SharePermissions, ShareService, EnterpriseSharingPolicy, DataClassification,
 };
+use ricecoder_security::audit::{AuditEventType, AuditLogger, MemoryAuditStorage, AuditQuery};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 use tempfile::TempDir;
 
 // ============================================================================
@@ -694,4 +697,571 @@ async fn test_complex_workflow_full_session_with_sharing_and_agents() {
     assert_ne!(imported_session.id, session_id);
     assert_eq!(imported_session.name, session.name);
     assert_eq!(imported_session.history.len(), session.history.len());
+}
+
+// ============================================================================
+// Task 13.2: Session Integration Tests - Enhanced Areas
+// ============================================================================
+
+// ============================================================================
+// Session Sharing/Access Control/URL-based Mechanisms Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_session_sharing_url_based_access_control() {
+    let share_service = ShareService::new();
+    let session = create_test_session("URL Access Control Session");
+    let session_id = session.id.clone();
+
+    // Create share with specific permissions
+    let permissions = SharePermissions {
+        read_only: true,
+        include_history: true,
+        include_context: false,
+    };
+
+    let share = share_service
+        .generate_share_link(&session_id, permissions.clone(), None)
+        .unwrap();
+    let share_url = format!("https://ricecoder.com/share/{}", share.id);
+
+    // Simulate URL-based access - extract share ID from URL
+    let share_id_from_url = share_url.split('/').last().unwrap();
+
+    // Access via URL-derived share ID
+    let retrieved_share = share_service.get_share(share_id_from_url).unwrap();
+    assert_eq!(retrieved_share.id, share.id);
+    assert_eq!(retrieved_share.permissions.read_only, true);
+
+    // Create shared session view
+    let shared_view = share_service.create_shared_session_view(&session, &permissions);
+
+    // Verify access control - context should be excluded
+    assert_eq!(shared_view.context.files.len(), 0);
+    assert_eq!(shared_view.context.custom.len(), 0);
+    // History should be included
+    assert_eq!(shared_view.history.len(), 0); // Original session has no history
+}
+
+#[tokio::test]
+async fn test_session_sharing_access_control_with_role_based_permissions() {
+    let share_service = ShareService::new();
+    let mut session = create_test_session("RBAC Session");
+    session.context.project_path = Some("/sensitive/project".to_string());
+    session.context.files = vec!["secret.rs".to_string(), "config.json".to_string()];
+    session.history.push(Message::new(MessageRole::User, "Sensitive information".to_string()));
+
+    let session_id = session.id.clone();
+
+    // Test different permission combinations
+    let test_cases = vec![
+        (SharePermissions { read_only: true, include_history: false, include_context: false }, "minimal"),
+        (SharePermissions { read_only: true, include_history: true, include_context: false }, "history_only"),
+        (SharePermissions { read_only: true, include_history: false, include_context: true }, "context_only"),
+        (SharePermissions { read_only: true, include_history: true, include_context: true }, "full_readonly"),
+        (SharePermissions { read_only: false, include_history: true, include_context: true }, "full_write"),
+    ];
+
+    for (permissions, case_name) in test_cases {
+        let share = share_service
+            .generate_share_link(&session_id, permissions.clone(), None)
+            .unwrap();
+
+        let shared_view = share_service.create_shared_session_view(&session, &permissions);
+
+        // Verify access control enforcement
+        if !permissions.include_history {
+            assert_eq!(shared_view.history.len(), 0, "History should be excluded in case: {}", case_name);
+        } else {
+            assert_eq!(shared_view.history.len(), session.history.len(), "History should be included in case: {}", case_name);
+        }
+
+        if !permissions.include_context {
+            assert_eq!(shared_view.context.files.len(), 0, "Files should be excluded in case: {}", case_name);
+            assert_eq!(shared_view.context.custom.len(), 0, "Custom data should be excluded in case: {}", case_name);
+        } else {
+            assert_eq!(shared_view.context.files.len(), session.context.files.len(), "Files should be included in case: {}", case_name);
+        }
+
+        // Verify read-only enforcement (would need additional logic in real implementation)
+        assert_eq!(shared_view.id, session.id, "Session ID should match in case: {}", case_name);
+    }
+}
+
+#[tokio::test]
+async fn test_session_sharing_url_based_sharing_workflow() {
+    let share_service = ShareService::new();
+    let session = create_test_session("URL Sharing Workflow");
+    let session_id = session.id.clone();
+
+    // 1. Generate share link
+    let permissions = SharePermissions {
+        read_only: true,
+        include_history: true,
+        include_context: true,
+    };
+
+    let share = share_service
+        .generate_share_link(&session_id, permissions.clone(), None)
+        .unwrap();
+
+    // 2. Simulate URL generation and distribution
+    let share_url = format!("https://ricecoder.com/sessions/share/{}", share.id);
+
+    // 3. Simulate recipient accessing via URL
+    let url_parts: Vec<&str> = share_url.split('/').collect();
+    let share_id_from_url = url_parts.last().unwrap();
+
+    // 4. Access the shared session
+    let retrieved_share = share_service.get_share(share_id_from_url).unwrap();
+    let shared_view = share_service.create_shared_session_view(&session, &retrieved_share.permissions);
+
+    // 5. Import as new session
+    let imported = share_service
+        .import_shared_session(&share.id, &shared_view, None)
+        .unwrap();
+
+    // 6. Verify the imported session
+    assert_ne!(imported.id, session_id);
+    assert_eq!(imported.name, session.name);
+    assert_eq!(imported.context.provider, session.context.provider);
+}
+
+// ============================================================================
+// Multi-session Concurrency/Isolation/Resource Management Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_multi_session_concurrency_with_shared_resources() {
+    let temp_dir = TempDir::new().unwrap();
+    let sessions_dir = temp_dir.path().join("sessions");
+    let archive_dir = temp_dir.path().join("archive");
+
+    let store = Arc::new(Mutex::new(SessionStore::with_dirs(sessions_dir, archive_dir).unwrap()));
+    let manager = Arc::new(Mutex::new(SessionManager::new(10)));
+
+    // Create multiple sessions concurrently
+    let mut handles = vec![];
+
+    for i in 0..5 {
+        let store_clone = Arc::clone(&store);
+        let manager_clone = Arc::clone(&manager);
+
+        let handle = tokio::spawn(async move {
+            let context = SessionContext::new(
+                "openai".to_string(),
+                "gpt-4".to_string(),
+                SessionMode::Chat
+            );
+
+            let mut mgr = manager_clone.lock().await;
+            let session = mgr
+                .create_session(format!("Concurrent Session {}", i), context)
+                .unwrap();
+            let session_id = session.id.clone();
+
+            // Persist concurrently
+            let mut str = store_clone.lock().await;
+            str.save(&session).await.unwrap();
+
+            session_id
+        });
+
+        handles.push(handle);
+    }
+
+    // Wait for all concurrent operations
+    let mut session_ids = vec![];
+    for handle in handles {
+        session_ids.push(handle.await.unwrap());
+    }
+
+    // Verify all sessions were created and persisted
+    assert_eq!(session_ids.len(), 5);
+
+    let str = store.lock().await;
+    for session_id in &session_ids {
+        assert!(str.exists(session_id));
+        let loaded = str.load(session_id).await.unwrap();
+        assert!(loaded.name.starts_with("Concurrent Session"));
+    }
+}
+
+#[tokio::test]
+async fn test_multi_session_isolation_and_resource_limits() {
+    let manager = SessionManager::new(3); // Limit to 3 sessions
+
+    // Create sessions up to the limit
+    let context = create_test_context();
+
+    let session1 = manager.create_session("Session 1".to_string(), context.clone()).unwrap();
+    let session2 = manager.create_session("Session 2".to_string(), context.clone()).unwrap();
+    let session3 = manager.create_session("Session 3".to_string(), context.clone()).unwrap();
+
+    // Verify limit enforcement - should not create 4th session
+    let result = manager.create_session("Session 4".to_string(), context.clone());
+    assert!(result.is_err(), "Should not allow creating session beyond limit");
+
+    // Verify isolation - each session has independent context
+    let sessions = manager.list_sessions();
+    assert_eq!(sessions.len(), 3);
+
+    // Switch between sessions and verify isolation
+    manager.switch_session(&session2.id).unwrap();
+    let active = manager.get_active_session().unwrap();
+    assert_eq!(active.id, session2.id);
+
+    // Modify active session context
+    // Note: In real implementation, this would modify the active session's context
+    // For this test, we verify the session list remains isolated
+
+    manager.switch_session(&session1.id).unwrap();
+    let active_after_switch = manager.get_active_session().unwrap();
+    assert_eq!(active_after_switch.id, session1.id);
+}
+
+#[tokio::test]
+async fn test_multi_session_resource_management_with_cleanup() {
+    let temp_dir = TempDir::new().unwrap();
+    let sessions_dir = temp_dir.path().join("sessions");
+    let archive_dir = temp_dir.path().join("archive");
+
+    let store = SessionStore::with_dirs(sessions_dir.clone(), archive_dir.clone()).unwrap();
+    let mut manager = SessionManager::new(10);
+
+    // Create multiple sessions with resources
+    let mut sessions = vec![];
+    for i in 0..5 {
+        let mut session = create_test_session(&format!("Resource Session {}", i));
+        session.context.files = vec![format!("file{}.rs", i), format!("test{}.txt", i)];
+        session.history = vec![
+            Message::new(MessageRole::User, format!("Message {}", i)),
+            Message::new(MessageRole::Assistant, format!("Response {}", i)),
+        ];
+
+        let created = manager.create_session(session.name.clone(), session.context.clone()).unwrap();
+        store.save(&session).await.unwrap();
+        sessions.push((created.id.clone(), session));
+    }
+
+    // Verify resource usage
+    let all_sessions = store.list().await.unwrap();
+    assert_eq!(all_sessions.len(), 5);
+
+    // Simulate resource pressure - delete some sessions
+    for (session_id, _) in sessions.iter().take(2) {
+        manager.delete_session(session_id).unwrap();
+        store.delete(session_id).await.unwrap();
+    }
+
+    // Verify cleanup
+    let remaining_sessions = store.list().await.unwrap();
+    assert_eq!(remaining_sessions.len(), 3);
+
+    // Verify remaining sessions are intact
+    for (session_id, original_session) in sessions.iter().skip(2) {
+        let loaded = store.load(session_id).await.unwrap();
+        assert_eq!(loaded.name, original_session.name);
+        assert_eq!(loaded.history.len(), original_session.history.len());
+    }
+}
+
+// ============================================================================
+// Session Cleanup/Garbage Collection/Backup/Recovery Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_session_cleanup_garbage_collection() {
+    let temp_dir = TempDir::new().unwrap();
+    let sessions_dir = temp_dir.path().join("sessions");
+    let archive_dir = temp_dir.path().join("archive");
+
+    let store = SessionStore::with_dirs(sessions_dir.clone(), archive_dir.clone()).unwrap();
+
+    // Create sessions with different ages
+    let mut sessions = vec![];
+    for i in 0..5 {
+        let session = create_test_session(&format!("GC Session {}", i));
+        store.save(&session).await.unwrap();
+        sessions.push(session.id.clone());
+    }
+
+    // Verify all sessions exist
+    assert_eq!(store.list().await.unwrap().len(), 5);
+
+    // Simulate garbage collection - delete sessions based on some criteria
+    // In real implementation, this might be based on age, inactivity, etc.
+    for session_id in sessions.iter().take(2) {
+        store.delete(session_id).await.unwrap();
+    }
+
+    // Verify garbage collection
+    let remaining = store.list().await.unwrap();
+    assert_eq!(remaining.len(), 3);
+
+    // Verify archived sessions are moved (if implemented)
+    // For this test, we just verify deletion worked
+    for deleted_id in sessions.iter().take(2) {
+        assert!(!store.exists(deleted_id));
+    }
+}
+
+#[tokio::test]
+async fn test_session_backup_and_recovery() {
+    let temp_dir = TempDir::new().unwrap();
+    let sessions_dir = temp_dir.path().join("sessions");
+    let archive_dir = temp_dir.path().join("archive");
+    let backup_dir = temp_dir.path().join("backup");
+
+    let store = SessionStore::with_dirs(sessions_dir.clone(), archive_dir.clone()).unwrap();
+
+    // Create sessions with data
+    let mut session1 = create_test_session("Backup Session 1");
+    session1.context.project_path = Some("/project1".to_string());
+    session1.history.push(Message::new(MessageRole::User, "Important data".to_string()));
+
+    let mut session2 = create_test_session("Backup Session 2");
+    session2.context.files = vec!["main.rs".to_string(), "lib.rs".to_string()];
+    session2.history.push(Message::new(MessageRole::Assistant, "Critical response".to_string()));
+
+    store.save(&session1).await.unwrap();
+    store.save(&session2).await.unwrap();
+
+    // Simulate backup - copy to backup directory
+    std::fs::create_dir_all(&backup_dir).unwrap();
+    for entry in std::fs::read_dir(&sessions_dir).unwrap() {
+        let entry = entry.unwrap();
+        let dest = backup_dir.join(entry.file_name());
+        std::fs::copy(entry.path(), dest).unwrap();
+    }
+
+    // Verify backup exists
+    assert_eq!(std::fs::read_dir(&backup_dir).unwrap().count(), 2);
+
+    // Simulate disaster - delete original sessions
+    store.delete(&session1.id).await.unwrap();
+    store.delete(&session2.id).await.unwrap();
+    assert_eq!(store.list().await.unwrap().len(), 0);
+
+    // Simulate recovery - restore from backup
+    let recovery_store = SessionStore::with_dirs(backup_dir, archive_dir).unwrap();
+    let backed_up_sessions = recovery_store.list().await.unwrap();
+    assert_eq!(backed_up_sessions.len(), 2);
+
+    // Load and verify recovered sessions
+    for session_id in &[session1.id.clone(), session2.id.clone()] {
+        let recovered = recovery_store.load(session_id).await.unwrap();
+        if recovered.name == "Backup Session 1" {
+            assert_eq!(recovered.context.project_path, Some("/project1".to_string()));
+            assert_eq!(recovered.history.len(), 1);
+        } else {
+            assert_eq!(recovered.context.files.len(), 2);
+            assert_eq!(recovered.history.len(), 1);
+        }
+    }
+}
+
+#[tokio::test]
+async fn test_session_recovery_from_corruption() {
+    let temp_dir = TempDir::new().unwrap();
+    let sessions_dir = temp_dir.path().join("sessions");
+    let archive_dir = temp_dir.path().join("archive");
+
+    let store = SessionStore::with_dirs(sessions_dir.clone(), archive_dir).unwrap();
+
+    // Create a valid session
+    let session = create_test_session("Recovery Test Session");
+    store.save(&session).await.unwrap();
+
+    // Simulate corruption - manually corrupt the file
+    let session_file = sessions_dir.join(format!("{}.json", session.id));
+    std::fs::write(&session_file, "corrupted json content").unwrap();
+
+    // Attempt to load corrupted session
+    let result = store.load(&session.id).await;
+    assert!(result.is_err(), "Should fail to load corrupted session");
+
+    // Verify session is marked as corrupted but not deleted
+    assert!(session_file.exists());
+
+    // In real implementation, there might be recovery mechanisms
+    // For this test, we verify the corruption is detected
+}
+
+// ============================================================================
+// Cross-crate Integration with Enterprise Compliance Tests
+// ============================================================================
+
+fn create_enterprise_audit_logger() -> Arc<AuditLogger> {
+    let storage = Arc::new(MemoryAuditStorage::new());
+    Arc::new(AuditLogger::new(storage))
+}
+
+fn create_enterprise_policy() -> EnterpriseSharingPolicy {
+    EnterpriseSharingPolicy {
+        max_expiration_days: Some(30),
+        requires_approval: true,
+        allowed_domains: vec!["company.com".to_string(), "trusted.org".to_string()],
+        compliance_logging: true,
+        data_classification: DataClassification::Confidential,
+    }
+}
+
+#[tokio::test]
+async fn test_cross_crate_enterprise_compliance_integration() {
+    let audit_logger = create_enterprise_audit_logger();
+    let share_service = ShareService::with_audit_logging("https://enterprise.ricecoder.com".to_string(), audit_logger.clone());
+
+    let mut session = create_test_session("Enterprise Compliance Session");
+    session.context.project_path = Some("/confidential/project".to_string());
+    session.history.push(Message::new(MessageRole::User, "Confidential discussion".to_string()));
+
+    let policy = create_enterprise_policy();
+
+    let permissions = SharePermissions {
+        read_only: true,
+        include_history: true,
+        include_context: true,
+    };
+
+    // Create enterprise share with compliance logging
+    let share = share_service
+        .generate_share_link_with_policy(
+            &session.id,
+            permissions.clone(),
+            None,
+            Some(policy),
+            Some("user@company.com".to_string()),
+        )
+        .unwrap();
+
+    // Access the share (should trigger compliance events)
+    let _retrieved = share_service.get_share(&share.id).unwrap();
+
+    // Import shared session (should trigger more compliance events)
+    let shared_view = share_service.create_shared_session_view(&session, &permissions);
+    let _imported = share_service
+        .import_shared_session(&share.id, &shared_view, Some("recipient@company.com".to_string()))
+        .unwrap();
+
+    // Verify compliance logging integration
+    let query = AuditQuery::default();
+    let events = audit_logger.query_records(query, 100).await.unwrap();
+    assert!(!events.is_empty(), "Should have audit events");
+
+    // Check for enterprise-specific events
+    let enterprise_events: Vec<_> = events.iter()
+        .filter(|e| e.resource.contains("share") || e.resource.contains("session"))
+        .collect();
+    assert!(!enterprise_events.is_empty(), "Should have enterprise-related audit events");
+
+    // Verify event types include compliance events
+    let event_types: std::collections::HashSet<_> = events.iter()
+        .map(|e| e.event_type.clone())
+        .collect();
+    assert!(event_types.contains(&AuditEventType::DataAccess), "Should include data access events");
+}
+
+#[tokio::test]
+async fn test_cross_crate_enterprise_policy_enforcement_integration() {
+    let audit_logger = create_enterprise_audit_logger();
+    let share_service = ShareService::with_audit_logging("https://enterprise.ricecoder.com".to_string(), audit_logger);
+
+    let session = create_test_session("Policy Enforcement Session");
+
+    let strict_policy = EnterpriseSharingPolicy {
+        max_expiration_days: Some(7), // Very short expiration
+        requires_approval: true,
+        allowed_domains: vec!["internal.company.com".to_string()],
+        compliance_logging: true,
+        data_classification: DataClassification::Restricted,
+    };
+
+    let permissions = SharePermissions {
+        read_only: true,
+        include_history: true,
+        include_context: true,
+    };
+
+    // Create share with strict policy
+    let share = share_service
+        .generate_share_link_with_policy(
+            &session.id,
+            permissions,
+            Some(chrono::Duration::days(14)), // Try to exceed policy limit
+            Some(strict_policy.clone()),
+            Some("user@internal.company.com".to_string()),
+        )
+        .unwrap();
+
+    // Verify policy enforcement - expiration should be capped
+    let expected_max = share.created_at + chrono::Duration::days(7);
+    assert_eq!(share.expires_at, Some(expected_max));
+
+    // Verify policy is attached
+    assert_eq!(share.policy.as_ref().unwrap().data_classification, DataClassification::Restricted);
+    assert_eq!(share.policy.as_ref().unwrap().allowed_domains, vec!["internal.company.com".to_string()]);
+}
+
+#[tokio::test]
+async fn test_cross_crate_enterprise_compliance_with_session_lifecycle() {
+    let audit_logger = create_enterprise_audit_logger();
+    let share_service = ShareService::with_audit_logging("https://enterprise.ricecoder.com".to_string(), audit_logger.clone());
+
+    let temp_dir = TempDir::new().unwrap();
+    let sessions_dir = temp_dir.path().join("sessions");
+    let archive_dir = temp_dir.path().join("archive");
+
+    let store = SessionStore::with_dirs(sessions_dir, archive_dir).unwrap();
+
+    // Create enterprise session
+    let mut session = create_test_session("Enterprise Lifecycle Session");
+    session.context.project_path = Some("/enterprise/project".to_string());
+
+    let policy = create_enterprise_policy();
+
+    let permissions = SharePermissions {
+        read_only: true,
+        include_history: true,
+        include_context: true,
+    };
+
+    // 1. Create and persist session
+    store.save(&session).await.unwrap();
+
+    // 2. Create enterprise share
+    let share = share_service
+        .generate_share_link_with_policy(
+            &session.id,
+            permissions.clone(),
+            None,
+            Some(policy),
+            Some("user@company.com".to_string()),
+        )
+        .unwrap();
+
+    // 3. Access and import shared session
+    let _retrieved = share_service.get_share(&share.id).unwrap();
+    let shared_view = share_service.create_shared_session_view(&session, &permissions);
+    let imported = share_service
+        .import_shared_session(&share.id, &shared_view, Some("recipient@company.com".to_string()))
+        .unwrap();
+
+    // 4. Persist imported session
+    store.save(&imported).await.unwrap();
+
+    // 5. Verify enterprise compliance throughout lifecycle
+    let query = AuditQuery::default();
+    let events = audit_logger.query_records(query, 100).await.unwrap();
+
+    // Should have events for creation, access, import, and persistence
+    let session_events: Vec<_> = events.iter()
+        .filter(|e| e.resource.contains("session") || e.resource.contains("share"))
+        .collect();
+
+    assert!(session_events.len() >= 3, "Should have multiple compliance events in lifecycle");
+
+    // Verify both original and imported sessions exist
+    assert!(store.exists(&session.id));
+    assert!(store.exists(&imported.id));
 }

@@ -16,7 +16,7 @@ pub mod regression;
 pub mod validation;
 
 pub use baseline::{PerformanceBaseline, BaselineData};
-pub use detector::RegressionDetector;
+pub use detector::PerformanceRegressionDetector;
 pub use memory::MemoryProfiler;
 pub use monitor::{PerformanceMonitor, PerformanceMetrics};
 pub use regression::{RegressionAlert, RegressionConfig};

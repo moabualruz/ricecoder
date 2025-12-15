@@ -32,6 +32,9 @@ pub enum SecurityError {
     #[error("Base64 decode error: {0}")]
     Base64(#[from] base64::DecodeError),
 
+    #[error("URL parse error: {0}")]
+    Url(#[from] url::ParseError),
+
     #[error("UTF-8 conversion error: {0}")]
     Utf8(#[from] std::string::FromUtf8Error),
 }

@@ -8,7 +8,14 @@ use tokio::sync::RwLock;
 use crate::error::{ParserError, ParserResult, ParserWarning};
 use crate::languages::{Language, LanguageRegistry, LanguageSupport};
 use crate::types::{ASTNode, NodeType, Position, Range, SyntaxTree};
-use ricecoder_cache::{Cache, CacheConfig, CacheEntry};
+use ricecoder_cache::{Cache, CacheConfig};
+
+/// Parser trait for parsing source code into syntax trees
+#[async_trait::async_trait]
+pub trait CodeParser {
+    /// Parse source code into a syntax tree
+    async fn parse(&self, source: &str) -> Result<SyntaxTree, ParserError>;
+}
 
 /// Parser configuration
 #[derive(Debug, Clone)]
@@ -148,8 +155,7 @@ impl Parser {
 
         // Cache the result
         if let Some(cache) = &self.cache {
-            let cache_entry = CacheEntry::new(result.clone(), None);
-            let _ = cache.set(&cache_key, cache_entry, None).await;
+            let _ = cache.set(&cache_key, result.clone(), None).await;
         }
 
         Ok(result)
@@ -235,10 +241,24 @@ impl Parser {
     }
 }
 
-impl std::fmt::Display for ParserStats {
-        format!("parse_{:x}", hasher.finish())
-    }
-}
+#[async_trait::async_trait]
+impl CodeParser for crate::parser::Parser {
+    async fn parse(&self, source: &str) -> Result<SyntaxTree, ParserError> {
+        // Try to detect language from content (simple heuristic)
+        let language = if source.contains("fn ") && source.contains("{") {
+            Language::Rust
+        } else if source.contains("def ") && source.contains(":") {
+            Language::Python
+        } else if source.contains("function") || source.contains("const") || source.contains("let") {
+            Language::JavaScript
+        } else {
+            Language::Rust // default
+        };
+
+        let result = self.parse(source, &language, None).await?;
+        Ok(result.tree)
+    }}
+
 
 impl std::fmt::Display for ParserStats {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

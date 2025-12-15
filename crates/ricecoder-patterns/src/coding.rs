@@ -3,7 +3,7 @@
 use crate::error::{PatternError, PatternResult};
 use crate::models::{DesignPattern, DetectedPattern, PatternCategory, PatternLocation};
 #[cfg(feature = "parsing")]
-use ricecoder_parsers::{ASTNode, NodeType, Parser, SyntaxTree};
+use ricecoder_parsers::{ASTNode, NodeType, CodeParser, SyntaxTree};
 use std::collections::HashMap;
 use std::path::Path;
 #[cfg(feature = "parsing")]
@@ -14,7 +14,7 @@ use walkdir;
 pub struct CodingPatternDetector {
     /// Parser for code analysis (optional)
     #[cfg(feature = "parsing")]
-    parser: std::sync::Arc<dyn Parser>,
+    parser: std::sync::Arc<dyn CodeParser>,
 }
 
 impl CodingPatternDetector {
@@ -27,7 +27,7 @@ impl CodingPatternDetector {
 
     /// Create a new detector with a parser
     #[cfg(feature = "parsing")]
-    pub fn with_parser(parser: std::sync::Arc<dyn Parser>) -> Self {
+    pub fn with_parser(parser: std::sync::Arc<dyn CodeParser>) -> Self {
         Self { parser }
     }
 

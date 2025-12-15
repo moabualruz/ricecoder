@@ -80,20 +80,23 @@ impl RegressionDetector {
 
         for metric in metrics {
             // Check for performance regression
-            if let Some(baseline_data) = self.baseline.get_baseline(&metric.test_name) {
-                let alerts_for_test = self.check_performance_regression(baseline_data, metric, now);
+            let baseline_data_opt = self.baseline.get_baseline(&metric.test_name).cloned();
+            if let Some(baseline_data) = baseline_data_opt {
+                let alerts_for_test = self.check_performance_regression(&baseline_data, metric, now);
                 alerts.extend(alerts_for_test);
             }
 
             // Check for memory regression
-            if let Some(baseline_data) = self.baseline.get_baseline(&metric.test_name) {
-                if let Some(alert) = self.check_memory_regression(baseline_data, metric, now) {
+            let baseline_data_opt = self.baseline.get_baseline(&metric.test_name).cloned();
+            if let Some(baseline_data) = baseline_data_opt {
+                if let Some(alert) = self.check_memory_regression(&baseline_data, metric, now) {
                     alerts.push(alert);
                 }
             }
 
             // Check target thresholds
-            if let Some(baseline_data) = self.baseline.get_baseline(&metric.test_name) {
+            let baseline_data_opt = self.baseline.get_baseline(&metric.test_name).cloned();
+            if let Some(baseline_data) = baseline_data_opt {
                 if let Some(target) = baseline_data.target_threshold_ns {
                     if let Some(alert) = self.check_target_exceeded(&metric.test_name, target, metric, now) {
                         alerts.push(alert);

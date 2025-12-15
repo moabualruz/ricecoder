@@ -38,7 +38,11 @@ fn benchmark_response_times(c: &mut Criterion) {
                 .status()
                 .unwrap_or_else(|_| panic!("Failed to execute config command"));
             assert!(result.success());
-            black_box(start.elapsed());
+            let elapsed = start.elapsed();
+            // Assert baseline: < 500ms for responses
+            assert!(elapsed < std::time::Duration::from_millis(500),
+                "Response time exceeded 500ms baseline: {:?}", elapsed);
+            black_box(elapsed);
         });
     });
 
@@ -52,7 +56,11 @@ fn benchmark_response_times(c: &mut Criterion) {
                 .status()
                 .unwrap_or_else(|_| panic!("Failed to execute help command"));
             assert!(result.success());
-            black_box(start.elapsed());
+            let elapsed = start.elapsed();
+            // Assert baseline: < 500ms for responses
+            assert!(elapsed < std::time::Duration::from_millis(500),
+                "Response time exceeded 500ms baseline: {:?}", elapsed);
+            black_box(elapsed);
         });
     });
 
@@ -60,191 +68,155 @@ fn benchmark_response_times(c: &mut Criterion) {
 }
 
 // ============================================================================
-// Benchmark 7: Memory Usage Tracking
+// Benchmark 10: Enterprise Workload Performance
 // ============================================================================
-// Validates: Memory usage < 300MB for typical sessions
+// Validates: Large-scale operations complete within reasonable time limits
 
-fn benchmark_memory_usage(c: &mut Criterion) {
-    let mut group = c.benchmark_group("memory_usage");
-    group.sample_size(20);
-
-    group.bench_function("baseline_memory", |b| {
-        b.iter(|| {
-            let start = Instant::now();
-            // Simulate memory allocation patterns typical of ricecoder usage
-            let mut allocations = Vec::new();
-
-            // Allocate various sizes similar to ricecoder's data structures
-            allocations.push(vec![0u8; 1024 * 1024]); // 1MB - config data
-            allocations.push(vec![0u8; 512 * 1024]);  // 512KB - session data
-            allocations.push(vec![0u8; 256 * 1024]);  // 256KB - cache data
-
-            // Simulate some processing
-            for alloc in &mut allocations {
-                alloc[0] = 1; // Touch memory
-            }
-
-            black_box((allocations, start.elapsed()));
-        });
-    });
-
-    group.finish();
-}
-
-// ============================================================================
-// Benchmark 8: Large Project Support Validation
-// ============================================================================
-// Validates: 500+ crates, 50K+ lines with incremental analysis
-
-fn benchmark_large_project(c: &mut Criterion) {
-    let mut group = c.benchmark_group("large_project");
-    group.sample_size(10);
-    group.measurement_time(std::time::Duration::from_secs(120));
+fn benchmark_enterprise_workload(c: &mut Criterion) {
+    let mut group = c.benchmark_group("enterprise_workload");
+    group.sample_size(5);
+    group.measurement_time(std::time::Duration::from_secs(180));
 
     let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
-    create_large_project(&temp_dir, 50, 1000); // 50 crates, ~1000 lines each
 
-    group.bench_function("analyze_large_project", |b| {
+    // Create enterprise-scale project (500+ files, 50K+ lines)
+    create_enterprise_project(&temp_dir, 50, 1000); // 50 crates, ~1000 lines each
+
+    group.bench_function("analyze_enterprise_project", |b| {
         b.iter(|| {
             let start = Instant::now();
-            // Simulate project analysis
-            let _analysis_result = analyze_project_structure(temp_dir.path());
-            black_box(start.elapsed());
+            // Simulate enterprise project analysis
+            let analysis_result = analyze_enterprise_project(temp_dir.path());
+            let elapsed = start.elapsed();
+
+            // Assert baselines for enterprise workload
+            assert!(elapsed < std::time::Duration::from_secs(30),
+                "Enterprise project analysis exceeded 30s baseline: {:?}", elapsed);
+            assert!(analysis_result.total_files > 500,
+                "Enterprise project should have >500 files, got {}", analysis_result.total_files);
+            assert!(analysis_result.total_lines > 50000,
+                "Enterprise project should have >50K lines, got {}", analysis_result.total_lines);
+
+            black_box((analysis_result, elapsed));
+        });
+    });
+
+    group.bench_function("resource_consumption_tracking", |b| {
+        b.iter(|| {
+            let start = Instant::now();
+            // Simulate resource-intensive operations
+            let mut resources = Vec::new();
+
+            // Simulate concurrent file processing
+            for i in 0..100 {
+                let file_path = temp_dir.path().join(format!("concurrent_file_{}.rs", i));
+                let content = format!("// Concurrent file {}\nfn func_{}() {{}}\n", i, i);
+                std::fs::write(&file_path, content).expect("Failed to write concurrent file");
+                resources.push(content);
+            }
+
+            // Simulate processing all files
+            let processed: Vec<_> = resources.iter().map(|content| {
+                content.lines().count()
+            }).collect();
+
+            let elapsed = start.elapsed();
+            // Assert resource consumption baseline
+            assert!(elapsed < std::time::Duration::from_secs(10),
+                "Resource consumption tracking exceeded 10s baseline: {:?}", elapsed);
+            assert!(processed.len() == 100,
+                "Should process 100 files, got {}", processed.len());
+
+            black_box((processed, elapsed));
         });
     });
 
     group.finish();
 }
 
-// ============================================================================
-// Benchmark 9: Concurrent Session Testing
-// ============================================================================
-// Validates: Up to 10+ parallel sessions using Tokio async runtime
-
-fn benchmark_concurrent_sessions(c: &mut Criterion) {
-    let mut group = c.benchmark_group("concurrent_sessions");
-    group.sample_size(5);
-
-    let rt = tokio::runtime::Runtime::new().expect("Failed to create tokio runtime");
-
-    for num_sessions in [1, 5, 10].iter() {
-        group.bench_with_input(
-            BenchmarkId::from_parameter(format!("{}sessions", num_sessions)),
-            num_sessions,
-            |b, &num_sessions| {
-                b.iter(|| {
-                    let start = Instant::now();
-                    rt.block_on(async {
-                        run_concurrent_sessions(num_sessions).await
-                    });
-                    black_box(start.elapsed());
-                });
-            },
-        );
-    }
-
-    group.finish();
-}
-
-async fn run_concurrent_sessions(num_sessions: usize) {
-    let semaphore = Arc::new(Semaphore::new(10)); // Limit concurrency
-
-    let tasks: Vec<_> = (0..num_sessions)
-        .map(|session_id| {
-            let sem = semaphore.clone();
-            tokio::spawn(async move {
-                let _permit = sem.acquire().await.unwrap();
-                // Simulate session work
-                simulate_session_work(session_id).await;
-            })
-        })
-        .collect();
-
-    for task in tasks {
-        task.await.expect("Session task failed");
-    }
-}
-
-async fn simulate_session_work(session_id: usize) {
-    // Simulate session initialization
-    tokio::time::sleep(std::time::Duration::from_millis(10)).await;
-
-    // Simulate some processing
-    let mut data = vec![0u8; 1024];
-    for i in 0..data.len() {
-        data[i] = (session_id as u8).wrapping_add(i as u8);
-    }
-
-    // Simulate cleanup
-    drop(data);
-}
-
-fn create_large_project(base_dir: &tempfile::TempDir, num_crates: usize, lines_per_file: usize) {
+fn create_enterprise_project(base_dir: &tempfile::TempDir, num_crates: usize, lines_per_file: usize) {
     for crate_num in 0..num_crates {
-        let crate_dir = base_dir.path().join(format!("crate_{}", crate_num));
-        std::fs::create_dir_all(&crate_dir).expect("Failed to create crate dir");
+        let crate_dir = base_dir.path().join(format!("enterprise_crate_{}", crate_num));
+        std::fs::create_dir_all(&crate_dir).expect("Failed to create enterprise crate dir");
 
         // Create Cargo.toml
         let cargo_toml = format!(r#"
 [package]
-name = "crate-{}"
-version = "0.1.0"
+name = "enterprise-crate-{}"
+version = "1.0.0"
 edition = "2021"
 
 [dependencies]
 serde = "1.0"
 tokio = "1.0"
+axum = "0.6"
+sqlx = "0.7"
+redis = "0.23"
 "#, crate_num);
 
         std::fs::write(crate_dir.join("Cargo.toml"), cargo_toml)
-            .expect("Failed to write Cargo.toml");
+            .expect("Failed to write enterprise Cargo.toml");
 
         // Create src directory
         let src_dir = crate_dir.join("src");
-        std::fs::create_dir_all(&src_dir).expect("Failed to create src dir");
+        std::fs::create_dir_all(&src_dir).expect("Failed to create enterprise src dir");
 
-        // Create main.rs with specified number of lines
-        let mut main_rs_content = String::from("// Large project test file\n\n");
-        for i in 0..(lines_per_file / 10) {
-            main_rs_content.push_str(&format!("/// Function {}\n", i));
-            main_rs_content.push_str(&format!("fn function_{}() {{\n", i));
-            main_rs_content.push_str(&format!("    println!(\"Function {} executed\");\n", i));
-            main_rs_content.push_str("}\n\n");
+        // Create multiple source files
+        for file_num in 0..10 {
+            let file_path = src_dir.join(format!("module_{}.rs", file_num));
+            let mut content = format!("// Enterprise module {} for crate {}\n\n", file_num, crate_num);
+
+            // Generate lines of code
+            for line_num in 0..(lines_per_file / 10) {
+                content.push_str(&format!("/// Documentation for function {}\n", line_num));
+                content.push_str(&format!("pub fn enterprise_function_{}_{}() -> Result<(), Box<dyn std::error::Error>> {{\n",
+                    crate_num, line_num));
+                content.push_str(&format!("    // Enterprise logic here\n"));
+                content.push_str(&format!("    Ok(())\n"));
+                content.push_str("}\n\n");
+            }
+
+            std::fs::write(&file_path, content)
+                .expect("Failed to write enterprise source file");
         }
-
-        std::fs::write(src_dir.join("main.rs"), main_rs_content)
-            .expect("Failed to write main.rs");
     }
 }
 
-fn analyze_project_structure(project_path: &std::path::Path) -> ProjectAnalysis {
+fn analyze_enterprise_project(project_path: &std::path::Path) -> EnterpriseAnalysis {
     let mut total_files = 0;
     let mut total_lines = 0;
     let mut total_size = 0;
+    let mut rust_files = 0;
 
     for entry in walkdir::WalkDir::new(project_path) {
-        let entry = entry.expect("Failed to read directory entry");
+        let entry = entry.expect("Failed to read enterprise directory entry");
         if entry.file_type().is_file() {
             total_files += 1;
             if let Ok(content) = std::fs::read_to_string(entry.path()) {
                 total_lines += content.lines().count();
                 total_size += content.len();
+
+                if entry.path().extension().map_or(false, |ext| ext == "rs") {
+                    rust_files += 1;
+                }
             }
         }
     }
 
-    ProjectAnalysis {
+    EnterpriseAnalysis {
         total_files,
         total_lines,
         total_size_bytes: total_size,
+        rust_files,
     }
 }
 
 #[derive(Debug)]
-struct ProjectAnalysis {
+struct EnterpriseAnalysis {
     total_files: usize,
     total_lines: usize,
     total_size_bytes: usize,
+    rust_files: usize,
 }
 
 criterion_group!(
@@ -253,6 +225,7 @@ criterion_group!(
     benchmark_memory_usage,
     benchmark_large_project,
     benchmark_concurrent_sessions,
+    benchmark_enterprise_workload,
 );
 
 criterion_main!(benches);

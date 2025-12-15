@@ -1,0 +1,1 @@
+cargo test -p ricecoder-mcp mcp_integration_tests

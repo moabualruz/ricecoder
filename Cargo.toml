@@ -39,6 +39,8 @@ ricecoder-tui = { path = "crates/ricecoder-tui", version = "0.1" }
 ricecoder-undo-redo = { path = "crates/ricecoder-undo-redo", version = "0.1" }
 ricecoder-vcs = { path = "crates/ricecoder-vcs", version = "0.1" }
 ricecoder-workflows = { path = "crates/ricecoder-workflows", version = "0.1" }
+ricecoder-security = { path = "crates/ricecoder-security", version = "0.1" }
+ricecoder-performance = { path = "crates/ricecoder-performance", version = "0.1" }
 tokio = { workspace = true }
 serde_json = { workspace = true }
 proptest = { workspace = true }

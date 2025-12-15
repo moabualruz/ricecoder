@@ -1,8 +1,6 @@
 use ricecoder_providers::*;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+use ricecoder_providers::*;
 
     #[test]
     fn test_openai_provider_creation() {
@@ -52,4 +50,3 @@ mod tests {
         let result = provider.count_tokens("Hello, world!", "invalid-model");
         assert!(result.is_err());
     }
-}

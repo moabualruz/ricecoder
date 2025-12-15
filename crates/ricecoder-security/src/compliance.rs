@@ -12,7 +12,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-use crate::audit::{AuditLogger, AuditEventType};
+use crate::audit::{AuditLogger, AuditEvent, AuditEventType};
 use crate::encryption::{KeyManager, EncryptedData};
 use crate::error::SecurityError;
 use crate::Result;
@@ -151,6 +151,7 @@ pub struct CustomerKey {
 }
 
 /// Compliance manager for SOC 2, GDPR, HIPAA
+#[derive(Debug)]
 pub struct ComplianceManager {
     audit_logger: Arc<AuditLogger>,
     customer_keys: Arc<RwLock<HashMap<String, CustomerKey>>>,

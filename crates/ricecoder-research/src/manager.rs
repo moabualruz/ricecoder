@@ -9,7 +9,7 @@ use crate::search_engine::SearchEngine;
 use crate::semantic_index::SemanticIndex;
 use crate::standards_detector::StandardsDetector;
 #[cfg(feature = "parsers")]
-use ricecoder_parsers::Parser;
+use ricecoder_parsers::CodeParser;
 #[cfg(feature = "patterns")]
 use ricecoder_patterns::PatternDetector;
 use std::collections::HashMap;
@@ -37,7 +37,7 @@ pub struct ResearchManager {
     relevance_scorer: Arc<RelevanceScorer>,
     /// Parser for code analysis (optional until ricecoder-parsers is stable)
     #[cfg(feature = "parsers")]
-    parser: Option<Arc<dyn Parser>>,
+    parser: Option<Arc<dyn CodeParser>>,
     /// Pattern detector for architectural and design patterns (optional until ricecoder-patterns is stable)
     #[cfg(feature = "patterns")]
     pattern_detector: Option<Arc<PatternDetector>>,
@@ -64,7 +64,7 @@ impl ResearchManager {
 
     /// Create a new ResearchManager with parser support
     #[cfg(feature = "parsers")]
-    pub fn with_parser(parser: Arc<dyn Parser>) -> Self {
+    pub fn with_parser(parser: Arc<dyn CodeParser>) -> Self {
         let semantic_index = Arc::new(SemanticIndex::new());
         #[cfg(feature = "patterns")]
         let pattern_detector = Arc::new(PatternDetector::new(Arc::clone(&parser)));
@@ -235,7 +235,7 @@ impl ResearchManager {
 
     /// Get parser (if available)
     #[cfg(feature = "parsers")]
-    pub fn parser(&self) -> Option<&Arc<dyn Parser>> {
+    pub fn parser(&self) -> Option<&Arc<dyn CodeParser>> {
         self.parser.as_ref()
     }
 

@@ -32,12 +32,14 @@ ricecoder-permissions = { path = "../ricecoder-permissions", version = "0.1" }
 ricecoder-agents = { path = "../ricecoder-agents", version = "0.1" }
 ricecoder-files = { path = "../ricecoder-files", version = "0.1" }
 ricecoder-security = { path = "../ricecoder-security", version = "0.1" }
+ricecoder-cache = { path = "../ricecoder-cache", version = "0.1" }
 
 [dev-dependencies]
 proptest = { workspace = true }
 tokio-test = { workspace = true }
 tempfile = { workspace = true }
 criterion = { version = "0.5", features = ["html_reports"] }
+async-trait = { workspace = true }
 
 [[bench]]
 name = "performance_benchmarks"

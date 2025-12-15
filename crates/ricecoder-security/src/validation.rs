@@ -21,6 +21,18 @@ pub enum ValidationError {
     CodeInjectionAttempt,
 }
 
+impl std::fmt::Display for ValidationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ValidationError::EmptyInput => write!(f, "Input cannot be empty"),
+            ValidationError::TooLong(len) => write!(f, "Input too long: {} characters", len),
+            ValidationError::InvalidCharacters(chars) => write!(f, "Invalid characters: {}", chars),
+            ValidationError::SuspiciousPattern(pattern) => write!(f, "Suspicious pattern detected: {}", pattern),
+            ValidationError::CodeInjectionAttempt => write!(f, "Potential code injection attempt detected"),
+        }
+    }
+}
+
 /// Validate and sanitize input
 pub fn validate_input(input: &str) -> Result<ValidatedInput> {
     // Check for empty input

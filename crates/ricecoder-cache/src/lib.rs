@@ -21,7 +21,7 @@ pub mod strategy;
 pub use cache::{Cache, CacheBuilder, CacheConfig};
 pub use error::CacheError;
 pub use metrics::{CacheMetrics, CacheStats};
-pub use storage::{CacheStorage, MemoryStorage, DiskStorage};
+pub use storage::{CacheEntry, CacheStorage, MemoryStorage, DiskStorage};
 pub use strategy::{CacheStrategy, TtlStrategy, FileChangeStrategy};
 
 /// Re-export commonly used types

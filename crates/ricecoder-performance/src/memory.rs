@@ -1,6 +1,6 @@
 //! Memory profiling utilities
 
-use sysinfo::{System, SystemExt, ProcessExt, Pid};
+use sysinfo::{System, Pid};
 use std::time::{Duration, Instant};
 
 /// Memory profiler for tracking memory usage
@@ -29,12 +29,12 @@ impl MemoryProfiler {
 
         if let Some(pid) = self.process_id {
             if let Some(process) = self.system.process(pid) {
-                return process.memory() * 1024; // Convert KB to bytes
+                return process.memory(); // Already in bytes
             }
         }
 
         // Fallback: get system memory usage
-        self.system.used_memory() * 1024
+        self.system.used_memory()
     }
 
     /// Profile memory usage during a function execution

@@ -169,7 +169,7 @@ impl ComplianceReporter {
             period_start,
             period_end,
             findings,
-            overall_status,
+            overall_status: overall_status.clone(),
             recommendations: self.generate_soc2_recommendations(&overall_status),
         };
 
@@ -208,7 +208,7 @@ impl ComplianceReporter {
             period_start,
             period_end,
             findings,
-            overall_status,
+            overall_status: overall_status.clone(),
             recommendations: self.generate_gdpr_recommendations(&overall_status),
         };
 
@@ -247,7 +247,7 @@ impl ComplianceReporter {
             period_start,
             period_end,
             findings,
-            overall_status,
+            overall_status: overall_status.clone(),
             recommendations: self.generate_hipaa_recommendations(&overall_status),
         };
 
@@ -286,7 +286,7 @@ impl ComplianceReporter {
             period_start,
             period_end,
             findings,
-            overall_status,
+            overall_status: overall_status.clone(),
             recommendations: self.generate_privacy_recommendations(&overall_status),
         };
 

@@ -3,7 +3,7 @@
 use crate::change::Change;
 use crate::checkpoint::Checkpoint;
 use crate::error::UndoRedoError;
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Utc, Duration};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;

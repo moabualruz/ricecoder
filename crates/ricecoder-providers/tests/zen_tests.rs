@@ -1,8 +1,6 @@
 use ricecoder_providers::*;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+use ricecoder_providers::*;
 
     #[test]
     fn test_zen_provider_creation() {
@@ -174,4 +172,3 @@ mod tests {
         assert_eq!(provider.endpoint_for_model("unknown-model"), "/chat/completions");
         assert_eq!(provider.endpoint_for_model("custom-model"), "/chat/completions");
     }
-}
