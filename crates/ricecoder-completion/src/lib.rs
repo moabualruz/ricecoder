@@ -187,5 +187,4 @@ pub use ranker::{AdvancedCompletionRanker, BasicCompletionRanker};
 pub use types::*;
 
 // Re-export storage integration
-pub use ricecoder_storage::get_builtin_completion_configs;
-pub use ricecoder_storage::get_completion_config;
+// Note: completion config functions are not yet implemented in storage
