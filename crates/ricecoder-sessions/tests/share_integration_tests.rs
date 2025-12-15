@@ -5,6 +5,7 @@
 use chrono::Duration;
 use ricecoder_sessions::{
     Message, MessageRole, Session, SessionContext, SessionMode, SharePermissions, ShareService,
+    EnterpriseSharingPolicy, DataClassification,
 };
 
 fn create_test_context() -> SessionContext {
@@ -55,6 +56,8 @@ async fn test_share_creation_and_access_workflow_basic() {
     assert!(!share_id.is_empty());
     assert_eq!(share.session_id, session_id);
     assert_eq!(share.permissions.read_only, true);
+    assert!(share.share_url.is_some()); // URL-based sharing
+    assert!(share.share_url.as_ref().unwrap().contains(&share_id));
 
     // 2. Access the share via link (Requirement 1.3)
     let retrieved_share = share_service.get_share(&share_id).unwrap();
@@ -480,4 +483,104 @@ async fn test_readonly_enforcement_prevents_modifications() {
     // 5. Verify the original session is unchanged
     assert_eq!(session.history.len(), original_history_len);
     assert_eq!(session.context.files.len(), original_files_len);
+}
+
+// ============================================================================
+// Test 6.6: URL-Based Session Sharing
+// ============================================================================
+
+#[tokio::test]
+async fn test_url_based_session_sharing() {
+    // **Feature: ricecoder-sharing, Integration Test 6.6: URL-Based Sharing**
+    // **Validates: URL generation, validation, and access**
+
+    let share_service = ShareService::with_base_url("https://ricecoder.com".to_string());
+    let session = create_test_session("URL Shared Session");
+    let session_id = session.id.clone();
+
+    let permissions = SharePermissions {
+        read_only: true,
+        include_history: true,
+        include_context: true,
+    };
+
+    // 1. Generate a share with URL
+    let share = share_service
+        .generate_share_link(&session_id, permissions.clone(), None)
+        .unwrap();
+
+    let share_url = share.share_url.unwrap();
+    let share_id = share.id.clone();
+
+    // 2. Verify URL format
+    assert!(share_url.starts_with("https://ricecoder.com/share/"));
+    assert!(share_url.ends_with(&share_id));
+
+    // 3. Access share via URL
+    let retrieved_share = share_service.get_share_by_url(&share_url).unwrap();
+    assert_eq!(retrieved_share.id, share_id);
+    assert_eq!(retrieved_share.session_id, session_id);
+
+    // 4. Test URL validation
+    let extracted_id = share_service.validate_share_url(&share_url).unwrap();
+    assert_eq!(extracted_id, share_id);
+
+    // 5. Test invalid URL
+    let invalid_url = "https://evil.com/share/123";
+    assert!(share_service.validate_share_url(invalid_url).is_err());
+
+    let invalid_format = "https://ricecoder.com/invalid/123";
+    assert!(share_service.validate_share_url(invalid_format).is_err());
+}
+
+#[tokio::test]
+async fn test_enterprise_sharing_policies() {
+    // **Feature: ricecoder-sharing, Integration Test 6.7: Enterprise Policies**
+    // **Validates: Policy enforcement and compliance logging**
+
+    use ricecoder_security::audit::MemoryAuditStorage;
+    use std::sync::Arc;
+
+    let audit_storage = Arc::new(MemoryAuditStorage::new());
+    let audit_logger = Arc::new(ricecoder_security::audit::AuditLogger::new(audit_storage));
+    let share_service = ShareService::with_audit_logging("https://enterprise.ricecoder.com".to_string(), audit_logger);
+
+    let session = create_test_session("Enterprise Session");
+    let session_id = session.id.clone();
+
+    let policy = EnterpriseSharingPolicy {
+        max_expiration_days: Some(30),
+        requires_approval: false,
+        allowed_domains: vec!["company.com".to_string()],
+        compliance_logging: true,
+        data_classification: DataClassification::Confidential,
+    };
+
+    let permissions = SharePermissions {
+        read_only: true,
+        include_history: true,
+        include_context: true,
+    };
+
+    // 1. Generate share with enterprise policy
+    let share = share_service
+        .generate_share_link_with_policy(
+            &session_id,
+            permissions.clone(),
+            Some(chrono::Duration::days(60)), // Try to exceed policy limit
+            Some(policy),
+            Some("user123".to_string()),
+        )
+        .unwrap();
+
+    // 2. Verify policy enforcement (expiration capped at 30 days)
+    let expected_max_expires = share.created_at + chrono::Duration::days(30);
+    assert_eq!(share.expires_at, Some(expected_max_expires));
+
+    // 3. Verify enterprise features enabled
+    assert!(share_service.has_enterprise_features());
+
+    // 4. Verify share has policy and creator
+    assert!(share.policy.is_some());
+    assert_eq!(share.creator_user_id, Some("user123".to_string()));
 }

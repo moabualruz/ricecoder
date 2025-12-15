@@ -16,6 +16,10 @@
 - **Export Functionality**: Export sessions to Markdown and other formats
 - **Undo/Redo**: Message-level undo/redo operations
 - **Background Processing**: Handle async operations and agents
+- **URL-Based Sharing**: Share sessions via generated URLs with access control
+- **Enterprise Sharing**: Compliance logging, data classification, and policy enforcement
+- **Encryption Support**: AES-256-GCM encryption for session data with enterprise key management
+- **Privacy-First Design**: No unnecessary data storage, minimal metadata retention
 
 ## Architecture
 
@@ -95,11 +99,23 @@ sessions:
     agent_timeout_seconds: 300
     retry_attempts: 3
 
-  # Sharing settings
-  sharing:
-    default_expiration_hours: 24
-    max_shared_sessions: 50
-    require_authentication: false
+   # Encryption settings
+   encryption:
+     enabled: false
+     enterprise_mode: false
+     key_rotation_days: 90
+
+   # Sharing settings
+   sharing:
+     base_url: "https://ricecoder.com"
+     default_expiration_hours: 24
+     max_shared_sessions: 50
+     require_authentication: false
+     enable_enterprise_features: false
+     enterprise:
+       max_expiration_days: 30
+       compliance_logging: true
+       data_classification: "internal"
 ```
 
 ## API Reference
@@ -109,6 +125,79 @@ sessions:
 - **`Message`**: Individual messages with role, content, and metadata
 - **`TokenUsage`**: Tracks token consumption
 - **`SessionCompactor`**: Handles context size management
+- **`ShareService`**: URL-based session sharing with enterprise features
+- **`EnterpriseSharingPolicy`**: Compliance and access control policies
+- **`SessionStore`**: Encrypted session persistence with enterprise key management
+
+## Session Encryption
+
+`ricecoder-sessions` supports optional encryption for enhanced security:
+
+```rust
+use ricecoder_sessions::SessionStore;
+
+// Basic encryption
+let store = SessionStore::with_encryption("master-password").unwrap();
+
+// Enterprise encryption with customer-managed keys
+let store = SessionStore::with_enterprise_encryption("master-password").unwrap();
+
+// Enable encryption on existing store
+let mut store = SessionStore::new().unwrap();
+store.enable_encryption("master-password").unwrap();
+store.enable_enterprise_encryption("master-password").unwrap();
+```
+
+### Encryption Features
+- **AES-256-GCM**: Industry-standard encryption for session data
+- **Enterprise Keys**: SOC 2 compliant customer-managed encryption keys
+- **Key Rotation**: Secure key rotation for long-term security
+- **Export Plaintext**: Exports always in plaintext for portability
+
+## URL-Based Session Sharing
+
+`ricecoder-sessions` provides comprehensive session sharing capabilities:
+
+```rust
+use ricecoder_sessions::{ShareService, SharePermissions, EnterpriseSharingPolicy, DataClassification};
+
+let share_service = ShareService::with_base_url("https://ricecoder.com".to_string());
+
+// Basic sharing
+let permissions = SharePermissions {
+    read_only: true,
+    include_history: true,
+    include_context: false,
+};
+
+let share = share_service.generate_share_link(
+    &session_id,
+    permissions,
+    Some(Duration::hours(24))
+).unwrap();
+
+println!("Share URL: {}", share.share_url.unwrap());
+
+// Enterprise sharing with compliance
+let policy = EnterpriseSharingPolicy {
+    max_expiration_days: Some(30),
+    requires_approval: false,
+    allowed_domains: vec!["company.com".to_string()],
+    compliance_logging: true,
+    data_classification: DataClassification::Confidential,
+};
+
+let enterprise_share = share_service.generate_share_link_with_policy(
+    &session_id,
+    permissions,
+    None,
+    Some(policy),
+    Some("user123".to_string())
+).unwrap();
+
+// Access via URL
+let accessed_share = share_service.get_share_by_url(&share.share_url.unwrap()).unwrap();
+```
 
 ## Data Model
 
@@ -181,6 +270,12 @@ cargo test -p ricecoder-sessions persistence
 
 # Test sharing functionality
 cargo test -p ricecoder-sessions sharing
+
+# Test URL-based sharing
+cargo test -p ricecoder-sessions url_sharing
+
+# Test enterprise features
+cargo test -p ricecoder-sessions enterprise
 ```
 
 Key test areas:

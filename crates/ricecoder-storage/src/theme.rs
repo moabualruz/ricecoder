@@ -62,10 +62,12 @@ impl ThemeStorage {
     pub fn save_preference(preference: &ThemePreference) -> StorageResult<()> {
         let path = Self::preference_path()?;
         let content = serde_json::to_string_pretty(preference)
-            .map_err(|e| StorageError::parse_error(path, "json", format!("Failed to serialize theme preference: {}", e)))?;
-        fs::write(&path, content).map_err(StorageError::Io)
+            .map_err(|e|
+                StorageError::parse_error(path.clone(), "json", format!("Serialization failed: {}", e))
+            )?;
+        fs::write(&path, content).map_err(StorageError::Io)?;
+        Ok(())
     }
-
     /// List all custom themes
     pub fn list_custom_themes() -> StorageResult<Vec<String>> {
         let dir = Self::custom_themes_dir()?;

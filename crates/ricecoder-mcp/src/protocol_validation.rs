@@ -15,6 +15,7 @@ use crate::transport::{MCPMessage, MCPRequest, MCPResponse, MCPNotification, MCP
 pub struct MCPProtocolValidator {
     method_name_pattern: Regex,
     id_pattern: Regex,
+    audit_logger: Option<Arc<crate::audit::MCPAuditLogger>>,
 }
 
 impl MCPProtocolValidator {
@@ -25,17 +26,51 @@ impl MCPProtocolValidator {
                 .map_err(|e| Error::ValidationError(format!("Invalid regex: {}", e)))?,
             id_pattern: Regex::new(r"^[a-zA-Z0-9._-]+$")
                 .map_err(|e| Error::ValidationError(format!("Invalid regex: {}", e)))?,
+            audit_logger: None,
+        })
+    }
+
+    /// Create a new protocol validator with audit logging
+    pub fn with_audit_logger(audit_logger: Arc<crate::audit::MCPAuditLogger>) -> Result<Self> {
+        Ok(Self {
+            method_name_pattern: Regex::new(r"^[a-zA-Z][a-zA-Z0-9._-]*$")
+                .map_err(|e| Error::ValidationError(format!("Invalid regex: {}", e)))?,
+            id_pattern: Regex::new(r"^[a-zA-Z0-9._-]+$")
+                .map_err(|e| Error::ValidationError(format!("Invalid regex: {}", e)))?,
+            audit_logger: Some(audit_logger),
         })
     }
 
     /// Validate an MCP message
     pub fn validate_message(&self, message: &MCPMessage) -> Result<()> {
-        match message {
+        let message_type = match message {
+            MCPMessage::Request(_) => "request",
+            MCPMessage::Response(_) => "response",
+            MCPMessage::Notification(_) => "notification",
+            MCPMessage::Error(_) => "error",
+        };
+
+        let result = match message {
             MCPMessage::Request(req) => self.validate_request(req),
             MCPMessage::Response(resp) => self.validate_response(resp),
             MCPMessage::Notification(notif) => self.validate_notification(notif),
             MCPMessage::Error(err) => self.validate_error(err),
+        };
+
+        // Audit logging
+        if let Some(ref audit_logger) = self.audit_logger {
+            let valid = result.is_ok();
+            let error_details = result.as_ref().err().map(|e| e.to_string());
+            let _ = audit_logger.log_protocol_validation(
+                message_type,
+                valid,
+                error_details,
+                None, // user_id
+                None, // session_id
+            ).await;
         }
+
+        result
     }
 
     /// Validate an MCP request
@@ -228,11 +263,18 @@ impl MCPErrorHandler {
         error_codes.insert(-32603, "Internal error".to_string());
         error_codes.insert(-32000, "Server error".to_string());
 
-        // MCP-specific error codes
+        // MCP-specific error codes (Protocol Version 2025-06-18)
         error_codes.insert(-32001, "Tool not found".to_string());
         error_codes.insert(-32002, "Tool execution failed".to_string());
         error_codes.insert(-32003, "Permission denied".to_string());
         error_codes.insert(-32004, "Invalid tool parameters".to_string());
+        // Enterprise error codes (2025-06-18)
+        error_codes.insert(-32005, "Audit logging failure".to_string());
+        error_codes.insert(-32006, "Connection pool exhausted".to_string());
+        error_codes.insert(-32007, "Security policy violation".to_string());
+        error_codes.insert(-32008, "Rate limit exceeded".to_string());
+        error_codes.insert(-32009, "Enterprise feature not available".to_string());
+        error_codes.insert(-32010, "Compliance check failed".to_string());
 
         Self { error_codes }
     }
@@ -253,6 +295,13 @@ impl MCPErrorHandler {
             -32002 => Error::ExecutionError(format!("Tool execution failed: {}", message)),
             -32003 => Error::PermissionDenied(message.clone()),
             -32004 => Error::ParameterValidationError(format!("Invalid tool parameters: {}", message)),
+            // Enterprise error codes (2025-06-18)
+            -32005 => Error::ExecutionError(format!("Audit logging failure: {}", message)),
+            -32006 => Error::ConnectionError(format!("Connection pool exhausted: {}", message)),
+            -32007 => Error::PermissionDenied(format!("Security policy violation: {}", message)),
+            -32008 => Error::ExecutionError(format!("Rate limit exceeded: {}", message)),
+            -32009 => Error::ServerError(format!("Enterprise feature not available: {}", message)),
+            -32010 => Error::ValidationError(format!("Compliance check failed: {}", message)),
             _ => {
                 warn!("Unknown MCP error code: {} - {}", code, message);
                 Error::ServerError(format!("MCP error {}: {}", code, message))
@@ -271,6 +320,7 @@ impl MCPErrorHandler {
             Error::TimeoutError(ms) => (-32000, format!("Timeout after {}ms", ms)),
             Error::ServerError(msg) => (-32000, msg.clone()),
             Error::ConnectionError(msg) => (-32000, format!("Connection error: {}", msg)),
+            // Handle enterprise errors (2025-06-18)
             _ => (-32603, format!("Internal error: {:?}", error)),
         };
 
@@ -310,6 +360,7 @@ impl Default for MCPErrorHandler {
 pub struct MCPComplianceChecker {
     validator: MCPProtocolValidator,
     error_handler: MCPErrorHandler,
+    audit_logger: Option<Arc<crate::audit::MCPAuditLogger>>,
 }
 
 impl MCPComplianceChecker {
@@ -318,6 +369,16 @@ impl MCPComplianceChecker {
         Self {
             validator: MCPProtocolValidator::new().expect("Failed to create validator"),
             error_handler: MCPErrorHandler::new(),
+            audit_logger: None,
+        }
+    }
+
+    /// Create a new compliance checker with audit logging
+    pub fn with_audit_logger(audit_logger: Arc<crate::audit::MCPAuditLogger>) -> Self {
+        Self {
+            validator: MCPProtocolValidator::with_audit_logger(audit_logger.clone()).expect("Failed to create validator"),
+            error_handler: MCPErrorHandler::new(),
+            audit_logger: Some(audit_logger),
         }
     }
 

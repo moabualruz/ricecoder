@@ -57,6 +57,11 @@ impl ProviderRegistry {
         self.providers.values().cloned().collect()
     }
 
+    /// Get all provider IDs
+    pub fn list_provider_ids(&self) -> Vec<String> {
+        self.providers.keys().cloned().collect()
+    }
+
     /// Get all available models across all providers
     pub fn list_all_models(&self) -> Vec<ModelInfo> {
         self.providers

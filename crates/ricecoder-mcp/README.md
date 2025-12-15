@@ -4,17 +4,22 @@
 
 ## Overview
 
-`ricecoder-mcp` implements the Model Context Protocol (MCP) to enable seamless integration of external tools and services into RiceCoder. It provides a standardized interface for tool discovery, execution, and management, with built-in connection pooling, error recovery, and permission system integration.
+`ricecoder-mcp` implements the Model Context Protocol (MCP) version 2025-06-18 to enable seamless integration of external tools and services into RiceCoder. It provides a standardized interface for tool discovery, execution, and management, with enterprise-grade features including connection pooling, error recovery, permission system integration, audit logging, and security compliance.
 
 ## Features
 
-- **MCP Client Implementation**: Full MCP protocol support for tool communication
+- **MCP Protocol 2025-06-18**: Full compliance with latest MCP specification including enterprise error codes
+- **Multiple Transports**: stdio, HTTP with OAuth 2.0, and SSE support
+- **Server/Client Architecture**: Complete MCP server management with tool enablement/disablement
+- **Connection Pooling**: Advanced connection pooling with configurable limits and health checks
+- **Failover Mechanisms**: Automatic failover with exponential backoff and reconnection logic
+- **Health Monitoring**: Comprehensive server health monitoring with enterprise alerting
+- **Audit Logging**: Enterprise-grade audit logging for all MCP operations and security events
+- **Enterprise Security**: OAuth 2.0 integration, RBAC, audit logging, and compliance reporting
 - **Tool Registry**: Dynamic tool discovery and registration system
-- **Connection Pooling**: Efficient management of MCP server connections
 - **Error Recovery**: Automatic retry logic and graceful error handling
 - **Permission Integration**: Seamless integration with RiceCoder's permission system
 - **Hot Reload**: Dynamic tool loading without restarting RiceCoder
-- **Health Monitoring**: MCP server health checks and status monitoring
 - **Metadata Management**: Tool metadata storage and retrieval
 
 ## Architecture
@@ -25,6 +30,9 @@
 - Connection pooling and resource management
 - Error recovery and retry logic implementation
 - Permission system integration and access control
+- RBAC (Role-Based Access Control) for enterprise security
+- OAuth 2.0 and OpenID Connect authentication
+- Audit logging and compliance reporting
 - Health monitoring and status reporting
 - Hot reload capability for dynamic tool updates
 
@@ -38,6 +46,7 @@
 - **Tools**: Extends RiceCoder with custom tools via MCP
 - **Agents**: Provides tools for agent execution workflows
 - **Permissions**: Integrates tool access with permission system
+- **Security**: RBAC and OAuth integration with ricecoder-security
 - **Storage**: Persists tool configurations and metadata
 
 ## Installation
@@ -166,6 +175,102 @@ mcp:
     auto_restart: true
 ```
 
+## Security
+
+### Authentication
+
+MCP supports multiple authentication methods for secure server connections:
+
+```rust
+use ricecoder_mcp::transport::{HTTPTransport, HTTPAuthConfig, HTTPAuthType};
+
+// Basic authentication
+let auth_config = HTTPAuthConfig {
+    auth_type: HTTPAuthType::Basic,
+    credentials: [
+        ("username".to_string(), "myuser".to_string()),
+        ("password".to_string(), "mypass".to_string()),
+    ].into(),
+};
+let transport = HTTPTransport::with_auth("https://api.example.com", auth_config)?;
+
+// OAuth 2.0 authentication
+let oauth_config = HTTPAuthConfig {
+    auth_type: HTTPAuthType::OAuth2,
+    credentials: [
+        ("token_id".to_string(), "oauth_token_123".to_string()),
+        ("user_id".to_string(), "user@example.com".to_string()),
+    ].into(),
+};
+let transport = HTTPTransport::with_auth("https://api.example.com", oauth_config)?
+    .with_oauth_manager(oauth_manager);
+```
+
+### Authorization
+
+RBAC integration provides enterprise-grade access control:
+
+```rust
+use ricecoder_mcp::rbac::{MCRBACManager, MCPAuthorizationMiddleware};
+
+// Create RBAC manager
+let rbac_manager = MCRBACManager::new(access_control, permission_manager);
+
+// Create authorization middleware
+let auth_middleware = MCPAuthorizationMiddleware::new(rbac_manager, audit_logger);
+
+// Check server access
+auth_middleware.authorize_server_access(&principal, "server-id").await?;
+
+// Check tool execution
+auth_middleware.authorize_tool_execution(&principal, "tool-name", None).await?;
+```
+
+### Audit Logging
+
+Comprehensive audit logging for compliance:
+
+```rust
+use ricecoder_mcp::audit::MCPAuditLogger;
+
+// Create audit logger
+let audit_logger = MCPAuditLogger::new(security_audit_logger);
+
+// Log server operations
+audit_logger.log_server_registration(&config, Some("user".to_string()), None).await?;
+
+// Log tool executions
+audit_logger.log_tool_execution(&server_id, &tool_name, &result, user_id, session_id).await?;
+```
+
+### Compliance Reporting
+
+SOC 2, GDPR, and HIPAA compliance monitoring:
+
+```rust
+use ricecoder_mcp::compliance::{MCPComplianceMonitor, ComplianceReportType};
+
+// Create compliance monitor
+let compliance_monitor = MCPComplianceMonitor::new(audit_logger);
+
+// Record violations
+compliance_monitor.record_violation(
+    ComplianceReportType::Soc2Type2,
+    ViolationSeverity::High,
+    "Unauthorized access attempt".to_string(),
+    "server:api".to_string(),
+    Some("user@example.com".to_string()),
+    serde_json::json!({"details": "violation details"}),
+).await?;
+
+// Generate compliance report
+let report = compliance_monitor.generate_report(
+    ComplianceReportType::Gdpr,
+    start_date,
+    end_date,
+).await?;
+```
+
 ## API Reference
 
 ### Key Types
@@ -175,6 +280,11 @@ mcp:
 - **`ConnectionPool`**: Connection pooling for MCP servers
 - **`ToolExecutionContext`**: Tool execution parameters
 - **`MCPConfig`**: MCP client configuration
+- **`MCRBACManager`**: RBAC access control manager
+- **`MCPAuthorizationMiddleware`**: Authorization middleware
+- **`MCPAuditLogger`**: Audit logging for MCP operations
+- **`MCPComplianceMonitor`**: Compliance monitoring and reporting
+- **`MCPEnterpriseMonitor`**: Enterprise monitoring and metrics
 
 ### Key Functions
 

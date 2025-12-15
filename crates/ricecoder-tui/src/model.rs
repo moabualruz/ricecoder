@@ -37,6 +37,7 @@ pub struct AppModel {
     pub sessions: SessionState,
     pub commands: CommandState,
     pub mcp: McpState,
+    pub providers: ProviderState,
     pub ui: UiState,
 
     // Async State
@@ -51,11 +52,13 @@ pub enum AppMode {
     Chat,
     /// Command mode for executing commands
     Command,
-    /// Diff mode for reviewing code changes
+    /// Diff mode for viewing changes
     Diff,
-    /// MCP mode for Model Context Protocol tools
+    /// MCP mode for Model Context Protocol management
     Mcp,
-    /// Help mode
+    /// Provider mode for AI provider management
+    Provider,
+    /// Help mode for displaying help information
     Help,
 }
 
@@ -67,6 +70,7 @@ impl AppMode {
             AppMode::Command => "Command",
             AppMode::Diff => "Diff",
             AppMode::Mcp => "MCP",
+            AppMode::Provider => "Provider",
             AppMode::Help => "Help",
         }
     }
@@ -78,7 +82,8 @@ impl AppMode {
             AppMode::Command => "Ctrl+2",
             AppMode::Diff => "Ctrl+3",
             AppMode::Mcp => "Ctrl+4",
-            AppMode::Help => "Ctrl+4",
+            AppMode::Provider => "Ctrl+5",
+            AppMode::Help => "Ctrl+6",
         }
     }
 }
@@ -118,6 +123,60 @@ pub struct McpState {
     pub available_tools: Vec<McpToolInfo>,
     pub selected_server: Option<String>,
     pub execution_history: Vec<McpExecutionRecord>,
+}
+
+/// Provider state for managing AI providers
+#[derive(Clone, Debug, PartialEq)]
+pub struct ProviderState {
+    pub available_providers: Vec<ProviderInfo>,
+    pub current_provider: Option<String>,
+    pub provider_metrics: HashMap<String, ProviderMetrics>,
+    pub selected_provider: Option<String>,
+    pub view_mode: ProviderViewMode,
+    pub filter_text: String,
+}
+
+/// Information about an AI provider
+#[derive(Clone, Debug, PartialEq)]
+pub struct ProviderInfo {
+    pub id: String,
+    pub name: String,
+    pub state: ProviderConnectionState,
+    pub models: Vec<String>,
+    pub error_message: Option<String>,
+    pub last_checked: Option<chrono::DateTime<chrono::Utc>>,
+}
+
+/// Provider connection state
+#[derive(Clone, Debug, PartialEq)]
+pub enum ProviderConnectionState {
+    Connected,
+    Disconnected,
+    Error,
+    Disabled,
+}
+
+/// Provider performance metrics
+#[derive(Clone, Debug, PartialEq)]
+pub struct ProviderMetrics {
+    pub total_requests: u64,
+    pub successful_requests: u64,
+    pub failed_requests: u64,
+    pub avg_response_time_ms: f64,
+    pub error_rate: f64,
+    pub total_tokens: u64,
+    pub total_cost: f64,
+    pub requests_per_second: f64,
+    pub tokens_per_second: f64,
+}
+
+/// Provider view mode for the UI
+#[derive(Clone, Debug, PartialEq)]
+pub enum ProviderViewMode {
+    List,
+    Status,
+    Performance,
+    Analytics,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -172,6 +231,16 @@ impl AppModel {
         theme: Theme,
         terminal_caps: TerminalCapabilities,
     ) -> Self {
+        Self::init_with_providers(config, theme, terminal_caps, Vec::new(), None)
+    }
+
+    pub fn init_with_providers(
+        config: TuiConfig,
+        theme: Theme,
+        terminal_caps: TerminalCapabilities,
+        available_providers: Vec<ProviderInfo>,
+        current_provider: Option<String>,
+    ) -> Self {
         Self {
             mode: AppMode::Chat,
             previous_mode: AppMode::Chat,
@@ -195,6 +264,15 @@ impl AppModel {
                 available_tools: Vec::new(),
                 selected_server: None,
                 execution_history: Vec::new(),
+            },
+
+            providers: ProviderState {
+                available_providers,
+                current_provider,
+                provider_metrics: HashMap::new(),
+                selected_provider: None,
+                view_mode: ProviderViewMode::List,
+                filter_text: String::new(),
             },
 
             ui: UiState {
@@ -365,6 +443,14 @@ pub enum AppMessage {
     McpServerRemoved(String),
     McpToolExecuted { server: String, tool: String, result: serde_json::Value },
     McpToolExecutionFailed { server: String, tool: String, error: String },
+
+    // Provider Events
+    ProviderSwitched(String),
+    ProviderStatusUpdated { provider_id: String, status: ProviderConnectionState },
+    ProviderMetricsUpdated { provider_id: String, metrics: ProviderMetrics },
+    ProviderSelected(String),
+    ProviderViewModeChanged(ProviderViewMode),
+    ProviderFilterChanged(String),
 
     // Component Events
     ComponentMessage { component_id: String, message: String },

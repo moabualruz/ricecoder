@@ -1,9 +1,16 @@
-//! MCP Transport Protocols
+//! MCP Transport Protocols (Protocol Version 2025-06-18)
 //!
 //! Implements the transport layer for MCP communication including:
 //! - stdio: Standard input/output streams
-//! - HTTP: RESTful HTTP transport
+//! - HTTP: RESTful HTTP transport with OAuth 2.0 authentication
 //! - SSE: Server-Sent Events for real-time communication
+//!
+//! Protocol Version 2025-06-18 Features:
+//! - Enhanced error codes (-32005 to -32010 for enterprise features)
+//! - OAuth 2.0 integration for HTTP transports
+//! - Connection pooling and failover support
+//! - Audit logging integration
+//! - Enterprise security features
 
 use async_trait::async_trait;
 use futures_util::StreamExt;
@@ -192,6 +199,8 @@ impl Drop for StdioTransport {
 pub struct HTTPTransport {
     base_url: String,
     client: reqwest::Client,
+    auth_config: Option<HTTPAuthConfig>,
+    oauth_manager: Option<std::sync::Arc<ricecoder_security::oauth::TokenManager>>,
 }
 
 impl HTTPTransport {
@@ -200,6 +209,8 @@ impl HTTPTransport {
         Self {
             base_url: base_url.trim_end_matches('/').to_string(),
             client: reqwest::Client::new(),
+            auth_config: None,
+            oauth_manager: None,
         }
     }
 
@@ -208,7 +219,73 @@ impl HTTPTransport {
         Self {
             base_url: base_url.trim_end_matches('/').to_string(),
             client,
+            auth_config: None,
+            oauth_manager: None,
         }
+    }
+
+    /// Set OAuth token manager for OAuth2 authentication
+    pub fn with_oauth_manager(mut self, oauth_manager: std::sync::Arc<ricecoder_security::oauth::TokenManager>) -> Self {
+        self.oauth_manager = Some(oauth_manager);
+        self
+    }
+
+    /// Create with authentication
+    pub fn with_auth(base_url: &str, auth_config: HTTPAuthConfig) -> Result<Self> {
+        let mut client_builder = reqwest::Client::builder();
+
+        // Configure authentication
+        match auth_config.auth_type {
+            HTTPAuthType::Basic => {
+                if let (Some(username), Some(password)) = (
+                    auth_config.credentials.get("username"),
+                    auth_config.credentials.get("password"),
+                ) {
+                    client_builder = client_builder.default_headers({
+                        let mut headers = reqwest::header::HeaderMap::new();
+                        use base64::{Engine as _, engine::general_purpose};
+                    let auth = format!("Basic {}", general_purpose::STANDARD.encode(format!("{}:{}", username, password)));
+                        headers.insert("Authorization", auth.parse().unwrap());
+                        headers
+                    });
+                }
+            }
+            HTTPAuthType::Bearer => {
+                if let Some(token) = auth_config.credentials.get("token") {
+                    client_builder = client_builder.default_headers({
+                        let mut headers = reqwest::header::HeaderMap::new();
+                        headers.insert("Authorization", format!("Bearer {}", token).parse().unwrap());
+                        headers
+                    });
+                }
+            }
+            HTTPAuthType::ApiKey => {
+                if let (Some(header_name), Some(api_key)) = (
+                    auth_config.credentials.get("header"),
+                    auth_config.credentials.get("key"),
+                ) {
+                    client_builder = client_builder.default_headers({
+                        let mut headers = reqwest::header::HeaderMap::new();
+                        headers.insert(header_name.parse().unwrap(), api_key.parse().unwrap());
+                        headers
+                    });
+                }
+            }
+            HTTPAuthType::OAuth2 => {
+                // OAuth2 will be handled per-request as tokens may need refresh
+            }
+            HTTPAuthType::None => {}
+        }
+
+        let client = client_builder.build()
+            .map_err(|e| Error::ConfigurationError(format!("Failed to build HTTP client: {}", e)))?;
+
+        Ok(Self {
+            base_url: base_url.trim_end_matches('/').to_string(),
+            client,
+            auth_config: Some(auth_config),
+            oauth_manager: None,
+        })
     }
 }
 
@@ -218,9 +295,31 @@ impl MCPTransport for HTTPTransport {
         match message {
             MCPMessage::Request(request) => {
                 let url = format!("{}/{}", self.base_url, request.method);
-                let response = self.client
-                    .post(&url)
-                    .json(&request.params)
+                let mut request_builder = self.client.post(&url).json(&request.params);
+
+                // Add OAuth2 authentication if configured
+                if let Some(auth_config) = &self.auth_config {
+                    if let HTTPAuthType::OAuth2 = auth_config.auth_type {
+                        if let Some(oauth_manager) = &self.oauth_manager {
+                            if let (Some(token_id), Some(user_id)) = (
+                                auth_config.credentials.get("token_id"),
+                                auth_config.credentials.get("user_id"),
+                            ) {
+                                if let Ok(token) = oauth_manager.validate_token(token_id) {
+                                    request_builder = request_builder.header("Authorization", format!("Bearer {}", token.access_token));
+                                } else {
+                                    return Err(Error::AuthenticationError("Invalid or expired OAuth2 token".to_string()));
+                                }
+                            } else {
+                                return Err(Error::AuthenticationError("OAuth2 token_id and user_id required".to_string()));
+                            }
+                        } else {
+                            return Err(Error::AuthenticationError("OAuth2 manager not configured".to_string()));
+                        }
+                    }
+                }
+
+                let response = request_builder
                     .send()
                     .await
                     .map_err(|e| Error::ConnectionError(format!("HTTP request failed: {}", e)))?;
@@ -410,7 +509,11 @@ impl TransportFactory {
             TransportType::HTTP => {
                 let http_config = config.http_config.as_ref()
                     .ok_or_else(|| Error::ConfigError("HTTP config required".to_string()))?;
-                let transport = HTTPTransport::new(&http_config.base_url);
+                let transport = if let Some(auth_config) = &http_config.auth_config {
+                    HTTPTransport::with_auth(&http_config.base_url, auth_config.clone())?
+                } else {
+                    HTTPTransport::new(&http_config.base_url)
+                };
                 Ok(Box::new(transport))
             }
             TransportType::SSE => {
@@ -456,6 +559,29 @@ pub struct StdioConfig {
 pub struct HTTPConfig {
     pub base_url: String,
     pub timeout_ms: Option<u64>,
+    pub auth_config: Option<HTTPAuthConfig>,
+}
+
+/// HTTP authentication configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HTTPAuthConfig {
+    pub auth_type: HTTPAuthType,
+    pub credentials: std::collections::HashMap<String, String>,
+}
+
+/// HTTP authentication types
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum HTTPAuthType {
+    #[serde(rename = "none")]
+    None,
+    #[serde(rename = "basic")]
+    Basic,
+    #[serde(rename = "bearer")]
+    Bearer,
+    #[serde(rename = "oauth2")]
+    OAuth2,
+    #[serde(rename = "apikey")]
+    ApiKey,
 }
 
 /// SSE transport configuration

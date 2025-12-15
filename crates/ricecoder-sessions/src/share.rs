@@ -6,6 +6,11 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use uuid::Uuid;
+use url::Url;
+
+use ricecoder_domain::value_objects::ValidUrl;
+use ricecoder_security::audit::{AuditLogger, AuditEventType, AuditEvent};
+use ricecoder_security::compliance::DataType;
 
 use crate::{Session, SessionError, SessionResult};
 
@@ -16,14 +21,40 @@ pub struct ShareService {
     shares: std::sync::Arc<std::sync::Mutex<HashMap<String, SessionShare>>>,
     /// Analytics tracker
     analytics: Arc<ShareAnalytics>,
+    /// Base URL for generating share URLs
+    base_url: String,
+    /// Audit logger for compliance
+    audit_logger: Option<Arc<AuditLogger>>,
 }
 
 impl ShareService {
-    /// Create a new share service
+    /// Create a new share service with default base URL
     pub fn new() -> Self {
         Self {
             shares: std::sync::Arc::new(std::sync::Mutex::new(HashMap::new())),
             analytics: Arc::new(ShareAnalytics::new()),
+            base_url: "https://ricecoder.com".to_string(),
+            audit_logger: None,
+        }
+    }
+
+    /// Create a new share service with custom base URL
+    pub fn with_base_url(base_url: String) -> Self {
+        Self {
+            shares: std::sync::Arc::new(std::sync::Mutex::new(HashMap::new())),
+            analytics: Arc::new(ShareAnalytics::new()),
+            base_url,
+            audit_logger: None,
+        }
+    }
+
+    /// Create a new share service with audit logging
+    pub fn with_audit_logging(base_url: String, audit_logger: Arc<AuditLogger>) -> Self {
+        Self {
+            shares: std::sync::Arc::new(std::sync::Mutex::new(HashMap::new())),
+            analytics: Arc::new(ShareAnalytics::new()),
+            base_url,
+            audit_logger: Some(audit_logger),
         }
     }
 
@@ -34,16 +65,52 @@ impl ShareService {
         permissions: SharePermissions,
         expires_in: Option<Duration>,
     ) -> SessionResult<SessionShare> {
+        self.generate_share_link_with_policy(session_id, permissions, expires_in, None, None)
+    }
+
+    /// Generate a share link with enterprise policy
+    pub fn generate_share_link_with_policy(
+        &self,
+        session_id: &str,
+        permissions: SharePermissions,
+        expires_in: Option<Duration>,
+        policy: Option<EnterpriseSharingPolicy>,
+        creator_user_id: Option<String>,
+    ) -> SessionResult<SessionShare> {
         let share_id = Uuid::new_v4().to_string();
         let now = Utc::now();
-        let expires_at = expires_in.map(|duration| now + duration);
+
+        // Apply enterprise policy constraints
+        let effective_expires_at = if let Some(ref policy) = policy {
+            if let Some(max_days) = policy.max_expiration_days {
+                let max_expires = now + Duration::days(max_days);
+                expires_in.map(|duration| {
+                    let requested_expires = now + duration;
+                    if requested_expires > max_expires {
+                        max_expires
+                    } else {
+                        requested_expires
+                    }
+                }).or(Some(max_expires))
+            } else {
+                expires_in.map(|duration| now + duration)
+            }
+        } else {
+            expires_in.map(|duration| now + duration)
+        };
+
+        // Generate share URL
+        let share_url = self.generate_share_url(&share_id)?;
 
         let share = SessionShare {
             id: share_id.clone(),
+            share_url: Some(share_url),
             session_id: session_id.to_string(),
             created_at: now,
-            expires_at,
+            expires_at: effective_expires_at,
             permissions,
+            policy,
+            creator_user_id: creator_user_id.clone(),
         };
 
         // Store the share
@@ -55,6 +122,82 @@ impl ShareService {
 
         // Track analytics
         self.analytics.record_share_created(&share);
+
+        // Log compliance event
+        if let Some(ref audit_logger) = self.audit_logger {
+            let event = AuditEvent {
+                event_type: AuditEventType::DataAccess,
+                user_id: creator_user_id,
+                session_id: Some(session_id.to_string()),
+                action: "share_created".to_string(),
+                resource: format!("session:{}", session_id),
+                metadata: serde_json::json!({
+                    "share_id": share_id,
+                    "permissions": permissions,
+                    "expires_at": effective_expires_at,
+                    "policy_applied": policy.is_some()
+                }),
+            };
+            // Note: In a real implementation, this would be async
+            // For now, we'll log synchronously
+            let _ = tokio::spawn(async move {
+                let _ = audit_logger.log_event(event).await;
+            });
+        }
+
+        Ok(share)
+    }
+
+    /// Generate a share URL from share ID
+    fn generate_share_url(&self, share_id: &str) -> SessionResult<String> {
+        let base_url = Url::parse(&self.base_url)
+            .map_err(|e| SessionError::Invalid(format!("Invalid base URL: {}", e)))?;
+
+        let share_url = base_url
+            .join(&format!("share/{}", share_id))
+            .map_err(|e| SessionError::Invalid(format!("Failed to generate share URL: {}", e)))?;
+
+        Ok(share_url.to_string())
+    }
+
+    /// Validate and extract share ID from URL
+    pub fn validate_share_url(&self, share_url: &str) -> SessionResult<String> {
+        let url = Url::parse(share_url)
+            .map_err(|e| SessionError::Invalid(format!("Invalid share URL: {}", e)))?;
+
+        // Ensure the URL is from our domain
+        let base_url = Url::parse(&self.base_url)
+            .map_err(|e| SessionError::Invalid(format!("Invalid base URL: {}", e)))?;
+
+        if url.host_str() != base_url.host_str() {
+            return Err(SessionError::Invalid("Share URL from unauthorized domain".to_string()));
+        }
+
+        // Extract share ID from path
+        let path_segments: Vec<&str> = url.path_segments()
+            .ok_or_else(|| SessionError::Invalid("Invalid share URL path".to_string()))?
+            .collect();
+
+        if path_segments.len() != 2 || path_segments[0] != "share" {
+            return Err(SessionError::Invalid("Invalid share URL format".to_string()));
+        }
+
+        let share_id = path_segments[1].to_string();
+
+        // Validate share ID format (UUID)
+        Uuid::parse_str(&share_id)
+            .map_err(|_| SessionError::Invalid("Invalid share ID format".to_string()))?;
+
+        Ok(share_id)
+    }
+
+    /// Get a share by URL, checking expiration
+    pub fn get_share_by_url(&self, share_url: &str) -> SessionResult<SessionShare> {
+        let share_id = self.validate_share_url(share_url)?;
+        let share = self.get_share(&share_id)?;
+
+        // Record URL access for analytics
+        self.analytics.record_url_accessed(&share_id, &share.session_id, &share.permissions);
 
         Ok(share)
     }
@@ -75,6 +218,26 @@ impl ShareService {
             if Utc::now() > expires_at {
                 return Err(SessionError::ShareExpired(share_id.to_string()));
             }
+        }
+
+        // Log access for compliance
+        if let Some(ref audit_logger) = self.audit_logger {
+            let event = AuditEvent {
+                event_type: AuditEventType::DataAccess,
+                user_id: share.creator_user_id.clone(),
+                session_id: Some(share.session_id.clone()),
+                action: "share_accessed".to_string(),
+                resource: format!("share:{}", share_id),
+                metadata: serde_json::json!({
+                    "share_id": share_id,
+                    "session_id": share.session_id,
+                    "permissions": share.permissions
+                }),
+            };
+            let audit_logger = audit_logger.clone();
+            let _ = tokio::spawn(async move {
+                let _ = audit_logger.log_event(event).await;
+            });
         }
 
         Ok(share.clone())
@@ -109,9 +272,10 @@ impl ShareService {
         &self,
         share_id: &str,
         shared_session: &Session,
+        importer_user_id: Option<String>,
     ) -> SessionResult<Session> {
         // Verify the share exists and hasn't expired
-        let _share = self.get_share(share_id)?;
+        let share = self.get_share(share_id)?;
 
         // Create a new local session with the shared session's data
         let mut imported_session = shared_session.clone();
@@ -124,19 +288,58 @@ impl ShareService {
         imported_session.created_at = now;
         imported_session.updated_at = now;
 
+        // Log import for compliance
+        if let Some(ref audit_logger) = self.audit_logger {
+            let event = AuditEvent {
+                event_type: AuditEventType::DataAccess,
+                user_id: importer_user_id.or_else(|| share.creator_user_id.clone()),
+                session_id: Some(imported_session.id.clone()),
+                action: "session_imported".to_string(),
+                resource: format!("session:{}:from_share:{}", imported_session.id, share_id),
+                metadata: serde_json::json!({
+                    "share_id": share_id,
+                    "original_session_id": share.session_id,
+                    "imported_session_id": imported_session.id
+                }),
+            };
+            let audit_logger = audit_logger.clone();
+            let _ = tokio::spawn(async move {
+                let _ = audit_logger.log_event(event).await;
+            });
+        }
+
         Ok(imported_session)
     }
 
     /// Revoke a share by ID
-    pub fn revoke_share(&self, share_id: &str) -> SessionResult<()> {
+    pub fn revoke_share(&self, share_id: &str, revoker_user_id: Option<String>) -> SessionResult<()> {
         let mut shares = self
             .shares
             .lock()
             .map_err(|e| SessionError::StorageError(format!("Failed to lock shares: {}", e)))?;
 
-        shares
+        let share = shares
             .remove(share_id)
             .ok_or_else(|| SessionError::ShareNotFound(share_id.to_string()))?;
+
+        // Log revocation for compliance
+        if let Some(ref audit_logger) = self.audit_logger {
+            let event = AuditEvent {
+                event_type: AuditEventType::DataAccess,
+                user_id: revoker_user_id.or_else(|| share.creator_user_id),
+                session_id: Some(share.session_id),
+                action: "share_revoked".to_string(),
+                resource: format!("share:{}", share_id),
+                metadata: serde_json::json!({
+                    "share_id": share_id,
+                    "session_id": share.session_id
+                }),
+            };
+            let audit_logger = audit_logger.clone();
+            let _ = tokio::spawn(async move {
+                let _ = audit_logger.log_event(event).await;
+            });
+        }
 
         Ok(())
     }
@@ -232,11 +435,49 @@ impl Default for ShareService {
     }
 }
 
+impl ShareService {
+    /// Set the base URL for share links
+    pub fn set_base_url(&mut self, base_url: String) {
+        self.base_url = base_url;
+    }
+
+    /// Set the audit logger
+    pub fn set_audit_logger(&mut self, audit_logger: Arc<AuditLogger>) {
+        self.audit_logger = Some(audit_logger);
+    }
+
+    /// Check if enterprise features are enabled
+    pub fn has_enterprise_features(&self) -> bool {
+        self.audit_logger.is_some()
+    }
+
+    /// Validate enterprise sharing policy
+    pub fn validate_enterprise_policy(&self, policy: &EnterpriseSharingPolicy) -> SessionResult<()> {
+        // Ensure policy doesn't allow excessively long expirations
+        if let Some(max_days) = policy.max_expiration_days {
+            if max_days > 365 { // Max 1 year
+                return Err(SessionError::Invalid("Maximum expiration cannot exceed 365 days".to_string()));
+            }
+        }
+
+        // Ensure data classification is appropriate
+        match policy.data_classification {
+            DataClassification::Public | DataClassification::Internal | DataClassification::Confidential | DataClassification::Restricted => {
+                // Valid classifications
+            }
+        }
+
+        Ok(())
+    }
+}
+
 /// A shared session
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SessionShare {
     /// Unique identifier for the share
     pub id: String,
+    /// Share URL for URL-based sharing
+    pub share_url: Option<String>,
     /// ID of the shared session
     pub session_id: String,
     /// When the share was created
@@ -245,6 +486,10 @@ pub struct SessionShare {
     pub expires_at: Option<DateTime<Utc>>,
     /// Share permissions
     pub permissions: SharePermissions,
+    /// Enterprise sharing policy
+    pub policy: Option<EnterpriseSharingPolicy>,
+    /// Creator user ID for enterprise tracking
+    pub creator_user_id: Option<String>,
 }
 
 /// Permissions for a shared session
@@ -258,6 +503,34 @@ pub struct SharePermissions {
     pub include_context: bool,
 }
 
+/// Enterprise sharing policies
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnterpriseSharingPolicy {
+    /// Maximum expiration time for shares
+    pub max_expiration_days: Option<i64>,
+    /// Whether to require approval for sharing
+    pub requires_approval: bool,
+    /// Allowed domains for sharing
+    pub allowed_domains: Vec<String>,
+    /// Whether to enable compliance logging
+    pub compliance_logging: bool,
+    /// Data classification level
+    pub data_classification: DataClassification,
+}
+
+/// Data classification levels for compliance
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DataClassification {
+    /// Public data - no restrictions
+    Public,
+    /// Internal data - basic restrictions
+    Internal,
+    /// Confidential data - strict controls
+    Confidential,
+    /// Restricted data - highest security
+    Restricted,
+}
+
 /// Analytics data for session sharing
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ShareAnalyticsData {
@@ -265,12 +538,27 @@ pub struct ShareAnalyticsData {
     pub total_shares_created: u64,
     /// Total number of share accesses
     pub total_share_accesses: u64,
+    /// Total number of URL-based accesses
+    pub total_url_accesses: u64,
     /// Number of shares by permission type
     pub shares_by_permissions: HashMap<String, u64>,
     /// Top accessed sessions
     pub top_accessed_sessions: Vec<(String, u64)>,
     /// Recent share activity
     pub recent_activity: Vec<ShareActivity>,
+    /// Enterprise compliance metrics
+    pub enterprise_metrics: Option<EnterpriseShareMetrics>,
+}
+
+/// Enterprise-specific sharing metrics
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnterpriseShareMetrics {
+    /// Shares by data classification
+    pub shares_by_classification: HashMap<String, u64>,
+    /// Compliance events logged
+    pub compliance_events: u64,
+    /// Policy violations detected
+    pub policy_violations: u64,
 }
 
 /// Individual share activity record
@@ -297,9 +585,11 @@ pub enum ShareActivityType {
 struct ShareAnalytics {
     total_shares_created: AtomicU64,
     total_share_accesses: AtomicU64,
+    total_url_accesses: AtomicU64,
     shares_by_permissions: std::sync::Mutex<HashMap<String, u64>>,
     session_access_counts: std::sync::Mutex<HashMap<String, u64>>,
     recent_activity: std::sync::Mutex<Vec<ShareActivity>>,
+    enterprise_metrics: std::sync::Mutex<Option<EnterpriseShareMetrics>>,
 }
 
 impl ShareAnalytics {
@@ -307,9 +597,15 @@ impl ShareAnalytics {
         Self {
             total_shares_created: AtomicU64::new(0),
             total_share_accesses: AtomicU64::new(0),
+            total_url_accesses: AtomicU64::new(0),
             shares_by_permissions: std::sync::Mutex::new(HashMap::new()),
             session_access_counts: std::sync::Mutex::new(HashMap::new()),
             recent_activity: std::sync::Mutex::new(Vec::new()),
+            enterprise_metrics: std::sync::Mutex::new(Some(EnterpriseShareMetrics {
+                shares_by_classification: HashMap::new(),
+                compliance_events: 0,
+                policy_violations: 0,
+            })),
         }
     }
 
@@ -323,6 +619,16 @@ impl ShareAnalytics {
 
         if let Ok(mut perms) = self.shares_by_permissions.lock() {
             *perms.entry(perm_key).or_insert(0) += 1;
+        }
+
+        // Track enterprise metrics
+        if let Ok(mut metrics) = self.enterprise_metrics.lock() {
+            if let Some(ref enterprise_metrics) = *metrics {
+                if let Some(ref policy) = share.policy {
+                    let classification_key = format!("{:?}", policy.data_classification);
+                    *enterprise_metrics.shares_by_classification.entry(classification_key).or_insert(0) += 1;
+                }
+            }
         }
 
         self.record_activity(ShareActivity {
@@ -350,6 +656,27 @@ impl ShareAnalytics {
         });
     }
 
+    fn record_url_accessed(&self, share_id: &str, session_id: &str, permissions: &SharePermissions) {
+        self.total_url_accesses.fetch_add(1, Ordering::Relaxed);
+        self.record_share_accessed(session_id, permissions);
+    }
+
+    fn record_compliance_event(&self) {
+        if let Ok(mut metrics) = self.enterprise_metrics.lock() {
+            if let Some(ref mut enterprise_metrics) = *metrics {
+                enterprise_metrics.compliance_events += 1;
+            }
+        }
+    }
+
+    fn record_policy_violation(&self) {
+        if let Ok(mut metrics) = self.enterprise_metrics.lock() {
+            if let Some(ref mut enterprise_metrics) = *metrics {
+                enterprise_metrics.policy_violations += 1;
+            }
+        }
+    }
+
     fn record_activity(&self, activity: ShareActivity) {
         if let Ok(mut activities) = self.recent_activity.lock() {
             activities.push(activity);
@@ -363,6 +690,7 @@ impl ShareAnalytics {
     fn get_data(&self) -> ShareAnalyticsData {
         let total_shares = self.total_shares_created.load(Ordering::Relaxed);
         let total_accesses = self.total_share_accesses.load(Ordering::Relaxed);
+        let total_url_accesses = self.total_url_accesses.load(Ordering::Relaxed);
 
         let shares_by_permissions = self.shares_by_permissions.lock()
             .map(|perms| perms.clone())
@@ -383,18 +711,25 @@ impl ShareAnalytics {
             .map(|activities| activities.clone())
             .unwrap_or_default();
 
+        let enterprise_metrics = self.enterprise_metrics.lock()
+            .map(|metrics| metrics.clone())
+            .unwrap_or_default();
+
         ShareAnalyticsData {
             total_shares_created: total_shares,
             total_share_accesses: total_accesses,
+            total_url_accesses,
             shares_by_permissions,
             top_accessed_sessions: session_counts,
             recent_activity,
+            enterprise_metrics,
         }
     }
 
     fn reset(&self) {
         self.total_shares_created.store(0, Ordering::Relaxed);
         self.total_share_accesses.store(0, Ordering::Relaxed);
+        self.total_url_accesses.store(0, Ordering::Relaxed);
 
         if let Ok(mut perms) = self.shares_by_permissions.lock() {
             perms.clear();
@@ -406,6 +741,14 @@ impl ShareAnalytics {
 
         if let Ok(mut activities) = self.recent_activity.lock() {
             activities.clear();
+        }
+
+        if let Ok(mut metrics) = self.enterprise_metrics.lock() {
+            *metrics = Some(EnterpriseShareMetrics {
+                shares_by_classification: HashMap::new(),
+                compliance_events: 0,
+                policy_violations: 0,
+            });
         }
     }
 }

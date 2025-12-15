@@ -239,6 +239,101 @@ impl App {
         Ok(app)
     }
 
+    /// Create a new application instance with custom configuration and provider data
+    pub async fn with_config_and_providers(
+        tui_config: ricecoder_storage::config::TuiConfig,
+        available_providers: Vec<crate::model::ProviderInfo>,
+        current_provider: Option<String>,
+    ) -> Result<Self> {
+        // Detect terminal capabilities for progressive enhancement
+        let capabilities = crate::TerminalCapabilities::detect();
+
+        // Create initial TEA model with provider data
+        let initial_model = crate::AppModel::init_with_providers(
+            tui_config,
+            ricecoder_themes::Theme::default(),
+            capabilities,
+            provider_data.available_providers,
+            provider_data.current_provider,
+        );
+
+        // Create reactive state manager
+        let reactive_state = std::sync::Arc::new(tokio::sync::RwLock::new(
+            ReactiveState::new(initial_model)
+        ));
+
+        // Create event dispatcher
+        let event_dispatcher = crate::EventDispatcher::new();
+
+        // Create optimistic updater
+        let optimistic_updater = crate::OptimisticUpdater::new();
+
+        // Create loading manager
+        let loading_manager = crate::LoadingManager::new();
+
+        // Create virtual renderer
+        let virtual_renderer = crate::VirtualRenderer::new((80, 24));
+
+        // Create virtual lists (will be initialized with data later)
+        let chat_virtual_list = None;
+        let command_virtual_list = None;
+
+        // Create lazy loaders
+        let chat_lazy_loader = None;
+        let command_lazy_loader = None;
+
+        // Create accessibility components
+        let keyboard_nav = crate::EnhancedKeyboardNavigation::new();
+        let high_contrast_themes = crate::HighContrastThemeManager::new();
+        let shortcut_customizer = crate::KeyboardShortcutCustomizer::new();
+        let screen_reader = crate::ScreenReaderAnnouncer::new(false);
+
+        // Create error management system
+        let error_manager = ErrorManager::new();
+
+        // Create progressive enhancement system
+        let progressive_enhancement = crate::ProgressiveEnhancement::new(capabilities);
+
+        // Create real-time updates system
+        let real_time_updates = crate::RealTimeUpdates::new();
+
+        // Create reactive UI coordinator
+        let reactive_ui = crate::ReactiveUICoordinator::new();
+
+        // Create chat widget
+        let chat = crate::ChatWidget::new();
+
+        let mut app = Self {
+            mode: AppMode::Chat,
+            theme: ricecoder_themes::Theme::default(),
+            terminal_caps: capabilities,
+            reactive_state,
+            event_dispatcher,
+            optimistic_updater,
+            loading_manager,
+            virtual_renderer,
+            chat_virtual_list,
+            command_virtual_list,
+            chat_lazy_loader,
+            command_lazy_loader,
+            keyboard_nav,
+            high_contrast_themes,
+            shortcut_customizer,
+            screen_reader,
+            error_manager,
+            progressive_enhancement,
+            real_time_updates,
+            reactive_ui,
+            chat,
+        };
+
+        // Subscribe chat widget to reactive updates for automatic UI updates
+        let reactive_receiver = app.reactive_ui.reactive_renderer().subscribe();
+        app.chat.subscribe_to_reactive_updates(reactive_receiver);
+
+        Ok(app)
+    }
+
     /// Initialize virtual lists and lazy loaders for large datasets
     pub async fn initialize_virtual_lists(&mut self) {
         let reactive_state = self.reactive_state.read().await;

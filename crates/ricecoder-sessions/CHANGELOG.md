@@ -10,10 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial release
+- URL-based session sharing with access control and expiration
+- Enterprise sharing policies with compliance logging
+- Privacy-first design with minimal data storage
+- Session URL generation and validation
+- Analytics and monitoring for share access
 
 ### Changed
 
-- N/A
+- Enhanced ShareService with URL generation and enterprise features
 
 ### Fixed
 

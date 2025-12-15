@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tracing::{debug, error, warn};
+use futures::StreamExt;
 
 use crate::error::ProviderError;
 use crate::models::{Capability, ChatRequest, ChatResponse, FinishReason, ModelInfo, TokenUsage};
@@ -25,6 +26,7 @@ pub struct ZenProvider {
 }
 
 /// Cache for models with TTL
+#[derive(Debug, Clone)]
 struct ModelCache {
     models: Option<Vec<ModelInfo>>,
     cached_at: Option<SystemTime>,
@@ -32,6 +34,7 @@ struct ModelCache {
 }
 
 /// Cache for health check with TTL
+#[derive(Debug, Clone)]
 struct HealthCheckCache {
     result: Option<bool>,
     cached_at: Option<SystemTime>,
@@ -413,14 +416,14 @@ impl ZenProvider {
                         }
                     }
                     Err(e) => {
-                        warn!("Failed to parse streaming chunk: {}", e);
+                        return Some(Err(ProviderError::ParseError(format!("Failed to parse streaming chunk: {}", e))));
                     }
                 }
             }
             None
         }));
 
-        Ok(Box::new(stream))
+        Ok(stream.boxed())
     }
 }
 

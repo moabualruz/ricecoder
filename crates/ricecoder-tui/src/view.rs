@@ -76,11 +76,19 @@ fn render_main_area(frame: &mut Frame, area: Rect, model: &AppModel) {
 
     // Render main content based on current mode
     render_main_content(frame, chunks[1], model);
+
+    // Update sidebar with provider information
+    render_sidebar_with_providers(frame, chunks[0], model);
 }
 
 /// Render the sidebar
 fn render_sidebar(frame: &mut Frame, area: Rect, model: &AppModel) {
-    let sidebar_content = vec![
+    render_sidebar_with_providers(frame, area, model);
+}
+
+/// Render the sidebar with provider information
+fn render_sidebar_with_providers(frame: &mut Frame, area: Rect, model: &AppModel) {
+    let mut sidebar_content = vec![
         Line::from(vec![
             Span::styled("📁 Sessions", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
         ]),
@@ -89,20 +97,51 @@ fn render_sidebar(frame: &mut Frame, area: Rect, model: &AppModel) {
         Line::from(format!("Total: {}", model.sessions.session_count)),
         Line::from(""),
         Line::from(vec![
-            Span::styled("📊 Stats", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            Span::styled("🤖 Providers", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
         ]),
         Line::from(""),
-        Line::from(format!("Tokens: {}", model.sessions.total_tokens.input_tokens + model.sessions.total_tokens.output_tokens)),
-        Line::from(format!("Mode: {:?}", model.mode)),
-        Line::from(""),
-        Line::from(vec![
-            Span::styled("🛠️ Tools", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-        ]),
-        Line::from(""),
-        Line::from("• File Picker"),
-        Line::from("• Command Palette"),
-        Line::from("• Help System"),
     ];
+
+    // Add current provider info
+    if let Some(current) = &model.providers.current_provider {
+        sidebar_content.push(Line::from(format!("Current: {}", current)));
+    } else {
+        sidebar_content.push(Line::from("Current: None"));
+    }
+
+    sidebar_content.push(Line::from(format!("Available: {}", model.providers.available_providers.len())));
+    sidebar_content.push(Line::from(""));
+
+    // Add provider status summary
+    let connected = model.providers.available_providers.iter()
+        .filter(|p| matches!(p.state, crate::model::ProviderConnectionState::Connected))
+        .count();
+    let errors = model.providers.available_providers.iter()
+        .filter(|p| matches!(p.state, crate::model::ProviderConnectionState::Error))
+        .count();
+
+    sidebar_content.push(Line::from(vec![
+        Span::styled("📊 Stats", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+    ]));
+    sidebar_content.push(Line::from(""));
+    sidebar_content.push(Line::from(format!("Tokens: {}", model.sessions.total_tokens.input_tokens + model.sessions.total_tokens.output_tokens)));
+    sidebar_content.push(Line::from(format!("Connected: {}/{}", connected, model.providers.available_providers.len())));
+    if errors > 0 {
+        sidebar_content.push(Line::from(vec![
+            Span::styled(format!("Errors: {}", errors), Style::default().fg(Color::Red)),
+        ]));
+    }
+    sidebar_content.push(Line::from(format!("Mode: {:?}", model.mode)));
+    sidebar_content.push(Line::from(""));
+
+    sidebar_content.push(Line::from(vec![
+        Span::styled("🛠️ Tools", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+    ]));
+    sidebar_content.push(Line::from(""));
+    sidebar_content.push(Line::from("• File Picker"));
+    sidebar_content.push(Line::from("• Command Palette"));
+    sidebar_content.push(Line::from("• Provider Manager"));
+    sidebar_content.push(Line::from("• Help System"));
 
     let sidebar = Paragraph::new(sidebar_content)
         .block(Block::default().borders(Borders::ALL).title("Sidebar"))
@@ -117,6 +156,8 @@ fn render_main_content(frame: &mut Frame, area: Rect, model: &AppModel) {
         AppMode::Chat => render_chat_mode(frame, area, model),
         AppMode::Command => render_command_mode(frame, area, model),
         AppMode::Diff => render_diff_mode(frame, area, model),
+        AppMode::Mcp => render_mcp_mode(frame, area, model),
+        AppMode::Provider => render_provider_mode(frame, area, model),
         AppMode::Help => render_help_mode(frame, area, model),
     }
 }
@@ -201,6 +242,283 @@ fn render_help_mode(frame: &mut Frame, area: Rect, _model: &AppModel) {
         .wrap(Wrap { trim: true });
 
     frame.render_widget(help_widget, area);
+}
+
+/// Render MCP mode interface
+fn render_mcp_mode(frame: &mut Frame, area: Rect, model: &AppModel) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3), // Header
+            Constraint::Min(5),    // Content
+        ])
+        .split(area);
+
+    // Header with MCP status
+    let header = Paragraph::new(vec![
+        Line::from(vec![
+            Span::styled("Model Context Protocol", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+        ]),
+        Line::from(format!("Servers: {}", model.mcp.servers.len())),
+        Line::from(format!("Tools: {}", model.mcp.available_tools.len())),
+    ])
+    .block(Block::default().borders(Borders::ALL).title("MCP Status"))
+    .wrap(Wrap { trim: true });
+
+    frame.render_widget(header, chunks[0]);
+
+    // MCP content area
+    let content = Paragraph::new("MCP server management and tool execution interface will be implemented here.")
+        .block(Block::default().borders(Borders::ALL).title("MCP Tools"))
+        .wrap(Wrap { trim: true });
+
+    frame.render_widget(content, chunks[1]);
+}
+
+/// Render provider mode interface
+fn render_provider_mode(frame: &mut Frame, area: Rect, model: &AppModel) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3), // Header with view mode
+            Constraint::Min(5),    // Provider list/content
+            Constraint::Length(3), // Footer with controls
+        ])
+        .split(area);
+
+    // Header with current view mode
+    let view_mode_indicator = match model.providers.view_mode {
+        crate::model::ProviderViewMode::List => "📋 List",
+        crate::model::ProviderViewMode::Status => "📊 Status",
+        crate::model::ProviderViewMode::Performance => "⚡ Performance",
+        crate::model::ProviderViewMode::Analytics => "📈 Analytics",
+    };
+
+    let header = Paragraph::new(vec![
+        Line::from(vec![
+            Span::styled("AI Provider Management", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            Span::raw(" | "),
+            Span::styled(view_mode_indicator, Style::default().fg(Color::Green)),
+        ]),
+        Line::from(format!("Current: {}", model.providers.current_provider.as_deref().unwrap_or("None"))),
+        Line::from(format!("Filter: {}", if model.providers.filter_text.is_empty() { "None" } else { &model.providers.filter_text })),
+    ])
+    .block(Block::default().borders(Borders::ALL).title("Provider Manager"))
+    .wrap(Wrap { trim: true });
+
+    frame.render_widget(header, chunks[0]);
+
+    // Main content based on view mode
+    match model.providers.view_mode {
+        crate::model::ProviderViewMode::List => render_provider_list(frame, chunks[1], model),
+        crate::model::ProviderViewMode::Status => render_provider_status(frame, chunks[1], model),
+        crate::model::ProviderViewMode::Performance => render_provider_performance(frame, chunks[1], model),
+        crate::model::ProviderViewMode::Analytics => render_provider_analytics(frame, chunks[1], model),
+    }
+
+    // Footer with controls
+    let footer = Paragraph::new(vec![
+        Line::from("Controls:"),
+        Line::from(vec![
+            Span::styled("l", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            Span::raw(" - List | "),
+            Span::styled("s", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            Span::raw(" - Status | "),
+            Span::styled("p", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            Span::raw(" - Performance | "),
+            Span::styled("a", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            Span::raw(" - Analytics"),
+        ]),
+        Line::from(vec![
+            Span::styled("↑↓", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            Span::raw(" - Navigate | "),
+            Span::styled("Enter", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            Span::raw(" - Switch Provider | "),
+            Span::styled("/", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            Span::raw(" - Command Mode"),
+        ]),
+    ])
+    .block(Block::default().borders(Borders::ALL).title("Controls"))
+    .wrap(Wrap { trim: true });
+
+    frame.render_widget(footer, chunks[2]);
+}
+
+/// Render provider list view
+fn render_provider_list(frame: &mut Frame, area: Rect, model: &AppModel) {
+    let mut content = Vec::new();
+
+    for provider in &model.providers.available_providers {
+        let is_selected = model.providers.selected_provider.as_ref() == Some(&provider.id);
+        let is_current = model.providers.current_provider.as_ref() == Some(&provider.id);
+
+        let status_icon = match provider.state {
+            crate::model::ProviderConnectionState::Connected => "🟢",
+            crate::model::ProviderConnectionState::Disconnected => "🟡",
+            crate::model::ProviderConnectionState::Error => "🔴",
+            crate::model::ProviderConnectionState::Disabled => "⚪",
+        };
+
+        let mut line_spans = vec![
+            Span::raw(status_icon),
+            Span::raw(" "),
+        ];
+
+        if is_current {
+            line_spans.push(Span::styled(&provider.name, Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)));
+            line_spans.push(Span::styled(" (current)", Style::default().fg(Color::Green)));
+        } else if is_selected {
+            line_spans.push(Span::styled(&provider.name, Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)));
+            line_spans.push(Span::styled(" (selected)", Style::default().fg(Color::Yellow)));
+        } else {
+            line_spans.push(Span::raw(&provider.name));
+        }
+
+        line_spans.push(Span::raw(format!(" - {} models", provider.models.len())));
+
+        content.push(Line::from(line_spans));
+
+        if let Some(error) = &provider.error_message {
+            content.push(Line::from(vec![
+                Span::raw("  "),
+                Span::styled(format!("Error: {}", error), Style::default().fg(Color::Red)),
+            ]));
+        }
+    }
+
+    if content.is_empty() {
+        content.push(Line::from("No providers configured. Use 'ricecoder providers' CLI command to configure providers."));
+    }
+
+    let list = Paragraph::new(content)
+        .block(Block::default().borders(Borders::ALL).title("Available Providers"))
+        .wrap(Wrap { trim: true });
+
+    frame.render_widget(list, area);
+}
+
+/// Render provider status view
+fn render_provider_status(frame: &mut Frame, area: Rect, model: &AppModel) {
+    let mut content = Vec::new();
+
+    for provider in &model.providers.available_providers {
+        content.push(Line::from(vec![
+            Span::styled(&provider.name, Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            Span::raw(" ("),
+            Span::raw(&provider.id),
+            Span::raw(")"),
+        ]));
+
+        content.push(Line::from(format!("  Status: {:?}", provider.state)));
+        content.push(Line::from(format!("  Models: {}", provider.models.len())));
+
+        if let Some(last_checked) = provider.last_checked {
+            content.push(Line::from(format!("  Last checked: {}", last_checked.format("%Y-%m-%d %H:%M:%S"))));
+        }
+
+        if let Some(error) = &provider.error_message {
+            content.push(Line::from(vec![
+                Span::raw("  "),
+                Span::styled(format!("Error: {}", error), Style::default().fg(Color::Red)),
+            ]));
+        }
+
+        content.push(Line::from(""));
+    }
+
+    if content.is_empty() {
+        content.push(Line::from("No provider status information available."));
+    }
+
+    let status = Paragraph::new(content)
+        .block(Block::default().borders(Borders::ALL).title("Provider Status"))
+        .wrap(Wrap { trim: true });
+
+    frame.render_widget(status, area);
+}
+
+/// Render provider performance view
+fn render_provider_performance(frame: &mut Frame, area: Rect, model: &AppModel) {
+    let mut content = Vec::new();
+
+    for (provider_id, metrics) in &model.providers.provider_metrics {
+        content.push(Line::from(vec![
+            Span::styled(provider_id, Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+        ]));
+
+        content.push(Line::from(format!("  Requests: {} total ({} success, {} failed)",
+            metrics.total_requests, metrics.successful_requests, metrics.failed_requests)));
+        content.push(Line::from(format!("  Response time: {:.2}ms avg", metrics.avg_response_time_ms)));
+        content.push(Line::from(format!("  Error rate: {:.2}%", metrics.error_rate * 100.0)));
+        content.push(Line::from(format!("  Tokens: {} total (${:.4} cost)", metrics.total_tokens, metrics.total_cost)));
+        content.push(Line::from(format!("  Throughput: {:.2} req/s, {:.2} tok/s",
+            metrics.requests_per_second, metrics.tokens_per_second)));
+        content.push(Line::from(""));
+    }
+
+    if content.is_empty() {
+        content.push(Line::from("No performance metrics available. Use providers to generate some activity."));
+    }
+
+    let performance = Paragraph::new(content)
+        .block(Block::default().borders(Borders::ALL).title("Provider Performance"))
+        .wrap(Wrap { trim: true });
+
+    frame.render_widget(performance, area);
+}
+
+/// Render provider analytics view
+fn render_provider_analytics(frame: &mut Frame, area: Rect, model: &AppModel) {
+    let mut content = Vec::new();
+
+    // Summary statistics
+    let total_providers = model.providers.available_providers.len();
+    let connected_providers = model.providers.available_providers.iter()
+        .filter(|p| matches!(p.state, crate::model::ProviderConnectionState::Connected))
+        .count();
+    let total_requests: u64 = model.providers.provider_metrics.values()
+        .map(|m| m.total_requests)
+        .sum();
+    let total_errors: u64 = model.providers.provider_metrics.values()
+        .map(|m| m.failed_requests)
+        .sum();
+
+    content.push(Line::from(vec![
+        Span::styled("Summary", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+    ]));
+    content.push(Line::from(format!("  Total providers: {}", total_providers)));
+    content.push(Line::from(format!("  Connected providers: {}", connected_providers)));
+    content.push(Line::from(format!("  Total requests: {}", total_requests)));
+    content.push(Line::from(format!("  Total errors: {}", total_errors)));
+
+    if total_requests > 0 {
+        let overall_error_rate = (total_errors as f64) / (total_requests as f64) * 100.0;
+        content.push(Line::from(format!("  Overall error rate: {:.2}%", overall_error_rate)));
+    }
+
+    content.push(Line::from(""));
+
+    // Best performing providers
+    content.push(Line::from(vec![
+        Span::styled("Best Performing (by response time)", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+    ]));
+
+    let mut sorted_providers: Vec<_> = model.providers.provider_metrics.iter().collect();
+    sorted_providers.sort_by(|a, b| a.1.avg_response_time_ms.partial_cmp(&b.1.avg_response_time_ms).unwrap());
+
+    for (provider_id, metrics) in sorted_providers.iter().take(3) {
+        content.push(Line::from(format!("  {}: {:.2}ms", provider_id, metrics.avg_response_time_ms)));
+    }
+
+    if content.len() <= 2 {
+        content.push(Line::from("  No performance data available"));
+    }
+
+    let analytics = Paragraph::new(content)
+        .block(Block::default().borders(Borders::ALL).title("Provider Analytics"))
+        .wrap(Wrap { trim: true });
+
+    frame.render_widget(analytics, area);
 }
 
 /// Render chat messages area

@@ -8,9 +8,10 @@ This guide provides comprehensive examples and usage patterns for the RiceCoder 
 2. [Chat Widget](#chat-widget)
 3. [Diff Widget](#diff-widget)
 4. [Prompt Widget](#prompt-widget)
-5. [Configuration](#configuration)
-6. [Keyboard Shortcuts](#keyboard-shortcuts)
-7. [Advanced Usage](#advanced-usage)
+5. [Provider Management](#provider-management)
+6. [Configuration](#configuration)
+7. [Keyboard Shortcuts](#keyboard-shortcuts)
+8. [Advanced Usage](#advanced-usage)
 
 ## Getting Started
 
@@ -38,7 +39,9 @@ ricecoder-tui --high-contrast
 - **Ctrl+1**: Switch to Chat mode
 - **Ctrl+2**: Switch to Command mode
 - **Ctrl+3**: Switch to Diff mode
-- **Ctrl+4**: Show Help
+- **Ctrl+4**: Switch to MCP mode
+- **Ctrl+5**: Switch to Provider mode
+- **Ctrl+6**: Show Help
 
 ## Chat Widget
 
@@ -196,6 +199,44 @@ Example:
 ```
 Unified Diff View | 150 lines | +45 -30 | Approved: 2/5
 ```
+
+## Provider Management
+
+The Provider Management interface allows you to view, switch, and monitor AI providers and their performance.
+
+### Features
+
+- **Provider List**: View all available AI providers with connection status
+- **Status Monitoring**: Real-time connection status and health checks
+- **Performance Metrics**: Response times, error rates, token usage, and costs
+- **Analytics Dashboard**: Overall provider performance and reliability statistics
+- **Provider Switching**: Runtime switching between different AI providers
+
+### Navigation
+
+- **l**: Switch to List view
+- **s**: Switch to Status view
+- **p**: Switch to Performance view
+- **a**: Switch to Analytics view
+- **↑/↓**: Navigate through provider list
+- **Enter**: Switch to selected provider
+- **/**: Quick access to Command mode for provider commands
+
+### Provider Status Indicators
+
+- **🟢**: Provider is connected and healthy
+- **🟡**: Provider is temporarily disconnected
+- **🔴**: Provider has errors
+- **⚪**: Provider is disabled
+
+### Performance Metrics
+
+The performance view shows:
+- Total requests and success/failure counts
+- Average response time
+- Error rate percentage
+- Token usage and cost estimates
+- Requests per second and tokens per second
 
 ## Prompt Widget
 

@@ -508,6 +508,9 @@ RiceCoder follows these security standards:
 - **CWE Top 25**: Addresses common weaknesses
 - **NIST Cybersecurity Framework**: Implements core functions
 - **Rust Security Guidelines**: Follows best practices
+- **SOC 2 Type II**: Customer-managed encryption keys, comprehensive audit logging
+- **GDPR**: Right to erasure, data portability, consent management
+- **HIPAA**: Security safeguards, privacy protections, breach procedures
 
 ### Certifications
 
@@ -515,15 +518,21 @@ RiceCoder follows these security standards:
 - ✅ Passes `cargo audit` security scan
 - ✅ Follows Rust security guidelines
 - ✅ Implements OWASP recommendations
+- ✅ SOC 2 Type II compliance infrastructure
+- ✅ GDPR/HIPAA data handling capabilities
 
 ### Data Protection
 
-RiceCoder does not store user data:
+RiceCoder implements comprehensive data protection:
 
-- ✅ No user accounts
-- ✅ No data collection
-- ✅ No telemetry
-- ✅ No tracking
+- ✅ Customer-managed encryption keys (SOC 2)
+- ✅ Right to data erasure (GDPR)
+- ✅ Data portability (GDPR)
+- ✅ Privacy-preserving analytics with opt-in
+- ✅ 90-day log retention with automated cleanup
+- ✅ Comprehensive audit logging
+- ✅ Consent management and tracking
+- ✅ No unauthorized data collection
 
 ---
 

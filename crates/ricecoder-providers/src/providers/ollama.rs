@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tokio::time::sleep;
+use futures::StreamExt;
 use tracing::{debug, error, info, warn};
 
 use super::ollama_config::OllamaConfig;
@@ -286,7 +287,7 @@ impl OllamaProvider {
         .await
         .map_err(|e| {
             error!("Failed to fetch models from Ollama after retries: {}", e);
-            ProviderError::NetworkError
+            ProviderError::NetworkError(e.to_string())
         })?;
 
         if !response.status().is_success() {
@@ -425,7 +426,7 @@ impl Provider for OllamaProvider {
         .await
         .map_err(|e| {
             error!("Ollama API request failed after retries: {}", e);
-            ProviderError::NetworkError
+            ProviderError::NetworkError(e.to_string())
         })?;
 
         let status = response.status();
@@ -482,7 +483,7 @@ impl Provider for OllamaProvider {
         .await
         .map_err(|e| {
             error!("Ollama streaming request failed after retries: {}", e);
-            ProviderError::NetworkError
+            ProviderError::NetworkError(e.to_string())
         })?;
 
         let status = response.status();
@@ -497,7 +498,7 @@ impl Provider for OllamaProvider {
         // This creates a stream that yields responses as they are parsed
         let body = response.text().await.map_err(|e| {
             error!("Failed to read streaming response body: {}", e);
-            ProviderError::NetworkError
+            ProviderError::NetworkError(e.to_string())
         })?;
 
         // Parse each line as a JSON object and create a stream
@@ -522,7 +523,7 @@ impl Provider for OllamaProvider {
                     }),
                     Err(e) => {
                         debug!("Failed to parse streaming response line: {}", e);
-                        Err(ProviderError::ProviderError(format!(
+                        Err(ProviderError::ParseError(format!(
                             "Failed to parse streaming response: {}",
                             e
                         )))
@@ -533,7 +534,7 @@ impl Provider for OllamaProvider {
 
         // Convert to a stream
         let chat_stream = futures::stream::iter(responses);
-        Ok(Box::new(chat_stream))
+        Ok(chat_stream.boxed())
     }
 
     fn count_tokens(&self, content: &str, _model: &str) -> Result<usize, ProviderError> {
@@ -557,7 +558,7 @@ impl Provider for OllamaProvider {
         .await
         .map_err(|e| {
             warn!("Ollama health check failed after retries: {}", e);
-            ProviderError::NetworkError
+            ProviderError::NetworkError(e.to_string())
         })?;
 
         match response.status().as_u16() {

@@ -407,10 +407,41 @@ For detailed setup instructions, see [Installation Setup Guide](https://github.c
 
 ### Next Steps
 
-1. **[Quick Start Guide](https://github.com/moabualruz/ricecoder/wiki/Quick-Start)** - Your first project (5 minutes)
-2. **[Configuration Guide](https://github.com/moabualruz/ricecoder/wiki/Configuration)** - Set up AI providers
-3. **[CLI Commands](https://github.com/moabualruz/ricecoder/wiki/CLI-Commands)** - Learn all commands
-4. **[Spec-Driven Development](https://github.com/moabualruz/ricecoder/wiki/Spec-Driven-Development)** - Master specs
+- Explore [interactive chat mode](docs/chat-mode.md) for free-form coding assistance
+- Learn about [spec-driven development](docs/specs.md) for systematic coding
+- Configure [multiple AI providers](docs/providers.md) for optimal performance
+- Set up [local models](docs/ollama.md) for offline privacy
+
+---
+
+## Performance
+
+RiceCoder is designed for high performance with strict performance targets:
+
+### Performance Targets ✅
+
+- **🚀 Startup Time**: < 3 seconds (cold start)
+- **⚡ Response Time**: < 500ms (typical operations)
+- **🧠 Memory Usage**: < 300MB (typical sessions)
+- **🏗️ Large Projects**: 500+ crates, 50K+ lines with incremental analysis
+- **🔄 Concurrent Sessions**: Up to 10+ parallel sessions
+
+### Performance Validation
+
+Run performance validation to ensure targets are met:
+
+```bash
+# Run performance validation
+./scripts/run-performance-validation.sh
+
+# Update performance baselines
+./scripts/update-performance-baselines.sh
+
+# Check for regressions
+ricecoder-performance check-regression --binary ./target/release/ricecoder --baseline performance-baselines.json
+```
+
+Performance baselines are automatically tracked and regression detection alerts when performance degrades beyond acceptable thresholds.
 
 ---
 

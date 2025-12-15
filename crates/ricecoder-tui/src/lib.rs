@@ -184,8 +184,7 @@ pub use ui_components::{OptimisticUpdater, LoadingManager, VirtualRenderer, Virt
 pub use render_pipeline::LazyLoader;
 pub use tokio_util::sync::CancellationToken;
 pub use project_bootstrap::{ProjectBootstrap, BootstrapResult, ProjectInfo};
-// TODO: Re-enable provider exports once provider interfaces are implemented
-// pub use providers::{
-//     ProviderFactory, ThemeProvider, ConfigProvider, SessionProvider,
-//     CommandProvider, HelpProvider, KeybindProvider,
-// };
+// Provider management components
+pub use providers::{
+    ProviderFactory, ProviderManager, ProviderStatusWidget, ProviderPerformanceWidget,
+};

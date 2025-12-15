@@ -3,7 +3,7 @@
 use thiserror::Error;
 
 /// Errors that can occur when interacting with providers
-#[derive(Debug, Error, PartialEq)]
+#[derive(Debug, Error, PartialEq, Clone)]
 pub enum ProviderError {
     /// Provider not found by ID or name
     #[error("Provider not found: {0}")]
@@ -22,8 +22,8 @@ pub enum ProviderError {
     ContextTooLarge(usize, usize),
 
     /// Network error occurred
-    #[error("Network error")]
-    NetworkError,
+    #[error("Network error: {0}")]
+    NetworkError(String),
 
     /// Generic provider error
     #[error("Provider error: {0}")]
@@ -45,6 +45,10 @@ pub enum ProviderError {
     #[error("Serialization error: {0}")]
     SerializationError(String),
 
+    /// Parse error
+    #[error("Parse error: {0}")]
+    ParseError(String),
+
     /// Internal error
     #[error("Internal error: {0}")]
     Internal(String),
@@ -61,7 +65,7 @@ impl From<reqwest::Error> for ProviderError {
         if err.is_timeout() {
             ProviderError::ProviderError("Request timeout".to_string())
         } else if err.is_connect() {
-            ProviderError::NetworkError
+            ProviderError::NetworkError(err.to_string())
         } else {
             ProviderError::ProviderError(err.to_string())
         }

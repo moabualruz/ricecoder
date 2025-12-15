@@ -8,14 +8,28 @@ use crate::{SecurityError, Result};
 /// Permission types
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Permission {
+    Create,
     Read,
     Write,
     Execute,
+    Delete,
+    Share,
     Admin,
     ApiKeyAccess,
     SessionCreate,
     SessionShare,
     AuditRead,
+}
+
+/// Resource types for access control
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum ResourceType {
+    Session,
+    SessionShare,
+    ApiKey,
+    AuditLog,
+    User,
+    System,
 }
 
 /// Role definition
@@ -71,6 +85,85 @@ impl AccessControl {
             }
         }
         false
+    }
+
+    /// Check permission for a user with resource context (async for future extensibility)
+    pub async fn check_permission(
+        &self,
+        user_id: Option<&str>,
+        permission: &Permission,
+        resource_type: &ResourceType,
+        resource_id: Option<&str>,
+    ) -> Result<bool> {
+        // For now, implement basic permission checking
+        // In a real implementation, this would check user roles from a database
+        // and apply resource-specific access control rules
+
+        // If no user_id provided, deny access
+        let user_id = match user_id {
+            Some(id) => id,
+            None => return Ok(false),
+        };
+
+        // Create a mock principal for demonstration
+        // In production, this would be loaded from a user store
+        let principal = Principal {
+            id: user_id.to_string(),
+            roles: vec!["user".to_string()], // Default role
+            attributes: HashMap::new(),
+        };
+
+        // Apply resource-specific logic
+        match resource_type {
+            ResourceType::Session => {
+                // Sessions can be accessed by their owners or shared appropriately
+                match permission {
+                    Permission::Create => Ok(true), // Anyone can create sessions
+                    Permission::Read | Permission::Write | Permission::Delete => {
+                        // Check if user owns the resource
+                        // For now, allow all - in production, check ownership
+                        Ok(self.has_permission(&principal, permission))
+                    }
+                    Permission::Share => Ok(self.has_permission(&principal, &Permission::SessionShare)),
+                    _ => Ok(self.has_permission(&principal, permission)),
+                }
+            }
+            ResourceType::SessionShare => {
+                // Share management permissions
+                match permission {
+                    Permission::Read | Permission::Delete => {
+                        // Check if user owns the share
+                        Ok(self.has_permission(&principal, permission))
+                    }
+                    _ => Ok(false),
+                }
+            }
+            ResourceType::ApiKey => {
+                match permission {
+                    Permission::Read | Permission::Write => {
+                        Ok(self.has_permission(&principal, &Permission::ApiKeyAccess))
+                    }
+                    _ => Ok(false),
+                }
+            }
+            ResourceType::AuditLog => {
+                match permission {
+                    Permission::Read => Ok(self.has_permission(&principal, &Permission::AuditRead)),
+                    _ => Ok(false),
+                }
+            }
+            ResourceType::User => {
+                // Users can only access their own data
+                if resource_id == Some(user_id) {
+                    Ok(self.has_permission(&principal, permission))
+                } else {
+                    Ok(self.has_permission(&principal, &Permission::Admin))
+                }
+            }
+            ResourceType::System => {
+                Ok(self.has_permission(&principal, &Permission::Admin))
+            }
+        }
     }
 
     /// Check if a principal has any of the specified permissions
@@ -187,15 +280,140 @@ impl AccessControl {
     /// Get human-readable permission name
     fn permission_name(&self, permission: &Permission) -> &str {
         match permission {
+            Permission::Create => "create",
             Permission::Read => "read",
             Permission::Write => "write",
             Permission::Execute => "execute",
+            Permission::Delete => "delete",
+            Permission::Share => "share",
             Permission::Admin => "admin",
             Permission::ApiKeyAccess => "api_key_access",
             Permission::SessionCreate => "session_create",
             Permission::SessionShare => "session_share",
             Permission::AuditRead => "audit_read",
         }
+    }
+}
+
+/// ABAC policy for attribute-based access control
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AbacPolicy {
+    pub name: String,
+    pub description: String,
+    pub rules: Vec<AbacRule>,
+}
+
+/// ABAC rule defining access conditions
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AbacRule {
+    pub subject_attributes: HashMap<String, AttributeCondition>,
+    pub resource_attributes: HashMap<String, AttributeCondition>,
+    pub action: String,
+    pub effect: AbacEffect,
+}
+
+/// Attribute condition for ABAC rules
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum AttributeCondition {
+    Equals(String),
+    NotEquals(String),
+    Contains(String),
+    NotContains(String),
+    Regex(String),
+    In(Vec<String>),
+    NotIn(Vec<String>),
+}
+
+/// ABAC effect (allow or deny)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum AbacEffect {
+    Allow,
+    Deny,
+}
+
+/// Attribute-Based Access Control system
+pub struct AttributeBasedAccessControl {
+    policies: Vec<AbacPolicy>,
+}
+
+impl AttributeBasedAccessControl {
+    /// Create a new ABAC system
+    pub fn new() -> Self {
+        Self {
+            policies: Vec::new(),
+        }
+    }
+
+    /// Add an ABAC policy
+    pub fn add_policy(&mut self, policy: AbacPolicy) {
+        self.policies.push(policy);
+    }
+
+    /// Evaluate access request using ABAC
+    pub fn evaluate_access(
+        &self,
+        subject_attrs: &HashMap<String, String>,
+        resource_attrs: &HashMap<String, String>,
+        action: &str,
+    ) -> AbacEffect {
+        // Default deny
+        let mut final_effect = AbacEffect::Deny;
+
+        for policy in &self.policies {
+            for rule in &policy.rules {
+                if rule.action != action {
+                    continue;
+                }
+
+                if self.matches_conditions(subject_attrs, &rule.subject_attributes)
+                    && self.matches_conditions(resource_attrs, &rule.resource_attributes) {
+                    final_effect = rule.effect.clone();
+                    // First matching rule wins (in order)
+                    break;
+                }
+            }
+        }
+
+        final_effect
+    }
+
+    /// Check if attributes match conditions
+    fn matches_conditions(
+        &self,
+        attributes: &HashMap<String, String>,
+        conditions: &HashMap<String, AttributeCondition>,
+    ) -> bool {
+        for (attr_name, condition) in conditions {
+            let attr_value = match attributes.get(attr_name) {
+                Some(value) => value,
+                None => return false, // Missing required attribute
+            };
+
+            if !self.matches_condition(attr_value, condition) {
+                return false;
+            }
+        }
+        true
+    }
+
+    /// Check if a single attribute value matches a condition
+    fn matches_condition(&self, value: &str, condition: &AttributeCondition) -> bool {
+        match condition {
+            AttributeCondition::Equals(expected) => value == expected,
+            AttributeCondition::NotEquals(expected) => value != expected,
+            AttributeCondition::Contains(substring) => value.contains(substring),
+            AttributeCondition::NotContains(substring) => !value.contains(substring),
+            AttributeCondition::Regex(pattern) => {
+                regex::Regex::new(pattern).map_or(false, |re| re.is_match(value))
+            }
+            AttributeCondition::In(values) => values.contains(&value.to_string()),
+            AttributeCondition::NotIn(values) => !values.contains(&value.to_string()),
+        }
+    }
+
+    /// Get all policies
+    pub fn get_policies(&self) -> &[AbacPolicy] {
+        &self.policies
     }
 }
 
@@ -345,5 +563,81 @@ mod tests {
         assert!(ac.has_permission(&developer, &Permission::Write));
         assert!(ac.has_permission(&developer, &Permission::ApiKeyAccess));
         assert!(!ac.has_permission(&developer, &Permission::Admin));
+    }
+
+    #[test]
+    fn test_abac_basic() {
+        let mut abac = AttributeBasedAccessControl::new();
+
+        let policy = AbacPolicy {
+            name: "developer_policy".to_string(),
+            description: "Allow developers to access dev resources".to_string(),
+            rules: vec![AbacRule {
+                subject_attributes: HashMap::from([
+                    ("department".to_string(), AttributeCondition::Equals("engineering".to_string())),
+                    ("clearance".to_string(), AttributeCondition::In(vec!["secret".to_string(), "top_secret".to_string()])),
+                ]),
+                resource_attributes: HashMap::from([
+                    ("environment".to_string(), AttributeCondition::Equals("development".to_string())),
+                ]),
+                action: "read".to_string(),
+                effect: AbacEffect::Allow,
+            }],
+        };
+
+        abac.add_policy(policy);
+
+        // Test matching attributes
+        let subject_attrs = HashMap::from([
+            ("department".to_string(), "engineering".to_string()),
+            ("clearance".to_string(), "secret".to_string()),
+        ]);
+        let resource_attrs = HashMap::from([
+            ("environment".to_string(), "development".to_string()),
+        ]);
+
+        let effect = abac.evaluate_access(&subject_attrs, &resource_attrs, "read");
+        assert!(matches!(effect, AbacEffect::Allow));
+
+        // Test non-matching attributes
+        let bad_subject_attrs = HashMap::from([
+            ("department".to_string(), "marketing".to_string()),
+            ("clearance".to_string(), "secret".to_string()),
+        ]);
+
+        let effect = abac.evaluate_access(&bad_subject_attrs, &resource_attrs, "read");
+        assert!(matches!(effect, AbacEffect::Deny));
+    }
+
+    #[test]
+    fn test_abac_regex_condition() {
+        let mut abac = AttributeBasedAccessControl::new();
+
+        let policy = AbacPolicy {
+            name: "regex_policy".to_string(),
+            description: "Allow access based on regex pattern".to_string(),
+            rules: vec![AbacRule {
+                subject_attributes: HashMap::from([
+                    ("email".to_string(), AttributeCondition::Regex(r".*@company\.com$".to_string())),
+                ]),
+                resource_attributes: HashMap::new(),
+                action: "access".to_string(),
+                effect: AbacEffect::Allow,
+            }],
+        };
+
+        abac.add_policy(policy);
+
+        let valid_subject = HashMap::from([
+            ("email".to_string(), "user@company.com".to_string()),
+        ]);
+        let invalid_subject = HashMap::from([
+            ("email".to_string(), "user@gmail.com".to_string()),
+        ]);
+
+        let resource_attrs = HashMap::new();
+
+        assert!(matches!(abac.evaluate_access(&valid_subject, &resource_attrs, "access"), AbacEffect::Allow));
+        assert!(matches!(abac.evaluate_access(&invalid_subject, &resource_attrs, "access"), AbacEffect::Deny));
     }
 }

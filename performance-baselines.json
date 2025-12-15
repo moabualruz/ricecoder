@@ -1,35 +1,36 @@
-# Performance Baselines
-#
-# This file contains performance baseline data for RiceCoder.
-# Baselines are established through criterion benchmarking and used
-# to detect performance regressions in CI/CD.
-
 {
-  "session_creation": {
-    "test_name": "session_creation",
-    "mean_time_ns": 150000,
-    "std_dev_ns": 25000,
-    "p95_time_ns": 200000,
-    "p99_time_ns": 250000,
-    "sample_size": 100,
-    "timestamp": "2024-01-01T00:00:00Z"
-  },
-  "application_startup": {
-    "test_name": "application_startup",
-    "mean_time_ns": 2000000000,
-    "std_dev_ns": 500000000,
-    "p95_time_ns": 2800000000,
-    "p99_time_ns": 2900000000,
-    "sample_size": 50,
-    "timestamp": "2024-01-01T00:00:00Z"
-  },
-  "ai_provider_response": {
-    "test_name": "ai_provider_response",
-    "mean_time_ns": 300000000,
-    "std_dev_ns": 50000000,
-    "p95_time_ns": 400000000,
-    "p99_time_ns": 450000000,
-    "sample_size": 100,
-    "timestamp": "2024-01-01T00:00:00Z"
+  "version": "0.1.72",
+  "last_updated": "2024-12-15T00:00:00Z",
+  "baselines": {
+    "cli_startup": {
+      "test_name": "cli_startup",
+      "mean_time_ns": 500000000,
+      "std_dev_ns": 100000000,
+      "p95_time_ns": 700000000,
+      "p99_time_ns": 900000000,
+      "sample_size": 50,
+      "timestamp": "2024-12-15T00:00:00Z",
+      "target_threshold_ns": 3000000000
+    },
+    "response_time": {
+      "test_name": "response_time",
+      "mean_time_ns": 100000000,
+      "std_dev_ns": 20000000,
+      "p95_time_ns": 150000000,
+      "p99_time_ns": 200000000,
+      "sample_size": 100,
+      "timestamp": "2024-12-15T00:00:00Z",
+      "target_threshold_ns": 500000000
+    },
+    "memory_usage": {
+      "test_name": "memory_usage",
+      "mean_time_ns": 100000000,
+      "std_dev_ns": 20000000,
+      "p95_time_ns": 150000000,
+      "p99_time_ns": 200000000,
+      "sample_size": 50,
+      "timestamp": "2024-12-15T00:00:00Z",
+      "target_threshold_ns": null
+    }
   }
 }

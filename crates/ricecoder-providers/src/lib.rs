@@ -10,6 +10,7 @@ pub mod community;
 pub mod config;
 pub mod curation;
 pub mod error;
+pub mod evaluation;
 pub mod health_check;
 pub mod integration;
 pub mod models;
@@ -20,6 +21,7 @@ pub mod rate_limiter;
 pub mod redaction;
 pub mod security_headers;
 pub mod streaming;
+pub mod sync;
 pub mod token_counter;
 
 // Re-export commonly used types
@@ -43,10 +45,16 @@ pub use community::{
 pub use curation::{
     CurationConfig, ProviderCurator, QualityScore, ReliabilityStatus, SelectionConstraints,
 };
+pub use evaluation::{
+    BenchmarkResult, ContinuousEvaluator, PerformanceMetrics, ProviderEvaluation, ProviderEvaluator,
+};
+pub use sync::{
+    CommunityDatabaseConfig, CommunityDatabaseSync, ContributionValidator, SyncStatus, ValidationRules,
+};
 pub use provider::manager::{ConnectionState, ModelFilter, ModelFilterCriteria, ProviderStatus};
 pub use provider::{Provider, ProviderManager, ProviderRegistry};
 pub use providers::{
-    AnthropicProvider, GoogleProvider, OllamaProvider, OpenAiProvider, ZenProvider,
+    AnthropicProvider, AzureOpenAiProvider, CohereProvider, GcpVertexProvider, GoogleProvider, OllamaProvider, OpenAiProvider, ReplicateProvider, TogetherProvider, ZenProvider,
 };
 pub use rate_limiter::{ExponentialBackoff, RateLimiterRegistry, TokenBucketLimiter};
 pub use redaction::{contains_sensitive_info, redact, Redacted, RedactionFilter};

@@ -3,14 +3,18 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::RwLock;
 
-use super::{ChatStream, Provider, ProviderRegistry};
+use super::{Provider, ProviderRegistry};
 use crate::community::{CommunityProviderRegistry, ProviderUsage};
 use crate::curation::{CurationConfig, ProviderCurator, SelectionConstraints};
 use crate::error::ProviderError;
+use crate::evaluation::{ContinuousEvaluator, ProviderEvaluator};
 use crate::health_check::HealthCheckCache;
 use crate::models::{Capability, ChatRequest, ChatResponse, ModelInfo, TokenUsage};
 use crate::performance_monitor::ProviderPerformanceMonitor;
+use crate::provider::ChatStream;
+use crate::sync::CommunityDatabaseSync;
 
 /// Provider connection state
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -114,6 +118,9 @@ pub struct ProviderManager {
     performance_monitor: Arc<ProviderPerformanceMonitor>,
     curator: ProviderCurator,
     community_registry: CommunityProviderRegistry,
+    evaluator: Option<ProviderEvaluator>,
+    continuous_evaluator: Option<ContinuousEvaluator>,
+    community_sync: Option<CommunityDatabaseSync>,
 }
 
 impl ProviderManager {
@@ -132,6 +139,9 @@ impl ProviderManager {
             performance_monitor,
             curator,
             community_registry: CommunityProviderRegistry::new(),
+            evaluator: None,
+            continuous_evaluator: None,
+            community_sync: None,
         }
     }
 
@@ -584,6 +594,82 @@ impl ProviderManager {
     /// Get provider analytics
     pub fn get_provider_analytics(&self, provider_id: &str) -> Option<&crate::community::ProviderAnalytics> {
         self.community_registry.get_analytics(provider_id)
+    }
+
+    /// Enable automated provider evaluation
+    pub fn enable_evaluation(&mut self) {
+        self.evaluator = Some(ProviderEvaluator::new(self.performance_monitor.clone()));
+    }
+
+    /// Enable continuous evaluation
+    pub fn enable_continuous_evaluation(&mut self, interval: Duration) {
+        if self.evaluator.is_none() {
+            self.enable_evaluation();
+        }
+
+        let mut continuous_evaluator = ContinuousEvaluator::new(interval);
+        // Add evaluators for all current providers
+        for provider_id in self.registry.list_provider_ids() {
+            if let Some(evaluator) = &self.evaluator {
+                continuous_evaluator.add_provider(&provider_id, evaluator.clone());
+            }
+        }
+
+        // Start continuous evaluation
+        let evaluator = continuous_evaluator.clone();
+        tokio::spawn(async move {
+            evaluator.start_evaluation().await;
+        });
+
+        self.continuous_evaluator = Some(continuous_evaluator);
+    }
+
+    /// Evaluate a specific provider
+    pub async fn evaluate_provider(&self, provider_id: &str, model: &str) -> Result<crate::evaluation::ProviderEvaluation, ProviderError> {
+        if let Some(evaluator) = &self.evaluator {
+            if let Ok(provider) = self.registry.get(provider_id) {
+                evaluator.evaluate_provider(&provider, model).await
+            } else {
+                Err(ProviderError::NotFound(format!("Provider {} not found", provider_id)))
+            }
+        } else {
+            Err(ProviderError::ProviderError("Evaluation not enabled".to_string()))
+        }
+    }
+
+    /// Get latest evaluation for a provider
+    pub async fn get_latest_evaluation(&self, provider_id: &str) -> Option<crate::evaluation::ProviderEvaluation> {
+        if let Some(continuous_evaluator) = &self.continuous_evaluator {
+            continuous_evaluator.get_latest_evaluation(provider_id).await
+        } else {
+            None
+        }
+    }
+
+    /// Enable community database synchronization
+    pub async fn enable_community_sync(&mut self, config: crate::sync::CommunityDatabaseConfig) {
+        let registry = Arc::new(RwLock::new(self.community_registry.clone()));
+        let sync = CommunityDatabaseSync::new(config, registry);
+        sync.start_sync().await;
+        self.community_sync = Some(sync);
+    }
+
+    /// Manually sync community configurations
+    pub async fn sync_community_configs(&self) -> Result<usize, ProviderError> {
+        if let Some(sync) = &self.community_sync {
+            sync.sync_now().await
+        } else {
+            Err(ProviderError::ProviderError("Community sync not enabled".to_string()))
+        }
+    }
+
+    /// Get community sync status
+    pub async fn get_community_sync_status(&self) -> HashMap<String, crate::sync::SyncStatus> {
+        if let Some(sync) = &self.community_sync {
+            sync.get_sync_status().await
+        } else {
+            HashMap::new()
+        }
     }
 }
 

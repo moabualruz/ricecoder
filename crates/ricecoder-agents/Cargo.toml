@@ -23,6 +23,7 @@ uuid.workspace = true
 ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
 ricecoder-providers = { path = "../ricecoder-providers", version = "0.1" }
 ricecoder-sessions = { path = "../ricecoder-sessions", version = "0.1" }
+ricecoder-security = { path = "../ricecoder-security", version = "0.1" }
 jsonschema.workspace = true
 serde_yaml.workspace = true
 reqwest = { version = "0.11", features = ["json"] }

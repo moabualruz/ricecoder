@@ -46,6 +46,14 @@ pub struct ParseResult {
     pub warnings: Vec<ParserWarning>,
 }
 
+/// Parser statistics
+#[derive(Debug, Clone)]
+pub struct ParserStats {
+    pub supported_languages: Vec<Language>,
+    pub cache_enabled: bool,
+    pub cache_stats: Option<ricecoder_cache::CacheStats>,
+}
+
 /// Main parser with caching and multi-language support
 pub struct Parser {
     language_registry: Arc<RwLock<LanguageRegistry>>,
@@ -225,13 +233,11 @@ impl Parser {
         }
         format!("parse_{:x}", hasher.finish())
     }
+}
 
-/// Parser statistics
-#[derive(Debug, Clone)]
-pub struct ParserStats {
-    pub supported_languages: Vec<Language>,
-    pub cache_enabled: bool,
-    pub cache_stats: Option<ricecoder_cache::CacheStats>,
+impl std::fmt::Display for ParserStats {
+        format!("parse_{:x}", hasher.finish())
+    }
 }
 
 impl std::fmt::Display for ParserStats {
@@ -320,7 +326,6 @@ pub mod tree_sitter_support {
         }
     }
 
-    #[async_trait]
     impl LanguageSupport for TreeSitterSupport {
         fn language(&self) -> Language {
             self.language.clone()
@@ -359,7 +364,6 @@ pub mod tree_sitter_support {
         }
     }
 }
-    }
 
 /// Create tree-sitter supports for supported languages
 pub fn create_supports() -> Vec<Box<dyn LanguageSupport>> {

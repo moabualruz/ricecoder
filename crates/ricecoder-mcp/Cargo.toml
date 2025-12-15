@@ -24,12 +24,14 @@ chrono = { version = "0.4", features = ["serde"] }
 regex = "1.0"
 reqwest = { version = "0.11", features = ["json", "stream"] }
 uuid = { version = "1.0", features = ["v4"] }
+base64 = "0.21"
 
 # For ricecoder integration
 ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
 ricecoder-permissions = { path = "../ricecoder-permissions", version = "0.1" }
 ricecoder-agents = { path = "../ricecoder-agents", version = "0.1" }
 ricecoder-files = { path = "../ricecoder-files", version = "0.1" }
+ricecoder-security = { path = "../ricecoder-security", version = "0.1" }
 
 [dev-dependencies]
 proptest = { workspace = true }

@@ -1,0 +1,42 @@
+[package]
+name = "ricecoder-benchmark"
+description = "Aider polyglot test suite integration for LLM evaluation"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+reqwest = { workspace = true }
+futures = { workspace = true }
+regex = { workspace = true }
+sha2 = { workspace = true }
+rand = "0.8"
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4.0", features = ["derive"] }
+tokio-stream = "0.1"
+tempfile = "3.0"
+walkdir = "2.0"
+git2 = "0.18"
+ricecoder-providers = { path = "../ricecoder-providers", version = "0.1" }
+ricecoder-domain = { path = "../ricecoder-domain", version = "0.1" }
+ricecoder-di = { path = "../ricecoder-di", version = "0.1" }
+
+[[bin]]
+name = "ricecoder-benchmark"
+path = "src/bin/benchmark.rs"
+
+[dev-dependencies]
+proptest = { workspace = true }
+tokio-test = { workspace = true }

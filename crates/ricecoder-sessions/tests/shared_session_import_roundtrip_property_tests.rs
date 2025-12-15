@@ -53,7 +53,7 @@ proptest! {
         let shared_view = service.create_shared_session_view(&session, &permissions);
 
         // Import the shared session
-        let imported = service.import_shared_session(&share.id, &shared_view);
+        let imported = service.import_shared_session(&share.id, &shared_view, None);
         prop_assert!(imported.is_ok());
         let imported = imported.unwrap();
 
@@ -96,7 +96,7 @@ proptest! {
         let share = share.unwrap();
 
         let shared_view = service.create_shared_session_view(&session, &permissions_no_history);
-        let imported = service.import_shared_session(&share.id, &shared_view);
+        let imported = service.import_shared_session(&share.id, &shared_view, None);
         prop_assert!(imported.is_ok());
         let imported = imported.unwrap();
 

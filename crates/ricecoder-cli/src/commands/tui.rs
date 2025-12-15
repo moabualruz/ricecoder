@@ -3,6 +3,8 @@
 use crate::commands::Command;
 use crate::error::{CliError, CliResult};
 use std::path::PathBuf;
+use ricecoder_providers::provider::manager::ProviderManager;
+use chrono;
 
 /// TUI command configuration
 #[derive(Debug, Clone)]
@@ -68,6 +70,39 @@ impl Command for TuiCommand {
     }
 }
 
+/// Load provider data for TUI initialization
+async fn load_provider_data_for_tui() -> CliResult<(Vec<ricecoder_tui::model::ProviderInfo>, Option<String>)> {
+    // Get provider manager from DI container
+    let provider_manager = crate::di::get_service::<ProviderManager>()
+        .ok_or_else(|| CliError::Internal("ProviderManager not available in DI container".to_string()))?;
+
+    // Get available providers
+    let available_providers = provider_manager.get_all_provider_statuses()
+        .into_iter()
+        .map(|status| ricecoder_tui::model::ProviderInfo {
+            id: status.id.clone(),
+            name: status.name.clone(),
+            state: match status.state {
+                ricecoder_providers::provider::manager::ConnectionState::Connected => ricecoder_tui::model::ProviderConnectionState::Connected,
+                ricecoder_providers::provider::manager::ConnectionState::Disconnected => ricecoder_tui::model::ProviderConnectionState::Disconnected,
+                ricecoder_providers::provider::manager::ConnectionState::Error => ricecoder_tui::model::ProviderConnectionState::Error,
+                ricecoder_providers::provider::manager::ConnectionState::Disabled => ricecoder_tui::model::ProviderConnectionState::Disabled,
+            },
+            models: status.models.iter().map(|m| m.id.clone()).collect(),
+            error_message: status.error_message.clone(),
+            last_checked: status.last_checked.map(|st| {
+                let duration = st.duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
+                chrono::DateTime::from_timestamp(duration.as_secs() as i64, duration.subsec_nanos()).unwrap_or_else(|| chrono::Utc::now())
+            }),
+        })
+        .collect();
+
+    // Get current provider (for now, we'll set this to None and let the TUI handle provider switching)
+    let current_provider = None;
+
+    Ok((available_providers, current_provider))
+}
+
 /// Launch the TUI application
 fn launch_tui(config: TuiConfig) -> CliResult<()> {
     // Create a runtime for async operations
@@ -104,8 +139,11 @@ fn launch_tui(config: TuiConfig) -> CliResult<()> {
             validate_provider_config(&tui_config)?;
         }
 
+        // Load provider data for the TUI
+        let (available_providers, current_provider) = load_provider_data_for_tui().await?;
+
         // Create and run the application
-        let mut app = App::with_config(tui_config)
+        let mut app = App::with_config_and_providers(tui_config, available_providers, current_provider)
             .map_err(|e| CliError::Internal(format!("Failed to initialize TUI: {}", e)))?;
 
         app.run()

@@ -24,6 +24,10 @@ uuid = { version = "1.0", features = ["v4", "serde"] }
 dirs = "5.0"
 anyhow = "1.0"
 tiktoken-rs = "0.5"
+url = "2.5"
+base64 = "0.21"
+ricecoder-security = { path = "../ricecoder-security", version = "0.1" }
+ricecoder-domain = { path = "../ricecoder-domain", version = "0.1" }
 
 [dev-dependencies]
 proptest = "1.4"

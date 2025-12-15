@@ -49,6 +49,14 @@ pub enum AgentError {
     #[error("Validation error: {0}")]
     ValidationError(String),
 
+    /// Access denied
+    #[error("Access denied: {0}")]
+    AccessDenied(String),
+
+    /// Compliance violation
+    #[error("Compliance violation: {0}")]
+    ComplianceViolation(String),
+
     /// Internal error
     #[error("Internal error: {0}")]
     Internal(String),
@@ -88,6 +96,16 @@ impl AgentError {
     /// Create a new InvalidInput error
     pub fn invalid_input(reason: impl Into<String>) -> Self {
         Self::InvalidInput(reason.into())
+    }
+
+    /// Create a new AccessDenied error
+    pub fn access_denied(reason: impl Into<String>) -> Self {
+        Self::AccessDenied(reason.into())
+    }
+
+    /// Create a new ComplianceViolation error
+    pub fn compliance_violation(reason: impl Into<String>) -> Self {
+        Self::ComplianceViolation(reason.into())
     }
 
     /// Create a new Internal error

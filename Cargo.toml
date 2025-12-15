@@ -87,9 +87,11 @@ members = [
     "crates/ricecoder-images",
     "crates/ricecoder-themes",
     "crates/ricecoder-config",
-    "crates/ricecoder-industry",
-    "crates/ricecoder-activity-log",
-    "crates/ricecoder-safety",
+     "crates/ricecoder-industry",
+     "crates/ricecoder-activity-log",
+     "crates/ricecoder-safety",
+     "crates/ricecoder-benchmark",
+     "crates/ricecoder-performance",
 ]
 resolver = "2"
 
@@ -134,6 +136,7 @@ regex = "1.10"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1.0", features = ["v4", "serde"] }
 glob = "0.3"
+walkdir = "2.0"
 ratatui = "0.29"
 crossterm = "0.27"
 arboard = "3.3"

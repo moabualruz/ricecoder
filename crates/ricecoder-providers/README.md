@@ -8,7 +8,11 @@
 
 ## Features
 
-- **Multi-Provider Support**: Anthropic, OpenAI, Google, Azure, Ollama, and more
+- **75+ Provider Support**: Anthropic, OpenAI, Google, Azure, GCP Vertex, Cohere, Together AI, Replicate, and more
+- **Quality Scoring**: Automated provider evaluation and benchmarking
+- **Community Ecosystem**: Community-managed provider database with validation
+- **Automated Evaluation**: Continuous performance monitoring and scoring
+- **Enterprise Integration**: Azure OpenAI and GCP Vertex AI support
 - **Unified Interface**: Consistent API across all providers
 - **Authentication Management**: API key and OAuth handling
 - **Rate Limiting**: Intelligent request throttling and retry logic
@@ -16,6 +20,7 @@
 - **Token Management**: Accurate token counting and limits
 - **Health Monitoring**: Provider availability and performance tracking
 - **Caching**: Response caching and optimization
+- **Cost Optimization**: Automatic provider switching based on cost and performance
 
 ## Architecture
 
@@ -45,14 +50,18 @@ After the TUI isolation refactoring, provider integration was moved from `riceco
 
 ## Supported Providers
 
-| Provider | Authentication | Models | Streaming |
-|----------|----------------|--------|-----------|
-| Anthropic | API Key | Claude 3.x | ✅ |
-| OpenAI | API Key | GPT-4, GPT-3.5 | ✅ |
-| Google | API Key/OAuth | Gemini | ✅ |
-| Azure OpenAI | API Key | GPT-4, GPT-3.5 | ✅ |
-| Ollama | None | Local models | ✅ |
-| OpenRouter | API Key | Multiple providers | ✅ |
+| Provider | Authentication | Models | Streaming | Enterprise |
+|----------|----------------|--------|-----------|------------|
+| Anthropic | API Key | Claude 3.x | ✅ | ❌ |
+| OpenAI | API Key | GPT-4, GPT-3.5 | ✅ | ❌ |
+| Google | API Key/OAuth | Gemini | ✅ | ❌ |
+| Azure OpenAI | API Key | GPT-4, GPT-3.5 | ✅ | ✅ |
+| GCP Vertex AI | Access Token | Gemini, PaLM | ✅ | ✅ |
+| Cohere | API Key | Command, Base | ❌ | ❌ |
+| Together AI | API Key | Llama, Mistral, CodeLlama | ❌ | ❌ |
+| Replicate | API Key | Various open-source | ❌ | ❌ |
+| Ollama | None | Local models | ✅ | ❌ |
+| And 65+ more | Various | Various | Varies | Varies |
 
 ## Installation
 

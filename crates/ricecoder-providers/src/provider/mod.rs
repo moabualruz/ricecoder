@@ -1,6 +1,7 @@
 //! Provider trait and registry
 
 use async_trait::async_trait;
+use futures;
 
 use crate::error::ProviderError;
 use crate::models::{ChatRequest, ChatResponse, ModelInfo};
@@ -12,8 +13,7 @@ pub use manager::ProviderManager;
 pub use registry::ProviderRegistry;
 
 /// A stream of chat completion responses
-pub type ChatStream =
-    Box<dyn futures::Stream<Item = Result<ChatResponse, ProviderError>> + Send + Unpin>;
+pub type ChatStream = futures::stream::BoxStream<'static, Result<ChatResponse, ProviderError>>;
 
 /// Core trait that all providers must implement
 #[async_trait]

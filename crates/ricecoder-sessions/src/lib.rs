@@ -34,7 +34,10 @@ pub use models::{
 pub use router::SessionRouter;
 pub use session_integration::SessionIntegration;
 pub use performance_monitor::{SessionMetrics, SessionPerformanceMonitor, SessionPerformanceSummary};
-pub use share::{SessionShare, SharePermissions, ShareService, ShareAnalyticsData};
+pub use share::{
+    DataClassification, EnterpriseShareMetrics, EnterpriseSharingPolicy, SessionShare, ShareAnalyticsData,
+    SharePermissions, ShareService,
+};
 pub use store::{GarbageCollectionConfig, GarbageCollectionResult, SessionStore};
 pub use token_estimator::{
     ModelPricing, TokenEstimate, TokenEstimator, TokenLimitStatus, TokenUsage, TokenUsageTracker,

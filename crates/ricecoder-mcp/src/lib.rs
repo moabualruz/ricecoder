@@ -5,6 +5,7 @@
 //! permission system integration, and error handling.
 
 pub mod agent_integration;
+pub mod audit;
 pub mod client;
 pub mod config;
 pub mod connection_pool;
@@ -19,6 +20,8 @@ pub mod marshaler;
 pub mod metadata;
 pub mod permissions;
 pub mod permissions_integration;
+pub mod rbac;
+pub mod compliance;
 pub mod registry;
 pub mod protocol_validation;
 pub mod registry;
@@ -31,6 +34,7 @@ pub mod transport;
 pub use agent_integration::{
     AgentToolCapabilities, ToolDiscovery, ToolInvoker, ToolWorkflowIntegration,
 };
+pub use audit::MCPAuditLogger;
 pub use client::MCPClient;
 pub use config::{MCPConfig, MCPConfigLoader};
 pub use connection_pool::{ConnectionPool, PoolConfig, PooledConnection, PoolStats};
@@ -51,6 +55,8 @@ pub use permissions_integration::{
     PermissionAwareToolExecution, ToolPermissionChecker, ToolPermissionDecision,
     ToolPermissionEnforcer, ToolPermissionLevel, ToolPermissionPrompt, UserPermissionDecision,
 };
+pub use rbac::{MCPAuthorizationMiddleware, MCRBACManager};
+pub use compliance::{MCPComplianceMonitor, MCPEnterpriseMonitor, ComplianceReport, MonitoringReport};
 pub use registry::ToolRegistry;
 pub use storage_integration::{
     JsonToolRegistryStorage, ToolRegistryCache, ToolRegistryPersistence, ToolRegistryStorage,

@@ -1,20 +1,27 @@
-//! Session persistence to disk
+//! Session persistence to disk with encryption support
 
 use crate::error::{SessionError, SessionResult};
 use crate::models::Session;
+use base64::engine::general_purpose;
 use chrono::{DateTime, Utc};
+use ricecoder_security::encryption::{CustomerKeyManager, EncryptedData, KeyManager};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tracing::{debug, error, info, warn};
 
-/// Manages session persistence to disk
+/// Manages session persistence to disk with optional encryption
 #[derive(Debug, Clone)]
 pub struct SessionStore {
     /// Base directory for storing sessions
     sessions_dir: PathBuf,
     /// Archive directory for deleted sessions
     archive_dir: PathBuf,
+    /// Optional encryption key manager for enterprise security
+    key_manager: Option<Arc<KeyManager>>,
+    /// Optional customer key manager for SOC 2 compliance
+    customer_key_manager: Option<Arc<CustomerKeyManager>>,
 }
 
 impl SessionStore {
@@ -35,6 +42,8 @@ impl SessionStore {
         Ok(Self {
             sessions_dir,
             archive_dir,
+            key_manager: None,
+            customer_key_manager: None,
         })
     }
 
@@ -46,7 +55,43 @@ impl SessionStore {
         Ok(Self {
             sessions_dir,
             archive_dir,
+            key_manager: None,
+            customer_key_manager: None,
         })
+    }
+
+    /// Create a session store with encryption enabled
+    pub fn with_encryption(master_password: &str) -> SessionResult<Self> {
+        let mut store = Self::new()?;
+        let key_manager = Arc::new(KeyManager::new(master_password)?);
+        store.key_manager = Some(key_manager);
+        Ok(store)
+    }
+
+    /// Create a session store with enterprise encryption
+    pub fn with_enterprise_encryption(master_password: &str) -> SessionResult<Self> {
+        let mut store = Self::new()?;
+        let key_manager = Arc::new(KeyManager::new(master_password)?);
+        let customer_key_manager = Arc::new(CustomerKeyManager::new(master_password)?);
+        store.key_manager = Some(key_manager);
+        store.customer_key_manager = Some(customer_key_manager);
+        Ok(store)
+    }
+
+    /// Enable encryption on an existing store
+    pub fn enable_encryption(&mut self, master_password: &str) -> SessionResult<()> {
+        let key_manager = Arc::new(KeyManager::new(master_password)?);
+        self.key_manager = Some(key_manager);
+        Ok(())
+    }
+
+    /// Enable enterprise encryption on an existing store
+    pub fn enable_enterprise_encryption(&mut self, master_password: &str) -> SessionResult<()> {
+        let key_manager = Arc::new(KeyManager::new(master_password)?);
+        let customer_key_manager = Arc::new(CustomerKeyManager::new(master_password)?);
+        self.key_manager = Some(key_manager);
+        self.customer_key_manager = Some(customer_key_manager);
+        Ok(())
     }
 
     /// Get the default sessions directory (~/.ricecoder/sessions/)
@@ -75,22 +120,47 @@ impl SessionStore {
         self.archive_dir.join(format!("{}.json", session_id))
     }
 
-    /// Save a session to disk
+    /// Save a session to disk with optional encryption
     pub async fn save(&self, session: &Session) -> SessionResult<()> {
         let path = self.session_path(&session.id);
 
         // Serialize session to JSON
         let json_data = serde_json::to_string_pretty(session)?;
 
+        // Encrypt if encryption is enabled
+        let data_to_write = if let Some(ref key_manager) = self.key_manager {
+            if let Some(ref customer_key_manager) = self.customer_key_manager {
+                // Use enterprise encryption with customer-managed keys
+                let customer_key = customer_key_manager.generate_customer_key()?;
+                let encrypted = customer_key_manager.encrypt_with_customer_key(&json_data, &customer_key)?;
+
+                // Store customer key encrypted with master key
+                let encrypted_key = key_manager.encrypt_api_key(&general_purpose::STANDARD.encode(&customer_key))?;
+
+                // Combine encrypted data and encrypted key
+                let combined = serde_json::json!({
+                    "encrypted_session": encrypted,
+                    "encrypted_key": encrypted_key
+                });
+                serde_json::to_string_pretty(&combined)?
+            } else {
+                // Use standard encryption
+                let encrypted = key_manager.encrypt_api_key(&json_data)?;
+                serde_json::to_string_pretty(&encrypted)?
+            }
+        } else {
+            json_data
+        };
+
         // Write to file
-        fs::write(&path, json_data)?;
+        fs::write(&path, data_to_write)?;
 
         info!("Session saved: {} at {:?}", session.id, path);
 
         Ok(())
     }
 
-    /// Load a session from disk
+    /// Load a session from disk with optional decryption
     pub async fn load(&self, session_id: &str) -> SessionResult<Session> {
         let path = self.session_path(session_id);
 
@@ -102,7 +172,30 @@ impl SessionStore {
         }
 
         // Read file
-        let json_data = fs::read_to_string(&path)?;
+        let file_data = fs::read_to_string(&path)?;
+
+        // Decrypt if encryption is enabled
+        let json_data = if let Some(ref key_manager) = self.key_manager {
+            if let Some(ref customer_key_manager) = self.customer_key_manager {
+                // Handle enterprise encryption
+                let combined: serde_json::Value = serde_json::from_str(&file_data)?;
+                let encrypted_session: EncryptedData = serde_json::from_value(combined["encrypted_session"].clone())?;
+                let encrypted_key: EncryptedData = serde_json::from_value(combined["encrypted_key"].clone())?;
+
+                // Decrypt customer key
+                let customer_key_b64 = key_manager.decrypt_api_key(&encrypted_key)?;
+                let customer_key = general_purpose::STANDARD.decode(&customer_key_b64)?;
+
+                // Decrypt session data
+                customer_key_manager.decrypt_with_customer_key(&encrypted_session, &customer_key)?
+            } else {
+                // Handle standard encryption
+                let encrypted: EncryptedData = serde_json::from_str(&file_data)?;
+                key_manager.decrypt_api_key(&encrypted)?
+            }
+        } else {
+            file_data
+        };
 
         // Deserialize from JSON
         let session: Session = serde_json::from_str(&json_data)?;
@@ -151,12 +244,12 @@ impl SessionStore {
         Ok(sessions)
     }
 
-    /// Export a session to a user-specified file
+    /// Export a session to a user-specified file (always in plain text)
     pub async fn export(&self, session_id: &str, export_path: &Path) -> SessionResult<()> {
-        // Load the session
+        // Load the session (decryption happens in load)
         let session = self.load(session_id).await?;
 
-        // Serialize to JSON
+        // Serialize to JSON (plain text for export)
         let json_data = serde_json::to_string_pretty(&session)?;
 
         // Write to export path

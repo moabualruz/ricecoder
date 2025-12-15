@@ -29,6 +29,11 @@ pub struct KeyManager {
     master_key: [u8; 32],
 }
 
+/// Customer key manager for SOC 2 compliance
+pub struct CustomerKeyManager {
+    master_key_manager: KeyManager,
+}
+
 impl KeyManager {
     /// Create a new key manager with a master password
     pub fn new(master_password: &str) -> Result<Self> {
@@ -132,6 +137,91 @@ impl KeyManager {
     }
 
     /// Generate random nonce
+    fn generate_nonce() -> [u8; 12] {
+        let mut bytes = [0u8; 12];
+        rand::thread_rng().fill(&mut bytes);
+        bytes
+    }
+}
+
+impl CustomerKeyManager {
+    /// Create a new customer key manager
+    pub fn new(master_password: &str) -> Result<Self> {
+        let master_key_manager = KeyManager::new(master_password)?;
+        Ok(Self { master_key_manager })
+    }
+
+    /// Generate a new customer-managed encryption key
+    pub fn generate_customer_key(&self) -> Result<Vec<u8>> {
+        let mut key = [0u8; 32];
+        rand::thread_rng().fill(&mut key);
+        Ok(key.to_vec())
+    }
+
+    /// Encrypt data with customer key
+    pub fn encrypt_with_customer_key(&self, data: &str, customer_key: &[u8]) -> Result<EncryptedData> {
+        let encrypted_key = self.master_key_manager.encrypt_api_key(&base64::encode(customer_key))?;
+        let mut derived_key = [0u8; 32];
+        rand::thread_rng().fill(&mut derived_key);
+
+        // Use customer key to derive encryption key
+        let argon2 = Argon2::default();
+        argon2.hash_password_into(customer_key, b"ricecoder-customer-encryption", &mut derived_key)
+            .map_err(|e| SecurityError::KeyDerivation {
+                message: e.to_string(),
+            })?;
+
+        let cipher = Aes256Gcm::new(&derived_key.into());
+        let nonce = Self::generate_nonce();
+        let nonce_gcm = aes_gcm::Nonce::from_slice(&nonce);
+
+        let ciphertext = cipher.encrypt(nonce_gcm, data.as_bytes())
+            .map_err(|e| SecurityError::Encryption {
+                message: e.to_string(),
+            })?;
+
+        Ok(EncryptedData {
+            salt: base64::encode(b"customer-key-salt"), // Fixed salt for customer keys
+            nonce: base64::encode(nonce),
+            ciphertext: base64::encode(ciphertext),
+        })
+    }
+
+    /// Decrypt data with customer key
+    pub fn decrypt_with_customer_key(&self, encrypted: &EncryptedData, customer_key: &[u8]) -> Result<String> {
+        let nonce_bytes = base64::decode(&encrypted.nonce)?;
+        let ciphertext = base64::decode(&encrypted.ciphertext)?;
+
+        let mut derived_key = [0u8; 32];
+        let argon2 = Argon2::default();
+        argon2.hash_password_into(customer_key, b"ricecoder-customer-encryption", &mut derived_key)
+            .map_err(|e| SecurityError::KeyDerivation {
+                message: e.to_string(),
+            })?;
+
+        let cipher = Aes256Gcm::new(&derived_key.into());
+        let nonce = aes_gcm::Nonce::from_slice(&nonce_bytes);
+
+        let plaintext = cipher.decrypt(nonce, ciphertext.as_ref())
+            .map_err(|e| SecurityError::Decryption {
+                message: e.to_string(),
+            })?;
+
+        String::from_utf8(plaintext).map_err(Into::into)
+    }
+
+    /// Rotate customer key
+    pub fn rotate_customer_key(&self, old_key: &[u8]) -> Result<Vec<u8>> {
+        // Generate new key
+        let new_key = self.generate_customer_key()?;
+
+        // Here would be logic to re-encrypt existing data with new key
+        // For now, just return the new key
+
+        Ok(new_key)
+    }
+
+    /// Generate random nonce for customer key operations
     fn generate_nonce() -> [u8; 12] {
         let mut bytes = [0u8; 12];
         rand::thread_rng().fill(&mut bytes);

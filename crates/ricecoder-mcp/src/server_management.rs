@@ -92,6 +92,9 @@ pub struct ServerManager {
     servers: Arc<RwLock<HashMap<String, ServerRegistration>>>,
     discovery_providers: Vec<Box<dyn ServerDiscoveryProvider>>,
     health_monitor: Arc<HealthMonitor>,
+    audit_logger: Option<Arc<crate::audit::MCPAuditLogger>>,
+    rbac_manager: Option<Arc<crate::rbac::MCRBACManager>>,
+    compliance_monitor: Option<Arc<crate::compliance::MCPComplianceMonitor>>,
     _health_task: tokio::task::JoinHandle<()>,
 }
 
@@ -109,12 +112,80 @@ impl ServerManager {
             servers,
             discovery_providers: Vec::new(),
             health_monitor,
+            audit_logger: None,
+            rbac_manager: None,
+            compliance_monitor: None,
+            _health_task: health_task,
+        }
+    }
+
+    /// Set RBAC manager
+    pub fn with_rbac_manager(mut self, rbac_manager: Arc<crate::rbac::MCRBACManager>) -> Self {
+        self.rbac_manager = Some(rbac_manager);
+        self
+    }
+
+    /// Set compliance monitor
+    pub fn with_compliance_monitor(mut self, compliance_monitor: Arc<crate::compliance::MCPComplianceMonitor>) -> Self {
+        self.compliance_monitor = Some(compliance_monitor);
+        self
+    }
+
+    /// Create a new server manager with audit logging
+    pub fn with_audit_logger(audit_logger: Arc<crate::audit::MCPAuditLogger>) -> Self {
+        let servers = Arc::new(RwLock::new(HashMap::new()));
+        let health_monitor = Arc::new(HealthMonitor::new(servers.clone()));
+
+        let health_task = tokio::spawn(async move {
+            health_monitor.run().await;
+        });
+
+        Self {
+            servers,
+            discovery_providers: Vec::new(),
+            health_monitor,
+            audit_logger: Some(audit_logger),
+            rbac_manager: None,
+            compliance_monitor: None,
             _health_task: health_task,
         }
     }
 
     /// Register a server with the manager
     pub async fn register_server(&self, config: ServerConfig) -> Result<()> {
+        self.register_server_with_auth(config, None).await
+    }
+
+    /// Register a server with the manager and authorization check
+    pub async fn register_server_with_auth(&self, config: ServerConfig, user_id: Option<&str>) -> Result<()> {
+        // RBAC check for server registration
+        if let (Some(ref rbac_manager), Some(user_id)) = (&self.rbac_manager, user_id) {
+            // Create a basic principal for RBAC check
+            let principal = ricecoder_security::access_control::Principal {
+                id: user_id.to_string(),
+                roles: vec![], // Would need to be populated from user context
+                attributes: std::collections::HashMap::new(),
+            };
+
+            rbac_manager.check_server_access(&principal, &config.id)?;
+
+            // Record compliance event
+            if let Some(ref compliance_monitor) = self.compliance_monitor {
+                let _ = compliance_monitor.record_violation(
+                    crate::compliance::ComplianceReportType::Soc2Type2,
+                    crate::compliance::ViolationSeverity::Low,
+                    "Server registration performed".to_string(),
+                    format!("mcp:server:{}", config.id),
+                    Some(user_id.to_string()),
+                    serde_json::json!({
+                        "action": "server_registration",
+                        "server_id": config.id,
+                        "auto_start": config.auto_start
+                    }),
+                ).await;
+            }
+        }
+
         let registration = ServerRegistration {
             config: config.clone(),
             transport: None,
@@ -135,6 +206,19 @@ impl ServerManager {
 
         info!("Registered MCP server: {} ({})", config.name, config.id);
 
+        // Audit logging
+        if let Some(ref audit_logger) = self.audit_logger {
+            let _ = audit_logger.log_server_registration(&config, user_id.map(|s| s.to_string()), None).await;
+        }
+
+        if config.auto_start {
+            drop(servers);
+            self.start_server(&config.id).await?;
+        }
+
+        Ok(())
+    }
+
         if config.auto_start {
             drop(servers);
             self.start_server(&config.id).await?;
@@ -151,6 +235,12 @@ impl ServerManager {
                 let _ = transport.close().await;
             }
             info!("Unregistered MCP server: {}", server_id);
+
+            // Audit logging
+            if let Some(ref audit_logger) = self.audit_logger {
+                let _ = audit_logger.log_server_unregistration(server_id, None, None).await;
+            }
+
             Ok(true)
         } else {
             Ok(false)
@@ -169,16 +259,37 @@ impl ServerManager {
             registration.health.connection_attempts += 1;
 
             // Create transport
-            let transport = TransportFactory::create(&registration.config.transport_config)?;
-            registration.transport = Some(Arc::new(transport));
+            let transport_result = TransportFactory::create(&registration.config.transport_config);
+            match transport_result {
+                Ok(transport) => {
+                    registration.transport = Some(Arc::new(transport));
 
-            // TODO: Initialize connection and discover tools
-            // For now, mark as connected
-            registration.health.state = ServerState::Connected;
-            registration.health.last_seen = Some(SystemTime::now());
+                    // TODO: Initialize connection and discover tools
+                    // For now, mark as connected
+                    registration.health.state = ServerState::Connected;
+                    registration.health.last_seen = Some(SystemTime::now());
 
-            info!("Started MCP server: {}", server_id);
-            Ok(())
+                    info!("Started MCP server: {}", server_id);
+
+                    // Audit logging
+                    if let Some(ref audit_logger) = self.audit_logger {
+                        let _ = audit_logger.log_server_connection(server_id, true, None, None, None).await;
+                    }
+
+                    Ok(())
+                }
+                Err(e) => {
+                    registration.health.state = ServerState::Error;
+                    registration.health.last_error = Some(e.to_string());
+
+                    // Audit logging
+                    if let Some(ref audit_logger) = self.audit_logger {
+                        let _ = audit_logger.log_server_connection(server_id, false, Some(e.to_string()), None, None).await;
+                    }
+
+                    Err(e)
+                }
+            }
         } else {
             Err(Error::ServerError(format!("Server not found: {}", server_id)))
         }
@@ -193,6 +304,12 @@ impl ServerManager {
             }
             registration.health.state = ServerState::Disconnected;
             info!("Stopped MCP server: {}", server_id);
+
+            // Audit logging
+            if let Some(ref audit_logger) = self.audit_logger {
+                let _ = audit_logger.log_server_disconnection(server_id, "manual_stop", None, None).await;
+            }
+
             Ok(())
         } else {
             Err(Error::ServerError(format!("Server not found: {}", server_id)))
@@ -221,6 +338,12 @@ impl ServerManager {
         if let Some(registration) = servers.get_mut(server_id) {
             registration.config.enabled_tools.insert(tool_name.to_string());
             info!("Enabled tool '{}' on server '{}'", tool_name, server_id);
+
+            // Audit logging
+            if let Some(ref audit_logger) = self.audit_logger {
+                let _ = audit_logger.log_tool_enablement(server_id, tool_name, true, None, None).await;
+            }
+
             Ok(())
         } else {
             Err(Error::ServerError(format!("Server not found: {}", server_id)))
@@ -233,6 +356,12 @@ impl ServerManager {
         if let Some(registration) = servers.get_mut(server_id) {
             registration.config.enabled_tools.remove(tool_name);
             info!("Disabled tool '{}' on server '{}'", tool_name, server_id);
+
+            // Audit logging
+            if let Some(ref audit_logger) = self.audit_logger {
+                let _ = audit_logger.log_tool_enablement(server_id, tool_name, false, None, None).await;
+            }
+
             Ok(())
         } else {
             Err(Error::ServerError(format!("Server not found: {}", server_id)))

@@ -318,7 +318,7 @@ async fn test_session_sharing_workflow_import_shared_session() {
 
     // 3. Import the shared session
     let imported = share_service
-        .import_shared_session(&share.id, &shared_view)
+        .import_shared_session(&share.id, &shared_view, None)
         .unwrap();
 
     // 4. Verify imported session is a new session with same data
@@ -673,7 +673,7 @@ async fn test_complex_workflow_full_session_with_sharing_and_agents() {
 
     // 6. Import the shared session
     let imported_session = share_service
-        .import_shared_session(&share.id, &shared_view)
+        .import_shared_session(&share.id, &shared_view, None)
         .unwrap();
 
     // 7. Start a background agent for the original session

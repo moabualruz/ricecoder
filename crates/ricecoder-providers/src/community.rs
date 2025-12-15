@@ -208,6 +208,7 @@ pub enum UpdateType {
 }
 
 /// Community provider registry
+#[derive(Clone)]
 pub struct CommunityProviderRegistry {
     /// Approved community configurations
     approved_configs: HashMap<String, CommunityProviderConfig>,

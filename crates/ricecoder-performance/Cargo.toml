@@ -1,0 +1,35 @@
+[package]
+name = "ricecoder-performance"
+description = "Performance monitoring and regression detection for RiceCoder"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository = "https://github.com/moabualruz/ricecoder"
+homepage = "https://github.com/moabualruz/ricecoder"
+documentation = "https://github.com/moabualruz/ricecoder/wiki"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+chrono = { version = "0.4", features = ["serde"] }
+async-trait = { workspace = true }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+regex = { workspace = true }
+tempfile = { workspace = true }
+walkdir = { workspace = true }
+sysinfo = "0.30"
+clap = { version = "4.0", features = ["derive"] }
+
+[[bin]]
+name = "ricecoder-performance"
+path = "src/bin/performance.rs"
+
+[dev-dependencies]
+proptest = { workspace = true }
+tokio-test = { workspace = true }

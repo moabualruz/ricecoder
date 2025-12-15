@@ -18,6 +18,16 @@ pub enum AuditEventType {
     DataAccess,
     SecurityViolation,
     SystemAccess,
+    // Compliance-specific events
+    DataErasure,
+    DataPortability,
+    ConsentChange,
+    PrivacySettingsChange,
+    CustomerKeyRotation,
+    ComplianceReportGenerated,
+    LogRetentionCleanup,
+    AnalyticsOptIn,
+    AnalyticsOptOut,
 }
 
 /// Audit event data
@@ -224,6 +234,135 @@ impl AuditLogger {
             metadata: serde_json::json!({
                 "violation_type": violation_type,
                 "details": details
+            }),
+        };
+        self.log_event(event).await
+    }
+
+    /// Log data erasure event
+    pub async fn log_data_erasure(
+        &self,
+        user_id: &str,
+        reason: &str,
+        request_id: &Uuid,
+    ) -> Result<()> {
+        let event = AuditEvent {
+            event_type: AuditEventType::DataErasure,
+            user_id: Some(user_id.to_string()),
+            session_id: None,
+            action: "erasure_requested".to_string(),
+            resource: format!("user_data:{}", user_id),
+            metadata: serde_json::json!({
+                "reason": reason,
+                "request_id": request_id,
+                "compliance": "GDPR_HIPAA"
+            }),
+        };
+        self.log_event(event).await
+    }
+
+    /// Log data portability event
+    pub async fn log_data_portability(
+        &self,
+        user_id: &str,
+        data_types: &[String],
+        format: &str,
+        request_id: &Uuid,
+    ) -> Result<()> {
+        let event = AuditEvent {
+            event_type: AuditEventType::DataPortability,
+            user_id: Some(user_id.to_string()),
+            session_id: None,
+            action: "portability_requested".to_string(),
+            resource: format!("user_data:{}", user_id),
+            metadata: serde_json::json!({
+                "data_types": data_types,
+                "format": format,
+                "request_id": request_id,
+                "compliance": "GDPR"
+            }),
+        };
+        self.log_event(event).await
+    }
+
+    /// Log consent change
+    pub async fn log_consent_change(
+        &self,
+        user_id: &str,
+        consent_type: &str,
+        granted: bool,
+    ) -> Result<()> {
+        let event = AuditEvent {
+            event_type: AuditEventType::ConsentChange,
+            user_id: Some(user_id.to_string()),
+            session_id: None,
+            action: if granted { "consent_granted" } else { "consent_revoked" }.to_string(),
+            resource: format!("user_consent:{}", user_id),
+            metadata: serde_json::json!({
+                "consent_type": consent_type,
+                "granted": granted,
+                "compliance": "GDPR"
+            }),
+        };
+        self.log_event(event).await
+    }
+
+    /// Log customer key rotation
+    pub async fn log_customer_key_rotation(
+        &self,
+        user_id: &str,
+        key_id: &str,
+        new_version: &str,
+    ) -> Result<()> {
+        let event = AuditEvent {
+            event_type: AuditEventType::CustomerKeyRotation,
+            user_id: Some(user_id.to_string()),
+            session_id: None,
+            action: "key_rotated".to_string(),
+            resource: format!("customer_key:{}", key_id),
+            metadata: serde_json::json!({
+                "new_version": new_version,
+                "compliance": "SOC2"
+            }),
+        };
+        self.log_event(event).await
+    }
+
+    /// Log analytics opt-in/opt-out
+    pub async fn log_analytics_consent(
+        &self,
+        user_id: &str,
+        opted_in: bool,
+    ) -> Result<()> {
+        let event = AuditEvent {
+            event_type: if opted_in { AuditEventType::AnalyticsOptIn } else { AuditEventType::AnalyticsOptOut },
+            user_id: Some(user_id.to_string()),
+            session_id: None,
+            action: if opted_in { "analytics_opt_in" } else { "analytics_opt_out" }.to_string(),
+            resource: format!("user_analytics:{}", user_id),
+            metadata: serde_json::json!({
+                "opted_in": opted_in,
+                "compliance": "privacy"
+            }),
+        };
+        self.log_event(event).await
+    }
+
+    /// Log compliance report generation
+    pub async fn log_compliance_report(
+        &self,
+        report_type: &str,
+        generated_by: &str,
+    ) -> Result<()> {
+        let event = AuditEvent {
+            event_type: AuditEventType::ComplianceReportGenerated,
+            user_id: Some(generated_by.to_string()),
+            session_id: None,
+            action: "report_generated".to_string(),
+            resource: "compliance_reports".to_string(),
+            metadata: serde_json::json!({
+                "report_type": report_type,
+                "compliance": "SOC2_GDPR_HIPAA"
             }),
         };
         self.log_event(event).await

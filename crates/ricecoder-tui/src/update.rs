@@ -22,6 +22,8 @@ pub enum Command {
     SwitchTheme(String),
     /// Switch application mode
     SwitchMode(AppMode),
+    /// Switch to a different AI provider
+    SwitchProvider(String),
     /// Send a chat message
     SendMessage(String),
     /// Exit the application
@@ -58,6 +60,12 @@ impl AppModel {
             AppMessage::McpServerRemoved(server) => self.handle_mcp_server_removed(server),
             AppMessage::McpToolExecuted { server, tool, result } => self.handle_mcp_tool_executed(server, tool, result),
             AppMessage::McpToolExecutionFailed { server, tool, error } => self.handle_mcp_tool_execution_failed(server, tool, error),
+            AppMessage::ProviderSwitched(provider_id) => self.handle_provider_switched(provider_id),
+            AppMessage::ProviderStatusUpdated { provider_id, status } => self.handle_provider_status_updated(provider_id, status),
+            AppMessage::ProviderMetricsUpdated { provider_id, metrics } => self.handle_provider_metrics_updated(provider_id, metrics),
+            AppMessage::ProviderSelected(provider_id) => self.handle_provider_selected(provider_id),
+            AppMessage::ProviderViewModeChanged(mode) => self.handle_provider_view_mode_changed(mode),
+            AppMessage::ProviderFilterChanged(filter) => self.handle_provider_filter_changed(filter),
             AppMessage::ComponentMessage { component_id, message } => self.handle_component_message(component_id, message),
             AppMessage::Tick => self.handle_tick(),
             AppMessage::ExitRequested => self.handle_exit_requested(),
@@ -77,18 +85,22 @@ impl AppModel {
             AppMode::Chat => self.handle_chat_key(key),
             AppMode::Command => self.handle_command_key(key),
             AppMode::Diff => self.handle_diff_key(key),
+            AppMode::Mcp => self.handle_mcp_key(key),
+            AppMode::Provider => self.handle_provider_key(key),
             AppMode::Help => self.handle_help_key(key),
         }
     }
 
     fn handle_global_keybinding(&self, key: KeyEvent) -> Option<Command> {
-        // Ctrl+1-4 for mode switching
+        // Ctrl+1-6 for mode switching
         if key.modifiers.contains(KeyModifiers::CONTROL) {
             match key.code {
                 KeyCode::Char('1') => Some(Command::SwitchMode(AppMode::Chat)),
                 KeyCode::Char('2') => Some(Command::SwitchMode(AppMode::Command)),
                 KeyCode::Char('3') => Some(Command::SwitchMode(AppMode::Diff)),
-                KeyCode::Char('4') => Some(Command::SwitchMode(AppMode::Help)),
+                KeyCode::Char('4') => Some(Command::SwitchMode(AppMode::Mcp)),
+                KeyCode::Char('5') => Some(Command::SwitchMode(AppMode::Provider)),
+                KeyCode::Char('6') => Some(Command::SwitchMode(AppMode::Help)),
                 KeyCode::Char('c') => Some(Command::Exit),
                 _ => None,
             }
@@ -146,6 +158,25 @@ impl AppModel {
     fn handle_diff_key(self, _key: KeyEvent) -> (Self, Vec<Command>) {
         // Handle diff-specific keybindings
         (self, vec![])
+    }
+
+    fn handle_mcp_key(self, _key: KeyEvent) -> (Self, Vec<Command>) {
+        // Handle MCP-specific keybindings
+        (self, vec![])
+    }
+
+    fn handle_provider_key(self, key: KeyEvent) -> (Self, Vec<Command>) {
+        match key.code {
+            KeyCode::Char('l') => (self.with_provider_view_mode(ProviderViewMode::List), vec![]),
+            KeyCode::Char('s') => (self.with_provider_view_mode(ProviderViewMode::Status), vec![]),
+            KeyCode::Char('p') => (self.with_provider_view_mode(ProviderViewMode::Performance), vec![]),
+            KeyCode::Char('a') => (self.with_provider_view_mode(ProviderViewMode::Analytics), vec![]),
+            KeyCode::Up => self.select_previous_provider(),
+            KeyCode::Down => self.select_next_provider(),
+            KeyCode::Enter => self.switch_to_selected_provider(),
+            KeyCode::Char('/') => (self, vec![Command::SwitchMode(AppMode::Command)]), // Quick command access
+            _ => (self, vec![]),
+        }
     }
 
     fn handle_help_key(self, _key: KeyEvent) -> (Self, Vec<Command>) {
@@ -309,9 +340,110 @@ impl AppModel {
         (self, vec![])
     }
 
+    fn handle_provider_switched(mut self, provider_id: String) -> (Self, Vec<Command>) {
+        self.providers.current_provider = Some(provider_id.clone());
+        (self, vec![Command::SwitchProvider(provider_id)])
+    }
+
+    fn handle_provider_status_updated(mut self, provider_id: String, status: ProviderConnectionState) -> (Self, Vec<Command>) {
+        if let Some(provider) = self.providers.available_providers.iter_mut().find(|p| p.id == provider_id) {
+            provider.state = status;
+            provider.last_checked = Some(chrono::Utc::now());
+        }
+        (self, vec![])
+    }
+
+    fn handle_provider_metrics_updated(mut self, provider_id: String, metrics: ProviderMetrics) -> (Self, Vec<Command>) {
+        self.providers.provider_metrics.insert(provider_id, metrics);
+        (self, vec![])
+    }
+
+    fn handle_provider_selected(mut self, provider_id: String) -> (Self, Vec<Command>) {
+        self.providers.selected_provider = Some(provider_id);
+        (self, vec![])
+    }
+
+    fn handle_provider_view_mode_changed(mut self, mode: ProviderViewMode) -> (Self, Vec<Command>) {
+        self.providers.view_mode = mode;
+        (self, vec![])
+    }
+
+    fn handle_provider_filter_changed(mut self, filter: String) -> (Self, Vec<Command>) {
+        self.providers.filter_text = filter;
+        (self, vec![])
+    }
+
     fn handle_component_message(self, _component_id: String, _message: String) -> (Self, Vec<Command>) {
         // TODO: Implement component message handling
         (self, vec![])
+    }
+
+    // Provider helper methods
+    fn with_provider_view_mode(mut self, mode: ProviderViewMode) -> Self {
+        self.providers.view_mode = mode;
+        self
+    }
+
+    fn select_previous_provider(self) -> (Self, Vec<Command>) {
+        let filtered_providers = self.get_filtered_providers();
+        if filtered_providers.is_empty() {
+            return (self, vec![]);
+        }
+
+        let current_index = self.providers.selected_provider
+            .as_ref()
+            .and_then(|selected| filtered_providers.iter().position(|p| p.id == *selected))
+            .unwrap_or(0);
+
+        let new_index = if current_index == 0 {
+            filtered_providers.len() - 1
+        } else {
+            current_index - 1
+        };
+
+        let new_selected = filtered_providers[new_index].id.clone();
+        (self.with_selected_provider(new_selected), vec![])
+    }
+
+    fn select_next_provider(self) -> (Self, Vec<Command>) {
+        let filtered_providers = self.get_filtered_providers();
+        if filtered_providers.is_empty() {
+            return (self, vec![]);
+        }
+
+        let current_index = self.providers.selected_provider
+            .as_ref()
+            .and_then(|selected| filtered_providers.iter().position(|p| p.id == *selected))
+            .unwrap_or(0);
+
+        let new_index = (current_index + 1) % filtered_providers.len();
+        let new_selected = filtered_providers[new_index].id.clone();
+        (self.with_selected_provider(new_selected), vec![])
+    }
+
+    fn switch_to_selected_provider(self) -> (Self, Vec<Command>) {
+        if let Some(provider_id) = &self.providers.selected_provider {
+            (self, vec![Command::SwitchProvider(provider_id.clone())])
+        } else {
+            (self, vec![])
+        }
+    }
+
+    fn with_selected_provider(mut self, provider_id: String) -> Self {
+        self.providers.selected_provider = Some(provider_id);
+        self
+    }
+
+    fn get_filtered_providers(&self) -> Vec<&ProviderInfo> {
+        let filter = &self.providers.filter_text;
+        if filter.is_empty() {
+            self.providers.available_providers.iter().collect()
+        } else {
+            self.providers.available_providers.iter()
+                .filter(|p| p.name.to_lowercase().contains(&filter.to_lowercase()) ||
+                         p.id.to_lowercase().contains(&filter.to_lowercase()))
+                .collect()
+        }
     }
 }
 

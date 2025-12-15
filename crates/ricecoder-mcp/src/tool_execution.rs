@@ -59,6 +59,9 @@ pub trait ToolExecutor: Send + Sync {
 pub struct MCPToolExecutor {
     transport: Arc<dyn MCPTransport>,
     permission_manager: Arc<MCPPermissionManager>,
+    rbac_manager: Option<Arc<crate::rbac::MCRBACManager>>,
+    audit_logger: Option<Arc<crate::audit::MCPAuditLogger>>,
+    server_id: String,
     default_timeout: Duration,
     execution_stats: Arc<RwLock<HashMap<String, ToolExecutionStats>>>,
 }
@@ -66,12 +69,34 @@ pub struct MCPToolExecutor {
 impl MCPToolExecutor {
     /// Create a new MCP tool executor
     pub fn new(
+        server_id: String,
         transport: Arc<dyn MCPTransport>,
         permission_manager: Arc<MCPPermissionManager>,
     ) -> Self {
         Self {
             transport,
             permission_manager,
+            rbac_manager: None,
+            audit_logger: None,
+            server_id,
+            default_timeout: Duration::from_secs(30),
+            execution_stats: Arc::new(RwLock::new(HashMap::new())),
+        }
+    }
+
+    /// Create with audit logging
+    pub fn with_audit_logger(
+        server_id: String,
+        transport: Arc<dyn MCPTransport>,
+        permission_manager: Arc<MCPPermissionManager>,
+        audit_logger: Arc<crate::audit::MCPAuditLogger>,
+    ) -> Self {
+        Self {
+            transport,
+            permission_manager,
+            rbac_manager: None,
+            audit_logger: Some(audit_logger),
+            server_id,
             default_timeout: Duration::from_secs(30),
             execution_stats: Arc::new(RwLock::new(HashMap::new())),
         }
@@ -79,6 +104,7 @@ impl MCPToolExecutor {
 
     /// Create with custom timeout
     pub fn with_timeout(
+        server_id: String,
         transport: Arc<dyn MCPTransport>,
         permission_manager: Arc<MCPPermissionManager>,
         timeout: Duration,
@@ -86,6 +112,34 @@ impl MCPToolExecutor {
         Self {
             transport,
             permission_manager,
+            rbac_manager: None,
+            audit_logger: None,
+            server_id,
+            default_timeout: timeout,
+            execution_stats: Arc::new(RwLock::new(HashMap::new())),
+        }
+    }
+
+    /// Set RBAC manager
+    pub fn with_rbac_manager(mut self, rbac_manager: Arc<crate::rbac::MCRBACManager>) -> Self {
+        self.rbac_manager = Some(rbac_manager);
+        self
+    }
+
+    /// Create with custom timeout and audit logging
+    pub fn with_timeout_and_audit(
+        server_id: String,
+        transport: Arc<dyn MCPTransport>,
+        permission_manager: Arc<MCPPermissionManager>,
+        audit_logger: Arc<crate::audit::MCPAuditLogger>,
+        timeout: Duration,
+    ) -> Self {
+        Self {
+            transport,
+            permission_manager,
+            rbac_manager: None,
+            audit_logger: Some(audit_logger),
+            server_id,
             default_timeout: timeout,
             execution_stats: Arc::new(RwLock::new(HashMap::new())),
         }
@@ -134,13 +188,13 @@ impl ToolExecutor for MCPToolExecutor {
     async fn execute(&self, context: &ToolExecutionContext) -> Result<ToolExecutionResult> {
         let start_time = SystemTime::now();
 
-        // Check permissions
-        let has_permission = self.permission_manager
+        // Check permissions (MCP permission manager)
+        let has_mcp_permission = self.permission_manager
             .check_permission(&context.tool_name, context.user_id.as_deref())
             .unwrap_or(false);
 
-        if !has_permission {
-            return Ok(ToolExecutionResult {
+        if !has_mcp_permission {
+            let result = ToolExecutionResult {
                 tool_name: context.tool_name.clone(),
                 success: false,
                 result: None,
@@ -152,7 +206,65 @@ impl ToolExecutor for MCPToolExecutor {
                 execution_time_ms: 0,
                 timestamp: start_time,
                 metadata: context.metadata.clone(),
-            });
+            };
+
+            // Audit logging for permission denial
+            if let Some(ref audit_logger) = self.audit_logger {
+                let _ = audit_logger.log_tool_permission_check(
+                    &self.server_id,
+                    &context.tool_name,
+                    false,
+                    "Permission denied by MCP permission manager",
+                    context.user_id.as_ref(),
+                    context.session_id.as_ref(),
+                ).await;
+            }
+
+            return Ok(result);
+        }
+
+        // Check RBAC permissions if RBAC manager is available
+        if let (Some(ref rbac_manager), Some(user_id)) = (&self.rbac_manager, &context.user_id) {
+            // Create a basic principal for RBAC check (in real implementation, this would be populated from user context)
+            let principal = ricecoder_security::access_control::Principal {
+                id: user_id.clone(),
+                roles: vec![], // Would need to be populated from user context
+                attributes: std::collections::HashMap::new(),
+            };
+
+            let has_rbac_permission = rbac_manager
+                .check_tool_execution_permission(&principal, &context.tool_name, None)
+                .unwrap_or(false);
+
+            if !has_rbac_permission {
+                let result = ToolExecutionResult {
+                    tool_name: context.tool_name.clone(),
+                    success: false,
+                    result: None,
+                    error: Some(ToolError::new(
+                        context.tool_name.clone(),
+                        "RBAC access denied".to_string(),
+                        "rbac_denied".to_string(),
+                    )),
+                    execution_time_ms: 0,
+                    timestamp: start_time,
+                    metadata: context.metadata.clone(),
+                };
+
+                // Audit logging for RBAC denial
+                if let Some(ref audit_logger) = self.audit_logger {
+                    let _ = audit_logger.log_tool_permission_check(
+                        &self.server_id,
+                        &context.tool_name,
+                        false,
+                        "Access denied by RBAC",
+                        context.user_id.as_ref(),
+                        context.session_id.as_ref(),
+                    ).await;
+                }
+
+                return Ok(result);
+            }
         }
 
         // Validate parameters
@@ -180,14 +292,14 @@ impl ToolExecutor for MCPToolExecutor {
             .unwrap_or(Duration::from_secs(0))
             .as_millis() as u64;
 
-        match timeout_result {
+        let result = match timeout_result {
             Ok(Ok(MCPMessage::Response(response))) => {
                 if response.id == request_id {
                     // Successful execution
                     let success = true;
                     self.update_stats(&context.tool_name, success, execution_time_ms).await;
 
-                    Ok(ToolExecutionResult {
+                    ToolExecutionResult {
                         tool_name: context.tool_name.clone(),
                         success: true,
                         result: Some(response.result),
@@ -195,13 +307,13 @@ impl ToolExecutor for MCPToolExecutor {
                         execution_time_ms,
                         timestamp: start_time,
                         metadata: context.metadata.clone(),
-                    })
+                    }
                 } else {
                     // Response ID mismatch
                     let success = false;
                     self.update_stats(&context.tool_name, success, execution_time_ms).await;
 
-                    Ok(ToolExecutionResult {
+                    ToolExecutionResult {
                         tool_name: context.tool_name.clone(),
                         success: false,
                         result: None,
@@ -213,7 +325,7 @@ impl ToolExecutor for MCPToolExecutor {
                         execution_time_ms,
                         timestamp: start_time,
                         metadata: context.metadata.clone(),
-                    })
+                    }
                 }
             }
             Ok(Ok(MCPMessage::Error(mcp_error))) => {
@@ -227,7 +339,7 @@ impl ToolExecutor for MCPToolExecutor {
                     "execution_error".to_string(),
                 );
 
-                Ok(ToolExecutionResult {
+                ToolExecutionResult {
                     tool_name: context.tool_name.clone(),
                     success: false,
                     result: None,
@@ -235,14 +347,14 @@ impl ToolExecutor for MCPToolExecutor {
                     execution_time_ms,
                     timestamp: start_time,
                     metadata: context.metadata.clone(),
-                })
+                }
             }
             Ok(Ok(_)) => {
                 // Unexpected message type
                 let success = false;
                 self.update_stats(&context.tool_name, success, execution_time_ms).await;
 
-                Ok(ToolExecutionResult {
+                ToolExecutionResult {
                     tool_name: context.tool_name.clone(),
                     success: false,
                     result: None,
@@ -254,14 +366,14 @@ impl ToolExecutor for MCPToolExecutor {
                     execution_time_ms,
                     timestamp: start_time,
                     metadata: context.metadata.clone(),
-                })
+                }
             }
             Ok(Err(e)) => {
                 // Transport error
                 let success = false;
                 self.update_stats(&context.tool_name, success, execution_time_ms).await;
 
-                Ok(ToolExecutionResult {
+                ToolExecutionResult {
                     tool_name: context.tool_name.clone(),
                     success: false,
                     result: None,
@@ -273,14 +385,14 @@ impl ToolExecutor for MCPToolExecutor {
                     execution_time_ms,
                     timestamp: start_time,
                     metadata: context.metadata.clone(),
-                })
+                }
             }
             Err(_) => {
                 // Timeout
                 let success = false;
                 self.update_stats(&context.tool_name, success, execution_time_ms).await;
 
-                Ok(ToolExecutionResult {
+                ToolExecutionResult {
                     tool_name: context.tool_name.clone(),
                     success: false,
                     result: None,
@@ -292,9 +404,22 @@ impl ToolExecutor for MCPToolExecutor {
                     execution_time_ms,
                     timestamp: start_time,
                     metadata: context.metadata.clone(),
-                })
+                }
             }
+        };
+
+        // Audit logging
+        if let Some(ref audit_logger) = self.audit_logger {
+            let _ = audit_logger.log_tool_execution(
+                &self.server_id,
+                &result.tool_name,
+                &result,
+                context.user_id.as_ref(),
+                context.session_id.as_ref(),
+            ).await;
         }
+
+        Ok(result)
     }
 
     async fn validate_parameters(&self, tool_name: &str, parameters: &HashMap<String, serde_json::Value>) -> Result<()> {

@@ -256,3 +256,59 @@ async fn test_session_store_export_nonexistent() {
     let result = store.export("nonexistent", &export_path).await;
     assert!(result.is_err());
 }
+
+#[tokio::test]
+async fn test_session_store_encryption() {
+    let temp_dir = TempDir::new().unwrap();
+    let sessions_dir = temp_dir.path().join("sessions");
+    let archive_dir = temp_dir.path().join("archive");
+
+    // Create store with encryption
+    let mut store = SessionStore::with_dirs(sessions_dir.clone(), archive_dir).unwrap();
+    store.enable_encryption("test-password").unwrap();
+
+    let session = create_test_session("encrypted_session");
+    let session_id = session.id.clone();
+
+    // Save the session (should be encrypted)
+    store.save(&session).await.unwrap();
+
+    // Verify file exists
+    assert!(store.exists(&session_id));
+
+    // Load the session (should be decrypted)
+    let loaded = store.load(&session_id).await.unwrap();
+
+    // Verify loaded session matches original
+    assert_eq!(loaded.id, session.id);
+    assert_eq!(loaded.name, session.name);
+    assert_eq!(loaded.status, session.status);
+}
+
+#[tokio::test]
+async fn test_session_store_enterprise_encryption() {
+    let temp_dir = TempDir::new().unwrap();
+    let sessions_dir = temp_dir.path().join("sessions");
+    let archive_dir = temp_dir.path().join("archive");
+
+    // Create store with enterprise encryption
+    let mut store = SessionStore::with_dirs(sessions_dir.clone(), archive_dir).unwrap();
+    store.enable_enterprise_encryption("test-password").unwrap();
+
+    let session = create_test_session("enterprise_encrypted_session");
+    let session_id = session.id.clone();
+
+    // Save the session (should be enterprise encrypted)
+    store.save(&session).await.unwrap();
+
+    // Verify file exists
+    assert!(store.exists(&session_id));
+
+    // Load the session (should be decrypted)
+    let loaded = store.load(&session_id).await.unwrap();
+
+    // Verify loaded session matches original
+    assert_eq!(loaded.id, session.id);
+    assert_eq!(loaded.name, session.name);
+    assert_eq!(loaded.status, session.status);
+}
