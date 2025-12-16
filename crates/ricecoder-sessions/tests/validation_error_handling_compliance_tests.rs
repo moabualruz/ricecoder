@@ -383,5 +383,4 @@ fn test_graceful_degradation() {
     service.revoke_share(&share.id, None).unwrap();
     let result = service.get_share(&share.id);
     assert!(result.is_err());
-}</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-sessions/tests/validation_error_handling_compliance_tests.rs
+}

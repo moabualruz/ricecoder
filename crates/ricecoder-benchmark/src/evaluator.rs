@@ -3,7 +3,8 @@
 use crate::error::BenchmarkError;
 use crate::exercise::Exercise;
 use std::path::Path;
-use std::process::{Command, Stdio};
+use tokio::process::Command;
+use std::process::Stdio;
 use std::time::Duration;
 use tokio::time::timeout;
 
@@ -33,7 +34,7 @@ impl Evaluator {
         }
     }
 
-    fn run_tests_inner(exercise: &Exercise, test_dir: &Path) -> Result<TestResult, BenchmarkError> {
+    async fn run_tests_inner(exercise: &Exercise, test_dir: &Path) -> Result<TestResult, BenchmarkError> {
         // Copy test files to test directory
         for test_file in &exercise.get_test_files() {
             if test_file.exists() {
@@ -57,7 +58,7 @@ impl Evaluator {
             .current_dir(test_dir)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
-            .output()?;
+            .output().await?;
 
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -78,11 +79,11 @@ impl Evaluator {
     fn get_test_command(language: &str) -> Result<(String, Vec<String>), BenchmarkError> {
         match language {
             "python" => Ok(("pytest".to_string(), vec![])),
-            "rust" => Ok(("cargo".to_string(), vec!["test", "--", "--include-ignored"])),
-            "go" => Ok(("go".to_string(), vec!["test", "./..."])),
-            "javascript" => Ok(("npm".to_string(), vec!["test"])),
-            "cpp" => Ok(("make".to_string(), vec!["test"])), // Assuming Makefile
-            "java" => Ok(("./gradlew".to_string(), vec!["test"])),
+            "rust" => Ok(("cargo".to_string(), vec!["test".to_string(), "--".to_string(), "--include-ignored".to_string()])),
+            "go" => Ok(("go".to_string(), vec!["test".to_string(), "./...".to_string()])),
+            "javascript" => Ok(("npm".to_string(), vec!["test".to_string()])),
+            "cpp" => Ok(("make".to_string(), vec!["test".to_string()])), // Assuming Makefile
+            "java" => Ok(("./gradlew".to_string(), vec!["test".to_string()])),
             _ => Err(BenchmarkError::TestExecution(format!("Unsupported language: {}", language))),
         }
     }

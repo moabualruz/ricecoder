@@ -51,7 +51,7 @@ impl CodingPatternDetector {
         for entry in walker {
             let path = entry.path();
             if let Ok(content) = std::fs::read_to_string(path) {
-                if let Ok(tree) = self.parser.parse(&content) {
+                if let Ok(tree) = self.parser.parse(&content).await {
                     let file_patterns = self.detect_in_tree(&tree, path).await?;
                     patterns.extend(file_patterns);
                 }

@@ -10,7 +10,7 @@ use tokio::sync::RwLock;
 use crate::{audit::AuditLogger, SecurityError, Result};
 
 /// Security event types
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum SecurityEventType {
     FailedLogin,
     SuspiciousActivity,
@@ -108,7 +108,7 @@ pub struct SecurityMonitor {
     audit_logger: Arc<AuditLogger>,
     events: Arc<RwLock<VecDeque<SecurityEvent>>>,
     alerts: Arc<RwLock<Vec<SecurityAlert>>>,
-    threat_detector: ThreatDetector,
+    threat_detector: Arc<RwLock<ThreatDetector>>,
     active_rules: HashMap<String, ThreatRule>,
 }
 
@@ -126,14 +126,15 @@ impl SecurityMonitor {
             audit_logger,
             events: Arc::new(RwLock::new(VecDeque::new())),
             alerts: Arc::new(RwLock::new(Vec::new())),
-            threat_detector: ThreatDetector::new(),
+            threat_detector: Arc::new(RwLock::new(ThreatDetector::new())),
             active_rules: HashMap::new(),
         }
     }
 
     /// Add a threat detection rule
-    pub fn add_rule(&mut self, rule: ThreatRule) {
-        self.threat_detector.add_rule(rule.clone());
+    pub async fn add_rule(&mut self, rule: ThreatRule) {
+        let mut detector = self.threat_detector.write().await;
+        detector.add_rule(rule.clone());
         if rule.enabled {
             self.active_rules.insert(rule.id.clone(), rule);
         }
@@ -152,7 +153,8 @@ impl SecurityMonitor {
         drop(events);
 
         // Check for threats
-        if let Some(alert) = self.threat_detector.detect_threat(&event).await? {
+        let mut detector = self.threat_detector.write().await;
+        if let Some(alert) = detector.detect_threat(&event).await? {
             let mut alerts = self.alerts.write().await;
             alerts.push(alert);
         }
@@ -248,18 +250,18 @@ impl SecurityMonitor {
             };
 
             if count > threshold {
+                let event_type_str = format!("{:?}", event_type);
                 let alert = SecurityAlert {
-                    id: format!("anomaly_{}_{}", format!("{:?}", event_type).to_lowercase(), now.timestamp()),
-                    title: format!("Anomalous {} Activity", format!("{:?}", event_type)),
+                    id: format!("anomaly_{}_{}", event_type_str.to_lowercase(), now.timestamp()),
+                    title: format!("Anomalous {} Activity", event_type_str),
                     description: format!("Detected {} occurrences of {} in 5 minutes (threshold: {})",
-                                       count, format!("{:?}", event_type), threshold),
+                                       count, event_type_str, threshold),
                     severity: ThreatLevel::High,
-                    events: recent_events.iter()
-                        .filter(|e| std::mem::discriminant(&e.event_type) == std::mem::discriminant(&event_type))
-                        .take(10)
-                        .cloned()
-                        .cloned()
-                        .collect(),
+                     events: recent_events.iter()
+                         .filter(|e| std::mem::discriminant(&e.event_type) == std::mem::discriminant(&event_type))
+                         .take(10)
+                         .map(|e| (*e).clone())
+                         .collect(),
                     triggered_at: now,
                     resolved_at: None,
                     actions_taken: vec![],
@@ -339,7 +341,9 @@ impl ThreatDetector {
             }
 
             if self.matches_pattern(event, &rule.event_pattern) {
-                let count_key = format!("{}_{}", rule.id, event.source_ip.as_ref().unwrap_or(&"unknown".to_string()));
+                let unknown_ip = "unknown".to_string();
+                let ip = event.source_ip.as_ref().unwrap_or(&unknown_ip);
+                let count_key = format!("{}_{}", rule.id, ip);
                 let now = Utc::now();
 
                 // Clean old counts
@@ -367,7 +371,7 @@ impl ThreatDetector {
 
         // Create alert from highest severity rule
         let highest_severity_rule = triggered_rules.into_iter()
-            .max_by_key(|r| std::mem::discriminant(&r.severity))
+            .max_by_key(|r| r.severity.clone())
             .unwrap();
 
         let alert = SecurityAlert {
@@ -391,9 +395,10 @@ impl ThreatDetector {
                 std::mem::discriminant(event_type) == std::mem::discriminant(&event.event_type)
             }
             EventPattern::Regex { field, pattern } => {
+                let empty = "".to_string();
                 let value = match field.as_str() {
-                    "source_ip" => event.source_ip.as_ref().unwrap_or(&"".to_string()),
-                    "user_id" => event.user_id.as_ref().unwrap_or(&"".to_string()),
+                    "source_ip" => event.source_ip.as_ref().unwrap_or(&empty),
+                    "user_id" => event.user_id.as_ref().unwrap_or(&empty),
                     "resource" => &event.resource,
                     _ => return false,
                 };

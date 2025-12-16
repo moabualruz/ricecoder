@@ -21,8 +21,8 @@ pub mod monitoring;
 pub mod error;
 
 pub use encryption::{KeyManager, CustomerKeyManager, EncryptedData};
-pub use validation::{validate_input, ValidatedInput, ValidationError};
-pub use audit::{AuditLogger, AuditEvent, AuditRecord};
+pub use validation::{validate_input, ValidatedInput, ValidationError, SecurityValidator};
+pub use audit::{AuditLogger, AuditEvent, AuditRecord, MemoryAuditStorage};
 pub use access_control::{Permission, ResourceType, AccessControl, PermissionCheck, AbacPolicy, AttributeBasedAccessControl};
 pub use compliance::{ComplianceManager, ComplianceValidator, DataErasure, DataPortability, PrivacyAnalytics, DataClassification};
 pub use reporting::{ComplianceReporter, ComplianceReport, ReportType};

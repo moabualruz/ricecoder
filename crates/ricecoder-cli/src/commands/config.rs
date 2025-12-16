@@ -32,7 +32,7 @@ impl ConfigCommand {
 
     /// Load configuration from files using ConfigLoader
     fn load_config() -> CliResult<Config> {
-        ConfigLoader::load_merged()
+        ConfigLoader::new().load_merged()
             .map_err(|e| CliError::Config(e.to_string()))
     }
 

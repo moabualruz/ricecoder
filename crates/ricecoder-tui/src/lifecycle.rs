@@ -50,6 +50,7 @@ pub trait TuiLifecycleComponent: Send + Sync {
 }
 
 /// Component registration info for TUI
+#[derive(Clone)]
 struct TuiComponentInfo {
     component: Arc<RwLock<dyn TuiLifecycleComponent>>,
     state: TuiLifecycleState,
@@ -85,7 +86,7 @@ impl TuiLifecycleManager {
         };
 
         let mut components = self.components.write().unwrap();
-        components.push(info);
+        components.push(info.clone());
 
         info!("Registered TUI component: {}", info.component.read().unwrap().name());
         Ok(())
@@ -298,3 +299,6 @@ where
 }
 
 #[cfg(test)]
+mod tests {
+    // Tests are in tests/lifecycle_tests.rs
+}

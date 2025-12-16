@@ -24,7 +24,6 @@ pub mod rbac;
 pub mod compliance;
 pub mod registry;
 pub mod protocol_validation;
-pub mod registry;
 pub mod server_management;
 pub mod storage_integration;
 pub mod tool_execution;
@@ -47,7 +46,7 @@ pub use error_reporting::{ErrorMessageFormatter, ErrorReporter, ErrorStatistics}
 pub use executor::CustomToolExecutor;
 pub use health_check::{HealthChecker, HealthCheckConfig, HealthStatus, ServerAvailability};
 pub use hot_reload::ConfigWatcher;
-pub use lifecycle::{ServerLifecycle, ServerLifecycleInfo, ServerState};
+pub use lifecycle::{ServerLifecycle, ServerLifecycleInfo};
 pub use marshaler::ToolMarshaler;
 pub use metadata::{ParameterMetadata, ToolMetadata, ToolSource};
 pub use permissions::{MCPPermissionManager, PermissionLevelConfig, PermissionRule};

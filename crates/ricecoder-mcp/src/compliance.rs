@@ -23,7 +23,7 @@ pub enum ComplianceReportType {
 }
 
 /// Compliance violation severity
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ViolationSeverity {
     Low,
     Medium,
@@ -86,7 +86,7 @@ impl MCPComplianceMonitor {
             id: uuid::Uuid::new_v4().to_string(),
             timestamp: Utc::now(),
             report_type,
-            severity,
+            severity: severity.clone(),
             description: description.clone(),
             resource: resource.clone(),
             user_id: user_id.clone(),
@@ -105,15 +105,13 @@ impl MCPComplianceMonitor {
         violations.push_back(violation.clone());
 
         // Audit the violation
-        if let Some(ref audit_logger) = self.audit_logger {
-            let _ = audit_logger.log_protocol_validation(
-                "compliance_violation",
-                false,
-                Some(&description),
-                user_id.as_deref(),
-                None,
-            ).await;
-        }
+        let _ = self.audit_logger.log_protocol_validation(
+            "compliance_violation",
+            false,
+            Some(description.clone()),
+            user_id,
+            None,
+        ).await;
 
         warn!(
             "Compliance violation recorded: {} - {} for resource {} (severity: {:?})",
@@ -153,7 +151,7 @@ impl MCPComplianceMonitor {
             .iter()
             .filter(|v| {
                 if let Some(ref rt) = report_type {
-                    if !std::mem::discriminant(&v.report_type) == std::mem::discriminant(rt) {
+                    if std::mem::discriminant(&v.report_type) != std::mem::discriminant(rt) {
                         return false;
                     }
                 }
@@ -190,10 +188,10 @@ impl MCPComplianceMonitor {
         let total_violations = violations.len();
         let unresolved_violations = violations.iter().filter(|v| !v.resolved).count();
 
-        let severity_counts = violations.iter().fold(HashMap::new(), |mut acc, v| {
-            *acc.entry(v.severity.clone()).or_insert(0) += 1;
-            acc
-        });
+        let mut severity_counts = HashMap::new();
+        for v in violations.iter() {
+            *severity_counts.entry(v.severity.clone()).or_insert(0) += 1;
+        }
 
         let report = ComplianceReport {
             report_type,
@@ -203,7 +201,7 @@ impl MCPComplianceMonitor {
             total_violations,
             unresolved_violations,
             severity_breakdown: severity_counts,
-            violations: violations.into_iter().take(100).collect(), // Include top 100 violations
+            violations: violations.iter().take(100).cloned().collect(), // Include top 100 violations
             compliance_status: self.assess_compliance_status(&violations),
         };
 
@@ -461,5 +459,4 @@ mod tests {
         let monitor = MCPEnterpriseMonitor::new();
         assert_eq!(monitor.max_history, 1000);
     }
-}</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-mcp/src/compliance.rs
+}

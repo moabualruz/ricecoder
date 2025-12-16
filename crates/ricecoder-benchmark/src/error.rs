@@ -27,4 +27,13 @@ pub enum BenchmarkError {
 
     #[error("Configuration error: {0}")]
     Config(String),
+
+    #[error("Walkdir error: {0}")]
+    Walkdir(#[from] walkdir::Error),
+
+    #[error("System time error: {0}")]
+    SystemTime(#[from] std::time::SystemTimeError),
+
+    #[error("Regex error: {0}")]
+    Regex(#[from] regex::Error),
 }

@@ -1,5 +1,4 @@
 use clap::{Parser, Subcommand};
-use clap::{Parser, Subcommand};
 use ricecoder_performance::{PerformanceValidator, PerformanceBaseline, PerformanceRegressionDetector};
 use std::path::PathBuf;
 

@@ -5,6 +5,7 @@
 //! Provides clean workflow orchestration interfaces with session integration.
 //! Core workflow functionality for declarative workflow definitions and execution.
 
+pub mod approval;
 pub mod engine;
 pub mod error;
 pub mod models;
@@ -13,6 +14,7 @@ pub mod parser;
 pub mod resolver;
 
 // Re-export core types
+pub use approval::{ApprovalGate, ApprovalRequest};
 pub use engine::WorkflowEngine;
 pub use error::*;
 pub use models::*;

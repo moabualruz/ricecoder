@@ -1659,7 +1659,7 @@ pub trait DIContainerBuilderExt {
     fn register_parsers_services(self) -> DIResult<Self> where Self: Sized;
 
     #[cfg(feature = "generation")]
-    register_generation_services(container)?;
+    fn register_generation_services(self) -> DIResult<Self> where Self: Sized;
 
     #[cfg(feature = "github")]
     fn register_github_services(self) -> DIResult<Self> where Self: Sized;

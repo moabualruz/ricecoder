@@ -58,7 +58,7 @@ pub struct AuditRecord {
 
 /// Audit storage trait
 #[async_trait::async_trait]
-pub trait AuditStorage: Send + Sync {
+pub trait AuditStorage: Send + Sync + std::fmt::Debug {
     async fn store_record(&self, record: &AuditRecord) -> Result<()>;
     async fn query_records(
         &self,
@@ -79,6 +79,7 @@ pub struct AuditQuery {
 }
 
 /// In-memory audit storage for testing/development
+#[derive(Debug)]
 pub struct MemoryAuditStorage {
     records: Arc<Mutex<Vec<AuditRecord>>>,
 }
@@ -149,6 +150,7 @@ impl AuditStorage for MemoryAuditStorage {
 }
 
 /// Audit logger for recording security events
+#[derive(Debug)]
 pub struct AuditLogger {
     storage: Arc<dyn AuditStorage>,
 }

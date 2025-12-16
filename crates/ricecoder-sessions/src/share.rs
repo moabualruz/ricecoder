@@ -108,8 +108,8 @@ impl ShareService {
             session_id: session_id.to_string(),
             created_at: now,
             expires_at: effective_expires_at,
-            permissions,
-            policy,
+            permissions: permissions.clone(),
+            policy: policy.clone(),
             creator_user_id: creator_user_id.clone(),
         };
 
@@ -125,21 +125,26 @@ impl ShareService {
 
         // Log compliance event
         if let Some(ref audit_logger) = self.audit_logger {
+            let permissions_clone = permissions.clone();
+            let policy_applied = policy.is_some();
+            let session_id_clone = session_id.to_string();
+            let share_id_clone = share_id.clone();
             let event = AuditEvent {
                 event_type: AuditEventType::DataAccess,
                 user_id: creator_user_id,
-                session_id: Some(session_id.to_string()),
+                session_id: Some(session_id_clone),
                 action: "share_created".to_string(),
                 resource: format!("session:{}", session_id),
                 metadata: serde_json::json!({
-                    "share_id": share_id,
-                    "permissions": permissions,
+                    "share_id": share_id_clone,
+                    "permissions": permissions_clone,
                     "expires_at": effective_expires_at,
-                    "policy_applied": policy.is_some()
+                    "policy_applied": policy_applied
                 }),
             };
             // Note: In a real implementation, this would be async
             // For now, we'll log synchronously
+            let audit_logger = audit_logger.clone();
             let _ = tokio::spawn(async move {
                 let _ = audit_logger.log_event(event).await;
             });
@@ -222,16 +227,19 @@ impl ShareService {
 
         // Log access for compliance
         if let Some(ref audit_logger) = self.audit_logger {
+            let session_id_clone = share.session_id.clone();
+            let permissions_clone = share.permissions.clone();
+            let share_id_clone = share_id.to_string();
             let event = AuditEvent {
                 event_type: AuditEventType::DataAccess,
                 user_id: share.creator_user_id.clone(),
-                session_id: Some(share.session_id.clone()),
+                session_id: Some(session_id_clone.clone()),
                 action: "share_accessed".to_string(),
                 resource: format!("share:{}", share_id),
                 metadata: serde_json::json!({
-                    "share_id": share_id,
-                    "session_id": share.session_id,
-                    "permissions": share.permissions
+                    "share_id": share_id_clone,
+                    "session_id": session_id_clone,
+                    "permissions": permissions_clone
                 }),
             };
             let audit_logger = audit_logger.clone();
@@ -290,16 +298,19 @@ impl ShareService {
 
         // Log import for compliance
         if let Some(ref audit_logger) = self.audit_logger {
+            let original_session_id = share.session_id.clone();
+            let imported_session_id = imported_session.id.clone();
+            let share_id_clone = share_id.to_string();
             let event = AuditEvent {
                 event_type: AuditEventType::DataAccess,
                 user_id: importer_user_id.or_else(|| share.creator_user_id.clone()),
-                session_id: Some(imported_session.id.clone()),
+                session_id: Some(imported_session_id.clone()),
                 action: "session_imported".to_string(),
-                resource: format!("session:{}:from_share:{}", imported_session.id, share_id),
+                resource: format!("session:{}:from_share:{}", imported_session_id, share_id),
                 metadata: serde_json::json!({
-                    "share_id": share_id,
-                    "original_session_id": share.session_id,
-                    "imported_session_id": imported_session.id
+                    "share_id": share_id_clone,
+                    "original_session_id": original_session_id,
+                    "imported_session_id": imported_session_id
                 }),
             };
             let audit_logger = audit_logger.clone();
@@ -324,15 +335,17 @@ impl ShareService {
 
         // Log revocation for compliance
         if let Some(ref audit_logger) = self.audit_logger {
+            let session_id_clone = share.session_id.clone();
+            let share_id_clone = share_id.to_string();
             let event = AuditEvent {
                 event_type: AuditEventType::DataAccess,
                 user_id: revoker_user_id.or_else(|| share.creator_user_id),
-                session_id: Some(share.session_id),
+                session_id: Some(session_id_clone.clone()),
                 action: "share_revoked".to_string(),
                 resource: format!("share:{}", share_id),
                 metadata: serde_json::json!({
-                    "share_id": share_id,
-                    "session_id": share.session_id
+                    "share_id": share_id_clone,
+                    "session_id": session_id_clone
                 }),
             };
             let audit_logger = audit_logger.clone();
@@ -623,7 +636,7 @@ impl ShareAnalytics {
 
         // Track enterprise metrics
         if let Ok(mut metrics) = self.enterprise_metrics.lock() {
-            if let Some(ref enterprise_metrics) = *metrics {
+            if let Some(ref mut enterprise_metrics) = *metrics {
                 if let Some(ref policy) = share.policy {
                     let classification_key = format!("{:?}", policy.data_classification);
                     *enterprise_metrics.shares_by_classification.entry(classification_key).or_insert(0) += 1;

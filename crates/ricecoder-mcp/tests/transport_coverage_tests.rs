@@ -620,5 +620,4 @@ async fn test_performance_benchmark_edge_cases() {
 
     let duration = start.elapsed();
     assert!(duration.as_secs() < 5); // Should complete quickly
-}</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-mcp/tests/transport_coverage_tests.rs
+}

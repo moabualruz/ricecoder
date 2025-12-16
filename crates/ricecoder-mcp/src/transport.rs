@@ -13,10 +13,11 @@
 //! - Enterprise security features
 
 use async_trait::async_trait;
-use futures_util::StreamExt;
+use futures_util::{StreamExt, TryFutureExt};
 use serde::{Deserialize, Serialize};
 use std::io::{BufRead, BufReader, Write};
-use std::process::{Child, Command, Stdio};
+use tokio::process::Command;
+use std::process::Stdio;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader as AsyncBufReader};
 use tokio::sync::mpsc;
 use tracing::{debug, error, info, warn};
@@ -92,8 +93,8 @@ pub trait MCPTransport: Send + Sync {
 
 /// Stdio transport for MCP communication
 pub struct StdioTransport {
-    child: std::sync::Mutex<Option<Child>>,
-    stdin: std::sync::Mutex<Option<std::process::ChildStdin>>,
+    child: std::sync::Mutex<Option<tokio::process::Child>>,
+    stdin: std::sync::Mutex<Option<tokio::process::ChildStdin>>,
     stdout_reader: std::sync::Mutex<Option<AsyncBufReader<tokio::process::ChildStdout>>>,
 }
 
@@ -126,8 +127,8 @@ impl StdioTransport {
 #[async_trait]
 impl MCPTransport for StdioTransport {
     async fn send(&self, message: &MCPMessage) -> Result<()> {
-        let mut stdin_guard = self.stdin.lock().unwrap();
-        if let Some(ref mut stdin) = *stdin_guard {
+        let mut stdin = self.stdin.lock().unwrap().take();
+        if let Some(mut stdin) = stdin {
             let json = serde_json::to_string(message)
                 .map_err(|e| Error::SerializationError(e))?;
 
@@ -135,13 +136,14 @@ impl MCPTransport for StdioTransport {
             let framed_message = format!("{}\n", json);
 
             // For synchronous stdin, we need to use a different approach
-            use std::io::Write;
-            stdin.write_all(framed_message.as_bytes())
+
+            stdin.write_all(framed_message.as_bytes()).await
                 .map_err(|e| Error::ConnectionError(format!("Failed to write to stdin: {}", e)))?;
-            stdin.flush()
+            stdin.flush().await
                 .map_err(|e| Error::ConnectionError(format!("Failed to flush stdin: {}", e)))?;
 
             debug!("Sent MCP message via stdio: {}", json);
+            *self.stdin.lock().unwrap() = Some(stdin);
             Ok(())
         } else {
             Err(Error::ConnectionError("Stdin not available".to_string()))
@@ -149,13 +151,14 @@ impl MCPTransport for StdioTransport {
     }
 
     async fn receive(&self) -> Result<MCPMessage> {
-        let mut reader_guard = self.stdout_reader.lock().unwrap();
-        if let Some(ref mut reader) = *reader_guard {
+        let mut reader = self.stdout_reader.lock().unwrap().take();
+        if let Some(mut reader) = reader {
             let mut line = String::new();
             let bytes_read = reader.read_line(&mut line).await
                 .map_err(|e| Error::ConnectionError(format!("Failed to read from stdout: {}", e)))?;
 
             if bytes_read == 0 {
+                *self.stdout_reader.lock().unwrap() = Some(reader);
                 return Err(Error::ConnectionError("EOF reached".to_string()));
             }
 
@@ -163,6 +166,7 @@ impl MCPTransport for StdioTransport {
                 .map_err(|e| Error::SerializationError(e))?;
 
             debug!("Received MCP message via stdio: {:?}", message);
+            *self.stdout_reader.lock().unwrap() = Some(reader);
             Ok(message)
         } else {
             Err(Error::ConnectionError("Stdout not available".to_string()))
@@ -170,15 +174,15 @@ impl MCPTransport for StdioTransport {
     }
 
     async fn is_connected(&self) -> bool {
-        let child_guard = self.child.lock().unwrap();
-        child_guard.as_ref().map_or(false, |c| c.try_wait().unwrap_or(None).is_none())
+        let mut child_guard = self.child.lock().unwrap();
+        child_guard.as_mut().map_or(false, |c| c.try_wait().unwrap_or(None).is_none())
     }
 
     async fn close(&self) -> Result<()> {
-        let mut child_guard = self.child.lock().unwrap();
-        if let Some(child) = child_guard.take() {
-            let _ = child.kill();
-            let _ = child.wait();
+        let child = self.child.lock().unwrap().take();
+        if let Some(mut child) = child {
+            let _ = child.kill().await;
+            let _ = child.wait().await;
         }
         Ok(())
     }
@@ -187,9 +191,11 @@ impl MCPTransport for StdioTransport {
 impl Drop for StdioTransport {
     fn drop(&mut self) {
         if let Ok(mut child_guard) = self.child.lock() {
-            if let Some(child) = child_guard.take() {
-                let _ = child.kill();
-                let _ = child.wait();
+            if let Some(mut child) = child_guard.take() {
+                let _ = futures::executor::block_on(async {
+                    let _ = child.kill().await;
+                    let _ = child.wait().await;
+                });
             }
         }
     }
@@ -266,7 +272,7 @@ impl HTTPTransport {
                 ) {
                     client_builder = client_builder.default_headers({
                         let mut headers = reqwest::header::HeaderMap::new();
-                        headers.insert(header_name.parse().unwrap(), api_key.parse().unwrap());
+                        headers.insert(header_name.parse::<reqwest::header::HeaderName>().unwrap(), api_key.parse::<reqwest::header::HeaderValue>().unwrap());
                         headers
                     });
                 }
@@ -278,7 +284,7 @@ impl HTTPTransport {
         }
 
         let client = client_builder.build()
-            .map_err(|e| Error::ConfigurationError(format!("Failed to build HTTP client: {}", e)))?;
+            .map_err(|e| Error::ConfigValidationError(format!("Failed to build HTTP client: {}", e)))?;
 
         Ok(Self {
             base_url: base_url.trim_end_matches('/').to_string(),
@@ -308,13 +314,13 @@ impl MCPTransport for HTTPTransport {
                                 if let Ok(token) = oauth_manager.validate_token(token_id) {
                                     request_builder = request_builder.header("Authorization", format!("Bearer {}", token.access_token));
                                 } else {
-                                    return Err(Error::AuthenticationError("Invalid or expired OAuth2 token".to_string()));
+                                    return Err(Error::AuthorizationError("Invalid or expired OAuth2 token".to_string()));
                                 }
                             } else {
-                                return Err(Error::AuthenticationError("OAuth2 token_id and user_id required".to_string()));
+                                return Err(Error::AuthorizationError("OAuth2 token_id and user_id required".to_string()));
                             }
                         } else {
-                            return Err(Error::AuthenticationError("OAuth2 manager not configured".to_string()));
+                            return Err(Error::AuthorizationError("OAuth2 manager not configured".to_string()));
                         }
                     }
                 }
@@ -385,8 +391,8 @@ impl SSETransport {
         Self {
             url: url.to_string(),
             client: reqwest::Client::new(),
-            event_receiver: None,
-            _handle: None,
+            event_receiver: std::sync::Mutex::new(None),
+            _handle: std::sync::Mutex::new(None),
         }
     }
 
@@ -463,19 +469,23 @@ impl MCPTransport for SSETransport {
     }
 
     async fn receive(&self) -> Result<MCPMessage> {
-        let mut receiver_guard = self.event_receiver.lock().unwrap();
-        if let Some(ref mut receiver) = *receiver_guard {
+        let mut receiver = self.event_receiver.lock().unwrap().take();
+        if let Some(mut receiver) = receiver {
             match receiver.recv().await {
                 Some(data) => {
                     let message: MCPMessage = serde_json::from_str(&data)
                         .map_err(|e| Error::SerializationError(e))?;
                     debug!("Received MCP message via SSE: {:?}", message);
+                    *self.event_receiver.lock().unwrap() = Some(receiver);
                     Ok(message)
                 }
-                None => Err(Error::ConnectionError("SSE receiver closed".to_string())),
+                None => {
+                    *self.event_receiver.lock().unwrap() = Some(receiver);
+                    Err(Error::ConnectionError("SSE connection closed".to_string()))
+                }
             }
         } else {
-            Err(Error::ConnectionError("SSE transport not connected".to_string()))
+            Err(Error::ConnectionError("SSE receiver not available".to_string()))
         }
     }
 

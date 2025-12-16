@@ -286,8 +286,8 @@ impl MCPAuditLogger {
         self.audit_logger
             .log_event(ricecoder_security::audit::AuditEvent {
                 event_type: ricecoder_security::audit::AuditEventType::SystemAccess,
-                user_id,
-                session_id,
+                user_id: user_id.clone(),
+                session_id: session_id.clone(),
                 action: format!("connection_pool_{}", event_type),
                 resource: format!("mcp_connection_pool:{}", server_id),
                 metadata: details,
@@ -316,8 +316,8 @@ impl MCPAuditLogger {
         self.audit_logger
             .log_event(ricecoder_security::audit::AuditEvent {
                 event_type,
-                user_id,
-                session_id,
+                user_id: user_id.clone(),
+                session_id: session_id.clone(),
                 action: if healthy { "health_check_passed" } else { "health_check_failed" }.to_string(),
                 resource: format!("mcp_server:{}", server_id),
                 metadata: serde_json::json!({
@@ -355,8 +355,8 @@ impl MCPAuditLogger {
         self.audit_logger
             .log_event(ricecoder_security::audit::AuditEvent {
                 event_type,
-                user_id,
-                session_id,
+                user_id: user_id.clone(),
+                session_id: session_id.clone(),
                 action: if valid { "protocol_validation_passed" } else { "protocol_validation_failed" }.to_string(),
                 resource: "mcp_protocol".to_string(),
                 metadata: serde_json::json!({

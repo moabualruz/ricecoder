@@ -3,6 +3,7 @@
 use crate::commands::Command;
 use crate::error::{CliError, CliResult};
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::collections::HashMap;
 
 /// MCP command action

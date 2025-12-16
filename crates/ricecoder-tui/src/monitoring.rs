@@ -218,7 +218,7 @@ pub struct MonitoringSystem {
     performance_monitor: PerformanceMonitor,
     usage_analytics: UsageAnalytics,
     metrics_collector: MetricsCollector,
-    profiler: PerformanceProfiler,
+    profiler: std::sync::Arc<std::sync::RwLock<PerformanceProfiler>>,
     ux_metrics: UserExperienceMetrics,
     enabled: bool,
 }
@@ -230,7 +230,7 @@ impl MonitoringSystem {
             performance_monitor: PerformanceMonitor::new(),
             usage_analytics: UsageAnalytics::new(),
             metrics_collector: MetricsCollector::new(),
-            profiler: PerformanceProfiler::new(),
+            profiler: std::sync::Arc::new(std::sync::RwLock::new(PerformanceProfiler::new())),
             ux_metrics: UserExperienceMetrics::new(),
             enabled: true,
         }
@@ -267,13 +267,13 @@ impl MonitoringSystem {
     }
 
     /// Get performance profiler
-    pub fn profiler(&self) -> &PerformanceProfiler {
+    pub fn profiler(&self) -> &std::sync::Arc<std::sync::RwLock<PerformanceProfiler>> {
         &self.profiler
     }
 
     /// Get performance profiler mutably
-    pub fn profiler_mut(&mut self) -> &mut PerformanceProfiler {
-        &mut self.profiler
+    pub fn profiler_arc(&self) -> &std::sync::Arc<std::sync::RwLock<PerformanceProfiler>> {
+        &self.profiler
     }
 
     /// Get UX metrics

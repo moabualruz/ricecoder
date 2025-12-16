@@ -21,5 +21,4 @@ cargo test -p ricecoder-sessions --test performance_memory_security_regression_t
 echo "Running persistence, serialization, and encryption validation tests..."
 cargo test -p ricecoder-sessions --test persistence_serialization_encryption_validation_tests -- --nocapture
 
-echo "All session unit tests completed!"</content>
-<parameter name="filePath">run_session_tests.sh
+echo "All session unit tests completed!"

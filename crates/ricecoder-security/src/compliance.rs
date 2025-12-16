@@ -5,6 +5,7 @@
 //! - GDPR/HIPAA data handling (right to erasure, portability)
 //! - Privacy-preserving analytics with opt-in and log retention
 
+use base64::{Engine as _, engine::general_purpose};
 use chrono::{DateTime, Utc, Duration};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -197,7 +198,7 @@ impl ComplianceManager {
         master_key_manager: &KeyManager,
     ) -> Result<String> {
         let key_id = format!("customer-key-{}", Uuid::new_v4());
-        let encrypted_key = master_key_manager.encrypt_api_key(&base64::encode(key_material))?;
+        let encrypted_key = master_key_manager.encrypt_api_key(&general_purpose::STANDARD.encode(key_material))?;
 
         let customer_key = CustomerKey {
             key_id: key_id.clone(),
@@ -252,6 +253,7 @@ impl ComplianceManager {
         reason: ErasureReason,
     ) -> Result<Uuid> {
         let request_id = Uuid::new_v4();
+        let reason_clone = reason.clone();
         let request = DataErasureRequest {
             id: request_id,
             user_id: user_id.to_string(),
@@ -265,6 +267,7 @@ impl ComplianceManager {
         requests.insert(request_id, request);
 
         // Audit the erasure request
+        let reason_str = format!("{:?}", reason_clone);
         self.audit_logger.log_event(AuditEvent {
             event_type: AuditEventType::SecurityViolation, // Could add specific type
             user_id: Some(user_id.to_string()),
@@ -273,7 +276,7 @@ impl ComplianceManager {
             resource: format!("user_data:{}", user_id),
             metadata: serde_json::json!({
                 "request_id": request_id,
-                "reason": format!("{:?}", reason),
+                "reason": reason_str,
                 "compliance": "GDPR_HIPAA"
             }),
         }).await?;
@@ -283,32 +286,38 @@ impl ComplianceManager {
 
     /// Process data erasure request
     pub async fn process_data_erasure(&self, request_id: &Uuid) -> Result<()> {
-        let mut requests = self.erasure_requests.write().await;
-        if let Some(request) = requests.get_mut(request_id) {
-            request.status = ErasureStatus::InProgress;
+        let (user_id, req_id) = {
+            let mut requests = self.erasure_requests.write().await;
+            if let Some(request) = requests.get_mut(request_id) {
+                request.status = ErasureStatus::InProgress;
 
-            // Here would be the actual data deletion logic
-            // For now, just mark as completed
-            request.status = ErasureStatus::Completed;
-            request.completed_date = Some(Utc::now());
+                // Here would be the actual data deletion logic
+                // For now, just mark as completed
+                request.status = ErasureStatus::Completed;
+                request.completed_date = Some(Utc::now());
 
-            // Remove compliance data
-            let mut compliance_data = self.compliance_data.write().await;
-            compliance_data.remove(&request.user_id);
+                // Remove compliance data
+                let mut compliance_data = self.compliance_data.write().await;
+                compliance_data.remove(&request.user_id);
 
-            // Audit completion
-            self.audit_logger.log_event(AuditEvent {
-                event_type: AuditEventType::SecurityViolation,
-                user_id: Some(request.user_id.clone()),
-                session_id: None,
-                action: "complete_data_erasure".to_string(),
-                resource: format!("erasure_request:{}", request_id),
-                metadata: serde_json::json!({
-                    "request_id": request_id,
-                    "compliance": "GDPR_HIPAA"
-                }),
-            }).await?;
-        }
+                (request.user_id.clone(), *request_id)
+            } else {
+                return Ok(());
+            }
+        };
+
+        // Audit completion
+        self.audit_logger.log_event(AuditEvent {
+            event_type: AuditEventType::SecurityViolation,
+            user_id: Some(user_id),
+            session_id: None,
+            action: "complete_data_erasure".to_string(),
+            resource: format!("erasure_request:{}", req_id),
+            metadata: serde_json::json!({
+                "request_id": req_id,
+                "compliance": "GDPR_HIPAA"
+            }),
+        }).await?;
 
         Ok(())
     }
@@ -321,6 +330,8 @@ impl ComplianceManager {
         format: ExportFormat,
     ) -> Result<Uuid> {
         let request_id = Uuid::new_v4();
+        let data_types_clone = data_types.clone();
+        let format_clone = format.clone();
         let request = DataPortabilityRequest {
             id: request_id,
             user_id: user_id.to_string(),
@@ -336,6 +347,8 @@ impl ComplianceManager {
         requests.insert(request_id, request);
 
         // Audit the portability request
+        let data_types_str = format!("{:?}", data_types_clone);
+        let format_str = format!("{:?}", format_clone);
         self.audit_logger.log_event(AuditEvent {
             event_type: AuditEventType::SecurityViolation,
             user_id: Some(user_id.to_string()),
@@ -344,8 +357,8 @@ impl ComplianceManager {
             resource: format!("user_data:{}", user_id),
             metadata: serde_json::json!({
                 "request_id": request_id,
-                "data_types": format!("{:?}", data_types),
-                "format": format!("{:?}", format),
+                "data_types": data_types_str,
+                "format": format_str,
                 "compliance": "GDPR"
             }),
         }).await?;
@@ -355,29 +368,35 @@ impl ComplianceManager {
 
     /// Process data portability request
     pub async fn process_data_portability(&self, request_id: &Uuid) -> Result<()> {
-        let mut requests = self.portability_requests.write().await;
-        if let Some(request) = requests.get_mut(request_id) {
-            request.status = PortabilityStatus::Processing;
+        let (user_id, req_id) = {
+            let mut requests = self.portability_requests.write().await;
+            if let Some(request) = requests.get_mut(request_id) {
+                request.status = PortabilityStatus::Processing;
 
-            // Here would be the actual data export logic
-            // For now, simulate completion
-            request.status = PortabilityStatus::Ready;
-            request.download_url = Some(format!("https://api.ricecoder.com/portability/{}", request_id));
-            request.expires_at = Some(Utc::now() + Duration::days(30));
+                // Here would be the actual data export logic
+                // For now, simulate completion
+                request.status = PortabilityStatus::Ready;
+                request.download_url = Some(format!("https://api.ricecoder.com/portability/{}", request_id));
+                request.expires_at = Some(Utc::now() + Duration::days(30));
 
-            // Audit completion
-            self.audit_logger.log_event(AuditEvent {
-                event_type: AuditEventType::SecurityViolation,
-                user_id: Some(request.user_id.clone()),
-                session_id: None,
-                action: "complete_data_portability".to_string(),
-                resource: format!("portability_request:{}", request_id),
-                metadata: serde_json::json!({
-                    "request_id": request_id,
-                    "compliance": "GDPR"
-                }),
-            }).await?;
-        }
+                (request.user_id.clone(), *request_id)
+            } else {
+                return Ok(());
+            }
+        };
+
+        // Audit completion
+        self.audit_logger.log_event(AuditEvent {
+            event_type: AuditEventType::SecurityViolation,
+            user_id: Some(user_id),
+            session_id: None,
+            action: "complete_data_portability".to_string(),
+            resource: format!("portability_request:{}", req_id),
+            metadata: serde_json::json!({
+                "request_id": req_id,
+                "compliance": "GDPR"
+            }),
+        }).await?;
 
         Ok(())
     }
@@ -586,6 +605,29 @@ impl ComplianceValidator {
         match classification {
             DataClassification::Public | DataClassification::Internal | DataClassification::Confidential | DataClassification::Restricted => {
                 // Erasure is generally allowed, but may require special handling for restricted data
+                Ok(true)
+            }
+        }
+    }
+
+    /// Validate enterprise sharing policy compliance
+    pub async fn validate_enterprise_policy(&self, data_classification: &DataClassification) -> Result<bool> {
+        // Validate the enterprise sharing policy against compliance requirements
+        // Check data classification compliance
+        self.validate_data_classification(data_classification).await
+    }
+
+    /// Validate resource usage compliance
+    pub async fn validate_resource_usage(&self, token_limit_status: &str) -> Result<bool> {
+        // Check if the token usage status complies with resource limits
+        match token_limit_status {
+            "Normal" | "Warning" => Ok(true),
+            "Critical" => {
+                // Critical status may require special approval or restrictions
+                Ok(false) // Deny critical usage
+            }
+            _ => {
+                // Unknown status - allow but log
                 Ok(true)
             }
         }

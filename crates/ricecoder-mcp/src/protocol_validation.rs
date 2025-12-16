@@ -6,6 +6,7 @@
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::Arc;
 use tracing::{debug, warn};
 
 use crate::error::{Error, Result};
@@ -42,7 +43,7 @@ impl MCPProtocolValidator {
     }
 
     /// Validate an MCP message
-    pub fn validate_message(&self, message: &MCPMessage) -> Result<()> {
+    pub async fn validate_message(&self, message: &MCPMessage) -> Result<()> {
         let message_type = match message {
             MCPMessage::Request(_) => "request",
             MCPMessage::Response(_) => "response",
@@ -383,9 +384,9 @@ impl MCPComplianceChecker {
     }
 
     /// Check if a message is protocol compliant
-    pub fn check_compliance(&self, message: &MCPMessage) -> Result<()> {
+    pub async fn check_compliance(&self, message: &MCPMessage) -> Result<()> {
         // First validate the message structure
-        self.validator.validate_message(message)?;
+        self.validator.validate_message(message).await?;
 
         // Additional compliance checks
         self.check_message_size(message)?;
@@ -435,8 +436,8 @@ impl MCPComplianceChecker {
     }
 
     /// Validate and handle an incoming message
-    pub fn validate_and_handle(&self, message: &MCPMessage) -> Result<()> {
-        match self.check_compliance(message) {
+    pub async fn validate_and_handle(&self, message: &MCPMessage) -> Result<()> {
+        match self.check_compliance(message).await {
             Ok(_) => {
                 debug!("Message passed compliance check");
                 Ok(())
@@ -514,8 +515,8 @@ mod tests {
         assert!(handler.is_server_error(-32000)); // Server error
     }
 
-    #[test]
-    fn test_compliance_checker() {
+    #[tokio::test]
+    async fn test_compliance_checker() {
         let checker = MCPComplianceChecker::new();
 
         let valid_request = MCPMessage::Request(MCPRequest {
@@ -524,7 +525,7 @@ mod tests {
             params: serde_json::json!({"tool": "grep"}),
         });
 
-        assert!(checker.check_compliance(&valid_request).is_ok());
+        assert!(checker.check_compliance(&valid_request).await.is_ok());
 
         // Test reserved method prefix
         let invalid_request = MCPMessage::Request(MCPRequest {
@@ -533,7 +534,7 @@ mod tests {
             params: serde_json::json!({}),
         });
 
-        assert!(checker.check_compliance(&invalid_request).is_err());
+        assert!(checker.check_compliance(&invalid_request).await.is_err());
     }
 
     #[test]

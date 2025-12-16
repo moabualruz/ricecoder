@@ -25,11 +25,13 @@ pub struct EncryptedData {
 }
 
 /// Key manager for API key encryption/decryption
+#[derive(Debug)]
 pub struct KeyManager {
     master_key: [u8; 32],
 }
 
 /// Customer key manager for SOC 2 compliance
+#[derive(Debug)]
 pub struct CustomerKeyManager {
     master_key_manager: KeyManager,
 }
@@ -116,10 +118,13 @@ impl KeyManager {
     /// Derive key from existing key bytes and salt
     fn derive_key_from_bytes(key: &[u8; 32], salt: &[u8]) -> Result<[u8; 32]> {
         let mut derived_key = [0u8; 32];
+        let params = Params::new(65536, 3, 4, None).map_err(|e| SecurityError::KeyDerivation {
+            message: e.to_string(),
+        })?;
         let argon2 = Argon2::new(
             argon2::Algorithm::Argon2id,
             argon2::Version::V0x13,
-            Params::new(65536, 3, 4, None).unwrap(),
+            params,
         );
 
         argon2
@@ -160,13 +165,13 @@ impl CustomerKeyManager {
 
     /// Encrypt data with customer key
     pub fn encrypt_with_customer_key(&self, data: &str, customer_key: &[u8]) -> Result<EncryptedData> {
-        let encrypted_key = self.master_key_manager.encrypt_api_key(&base64::encode(customer_key))?;
-        let mut derived_key = [0u8; 32];
-        rand::thread_rng().fill(&mut derived_key);
+        let encrypted_key = self.master_key_manager.encrypt_api_key(&general_purpose::STANDARD.encode(customer_key))?;
+        let salt = Self::generate_salt();
 
         // Use customer key to derive encryption key
+        let mut derived_key = [0u8; 32];
         let argon2 = Argon2::default();
-        argon2.hash_password_into(customer_key, b"ricecoder-customer-encryption", &mut derived_key)
+        argon2.hash_password_into(customer_key, &salt, &mut derived_key)
             .map_err(|e| SecurityError::KeyDerivation {
                 message: e.to_string(),
             })?;
@@ -181,20 +186,21 @@ impl CustomerKeyManager {
             })?;
 
         Ok(EncryptedData {
-            salt: base64::encode(b"customer-key-salt"), // Fixed salt for customer keys
-            nonce: base64::encode(nonce),
-            ciphertext: base64::encode(ciphertext),
+            salt: general_purpose::STANDARD.encode(salt),
+            nonce: general_purpose::STANDARD.encode(nonce),
+            ciphertext: general_purpose::STANDARD.encode(ciphertext),
         })
     }
 
     /// Decrypt data with customer key
     pub fn decrypt_with_customer_key(&self, encrypted: &EncryptedData, customer_key: &[u8]) -> Result<String> {
-        let nonce_bytes = base64::decode(&encrypted.nonce)?;
-        let ciphertext = base64::decode(&encrypted.ciphertext)?;
+        let salt_bytes = general_purpose::STANDARD.decode(&encrypted.salt)?;
+        let nonce_bytes = general_purpose::STANDARD.decode(&encrypted.nonce)?;
+        let ciphertext = general_purpose::STANDARD.decode(&encrypted.ciphertext)?;
 
         let mut derived_key = [0u8; 32];
         let argon2 = Argon2::default();
-        argon2.hash_password_into(customer_key, b"ricecoder-customer-encryption", &mut derived_key)
+        argon2.hash_password_into(customer_key, &salt_bytes, &mut derived_key)
             .map_err(|e| SecurityError::KeyDerivation {
                 message: e.to_string(),
             })?;
@@ -226,6 +232,11 @@ impl CustomerKeyManager {
         let mut bytes = [0u8; 12];
         rand::thread_rng().fill(&mut bytes);
         bytes
+    }
+
+    /// Generate random salt
+    fn generate_salt() -> [u8; 32] {
+        rand::thread_rng().gen()
     }
 }
 

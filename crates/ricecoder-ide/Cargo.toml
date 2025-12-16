@@ -28,6 +28,8 @@ ricecoder-external-lsp = { path = "../ricecoder-external-lsp", version = "0.1" }
 ricecoder-completion = { path = "../ricecoder-completion", version = "0.1" }
 ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
 ricecoder-tui = { path = "../ricecoder-tui", version = "0.1" }
+ricecoder-themes = { path = "../ricecoder-themes", version = "0.1" }
+ratatui = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

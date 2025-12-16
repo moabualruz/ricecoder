@@ -190,10 +190,9 @@ impl ToolExecutor for MCPToolExecutor {
 
         // Check permissions (MCP permission manager)
         let has_mcp_permission = self.permission_manager
-            .check_permission(&context.tool_name, context.user_id.as_deref())
-            .unwrap_or(false);
+            .check_permission(&context.tool_name, context.user_id.as_deref());
 
-        if !has_mcp_permission {
+        if has_mcp_permission.is_ok() {
             let result = ToolExecutionResult {
                 tool_name: context.tool_name.clone(),
                 success: false,
@@ -215,8 +214,8 @@ impl ToolExecutor for MCPToolExecutor {
                     &context.tool_name,
                     false,
                     "Permission denied by MCP permission manager",
-                    context.user_id.as_ref(),
-                    context.session_id.as_ref(),
+                    context.user_id.as_ref().map(|s| s.clone()),
+                    context.session_id.as_ref().map(|s| s.clone()),
                 ).await;
             }
 
@@ -258,8 +257,8 @@ impl ToolExecutor for MCPToolExecutor {
                         &context.tool_name,
                         false,
                         "Access denied by RBAC",
-                        context.user_id.as_ref(),
-                        context.session_id.as_ref(),
+                        context.user_id.as_ref().map(|s| s.clone()),
+                        context.session_id.as_ref().map(|s| s.clone()),
                     ).await;
                 }
 
@@ -414,8 +413,8 @@ impl ToolExecutor for MCPToolExecutor {
                 &self.server_id,
                 &result.tool_name,
                 &result,
-                context.user_id.as_ref(),
-                context.session_id.as_ref(),
+                context.user_id.clone(),
+                context.session_id.clone(),
             ).await;
         }
 

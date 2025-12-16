@@ -65,6 +65,8 @@ impl WidgetContainer {
             AppMode::Chat => Some(&mut self.chat as &mut dyn std::any::Any),
             AppMode::Diff => Some(&mut self.diff as &mut dyn std::any::Any),
             AppMode::Command => Some(&mut self.prompt as &mut dyn std::any::Any),
+            AppMode::Mcp => None, // TODO: Add MCP widget
+            AppMode::Provider => None, // TODO: Add Provider widget
             AppMode::Help => Some(&mut self.menu as &mut dyn std::any::Any),
         }
     }
@@ -313,6 +315,14 @@ impl StateSynchronizer {
                 // Command mode specific sync
                 tracing::debug!("Syncing command mode state");
             }
+            AppMode::Mcp => {
+                // MCP mode specific sync
+                tracing::debug!("Syncing MCP mode state");
+            }
+            AppMode::Provider => {
+                // Provider mode specific sync
+                tracing::debug!("Syncing provider mode state");
+            }
             AppMode::Help => {
                 // Help mode specific sync
                 tracing::debug!("Syncing help mode state");
@@ -384,6 +394,14 @@ impl WidgetIntegration {
                     tracing::debug!("Command mode: initializing menu");
                 }
             }
+            AppMode::Mcp => {
+                // MCP mode initialization
+                tracing::debug!("MCP mode: initializing MCP interface");
+            }
+            AppMode::Provider => {
+                // Provider mode initialization
+                tracing::debug!("Provider mode: initializing provider management");
+            }
             AppMode::Help => {
                 // Ensure help is ready
                 tracing::debug!("Help mode: showing help");
@@ -423,6 +441,16 @@ impl WidgetIntegration {
                 Ok(LayoutInfo::Diff(layout))
             }
             AppMode::Command => {
+                let layout = self.layout.layout_command()?;
+                Ok(LayoutInfo::Command(layout))
+            }
+            AppMode::Mcp => {
+                // Use command layout for MCP for now
+                let layout = self.layout.layout_command()?;
+                Ok(LayoutInfo::Command(layout))
+            }
+            AppMode::Provider => {
+                // Use command layout for Provider for now
                 let layout = self.layout.layout_command()?;
                 Ok(LayoutInfo::Command(layout))
             }

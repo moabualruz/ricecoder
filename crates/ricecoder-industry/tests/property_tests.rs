@@ -679,5 +679,4 @@ proptest! {
             }
         });
     }
-}</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-industry/tests/property_tests.rs
+}

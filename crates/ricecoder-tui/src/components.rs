@@ -1,7 +1,6 @@
 //! Interactive UI components and Component Architecture for TEA
 
-use crate::app::AppMode;
-use crate::model::{AppMessage, AppModel};
+use crate::model::{AppMessage, AppModel, AppMode};
 use ratatui::layout::Rect;
 use ratatui::Frame;
 use std::any::Any;
@@ -71,6 +70,16 @@ pub mod messaging {
             AppMessage::ComponentMessage { .. } => "ComponentMessage".to_string(),
             AppMessage::Tick => "Tick".to_string(),
             AppMessage::ExitRequested => "ExitRequested".to_string(),
+            AppMessage::McpServerAdded(_) => "McpServerAdded".to_string(),
+            AppMessage::McpServerRemoved(_) => "McpServerRemoved".to_string(),
+            AppMessage::McpToolExecuted { .. } => "McpToolExecuted".to_string(),
+            AppMessage::McpToolExecutionFailed { .. } => "McpToolExecutionFailed".to_string(),
+            AppMessage::ProviderSwitched(_) => "ProviderSwitched".to_string(),
+            AppMessage::ProviderStatusUpdated { .. } => "ProviderStatusUpdated".to_string(),
+            AppMessage::ProviderMetricsUpdated { .. } => "ProviderMetricsUpdated".to_string(),
+            AppMessage::ProviderSelected(_) => "ProviderSelected".to_string(),
+            AppMessage::ProviderViewModeChanged(_) => "ProviderViewModeChanged".to_string(),
+            AppMessage::ProviderFilterChanged(_) => "ProviderFilterChanged".to_string(),
         }
     }
 
@@ -1015,6 +1024,8 @@ impl ModeIndicator {
             AppMode::Chat => vec!["QuestionAnswering", "FreeformChat"],
             AppMode::Command => vec!["CodeGeneration", "FileOperations", "CommandExecution"],
             AppMode::Diff => vec!["CodeModification", "FileOperations"],
+            AppMode::Mcp => vec!["ToolExecution", "ServerManagement"],
+            AppMode::Provider => vec!["ProviderManagement", "StatusMonitoring"],
             AppMode::Help => vec!["QuestionAnswering"],
         }
     }
@@ -1080,6 +1091,8 @@ impl ModeSelectionMenu {
                 AppMode::Chat,
                 AppMode::Command,
                 AppMode::Diff,
+                AppMode::Mcp,
+                AppMode::Provider,
                 AppMode::Help,
             ],
             selected: 0,
@@ -1152,6 +1165,8 @@ impl ModeSelectionMenu {
                     AppMode::Chat => "Chat with the AI assistant",
                     AppMode::Command => "Execute commands and generate code",
                     AppMode::Diff => "Review and apply code changes",
+                    AppMode::Mcp => "Manage MCP servers and tools",
+                    AppMode::Provider => "Configure AI providers",
                     AppMode::Help => "Get help and documentation",
                 };
                 (mode, desc)

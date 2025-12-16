@@ -110,6 +110,8 @@ impl ContextIndicators {
             AppMode::Chat => "💬",
             AppMode::Command => "⚙️",
             AppMode::Diff => "📝",
+            AppMode::Mcp => "🔧",
+            AppMode::Provider => "🤖",
             AppMode::Help => "❓",
         };
         parts.push(mode_str.to_string());

@@ -14,7 +14,7 @@ use crate::style::Theme;
 use crate::terminal_state::TerminalCapabilities;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use crate::theme::ThemeManager;
-use crate::model::PendingOperation;
+use crate::model::{PendingOperation, AppMode};
 use crate::tea::ReactiveState;
 use anyhow::Result;
 use ratatui::backend::CrosstermBackend;
@@ -28,63 +28,14 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-/// Application mode
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum AppMode {
-    /// Chat mode for conversational interaction
-    Chat,
-    /// Command mode for executing commands
-    Command,
-    /// Diff mode for reviewing code changes
-    Diff,
-    /// Help mode
-    Help,
-}
-
-impl AppMode {
-    /// Get the display name for the mode
-    pub fn display_name(&self) -> &'static str {
-        match self {
-            AppMode::Chat => "Chat",
-            AppMode::Command => "Command",
-            AppMode::Diff => "Diff",
-            AppMode::Help => "Help",
-        }
-    }
-
-    /// Get the keyboard shortcut for the mode
-    pub fn shortcut(&self) -> &'static str {
-        match self {
-            AppMode::Chat => "Ctrl+1",
-            AppMode::Command => "Ctrl+2",
-            AppMode::Diff => "Ctrl+3",
-            AppMode::Help => "Ctrl+4",
-        }
-    }
-
-    /// Get the next mode in the cycle
-    pub fn next(&self) -> AppMode {
-        match self {
-            AppMode::Chat => AppMode::Command,
-            AppMode::Command => AppMode::Diff,
-            AppMode::Diff => AppMode::Help,
-            AppMode::Help => AppMode::Chat,
-        }
-    }
-
-    /// Get the previous mode in the cycle
-    pub fn previous(&self) -> AppMode {
-        match self {
-            AppMode::Chat => AppMode::Help,
-            AppMode::Command => AppMode::Chat,
-            AppMode::Diff => AppMode::Command,
-            AppMode::Help => AppMode::Diff,
-        }
-    }
-}
-
 /// Main application state - TEA Architecture Integration
 pub struct App {
+    /// Current application mode
+    pub mode: AppMode,
+    /// Current theme
+    pub theme: ricecoder_themes::Theme,
+    /// Terminal capabilities
+    pub terminal_caps: crate::terminal_state::TerminalCapabilities,
     /// TEA reactive state manager
     pub reactive_state: std::sync::Arc<tokio::sync::RwLock<ReactiveState>>,
     /// Event dispatcher for async event handling
@@ -171,7 +122,7 @@ impl App {
         let error_manager = ErrorManager::new();
 
         // Create progressive enhancement manager
-        let progressive_enhancement = crate::ProgressiveEnhancement::new(capabilities);
+        let progressive_enhancement = crate::ProgressiveEnhancement::new(capabilities.clone());
 
         // Create real-time updates coordinator
         let real_time_updates = Arc::new(crate::RealTimeUpdates::new(error_manager.clone()));
@@ -196,6 +147,9 @@ impl App {
         ))?;
 
         let mut app = Self {
+            mode: AppMode::Chat,
+            theme: ricecoder_themes::Theme::default(),
+            terminal_caps: capabilities,
             reactive_state,
             event_dispatcher,
             optimistic_updater,
@@ -252,9 +206,9 @@ impl App {
         let initial_model = crate::AppModel::init_with_providers(
             tui_config,
             ricecoder_themes::Theme::default(),
-            capabilities,
-            provider_data.available_providers,
-            provider_data.current_provider,
+            capabilities.clone(),
+            available_providers,
+            current_provider,
         );
 
         // Create reactive state manager
@@ -292,16 +246,20 @@ impl App {
         let error_manager = ErrorManager::new();
 
         // Create progressive enhancement system
-        let progressive_enhancement = crate::ProgressiveEnhancement::new(capabilities);
+        let progressive_enhancement = crate::ProgressiveEnhancement::new(capabilities.clone());
 
         // Create real-time updates system
-        let real_time_updates = crate::RealTimeUpdates::new();
+        let real_time_updates = Arc::new(crate::RealTimeUpdates::new(error_manager.clone()));
 
         // Create reactive UI coordinator
-        let reactive_ui = crate::ReactiveUICoordinator::new();
+        let reactive_ui = crate::ReactiveUICoordinator::new(
+            Arc::clone(&reactive_state),
+            Arc::clone(&real_time_updates),
+            error_manager.clone(),
+        );
 
         // Create chat widget
-        let chat = crate::ChatWidget::new();
+        let chat = crate::widgets::ChatWidget::new();
 
         let mut app = Self {
             mode: AppMode::Chat,

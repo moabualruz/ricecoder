@@ -547,5 +547,4 @@ fn test_boundary_condition_testing() {
         let result = validator.validate_message(&message);
         assert!(result.is_ok() || result.is_err()); // No panics
     }
-}</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-mcp/tests/protocol_coverage_tests.rs
+}

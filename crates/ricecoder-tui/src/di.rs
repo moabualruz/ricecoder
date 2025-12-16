@@ -4,23 +4,21 @@
 //! for the RiceCoder TUI application.
 
 use ricecoder_di::{create_application_container, DIContainer, DIResult};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 /// Global DI container for the TUI application
-static mut DI_CONTAINER: Option<Arc<DIContainer>> = None;
+static DI_CONTAINER: OnceLock<Arc<DIContainer>> = OnceLock::new();
 
 /// Initialize the DI container for the TUI
 pub fn initialize_di_container() -> DIResult<()> {
     let container = create_application_container()?;
-    unsafe {
-        DI_CONTAINER = Some(Arc::new(container));
-    }
+    DI_CONTAINER.set(Arc::new(container)).map_err(|_| ricecoder_di::DIError::ServiceAlreadyRegistered { service_type: "DIContainer".to_string() })?;
     Ok(())
 }
 
 /// Get the global DI container
 pub fn get_di_container() -> Option<Arc<DIContainer>> {
-    unsafe { DI_CONTAINER.clone() }
+    DI_CONTAINER.get().cloned()
 }
 
 /// Get a service from the DI container
@@ -42,14 +40,13 @@ pub fn initialize_di_container_with_features(features: &[&str]) -> DIResult<()> 
 
 /// Check if DI container is initialized
 pub fn is_di_initialized() -> bool {
-    unsafe { DI_CONTAINER.is_some() }
+    DI_CONTAINER.get().is_some()
 }
 
 /// Reset the DI container (mainly for testing)
 #[cfg(test)]
 pub fn reset_di_container() {
-    unsafe {
-        DI_CONTAINER = None;
-    }
+    // OnceLock cannot be reset, so this is a no-op for now
+    // In tests, use separate containers
 }
 

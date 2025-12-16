@@ -328,5 +328,4 @@ fn test_enterprise_encryption_key_validation() {
     // Test with valid password
     let result = store.enable_enterprise_encryption("enterprise-password-123");
     assert!(result.is_ok());
-}</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-sessions/tests/persistence_serialization_encryption_validation_tests.rs
+}

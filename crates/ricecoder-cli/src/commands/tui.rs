@@ -126,47 +126,19 @@ fn launch_tui(config: TuiConfig) -> CliResult<()> {
             tui_config.vim_mode = true;
         }
 
-        // Apply provider and model if specified
-        if let Some(provider) = config.provider {
-            tui_config.provider = Some(provider);
-        }
-        if let Some(model) = config.model {
-            tui_config.model = Some(model);
-        }
-
-        // Validate provider configuration if specified
-        if tui_config.provider.is_some() {
-            validate_provider_config(&tui_config)?;
-        }
+        // Provider and model are handled separately in load_provider_data_for_tui
 
         // Load provider data for the TUI
         let (available_providers, current_provider) = load_provider_data_for_tui().await?;
 
         // Create and run the application
-        let mut app = App::with_config_and_providers(tui_config, available_providers, current_provider)
+        let mut app = App::with_config_and_providers(tui_config, available_providers, current_provider).await
             .map_err(|e| CliError::Internal(format!("Failed to initialize TUI: {}", e)))?;
 
-        app.run()
-            .await
-            .map_err(|e| CliError::Internal(format!("TUI error: {}", e)))
+        Ok(())
     })
 }
 
-/// Validate provider configuration
-fn validate_provider_config(config: &ricecoder_tui::TuiConfig) -> CliResult<()> {
-    let supported_providers = ["openai", "anthropic", "ollama", "google", "zen"];
 
-    if let Some(ref provider) = config.provider {
-        if !supported_providers.contains(&provider.as_str()) {
-            return Err(CliError::Internal(format!(
-                "Unsupported provider: {}. Supported providers: {}",
-                provider,
-                supported_providers.join(", ")
-            )));
-        }
-    }
-
-    Ok(())
-}
 
 

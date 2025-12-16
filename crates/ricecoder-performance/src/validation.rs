@@ -44,15 +44,14 @@ impl PerformanceValidator {
 
         // Run multiple iterations
         for _ in 0..10 {
-            let _timer = monitor.start();
-            let start = std::time::Instant::now();
+            monitor.start();
 
             let result = Command::new(&self.binary_path)
                 .arg("--version")
                 .output()
                 .await?;
 
-            monitor.record_measurement(start.elapsed());
+            monitor.stop();
 
             if !result.status.success() {
                 return Err(format!("CLI command failed: {:?}", result.status).into());
@@ -113,14 +112,14 @@ impl PerformanceValidator {
 
         // Test help command as a typical operation
         for _ in 0..20 {
-            let start = std::time::Instant::now();
+            monitor.start();
 
             let result = Command::new(&self.binary_path)
                 .arg("--help")
                 .output()
                 .await?;
 
-            monitor.record_measurement(start.elapsed());
+            monitor.stop();
 
             if !result.status.success() {
                 return Err(format!("Help command failed: {:?}", result.status).into());
@@ -157,14 +156,14 @@ impl PerformanceValidator {
         let mut monitor = PerformanceMonitor::new("memory_usage".to_string());
 
         // Simulate memory measurement during operation
-        let start = std::time::Instant::now();
+        monitor.start();
 
         let result = Command::new(&self.binary_path)
             .arg("--help")
             .output()
             .await?;
 
-        monitor.record_measurement(start.elapsed());
+        monitor.stop();
 
         if !result.status.success() {
             return Err(format!("Command failed: {:?}", result.status).into());

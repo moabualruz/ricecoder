@@ -117,4 +117,14 @@ impl AgentError {
 /// Result type for agent operations
 pub type Result<T> = std::result::Result<T, AgentError>;
 
+impl From<ricecoder_security::SecurityError> for AgentError {
+    fn from(error: ricecoder_security::SecurityError) -> Self {
+        match error {
+            ricecoder_security::SecurityError::AccessDenied { message } => AgentError::AccessDenied(message),
+            ricecoder_security::SecurityError::Validation { message } => AgentError::ValidationError(message),
+            _ => AgentError::Internal(format!("Security error: {}", error)),
+        }
+    }
+}
+
 

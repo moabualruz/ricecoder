@@ -612,5 +612,4 @@ async fn test_performance_regression_detection() -> Result<(), Box<dyn std::erro
     assert!(threshold_validation.passed, "Current metrics should pass thresholds");
 
     Ok(())
-}</content>
-<parameter name="filePath">D:\work\kiro-workspace\projects\ricecoder\tests\comprehensive_integration_performance.rs
+}

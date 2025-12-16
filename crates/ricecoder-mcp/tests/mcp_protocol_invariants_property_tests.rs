@@ -998,5 +998,4 @@ impl MCPTransport for MockTransport {
     async fn close(&self) -> Result<()> {
         Ok(())
     }
-}</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-mcp/tests/mcp_protocol_invariants_property_tests.rs
+}

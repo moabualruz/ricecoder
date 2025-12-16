@@ -525,5 +525,4 @@ fn test_large_session_handling() {
 
     println!("Large session handling - Size: {} KB, Messages: {}, Agents: {}",
              size_kb, deserialized.history.len(), deserialized.background_agents.len());
-}</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-sessions/tests/performance_memory_security_regression_tests.rs
+}

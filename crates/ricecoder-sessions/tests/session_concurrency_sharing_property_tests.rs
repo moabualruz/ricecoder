@@ -708,5 +708,4 @@ proptest! {
             prop_assert_eq!(correct_permission_count, access_count);
         });
     }
-}</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-sessions/tests/session_concurrency_sharing_property_tests.rs
+}

@@ -214,7 +214,7 @@ impl LanguageConfig {
 }
 
 /// Language support interface
-pub trait LanguageSupport {
+pub trait LanguageSupport: Send + Sync {
     /// Get the language this support is for
     fn language(&self) -> Language;
 
@@ -235,7 +235,7 @@ pub trait LanguageSupport {
 
 /// Language registry for managing language supports
 pub struct LanguageRegistry {
-    supports: HashMap<Language, Box<dyn LanguageSupport>>,
+    supports: HashMap<Language, Box<dyn LanguageSupport + 'static>>,
 }
 
 impl LanguageRegistry {
@@ -247,17 +247,17 @@ impl LanguageRegistry {
     }
 
     /// Register a language support
-    pub fn register(&mut self, support: Box<dyn LanguageSupport>) {
+    pub fn register(&mut self, support: Box<dyn LanguageSupport + 'static>) {
         self.supports.insert(support.language(), support);
     }
 
     /// Get language support for a language
-    pub fn get(&self, language: &Language) -> Option<&dyn LanguageSupport> {
+    pub fn get(&self, language: &Language) -> Option<&(dyn LanguageSupport + 'static)> {
         self.supports.get(language).map(|s| s.as_ref())
     }
 
     /// Detect language from file path and get support
-    pub fn detect_and_get(&self, file_path: &std::path::Path) -> Option<&dyn LanguageSupport> {
+    pub fn detect_and_get(&self, file_path: &std::path::Path) -> Option<&(dyn LanguageSupport + 'static)> {
         Language::from_path(file_path)
             .and_then(|lang| self.get(&lang))
     }

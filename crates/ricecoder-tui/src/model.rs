@@ -86,6 +86,30 @@ impl AppMode {
             AppMode::Help => "Ctrl+6",
         }
     }
+
+    /// Get the next mode in the cycle
+    pub fn next(&self) -> AppMode {
+        match self {
+            AppMode::Chat => AppMode::Command,
+            AppMode::Command => AppMode::Diff,
+            AppMode::Diff => AppMode::Mcp,
+            AppMode::Mcp => AppMode::Provider,
+            AppMode::Provider => AppMode::Help,
+            AppMode::Help => AppMode::Chat,
+        }
+    }
+
+    /// Get the previous mode in the cycle
+    pub fn previous(&self) -> AppMode {
+        match self {
+            AppMode::Chat => AppMode::Help,
+            AppMode::Command => AppMode::Chat,
+            AppMode::Diff => AppMode::Command,
+            AppMode::Mcp => AppMode::Diff,
+            AppMode::Provider => AppMode::Mcp,
+            AppMode::Help => AppMode::Provider,
+        }
+    }
 }
 
 /// Session state

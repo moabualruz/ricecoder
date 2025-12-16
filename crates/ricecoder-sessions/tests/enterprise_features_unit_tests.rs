@@ -430,5 +430,4 @@ fn test_enterprise_session_invalidation_cascade() {
     // Verify both shares are gone
     assert!(share_service.get_share(&share1.id).is_err());
     assert!(share_service.get_share(&share2.id).is_err());
-}</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-sessions/tests/enterprise_features_unit_tests.rs
+}

@@ -4933,6 +4933,7 @@ name = "ricecoder"
 version = "0.1.72"
 dependencies = [
  "anyhow",
+ "async-trait",
  "atty",
  "chrono",
  "clap",
@@ -5396,9 +5397,11 @@ dependencies = [
  "async-trait",
  "jsonschema 0.18.3",
  "proptest",
+ "ratatui 0.29.0",
  "ricecoder-completion",
  "ricecoder-external-lsp",
  "ricecoder-storage",
+ "ricecoder-themes",
  "ricecoder-tui",
  "serde",
  "serde_json",
@@ -5615,6 +5618,7 @@ dependencies = [
  "criterion",
  "futures",
  "futures-util",
+ "http 0.2.12",
  "proptest",
  "regex",
  "reqwest 0.11.27",

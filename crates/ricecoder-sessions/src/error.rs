@@ -2,6 +2,7 @@
 
 use std::io;
 use thiserror::Error;
+use base64;
 
 /// Result type for session operations
 pub type SessionResult<T> = Result<T, SessionError>;
@@ -60,4 +61,16 @@ pub enum SessionError {
     /// Token estimation error
     #[error("Token estimation error: {0}")]
     TokenEstimation(String),
+}
+
+impl From<ricecoder_security::SecurityError> for SessionError {
+    fn from(err: ricecoder_security::SecurityError) -> Self {
+        SessionError::StorageError(format!("Security error: {}", err))
+    }
+}
+
+impl From<base64::DecodeError> for SessionError {
+    fn from(err: base64::DecodeError) -> Self {
+        SessionError::Invalid(format!("Base64 decode error: {}", err))
+    }
 }

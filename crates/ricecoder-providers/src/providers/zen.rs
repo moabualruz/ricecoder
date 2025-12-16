@@ -8,7 +8,8 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tracing::{debug, error, warn};
-use futures::StreamExt;
+use futures::{stream, StreamExt};
+use std::result::Result;
 
 use crate::error::ProviderError;
 use crate::models::{Capability, ChatRequest, ChatResponse, FinishReason, ModelInfo, TokenUsage};
@@ -378,7 +379,6 @@ impl ZenProvider {
         text: &str,
         model: String,
     ) -> Result<crate::provider::ChatStream, ProviderError> {
-        use futures::stream;
 
         let lines: Vec<String> = text
             .lines()

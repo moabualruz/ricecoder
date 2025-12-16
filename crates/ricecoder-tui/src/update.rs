@@ -422,8 +422,8 @@ impl AppModel {
     }
 
     fn switch_to_selected_provider(self) -> (Self, Vec<Command>) {
-        if let Some(provider_id) = &self.providers.selected_provider {
-            (self, vec![Command::SwitchProvider(provider_id.clone())])
+        if let Some(provider_id) = self.providers.selected_provider.clone() {
+            (self, vec![Command::SwitchProvider(provider_id)])
         } else {
             (self, vec![])
         }

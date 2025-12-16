@@ -259,5 +259,4 @@ fn test_session_immutability_through_operations() {
     assert_eq!(session.name, original_name);
     assert_eq!(session.status, original_status);
     assert_eq!(session.context.provider, original_context.provider);
-}</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-sessions/tests/session_lifecycle_unit_tests.rs
+}

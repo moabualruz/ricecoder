@@ -1,9 +1,10 @@
 //! Main parser implementation with caching and optimization
 
-use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use std::future::Future;
+use std::pin::Pin;
 
 use crate::error::{ParserError, ParserResult, ParserWarning};
 use crate::languages::{Language, LanguageRegistry, LanguageSupport};
@@ -11,10 +12,9 @@ use crate::types::{ASTNode, NodeType, Position, Range, SyntaxTree};
 use ricecoder_cache::{Cache, CacheConfig};
 
 /// Parser trait for parsing source code into syntax trees
-#[async_trait::async_trait]
 pub trait CodeParser {
     /// Parse source code into a syntax tree
-    async fn parse(&self, source: &str) -> Result<SyntaxTree, ParserError>;
+    fn parse<'a>(&'a self, source: &'a str) -> Pin<Box<dyn Future<Output = Result<SyntaxTree, ParserError>> + Send + 'a>>;
 }
 
 /// Parser configuration
@@ -97,7 +97,7 @@ impl Parser {
     }
 
     /// Register a language support
-    pub async fn register_language(&self, support: Box<dyn LanguageSupport>) -> ParserResult<()> {
+    pub async fn register_language(&self, support: Box<dyn LanguageSupport + 'static>) -> ParserResult<()> {
         let mut registry = self.language_registry.write().await;
         registry.register(support);
         Ok(())
@@ -241,23 +241,25 @@ impl Parser {
     }
 }
 
-#[async_trait::async_trait]
-impl CodeParser for crate::parser::Parser {
-    async fn parse(&self, source: &str) -> Result<SyntaxTree, ParserError> {
-        // Try to detect language from content (simple heuristic)
-        let language = if source.contains("fn ") && source.contains("{") {
-            Language::Rust
-        } else if source.contains("def ") && source.contains(":") {
-            Language::Python
-        } else if source.contains("function") || source.contains("const") || source.contains("let") {
-            Language::JavaScript
-        } else {
-            Language::Rust // default
-        };
+impl CodeParser for Parser {
+    fn parse<'a>(&'a self, source: &'a str) -> Pin<Box<dyn Future<Output = Result<SyntaxTree, ParserError>> + Send + 'a>> {
+        Box::pin(async move {
+            // Try to detect language from content (simple heuristic)
+            let language = if source.contains("fn ") && source.contains("{") {
+                Language::Rust
+            } else if source.contains("def ") && source.contains(":") {
+                Language::Python
+            } else if source.contains("function") || source.contains("const") || source.contains("let") {
+                Language::JavaScript
+            } else {
+                Language::Rust // default
+            };
 
-        let result = self.parse(source, &language, None).await?;
-        Ok(result.tree)
-    }}
+            let result = self.parse(source, &language, None).await?;
+            Ok(result.tree)
+        })
+    }
+}
 
 
 impl std::fmt::Display for ParserStats {
@@ -386,21 +388,21 @@ pub mod tree_sitter_support {
 }
 
 /// Create tree-sitter supports for supported languages
-pub fn create_supports() -> Vec<Box<dyn LanguageSupport>> {
+pub fn create_supports() -> Vec<Box<dyn LanguageSupport + 'static>> {
     let mut supports = Vec::new();
 
     // Rust support
-    supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(Language::Rust, tree_sitter_rust::language())));
+    supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(Language::Rust, tree_sitter_rust::language())) as Box<dyn LanguageSupport + 'static>);
 
     // Python support
-    supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(Language::Python, tree_sitter_python::language())));
+    supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(Language::Python, tree_sitter_python::language())) as Box<dyn LanguageSupport + 'static>);
 
     // TypeScript/JavaScript support
-    supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(Language::TypeScript, tree_sitter_typescript::language_tsx())));
-    supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(Language::JavaScript, tree_sitter_typescript::language_tsx())));
+    supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(Language::TypeScript, tree_sitter_typescript::language_tsx())) as Box<dyn LanguageSupport + 'static>);
+    supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(Language::JavaScript, tree_sitter_typescript::language_tsx())) as Box<dyn LanguageSupport + 'static>);
 
     // Go support
-    supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(Language::Go, tree_sitter_go::language())));
+    supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(Language::Go, tree_sitter_go::language())) as Box<dyn LanguageSupport + 'static>);
 
     supports
 }

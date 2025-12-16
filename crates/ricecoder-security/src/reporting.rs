@@ -44,7 +44,7 @@ pub struct ComplianceFinding {
 }
 
 /// Finding severity
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum FindingSeverity {
     Critical,
     High,

@@ -130,7 +130,7 @@ impl PatternDetector {
         let content = std::fs::read_to_string(file_path)
             .map_err(|e| PatternError::Io(e))?;
 
-        let tree = self.parser.parse(&content)
+        let tree = self.parser.parse(&content).await
             .map_err(|e| PatternError::Parsing(e.to_string()))?;
 
         // Detect patterns in the syntax tree
@@ -188,7 +188,7 @@ mod tests {
     struct MockParser;
 
     impl CodeParser for MockParser {
-        fn parse(&self, _content: &str) -> Result<SyntaxTree, ParserError> {
+        async fn parse(&self, _content: &str) -> Result<SyntaxTree, ParserError> {
             Ok(SyntaxTree {
                 root: ricecoder_parsers::ASTNode {
                     node_type: ricecoder_parsers::NodeType::Root,

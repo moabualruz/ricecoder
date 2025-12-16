@@ -868,5 +868,4 @@ proptest! {
                 "Health checks took too long: {:?} > {:?}", total_time, max_expected_time);
         });
     }
-}</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-providers/tests/provider_performance_reliability_property_tests.rs
+}

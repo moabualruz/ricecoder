@@ -336,5 +336,4 @@ async fn test_enterprise_workspace_orchestration_with_security() -> Result<(), B
     orchestration.shutdown().await?;
 
     Ok(())
-}</content>
-<parameter name="filePath">D:\work\kiro-workspace\projects\ricecoder\tests\domain_application_infrastructure_integration.rs
+}

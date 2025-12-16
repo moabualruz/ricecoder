@@ -62,21 +62,22 @@ impl MCPTestEnvironment {
 /// **Mock MCP Server: Configurable Mock Server**
 pub struct MockMCPServer {
     pub server_id: String,
-    pub tools: HashMap<String, ToolMetadata>,
+    pub tools: std::sync::Mutex<HashMap<String, ToolMetadata>>,
 }
 
 impl MockMCPServer {
     pub fn new(server_id: String) -> Self {
         Self {
             server_id,
-            tools: HashMap::new(),
+            tools: std::sync::Mutex::new(HashMap::new()),
         }
     }
 
     pub async fn handle_request(&self, request: &MCPRequest) -> Result<MCPResponse> {
         // Handle tool listing
         if request.method == "tools/list" {
-            let tools: Vec<Value> = self.tools.values().map(|tool| {
+            let tools = self.tools.lock().unwrap();
+            let tools: Vec<Value> = tools.values().map(|tool| {
                 json!({
                     "name": tool.name,
                     "description": tool.description,
@@ -219,5 +220,4 @@ impl MCPTransport for EnhancedMockTransport {
     async fn close(&self) -> Result<()> {
         Ok(())
     }
-}</content>
-<parameter name="filePath">D:\work\kiro-workspace\projects\ricecoder\crates\ricecoder-mcp\tests\mcp_testing_infrastructure.rs
+}

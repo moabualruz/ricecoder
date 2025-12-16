@@ -16,7 +16,7 @@ use std::time::Duration;
 struct StatefulMockProvider {
     id: String,
     name: String,
-    available: bool,
+    available: std::sync::Mutex<bool>,
     models: Vec<ModelInfo>,
 }
 
@@ -46,7 +46,7 @@ impl Provider for StatefulMockProvider {
     }
 
     async fn chat(&self, request: ChatRequest) -> Result<ChatResponse, ProviderError> {
-        if self.available {
+        if *self.available.lock().unwrap() {
             Ok(ChatResponse {
                 content: "Response".to_string(),
                 model: request.model,
@@ -84,7 +84,7 @@ proptest! {
         let provider = Arc::new(StatefulMockProvider {
             id: "test_provider".to_string(),
             name: "Test Provider".to_string(),
-            available: true,
+            available: std::sync::Mutex::new(true),
             models: vec![ModelInfo {
                 id: "test-model".to_string(),
                 name: "Test Model".to_string(),
@@ -126,9 +126,9 @@ proptest! {
             }
 
             // Update the mock provider's availability
-            unsafe {
-                let provider_ptr = Arc::as_ptr(&provider) as *mut StatefulMockProvider;
-                (*provider_ptr).available = expected_connected;
+            {
+                let mut available = provider.available.lock().unwrap();
+                *available = expected_connected;
             }
 
             // Test a simple operation to verify state
@@ -172,7 +172,7 @@ proptest! {
         let provider = Arc::new(StatefulMockProvider {
             id: "status_test_provider".to_string(),
             name: "Status Test Provider".to_string(),
-            available: true,
+            available: std::sync::Mutex::new(true),
             models: vec![],
         });
 

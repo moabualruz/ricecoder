@@ -551,5 +551,4 @@ async fn test_memory_leak_prevention() {
     let cycles_per_second = cycles as f64 / test_duration.as_secs_f64();
     assert!(cycles_per_second > 100.0,
         "Operation throughput too low: {} cycles/sec", cycles_per_second);
-}</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-mcp/tests/performance_coverage_tests.rs
+}

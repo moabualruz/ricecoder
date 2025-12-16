@@ -378,5 +378,4 @@ async fn test_mcp_provider_rate_limiting_with_compliance() -> Result<(), Box<dyn
     }
 
     Ok(())
-}</content>
-<parameter name="filePath">D:\work\kiro-workspace\projects\ricecoder\tests\external_service_mcp_providers_compliance.rs
+}

@@ -2,7 +2,7 @@
 
 use crate::error::{SessionError, SessionResult};
 use crate::models::Session;
-use base64::engine::general_purpose;
+use base64::{Engine, engine::general_purpose};
 use chrono::{DateTime, Utc};
 use ricecoder_security::encryption::{CustomerKeyManager, EncryptedData, KeyManager};
 use std::fs;

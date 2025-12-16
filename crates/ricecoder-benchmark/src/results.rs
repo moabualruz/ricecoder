@@ -136,8 +136,8 @@ impl BenchmarkResults {
              Total Exercises: {}\n\
              Completed: {}\n\
              Pass Rates: {:.1}% (1st attempt), {:.1}% (2nd attempt)\n\
-             Total Cost: ${:.4f}\n\
-             Average Duration: {:.1f}s per exercise\n\
+             Total Cost: ${:.4}\n\
+             Average Duration: {:.1}s per exercise\n\
              Error Outputs: {}\n\
              Malformed Responses: {}\n\
              Syntax Errors: {}\n\

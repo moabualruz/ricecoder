@@ -1338,26 +1338,12 @@ impl PerformanceProfiler {
         }
     }
 
-    /// Generate flame graph data in folded format
+    /// Generate flame graph data in folded stack format
     pub fn generate_flame_graph(&self) -> String {
         let mut lines = Vec::new();
+        let mut stack = Vec::new();
 
         for span in &self.spans {
-            // Build stack trace
-            let mut stack = Vec::new();
-            let mut current_index = span.parent_index;
-
-            // Walk up the parent chain to build stack
-            while let Some(idx) = current_index {
-                if let Some(parent_span) = self.spans.get(idx) {
-                    stack.push(parent_span.name.clone());
-                    current_index = parent_span.parent_index;
-                } else {
-                    break;
-                }
-            }
-
-            stack.reverse();
             stack.push(span.name.clone());
 
             // Format: stack_trace samples

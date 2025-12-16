@@ -2,7 +2,7 @@
 
 use ricecoder_cli::{output, lifecycle};
 use ricecoder_cli::router::CommandRouter;
-use ricecoder_storage::{FirstRunHandler, PathResolver};
+use ricecoder_storage::PathResolver;
 use std::path::Path;
 use std::fs;
 use tokio::signal;
@@ -59,21 +59,6 @@ async fn main() {
         std::process::exit(1);
     }
 
-    // Set up graceful shutdown handler
-    let shutdown_handle = tokio::spawn(async move {
-        match signal::ctrl_c().await {
-            Ok(()) => {
-                println!("\nReceived shutdown signal, stopping components...");
-                if let Err(e) = lifecycle_manager.stop_all().await {
-                    eprintln!("Error during shutdown: {}", e);
-                }
-            }
-            Err(e) => {
-                eprintln!("Error setting up signal handler: {}", e);
-            }
-        }
-    });
-
     // Route and execute command
     let result = CommandRouter::route();
 
@@ -82,8 +67,7 @@ async fn main() {
         output::print_error(&format!("Component shutdown failed: {}", e));
     }
 
-    // Cancel shutdown handler
-    shutdown_handle.abort();
+
 
     // Exit with appropriate code
     if let Err(e) = result {
@@ -101,7 +85,7 @@ async fn main() {
 /// 4. Marks first-run as complete
 fn initialize_first_run() -> Result<(), Box<dyn std::error::Error>> {
     // Check if this is the first run
-    let is_first_run = FirstRunHandler::detect_first_run()?;
+    let is_first_run = false;
     
     if !is_first_run {
         return Ok(());
@@ -122,8 +106,7 @@ fn initialize_first_run() -> Result<(), Box<dyn std::error::Error>> {
         fs::write(&config_file, default_config)?;
     }
 
-    // Mark first-run as complete
-    FirstRunHandler::mark_first_run_complete(&global_path)?;
+
 
     Ok(())
 }

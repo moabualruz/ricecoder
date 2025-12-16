@@ -758,5 +758,4 @@ async fn test_cross_component_integration() {
 
     let pool_stats = pool.stats().await;
     assert!(pool_stats.total_connections >= 0);
-}</content>
-<parameter name="filePath">D:\work\kiro-workspace\projects\ricecoder\crates\ricecoder-mcp\tests\mcp_integration_tests.rs
+}

@@ -2,16 +2,16 @@
 
 use async_trait::async_trait;
 use oauth2::{
-    basic::BasicClient, reqwest::async_http_client, AuthUrl, ClientId, ClientSecret,
-    CsrfToken, PkceCodeChallenge, RedirectUrl, Scope, TokenResponse, TokenUrl,
+    basic::BasicClient, reqwest::async_http_client, AuthorizationCode as OAuthAuthorizationCode, AuthUrl, ClientId, ClientSecret,
+    CsrfToken, PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, Scope, TokenResponse, TokenUrl,
 };
 use openidconnect::{
     core::{CoreAuthenticationFlow, CoreClient, CoreProviderMetadata},
     reqwest::async_http_client as oidc_http_client,
-    AccessTokenHash, AuthorizationCode, ClientId as OidcClientId,
+    AccessTokenHash, AuthorizationCode as OidcAuthorizationCode, ClientId as OidcClientId,
     ClientSecret as OidcClientSecret, CsrfToken as OidcCsrfToken, IssuerUrl,
     Nonce, OAuth2TokenResponse, PkceCodeChallenge as OidcPkceCodeChallenge,
-    RedirectUrl as OidcRedirectUrl, Scope as OidcScope, SubjectIdentifier,
+    PkceCodeVerifier as OidcPkceCodeVerifier, RedirectUrl as OidcRedirectUrl, Scope as OidcScope, SubjectIdentifier, TokenResponse as OidcTokenResponse,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -69,6 +69,7 @@ pub struct UserInfo {
 }
 
 /// OAuth 2.0 client for token management
+#[derive(Debug)]
 pub struct OAuthClient {
     providers: HashMap<String, BasicClient>,
 }
@@ -110,7 +111,7 @@ impl OAuthClient {
     }
 
     /// Generate authorization URL for OAuth 2.0 flow
-    pub fn generate_auth_url(&self, provider_name: &str, scopes: &[String]) -> Result<(Url, CsrfToken, PkceCodeChallenge)> {
+    pub fn generate_auth_url(&self, provider_name: &str, scopes: &[String]) -> Result<(Url, CsrfToken, oauth2::PkceCodeVerifier)> {
         let client = self.providers.get(provider_name)
             .ok_or_else(|| SecurityError::Validation {
                 message: format!("OAuth provider '{}' not found", provider_name),
@@ -120,7 +121,7 @@ impl OAuthClient {
 
         let mut auth_request = client
             .authorize_url(CsrfToken::new_random)
-            .set_pkce_challenge(pkce_challenge.clone());
+            .set_pkce_challenge(pkce_challenge);
 
         for scope in scopes {
             auth_request = auth_request.add_scope(Scope::new(scope.clone()));
@@ -128,7 +129,7 @@ impl OAuthClient {
 
         let (auth_url, csrf_token) = auth_request.url();
 
-        Ok((auth_url, csrf_token, pkce_challenge))
+        Ok((auth_url, csrf_token, pkce_verifier))
     }
 
     /// Exchange authorization code for tokens
@@ -144,7 +145,7 @@ impl OAuthClient {
             })?;
 
         let token_result = client
-            .exchange_code(AuthorizationCode::new(code.to_string()))
+            .exchange_code(OAuthAuthorizationCode::new(code.to_string()))
             .set_pkce_verifier(pkce_verifier)
             .request_async(async_http_client)
             .await
@@ -197,7 +198,7 @@ impl OidcClient {
     }
 
     /// Generate authorization URL for OIDC flow
-    pub fn generate_auth_url(&mut self, provider_name: &str, scopes: &[String]) -> Result<(Url, OidcCsrfToken, Nonce)> {
+    pub fn generate_auth_url(&mut self, provider_name: &str, scopes: &[String]) -> Result<(Url, OidcCsrfToken, Nonce, OidcPkceCodeVerifier)> {
         let client = self.providers.get(provider_name)
             .ok_or_else(|| SecurityError::Validation {
                 message: format!("OIDC provider '{}' not found", provider_name),
@@ -205,12 +206,13 @@ impl OidcClient {
 
         let (pkce_challenge, pkce_verifier) = OidcPkceCodeChallenge::new_random_sha256();
         let nonce = Nonce::new_random();
+        let nonce_clone = nonce.clone();
 
         let mut auth_request = client
             .authorize_url(
                 CoreAuthenticationFlow::AuthorizationCode,
                 OidcCsrfToken::new_random,
-                nonce.clone(),
+                move || nonce_clone,
             )
             .set_pkce_challenge(pkce_challenge);
 
@@ -221,9 +223,9 @@ impl OidcClient {
         let (auth_url, csrf_token, returned_nonce) = auth_request.url();
 
         // Store nonce for later verification
-        self.nonces.insert(csrf_token.secret().clone(), nonce.clone());
+        self.nonces.insert(csrf_token.secret().clone(), nonce);
 
-        Ok((auth_url, csrf_token, returned_nonce))
+        Ok((auth_url, csrf_token, returned_nonce, pkce_verifier))
     }
 
     /// Exchange authorization code for tokens (OIDC)
@@ -231,7 +233,7 @@ impl OidcClient {
         &mut self,
         provider_name: &str,
         code: &str,
-        pkce_verifier: openidconnect::PkceCodeVerifier,
+        pkce_verifier: OidcPkceCodeVerifier,
         csrf_token: &str,
     ) -> Result<(OAuthToken, UserInfo)> {
         let client = self.providers.get(provider_name)
@@ -245,7 +247,7 @@ impl OidcClient {
             })?;
 
         let token_result = client
-            .exchange_code(AuthorizationCode::new(code.to_string()))
+            .exchange_code(OidcAuthorizationCode::new(code.to_string()))
             .set_pkce_verifier(pkce_verifier)
             .request_async(oidc_http_client)
             .await
@@ -270,9 +272,9 @@ impl OidcClient {
             subject: claims.subject().to_string(),
             email: claims.email().map(|e| e.as_str().to_string()),
             email_verified: claims.email_verified(),
-            name: claims.name().map(|n| n.get(None).to_string()),
-            given_name: claims.given_name().map(|n| n.get(None).to_string()),
-            family_name: claims.family_name().map(|n| n.get(None).to_string()),
+            name: Some(claims.name().map_or("".to_string(), |n| n.get(None).map_or("".to_string(), |s| s.to_string()))),
+            given_name: Some(claims.given_name().map_or("".to_string(), |n| n.get(None).map_or("".to_string(), |s| s.to_string()))),
+            family_name: Some(claims.family_name().map_or("".to_string(), |n| n.get(None).map_or("".to_string(), |s| s.to_string()))),
             preferred_username: claims.preferred_username().map(|u| u.as_str().to_string()),
             groups: vec![], // Would need custom claims for groups
             attributes: HashMap::new(), // Additional custom claims
@@ -284,7 +286,7 @@ impl OidcClient {
             expires_in: token_result.expires_in().map(|d| d.as_secs()),
             refresh_token: token_result.refresh_token().map(|t| t.secret().clone()),
             scope: token_result.scopes().map(|s| s.iter().map(|scope| scope.as_str()).collect::<Vec<_>>().join(" ")),
-            id_token: Some(id_token.to_string()),
+             id_token: Some(id_token.to_string()),
         };
 
         Ok((token, user_info))
@@ -313,12 +315,12 @@ impl TokenManager {
     }
 
     /// Generate OAuth authorization URL
-    pub fn generate_oauth_auth_url(&self, provider_name: &str, scopes: &[String]) -> Result<(Url, CsrfToken, PkceCodeChallenge)> {
+    pub fn generate_oauth_auth_url(&self, provider_name: &str, scopes: &[String]) -> Result<(Url, CsrfToken, oauth2::PkceCodeVerifier)> {
         self.oauth_client.generate_auth_url(provider_name, scopes)
     }
 
     /// Generate OIDC authorization URL
-    pub fn generate_oidc_auth_url(&mut self, provider_name: &str, scopes: &[String]) -> Result<(Url, OidcCsrfToken, Nonce)> {
+    pub fn generate_oidc_auth_url(&mut self, provider_name: &str, scopes: &[String]) -> Result<(Url, OidcCsrfToken, Nonce, OidcPkceCodeVerifier)> {
         self.oidc_client.generate_auth_url(provider_name, scopes)
     }
 
@@ -356,7 +358,7 @@ impl TokenManager {
         &mut self,
         provider_name: &str,
         code: &str,
-        pkce_verifier: openidconnect::PkceCodeVerifier,
+        pkce_verifier: OidcPkceCodeVerifier,
         csrf_token: &str,
         user_id: &str,
     ) -> Result<(String, UserInfo)> {

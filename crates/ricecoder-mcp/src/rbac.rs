@@ -55,7 +55,7 @@ impl MCRBACManager {
         for role_name in &principal.roles {
             if let Some(security_roles) = self.role_mappings.get(role_name) {
                 for security_role in security_roles {
-                    if self.access_control.roles.contains_key(security_role) {
+                    if principal.roles.contains(security_role) {
                         debug!("Principal {} granted access to MCP server {} via role {}", principal.id, server_id, security_role);
                         return Ok(true);
                     }
@@ -345,5 +345,4 @@ mod tests {
         assert!(result.is_ok());
         assert!(!result.unwrap());
     }
-}</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-mcp/src/rbac.rs
+}

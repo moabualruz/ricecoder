@@ -50,5 +50,5 @@ pub mod monitoring;
 pub use constraints::{SecurityConstraint, ConstraintType, ConstraintResult};
 pub use error::{SafetyError, SafetyResult};
 pub use risk::{RiskScorer, RiskLevel, RiskScore, RiskFactors};
-pub use validation::{SafetyValidator, ValidationResult, ApprovalGate};
+pub use validation::{SafetyValidator, ValidationResult, ApprovalGate, ApprovalRequest};
 pub use monitoring::{SafetyMonitor, SafetyMetrics, AlertLevel};

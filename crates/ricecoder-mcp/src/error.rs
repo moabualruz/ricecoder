@@ -80,6 +80,15 @@ pub enum Error {
 
     #[error("Multiple naming conflicts detected: {0}")]
     MultipleNamingConflicts(String),
+
+    #[error("Authorization error: {0}")]
+    AuthorizationError(String),
+}
+
+impl From<ricecoder_security::SecurityError> for Error {
+    fn from(err: ricecoder_security::SecurityError) -> Self {
+        Error::AuthorizationError(err.to_string())
+    }
 }
 
 impl Error {
@@ -110,6 +119,7 @@ impl Error {
             Error::ConfigValidationError(msg) => format!("Configuration validation failed: {}. Please fix your configuration.", msg),
             Error::ToolRegistrationError(msg) => format!("Tool registration failed: {}. Please check the tool definition.", msg),
             Error::MultipleNamingConflicts(msg) => format!("Multiple naming conflicts detected: {}. Please use qualified tool names.", msg),
+            Error::AuthorizationError(msg) => format!("Authorization error: {}. Please check your permissions.", msg),
         }
     }
 
@@ -141,6 +151,7 @@ impl Error {
             Error::ConfigValidationError(_) => "ConfigValidationError",
             Error::ToolRegistrationError(_) => "ToolRegistrationError",
             Error::MultipleNamingConflicts(_) => "MultipleNamingConflicts",
+            Error::AuthorizationError(_) => "AuthorizationError",
         }
     }
 

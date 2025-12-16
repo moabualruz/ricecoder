@@ -403,19 +403,17 @@ async fn test_mock_server_concurrent_requests() {
 
     // Add some tools to the server
     {
-        let server_mut = Arc::as_ptr(&server) as *mut MockMCPServer;
-        unsafe {
-            (*server_mut).tools.insert(
-                "concurrent-tool".to_string(),
-                ToolMetadata {
-                    name: "concurrent-tool".to_string(),
-                    description: "Tool for concurrent testing".to_string(),
-                    input_schema: serde_json::json!({"type": "object"}),
-                    permissions_required: vec![],
-                    metadata: None,
-                }
-            );
-        }
+        let mut tools = server.tools.lock().unwrap();
+        tools.insert(
+            "concurrent-tool".to_string(),
+            ToolMetadata {
+                name: "concurrent-tool".to_string(),
+                description: "Tool for concurrent testing".to_string(),
+                input_schema: serde_json::json!({"type": "object"}),
+                permissions_required: vec![],
+                metadata: None,
+            }
+        );
     }
 
     // Spawn concurrent requests
@@ -443,5 +441,4 @@ async fn test_mock_server_concurrent_requests() {
 
     // All requests should succeed
     assert_eq!(success_count, 10);
-}</content>
-<parameter name="filePath">D:\work\kiro-workspace\projects\ricecoder\crates\ricecoder-mcp\tests\mcp_testing_infrastructure_tests.rs
+}

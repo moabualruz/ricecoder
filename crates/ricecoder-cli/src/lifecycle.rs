@@ -3,7 +3,7 @@
 //! This module provides lifecycle management for application components,
 //! ensuring proper startup, initialization, and shutdown procedures.
 
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, OnceLock, RwLock};
 use tracing::{debug, info, warn};
 use ricecoder_di::DIContainer;
 
@@ -50,6 +50,7 @@ pub trait LifecycleComponent: Send + Sync {
 }
 
 /// Component registration info
+#[derive(Clone)]
 struct ComponentInfo {
     component: Arc<RwLock<dyn LifecycleComponent>>,
     state: LifecycleState,
@@ -85,7 +86,7 @@ impl LifecycleManager {
         };
 
         let mut components = self.components.write().unwrap();
-        components.push(info);
+        components.push(info.clone());
 
         info!("Registered component: {}", info.component.read().unwrap().name());
         Ok(())
@@ -98,19 +99,19 @@ impl LifecycleManager {
         // Sort components by dependencies (simple topological sort)
         self.sort_by_dependencies()?;
 
-        let components = self.components.read().unwrap().clone();
+        let components_guard = self.components.read().unwrap();
+        let components: Vec<_> = components_guard.iter().map(|info| info.component.clone()).collect();
+        drop(components_guard);
 
-        for info in &components {
-            let mut component = info.component.write().unwrap();
+        for comp_arc in components.into_iter() {
+            let mut component = comp_arc.write().unwrap();
             let name = component.name();
 
             debug!("Initializing component: {}", name);
 
             // Update state
-            drop(component);
             self.update_component_state(name, LifecycleState::Initializing);
 
-            let mut component = info.component.write().unwrap();
             match component.initialize().await {
                 Ok(()) => {
                     debug!("Component initialized successfully: {}", name);
@@ -134,9 +135,9 @@ impl LifecycleManager {
     pub async fn start_all(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         info!("Starting all components...");
 
-        let components = self.components.read().unwrap().clone();
+        let components = self.components.read().unwrap();
 
-        for info in &components {
+        for info in components.iter() {
             if info.state != LifecycleState::Ready {
                 continue;
             }
@@ -165,26 +166,17 @@ impl LifecycleManager {
     pub async fn stop_all(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         info!("Stopping all components...");
 
-        let components = self.components.read().unwrap().clone();
+        let components_guard = self.components.read().unwrap();
+        let components: Vec<_> = components_guard.iter().map(|info| info.component.clone()).collect();
+        drop(components_guard);
 
         // Stop in reverse order
-        for info in components.iter().rev() {
-            let mut component = info.component.write().unwrap();
+        for comp_arc in components.into_iter().rev() {
+            let mut component = comp_arc.write().unwrap();
             let name = component.name();
-
-            debug!("Stopping component: {}", name);
-            self.update_component_state(name, LifecycleState::ShuttingDown);
-
-            match component.stop().await {
-                Ok(()) => {
-                    debug!("Component stopped successfully: {}", name);
-                    drop(component);
-                    self.update_component_state(name, LifecycleState::ShutDown);
-                }
-                Err(e) => {
-                    warn!("Component stop failed: {} - {}", name, e);
-                    // Continue stopping other components even if one fails
-                }
+            info!("Stopping component: {}", name);
+            if let Err(e) = component.stop().await {
+                warn!("Component stop failed: {} - {}", name, e);
             }
         }
 
@@ -194,10 +186,12 @@ impl LifecycleManager {
 
     /// Perform health checks on all components
     pub async fn health_check_all(&self) -> Vec<(String, Result<(), Box<dyn std::error::Error + Send + Sync>>)> {
-        let components = self.components.read().unwrap().clone();
+        let components_guard = self.components.read().unwrap();
+        let infos: Vec<_> = components_guard.iter().cloned().collect();
+        drop(components_guard);
         let mut results = Vec::new();
 
-        for info in &components {
+        for info in infos.into_iter() {
             if info.state != LifecycleState::Ready {
                 continue;
             }
@@ -266,20 +260,18 @@ impl Default for LifecycleManager {
 }
 
 /// Global lifecycle manager
-static mut LIFECYCLE_MANAGER: Option<Arc<LifecycleManager>> = None;
+static LIFECYCLE_MANAGER: OnceLock<Arc<LifecycleManager>> = OnceLock::new();
 
 /// Initialize the global lifecycle manager
 pub fn initialize_lifecycle_manager() -> Arc<LifecycleManager> {
     let manager = Arc::new(LifecycleManager::new());
-    unsafe {
-        LIFECYCLE_MANAGER = Some(manager.clone());
-    }
+    let _ = LIFECYCLE_MANAGER.set(manager.clone());
     manager
 }
 
 /// Get the global lifecycle manager
 pub fn get_lifecycle_manager() -> Option<Arc<LifecycleManager>> {
-    unsafe { LIFECYCLE_MANAGER.clone() }
+    LIFECYCLE_MANAGER.get().cloned()
 }
 
 /// Register a component with the global lifecycle manager
@@ -296,5 +288,3 @@ where
         Err("Lifecycle manager not initialized".into())
     }
 }
-
-#[cfg(test)]

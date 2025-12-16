@@ -53,6 +53,7 @@ ricecoder-generation = { path = "../ricecoder-generation", version = "0.1" }
 ricecoder-github = { path = "../ricecoder-github", version = "0.1" }
 ricecoder-hooks = { path = "../ricecoder-hooks", version = "0.1" }
 ricecoder-ide = { path = "../ricecoder-ide", version = "0.1" }
+async-trait = { workspace = true }
 ricecoder-images = { path = "../ricecoder-images", version = "0.1" }
 ricecoder-keybinds = { path = "../ricecoder-keybinds", version = "0.1" }
 ricecoder-learning = { path = "../ricecoder-learning", version = "0.1" }

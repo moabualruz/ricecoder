@@ -69,10 +69,10 @@ pub enum AuthType {
 }
 
 /// Server registration information
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ServerRegistration {
     pub config: ServerConfig,
-    pub transport: Option<Arc<dyn MCPTransport>>,
+    pub transport: Option<Arc<Box<dyn MCPTransport>>>,
     pub health: ServerHealth,
     pub tools: Vec<ToolMetadata>,
     pub registered_at: SystemTime,
@@ -104,8 +104,9 @@ impl ServerManager {
         let servers = Arc::new(RwLock::new(HashMap::new()));
         let health_monitor = Arc::new(HealthMonitor::new(servers.clone()));
 
+        let health_monitor_clone = health_monitor.clone();
         let health_task = tokio::spawn(async move {
-            health_monitor.run().await;
+            health_monitor_clone.run().await;
         });
 
         Self {
@@ -136,8 +137,9 @@ impl ServerManager {
         let servers = Arc::new(RwLock::new(HashMap::new()));
         let health_monitor = Arc::new(HealthMonitor::new(servers.clone()));
 
+        let health_monitor_clone = health_monitor.clone();
         let health_task = tokio::spawn(async move {
-            health_monitor.run().await;
+            health_monitor_clone.run().await;
         });
 
         Self {
@@ -210,14 +212,6 @@ impl ServerManager {
         if let Some(ref audit_logger) = self.audit_logger {
             let _ = audit_logger.log_server_registration(&config, user_id.map(|s| s.to_string()), None).await;
         }
-
-        if config.auto_start {
-            drop(servers);
-            self.start_server(&config.id).await?;
-        }
-
-        Ok(())
-    }
 
         if config.auto_start {
             drop(servers);
@@ -300,7 +294,7 @@ impl ServerManager {
         let mut servers = self.servers.write().await;
         if let Some(registration) = servers.get_mut(server_id) {
             if let Some(transport) = registration.transport.take() {
-                transport.close().await?;
+                transport.as_ref().close().await?;
             }
             registration.health.state = ServerState::Disconnected;
             info!("Stopped MCP server: {}", server_id);
@@ -457,7 +451,7 @@ impl HealthMonitor {
         let mut servers = self.servers.write().await;
         if let Some(registration) = servers.get_mut(server_id) {
             let is_connected = if let Some(ref transport) = registration.transport {
-                transport.is_connected().await
+                transport.as_ref().is_connected().await
             } else {
                 false
             };

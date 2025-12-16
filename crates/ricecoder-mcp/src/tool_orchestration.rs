@@ -5,7 +5,7 @@
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tokio::sync::RwLock;
@@ -14,7 +14,7 @@ use tracing::{debug, error, info, warn};
 use crate::error::{Error, Result, ToolError};
 use crate::metadata::ToolMetadata;
 use crate::tool_execution::{ToolExecutionContext, ToolExecutionResult, ToolExecutor};
-use crate::cache::{Cache, CacheConfig, CacheEntry};
+use ricecoder_cache::storage::CacheEntry;
 use ricecoder_cache::{Cache as ExternalCache, CacheConfig as ExternalCacheConfig};
 
 /// Tool execution step in a pipeline
@@ -50,7 +50,7 @@ pub struct PipelineExecutionContext {
 }
 
 /// Pipeline execution result
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct PipelineExecutionResult {
     pub pipeline_id: String,
     pub success: bool,

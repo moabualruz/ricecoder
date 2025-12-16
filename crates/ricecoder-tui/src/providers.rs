@@ -3,7 +3,8 @@
 //! This module provides UI components for managing AI providers in the TUI,
 //! including provider selection, status displays, and performance monitoring.
 
-use crate::components::{Component, ComponentId, Event, EventResult};
+use crate::components::{Component, ComponentId, EventResult};
+use crate::event::Event;
 use crate::model::{AppMessage, ProviderInfo, ProviderMetrics, ProviderViewMode};
 use ratatui::layout::Rect;
 use ratatui::Frame;
@@ -66,53 +67,94 @@ impl ProviderManager {
 }
 
 impl Component for ProviderManager {
-    fn id(&self) -> &ComponentId {
-        &self.id
+    fn id(&self) -> ComponentId {
+        self.id.clone()
     }
 
-    fn handle_event(&mut self, event: Event) -> EventResult {
-        match event {
-            Event::Key(key) => match key.code {
-                crossterm::event::KeyCode::Up => {
-                    self.select_previous();
-                    EventResult::Consumed
-                }
-                crossterm::event::KeyCode::Down => {
-                    self.select_next();
-                    EventResult::Consumed
-                }
-                crossterm::event::KeyCode::Enter => {
-                    if let Some(provider) = self.selected_provider() {
-                        EventResult::Message(AppMessage::ProviderSelected(provider.id.clone()))
-                    } else {
-                        EventResult::Consumed
-                    }
-                }
-                crossterm::event::KeyCode::Char('l') => {
-                    self.view_mode = ProviderViewMode::List;
-                    EventResult::Message(AppMessage::ProviderViewModeChanged(ProviderViewMode::List))
-                }
-                crossterm::event::KeyCode::Char('s') => {
-                    self.view_mode = ProviderViewMode::Status;
-                    EventResult::Message(AppMessage::ProviderViewModeChanged(ProviderViewMode::Status))
-                }
-                crossterm::event::KeyCode::Char('p') => {
-                    self.view_mode = ProviderViewMode::Performance;
-                    EventResult::Message(AppMessage::ProviderViewModeChanged(ProviderViewMode::Performance))
-                }
-                crossterm::event::KeyCode::Char('a') => {
-                    self.view_mode = ProviderViewMode::Analytics;
-                    EventResult::Message(AppMessage::ProviderViewModeChanged(ProviderViewMode::Analytics))
-                }
-                _ => EventResult::Ignored,
-            },
-            _ => EventResult::Ignored,
-        }
-    }
 
-    fn render(&self, frame: &mut Frame, area: Rect) {
+
+    fn render(&self, frame: &mut Frame, area: Rect, _model: &crate::model::AppModel) {
         // This component delegates rendering to the main view functions
         // The actual rendering is handled in view.rs render_provider_mode
+    }
+
+    fn update(&mut self, _message: &crate::model::AppMessage, _model: &crate::model::AppModel) -> bool {
+        false
+    }
+
+    fn is_focused(&self) -> bool {
+        false
+    }
+
+    fn set_focused(&mut self, _focused: bool) {}
+
+    fn is_visible(&self) -> bool {
+        true
+    }
+
+    fn set_visible(&mut self, _visible: bool) {}
+
+    fn is_enabled(&self) -> bool {
+        true
+    }
+
+    fn set_enabled(&mut self, _enabled: bool) {}
+
+    fn bounds(&self) -> ratatui::layout::Rect {
+        ratatui::layout::Rect::default()
+    }
+
+    fn set_bounds(&mut self, _bounds: ratatui::layout::Rect) {}
+
+    fn handle_focus(&mut self, _direction: crate::components::FocusDirection) -> crate::components::FocusResult {
+        crate::components::FocusResult::Boundary
+    }
+
+    fn children(&self) -> Vec<&dyn Component> {
+        vec![]
+    }
+
+    fn children_mut(&mut self) -> Vec<&mut dyn Component> {
+        vec![]
+    }
+
+    fn find_child(&self, _id: &ComponentId) -> Option<&dyn Component> {
+        None
+    }
+
+    fn find_child_mut(&mut self, _id: &ComponentId) -> Option<&mut dyn Component> {
+        None
+    }
+
+    fn add_child(&mut self, _child: Box<dyn Component>) {}
+
+    fn remove_child(&mut self, _id: &ComponentId) -> Option<Box<dyn Component>> {
+        None
+    }
+
+    fn z_index(&self) -> i32 {
+        0
+    }
+
+    fn set_z_index(&mut self, _z_index: i32) {}
+
+    fn can_focus(&self) -> bool {
+        false
+    }
+
+    fn tab_order(&self) -> Option<usize> {
+        None
+    }
+
+    fn set_tab_order(&mut self, _order: Option<usize>) {}
+
+    fn clone_box(&self) -> Box<dyn Component> {
+        Box::new(ProviderManager {
+            id: self.id.clone(),
+            providers: self.providers.clone(),
+            selected_index: self.selected_index,
+            view_mode: self.view_mode.clone(),
+        })
     }
 }
 
@@ -136,16 +178,89 @@ impl ProviderStatusWidget {
 }
 
 impl Component for ProviderStatusWidget {
-    fn id(&self) -> &ComponentId {
-        &self.id
+    fn id(&self) -> ComponentId {
+        self.id.clone()
     }
 
-    fn handle_event(&mut self, _event: Event) -> EventResult {
-        EventResult::Ignored
-    }
-
-    fn render(&self, frame: &mut Frame, area: Rect) {
+    fn render(&self, frame: &mut Frame, area: Rect, _model: &crate::model::AppModel) {
         // Status rendering is handled in the main view functions
+    }
+
+    fn update(&mut self, _message: &crate::model::AppMessage, _model: &crate::model::AppModel) -> bool {
+        false
+    }
+
+    fn is_focused(&self) -> bool {
+        false
+    }
+
+    fn set_focused(&mut self, _focused: bool) {}
+
+    fn is_visible(&self) -> bool {
+        true
+    }
+
+    fn set_visible(&mut self, _visible: bool) {}
+
+    fn is_enabled(&self) -> bool {
+        true
+    }
+
+    fn set_enabled(&mut self, _enabled: bool) {}
+
+    fn bounds(&self) -> ratatui::layout::Rect {
+        ratatui::layout::Rect::default()
+    }
+
+    fn set_bounds(&mut self, _bounds: ratatui::layout::Rect) {}
+
+    fn handle_focus(&mut self, _direction: crate::components::FocusDirection) -> crate::components::FocusResult {
+        crate::components::FocusResult::Boundary
+    }
+
+    fn children(&self) -> Vec<&dyn Component> {
+        vec![]
+    }
+
+    fn children_mut(&mut self) -> Vec<&mut dyn Component> {
+        vec![]
+    }
+
+    fn find_child(&self, _id: &ComponentId) -> Option<&dyn Component> {
+        None
+    }
+
+    fn find_child_mut(&mut self, _id: &ComponentId) -> Option<&mut dyn Component> {
+        None
+    }
+
+    fn add_child(&mut self, _child: Box<dyn Component>) {}
+
+    fn remove_child(&mut self, _id: &ComponentId) -> Option<Box<dyn Component>> {
+        None
+    }
+
+    fn z_index(&self) -> i32 {
+        0
+    }
+
+    fn set_z_index(&mut self, _z_index: i32) {}
+
+    fn can_focus(&self) -> bool {
+        false
+    }
+
+    fn tab_order(&self) -> Option<usize> {
+        None
+    }
+
+    fn set_tab_order(&mut self, _order: Option<usize>) {}
+
+    fn clone_box(&self) -> Box<dyn Component> {
+        Box::new(ProviderStatusWidget {
+            id: self.id.clone(),
+            provider: self.provider.clone(),
+        })
     }
 }
 
@@ -169,16 +284,89 @@ impl ProviderPerformanceWidget {
 }
 
 impl Component for ProviderPerformanceWidget {
-    fn id(&self) -> &ComponentId {
-        &self.id
+    fn id(&self) -> ComponentId {
+        self.id.clone()
     }
 
-    fn handle_event(&mut self, _event: Event) -> EventResult {
-        EventResult::Ignored
-    }
-
-    fn render(&self, frame: &mut Frame, area: Rect) {
+    fn render(&self, frame: &mut Frame, area: Rect, _model: &crate::model::AppModel) {
         // Performance rendering is handled in the main view functions
+    }
+
+    fn update(&mut self, _message: &crate::model::AppMessage, _model: &crate::model::AppModel) -> bool {
+        false
+    }
+
+    fn is_focused(&self) -> bool {
+        false
+    }
+
+    fn set_focused(&mut self, _focused: bool) {}
+
+    fn is_visible(&self) -> bool {
+        true
+    }
+
+    fn set_visible(&mut self, _visible: bool) {}
+
+    fn is_enabled(&self) -> bool {
+        true
+    }
+
+    fn set_enabled(&mut self, _enabled: bool) {}
+
+    fn bounds(&self) -> ratatui::layout::Rect {
+        ratatui::layout::Rect::default()
+    }
+
+    fn set_bounds(&mut self, _bounds: ratatui::layout::Rect) {}
+
+    fn handle_focus(&mut self, _direction: crate::components::FocusDirection) -> crate::components::FocusResult {
+        crate::components::FocusResult::Boundary
+    }
+
+    fn children(&self) -> Vec<&dyn Component> {
+        vec![]
+    }
+
+    fn children_mut(&mut self) -> Vec<&mut dyn Component> {
+        vec![]
+    }
+
+    fn find_child(&self, _id: &ComponentId) -> Option<&dyn Component> {
+        None
+    }
+
+    fn find_child_mut(&mut self, _id: &ComponentId) -> Option<&mut dyn Component> {
+        None
+    }
+
+    fn add_child(&mut self, _child: Box<dyn Component>) {}
+
+    fn remove_child(&mut self, _id: &ComponentId) -> Option<Box<dyn Component>> {
+        None
+    }
+
+    fn z_index(&self) -> i32 {
+        0
+    }
+
+    fn set_z_index(&mut self, _z_index: i32) {}
+
+    fn can_focus(&self) -> bool {
+        false
+    }
+
+    fn tab_order(&self) -> Option<usize> {
+        None
+    }
+
+    fn set_tab_order(&mut self, _order: Option<usize>) {}
+
+    fn clone_box(&self) -> Box<dyn Component> {
+        Box::new(ProviderPerformanceWidget {
+            id: self.id.clone(),
+            metrics: self.metrics.clone(),
+        })
     }
 }
 

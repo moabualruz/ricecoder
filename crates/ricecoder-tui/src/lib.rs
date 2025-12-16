@@ -136,6 +136,7 @@ pub use components::{
 };
 pub use event::{
     KeyEvent, MouseEvent as EventMouseEvent, KeyCode, KeyModifiers, MouseButton,
+    EventLoop,
 };
 // TuiConfig is now exported from ricecoder-storage
 pub use diff::{DiffHunk, DiffLine, DiffLineType, DiffViewType, DiffWidget};
@@ -150,6 +151,12 @@ pub use logger_widget::{LogEntry, LogLevel, LoggerWidget};
 pub use markdown::{MarkdownElement, MarkdownParser};
 pub use performance::{
     DiffRenderOptimizer, LazyLoadConfig, LazyMessageHistory, ThemeSwitchPerformance,
+    JobQueue, Job, JobPriority, JobTask, JobId, ActiveJob, JobResult, JobQueueStats,
+    ProgressReporter, ProgressUpdate, ProgressStatus, ProgressTracker, ProgressStats,
+    ProfileSpan, CpuMonitor, CpuSample, MemoryProfiler, MemorySample,
+    MemoryStats, ProfileSpanHandle, ProfileStats, CpuStats, MemoryLeak, LeakSeverity,
+    HistoryLimits, CacheStats, ContentCache, VirtualScrollManager, MemoryTracker,
+    RenderPerformanceMetrics, RenderPerformanceTracker, FileOperationType, JobOutput,
 };
 pub use popup_widget::{PopupButton, PopupType, PopupWidget};
 pub use progressive_enhancement::{

@@ -369,5 +369,4 @@ async fn test_session_garbage_collection_with_encryption() -> Result<(), Box<dyn
     assert!(recent_loaded.is_some(), "Recent session should remain");
 
     Ok(())
-}</content>
-<parameter name="filePath">D:\work\kiro-workspace\projects\ricecoder\tests\database_session_persistence_encryption.rs
+}

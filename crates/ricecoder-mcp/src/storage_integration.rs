@@ -333,7 +333,7 @@ impl ToolRegistryPersistence {
 /// This struct provides in-memory caching of tool registries to reduce
 /// disk I/O and improve performance.
 pub struct ToolRegistryCache {
-    cache: std::sync::Mutex<HashMap<String, (ToolRegistry, std::time::Instant)>>,
+    cache: tokio::sync::Mutex<HashMap<String, (ToolRegistry, std::time::Instant)>>,
     ttl_secs: u64,
 }
 
@@ -345,14 +345,14 @@ impl ToolRegistryCache {
     /// * `ttl_secs` - Time-to-live for cache entries in seconds
     pub fn new(ttl_secs: u64) -> Self {
         Self {
-            cache: std::sync::Mutex::new(HashMap::new()),
+            cache: tokio::sync::Mutex::new(HashMap::new()),
             ttl_secs,
         }
     }
 
     /// Gets a cached registry
-    pub fn get(&self, key: &str) -> Option<ToolRegistry> {
-        let cache = self.cache.lock().unwrap();
+    pub async fn get(&self, key: &str) -> Option<ToolRegistry> {
+        let cache = self.cache.lock().await;
         if let Some((registry, timestamp)) = cache.get(key) {
             let elapsed = timestamp.elapsed().as_secs();
             if elapsed < self.ttl_secs {
@@ -363,20 +363,20 @@ impl ToolRegistryCache {
     }
 
     /// Sets a cached registry
-    pub fn set(&self, key: String, registry: ToolRegistry) {
-        let mut cache = self.cache.lock().unwrap();
+    pub async fn set(&self, key: String, registry: ToolRegistry) {
+        let mut cache = self.cache.lock().await;
         cache.insert(key, (registry, std::time::Instant::now()));
     }
 
     /// Clears the cache
-    pub fn clear(&self) {
-        let mut cache = self.cache.lock().unwrap();
+    pub async fn clear(&self) {
+        let mut cache = self.cache.lock().await;
         cache.clear();
     }
 
     /// Removes expired entries from the cache
-    pub fn cleanup_expired(&self) {
-        let mut cache = self.cache.lock().unwrap();
+    pub async fn cleanup_expired(&self) {
+        let mut cache = self.cache.lock().await;
         let now = std::time::Instant::now();
         cache.retain(|_, (_, timestamp)| now.duration_since(*timestamp).as_secs() < self.ttl_secs);
     }
@@ -439,27 +439,27 @@ mod tests {
         assert_eq!(loaded_registry.tool_count(), 1);
     }
 
-    #[test]
-    fn test_tool_registry_cache() {
+    #[tokio::test]
+    async fn test_tool_registry_cache() {
         let cache = ToolRegistryCache::new(60);
         let registry = ToolRegistry::new();
 
-        cache.set("test".to_string(), registry.clone());
-        assert!(cache.get("test").is_some());
+        cache.set("test".to_string(), registry.clone()).await;
+        assert!(cache.get("test").await.is_some());
 
-        cache.clear();
-        assert!(cache.get("test").is_none());
+        cache.clear().await;
+        assert!(cache.get("test").await.is_none());
     }
 
-    #[test]
-    fn test_tool_registry_cache_expiration() {
+    #[tokio::test]
+    async fn test_tool_registry_cache_expiration() {
         let cache = ToolRegistryCache::new(0); // 0 second TTL
         let registry = ToolRegistry::new();
 
-        cache.set("test".to_string(), registry);
-        std::thread::sleep(std::time::Duration::from_millis(10));
+        cache.set("test".to_string(), registry).await;
+        tokio::time::sleep(std::time::Duration::from_millis(10)).await;
 
-        assert!(cache.get("test").is_none());
+        assert!(cache.get("test").await.is_none());
     }
 
     #[test]

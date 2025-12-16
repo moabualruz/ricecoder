@@ -1,3 +1,10 @@
+pub mod cli;
+pub mod error;
+pub mod evaluator;
+pub mod exercise;
+pub mod results;
+pub mod runner;
+
 #[cfg(test)]
 mod tests {
     use super::*;

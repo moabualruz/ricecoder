@@ -33,7 +33,7 @@ impl ChatCommand {
         }
 
         // Load configuration to get default provider
-        let config = ConfigLoader::load_merged()
+        let config = ConfigLoader::new().load_merged()
             .map_err(|e| CliError::Config(format!("Failed to load configuration: {}", e)))?;
 
         // Use configured default provider or fall back to "zen"
@@ -65,7 +65,7 @@ impl ChatCommand {
         }
 
         // Load configuration to get default model
-        let config = ConfigLoader::load_merged()
+        let config = ConfigLoader::new().load_merged()
             .map_err(|e| CliError::Config(format!("Failed to load configuration: {}", e)))?;
 
         // Use configured default model or fall back to "zen/big-pickle"

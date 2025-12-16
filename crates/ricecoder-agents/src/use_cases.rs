@@ -383,6 +383,7 @@ impl SessionLifecycleUseCase {
                 }),
             };
             // Note: In production, this should be async
+            let audit_logger = audit_logger.clone();
             let _ = tokio::spawn(async move {
                 let _ = audit_logger.log_event(event).await;
             });
@@ -649,7 +650,7 @@ impl SessionSharingUseCase {
                 }
 
                 // Validate enterprise sharing policy
-                if !compliance_validator.validate_enterprise_policy(policy).await? {
+                if !compliance_validator.validate_enterprise_policy(&data_classification).await? {
                     return Err(AgentError::ComplianceViolation("Enterprise sharing policy violates compliance requirements".to_string()));
                 }
             }
@@ -729,7 +730,8 @@ impl SessionSharingUseCase {
             }
         }
 
-        self.share_service.revoke_share(share_id)
+        let user_id_for_revoke = user_id.clone();
+        self.share_service.revoke_share(share_id, user_id_for_revoke)
             .map_err(|e| AgentError::Internal(format!("Failed to revoke share: {}", e)))?;
 
         info!(share_id = %share_id, user_id = ?user_id, "Share link revoked successfully");
@@ -832,7 +834,7 @@ impl SessionStateManagementUseCase {
                 action: "token_usage_accessed".to_string(),
                 resource: format!("session:{}:token_usage", session_id),
                 metadata: serde_json::json!({
-                    "total_tokens": usage.total_tokens_used
+                    "total_tokens": usage.total_tokens
                 }),
             };
             let audit_logger = audit_logger.clone();
@@ -862,7 +864,7 @@ impl SessionStateManagementUseCase {
 
         // Validate compliance if enabled (check for resource usage limits)
         if let Some(ref compliance_validator) = self.compliance_validator {
-            if !compliance_validator.validate_resource_usage(&status).await? {
+            if !compliance_validator.validate_resource_usage(&format!("{:?}", status)).await? {
                 return Err(AgentError::ComplianceViolation("Session token usage exceeds compliance limits".to_string()));
             }
         }

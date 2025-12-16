@@ -381,5 +381,4 @@ fn test_background_agent_manager_concurrent_operations() {
     for id in &agent_ids {
         assert!(unique_ids.insert(id.clone()));
     }
-}</content>
-<parameter name="filePath">projects/ricecoder/crates/ricecoder-sessions/tests/session_state_management_unit_tests.rs
+}

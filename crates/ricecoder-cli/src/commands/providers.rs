@@ -118,7 +118,8 @@ impl ProvidersCommand {
             }
 
             if let Some(last_checked) = provider.last_checked {
-                println!("  Last checked: {}", last_checked.format("%Y-%m-%d %H:%M:%S"));
+                let dt: chrono::DateTime<chrono::Utc> = last_checked.into();
+                println!("  Last checked: {}", dt.format("%Y-%m-%d %H:%M:%S"));
             }
 
             println!();
@@ -155,15 +156,18 @@ impl ProvidersCommand {
                 }
 
                 if let Some(last_checked) = status.last_checked {
-                    println!("  Last checked: {}", last_checked.format("%Y-%m-%d %H:%M:%S"));
+                    let dt: chrono::DateTime<chrono::Utc> = last_checked.into();
+                    println!("  Last checked: {}", dt.format("%Y-%m-%d %H:%M:%S"));
                 }
             } else {
                 println!("Provider '{}' not found", provider_id);
             }
         } else {
             // Show current provider
-            let current = switching.get_current_provider();
-            println!("Current provider: {}", current);
+            match switching.get_current_provider() {
+                Ok(provider) => println!("Current provider: {}", provider),
+                Err(e) => println!("Error getting current provider: {}", e),
+            }
         }
 
         Ok(())
@@ -243,13 +247,13 @@ impl ProvidersCommand {
     fn list_provider_models(&self, provider_id: Option<&str>, filter: Option<&str>) -> CliResult<()> {
         let (_, _, _, models, _, _) = self.get_use_cases()?;
 
-        let filter_criteria = filter.map(|f| match f.to_lowercase().as_str() {
-            "free" => ricecoder_providers::provider::manager::ModelFilterCriteria::FreeOnly,
-            "chat" => ricecoder_providers::provider::manager::ModelFilterCriteria::Capability(ricecoder_providers::models::Capability::Chat),
-            "completion" => ricecoder_providers::provider::manager::ModelFilterCriteria::Capability(ricecoder_providers::models::Capability::Completion),
+        let filter_criteria = filter.and_then(|f| match f.to_lowercase().as_str() {
+            "free" => Some(ricecoder_providers::provider::manager::ModelFilterCriteria::FreeOnly),
+            "chat" => Some(ricecoder_providers::provider::manager::ModelFilterCriteria::Capability(ricecoder_providers::models::Capability::Chat)),
+            "completion" => Some(ricecoder_providers::provider::manager::ModelFilterCriteria::Capability(ricecoder_providers::models::Capability::Chat)),
             _ => {
                 println!("Unknown filter: {}. Available filters: free, chat, completion", f);
-                return Ok(());
+                None
             }
         });
 
@@ -338,8 +342,6 @@ impl ProvidersCommand {
                 println!("  Successful requests: {}", analytics.successful_requests);
                 println!("  Failed requests: {}", analytics.failed_requests);
                 println!("  Average response time: {:.2}ms", analytics.avg_response_time_ms);
-                println!("  Community rating: {:.2}/5.0", analytics.community_rating);
-                println!("  Reliability score: {:.2}%", analytics.reliability_score * 100.0);
             } else {
                 println!("No community analytics available for provider '{}'", provider_id);
             }
