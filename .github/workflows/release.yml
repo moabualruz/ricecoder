@@ -1,3 +1,6 @@
+# TEMPORARILY DISABLED - Remove this condition to re-enable
+# Set GITHUB_ACTIONS_ENABLED=true in repository secrets to re-enable
+
 name: Release
 
 on:
@@ -5,7 +8,23 @@ on:
     tags:
       - 'v*.*.*'
 
-env:
+jobs:
+  # Skip all jobs if GitHub Actions are disabled
+  check-enabled:
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - name: Check if GitHub Actions are enabled
+        id: check
+        run: |
+          if [ "${{ secrets.GITHUB_ACTIONS_ENABLED }}" = "true" ]; then
+            echo "enabled=true" >> $GITHUB_OUTPUT
+          else
+            echo "enabled=false" >> $GITHUB_OUTPUT
+          fi
+
+  build:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
   REGISTRY: docker.io
