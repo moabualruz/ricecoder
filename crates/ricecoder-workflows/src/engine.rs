@@ -8,6 +8,40 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
+// Optional MCP integration
+#[cfg(feature = "mcp")]
+use ricecoder_mcp::agent_integration::ToolInvoker;
+
+/// Extension trait for MCP integration
+#[cfg(feature = "mcp")]
+pub trait WorkflowEngineMcpExt {
+    /// Execute an MCP tool as part of a workflow step
+    fn execute_mcp_tool_async(
+        &self,
+        tool_id: &str,
+        parameters: HashMap<String, serde_json::Value>,
+        server_id: Option<&str>,
+        timeout_seconds: Option<u64>,
+        user_id: Option<&str>,
+        session_id: Option<&str>,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = WorkflowResult<serde_json::Value>> + Send + '_>>;
+}
+
+#[cfg(feature = "mcp")]
+impl WorkflowEngineMcpExt for WorkflowEngine {
+    fn execute_mcp_tool_async(
+        &self,
+        tool_id: &str,
+        parameters: HashMap<String, serde_json::Value>,
+        server_id: Option<&str>,
+        timeout_seconds: Option<u64>,
+        user_id: Option<&str>,
+        session_id: Option<&str>,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = WorkflowResult<serde_json::Value>> + Send + '_>> {
+        Box::pin(self.execute_mcp_tool(tool_id, parameters, server_id, timeout_seconds, user_id, session_id))
+    }
+}
+
 /// Central coordinator for workflow execution
 ///
 /// Manages workflow lifecycle (create, start, pause, resume, cancel) and tracks
@@ -18,6 +52,9 @@ pub struct WorkflowEngine {
     active_workflows: HashMap<String, WorkflowState>,
     /// Session manager for persistence
     session_manager: Arc<RwLock<SessionManager>>,
+    /// MCP tool invoker for workflow steps (optional)
+    #[cfg(feature = "mcp")]
+    mcp_tool_invoker: Option<Arc<dyn ToolInvoker>>,
 }
 
 impl Default for WorkflowEngine {
@@ -37,6 +74,63 @@ impl WorkflowEngine {
         WorkflowEngine {
             active_workflows: HashMap::new(),
             session_manager: Arc::new(RwLock::new(session_manager)),
+            #[cfg(feature = "mcp")]
+            mcp_tool_invoker: None,
+        }
+    }
+
+    /// Create a new workflow engine with MCP integration
+    #[cfg(feature = "mcp")]
+    pub fn with_mcp_integration(session_manager: SessionManager, mcp_tool_invoker: Arc<dyn ToolInvoker>) -> Self {
+        WorkflowEngine {
+            active_workflows: HashMap::new(),
+            session_manager: Arc::new(RwLock::new(session_manager)),
+            mcp_tool_invoker: Some(mcp_tool_invoker),
+        }
+    }
+
+    /// Set MCP tool invoker
+    #[cfg(feature = "mcp")]
+    pub fn set_mcp_tool_invoker(&mut self, invoker: Arc<dyn ToolInvoker>) {
+        self.mcp_tool_invoker = Some(invoker);
+    }
+
+    /// Execute an MCP tool as part of a workflow step
+    #[cfg(feature = "mcp")]
+    pub async fn execute_mcp_tool(
+        &self,
+        tool_id: &str,
+        parameters: HashMap<String, serde_json::Value>,
+        server_id: Option<&str>,
+        timeout_seconds: Option<u64>,
+        user_id: Option<&str>,
+        session_id: Option<&str>,
+    ) -> WorkflowResult<serde_json::Value> {
+        let invoker = self.mcp_tool_invoker.as_ref().ok_or_else(|| {
+            WorkflowError::Invalid("MCP tool invoker not configured".to_string())
+        })?;
+
+        // Convert parameters to the expected format
+        let params = parameters.into_iter().collect();
+
+        // Execute the tool
+        match invoker.invoke_tool(tool_id, params) {
+            Ok(result) => {
+                // Log successful execution
+                info!(
+                    "Successfully executed MCP tool '{}' in workflow context (user: {:?}, session: {:?})",
+                    tool_id, user_id, session_id
+                );
+                Ok(result)
+            }
+            Err(e) => {
+                // Log failed execution
+                error!(
+                    "Failed to execute MCP tool '{}' in workflow context: {} (user: {:?}, session: {:?})",
+                    tool_id, e, user_id, session_id
+                );
+                Err(WorkflowError::Execution(format!("MCP tool execution failed: {}", e)))
+            }
         }
     }
 

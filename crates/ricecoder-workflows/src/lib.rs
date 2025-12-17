@@ -21,3 +21,7 @@ pub use models::*;
 pub use parameters::*;
 pub use parser::WorkflowParser;
 pub use resolver::DependencyResolver;
+
+// Re-export MCP integration types
+#[cfg(feature = "mcp")]
+pub use engine::WorkflowEngineMcpExt;

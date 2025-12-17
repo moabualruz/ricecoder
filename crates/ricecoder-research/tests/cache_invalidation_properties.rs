@@ -4,10 +4,11 @@
 
 use proptest::prelude::*;
 use ricecoder_research::{
-    ArchitecturalIntent, ArchitecturalStyle, CacheManager, CaseStyle, DocFormat,
+    ArchitecturalIntent, ArchitecturalStyle, CaseStyle, DocFormat,
     DocumentationStyle, FormattingStyle, ImportOrganization, IndentType, NamingConventions,
-    ProjectContext, ProjectStructure, ProjectType, StandardsProfile,
+    ProjectContext, ProjectStructure, ProjectType, StandardsProfile, SearchStatistics,
 };
+use ricecoder_storage::cache::CacheManager;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::SystemTime;
@@ -249,7 +250,7 @@ proptest! {
     /// For any sequence of hits and misses, hit rate should be calculated correctly
     #[test]
     fn prop_cache_hit_rate_calculation(hits in 0u64..1000, misses in 0u64..1000) {
-        let stats = ricecoder_research::CacheStatistics {
+        let stats = SearchStatistics {
             hits,
             misses,
             invalidations: 0,

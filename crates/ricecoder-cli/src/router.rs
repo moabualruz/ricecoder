@@ -12,7 +12,7 @@ use clap::{Parser, Subcommand};
 #[command(bin_name = "rice")]
 #[command(about = "Terminal-first, spec-driven coding assistant")]
 #[command(
-    long_about = "RiceCoder: A terminal-first, spec-driven coding assistant.\n\nGenerate code from specifications, refactor existing code, and get AI-powered code reviews.\n\nFor more information, visit: https://github.com/moabualruz/ricecoder/wiki"
+    long_about = "RiceCoder: A terminal-first, spec-driven coding assistant.\n\nGenerate code from specifications, refactor existing code, and get AI-powered code reviews.\n\n🚀 Quick Start:\n  • rice init          Initialize a new project\n  • rice chat          Start interactive AI chat\n  • rice refactor      AI-powered code refactoring\n  • rice sessions list Manage coding sessions\n  • rice providers     Configure AI providers\n\nFor more information, visit: https://github.com/moabualruz/ricecoder/wiki"
 )]
 #[command(version)]
 #[command(author = "RiceCoder Contributors")]

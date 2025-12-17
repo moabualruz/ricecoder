@@ -176,6 +176,8 @@ pub struct SessionContext {
     pub files: Vec<String>,
     /// Custom context data
     pub custom: HashMap<String, serde_json::Value>,
+    /// Tenant/organization ID for multi-tenant isolation
+    pub tenant_id: Option<String>,
 }
 
 impl SessionContext {
@@ -188,6 +190,20 @@ impl SessionContext {
             mode,
             files: Vec::new(),
             custom: HashMap::new(),
+            tenant_id: None,
+        }
+    }
+
+    /// Create a new session context with tenant isolation
+    pub fn with_tenant(provider: String, model: String, mode: SessionMode, tenant_id: String) -> Self {
+        Self {
+            project_path: None,
+            provider,
+            model,
+            mode,
+            files: Vec::new(),
+            custom: HashMap::new(),
+            tenant_id: Some(tenant_id),
         }
     }
 }
@@ -407,4 +423,205 @@ pub enum AgentStatus {
     Failed,
     /// Agent was cancelled
     Cancelled,
+}
+
+/// Enterprise compliance event types
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ComplianceEventType {
+    /// Session shared with external user
+    SessionShared,
+    /// Session accessed by unauthorized user
+    UnauthorizedAccess,
+    /// Data retention policy violation
+    RetentionViolation,
+    /// Encryption policy violation
+    EncryptionViolation,
+    /// Audit logging failure
+    AuditFailure,
+}
+
+/// Enterprise compliance alert levels
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ComplianceAlertLevel {
+    /// Informational event
+    Info,
+    /// Warning that requires attention
+    Warning,
+    /// Critical violation requiring immediate action
+    Critical,
+}
+
+/// Enterprise compliance event
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ComplianceEvent {
+    /// Unique event ID
+    pub id: String,
+    /// Event type
+    pub event_type: ComplianceEventType,
+    /// Alert level
+    pub alert_level: ComplianceAlertLevel,
+    /// User ID associated with the event
+    pub user_id: Option<String>,
+    /// Session ID associated with the event
+    pub session_id: Option<String>,
+    /// Description of the event
+    pub description: String,
+    /// Additional metadata
+    pub metadata: HashMap<String, serde_json::Value>,
+    /// When the event occurred
+    pub timestamp: DateTime<Utc>,
+}
+
+/// Enterprise session analytics data
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnterpriseSessionAnalytics {
+    /// Total number of sessions created
+    pub total_sessions_created: u64,
+    /// Total number of sessions shared
+    pub total_sessions_shared: u64,
+    /// Total number of session accesses
+    pub total_session_accesses: u64,
+    /// Sessions by tenant/organization
+    pub sessions_by_tenant: HashMap<String, u64>,
+    /// Sessions by data classification
+    pub sessions_by_classification: HashMap<String, u64>,
+    /// Average session duration
+    pub average_session_duration_minutes: f64,
+    /// Compliance events by type
+    pub compliance_events_by_type: HashMap<String, u64>,
+    /// Top users by session creation
+    pub top_users_by_sessions: Vec<(String, u64)>,
+    /// Session sharing trends over time
+    pub sharing_trends: Vec<SharingTrendPoint>,
+}
+
+/// Data point for session sharing trends
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SharingTrendPoint {
+    /// Date of the data point
+    pub date: DateTime<Utc>,
+    /// Number of shares created on this date
+    pub shares_created: u64,
+    /// Number of shares accessed on this date
+    pub shares_accessed: u64,
+    /// Number of compliance events on this date
+    pub compliance_events: u64,
+}
+
+/// GDPR/HIPAA compliance data retention policy
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DataRetentionPolicy {
+    /// Maximum retention period for session data
+    pub session_data_retention_days: u32,
+    /// Maximum retention period for audit logs
+    pub audit_log_retention_days: u32,
+    /// Maximum retention period for backup data
+    pub backup_retention_days: u32,
+    /// Whether to enable automatic data deletion
+    pub auto_delete_expired_data: bool,
+    /// Data minimization settings
+    pub data_minimization: DataMinimizationSettings,
+}
+
+/// Data minimization settings for GDPR compliance
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DataMinimizationSettings {
+    /// Whether to anonymize IP addresses
+    pub anonymize_ip_addresses: bool,
+    /// Whether to limit collection of unnecessary data
+    pub limit_unnecessary_collection: bool,
+    /// Whether to enable data purging on user request
+    pub enable_data_purging: bool,
+    /// Whether to enable data export for portability
+    pub enable_data_export: bool,
+}
+
+/// Data portability export format
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum DataExportFormat {
+    /// JSON format
+    Json,
+    /// XML format
+    Xml,
+    /// CSV format
+    Csv,
+    /// PDF report format
+    Pdf,
+}
+
+/// Data export request for GDPR Article 20
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DataExportRequest {
+    /// User ID requesting export
+    pub user_id: String,
+    /// Export format
+    pub format: DataExportFormat,
+    /// Include audit logs
+    pub include_audit_logs: bool,
+    /// Include session data
+    pub include_session_data: bool,
+    /// Include sharing history
+    pub include_sharing_history: bool,
+    /// Requested at timestamp
+    pub requested_at: DateTime<Utc>,
+    /// Export completed at timestamp
+    pub completed_at: Option<DateTime<Utc>>,
+}
+
+/// Right to erasure (GDPR Article 17) request
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DataErasureRequest {
+    /// User ID requesting erasure
+    pub user_id: String,
+    /// Reason for erasure request
+    pub reason: ErasureReason,
+    /// Whether to erase all user data
+    pub erase_all_data: bool,
+    /// Specific data types to erase
+    pub data_types_to_erase: Vec<DataType>,
+    /// Requested at timestamp
+    pub requested_at: DateTime<Utc>,
+    /// Erasure completed at timestamp
+    pub completed_at: Option<DateTime<Utc>>,
+}
+
+/// Reason for data erasure request
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ErasureReason {
+    /// User withdrew consent
+    ConsentWithdrawn,
+    /// Data no longer needed
+    NoLongerNeeded,
+    /// Legal obligation
+    LegalObligation,
+    /// User requested deletion
+    UserRequest,
+}
+
+/// Types of data that can be erased
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum DataType {
+    /// Session data
+    Sessions,
+    /// Audit logs
+    AuditLogs,
+    /// Sharing history
+    SharingHistory,
+    /// User preferences
+    UserPreferences,
+    /// All data types
+    All,
+}
+
+/// Privacy-preserving session handling settings
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PrivacySettings {
+    /// Enable differential privacy for analytics
+    pub enable_differential_privacy: bool,
+    /// Enable data anonymization
+    pub enable_data_anonymization: bool,
+    /// Enable consent management
+    pub enable_consent_management: bool,
+    /// Enable privacy audit logging
+    pub enable_privacy_auditing: bool,
 }

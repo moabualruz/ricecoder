@@ -67,6 +67,7 @@ impl WidgetContainer {
             AppMode::Command => Some(&mut self.prompt as &mut dyn std::any::Any),
             AppMode::Mcp => None, // TODO: Add MCP widget
             AppMode::Provider => None, // TODO: Add Provider widget
+            AppMode::Session => None, // TODO: Add Session widget
             AppMode::Help => Some(&mut self.menu as &mut dyn std::any::Any),
         }
     }
@@ -323,6 +324,10 @@ impl StateSynchronizer {
                 // Provider mode specific sync
                 tracing::debug!("Syncing provider mode state");
             }
+            AppMode::Session => {
+                // Session mode specific sync
+                tracing::debug!("Syncing session mode state");
+            }
             AppMode::Help => {
                 // Help mode specific sync
                 tracing::debug!("Syncing help mode state");
@@ -402,6 +407,10 @@ impl WidgetIntegration {
                 // Provider mode initialization
                 tracing::debug!("Provider mode: initializing provider management");
             }
+            AppMode::Session => {
+                // Session mode initialization
+                tracing::debug!("Session mode: initializing session management");
+            }
             AppMode::Help => {
                 // Ensure help is ready
                 tracing::debug!("Help mode: showing help");
@@ -451,6 +460,11 @@ impl WidgetIntegration {
             }
             AppMode::Provider => {
                 // Use command layout for Provider for now
+                let layout = self.layout.layout_command()?;
+                Ok(LayoutInfo::Command(layout))
+            }
+            AppMode::Session => {
+                // Use command layout for Session for now
                 let layout = self.layout.layout_command()?;
                 Ok(LayoutInfo::Command(layout))
             }

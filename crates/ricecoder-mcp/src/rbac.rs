@@ -306,12 +306,7 @@ mod tests {
         let mut access_control = AccessControl::new();
 
         // Add admin role
-        let admin_role = Role {
-            name: "admin".to_string(),
-            permissions: vec![Permission::ApiKeyAccess, Permission::Admin],
-            description: "Administrator role".to_string(),
-        };
-        access_control.add_role(admin_role);
+        access_control.add_custom_role("admin".to_string(), vec![Permission::ApiKeyAccess, Permission::Admin]);
 
         let access_control = Arc::new(access_control);
         let permission_manager = Arc::new(MCPPermissionManager::new());

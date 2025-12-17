@@ -68,7 +68,7 @@ impl Command for TuiCommand {
         let config = self.get_config();
 
         // Launch the TUI application
-        launch_tui(config)
+        launch_tui(config).await
     }
 }
 
@@ -106,41 +106,37 @@ async fn load_provider_data_for_tui() -> CliResult<(Vec<ricecoder_tui::model::Pr
 }
 
 /// Launch the TUI application
-fn launch_tui(config: TuiConfig) -> CliResult<()> {
-    // Create a runtime for async operations
-    let rt = tokio::runtime::Runtime::new()
-        .map_err(|e| CliError::Internal(format!("Failed to create runtime: {}", e)))?;
+async fn launch_tui(config: TuiConfig) -> CliResult<()> {
+    // For now, show information about TUI development status
+    // TODO: Properly integrate with ricecoder-tui crate's event loop
+    println!("🍚 RiceCoder TUI - Terminal User Interface");
+    println!();
+    println!("The interactive TUI is currently under development.");
+    println!("For now, you can use the command-line interface:");
+    println!();
+    println!("🚀 Quick Start:");
+    println!("  • rice init          Initialize a new project");
+    println!("  • rice chat          Start interactive AI chat");
+    println!("  • rice refactor      AI-powered code refactoring");
+    println!("  • rice sessions list Manage coding sessions");
+    println!("  • rice providers     Configure AI providers");
+    println!();
+    println!("📚 Available Commands:");
+    println!("  gen, chat, refactor, review, config, compliance, completions,");
+    println!("  custom, sessions, providers, mcp, lsp, hooks, help");
+    println!();
+    println!("💡 The TUI will provide:");
+    println!("  • Interactive session management");
+    println!("  • Real-time AI chat interface");
+    println!("  • Code editing and refactoring tools");
+    println!("  • Provider and model switching");
+    println!("  • Progress monitoring and analytics");
+    println!();
+    println!("Version: {}", env!("CARGO_PKG_VERSION"));
+    println!();
+    println!("Stay tuned for the full TUI release!");
 
-    rt.block_on(async {
-        // Import the TUI app
-        use ricecoder_tui::App;
-
-        // Create TUI configuration from CLI config
-        let mut tui_config = ricecoder_tui::TuiConfig::default();
-
-        // Apply theme if specified
-        if let Some(theme) = config.theme {
-            tui_config.theme = theme;
-        }
-
-        // Apply vim mode if enabled
-        if config.vim_mode {
-            tui_config.vim_mode = true;
-        }
-
-        // Provider and model are handled separately in load_provider_data_for_tui
-
-        // Load provider data for the TUI
-        let (available_providers, current_provider) = load_provider_data_for_tui().await?;
-
-        // Create and run the application
-        let mut app = App::with_config_and_providers(tui_config, available_providers, current_provider).await
-            .map_err(|e| CliError::Internal(format!("Failed to initialize TUI: {}", e)))?;
-
-        Ok(())
-    })
+    Ok(())
 }
-
-
 
 

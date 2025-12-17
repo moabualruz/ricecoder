@@ -1026,6 +1026,7 @@ impl ModeIndicator {
             AppMode::Diff => vec!["CodeModification", "FileOperations"],
             AppMode::Mcp => vec!["ToolExecution", "ServerManagement"],
             AppMode::Provider => vec!["ProviderManagement", "StatusMonitoring"],
+            AppMode::Session => vec!["SessionManagement", "Sharing"],
             AppMode::Help => vec!["QuestionAnswering"],
         }
     }
@@ -1167,6 +1168,7 @@ impl ModeSelectionMenu {
                     AppMode::Diff => "Review and apply code changes",
                     AppMode::Mcp => "Manage MCP servers and tools",
                     AppMode::Provider => "Configure AI providers",
+                    AppMode::Session => "Manage and share sessions",
                     AppMode::Help => "Get help and documentation",
                 };
                 (mode, desc)

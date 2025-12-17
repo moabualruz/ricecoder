@@ -2,7 +2,7 @@
 //! Tests context selection, relevance scoring, and token budget management
 //! **Validates: Requirements 1.10, 2.1, 2.2, 2.3, 2.4, 2.5**
 
-use ricecoder_research::{ContextBuilder, FileContext};
+use ricecoder_research::{FileContext};
 use std::path::PathBuf;
 
 // ============================================================================

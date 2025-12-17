@@ -18,6 +18,8 @@ pub struct SessionStore {
     sessions_dir: PathBuf,
     /// Archive directory for deleted sessions
     archive_dir: PathBuf,
+    /// Enterprise backup directory for disaster recovery
+    backup_dir: PathBuf,
     /// Optional encryption key manager for enterprise security
     key_manager: Option<Arc<KeyManager>>,
     /// Optional customer key manager for SOC 2 compliance
@@ -29,10 +31,12 @@ impl SessionStore {
     pub fn new() -> SessionResult<Self> {
         let sessions_dir = Self::get_sessions_dir()?;
         let archive_dir = Self::get_archive_dir()?;
+        let backup_dir = Self::get_backup_dir()?;
 
         // Ensure directories exist
         fs::create_dir_all(&sessions_dir)?;
         fs::create_dir_all(&archive_dir)?;
+        fs::create_dir_all(&backup_dir)?;
 
         debug!(
             "SessionStore initialized with sessions_dir: {:?}",
@@ -42,6 +46,7 @@ impl SessionStore {
         Ok(Self {
             sessions_dir,
             archive_dir,
+            backup_dir,
             key_manager: None,
             customer_key_manager: None,
         })
@@ -49,12 +54,15 @@ impl SessionStore {
 
     /// Create a session store with custom directories (for testing)
     pub fn with_dirs(sessions_dir: PathBuf, archive_dir: PathBuf) -> SessionResult<Self> {
+        let backup_dir = sessions_dir.parent().unwrap_or(&sessions_dir).join("backup");
         fs::create_dir_all(&sessions_dir)?;
         fs::create_dir_all(&archive_dir)?;
+        fs::create_dir_all(&backup_dir)?;
 
         Ok(Self {
             sessions_dir,
             archive_dir,
+            backup_dir,
             key_manager: None,
             customer_key_manager: None,
         })
@@ -108,6 +116,14 @@ impl SessionStore {
             SessionError::ConfigError("Could not determine home directory".to_string())
         })?;
         Ok(home.join(".ricecoder").join("sessions").join("archive"))
+    }
+
+    /// Get the default backup directory (~/.ricecoder/sessions/backup/)
+    fn get_backup_dir() -> SessionResult<PathBuf> {
+        let home = dirs::home_dir().ok_or_else(|| {
+            SessionError::ConfigError("Could not determine home directory".to_string())
+        })?;
+        Ok(home.join(".ricecoder").join("sessions").join("backup"))
     }
 
     /// Get the path for a session file
@@ -499,6 +515,214 @@ impl SessionStore {
 
         Ok(total_size)
     }
+
+    /// Enterprise backup: Create encrypted backup of all sessions
+    pub async fn create_enterprise_backup(&self, backup_id: &str) -> SessionResult<PathBuf> {
+        use tokio::fs;
+
+        let backup_path = self.backup_dir.join(format!("{}.tar.gz.enc", backup_id));
+        let temp_dir = tempfile::tempdir()?;
+
+        // Create backup directory structure
+        let sessions_backup_dir = temp_dir.path().join("sessions");
+        let archive_backup_dir = temp_dir.path().join("archive");
+        fs::create_dir_all(&sessions_backup_dir).await?;
+        fs::create_dir_all(&archive_backup_dir).await?;
+
+        // Copy all session files
+        let mut entries = fs::read_dir(&self.sessions_dir).await?;
+        while let Some(entry) = entries.next_entry().await? {
+            if entry.file_type().await?.is_file() {
+                let dest_path = sessions_backup_dir.join(entry.file_name());
+                fs::copy(entry.path(), dest_path).await?;
+            }
+        }
+
+        // Copy all archive files
+        let mut archive_entries = fs::read_dir(&self.archive_dir).await?;
+        while let Some(entry) = archive_entries.next_entry().await? {
+            if entry.file_type().await?.is_file() {
+                let dest_path = archive_backup_dir.join(entry.file_name());
+                fs::copy(entry.path(), dest_path).await?;
+            }
+        }
+
+        // Create metadata file
+        let metadata = serde_json::json!({
+            "backup_id": backup_id,
+            "created_at": Utc::now().to_rfc3339(),
+            "session_count": self.count_sessions()?,
+            "archive_count": self.count_archive_files()?,
+            "total_size_bytes": self.calculate_total_size()?,
+            "encryption_used": self.key_manager.is_some()
+        });
+        let metadata_path = temp_dir.path().join("metadata.json");
+        fs::write(&metadata_path, serde_json::to_string_pretty(&metadata)?).await?;
+
+        // Create encrypted tar.gz archive
+        if let Some(ref key_manager) = self.key_manager {
+            // Compress and encrypt the backup
+            let tar_gz_path = self.backup_dir.join(format!("{}.tar.gz", backup_id));
+            self.create_tar_gz(temp_dir.path(), &tar_gz_path).await?;
+
+            // Encrypt the archive
+            let tar_gz_data = fs::read(&tar_gz_path).await?;
+            let encrypted_data = key_manager.encrypt_api_key(&general_purpose::STANDARD.encode(&tar_gz_data))?;
+
+            // Write encrypted data
+            let encrypted_json = serde_json::to_string(&encrypted_data)?;
+            fs::write(&backup_path, encrypted_json).await?;
+
+            // Clean up temporary tar.gz
+            let _ = fs::remove_file(&tar_gz_path).await;
+        } else {
+            // Create unencrypted tar.gz
+            self.create_tar_gz(temp_dir.path(), &backup_path).await?;
+        }
+
+        info!("Enterprise backup created: {:?}", backup_path);
+        Ok(backup_path)
+    }
+
+    /// Enterprise recovery: Restore sessions from encrypted backup
+    pub async fn restore_enterprise_backup(&self, backup_path: &Path, master_password: Option<&str>) -> SessionResult<usize> {
+        use tokio::fs;
+
+        let mut restored_count = 0;
+        let temp_dir = tempfile::tempdir()?;
+
+        if let Some(ref key_manager) = self.key_manager {
+            // Decrypt the backup
+            let encrypted_json = fs::read_to_string(backup_path).await?;
+            let encrypted_data: EncryptedData = serde_json::from_str(&encrypted_json)?;
+            let decrypted_data = key_manager.decrypt_api_key(&encrypted_data)?;
+            let tar_gz_data = general_purpose::STANDARD.decode(decrypted_data)?;
+
+            // Write decrypted tar.gz to temp file
+            let temp_tar_gz = temp_dir.path().join("backup.tar.gz");
+            fs::write(&temp_tar_gz, tar_gz_data).await?;
+
+            // Extract the archive
+            restored_count = self.extract_tar_gz(&temp_tar_gz, temp_dir.path()).await?;
+        } else {
+            // Extract unencrypted tar.gz directly
+            restored_count = self.extract_tar_gz(backup_path, temp_dir.path()).await?;
+        }
+
+        // Restore sessions from extracted files
+        let sessions_dir = temp_dir.path().join("sessions");
+        if sessions_dir.exists() {
+            let mut entries = fs::read_dir(&sessions_dir).await?;
+            while let Some(entry) = entries.next_entry().await? {
+                if entry.file_type().await?.is_file() {
+                    let dest_path = self.session_path(&entry.file_name().to_string_lossy().trim_end_matches(".json"));
+                    fs::copy(entry.path(), dest_path).await?;
+                }
+            }
+        }
+
+        // Restore archive files
+        let archive_dir = temp_dir.path().join("archive");
+        if archive_dir.exists() {
+            let mut entries = fs::read_dir(&archive_dir).await?;
+            while let Some(entry) = entries.next_entry().await? {
+                if entry.file_type().await?.is_file() {
+                    let dest_path = self.archive_path(&entry.file_name().to_string_lossy().trim_end_matches(".json"));
+                    fs::copy(entry.path(), dest_path).await?;
+                }
+            }
+        }
+
+        info!("Enterprise backup restored: {} sessions", restored_count);
+        Ok(restored_count)
+    }
+
+    /// Create tar.gz archive from directory
+    async fn create_tar_gz(&self, source_dir: &Path, dest_path: &Path) -> SessionResult<()> {
+        use tokio::process::Command;
+
+        let output = Command::new("tar")
+            .args(&["-czf", &dest_path.to_string_lossy(), "-C", &source_dir.to_string_lossy(), "."])
+            .output()
+            .await?;
+
+        if !output.status.success() {
+            return Err(SessionError::StorageError(format!(
+                "Failed to create tar.gz: {}",
+                String::from_utf8_lossy(&output.stderr)
+            )));
+        }
+
+        Ok(())
+    }
+
+    /// Extract tar.gz archive to directory
+    async fn extract_tar_gz(&self, archive_path: &Path, dest_dir: &Path) -> SessionResult<usize> {
+        use tokio::process::Command;
+
+        let output = Command::new("tar")
+            .args(&["-xzf", &archive_path.to_string_lossy(), "-C", &dest_dir.to_string_lossy()])
+            .output()
+            .await?;
+
+        if !output.status.success() {
+            return Err(SessionError::StorageError(format!(
+                "Failed to extract tar.gz: {}",
+                String::from_utf8_lossy(&output.stderr)
+            )));
+        }
+
+        // Count extracted files
+        let mut count = 0;
+        let mut entries = tokio::fs::read_dir(dest_dir).await?;
+        while let Some(_) = entries.next_entry().await? {
+            count += 1;
+        }
+
+        Ok(count)
+    }
+
+    /// List available enterprise backups
+    pub fn list_enterprise_backups(&self) -> SessionResult<Vec<EnterpriseBackupInfo>> {
+        let mut backups = Vec::new();
+
+        let entries = fs::read_dir(&self.backup_dir)?;
+        for entry in entries {
+            let entry = entry?;
+            let path = entry.path();
+
+            if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("enc") {
+                if let Some(file_name) = path.file_stem().and_then(|s| s.to_str()) {
+                    backups.push(EnterpriseBackupInfo {
+                        id: file_name.to_string(),
+                        path: path.clone(),
+                        created_at: entry.metadata()?.modified().ok()
+                            .and_then(|t| DateTime::from_timestamp(t.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs() as i64, 0))
+                            .unwrap_or_else(|| Utc::now()),
+                        size_bytes: entry.metadata()?.len(),
+                        encrypted: true,
+                    });
+                }
+            } else if path.extension().and_then(|s| s.to_str()) == Some("gz") {
+                if let Some(file_name) = path.file_stem().and_then(|s| s.to_str()) {
+                    backups.push(EnterpriseBackupInfo {
+                        id: file_name.to_string(),
+                        path: path.clone(),
+                        created_at: entry.metadata()?.modified().ok()
+                            .and_then(|t| DateTime::from_timestamp(t.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs() as i64, 0))
+                            .unwrap_or_else(|| Utc::now()),
+                        size_bytes: entry.metadata()?.len(),
+                        encrypted: false,
+                    });
+                }
+            }
+        }
+
+        // Sort by creation time (newest first)
+        backups.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+
+        Ok(backups)
+    }
 }
 
 /// Configuration for garbage collection
@@ -537,6 +761,21 @@ pub struct GarbageCollectionResult {
     pub current_archive_count: usize,
     /// Total storage size in bytes
     pub total_size_bytes: u64,
+}
+
+/// Information about an enterprise backup
+#[derive(Debug, Clone)]
+pub struct EnterpriseBackupInfo {
+    /// Backup ID
+    pub id: String,
+    /// Path to backup file
+    pub path: PathBuf,
+    /// When the backup was created
+    pub created_at: DateTime<Utc>,
+    /// Size of backup in bytes
+    pub size_bytes: u64,
+    /// Whether the backup is encrypted
+    pub encrypted: bool,
 }
 
 impl Default for SessionStore {

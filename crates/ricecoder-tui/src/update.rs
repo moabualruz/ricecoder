@@ -86,6 +86,7 @@ impl AppModel {
             AppMode::Command => self.handle_command_key(key),
             AppMode::Diff => self.handle_diff_key(key),
             AppMode::Mcp => self.handle_mcp_key(key),
+            AppMode::Session => self.handle_session_key(key),
             AppMode::Provider => self.handle_provider_key(key),
             AppMode::Help => self.handle_help_key(key),
         }
@@ -99,6 +100,7 @@ impl AppModel {
                 KeyCode::Char('2') => Some(Command::SwitchMode(AppMode::Command)),
                 KeyCode::Char('3') => Some(Command::SwitchMode(AppMode::Diff)),
                 KeyCode::Char('4') => Some(Command::SwitchMode(AppMode::Mcp)),
+                KeyCode::Char('7') => Some(Command::SwitchMode(AppMode::Session)),
                 KeyCode::Char('5') => Some(Command::SwitchMode(AppMode::Provider)),
                 KeyCode::Char('6') => Some(Command::SwitchMode(AppMode::Help)),
                 KeyCode::Char('c') => Some(Command::Exit),
@@ -163,6 +165,80 @@ impl AppModel {
     fn handle_mcp_key(self, _key: KeyEvent) -> (Self, Vec<Command>) {
         // Handle MCP-specific keybindings
         (self, vec![])
+    }
+
+    fn handle_session_key(self, key: KeyEvent) -> (Self, Vec<Command>) {
+        match key.code {
+            KeyCode::Char('n') => {
+                // New session
+                let mut new_state = self;
+                new_state.sessions.editor = SessionEditorState {
+                    is_editing: true,
+                    session_id: None,
+                    name: String::new(),
+                    provider: "anthropic".to_string(), // Default provider
+                    description: String::new(),
+                };
+                (new_state, vec![])
+            }
+            KeyCode::Char('e') => {
+                // Edit selected session
+                if let Some(selected_session) = self.sessions.browser.sessions.get(self.sessions.browser.selected_index).cloned() {
+                    let mut new_state = self;
+                    new_state.sessions.editor = SessionEditorState {
+                        is_editing: true,
+                        session_id: Some(selected_session.id),
+                        name: selected_session.name,
+                        provider: selected_session.provider,
+                        description: String::new(), // Would need to load from session
+                    };
+                    (new_state, vec![])
+                } else {
+                    (self, vec![])
+                }
+            }
+            KeyCode::Char('s') => {
+                // Share selected session
+                if let Some(selected_session) = self.sessions.browser.sessions.get(self.sessions.browser.selected_index).cloned() {
+                    let mut new_state = self;
+                    new_state.sessions.sharing = SessionSharingState {
+                        is_sharing: true,
+                        session_id: selected_session.id,
+                        share_url: None,
+                        expires_in: Some(3600), // 1 hour default
+                        permissions: SharePermissions::ReadOnly,
+                    };
+                    (new_state, vec![])
+                } else {
+                    (self, vec![])
+                }
+            }
+            KeyCode::Up => {
+                // Navigate up in session list
+                let mut new_state = self;
+                if new_state.sessions.browser.selected_index > 0 {
+                    new_state.sessions.browser.selected_index -= 1;
+                }
+                (new_state, vec![])
+            }
+            KeyCode::Down => {
+                // Navigate down in session list
+                let mut new_state = self;
+                if new_state.sessions.browser.selected_index < new_state.sessions.browser.sessions.len().saturating_sub(1) {
+                    new_state.sessions.browser.selected_index += 1;
+                }
+                (new_state, vec![])
+            }
+            KeyCode::Enter => {
+                // Activate selected session
+                if let Some(selected_session) = self.sessions.browser.sessions.get(self.sessions.browser.selected_index).cloned() {
+                    (self.with_active_session(Some(selected_session.id)), vec![])
+                } else {
+                    (self, vec![])
+                }
+            }
+            _ => (self, vec![]),
+        }
     }
 
     fn handle_provider_key(self, key: KeyEvent) -> (Self, Vec<Command>) {

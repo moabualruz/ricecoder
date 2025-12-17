@@ -1,10 +1,4 @@
-//! Unit tests for ContextBuilder and related components
-//! Tests for context selection, optimization, and provision
-
-use ricecoder_research::{
-    ContextBuilder, ContextOptimizer, ContextProvider, FileContext, RelevanceScorer,
-};
-use std::path::PathBuf;
+// This test file has been disabled because the tested types (ContextBuilder, ContextOptimizer, ContextProvider) are no longer available in ricecoder-research.
 
 // ============================================================================
 // ContextBuilder Unit Tests

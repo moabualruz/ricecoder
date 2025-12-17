@@ -14,9 +14,15 @@ use ricecoder_help::HelpDialog;
 // Stub type for TUI isolation - TokenUsage moved to ricecoder-sessions
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TokenUsage {
-    pub input_tokens: usize,
-    pub output_tokens: usize,
-    pub cached_tokens: usize,
+    pub input_tokens: u64,
+    pub output_tokens: u64,
+}
+
+/// Share permissions for session sharing
+#[derive(Debug, Clone, PartialEq)]
+pub enum SharePermissions {
+    ReadOnly,
+    ReadWrite,
 }
 use std::collections::HashMap;
 
@@ -58,6 +64,8 @@ pub enum AppMode {
     Mcp,
     /// Provider mode for AI provider management
     Provider,
+    /// Session mode for session management
+    Session,
     /// Help mode for displaying help information
     Help,
 }
@@ -71,6 +79,7 @@ impl AppMode {
             AppMode::Diff => "Diff",
             AppMode::Mcp => "MCP",
             AppMode::Provider => "Provider",
+            AppMode::Session => "Session",
             AppMode::Help => "Help",
         }
     }
@@ -83,6 +92,7 @@ impl AppMode {
             AppMode::Diff => "Ctrl+3",
             AppMode::Mcp => "Ctrl+4",
             AppMode::Provider => "Ctrl+5",
+            AppMode::Session => "Ctrl+7",
             AppMode::Help => "Ctrl+6",
         }
     }
@@ -94,7 +104,8 @@ impl AppMode {
             AppMode::Command => AppMode::Diff,
             AppMode::Diff => AppMode::Mcp,
             AppMode::Mcp => AppMode::Provider,
-            AppMode::Provider => AppMode::Help,
+            AppMode::Provider => AppMode::Session,
+            AppMode::Session => AppMode::Help,
             AppMode::Help => AppMode::Chat,
         }
     }
@@ -107,9 +118,79 @@ impl AppMode {
             AppMode::Diff => AppMode::Command,
             AppMode::Mcp => AppMode::Diff,
             AppMode::Provider => AppMode::Mcp,
+            AppMode::Session => AppMode::Provider,
             AppMode::Help => AppMode::Provider,
         }
     }
+}
+
+/// Session information for display
+#[derive(Clone, Debug, PartialEq)]
+pub struct SessionInfo {
+    pub id: String,
+    pub name: String,
+    pub status: SessionStatus,
+    pub created_at: u64,
+    pub last_activity: u64,
+    pub provider: String,
+    pub token_count: u64,
+    pub is_shared: bool,
+}
+
+/// Session status
+#[derive(Clone, Debug, PartialEq)]
+pub enum SessionStatus {
+    Active,
+    Paused,
+    Completed,
+    Failed,
+}
+
+/// Session browser state
+#[derive(Clone, Debug, PartialEq)]
+pub struct SessionBrowserState {
+    pub sessions: Vec<SessionInfo>,
+    pub selected_index: usize,
+    pub filter_text: String,
+    pub sort_by: SessionSortBy,
+    pub view_mode: SessionViewMode,
+}
+
+/// Session sort options
+#[derive(Clone, Debug, PartialEq)]
+pub enum SessionSortBy {
+    Name,
+    Created,
+    LastActivity,
+    TokenCount,
+}
+
+/// Session view modes
+#[derive(Clone, Debug, PartialEq)]
+pub enum SessionViewMode {
+    List,
+    Grid,
+    Details,
+}
+
+/// Session creation/editing state
+#[derive(Clone, Debug, PartialEq)]
+pub struct SessionEditorState {
+    pub is_editing: bool,
+    pub session_id: Option<String>,
+    pub name: String,
+    pub provider: String,
+    pub description: String,
+}
+
+/// Session sharing state
+#[derive(Clone, Debug, PartialEq)]
+pub struct SessionSharingState {
+    pub is_sharing: bool,
+    pub session_id: String,
+    pub share_url: Option<String>,
+    pub expires_in: Option<u64>,
+    pub permissions: SharePermissions,
 }
 
 /// Session state
@@ -118,6 +199,9 @@ pub struct SessionState {
     pub active_session_id: Option<String>,
     pub session_count: usize,
     pub total_tokens: TokenUsage,
+    pub browser: SessionBrowserState,
+    pub editor: SessionEditorState,
+    pub sharing: SessionSharingState,
 }
 
 /// Command state
@@ -275,6 +359,27 @@ impl AppModel {
                 active_session_id: None,
                 session_count: 0,
                 total_tokens: TokenUsage::default(),
+                browser: SessionBrowserState {
+                    sessions: Vec::new(),
+                    selected_index: 0,
+                    filter_text: String::new(),
+                    sort_by: SessionSortBy::LastActivity,
+                    view_mode: SessionViewMode::List,
+                },
+                editor: SessionEditorState {
+                    is_editing: false,
+                    session_id: None,
+                    name: String::new(),
+                    provider: String::new(),
+                    description: String::new(),
+                },
+                sharing: SessionSharingState {
+                    is_sharing: false,
+                    session_id: String::new(),
+                    share_url: None,
+                    expires_in: None,
+                    permissions: SharePermissions::ReadOnly,
+                },
             },
 
             commands: CommandState {
@@ -358,6 +463,11 @@ impl AppModel {
     }
 
     pub fn with_session_id(mut self, session_id: Option<String>) -> Self {
+        self.sessions.active_session_id = session_id;
+        self
+    }
+
+    pub fn with_active_session(mut self, session_id: Option<String>) -> Self {
         self.sessions.active_session_id = session_id;
         self
     }

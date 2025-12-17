@@ -9,13 +9,14 @@ use uuid::Uuid;
 use url::Url;
 
 use ricecoder_domain::value_objects::ValidUrl;
+use ricecoder_security::access_control::{AccessControl, Permission, Principal, ResourceType};
 use ricecoder_security::audit::{AuditLogger, AuditEventType, AuditEvent};
 use ricecoder_security::compliance::DataType;
+use ricecoder_security::encryption::{KeyManager, EncryptedData};
 
 use crate::{Session, SessionError, SessionResult};
 
 /// Service for managing session sharing
-#[derive(Debug, Clone)]
 pub struct ShareService {
     /// In-memory store of active shares
     shares: std::sync::Arc<std::sync::Mutex<HashMap<String, SessionShare>>>,
@@ -25,6 +26,10 @@ pub struct ShareService {
     base_url: String,
     /// Audit logger for compliance
     audit_logger: Option<Arc<AuditLogger>>,
+    /// Access control system for RBAC
+    access_control: Arc<AccessControl>,
+    /// Key manager for enterprise encryption
+    key_manager: Option<KeyManager>,
 }
 
 impl ShareService {
@@ -35,6 +40,8 @@ impl ShareService {
             analytics: Arc::new(ShareAnalytics::new()),
             base_url: "https://ricecoder.com".to_string(),
             audit_logger: None,
+            access_control: Arc::new(AccessControl::new()),
+            key_manager: None,
         }
     }
 
@@ -45,6 +52,8 @@ impl ShareService {
             analytics: Arc::new(ShareAnalytics::new()),
             base_url,
             audit_logger: None,
+            access_control: Arc::new(AccessControl::new()),
+            key_manager: None,
         }
     }
 
@@ -55,8 +64,45 @@ impl ShareService {
             analytics: Arc::new(ShareAnalytics::new()),
             base_url,
             audit_logger: Some(audit_logger),
+            access_control: Arc::new(AccessControl::new()),
+            key_manager: None,
         }
     }
+
+    /// Create a new share service with access control
+    pub fn with_access_control(base_url: String, access_control: Arc<AccessControl>) -> Self {
+        Self {
+            shares: std::sync::Arc::new(std::sync::Mutex::new(HashMap::new())),
+            analytics: Arc::new(ShareAnalytics::new()),
+            base_url,
+            audit_logger: None,
+            access_control,
+            key_manager: None,
+        }
+    }
+
+    /// Create a new share service with full enterprise features
+    pub fn with_enterprise_features(
+        base_url: String,
+        audit_logger: Arc<AuditLogger>,
+        access_control: Arc<AccessControl>,
+    ) -> Self {
+        Self {
+            shares: std::sync::Arc::new(std::sync::Mutex::new(HashMap::new())),
+            analytics: Arc::new(ShareAnalytics::new()),
+            base_url,
+            audit_logger: Some(audit_logger),
+            access_control,
+            key_manager: None,
+        }
+    }
+
+    /// Set the key manager for enterprise encryption
+    pub fn set_key_manager(&mut self, key_manager: KeyManager) {
+        self.key_manager = Some(key_manager);
+    }
+
+
 
     /// Generate a share link for a session with optional expiration
     pub fn generate_share_link(
@@ -77,11 +123,70 @@ impl ShareService {
         policy: Option<EnterpriseSharingPolicy>,
         creator_user_id: Option<String>,
     ) -> SessionResult<SessionShare> {
+        // Check RBAC permissions for session sharing
+        if let Some(ref user_id) = creator_user_id {
+            let principal = Principal {
+                id: user_id.clone(),
+                roles: vec!["user".to_string()], // In production, load from user store
+                attributes: HashMap::new(),
+            };
+
+            // Check if user has permission to share sessions
+            if !self.access_control.has_permission(&principal, &Permission::SessionShare) {
+                return Err(SessionError::PermissionDenied(
+                    "User does not have permission to share sessions".to_string()
+                ));
+            }
+
+            // Additional checks for enterprise policies
+            if let Some(ref policy) = policy {
+                // Check if user can create shares with this data classification
+                match policy.data_classification {
+                    DataClassification::Restricted => {
+                    if !self.access_control.has_permission(&principal, &Permission::Admin) {
+                        return Err(SessionError::PermissionDenied(
+                            "Only administrators can share restricted data".to_string()
+                        ));
+                    }
+                    }
+                    DataClassification::Confidential => {
+                    if !self.access_control.has_any_permission(&principal, &[Permission::Admin, Permission::SessionShare]) {
+                        return Err(SessionError::PermissionDenied(
+                            "Insufficient permissions for sharing confidential data".to_string()
+                        ));
+                    }
+                    }
+                    _ => {} // Public and Internal allow sharing with SessionShare permission
+                }
+            }
+            } else {
+                // Anonymous sharing not allowed for enterprise features
+                return Err(SessionError::PermissionDenied(
+                    "User authentication required for session sharing".to_string()
+                ));
+            }
+
         let share_id = Uuid::new_v4().to_string();
         let now = Utc::now();
 
+        // Apply enterprise governance policies
+        let effective_policy = if self.has_enterprise_features() {
+            let session_data = serde_json::json!({
+                "session_id": session_id,
+                "permissions": &permissions,
+                "creator_user_id": &creator_user_id
+            });
+            Some(self.apply_governance_policies(
+                creator_user_id.as_ref().unwrap(),
+                &session_data,
+                policy.as_ref(),
+            )?)
+        } else {
+            policy.clone()
+        };
+
         // Apply enterprise policy constraints
-        let effective_expires_at = if let Some(ref policy) = policy {
+        let effective_expires_at = if let Some(ref policy) = effective_policy {
             if let Some(max_days) = policy.max_expiration_days {
                 let max_expires = now + Duration::days(max_days);
                 expires_in.map(|duration| {
@@ -102,6 +207,24 @@ impl ShareService {
         // Generate share URL
         let share_url = self.generate_share_url(&share_id)?;
 
+        // Encrypt session data for enterprise security if key manager is available
+        let encrypted_session_data = if let Some(ref key_manager) = self.key_manager {
+            // Serialize session data for encryption
+            let session_data = serde_json::json!({
+                "session_id": session_id,
+                "permissions": permissions,
+                "policy": policy,
+                "creator_user_id": creator_user_id
+            });
+            let data_str = serde_json::to_string(&session_data)
+                .map_err(|e| SessionError::Invalid(format!("Failed to serialize session data: {}", e)))?;
+
+            Some(key_manager.encrypt_api_key(&data_str)
+                .map_err(|e| SessionError::Invalid(format!("Failed to encrypt session data: {}", e)))?)
+        } else {
+            None
+        };
+
         let share = SessionShare {
             id: share_id.clone(),
             share_url: Some(share_url),
@@ -109,8 +232,9 @@ impl ShareService {
             created_at: now,
             expires_at: effective_expires_at,
             permissions: permissions.clone(),
-            policy: policy.clone(),
+            policy: effective_policy.clone(),
             creator_user_id: creator_user_id.clone(),
+            encrypted_session_data: encrypted_session_data.clone(),
         };
 
         // Store the share
@@ -123,15 +247,16 @@ impl ShareService {
         // Track analytics
         self.analytics.record_share_created(&share);
 
-        // Log compliance event
+        // Log compliance event with governance details
         if let Some(ref audit_logger) = self.audit_logger {
             let permissions_clone = permissions.clone();
-            let policy_applied = policy.is_some();
+            let policy_applied = effective_policy.is_some();
+            let governance_applied = self.has_enterprise_features();
             let session_id_clone = session_id.to_string();
             let share_id_clone = share_id.clone();
             let event = AuditEvent {
                 event_type: AuditEventType::DataAccess,
-                user_id: creator_user_id,
+                user_id: creator_user_id.clone(),
                 session_id: Some(session_id_clone),
                 action: "share_created".to_string(),
                 resource: format!("session:{}", session_id),
@@ -139,7 +264,10 @@ impl ShareService {
                     "share_id": share_id_clone,
                     "permissions": permissions_clone,
                     "expires_at": effective_expires_at,
-                    "policy_applied": policy_applied
+                    "policy_applied": policy_applied,
+                    "governance_applied": governance_applied,
+                    "data_classification": effective_policy.as_ref().map(|p| format!("{:?}", p.data_classification)),
+                    "encryption_used": encrypted_session_data.is_some()
                 }),
             };
             // Note: In a real implementation, this would be async
@@ -448,6 +576,21 @@ impl Default for ShareService {
     }
 }
 
+impl Clone for ShareService {
+    fn clone(&self) -> Self {
+        // Note: KeyManager is not cloneable, so we create a new instance without it
+        // In production, KeyManager should be shared via Arc
+        Self {
+            shares: self.shares.clone(),
+            analytics: self.analytics.clone(),
+            base_url: self.base_url.clone(),
+            audit_logger: self.audit_logger.clone(),
+            access_control: self.access_control.clone(),
+            key_manager: None, // Cannot clone KeyManager
+        }
+    }
+}
+
 impl ShareService {
     /// Set the base URL for share links
     pub fn set_base_url(&mut self, base_url: String) {
@@ -461,7 +604,7 @@ impl ShareService {
 
     /// Check if enterprise features are enabled
     pub fn has_enterprise_features(&self) -> bool {
-        self.audit_logger.is_some()
+        self.audit_logger.is_some() && self.key_manager.is_some()
     }
 
     /// Validate enterprise sharing policy
@@ -481,6 +624,94 @@ impl ShareService {
         }
 
         Ok(())
+    }
+
+    /// Apply enterprise governance policies to sharing
+    pub fn apply_governance_policies(
+        &self,
+        user_id: &str,
+        session_data: &serde_json::Value,
+        requested_policy: Option<&EnterpriseSharingPolicy>,
+    ) -> SessionResult<EnterpriseSharingPolicy> {
+        // Get user's principal for governance checks
+        let principal = Principal {
+            id: user_id.to_string(),
+            roles: vec!["user".to_string()], // In production, load from user store
+            attributes: HashMap::new(),
+        };
+
+        // Start with default policy
+        let mut policy = EnterpriseSharingPolicy {
+            max_expiration_days: Some(30), // Default 30 days
+            requires_approval: false,
+            allowed_domains: vec![],
+            compliance_logging: true,
+            data_classification: DataClassification::Internal,
+        };
+
+        // Apply user role-based governance
+        if self.access_control.has_permission(&principal, &Permission::Admin) {
+            // Admins can share with longer expirations and higher classifications
+            policy.max_expiration_days = Some(365);
+            policy.data_classification = DataClassification::Confidential;
+        } else if self.access_control.has_permission(&principal, &Permission::SessionShare) {
+            // Regular users with sharing permission
+            policy.max_expiration_days = Some(90);
+            policy.data_classification = DataClassification::Internal;
+        } else {
+            return Err(SessionError::PermissionDenied(
+                "User does not have permission to share sessions".to_string()
+            ));
+        }
+
+        // Apply session data classification based on content analysis
+        if let Some(content) = session_data.get("content") {
+            if content.to_string().contains("password") || content.to_string().contains("secret") {
+                policy.data_classification = DataClassification::Confidential;
+                policy.requires_approval = true;
+            }
+        }
+
+        // Override with requested policy if user has sufficient permissions
+        if let Some(requested) = requested_policy {
+            // Validate requested policy against user's permissions
+            match requested.data_classification {
+                DataClassification::Restricted => {
+                    if !self.access_control.has_permission(&principal, &Permission::Admin) {
+                        return Err(SessionError::PermissionDenied(
+                            "Only administrators can set restricted data classification".to_string()
+                        ));
+                    }
+                }
+                DataClassification::Confidential => {
+                    if !self.access_control.has_any_permission(&principal, &[Permission::Admin, Permission::SessionShare]) {
+                        return Err(SessionError::PermissionDenied(
+                            "Insufficient permissions for confidential data classification".to_string()
+                        ));
+                    }
+                }
+                _ => {} // Allow lower classifications
+            }
+
+            // Apply requested policy settings within governance bounds
+            if let Some(req_max_days) = requested.max_expiration_days {
+                if req_max_days <= policy.max_expiration_days.unwrap_or(30) {
+                    policy.max_expiration_days = Some(req_max_days);
+                } else {
+                    return Err(SessionError::Invalid(format!(
+                        "Requested expiration exceeds governance limit of {} days",
+                        policy.max_expiration_days.unwrap_or(30)
+                    )));
+                }
+            }
+
+            policy.requires_approval = requested.requires_approval || policy.requires_approval;
+            policy.allowed_domains = requested.allowed_domains.clone();
+            policy.compliance_logging = requested.compliance_logging;
+            policy.data_classification = requested.data_classification;
+        }
+
+        Ok(policy)
     }
 }
 
@@ -503,6 +734,8 @@ pub struct SessionShare {
     pub policy: Option<EnterpriseSharingPolicy>,
     /// Creator user ID for enterprise tracking
     pub creator_user_id: Option<String>,
+    /// Encrypted session data for enterprise security
+    pub encrypted_session_data: Option<EncryptedData>,
 }
 
 /// Permissions for a shared session

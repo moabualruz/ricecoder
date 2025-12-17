@@ -406,18 +406,113 @@ impl ServerManager {
     pub async fn start_server(&self, server_id: &str) -> Result<()> {
         let mut servers = self.servers.write().await;
         if let Some(registration) = servers.get_mut(server_id) {
-            if registration.health.state == ServerState::Stopped {
+            if registration.health.state == ServerState::Stopped || registration.health.state == ServerState::Disconnected {
                 // In a real implementation, this would start the transport
                 // For now, just set the state
                 registration.health.state = ServerState::Starting;
                 info!("Starting server: {}", server_id);
                 // Simulate starting
                 registration.health.state = ServerState::Connected;
+                registration.health.last_seen = Some(SystemTime::now());
             }
         } else {
             return Err(Error::ServerNotFound(server_id.to_string()));
         }
         Ok(())
+    }
+
+    /// Stop a server by ID
+    pub async fn stop_server(&self, server_id: &str) -> Result<()> {
+        let mut servers = self.servers.write().await;
+        if let Some(registration) = servers.get_mut(server_id) {
+            if registration.health.state == ServerState::Connected || registration.health.state == ServerState::Connecting {
+                registration.health.state = ServerState::Stopped;
+                registration.transport = None;
+                info!("Stopped server: {}", server_id);
+
+                // Audit logging
+                if let Some(ref audit_logger) = self.audit_logger {
+                    let _ = audit_logger.log_server_connection(server_id, false, None, None, None).await;
+                }
+            }
+        } else {
+            return Err(Error::ServerNotFound(server_id.to_string()));
+        }
+        Ok(())
+    }
+
+    /// Restart a server by ID
+    pub async fn restart_server(&self, server_id: &str) -> Result<()> {
+        self.stop_server(server_id).await?;
+        self.start_server(server_id).await
+    }
+
+    /// List all registered servers
+    pub async fn list_servers(&self) -> Result<Vec<ServerRegistration>> {
+        let servers = self.servers.read().await;
+        Ok(servers.values().cloned().collect())
+    }
+
+    /// Get server registration by ID
+    pub async fn get_server(&self, server_id: &str) -> Result<ServerRegistration> {
+        let servers = self.servers.read().await;
+        servers.get(server_id).cloned().ok_or_else(|| Error::ServerNotFound(server_id.to_string()))
+    }
+
+    /// Enable a tool for a server
+    pub async fn enable_tool(&self, server_id: &str, tool_id: &str) -> Result<()> {
+        let mut servers = self.servers.write().await;
+        if let Some(registration) = servers.get_mut(server_id) {
+            registration.config.enabled_tools.insert(tool_id.to_string());
+            info!("Enabled tool {} for server {}", tool_id, server_id);
+            Ok(())
+        } else {
+            Err(Error::ServerNotFound(server_id.to_string()))
+        }
+    }
+
+    /// Disable a tool for a server
+    pub async fn disable_tool(&self, server_id: &str, tool_id: &str) -> Result<()> {
+        let mut servers = self.servers.write().await;
+        if let Some(registration) = servers.get_mut(server_id) {
+            registration.config.enabled_tools.remove(tool_id);
+            info!("Disabled tool {} for server {}", tool_id, server_id);
+            Ok(())
+        } else {
+            Err(Error::ServerNotFound(server_id.to_string()))
+        }
+    }
+
+    /// Check if a tool is enabled for a server
+    pub async fn is_tool_enabled(&self, server_id: &str, tool_id: &str) -> Result<bool> {
+        let servers = self.servers.read().await;
+        if let Some(registration) = servers.get(server_id) {
+            Ok(registration.config.enabled_tools.contains(tool_id))
+        } else {
+            Err(Error::ServerNotFound(server_id.to_string()))
+        }
+    }
+
+    /// Unregister a server
+    pub async fn unregister_server(&self, server_id: &str) -> Result<()> {
+        let mut servers = self.servers.write().await;
+        if servers.remove(server_id).is_some() {
+            info!("Unregistered server: {}", server_id);
+
+            // Audit logging
+            if let Some(ref audit_logger) = self.audit_logger {
+                let _ = audit_logger.log_server_unregistration(server_id, None, None).await;
+            }
+
+            Ok(())
+        } else {
+            Err(Error::ServerNotFound(server_id.to_string()))
+        }
+    }
+
+    /// Add a discovery provider
+    pub fn add_discovery_provider(&mut self, provider: Box<dyn ServerDiscoveryProvider>) {
+        self.discovery_providers.push(provider);
     }
 }
 

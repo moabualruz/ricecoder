@@ -112,6 +112,7 @@ impl ContextIndicators {
             AppMode::Diff => "📝",
             AppMode::Mcp => "🔧",
             AppMode::Provider => "🤖",
+            AppMode::Session => "📋",
             AppMode::Help => "❓",
         };
         parts.push(mode_str.to_string());

@@ -3,7 +3,6 @@
 //! **Validates: Requirements 1.7, 1.8, 1.9**
 
 use ricecoder_research::models::Language;
-use ricecoder_research::CodebaseScanner;
 use std::fs;
 use std::path::PathBuf;
 use tempfile::TempDir;

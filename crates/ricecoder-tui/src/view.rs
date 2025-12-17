@@ -157,6 +157,7 @@ fn render_main_content(frame: &mut Frame, area: Rect, model: &AppModel) {
         AppMode::Command => render_command_mode(frame, area, model),
         AppMode::Diff => render_diff_mode(frame, area, model),
         AppMode::Mcp => render_mcp_mode(frame, area, model),
+        AppMode::Session => render_session_mode(frame, area, model),
         AppMode::Provider => render_provider_mode(frame, area, model),
         AppMode::Help => render_help_mode(frame, area, model),
     }
@@ -267,12 +268,208 @@ fn render_mcp_mode(frame: &mut Frame, area: Rect, model: &AppModel) {
 
     frame.render_widget(header, chunks[0]);
 
-    // MCP content area
-    let content = Paragraph::new("MCP server management and tool execution interface will be implemented here.")
-        .block(Block::default().borders(Borders::ALL).title("MCP Tools"))
+    // MCP content area with server and tool lists
+    let content_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(50), // Servers
+            Constraint::Percentage(50), // Tools
+        ])
+        .split(chunks[1]);
+
+    // Servers list
+    let mut server_lines = Vec::new();
+    for server in &model.mcp.servers {
+        let status_icon = match server.health_status.as_str() {
+            "healthy" => "🟢",
+            "unhealthy" => "🔴",
+            _ => "🟡",
+        };
+        server_lines.push(Line::from(format!(
+            "{} {} - {}",
+            status_icon,
+            server.name,
+            if server.enabled { "enabled" } else { "disabled" }
+        )));
+    }
+    if server_lines.is_empty() {
+        server_lines.push(Line::from("No MCP servers configured"));
+    }
+
+    let servers_list = Paragraph::new(server_lines)
+        .block(Block::default().borders(Borders::ALL).title("MCP Servers"))
         .wrap(Wrap { trim: true });
 
-    frame.render_widget(content, chunks[1]);
+    frame.render_widget(servers_list, content_chunks[0]);
+
+    // Tools list
+    let mut tool_lines = Vec::new();
+    for tool in &model.mcp.available_tools {
+        tool_lines.push(Line::from(format!(
+            "{} - {} ({})",
+            tool.tool_name,
+            tool.description,
+            tool.server_name
+        )));
+    }
+    if tool_lines.is_empty() {
+        tool_lines.push(Line::from("No tools available"));
+    }
+
+    let tools_list = Paragraph::new(tool_lines)
+        .block(Block::default().borders(Borders::ALL).title("Available Tools"))
+        .wrap(Wrap { trim: true });
+
+    frame.render_widget(tools_list, content_chunks[1]);
+}
+
+/// Render session management mode interface
+fn render_session_mode(frame: &mut Frame, area: Rect, model: &AppModel) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3), // Header
+            Constraint::Min(5),    // Content
+        ])
+        .split(area);
+
+    // Header with session status
+    let header = Paragraph::new(vec![
+        Line::from(vec![
+            Span::styled("Session Management", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+        ]),
+        Line::from(format!("Active: {}", model.sessions.active_session_id.as_deref().unwrap_or("None"))),
+        Line::from(format!("Total: {}", model.sessions.session_count)),
+    ])
+    .block(Block::default().borders(Borders::ALL).title("Session Status"))
+    .wrap(Wrap { trim: true });
+
+    frame.render_widget(header, chunks[0]);
+
+    // Session content area
+    if model.sessions.editor.is_editing {
+        render_session_editor(frame, chunks[1], model);
+    } else if model.sessions.sharing.is_sharing {
+        render_session_sharing(frame, chunks[1], model);
+    } else {
+        render_session_browser(frame, chunks[1], model);
+    }
+}
+
+/// Render session browser component
+fn render_session_browser(frame: &mut Frame, area: Rect, model: &AppModel) {
+    let chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(70), // Session list
+            Constraint::Percentage(30), // Session details
+        ])
+        .split(area);
+
+    // Session list
+    let mut session_lines = Vec::new();
+    for (index, session) in model.sessions.browser.sessions.iter().enumerate() {
+        let is_selected = index == model.sessions.browser.selected_index;
+        let status_icon = match session.status {
+            crate::model::SessionStatus::Active => "🟢",
+            crate::model::SessionStatus::Paused => "🟡",
+            crate::model::SessionStatus::Completed => "✅",
+            crate::model::SessionStatus::Failed => "🔴",
+        };
+
+        let line = Line::from(format!(
+            "{} {} - {} ({})",
+            status_icon,
+            session.name,
+            session.provider,
+            if session.is_shared { "shared" } else { "private" }
+        ));
+
+        if is_selected {
+            session_lines.push(Line::from(Span::styled(line.spans[0].content.clone(), Style::default().bg(Color::Blue))));
+        } else {
+            session_lines.push(line);
+        }
+    }
+
+    if session_lines.is_empty() {
+        session_lines.push(Line::from("No sessions found. Press 'n' to create a new session."));
+    }
+
+    let session_list = Paragraph::new(session_lines)
+        .block(Block::default().borders(Borders::ALL).title("Sessions"))
+        .wrap(Wrap { trim: true });
+
+    frame.render_widget(session_list, chunks[0]);
+
+    // Session details
+    let details_lines = if let Some(selected_session) = model.sessions.browser.sessions.get(model.sessions.browser.selected_index) {
+        vec![
+            Line::from(format!("Name: {}", selected_session.name)),
+            Line::from(format!("ID: {}", selected_session.id)),
+            Line::from(format!("Provider: {}", selected_session.provider)),
+            Line::from(format!("Status: {:?}", selected_session.status)),
+            Line::from(format!("Tokens: {}", selected_session.token_count)),
+            Line::from(format!("Shared: {}", if selected_session.is_shared { "Yes" } else { "No" })),
+            Line::from(format!("Created: {}", format_timestamp(selected_session.created_at as i64))),
+            Line::from(format!("Last Activity: {}", format_timestamp(selected_session.last_activity as i64))),
+        ]
+    } else {
+        vec![Line::from("No session selected")]
+    };
+
+    let details = Paragraph::new(details_lines)
+        .block(Block::default().borders(Borders::ALL).title("Session Details"))
+        .wrap(Wrap { trim: true });
+
+    frame.render_widget(details, chunks[1]);
+}
+
+/// Render session editor component
+fn render_session_editor(frame: &mut Frame, area: Rect, model: &AppModel) {
+    let editor = &model.sessions.editor;
+
+    let content = Paragraph::new(vec![
+        Line::from(format!("Name: {}", editor.name)),
+        Line::from(format!("Provider: {}", editor.provider)),
+        Line::from(format!("Description: {}", editor.description)),
+        Line::from(""),
+        Line::from("Press Enter to save, Esc to cancel"),
+    ])
+    .block(Block::default().borders(Borders::ALL).title(if editor.is_editing && editor.session_id.is_some() { "Edit Session" } else { "Create Session" }))
+    .wrap(Wrap { trim: true });
+
+    frame.render_widget(content, area);
+}
+
+/// Render session sharing component
+fn render_session_sharing(frame: &mut Frame, area: Rect, model: &AppModel) {
+    let sharing = &model.sessions.sharing;
+
+    let mut content_lines = vec![
+        Line::from(format!("Session: {}", sharing.session_id)),
+        Line::from(format!("Expires: {} seconds", sharing.expires_in.unwrap_or(0))),
+        Line::from(format!("Permissions: {:?}", sharing.permissions)),
+    ];
+
+    if let Some(url) = &sharing.share_url {
+        content_lines.push(Line::from(""));
+        content_lines.push(Line::from("Share URL:"));
+        content_lines.push(Line::from(url.clone()));
+    }
+
+    let content = Paragraph::new(content_lines)
+        .block(Block::default().borders(Borders::ALL).title("Share Session"))
+        .wrap(Wrap { trim: true });
+
+    frame.render_widget(content, area);
+}
+
+/// Format timestamp for display
+fn format_timestamp(ts: i64) -> String {
+    use chrono::{DateTime, Utc};
+    let dt = DateTime::<Utc>::from_timestamp(ts, 0).unwrap_or_else(|| DateTime::<Utc>::UNIX_EPOCH);
+    dt.format("%Y-%m-%d %H:%M:%S").to_string()
 }
 
 /// Render provider mode interface

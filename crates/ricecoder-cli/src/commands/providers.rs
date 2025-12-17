@@ -28,6 +28,8 @@ pub enum ProvidersAction {
     Failover { provider_id: String },
     /// Show community provider analytics
     Community { provider_id: Option<String> },
+    /// Configure provider settings
+    Configure { provider_id: String, setting: String, value: String },
 }
 
 /// Providers command handler
@@ -78,13 +80,14 @@ impl Command for ProvidersCommand {
     async fn execute(&self) -> CliResult<()> {
         match &self.action {
             ProvidersAction::List => self.list_providers(),
-            ProvidersAction::Switch { provider_id } => self.switch_provider(provider_id),
+            ProvidersAction::Switch { provider_id } => self.switch_provider(provider_id).await,
             ProvidersAction::Status { provider_id } => self.show_provider_status(provider_id.as_deref()),
             ProvidersAction::Performance { provider_id } => self.show_provider_performance(provider_id.as_deref()),
-            ProvidersAction::Health { provider_id } => self.check_provider_health(provider_id.as_deref()),
+            ProvidersAction::Health { provider_id } => self.check_provider_health(provider_id.as_deref()).await,
             ProvidersAction::Models { provider_id, filter } => self.list_provider_models(provider_id.as_deref(), filter.as_deref()),
             ProvidersAction::Failover { provider_id } => self.show_failover_provider(provider_id),
             ProvidersAction::Community { provider_id } => self.show_community_analytics(provider_id.as_deref()),
+            ProvidersAction::Configure { provider_id, setting, value } => self.configure_provider(provider_id, setting, value),
         }
     }
 }
@@ -131,11 +134,11 @@ impl ProvidersCommand {
     }
 
     /// Switch to a specific provider
-    fn switch_provider(&self, provider_id: &str) -> CliResult<()> {
-        let rt = tokio::runtime::Runtime::new().map_err(|e| CliError::Internal(format!("Failed to create runtime: {}", e)))?;
+    async fn switch_provider(&self, provider_id: &str) -> CliResult<()> {
         let (switching, _, _, _, _, _) = self.get_use_cases()?;
 
-        rt.block_on(switching.switch_provider(provider_id))
+        switching.switch_provider(provider_id)
+            .await
             .map_err(|e| CliError::Internal(format!("Failed to switch provider: {}", e)))?;
 
         println!("Successfully switched to provider: {}", provider_id);
@@ -217,28 +220,27 @@ impl ProvidersCommand {
     }
 
     /// Check provider health
-    fn check_provider_health(&self, provider_id: Option<&str>) -> CliResult<()> {
-        let rt = tokio::runtime::Runtime::new().map_err(|e| CliError::Internal(format!("Failed to create runtime: {}", e)))?;
+    async fn check_provider_health(&self, provider_id: Option<&str>) -> CliResult<()> {
         let (_, _, _, _, health, _) = self.get_use_cases()?;
 
         if let Some(provider_id) = provider_id {
-            let is_healthy = rt.block_on(health.check_provider_health(provider_id))
+            let is_healthy = health.check_provider_health(provider_id)
+                .await
                 .map_err(|e| CliError::Internal(format!("Health check failed: {}", e)))?;
 
             println!("Provider '{}' health: {}", provider_id, if is_healthy { "Healthy" } else { "Unhealthy" });
         } else {
             // Check all providers
-            let results = rt.block_on(health.check_all_provider_health());
+            let results = health.check_all_provider_health().await;
             println!("Provider Health Status:");
             println!();
 
             for (id, result) in results {
-                let status = match result {
-                    Ok(true) => "🟢 Healthy",
-                    Ok(false) => "🔴 Unhealthy",
-                    Err(_) => "❓ Error",
+                match result {
+                    Ok(true) => println!("  {}: 🟢 Healthy", id),
+                    Ok(false) => println!("  {}: 🔴 Unhealthy", id),
+                    Err(e) => println!("  {}: ❌ Error: {}", id, e),
                 };
-                println!("  {}: {}", id, status);
             }
         }
 
@@ -369,6 +371,42 @@ impl ProvidersCommand {
             }
         }
 
+        Ok(())
+    }
+
+    /// Configure provider settings
+    fn configure_provider(&self, provider_id: &str, setting: &str, value: &str) -> CliResult<()> {
+        // Validate inputs
+        if provider_id.trim().is_empty() {
+            return Err(CliError::Internal("Provider ID cannot be empty".to_string()));
+        }
+        if setting.trim().is_empty() {
+            return Err(CliError::Internal("Setting name cannot be empty".to_string()));
+        }
+        if value.len() > 1000 {
+            return Err(CliError::Internal("Setting value too long (max 1000 characters)".to_string()));
+        }
+
+        // Validate setting names for known providers
+        match provider_id {
+            "anthropic" => {
+                if !["api_key", "model", "max_tokens", "temperature"].contains(&setting) {
+                    return Err(CliError::Internal(format!("Unknown setting '{}' for Anthropic provider", setting)));
+                }
+            }
+            "openai" => {
+                if !["api_key", "model", "max_tokens", "temperature", "organization"].contains(&setting) {
+                    return Err(CliError::Internal(format!("Unknown setting '{}' for OpenAI provider", setting)));
+                }
+            }
+            _ => {
+                return Err(CliError::Internal(format!("Unknown provider '{}'", provider_id)));
+            }
+        }
+
+        println!("Configuring provider '{}' setting '{}' to '{}'", provider_id, setting, value);
+        println!("Note: Provider configuration is not yet implemented in this CLI version.");
+        println!("Configuration should be done through the TUI or API.");
         Ok(())
     }
 }

@@ -513,6 +513,14 @@ mod tests {
             })
         }
 
+        fn generate_cache_key(&self, context: &ToolExecutionContext) -> String {
+            format!("mock:{}:{}", context.tool_name, serde_json::to_string(&context.parameters).unwrap_or_default())
+        }
+
+        fn is_cache_result_valid(&self, _cached_result: &ToolExecutionResult, _context: &ToolExecutionContext) -> bool {
+            true // Mock always considers cache valid
+        }
+
         async fn validate_parameters(&self, _tool_name: &str, _parameters: &HashMap<String, serde_json::Value>) -> Result<()> {
             Ok(())
         }

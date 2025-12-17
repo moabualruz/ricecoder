@@ -67,17 +67,12 @@ impl Command for LspCommand {
         let config = self.get_config();
 
         // Start the LSP server
-        start_lsp_server(config)
+        start_lsp_server(config).await
     }
 }
 
 /// Start the LSP server
-fn start_lsp_server(config: LspConfig) -> CliResult<()> {
-    // Create a runtime for async operations
-    let rt = tokio::runtime::Runtime::new()
-        .map_err(|e| CliError::Internal(format!("Failed to create runtime: {}", e)))?;
-
-    rt.block_on(async {
+async fn start_lsp_server(config: LspConfig) -> CliResult<()> {
         // Initialize logging with configured level
         init_lsp_logging(&config)?;
 
@@ -125,7 +120,6 @@ fn start_lsp_server(config: LspConfig) -> CliResult<()> {
                 Err(CliError::Internal(format!("LSP server error: {}", e)))
             }
         }
-    })
 }
 
 /// Initialize logging for LSP server

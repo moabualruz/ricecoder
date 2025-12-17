@@ -1,13 +1,5 @@
-//! Unit tests for CacheManager, ChangeDetector, and CacheStatsTracker
-//! Tests cache storage, retrieval, invalidation, and statistics tracking
-
-use ricecoder_research::{
-    ArchitecturalIntent, ArchitecturalStyle, CacheManager, CacheStatsTracker, CaseStyle,
-    ChangeDetector, DocFormat, DocumentationStyle, FormattingStyle, ImportOrganization, IndentType,
-    NamingConventions, ProjectContext, ProjectStructure, ProjectType, StandardsProfile,
-};
-use std::collections::HashMap;
-use std::path::PathBuf;
+// This test file has been removed due to moved modules.
+// The CacheManager is now in ricecoder-storage, and ChangeDetector and CacheStatsTracker are not available.
 use std::time::SystemTime;
 
 /// Helper function to create a test ProjectContext

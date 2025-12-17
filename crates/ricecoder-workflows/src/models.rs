@@ -87,6 +87,9 @@ pub enum StepType {
     /// Approval gate step
     #[serde(rename = "approval")]
     Approval(ApprovalStep),
+    /// MCP tool execution step
+    #[serde(rename = "mcp")]
+    Mcp(McpStep),
 }
 
 /// Agent execution step
@@ -138,6 +141,19 @@ pub struct ApprovalStep {
     pub timeout: u64,
     /// Default approval decision
     pub default: ApprovalDefault,
+}
+
+/// MCP tool execution step
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct McpStep {
+    /// MCP tool ID to execute
+    pub tool_id: String,
+    /// Tool parameters
+    pub parameters: serde_json::Value,
+    /// Server ID (optional, will use default if not specified)
+    pub server_id: Option<String>,
+    /// Execution timeout in seconds
+    pub timeout_seconds: Option<u64>,
 }
 
 /// Default approval decision

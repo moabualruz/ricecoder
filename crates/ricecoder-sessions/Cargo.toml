@@ -26,6 +26,7 @@ anyhow = "1.0"
 tiktoken-rs = "0.5"
 url = "2.5"
 base64 = "0.21"
+tempfile = "3.8"
 ricecoder-security = { path = "../ricecoder-security", version = "0.1" }
 ricecoder-domain = { path = "../ricecoder-domain", version = "0.1" }
 

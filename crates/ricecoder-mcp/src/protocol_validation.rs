@@ -17,6 +17,7 @@ pub struct MCPProtocolValidator {
     method_name_pattern: Regex,
     id_pattern: Regex,
     audit_logger: Option<Arc<crate::audit::MCPAuditLogger>>,
+    supported_versions: Vec<String>,
 }
 
 impl MCPProtocolValidator {
@@ -28,6 +29,7 @@ impl MCPProtocolValidator {
             id_pattern: Regex::new(r"^[a-zA-Z0-9._-]+$")
                 .map_err(|e| Error::ValidationError(format!("Invalid regex: {}", e)))?,
             audit_logger: None,
+            supported_versions: vec!["2025-06-18".to_string()], // MCP protocol version
         })
     }
 
@@ -39,7 +41,31 @@ impl MCPProtocolValidator {
             id_pattern: Regex::new(r"^[a-zA-Z0-9._-]+$")
                 .map_err(|e| Error::ValidationError(format!("Invalid regex: {}", e)))?,
             audit_logger: Some(audit_logger),
+            supported_versions: vec!["2025-06-18".to_string()], // MCP protocol version
         })
+    }
+
+    /// Negotiate protocol version compatibility
+    pub fn negotiate_version(&self, client_versions: &[String]) -> Result<String> {
+        for client_version in client_versions {
+            if self.supported_versions.contains(client_version) {
+                return Ok(client_version.clone());
+            }
+        }
+        Err(Error::ValidationError(format!(
+            "No compatible protocol version found. Supported: {:?}, Client requested: {:?}",
+            self.supported_versions, client_versions
+        )))
+    }
+
+    /// Check if a protocol version is supported
+    pub fn is_version_supported(&self, version: &str) -> bool {
+        self.supported_versions.contains(&version.to_string())
+    }
+
+    /// Get supported protocol versions
+    pub fn get_supported_versions(&self) -> &[String] {
+        &self.supported_versions
     }
 
     /// Validate an MCP message
@@ -541,19 +567,34 @@ mod tests {
     fn test_json_depth_validation() {
         let validator = MCPProtocolValidator::new().unwrap();
 
-        // Create deeply nested JSON
-        let mut deep_value = serde_json::json!({"level": 0});
-        let mut current = &mut deep_value;
-
-        for i in 1..35 { // Exceed max depth of 32
-            *current = serde_json::json!({"level": i, "nested": {}});
-            if let Some(obj) = current.as_object_mut() {
-                if let Some(nested) = obj.get_mut("nested") {
-                    current = nested;
-                }
-            }
+        // Create deeply nested JSON by building from inside out
+        let mut deep_value = serde_json::json!({"level": 34, "nested": null});
+        for i in (1..34).rev() {
+            deep_value = serde_json::json!({"level": i, "nested": deep_value});
         }
 
         assert!(validator.validate_json_value(&deep_value, "test").is_err());
+    }
+
+    #[test]
+    fn test_version_negotiation() {
+        let validator = MCPProtocolValidator::new().unwrap();
+
+        // Test successful negotiation
+        let client_versions = vec!["2025-06-18".to_string(), "2024-01-01".to_string()];
+        let negotiated = validator.negotiate_version(&client_versions).unwrap();
+        assert_eq!(negotiated, "2025-06-18");
+
+        // Test failed negotiation
+        let client_versions = vec!["2023-01-01".to_string()];
+        assert!(validator.negotiate_version(&client_versions).is_err());
+
+        // Test version support check
+        assert!(validator.is_version_supported("2025-06-18"));
+        assert!(!validator.is_version_supported("2023-01-01"));
+
+        // Test getting supported versions
+        let supported = validator.get_supported_versions();
+        assert!(supported.contains(&"2025-06-18".to_string()));
     }
 }
