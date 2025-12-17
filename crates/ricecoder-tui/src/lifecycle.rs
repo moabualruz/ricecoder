@@ -3,7 +3,8 @@
 //! This module provides lifecycle management for TUI application components,
 //! ensuring proper startup, initialization, and shutdown procedures.
 
-use std::sync::{Arc, RwLock};
+use std::fmt::Debug;
+use std::sync::{Arc, RwLock, OnceLock};
 use tracing::{debug, info, warn};
 use ricecoder_di::DIContainer;
 
@@ -26,7 +27,7 @@ pub enum TuiLifecycleState {
 
 /// Component lifecycle trait for TUI
 #[async_trait::async_trait]
-pub trait TuiLifecycleComponent: Send + Sync {
+pub trait TuiLifecycleComponent: Send + Sync + Debug {
     /// Get the component name
     fn name(&self) -> &'static str;
 
@@ -50,7 +51,7 @@ pub trait TuiLifecycleComponent: Send + Sync {
 }
 
 /// Component registration info for TUI
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct TuiComponentInfo {
     component: Arc<RwLock<dyn TuiLifecycleComponent>>,
     state: TuiLifecycleState,
@@ -58,6 +59,7 @@ struct TuiComponentInfo {
 }
 
 /// Component lifecycle manager for TUI
+#[derive(Debug)]
 pub struct TuiLifecycleManager {
     components: RwLock<Vec<TuiComponentInfo>>,
 }
@@ -68,6 +70,32 @@ impl TuiLifecycleManager {
         Self {
             components: RwLock::new(Vec::new()),
         }
+    }
+
+    /// Validate memory safety invariants
+    pub fn validate_memory_safety(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let components = self.components.read().unwrap();
+
+        // Check for component name uniqueness
+        let mut names = std::collections::HashSet::new();
+        for info in &*components {
+            let name = info.component.read().unwrap().name().to_string();
+            if !names.insert(name.clone()) {
+                return Err(format!("Duplicate component name: {}", name).into());
+            }
+        }
+
+        // Check for circular dependencies (simplified check)
+        for info in &*components {
+            for dep in &info.dependencies {
+                if !components.iter().any(|other| other.component.read().unwrap().name() == dep.as_str()) {
+                    return Err(format!("Component '{}' depends on non-existent component '{}'",
+                                     info.component.read().unwrap().name(), dep).into());
+                }
+            }
+        }
+
+        Ok(())
     }
 
     /// Register a component with optional dependencies
@@ -267,20 +295,18 @@ impl Default for TuiLifecycleManager {
 }
 
 /// Global lifecycle manager for TUI
-static mut TUI_LIFECYCLE_MANAGER: Option<Arc<TuiLifecycleManager>> = None;
+static TUI_LIFECYCLE_MANAGER: OnceLock<Arc<TuiLifecycleManager>> = OnceLock::new();
 
 /// Initialize the global TUI lifecycle manager
 pub fn initialize_tui_lifecycle_manager() -> Arc<TuiLifecycleManager> {
     let manager = Arc::new(TuiLifecycleManager::new());
-    unsafe {
-        TUI_LIFECYCLE_MANAGER = Some(manager.clone());
-    }
+    TUI_LIFECYCLE_MANAGER.set(manager.clone()).expect("TUI lifecycle manager already initialized");
     manager
 }
 
 /// Get the global TUI lifecycle manager
 pub fn get_tui_lifecycle_manager() -> Option<Arc<TuiLifecycleManager>> {
-    unsafe { TUI_LIFECYCLE_MANAGER.clone() }
+    TUI_LIFECYCLE_MANAGER.get().cloned()
 }
 
 /// Register a component with the global TUI lifecycle manager

@@ -41,6 +41,7 @@ ricecoder-vcs = { path = "crates/ricecoder-vcs", version = "0.1" }
 ricecoder-workflows = { path = "crates/ricecoder-workflows", version = "0.1" }
 ricecoder-security = { path = "crates/ricecoder-security", version = "0.1" }
 ricecoder-performance = { path = "crates/ricecoder-performance", version = "0.1" }
+ricecoder-monitoring = { path = "crates/ricecoder-monitoring", version = "0.1" }
 tokio = { workspace = true }
 serde_json = { workspace = true }
 proptest = { workspace = true }
@@ -89,12 +90,16 @@ members = [
     "crates/ricecoder-images",
     "crates/ricecoder-themes",
     "crates/ricecoder-config",
-     "crates/ricecoder-industry",
-     "crates/ricecoder-activity-log",
-     "crates/ricecoder-safety",
-     "crates/ricecoder-benchmark",
-     "crates/ricecoder-performance",
-]
+      "crates/ricecoder-industry",
+       "crates/ricecoder-activity-log",
+       "crates/ricecoder-safety",
+       "crates/ricecoder-benchmark",
+        "crates/ricecoder-performance",
+        "crates/ricecoder-monitoring",
+         "crates/ricecoder-updates",
+         "crates/ricecoder-beta",
+         "crates/ricecoder-continuous-improvement",
+ ]
 resolver = "2"
 
 [workspace.package]
@@ -107,6 +112,34 @@ homepage = "https://github.com/moabualruz/ricecoder"
 documentation = "https://github.com/moabualruz/ricecoder/wiki"
 keywords = ["ai", "coding", "assistant", "cli", "spec-driven"]
 categories = ["command-line-utilities", "development-tools"]
+
+[workspace.metadata.release]
+pre-release-commit-message = "chore: release {{version}}"
+tag-message = "Release {{version}}"
+tag-prefix = "v"
+pre-release-replacements = [
+  { file = "CHANGELOG.md", search = "## \\[Unreleased\\]", replace = "## [Unreleased]\n\n## [{{version}}] - {{date}}", exactly = 1 },
+]
+
+# Documentation configuration for docs.rs and local rustdoc
+[workspace.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+
+# Rustdoc configuration
+[workspace.metadata.cargo-docs]
+# Enable all features for documentation
+features = ["all"]
+# Include private items in documentation
+document-private-items = false
+# Generate documentation with examples
+rustdoc-args = [
+  "--cfg", "docsrs",
+  "--extend-css", "docs/custom.css",
+  "--html-in-header", "docs/header.html",
+  "--html-after-content", "docs/footer.html"
+]
 
 [workspace.dependencies]
 serde = { version = "1.0", features = ["derive"] }
@@ -132,7 +165,7 @@ lazy_static = "1.4"
 mockito = "1.2"
 async-trait = "0.1"
 futures = "0.3"
-reqwest = { version = "0.11", features = ["json"] }
+reqwest = { version = "0.11", default-features = false, features = ["json", "native-tls"] }
 dotenv = "0.15"
 regex = "1.10"
 chrono = { version = "0.4", features = ["serde"] }
@@ -155,8 +188,15 @@ tree-sitter-typescript = "0.20"
 tree-sitter-python = "0.20"
 jsonschema = "0.18"
 url = "2.5"
-octocrab = "0.32"
+octocrab = { version = "0.32", default-features = false, features = ["native-tls"] }
 notify = "6.1"
+rustls = { git = "https://github.com/rustls/rustls", tag = "v/0.23.31", default-features = false, features = ["ring"] }
+rustls-webpki = { git = "https://github.com/rustls/webpki", tag = "v/0.103.4", default-features = false, features = ["ring"] }
+
+[patch.crates-io]
+jsonwebtoken = { git = "https://github.com/jedisct1/rust-jwt-simple", package = "jwt-simple", tag = "0.12.13" }
+
+
 [dev-dependencies]
 proptest = { workspace = true }
 tempfile = { workspace = true }

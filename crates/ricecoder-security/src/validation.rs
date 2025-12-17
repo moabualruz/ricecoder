@@ -198,11 +198,11 @@ pub fn validate_file_path(path: &str) -> Result<()> {
 }
 
 /// Security validator with audit logging
-pub struct SecurityValidator {
+pub struct ValidationEngine {
     audit_logger: Arc<AuditLogger>,
 }
 
-impl SecurityValidator {
+impl ValidationEngine {
     /// Create a new security validator
     pub fn new(audit_logger: Arc<AuditLogger>) -> Self {
         Self { audit_logger }

@@ -2,6 +2,7 @@
 
 use crate::commands::Command;
 use crate::error::{CliError, CliResult};
+use async_trait::async_trait;
 use ricecoder_agents::use_cases::{
     ProviderSwitchingUseCase, ProviderPerformanceUseCase, ProviderFailoverUseCase,
     ProviderModelUseCase, ProviderHealthUseCase, ProviderCommunityUseCase,
@@ -72,8 +73,9 @@ impl ProvidersCommand {
     }
 }
 
+#[async_trait::async_trait]
 impl Command for ProvidersCommand {
-    fn execute(&self) -> CliResult<()> {
+    async fn execute(&self) -> CliResult<()> {
         match &self.action {
             ProvidersAction::List => self.list_providers(),
             ProvidersAction::Switch { provider_id } => self.switch_provider(provider_id),

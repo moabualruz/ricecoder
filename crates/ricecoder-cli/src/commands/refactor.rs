@@ -2,6 +2,7 @@
 
 use super::Command;
 use crate::error::CliResult;
+use async_trait::async_trait;
 
 /// Refactor existing code
 pub struct RefactorCommand {
@@ -14,8 +15,9 @@ impl RefactorCommand {
     }
 }
 
+#[async_trait::async_trait]
 impl Command for RefactorCommand {
-    fn execute(&self) -> CliResult<()> {
+    async fn execute(&self) -> CliResult<()> {
         println!("Refactoring: {}", self.file);
         println!("✓ Refactoring complete");
         Ok(())

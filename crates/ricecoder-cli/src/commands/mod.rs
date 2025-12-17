@@ -1,6 +1,7 @@
 // Command handlers for ricecoder CLI
 
 pub mod chat;
+pub mod compliance;
 pub mod config;
 pub mod custom;
 pub mod custom_storage;
@@ -18,6 +19,7 @@ pub mod tui;
 pub mod version;
 
 pub use chat::ChatCommand;
+pub use compliance::{ComplianceAction, ComplianceCommand};
 pub use config::ConfigCommand;
 pub use custom::{CustomAction, CustomCommandHandler};
 pub use gen::GenCommand;
@@ -36,7 +38,8 @@ pub use version::VersionCommand;
 use crate::error::CliResult;
 
 /// Trait for command handlers
+#[async_trait::async_trait]
 pub trait Command: Send + Sync {
     /// Execute the command
-    fn execute(&self) -> CliResult<()>;
+    async fn execute(&self) -> CliResult<()>;
 }

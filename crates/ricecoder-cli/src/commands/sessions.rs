@@ -2,6 +2,7 @@
 
 use crate::commands::Command;
 use crate::error::{CliError, CliResult};
+use async_trait::async_trait;
 
 fn format_timestamp(ts: i64) -> String {
     use chrono::{DateTime, Utc};
@@ -97,8 +98,9 @@ impl SessionsCommand {
     }
 }
 
+#[async_trait::async_trait]
 impl Command for SessionsCommand {
-    fn execute(&self) -> CliResult<()> {
+    async fn execute(&self) -> CliResult<()> {
         println!("Sessions command not implemented yet");
         Ok(())
     }

@@ -20,7 +20,7 @@ serde_json = "1.0"
 thiserror = "1.0"
 tracing = "0.1"
 tokio = { version = "1.0", features = ["full"] }
-reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+reqwest = { workspace = true }
 oauth2 = "4.4"
 url = "2.5"
 chrono = { version = "0.4", features = ["serde"] }

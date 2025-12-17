@@ -2,6 +2,7 @@
 
 use crate::commands::Command;
 use crate::error::{CliError, CliResult};
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::HashMap;
@@ -118,8 +119,9 @@ impl McpCommand {
     }
 }
 
+#[async_trait::async_trait]
 impl Command for McpCommand {
-    fn execute(&self) -> CliResult<()> {
+    async fn execute(&self) -> CliResult<()> {
         match &self.action {
             McpAction::List => list_servers(),
             McpAction::Add { name, command, args } => add_server(name, command, args.clone()),

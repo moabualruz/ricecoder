@@ -16,6 +16,9 @@ use crate::metadata::{ParameterMetadata, ToolMetadata};
 use crate::permissions::{MCPPermissionManager, PermissionLevelConfig};
 use crate::transport::{MCPMessage, MCPRequest, MCPResponse, MCPTransport};
 
+// Import cache types
+use ricecoder_cache::{Cache, CacheConfig, CacheBuilder, CacheStorage, MemoryStorage};
+
 /// Tool execution context
 #[derive(Debug, Clone)]
 pub struct ToolExecutionContext {
@@ -53,6 +56,12 @@ pub trait ToolExecutor: Send + Sync {
 
     /// List available tools
     async fn list_tools(&self) -> Result<Vec<ToolMetadata>>;
+
+    /// Generate a cache key for tool execution context
+    fn generate_cache_key(&self, context: &ToolExecutionContext) -> String;
+
+    /// Check if a cached result is still valid for the current context
+    fn is_cache_result_valid(&self, cached_result: &ToolExecutionResult, context: &ToolExecutionContext) -> bool;
 }
 
 /// MCP tool executor that communicates with MCP servers
@@ -61,9 +70,11 @@ pub struct MCPToolExecutor {
     permission_manager: Arc<MCPPermissionManager>,
     rbac_manager: Option<Arc<crate::rbac::MCRBACManager>>,
     audit_logger: Option<Arc<crate::audit::MCPAuditLogger>>,
+    analytics: Option<Arc<crate::analytics::MCPAnalyticsAggregator>>,
     server_id: String,
     default_timeout: Duration,
     execution_stats: Arc<RwLock<HashMap<String, ToolExecutionStats>>>,
+    result_cache: Option<Arc<Cache>>,
 }
 
 impl MCPToolExecutor {
@@ -78,9 +89,11 @@ impl MCPToolExecutor {
             permission_manager,
             rbac_manager: None,
             audit_logger: None,
+            analytics: None,
             server_id,
             default_timeout: Duration::from_secs(30),
             execution_stats: Arc::new(RwLock::new(HashMap::new())),
+            result_cache: None,
         }
     }
 
@@ -96,10 +109,18 @@ impl MCPToolExecutor {
             permission_manager,
             rbac_manager: None,
             audit_logger: Some(audit_logger),
+            analytics: None,
             server_id,
             default_timeout: Duration::from_secs(30),
             execution_stats: Arc::new(RwLock::new(HashMap::new())),
+            result_cache: None,
         }
+    }
+
+    /// Set analytics aggregator
+    pub fn with_analytics(mut self, analytics: Arc<crate::analytics::MCPAnalyticsAggregator>) -> Self {
+        self.analytics = Some(analytics);
+        self
     }
 
     /// Create with custom timeout
@@ -114,15 +135,40 @@ impl MCPToolExecutor {
             permission_manager,
             rbac_manager: None,
             audit_logger: None,
+            analytics: None,
             server_id,
             default_timeout: timeout,
             execution_stats: Arc::new(RwLock::new(HashMap::new())),
+            result_cache: None,
         }
     }
 
     /// Set RBAC manager
     pub fn with_rbac_manager(mut self, rbac_manager: Arc<crate::rbac::MCRBACManager>) -> Self {
         self.rbac_manager = Some(rbac_manager);
+        self
+    }
+
+    /// Enable result caching with default configuration
+    pub fn with_caching(mut self) -> Self {
+        let cache_config = CacheConfig {
+            default_ttl: Some(Duration::from_secs(300)), // 5 minutes default TTL
+            max_entries: Some(1000), // Max 1000 cached results
+            max_size_bytes: Some(50 * 1024 * 1024), // 50MB max cache size
+            enable_metrics: true,
+        };
+        let cache = CacheBuilder::new()
+            .config(cache_config)
+            .primary_storage(Arc::new(MemoryStorage::new()))
+            .build()
+            .expect("Failed to create cache");
+        self.result_cache = Some(Arc::new(cache));
+        self
+    }
+
+    /// Enable result caching with custom cache
+    pub fn with_custom_cache(mut self, cache: Arc<Cache>) -> Self {
+        self.result_cache = Some(cache);
         self
     }
 
@@ -139,9 +185,11 @@ impl MCPToolExecutor {
             permission_manager,
             rbac_manager: None,
             audit_logger: Some(audit_logger),
+            analytics: None,
             server_id,
             default_timeout: timeout,
             execution_stats: Arc::new(RwLock::new(HashMap::new())),
+            result_cache: None,
         }
     }
 
@@ -187,6 +235,23 @@ impl MCPToolExecutor {
 impl ToolExecutor for MCPToolExecutor {
     async fn execute(&self, context: &ToolExecutionContext) -> Result<ToolExecutionResult> {
         let start_time = SystemTime::now();
+
+        // Generate cache key for this tool execution
+        let cache_key = self.generate_cache_key(context);
+
+        // Check cache first if caching is enabled
+        if let Some(ref cache) = self.result_cache {
+            if let Ok(Some(cached_result)) = cache.get::<ToolExecutionResult>(&cache_key).await {
+                // Check if cached result is still valid (not expired based on our logic)
+                if self.is_cache_result_valid(&cached_result, context) {
+                    debug!("Cache hit for tool '{}' with key '{}'", context.tool_name, cache_key);
+                    return Ok(cached_result);
+                } else {
+                    // Remove expired cached result
+                    let _ = cache.remove(&cache_key).await;
+                }
+            }
+        }
 
         // Check permissions (MCP permission manager)
         let has_mcp_permission = self.permission_manager
@@ -298,7 +363,7 @@ impl ToolExecutor for MCPToolExecutor {
                     let success = true;
                     self.update_stats(&context.tool_name, success, execution_time_ms).await;
 
-                    ToolExecutionResult {
+                    let result = ToolExecutionResult {
                         tool_name: context.tool_name.clone(),
                         success: true,
                         result: Some(response.result),
@@ -306,7 +371,18 @@ impl ToolExecutor for MCPToolExecutor {
                         execution_time_ms,
                         timestamp: start_time,
                         metadata: context.metadata.clone(),
+                    };
+
+                    // Cache successful results
+                    if let Some(ref cache) = self.result_cache {
+                        if let Err(e) = cache.set(&cache_key, result.clone(), None).await {
+                            warn!("Failed to cache tool result: {}", e);
+                        } else {
+                            debug!("Cached successful result for tool '{}' with key '{}'", context.tool_name, cache_key);
+                        }
                     }
+
+                    result
                 } else {
                     // Response ID mismatch
                     let success = false;
@@ -418,7 +494,42 @@ impl ToolExecutor for MCPToolExecutor {
             ).await;
         }
 
+        // Analytics
+        if let Some(ref analytics) = self.analytics {
+            let _ = analytics.record_tool_execution(
+                &self.server_id,
+                &result.tool_name,
+                &result,
+                context.user_id.clone(),
+                context.session_id.clone(),
+            ).await;
+        }
+
         Ok(result)
+    }
+
+    /// Generate a cache key for tool execution context
+    fn generate_cache_key(&self, context: &ToolExecutionContext) -> String {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+
+        let mut hasher = DefaultHasher::new();
+        context.tool_name.hash(&mut hasher);
+        serde_json::to_string(&context.parameters).unwrap_or_default().hash(&mut hasher);
+        context.user_id.hash(&mut hasher);
+        // Note: We don't include session_id in cache key as results should be consistent across sessions
+
+        format!("tool_{}_{:x}", context.tool_name, hasher.finish())
+    }
+
+    /// Check if a cached result is still valid for the current context
+    fn is_cache_result_valid(&self, cached_result: &ToolExecutionResult, context: &ToolExecutionContext) -> bool {
+        // Basic validity checks:
+        // 1. Tool name matches
+        // 2. Result is not too old (we rely on cache TTL for this)
+        // 3. Result was successful (we don't cache failures that might be transient)
+
+        cached_result.tool_name == context.tool_name && cached_result.success
     }
 
     async fn validate_parameters(&self, tool_name: &str, parameters: &HashMap<String, serde_json::Value>) -> Result<()> {

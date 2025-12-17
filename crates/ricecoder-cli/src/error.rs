@@ -47,6 +47,9 @@ pub enum CliError {
 
     #[error("Timeout: {operation}")]
     Timeout { operation: String },
+
+    #[error("Validation error: {message}")]
+    Validation { message: String },
 }
 
 impl CliError {
@@ -151,6 +154,12 @@ impl CliError {
                     operation
                 )
             }
+            CliError::Validation { message } => {
+                format!(
+                    "❌ Validation error: {}\n\n💡 Suggestion: Check your input and try again.\n\n📚 Common issues:\n  • Invalid format or syntax\n  • Missing required fields\n  • Incorrect data types\n\n📖 Documentation: https://github.com/moabualruz/ricecoder/wiki",
+                    message
+                )
+            }
         }
     }
 
@@ -182,6 +191,7 @@ impl CliError {
             CliError::MissingField { field } => format!("Missing field: {}", field),
             CliError::NetworkError { details } => format!("Network error: {}", details),
             CliError::Timeout { operation } => format!("Timeout: {}", operation),
+            CliError::Validation { message } => format!("Validation error: {}", message),
         }
     }
 
@@ -224,6 +234,11 @@ impl CliError {
                 "Try again".to_string(),
                 "Check internet speed".to_string(),
                 "Increase timeout if available".to_string(),
+            ],
+            CliError::Validation { .. } => vec![
+                "Check input format".to_string(),
+                "Verify required fields are present".to_string(),
+                "Check data types".to_string(),
             ],
             _ => vec!["Check documentation for more details".to_string()],
         }

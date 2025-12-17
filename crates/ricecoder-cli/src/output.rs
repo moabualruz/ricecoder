@@ -53,6 +53,15 @@ impl OutputStyle {
         }
     }
 
+    /// Format number
+    pub fn number(&self, num: usize) -> String {
+        if self.use_colors {
+            num.to_string().magenta().bold().to_string()
+        } else {
+            num.to_string()
+        }
+    }
+
     /// Format code block
     pub fn code(&self, code: &str) -> String {
         if self.use_colors {

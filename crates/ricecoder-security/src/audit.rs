@@ -41,6 +41,19 @@ pub struct AuditEvent {
     pub metadata: serde_json::Value,
 }
 
+impl AuditEvent {
+    pub fn new(action: String, user_id: Option<String>, metadata: serde_json::Value) -> Self {
+        Self {
+            event_type: AuditEventType::SystemAccess,
+            user_id,
+            session_id: None,
+            action,
+            resource: "feedback".to_string(),
+            metadata,
+        }
+    }
+}
+
 /// Audit record for storage
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuditRecord {

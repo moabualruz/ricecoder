@@ -1,6 +1,7 @@
 // RiceCoder CLI Library
 
 pub mod accessibility;
+pub mod async_optimization;
 pub mod branding;
 pub mod chat;
 pub mod commands;

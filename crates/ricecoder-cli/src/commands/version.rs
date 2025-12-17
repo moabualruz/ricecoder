@@ -2,6 +2,7 @@
 
 use super::Command;
 use crate::error::CliResult;
+use async_trait::async_trait;
 use crate::output::OutputStyle;
 
 /// Display version information
@@ -27,9 +28,9 @@ impl VersionCommand {
         )
     }
 }
-
+#[async_trait::async_trait]
 impl Command for VersionCommand {
-    fn execute(&self) -> CliResult<()> {
+    async fn execute(&self) -> CliResult<()> {
         let style = OutputStyle::default();
         println!("{}", style.header(&Self::get_version_info()));
         Ok(())

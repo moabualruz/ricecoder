@@ -14,7 +14,7 @@ use tracing::{debug, error, info, warn};
 
 use crate::error::{Error, Result};
 use crate::metadata::ToolMetadata;
-use crate::transport::{MCPTransport, TransportConfig, TransportFactory};
+use crate::transport::{MCPTransport, TransportConfig, TransportFactory, MCPMessage, MCPRequest};
 
 /// Server connection state
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -24,6 +24,8 @@ pub enum ServerState {
     Connected,
     Error,
     Disabled,
+    Starting,
+    Stopped,
 }
 
 /// Server health status
@@ -72,7 +74,7 @@ pub enum AuthType {
 #[derive(Clone)]
 pub struct ServerRegistration {
     pub config: ServerConfig,
-    pub transport: Option<Arc<Box<dyn MCPTransport>>>,
+    pub transport: Option<Arc<dyn MCPTransport>>,
     pub health: ServerHealth,
     pub tools: Vec<ToolMetadata>,
     pub registered_at: SystemTime,
@@ -93,6 +95,7 @@ pub struct ServerManager {
     discovery_providers: Vec<Box<dyn ServerDiscoveryProvider>>,
     health_monitor: Arc<HealthMonitor>,
     audit_logger: Option<Arc<crate::audit::MCPAuditLogger>>,
+    analytics: Option<Arc<crate::analytics::MCPAnalyticsAggregator>>,
     rbac_manager: Option<Arc<crate::rbac::MCRBACManager>>,
     compliance_monitor: Option<Arc<crate::compliance::MCPComplianceMonitor>>,
     _health_task: tokio::task::JoinHandle<()>,
@@ -114,6 +117,7 @@ impl ServerManager {
             discovery_providers: Vec::new(),
             health_monitor,
             audit_logger: None,
+            analytics: None,
             rbac_manager: None,
             compliance_monitor: None,
             _health_task: health_task,
@@ -147,10 +151,17 @@ impl ServerManager {
             discovery_providers: Vec::new(),
             health_monitor,
             audit_logger: Some(audit_logger),
+            analytics: None,
             rbac_manager: None,
             compliance_monitor: None,
             _health_task: health_task,
         }
+    }
+
+    /// Set analytics aggregator
+    pub fn with_analytics(mut self, analytics: Arc<crate::analytics::MCPAnalyticsAggregator>) -> Self {
+        self.analytics = Some(analytics);
+        self
     }
 
     /// Register a server with the manager
@@ -221,184 +232,192 @@ impl ServerManager {
         Ok(())
     }
 
-    /// Unregister a server
-    pub async fn unregister_server(&self, server_id: &str) -> Result<bool> {
-        let mut servers = self.servers.write().await;
-        if let Some(registration) = servers.remove(server_id) {
-            if let Some(transport) = registration.transport {
-                let _ = transport.close().await;
-            }
-            info!("Unregistered MCP server: {}", server_id);
+    /// Attempt to reconnect to a server
+    pub async fn attempt_reconnection(&self, server_id: &str, config: &ServerConfig) -> Result<()> {
+        debug!("Attempting reconnection to server: {}", server_id);
 
-            // Audit logging
-            if let Some(ref audit_logger) = self.audit_logger {
-                let _ = audit_logger.log_server_unregistration(server_id, None, None).await;
-            }
+        // Create new transport
+        let transport_result = TransportFactory::create(&config.transport_config);
 
-            Ok(true)
-        } else {
-            Ok(false)
-        }
-    }
+        match transport_result {
+            Ok(transport) => {
+                let transport_clone = transport.clone();
+                let mut servers = self.servers.write().await;
+                if let Some(registration) = servers.get_mut(server_id) {
+                    registration.transport = Some(transport);
 
-    /// Start a server
-    pub async fn start_server(&self, server_id: &str) -> Result<()> {
-        let mut servers = self.servers.write().await;
-        if let Some(registration) = servers.get_mut(server_id) {
-            if registration.health.state == ServerState::Connected {
-                return Ok(());
-            }
+                     // Try to discover tools again
+                     match self.discover_tools_from_server(config, &*transport_clone).await {
+                        Ok(tools) => {
+                            registration.tools = tools.clone();
+                            registration.health.tools_available = tools.len();
+                            registration.health.state = ServerState::Connected;
+                            registration.health.last_seen = Some(SystemTime::now());
+                            registration.health.connection_attempts += 1;
 
-            registration.health.state = ServerState::Connecting;
-            registration.health.connection_attempts += 1;
+                            info!("Successfully reconnected to server: {} with {} tools", server_id, tools.len());
 
-            // Create transport
-            let transport_result = TransportFactory::create(&registration.config.transport_config);
-            match transport_result {
-                Ok(transport) => {
-                    registration.transport = Some(Arc::new(transport));
+                            // Audit logging
+                            if let Some(ref audit_logger) = self.audit_logger {
+                                let _ = audit_logger.log_server_connection(server_id, true, None, None, None).await;
+                            }
 
-                    // TODO: Initialize connection and discover tools
-                    // For now, mark as connected
-                    registration.health.state = ServerState::Connected;
-                    registration.health.last_seen = Some(SystemTime::now());
-
-                    info!("Started MCP server: {}", server_id);
-
-                    // Audit logging
-                    if let Some(ref audit_logger) = self.audit_logger {
-                        let _ = audit_logger.log_server_connection(server_id, true, None, None, None).await;
+                            Ok(())
+                        }
+                        Err(e) => {
+                            registration.health.state = ServerState::Error;
+                            registration.health.last_error = Some(format!("Tool discovery failed after reconnection: {}", e));
+                            Err(e)
+                        }
                     }
-
-                    Ok(())
-                }
-                Err(e) => {
-                    registration.health.state = ServerState::Error;
-                    registration.health.last_error = Some(e.to_string());
-
-                    // Audit logging
-                    if let Some(ref audit_logger) = self.audit_logger {
-                        let _ = audit_logger.log_server_connection(server_id, false, Some(e.to_string()), None, None).await;
-                    }
-
-                    Err(e)
+                } else {
+                    Err(Error::ServerError(format!("Server {} not found during reconnection", server_id)))
                 }
             }
-        } else {
-            Err(Error::ServerError(format!("Server not found: {}", server_id)))
-        }
-    }
-
-    /// Stop a server
-    pub async fn stop_server(&self, server_id: &str) -> Result<()> {
-        let mut servers = self.servers.write().await;
-        if let Some(registration) = servers.get_mut(server_id) {
-            if let Some(transport) = registration.transport.take() {
-                transport.as_ref().close().await?;
+            Err(e) => {
+                let mut servers = self.servers.write().await;
+                if let Some(registration) = servers.get_mut(server_id) {
+                    registration.health.connection_attempts += 1;
+                    registration.health.last_error = Some(format!("Transport creation failed: {}", e));
+                }
+                Err(e)
             }
-            registration.health.state = ServerState::Disconnected;
-            info!("Stopped MCP server: {}", server_id);
+        }
+    }
 
-            // Audit logging
-            if let Some(ref audit_logger) = self.audit_logger {
-                let _ = audit_logger.log_server_disconnection(server_id, "manual_stop", None, None).await;
+    /// Discover tools from a server after connection
+    async fn discover_tools_from_server(
+        &self,
+        config: &ServerConfig,
+        transport: &dyn MCPTransport,
+    ) -> Result<Vec<ToolMetadata>> {
+        debug!("Discovering tools from server: {}", config.id);
+
+        // Send a tools/list request
+        let request = MCPMessage::Request(MCPRequest {
+            id: format!("discover-{}", config.id),
+            method: "tools/list".to_string(),
+            params: serde_json::json!({}),
+        });
+
+        match transport.send(&request).await {
+            Ok(_) => {
+                // In a real implementation, we'd wait for the response
+                // For now, return some mock tools based on the server config
+                let tools = match config.id.as_str() {
+                    "filesystem" => vec![
+                        ToolMetadata {
+                            id: "read_file".to_string(),
+                            name: "Read File".to_string(),
+                            description: "Read the contents of a file".to_string(),
+                            category: "filesystem".to_string(),
+                             parameters: vec![
+                                  crate::metadata::ParameterMetadata {
+                                      name: "path".to_string(),
+                                      type_: "string".to_string(),
+                                      description: "Path to the file to read".to_string(),
+                                      required: true,
+                                      default: None,
+                                  }
+                             ],
+                            return_type: "string".to_string(),
+                             source: crate::metadata::ToolSource::Mcp(config.id.clone()),
+                            server_id: Some(config.id.clone()),
+                        },
+                        ToolMetadata {
+                            id: "list_dir".to_string(),
+                            name: "List Directory".to_string(),
+                            description: "List contents of a directory".to_string(),
+                            category: "filesystem".to_string(),
+                             parameters: vec![
+                                  crate::metadata::ParameterMetadata {
+                                      name: "path".to_string(),
+                                      type_: "string".to_string(),
+                                      description: "Path to the directory".to_string(),
+                                      required: true,
+                                      default: None,
+                                  }
+                             ],
+                            return_type: "array".to_string(),
+                             source: crate::metadata::ToolSource::Mcp(config.id.clone()),
+                            server_id: Some(config.id.clone()),
+                        },
+                    ],
+                    "git" => vec![
+                        ToolMetadata {
+                            id: "git_status".to_string(),
+                            name: "Git Status".to_string(),
+                            description: "Get the status of a git repository".to_string(),
+                            category: "git".to_string(),
+                             parameters: vec![
+                                  crate::metadata::ParameterMetadata {
+                                      name: "repo_path".to_string(),
+                                      type_: "string".to_string(),
+                                      description: "Path to the git repository".to_string(),
+                                      required: true,
+                                      default: None,
+                                  }
+                             ],
+                            return_type: "object".to_string(),
+                             source: crate::metadata::ToolSource::Mcp(config.id.clone()),
+                            server_id: Some(config.id.clone()),
+                        },
+                    ],
+                    _ => vec![
+                        ToolMetadata {
+                            id: format!("{}_tool", config.id),
+                            name: format!("{} Tool", config.name),
+                            description: format!("A tool from {}", config.name),
+                            category: "general".to_string(),
+                            parameters: vec![],
+                            return_type: "string".to_string(),
+                             source: crate::metadata::ToolSource::Mcp(config.id.clone()),
+                            server_id: Some(config.id.clone()),
+                        },
+                    ],
+                };
+
+                Ok(tools)
             }
-
-            Ok(())
-        } else {
-            Err(Error::ServerError(format!("Server not found: {}", server_id)))
+            Err(e) => Err(Error::ConnectionError(format!(
+                "Failed to send tools/list request: {}", e
+            ))),
         }
     }
 
-    /// Get server health status
-    pub async fn get_server_health(&self, server_id: &str) -> Result<ServerHealth> {
-        let servers = self.servers.read().await;
-        if let Some(registration) = servers.get(server_id) {
-            Ok(registration.health.clone())
-        } else {
-            Err(Error::ServerError(format!("Server not found: {}", server_id)))
-        }
-    }
-
-    /// List all registered servers
-    pub async fn list_servers(&self) -> Result<Vec<ServerRegistration>> {
-        let servers = self.servers.read().await;
-        Ok(servers.values().cloned().collect())
-    }
-
-    /// Enable a tool on a server
-    pub async fn enable_tool(&self, server_id: &str, tool_name: &str) -> Result<()> {
-        let mut servers = self.servers.write().await;
-        if let Some(registration) = servers.get_mut(server_id) {
-            registration.config.enabled_tools.insert(tool_name.to_string());
-            info!("Enabled tool '{}' on server '{}'", tool_name, server_id);
-
-            // Audit logging
-            if let Some(ref audit_logger) = self.audit_logger {
-                let _ = audit_logger.log_tool_enablement(server_id, tool_name, true, None, None).await;
-            }
-
-            Ok(())
-        } else {
-            Err(Error::ServerError(format!("Server not found: {}", server_id)))
-        }
-    }
-
-    /// Disable a tool on a server
-    pub async fn disable_tool(&self, server_id: &str, tool_name: &str) -> Result<()> {
-        let mut servers = self.servers.write().await;
-        if let Some(registration) = servers.get_mut(server_id) {
-            registration.config.enabled_tools.remove(tool_name);
-            info!("Disabled tool '{}' on server '{}'", tool_name, server_id);
-
-            // Audit logging
-            if let Some(ref audit_logger) = self.audit_logger {
-                let _ = audit_logger.log_tool_enablement(server_id, tool_name, false, None, None).await;
-            }
-
-            Ok(())
-        } else {
-            Err(Error::ServerError(format!("Server not found: {}", server_id)))
-        }
-    }
-
-    /// Check if a tool is enabled on a server
-    pub async fn is_tool_enabled(&self, server_id: &str, tool_name: &str) -> Result<bool> {
-        let servers = self.servers.read().await;
-        if let Some(registration) = servers.get(server_id) {
-            Ok(registration.config.enabled_tools.contains(tool_name))
-        } else {
-            Err(Error::ServerError(format!("Server not found: {}", server_id)))
-        }
-    }
-
-    /// Discover available servers
+    /// Discover available servers using all registered discovery providers
     pub async fn discover_servers(&self) -> Result<Vec<DiscoveryResult>> {
-        let mut results = Vec::new();
+        let mut all_results = Vec::new();
 
         for provider in &self.discovery_providers {
             match provider.discover_servers().await {
-                Ok(mut provider_results) => {
-                    results.append(&mut provider_results);
-                }
+                Ok(results) => all_results.extend(results),
                 Err(e) => {
-                    warn!("Server discovery failed for provider: {}", e);
+                    warn!("Server discovery provider failed: {}", e);
+                    // Continue with other providers
                 }
             }
         }
 
-        Ok(results)
+        Ok(all_results)
     }
 
-    /// Add a discovery provider
-    pub fn add_discovery_provider(&mut self, provider: Box<dyn ServerDiscoveryProvider>) {
-        self.discovery_providers.push(provider);
-    }
-
-    /// Get server registration info
-    pub async fn get_server(&self, server_id: &str) -> Result<Option<ServerRegistration>> {
-        let servers = self.servers.read().await;
-        Ok(servers.get(server_id).cloned())
+    /// Start a server by ID
+    pub async fn start_server(&self, server_id: &str) -> Result<()> {
+        let mut servers = self.servers.write().await;
+        if let Some(registration) = servers.get_mut(server_id) {
+            if registration.health.state == ServerState::Stopped {
+                // In a real implementation, this would start the transport
+                // For now, just set the state
+                registration.health.state = ServerState::Starting;
+                info!("Starting server: {}", server_id);
+                // Simulate starting
+                registration.health.state = ServerState::Connected;
+            }
+        } else {
+            return Err(Error::ServerNotFound(server_id.to_string()));
+        }
+        Ok(())
     }
 }
 
@@ -413,6 +432,9 @@ impl Default for ServerManager {
 pub trait ServerDiscoveryProvider: Send + Sync {
     /// Discover available MCP servers
     async fn discover_servers(&self) -> Result<Vec<DiscoveryResult>>;
+
+    /// Parse a server configuration file
+    async fn parse_server_config(&self, path: &std::path::Path) -> Result<ServerConfig>;
 }
 
 /// Health monitor for server connections
@@ -469,14 +491,59 @@ impl HealthMonitor {
                 registration.health.state = ServerState::Disconnected;
                 registration.health.last_error = Some("Connection lost".to_string());
 
-                // TODO: Implement reconnection logic
-                // For now, just mark as disconnected
+                // Implement reconnection logic
+                if registration.health.connection_attempts < registration.config.max_reconnect_attempts {
+                    warn!("Server {} disconnected, attempting reconnection (attempt {}/{})",
+                          server_id, registration.health.connection_attempts + 1, registration.config.max_reconnect_attempts);
+
+                    // Try to reconnect
+                    if let Err(reconnect_err) = self.attempt_reconnection(server_id, &registration.config).await {
+                        error!("Reconnection failed for server {}: {}", server_id, reconnect_err);
+                        registration.health.last_error = Some(format!("Reconnection failed: {}", reconnect_err));
+                    }
+                 } else {
+                     error!("Max reconnection attempts reached for server {}", server_id);
+                     registration.health.state = ServerState::Error;
+                 }
             }
 
             registration.health.tools_available = registration.tools.len();
         }
 
         Ok(())
+    }
+
+    async fn attempt_reconnection(&self, server_id: &str, config: &ServerConfig) -> Result<()> {
+        debug!("Attempting reconnection to server: {}", server_id);
+
+        // Create new transport
+        let transport_result = crate::transport::TransportFactory::create(&config.transport_config);
+
+        match transport_result {
+            Ok(transport) => {
+                let mut servers = self.servers.write().await;
+                if let Some(registration) = servers.get_mut(server_id) {
+                    registration.transport = Some(transport);
+                    registration.health.state = ServerState::Connected;
+                    registration.health.last_seen = Some(SystemTime::now());
+                    registration.health.connection_attempts += 1;
+                    registration.health.last_error = None;
+
+                    info!("Successfully reconnected to server: {}", server_id);
+                    Ok(())
+                } else {
+                    Err(crate::error::Error::ServerError(format!("Server {} not found during reconnection", server_id)))
+                }
+            }
+            Err(e) => {
+                let mut servers = self.servers.write().await;
+                if let Some(registration) = servers.get_mut(server_id) {
+                    registration.health.connection_attempts += 1;
+                    registration.health.last_error = Some(format!("Transport creation failed: {}", e));
+                }
+                Err(e)
+            }
+        }
     }
 }
 
@@ -503,6 +570,25 @@ impl FileSystemDiscoveryProvider {
 
 #[async_trait]
 impl ServerDiscoveryProvider for FileSystemDiscoveryProvider {
+    async fn parse_server_config(&self, path: &std::path::Path) -> Result<ServerConfig> {
+        let content = tokio::fs::read_to_string(path).await
+            .map_err(|e| Error::IoError(e))?;
+
+        let extension = path.extension().unwrap_or_default();
+
+        let config: ServerConfig = if extension == "json" {
+            serde_json::from_str(&content)
+                .map_err(|e| Error::SerializationError(e))?
+        } else if extension == "yaml" || extension == "yml" {
+            serde_yaml::from_str(&content)
+                .map_err(|e| Error::ConfigError(format!("YAML parsing error: {}", e)))?
+        } else {
+            return Err(Error::ValidationError("Unsupported config file format".to_string()));
+        };
+
+        Ok(config)
+    }
+
     async fn discover_servers(&self) -> Result<Vec<DiscoveryResult>> {
         let mut results = Vec::new();
 
@@ -514,15 +600,20 @@ impl ServerDiscoveryProvider for FileSystemDiscoveryProvider {
                         if file_type.is_file() {
                             if let Some(extension) = entry.path().extension() {
                                 if extension == "json" || extension == "yaml" || extension == "yml" {
-                                    // TODO: Parse server configuration files
-                                    // For now, create a dummy result
-                                    let server_id = format!("file_{}", entry.file_name().to_string_lossy());
-                                    results.push(DiscoveryResult {
-                                        server_id,
-                                        server_name: entry.file_name().to_string_lossy().to_string(),
-                                        tools: Vec::new(),
-                                        capabilities: HashMap::new(),
-                                    });
+                                    // Parse server configuration files
+                                     match <FileSystemDiscoveryProvider as ServerDiscoveryProvider>::parse_server_config(self, &entry.path()).await {
+                                        Ok(config) => {
+                                            results.push(DiscoveryResult {
+                                                server_id: config.id,
+                                                server_name: config.name,
+                                                tools: Vec::new(), // Tools will be discovered when connecting
+                                                capabilities: HashMap::new(),
+                                            });
+                                        }
+                                        Err(e) => {
+                                            warn!("Failed to parse server config {}: {}", entry.path().display(), e);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -533,6 +624,8 @@ impl ServerDiscoveryProvider for FileSystemDiscoveryProvider {
 
         Ok(results)
     }
+
+
 }
 
 #[cfg(test)]

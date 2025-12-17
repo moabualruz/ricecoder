@@ -81,6 +81,9 @@ pub enum Error {
     #[error("Multiple naming conflicts detected: {0}")]
     MultipleNamingConflicts(String),
 
+    #[error("Server not found: {0}")]
+    ServerNotFound(String),
+
     #[error("Authorization error: {0}")]
     AuthorizationError(String),
 }
@@ -119,6 +122,7 @@ impl Error {
             Error::ConfigValidationError(msg) => format!("Configuration validation failed: {}. Please fix your configuration.", msg),
             Error::ToolRegistrationError(msg) => format!("Tool registration failed: {}. Please check the tool definition.", msg),
             Error::MultipleNamingConflicts(msg) => format!("Multiple naming conflicts detected: {}. Please use qualified tool names.", msg),
+            Error::ServerNotFound(server_id) => format!("Server '{}' not found. Please check the server ID.", server_id),
             Error::AuthorizationError(msg) => format!("Authorization error: {}. Please check your permissions.", msg),
         }
     }
@@ -151,6 +155,7 @@ impl Error {
             Error::ConfigValidationError(_) => "ConfigValidationError",
             Error::ToolRegistrationError(_) => "ToolRegistrationError",
             Error::MultipleNamingConflicts(_) => "MultipleNamingConflicts",
+            Error::ServerNotFound(_) => "ServerNotFound",
             Error::AuthorizationError(_) => "AuthorizationError",
         }
     }

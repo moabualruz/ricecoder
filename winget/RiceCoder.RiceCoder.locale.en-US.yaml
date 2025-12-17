@@ -1,0 +1,29 @@
+# Created with WinGet Automation using Komac v1.11.0
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.locale.1.4.0.schema.json
+
+PackageIdentifier: RiceCoder.RiceCoder
+PackageVersion: 0.1.72
+PackageLocale: en-US
+Publisher: RiceCoder Contributors
+PublisherUrl: https://github.com/moabualruz/ricecoder
+PublisherSupportUrl: https://github.com/moabualruz/ricecoder/issues
+Author: RiceCoder Contributors
+PackageName: RiceCoder
+PackageUrl: https://github.com/moabualruz/ricecoder
+License: MIT
+LicenseUrl: https://github.com/moabualruz/ricecoder/blob/main/LICENSE.md
+Copyright: Copyright (c) RiceCoder Contributors
+ShortDescription: Terminal-first, spec-driven coding assistant
+Description: Terminal-first, spec-driven coding assistant that understands your project before generating code. Features MCP support, session management, provider ecosystem, and enterprise security.
+Moniker: rice
+Tags:
+- ai
+- coding-assistant
+- cli
+- rust
+- terminal
+- spec-driven
+- llm
+ReleaseNotesUrl: https://github.com/moabualruz/ricecoder/releases/tag/v0.1.72
+ManifestType: locale
+ManifestVersion: 1.4.0

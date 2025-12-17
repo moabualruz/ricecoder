@@ -1,4 +1,6 @@
 //! # RiceCoder Domain
+#![forbid(unsafe_code)]
+
 //!
 //! Core domain entities and business logic for RiceCoder.
 //! This crate contains the central business rules, entities, and domain services

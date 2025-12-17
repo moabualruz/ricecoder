@@ -1,0 +1,41 @@
+[package]
+name = "ricecoder-updates"
+version.workspace = true
+edition.workspace = true
+description = "Update mechanisms, distribution analytics, and enterprise update management for RiceCoder"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+ricecoder-domain = { path = "../ricecoder-domain", version = "0.1" }
+ricecoder-security = { path = "../ricecoder-security", version = "0.1" }
+ricecoder-activity-log = { path = "../ricecoder-activity-log", version = "0.1" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+tokio = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+reqwest = { workspace = true, features = ["json", "native-tls"] }
+chrono = { workspace = true }
+uuid = { workspace = true }
+sha2 = { workspace = true }
+hex = "0.4"
+semver = { version = "1.0", features = ["serde"] }
+tempfile = { workspace = true }
+futures = { workspace = true }
+async-trait = { workspace = true }
+url = { workspace = true }
+dirs = { workspace = true }
+anyhow = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+tokio-test = { workspace = true }
+tempfile = { workspace = true }
+mockito = { workspace = true }

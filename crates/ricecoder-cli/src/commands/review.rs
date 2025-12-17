@@ -2,6 +2,7 @@
 
 use super::Command;
 use crate::error::CliResult;
+use async_trait::async_trait;
 
 /// Review code
 pub struct ReviewCommand {
@@ -14,8 +15,9 @@ impl ReviewCommand {
     }
 }
 
+#[async_trait::async_trait]
 impl Command for ReviewCommand {
-    fn execute(&self) -> CliResult<()> {
+    async fn execute(&self) -> CliResult<()> {
         println!("Reviewing: {}", self.file);
         println!("✓ Review complete");
         Ok(())

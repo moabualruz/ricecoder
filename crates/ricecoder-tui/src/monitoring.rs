@@ -10,6 +10,130 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 
+/// Memory safety monitor for enterprise compliance
+#[derive(Debug)]
+pub struct MemorySafetyMonitor {
+    unsafe_operations_detected: std::sync::atomic::AtomicU64,
+    memory_violations: std::sync::atomic::AtomicU64,
+    last_safety_check: std::sync::Mutex<Instant>,
+    safety_incidents: std::sync::Mutex<Vec<SafetyIncident>>,
+}
+
+#[derive(Debug, Clone)]
+pub struct SafetyIncident {
+    pub timestamp: Instant,
+    pub incident_type: SafetyIncidentType,
+    pub description: String,
+    pub severity: SafetySeverity,
+}
+
+#[derive(Debug, Clone)]
+pub enum SafetyIncidentType {
+    UnsafeCodeDetected,
+    MemoryViolation,
+    ThreadSafetyIssue,
+    ResourceLeak,
+}
+
+#[derive(Debug, Clone)]
+pub enum SafetySeverity {
+    Low,
+    Medium,
+    High,
+    Critical,
+}
+
+impl MemorySafetyMonitor {
+    /// Create new memory safety monitor
+    pub fn new() -> Self {
+        Self {
+            unsafe_operations_detected: std::sync::atomic::AtomicU64::new(0),
+            memory_violations: std::sync::atomic::AtomicU64::new(0),
+            last_safety_check: std::sync::Mutex::new(Instant::now()),
+            safety_incidents: std::sync::Mutex::new(Vec::new()),
+        }
+    }
+
+    /// Record unsafe operation detection
+    pub fn record_unsafe_operation(&self, description: String) {
+        self.unsafe_operations_detected.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        self.record_incident(SafetyIncidentType::UnsafeCodeDetected, description, SafetySeverity::High);
+    }
+
+    /// Record memory violation
+    pub fn record_memory_violation(&self, description: String) {
+        self.memory_violations.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        self.record_incident(SafetyIncidentType::MemoryViolation, description, SafetySeverity::Critical);
+    }
+
+    /// Record safety incident
+    pub fn record_incident(&self, incident_type: SafetyIncidentType, description: String, severity: SafetySeverity) {
+        let incident = SafetyIncident {
+            timestamp: Instant::now(),
+            incident_type,
+            description,
+            severity,
+        };
+
+        if let Ok(mut incidents) = self.safety_incidents.lock() {
+            incidents.push(incident);
+
+            // Keep only last 100 incidents
+            if incidents.len() > 100 {
+                incidents.remove(0);
+            }
+        }
+    }
+
+    /// Perform safety check
+    pub fn perform_safety_check(&self) -> SafetyCheckResult {
+        *self.last_safety_check.lock().unwrap() = Instant::now();
+
+        let unsafe_ops = self.unsafe_operations_detected.load(std::sync::atomic::Ordering::Relaxed);
+        let violations = self.memory_violations.load(std::sync::atomic::Ordering::Relaxed);
+
+        let incidents = self.safety_incidents.lock().unwrap().clone();
+
+        SafetyCheckResult {
+            unsafe_operations_count: unsafe_ops,
+            memory_violations_count: violations,
+            total_incidents: incidents.len(),
+            critical_incidents: incidents.iter().filter(|i| matches!(i.severity, SafetySeverity::Critical)).count(),
+            last_check: Instant::now(),
+        }
+    }
+
+    /// Get compliance status
+    pub fn compliance_status(&self) -> ComplianceStatus {
+        let result = self.perform_safety_check();
+
+        if result.memory_violations_count > 0 {
+            ComplianceStatus::NonCompliant("Memory violations detected".to_string())
+        } else if result.unsafe_operations_count > 0 {
+            ComplianceStatus::NonCompliant("Unsafe operations detected".to_string())
+        } else if result.critical_incidents > 0 {
+            ComplianceStatus::NonCompliant("Critical safety incidents detected".to_string())
+        } else {
+            ComplianceStatus::Compliant
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct SafetyCheckResult {
+    pub unsafe_operations_count: u64,
+    pub memory_violations_count: u64,
+    pub total_incidents: usize,
+    pub critical_incidents: usize,
+    pub last_check: Instant,
+}
+
+#[derive(Debug)]
+pub enum ComplianceStatus {
+    Compliant,
+    NonCompliant(String),
+}
+
 /// User experience metrics collector
 #[derive(Debug)]
 pub struct UserExperienceMetrics {

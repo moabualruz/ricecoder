@@ -2,6 +2,7 @@
 // Adapted from automation/src/cli/router.rs
 
 use crate::commands::*;
+use ricecoder_mcp::compliance::ComplianceReportType;
 use crate::error::{CliError, CliResult};
 use clap::{Parser, Subcommand};
 
@@ -104,6 +105,13 @@ pub enum Commands {
     Config {
         #[command(subcommand)]
         action: Option<ConfigSubcommand>,
+    },
+
+    /// Compliance reporting and automation
+    #[command(about = "Generate compliance reports and run automated compliance checks")]
+    Compliance {
+        #[command(subcommand)]
+        action: Option<ComplianceSubcommand>,
     },
 
     /// Generate shell completions
@@ -548,22 +556,53 @@ pub enum ConfigSubcommand {
     },
 }
 
+#[derive(Subcommand, Debug, Clone)]
+pub enum ComplianceSubcommand {
+    /// Generate compliance reports
+    #[command(about = "Generate compliance reports for SOC 2, GDPR, HIPAA")]
+    Report {
+        /// Compliance standard (soc2, gdpr, hipaa)
+        #[arg(value_name = "STANDARD")]
+        standard: String,
+    },
+
+    /// Check compliance status
+    #[command(about = "Check compliance status for a specific standard")]
+    Check {
+        /// Compliance standard (soc2, gdpr, hipaa)
+        #[arg(value_name = "STANDARD")]
+        standard: String,
+    },
+
+    /// Run automated compliance validation
+    #[command(about = "Run automated compliance validation for all standards")]
+    Validate,
+
+    /// Show compliance monitoring dashboard
+    #[command(about = "Show compliance monitoring dashboard and metrics")]
+    Monitor,
+
+    /// Generate compliance documentation
+    #[command(about = "Generate compliance documentation and guides")]
+    Docs,
+}
+
 /// Route and execute commands
 pub struct CommandRouter;
 
 impl CommandRouter {
     /// Parse CLI arguments and route to appropriate handler
-    pub fn route() -> CliResult<()> {
+    pub async fn route() -> CliResult<()> {
         let cli = Cli::parse();
 
         // Initialize logging based on CLI flags
         crate::logging::init_logging(cli.verbose, cli.quiet);
 
-        Self::execute(&cli)
+        Self::execute(&cli).await
     }
 
     /// Execute a command
-    pub fn execute(cli: &Cli) -> CliResult<()> {
+    pub async fn execute(cli: &Cli) -> CliResult<()> {
         // Default to TUI if no command specified
         let command = cli.command.clone().unwrap_or(Commands::Tui {
             theme: None,
@@ -586,11 +625,11 @@ impl CommandRouter {
                     .with_provider(provider.clone())
                     .with_model(model.clone())
                     .with_force(*force);
-                cmd.execute()
+                cmd.execute().await
             }
             Commands::Gen { spec } => {
                 let cmd = GenCommand::new(spec.clone());
-                cmd.execute()
+                cmd.execute().await
             }
             Commands::Chat {
                 message,
@@ -598,15 +637,15 @@ impl CommandRouter {
                 model,
             } => {
                 let cmd = ChatCommand::new(message.clone(), provider.clone(), model.clone());
-                cmd.execute()
+                cmd.execute().await
             }
             Commands::Refactor { file } => {
                 let cmd = RefactorCommand::new(file.clone());
-                cmd.execute()
+                cmd.execute().await
             }
             Commands::Review { file } => {
                 let cmd = ReviewCommand::new(file.clone());
-                cmd.execute()
+                cmd.execute().await
             }
             Commands::Config { action } => {
                 let config_action = match action {
@@ -617,7 +656,35 @@ impl CommandRouter {
                     }
                 };
                 let cmd = ConfigCommand::new(config_action);
-                cmd.execute()
+                cmd.execute().await
+            }
+            Commands::Compliance { action } => {
+                let compliance_action = match action {
+                    Some(ComplianceSubcommand::Report { standard }) => {
+                        let report_type = match standard.to_lowercase().as_str() {
+                            "soc2" => compliance::ComplianceAction::Report(ComplianceReportType::Soc2Type2),
+                            "gdpr" => compliance::ComplianceAction::Report(ComplianceReportType::Gdpr),
+                            "hipaa" => compliance::ComplianceAction::Report(ComplianceReportType::Hipaa),
+                            _ => return Err(CliError::InvalidArgument { message: format!("Unknown compliance standard: {}", standard) }),
+                        };
+                        report_type
+                    }
+                    Some(ComplianceSubcommand::Check { standard }) => {
+                        let report_type = match standard.to_lowercase().as_str() {
+                            "soc2" => compliance::ComplianceAction::Check(ComplianceReportType::Soc2Type2),
+                            "gdpr" => compliance::ComplianceAction::Check(ComplianceReportType::Gdpr),
+                            "hipaa" => compliance::ComplianceAction::Check(ComplianceReportType::Hipaa),
+                            _ => return Err(CliError::InvalidArgument { message: format!("Unknown compliance standard: {}", standard) }),
+                        };
+                        report_type
+                    }
+                    Some(ComplianceSubcommand::Validate) => compliance::ComplianceAction::Validate,
+                    Some(ComplianceSubcommand::Monitor) => compliance::ComplianceAction::Monitor,
+                    Some(ComplianceSubcommand::Docs) => compliance::ComplianceAction::Docs,
+                    None => compliance::ComplianceAction::Validate, // Default to validate
+                };
+                let cmd = ComplianceCommand::new(compliance_action);
+                cmd.execute().await
             }
             Commands::Completions { shell } => {
                 crate::completion::generate_completions(shell).map_err(CliError::Internal)
@@ -639,7 +706,7 @@ impl CommandRouter {
                     }
                 };
                 let cmd = custom::CustomCommandHandler::new(custom_action);
-                cmd.execute()
+                cmd.execute().await
             }
             Commands::Tui {
                 theme,
@@ -656,7 +723,7 @@ impl CommandRouter {
                     provider.clone(),
                     model.clone(),
                 );
-                cmd.execute()
+                cmd.execute().await
             }
             Commands::Sessions { action } => {
                 let sessions_action = match action {
@@ -706,7 +773,7 @@ impl CommandRouter {
                     }
                 };
                 let cmd = SessionsCommand::new(sessions_action);
-                cmd.execute()
+                cmd.execute().await
             }
             Commands::Providers { action } => {
                 let providers_action = match action {
@@ -737,7 +804,7 @@ impl CommandRouter {
                     }
                 };
                 let cmd = ProvidersCommand::new(providers_action);
-                cmd.execute()
+                cmd.execute().await
             }
             Commands::Mcp { action } => {
                 let mcp_action = match action {
@@ -771,7 +838,7 @@ impl CommandRouter {
                     Some(McpSubcommand::Status) => mcp::McpAction::Status,
                 };
                 let cmd = McpCommand::new(mcp_action);
-                cmd.execute()
+                cmd.execute().await
             }
             Commands::Lsp {
                 log_level,
@@ -779,7 +846,7 @@ impl CommandRouter {
                 debug,
             } => {
                 let cmd = lsp::LspCommand::new(log_level.clone(), *port, *debug);
-                cmd.execute()
+                cmd.execute().await
             }
             Commands::Hooks { action } => {
                 let hooks_action = match action {
@@ -806,7 +873,7 @@ impl CommandRouter {
             }
             Commands::Help { topic } => {
                 let cmd = HelpCommand::new(topic.clone());
-                cmd.execute()
+                cmd.execute().await
             }
         }
     }

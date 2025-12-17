@@ -1,4 +1,6 @@
 //! RiceCoder Terminal User Interface (TUI) - Pure UI Layer
+#![forbid(unsafe_code)]
+
 //!
 //! This crate provides a beautiful, responsive terminal user interface for RiceCoder
 //! built with [ratatui](https://github.com/ratatui-org/ratatui). **Important**: This crate
@@ -102,6 +104,10 @@ pub use error::{
     KeybindError, StorageError, ToolError, TuiError,
     TuiResult,
 };
+pub use lifecycle::{
+    TuiLifecycleManager, TuiLifecycleState, TuiLifecycleComponent,
+    initialize_tui_lifecycle_manager, get_tui_lifecycle_manager, register_tui_component,
+};
 // Provider and session errors moved to respective crates
 // pub use error_handling::{
 //     ErrorBoundary, ErrorCategory, ErrorLogger, ErrorManager, ErrorSeverity, RecoveryStrategy,
@@ -122,6 +128,8 @@ pub use monitoring::{
     MonitoringSystem, PerformanceMonitor, UsageAnalytics, MetricsCollector,
     PerformanceProfiler, UserExperienceMetrics, MonitoringReport, PerformanceReport,
     AnalyticsReport, UserExperienceReport, AnonymousStatistics,
+    MemorySafetyMonitor, SafetyIncident, SafetyIncidentType, SafetySeverity,
+    SafetyCheckResult, ComplianceStatus,
 };
 pub use command_palette::{CommandPaletteWidget, PaletteCommand};
 // executor exports moved to ricecoder-commands

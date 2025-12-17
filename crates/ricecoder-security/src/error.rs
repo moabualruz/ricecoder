@@ -23,6 +23,12 @@ pub enum SecurityError {
     #[error("Audit logging error: {message}")]
     Audit { message: String },
 
+    #[error("Serialization error: {message}")]
+    Serialization { message: String },
+
+    #[error("Deserialization error: {message}")]
+    Deserialization { message: String },
+
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 

@@ -6,7 +6,7 @@
 
 use std::collections::{HashMap, VecDeque};
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, Weak};
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 use crate::CancellationToken;
@@ -1283,29 +1283,29 @@ impl PerformanceProfiler {
     }
 
     /// Start a profiling span
-    pub fn start_span(&mut self, name: &str) -> Option<ProfileSpanHandle> {
-        if !self.enabled {
+    pub fn start_span(profiler: &Arc<Mutex<Self>>, name: &str) -> Option<ProfileSpanHandle> {
+        let mut profiler_guard = profiler.lock().unwrap();
+        if !profiler_guard.enabled {
             return None;
         }
 
         let span = ProfileSpan {
             name: name.to_string(),
-            start_time: self.session_start.elapsed(),
+            start_time: profiler_guard.session_start.elapsed(),
             duration: std::time::Duration::from_nanos(0),
-            parent_index: self.active_spans.last().map(|_| self.spans.len().saturating_sub(1)),
+            parent_index: profiler_guard.active_spans.last().map(|_| profiler_guard.spans.len().saturating_sub(1)),
             thread_id: get_current_thread_id(),
             metadata: std::collections::HashMap::new(),
         };
 
-        self.active_spans.push(span.clone());
+        profiler_guard.active_spans.push(span.clone());
         Some(ProfileSpanHandle {
-            profiler: self as *mut PerformanceProfiler,
-            span_index: self.spans.len(),
+            profiler: Arc::clone(profiler),
         })
     }
 
     /// End the current span
-    pub fn end_span(&mut self, handle: ProfileSpanHandle) {
+    pub fn end_span(&mut self) {
         if !self.enabled {
             return;
         }
@@ -1388,24 +1388,44 @@ impl PerformanceProfiler {
         self.active_spans.clear();
         self.session_start = std::time::Instant::now();
     }
+
+    /// Validate memory safety invariants
+    pub fn validate_memory_safety(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        // Check that active spans don't exceed reasonable limits
+        if self.active_spans.len() > self.max_spans {
+            return Err(format!("Active spans ({}) exceed maximum allowed ({})",
+                             self.active_spans.len(), self.max_spans).into());
+        }
+
+        // Check that total spans don't exceed reasonable limits
+        if self.spans.len() > self.max_spans * 2 {
+            return Err(format!("Total spans ({}) significantly exceed maximum allowed ({})",
+                             self.spans.len(), self.max_spans).into());
+        }
+
+        // Validate span data integrity
+        for span in &self.spans {
+            if span.duration.as_nanos() == 0 {
+                return Err("Span has zero duration".into());
+            }
+            if span.start_time > self.session_start.elapsed() {
+                return Err("Span start time is in the future".into());
+            }
+        }
+
+        Ok(())
+    }
 }
 
 /// RAII handle for profiling spans
 pub struct ProfileSpanHandle {
-    profiler: *mut PerformanceProfiler,
-    span_index: usize,
+    profiler: Arc<Mutex<PerformanceProfiler>>,
 }
 
 impl Drop for ProfileSpanHandle {
     fn drop(&mut self) {
-        unsafe {
-            if let Some(profiler) = self.profiler.as_mut() {
-                profiler.end_span(ProfileSpanHandle {
-                    profiler: self.profiler,
-                    span_index: self.span_index,
-                });
-            }
-        }
+        let mut profiler = self.profiler.lock().unwrap();
+        profiler.end_span();
     }
 }
 

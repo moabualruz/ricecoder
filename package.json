@@ -1,7 +1,7 @@
 {
   "name": "ricecoder",
-  "version": "0.1.6",
-  "description": "Terminal-first, spec-driven coding assistant with research-first approach",
+  "version": "0.1.72",
+  "description": "Terminal-first, spec-driven coding assistant that understands your project before generating code",
   "main": "index.js",
   "bin": {
     "ricecoder": "./bin/ricecoder",
@@ -9,7 +9,8 @@
   },
   "scripts": {
     "postinstall": "node scripts/install.js",
-    "test": "jest"
+    "test": "jest",
+    "prepublishOnly": "npm run test"
   },
   "repository": {
     "type": "git",
@@ -21,18 +22,20 @@
   },
   "keywords": [
     "ai",
-    "code-generation",
-    "refactoring",
+    "coding-assistant",
     "cli",
     "rust",
-    "coding-assistant",
-    "spec-driven",
     "terminal",
-    "tui",
-    "llm"
+    "spec-driven",
+    "llm",
+    "mcp",
+    "enterprise",
+    "security",
+    "code-generation",
+    "refactoring"
   ],
   "author": "RiceCoder Contributors",
-  "license": "MIT",
+  "license": "CC BY-NC-SA 4.0",
   "engines": {
     "node": ">=14.0.0"
   },
@@ -49,15 +52,32 @@
     "bin",
     "scripts",
     "README.md",
-    "LICENSE.md"
+    "LICENSE.md",
+    "SECURITY.md"
   ],
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
     "adm-zip": "^0.5.10"
   },
   "devDependencies": {
     "jest": "^29.0.0"
+  },
+  "enterprise": {
+    "features": [
+      "MCP Protocol Support",
+      "Enterprise Security (AES-256-GCM encryption)",
+      "RBAC Access Control",
+      "Audit Logging",
+      "Session Management",
+      "Provider Ecosystem",
+      "Compliance (SOC 2, GDPR, HIPAA)"
+    ],
+    "support": {
+      "email": "enterprise@ricecoder.dev",
+      "docs": "https://github.com/moabualruz/ricecoder/wiki/Enterprise"
+    }
   }
 }

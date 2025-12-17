@@ -308,7 +308,7 @@ async fn test_error_recovery_strategy_selection() {
     assert_eq!(determine_recovery_strategy(&validation_error), RecoveryStrategy::Fail);
 
     // Test serialization errors
-    let serial_error = Error::SerializationError(serde_json::Error::custom("Parse error"));
+    let serial_error = Error::SerializationError(serde_json::from_str::<serde_json::Value>("invalid").unwrap_err());
     assert_eq!(determine_recovery_strategy(&serial_error), RecoveryStrategy::Fail);
 
     // Test server errors

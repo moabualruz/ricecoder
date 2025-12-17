@@ -4,6 +4,7 @@
 use super::custom_storage::CustomCommandsStorage;
 use super::Command;
 use crate::error::{CliError, CliResult};
+use async_trait::async_trait;
 use ricecoder_commands::{CommandManager, CommandRegistry, ConfigManager};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -57,9 +58,9 @@ impl CustomCommandHandler {
         }
     }
 }
-
+#[async_trait::async_trait]
 impl Command for CustomCommandHandler {
-    fn execute(&self) -> CliResult<()> {
+    async fn execute(&self) -> CliResult<()> {
         match &self.action {
             CustomAction::List => self.handle_list(),
             CustomAction::Info(name) => self.handle_info(name),

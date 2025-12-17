@@ -6,6 +6,7 @@ use crate::error::{CliError, CliResult};
 use crate::output::OutputStyle;
 use std::fs;
 use std::path::{Path, PathBuf};
+use async_trait::async_trait;
 
 /// Generate code from a specification
 pub struct GenCommand {
@@ -66,8 +67,9 @@ impl GenCommand {
     }
 }
 
+#[async_trait::async_trait]
 impl Command for GenCommand {
-    fn execute(&self) -> CliResult<()> {
+    async fn execute(&self) -> CliResult<()> {
         let style = OutputStyle::default();
 
         // Validate spec file

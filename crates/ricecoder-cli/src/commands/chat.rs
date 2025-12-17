@@ -8,6 +8,7 @@ use crate::output::OutputStyle;
 use ricecoder_storage::{ConfigLoader, PathResolver};
 use ricecoder_providers::provider::ProviderRegistry;
 use ricecoder_providers::models::ChatRequest;
+use async_trait::async_trait;
 
 /// Interactive chat mode
 pub struct ChatCommand {
@@ -109,7 +110,7 @@ impl ChatCommand {
     }
 
     /// Process initial message by sending to provider and getting response
-    fn process_initial_message(&self, message: &str, session: &mut ChatSession) -> CliResult<()> {
+    async fn process_initial_message(&self, message: &str, session: &mut ChatSession) -> CliResult<()> {
         let style = OutputStyle::default();
 
         // Add user message to history
@@ -121,7 +122,7 @@ impl ChatCommand {
         println!("{}", style.info("Processing message..."));
 
         // Send to AI provider and get response
-        let response = self.send_to_provider(message, session)?;
+        let response = self.send_to_provider(message, session).await?;
         session.add_message("assistant".to_string(), response.clone());
 
         println!("{}", style.success(&response));
@@ -131,12 +132,8 @@ impl ChatCommand {
     }
 
     /// Send message to provider and get response
-    fn send_to_provider(&self, message: &str, session: &ChatSession) -> CliResult<String> {
-        // Create a runtime for async operations
-        let rt = tokio::runtime::Runtime::new()
-            .map_err(|e| CliError::Internal(format!("Failed to create runtime: {}", e)))?;
-
-        rt.block_on(self.send_to_provider_async(message, session))
+    async fn send_to_provider(&self, message: &str, session: &ChatSession) -> CliResult<String> {
+        self.send_to_provider_async(message, session).await
     }
 
     /// Async version of send_to_provider
@@ -243,12 +240,12 @@ impl ChatCommand {
     }
 
     /// Enter interactive chat loop
-    fn run_chat_loop(&self, session: &mut ChatSession) -> CliResult<()> {
+    async fn run_chat_loop(&self, session: &mut ChatSession) -> CliResult<()> {
         let style = OutputStyle::default();
 
         // If initial message provided, process it
         if let Some(msg) = &self.message {
-            self.process_initial_message(msg, session)?;
+            self.process_initial_message(msg, session).await?;
         } else {
             // Interactive mode
             println!();
@@ -264,8 +261,9 @@ impl ChatCommand {
     }
 }
 
+#[async_trait::async_trait]
 impl Command for ChatCommand {
-    fn execute(&self) -> CliResult<()> {
+    async fn execute(&self) -> CliResult<()> {
         let style = OutputStyle::default();
 
         // Get provider from CLI args or configuration
@@ -288,14 +286,11 @@ impl Command for ChatCommand {
         let mut session = ChatSession::new(provider, model);
 
         // Create and initialize provider for the session
-        let rt = tokio::runtime::Runtime::new()
-            .map_err(|e| CliError::Internal(format!("Failed to create runtime: {}", e)))?;
-
-        let provider_instance = rt.block_on(self.create_provider())?;
+        let provider_instance = self.create_provider().await?;
         session.set_provider(provider_instance);
 
         // Run chat loop
-        self.run_chat_loop(&mut session)?;
+        self.run_chat_loop(&mut session).await?;
 
         println!();
         println!("{}", style.success("Chat session ended"));

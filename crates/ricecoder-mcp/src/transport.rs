@@ -15,7 +15,9 @@
 use async_trait::async_trait;
 use futures_util::{StreamExt, TryFutureExt};
 use serde::{Deserialize, Serialize};
+use std::fmt::Debug;
 use std::io::{BufRead, BufReader, Write};
+use std::sync::Arc;
 use tokio::process::Command;
 use std::process::Stdio;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader as AsyncBufReader};
@@ -77,7 +79,7 @@ pub struct MCPErrorData {
 
 /// Transport trait for MCP communication
 #[async_trait]
-pub trait MCPTransport: Send + Sync {
+pub trait MCPTransport: Send + Sync + Debug + 'static {
     /// Send a message
     async fn send(&self, message: &MCPMessage) -> Result<()>;
 
@@ -92,6 +94,7 @@ pub trait MCPTransport: Send + Sync {
 }
 
 /// Stdio transport for MCP communication
+#[derive(Debug)]
 pub struct StdioTransport {
     child: std::sync::Mutex<Option<tokio::process::Child>>,
     stdin: std::sync::Mutex<Option<tokio::process::ChildStdin>>,
@@ -202,6 +205,7 @@ impl Drop for StdioTransport {
 }
 
 /// HTTP transport for MCP communication
+#[derive(Debug)]
 pub struct HTTPTransport {
     base_url: String,
     client: reqwest::Client,
@@ -378,6 +382,7 @@ impl MCPTransport for HTTPTransport {
 }
 
 /// SSE (Server-Sent Events) transport for MCP communication
+#[derive(Debug)]
 pub struct SSETransport {
     url: String,
     client: reqwest::Client,
@@ -507,14 +512,14 @@ pub struct TransportFactory;
 
 impl TransportFactory {
     /// Create a transport based on configuration
-    pub fn create(config: &TransportConfig) -> Result<Box<dyn MCPTransport>> {
+    pub fn create(config: &TransportConfig) -> Result<Arc<dyn MCPTransport>> {
         match config.transport_type {
             TransportType::Stdio => {
                 let stdio_config = config.stdio_config.as_ref()
                     .ok_or_else(|| Error::ConfigError("Stdio config required".to_string()))?;
                 let args: Vec<&str> = stdio_config.args.iter().map(|s| s.as_str()).collect();
                 let transport = StdioTransport::new(&stdio_config.command, &args)?;
-                Ok(Box::new(transport))
+                Ok(Arc::new(transport))
             }
             TransportType::HTTP => {
                 let http_config = config.http_config.as_ref()
@@ -524,14 +529,14 @@ impl TransportFactory {
                 } else {
                     HTTPTransport::new(&http_config.base_url)
                 };
-                Ok(Box::new(transport))
+                Ok(Arc::new(transport))
             }
             TransportType::SSE => {
                 let sse_config = config.sse_config.as_ref()
                     .ok_or_else(|| Error::ConfigError("SSE config required".to_string()))?;
                 let mut transport = SSETransport::new(&sse_config.url);
                 // Note: connect() should be called separately for SSE
-                Ok(Box::new(transport))
+                Ok(Arc::new(transport))
             }
         }
     }

@@ -60,7 +60,7 @@ async fn main() {
     }
 
     // Route and execute command
-    let result = CommandRouter::route();
+    let result = CommandRouter::route().await;
 
     // Stop components before exiting
     if let Err(e) = lifecycle_manager.stop_all().await {

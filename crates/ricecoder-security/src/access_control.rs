@@ -19,6 +19,7 @@ pub enum Permission {
     SessionCreate,
     SessionShare,
     AuditRead,
+    UpdateAuto,
 }
 
 /// Resource types for access control
@@ -33,11 +34,71 @@ pub enum ResourceType {
 }
 
 /// Role definition
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Role {
-    pub name: String,
-    pub permissions: Vec<Permission>,
-    pub description: String,
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum Role {
+    User,
+    Admin,
+    Service,
+    Auditor,
+}
+
+impl Role {
+    /// Check if this role has a specific permission
+    pub fn has_permission(&self, permission: &Permission) -> bool {
+        self.permissions().contains(permission)
+    }
+
+    /// Get permissions for this role
+    pub fn permissions(&self) -> &[Permission] {
+        match self {
+            Role::User => &[
+                Permission::Read,
+                Permission::Write,
+                Permission::Execute,
+                Permission::SessionCreate,
+            ],
+            Role::Admin => &[
+                Permission::Read,
+                Permission::Write,
+                Permission::Execute,
+                Permission::Admin,
+                Permission::ApiKeyAccess,
+                Permission::SessionCreate,
+                Permission::SessionShare,
+                Permission::AuditRead,
+                Permission::UpdateAuto,
+            ],
+            Role::Service => &[
+                Permission::Read,
+                Permission::ApiKeyAccess,
+                Permission::SessionCreate,
+            ],
+            Role::Auditor => &[
+                Permission::Read,
+                Permission::AuditRead,
+            ],
+        }
+    }
+
+    /// Get role name
+    pub fn name(&self) -> &str {
+        match self {
+            Role::User => "user",
+            Role::Admin => "admin",
+            Role::Service => "service",
+            Role::Auditor => "auditor",
+        }
+    }
+
+    /// Get role description
+    pub fn description(&self) -> &str {
+        match self {
+            Role::User => "Basic user with read/write/execute permissions",
+            Role::Admin => "Administrator with full access",
+            Role::Service => "Service account for automated operations",
+            Role::Auditor => "Audit and compliance monitoring",
+        }
+    }
 }
 
 /// User or service principal
@@ -50,41 +111,50 @@ pub struct Principal {
 
 /// Access control system
 pub struct AccessControl {
-    roles: HashMap<String, Role>,
-    role_permissions: HashMap<String, Vec<Permission>>,
+    custom_roles: HashMap<String, Vec<Permission>>,
 }
 
 impl AccessControl {
     /// Create a new access control system
     pub fn new() -> Self {
-        let mut ac = Self {
-            roles: HashMap::new(),
-            role_permissions: HashMap::new(),
-        };
-
-        // Initialize default roles
-        ac.add_default_roles();
-        ac
+        Self {
+            custom_roles: HashMap::new(),
+        }
     }
 
-    /// Add a role
-    pub fn add_role(&mut self, role: Role) {
-        let role_name = role.name.clone();
-        let permissions = role.permissions.clone();
-        self.roles.insert(role_name.clone(), role);
-        self.role_permissions.insert(role_name, permissions);
+    /// Add a custom role
+    pub fn add_custom_role(&mut self, name: String, permissions: Vec<Permission>) {
+        self.custom_roles.insert(name, permissions);
     }
 
     /// Check if a principal has a specific permission
     pub fn has_permission(&self, principal: &Principal, permission: &Permission) -> bool {
         for role_name in &principal.roles {
-            if let Some(permissions) = self.role_permissions.get(role_name) {
+            // Check built-in roles
+            if let Some(role) = Self::role_from_name(role_name) {
+                if role.has_permission(permission) {
+                    return true;
+                }
+            }
+            // Check custom roles
+            if let Some(permissions) = self.custom_roles.get(role_name) {
                 if permissions.contains(permission) {
                     return true;
                 }
             }
         }
         false
+    }
+
+    /// Get built-in role from name
+    fn role_from_name(name: &str) -> Option<Role> {
+        match name {
+            "user" => Some(Role::User),
+            "admin" => Some(Role::Admin),
+            "service" => Some(Role::Service),
+            "auditor" => Some(Role::Auditor),
+            _ => None,
+        }
     }
 
     /// Check permission for a user with resource context (async for future extensibility)
@@ -185,7 +255,16 @@ impl AccessControl {
         let mut all_permissions = Vec::new();
 
         for role_name in &principal.roles {
-            if let Some(permissions) = self.role_permissions.get(role_name) {
+            // Check built-in roles
+            if let Some(role) = Self::role_from_name(role_name) {
+                for perm in role.permissions() {
+                    if !all_permissions.contains(perm) {
+                        all_permissions.push(perm.clone());
+                    }
+                }
+            }
+            // Check custom roles
+            if let Some(permissions) = self.custom_roles.get(role_name) {
                 for perm in permissions {
                     if !all_permissions.contains(perm) {
                         all_permissions.push(perm.clone());
@@ -215,67 +294,17 @@ impl AccessControl {
         Ok(())
     }
 
-    /// Get role by name
-    pub fn get_role(&self, name: &str) -> Option<&Role> {
-        self.roles.get(name)
+    /// Get built-in role by name
+    pub fn get_builtin_role(&self, name: &str) -> Option<Role> {
+        Self::role_from_name(name)
     }
 
-    /// List all roles
-    pub fn list_roles(&self) -> Vec<&Role> {
-        self.roles.values().collect()
+    /// List all built-in roles
+    pub fn list_builtin_roles(&self) -> Vec<Role> {
+        vec![Role::User, Role::Admin, Role::Service, Role::Auditor]
     }
 
-    /// Add default roles
-    fn add_default_roles(&mut self) {
-        // User role - basic permissions
-        self.add_role(Role {
-            name: "user".to_string(),
-            permissions: vec![
-                Permission::Read,
-                Permission::Write,
-                Permission::Execute,
-                Permission::SessionCreate,
-            ],
-            description: "Basic user with read/write/execute permissions".to_string(),
-        });
 
-        // Admin role - all permissions
-        self.add_role(Role {
-            name: "admin".to_string(),
-            permissions: vec![
-                Permission::Read,
-                Permission::Write,
-                Permission::Execute,
-                Permission::Admin,
-                Permission::ApiKeyAccess,
-                Permission::SessionCreate,
-                Permission::SessionShare,
-                Permission::AuditRead,
-            ],
-            description: "Administrator with full access".to_string(),
-        });
-
-        // Service role - for automated systems
-        self.add_role(Role {
-            name: "service".to_string(),
-            permissions: vec![
-                Permission::Read,
-                Permission::ApiKeyAccess,
-                Permission::SessionCreate,
-            ],
-            description: "Service account for automated operations".to_string(),
-        });
-
-        // Auditor role - read-only access to audit logs
-        self.add_role(Role {
-            name: "auditor".to_string(),
-            permissions: vec![
-                Permission::Read,
-                Permission::AuditRead,
-            ],
-            description: "Audit and compliance monitoring".to_string(),
-        });
-    }
 
     /// Get human-readable permission name
     fn permission_name(&self, permission: &Permission) -> &str {
@@ -291,6 +320,7 @@ impl AccessControl {
             Permission::SessionCreate => "session_create",
             Permission::SessionShare => "session_share",
             Permission::AuditRead => "audit_read",
+            Permission::UpdateAuto => "update_auto",
         }
     }
 }
@@ -462,10 +492,10 @@ mod tests {
         let ac = AccessControl::new();
 
         // Check that default roles exist
-        assert!(ac.get_role("user").is_some());
-        assert!(ac.get_role("admin").is_some());
-        assert!(ac.get_role("service").is_some());
-        assert!(ac.get_role("auditor").is_some());
+        assert!(ac.get_builtin_role("user").is_some());
+        assert!(ac.get_builtin_role("admin").is_some());
+        assert!(ac.get_builtin_role("service").is_some());
+        assert!(ac.get_builtin_role("auditor").is_some());
     }
 
     #[test]
@@ -545,13 +575,7 @@ mod tests {
     fn test_custom_role() {
         let mut ac = AccessControl::new();
 
-        let custom_role = Role {
-            name: "developer".to_string(),
-            permissions: vec![Permission::Read, Permission::Write, Permission::ApiKeyAccess],
-            description: "Developer role".to_string(),
-        };
-
-        ac.add_role(custom_role);
+        ac.add_custom_role("developer".to_string(), vec![Permission::Read, Permission::Write, Permission::ApiKeyAccess]);
 
         let developer = Principal {
             id: "dev123".to_string(),

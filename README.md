@@ -43,6 +43,8 @@ Choose your preferred installation method:
 | **Docker** | `docker pull moabualruz/ricecoder:latest` | Isolated environments |
 | **npm** | `npm install -g ricecoder` | Node.js developers |
 | **Homebrew** | `brew install ricecoder` | macOS users |
+| **Scoop** | `scoop install ricecoder` | Windows users |
+| **Winget** | `winget install RiceCoder.RiceCoder` | Windows users |
 | **From Source** | `git clone ... && ./scripts/install.sh` | Development, customization |
 
 ### Installation Methods
@@ -183,7 +185,61 @@ brew upgrade ricecoder
 
 ---
 
-#### 6. Build from Source
+#### 6. Scoop (Windows)
+
+Install via Scoop:
+
+```powershell
+# Install
+scoop install ricecoder
+
+# Verify
+rice --version
+
+# Update
+scoop update ricecoder
+```
+
+**Features**:
+
+- Native Windows package manager
+- Easy updates and uninstall
+- Integrates with Windows
+
+**Platforms**: Windows
+
+**Requirements**: Scoop ([Install Scoop](https://scoop.sh/))
+
+---
+
+#### 7. Winget (Windows)
+
+Install via Windows Package Manager:
+
+```powershell
+# Install
+winget install RiceCoder.RiceCoder
+
+# Verify
+rice --version
+
+# Update
+winget upgrade RiceCoder.RiceCoder
+```
+
+**Features**:
+
+- Official Microsoft package manager
+- Enterprise-friendly
+- Integrated with Windows
+
+**Platforms**: Windows
+
+**Requirements**: Windows Package Manager (winget) - included with Windows 10/11
+
+---
+
+#### 8. Build from Source
 
 Clone and build locally with automatic installation:
 
@@ -251,14 +307,14 @@ rice --version
 
 ### Platform Support Matrix
 
-| Platform | Arch | Cargo | Curl | Docker | npm | Homebrew | Source |
-|----------|------|-------|------|--------|-----|----------|--------|
-| **Linux** | x86_64 | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
-| **Linux** | ARM64 | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
-| **macOS** | Intel | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **macOS** | Apple Silicon | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Windows** | x86_64 | ✅ | ❌ | ✅ | ✅ | ❌ | ✅ |
-| **Windows** | ARM64 | ✅ | ❌ | ✅ | ✅ | ❌ | ✅ |
+| Platform | Arch | Cargo | Curl | Docker | npm | Homebrew | Scoop | Winget | Source |
+|----------|------|-------|------|--------|-----|----------|-------|--------|--------|
+| **Linux** | x86_64 | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ |
+| **Linux** | ARM64 | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ |
+| **macOS** | Intel | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ |
+| **macOS** | Apple Silicon | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ |
+| **Windows** | x86_64 | ✅ | ❌ | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ |
+| **Windows** | ARM64 | ✅ | ❌ | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ |
 
 **Legend**: ✅ Supported | ❌ Not available | ⚠️ Limited support
 
@@ -382,6 +438,626 @@ rm -rf ~/.ricecoder/
 # Remove project config
 rm -rf .agent/
 ```
+
+---
+
+## Frequently Asked Questions (FAQ)
+
+### General Questions
+
+#### What is RiceCoder?
+
+RiceCoder is a terminal-first, spec-driven coding assistant that understands your project before generating code. Unlike traditional AI coding tools, RiceCoder analyzes your codebase, understands your patterns, and generates code that fits your project's style and architecture.
+
+#### How is RiceCoder different from other AI coding assistants?
+
+- **Research-First**: Analyzes your project context before generating code
+- **Spec-Driven**: Systematic development from specifications
+- **Terminal-Native**: Beautiful CLI/TUI that works anywhere
+- **Offline-First**: Local models via Ollama for privacy
+- **Multi-Agent**: Specialized agents for different tasks
+- **Enterprise-Ready**: SOC 2 compliance, audit logging, RBAC
+
+#### Is RiceCoder free?
+
+RiceCoder is licensed under CC BY-NC-SA 4.0, making it free for personal and non-commercial use. Commercial use requires a separate license.
+
+#### What programming languages does RiceCoder support?
+
+RiceCoder supports all major programming languages including Rust, Python, JavaScript/TypeScript, Go, Java, C++, and more. It uses LSP (Language Server Protocol) for comprehensive language support.
+
+### Installation & Setup
+
+#### Which installation method should I use?
+
+- **Cargo**: Best for Rust developers, easy updates
+- **Curl**: Quick setup for any platform
+- **Docker**: Isolated environments
+- **Package Managers**: Homebrew (macOS), Scoop (Windows), Winget (Windows), npm
+- **From Source**: For development or customization
+
+#### I'm getting "Command not found: rice"
+
+1. Restart your terminal
+2. Check PATH: `echo $PATH`
+3. Verify installation: `which rice` (Unix) or `where rice` (Windows)
+4. Reinstall if needed
+
+#### How do I configure AI providers?
+
+```bash
+# Configure OpenAI
+rice provider config openai --api-key sk-your-key
+
+# Configure Anthropic
+rice provider config anthropic --api-key sk-ant-your-key
+
+# Test connection
+rice provider test openai
+
+# Set default provider
+rice provider default openai
+```
+
+#### Can I use local models?
+
+Yes! RiceCoder supports Ollama for offline-first development:
+
+```bash
+# Install Ollama
+curl -fsSL https://ollama.ai/install.sh | sh
+
+# Start server
+ollama serve
+
+# Pull a model
+ollama pull llama2:13b
+
+# Configure RiceCoder
+rice provider config ollama --base-url http://localhost:11434
+```
+
+### Usage Questions
+
+#### How do I start using RiceCoder?
+
+```bash
+# Initialize project
+rice init
+
+# Start interactive chat
+rice chat
+
+# Generate code from spec
+rice gen --spec my-feature.spec.md
+
+# Review code
+rice review src/main.rs
+```
+
+#### What are specs and how do I write them?
+
+Specs are Markdown or YAML files that describe what you want to build. Example:
+
+```markdown
+# User Authentication System
+
+## Requirements
+- User registration with email verification
+- JWT-based authentication
+- Password hashing with bcrypt
+- Role-based access control
+
+## API Endpoints
+- POST /auth/register
+- POST /auth/login
+- GET /auth/me
+- POST /auth/logout
+```
+
+#### How do I share sessions with my team?
+
+```bash
+# Create shareable session
+rice chat --share
+
+# Share with team
+rice session share --team my-team
+
+# Join shared session
+rice session join https://ricecoder.app/s/session-id
+```
+
+#### What is MCP and how do I use it?
+
+MCP (Model Context Protocol) allows RiceCoder to connect to external tools. Basic setup:
+
+```bash
+# Install MCP servers
+npm install -g @modelcontextprotocol/server-filesystem
+
+# Configure in RiceCoder
+rice mcp add filesystem --command npx --args "-y,@modelcontextprotocol/server-filesystem,/workspace"
+
+# Start MCP servers
+rice mcp start
+
+# Use in chat
+rice chat --mcp
+```
+
+### Performance & Troubleshooting
+
+#### Why is RiceCoder slow?
+
+Common causes:
+1. Large codebase analysis - use `--focus` flag
+2. Slow provider - try different model or provider
+3. Network issues - check connection
+4. Resource constraints - check memory/CPU usage
+
+#### How do I optimize performance?
+
+```bash
+# Run performance validation
+./scripts/run-performance-validation.sh
+
+# Profile specific operations
+rice profile chat --duration 30s
+
+# Optimize provider settings
+rice provider optimize openai --metric latency
+
+# Monitor resources
+rice monitor resources
+```
+
+#### I'm getting API rate limit errors
+
+Solutions:
+1. Reduce request frequency
+2. Switch to different provider
+3. Upgrade API plan
+4. Use local models (Ollama)
+
+#### How do I debug issues?
+
+```bash
+# Enable debug logging
+export RUST_LOG=debug
+rice chat
+
+# Check system health
+rice doctor
+
+# View logs
+rice logs --tail 100
+
+# Validate configuration
+rice config validate
+```
+
+### Enterprise & Security
+
+#### Is RiceCoder SOC 2 compliant?
+
+Yes, RiceCoder includes SOC 2 Type II compliance features:
+- Comprehensive audit logging
+- Customer-managed encryption keys
+- Access control and RBAC
+- Security monitoring and threat detection
+
+#### How do I set up enterprise security?
+
+```bash
+# Enable enterprise features
+rice enterprise enable
+
+# Configure audit logging
+rice audit enable
+
+# Set up RBAC
+rice rbac configure
+
+# Configure encryption
+rice encryption setup
+```
+
+#### Can I use RiceCoder with corporate firewalls?
+
+Yes, RiceCoder supports proxy configuration and can work behind corporate firewalls. Configure proxy settings in your provider configuration.
+
+### Development & Contributing
+
+#### How do I contribute to RiceCoder?
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+
+#### How do I report bugs?
+
+Use GitHub Issues: https://github.com/moabualruz/ricecoder/issues
+
+Include:
+- RiceCoder version (`rice --version`)
+- Operating system
+- Steps to reproduce
+- Expected vs actual behavior
+- Logs (`rice logs`)
+
+#### Where can I get help?
+
+- **Discord**: https://discord.gg/BRsr7bDX
+- **GitHub Discussions**: https://github.com/moabualruz/ricecoder/discussions
+- **Documentation**: https://github.com/moabualruz/ricecoder/wiki
+
+---
+
+## Troubleshooting Guide
+
+### Installation Issues
+
+#### "Permission denied" during installation
+
+**Unix/Linux/macOS**:
+```bash
+# Fix permissions
+chmod +x ~/.cargo/bin/rice
+
+# Or reinstall with proper permissions
+sudo curl -fsSL https://raw.githubusercontent.com/moabualruz/ricecoder/main/scripts/install | bash
+```
+
+**Windows**:
+- Run terminal as Administrator
+- Check User Account Control settings
+- Use Scoop or Winget for easier installation
+
+#### Rust toolchain issues
+
+```bash
+# Update Rust
+rustup update
+
+# Install specific version
+rustup install 1.75
+
+# Set default version
+rustup default 1.75
+```
+
+#### Build failures from source
+
+```bash
+# Clean build artifacts
+cargo clean
+
+# Update dependencies
+cargo update
+
+# Build with verbose output
+cargo build --verbose
+
+# Check for missing system dependencies
+# Ubuntu/Debian
+sudo apt-get install build-essential pkg-config libssl-dev
+
+# macOS
+xcode-select --install
+
+# Windows
+# Install Visual Studio Build Tools
+```
+
+### Configuration Issues
+
+#### Provider configuration not working
+
+```bash
+# Validate configuration
+rice config validate
+
+# Test provider connection
+rice provider test openai
+
+# Check API key format
+echo $OPENAI_API_KEY | head -c 10  # Should start with sk-
+
+# Reset provider config
+rice provider reset openai
+```
+
+#### MCP server connection failures
+
+```bash
+# Check MCP server status
+rice mcp status
+
+# Restart MCP servers
+rice mcp restart
+
+# Debug MCP connections
+rice mcp debug
+
+# Check server logs
+rice mcp logs filesystem
+```
+
+#### Session persistence issues
+
+```bash
+# Check session storage
+rice session list
+
+# Validate session files
+rice session validate
+
+# Reset session storage
+rice session reset
+
+# Check disk space
+df -h
+```
+
+### Runtime Issues
+
+#### High memory usage
+
+```bash
+# Monitor memory usage
+rice monitor memory
+
+# Clear caches
+rice cache clear
+
+# Reduce concurrent sessions
+rice config set max_concurrent_sessions 3
+
+# Use smaller models
+rice provider config ollama --model phi:2.7b
+```
+
+#### Slow response times
+
+```bash
+# Check network latency
+ping api.openai.com
+
+# Test provider performance
+rice provider benchmark openai
+
+# Switch to faster provider
+rice provider default anthropic
+
+# Enable caching
+rice cache enable
+```
+
+#### Crashes or panics
+
+```bash
+# Enable crash reporting
+rice config set crash_reporting enabled
+
+# Run with debug symbols
+RUST_BACKTRACE=1 rice chat
+
+# Check system resources
+rice doctor
+
+# Update to latest version
+rice update
+```
+
+### Network and Connectivity
+
+#### Proxy configuration
+
+```bash
+# Set HTTP proxy
+rice config set proxy http://proxy.company.com:8080
+
+# Set HTTPS proxy
+rice config set https_proxy http://proxy.company.com:8080
+
+# Bypass proxy for local
+rice config set no_proxy localhost,127.0.0.1
+```
+
+#### SSL/TLS issues
+
+```bash
+# Disable SSL verification (not recommended for production)
+rice config set ssl_verify false
+
+# Use custom CA certificates
+rice config set ca_certs /path/to/ca-bundle.crt
+
+# Check certificate validity
+openssl s_client -connect api.openai.com:443
+```
+
+#### Firewall blocking connections
+
+```bash
+# Test connectivity
+rice network test api.openai.com
+
+# Check firewall rules
+# Linux
+sudo ufw status
+
+# Windows
+netsh advfirewall show allprofiles
+
+# macOS
+sudo pfctl -s rules
+```
+
+### Provider-Specific Issues
+
+#### OpenAI API errors
+
+```bash
+# Check API key
+rice provider test openai
+
+# Check rate limits
+rice provider limits openai
+
+# Switch to different model
+rice provider config openai --model gpt-3.5-turbo
+
+# Check account status
+# Visit https://platform.openai.com/account
+```
+
+#### Anthropic/Claude issues
+
+```bash
+# Test connection
+rice provider test anthropic
+
+# Check API key format (should start with sk-ant-)
+echo $ANTHROPIC_API_KEY | head -c 10
+
+# Try different model
+rice provider config anthropic --model claude-3-haiku-20240307
+```
+
+#### Ollama local model issues
+
+```bash
+# Check Ollama status
+ollama list
+
+# Restart Ollama
+ollama serve
+
+# Pull model again
+ollama pull llama2:13b
+
+# Check system resources
+# Ollama needs significant RAM for larger models
+```
+
+### Performance Optimization
+
+#### Profiling and benchmarking
+
+```bash
+# Run performance benchmarks
+rice benchmark run
+
+# Profile specific command
+rice profile "gen --spec my-spec.md" --output profile.json
+
+# Monitor system resources
+rice monitor resources --interval 5
+
+# Generate performance report
+rice report performance --output perf-report.md
+```
+
+#### Memory optimization
+
+```bash
+# Check memory usage
+rice monitor memory
+
+# Clear all caches
+rice cache clear all
+
+# Reduce session history
+rice config set max_session_history 100
+
+# Use streaming responses
+rice config set streaming enabled
+```
+
+#### Storage optimization
+
+```bash
+# Check disk usage
+rice monitor disk
+
+# Clean old sessions
+rice session cleanup --older-than 90d
+
+# Compress session data
+rice session compress
+
+# Move cache to faster storage
+rice config set cache_dir /fast/ssd/cache
+```
+
+### Advanced Troubleshooting
+
+#### Debug logging
+
+```bash
+# Enable detailed logging
+export RUST_LOG=ricecoder=debug
+
+# Log to file
+rice chat 2>&1 | tee ricecoder-debug.log
+
+# Filter specific components
+export RUST_LOG=ricecoder::mcp=trace,ricecoder::providers=debug
+
+# View recent logs
+rice logs --since 1h
+```
+
+#### System diagnostics
+
+```bash
+# Run full system check
+rice doctor --full
+
+# Check dependencies
+rice doctor --deps
+
+# Validate all configurations
+rice doctor --config
+
+# Generate diagnostic report
+rice doctor --report diagnostic.md
+```
+
+#### Recovery procedures
+
+```bash
+# Backup current configuration
+rice config backup --output config-backup.yaml
+
+# Reset to defaults
+rice config reset
+
+# Restore from backup
+rice config restore config-backup.yaml
+
+# Emergency cleanup
+rice emergency cleanup
+```
+
+### Getting Help
+
+If you can't resolve an issue:
+
+1. **Check the documentation**: https://github.com/moabualruz/ricecoder/wiki
+2. **Search existing issues**: https://github.com/moabualruz/ricecoder/issues
+3. **Ask the community**: https://discord.gg/BRsr7bDX
+4. **File a bug report**: Include version, OS, steps to reproduce, and logs
+
+For urgent enterprise support, contact enterprise@ricecoder.com
+
+---
 
 ### Getting Started
 

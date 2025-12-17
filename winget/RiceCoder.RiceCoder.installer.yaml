@@ -1,0 +1,33 @@
+# Created with WinGet Automation using Komac v1.11.0
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.4.0.schema.json
+
+PackageIdentifier: RiceCoder.RiceCoder
+PackageVersion: 0.1.72
+Platform:
+- Windows.Desktop
+MinimumOSVersion: 10.0.17763.0
+InstallerType: zip
+Scope: user
+InstallModes:
+- interactive
+- silent
+- silentWithProgress
+UpgradeBehavior: install
+Commands:
+- rice
+FileExtensions:
+- md
+- rs
+- py
+- js
+- ts
+- go
+ReleaseDate: 2025-01-01
+Installers:
+- Architecture: x64
+  InstallerUrl: https://github.com/moabualruz/ricecoder/releases/download/v0.1.72/ricecoder-0.1.72-windows-x86_64.zip
+  InstallerSha256: TODO_Add_SHA256_Checksum_Here
+  ProductCode: RiceCoder.RiceCoder
+PackageLocale: en-US
+ManifestType: installer
+ManifestVersion: 1.4.0

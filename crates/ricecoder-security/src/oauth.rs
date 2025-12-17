@@ -75,12 +75,14 @@ pub struct OAuthClient {
 }
 
 /// OpenID Connect client
+#[derive(Debug)]
 pub struct OidcClient {
     providers: HashMap<String, CoreClient>,
     nonces: HashMap<String, Nonce>,
 }
 
 /// Secure token manager combining OAuth 2.0 and OIDC
+#[derive(Debug)]
 pub struct TokenManager {
     oauth_client: OAuthClient,
     oidc_client: OidcClient,

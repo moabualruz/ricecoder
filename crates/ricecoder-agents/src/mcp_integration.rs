@@ -14,9 +14,9 @@ use tokio::sync::RwLock;
 use tracing::{debug, error, info, warn};
 
 #[cfg(feature = "mcp")]
-use rust_mcp_sdk::client::McpClient;
+use rmcp::client::Client;
 #[cfg(feature = "mcp")]
-use rust_mcp_sdk::transport::stdio::StdioTransport;
+use rmcp::transport::StdioTransport;
 
 /// External Tool Backend
 ///
@@ -217,7 +217,7 @@ impl ToolExecutor for HTTPToolExecutor {
 /// MCP (Model Context Protocol) tool executor
 #[cfg(feature = "mcp")]
 pub struct MCPToolExecutor {
-    client: Arc<RwLock<Option<McpClient<StdioTransport>>>>,
+    client: Arc<RwLock<Option<Client<StdioTransport>>>>,
     server_command: String,
     server_args: Vec<String>,
 }
@@ -249,7 +249,7 @@ impl MCPToolExecutor {
                 .map_err(|e| format!("Failed to create MCP transport: {}", e))?;
 
             // Create MCP client
-            let client = McpClient::new(transport);
+            let client = Client::new(transport);
 
             // Initialize the client
             client.initialize().await
@@ -292,17 +292,17 @@ impl ToolExecutor for MCPToolExecutor {
 
         // Convert MCP result to our format
         match result {
-            rust_mcp_sdk::schema::CallToolResult::Success { content, .. } => {
+            rmcp::schema::CallToolResult::Success { content, .. } => {
                 // Extract the first text content if available
                 let data = if let Some(first_content) = content.first() {
                     match first_content {
-                        rust_mcp_sdk::schema::ToolResultContent::Text { text } => {
+                        rmcp::schema::ToolResultContent::Text { text } => {
                             Some(json!(text))
                         }
-                        rust_mcp_sdk::schema::ToolResultContent::Image { .. } => {
+                        rmcp::schema::ToolResultContent::Image { .. } => {
                             Some(json!({"type": "image", "content": "Image content not supported"}))
                         }
-                        rust_mcp_sdk::schema::ToolResultContent::Resource { .. } => {
+                        rmcp::schema::ToolResultContent::Resource { .. } => {
                             Some(json!({"type": "resource", "content": "Resource content not supported"}))
                         }
                     }
@@ -317,7 +317,7 @@ impl ToolExecutor for MCPToolExecutor {
                     execution_time_ms: execution_time,
                 })
             }
-            rust_mcp_sdk::schema::CallToolResult::Error { error } => {
+            rmcp::schema::CallToolResult::Error { error } => {
                 Ok(ToolExecutionResult {
                     success: false,
                     data: None,

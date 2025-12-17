@@ -90,6 +90,7 @@ impl Default for HealthCheckConfig {
 pub struct HealthChecker {
     config: HealthCheckConfig,
     availability: Arc<RwLock<std::collections::HashMap<String, ServerAvailability>>>,
+    analytics: Option<Arc<crate::analytics::MCPAnalyticsAggregator>>,
 }
 
 impl HealthChecker {
@@ -103,7 +104,14 @@ impl HealthChecker {
         Self {
             config,
             availability: Arc::new(RwLock::new(std::collections::HashMap::new())),
+            analytics: None,
         }
+    }
+
+    /// Set analytics aggregator
+    pub fn with_analytics(mut self, analytics: Arc<crate::analytics::MCPAnalyticsAggregator>) -> Self {
+        self.analytics = Some(analytics);
+        self
     }
 
     /// Registers a server for health checking
@@ -151,15 +159,29 @@ impl HealthChecker {
             .ok_or_else(|| Error::ConnectionError(format!("Server not registered: {}", server_id)))?;
 
         // Simulate health check (in real implementation, would ping the server)
+        let start_time = std::time::Instant::now();
         let is_healthy = true;
+        let check_duration = start_time.elapsed().as_millis() as u64;
 
         if is_healthy {
             server_avail.mark_healthy();
             info!("Server health check passed: {}", server_id);
+
+            // Analytics
+            if let Some(ref analytics) = self.analytics {
+                let _ = analytics.record_health_check(server_id, true, check_duration, None, None).await;
+            }
+
             Ok(true)
         } else {
             server_avail.mark_unhealthy();
             warn!("Server health check failed: {}", server_id);
+
+            // Analytics
+            if let Some(ref analytics) = self.analytics {
+                let _ = analytics.record_health_check(server_id, false, check_duration, None, None).await;
+            }
+
             Ok(false)
         }
     }

@@ -1,10 +1,13 @@
 //! MCP Integration for RiceCoder
+#![forbid(unsafe_code)]
+
 //!
 //! Provides Model Context Protocol support for extending RiceCoder with custom tools
 //! and service integrations. Includes MCP client implementation, tool registry,
 //! permission system integration, and error handling.
 
 pub mod agent_integration;
+pub mod analytics;
 pub mod audit;
 pub mod client;
 pub mod config;
@@ -33,6 +36,7 @@ pub mod transport;
 pub use agent_integration::{
     AgentToolCapabilities, ToolDiscovery, ToolInvoker, ToolWorkflowIntegration,
 };
+pub use analytics::{MCPAnalyticsAggregator, MCPEnterpriseDashboard, MCPUsageReport, EnterpriseDashboardReport, RealtimeDashboardSnapshot};
 pub use audit::MCPAuditLogger;
 pub use client::MCPClient;
 pub use config::{MCPConfig, MCPConfigLoader};

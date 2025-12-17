@@ -1,0 +1,110 @@
+[graph]
+# The graph table configures how cargo-deny will understand and work with your dependency graph
+
+[graph]
+# The target platforms to check when auditing the dependency graph
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "x86_64-apple-darwin",
+    "x86_64-pc-windows-msvc",
+    "aarch64-unknown-linux-gnu",
+    "aarch64-apple-darwin",
+]
+
+# The output to produce for the dependency graph
+output-format = "json"
+
+[advisories]
+# The lint level for security vulnerabilities
+vulnerability = "deny"
+# The lint level for unmaintained crates
+unmaintained = "warn"
+# The lint level for crates with security notices
+notice = "warn"
+# A list of advisory IDs to ignore
+ignore = [
+    #"RUSTSEC-0000-0000",
+]
+
+[licenses]
+# The lint level for crates which do not have a detectable license
+unlicensed = "deny"
+# List of explicitly allowed licenses
+# https://spdx.org/licenses/
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-DFS-2016",
+    "CC0-1.0",
+    "0BSD",
+    "Zlib",
+]
+# List of explicitly disallowed licenses
+# See https://spdx.org/licenses/ for list of possible licenses
+deny = [
+    "AGPL-1.0",
+    "AGPL-3.0",
+    "LGPL-2.0",
+    "LGPL-2.1",
+    "LGPL-3.0",
+    "GPL-2.0",
+    "GPL-3.0",
+    "CDDL-1.0",
+    "CDDL-1.1",
+    "CECILL-2.1",
+    "EPL-1.0",
+    "EPL-2.0",
+    "MPL-1.1",
+    "MPL-2.0",
+]
+# Lint level for when multiple versions of the same license are detected
+confidence-threshold = 0.8
+
+[bans]
+# Lint level for when multiple versions of the same crate are detected
+multiple-versions = "warn"
+# Lint level for when a crate version requirement is `*`
+wildcards = "allow"
+# The graph highlighting used when creating dotgraphs for crates
+highlight = "all"
+# The default lint level if no other predicates are matched
+allow = [
+    #{ name = "ansi_term", version = "*" },
+]
+deny = [
+    # Each entry the name of a crate and a version range. If version is
+    # not specified, all versions will be matched.
+    #{ name = "ansi_term", version = "*" },
+]
+# Certain crates/versions that will be skipped when doing duplicate detection.
+skip = [
+    #{ name = "ansi_term", version = "*" },
+]
+# Similarly to `skip` allows you to skip certain crates from being checked. Unlike `skip`,
+# `skip-tree` skips the crate and all of its dependencies entirely
+skip-tree = [
+    #{ name = "ansi_term", version = "*" },
+]
+
+[sources]
+# Lint level for what to happen when a crate from a crate registry that is
+# not in the allow list is encountered
+unknown-registry = "deny"
+# Lint level for what to happen when a crate from a git repository that is not
+# in the allow list is encountered
+unknown-git = "deny"
+# List of allowed crate registries
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+# List of allowed Git repositories
+allow-git = [
+    "https://github.com/moabualruz/ricecoder",
+    "https://github.com/modelcontextprotocol",
+    "https://github.com/SergioBenitez/Rocket",
+    "https://github.com/tokio-rs",
+    "https://github.com/hyperium",
+    "https://github.com/seanmonstar",
+    "https://github.com/rustls",
+]

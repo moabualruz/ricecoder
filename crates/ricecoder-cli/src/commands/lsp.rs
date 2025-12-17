@@ -2,6 +2,7 @@
 
 use crate::commands::Command;
 use crate::error::{CliError, CliResult};
+use async_trait::async_trait;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tracing::{error, info};
@@ -59,9 +60,9 @@ impl LspCommand {
         }
     }
 }
-
+#[async_trait::async_trait]
 impl Command for LspCommand {
-    fn execute(&self) -> CliResult<()> {
+    async fn execute(&self) -> CliResult<()> {
         // Build LSP configuration
         let config = self.get_config();
 

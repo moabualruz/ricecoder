@@ -1,0 +1,29 @@
+{
+    "version": "0.1.72",
+    "description": "Terminal-first, spec-driven coding assistant that understands your project before generating code",
+    "homepage": "https://github.com/moabualruz/ricecoder",
+    "license": "MIT",
+    "architecture": {
+        "64bit": {
+            "url": "https://github.com/moabualruz/ricecoder/releases/download/v0.1.72/ricecoder-0.1.72-windows-x86_64.zip",
+            "hash": "TODO: Add SHA256 checksum for Windows x86_64 binary",
+            "bin": "ricecoder.exe",
+            "shortcuts": [
+                [
+                    "ricecoder.exe",
+                    "RiceCoder"
+                ]
+            ]
+        }
+    },
+    "checkver": {
+        "github": "https://github.com/moabualruz/ricecoder"
+    },
+    "autoupdate": {
+        "architecture": {
+            "64bit": {
+                "url": "https://github.com/moabualruz/ricecoder/releases/download/v$version/ricecoder-$version-windows-x86_64.zip"
+            }
+        }
+    }
+}

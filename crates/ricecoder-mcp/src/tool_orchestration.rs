@@ -226,8 +226,58 @@ impl ToolOrchestrator {
             }
         }
 
-        // TODO: Validate that tools exist and parameters are correct
-        // This would require access to tool metadata
+        // Validate that tools exist and parameters are correct
+        for step in &pipeline.steps {
+            // Check if tool exists
+            match self.executor.get_tool_metadata(&step.tool_name).await {
+                Ok(Some(metadata)) => {
+                    // Validate parameters against metadata
+                    for (param_name, param_value) in &step.parameters {
+                        let param_meta = metadata.parameters.iter().find(|p| &p.name == param_name);
+                        match param_meta {
+                            Some(param_meta) => {
+                                // Basic type validation
+                                if param_meta.required && param_value.is_null() {
+                                    return Err(Error::ParameterValidationError(format!(
+                                        "Required parameter '{}' for tool '{}' is null",
+                                        param_name, step.tool_name
+                                    )));
+                                }
+                                // Could add more sophisticated validation here
+                            }
+                            None => {
+                                return Err(Error::ParameterValidationError(format!(
+                                    "Unknown parameter '{}' for tool '{}'",
+                                    param_name, step.tool_name
+                                )));
+                            }
+                        }
+                    }
+
+                    // Check for missing required parameters
+                    for param_meta in &metadata.parameters {
+                        if param_meta.required && !step.parameters.contains_key(&param_meta.name) {
+                            return Err(Error::ParameterValidationError(format!(
+                                "Missing required parameter '{}' for tool '{}'",
+                                param_meta.name, step.tool_name
+                            )));
+                        }
+                    }
+                }
+                Ok(None) => {
+                    return Err(Error::ToolNotFound(format!(
+                        "Tool '{}' not found in pipeline step '{}'",
+                        step.tool_name, step.step_id
+                    )));
+                }
+                Err(e) => {
+                    return Err(Error::ValidationError(format!(
+                        "Failed to validate tool '{}' in pipeline step '{}': {}",
+                        step.tool_name, step.step_id, e
+                    )));
+                }
+            }
+        }
 
         Ok(())
     }

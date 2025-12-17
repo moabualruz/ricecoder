@@ -10,6 +10,7 @@ documentation = "https://github.com/moabualruz/ricecoder/wiki"
 keywords = ["ai", "coding", "assistant", "cli", "spec-driven"]
 categories = ["command-line-utilities", "development-tools"]
 description = "Terminal-first, spec-driven coding assistant that understands your project before generating code"
+publish = true
 
 [[bin]]
 name = "rice"
@@ -65,8 +66,9 @@ ricecoder-orchestration = { path = "../ricecoder-orchestration", version = "0.1"
 ricecoder-permissions = { path = "../ricecoder-permissions", version = "0.1" }
 ricecoder-providers = { path = "../ricecoder-providers", version = "0.1" }
 ricecoder-refactoring = { path = "../ricecoder-refactoring", version = "0.1" }
-ricecoder-research = { path = "../ricecoder-research", version = "0.1" }
-ricecoder-sessions = { path = "../ricecoder-sessions", version = "0.1" }
+ ricecoder-research = { path = "../ricecoder-research", version = "0.1" }
+ ricecoder-security = { path = "../ricecoder-security", version = "0.1" }
+ ricecoder-sessions = { path = "../ricecoder-sessions", version = "0.1" }
 ricecoder-specs = { path = "../ricecoder-specs", version = "0.1" }
 ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
 ricecoder-teams = { path = "../ricecoder-teams", version = "0.1" }
@@ -74,6 +76,13 @@ ricecoder-tools = { path = "../ricecoder-tools", version = "0.1" }
 ricecoder-tui = { path = "../ricecoder-tui", version = "0.1" }
 ricecoder-undo-redo = { path = "../ricecoder-undo-redo", version = "0.1" }
 ricecoder-workflows = { path = "../ricecoder-workflows", version = "0.1" }
+
+[profile.release]
+lto = true
+strip = true
+opt-level = 3
+panic = "abort"
+codegen-units = 1
 
 [dev-dependencies]
 proptest = { workspace = true }

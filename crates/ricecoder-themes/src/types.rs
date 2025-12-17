@@ -1,7 +1,7 @@
 //! Core theme types and data structures
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 /// A complete theme definition
 #[derive(Debug, Clone, PartialEq)]
@@ -316,7 +316,7 @@ pub struct ThemeConfig {
     /// Current theme name
     pub current_theme: String,
     /// Custom theme overrides
-    pub overrides: HashMap<String, serde_json::Value>,
+    pub overrides: BTreeMap<String, serde_json::Value>,
     /// Theme settings
     pub settings: ThemeSettings,
 }

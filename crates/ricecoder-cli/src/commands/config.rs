@@ -3,6 +3,7 @@
 
 use super::Command;
 use crate::error::{CliError, CliResult};
+use async_trait::async_trait;
 use crate::output::OutputStyle;
 use ricecoder_storage::{ConfigLoader, PathResolver, Config};
 use std::path::PathBuf;
@@ -191,9 +192,9 @@ impl ConfigCommand {
         Ok(())
     }
 }
-
+#[async_trait::async_trait]
 impl Command for ConfigCommand {
-    fn execute(&self) -> CliResult<()> {
+    async fn execute(&self) -> CliResult<()> {
         match &self.action {
             ConfigAction::List => self.list_config(),
             ConfigAction::Get(key) => self.get_config(key),

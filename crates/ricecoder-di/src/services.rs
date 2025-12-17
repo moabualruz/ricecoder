@@ -179,6 +179,9 @@ pub fn register_infrastructure_services(container: &DIContainer) -> DIResult<()>
     #[cfg(feature = "storage")]
     register_storage_services(container)?;
 
+    #[cfg(feature = "monitoring")]
+    register_monitoring_services(container)?;
+
     #[cfg(feature = "research")]
     register_research_services(container)?;
 
@@ -916,6 +919,93 @@ pub fn register_generation_services(container: &DIContainer) -> DIResult<()> {
     Ok(())
 }
 
+/// Register monitoring services (optional feature)
+#[cfg(feature = "monitoring")]
+pub fn register_monitoring_services(container: &DIContainer) -> DIResult<()> {
+    use ricecoder_monitoring::{AnalyticsConfig, AlertingConfig, ComplianceConfig, ErrorTrackingConfig, MetricsConfig, MonitoringConfig, PerformanceConfig};
+
+    // Create default monitoring configuration
+    let monitoring_config = MonitoringConfig {
+        metrics: MetricsConfig {
+            enabled: true,
+            collection_interval: std::time::Duration::from_secs(60),
+            retention_period: std::time::Duration::from_secs(86400 * 30), // 30 days
+            exporters: vec![],
+        },
+        alerting: AlertingConfig {
+            enabled: true,
+            rules: vec![],
+            channels: vec![],
+        },
+        error_tracking: ErrorTrackingConfig {
+            enabled: true,
+            dsn: None,
+            environment: "production".to_string(),
+            release: None,
+            sample_rate: 1.0,
+        },
+        performance: PerformanceConfig {
+            enabled: true,
+            profiling_enabled: true,
+            anomaly_detection_enabled: true,
+            thresholds: ricecoder_monitoring::types::PerformanceThresholds {
+                max_response_time_ms: 500,
+                max_memory_mb: 300,
+                max_cpu_percent: 80.0,
+            },
+        },
+        analytics: AnalyticsConfig {
+            enabled: true,
+            tracking_id: None,
+            event_buffer_size: 1000,
+            flush_interval: std::time::Duration::from_secs(300),
+        },
+        compliance: ComplianceConfig {
+            enabled: true,
+            standards: vec!["SOC2".to_string(), "GDPR".to_string()],
+            reporting_interval: std::time::Duration::from_secs(86400), // Daily
+            audit_log_retention: std::time::Duration::from_secs(86400 * 2555), // 7 years
+        },
+    };
+
+    container.register(move |_| {
+        let metrics_collector = Arc::new(MetricsCollector::new(monitoring_config.metrics.clone()));
+        Ok(metrics_collector)
+    })?;
+
+    container.register(move |_| {
+        let error_tracker = Arc::new(ErrorTracker::new(monitoring_config.error_tracking.clone()));
+        Ok(error_tracker)
+    })?;
+
+    container.register(move |_| {
+        let performance_monitor = Arc::new(MonitoringPerformanceMonitor::new(monitoring_config.performance.clone()));
+        Ok(performance_monitor)
+    })?;
+
+    container.register(move |_| {
+        let analytics_engine = Arc::new(AnalyticsEngine::new(monitoring_config.analytics.clone()));
+        Ok(analytics_engine)
+    })?;
+
+    container.register(move |_| {
+        let compliance_engine = Arc::new(ComplianceEngine::new(monitoring_config.compliance.clone()));
+        Ok(compliance_engine)
+    })?;
+
+    container.register(|_| {
+        let dashboard_manager = Arc::new(DashboardManager::new());
+        Ok(dashboard_manager)
+    })?;
+
+    container.register(|_| {
+        let report_generator = Arc::new(ReportGenerator::new());
+        Ok(report_generator)
+    })?;
+
+    Ok(())
+}
+
 /// Register app config services (optional feature)
 #[cfg(feature = "config")]
 pub fn register_app_config_services(container: &DIContainer) -> DIResult<()> {
@@ -1291,6 +1381,8 @@ pub struct ContainerConfig {
     pub enable_local_models: bool,
     /// Enable CLI services
     pub enable_cli: bool,
+    /// Enable monitoring services
+    pub enable_monitoring: bool,
 }
 
 /// Create a container based on configuration
@@ -1556,6 +1648,13 @@ pub fn create_configured_container(config: &ContainerConfig) -> DIResult<DIConta
         }
     }
 
+    if config.enable_monitoring {
+        #[cfg(feature = "monitoring")]
+        {
+            builder = builder.register_monitoring_services()?;
+        }
+    }
+
     let container = builder.build();
     Ok(container)
 }
@@ -1672,6 +1771,9 @@ pub trait DIContainerBuilderExt {
 
     #[cfg(feature = "cli")]
     fn register_cli_services(self) -> DIResult<Self> where Self: Sized;
+
+    #[cfg(feature = "monitoring")]
+    fn register_monitoring_services(self) -> DIResult<Self> where Self: Sized;
 }
 
 impl DIContainerBuilderExt for crate::DIContainerBuilder {
@@ -1904,6 +2006,12 @@ impl DIContainerBuilderExt for crate::DIContainerBuilder {
     #[cfg(feature = "cli")]
     fn register_cli_services(self) -> DIResult<Self> {
         register_cli_services(&self.container)?;
+        Ok(self)
+    }
+
+    #[cfg(feature = "monitoring")]
+    fn register_monitoring_services(self) -> DIResult<Self> {
+        register_monitoring_services(&self.container)?;
         Ok(self)
     }
 }

@@ -24,4 +24,8 @@ echo "✅ Binaries built successfully"
 echo "🔍 Running performance validation..."
 $PERF_TOOL validate --binary $BINARY_PATH --baseline $BASELINE_FILE
 
-echo "🎯 Performance validation completed!"
+# Run enterprise workload simulation
+echo "🏢 Running enterprise workload simulation..."
+$PERF_TOOL simulate --binary $BINARY_PATH --duration 60
+
+echo "🎯 Performance validation and simulation completed!"

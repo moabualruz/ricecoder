@@ -2,6 +2,7 @@
 
 use super::Command;
 use crate::error::CliResult;
+use async_trait::async_trait;
 use crate::output::OutputStyle;
 
 /// Help and tutorial command
@@ -288,9 +289,9 @@ impl HelpCommand {
         println!();
     }
 }
-
+#[async_trait::async_trait]
 impl Command for HelpCommand {
-    fn execute(&self) -> CliResult<()> {
+    async fn execute(&self) -> CliResult<()> {
         match &self.topic {
             None => self.show_main_help(),
             Some(topic) => match topic.as_str() {

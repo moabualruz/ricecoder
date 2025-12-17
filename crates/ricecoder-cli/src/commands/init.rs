@@ -4,6 +4,7 @@ use super::Command;
 use crate::error::{CliError, CliResult};
 use crate::output::OutputStyle;
 use std::io::{self, Write};
+use async_trait::async_trait;
 
 /// Initialize a new ricecoder project
 pub struct InitCommand {
@@ -154,8 +155,9 @@ impl InitCommand {
     }
 }
 
+#[async_trait::async_trait]
 impl Command for InitCommand {
-    fn execute(&self) -> CliResult<()> {
+    async fn execute(&self) -> CliResult<()> {
         let path = self.project_path.as_deref().unwrap_or(".");
         let style = OutputStyle::default();
 

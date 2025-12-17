@@ -420,7 +420,7 @@ fn test_error_handler_complex_scenarios() {
         (Error::ConnectionError("Network timeout".to_string()), "connection_timeout"),
         (Error::AuthenticationError("Invalid token".to_string()), "auth_failure"),
         (Error::ValidationError("Invalid input format".to_string()), "validation_error"),
-        (Error::SerializationError(serde_json::Error::custom("Parse failed")), "serialization_error"),
+        (Error::SerializationError(serde_json::from_str::<serde_json::Value>("invalid").unwrap_err()), "serialization_error"),
         (Error::ServerError("Internal server error".to_string()), "server_error"),
         (Error::ConfigError("Missing configuration".to_string()), "config_error"),
     ];

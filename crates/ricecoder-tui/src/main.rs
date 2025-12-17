@@ -1,6 +1,7 @@
 //! RiceCoder TUI - Terminal User Interface entry point
 
 use anyhow::Result;
+use std::fmt;
 use ricecoder_tui::{
     accessibility::*, app::App, banner::*, model::*, update::*, clipboard::*,
     code_editor_widget::*, command_blocks::*, command_palette::*, components::*,

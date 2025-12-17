@@ -100,22 +100,30 @@ jobs:
           chmod +x release/ricecoder
         working-directory: projects/ricecoder
 
-      - name: Prepare binary (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          mkdir -p release
-          copy target\${{ matrix.target }}\release\ricecoder.exe release\ricecoder.exe
-          copy README.md release\README.md
-          copy LICENSE.md release\LICENSE.md
-        working-directory: projects/ricecoder
-        shell: cmd
+       - name: Prepare binary (Windows)
+         if: runner.os == 'Windows'
+         run: |
+           mkdir -p release
+           copy target\${{ matrix.target }}\release\ricecoder.exe release\ricecoder.exe
+           copy README.md release\README.md
+           copy LICENSE.md release\LICENSE.md
+         working-directory: projects/ricecoder
+         shell: cmd
 
-      - name: Create archive (Unix)
-        if: runner.os != 'Windows'
-        run: |
-          cd release
-          tar czf ricecoder-${{ matrix.target }}.tar.gz ricecoder README.md LICENSE.md
-          ls -lh ricecoder-${{ matrix.target }}.tar.gz
+       - name: Code sign Windows binary
+         if: runner.os == 'Windows' && env.WINDOWS_CERTIFICATE != ''
+         run: |
+           signtool sign /fd SHA256 /t http://timestamp.digicert.com /f cert.p12 /p ${{ secrets.WINDOWS_CERT_PASSWORD }} release\ricecoder.exe
+         working-directory: projects/ricecoder
+         env:
+           WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+
+       - name: Create archive (Unix)
+         if: runner.os != 'Windows'
+         run: |
+           cd release
+           tar cJf ricecoder-${{ matrix.target }}.tar.xz ricecoder README.md LICENSE.md
+           ls -lh ricecoder-${{ matrix.target }}.tar.xz
         working-directory: projects/ricecoder
 
       - name: Create archive (Windows)
@@ -126,24 +134,86 @@ jobs:
           dir ricecoder-${{ matrix.target }}.zip
         working-directory: projects/ricecoder
 
-      - name: Upload artifacts (Unix)
-        if: runner.os != 'Windows'
-        uses: actions/upload-artifact@v3
-        with:
-          name: ricecoder-${{ matrix.target }}
-          path: projects/ricecoder/release/ricecoder-${{ matrix.target }}.tar.gz
+       - name: Upload artifacts (Unix)
+         if: runner.os != 'Windows'
+         uses: actions/upload-artifact@v3
+         with:
+           name: ricecoder-${{ matrix.target }}
+           path: projects/ricecoder/release/ricecoder-${{ matrix.target }}.tar.xz
 
-      - name: Upload artifacts (Windows)
-        if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v3
-        with:
-          name: ricecoder-${{ matrix.target }}
-          path: projects/ricecoder/release/ricecoder-${{ matrix.target }}.zip
+       - name: Upload artifacts (Windows)
+         if: runner.os == 'Windows'
+         uses: actions/upload-artifact@v3
+         with:
+           name: ricecoder-${{ matrix.target }}
+           path: projects/ricecoder/release/ricecoder-${{ matrix.target }}.zip
 
-  create-release:
-    name: Create Release
-    needs: build
-    runs-on: ubuntu-latest
+   universal-macos:
+     name: Create Universal macOS Binary
+     needs: build
+     runs-on: macos-latest
+     if: contains(github.ref, 'tags/v')
+
+     steps:
+       - name: Checkout code
+         uses: actions/checkout@v4
+
+       - name: Download macOS x86_64 artifact
+         uses: actions/download-artifact@v3
+         with:
+           name: ricecoder-x86_64-apple-darwin
+           path: artifacts/x86_64
+
+       - name: Download macOS ARM64 artifact
+         uses: actions/download-artifact@v3
+         with:
+           name: ricecoder-aarch64-apple-darwin
+           path: artifacts/aarch64
+
+       - name: Extract binaries
+         run: |
+           mkdir -p universal
+           tar -xf artifacts/x86_64/ricecoder-x86_64-apple-darwin.tar.xz -C universal ricecoder
+           mv universal/ricecoder universal/ricecoder-x86_64
+           tar -xf artifacts/aarch64/ricecoder-aarch64-apple-darwin.tar.xz -C universal ricecoder
+           mv universal/ricecoder universal/ricecoder-arm64
+           chmod +x universal/ricecoder-*
+
+       - name: Create universal binary
+         run: |
+           cd universal
+           lipo -create -output ricecoder ricecoder-x86_64 ricecoder-arm64
+           lipo -info ricecoder
+
+       - name: Code sign universal binary
+         run: |
+           cd universal
+           codesign --sign - --force --verbose ricecoder
+
+       - name: Prepare universal release
+         run: |
+           mkdir -p release
+           cp universal/ricecoder release/ricecoder
+           cp README.md release/README.md
+           cp LICENSE.md release/LICENSE.md
+           chmod +x release/ricecoder
+
+       - name: Create universal archive
+         run: |
+           cd release
+           tar cJf ricecoder-universal-apple-darwin.tar.xz ricecoder README.md LICENSE.md
+           ls -lh ricecoder-universal-apple-darwin.tar.xz
+
+       - name: Upload universal artifact
+         uses: actions/upload-artifact@v3
+         with:
+           name: ricecoder-universal-apple-darwin
+           path: release/ricecoder-universal-apple-darwin.tar.xz
+
+   create-release:
+     name: Create Release
+     needs: [build, universal-macos]
+     runs-on: ubuntu-latest
     permissions:
       contents: write
 
@@ -156,25 +226,41 @@ jobs:
         with:
           path: artifacts
 
-      - name: Prepare release artifacts
-        run: |
-          mkdir -p release
-          find artifacts -type f -name "*.tar.gz" -o -name "*.zip" | while read file; do
-            cp "$file" release/
-          done
-          ls -lh release/
+       - name: Prepare release artifacts
+         run: |
+           mkdir -p release
+           find artifacts -type f -name "*.tar.xz" -o -name "*.zip" | while read file; do
+             cp "$file" release/
+           done
+           ls -lh release/
 
-      - name: Generate SHA256 checksums
-        run: |
-          cd release
-          for file in ricecoder-*.tar.gz ricecoder-*.zip; do
-            if [ -f "$file" ]; then
-              sha256sum "$file" > "$file.sha256"
-              echo "Generated checksum for $file"
-              cat "$file.sha256"
-            fi
-          done
-          ls -lh *.sha256
+       - name: Import GPG key
+         run: |
+           echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --batch --yes
+           echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --passphrase-fd 0 --pinentry-mode loopback --sign
+
+       - name: Generate SHA256 checksums
+         run: |
+           cd release
+           for file in ricecoder-*.tar.xz ricecoder-*.tar.xz.sha256 ricecoder-*.zip ricecoder-*.zip.sha256; do
+             if [ -f "$file" ]; then
+               sha256sum "$file" > "$file.sha256"
+               echo "Generated checksum for $file"
+               cat "$file.sha256"
+             fi
+           done
+           ls -lh *.sha256
+
+       - name: GPG sign releases
+         run: |
+           cd release
+           for file in ricecoder-*.tar.xz ricecoder-*.zip *.sha256; do
+             if [ -f "$file" ]; then
+               gpg --detach-sign --armor "$file"
+               echo "Signed $file"
+             fi
+           done
+           ls -lh *.asc
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
