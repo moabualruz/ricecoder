@@ -1,0 +1,55 @@
+[package]
+name = "ricegrep"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[[bin]]
+name = "ricegrep"
+path = "src/main.rs"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+bincode = "1.3"
+tokio = { workspace = true }
+regex = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+clap = { workspace = true }
+walkdir = { workspace = true }
+ignore = "0.4"
+rayon = "1.7"
+futures = { workspace = true }
+async-trait = { workspace = true }
+once_cell = "1.18"
+memmap2 = "0.7"
+bstr = "1.6"
+encoding_rs = "0.8"
+same-file = "1.0"
+globset = "0.4"
+termcolor = "1.2"
+atty = "0.2"
+strsim = "0.11"
+ figment = { version = "0.10", features = ["toml", "env"] }
+ toml = "0.8"
+ tempfile = "3.0"
+ symspell = "0.4"
+ detect-lang = "0.1"
+ dirs = "5.0"
+ notify = { version = "6.1", default-features = false }
+
+[dev-dependencies]
+tempfile = "3.0"
+
+# RiceCoder integration (placeholders for now)
+# ricecoder-lsp = { path = "../ricecoder-lsp" }
+# ricecoder-sessions = { path = "../ricecoder-sessions" }
+# ricecoder-providers = { path = "../ricecoder-providers" }

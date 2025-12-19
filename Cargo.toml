@@ -98,8 +98,8 @@ members = [
         "crates/ricecoder-performance",
         "crates/ricecoder-monitoring",
          "crates/ricecoder-updates",
-         "crates/ricecoder-beta",
          "crates/ricecoder-continuous-improvement",
+    "crates/ricegrep",
  ]
 resolver = "2"
 
