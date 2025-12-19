@@ -11,6 +11,7 @@ use crate::search::{SearchQuery, SearchResults, SearchMatch};
 use async_trait::async_trait;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
+use tokio::sync::Mutex;
 
 /// Query understanding result from AI processing
 #[derive(Debug, Clone)]
@@ -55,7 +56,10 @@ pub trait AIProcessor: Send + Sync {
     async fn process_query(&self, query: &str) -> Result<QueryUnderstanding, RiceGrepError>;
 
     /// Rerank search results based on AI understanding
-    async fn rerank_results(&mut self, results: &mut SearchResults, query: &QueryUnderstanding) -> Result<(), RiceGrepError>;
+    async fn rerank_results(&mut self, results: &mut SearchResults, query: &str) -> Result<(), RiceGrepError>;
+
+    /// Generate an AI-powered answer based on search results
+    async fn generate_answer(&self, query: &str, results: &SearchResults) -> Result<String, RiceGrepError>;
 
     /// Get confidence threshold for AI features
     fn confidence_threshold(&self) -> f32;
@@ -70,7 +74,11 @@ pub struct RiceGrepAIProcessor {
     confidence_threshold: f32,
     /// Programming domain knowledge
     domain_knowledge: DomainKnowledge,
+    /// Embedded AI processor for ML-based processing
+    embedded_processor: Option<crate::embedded_ai::EmbeddedAIProcessor>,
 }
+
+
 
 impl RiceGrepAIProcessor {
     /// Create a new AI processor
@@ -78,8 +86,11 @@ impl RiceGrepAIProcessor {
         Self {
             confidence_threshold: 0.7,
             domain_knowledge: DomainKnowledge::new(),
+            embedded_processor: crate::embedded_ai::EmbeddedAIProcessor::new().ok(),
         }
     }
+
+
 
     /// Set confidence threshold
     pub fn with_confidence_threshold(mut self, threshold: f32) -> Self {
@@ -88,20 +99,25 @@ impl RiceGrepAIProcessor {
     }
 
     /// Create query understanding from natural language
-    fn understand_query(&self, query: &str) -> QueryUnderstanding {
-        // Basic heuristic-based understanding (can be enhanced with AI)
+    fn understand_query(&self, query: &str) -> Result<QueryUnderstanding, RiceGrepError> {
+        // Use embedded AI processor if available
+        if let Some(ref processor) = self.embedded_processor {
+            return processor.process_query(query);
+        }
+
+        // Fallback to heuristic-based understanding
         let intent = self.classify_intent(query);
         let search_terms = self.extract_search_terms(query);
         let language_context = self.detect_language_context(query);
 
-        QueryUnderstanding {
+        Ok(QueryUnderstanding {
             original_query: query.to_string(),
             intent,
             search_terms,
             language_context,
             context: HashMap::new(),
-            confidence: 0.8, // Basic confidence for heuristic approach
-        }
+            confidence: 0.7, // Lower confidence for heuristic approach
+        })
     }
 
     /// Classify query intent
@@ -181,14 +197,29 @@ impl RiceGrepAIProcessor {
         }
     }
 
-    /// Rerank results based on relevance to query understanding
-    fn rerank_results_basic(&self, results: &mut SearchResults, query: &QueryUnderstanding) {
+    /// Rerank results using embedded AI or fallback to basic method
+    async fn rerank_results(&self, results: &mut SearchResults, query: &str) -> Result<(), RiceGrepError> {
+        // Use embedded AI processor if available
+        if let Some(ref processor) = self.embedded_processor {
+            return processor.rerank_results(results, query);
+        }
+
+        // Fallback to basic reranking
+        self.rerank_results_basic(results, query).await;
+        Ok(())
+    }
+
+    /// Basic reranking based on term frequency and position (fallback)
+    async fn rerank_results_basic(&self, results: &mut SearchResults, query: &str) {
+        // Extract search terms from query
+        let search_terms = self.extract_search_terms(query);
+
         // Simple reranking based on term frequency and position
         for match_result in &mut results.matches {
             let mut score = 0.0f32;
 
             // Boost score for matches containing search terms
-            for term in &query.search_terms {
+            for term in &search_terms {
                 if match_result.line_content.to_lowercase().contains(&term.to_lowercase()) {
                     score += 1.0;
 
@@ -289,15 +320,49 @@ impl Default for DomainKnowledge {
 #[async_trait]
 impl AIProcessor for RiceGrepAIProcessor {
     async fn process_query(&self, query: &str) -> Result<QueryUnderstanding, RiceGrepError> {
-        // For now, use heuristic-based understanding
-        // TODO: Integrate with actual AI provider for advanced NLP
-        Ok(self.understand_query(query))
+        // Use embedded AI processor or fallback to heuristics
+        self.understand_query(query)
     }
 
-    async fn rerank_results(&mut self, results: &mut SearchResults, query: &QueryUnderstanding) -> Result<(), RiceGrepError> {
-        // Basic reranking - can be enhanced with AI
-        self.rerank_results_basic(results, query);
-        Ok(())
+    async fn rerank_results(&mut self, results: &mut SearchResults, query: &str) -> Result<(), RiceGrepError> {
+        // Use embedded AI processor or fallback to basic reranking
+        self.rerank_results(results, query).await
+    }
+
+    async fn generate_answer(&self, query: &str, results: &SearchResults) -> Result<String, RiceGrepError> {
+        // Basic answer generation
+        if results.matches.is_empty() {
+            return Ok(format!("No matches found for query: {}", query));
+        }
+
+        let mut answer = format!("Based on your query '{}', I found {} matches across {} files:\n\n",
+                                query, results.total_matches, results.files_searched);
+
+        // Group matches by file and show top matches
+        let mut file_matches: HashMap<&std::path::Path, Vec<&SearchMatch>> = HashMap::new();
+        for match_result in &results.matches {
+            file_matches.entry(&match_result.file).or_insert_with(Vec::new).push(match_result);
+        }
+
+        // Show summary for top 3 files
+        for (file_path, matches) in file_matches.iter().take(3) {
+            answer.push_str(&format!("📁 {} ({} matches):\n", file_path.display(), matches.len()));
+            for match_result in matches.iter().take(2) {
+                answer.push_str(&format!("  Line {}: {}\n",
+                                       match_result.line_number,
+                                       match_result.line_content.trim()));
+            }
+            if matches.len() > 2 {
+                answer.push_str(&format!("  ... and {} more matches\n", matches.len() - 2));
+            }
+            answer.push_str("\n");
+        }
+
+        if file_matches.len() > 3 {
+            answer.push_str(&format!("... and {} more files with matches\n", file_matches.len() - 3));
+        }
+
+        Ok(answer)
     }
 
     fn confidence_threshold(&self) -> f32 {
@@ -305,8 +370,7 @@ impl AIProcessor for RiceGrepAIProcessor {
     }
 
     fn is_available(&self) -> bool {
-        // For now, always available with basic heuristics
-        // TODO: Check if AI provider is actually available
+        // Always available with heuristic processing
         true
     }
 }

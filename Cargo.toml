@@ -67,6 +67,7 @@ members = [
      "crates/ricecoder-workflows",
     "crates/ricecoder-execution",
     "crates/ricecoder-sessions",
+    "crates/ricegrep",
     "crates/ricecoder-modes",
     "crates/ricecoder-lsp",
      "crates/ricecoder-completion",

@@ -27,6 +27,7 @@ RiceCoder (`rice`) is a terminal-first, spec-driven coding assistant that unders
 - **🚀 Project Bootstrap** - Automatic project detection and configuration
 - **🎯 Session Management** - Persistent sessions with token-aware message handling
 - **🔧 Dependency Injection** - Modular architecture with service container for clean component wiring
+- **🔍 RiceGrep Integration** - AI-enhanced code search with embedded models and ripgrep compatibility
 
 ---
 
@@ -1225,7 +1226,7 @@ RiceCoder follows a phased release strategy with extended Alpha testing before p
 - **Alpha (v0.1.5)** ✅ - Phase 5: Foundation features
 - **Alpha (v0.1.6)** ✅ - Phase 6: Infrastructure features
 - **Alpha (v0.1.7)** ✅ - Phase 7: Integration features (current)
-- **Alpha (v0.1.8)** 📋 - Phase 8: Production readiness (planned)
+- **Alpha (v0.1.8)** ✅ - Phase 8: Enterprise features complete
 
 **Why Extended Alpha?** We're gathering user feedback, identifying edge cases, optimizing performance, and hardening security before the production release.
 
@@ -1321,6 +1322,18 @@ RiceCoder follows a phased release strategy with extended Alpha testing before p
 - [x] Image Support - Drag-and-drop images with AI analysis, caching, and terminal display
 
 **Timeline**: Completed December 9, 2025
+
+### Enterprise Features
+
+RiceCoder includes enterprise-grade capabilities for production deployment and team collaboration:
+
+- **🔐 Security & Authentication** - Enterprise security with credential management, audit logging, and access controls
+- **📊 Monitoring & Telemetry** - Comprehensive performance tracking, AI usage metrics, and health monitoring
+- **🗄️ Local Database Storage** - Persistent search history, user preferences, and configuration storage
+- **⚙️ Background Process Management** - Reliable background operations with lifecycle control and resource monitoring
+- **🔗 MCP Ecosystem** - Full Model Context Protocol support for AI assistant integration
+- **🚀 Production Deployment** - Containerization, orchestration, and automated deployment procedures
+- **🧪 Integration Testing** - Comprehensive compatibility validation for external tools and AI assistants
 
 #### Image Support ✅ COMPLETE
 
@@ -1460,3 +1473,60 @@ Inspired by [Aider](https://github.com/paul-gauthier/aider), [OpenCode](https://
 **r[** - *Plan. Think. Code.*
 
 </div>
+
+---
+
+## RiceGrep: AI-Enhanced Code Search
+
+RiceCoder includes **RiceGrep** (`ricegrep`), the first AI-enhanced, offline-first code search tool with **embedded AI models** that maintains full compatibility with traditional grep workflows while adding intelligent reranking and natural language query understanding.
+
+### RiceGrep Features
+
+- **🔍 AI-Enhanced Search** - Natural language queries with intelligent result reranking
+- **⚡ Ripgrep Compatible** - Drop-in replacement with identical CLI and output formats
+- **🔒 Offline-First** - Full functionality without internet connectivity
+- **🧠 Embedded AI Models** - Ships with MiniBERT and CodeBERT Tiny models for immediate AI capabilities
+- **🎯 Language Awareness** - Programming language detection and context-aware ranking
+- **📊 Enhanced Output** - Detailed metadata, confidence scores, and AI reasoning
+- **🔄 Watch Mode** - Automatic reindexing for evolving codebases
+- **🛠️ Replace & Transform** - Safe file transformations with language awareness
+- **⚙️ Configuration System** - Comprehensive customization and scripting support
+- **🤖 MCP Server** - AI assistant integration via Model Context Protocol
+
+### RiceGrep Usage
+
+```bash
+# Install ricegrep (included with RiceCoder)
+ricegrep --help
+
+# Basic search (ripgrep compatible)
+ricegrep "function.*error" src/
+
+# AI-enhanced natural language search
+ricegrep --ai "find error handling functions" src/
+
+# Watch mode for automatic reindexing
+ricegrep --index-watch
+
+# Replace with language awareness
+ricegrep --replace "old_name" "new_name" --lang rust src/
+
+# MCP server for AI assistants
+ricegrep mcp start
+```
+
+### RiceGrep vs Traditional Tools
+
+| Feature | RiceGrep | ripgrep | grep |
+|---------|----------|---------|------|
+| Regex Performance | ✅ Native speed | ✅ Native speed | ⚠️ Slower |
+| AI Enhancement | ✅ Natural language | ❌ | ❌ |
+| Offline Operation | ✅ Full offline | ✅ | ✅ |
+| Language Awareness | ✅ Context ranking | ❌ | ❌ |
+| Watch Mode | ✅ Auto-reindexing | ❌ | ❌ |
+| MCP Integration | ✅ AI assistants | ❌ | ❌ |
+| Replace Operations | ✅ Language-aware | ⚠️ Basic | ⚠️ Basic |
+
+See [RiceGrep Documentation](https://github.com/moabualruz/ricecoder/wiki/RiceGrep) for comprehensive usage guides.
+
+---

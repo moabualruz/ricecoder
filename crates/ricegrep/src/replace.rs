@@ -1,9 +1,15 @@
 //! Replace operations for RiceGrep
 //!
 //! This module provides safe file transformation capabilities with
-//! preview, rollback, and validation features.
+//! preview, rollback, and validation features, including symbol rename operations.
 
 use crate::error::RiceGrepError;
+use detect_lang::Language;
+// TODO: Integrate with ricecoder_refactoring for advanced symbol analysis
+// use ricecoder_refactoring::{
+//     ConfigManager, GenericRefactoringProvider, ProviderRegistry, RefactoringEngine,
+//     Refactoring, RefactoringOptions, RefactoringTarget, RefactoringType,
+// };
 use std::path::PathBuf;
 use std::fs;
 use tokio::fs as async_fs;
@@ -23,6 +29,19 @@ pub struct ReplaceOperation {
     pub byte_offset: usize,
 }
 
+/// Symbol rename operation with language awareness
+#[derive(Debug, Clone)]
+pub struct SymbolRenameOperation {
+    /// File containing the symbol
+    pub file_path: PathBuf,
+    /// Current symbol name
+    pub old_symbol: String,
+    /// New symbol name
+    pub new_symbol: String,
+    /// Programming language for context-aware renaming
+    pub language: Language<'static>,
+}
+
 /// Result of executing replace operations
 #[derive(Debug, Clone)]
 pub struct ReplaceResult {
@@ -34,6 +53,21 @@ pub struct ReplaceResult {
     pub operations_failed: usize,
     /// Error messages for failed operations
     pub errors: Vec<String>,
+}
+
+/// Result of executing symbol rename operations
+#[derive(Debug, Clone)]
+pub struct SymbolRenameResult {
+    /// Number of files modified by the rename
+    pub files_modified: usize,
+    /// Number of symbols successfully renamed
+    pub symbols_renamed: usize,
+    /// Number of rename operations that failed
+    pub operations_failed: usize,
+    /// Error messages for failed operations
+    pub errors: Vec<String>,
+    /// Impact analysis summary
+    pub impact_summary: Option<String>,
 }
 
 /// Engine for executing replace operations safely
@@ -86,6 +120,92 @@ impl ReplaceEngine {
         }
 
         Ok(result)
+    }
+
+    /// Execute symbol rename operations with language awareness
+    pub async fn execute_symbol_rename(&self, operation: SymbolRenameOperation) -> Result<SymbolRenameResult, RiceGrepError> {
+        let mut result = SymbolRenameResult {
+            files_modified: 0,
+            symbols_renamed: 0,
+            operations_failed: 0,
+            errors: Vec::new(),
+            impact_summary: None,
+        };
+
+        // Read the file content
+        let content = fs::read_to_string(&operation.file_path)?;
+
+        // Use language-aware regex patterns for symbol replacement
+        // This is a simplified implementation - full LSP integration would be better
+        let pattern = match &operation.language.0[..] {
+            "rust" => format!(r"\b{}\b", regex::escape(&operation.old_symbol)),
+            "python" => format!(r"\b{}\b", regex::escape(&operation.old_symbol)),
+            "typescript" | "javascript" => format!(r"\b{}\b", regex::escape(&operation.old_symbol)),
+            _ => format!(r"\b{}\b", regex::escape(&operation.old_symbol)), // Generic word boundary
+        };
+
+        let regex = regex::Regex::new(&pattern)?;
+        let new_content = regex.replace_all(&content, &operation.new_symbol);
+
+        // Check if any replacements were made
+        let replacements_made = new_content.as_ref() != content.as_str();
+
+        if replacements_made {
+            // Create backup if requested
+            if self.create_backups {
+                let backup_path = operation.file_path.with_extension(format!("{}.backup",
+                    operation.file_path.extension().unwrap_or_default().to_string_lossy()));
+                fs::write(&backup_path, &content)?;
+            }
+
+            // Write the modified content back to the file
+            fs::write(&operation.file_path, new_content.as_ref())?;
+
+            result.files_modified = 1;
+            result.symbols_renamed = regex.find_iter(&content).count();
+            result.impact_summary = Some(format!("Renamed {} occurrences of symbol '{}' to '{}' in file {} ({})",
+                result.symbols_renamed, operation.old_symbol, operation.new_symbol,
+                operation.file_path.display(), operation.language.0));
+        } else {
+            result.impact_summary = Some(format!("No occurrences of symbol '{}' found in file {}",
+                operation.old_symbol, operation.file_path.display()));
+        }
+
+        Ok(result)
+    }
+
+    /// Validate symbol rename operations
+    pub fn validate_symbol_rename(&self, operation: &SymbolRenameOperation) -> Result<(), RiceGrepError> {
+        // Check if file exists
+        if !operation.file_path.exists() {
+            return Err(RiceGrepError::Search {
+                message: format!("File does not exist: {}", operation.file_path.display())
+            });
+        }
+
+        // Check file size
+        let metadata = fs::metadata(&operation.file_path)?;
+        if metadata.len() > self.max_file_size {
+            return Err(RiceGrepError::Search {
+                message: format!("File too large: {} bytes (max: {} bytes)",
+                               metadata.len(), self.max_file_size)
+            });
+        }
+
+        // Basic validation of symbol names
+        if operation.old_symbol.is_empty() || operation.new_symbol.is_empty() {
+            return Err(RiceGrepError::Search {
+                message: "Symbol names cannot be empty".to_string()
+            });
+        }
+
+        if operation.old_symbol == operation.new_symbol {
+            return Err(RiceGrepError::Search {
+                message: "Old and new symbol names are identical".to_string()
+            });
+        }
+
+        Ok(())
     }
 
     /// Process all replace operations for a single file

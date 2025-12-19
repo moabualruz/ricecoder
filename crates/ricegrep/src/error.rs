@@ -36,6 +36,18 @@ pub enum RiceGrepError {
     #[error("Configuration error: {message}")]
     Config { message: String },
 
+    #[error("Database error: {message}")]
+    Database { message: String },
+
+    #[error("MCP error: {message}")]
+    Mcp { message: String },
+
+    #[error("Process error: {message}")]
+    Process { message: String },
+
+    #[error("Config error: {0}")]
+    ConfigError(String),
+
     #[error("File watching error: {0}")]
     Watch(#[from] notify::Error),
 }

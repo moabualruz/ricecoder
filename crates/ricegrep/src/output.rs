@@ -6,6 +6,10 @@
 use crate::config::{OutputFormat, ColorChoice};
 use crate::search::{SearchResults, SearchMatch};
 use std::io::{self, Write};
+use syntect::easy::HighlightLines;
+use syntect::highlighting::{Style, ThemeSet};
+use syntect::parsing::SyntaxSet;
+use syntect::util::{as_24_bit_terminal_escaped, LinesWithEndings};
 
 /// Output formatter for search results
 pub struct OutputFormatter {
@@ -16,11 +20,14 @@ pub struct OutputFormatter {
     filename: bool,
     ai_enabled: bool,
     count: bool,
+    content: bool,
+    max_lines: Option<usize>,
+    syntax_highlight: bool,
 }
 
 impl OutputFormatter {
     /// Create a new output formatter
-    pub fn new(format: OutputFormat, color: ColorChoice, line_numbers: bool, heading: bool, filename: bool, ai_enabled: bool, count: bool) -> Self {
+    pub fn new(format: OutputFormat, color: ColorChoice, line_numbers: bool, heading: bool, filename: bool, ai_enabled: bool, count: bool, content: bool, max_lines: Option<usize>) -> Self {
         Self {
             format,
             color,
@@ -29,6 +36,25 @@ impl OutputFormatter {
             filename,
             ai_enabled,
             count,
+            content,
+            max_lines,
+            syntax_highlight: false, // Default to no syntax highlighting
+        }
+    }
+
+    /// Create a new output formatter with syntax highlighting
+    pub fn with_syntax_highlight(format: OutputFormat, color: ColorChoice, line_numbers: bool, heading: bool, filename: bool, ai_enabled: bool, count: bool, content: bool, max_lines: Option<usize>, syntax_highlight: bool) -> Self {
+        Self {
+            format,
+            color,
+            line_numbers,
+            heading,
+            filename,
+            ai_enabled,
+            count,
+            content,
+            max_lines,
+            syntax_highlight,
         }
     }
 
@@ -42,6 +68,10 @@ impl OutputFormatter {
 
     /// Write results in JSON format
     fn write_json(&self, results: &SearchResults) -> Result<(), RiceGrepError> {
+        if self.content {
+            return self.write_json_content_mode(results);
+        }
+
         let stdout = io::stdout();
         let mut handle = stdout.lock();
 
@@ -115,8 +145,13 @@ impl OutputFormatter {
             return Ok(());
         }
 
-        // Print summary only when AI is enabled
-        if self.ai_enabled {
+        // Content display mode: show full file contents
+        if self.content {
+            return self.write_content_mode(results);
+        }
+
+        // Print summary with AI usage indicators
+        if self.ai_enabled || results.ai_reranked {
             writeln!(handle, "Found {} matches in {} files (searched in {:.2}ms)",
                      results.total_matches,
                      results.files_searched,
@@ -124,6 +159,12 @@ impl OutputFormatter {
 
             if results.ai_reranked {
                 writeln!(handle, "Results enhanced with AI reranking")?;
+            } else {
+                writeln!(handle, "Results ranked using deterministic algorithms")?;
+            }
+
+            if results.degradation_mode {
+                writeln!(handle, "Note: Operating in degradation mode - some features unavailable")?;
             }
 
             writeln!(handle)?;
@@ -185,6 +226,164 @@ impl OutputFormatter {
             }
 
             writeln!(handle)?;
+        }
+
+        Ok(())
+    }
+
+    /// Write results in JSON content mode
+    fn write_json_content_mode(&self, results: &SearchResults) -> Result<(), RiceGrepError> {
+        use std::fs;
+        use std::collections::HashSet;
+
+        let stdout = io::stdout();
+        let mut handle = stdout.lock();
+
+        // Get unique files that have matches
+        let files_with_matches: HashSet<_> = results.matches.iter()
+            .map(|m| &m.file)
+            .collect();
+
+        for file_path in files_with_matches {
+            match fs::read_to_string(file_path) {
+                Ok(content) => {
+                    let json_file = serde_json::json!({
+                        "type": "file",
+                        "path": file_path,
+                        "content": content
+                    });
+                    writeln!(handle, "{}", serde_json::to_string(&json_file)?)?;
+                }
+                Err(e) => {
+                    let json_error = serde_json::json!({
+                        "type": "error",
+                        "path": file_path,
+                        "error": e.to_string()
+                    });
+                    writeln!(handle, "{}", serde_json::to_string(&json_error)?)?;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Write results in content mode (full file display)
+    fn write_content_mode(&self, results: &SearchResults) -> Result<(), RiceGrepError> {
+        use std::fs;
+        use std::collections::HashSet;
+
+        let stdout = io::stdout();
+        let mut handle = stdout.lock();
+
+        // Get unique files that have matches
+        let files_with_matches: HashSet<_> = results.matches.iter()
+            .map(|m| &m.file)
+            .collect();
+
+        for file_path in files_with_matches {
+            // Show filename header
+            if self.filename {
+                writeln!(handle, "{}", file_path.display())?;
+                if self.heading {
+                    writeln!(handle, "{}", "=".repeat(file_path.display().to_string().len()))?;
+                }
+            }
+
+            // Read and display full file content
+            match fs::read_to_string(file_path) {
+                Ok(content) => {
+                    if self.syntax_highlight && self.color != ColorChoice::Never {
+                        self.write_syntax_highlighted_content(&mut handle, &content, file_path)?;
+                    } else {
+                        self.write_plain_content(&mut handle, &content)?;
+                    }
+
+                    // Indicate if content was truncated
+                    if let Some(max_lines) = self.max_lines {
+                        let total_lines = content.lines().count();
+                        if total_lines > max_lines {
+                            writeln!(handle, "... (content truncated to {} lines)", max_lines)?;
+                        }
+                    }
+
+                    writeln!(handle)?; // Add blank line between files
+                }
+                Err(e) => {
+                    writeln!(handle, "Error reading file {}: {}", file_path.display(), e)?;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Write content with syntax highlighting
+    fn write_syntax_highlighted_content(&self, handle: &mut impl Write, content: &str, file_path: &std::path::Path) -> Result<(), RiceGrepError> {
+        // Initialize syntax highlighting
+        let ps = SyntaxSet::load_defaults_newlines();
+        let ts = ThemeSet::load_defaults();
+
+        // Try to detect syntax based on file extension
+        let syntax = file_path
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .and_then(|ext| ps.find_syntax_by_extension(ext))
+            .unwrap_or_else(|| ps.find_syntax_plain_text());
+
+        let mut h = HighlightLines::new(syntax, &ts.themes["base16-ocean.dark"]);
+
+        let lines: Vec<&str> = content.lines().collect();
+
+        // Apply max_lines limit if specified
+        let lines_to_show = if let Some(max_lines) = self.max_lines {
+            &lines[..lines.len().min(max_lines)]
+        } else {
+            &lines[..]
+        };
+
+        // Add line numbers if requested
+        if self.line_numbers {
+            for (i, line) in lines_to_show.iter().enumerate() {
+                let ranges: Vec<(Style, &str)> = h.highlight_line(line, &ps).map_err(|_| {
+                    RiceGrepError::Config { message: "Syntax highlighting error".to_string() }
+                })?;
+                let escaped = as_24_bit_terminal_escaped(&ranges[..], false);
+                writeln!(handle, "{:6}: {}", i + 1, escaped)?;
+            }
+        } else {
+            for line in lines_to_show {
+                let ranges: Vec<(Style, &str)> = h.highlight_line(line, &ps).map_err(|_| {
+                    RiceGrepError::Config { message: "Syntax highlighting error".to_string() }
+                })?;
+                let escaped = as_24_bit_terminal_escaped(&ranges[..], false);
+                writeln!(handle, "{}", escaped)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Write plain content without syntax highlighting
+    fn write_plain_content(&self, handle: &mut impl Write, content: &str) -> Result<(), RiceGrepError> {
+        let lines: Vec<&str> = content.lines().collect();
+
+        // Apply max_lines limit if specified
+        let lines_to_show = if let Some(max_lines) = self.max_lines {
+            &lines[..lines.len().min(max_lines)]
+        } else {
+            &lines[..]
+        };
+
+        // Add line numbers if requested
+        if self.line_numbers {
+            for (i, line) in lines_to_show.iter().enumerate() {
+                writeln!(handle, "{:6}: {}", i + 1, *line)?;
+            }
+        } else {
+            for line in lines_to_show {
+                writeln!(handle, "{}", line)?;
+            }
         }
 
         Ok(())

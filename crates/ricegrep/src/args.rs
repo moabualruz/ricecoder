@@ -7,103 +7,244 @@ use clap::{Arg, ArgMatches, Command, ArgAction, value_parser};
 use std::path::PathBuf;
 use crate::config::{RiceGrepConfig, OutputFormat, ColorChoice};
 
+/// RiceGrep subcommands
+#[derive(Debug, Clone, PartialEq)]
+pub enum RiceGrepCommand {
+    /// Search command (default behavior)
+    Search(SearchArgs),
+    /// Replace/symbol rename command
+    Replace(ReplaceArgs),
+    /// Watch mode command
+    Watch(WatchArgs),
+    /// MCP server command
+    Mcp(McpArgs),
+    /// Install plugin command
+    Install(InstallArgs),
+    /// Uninstall plugin command
+    Uninstall(UninstallArgs),
+    /// Legacy option-based interface (for backward compatibility)
+    Legacy(LegacyArgs),
+}
+
+/// Arguments for search subcommand
+#[derive(Debug, Clone, PartialEq)]
+pub struct SearchArgs {
+    pub pattern: String,
+    pub paths: Vec<PathBuf>,
+    pub case_insensitive: bool,
+    pub case_sensitive: bool,
+    pub word_regexp: bool,
+    pub fixed_strings: bool,
+    pub line_number: bool,
+    pub invert_match: bool,
+    pub count: bool,
+    pub max_count: Option<usize>,
+    pub before_context: Option<usize>,
+    pub after_context: Option<usize>,
+    pub context: Option<usize>,
+    pub content: bool,
+    pub syntax_highlight: bool,
+    pub answer: bool,
+    pub no_rerank: bool,
+    pub ai_enhanced: bool,
+    pub natural_language: bool,
+    pub replace: Option<String>,
+    pub preview: bool,
+    pub force: bool,
+    pub ignore_file: Option<PathBuf>,
+    pub quiet: bool,
+    pub dry_run: bool,
+    pub max_file_size: Option<u64>,
+    pub max_files: Option<usize>,
+    pub max_matches: Option<usize>,
+    pub max_lines: Option<usize>,
+}
+
+/// Arguments for replace subcommand
+#[derive(Debug, Clone, PartialEq)]
+pub struct ReplaceArgs {
+    pub old_symbol: String,
+    pub new_symbol: String,
+    pub file_path: PathBuf,
+    pub language: Option<String>,
+    pub preview: bool,
+    pub force: bool,
+    pub dry_run: bool,
+}
+
+/// Arguments for watch subcommand
+#[derive(Debug, Clone, PartialEq)]
+pub struct WatchArgs {
+    pub paths: Vec<PathBuf>,
+    pub timeout: Option<u64>,
+    pub clear_screen: bool,
+    pub max_file_size: Option<u64>,
+}
+
+/// Arguments for MCP subcommand
+#[derive(Debug, Clone, PartialEq)]
+pub struct McpArgs {
+    pub port: Option<u16>,
+    pub host: String,
+}
+
+
+/// Arguments for install subcommand
+#[derive(Debug, Clone, PartialEq)]
+pub struct InstallArgs {
+    pub plugin: String,
+    pub version: Option<String>,
+    pub force: bool,
+}
+
+/// Arguments for uninstall subcommand
+#[derive(Debug, Clone, PartialEq)]
+pub struct UninstallArgs {
+    pub plugin: String,
+    pub force: bool,
+}
+
+/// Legacy arguments for backward compatibility
+#[derive(Debug, Clone, PartialEq)]
+pub struct LegacyArgs {
+    pub pattern: String,
+    pub paths: Vec<PathBuf>,
+    pub case_insensitive: bool,
+    pub case_sensitive: bool,
+    pub word_regexp: bool,
+    pub fixed_strings: bool,
+    pub line_number: bool,
+    pub line_number_flag: bool,
+    pub no_line_number: bool,
+    pub files: bool,
+    pub files_with_matches: bool,
+    pub files_without_match: bool,
+    pub count: bool,
+    pub invert_match: bool,
+    pub max_count: Option<usize>,
+    pub before_context: Option<usize>,
+    pub after_context: Option<usize>,
+    pub context: Option<usize>,
+    pub follow: bool,
+    pub hidden: bool,
+    pub no_ignore: bool,
+    pub color: ColorChoice,
+    pub threads: Option<usize>,
+    pub ai_enhanced: bool,
+    pub natural_language: bool,
+    pub fuzzy: Option<usize>,
+    pub output_format: OutputFormat,
+    pub index_build: bool,
+    pub index_update: bool,
+    pub index_watch: bool,
+    pub index_status: bool,
+    pub replace: Option<String>,
+    pub preview: bool,
+    pub force: bool,
+    pub with_filename: bool,
+    pub no_filename: bool,
+}
+
 /// Parsed command-line arguments for RiceGrep
 #[derive(Debug, Clone)]
 pub struct Args {
-    /// The search pattern (regex or literal)
-    pub pattern: String,
-    /// Paths to search in
-    pub paths: Vec<PathBuf>,
-    /// Case insensitive search
-    pub case_insensitive: bool,
-    /// Case sensitive search (overrides case_insensitive)
-    pub case_sensitive: bool,
-    /// Match whole words only
-    pub word_regexp: bool,
-    /// Literal string search (no regex)
-    pub fixed_strings: bool,
-    /// Line number display
-    pub line_number: bool,
-    /// Explicitly request line numbers
-    pub line_number_flag: bool,
-    /// Suppress line numbers
-    pub no_line_number: bool,
-    /// Only show filenames
-    pub files: bool,
-    /// Only show filenames with matches
-    pub files_with_matches: bool,
-    /// Only show filenames without matches
-    pub files_without_match: bool,
-    /// Count matches per file
-    pub count: bool,
-    /// Invert match (show non-matching lines)
-    pub invert_match: bool,
-    /// Maximum number of matches to find
-    pub max_count: Option<usize>,
-    /// Context lines before match
-    pub before_context: Option<usize>,
-    /// Context lines after match
-    pub after_context: Option<usize>,
-    /// Context lines before and after match
-    pub context: Option<usize>,
-    /// Follow symbolic links
-    pub follow: bool,
-    /// Search hidden files and directories
-    pub hidden: bool,
-    /// Respect .gitignore files
-    pub no_ignore: bool,
-    /// No heading (filename) for matches
-    pub no_heading: bool,
-    /// No filename for matches
-    pub no_filename: bool,
-    /// Force filename display
-    pub with_filename: bool,
-    /// Enable AI-enhanced search
-    pub ai_enhanced: bool,
-    /// Force natural language processing
-    pub natural_language: bool,
-    /// Launch interactive TUI mode
-    pub tui: bool,
-    /// Enable watch mode
-    pub watch: bool,
-    /// Watch mode timeout in seconds
-    pub watch_timeout: Option<u64>,
-    /// Clear screen between watch mode updates
-    pub watch_clear: bool,
-    /// Fuzzy search tolerance
-    pub fuzzy: Option<usize>,
-    /// Output format (text, json)
-    pub format: OutputFormat,
-    /// Color output
-    pub color: ColorChoice,
-    /// Threads to use
-    pub threads: Option<usize>,
-    /// Build search index
-    pub index_build: bool,
-    /// Update existing index
-    pub index_update: bool,
-    /// Watch mode for continuous indexing
-    pub index_watch: bool,
-    /// Show indexing status
-    pub index_status: bool,
-    /// Replace pattern (for replace operations)
-    pub replace: Option<String>,
-    /// Preview replace operations without executing
-    pub preview: bool,
-    /// Force replace operations (skip safety checks)
-    pub force: bool,
+    /// The subcommand to execute
+    pub command: RiceGrepCommand,
 }
 
 
 
 impl Args {
-    /// Parse command line arguments with configuration support
+    /// Parse command line arguments with subcommand support
     pub fn parse() -> Result<Self, RiceGrepError> {
         let matches = Self::command().get_matches();
 
-        // Load configuration for defaults
-        let config = RiceGrepConfig::load().unwrap_or_default();
+        // Determine which subcommand was used
+        let command = if let Some(search_matches) = matches.subcommand_matches("search") {
+            RiceGrepCommand::Search(Self::parse_search_args(search_matches)?)
+        } else if let Some(replace_matches) = matches.subcommand_matches("replace") {
+            RiceGrepCommand::Replace(Self::parse_replace_args(replace_matches)?)
+        } else if let Some(watch_matches) = matches.subcommand_matches("watch") {
+            RiceGrepCommand::Watch(Self::parse_watch_args(watch_matches)?)
+        } else if let Some(mcp_matches) = matches.subcommand_matches("mcp") {
+            RiceGrepCommand::Mcp(Self::parse_mcp_args(mcp_matches)?)
+        } else if let Some(install_matches) = matches.subcommand_matches("install") {
+            RiceGrepCommand::Install(Self::parse_install_args(install_matches)?)
+        } else if let Some(uninstall_matches) = matches.subcommand_matches("uninstall") {
+            RiceGrepCommand::Uninstall(Self::parse_uninstall_args(uninstall_matches)?)
+        } else {
+            // No subcommand specified - check if we have legacy options
+            if matches.get_one::<String>("pattern").is_some() {
+                RiceGrepCommand::Legacy(Self::parse_legacy_args(&matches)?)
+            } else {
+                // Default to search subcommand
+                RiceGrepCommand::Search(SearchArgs {
+                    pattern: String::new(),
+                    paths: vec![],
+                    case_insensitive: false,
+                    case_sensitive: false,
+                    word_regexp: false,
+                    fixed_strings: false,
+                    line_number: true,
+                    invert_match: false,
+                    count: false,
+                    max_count: None,
+                    before_context: None,
+                    after_context: None,
+                    context: None,
+                    content: false,
+                    syntax_highlight: false,
+                    answer: false,
+                    no_rerank: false,
+                    ai_enhanced: false,
+                    natural_language: false,
+                    replace: None,
+                    preview: false,
+                    force: false,
+                    ignore_file: None,
+                    quiet: false,
+                    dry_run: false,
+                    max_file_size: None,
+                    max_files: None,
+                    max_matches: None,
+                    max_lines: None,
+                })
+            }
+        };
 
+        Ok(Self { command })
+    }
+
+    /// Parse replace subcommand arguments
+    fn parse_replace_args(matches: &ArgMatches) -> Result<ReplaceArgs, crate::error::RiceGrepError> {
+        Ok(ReplaceArgs {
+            old_symbol: matches
+                .get_one::<String>("old_symbol")
+                .ok_or_else(|| crate::error::RiceGrepError::Search {
+                    message: "old_symbol is required".to_string()
+                })?
+                .clone(),
+            new_symbol: matches
+                .get_one::<String>("new_symbol")
+                .ok_or_else(|| crate::error::RiceGrepError::Search {
+                    message: "new_symbol is required".to_string()
+                })?
+                .clone(),
+            file_path: matches
+                .get_one::<PathBuf>("file")
+                .ok_or_else(|| crate::error::RiceGrepError::Search {
+                    message: "file is required".to_string()
+                })?
+                .clone(),
+            language: matches.get_one::<String>("language").cloned(),
+            preview: matches.get_flag("preview"),
+            force: matches.get_flag("force"),
+            dry_run: matches.get_flag("dry-run"),
+        })
+    }
+
+    /// Parse search subcommand arguments
+    fn parse_search_args(matches: &ArgMatches) -> Result<SearchArgs, RiceGrepError> {
         let pattern = matches
             .get_one::<String>("pattern")
             .cloned()
@@ -115,147 +256,538 @@ impl Args {
             .map(PathBuf::from)
             .collect();
 
-        // Use configuration defaults with CLI overrides
-        let case_insensitive = matches.get_flag("ignore-case");
-        let case_sensitive = matches.get_flag("case-sensitive");
-        let word_regexp = matches.get_flag("word-regexp");
-        let fixed_strings = matches.get_flag("fixed-strings");
-        let line_number_flag = matches.get_flag("line-number");
-        let no_line_number = matches.get_flag("no-line-number");
-        let line_number = line_number_flag; // Will be adjusted in main.rs for defaults
-        let files = matches.get_flag("files");
-        let files_with_matches = matches.get_flag("files-with-matches");
-        let files_without_match = matches.get_flag("files-without-match");
-        let count = matches.get_flag("count");
-        let invert_match = matches.get_flag("invert-match");
-
-        let max_count = matches
-            .get_one::<String>("max-count")
-            .and_then(|s| s.parse().ok())
-            .or(config.max_search_results);
-
-        let before_context = matches
-            .get_one::<String>("before-context")
-            .and_then(|s| s.parse().ok());
-
-        let after_context = matches
-            .get_one::<String>("after-context")
-            .and_then(|s| s.parse().ok());
-
-        let context = matches
-            .get_one::<String>("context")
-            .and_then(|s| s.parse().ok());
-
-        let follow = matches.get_flag("follow");
-        let hidden = matches.get_flag("hidden");
-        let no_ignore = matches.get_flag("no-ignore");
-        let no_heading = matches.get_flag("no-heading");
-        let no_filename = matches.get_flag("no-filename");
-        let with_filename = matches.get_flag("with-filename");
-
-        // AI and watch mode with configuration defaults
-        let ai_enhanced = matches.get_flag("ai-enhanced") ||
-                         (config.ai_enabled && !matches.get_flag("no-ai"));
-        let natural_language = matches.get_flag("natural-language");
-        let tui = matches.get_flag("tui");
-
-        let watch = matches.get_flag("watch") ||
-                   (config.watch_enabled && !matches.get_flag("no-watch"));
-        let watch_timeout = matches.get_one::<String>("watch-timeout")
-            .and_then(|s| s.parse().ok())
-            .or(config.watch_timeout_seconds);
-        let watch_clear = matches.get_flag("watch-clear") ||
-                         config.watch_clear_screen;
-
-        let fuzzy = matches
-            .get_one::<String>("fuzzy")
-            .and_then(|s| s.parse::<usize>().ok());
-
-        let format = if matches.get_flag("json") {
-            OutputFormat::Json
+        // Validate ignore file if specified
+        let ignore_file = if let Some(ignore_file_str) = matches.get_one::<String>("ignore-file") {
+            let path = PathBuf::from(ignore_file_str);
+            if !path.exists() {
+                return Err(RiceGrepError::Search {
+                    message: format!("Ignore file '{}' does not exist", path.display())
+                });
+            }
+            if !path.is_file() {
+                return Err(RiceGrepError::Search {
+                    message: format!("Ignore file '{}' is not a regular file", path.display())
+                });
+            }
+            Some(path)
         } else {
-            config.output_format
+            None
         };
 
-        let color = match matches.get_one::<String>("color").map(|s| s.as_str()) {
-            Some("never") => ColorChoice::Never,
-            Some("always") => ColorChoice::Always,
-            _ => ColorChoice::Auto,
-        };
-
-        let threads = matches
-            .get_one::<String>("threads")
-            .and_then(|s| s.parse().ok());
-
-        let index_build = matches.get_flag("index-build");
-        let index_update = matches.get_flag("index-update");
-        let index_watch = matches.get_flag("index-watch");
-        let index_status = matches.get_flag("index-status");
-
-        let replace = matches.get_one::<String>("replace").cloned();
-        let preview = matches.get_flag("preview");
-        let force = matches.get_flag("force");
-
-        Ok(Args {
+        Ok(SearchArgs {
             pattern,
             paths,
-            case_insensitive,
-            case_sensitive,
-            word_regexp,
-            fixed_strings,
-            line_number,
-            line_number_flag,
-            no_line_number,
-            files,
-            files_with_matches,
-            files_without_match,
-            count,
-            invert_match,
-            max_count,
-            before_context,
-            after_context,
-            context,
-            follow,
-            hidden,
-            no_ignore,
-            no_heading,
-            no_filename,
-            with_filename,
-            ai_enhanced,
-            natural_language,
-            tui,
-            watch,
-            watch_timeout,
-            watch_clear,
-            fuzzy,
-            format,
-             color,
-             threads,
-             index_build,
-             index_update,
-             index_watch,
-             index_status,
-             replace,
-             preview,
-             force,
+            case_insensitive: matches.get_flag("ignore-case"),
+            case_sensitive: matches.get_flag("case-sensitive"),
+            word_regexp: matches.get_flag("word-regexp"),
+            fixed_strings: matches.get_flag("fixed-strings"),
+            line_number: matches.get_flag("line-number"),
+            invert_match: matches.get_flag("invert-match"),
+            count: matches.get_flag("count"),
+            max_count: matches.get_one::<String>("max-count")
+                .and_then(|s| s.parse().ok()),
+            before_context: matches.get_one::<String>("before-context")
+                .and_then(|s| s.parse().ok()),
+            after_context: matches.get_one::<String>("after-context")
+                .and_then(|s| s.parse().ok()),
+            context: matches.get_one::<String>("context")
+                .and_then(|s| s.parse().ok()),
+            content: matches.get_flag("content"),
+            syntax_highlight: matches.get_flag("syntax-highlight"),
+            answer: matches.get_flag("answer"),
+            no_rerank: matches.get_flag("no-rerank"),
+            ai_enhanced: matches.get_flag("ai-enhanced"),
+            natural_language: matches.get_flag("natural-language"),
+            replace: matches.get_one::<String>("replace").cloned(),
+            preview: matches.get_flag("preview"),
+            force: matches.get_flag("force"),
+            ignore_file: matches.get_one::<String>("ignore-file")
+                .map(PathBuf::from),
+            quiet: matches.get_flag("quiet"),
+            dry_run: matches.get_flag("dry-run"),
+            max_file_size: matches.get_one::<String>("max-file-size")
+                .and_then(|s| s.parse().ok()),
+            max_files: matches.get_one::<String>("max-files")
+                .and_then(|s| s.parse().ok()),
+            max_matches: matches.get_one::<String>("max-matches")
+                .and_then(|s| s.parse().ok()),
+            max_lines: matches.get_one::<String>("max-lines")
+                .and_then(|s| s.parse().ok()),
+        })
+    }
+
+    /// Parse watch subcommand arguments
+    fn parse_watch_args(matches: &ArgMatches) -> Result<WatchArgs, RiceGrepError> {
+        let paths = matches
+            .get_many::<String>("path")
+            .unwrap_or_default()
+            .map(PathBuf::from)
+            .collect();
+
+        Ok(WatchArgs {
+            paths,
+            timeout: matches.get_one::<String>("timeout")
+                .and_then(|s| s.parse().ok()),
+            clear_screen: matches.get_flag("clear"),
+            max_file_size: matches.get_one::<String>("max-file-size")
+                .and_then(|s| s.parse().ok()),
+        })
+    }
+
+    /// Parse MCP subcommand arguments
+    fn parse_mcp_args(matches: &ArgMatches) -> Result<McpArgs, crate::error::RiceGrepError> {
+        Ok(McpArgs {
+            port: matches.get_one::<u16>("port").copied(),
+            host: matches
+                .get_one::<String>("host")
+                .cloned()
+                .unwrap_or_else(|| "localhost".to_string()),
+        })
+    }
+
+    /// Parse install subcommand arguments
+    fn parse_install_args(matches: &ArgMatches) -> Result<InstallArgs, RiceGrepError> {
+        let plugin = matches
+            .get_one::<String>("plugin")
+            .cloned()
+            .ok_or_else(|| RiceGrepError::Search {
+                message: "Plugin name required".to_string()
+            })?;
+
+        Ok(InstallArgs {
+            plugin,
+            version: matches.get_one::<String>("version").cloned(),
+            force: matches.get_flag("force"),
+        })
+    }
+
+    /// Parse uninstall subcommand arguments
+    fn parse_uninstall_args(matches: &ArgMatches) -> Result<UninstallArgs, RiceGrepError> {
+        let plugin = matches
+            .get_one::<String>("plugin")
+            .cloned()
+            .ok_or_else(|| RiceGrepError::Search {
+                message: "Plugin name required".to_string()
+            })?;
+
+        Ok(UninstallArgs {
+            plugin,
+            force: matches.get_flag("force"),
+        })
+    }
+
+    /// Parse legacy arguments for backward compatibility
+    fn parse_legacy_args(matches: &ArgMatches) -> Result<LegacyArgs, RiceGrepError> {
+        let pattern = matches
+            .get_one::<String>("pattern")
+            .cloned()
+            .unwrap_or_default();
+
+        let paths = matches
+            .get_many::<String>("path")
+            .unwrap_or_default()
+            .map(PathBuf::from)
+            .collect();
+
+        Ok(LegacyArgs {
+            pattern,
+            paths,
+            case_insensitive: matches.get_flag("ignore-case"),
+            case_sensitive: matches.get_flag("case-sensitive"),
+            word_regexp: matches.get_flag("word-regexp"),
+            fixed_strings: matches.get_flag("fixed-strings"),
+            line_number: matches.get_flag("line-number"),
+            line_number_flag: matches.get_flag("line-number"),
+            no_line_number: matches.get_flag("no-line-number"),
+            files: matches.get_flag("files"),
+            files_with_matches: matches.get_flag("files-with-matches"),
+            files_without_match: matches.get_flag("files-without-match"),
+            count: matches.get_flag("count"),
+            invert_match: matches.get_flag("invert-match"),
+            max_count: matches.get_one::<String>("max-count")
+                .and_then(|s| s.parse().ok()),
+            before_context: matches.get_one::<String>("before-context")
+                .and_then(|s| s.parse().ok()),
+            after_context: matches.get_one::<String>("after-context")
+                .and_then(|s| s.parse().ok()),
+            context: matches.get_one::<String>("context")
+                .and_then(|s| s.parse().ok()),
+            follow: matches.get_flag("follow"),
+            hidden: matches.get_flag("hidden"),
+            no_ignore: matches.get_flag("no-ignore"),
+            color: ColorChoice::Auto, // Default for now
+            threads: matches.get_one::<String>("threads")
+                .and_then(|s| s.parse().ok()),
+            ai_enhanced: matches.get_flag("ai-enhanced"),
+            natural_language: matches.get_flag("natural-language"),
+            fuzzy: matches.get_one::<String>("fuzzy")
+                .and_then(|s| s.parse().ok()),
+            output_format: if matches.get_flag("json") {
+                OutputFormat::Json
+            } else {
+                OutputFormat::Text
+            },
+            index_build: matches.get_flag("index-build"),
+            index_update: matches.get_flag("index-update"),
+            index_watch: matches.get_flag("index-watch"),
+            index_status: matches.get_flag("index-status"),
+            replace: matches.get_one::<String>("replace").cloned(),
+            preview: matches.get_flag("preview"),
+            force: matches.get_flag("force"),
+            with_filename: matches.get_flag("with-filename"),
+            no_filename: matches.get_flag("no-filename"),
         })
     }
 
     /// Build the clap command with all arguments
-    fn command() -> Command {
+    pub fn command() -> Command {
         Command::new("ricegrep")
             .version(env!("CARGO_PKG_VERSION"))
             .author("RiceCoder")
-            .about("AI-enhanced code search tool with ripgrep compatibility\n\nEXAMPLES:\n    ricegrep 'fn main' src/           # Search for function definitions\n    ricegrep --ignore-case 'TODO' .    # Case-insensitive search\n    ricegrep --replace 'new_name' 'old_name' file.rs  # Replace text\n    ricegrep --index-build .           # Build search index\n    ricegrep --ai-enhanced 'find all functions'  # AI-powered search")
+            .about("AI-enhanced code search tool with ripgrep compatibility")
+            .subcommand_required(false)
+            .arg_required_else_help(false)
+            .subcommand(
+                Command::new("replace")
+                    .about("Rename symbols with language awareness")
+                    .arg(
+                        Arg::new("old_symbol")
+                            .help("The symbol to rename")
+                            .required(true)
+                            .index(1)
+                    )
+                    .arg(
+                        Arg::new("new_symbol")
+                            .help("The new symbol name")
+                            .required(true)
+                            .index(2)
+                    )
+                    .arg(
+                        Arg::new("file")
+                            .help("File containing the symbol")
+                            .required(true)
+                            .index(3)
+                            .value_parser(value_parser!(PathBuf))
+                    )
+                    .arg(
+                        Arg::new("language")
+                            .long("language")
+                            .short('l')
+                            .help("Programming language (auto-detected if not specified)")
+                            .value_parser(value_parser!(String))
+                    )
+                    .arg(
+                        Arg::new("preview")
+                            .long("preview")
+                            .short('p')
+                            .help("Show preview of changes without applying them")
+                            .action(ArgAction::SetTrue)
+                    )
+                    .arg(
+                        Arg::new("force")
+                            .long("force")
+                            .short('f')
+                            .help("Force the rename operation without confirmation")
+                            .action(ArgAction::SetTrue)
+                    )
+                    .arg(
+                        Arg::new("dry-run")
+                            .long("dry-run")
+                            .short('d')
+                            .help("Show what would be renamed without making changes")
+                            .action(ArgAction::SetTrue)
+                    )
+            )
+            .subcommand(
+                Command::new("search")
+                    .about("File pattern searcher")
+                    .arg(
+                        Arg::new("pattern")
+                            .help("The pattern to search for")
+                            .required(false)
+                            .index(1),
+                    )
+                    .arg(
+                        Arg::new("path")
+                            .help("The path to search in")
+                            .index(2)
+                            .num_args(1..),
+                    )
+                    .arg(
+                        Arg::new("ignore-case")
+                            .short('i')
+                            .long("ignore-case")
+                            .help("Makes the search case-insensitive")
+                            .action(clap::ArgAction::SetTrue),
+                    )
+                    .arg(
+                        Arg::new("case-sensitive")
+                            .short('s')
+                            .long("case-sensitive")
+                            .help("Makes the search case-sensitive")
+                            .action(clap::ArgAction::SetTrue),
+                    )
+                    .arg(
+                        Arg::new("word-regexp")
+                            .short('w')
+                            .long("word-regexp")
+                            .help("Match whole words only")
+                            .action(clap::ArgAction::SetTrue),
+                    )
+                    .arg(
+                        Arg::new("fixed-strings")
+                            .short('F')
+                            .long("fixed-strings")
+                            .help("Treat pattern as literal string, not regex")
+                            .action(clap::ArgAction::SetTrue),
+                    )
+                    .arg(
+                        Arg::new("line-number")
+                            .short('n')
+                            .long("line-number")
+                            .help("Show line numbers")
+                            .action(clap::ArgAction::SetTrue),
+                    )
+                    .arg(
+                        Arg::new("invert-match")
+                            .short('v')
+                            .long("invert-match")
+                            .help("Invert match (show non-matching lines)")
+                            .action(clap::ArgAction::SetTrue),
+                    )
+                    .arg(
+                        Arg::new("count")
+                            .short('c')
+                            .long("count")
+                            .help("Count matches per file")
+                            .action(clap::ArgAction::SetTrue),
+                    )
+                    .arg(
+                        Arg::new("max-count")
+                            .short('m')
+                            .long("max-count")
+                            .help("The maximum number of results to return")
+                            .value_name("max_count"),
+                    )
+                    .arg(
+                        Arg::new("before-context")
+                            .short('B')
+                            .long("before-context")
+                            .help("Lines before match")
+                            .value_name("NUM"),
+                    )
+                    .arg(
+                        Arg::new("after-context")
+                            .short('A')
+                            .long("after-context")
+                            .help("Lines after match")
+                            .value_name("NUM"),
+                    )
+                    .arg(
+                        Arg::new("context")
+                            .short('C')
+                            .long("context")
+                            .help("Lines before and after match")
+                            .value_name("NUM"),
+                    )
+                    .arg(
+                        Arg::new("content")
+                            .short('o')
+                            .long("content")
+                            .help("Show content of the results")
+                            .action(clap::ArgAction::SetTrue),
+                    )
+                    .arg(
+                        Arg::new("syntax-highlight")
+                            .long("syntax-highlight")
+                            .help("Enable syntax highlighting for content display")
+                            .action(clap::ArgAction::SetTrue),
+                    )
+                    .arg(
+                        Arg::new("answer")
+                            .short('a')
+                            .long("answer")
+                            .help("Generate an answer to the question based on the results")
+                            .action(clap::ArgAction::SetTrue),
+                    )
+                    .arg(
+                        Arg::new("no-rerank")
+                            .long("no-rerank")
+                            .help("Disable reranking of search results")
+                            .action(clap::ArgAction::SetTrue),
+                    )
+                    .arg(
+                        Arg::new("ai-enhanced")
+                            .long("ai-enhanced")
+                            .help("Enable AI-enhanced search")
+                            .action(clap::ArgAction::SetTrue),
+                    )
+                    .arg(
+                        Arg::new("natural-language")
+                            .long("natural-language")
+                            .help("Process query as natural language")
+                            .action(clap::ArgAction::SetTrue),
+                    )
+                    .arg(
+                        Arg::new("replace")
+                            .short('r')
+                            .long("replace")
+                            .help("Replace matches with specified pattern")
+                            .value_name("PATTERN"),
+                    )
+                    .arg(
+                        Arg::new("preview")
+                            .long("preview")
+                            .help("Show replace operations without making changes")
+                            .action(clap::ArgAction::SetTrue),
+                    )
+                    .arg(
+                        Arg::new("force")
+                            .long("force")
+                            .help("Execute replace operations")
+                            .action(clap::ArgAction::SetTrue),
+                    )
+                    .arg(
+                        Arg::new("ignore-file")
+                            .long("ignore-file")
+                            .help("Specify custom ignore file (e.g., .ricegrepignore)")
+                            .value_name("FILE"),
+                    )
+                    .arg(
+                        Arg::new("quiet")
+                            .short('q')
+                            .long("quiet")
+                            .help("Suppress progress output and spinners")
+                            .action(clap::ArgAction::SetTrue),
+                    )
+                    .arg(
+                        Arg::new("dry-run")
+                            .long("dry-run")
+                            .help("Show what would be done without making changes")
+                            .action(clap::ArgAction::SetTrue),
+                    )
+                    .arg(
+                        Arg::new("max-file-size")
+                            .long("max-file-size")
+                            .help("Maximum file size in bytes to search/index")
+                            .value_name("BYTES"),
+                    )
+                    .arg(
+                        Arg::new("max-files")
+                            .long("max-files")
+                            .help("Maximum number of files to process")
+                            .value_name("COUNT"),
+                    )
+                    .arg(
+                        Arg::new("max-matches")
+                            .long("max-matches")
+                            .help("Maximum number of matches to return")
+                            .value_name("COUNT"),
+                    )
+                    .arg(
+                        Arg::new("max-lines")
+                            .long("max-lines")
+                            .help("Maximum number of lines to display per file (for --content)")
+                            .value_name("COUNT"),
+                    )
+            )
+            .subcommand(
+                Command::new("watch")
+                    .about("Watch mode for continuous indexing")
+                    .arg(
+                        Arg::new("timeout")
+                            .long("timeout")
+                            .short('t')
+                            .help("Watch timeout in seconds")
+                            .value_parser(value_parser!(u64))
+                    )
+                    .arg(
+                        Arg::new("clear-screen")
+                            .long("clear-screen")
+                            .short('c')
+                            .help("Clear screen between updates")
+                            .action(ArgAction::SetTrue)
+                    )
+                    .arg(
+                        Arg::new("max-file-size")
+                            .long("max-file-size")
+                            .help("Maximum file size to index (in bytes)")
+                            .value_parser(value_parser!(u64))
+                    )
+                    .arg(
+                        Arg::new("paths")
+                            .help("Paths to watch")
+                            .index(1)
+                            .num_args(1..)
+                            .value_parser(value_parser!(PathBuf))
+                    )
+            )
+            .subcommand(
+                Command::new("mcp")
+                    .about("Start MCP server for AI assistant integration")
+                    .arg(
+                        Arg::new("port")
+                            .long("port")
+                            .short('p')
+                            .help("Port for MCP server (stdio mode if not specified)")
+                            .value_parser(value_parser!(u16))
+                    )
+                    .arg(
+                        Arg::new("host")
+                            .long("host")
+                            .help("Host for MCP server")
+                            .default_value("localhost")
+                            .value_parser(value_parser!(String))
+                    )
+            )
+            .subcommand(
+                Command::new("install")
+                    .about("Install plugins and integrations")
+                    .arg(
+                        Arg::new("plugin")
+                            .help("Plugin to install")
+                            .required(true)
+                            .index(1),
+                    )
+                    .arg(
+                        Arg::new("version")
+                            .long("version")
+                            .help("Version to install")
+                            .value_name("VERSION"),
+                    )
+                    .arg(
+                        Arg::new("force")
+                            .short('f')
+                            .long("force")
+                            .help("Force installation")
+                            .action(clap::ArgAction::SetTrue),
+                    )
+            )
+            .subcommand(
+                Command::new("uninstall")
+                    .about("Uninstall plugins and integrations")
+                    .arg(
+                        Arg::new("plugin")
+                            .help("Plugin to uninstall")
+                            .required(true)
+                            .index(1),
+                    )
+                    .arg(
+                        Arg::new("force")
+                            .short('f')
+                            .long("force")
+                            .help("Force uninstallation")
+                            .action(clap::ArgAction::SetTrue),
+                    )
+            )
             .arg(
                 Arg::new("pattern")
-                    .help("Search pattern (regex or literal string)")
-                    .required_unless_present_any(["tui", "index-build", "index-update", "index-watch", "index-status"])
+                    .help("The pattern to search for (legacy mode)")
                     .index(1),
             )
             .arg(
                 Arg::new("path")
-                    .help("Files or directories to search")
+                    .help("Files or directories to search (legacy mode)")
                     .index(2)
                     .num_args(1..),
             )

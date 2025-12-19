@@ -3,7 +3,7 @@
 //! Provides an interactive TUI for search result exploration with
 //! real-time updates, keyboard navigation, and AI-enhanced display.
 
-use crate::search::{SearchResults, SearchMatch, RegexSearchEngine, SearchEngine, SearchQuery};
+use crate::search::{SearchResults, SearchMatch, RegexSearchEngine, SearchEngine, SearchQuery, ProgressVerbosity};
 use crate::error::RiceGrepError;
 use crate::args::Args;
 use std::io;
@@ -142,8 +142,17 @@ impl RiceGrepTUI {
             follow: false,
             hidden: false,
             no_ignore: false,
+            ignore_file: None,
+            quiet: false, // TUI mode shows progress
+            dry_run: false, // TUI mode doesn't support dry-run
+            max_file_size: None, // TUI mode doesn't support max file size
+            progress_verbosity: ProgressVerbosity::Normal, // TUI mode uses normal progress
+            max_files: None, // TUI mode doesn't support file quotas
+            max_matches: None, // TUI mode doesn't support match quotas
+            max_lines: None, // TUI mode doesn't support line limits
             invert_match: false,
             ai_enhanced,
+            no_rerank: false,
             fuzzy: None,
             max_count: None,
             spelling_correction: None,
@@ -256,12 +265,8 @@ pub async fn run_tui(args: &Args) -> Result<(), RiceGrepError> {
     // For now, we don't have a dedicated TUI flag, so this is a placeholder
     // In full implementation, this would check for --tui flag
 
-    // For now, just run the interactive mode if no pattern is provided
-    if args.pattern.is_empty() {
-        let search_engine = RegexSearchEngine::new();
-        let mut tui = RiceGrepTUI::new(search_engine);
-        tui.run().await?;
-    }
+    // TUI integration is handled in main.rs command dispatch
+    // This code is kept for future TUI subcommand implementation
 
     Ok(())
 }

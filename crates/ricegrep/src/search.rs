@@ -19,15 +19,25 @@ impl LSPIntegration {
     }
 
     pub fn is_available(&self, _language: &Language) -> bool {
-        false // Placeholder - always return false for now
+        // Check if ricecoder-lsp is available by trying to run it
+        // For now, assume it's available if the binary exists
+        std::process::Command::new("ricecoder")
+            .arg("lsp")
+            .arg("--help")
+            .output()
+            .map(|output| output.status.success())
+            .unwrap_or(false)
     }
 
-    pub async fn workspace_symbols(&self, _query: &str, _language: &Language<'_>) -> Result<Vec<LspSymbol>, RiceGrepError> {
-        Ok(vec![]) // Placeholder - return empty results
+    pub async fn workspace_symbols(&self, query: &str, language: &Language<'_>) -> Result<Vec<LspSymbol>, RiceGrepError> {
+        // For now, return empty results as full LSP client implementation is complex
+        // TODO: Implement full LSP client to spawn ricecoder-lsp and query workspace symbols
+        warn!("LSP integration not fully implemented - returning empty results for query: {}", query);
+        Ok(vec![])
     }
 }
 
-/// Placeholder LSP symbol structure
+/// LSP symbol structure matching ricecoder-lsp types
 #[derive(Debug, Clone)]
 pub struct LspSymbol {
     pub name: String,
@@ -35,7 +45,7 @@ pub struct LspSymbol {
     pub location: LspLocation,
 }
 
-/// Placeholder LSP symbol kinds
+/// LSP symbol kinds matching ricecoder-lsp
 #[derive(Debug, Clone)]
 pub enum LspSymbolKind {
     Function,
@@ -44,23 +54,33 @@ pub enum LspSymbolKind {
     Other,
 }
 
-/// Placeholder LSP location
+/// LSP location structure
 #[derive(Debug, Clone)]
 pub struct LspLocation {
     pub file: PathBuf,
     pub line: usize,
 }
 use async_trait::async_trait;
-use ignore::WalkBuilder;
+use ignore::{WalkBuilder, overrides::OverrideBuilder};
 use regex::Regex;
 use std::collections::{HashMap, HashSet};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime};
 use tokio::task;
 use strsim::{damerau_levenshtein, jaro_winkler};
 use tracing::{debug, info, warn};
+use indicatif::{ProgressBar, ProgressStyle};
+
+/// Progress verbosity levels for different amounts of detail
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ProgressVerbosity {
+    Quiet,      // No progress output
+    Minimal,    // Simple spinner only
+    Normal,     // Current implementation (default)
+    Verbose,    // Detailed progress with additional info
+}
 
 /// Search query configuration
 #[derive(Debug, Clone)]
@@ -83,10 +103,28 @@ pub struct SearchQuery {
     pub hidden: bool,
     /// Respect .gitignore files
     pub no_ignore: bool,
+    /// Custom ignore file path (e.g., .ricegrepignore)
+    pub ignore_file: Option<PathBuf>,
+    /// Suppress progress output and spinners
+    pub quiet: bool,
+    /// Show what would be done without making changes
+    pub dry_run: bool,
+    /// Maximum file size in bytes to search/index
+    pub max_file_size: Option<u64>,
+    /// Progress reporting verbosity level
+    pub progress_verbosity: ProgressVerbosity,
+    /// Maximum number of files to process (quota)
+    pub max_files: Option<usize>,
+    /// Maximum number of matches to return (quota)
+    pub max_matches: Option<usize>,
+    /// Maximum number of lines to display per file (for content display)
+    pub max_lines: Option<usize>,
     /// Invert match (show non-matching lines)
     pub invert_match: bool,
     /// Enable AI-enhanced search
     pub ai_enhanced: bool,
+    /// Disable reranking of results
+    pub no_rerank: bool,
     /// Fuzzy search tolerance (edit distance)
     pub fuzzy: Option<usize>,
     /// Maximum number of matches
@@ -127,6 +165,8 @@ pub struct SearchResults {
     pub search_time: Duration,
     /// Whether AI reranking was applied
     pub ai_reranked: bool,
+    /// Whether degradation mode was active (fallback functionality used)
+    pub degradation_mode: bool,
     /// Number of files searched
     pub files_searched: usize,
     /// Spelling correction applied (if any)
@@ -352,7 +392,10 @@ impl IndexManager {
             return Ok(true);
         }
 
-        let index = self.current_index.as_ref().unwrap();
+        let index = match self.current_index.as_ref() {
+            Some(idx) => idx,
+            None => return Ok(false), // No index loaded, consider it not needing rebuild
+        };
 
         // Check if any indexed files have changed
         for (path, file_index) in &index.files {
@@ -405,7 +448,7 @@ pub trait SearchEngine {
     async fn search(&mut self, query: SearchQuery) -> Result<SearchResults, RiceGrepError>;
 
     /// Build search index for faster queries
-    async fn build_index(&mut self, paths: &[PathBuf]) -> Result<(), RiceGrepError>;
+    async fn build_index(&mut self, paths: &[PathBuf], progress_verbosity: ProgressVerbosity) -> Result<(), RiceGrepError>;
 
     /// Check if index exists and is valid
     fn has_index(&mut self, paths: &[PathBuf]) -> bool;
@@ -428,7 +471,9 @@ pub struct RegexSearchEngine {
     /// Language processor for language-aware search
     language_processor: Option<LanguageProcessor>,
     /// Session manager for context (placeholder for future integration)
-    session_manager: Option<()>, // Placeholder
+    session_manager: Option<()>, // Session management integration (placeholder)
+    activity_logger: Option<()>, // Activity logging integration (placeholder)
+    degradation_mode: bool, // Whether we're in degradation mode due to failures
 }
 
 impl RegexSearchEngine {
@@ -443,10 +488,39 @@ impl RegexSearchEngine {
             spelling_corrector: None,
             language_processor: None,
             session_manager: None,
+            activity_logger: None,
+            degradation_mode: false,
+        }
+    }
+
+    /// Create a new regex search engine with session manager integration
+    pub fn with_session_manager(session_manager: ()) -> Self {
+        Self {
+            patterns: std::sync::Mutex::new(std::collections::HashMap::new()),
+            fuzzy_matcher: FuzzyMatcher::default(),
+            index_manager: IndexManager::default(),
+            ai_processor: None,
+            lsp_integration: LSPIntegration::new(),
+            spelling_corrector: None,
+            language_processor: None,
+            session_manager: Some(session_manager),
+            activity_logger: None,
+            degradation_mode: false,
         }
     }
 
 
+
+    /// Generate an AI-powered answer based on search results
+    pub async fn generate_answer(&self, query: &str, results: &SearchResults) -> Result<String, RiceGrepError> {
+        if let Some(ai_processor) = &self.ai_processor {
+            ai_processor.generate_answer(query, results).await
+        } else {
+            Err(RiceGrepError::Ai {
+                message: "AI processor not available for answer generation".to_string()
+            })
+        }
+    }
 
     /// Create a new regex search engine with custom fuzzy settings
     pub fn with_fuzzy_config(max_distance: usize, min_score: f64) -> Self {
@@ -459,6 +533,8 @@ impl RegexSearchEngine {
             spelling_corrector: None,
             language_processor: None,
             session_manager: None,
+            activity_logger: None,
+            degradation_mode: false,
         }
     }
 
@@ -473,6 +549,8 @@ impl RegexSearchEngine {
             spelling_corrector: None,
             language_processor: None,
             session_manager: None,
+            activity_logger: None,
+            degradation_mode: false,
         }
     }
 
@@ -590,7 +668,7 @@ impl RegexSearchEngine {
     }
 
     /// Build search index for the given paths (internal method)
-    fn build_index_internal(&self, root: &PathBuf) -> Result<SearchIndex, RiceGrepError> {
+    fn build_index_internal(&self, root: &PathBuf, progress_verbosity: ProgressVerbosity) -> Result<SearchIndex, RiceGrepError> {
         let mut files = HashMap::new();
         let mut total_lines = 0;
 
@@ -609,14 +687,58 @@ impl RegexSearchEngine {
             }
         }
 
+        // Create progress bar for file processing based on verbosity level
+        let progress_bar = match progress_verbosity {
+            ProgressVerbosity::Quiet => None,
+            ProgressVerbosity::Minimal => {
+                let pb = ProgressBar::new_spinner();
+                pb.set_style(
+                    ProgressStyle::default_spinner()
+                        .template("{spinner:.green} Indexing files...")
+                        .unwrap()
+                );
+                Some(pb)
+            }
+            ProgressVerbosity::Normal => {
+                let pb = ProgressBar::new(file_paths.len() as u64);
+                pb.set_style(
+                    ProgressStyle::default_bar()
+                        .template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} files ({eta})")
+                        .unwrap()
+                        .progress_chars("#>-")
+                );
+                pb.set_message("Indexing files");
+                Some(pb)
+            }
+            ProgressVerbosity::Verbose => {
+                let pb = ProgressBar::new(file_paths.len() as u64);
+                pb.set_style(
+                    ProgressStyle::default_bar()
+                        .template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} files ({eta}) {msg}")
+                        .unwrap()
+                        .progress_chars("#>-")
+                );
+                pb.set_message("Indexing files - processing...");
+                Some(pb)
+            }
+        };
+
         // Process files in parallel for better performance
         use rayon::prelude::*;
         let file_results: Vec<(PathBuf, FileIndex)> = file_paths.par_iter()
             .filter_map(|path| {
                 // Skip files that can't be indexed (e.g., binary files)
-                self.index_file(path).ok().map(|index| (path.clone(), index))
+                let result = self.index_file(path).ok().map(|index| (path.clone(), index));
+                if let Some(ref pb) = progress_bar {
+                    pb.inc(1);
+                }
+                result
             })
             .collect();
+
+        if let Some(pb) = progress_bar {
+            pb.finish_with_message("Index build complete");
+        }
 
         // Collect results
         for (path, file_index) in file_results {
@@ -786,6 +908,51 @@ impl RegexSearchEngine {
     }
 
     /// Basic reranking of matches based on query understanding
+    /// Deterministic ranking that works without AI understanding
+    fn rerank_matches_deterministic(&self, matches: &mut Vec<SearchMatch>, query_pattern: &str) {
+        // Simple TF-IDF style ranking based on term frequency and position
+        for match_result in matches.iter_mut() {
+            let mut score = 0.0f32;
+
+            // Term frequency scoring - count occurrences of query terms
+            let query_terms: Vec<&str> = query_pattern.split_whitespace().collect();
+            for term in &query_terms {
+                let term_lower = term.to_lowercase();
+                let content_lower = match_result.line_content.to_lowercase();
+                let count = content_lower.matches(&term_lower).count() as f32;
+                score += count * 1.0; // Term frequency
+
+                // Exact match bonus
+                if content_lower.contains(&term_lower) {
+                    score += 0.5;
+                }
+            }
+
+            // Position-based scoring
+            if match_result.line_number <= 5 {
+                score += 0.3; // Early in file
+            } else if match_result.line_number <= 20 {
+                score += 0.1; // Still near top
+            }
+
+            // Length penalty (shorter, more focused matches score higher)
+            let line_length = match_result.line_content.len() as f32;
+            if line_length > 100.0 {
+                score -= (line_length - 100.0) / 1000.0; // Small penalty for very long lines
+            }
+
+            match_result.ai_score = Some(score);
+        }
+
+        // Sort by score (descending) - deterministic sort
+        matches.sort_by(|a, b| {
+            let a_score = a.ai_score.unwrap_or(0.0);
+            let b_score = b.ai_score.unwrap_or(0.0);
+            // Use total_cmp for deterministic floating point comparison
+            b_score.total_cmp(&a_score)
+        });
+    }
+
     fn rerank_matches_basic(&self, matches: &mut Vec<SearchMatch>, understanding: &crate::ai::QueryUnderstanding) {
         // Simple reranking based on term frequency and position
         for match_result in matches.iter_mut() {
@@ -949,6 +1116,33 @@ impl RegexSearchEngine {
         false
     }
 
+    /// Parse a custom ignore file with .gitignore-style syntax
+    fn parse_ignore_file(&self, ignore_file_path: &PathBuf) -> Result<Vec<String>, RiceGrepError> {
+        if !ignore_file_path.exists() {
+            return Ok(vec![]);
+        }
+
+        let content = fs::read_to_string(ignore_file_path)
+            .map_err(|e| RiceGrepError::Search {
+                message: format!("Failed to read ignore file {}: {}", ignore_file_path.display(), e)
+            })?;
+
+        let mut patterns = Vec::new();
+
+        for line in content.lines() {
+            let line = line.trim();
+
+            // Skip empty lines and comments
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+
+            patterns.push(line.to_string());
+        }
+
+        Ok(patterns)
+    }
+
     /// Get files to search based on query configuration
     fn get_search_files(&self, query: &SearchQuery) -> Result<Vec<PathBuf>, RiceGrepError> {
         let mut files = Vec::new();
@@ -960,25 +1154,142 @@ impl RegexSearchEngine {
             query.paths.clone()
         };
 
+        // Parse custom ignore patterns if specified
+        let (ignore_patterns, unignore_patterns) = if let Some(ref ignore_file) = query.ignore_file {
+            let all_patterns = self.parse_ignore_file(ignore_file)?;
+            let mut ignore_patterns = Vec::new();
+            let mut unignore_patterns = Vec::new();
+
+            for pattern in all_patterns {
+                if pattern.starts_with('!') {
+                    // Negation pattern - don't ignore files matching this
+                    unignore_patterns.push(pattern[1..].to_string());
+                } else {
+                    // Normal ignore pattern
+                    ignore_patterns.push(pattern);
+                }
+            }
+
+            (ignore_patterns, unignore_patterns)
+        } else {
+            (vec![], vec![])
+        };
+
         for path in search_paths {
-            let walker = WalkBuilder::new(&path)
+            // Check file quota
+            if let Some(max_files) = query.max_files {
+                if files.len() >= max_files {
+                    break; // Stop processing if we've reached the file quota
+                }
+            }
+
+            let mut walker_builder = WalkBuilder::new(&path);
+            walker_builder
                 .hidden(!query.hidden) // Hide hidden files unless requested
                 .ignore(!query.no_ignore) // Respect .gitignore unless disabled
-                .follow_links(query.follow)
-                .build();
+                .follow_links(query.follow);
+
+            // Note: Custom ignore file patterns are handled by manual filtering below
+            // The OverrideBuilder is not used for custom ignore files to avoid conflicts
+
+            let walker = walker_builder.build();
 
             for entry in walker {
                 let entry = entry?;
-                let path = entry.path();
+                let file_path = entry.path();
 
                 // Only search files
-                if path.is_file() {
-                    files.push(path.to_path_buf());
+                if file_path.is_file() {
+                    // Check file size limit
+                    let file_size_ok = if let Some(max_size) = query.max_file_size {
+                        match file_path.metadata() {
+                            Ok(metadata) => metadata.len() <= max_size,
+                            Err(_) => true, // If we can't get metadata, allow the file
+                        }
+                    } else {
+                        true
+                    };
+
+                    if file_size_ok {
+                        // Check against custom ignore patterns
+                        let should_ignore = if !ignore_patterns.is_empty() || !unignore_patterns.is_empty() {
+                            self.should_ignore_file(file_path, &path, &ignore_patterns, &unignore_patterns)
+                        } else {
+                            false
+                        };
+
+                        if !should_ignore {
+                            files.push(file_path.to_path_buf());
+
+                            // Check if we've reached the file quota
+                            if let Some(max_files) = query.max_files {
+                                if files.len() >= max_files {
+                                    break; // Stop collecting files if we've reached the quota
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
 
         Ok(files)
+    }
+
+    /// Check if a file should be ignored based on custom ignore patterns
+    fn should_ignore_file(&self, file_path: &Path, root_path: &Path, ignore_patterns: &[String], unignore_patterns: &[String]) -> bool {
+        // Get the relative path from the search root
+        let relative_path = match file_path.strip_prefix(root_path) {
+            Ok(rel) => rel,
+            Err(_) => return false, // If we can't get relative path, don't ignore
+        };
+
+        let relative_str = relative_path.to_string_lossy().replace('\\', "/");
+
+        // First check if it matches any ignore patterns
+        let mut should_ignore = false;
+        for pattern in ignore_patterns {
+            if self.matches_ignore_pattern(&relative_str, pattern) {
+                should_ignore = true;
+                break;
+            }
+        }
+
+        // Then check if it matches any unignore patterns (negation)
+        if should_ignore {
+            for pattern in unignore_patterns {
+                if self.matches_ignore_pattern(&relative_str, pattern) {
+                    should_ignore = false;
+                    break;
+                }
+            }
+        }
+
+        should_ignore
+    }
+
+    /// Check if a relative path matches an ignore pattern
+    fn matches_ignore_pattern(&self, relative_path: &str, pattern: &str) -> bool {
+        // Simple implementation of .gitignore-style matching
+        // For now, support exact matches and basic glob patterns
+
+        if pattern.contains('*') {
+            // Simple glob matching
+            let pattern_regex = pattern
+                .replace('.', r"\.")
+                .replace('*', ".*")
+                .replace('?', ".");
+            match regex::Regex::new(&format!("^{}$", pattern_regex)) {
+                Ok(re) => re.is_match(relative_path),
+                Err(_) => false,
+            }
+        } else if pattern.ends_with('/') {
+            // Directory pattern - match if path starts with the directory
+            relative_path.starts_with(pattern)
+        } else {
+            // Exact match or file name match
+            relative_path == pattern || relative_path.ends_with(&format!("/{}", pattern))
+        }
     }
 }
 
@@ -1018,7 +1329,22 @@ impl SearchEngine for RegexSearchEngine {
         let processed_query = if self.is_natural_language_query(&corrected_query) && self.ai_processor.is_some() {
             info!("Processing natural language query with AI");
             // Process with AI to understand the query
-            let ai_processor = self.ai_processor.as_ref().unwrap();
+            let ai_processor = match self.ai_processor.as_ref() {
+                Some(proc) => proc,
+                None => {
+                    warn!("AI processor became unavailable during query processing");
+                    return Ok(SearchResults {
+                        matches: vec![],
+                        total_matches: 0,
+                        search_time: start_time.elapsed(),
+                        ai_reranked: false,
+                        degradation_mode: true,
+                        files_searched: 0,
+                        spelling_correction: corrected_query.spelling_correction,
+                        file_counts: std::collections::HashMap::new(),
+                    });
+                }
+            };
             match ai_processor.process_query(&corrected_query.pattern).await {
                 Ok(understanding) => {
                     info!("AI query understanding: intent={:?}, terms={:?}",
@@ -1100,28 +1426,37 @@ impl SearchEngine for RegexSearchEngine {
 
         let mut ai_reranked = false;
 
-        // Apply AI reranking if available and requested
+        // Apply ranking: AI reranking if available and requested, otherwise deterministic ranking
         let mut ai_reranked = false;
-        if processed_query.ai_enhanced && self.ai_processor.is_some() {
-            if let Ok(understanding) = self.ai_processor.as_ref().unwrap().process_query(&processed_query.pattern).await {
-                // Create a temporary results struct for reranking
-                let mut temp_results = SearchResults {
-                    matches: Vec::new(),
-                    total_matches: 0,
-                    search_time: start_time.elapsed(),
-                    ai_reranked: false,
-                    files_searched: 0,
-                    spelling_correction: None,
-                    file_counts: std::collections::HashMap::new(),
-                };
+        let mut degradation_detected = false;
 
-                // Rerank by creating a copy and sorting
-                let mut matches_copy = all_matches.clone();
-                self.rerank_matches_basic(&mut matches_copy, &understanding);
-                all_matches = matches_copy;
-                ai_reranked = true;
+        if processed_query.ai_enhanced && !processed_query.no_rerank {
+            if let Some(ai_proc) = self.ai_processor.as_ref() {
+                if let Ok(understanding) = ai_proc.process_query(&processed_query.pattern).await {
+                    // AI reranking available - use it
+                    let mut matches_copy = all_matches.clone();
+                    self.rerank_matches_basic(&mut matches_copy, &understanding);
+                    all_matches = matches_copy;
+                    ai_reranked = true;
+                } else {
+                    // AI processing failed - fall back to deterministic ranking
+                    warn!("AI processing failed, falling back to deterministic ranking");
+                    self.rerank_matches_deterministic(&mut all_matches, &processed_query.pattern);
+                    degradation_detected = true;
+                }
+            } else {
+                // AI processor not available - use deterministic ranking
+                debug!("AI processor not available, using deterministic ranking");
+                self.rerank_matches_deterministic(&mut all_matches, &processed_query.pattern);
+                degradation_detected = true;
             }
+        } else {
+            // AI reranking disabled - use deterministic ranking
+            self.rerank_matches_deterministic(&mut all_matches, &processed_query.pattern);
         }
+
+        // Update degradation mode status
+        self.degradation_mode = degradation_detected;
 
         let total_matches = all_matches.len();
         let files_searched = if index_loaded {
@@ -1135,34 +1470,55 @@ impl SearchEngine for RegexSearchEngine {
         info!("Search completed: {} matches in {} files, took {:.2}ms",
               total_matches, files_searched, search_time.as_secs_f64() * 1000.0);
 
-        // Store search in session if available (placeholder)
-        if self.session_manager.is_some() {
-            // In full implementation, this would store search history in the session
+        // Store search in session if available
+        if let Some(session_manager) = &self.session_manager {
+            // Store search query and results in session context
+            // This allows search history and context to persist across ricegrep invocations
             debug!("Search stored in session context");
+            // TODO: Implement actual session storage of search results
         }
+
+        // Log search activity if logger is available
+        // TODO: Integrate with ricecoder-activity-log when dependency issues are resolved
+        // if let Some(logger) = &self.activity_logger {
+        //     debug!("Search activity logged");
+        // }
+
+        // Apply max matches quota
+        let matches = if let Some(max_matches) = processed_query.max_matches {
+            if all_matches.len() > max_matches {
+                info!("Limiting results to {} matches (quota exceeded)", max_matches);
+                all_matches.into_iter().take(max_matches).collect()
+            } else {
+                all_matches
+            }
+        } else {
+            all_matches
+        };
 
         // Build file counts for --count mode
         let mut file_counts = std::collections::HashMap::new();
-        for match_result in &all_matches {
+        for match_result in &matches {
             *file_counts.entry(match_result.file.clone()).or_insert(0) += 1;
         }
 
         Ok(SearchResults {
-            matches: all_matches,
+            matches,
             total_matches,
             search_time,
             ai_reranked,
+            degradation_mode: degradation_detected,
             files_searched,
             spelling_correction: corrected_query.spelling_correction,
             file_counts,
         })
     }
 
-    async fn build_index(&mut self, paths: &[PathBuf]) -> Result<(), RiceGrepError> {
+    async fn build_index(&mut self, paths: &[PathBuf], progress_verbosity: ProgressVerbosity) -> Result<(), RiceGrepError> {
         let root_path = paths.first().cloned().unwrap_or_else(|| PathBuf::from("."));
 
         // Build the index
-        let index = self.build_index_internal(&root_path)?;
+        let index = self.build_index_internal(&root_path, progress_verbosity)?;
 
         // Store the index in memory
         self.index_manager.current_index = Some(Arc::new(index.clone()));

@@ -8,12 +8,21 @@ pub mod search;
 pub mod output;
 pub mod error;
 pub mod ai;
+pub mod embedded_ai;
 pub mod language;
 pub mod tui;
 pub mod config;
 pub mod spelling;
 pub mod replace;
 pub mod watch;
+pub mod mcp;
+pub mod skills;
+pub mod telemetry;
+pub mod monitoring;
+// pub mod database; // Disabled due to Scylla compatibility issues
+
+pub use monitoring::{ProcessManager, ProcessConfig, ProcessStatus};
+pub use telemetry::{UsageAnalytics, BenchmarkSuite, BenchmarkConfig, PerformanceReport};
 
 pub use args::Args;
 pub use search::SearchEngine;
@@ -26,6 +35,7 @@ pub use language::{LanguageProcessor, LanguageConfig, LanguageDetection, Languag
 mod tests {
     use super::*;
     use std::path::PathBuf;
+    use crate::search::ProgressVerbosity;
 
     #[tokio::test]
     async fn test_basic_search() {
@@ -40,8 +50,17 @@ mod tests {
             follow: false,
             hidden: false,
             no_ignore: true, // Don't ignore files for testing
+            ignore_file: None,
+            quiet: false,
+            dry_run: false,
+            max_file_size: None,
+            progress_verbosity: ProgressVerbosity::Quiet,
+            max_files: None,
+            max_matches: Some(10),
+            max_lines: None,
             invert_match: false,
             ai_enhanced: false,
+            no_rerank: false,
             fuzzy: None,
             max_count: Some(10),
             spelling_correction: None,
@@ -104,8 +123,17 @@ mod tests {
             follow: false,
             hidden: false,
             no_ignore: false,
+            ignore_file: None,
+            quiet: false,
+            dry_run: false,
+            max_file_size: None,
+            progress_verbosity: ProgressVerbosity::Quiet,
+            max_files: None,
+            max_matches: None,
+            max_lines: None,
             invert_match: false,
             ai_enhanced: false,
+            no_rerank: false,
             fuzzy: None,
             max_count: None,
             spelling_correction: None,
@@ -121,8 +149,17 @@ mod tests {
             follow: false,
             hidden: false,
             no_ignore: false,
+            ignore_file: None,
+            quiet: false,
+            dry_run: false,
+            max_file_size: None,
+            progress_verbosity: ProgressVerbosity::Quiet,
+            max_files: None,
+            max_matches: None,
+            max_lines: None,
             invert_match: false,
             ai_enhanced: false,
+            no_rerank: false,
             fuzzy: None,
             max_count: None,
             spelling_correction: None,
@@ -149,7 +186,7 @@ mod tests {
         // Test index building with custom index directory
         let index_dir = temp_dir.path().join("index");
         let mut search_engine = RegexSearchEngine::with_index_dir(index_dir);
-        search_engine.build_index(&[temp_dir.path().to_path_buf()]).await.unwrap();
+        search_engine.build_index(&[temp_dir.path().to_path_buf()], ProgressVerbosity::Quiet).await.unwrap();
 
         // Test search with index
         let query = SearchQuery {
@@ -162,8 +199,17 @@ mod tests {
             follow: false,
             hidden: false,
             no_ignore: true,
+            ignore_file: None,
+            quiet: false,
+            dry_run: false,
+            max_file_size: None,
+            progress_verbosity: ProgressVerbosity::Quiet, // Test mode uses quiet progress
+            max_files: None,
+            max_matches: None,
+            max_lines: None,
             invert_match: false,
             ai_enhanced: false,
+            no_rerank: false,
             fuzzy: None,
             max_count: None,
             spelling_correction: None,
@@ -211,6 +257,8 @@ mod tests {
             true, // filename
             false, // ai enabled
             false, // count
+            false, // content
+            None, // max_lines
         );
 
         let results = SearchResults {
@@ -227,6 +275,7 @@ mod tests {
             total_matches: 1,
             search_time: std::time::Duration::from_millis(50),
             ai_reranked: false,
+            degradation_mode: false,
             files_searched: 1,
             spelling_correction: None,
             file_counts: std::collections::HashMap::new(),
@@ -248,5 +297,35 @@ mod tests {
             message: "test error".to_string()
         };
         assert!(search_error.to_string().contains("test error"));
+    }
+
+    #[test]
+    fn test_skill_registry() {
+        use crate::skills::SkillRegistry;
+
+        let registry = SkillRegistry::new();
+
+        // Test that built-in skills are registered
+        assert!(registry.get_skill("ricegrep-search").is_some());
+        assert!(registry.get_skill("ricegrep-replace").is_some());
+
+        // Test skill export
+        let yaml_result = registry.export_skill_yaml("ricegrep-search");
+        assert!(yaml_result.is_ok());
+        assert!(yaml_result.unwrap().contains("ricegrep-search"));
+
+        let json_result = registry.export_skill_json("ricegrep-search");
+        assert!(json_result.is_ok());
+        assert!(json_result.unwrap().contains("ricegrep-search"));
+    }
+
+    #[test]
+    fn test_mcp_server_creation() {
+        use crate::mcp::RiceGrepMcpServer;
+
+        // Test that MCP server can be created
+        let server = RiceGrepMcpServer::new();
+        // Server creation should not panic
+        assert!(true); // Placeholder test - full MCP testing requires SDK
     }
 }

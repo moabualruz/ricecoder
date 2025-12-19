@@ -4,7 +4,7 @@
 //! index rebuilding when files change.
 
 use crate::error::RiceGrepError;
-use crate::search::{IndexManager, RegexSearchEngine, SearchEngine};
+use crate::search::{IndexManager, RegexSearchEngine, SearchEngine, ProgressVerbosity};
 use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::PathBuf;
 use std::sync::mpsc::channel;
@@ -95,7 +95,7 @@ impl WatchEngine {
 
                     let update_start = std::time::Instant::now();
                     let mut search_engine = RegexSearchEngine::new();
-                    search_engine.build_index(&self.config.paths).await?;
+                    search_engine.build_index(&self.config.paths, ProgressVerbosity::Normal).await?;
                     let update_time = update_start.elapsed();
 
                     println!("✅ Index updated in {:.2}s", update_time.as_secs_f64());
