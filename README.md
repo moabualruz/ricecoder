@@ -1478,20 +1478,21 @@ Inspired by [Aider](https://github.com/paul-gauthier/aider), [OpenCode](https://
 
 ## RiceGrep: AI-Enhanced Code Search
 
-RiceCoder includes **RiceGrep** (`ricegrep`), the first AI-enhanced, offline-first code search tool with **embedded AI models** that maintains full compatibility with traditional grep workflows while adding intelligent reranking and natural language query understanding.
+RiceCoder includes **RiceGrep** (`ricegrep`), an AI-enhanced, offline-first code search tool with **heuristic-based AI processing** that maintains full compatibility with traditional grep workflows while adding intelligent reranking and natural language query understanding.
 
 ### RiceGrep Features
 
-- **🔍 AI-Enhanced Search** - Natural language queries with intelligent result reranking
+- **🔍 AI-Enhanced Search** - Natural language queries with intelligent result reranking (heuristic-based, no external APIs)
 - **⚡ Ripgrep Compatible** - Drop-in replacement with identical CLI and output formats
 - **🔒 Offline-First** - Full functionality without internet connectivity
-- **🧠 Embedded AI Models** - Ships with MiniBERT and CodeBERT Tiny models for immediate AI capabilities
+- **🧠 Heuristic AI Processing** - Advanced query understanding and result ranking without external models
 - **🎯 Language Awareness** - Programming language detection and context-aware ranking
 - **📊 Enhanced Output** - Detailed metadata, confidence scores, and AI reasoning
-- **🔄 Watch Mode** - Automatic reindexing for evolving codebases
-- **🛠️ Replace & Transform** - Safe file transformations with language awareness
+- **🔄 Watch Mode Framework** - Ready for continuous monitoring (implementation in progress)
+- **🛠️ Safe Replace** - Preview and execute find-replace operations safely
 - **⚙️ Configuration System** - Comprehensive customization and scripting support
 - **🤖 MCP Server** - AI assistant integration via Model Context Protocol
+- **📦 Plugin Ecosystem** - Automated installation for Claude Code, OpenCode, Codex, Factory Droid
 
 ### RiceGrep Usage
 
@@ -1503,16 +1504,20 @@ ricegrep --help
 ricegrep "function.*error" src/
 
 # AI-enhanced natural language search
-ricegrep --ai "find error handling functions" src/
+ricegrep search --ai-enhanced "find error handling functions" src/
 
-# Watch mode for automatic reindexing
-ricegrep --index-watch
+# Answer generation from search results
+ricegrep search --answer "how does authentication work" .
 
-# Replace with language awareness
-ricegrep --replace "old_name" "new_name" --lang rust src/
+# Plugin installation for AI assistants
+ricegrep install claude-code
+ricegrep install opencode
 
 # MCP server for AI assistants
-ricegrep mcp start
+ricegrep mcp
+
+# Safe replace operations
+ricegrep replace "old_name" "new_name" --preview file.rs
 ```
 
 ### RiceGrep vs Traditional Tools
@@ -1520,12 +1525,13 @@ ricegrep mcp start
 | Feature | RiceGrep | ripgrep | grep |
 |---------|----------|---------|------|
 | Regex Performance | ✅ Native speed | ✅ Native speed | ⚠️ Slower |
-| AI Enhancement | ✅ Natural language | ❌ | ❌ |
+| AI Enhancement | ✅ Heuristic-based | ❌ | ❌ |
 | Offline Operation | ✅ Full offline | ✅ | ✅ |
 | Language Awareness | ✅ Context ranking | ❌ | ❌ |
-| Watch Mode | ✅ Auto-reindexing | ❌ | ❌ |
+| Watch Mode | 🚧 Framework ready | ❌ | ❌ |
 | MCP Integration | ✅ AI assistants | ❌ | ❌ |
-| Replace Operations | ✅ Language-aware | ⚠️ Basic | ⚠️ Basic |
+| Plugin Ecosystem | ✅ Claude/OpenCode/etc | ❌ | ❌ |
+| Replace Operations | ✅ Safe preview | ⚠️ Basic | ⚠️ Basic |
 
 See [RiceGrep Documentation](https://github.com/moabualruz/ricecoder/wiki/RiceGrep) for comprehensive usage guides.
 

@@ -1,14 +1,15 @@
 # RiceGrep
 
-AI-enhanced code search tool with full ripgrep compatibility and modern CLI architecture.
+AI-enhanced code search tool with full ripgrep compatibility, MCP server support, and plugin ecosystem for AI assistants.
 
 ## Features
 
 - **Ripgrep Compatible**: Drop-in replacement for ripgrep with identical CLI options
-- **AI-Enhanced Search**: Intelligent query understanding and result reranking
+- **AI-Enhanced Search**: Heuristic-based query understanding and result reranking (no external APIs)
 - **Content Display**: Full file content viewing with syntax highlighting support
 - **Answer Generation**: AI-powered answer synthesis from search results
 - **Deterministic Fallback**: Always works, even without AI dependencies
+- **Local File Storage**: Database disabled by default for privacy and simplicity
 - **Spelling Correction**: Automatic correction of typos in search queries
 - **Language Awareness**: Programming language detection and context-aware ranking
 - **Custom Ignore Files**: Support for .ricegrepignore files with .gitignore-style patterns
@@ -16,13 +17,12 @@ AI-enhanced code search tool with full ripgrep compatibility and modern CLI arch
 - **Dry Run Support**: Preview operations without making changes (--dry-run flag)
 - **File Size Management**: Configurable limits on file sizes for search and indexing
 - **Indexing**: Fast search acceleration for large codebases with progress feedback
-- **Watch Mode**: Continuous monitoring with automatic index updates
+- **Watch Mode**: Continuous monitoring with automatic index updates (framework ready)
 - **Safe Replace**: Preview and execute find-replace operations safely
 - **Symbol Rename**: Language-aware symbol renaming with safety checks
-- **AI Assistant Integration**: Native support for Claude Code, OpenCode, Codex, Factory Droid, Cursor, Windsurf
+- **AI Assistant Integration**: Plugin system for Claude Code, OpenCode, Codex, Factory Droid
 - **MCP Server**: Model Context Protocol server for AI assistant tool integration
-- **Skill System**: Structured skill definitions for assistant capability discovery
-- **Plugin Marketplace**: Extensible plugin system for third-party integrations
+- **Plugin Installation**: Automated installation for AI assistants (`ricegrep install claude-code`, etc.)
 - **Modern CLI**: Subcommand architecture with comprehensive help and completion
 
 ## Installation
@@ -42,8 +42,8 @@ ricegrep search [OPTIONS] [PATTERN] [PATH]...    # Search for patterns
 ricegrep replace [OPTIONS] OLD_SYMBOL NEW_SYMBOL FILE  # Symbol rename operations
 ricegrep watch [OPTIONS] [PATH]...               # Watch mode for continuous monitoring
 ricegrep mcp [OPTIONS]                           # Start MCP server for AI assistants
-ricegrep install [OPTIONS] [PLUGIN]              # Install AI assistant integrations
-ricegrep uninstall [OPTIONS] [PLUGIN]            # Uninstall AI assistant integrations
+ricegrep install [OPTIONS] [PLUGIN]              # Install plugins for AI assistants
+ricegrep uninstall [OPTIONS] [PLUGIN]            # Uninstall plugins from AI assistants
 ricegrep --help                                  # Show help
 ricegrep --version                               # Show version
 ```
@@ -129,35 +129,42 @@ RiceGrep integrates seamlessly with popular AI coding assistants, providing enha
 ### Supported Assistants
 
 - **Claude Code**: Plugin marketplace integration with skills system
-- **OpenCode**: Plugin system with hooks and event handling
-- **Codex**: Skills-based integration with MCP server support
-- **Factory Droid**: Python hooks for background processing
-- **Cursor**: Extension API integration
-- **Windsurf**: Assistant compatibility layer
+- **OpenCode**: Plugin system with tool definitions and MCP configuration
+- **Codex**: Skills-based integration with AGENTS.md and MCP server support
+- **Factory Droid**: Python hooks for background processing and lifecycle management
 
 ### Installation
 
 Install RiceGrep integration for your preferred AI assistant:
 
 ```bash
-# Claude Code integration
+# Claude Code integration (marketplace + plugin)
 ricegrep install claude-code
 
-# OpenCode integration
+# OpenCode integration (tool definition + MCP config)
 ricegrep install opencode
 
-# Codex integration
+# Codex integration (MCP + AGENTS.md)
 ricegrep install codex
 
-# Factory Droid integration
-ricegrep install factory-droid
+# Factory Droid integration (hooks + skills + settings)
+ricegrep install droid
 
-# Cursor integration
-ricegrep install cursor
-
-# Windsurf integration
-ricegrep install windsurf
+# Uninstall plugins
+ricegrep uninstall claude-code
+ricegrep uninstall opencode
+ricegrep uninstall codex
+ricegrep uninstall droid
 ```
+
+**Note:** All major AI assistants are supported, just like mgrep!
+
+#### What Plugin Installation Does
+
+- **Claude Code**: Adds RiceGrep to marketplace and installs plugin (`claude plugin marketplace add ricecoder/ricegrep`)
+- **OpenCode**: Creates tool definition files and configures MCP integration in `~/.config/opencode/`
+- **Codex**: Adds skills to AGENTS.md and registers MCP server (`codex mcp add ricegrep`)
+- **Factory Droid**: Creates Python hooks and updates settings in `~/.factory/`
 
 ### MCP Server
 
@@ -208,9 +215,16 @@ ricegrep search 'old_name' --replace 'new_name' --force file.rs
 RiceGrep supports cascading configuration:
 - Command-line options (highest priority)
 - Environment variables with `RICEGREP_` prefix
-- TOML configuration file (`.ricegrep.toml`)
+- Local TOML configuration file (`.ricecoder/.ricegrep.toml`)
+- Global TOML configuration file (`~/Documents/.ricecoder/.ricegrep.toml`)
 
-### Example Configuration (.ricegrep.toml)
+### Environment Variables
+
+- `RICEGREP_DATABASE_ENABLED`: Enable database storage (default: false)
+- `RICEGREP_AI_ENABLED`: Enable AI features (default: true)
+- `RICEGREP_COLOR`: Color output mode (auto/always/never)
+
+### Example Configuration (.ricecoder/.ricegrep.toml)
 ```toml
 # AI settings
 ai_enabled = true
@@ -223,6 +237,9 @@ follow_symlinks = true
 # Output settings
 color = "auto"
 line_numbers = true
+
+# Database settings (disabled by default for privacy)
+database_enabled = false
 ```
 
 ### Custom Ignore Files (.ricegrepignore)
@@ -246,6 +263,26 @@ config.local.*
 ```
 
 Use with: `ricegrep search --ignore-file .ricegrepignore PATTERN`
+
+### Storage Locations
+
+RiceGrep organizes its data in the following structure:
+
+```
+project/
+├── .ricecoder/
+│   ├── .ricegrep/                    # Search indices and metadata
+│   │   ├── index_*.idx              # Search index files
+│   │   ├── plugins/                 # Plugin storage
+│   │   └── store/                   # Additional storage
+│   ├── .ricegrep.toml               # Local configuration
+│   └── ricegrep.db                  # Database (when enabled)
+
+# Global configuration (platform-aware):
+# Windows: %USERPROFILE%\Documents\.ricecoder\.ricegrep.toml
+# macOS: ~/Documents/.ricecoder/.ricegrep.toml
+# Linux: ~/Documents/.ricecoder/.ricegrep.toml
+```
 
 ## AI Features
 

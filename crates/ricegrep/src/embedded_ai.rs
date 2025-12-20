@@ -1,125 +1,43 @@
-//! Embedded AI processing for RiceGrep
+//! AI processing for RiceGrep
 //!
-//! This module provides improved heuristic-based AI processing for semantic search
-//! capabilities, with CPU default and CUDA detection logic (ML support planned).
+//! This module provides heuristic-based AI processing for semantic search
+//! and natural language understanding capabilities. No external APIs required.
 
 use crate::error::RiceGrepError;
 use crate::ai::{QueryUnderstanding, QueryIntent};
 use std::collections::HashMap;
-use tokenizers::Tokenizer;
 
-/// Embedded AI processor with improved heuristics for semantic search
+/// AI processor using pure heuristic-based processing (no external APIs)
 pub struct EmbeddedAIProcessor {
-    tokenizer: Option<tokenizers::Tokenizer>,
-}
-
-/// Model configurations for embedded models
-struct ModelConfig {
-    vocab_size: usize,
-    hidden_size: usize,
-    num_hidden_layers: usize,
-    num_attention_heads: usize,
-    intermediate_size: usize,
-    max_position_embeddings: usize,
+    // Pure heuristic processing - no external dependencies
 }
 
 impl EmbeddedAIProcessor {
-    /// Create a new embedded AI processor
-    pub fn new() -> Result<Self, RiceGrepError> {
-        // Try to load tokenizer for better processing
-        let tokenizer = match Self::load_tokenizer() {
-            Ok(tokenizer) => Some(tokenizer),
-            Err(e) => {
-                eprintln!("Warning: Failed to load tokenizer: {}. Using basic heuristics.", e);
-                None
-            }
-        };
-
-        Ok(Self { tokenizer })
-    }
-
-    /// Load tokenizer for improved text processing
-    fn load_tokenizer() -> Result<Tokenizer, RiceGrepError> {
-        // For now, create a basic tokenizer configuration
-        // In the future, this could load pre-trained models
-        let tokenizer_json = r####"{
-            "version": "1.0",
-            "truncation": null,
-            "padding": null,
-            "added_tokens": [],
-            "normalizer": {
-                "type": "BertNormalizer",
-                "clean_text": true,
-                "handle_chinese_chars": true,
-                "strip_accents": null,
-                "lowercase": true
-            },
-            "pre_tokenizer": {
-                "type": "BertPreTokenizer"
-            },
-            "post_processor": {
-                "type": "BertProcessing",
-                "sep": ["[SEP]", 102],
-                "cls": ["[CLS]", 101]
-            },
-            "decoder": {
-                "type": "WordPiece",
-                "prefix": "##",
-                "cleanup": true
-            },
-            "model": {
-                "type": "WordPiece",
-                "vocab": {
-                    "[PAD]": 0,
-                    "[UNK]": 100,
-                    "[CLS]": 101,
-                    "[SEP]": 102,
-                    "[MASK]": 103
-                },
-                "unk_token": "[UNK]",
-                "continuing_subword_prefix": "##",
-                "max_input_chars_per_word": 100
-            }
-        }"####;
-
-        Tokenizer::from_bytes(tokenizer_json.as_bytes()).map_err(|e| RiceGrepError::Ai {
-            message: format!("Failed to load tokenizer: {}", e),
-        })
+    /// Create a new AI processor
+    pub fn new() -> Self {
+        // Pure heuristic processing - no external dependencies
+        Self {}
     }
 
 
 
 
 
-    /// Process query for understanding with improved heuristics
-    pub fn process_query(&self, query: &str) -> Result<QueryUnderstanding, RiceGrepError> {
-        // Use tokenizer if available for better tokenization
-        let tokenized_terms = if let Some(ref tokenizer) = self.tokenizer {
-            if let Ok(encoding) = tokenizer.encode(query, true) {
-                let tokens = encoding.get_tokens();
-                // Extract meaningful tokens
-                tokens.iter()
-                    .filter(|t| !t.starts_with("[") && !t.starts_with("##") && t.len() > 2)
-                    .map(|t| t.to_lowercase())
-                    .collect::<Vec<_>>()
-            } else {
-                Vec::new()
-            }
-        } else {
-            Vec::new()
-        };
 
-        // Extract understanding from query using improved heuristics
+
+    /// Process query using heuristic-based natural language understanding
+    pub async fn process_query(&self, query: &str) -> Result<QueryUnderstanding, RiceGrepError> {
+        // Use improved heuristics (OpenAI integration disabled)
+        self.process_query_with_heuristics(query)
+    }
+
+    // OpenAI LLM integration disabled for now
+    // TODO: Re-enable when async-openai API compatibility is resolved
+
+    /// Fallback heuristic processing
+    fn process_query_with_heuristics(&self, query: &str) -> Result<QueryUnderstanding, RiceGrepError> {
         let intent = self.classify_intent(query);
-        let mut search_terms = self.extract_search_terms(query);
-
-        // Add tokenized terms if they provide value
-        for token in tokenized_terms {
-            if !search_terms.iter().any(|t| t.to_lowercase().contains(&token) || token.contains(&t.to_lowercase())) {
-                search_terms.push(token);
-            }
-        }
-
+        let search_terms = self.extract_search_terms(query);
         let language_context = self.detect_language_context(query);
 
         Ok(QueryUnderstanding {
@@ -128,19 +46,38 @@ impl EmbeddedAIProcessor {
             search_terms,
             language_context,
             context: HashMap::new(),
-            confidence: 0.85, // Higher confidence for improved processing
+            confidence: 0.6, // Lower confidence for heuristics
         })
     }
 
-    /// Rerank search results using improved semantic heuristics
-    pub fn rerank_results(&self, results: &mut crate::search::SearchResults, query: &str) -> Result<(), RiceGrepError> {
-        // Use improved semantic reranking
-        self.rerank_with_semantic_heuristics(results, query)
+    /// Parse intent string to enum
+    fn parse_intent(intent_str: &str) -> QueryIntent {
+        match intent_str.to_lowercase().as_str() {
+            "search" => QueryIntent::Search,
+            "find" => QueryIntent::Find,
+            "locate" => QueryIntent::Locate,
+            "definition" => QueryIntent::Definition,
+            "references" => QueryIntent::References,
+            "similar" => QueryIntent::Similar,
+            "explain" => QueryIntent::Explain,
+            _ => QueryIntent::Search,
+        }
     }
 
+
+
+    /// Rerank search results using heuristic-based semantic understanding
+    pub async fn rerank_results(&self, results: &mut crate::search::SearchResults, query: &str) -> Result<(), RiceGrepError> {
+        // Use heuristic reranking (OpenAI integration disabled)
+        self.rerank_with_semantic_heuristics(results, query).await
+    }
+
+    // OpenAI LLM reranking disabled for now
+    // TODO: Re-enable when async-openai API compatibility is resolved
+
     /// Improved semantic reranking using advanced heuristics
-    fn rerank_with_semantic_heuristics(&self, results: &mut crate::search::SearchResults, query: &str) -> Result<(), RiceGrepError> {
-        let understanding = self.process_query(query)?;
+    async fn rerank_with_semantic_heuristics(&self, results: &mut crate::search::SearchResults, query: &str) -> Result<(), RiceGrepError> {
+        let understanding = self.process_query_with_heuristics(query)?;
 
         // Enhanced semantic reranking
         for match_result in &mut results.matches {
@@ -300,7 +237,7 @@ impl EmbeddedAIProcessor {
     }
 
     /// Generate answer using embedded model
-    pub fn generate_answer(&self, query: &str, results: &crate::search::SearchResults) -> Result<String, RiceGrepError> {
+    pub async fn generate_answer(&self, query: &str, results: &crate::search::SearchResults) -> Result<String, RiceGrepError> {
         if results.matches.is_empty() {
             return Ok(format!("No matches found for query: {}", query));
         }
@@ -440,7 +377,6 @@ impl EmbeddedAIProcessor {
     /// Check if word is an intent keyword
     fn is_intent_keyword(&self, word: &str) -> bool {
         matches!(word, "definition" | "def" | "reference" | "usage" | "similar" | "like" |
-                       "explain" | "what" | "how" | "where" | "which" | "when" | "why")
+                        "explain" | "what" | "how" | "where" | "which" | "when" | "why")
     }
 }
-

@@ -19,10 +19,11 @@ pub mod mcp;
 pub mod skills;
 pub mod telemetry;
 pub mod monitoring;
-// pub mod database; // Disabled due to Scylla compatibility issues
+pub mod database;
 
 pub use monitoring::{ProcessManager, ProcessConfig, ProcessStatus};
 pub use telemetry::{UsageAnalytics, BenchmarkSuite, BenchmarkConfig, PerformanceReport};
+pub use database::{DatabaseManager, DatabaseConfig, SearchHistory, UserPreferences, IndexMetadata, IndexStatus};
 
 pub use args::Args;
 pub use search::SearchEngine;

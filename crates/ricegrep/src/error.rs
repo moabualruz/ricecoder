@@ -50,4 +50,7 @@ pub enum RiceGrepError {
 
     #[error("File watching error: {0}")]
     Watch(#[from] notify::Error),
+
+    #[error("SQLite error: {0}")]
+    Sqlite(#[from] rusqlite::Error),
 }

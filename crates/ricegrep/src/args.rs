@@ -319,18 +319,16 @@ impl Args {
     /// Parse watch subcommand arguments
     fn parse_watch_args(matches: &ArgMatches) -> Result<WatchArgs, RiceGrepError> {
         let paths = matches
-            .get_many::<String>("path")
+            .get_many::<PathBuf>("paths")
             .unwrap_or_default()
-            .map(PathBuf::from)
+            .cloned()
             .collect();
 
         Ok(WatchArgs {
             paths,
-            timeout: matches.get_one::<String>("timeout")
-                .and_then(|s| s.parse().ok()),
-            clear_screen: matches.get_flag("clear"),
-            max_file_size: matches.get_one::<String>("max-file-size")
-                .and_then(|s| s.parse().ok()),
+            timeout: matches.get_one::<u64>("timeout").copied(),
+            clear_screen: matches.get_flag("clear-screen"),
+            max_file_size: matches.get_one::<u64>("max-file-size").copied(),
         })
     }
 

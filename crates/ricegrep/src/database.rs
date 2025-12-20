@@ -1,38 +1,27 @@
 //! Database storage for RiceGrep enterprise features
 //!
 //! This module provides persistent storage for search history, user preferences,
-//! and index metadata using Scylla/Cassandra as the backend.
+//! and index metadata using SQLite as the backend.
 
 use crate::error::RiceGrepError;
-use async_trait::async_trait;
-use scylla::{Session, SessionBuilder};
+use rusqlite::{params, Connection, Result as SqliteResult};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
 
 /// Database configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DatabaseConfig {
-    /// Scylla/Cassandra hosts
-    pub hosts: Vec<String>,
-    /// Keyspace name
-    pub keyspace: String,
-    /// Connection timeout in seconds
-    pub connection_timeout_secs: u64,
-    /// Request timeout in seconds
-    pub request_timeout_secs: u64,
+    /// SQLite database file path
+    pub database_path: PathBuf,
 }
 
 impl Default for DatabaseConfig {
     fn default() -> Self {
         Self {
-            hosts: vec!["127.0.0.1:9042".to_string()],
-            keyspace: "ricegrep".to_string(),
-            connection_timeout_secs: 30,
-            request_timeout_secs: 30,
+            database_path: PathBuf::from(".ricecoder/ricegrep.db"),
         }
     }
 }
@@ -83,140 +72,109 @@ pub enum IndexStatus {
     Outdated,
 }
 
-/// Database session manager
+/// Database manager using SQLite
 pub struct DatabaseManager {
-    session: Arc<Session>,
+    conn: Arc<Connection>,
     config: DatabaseConfig,
 }
 
 impl DatabaseManager {
     /// Create a new database manager
-    pub async fn new(config: DatabaseConfig) -> Result<Self, RiceGrepError> {
-        let session = SessionBuilder::new()
-            .known_nodes(&config.hosts)
-            .connection_timeout(std::time::Duration::from_secs(config.connection_timeout_secs))
-            .build()
-            .await
+    pub fn new(config: DatabaseConfig) -> Result<Self, RiceGrepError> {
+        let conn = Connection::open(&config.database_path)
             .map_err(|e| RiceGrepError::Database {
-                message: format!("Failed to connect to database: {}", e),
-            })?;
-
-        // Create keyspace if it doesn't exist
-        session
-            .query(
-                format!(
-                    "CREATE KEYSPACE IF NOT EXISTS {} WITH REPLICATION = {{
-                        'class': 'SimpleStrategy',
-                        'replication_factor': 1
-                    }}",
-                    config.keyspace
-                ),
-                &[],
-            )
-            .await
-            .map_err(|e| RiceGrepError::Database {
-                message: format!("Failed to create keyspace: {}", e),
-            })?;
-
-        // Use the keyspace
-        session
-            .query(format!("USE {}", config.keyspace), &[])
-            .await
-            .map_err(|e| RiceGrepError::Database {
-                message: format!("Failed to use keyspace: {}", e),
+                message: format!("Failed to open database: {}", e),
             })?;
 
         // Create tables
-        Self::create_tables(&session).await?;
+        Self::create_tables(&conn)?;
 
         Ok(Self {
-            session: Arc::new(session),
+            conn: Arc::new(conn),
             config,
         })
     }
 
     /// Create database tables
-    async fn create_tables(session: &Session) -> Result<(), RiceGrepError> {
+    fn create_tables(conn: &Connection) -> Result<(), RiceGrepError> {
         // Search history table
-        session
-            .query(
-                r#"
-                CREATE TABLE IF NOT EXISTS search_history (
-                    id uuid PRIMARY KEY,
-                    user_id text,
-                    query text,
-                    results_count int,
-                    execution_time_ms bigint,
-                    timestamp timestamp,
-                    ai_used boolean,
-                    success boolean
-                )
-                "#,
-                &[],
+        conn.execute(
+            r#"
+            CREATE TABLE IF NOT EXISTS search_history (
+                id TEXT PRIMARY KEY,
+                user_id TEXT,
+                query TEXT NOT NULL,
+                results_count INTEGER NOT NULL,
+                execution_time_ms INTEGER NOT NULL,
+                timestamp INTEGER NOT NULL,
+                ai_used BOOLEAN NOT NULL,
+                success BOOLEAN NOT NULL
             )
-            .await
-            .map_err(|e| RiceGrepError::Database {
-                message: format!("Failed to create search_history table: {}", e),
-            })?;
+            "#,
+            [],
+        )
+        .map_err(|e| RiceGrepError::Database {
+            message: format!("Failed to create search_history table: {}", e),
+        })?;
 
         // User preferences table
-        session
-            .query(
-                r#"
-                CREATE TABLE IF NOT EXISTS user_preferences (
-                    user_id text,
-                    setting_key text,
-                    setting_value text,
-                    category text,
-                    last_updated timestamp,
-                    is_ai_preference boolean,
-                    PRIMARY KEY (user_id, setting_key)
-                )
-                "#,
-                &[],
+        conn.execute(
+            r#"
+            CREATE TABLE IF NOT EXISTS user_preferences (
+                user_id TEXT NOT NULL,
+                setting_key TEXT NOT NULL,
+                setting_value TEXT NOT NULL,
+                category TEXT NOT NULL,
+                last_updated INTEGER NOT NULL,
+                is_ai_preference BOOLEAN NOT NULL,
+                PRIMARY KEY (user_id, setting_key)
             )
-            .await
-            .map_err(|e| RiceGrepError::Database {
-                message: format!("Failed to create user_preferences table: {}", e),
-            })?;
+            "#,
+            [],
+        )
+        .map_err(|e| RiceGrepError::Database {
+            message: format!("Failed to create user_preferences table: {}", e),
+        })?;
 
         // Index metadata table
-        session
-            .query(
-                r#"
-                CREATE TABLE IF NOT EXISTS index_metadata (
-                    index_id uuid PRIMARY KEY,
-                    path text,
-                    file_count int,
-                    total_size_bytes bigint,
-                    last_rebuild timestamp,
-                    rebuild_duration_ms bigint,
-                    performance_score double,
-                    status text
-                )
-                "#,
-                &[],
+        conn.execute(
+            r#"
+            CREATE TABLE IF NOT EXISTS index_metadata (
+                index_id TEXT PRIMARY KEY,
+                path TEXT NOT NULL,
+                file_count INTEGER NOT NULL,
+                total_size_bytes INTEGER NOT NULL,
+                last_rebuild INTEGER NOT NULL,
+                rebuild_duration_ms INTEGER NOT NULL,
+                performance_score REAL NOT NULL,
+                status TEXT NOT NULL
             )
-            .await
-            .map_err(|e| RiceGrepError::Database {
-                message: format!("Failed to create index_metadata table: {}", e),
-            })?;
+            "#,
+            [],
+        )
+        .map_err(|e| RiceGrepError::Database {
+            message: format!("Failed to create index_metadata table: {}", e),
+        })?;
 
         Ok(())
     }
 
+
+
+
+
     /// Store search history
-    pub async fn store_search_history(&self, history: SearchHistory) -> Result<(), RiceGrepError> {
-        self.session
-            .query(
+    pub fn store_search_history(&self, history: SearchHistory) -> Result<(), RiceGrepError> {
+        self.conn
+            .execute(
                 r#"
                 INSERT INTO search_history (
                     id, user_id, query, results_count, execution_time_ms,
                     timestamp, ai_used, success
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 "#,
-                (
-                    history.id,
+                params![
+                    history.id.to_string(),
                     history.user_id,
                     history.query,
                     history.results_count as i32,
@@ -224,9 +182,8 @@ impl DatabaseManager {
                     history.timestamp.timestamp_millis(),
                     history.ai_used,
                     history.success,
-                ),
+                ],
             )
-            .await
             .map_err(|e| RiceGrepError::Database {
                 message: format!("Failed to store search history: {}", e),
             })?;
@@ -235,168 +192,124 @@ impl DatabaseManager {
     }
 
     /// Retrieve search history for a user
-    pub async fn get_search_history(
+    pub fn get_search_history(
         &self,
         user_id: Option<&str>,
         limit: usize,
     ) -> Result<Vec<SearchHistory>, RiceGrepError> {
-        let rows = if let Some(user_id) = user_id {
-            self.session
-                .query(
-                    "SELECT id, user_id, query, results_count, execution_time_ms, timestamp, ai_used, success FROM search_history WHERE user_id = ? LIMIT ?",
-                    (user_id, limit as i32),
-                )
+        let mut stmt = if let Some(user_id) = user_id {
+            self.conn.prepare(
+                "SELECT id, user_id, query, results_count, execution_time_ms, timestamp, ai_used, success FROM search_history WHERE user_id = ? ORDER BY timestamp DESC LIMIT ?"
+            )?
         } else {
-            self.session
-                .query(
-                    "SELECT id, user_id, query, results_count, execution_time_ms, timestamp, ai_used, success FROM search_history LIMIT ? ALLOW FILTERING",
-                    (limit as i32,),
-                )
-        }
-            .await
-            .map_err(|e| RiceGrepError::Database {
-                message: format!("Failed to retrieve search history: {}", e),
-            })?;
+            self.conn.prepare(
+                "SELECT id, user_id, query, results_count, execution_time_ms, timestamp, ai_used, success FROM search_history ORDER BY timestamp DESC LIMIT ?"
+            )?
+        };
 
         let mut results = Vec::new();
-        for row in rows.rows().unwrap_or_default() {
-            let (id, user_id, query, results_count, execution_time_ms, timestamp_ms, ai_used, success): (Uuid, Option<String>, String, i32, i64, i64, bool, bool) = row.into_typed().map_err(|e| RiceGrepError::Database {
-                message: format!("Failed to parse search history row: {}", e),
-            })?;
+        let mut rows = if let Some(user_id) = user_id {
+            stmt.query(params![user_id, limit as i64])?
+        } else {
+            stmt.query(params![limit as i64])?
+        };
 
-            let timestamp = DateTime::from_timestamp_millis(timestamp_ms).ok_or_else(|| RiceGrepError::Database {
-                message: "Invalid timestamp in database".to_string(),
-            })?;
-
-            results.push(SearchHistory {
-                id,
-                user_id,
-                query,
-                results_count: results_count as usize,
-                execution_time_ms: execution_time_ms as u64,
-                timestamp,
-                ai_used,
-                success,
-            });
+        while let Some(row) = rows.next()? {
+            results.push(Self::map_search_history_row(&row)?);
         }
 
         Ok(results)
     }
 
-    /// Store user preference
-    pub async fn store_user_preference(&self, pref: UserPreferences) -> Result<(), RiceGrepError> {
-        self.session
-            .query(
-                r#"
-                INSERT INTO user_preferences (
-                    user_id, setting_key, setting_value, category,
-                    last_updated, is_ai_preference
-                ) VALUES (?, ?, ?, ?, ?, ?)
-                "#,
-                (
-                    pref.user_id,
-                    pref.setting_key,
-                    serde_json::to_string(&pref.setting_value).map_err(|e| RiceGrepError::Database {
-                        message: format!("Failed to serialize preference value: {}", e),
-                    })?,
-                    pref.category,
-                    pref.last_updated,
-                    pref.is_ai_preference,
-                ),
-            )
-            .await
-            .map_err(|e| RiceGrepError::Database {
-                message: format!("Failed to store user preference: {}", e),
-            })?;
-
-        Ok(())
+    /// Helper function to map database rows to SearchHistory
+    fn map_search_history_row(row: &rusqlite::Row) -> rusqlite::Result<SearchHistory> {
+        Ok(SearchHistory {
+            id: Uuid::parse_str(&row.get::<_, String>(0)?).unwrap_or_default(),
+            user_id: row.get(1)?,
+            query: row.get(2)?,
+            results_count: row.get::<_, i32>(3)? as usize,
+            execution_time_ms: row.get::<_, i64>(4)? as u64,
+            timestamp: DateTime::from_timestamp_millis(row.get::<_, i64>(5)?).unwrap_or_else(|| Utc::now()),
+            ai_used: row.get(6)?,
+            success: row.get(7)?,
+        })
     }
 
-    /// Get user preference
-    pub async fn get_user_preference(
-        &self,
-        user_id: &str,
-        setting_key: &str,
-    ) -> Result<Option<UserPreferences>, RiceGrepError> {
-        let rows = self
-            .session
-            .query(
-                "SELECT user_id, setting_key, setting_value, category, last_updated, is_ai_preference FROM user_preferences WHERE user_id = ? AND setting_key = ?",
-                (user_id, setting_key),
-            )
-            .await
-            .map_err(|e| RiceGrepError::Database {
-                message: format!("Failed to retrieve user preference: {}", e),
-            })?;
+    /// Get index metadata
+    pub fn get_index_metadata(&self, index_id: Uuid) -> Result<Option<IndexMetadata>, RiceGrepError> {
+        let mut stmt = self.conn.prepare(
+            "SELECT index_id, path, file_count, total_size_bytes, last_rebuild, rebuild_duration_ms, performance_score, status FROM index_metadata WHERE index_id = ?"
+        )?;
 
-        if let Some(row) = rows.first_row() {
-            let (user_id, setting_key, setting_value_str, category, last_updated_ms, is_ai_preference): (String, String, String, String, i64, bool) = row.into_typed().map_err(|e| RiceGrepError::Database {
-                message: format!("Failed to parse user preference row: {}", e),
-            })?;
+        let result = stmt.query_row(params![index_id.to_string()], |row| {
+            let status_str: String = row.get(7)?;
+            let status = match status_str.as_str() {
+                "active" => IndexStatus::Active,
+                "rebuilding" => IndexStatus::Rebuilding,
+                "corrupted" => IndexStatus::Corrupted,
+                "outdated" => IndexStatus::Outdated,
+                _ => IndexStatus::Corrupted,
+            };
 
-            let last_updated = DateTime::from_timestamp_millis(last_updated_ms).ok_or_else(|| RiceGrepError::Database {
-                message: "Invalid timestamp in database".to_string(),
-            })?;
+            Ok(IndexMetadata {
+                index_id: Uuid::parse_str(&row.get::<_, String>(0)?).unwrap_or_default(),
+                path: row.get(1)?,
+                file_count: row.get::<_, i32>(2)? as usize,
+                total_size_bytes: row.get::<_, i64>(3)? as u64,
+                last_rebuild: DateTime::from_timestamp_millis(row.get::<_, i64>(4)?).unwrap_or_else(|| Utc::now()),
+                rebuild_duration_ms: row.get::<_, i64>(5)? as u64,
+                performance_score: row.get(6)?,
+                status,
+            })
+        });
 
-            let setting_value: serde_json::Value = serde_json::from_str(&setting_value_str).map_err(|e| RiceGrepError::Database {
-                message: format!("Failed to deserialize preference value: {}", e),
-            })?;
-
-            Ok(Some(UserPreferences {
-                user_id,
-                setting_key,
-                setting_value,
-                category,
-                last_updated,
-                is_ai_preference,
-            }))
-        } else {
-            Ok(None)
+        match result {
+            Ok(metadata) => Ok(Some(metadata)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(RiceGrepError::Database {
+                message: format!("Failed to retrieve index metadata: {}", e),
+            }),
         }
     }
 
-    /// Get all user preferences
-    pub async fn get_user_preferences(&self, user_id: &str) -> Result<Vec<UserPreferences>, RiceGrepError> {
-        let rows = self
-            .session
-            .query(
-                "SELECT user_id, setting_key, setting_value, category, last_updated, is_ai_preference FROM user_preferences WHERE user_id = ?",
-                (user_id,),
-            )
-            .await
-            .map_err(|e| RiceGrepError::Database {
-                message: format!("Failed to retrieve user preferences: {}", e),
-            })?;
+    /// Get all index metadata
+    pub fn get_all_index_metadata(&self) -> Result<Vec<IndexMetadata>, RiceGrepError> {
+        let mut stmt = self.conn.prepare(
+            "SELECT index_id, path, file_count, total_size_bytes, last_rebuild, rebuild_duration_ms, performance_score, status FROM index_metadata"
+        )?;
+
+        let rows = stmt.query_map([], |row| {
+            let status_str: String = row.get(7)?;
+            let status = match status_str.as_str() {
+                "active" => IndexStatus::Active,
+                "rebuilding" => IndexStatus::Rebuilding,
+                "corrupted" => IndexStatus::Corrupted,
+                "outdated" => IndexStatus::Outdated,
+                _ => IndexStatus::Corrupted,
+            };
+
+            Ok(IndexMetadata {
+                index_id: Uuid::parse_str(&row.get::<_, String>(0)?).unwrap_or_default(),
+                path: row.get(1)?,
+                file_count: row.get::<_, i32>(2)? as usize,
+                total_size_bytes: row.get::<_, i64>(3)? as u64,
+                last_rebuild: DateTime::from_timestamp_millis(row.get::<_, i64>(4)?).unwrap_or_else(|| Utc::now()),
+                rebuild_duration_ms: row.get::<_, i64>(5)? as u64,
+                performance_score: row.get(6)?,
+                status,
+            })
+        })?;
 
         let mut results = Vec::new();
-        for row in rows.rows().unwrap_or_default() {
-            let (user_id, setting_key, setting_value_str, category, last_updated_ms, is_ai_preference): (String, String, String, String, i64, bool) = row.into_typed().map_err(|e| RiceGrepError::Database {
-                message: format!("Failed to parse user preference row: {}", e),
-            })?;
-
-            let last_updated = DateTime::from_timestamp_millis(last_updated_ms).ok_or_else(|| RiceGrepError::Database {
-                message: "Invalid timestamp in database".to_string(),
-            })?;
-
-            let setting_value: serde_json::Value = serde_json::from_str(&setting_value_str).map_err(|e| RiceGrepError::Database {
-                message: format!("Failed to deserialize preference value: {}", e),
-            })?;
-
-            results.push(UserPreferences {
-                user_id,
-                setting_key,
-                setting_value,
-                category,
-                last_updated,
-                is_ai_preference,
-            });
+        for row in rows {
+            results.push(row?);
         }
 
         Ok(results)
     }
 
     /// Store index metadata
-    pub async fn store_index_metadata(&self, metadata: IndexMetadata) -> Result<(), RiceGrepError> {
+    pub fn store_index_metadata(&self, metadata: IndexMetadata) -> Result<(), RiceGrepError> {
         let status_str = match metadata.status {
             IndexStatus::Active => "active",
             IndexStatus::Rebuilding => "rebuilding",
@@ -404,206 +317,27 @@ impl DatabaseManager {
             IndexStatus::Outdated => "outdated",
         };
 
-        self.session
-            .query(
+        self.conn
+            .execute(
                 r#"
                 INSERT INTO index_metadata (
                     index_id, path, file_count, total_size_bytes,
                     last_rebuild, rebuild_duration_ms, performance_score, status
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 "#,
-                (
-                    metadata.index_id,
+                params![
+                    metadata.index_id.to_string(),
                     metadata.path,
                     metadata.file_count as i32,
                     metadata.total_size_bytes as i64,
-                    metadata.last_rebuild,
+                    metadata.last_rebuild.timestamp_millis(),
                     metadata.rebuild_duration_ms as i64,
                     metadata.performance_score,
                     status_str,
-                ),
+                ],
             )
-            .await
             .map_err(|e| RiceGrepError::Database {
                 message: format!("Failed to store index metadata: {}", e),
-            })?;
-
-        Ok(())
-    }
-
-    /// Get index metadata
-    pub async fn get_index_metadata(&self, index_id: Uuid) -> Result<Option<IndexMetadata>, RiceGrepError> {
-        let rows = self
-            .session
-            .query(
-                "SELECT index_id, path, file_count, total_size_bytes, last_rebuild, rebuild_duration_ms, performance_score, status FROM index_metadata WHERE index_id = ?",
-                (index_id,),
-            )
-            .await
-            .map_err(|e| RiceGrepError::Database {
-                message: format!("Failed to retrieve index metadata: {}", e),
-            })?;
-
-        if let Some(row) = rows.first_row() {
-            let (index_id, path, file_count, total_size_bytes, last_rebuild_ms, rebuild_duration_ms, performance_score, status_str): (Uuid, String, i32, i64, i64, i64, f64, String) = row.into_typed().map_err(|e| RiceGrepError::Database {
-                message: format!("Failed to parse index metadata row: {}", e),
-            })?;
-
-            let last_rebuild = DateTime::from_timestamp_millis(last_rebuild_ms).ok_or_else(|| RiceGrepError::Database {
-                message: "Invalid timestamp in database".to_string(),
-            })?;
-
-            let status = match status_str.as_str() {
-                "active" => IndexStatus::Active,
-                "rebuilding" => IndexStatus::Rebuilding,
-                "corrupted" => IndexStatus::Corrupted,
-                "outdated" => IndexStatus::Outdated,
-                _ => IndexStatus::Corrupted,
-            };
-
-            Ok(Some(IndexMetadata {
-                index_id,
-                path,
-                file_count: file_count as usize,
-                total_size_bytes: total_size_bytes as u64,
-                last_rebuild,
-                rebuild_duration_ms: rebuild_duration_ms as u64,
-                performance_score,
-                status,
-            }))
-        } else {
-            Ok(None)
-        }
-    }
-
-    /// Get all index metadata
-    pub async fn get_all_index_metadata(&self) -> Result<Vec<IndexMetadata>, RiceGrepError> {
-        let rows = self
-            .session
-            .query(
-                "SELECT index_id, path, file_count, total_size_bytes, last_rebuild, rebuild_duration_ms, performance_score, status FROM index_metadata",
-                &[],
-            )
-            .await
-            .map_err(|e| RiceGrepError::Database {
-                message: format!("Failed to retrieve index metadata: {}", e),
-            })?;
-
-        let mut results = Vec::new();
-        for row in rows.rows().unwrap_or_default() {
-            let (index_id, path, file_count, total_size_bytes, last_rebuild_ms, rebuild_duration_ms, performance_score, status_str): (Uuid, String, i32, i64, i64, i64, f64, String) = row.into_typed().map_err(|e| RiceGrepError::Database {
-                message: format!("Failed to parse index metadata row: {}", e),
-            })?;
-
-            let last_rebuild = DateTime::from_timestamp_millis(last_rebuild_ms).ok_or_else(|| RiceGrepError::Database {
-                message: "Invalid timestamp in database".to_string(),
-            })?;
-
-            let status = match status_str.as_str() {
-                "active" => IndexStatus::Active,
-                "rebuilding" => IndexStatus::Rebuilding,
-                "corrupted" => IndexStatus::Corrupted,
-                "outdated" => IndexStatus::Outdated,
-                _ => IndexStatus::Corrupted,
-            };
-
-            results.push(IndexMetadata {
-                index_id,
-                path,
-                file_count: file_count as usize,
-                total_size_bytes: total_size_bytes as u64,
-                last_rebuild,
-                rebuild_duration_ms: rebuild_duration_ms as u64,
-                performance_score,
-                status,
-            });
-        }
-
-        Ok(results)
-    }
-}
-
-/// Migration manager for database schema updates
-pub struct MigrationManager {
-    session: Arc<Session>,
-    current_version: i32,
-}
-
-impl MigrationManager {
-    /// Create a new migration manager
-    pub fn new(session: Arc<Session>) -> Self {
-        Self {
-            session,
-            current_version: 1,
-        }
-    }
-
-    /// Run all pending migrations
-    pub async fn run_migrations(&self) -> Result<(), RiceGrepError> {
-        // Create migrations table if it doesn't exist
-        self.session
-            .query(
-                r#"
-                CREATE TABLE IF NOT EXISTS schema_migrations (
-                    version int PRIMARY KEY,
-                    description text,
-                    applied_at timestamp
-                )
-                "#,
-                &[],
-            )
-            .await
-            .map_err(|e| RiceGrepError::Database {
-                message: format!("Failed to create migrations table: {}", e),
-            })?;
-
-        // Get current version
-        let current_version = self.get_current_version().await?;
-
-        // Run migrations
-        if current_version < 1 {
-            self.run_migration_1().await?;
-        }
-
-        // Future migrations can be added here
-
-        Ok(())
-    }
-
-    /// Get current schema version
-    async fn get_current_version(&self) -> Result<i32, RiceGrepError> {
-        let rows = self
-            .session
-            .query("SELECT version FROM schema_migrations LIMIT 1000 ALLOW FILTERING", &[])
-            .await
-            .map_err(|e| RiceGrepError::Database {
-                message: format!("Failed to get current version: {}", e),
-            })?;
-
-        let mut max_version = 0;
-        for row in rows.rows().unwrap_or_default() {
-            let version: i32 = row.into_typed().map_err(|e| RiceGrepError::Database {
-                message: format!("Failed to parse version: {}", e),
-            })?;
-            if version > max_version {
-                max_version = version;
-            }
-        }
-
-        Ok(max_version)
-    }
-
-    /// Migration 1: Initial schema
-    async fn run_migration_1(&self) -> Result<(), RiceGrepError> {
-        // Mark migration as applied
-        self.session
-            .query(
-                "INSERT INTO schema_migrations (version, description, applied_at) VALUES (?, ?, ?)",
-                (1, "Initial schema", Utc::now().timestamp_millis()),
-            )
-            .await
-            .map_err(|e| RiceGrepError::Database {
-                message: format!("Failed to record migration 1: {}", e),
             })?;
 
         Ok(())

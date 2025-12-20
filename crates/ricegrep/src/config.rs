@@ -108,17 +108,17 @@ impl Default for RiceGrepConfig {
                 boosts
             },
 
-            index_dir: PathBuf::from(".ricegrep"),
+            index_dir: PathBuf::from(".ricecoder/.ricegrep"),
             max_file_size_mb: 10,
 
             mcp_enabled: false,
             mcp_port: None,
 
-            plugin_dirs: vec![PathBuf::from(".ricegrep/plugins")],
+            plugin_dirs: vec![PathBuf::from(".ricecoder/.ricegrep/plugins")],
             plugin_enabled: vec![],
 
             store_enabled: true,
-            store_path: PathBuf::from(".ricegrep/store"),
+            store_path: PathBuf::from(".ricecoder/.ricegrep/store"),
         }
     }
 }
@@ -130,9 +130,9 @@ impl RiceGrepConfig {
             // Start with defaults
             .merge(Serialized::defaults(Self::default()))
             // Global configuration file
-            .merge(Toml::file(expand_path("~/.ricegrep.toml")).nested())
+            .merge(Toml::file(expand_path("~/Documents/.ricecoder/.ricegrep.toml")).nested())
             // Local project configuration
-            .merge(Toml::file(".ricegrep.toml").nested())
+            .merge(Toml::file(".ricecoder/.ricegrep.toml").nested())
             // Environment variables (RICEGREP_*)
             .merge(Env::prefixed("RICEGREP_").global())
             // Extract final configuration
@@ -142,17 +142,25 @@ impl RiceGrepConfig {
     /// Save configuration to local file
     pub fn save(&self) -> Result<(), Box<dyn std::error::Error>> {
         let toml_string = toml::to_string_pretty(self)?;
-        std::fs::create_dir_all(".ricegrep")?;
-        std::fs::write(".ricegrep.toml", toml_string)?;
+        std::fs::create_dir_all(".ricecoder")?;
+        std::fs::write(".ricecoder/.ricegrep.toml", toml_string)?;
         Ok(())
     }
 }
 
-/// Expand tilde in path
+/// Expand tilde in path with platform-specific handling
+/// Uses the same approach as ricecoder-storage for cross-platform compatibility
 fn expand_path(path: &str) -> PathBuf {
-    if path.starts_with('~') {
-        if let Some(home) = std::env::var_os("HOME") {
-            return PathBuf::from(path.replacen('~', &home.to_string_lossy(), 1));
+    if path.starts_with("~/Documents/") {
+        // Platform-specific Documents folder (like ricecoder-storage)
+        if let Some(documents) = dirs::document_dir() {
+            let relative_path = path.strip_prefix("~/Documents/").unwrap();
+            return documents.join(relative_path);
+        }
+    } else if path.starts_with('~') {
+        // Regular home directory expansion
+        if let Some(home) = dirs::home_dir() {
+            return home.join(path.strip_prefix('~').unwrap());
         }
     }
     PathBuf::from(path)
@@ -168,6 +176,24 @@ mod tests {
         assert!(!config.ai_enabled);
         assert_eq!(config.fuzzy_distance, 2);
         assert_eq!(config.output_format, OutputFormat::Text);
+    }
+
+    #[test]
+    fn test_expand_path_documents() {
+        // Test that ~/Documents/ paths are expanded using dirs::document_dir()
+        let path = "~/Documents/.ricecoder/.ricegrep.toml";
+        let expanded = expand_path(path);
+
+        // Should use document_dir() if available, otherwise fallback
+        if let Some(docs_dir) = dirs::document_dir() {
+            let expected = docs_dir.join(".ricecoder/.ricegrep.toml");
+            assert_eq!(expanded, expected);
+        } else {
+            // Fallback case
+            let home = dirs::home_dir().unwrap();
+            let expected = home.join("Documents/.ricecoder/.ricegrep.toml");
+            assert_eq!(expanded, expected);
+        }
     }
 
     #[test]

@@ -358,7 +358,8 @@ impl AuditLogger {
             .unwrap_or_else(|| {
                 dirs::home_dir()
                     .unwrap_or_else(|| PathBuf::from("."))
-                    .join(".ricegrep")
+                    .join("Documents")
+                    .join(".ricecoder")
                     .join("audit.log")
             });
 

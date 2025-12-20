@@ -80,7 +80,7 @@ impl LocalMetadataStore {
         let home = dirs::home_dir()
             .ok_or_else(|| RiceGrepError::ConfigError("Could not find home directory".to_string()))?;
 
-        Ok(home.join(".ricegrep").join("metadata"))
+        Ok(home.join(".ricecoder").join(".ricegrep").join("metadata"))
     }
 
     /// Ensure metadata directory exists

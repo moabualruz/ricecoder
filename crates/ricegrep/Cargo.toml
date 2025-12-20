@@ -58,8 +58,11 @@ clap = { version = "4.0", features = ["derive"] }
 thiserror = "1.0"
 # Logging
 tracing = "0.1"
-# AI/ML dependencies - Using improved heuristics for semantic search
-tokenizers = "0.20"
+# AI/ML dependencies - Pure heuristic-based processing (no external APIs)
+# Database dependencies - Using SQLite for simplicity and reliability
+rusqlite = { version = "0.31", features = ["bundled"] }
+serde_rusqlite = "0.35"
+rust-mcp-sdk = { version = "0.7", features = ["server", "stdio"] }
 # TODO: Add ML libraries with proper CPU/CUDA support
 
 [dev-dependencies]
@@ -69,7 +72,6 @@ tempfile = "3.0"
 ricecoder-sessions = { path = "../ricecoder-sessions" }
 ricecoder-refactoring = { path = "../ricecoder-refactoring" }
 
-# MCP integration - temporarily disabled until proper SDK is available
-# mcpr = "0.2"
+# MCP integration - simple stdio-based implementation
 
 

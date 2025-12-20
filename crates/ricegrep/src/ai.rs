@@ -86,7 +86,7 @@ impl RiceGrepAIProcessor {
         Self {
             confidence_threshold: 0.7,
             domain_knowledge: DomainKnowledge::new(),
-            embedded_processor: crate::embedded_ai::EmbeddedAIProcessor::new().ok(),
+            embedded_processor: Some(crate::embedded_ai::EmbeddedAIProcessor::new()),
         }
     }
 
@@ -99,10 +99,10 @@ impl RiceGrepAIProcessor {
     }
 
     /// Create query understanding from natural language
-    fn understand_query(&self, query: &str) -> Result<QueryUnderstanding, RiceGrepError> {
+    async fn understand_query(&self, query: &str) -> Result<QueryUnderstanding, RiceGrepError> {
         // Use embedded AI processor if available
         if let Some(ref processor) = self.embedded_processor {
-            return processor.process_query(query);
+            return processor.process_query(query).await;
         }
 
         // Fallback to heuristic-based understanding
@@ -201,7 +201,7 @@ impl RiceGrepAIProcessor {
     async fn rerank_results(&self, results: &mut SearchResults, query: &str) -> Result<(), RiceGrepError> {
         // Use embedded AI processor if available
         if let Some(ref processor) = self.embedded_processor {
-            return processor.rerank_results(results, query);
+            return processor.rerank_results(results, query).await;
         }
 
         // Fallback to basic reranking
@@ -321,7 +321,7 @@ impl Default for DomainKnowledge {
 impl AIProcessor for RiceGrepAIProcessor {
     async fn process_query(&self, query: &str) -> Result<QueryUnderstanding, RiceGrepError> {
         // Use embedded AI processor or fallback to heuristics
-        self.understand_query(query)
+        self.understand_query(query).await
     }
 
     async fn rerank_results(&mut self, results: &mut SearchResults, query: &str) -> Result<(), RiceGrepError> {

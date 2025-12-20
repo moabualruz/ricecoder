@@ -437,7 +437,7 @@ impl IndexManager {
 
 impl Default for IndexManager {
     fn default() -> Self {
-        Self::new(PathBuf::from(".ricegrep"))
+        Self::new(PathBuf::from(".ricecoder/.ricegrep"))
     }
 }
 
