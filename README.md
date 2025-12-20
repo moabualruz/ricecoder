@@ -1493,7 +1493,7 @@ RiceCoder includes **RiceGrep** (`ricegrep`), an AI-enhanced, offline-first code
 - **⚙️ Configuration System** - Comprehensive customization and scripting support
 - **🤖 MCP Server** - AI assistant integration via Model Context Protocol (starts background watch by default)
 - **📦 Plugin Ecosystem** - Automated installation for Claude Code, OpenCode, Codex, Factory Droid
-- **🗂️ Index Management** - Build, update, status, and clear search indexes
+- **🗂️ Index Management** - Build, update, status, and clear search indexes (auto-skips .git files)
 
 ### RiceGrep Usage
 
@@ -1511,7 +1511,9 @@ ricegrep search --ai-enhanced "find error handling functions" src/
 ricegrep search --answer "how does authentication work" .
 
 # Watch mode with automatic index updates
-ricegrep watch . --timeout 300
+ricegrep watch                    # Watch current directory
+ricegrep watch src/               # Watch specific directory
+ricegrep watch --timeout 300      # Watch with 5-minute timeout
 
 # Index management (basic)
 ricegrep index --build .      # Build search index (framework)
@@ -1537,7 +1539,8 @@ ricegrep replace "old_name" "new_name" --preview file.rs
 | AI Enhancement | ✅ Heuristic-based | ❌ | ❌ |
 | Offline Operation | ✅ Full offline | ✅ | ✅ |
 | Language Awareness | ✅ Context ranking | ❌ | ❌ |
-| Watch Mode | ✅ Auto-reindexing | ❌ | ❌ |
+| Watch Mode | ✅ Auto-reindexing + search updates | ❌ | ❌ |
+| Index Management | ✅ File-by-file incremental | ❌ | ❌ |
 | MCP Integration | ✅ AI assistants + background watch | ❌ | ❌ |
 | Plugin Ecosystem | ✅ Claude/OpenCode/etc | ❌ | ❌ |
 | Replace Operations | ✅ Safe preview | ⚠️ Basic | ⚠️ Basic |

@@ -3,11 +3,15 @@
 //! Provides the command-line interface for RiceGrep with ripgrep-compatible
 //! search functionality and AI enhancements.
 
-use ricegrep::args::{Args, RiceGrepCommand, SearchArgs};
+use ricegrep::args::{Args, RiceGrepCommand, SearchArgs, IndexArgs, IndexCommand};
+use std::path::PathBuf;
+use notify;
 use ricegrep::database::{DatabaseManager, DatabaseConfig};
 use ricegrep::search::{RegexSearchEngine, SearchEngine, SearchQuery, ProgressVerbosity};
 use ricegrep::spelling::{SpellingCorrector, SpellingConfig};
 use ricegrep::ai::RiceGrepAIProcessor;
+use ricegrep::watch;
+use notify::Watcher;
 use ricegrep::output::OutputFormatter;
 use ricegrep::config::{OutputFormat, ColorChoice};
 use ricegrep::mcp::RiceGrepMcpServer;
@@ -15,6 +19,177 @@ use std::sync::Arc;
 use std::process::Command;
 use tokio::process::Command as TokioCommand;
 use serde_json;
+
+/// Handle search command (used by both Search and Legacy commands)
+async fn handle_search_command(search_args: SearchArgs, database_manager: Option<Arc<DatabaseManager>>) -> Result<(), Box<dyn std::error::Error>> {
+    // Determine if we're searching multiple files
+    let is_multiple_files =
+        search_args.paths.len() > 1 ||
+        (search_args.paths.len() == 1 && std::fs::metadata(&search_args.paths[0]).map(|m| m.is_dir()).unwrap_or(false));
+
+    // Show line numbers by default for multiple files
+    let show_line_numbers = search_args.line_number || is_multiple_files;
+
+    let query = SearchQuery {
+        pattern: search_args.pattern.clone(),
+        paths: search_args.paths,
+        case_insensitive: search_args.case_insensitive,
+        case_sensitive: search_args.case_sensitive,
+        word_regexp: search_args.word_regexp,
+        fixed_strings: search_args.fixed_strings,
+        follow: false, // Not implemented in subcommand yet
+        hidden: false, // Not implemented in subcommand yet
+        no_ignore: false, // Not implemented in subcommand yet
+        ignore_file: None, // TODO: Add ignore_file to SearchArgs
+        quiet: false, // TODO: Add quiet to SearchArgs
+        dry_run: false, // TODO: Add dry_run to SearchArgs
+        max_file_size: None, // TODO: Add max_file_size to SearchArgs
+        progress_verbosity: ProgressVerbosity::Normal,
+        max_files: None, // TODO: Add max_files to SearchArgs
+        max_matches: search_args.max_count,
+        max_lines: None, // TODO: Add max_lines to SearchArgs
+        invert_match: search_args.invert_match,
+        ai_enhanced: search_args.ai_enhanced || search_args.natural_language,
+        no_rerank: search_args.no_rerank,
+        fuzzy: None,
+        max_count: search_args.max_count,
+        spelling_correction: None,
+    };
+
+    // Create search engine - AI processor is lazy-loaded only when needed
+    let ai_processor = Box::new(RiceGrepAIProcessor::new());
+    let mut search_engine = RegexSearchEngine::new()
+        .with_spelling_corrector(SpellingConfig::default())
+        .with_ai_processor(ai_processor);
+
+    // Execute search with performance monitoring
+    let search_start = std::time::Instant::now();
+    let results = search_engine.search(query).await?;
+    let search_duration = search_start.elapsed();
+
+    // Store search history in database if available (disabled)
+    // TODO: Re-enable when database is fixed
+
+    // Output results
+    let formatter = OutputFormatter::new(
+        OutputFormat::Text,
+        ColorChoice::Auto,
+        show_line_numbers,
+        true, // heading
+        true, // filename
+        search_args.ai_enhanced || search_args.natural_language, // ai_enabled
+        search_args.count,
+        search_args.content,
+        None, // max_lines
+    );
+    formatter.write_results(&results)?;
+
+    // Generate AI answer if requested
+    if search_args.answer {
+        match search_engine.generate_answer(&search_args.pattern, &results).await {
+            Ok(answer) => {
+                println!("\n🤖 AI Answer:\n{}", answer);
+            }
+            Err(e) => {
+                eprintln!("Warning: Failed to generate AI answer: {}", e);
+            }
+        }
+    }
+
+    // Log performance metrics if requested
+    if std::env::var("RICEGREP_PERF").is_ok() {
+        eprintln!("Search completed in {:.2}ms, found {} matches in {} files",
+                  search_duration.as_secs_f64() * 1000.0,
+                  results.total_matches,
+                  results.files_searched);
+    }
+
+    Ok(())
+}
+
+/// Start background watch mode for MCP server
+fn start_background_watch(_database_manager: Arc<DatabaseManager>) {
+    // Spawn a background task to monitor file changes and rebuild index
+    tokio::spawn(async {
+        println!("🔍 Background watch mode started in current directory");
+
+        // Create a simple file watcher for the current directory
+        let (tx, rx) = std::sync::mpsc::channel();
+        let mut watcher = match notify::RecommendedWatcher::new(tx, notify::Config::default()) {
+            Ok(w) => w,
+            Err(e) => {
+                eprintln!("Failed to create file watcher: {}", e);
+                return;
+            }
+        };
+
+        // Watch the current directory recursively
+        if let Err(e) = watcher.watch(std::path::Path::new("."), notify::RecursiveMode::Recursive) {
+            eprintln!("Failed to watch current directory: {}", e);
+            return;
+        }
+
+        // Track changed files for incremental updates
+        let mut pending_changes: Vec<PathBuf> = Vec::new();
+        let mut last_update = std::time::Instant::now();
+        let debounce_duration = std::time::Duration::from_millis(500);
+
+        loop {
+            match rx.recv_timeout(debounce_duration) {
+                Ok(Ok(event)) => {
+                    // Collect changed file paths
+                    for path in event.paths {
+                        if path.is_file() {
+                            pending_changes.push(path);
+                        }
+                    }
+                }
+                Ok(Err(e)) => {
+                    eprintln!("Watch error: {}", e);
+                    break;
+                }
+                Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+                    // Check if we have pending changes to process
+                    if !pending_changes.is_empty() && last_update.elapsed() >= debounce_duration {
+                        let detection_time = std::time::Instant::now();
+
+                        // Perform incremental update
+                        let start_time = std::time::Instant::now();
+                        let mut search_engine = RegexSearchEngine::new();
+                        let root_path = PathBuf::from(".");
+
+                        if let Err(e) = search_engine.update_index_incremental(&root_path, &pending_changes, None) {
+                            eprintln!("Warning: Incremental update failed: {}", e);
+                            // Fall back to full rebuild
+                            if let Err(e) = search_engine.build_index(&[root_path], ProgressVerbosity::Quiet).await {
+                                eprintln!("Warning: Full rebuild also failed: {}", e);
+                            } else {
+                                let duration = start_time.elapsed();
+                                let total_time = detection_time.elapsed();
+                                println!("⚡ Index rebuilt in {:.2}s (total: {:.2}s)",
+                                        duration.as_secs_f64(), total_time.as_secs_f64());
+                            }
+                        } else {
+                            let duration = start_time.elapsed();
+                            let total_time = detection_time.elapsed();
+                            println!("⚡ Index updated in {:.2}s (total: {:.2}s)",
+                                    duration.as_secs_f64(), total_time.as_secs_f64());
+                        }
+
+                        // Clear pending changes and reset timer
+                        pending_changes.clear();
+                        last_update = std::time::Instant::now();
+                    }
+                }
+                Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                    break;
+                }
+            }
+        }
+
+        println!("🔍 Background watch mode stopped");
+    });
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -40,88 +215,207 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // For now, only handle search command
     match args.command {
         RiceGrepCommand::Search(search_args) => {
+            return handle_search_command(search_args, database_manager).await;
+        }
+        RiceGrepCommand::Legacy(legacy_args) => {
+            // Handle index operations for legacy flags
+            if legacy_args.index_build {
+                println!("🔄 Building search index...");
+                let paths = if legacy_args.paths.is_empty() {
+                    vec![std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))]
+                } else {
+                    legacy_args.paths
+                };
 
-            // Determine if we're searching multiple files
-            let is_multiple_files =
-                search_args.paths.len() > 1 ||
-                (search_args.paths.len() == 1 && std::fs::metadata(&search_args.paths[0]).map(|m| m.is_dir()).unwrap_or(false));
+                let start_time = std::time::Instant::now();
+                let mut search_engine = RegexSearchEngine::new();
+                if let Err(e) = search_engine.build_index(&paths, ProgressVerbosity::Normal).await {
+                    eprintln!("❌ Failed to build index: {}", e);
+                    std::process::exit(1);
+                }
+                let duration = start_time.elapsed();
+                println!("✅ Index built successfully in {:.2}s", duration.as_secs_f64());
+            } else if legacy_args.index_update {
+                println!("🔄 Updating search index...");
+                let root_path = legacy_args.paths.first().cloned().unwrap_or_else(|| PathBuf::from("."));
+                let changed_files = if legacy_args.paths.len() > 1 {
+                    &legacy_args.paths[1..]
+                } else {
+                    // For update, we need to find changed files - for now, just rebuild
+                    &[root_path.clone()]
+                };
 
-            // Show line numbers by default for multiple files
-            let show_line_numbers = search_args.line_number || is_multiple_files;
+                let start_time = std::time::Instant::now();
+                let mut search_engine = RegexSearchEngine::new();
+                if let Err(e) = search_engine.update_index_incremental(&root_path, changed_files, None) {
+                    eprintln!("❌ Failed to update index: {}", e);
+                    std::process::exit(1);
+                }
+                let duration = start_time.elapsed();
+                println!("✅ Index updated successfully in {:.2}s", duration.as_secs_f64());
+            } else if legacy_args.index_status {
+                let mut search_engine = RegexSearchEngine::new();
+                if let Some(stats) = search_engine.get_index_stats() {
+                    println!("📊 Index Status:");
+                    println!("   Directory: .ricecoder/.ricegrep");
+                    println!("   Index files: {}", stats.file_count);
+                    println!("   Total lines: {}", stats.line_count);
+                    println!("   Size: {} bytes", stats.total_size_bytes);
+                    println!("   Last updated: {:?}", stats.last_updated);
+                } else {
+                    println!("📊 Index Status:");
+                    println!("   Directory: .ricecoder/.ricegrep");
+                    println!("   Index files: 0");
+                }
+            } else {
+                // Regular search operation - convert to SearchArgs
+                let search_args = SearchArgs {
+                    pattern: legacy_args.pattern,
+                    paths: legacy_args.paths,
+                    case_insensitive: legacy_args.case_insensitive,
+                    case_sensitive: legacy_args.case_sensitive,
+                    word_regexp: legacy_args.word_regexp,
+                    fixed_strings: legacy_args.fixed_strings,
+                    line_number: true,
+                    invert_match: legacy_args.invert_match,
+                    count: legacy_args.count,
+                    max_count: legacy_args.max_count,
+                    before_context: legacy_args.before_context,
+                    after_context: legacy_args.after_context,
+                    context: legacy_args.context,
+                    content: false,
+                    syntax_highlight: false,
+                    answer: false,
+                    no_rerank: true,
+                    ai_enhanced: false,
+                    natural_language: false,
+                    replace: None,
+                    preview: false,
+                    force: false,
+                    ignore_file: None,
+                    quiet: false,
+                    dry_run: false,
+                    max_file_size: None,
+                    max_files: None,
+                    max_matches: None,
+                    max_lines: None,
+                };
 
-            // Create search query from args
-            let query = SearchQuery {
-                pattern: search_args.pattern.clone(),
-                paths: search_args.paths,
-                case_insensitive: search_args.case_insensitive,
-                case_sensitive: search_args.case_sensitive,
-                word_regexp: search_args.word_regexp,
-                fixed_strings: search_args.fixed_strings,
-                follow: false, // Not implemented in subcommand yet
-                hidden: false, // Not implemented in subcommand yet
-                no_ignore: false, // Not implemented in subcommand yet
-                ignore_file: None, // TODO: Add ignore_file to SearchArgs
-                quiet: false, // TODO: Add quiet to SearchArgs
-                dry_run: false, // TODO: Add dry_run to SearchArgs
-                max_file_size: None, // TODO: Add max_file_size to SearchArgs
-                progress_verbosity: ProgressVerbosity::Normal,
-                max_files: None, // TODO: Add max_files to SearchArgs
-                max_matches: search_args.max_count,
-                max_lines: None, // TODO: Add max_lines to SearchArgs
-                invert_match: search_args.invert_match,
-                ai_enhanced: search_args.ai_enhanced || search_args.natural_language,
-                no_rerank: search_args.no_rerank,
-                fuzzy: None,
-                max_count: search_args.max_count,
-                spelling_correction: None,
+                return handle_search_command(search_args, database_manager).await;
+            }
+        }
+        RiceGrepCommand::Watch(watch_args) => {
+            // Set up watch configuration
+            let watch_config = watch::WatchConfig {
+                paths: if watch_args.paths.is_empty() {
+                    vec![std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))]
+                } else {
+                    watch_args.paths
+                },
+                timeout: watch_args.timeout,
+                clear_screen: watch_args.clear_screen,
+                debounce_ms: 500, // Default debounce
             };
 
-            // Create search engine - AI processor is lazy-loaded only when needed
-            let ai_processor = Box::new(RiceGrepAIProcessor::new());
-            let mut search_engine = RegexSearchEngine::new()
-                .with_spelling_corrector(SpellingConfig::default())
-                .with_ai_processor(ai_processor);
+            // Create index directory path
+            let index_dir = std::env::current_dir()
+                .unwrap_or_else(|_| PathBuf::from("."))
+                .join(".ricecoder")
+                .join(".ricegrep");
 
-            // Execute search with performance monitoring
-            let search_start = std::time::Instant::now();
-            let results = search_engine.search(query).await?;
-            let search_duration = search_start.elapsed();
+            // Create and start watch engine
+            let mut watch_engine = watch::WatchEngine::new(watch_config, index_dir);
 
-            // Store search history in database if available (disabled)
-            // TODO: Re-enable when database is fixed
-
-            // Output results
-            let formatter = OutputFormatter::new(
-                OutputFormat::Text,
-                ColorChoice::Auto,
-                show_line_numbers,
-                true, // heading
-                true, // filename
-                search_args.ai_enhanced || search_args.natural_language, // ai_enabled
-                search_args.count,
-                search_args.content,
-                None, // max_lines
-            );
-            formatter.write_results(&results)?;
-
-            // Generate AI answer if requested
-            if search_args.answer {
-                match search_engine.generate_answer(&search_args.pattern, &results).await {
-                    Ok(answer) => {
-                        println!("\n🤖 AI Answer:\n{}", answer);
-                    }
-                    Err(e) => {
-                        eprintln!("Warning: Failed to generate AI answer: {}", e);
-                    }
-                }
+            if let Err(e) = watch_engine.start().await {
+                eprintln!("Watch mode error: {}", e);
+                std::process::exit(1);
             }
+        }
+        RiceGrepCommand::Legacy(legacy_args) => {
+            // Handle index operations for legacy flags
+            if legacy_args.index_build {
+                println!("🔄 Building search index...");
+                let paths = if legacy_args.paths.is_empty() {
+                    vec![std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))]
+                } else {
+                    legacy_args.paths
+                };
 
-            // Log performance metrics if requested
-            if std::env::var("RICEGREP_PERF").is_ok() {
-                eprintln!("Search completed in {:.2}ms, found {} matches in {} files",
-                          search_duration.as_secs_f64() * 1000.0,
-                          results.total_matches,
-                          results.files_searched);
+                let start_time = std::time::Instant::now();
+                let mut search_engine = RegexSearchEngine::new();
+                if let Err(e) = search_engine.build_index(&paths, ProgressVerbosity::Normal).await {
+                    eprintln!("❌ Failed to build index: {}", e);
+                    std::process::exit(1);
+                }
+                let duration = start_time.elapsed();
+                println!("✅ Index built successfully in {:.2}s", duration.as_secs_f64());
+            } else if legacy_args.index_update {
+                println!("🔄 Updating search index...");
+                let root_path = legacy_args.paths.first().cloned().unwrap_or_else(|| PathBuf::from("."));
+                let changed_files = if legacy_args.paths.len() > 1 {
+                    &legacy_args.paths[1..]
+                } else {
+                    // For update, we need to find changed files - for now, just rebuild
+                    &[root_path.clone()]
+                };
+
+                let start_time = std::time::Instant::now();
+                let mut search_engine = RegexSearchEngine::new();
+                if let Err(e) = search_engine.update_index_incremental(&root_path, changed_files, None) {
+                    eprintln!("❌ Failed to update index: {}", e);
+                    std::process::exit(1);
+                }
+                let duration = start_time.elapsed();
+                println!("✅ Index updated successfully in {:.2}s", duration.as_secs_f64());
+            } else if legacy_args.index_status {
+                let mut search_engine = RegexSearchEngine::new();
+                if let Some(stats) = search_engine.get_index_stats() {
+                    println!("📊 Index Status:");
+                    println!("   Directory: .ricecoder/.ricegrep");
+                    println!("   Index files: {}", stats.file_count);
+                    println!("   Total lines: {}", stats.line_count);
+                    println!("   Size: {} bytes", stats.total_size_bytes);
+                    println!("   Last updated: {:?}", stats.last_updated);
+                } else {
+                    println!("📊 Index Status:");
+                    println!("   Directory: .ricecoder/.ricegrep");
+                    println!("   Index files: 0");
+                }
+            } else {
+                // Regular search operation
+                let search_args = SearchArgs {
+                    pattern: legacy_args.pattern,
+                    paths: legacy_args.paths,
+                    case_insensitive: legacy_args.case_insensitive,
+                    case_sensitive: legacy_args.case_sensitive,
+                    word_regexp: legacy_args.word_regexp,
+                    fixed_strings: legacy_args.fixed_strings,
+                    line_number: legacy_args.line_number,
+                    invert_match: legacy_args.invert_match,
+                    count: legacy_args.count,
+                    max_count: legacy_args.max_count,
+                    before_context: legacy_args.before_context,
+                    after_context: legacy_args.after_context,
+                    context: legacy_args.context,
+                    content: false,
+                    syntax_highlight: false,
+                    answer: false,
+                    no_rerank: true,
+                    ai_enhanced: false,
+                    natural_language: false,
+                    replace: None,
+                    preview: false,
+                    force: false,
+                    ignore_file: None,
+                    quiet: false,
+                    dry_run: false,
+                    max_file_size: None,
+                    max_files: None,
+                    max_matches: None,
+                    max_lines: None,
+                };
+
+                return handle_search_command(search_args, database_manager).await;
             }
         }
         RiceGrepCommand::Watch(watch_args) => {
@@ -130,11 +424,86 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             std::process::exit(1);
         }
         RiceGrepCommand::Mcp(mcp_args) => {
-            // Start MCP server in stdio mode (like mgrep)
+            // Start background watch mode unless disabled
+            if !mcp_args.no_watch {
+                println!("🔍 Starting MCP server with background watch mode...");
+                if let Some(ref db) = database_manager {
+                    start_background_watch(db.clone());
+                }
+            } else {
+                println!("🔌 Starting MCP server without background watch mode...");
+            }
+
+            // Start MCP server in stdio mode
             let server = RiceGrepMcpServer::new();
             if let Err(e) = server.start_stdio_server().await {
                 eprintln!("Failed to start MCP server: {}", e);
                 std::process::exit(1);
+            }
+        }
+        RiceGrepCommand::Index(index_args) => {
+            // Handle index management commands
+            match index_args.command {
+                IndexCommand::Build => {
+                    println!("🔄 Building search index...");
+                    let paths = if index_args.paths.is_empty() {
+                        vec![std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))]
+                    } else {
+                        index_args.paths
+                    };
+
+                    let start_time = std::time::Instant::now();
+                    let mut search_engine = RegexSearchEngine::new();
+                    if let Err(e) = search_engine.build_index(&paths, ProgressVerbosity::Normal).await {
+                        eprintln!("❌ Failed to build index: {}", e);
+                        std::process::exit(1);
+                    }
+                    let duration = start_time.elapsed();
+                    println!("✅ Index built successfully in {:.2}s", duration.as_secs_f64());
+                }
+                IndexCommand::Update => {
+                    println!("🔄 Updating search index...");
+                    let root_path = index_args.paths.first().cloned().unwrap_or_else(|| PathBuf::from("."));
+                    let changed_files = if index_args.paths.len() > 1 {
+                        &index_args.paths[1..]
+                    } else {
+                        // For update, we need to find changed files - for now, just rebuild
+                        &[root_path.clone()]
+                    };
+
+                    let start_time = std::time::Instant::now();
+                    let mut search_engine = RegexSearchEngine::new();
+                    if let Err(e) = search_engine.update_index_incremental(&root_path, changed_files, None) {
+                        eprintln!("❌ Failed to update index: {}", e);
+                        std::process::exit(1);
+                    }
+                    let duration = start_time.elapsed();
+                    println!("✅ Index updated successfully in {:.2}s", duration.as_secs_f64());
+                }
+                IndexCommand::Clear => {
+                    println!("🗑️  Clearing search index...");
+                    let mut search_engine = RegexSearchEngine::new();
+                    if let Err(e) = search_engine.clear_index() {
+                        eprintln!("❌ Failed to clear index: {}", e);
+                        std::process::exit(1);
+                    }
+                    println!("✅ Index cleared successfully");
+                }
+                IndexCommand::Status => {
+                    let mut search_engine = RegexSearchEngine::new();
+                    if let Some(stats) = search_engine.get_index_stats() {
+                        println!("📊 Index Status:");
+                        println!("   Directory: .ricecoder/.ricegrep");
+                        println!("   Index files: {}", stats.file_count);
+                        println!("   Total lines: {}", stats.line_count);
+                        println!("   Size: {} bytes", stats.total_size_bytes);
+                        println!("   Last updated: {:?}", stats.last_updated);
+                    } else {
+                        println!("📊 Index Status:");
+                        println!("   Directory: .ricecoder/.ricegrep");
+                        println!("   Index files: 0");
+                    }
+                }
             }
         }
         RiceGrepCommand::Install(install_args) => {
@@ -320,14 +689,32 @@ export default tool({
     // Update MCP configuration
     let mut mcp_config = if mcp_path.exists() {
         match std::fs::read_to_string(&mcp_path) {
-            Ok(content) => serde_json::from_str(&content).unwrap_or_else(|_| serde_json::json!({})),
-            Err(_) => serde_json::json!({}),
+            Ok(content) => {
+                match serde_json::from_str(&content) {
+                    Ok(json) => json,
+                    Err(e) => {
+                        eprintln!("⚠️  Warning: Could not parse existing OpenCode config ({}), preserving as-is", e);
+                        eprintln!("   You may need to manually add RiceGrep to your OpenCode MCP configuration");
+                        return; // Don't modify the file if we can't parse it
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!("⚠️  Warning: Could not read OpenCode config ({}), skipping MCP setup", e);
+                return;
+            }
         }
     } else {
         serde_json::json!({})
     };
 
-    let mut mcp_config = mcp_config.as_object_mut().unwrap();
+    let mut mcp_config = match mcp_config.as_object_mut() {
+        Some(obj) => obj,
+        None => {
+            eprintln!("⚠️  Warning: OpenCode config is not a JSON object, skipping MCP setup");
+            return;
+        }
+    };
 
     // Add schema if not present
     if !mcp_config.contains_key("$schema") {
@@ -689,14 +1076,32 @@ search, grep, files, local files, local search, semantic search, AI search
     // Update settings.json
     let mut settings = if settings_path.exists() {
         match std::fs::read_to_string(&settings_path) {
-            Ok(content) => serde_json::from_str(&content).unwrap_or_else(|_| serde_json::json!({})),
-            Err(_) => serde_json::json!({}),
+            Ok(content) => {
+                match serde_json::from_str(&content) {
+                    Ok(json) => json,
+                    Err(e) => {
+                        eprintln!("⚠️  Warning: Could not parse existing Factory Droid settings ({}), preserving as-is", e);
+                        eprintln!("   You may need to manually configure RiceGrep hooks in Factory Droid");
+                        return; // Don't modify the file if we can't parse it
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!("⚠️  Warning: Could not read Factory Droid settings ({}), skipping configuration", e);
+                return;
+            }
         }
     } else {
         serde_json::json!({})
     };
 
-    let mut settings_obj = settings.as_object_mut().unwrap();
+    let mut settings_obj = match settings.as_object_mut() {
+        Some(obj) => obj,
+        None => {
+            eprintln!("⚠️  Warning: Factory Droid settings is not a JSON object, skipping configuration");
+            return;
+        }
+    };
 
     // Enable hooks and background processes
     settings_obj.insert("enableHooks".to_string(), serde_json::json!(true));

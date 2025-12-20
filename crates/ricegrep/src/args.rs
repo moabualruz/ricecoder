@@ -18,6 +18,8 @@ pub enum RiceGrepCommand {
     Watch(WatchArgs),
     /// MCP server command
     Mcp(McpArgs),
+    /// Index management command
+    Index(IndexArgs),
     /// Install plugin command
     Install(InstallArgs),
     /// Uninstall plugin command
@@ -86,6 +88,23 @@ pub struct WatchArgs {
 pub struct McpArgs {
     pub port: Option<u16>,
     pub host: String,
+    pub no_watch: bool,
+}
+
+/// Index management commands
+#[derive(Debug, Clone, PartialEq)]
+pub enum IndexCommand {
+    Build,
+    Update,
+    Clear,
+    Status,
+}
+
+/// Arguments for index subcommand
+#[derive(Debug, Clone, PartialEq)]
+pub struct IndexArgs {
+    pub command: IndexCommand,
+    pub paths: Vec<PathBuf>,
 }
 
 
@@ -168,6 +187,8 @@ impl Args {
             RiceGrepCommand::Watch(Self::parse_watch_args(watch_matches)?)
         } else if let Some(mcp_matches) = matches.subcommand_matches("mcp") {
             RiceGrepCommand::Mcp(Self::parse_mcp_args(mcp_matches)?)
+        } else if let Some(index_matches) = matches.subcommand_matches("index") {
+            RiceGrepCommand::Index(Self::parse_index_args(index_matches)?)
         } else if let Some(install_matches) = matches.subcommand_matches("install") {
             RiceGrepCommand::Install(Self::parse_install_args(install_matches)?)
         } else if let Some(uninstall_matches) = matches.subcommand_matches("uninstall") {
@@ -340,7 +361,32 @@ impl Args {
                 .get_one::<String>("host")
                 .cloned()
                 .unwrap_or_else(|| "localhost".to_string()),
+            no_watch: matches.get_flag("no-watch"),
         })
+    }
+
+    fn parse_index_args(matches: &ArgMatches) -> Result<IndexArgs, crate::error::RiceGrepError> {
+        let command = if let Some(_) = matches.subcommand_matches("build") {
+            IndexCommand::Build
+        } else if let Some(_) = matches.subcommand_matches("update") {
+            IndexCommand::Update
+        } else if let Some(_) = matches.subcommand_matches("clear") {
+            IndexCommand::Clear
+        } else if let Some(_) = matches.subcommand_matches("status") {
+            IndexCommand::Status
+        } else {
+            return Err(crate::error::RiceGrepError::Search {
+                message: "No index subcommand specified".to_string(),
+            });
+        };
+
+        let paths = matches
+            .get_many::<PathBuf>("paths")
+            .unwrap_or_default()
+            .cloned()
+            .collect();
+
+        Ok(IndexArgs { command, paths })
     }
 
     /// Parse install subcommand arguments
@@ -736,6 +782,46 @@ impl Args {
                             .help("Host for MCP server")
                             .default_value("localhost")
                             .value_parser(value_parser!(String))
+                    )
+                    .arg(
+                        Arg::new("no-watch")
+                            .long("no-watch")
+                            .help("Disable automatic background watch mode")
+                            .action(ArgAction::SetTrue)
+                    )
+            )
+            .subcommand(
+                Command::new("index")
+                    .about("Manage search indexes")
+                    .subcommand(
+                        Command::new("build")
+                            .about("Build search index for faster queries")
+                            .arg(
+                                Arg::new("paths")
+                                    .help("Paths to index")
+                                    .index(1)
+                                    .num_args(0..)
+                                    .value_parser(value_parser!(PathBuf))
+                            )
+                    )
+                    .subcommand(
+                        Command::new("update")
+                            .about("Update existing search index with changed files")
+                            .arg(
+                                Arg::new("paths")
+                                    .help("Paths to update in index")
+                                    .index(1)
+                                    .num_args(0..)
+                                    .value_parser(value_parser!(PathBuf))
+                            )
+                    )
+                    .subcommand(
+                        Command::new("clear")
+                            .about("Clear search index")
+                    )
+                    .subcommand(
+                        Command::new("status")
+                            .about("Show index status and statistics")
                     )
             )
             .subcommand(

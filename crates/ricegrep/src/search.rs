@@ -8,6 +8,15 @@ use crate::language::{LanguageProcessor, LanguageConfig};
 use crate::spelling::{SpellingCorrector, SpellingConfig, CorrectionResult};
 use detect_lang::Language;
 
+/// Index statistics
+#[derive(Debug, Clone)]
+pub struct IndexStats {
+    pub file_count: usize,
+    pub line_count: usize,
+    pub total_size_bytes: usize,
+    pub last_updated: SystemTime,
+}
+
 
 /// Placeholder for LSP integration (to be implemented)
 #[derive(Debug, Clone)]
@@ -335,21 +344,14 @@ impl IndexManager {
         }
     }
 
-    /// Get the index file path for a given root directory
-    fn get_index_path(&self, root: &PathBuf) -> PathBuf {
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
-
-        let mut hasher = DefaultHasher::new();
-        root.hash(&mut hasher);
-        let hash = hasher.finish();
-
-        self.index_dir.join(format!("index_{:x}.idx", hash))
+    /// Get the index file path (simplified to single index per directory)
+    fn get_index_path(&self, _root: &PathBuf) -> PathBuf {
+        self.index_dir.join("index.idx")
     }
 
     /// Load index from disk if it exists
-    pub fn load_index(&mut self, root: &PathBuf) -> Result<bool, RiceGrepError> {
-        let index_path = self.get_index_path(root);
+    pub fn load_index(&mut self, _root: &PathBuf) -> Result<bool, RiceGrepError> {
+        let index_path = self.index_dir.join("index.idx");
 
         if !index_path.exists() {
             return Ok(false);
@@ -366,19 +368,17 @@ impl IndexManager {
     }
 
     /// Save current index to disk
-    pub fn save_index(&self, root: &PathBuf) -> Result<(), RiceGrepError> {
+    pub fn save_index(&self) -> Result<(), RiceGrepError> {
         if let Some(index) = &self.current_index {
-            let index_path = self.get_index_path(root);
+            let index_path = self.index_dir.join("index.idx");
 
-            // Ensure index directory exists
-            if let Some(parent) = index_path.parent() {
-                fs::create_dir_all(parent)?;
-            }
+            let data = bincode::serialize(&**index)
+                .map_err(|e| RiceGrepError::Index {
+                    message: format!("Failed to serialize index: {}", e),
+                })?;
 
-        let data = bincode::serialize(&**index)
-            .map_err(|e| RiceGrepError::Index {
-                message: format!("Failed to serialize index: {}", e),
-            })?;
+            // Ensure the index directory exists
+            fs::create_dir_all(&self.index_dir)?;
 
             fs::write(&index_path, data)?;
         }
@@ -429,6 +429,14 @@ impl IndexManager {
         Ok(false)
     }
 
+    /// Clear the current index
+    pub fn clear_index(&mut self) -> Result<(), RiceGrepError> {
+        self.current_index = None;
+        // Note: In a real implementation, we would also clear the database
+        // For now, we just clear the in-memory index
+        Ok(())
+    }
+
     /// Get current index
     pub fn get_index(&self) -> Option<Arc<SearchIndex>> {
         self.current_index.clone()
@@ -450,8 +458,17 @@ pub trait SearchEngine {
     /// Build search index for faster queries
     async fn build_index(&mut self, paths: &[PathBuf], progress_verbosity: ProgressVerbosity) -> Result<(), RiceGrepError>;
 
+    /// Update index incrementally with changed files
+    fn update_index_incremental(&mut self, root: &PathBuf, changed_files: &[PathBuf], max_file_size: Option<u64>) -> Result<(), RiceGrepError>;
+
     /// Check if index exists and is valid
     fn has_index(&mut self, paths: &[PathBuf]) -> bool;
+
+    /// Get index statistics
+    fn get_index_stats(&mut self) -> Option<IndexStats>;
+
+    /// Clear the search index
+    fn clear_index(&mut self) -> Result<(), RiceGrepError>;
 }
 
 /// Basic regex search engine
@@ -682,6 +699,14 @@ impl RegexSearchEngine {
         for entry in walker {
             let entry = entry?;
             let path = entry.path();
+
+            // Skip index directory files
+            if let Some(path_str) = path.to_str() {
+                if path_str.contains("/.ricegrep/") || path_str.contains("\\.ricegrep\\") || path_str.contains(".ricegrep/") || path_str.contains(".ricegrep\\") {
+                    continue; // Skip index directory entirely
+                }
+            }
+
             if path.is_file() {
                 file_paths.push(path.to_path_buf());
             }
@@ -723,27 +748,42 @@ impl RegexSearchEngine {
             }
         };
 
-        // Process files in parallel for better performance
-        use rayon::prelude::*;
-        let file_results: Vec<(PathBuf, FileIndex)> = file_paths.par_iter()
-            .filter_map(|path| {
-                // Skip files that can't be indexed (e.g., binary files)
-                let result = self.index_file(path).ok().map(|index| (path.clone(), index));
-                if let Some(ref pb) = progress_bar {
-                    pb.inc(1);
+        // Process files one at a time for incremental updates
+        for (i, path) in file_paths.iter().enumerate() {
+            // Skip .git files and index files entirely
+            if let Some(path_str) = path.to_str() {
+                if path_str.contains("/.git/") || path_str.contains("\\.git\\") || path_str.contains(".git/") || path_str.contains(".git\\") {
+                    continue; // Skip .git files entirely
                 }
-                result
-            })
-            .collect();
+                if path_str.contains("/.ricegrep/") || path_str.contains("\\.ricegrep\\") || path_str.contains(".ricegrep/") || path_str.contains(".ricegrep\\") {
+                    continue; // Skip index directory entirely
+                }
+            }
+
+            // Index the file
+            match self.index_file(path) {
+                Ok(file_index) => {
+                    total_lines += file_index.lines.len();
+                    files.insert(path.clone(), file_index);
+                }
+                Err(e) => {
+                    if progress_verbosity != ProgressVerbosity::Quiet {
+                        eprintln!("Warning: Failed to index {}: {}", path.display(), e);
+                    }
+                }
+            }
+
+            // Update progress
+            if let Some(ref pb) = progress_bar {
+                pb.set_position((i + 1) as u64);
+                if progress_verbosity == ProgressVerbosity::Verbose {
+                    pb.set_message(format!("Indexed: {}", path.display()));
+                }
+            }
+        }
 
         if let Some(pb) = progress_bar {
             pb.finish_with_message("Index build complete");
-        }
-
-        // Collect results
-        for (path, file_index) in file_results {
-            total_lines += file_index.lines.len();
-            files.insert(path, file_index);
         }
 
         let metadata = IndexMetadata {
@@ -1524,7 +1564,76 @@ impl SearchEngine for RegexSearchEngine {
         self.index_manager.current_index = Some(Arc::new(index.clone()));
 
         // Save to disk
-        self.index_manager.save_index(&root_path)?;
+        self.index_manager.save_index()?;
+
+        Ok(())
+    }
+
+    fn update_index_incremental(&mut self, root: &PathBuf, changed_files: &[PathBuf], max_file_size: Option<u64>) -> Result<(), RiceGrepError> {
+        // Load existing index or create new one
+        let mut index = if let Some(existing_index) = &self.index_manager.current_index {
+            (**existing_index).clone()
+        } else {
+            // Try to load from disk
+            match self.index_manager.load_index(root) {
+                Ok(true) => {
+                    if let Some(loaded_index) = &self.index_manager.current_index {
+                        (**loaded_index).clone()
+                    } else {
+                        SearchIndex {
+                            files: HashMap::new(),
+                            metadata: IndexMetadata {
+                                created_at: SystemTime::now(),
+                                file_count: 0,
+                                line_count: 0,
+                                version: "1.0".to_string(),
+                            },
+                        }
+                    }
+                }
+                _ => SearchIndex {
+                    files: HashMap::new(),
+                    metadata: IndexMetadata {
+                        created_at: SystemTime::now(),
+                        file_count: 0,
+                        line_count: 0,
+                        version: "1.0".to_string(),
+                    },
+                }
+            }
+        };
+
+        // Process each changed file incrementally
+        for file_path in changed_files {
+            // Check file size limit
+            if let Some(max_size) = max_file_size {
+                if let Ok(metadata) = std::fs::metadata(file_path) {
+                    if metadata.len() > max_size {
+                        continue; // Skip large files
+                    }
+                }
+            }
+
+            // Index the file
+            match self.index_file(file_path) {
+                Ok(file_index) => {
+                    // Update the in-memory index
+                    let old_lines = index.files.get(file_path).map(|f| f.lines.len()).unwrap_or(0);
+                    index.files.insert(file_path.clone(), file_index);
+                    index.metadata.line_count = index.metadata.line_count - old_lines + index.files[file_path].lines.len();
+                    index.metadata.file_count = index.files.len();
+
+                    // Save incrementally to disk
+                    self.index_manager.save_index()?;
+                }
+                Err(e) => {
+                    eprintln!("Warning: Failed to index {}: {}", file_path.display(), e);
+                }
+            }
+        }
+
+        // Update in-memory index
+        self.index_manager.current_index = Some(Arc::new(index));
 
         Ok(())
     }
@@ -1532,5 +1641,40 @@ impl SearchEngine for RegexSearchEngine {
     fn has_index(&mut self, paths: &[PathBuf]) -> bool {
         let root_path = paths.first().cloned().unwrap_or_else(|| PathBuf::from("."));
         self.index_manager.load_index(&root_path).unwrap_or(false)
+    }
+
+    fn get_index_stats(&mut self) -> Option<IndexStats> {
+        // First check if we have an in-memory index
+        if let Some(index) = &self.index_manager.current_index {
+            let metadata = &index.metadata;
+            return Some(IndexStats {
+                file_count: metadata.file_count,
+                line_count: metadata.line_count,
+                total_size_bytes: metadata.file_count * 1024, // Rough estimate
+                last_updated: metadata.created_at,
+            });
+        }
+
+        // If no in-memory index, try to load the index file
+        let index_path = self.index_manager.index_dir.join("index.idx");
+        if index_path.exists() {
+            if let Ok(data) = std::fs::read(&index_path) {
+                if let Ok(index) = bincode::deserialize::<SearchIndex>(&data) {
+                    let metadata = &index.metadata;
+                    return Some(IndexStats {
+                        file_count: metadata.file_count,
+                        line_count: metadata.line_count,
+                        total_size_bytes: metadata.file_count * 1024, // Rough estimate
+                        last_updated: metadata.created_at,
+                    });
+                }
+            }
+        }
+
+        None
+    }
+
+    fn clear_index(&mut self) -> Result<(), RiceGrepError> {
+        self.index_manager.clear_index()
     }
 }

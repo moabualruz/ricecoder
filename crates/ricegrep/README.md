@@ -41,6 +41,7 @@ RiceGrep uses a modern subcommand architecture for better organization and disco
 ricegrep search [OPTIONS] [PATTERN] [PATH]...    # Search for patterns
 ricegrep replace [OPTIONS] OLD_SYMBOL NEW_SYMBOL FILE  # Symbol rename operations
 ricegrep watch [OPTIONS] [PATH]...               # Watch mode for continuous monitoring
+ricegrep index [OPTIONS] [PATHS]...              # Manage search indexes
 ricegrep mcp [OPTIONS]                           # Start MCP server for AI assistants
 ricegrep install [OPTIONS] [PLUGIN]              # Install plugins for AI assistants
 ricegrep uninstall [OPTIONS] [PLUGIN]            # Uninstall plugins from AI assistants
@@ -122,6 +123,24 @@ ricegrep watch .
 ricegrep watch --timeout 300 src/  # Watch with 5-minute timeout
 ```
 
+### Index Management
+
+Manage search indexes for improved performance:
+
+```bash
+# Build search index
+ricegrep index --build .
+
+# Update existing index
+ricegrep index --update src/
+
+# Check index status
+ricegrep index --status
+
+# Clear index
+ricegrep index --clear
+```
+
 ## AI Assistant Integration
 
 RiceGrep integrates seamlessly with popular AI coding assistants, providing enhanced search and refactoring capabilities.
@@ -157,7 +176,7 @@ ricegrep uninstall codex
 ricegrep uninstall droid
 ```
 
-**Note:** All major AI assistants are supported, just like mgrep!
+**Note:** All major AI assistants are supported!
 
 #### What Plugin Installation Does
 
@@ -172,15 +191,17 @@ RiceGrep provides an MCP (Model Context Protocol) server for AI assistants that 
 
 ```bash
 # Start MCP server (stdio mode for most assistants)
+# Automatically starts background watch mode for index updates
 ricegrep mcp
 
 # Start MCP server with custom settings
 ricegrep mcp --host localhost --port 8080
 ```
 
-The MCP server exposes two main tools:
-- `search`: Semantic search with AI-enhanced ranking
-- `replace_symbol`: Language-aware symbol renaming
+**Note:** When started, the MCP server automatically begins background watch mode after 5 seconds. This ensures AI assistants always have access to the latest indexed data.
+
+The MCP server exposes one main tool:
+- `search`: Semantic search with AI-enhanced ranking and comprehensive results
 
 ### Skill Definitions
 

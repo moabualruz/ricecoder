@@ -71,12 +71,25 @@ impl WatchEngine {
             println!("Watching: {}", path.display());
         }
 
+        // Initial index build if needed
+        println!("🔄 Performing initial index build...");
+        let mut search_engine = RegexSearchEngine::new();
+        if let Err(e) = search_engine.build_index(&self.config.paths, ProgressVerbosity::Quiet).await {
+            eprintln!("Warning: Initial index build failed: {}", e);
+        } else {
+            println!("✅ Initial index build complete");
+        }
+
         // Initial search and display
         self.perform_search_and_display().await?;
 
         // Set up timeout if specified
         let start_time = std::time::Instant::now();
         let timeout_duration = self.config.timeout.map(|t| Duration::from_secs(t));
+
+        // Track changed files for incremental updates
+        let mut pending_changes: Vec<PathBuf> = Vec::new();
+        let mut last_update = std::time::Instant::now();
 
         loop {
             // Check for timeout
@@ -90,21 +103,58 @@ impl WatchEngine {
             // Wait for file change events with timeout
             match rx.recv_timeout(Duration::from_millis(self.config.debounce_ms)) {
                 Ok(Ok(event)) => {
-                    println!("\n📝 File change detected: {:?}", event.kind);
-                    println!("🔄 Updating search index...");
+                    // Store the original count before moving paths
+                    let original_count = event.paths.len();
 
-                    let update_start = std::time::Instant::now();
-                    let mut search_engine = RegexSearchEngine::new();
-                    search_engine.build_index(&self.config.paths, ProgressVerbosity::Normal).await?;
-                    let update_time = update_start.elapsed();
+                    // Collect changed file paths
+                    for path in event.paths {
+                        if path.is_file() {
+                            pending_changes.push(path);
+                        }
+                    }
 
-                    println!("✅ Index updated in {:.2}s", update_time.as_secs_f64());
-
-                    // Perform search and display results
-                    self.perform_search_and_display().await?;
+                    // Show detection timing if this is the first change in this batch
+                    if pending_changes.len() == original_count {
+                        println!("📝 File change detected");
+                    }
                 }
                 Ok(Err(e)) => {
                     eprintln!("Watch error: {}", e);
+                }
+                Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+                    // Check if we have pending changes to process
+                    if !pending_changes.is_empty() && last_update.elapsed() >= Duration::from_millis(self.config.debounce_ms) {
+                        let detection_time = std::time::Instant::now();
+
+                        let update_start = std::time::Instant::now();
+                        let mut search_engine = RegexSearchEngine::new();
+
+                        // Use the first watched path as the root for incremental updates
+                        let root_path = self.config.paths.first().cloned()
+                            .unwrap_or_else(|| PathBuf::from("."));
+
+                        // Perform incremental update
+                        if let Err(e) = search_engine.update_index_incremental(&root_path, &pending_changes, None) {
+                            eprintln!("Warning: Incremental update failed: {}", e);
+                            // Fall back to full rebuild
+                            if let Err(e) = search_engine.build_index(&self.config.paths, ProgressVerbosity::Quiet).await {
+                                eprintln!("Warning: Full rebuild also failed: {}", e);
+                            }
+                        }
+
+                        let update_time = update_start.elapsed();
+                        let total_time = detection_time.elapsed();
+
+                        println!("⚡ Index updated in {:.2}s (total: {:.2}s)",
+                                update_time.as_secs_f64(), total_time.as_secs_f64());
+
+                        // Clear pending changes and reset timer
+                        pending_changes.clear();
+                        last_update = std::time::Instant::now();
+
+                        // Perform search and display results
+                        self.perform_search_and_display().await?;
+                    }
                 }
                 Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
                     // No events in the timeout period, continue
