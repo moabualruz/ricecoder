@@ -717,32 +717,19 @@ impl RegexSearchEngine {
             ProgressVerbosity::Quiet => None,
             ProgressVerbosity::Minimal => {
                 let pb = ProgressBar::new_spinner();
-                pb.set_style(
-                    ProgressStyle::default_spinner()
-                        .template("{spinner:.green} Indexing files...")
-                        .unwrap()
-                );
+                pb.set_style(ProgressStyle::default_spinner());
+                pb.set_message("Indexing files...");
                 Some(pb)
             }
             ProgressVerbosity::Normal => {
                 let pb = ProgressBar::new(file_paths.len() as u64);
-                pb.set_style(
-                    ProgressStyle::default_bar()
-                        .template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} files ({eta})")
-                        .unwrap()
-                        .progress_chars("#>-")
-                );
+                pb.set_style(ProgressStyle::default_bar().progress_chars("#>-"));
                 pb.set_message("Indexing files");
                 Some(pb)
             }
             ProgressVerbosity::Verbose => {
                 let pb = ProgressBar::new(file_paths.len() as u64);
-                pb.set_style(
-                    ProgressStyle::default_bar()
-                        .template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} files ({eta}) {msg}")
-                        .unwrap()
-                        .progress_chars("#>-")
-                );
+                pb.set_style(ProgressStyle::default_bar().progress_chars("#>-"));
                 pb.set_message("Indexing files - processing...");
                 Some(pb)
             }

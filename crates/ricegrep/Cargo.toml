@@ -41,11 +41,22 @@ strsim = "0.11"
   figment = { version = "0.10", features = ["toml", "env"] }
   toml = "0.8"
   tempfile = "3.0"
-  symspell = "0.4"
-  detect-lang = "0.1"
-  dirs = "5.0"
-   notify = { version = "6.1", default-features = false }
-   indicatif = "0.17"
+   typos = "0.6"
+   detect-lang = "0.1"
+   dirs = "5.0"
+# AI/ML dependencies for enhanced search capabilities
+# Using Candle for pure Rust ML inference without external dependencies
+candle-core = "0.9"
+candle-nn = "0.9"
+candle-transformers = "0.9"
+tokenizers = "0.20"
+hf-hub = "0.4"
+bm25 = "2.0"
+rust-stemmers = "1.2"
+   # Keep symspell as fallback for --no-ai mode
+   symspell = "0.4"
+    notify = { version = "6.1", default-features = false }
+    indicatif = { workspace = true }
 # Database dependencies
 scylla = "0.12"
 uuid = { version = "1.0", features = ["v4", "serde"] }

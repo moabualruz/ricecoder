@@ -323,9 +323,11 @@ mod tests {
     #[test]
     fn test_mcp_server_creation() {
         use crate::mcp::RiceGrepMcpServer;
+        use crate::search::RegexSearchEngine;
 
-        // Test that MCP server can be created
-        let server = RiceGrepMcpServer::new();
+        // Test that MCP server can be created with a search engine
+        let search_engine = RegexSearchEngine::new();
+        let server = RiceGrepMcpServer::new(search_engine);
         // Server creation should not panic
         assert!(true); // Placeholder test - full MCP testing requires SDK
     }

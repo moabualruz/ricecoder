@@ -426,16 +426,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         RiceGrepCommand::Mcp(mcp_args) => {
             // Start background watch mode unless disabled
             if !mcp_args.no_watch {
-                println!("🔍 Starting MCP server with background watch mode...");
+                eprintln!("🔍 Starting MCP server with background watch mode...");
                 if let Some(ref db) = database_manager {
                     start_background_watch(db.clone());
                 }
             } else {
-                println!("🔌 Starting MCP server without background watch mode...");
+                eprintln!("🔌 Starting MCP server without background watch mode...");
             }
 
+            // Create properly initialized search engine with AI capabilities
+            let ai_processor = Box::new(RiceGrepAIProcessor::new());
+            let search_engine = RegexSearchEngine::new()
+                .with_spelling_corrector(SpellingConfig::default())
+                .with_ai_processor(ai_processor);
+
             // Start MCP server in stdio mode
-            let server = RiceGrepMcpServer::new();
+            let server = RiceGrepMcpServer::new(search_engine);
             if let Err(e) = server.start_stdio_server().await {
                 eprintln!("Failed to start MCP server: {}", e);
                 std::process::exit(1);

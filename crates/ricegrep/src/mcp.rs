@@ -13,22 +13,12 @@ use std::io::{self, Write, BufRead};
 struct JsonRpcMessage {
     jsonrpc: String,
     id: Option<serde_json::Value>,
-    #[serde(flatten)]
-    method: JsonRpcMethod,
+    method: String,
+    params: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(tag = "method", content = "params")]
-enum JsonRpcMethod {
-    #[serde(rename = "initialize")]
-    Initialize { params: InitializeParams },
-    #[serde(rename = "tools/list")]
-    ToolsList,
-    #[serde(rename = "tools/call")]
-    ToolsCall { params: ToolsCallParams },
-}
-
-#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct InitializeParams {
     protocol_version: String,
     capabilities: serde_json::Value,
@@ -68,8 +58,15 @@ pub struct RiceGrepMcpServer {
 }
 
 impl RiceGrepMcpServer {
-    /// Create a new MCP server instance
-    pub fn new() -> Self {
+    /// Create a new MCP server instance with a properly initialized search engine
+    pub fn new(search_engine: RegexSearchEngine) -> Self {
+        Self {
+            search_engine: Arc::new(Mutex::new(search_engine)),
+        }
+    }
+
+    /// Create a new MCP server instance (legacy method for compatibility)
+    pub fn default() -> Self {
         Self {
             search_engine: Arc::new(Mutex::new(RegexSearchEngine::new())),
         }
@@ -122,15 +119,35 @@ impl RiceGrepMcpServer {
                 message: format!("Failed to parse message: {}", e),
             })?;
 
-        let response = match request.method {
-            JsonRpcMethod::Initialize { params } => {
+        let response = match request.method.as_str() {
+            "initialize" => {
+                let params: InitializeParams = serde_json::from_value(request.params.unwrap_or(serde_json::Value::Null))
+                    .map_err(|e| RiceGrepError::Mcp {
+                        message: format!("Failed to parse initialize params: {}", e),
+                    })?;
                 self.handle_initialize(params, request.id).await?
             }
-            JsonRpcMethod::ToolsList => {
+            "tools/list" => {
                 self.handle_tools_list(request.id).await?
             }
-            JsonRpcMethod::ToolsCall { params } => {
+            "tools/call" => {
+                let params: ToolsCallParams = serde_json::from_value(request.params.unwrap_or(serde_json::Value::Null))
+                    .map_err(|e| RiceGrepError::Mcp {
+                        message: format!("Failed to parse tools/call params: {}", e),
+                    })?;
                 self.handle_tools_call(params, request.id).await?
+            }
+            _ => {
+                return Ok(Some(serde_json::to_string(&JsonRpcResponse {
+                    jsonrpc: "2.0".to_string(),
+                    id: request.id,
+                    result: serde_json::json!({
+                        "content": [{ "type": "text", "text": format!("Unknown method: {}", request.method) }],
+                        "isError": true
+                    }),
+                }).map_err(|e| RiceGrepError::Mcp {
+                    message: format!("Failed to serialize error response: {}", e),
+                })?));
             }
         };
 
@@ -296,6 +313,6 @@ impl RiceGrepMcpServer {
 
 impl Default for RiceGrepMcpServer {
     fn default() -> Self {
-        Self::new()
+        Self::default()
     }
 }
