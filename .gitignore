@@ -88,3 +88,6 @@ node_modules/
 # Agent cache
 .agent/cache
 **/.agent/cache
+
+#ricegrep indicies
+**/*.idx

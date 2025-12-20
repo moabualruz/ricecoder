@@ -1488,11 +1488,12 @@ RiceCoder includes **RiceGrep** (`ricegrep`), an AI-enhanced, offline-first code
 - **🧠 Heuristic AI Processing** - Advanced query understanding and result ranking without external models
 - **🎯 Language Awareness** - Programming language detection and context-aware ranking
 - **📊 Enhanced Output** - Detailed metadata, confidence scores, and AI reasoning
-- **🔄 Watch Mode Framework** - Ready for continuous monitoring (implementation in progress)
+- **🔄 Watch Mode** - Continuous monitoring with automatic index updates
 - **🛠️ Safe Replace** - Preview and execute find-replace operations safely
 - **⚙️ Configuration System** - Comprehensive customization and scripting support
-- **🤖 MCP Server** - AI assistant integration via Model Context Protocol
+- **🤖 MCP Server** - AI assistant integration via Model Context Protocol (starts background watch by default)
 - **📦 Plugin Ecosystem** - Automated installation for Claude Code, OpenCode, Codex, Factory Droid
+- **🗂️ Index Management** - Build, update, status, and clear search indexes
 
 ### RiceGrep Usage
 
@@ -1509,12 +1510,20 @@ ricegrep search --ai-enhanced "find error handling functions" src/
 # Answer generation from search results
 ricegrep search --answer "how does authentication work" .
 
+# Watch mode with automatic index updates
+ricegrep watch . --timeout 300
+
+# Index management (basic)
+ricegrep index --build .      # Build search index (framework)
+ricegrep index --status       # Check index status
+
 # Plugin installation for AI assistants
 ricegrep install claude-code
 ricegrep install opencode
 
 # MCP server for AI assistants
-ricegrep mcp
+ricegrep mcp                    # Start MCP server with background watch
+ricegrep mcp --no-watch        # Start MCP server without background watch
 
 # Safe replace operations
 ricegrep replace "old_name" "new_name" --preview file.rs
@@ -1528,8 +1537,8 @@ ricegrep replace "old_name" "new_name" --preview file.rs
 | AI Enhancement | ✅ Heuristic-based | ❌ | ❌ |
 | Offline Operation | ✅ Full offline | ✅ | ✅ |
 | Language Awareness | ✅ Context ranking | ❌ | ❌ |
-| Watch Mode | 🚧 Framework ready | ❌ | ❌ |
-| MCP Integration | ✅ AI assistants | ❌ | ❌ |
+| Watch Mode | ✅ Auto-reindexing | ❌ | ❌ |
+| MCP Integration | ✅ AI assistants + background watch | ❌ | ❌ |
 | Plugin Ecosystem | ✅ Claude/OpenCode/etc | ❌ | ❌ |
 | Replace Operations | ✅ Safe preview | ⚠️ Basic | ⚠️ Basic |
 
