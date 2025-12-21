@@ -10,13 +10,13 @@ homepage = "https://github.com/moabualruz/ricecoder"
 documentation = "https://github.com/moabualruz/ricecoder/wiki"
 
 [dependencies]
-ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
-ricecoder-providers = { path = "../ricecoder-providers", version = "0.1" }
-ricecoder-files = { path = "../ricecoder-files", version = "0.1" }
-image = "0.24"
-usvg = "0.37"
-resvg = "0.37"
-tiny-skia = "0.11"
+ricecoder-storage = { workspace = true }
+ricecoder-providers = { workspace = true }
+ricecoder-files = { workspace = true }
+image = { workspace = true }
+usvg = { workspace = true }
+resvg = { workspace = true }
+tiny-skia = { workspace = true }
 sha2 = { workspace = true }
 tokio = { workspace = true }
 thiserror = { workspace = true }

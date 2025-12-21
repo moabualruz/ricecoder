@@ -22,16 +22,16 @@ reqwest = { workspace = true }
 futures = { workspace = true }
 regex = { workspace = true }
 sha2 = { workspace = true }
-rand = "0.8"
-chrono = { version = "0.4", features = ["serde"] }
-clap = { version = "4.0", features = ["derive"] }
-tokio-stream = "0.1"
-tempfile = "3.0"
-walkdir = "2.0"
-git2 = "0.18"
-ricecoder-providers = { path = "../ricecoder-providers", version = "0.1" }
-ricecoder-domain = { path = "../ricecoder-domain", version = "0.1" }
-ricecoder-di = { path = "../ricecoder-di", version = "0.1" }
+rand = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
+clap = { workspace = true, features = ["derive"] }
+tokio-stream = { workspace = true }
+tempfile = { workspace = true }
+walkdir = { workspace = true }
+git2 = { workspace = true }
+ricecoder-providers = { workspace = true }
+ricecoder-domain = { workspace = true }
+ricecoder-di = { workspace = true }
 
 [[bin]]
 name = "ricecoder-benchmark"

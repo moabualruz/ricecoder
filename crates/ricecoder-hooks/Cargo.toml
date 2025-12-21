@@ -14,7 +14,7 @@ name = "ricecoder_hooks"
 path = "src/lib.rs"
 
 [dependencies]
-ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
+ricecoder-storage = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }

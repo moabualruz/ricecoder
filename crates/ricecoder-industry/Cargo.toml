@@ -15,31 +15,31 @@ name = "ricecoder_industry"
 path = "src/lib.rs"
 
 [dependencies]
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-thiserror = "1.0"
-tracing = "0.1"
-tokio = { version = "1.0", features = ["full"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
 reqwest = { workspace = true }
-oauth2 = "4.4"
-url = "2.5"
-chrono = { version = "0.4", features = ["serde"] }
-uuid = { version = "1.0", features = ["v4", "serde"] }
-async-trait = "0.1"
-base64 = "0.21"
-sha2 = "0.10"
-hmac = "0.12"
-jwt = "0.16"
-anyhow = "1.0"
-futures = "0.3"
-regex = "1.10"
+oauth2 = { workspace = true }
+url = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
+uuid = { workspace = true, features = ["v4", "serde"] }
+async-trait = { workspace = true }
+base64 = { workspace = true }
+sha2 = { workspace = true }
+hmac = { workspace = true }
+jwt = { workspace = true }
+anyhow = { workspace = true }
+futures = { workspace = true }
+regex = { workspace = true }
 
 # RiceCoder internal dependencies
-ricecoder-security = { path = "../ricecoder-security", version = "0.1" }
-ricecoder-domain = { path = "../ricecoder-domain", version = "0.1" }
+ricecoder-security = { workspace = true }
+ricecoder-domain = { workspace = true }
 
 [dev-dependencies]
-proptest = "1.4"
-tokio-test = "0.4"
-mockito = "1.2"
-tempfile = "3.8"
+proptest = { workspace = true }
+tokio-test = { workspace = true }
+mockito = { workspace = true }
+tempfile = { workspace = true }

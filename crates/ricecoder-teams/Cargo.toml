@@ -14,22 +14,22 @@ name = "ricecoder_teams"
 path = "src/lib.rs"
 
 [dependencies]
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-serde_yaml = "0.9"
-thiserror = "1.0"
-tracing = "0.1"
-tokio = { version = "1.0", features = ["full"] }
-chrono = { version = "0.4", features = ["serde"] }
-uuid = { version = "1.0", features = ["v4", "serde"] }
-ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
-ricecoder-learning = { path = "../ricecoder-learning", version = "0.1" }
-ricecoder-permissions = { path = "../ricecoder-permissions", version = "0.1" }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+chrono = { workspace = true, features = ["serde"] }
+uuid = { workspace = true, features = ["v4", "serde"] }
+ricecoder-storage = { workspace = true }
+ricecoder-learning = { workspace = true }
+ricecoder-permissions = { workspace = true }
 
 [dev-dependencies]
-proptest = "1.4"
-tokio-test = "0.4"
-tempfile = "3.8"
+proptest = { workspace = true }
+tokio-test = { workspace = true }
+tempfile = { workspace = true }
 
 
 

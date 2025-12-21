@@ -25,52 +25,52 @@ thiserror = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 tokio = { workspace = true }
-tokio-util = "0.7"
-futures = "0.3"
+tokio-util = { workspace = true }
+futures = { workspace = true }
 anyhow = { workspace = true }
 crossterm = { workspace = true }
 colored = { workspace = true }
 dirs = { workspace = true }
 arboard = { workspace = true }
-base64 = "0.22"
+base64 = { workspace = true }
 chrono = { workspace = true }
-ctrlc = "3.4"
-atty = "0.2"
-ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
-ricecoder-images = { path = "../ricecoder-images", version = "0.1" }
-ricecoder-files = { path = "../ricecoder-files", version = "0.1" }
-ricecoder-help = { path = "../ricecoder-help", version = "0.1" }
-ricecoder-keybinds = { path = "../ricecoder-keybinds", version = "0.1" }
-ricecoder-themes = { path = "../ricecoder-themes", version = "0.1" }
-ricecoder-config = { path = "../ricecoder-config", version = "0.1" }
-ricecoder-research = { path = "../ricecoder-research", version = "0.1" }
-ricecoder-di = { path = "../ricecoder-di", version = "0.1" }
-resvg = "0.40"
-usvg = "0.40"
-tiny-skia = "0.11"
-image = "0.25"
-ratatui = "0.29"
-ratatui-textarea = "0.4"
-tui-tree-widget = "0.18"
-ratatui-image = "8.0"
-ratatui-explorer = "0.2"
-tui-scrollview = "0.5"
+ctrlc = { workspace = true }
+atty = { workspace = true }
+ricecoder-storage = { workspace = true }
+ricecoder-images = { workspace = true }
+ricecoder-files = { workspace = true }
+ricecoder-help = { workspace = true }
+ricecoder-keybinds = { workspace = true }
+ricecoder-themes = { workspace = true }
+ricecoder-config = { workspace = true }
+ricecoder-research = { workspace = true }
+ricecoder-di = { workspace = true }
+resvg = { workspace = true }
+usvg = { workspace = true }
+tiny-skia = { workspace = true }
+image = { workspace = true }
+ratatui = { workspace = true }
+ratatui-textarea = { workspace = true }
+tui-tree-widget = { workspace = true }
+ratatui-image = { workspace = true }
+ratatui-explorer = { workspace = true }
+tui-scrollview = { workspace = true }
 
 syntect = { workspace = true }
 lazy_static = { workspace = true }
-unicode-width = "0.1"
+unicode-width = { workspace = true }
 async-trait = { workspace = true }
-regex = "1.10"
-toml = "0.8"
-uuid = { version = "1.0", features = ["v4"] }
-notify = "6.1"
-walkdir = "2.4"
+regex = { workspace = true }
+toml = { workspace = true }
+uuid = { workspace = true, features = ["v4"] }
+notify = { workspace = true }
+walkdir = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
 tokio-test = { workspace = true }
 tempfile = { workspace = true }
-ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
+ricecoder-storage = { workspace = true }
 
 
 

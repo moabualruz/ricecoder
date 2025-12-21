@@ -16,9 +16,9 @@ name = "ricecoder-beta"
 path = "src/main.rs"
 
 [dependencies]
-ricecoder-domain = { path = "../ricecoder-domain", version = "0.1" }
-ricecoder-security = { path = "../ricecoder-security", version = "0.1" }
-ricecoder-activity-log = { path = "../ricecoder-activity-log", version = "0.1" }
+ricecoder-domain = { workspace = true }
+ricecoder-security = { workspace = true }
+ricecoder-activity-log = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }

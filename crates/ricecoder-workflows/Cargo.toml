@@ -21,7 +21,7 @@ tracing = { workspace = true }
 uuid = { workspace = true }
 
 # RiceCoder internal dependencies
-ricecoder-sessions = { path = "../ricecoder-sessions", version = "0.1" }
+ricecoder-sessions = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

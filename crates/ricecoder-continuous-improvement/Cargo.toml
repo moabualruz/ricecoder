@@ -24,20 +24,20 @@ anyhow = { workspace = true }
 async-trait = { workspace = true }
 futures = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
-dashmap = "6.0"
-parking_lot = "0.12"
-once_cell = "1.19"
+dashmap = { workspace = true }
+parking_lot = { workspace = true }
+once_cell = { workspace = true }
 regex = { workspace = true }
 url = { workspace = true }
- base64 = "0.22"
- aes-gcm = "0.10"
- rand = "0.8"
- semver = "1.0"
-sqlx = { version = "0.8", features = ["runtime-tokio-native-tls", "sqlite", "chrono"] }
-rusqlite = { version = "0.31", features = ["bundled"] }
-csv = "1.3"
-flate2 = "1.0"
-tar = "0.4"
+ base64 = { workspace = true }
+ aes-gcm = { workspace = true }
+ rand = { workspace = true }
+ semver = { workspace = true }
+sqlx = { workspace = true, features = ["runtime-tokio-native-tls", "sqlite", "chrono"] }
+rusqlite = { workspace = true, features = ["bundled"] }
+csv = { workspace = true }
+flate2 = { workspace = true }
+tar = { workspace = true }
 walkdir = { workspace = true }
 glob = { workspace = true }
 toml = { workspace = true }
@@ -47,11 +47,11 @@ proptest = { workspace = true, optional = true }
 tempfile = { workspace = true, optional = true }
 
 # Internal dependencies
-ricecoder-beta = { path = "../ricecoder-beta", version = "0.1" }
-ricecoder-monitoring = { path = "../ricecoder-monitoring", version = "0.1" }
-ricecoder-updates = { path = "../ricecoder-updates", version = "0.1" }
-ricecoder-security = { path = "../ricecoder-security", version = "0.1" }
-ricecoder-domain = { path = "../ricecoder-domain", version = "0.1" }
+ricecoder-beta = { workspace = true }
+ricecoder-monitoring = { workspace = true }
+ricecoder-updates = { workspace = true }
+ricecoder-security = { workspace = true }
+ricecoder-domain = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

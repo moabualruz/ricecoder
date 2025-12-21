@@ -11,17 +11,17 @@ documentation = "https://github.com/moabualruz/ricecoder/wiki"
 
 [dependencies]
 tokio = { workspace = true }
-sha2 = "0.10"
+sha2 = { workspace = true }
 uuid = { workspace = true }
 chrono = { workspace = true }
 thiserror = { workspace = true }
-git2 = "0.18"
-similar = "2.3"
+git2 = { workspace = true }
+similar = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tracing = { workspace = true }
-fxhash = "0.2"
-notify = "6.1"
+fxhash = { workspace = true }
+notify = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

@@ -17,17 +17,17 @@ serde_json = { workspace = true }
 serde_yaml = { workspace = true }
 tracing = { workspace = true }
 chrono = { workspace = true }
-octocrab = "0.32"
+octocrab = { workspace = true }
 reqwest = { workspace = true }
 async-trait = { workspace = true }
 futures = { workspace = true }
-regex = "1.10"
-hmac = "0.12"
-sha2 = "0.10"
-hex = "0.4"
+regex = { workspace = true }
+hmac = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
 
-ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
-ricecoder-files = { path = "../ricecoder-files", version = "0.1" }
+ricecoder-storage = { workspace = true }
+ricecoder-files = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

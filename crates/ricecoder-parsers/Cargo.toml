@@ -15,19 +15,19 @@ tokio = { workspace = true }
 async-trait = { workspace = true }
 
 # Language-specific parsers
-tree-sitter = "0.20"
-tree-sitter-rust = "0.20"
-tree-sitter-python = "0.20"
-tree-sitter-typescript = "0.20"
-tree-sitter-go = "0.20"
+tree-sitter = { workspace = true }
+tree-sitter-rust = { workspace = true }
+tree-sitter-python = { workspace = true }
+tree-sitter-typescript = { workspace = true }
+tree-sitter-go = { workspace = true }
 
 # Performance and caching
-ricecoder-cache = { path = "../ricecoder-cache", version = "0.1" }
+ricecoder-cache = { workspace = true }
 
 # Error handling
 anyhow = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
-criterion = { version = "0.5", features = ["html_reports"] }
+criterion = { workspace = true, features = ["html_reports"] }
 tempfile = { workspace = true }

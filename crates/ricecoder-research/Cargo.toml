@@ -19,14 +19,14 @@ thiserror = { workspace = true }
 tracing = { workspace = true }
 chrono = { workspace = true }
 uuid = { workspace = true }
-regex = "1.10"
-walkdir = "2.5"
-ignore = "0.4"
-rayon = "1.8"
-ricecoder-parsers = { path = "../ricecoder-parsers", version = "0.1", optional = true }
-ricecoder-patterns = { path = "../ricecoder-patterns", version = "0.1", optional = true }
-fxhash = "0.2"
-lru = "0.12"
+regex = { workspace = true }
+walkdir = { workspace = true }
+ignore = { workspace = true }
+rayon = { workspace = true }
+ricecoder-parsers = { workspace = true, optional = true }
+ricecoder-patterns = { workspace = true, optional = true }
+fxhash = { workspace = true }
+lru = { workspace = true }
 
 [features]
 default = []

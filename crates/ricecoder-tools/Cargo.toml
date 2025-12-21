@@ -27,7 +27,7 @@ url = { workspace = true }
 dirs = { workspace = true }
 regex = { workspace = true }
 uuid = { workspace = true }
-ricecoder-mcp = { path = "../ricecoder-mcp", version = "0.1" }
+ricecoder-mcp = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

@@ -15,22 +15,22 @@ name = "ricecoder_safety"
 path = "src/lib.rs"
 
 [dependencies]
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-thiserror = "1.0"
-tracing = "0.1"
-tokio = { version = "1.0", features = ["full"] }
-chrono = { version = "0.4", features = ["serde"] }
-uuid = { version = "1.0", features = ["v4", "serde"] }
-async-trait = "0.1"
-regex = "1.10"
-futures = "0.3"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+chrono = { workspace = true, features = ["serde"] }
+uuid = { workspace = true, features = ["v4", "serde"] }
+async-trait = { workspace = true }
+regex = { workspace = true }
+futures = { workspace = true }
 
 # RiceCoder internal dependencies
-ricecoder-security = { path = "../ricecoder-security", version = "0.1" }
-ricecoder-activity-log = { path = "../ricecoder-activity-log", version = "0.1" }
+ricecoder-security = { workspace = true }
+ricecoder-activity-log = { workspace = true }
 
 [dev-dependencies]
-proptest = "1.4"
-tokio-test = "0.4"
-tempfile = "3.8"
+proptest = { workspace = true }
+tokio-test = { workspace = true }
+tempfile = { workspace = true }

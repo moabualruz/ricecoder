@@ -14,19 +14,19 @@ name = "ricecoder_config"
 path = "src/lib.rs"
 
 [dependencies]
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-serde_yaml = "0.9"
-toml = "0.8"
-thiserror = "1.0"
-tracing = "0.1"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+toml = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
 tokio = { workspace = true }
 anyhow = { workspace = true }
-config = "0.14"
+config = { workspace = true }
 dirs = { workspace = true }
-notify = "6.1"
+notify = { workspace = true }
 
 [dev-dependencies]
-proptest = "1.4"
-tokio-test = "0.4"
-tempfile = "3.8"
+proptest = { workspace = true }
+tokio-test = { workspace = true }
+tempfile = { workspace = true }

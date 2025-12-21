@@ -17,11 +17,11 @@ thiserror = { workspace = true }
 chrono = { workspace = true }
 regex = { workspace = true }
 uuid = { workspace = true }
-pulldown-cmark = "0.9"
+pulldown-cmark = { workspace = true }
 tracing = { workspace = true }
 tokio = { workspace = true }
 async-trait = { workspace = true }
-ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
+ricecoder-storage = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

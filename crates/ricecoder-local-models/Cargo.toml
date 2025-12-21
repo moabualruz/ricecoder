@@ -14,26 +14,26 @@ name = "ricecoder_local_models"
 path = "src/lib.rs"
 
 [dependencies]
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-serde_yaml = "0.9"
-thiserror = "1.0"
-tracing = "0.1"
-tokio = { version = "1.0", features = ["full"] }
-anyhow = "1.0"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+anyhow = { workspace = true }
 reqwest = { workspace = true }
-futures = "0.3"
-chrono = { version = "0.4", features = ["serde"] }
+futures = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
 
-ricecoder-providers = { path = "../ricecoder-providers", version = "0.1" }
-ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
+ricecoder-providers = { workspace = true }
+ricecoder-storage = { workspace = true }
 
 [dev-dependencies]
-proptest = "1.4"
-tokio-test = "0.4"
-tempfile = "3.8"
-mockito = "1.2"
-serial_test = "3.0"
+proptest = { workspace = true }
+tokio-test = { workspace = true }
+tempfile = { workspace = true }
+mockito = { workspace = true }
+serial_test = { workspace = true }
 
 
 

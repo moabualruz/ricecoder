@@ -25,10 +25,10 @@ anyhow = { workspace = true }
 async-trait = { workspace = true }
 regex = { workspace = true }
 chrono = { workspace = true }
-dirs = "5.0"
-ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
-ricecoder-lsp = { path = "../ricecoder-lsp", version = "0.1" }
-ricecoder-completion = { path = "../ricecoder-completion", version = "0.1" }
+dirs = { workspace = true }
+ricecoder-storage = { workspace = true }
+ricecoder-lsp = { workspace = true }
+ricecoder-completion = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

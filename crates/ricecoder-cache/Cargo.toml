@@ -7,25 +7,25 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 # Async runtime
-tokio = { version = "1.0", features = ["fs", "io-util", "sync", "time", "macros", "rt-multi-thread"] }
+tokio = { workspace = true, features = ["fs", "io-util", "sync", "time", "macros", "rt-multi-thread"] }
 
 # Serialization
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 
 # Time handling
-chrono = { version = "0.4", features = ["serde"] }
+chrono = { workspace = true, features = ["serde"] }
 
 # Error handling
-thiserror = "1.0"
+thiserror = { workspace = true }
 
 # Async traits
-async-trait = "0.1"
+async-trait = { workspace = true }
 
 # Domain dependencies
-ricecoder-domain = { path = "../ricecoder-domain" }
+ricecoder-domain = { workspace = true }
 
 [dev-dependencies]
-tempfile = "3.0"
-criterion = { version = "0.5", features = ["html_reports"] }
-proptest = "1.0"
+tempfile = { workspace = true }
+criterion = { workspace = true, features = ["html_reports"] }
+proptest = { workspace = true }

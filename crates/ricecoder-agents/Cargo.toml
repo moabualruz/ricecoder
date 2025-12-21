@@ -10,33 +10,33 @@ homepage = "https://github.com/moabualruz/ricecoder"
 documentation = "https://github.com/moabualruz/ricecoder/wiki"
 
 [dependencies]
-async-trait.workspace = true
-thiserror.workspace = true
-tracing.workspace = true
-tokio.workspace = true
-serde.workspace = true
-serde_json.workspace = true
-futures.workspace = true
-chrono.workspace = true
-uuid.workspace = true
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+futures = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
 
-ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
-ricecoder-providers = { path = "../ricecoder-providers", version = "0.1" }
-ricecoder-sessions = { path = "../ricecoder-sessions", version = "0.1" }
-ricecoder-security = { path = "../ricecoder-security", version = "0.1" }
-jsonschema.workspace = true
-serde_yaml.workspace = true
+ricecoder-storage = { workspace = true }
+ricecoder-providers = { workspace = true }
+ricecoder-sessions = { workspace = true }
+ricecoder-security = { workspace = true }
+jsonschema = { workspace = true }
+serde_yaml = { workspace = true }
 reqwest = { workspace = true }
-rmcp = { version = "0.11.0", features = ["client", "transport-io"], optional = true }
+rmcp = { workspace = true, features = ["client", "transport-io"], optional = true }
 
 [features]
 default = []
 mcp = ["rmcp"]
 
 [dev-dependencies]
-proptest.workspace = true
-tokio-test.workspace = true
-tempfile.workspace = true
+proptest = { workspace = true }
+tokio-test = { workspace = true }
+tempfile = { workspace = true }
 
 
 

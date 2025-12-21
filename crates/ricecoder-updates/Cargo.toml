@@ -12,9 +12,9 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
-ricecoder-domain = { path = "../ricecoder-domain", version = "0.1" }
-ricecoder-security = { path = "../ricecoder-security", version = "0.1" }
-ricecoder-activity-log = { path = "../ricecoder-activity-log", version = "0.1" }
+ricecoder-domain = { workspace = true }
+ricecoder-security = { workspace = true }
+ricecoder-activity-log = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
@@ -25,8 +25,8 @@ reqwest = { workspace = true, features = ["json", "native-tls"] }
 chrono = { workspace = true }
 uuid = { workspace = true }
 sha2 = { workspace = true }
-hex = "0.4"
-semver = { version = "1.0", features = ["serde"] }
+hex = { workspace = true }
+semver = { workspace = true, features = ["serde"] }
 tempfile = { workspace = true }
 futures = { workspace = true }
 async-trait = { workspace = true }

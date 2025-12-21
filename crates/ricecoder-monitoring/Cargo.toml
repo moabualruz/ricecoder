@@ -24,29 +24,29 @@ anyhow = { workspace = true }
 async-trait = { workspace = true }
 futures = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
-prometheus = "0.14"
-opentelemetry = "0.29"
-opentelemetry_sdk = { version = "0.29", features = ["rt-tokio"] }
-opentelemetry-prometheus = "0.29"
-opentelemetry-otlp = { version = "0.29", features = ["grpc-tonic"] }
-sentry = { version = "0.34", features = ["tracing"] }
-log = "0.4"
-env_logger = "0.11"
-dashmap = "6.0"
-parking_lot = "0.12"
-once_cell = "1.19"
+prometheus = { workspace = true }
+opentelemetry = { workspace = true }
+opentelemetry_sdk = { workspace = true, features = ["rt-tokio"] }
+opentelemetry-prometheus = { workspace = true }
+opentelemetry-otlp = { workspace = true, features = ["grpc-tonic"] }
+sentry = { workspace = true, features = ["tracing"] }
+log = { workspace = true }
+env_logger = { workspace = true }
+dashmap = { workspace = true }
+parking_lot = { workspace = true }
+once_cell = { workspace = true }
 regex = { workspace = true }
 url = { workspace = true }
-base64 = "0.22"
-aes-gcm = "0.10"
-argon2 = "0.5"
-rand = "0.8"
-sysinfo = "0.30"
-sqlx = { version = "0.8", features = ["runtime-tokio-native-tls", "sqlite", "chrono"] }
-rusqlite = { version = "0.31", features = ["bundled"] }
-csv = "1.3"
-flate2 = "1.0"
-tar = "0.4"
+base64 = { workspace = true }
+aes-gcm = { workspace = true }
+argon2 = { workspace = true }
+rand = { workspace = true }
+sysinfo = { workspace = true }
+sqlx = { workspace = true, features = ["runtime-tokio-native-tls", "sqlite", "chrono"] }
+rusqlite = { workspace = true, features = ["bundled"] }
+csv = { workspace = true }
+flate2 = { workspace = true }
+tar = { workspace = true }
 walkdir = { workspace = true }
 glob = { workspace = true }
 toml = { workspace = true }

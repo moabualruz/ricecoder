@@ -18,28 +18,28 @@ tracing = { workspace = true }
 tokio = { workspace = true }
 async-trait = { workspace = true }
 futures = { workspace = true }
-futures-util = "0.3"
+futures-util = { workspace = true }
 anyhow = { workspace = true }
-chrono = { version = "0.4", features = ["serde"] }
-regex = "1.0"
+chrono = { workspace = true, features = ["serde"] }
+regex = { workspace = true }
 reqwest = { workspace = true, features = ["stream"] }
-http = "0.2"
-uuid = { version = "1.0", features = ["v4"] }
-base64 = "0.21"
+http = { workspace = true }
+uuid = { workspace = true, features = ["v4"] }
+base64 = { workspace = true }
 
 # For ricecoder integration
-ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
-ricecoder-permissions = { path = "../ricecoder-permissions", version = "0.1" }
-ricecoder-agents = { path = "../ricecoder-agents", version = "0.1" }
-ricecoder-files = { path = "../ricecoder-files", version = "0.1" }
-ricecoder-security = { path = "../ricecoder-security", version = "0.1" }
-ricecoder-cache = { path = "../ricecoder-cache", version = "0.1" }
+ricecoder-storage = { workspace = true }
+ricecoder-permissions = { workspace = true }
+ricecoder-agents = { workspace = true }
+ricecoder-files = { workspace = true }
+ricecoder-security = { workspace = true }
+ricecoder-cache = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
 tokio-test = { workspace = true }
 tempfile = { workspace = true }
-criterion = { version = "0.5", features = ["html_reports"] }
+criterion = { workspace = true, features = ["html_reports"] }
 async-trait = { workspace = true }
 
 [[bench]]

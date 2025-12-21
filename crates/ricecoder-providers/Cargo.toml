@@ -23,17 +23,17 @@ dotenv = { workspace = true }
 futures = { workspace = true }
 regex = { workspace = true }
 sha2 = { workspace = true }
-rand = "0.8"
-chrono = { version = "0.4", features = ["serde"] }
-ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
+rand = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
+ricecoder-storage = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
 tokio-test = { workspace = true }
 tempfile = { workspace = true }
-lazy_static = "1.4"
+lazy_static = { workspace = true }
 mockito = { workspace = true }
-serial_test = "3.0"
+serial_test = { workspace = true }
 
 
 

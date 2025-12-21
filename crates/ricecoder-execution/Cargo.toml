@@ -21,11 +21,11 @@ tracing = { workspace = true }
 uuid = { workspace = true }
 futures = { workspace = true }
 
-ricecoder-workflows = { path = "../ricecoder-workflows", version = "0.1" }
-ricecoder-files = { path = "../ricecoder-files", version = "0.1" }
-ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
-tree-sitter = "0.20"
-tree-sitter-bash = "0.20"
+ricecoder-workflows = { workspace = true }
+ricecoder-files = { workspace = true }
+ricecoder-storage = { workspace = true }
+tree-sitter = { workspace = true }
+tree-sitter-bash = { workspace = true }
 regex = { workspace = true }
 
 [dev-dependencies]

@@ -26,25 +26,25 @@ thiserror = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 tokio = { workspace = true }
-axum = "0.7"
-tower = "0.4"
-tower-http = { version = "0.5", features = ["cors", "fs", "trace"] }
-utoipa = { version = "4.2", features = ["axum_extras", "chrono"] }
-utoipa-swagger-ui = { version = "6.0", features = ["axum"] }
-ricecoder-sessions = { path = "../ricecoder-sessions", version = "0.1" }
-ricecoder-mcp = { path = "../ricecoder-mcp", version = "0.1" }
-ricecoder-security = { path = "../ricecoder-security", version = "0.1" }
-ricecoder-di = { path = "../ricecoder-di", version = "0.1" }
-ricecoder-activity-log = { path = "../ricecoder-activity-log", version = "0.1" }
-ricecoder-agents = { path = "../ricecoder-agents", version = "0.1" }
-uuid = { version = "1.0", features = ["v4", "serde"] }
+axum = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true, features = ["cors", "fs", "trace"] }
+utoipa = { workspace = true, features = ["axum_extras", "chrono"] }
+utoipa-swagger-ui = { workspace = true, features = ["axum"] }
+ricecoder-sessions = { workspace = true }
+ricecoder-mcp = { workspace = true }
+ricecoder-security = { workspace = true }
+ricecoder-di = { workspace = true }
+ricecoder-activity-log = { workspace = true }
+ricecoder-agents = { workspace = true }
+uuid = { workspace = true, features = ["v4", "serde"] }
 chrono = { workspace = true }
-jsonwebtoken = "9.3"
-bcrypt = "0.15"
-base64 = "0.22"
-futures = "0.3"
-async-trait = "0.1"
+jsonwebtoken = { workspace = true }
+bcrypt = { workspace = true }
+base64 = { workspace = true }
+futures = { workspace = true }
+async-trait = { workspace = true }
 
 [dev-dependencies]
-reqwest = { version = "0.11", features = ["json"] }
-tokio-test = "0.4"
+reqwest = { workspace = true, features = ["json"] }
+tokio-test = { workspace = true }

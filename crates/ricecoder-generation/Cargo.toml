@@ -10,28 +10,28 @@ homepage = "https://github.com/moabualruz/ricecoder"
 documentation = "https://github.com/moabualruz/ricecoder/wiki"
 
 [dependencies]
-handlebars = "5.0"
-heck = "0.4"
-regex = "1.10"
+handlebars = { workspace = true }
+heck = { workspace = true }
+regex = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-serde_yaml = "0.9"
+serde_yaml = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 tokio = { workspace = true }
-uuid = { version = "1.0", features = ["v4", "serde"] }
-futures = "0.3"
+uuid = { workspace = true, features = ["v4", "serde"] }
+futures = { workspace = true }
 chrono = { workspace = true }
-ricecoder-specs = { path = "../ricecoder-specs", version = "0.1" }
-ricecoder-providers = { path = "../ricecoder-providers", version = "0.1" }
-ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
+ricecoder-specs = { workspace = true }
+ricecoder-providers = { workspace = true }
+ricecoder-storage = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
 tokio-test = { workspace = true }
 tempfile = { workspace = true }
 chrono = { workspace = true }
-lazy_static = "1.4"
+lazy_static = { workspace = true }
 
 
 

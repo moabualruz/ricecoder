@@ -23,16 +23,16 @@ tracing-subscriber = { workspace = true }
 tokio = { workspace = true }
 anyhow = { workspace = true }
 async-trait = { workspace = true }
-tree-sitter = "0.20"
-tree-sitter-rust = "0.20"
-tree-sitter-typescript = "0.20"
-tree-sitter-python = "0.20"
+tree-sitter = { workspace = true }
+tree-sitter-rust = { workspace = true }
+tree-sitter-typescript = { workspace = true }
+tree-sitter-python = { workspace = true }
 regex = { workspace = true }
 chrono = { workspace = true }
-ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
-ricecoder-completion = { path = "../ricecoder-completion", version = "0.1" }
-ricecoder-refactoring = { path = "../ricecoder-refactoring", version = "0.1" }
-ratatui = "0.29"
+ricecoder-storage = { workspace = true }
+ricecoder-completion = { workspace = true }
+ricecoder-refactoring = { workspace = true }
+ratatui = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

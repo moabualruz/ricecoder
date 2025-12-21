@@ -10,26 +10,26 @@ homepage = "https://github.com/moabualruz/ricecoder"
 documentation = "https://github.com/moabualruz/ricecoder/wiki"
 
 [dependencies]
-async-trait.workspace = true
-thiserror.workspace = true
-tracing.workspace = true
-tokio.workspace = true
-serde.workspace = true
-serde_json.workspace = true
-serde_yaml.workspace = true
-futures.workspace = true
-chrono.workspace = true
-uuid.workspace = true
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+futures = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
 
-ricecoder-storage = { path = "../ricecoder-storage", version = "0.1" }
-ricecoder-agents = { path = "../ricecoder-agents", version = "0.1" }
-ricecoder-providers = { path = "../ricecoder-providers", version = "0.1" }
-jsonschema.workspace = true
+ricecoder-storage = { workspace = true }
+ricecoder-agents = { workspace = true }
+ricecoder-providers = { workspace = true }
+jsonschema = { workspace = true }
 
 [dev-dependencies]
-proptest.workspace = true
-tokio-test.workspace = true
-tempfile.workspace = true
+proptest = { workspace = true }
+tokio-test = { workspace = true }
+tempfile = { workspace = true }
 
 
 
