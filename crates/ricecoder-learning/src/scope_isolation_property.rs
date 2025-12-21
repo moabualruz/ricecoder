@@ -19,18 +19,9 @@ mod tests {
 
     /// Strategy for generating random rules
     fn arb_rule(scope: RuleScope) -> impl Strategy<Value = Rule> {
-        (
-            "[a-z]{1,10}",
-            "[a-z]{1,10}",
-        )
-            .prop_map(move |(pattern, action)| {
-                Rule::new(
-                    scope,
-                    pattern,
-                    action,
-                    RuleSource::Learned,
-                )
-            })
+        ("[a-z]{1,10}", "[a-z]{1,10}").prop_map(move |(pattern, action)| {
+            Rule::new(scope, pattern, action, RuleSource::Learned)
+        })
     }
 
     /// Strategy for generating random rule collections

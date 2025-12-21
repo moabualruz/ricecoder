@@ -63,7 +63,9 @@ pub struct RefactoringAnalysis {
 #[derive(Clone)]
 pub struct ProviderRegistry {
     lsp_providers: Arc<LspProviderRegistry>,
-    providers: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, Arc<dyn RefactoringProvider>>>>,
+    providers: std::sync::Arc<
+        std::sync::Mutex<std::collections::HashMap<String, Arc<dyn RefactoringProvider>>>,
+    >,
     generic_provider: Arc<dyn RefactoringProvider>,
 }
 
@@ -97,7 +99,9 @@ impl ProviderRegistry {
     /// Register a provider for a language
     pub fn register(&self, language: String, provider: Arc<dyn RefactoringProvider>) -> Result<()> {
         let mut providers = self.providers.lock().map_err(|_| {
-            crate::error::RefactoringError::Other("Failed to acquire lock on provider registry".to_string())
+            crate::error::RefactoringError::Other(
+                "Failed to acquire lock on provider registry".to_string(),
+            )
         })?;
         providers.insert(language, provider);
         Ok(())
@@ -134,7 +138,9 @@ impl ProviderRegistry {
 
         // Check configured providers
         let providers = self.providers.lock().map_err(|_| {
-            crate::error::RefactoringError::Other("Failed to acquire lock on provider registry".to_string())
+            crate::error::RefactoringError::Other(
+                "Failed to acquire lock on provider registry".to_string(),
+            )
         })?;
         Ok(providers.contains_key(language))
     }
@@ -150,7 +156,9 @@ impl ProviderRegistry {
 
         // Add configured languages
         let providers = self.providers.lock().map_err(|_| {
-            crate::error::RefactoringError::Other("Failed to acquire lock on provider registry".to_string())
+            crate::error::RefactoringError::Other(
+                "Failed to acquire lock on provider registry".to_string(),
+            )
         })?;
         languages.extend(providers.keys().cloned());
 

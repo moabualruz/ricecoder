@@ -355,5 +355,3 @@ struct GoogleUsageMetadata {
     candidates_token_count: usize,
     total_token_count: usize,
 }
-
-

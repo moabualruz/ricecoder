@@ -7,11 +7,11 @@
 //! - Project analysis caching
 
 use crate::CacheManager;
+use serde::Serialize;
 use std::path::Path;
-use tracing::{debug, info};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
-use serde::Serialize;
+use tracing::{debug, info};
 
 /// Cache statistics tracker
 #[derive(Debug, Clone)]
@@ -272,7 +272,7 @@ impl ProviderCache {
             .bytes()
             .fold(0u64, |acc, b| acc.wrapping_mul(31).wrapping_add(b as u64));
 
-        format!("provider_{}_{}_{}",provider, model, hash)
+        format!("provider_{}_{}_{}", provider, model, hash)
     }
 
     /// Get cache statistics
@@ -335,10 +335,16 @@ impl ProjectAnalysisCache {
     }
 
     /// Invalidate project analysis cache
-    pub fn invalidate_analysis(&self, project_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn invalidate_analysis(
+        &self,
+        project_path: &Path,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let cache_key = format!("analysis_{}", project_path.display());
         self.cache.invalidate(&cache_key)?;
-        debug!("Project analysis cache invalidated: {}", project_path.display());
+        debug!(
+            "Project analysis cache invalidated: {}",
+            project_path.display()
+        );
         Ok(())
     }
 
@@ -356,25 +362,25 @@ mod tests {
     #[test]
     fn test_cache_stats() {
         let stats = CacheStats::new();
-        
+
         stats.record_hit();
         stats.record_hit();
         stats.record_miss();
-        
+
         let (hits, misses, rate) = stats.stats();
         assert_eq!(hits, 2);
         assert_eq!(misses, 1);
-        assert!((rate - 2.0/3.0).abs() < 0.01);
+        assert!((rate - 2.0 / 3.0).abs() < 0.01);
     }
 
     #[test]
     fn test_cache_stats_reset() {
         let stats = CacheStats::new();
-        
+
         stats.record_hit();
         stats.record_miss();
         stats.reset();
-        
+
         let (hits, misses, _) = stats.stats();
         assert_eq!(hits, 0);
         assert_eq!(misses, 0);
@@ -390,7 +396,7 @@ mod tests {
         std::fs::write(&config_path, "key: value")?;
 
         let cache = ConfigCache::new(&cache_dir)?;
-        
+
         // First access: miss
         let _: serde_json::Value = cache.get_config(&config_path)?;
         assert_eq!(cache.stats().stats().1, 1); // 1 miss
@@ -412,7 +418,7 @@ mod tests {
         std::fs::write(&spec_path, "name: test")?;
 
         let cache = SpecCache::new(&cache_dir)?;
-        
+
         // First access: miss
         let _: serde_json::Value = cache.get_spec(&spec_path)?;
         assert_eq!(cache.stats().stats().1, 1); // 1 miss
@@ -431,7 +437,7 @@ mod tests {
         std::fs::create_dir(&cache_dir)?;
 
         let cache = ProviderCache::new(&cache_dir)?;
-        
+
         // First access: miss
         let result = cache.get_response("openai", "gpt-4", "hello")?;
         assert!(result.is_none());

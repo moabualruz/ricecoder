@@ -27,13 +27,13 @@ fn get_cargo_toml_path() -> PathBuf {
         PathBuf::from("projects/ricecoder/Cargo.toml"),
         PathBuf::from("Cargo.toml"),
     ];
-    
+
     for path in paths {
         if path.exists() {
             return path;
         }
     }
-    
+
     PathBuf::from("../../Cargo.toml")
 }
 
@@ -44,13 +44,13 @@ fn get_package_json_path() -> PathBuf {
         PathBuf::from("projects/ricecoder/package.json"),
         PathBuf::from("package.json"),
     ];
-    
+
     for path in paths {
         if path.exists() {
             return path;
         }
     }
-    
+
     PathBuf::from("../../package.json")
 }
 
@@ -61,13 +61,13 @@ fn get_dockerfile_path() -> PathBuf {
         PathBuf::from("projects/ricecoder/Dockerfile"),
         PathBuf::from("Dockerfile"),
     ];
-    
+
     for path in paths {
         if path.exists() {
             return path;
         }
     }
-    
+
     PathBuf::from("../../Dockerfile")
 }
 
@@ -151,10 +151,7 @@ fn test_cargo_toml_has_keywords() {
         content.contains("keywords"),
         "Cargo.toml should have keywords"
     );
-    assert!(
-        content.contains("ai"),
-        "Keywords should include 'ai'"
-    );
+    assert!(content.contains("ai"), "Keywords should include 'ai'");
     assert!(
         content.contains("coding"),
         "Keywords should include 'coding'"
@@ -302,10 +299,7 @@ fn test_package_json_version_matches_cargo() {
         .and_then(|line| line.split('"').nth(3));
 
     if let (Some(cv), Some(pv)) = (cargo_version, package_version) {
-        assert_eq!(
-            cv, pv,
-            "Cargo.toml and package.json versions should match"
-        );
+        assert_eq!(cv, pv, "Cargo.toml and package.json versions should match");
     }
 }
 
@@ -442,7 +436,7 @@ fn test_install_script_js_exists() {
         PathBuf::from("projects/ricecoder/scripts/install.js"),
         PathBuf::from("scripts/install.js"),
     ];
-    
+
     let mut found = false;
     for path in paths {
         if path.exists() {
@@ -450,11 +444,8 @@ fn test_install_script_js_exists() {
             break;
         }
     }
-    
-    assert!(
-        found,
-        "install.js should exist for npm postinstall"
-    );
+
+    assert!(found, "install.js should exist for npm postinstall");
 }
 
 #[test]
@@ -464,8 +455,12 @@ fn test_install_script_js_downloads_binary() {
         PathBuf::from("projects/ricecoder/scripts/install.js"),
         PathBuf::from("scripts/install.js"),
     ];
-    
-    let install_js = paths.iter().find(|p| p.exists()).cloned().unwrap_or_default();
+
+    let install_js = paths
+        .iter()
+        .find(|p| p.exists())
+        .cloned()
+        .unwrap_or_default();
     assert!(install_js.exists(), "install.js should exist");
 
     let content = fs::read_to_string(&install_js).expect("Should read install.js");
@@ -488,8 +483,12 @@ fn test_install_script_js_verifies_checksum() {
         PathBuf::from("projects/ricecoder/scripts/install.js"),
         PathBuf::from("scripts/install.js"),
     ];
-    
-    let install_js = paths.iter().find(|p| p.exists()).cloned().unwrap_or_default();
+
+    let install_js = paths
+        .iter()
+        .find(|p| p.exists())
+        .cloned()
+        .unwrap_or_default();
     assert!(install_js.exists(), "install.js should exist");
 
     let content = fs::read_to_string(&install_js).expect("Should read install.js");
@@ -508,8 +507,12 @@ fn test_install_script_js_extracts_archive() {
         PathBuf::from("projects/ricecoder/scripts/install.js"),
         PathBuf::from("scripts/install.js"),
     ];
-    
-    let install_js = paths.iter().find(|p| p.exists()).cloned().unwrap_or_default();
+
+    let install_js = paths
+        .iter()
+        .find(|p| p.exists())
+        .cloned()
+        .unwrap_or_default();
     assert!(install_js.exists(), "install.js should exist");
 
     let content = fs::read_to_string(&install_js).expect("Should read install.js");
@@ -528,8 +531,12 @@ fn test_install_script_js_handles_errors() {
         PathBuf::from("projects/ricecoder/scripts/install.js"),
         PathBuf::from("scripts/install.js"),
     ];
-    
-    let install_js = paths.iter().find(|p| p.exists()).cloned().unwrap_or_default();
+
+    let install_js = paths
+        .iter()
+        .find(|p| p.exists())
+        .cloned()
+        .unwrap_or_default();
     assert!(install_js.exists(), "install.js should exist");
 
     let content = fs::read_to_string(&install_js).expect("Should read install.js");

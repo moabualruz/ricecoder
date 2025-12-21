@@ -7,9 +7,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use super::actions_integration::{
-    CiResultSummary, WorkflowJob, WorkflowStatus,
-};
+use super::actions_integration::{CiResultSummary, WorkflowJob, WorkflowStatus};
 
 /// Workflow configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -75,15 +73,14 @@ impl ActionsOperations {
     /// # Returns
     ///
     /// Result containing the iteration result
-    pub async fn fix_and_retry(
-        run_id: u64,
-        fixes: Vec<String>,
-    ) -> Result<WorkflowIterationResult> {
+    pub async fn fix_and_retry(run_id: u64, fixes: Vec<String>) -> Result<WorkflowIterationResult> {
         if run_id == 0 {
             return Err(GitHubError::invalid_input("Run ID cannot be zero"));
         }
         if fixes.is_empty() {
-            return Err(GitHubError::invalid_input("At least one fix must be provided"));
+            return Err(GitHubError::invalid_input(
+                "At least one fix must be provided",
+            ));
         }
 
         // In a real implementation, this would:
@@ -212,7 +209,10 @@ impl ActionsOperations {
             return Err(GitHubError::invalid_input("Run ID cannot be zero"));
         }
 
-        let mut report = format!("# Workflow Report\n\nRun ID: {}\n\nStatus: {:?}\n\n", run_id, status);
+        let mut report = format!(
+            "# Workflow Report\n\nRun ID: {}\n\nStatus: {:?}\n\n",
+            run_id, status
+        );
 
         report.push_str("## Jobs\n\n");
         for job in jobs {
@@ -311,19 +311,16 @@ mod tests {
 
     #[tokio::test]
     async fn test_generate_detailed_report_with_zero_id() {
-        let result = ActionsOperations::generate_detailed_report(0, WorkflowStatus::Completed, vec![])
-            .await;
+        let result =
+            ActionsOperations::generate_detailed_report(0, WorkflowStatus::Completed, vec![]).await;
         assert!(result.is_err());
     }
 
     #[tokio::test]
     async fn test_generate_detailed_report_success() {
-        let result = ActionsOperations::generate_detailed_report(
-            12345,
-            WorkflowStatus::Completed,
-            vec![],
-        )
-        .await;
+        let result =
+            ActionsOperations::generate_detailed_report(12345, WorkflowStatus::Completed, vec![])
+                .await;
         assert!(result.is_ok());
         let report = result.unwrap();
         assert!(report.contains("Workflow Report"));

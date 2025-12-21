@@ -10,7 +10,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use std::{env, io, collections::HashMap};
+use std::{collections::HashMap, env, io};
 
 /// Terminal color support levels
 ///
@@ -166,16 +166,36 @@ impl TerminalCapabilities {
     /// Requirements: 4.3 - Support capability override via configuration
     pub fn detect_with_overrides(overrides: CapabilityOverrides) -> Self {
         let terminal_type = Self::detect_terminal_type();
-        let color_support = overrides.color_support.unwrap_or_else(|| Self::detect_color_support());
-        let mouse_support = overrides.mouse_support.unwrap_or_else(|| Self::detect_mouse_support());
-        let sixel_support = overrides.sixel_support.unwrap_or_else(|| Self::detect_sixel_support(&terminal_type));
-        let kitty_graphics_support = overrides.kitty_graphics_support.unwrap_or_else(|| Self::detect_kitty_graphics_support(&terminal_type));
-        let iterm2_inline_images_support = overrides.iterm2_inline_images_support.unwrap_or_else(|| Self::detect_iterm2_inline_images_support(&terminal_type));
-        let wezterm_multiplexer_support = overrides.wezterm_multiplexer_support.unwrap_or_else(|| Self::detect_wezterm_multiplexer_support(&terminal_type));
-        let unicode_placeholder_support = overrides.unicode_placeholder_support.unwrap_or_else(|| Self::detect_unicode_placeholder_support(&terminal_type));
-        let block_graphics_support = overrides.block_graphics_support.unwrap_or_else(|| Self::detect_block_graphics_support());
-        let ansi_art_support = overrides.ansi_art_support.unwrap_or_else(|| Self::detect_ansi_art_support());
-        let unicode_support = overrides.unicode_support.unwrap_or_else(|| Self::detect_unicode_support());
+        let color_support = overrides
+            .color_support
+            .unwrap_or_else(|| Self::detect_color_support());
+        let mouse_support = overrides
+            .mouse_support
+            .unwrap_or_else(|| Self::detect_mouse_support());
+        let sixel_support = overrides
+            .sixel_support
+            .unwrap_or_else(|| Self::detect_sixel_support(&terminal_type));
+        let kitty_graphics_support = overrides
+            .kitty_graphics_support
+            .unwrap_or_else(|| Self::detect_kitty_graphics_support(&terminal_type));
+        let iterm2_inline_images_support = overrides
+            .iterm2_inline_images_support
+            .unwrap_or_else(|| Self::detect_iterm2_inline_images_support(&terminal_type));
+        let wezterm_multiplexer_support = overrides
+            .wezterm_multiplexer_support
+            .unwrap_or_else(|| Self::detect_wezterm_multiplexer_support(&terminal_type));
+        let unicode_placeholder_support = overrides
+            .unicode_placeholder_support
+            .unwrap_or_else(|| Self::detect_unicode_placeholder_support(&terminal_type));
+        let block_graphics_support = overrides
+            .block_graphics_support
+            .unwrap_or_else(|| Self::detect_block_graphics_support());
+        let ansi_art_support = overrides
+            .ansi_art_support
+            .unwrap_or_else(|| Self::detect_ansi_art_support());
+        let unicode_support = overrides
+            .unicode_support
+            .unwrap_or_else(|| Self::detect_unicode_support());
         let is_ssh = Self::detect_ssh_session();
         let (is_tmux, tmux_version) = Self::detect_tmux_session_with_version();
         let size = crossterm::terminal::size().unwrap_or((80, 24));
@@ -370,7 +390,9 @@ impl TerminalCapabilities {
                 // iTerm2 supports sixel in newer versions
                 if let Ok(version) = env::var("TERM_PROGRAM_VERSION") {
                     // Check if version is 3.5.0 or higher (approximate sixel support)
-                    version.split('.').next()
+                    version
+                        .split('.')
+                        .next()
                         .and_then(|major| major.parse::<u32>().ok())
                         .map_or(false, |major| major >= 3)
                 } else {
@@ -407,19 +429,20 @@ impl TerminalCapabilities {
     /// Requirements: 4.1 - Detect graphics protocol support
     fn detect_unicode_placeholder_support(terminal_type: &TerminalType) -> bool {
         // Unicode placeholders work in most modern terminals
-        matches!(terminal_type,
-            TerminalType::Xterm |
-            TerminalType::ITerm2 |
-            TerminalType::WezTerm |
-            TerminalType::Kitty |
-            TerminalType::Alacritty |
-            TerminalType::WindowsTerminal |
-            TerminalType::VSCode |
-            TerminalType::Hyper |
-            TerminalType::Tabby |
-            TerminalType::Foot |
-            TerminalType::Rio |
-            TerminalType::Warp
+        matches!(
+            terminal_type,
+            TerminalType::Xterm
+                | TerminalType::ITerm2
+                | TerminalType::WezTerm
+                | TerminalType::Kitty
+                | TerminalType::Alacritty
+                | TerminalType::WindowsTerminal
+                | TerminalType::VSCode
+                | TerminalType::Hyper
+                | TerminalType::Tabby
+                | TerminalType::Foot
+                | TerminalType::Rio
+                | TerminalType::Warp
         )
     }
 
@@ -494,7 +517,7 @@ impl TerminalCapabilities {
                     }
                 })
                 .map(|v| v.trim().to_string());
-            
+
             (true, version)
         } else {
             (false, None)
@@ -505,7 +528,11 @@ impl TerminalCapabilities {
     ///
     /// Requirements: 4.3 - Reduce graphics complexity over SSH
     pub fn should_reduce_graphics(&self) -> bool {
-        self.is_ssh || self.overrides_applied.force_reduced_graphics.unwrap_or(false)
+        self.is_ssh
+            || self
+                .overrides_applied
+                .force_reduced_graphics
+                .unwrap_or(false)
     }
 
     /// Check if OSC 52 should be wrapped for TMUX
@@ -542,7 +569,10 @@ impl TerminalCapabilities {
     /// Requirements: 4.4 - Support TMUX-specific escape sequences
     pub fn wrap_escape_sequence(&self, sequence: &str) -> String {
         if self.is_tmux {
-            format!("\x1bPtmux;\x1b{}\x1b\\", sequence.replace('\x1b', "\x1b\x1b"))
+            format!(
+                "\x1bPtmux;\x1b{}\x1b\\",
+                sequence.replace('\x1b', "\x1b\x1b")
+            )
         } else {
             sequence.to_string()
         }
@@ -553,7 +583,11 @@ impl TerminalCapabilities {
     /// Requirements: 4.2 - Use appropriate color mode
     pub fn get_color_mode(&self) -> crossterm::style::Color {
         match self.color_support {
-            ColorSupport::TrueColor => crossterm::style::Color::Rgb { r: 255, g: 255, b: 255 },
+            ColorSupport::TrueColor => crossterm::style::Color::Rgb {
+                r: 255,
+                g: 255,
+                b: 255,
+            },
             ColorSupport::Ansi256 => crossterm::style::Color::AnsiValue(255),
             ColorSupport::Ansi16 => crossterm::style::Color::White,
             ColorSupport::None => crossterm::style::Color::Reset,
@@ -565,24 +599,36 @@ impl TerminalCapabilities {
     /// Requirements: 4.2 - Adapt UI based on detected capabilities
     pub fn get_optimizations(&self) -> HashMap<String, bool> {
         let mut optimizations = HashMap::new();
-        
+
         // Enable mouse support if detected
         optimizations.insert("mouse_support".to_string(), self.mouse_support);
-        
+
         // Enable sixel graphics if supported
         optimizations.insert("sixel_graphics".to_string(), self.sixel_support);
 
         // Enable Kitty graphics protocol if supported
-        optimizations.insert("kitty_graphics_protocol".to_string(), self.kitty_graphics_support);
+        optimizations.insert(
+            "kitty_graphics_protocol".to_string(),
+            self.kitty_graphics_support,
+        );
 
         // Enable iTerm2 inline images if supported
-        optimizations.insert("iterm2_inline_images".to_string(), self.iterm2_inline_images_support);
+        optimizations.insert(
+            "iterm2_inline_images".to_string(),
+            self.iterm2_inline_images_support,
+        );
 
         // Enable WezTerm multiplexer features if supported
-        optimizations.insert("wezterm_multiplexer".to_string(), self.wezterm_multiplexer_support);
+        optimizations.insert(
+            "wezterm_multiplexer".to_string(),
+            self.wezterm_multiplexer_support,
+        );
 
         // Enable Unicode placeholder protocol if supported
-        optimizations.insert("unicode_placeholder_protocol".to_string(), self.unicode_placeholder_support);
+        optimizations.insert(
+            "unicode_placeholder_protocol".to_string(),
+            self.unicode_placeholder_support,
+        );
 
         // Enable block graphics if supported
         optimizations.insert("block_graphics".to_string(), self.block_graphics_support);
@@ -592,13 +638,16 @@ impl TerminalCapabilities {
 
         // Enable Unicode characters if supported
         optimizations.insert("unicode_chars".to_string(), self.unicode_support);
-        
+
         // Reduce graphics complexity for SSH
-        optimizations.insert("reduced_graphics".to_string(), self.should_reduce_graphics());
-        
+        optimizations.insert(
+            "reduced_graphics".to_string(),
+            self.should_reduce_graphics(),
+        );
+
         // Enable TMUX-specific handling
         optimizations.insert("tmux_mode".to_string(), self.is_tmux);
-        
+
         // Terminal-specific optimizations
         match self.terminal_type {
             TerminalType::Kitty => {
@@ -613,7 +662,7 @@ impl TerminalCapabilities {
             }
             _ => {}
         }
-        
+
         optimizations
     }
 }
@@ -700,7 +749,11 @@ impl TerminalState {
     /// Should be called when terminal is resized
     pub fn update_size(&mut self) -> Result<()> {
         self.capabilities.size = crossterm::terminal::size().unwrap_or((80, 24));
-        tracing::debug!("Terminal size updated: {}x{}", self.capabilities.size.0, self.capabilities.size.1);
+        tracing::debug!(
+            "Terminal size updated: {}x{}",
+            self.capabilities.size.0,
+            self.capabilities.size.1
+        );
         Ok(())
     }
 }
@@ -736,6 +789,3 @@ impl Default for TerminalCapabilities {
         }
     }
 }
-
-
-

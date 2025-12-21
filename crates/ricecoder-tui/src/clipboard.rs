@@ -67,9 +67,11 @@ impl Osc52Clipboard {
 
         // Write to stdout
         let mut stdout = io::stdout();
-        stdout.write_all(sequence.as_bytes())
-            .map_err(|e| ClipboardError::CopyError(format!("Failed to write OSC 52 sequence: {}", e)))?;
-        stdout.flush()
+        stdout.write_all(sequence.as_bytes()).map_err(|e| {
+            ClipboardError::CopyError(format!("Failed to write OSC 52 sequence: {}", e))
+        })?;
+        stdout
+            .flush()
             .map_err(|e| ClipboardError::CopyError(format!("Failed to flush stdout: {}", e)))?;
 
         Ok(())
@@ -79,10 +81,21 @@ impl Osc52Clipboard {
     pub fn is_supported() -> bool {
         // Check for common terminals that support OSC 52
         if let Ok(term) = std::env::var("TERM") {
-            matches!(term.as_str(),
-                "xterm" | "xterm-256color" | "screen" | "screen-256color" |
-                "tmux" | "tmux-256color" | "rxvt" | "rxvt-256color" |
-                "alacritty" | "kitty" | "wezterm" | "foot" | "ghostty"
+            matches!(
+                term.as_str(),
+                "xterm"
+                    | "xterm-256color"
+                    | "screen"
+                    | "screen-256color"
+                    | "tmux"
+                    | "tmux-256color"
+                    | "rxvt"
+                    | "rxvt-256color"
+                    | "alacritty"
+                    | "kitty"
+                    | "wezterm"
+                    | "foot"
+                    | "ghostty"
             )
         } else {
             false
@@ -111,9 +124,11 @@ impl TmuxClipboard {
         let tmux_sequence = format!("\x1bPtmux;{}\x1b\\", osc52);
 
         let mut stdout = io::stdout();
-        stdout.write_all(tmux_sequence.as_bytes())
-            .map_err(|e| ClipboardError::CopyError(format!("Failed to write TMUX sequence: {}", e)))?;
-        stdout.flush()
+        stdout.write_all(tmux_sequence.as_bytes()).map_err(|e| {
+            ClipboardError::CopyError(format!("Failed to write TMUX sequence: {}", e))
+        })?;
+        stdout
+            .flush()
             .map_err(|e| ClipboardError::CopyError(format!("Failed to flush stdout: {}", e)))?;
 
         Ok(())
@@ -128,18 +143,18 @@ impl TmuxClipboard {
     fn get_tmux_version() -> Result<String, ClipboardError> {
         use std::process::Command;
 
-        let output = Command::new("tmux")
-            .arg("-V")
-            .output()
-            .map_err(|e| ClipboardError::TerminalDetectionError(format!("Failed to run tmux -V: {}", e)))?;
+        let output = Command::new("tmux").arg("-V").output().map_err(|e| {
+            ClipboardError::TerminalDetectionError(format!("Failed to run tmux -V: {}", e))
+        })?;
 
-        let version_output = String::from_utf8(output.stdout)
-            .map_err(|e| ClipboardError::TerminalDetectionError(format!("Invalid TMUX version output: {}", e)))?;
+        let version_output = String::from_utf8(output.stdout).map_err(|e| {
+            ClipboardError::TerminalDetectionError(format!("Invalid TMUX version output: {}", e))
+        })?;
 
         // Parse version from "tmux X.Y.Z"
-        let version = version_output.trim()
-            .strip_prefix("tmux ")
-            .ok_or_else(|| ClipboardError::TerminalDetectionError("Unexpected TMUX version format".to_string()))?;
+        let version = version_output.trim().strip_prefix("tmux ").ok_or_else(|| {
+            ClipboardError::TerminalDetectionError("Unexpected TMUX version format".to_string())
+        })?;
 
         Ok(version.to_string())
     }
@@ -270,7 +285,11 @@ impl ClipboardManager {
     }
 
     /// Copy code block with syntax highlighting hints
-    pub fn copy_code_block(&self, code: &str, language: Option<&str>) -> Result<(), ClipboardError> {
+    pub fn copy_code_block(
+        &self,
+        code: &str,
+        language: Option<&str>,
+    ) -> Result<(), ClipboardError> {
         let formatted = if let Some(lang) = language {
             format!("```{}\n{}\n```", lang, code)
         } else {
@@ -280,7 +299,12 @@ impl ClipboardManager {
     }
 
     /// Copy chat message with role and content
-    pub fn copy_chat_message(&self, role: &str, content: &str, timestamp: Option<&str>) -> Result<(), ClipboardError> {
+    pub fn copy_chat_message(
+        &self,
+        role: &str,
+        content: &str,
+        timestamp: Option<&str>,
+    ) -> Result<(), ClipboardError> {
         let formatted = if let Some(ts) = timestamp {
             format!("[{}] **{}**: {}", ts, role, content)
         } else {
@@ -290,7 +314,10 @@ impl ClipboardManager {
     }
 
     /// Copy conversation transcript
-    pub fn copy_conversation_transcript(&self, messages: &[(&str, &str)]) -> Result<(), ClipboardError> {
+    pub fn copy_conversation_transcript(
+        &self,
+        messages: &[(&str, &str)],
+    ) -> Result<(), ClipboardError> {
         let mut transcript = String::new();
         for (role, content) in messages {
             transcript.push_str(&format!("**{}**: {}\n\n", role, content));
@@ -299,14 +326,17 @@ impl ClipboardManager {
     }
 
     /// Copy formatted data with custom formatting
-    pub fn copy_formatted_data(&self, data: &str, format: CopyFormat) -> Result<(), ClipboardError> {
+    pub fn copy_formatted_data(
+        &self,
+        data: &str,
+        format: CopyFormat,
+    ) -> Result<(), ClipboardError> {
         let formatted = match format {
             CopyFormat::Plain => data.to_string(),
             CopyFormat::Markdown => format!("```\n{}\n```", data),
             CopyFormat::Json => {
                 if let Ok(json_value) = serde_json::from_str::<serde_json::Value>(data) {
-                    serde_json::to_string_pretty(&json_value)
-                        .unwrap_or_else(|_| data.to_string())
+                    serde_json::to_string_pretty(&json_value).unwrap_or_else(|_| data.to_string())
                 } else {
                     data.to_string()
                 }
@@ -331,16 +361,20 @@ impl ClipboardManager {
             }
             ClipboardBackend::Osc52 => Osc52Clipboard::is_supported(),
             ClipboardBackend::Tmux => {
-                TmuxClipboard::is_in_tmux() &&
-                TmuxClipboard::get_tmux_version()
-                    .map(|v| TmuxClipboard::supports_osc52(&v))
-                    .unwrap_or(false)
+                TmuxClipboard::is_in_tmux()
+                    && TmuxClipboard::get_tmux_version()
+                        .map(|v| TmuxClipboard::supports_osc52(&v))
+                        .unwrap_or(false)
             }
         }
     }
 
     /// Legacy static methods for backward compatibility
-    pub fn copy_command_block_static(command: &str, output: &str, status: &str) -> Result<(), ClipboardError> {
+    pub fn copy_command_block_static(
+        command: &str,
+        output: &str,
+        status: &str,
+    ) -> Result<(), ClipboardError> {
         Self::new().copy_command_block(command, output, status)
     }
 
@@ -460,5 +494,3 @@ impl CopyOperation {
         }
     }
 }
-
-

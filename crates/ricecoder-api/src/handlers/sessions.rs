@@ -1,12 +1,5 @@
 //! Session management API handlers
 
-use axum::{
-    extract::{Path, Query, State},
-    http::StatusCode,
-    Json,
-};
-use serde::Deserialize;
-use std::collections::HashMap;
 use crate::{
     error::{ApiError, ApiResult},
     models::{
@@ -15,6 +8,13 @@ use crate::{
     },
     state::AppState,
 };
+use axum::{
+    extract::{Path, Query, State},
+    http::StatusCode,
+    Json,
+};
+use serde::Deserialize;
+use std::collections::HashMap;
 
 /// Query parameters for session listing
 #[derive(Debug, Deserialize, utoipa::IntoParams)]
@@ -44,20 +44,33 @@ pub async fn create_session(
 ) -> ApiResult<Json<SessionResponse>> {
     // Validate request
     if request.name.trim().is_empty() {
-        return Err(ApiError::BadRequest("Session name cannot be empty".to_string()));
+        return Err(ApiError::BadRequest(
+            "Session name cannot be empty".to_string(),
+        ));
     }
     if request.name.len() > 100 {
-        return Err(ApiError::BadRequest("Session name too long (max 100 characters)".to_string()));
+        return Err(ApiError::BadRequest(
+            "Session name too long (max 100 characters)".to_string(),
+        ));
     }
-    if !request.name.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-') {
-        return Err(ApiError::BadRequest("Session name can only contain alphanumeric characters, underscores, and hyphens".to_string()));
+    if !request
+        .name
+        .chars()
+        .all(|c| c.is_alphanumeric() || c == '_' || c == '-')
+    {
+        return Err(ApiError::BadRequest(
+            "Session name can only contain alphanumeric characters, underscores, and hyphens"
+                .to_string(),
+        ));
     }
     if request.provider.trim().is_empty() {
         return Err(ApiError::BadRequest("Provider cannot be empty".to_string()));
     }
     if let Some(ref context) = request.context {
         if context.len() > 10000 {
-            return Err(ApiError::BadRequest("Context too long (max 10000 characters)".to_string()));
+            return Err(ApiError::BadRequest(
+                "Context too long (max 10000 characters)".to_string(),
+            ));
         }
     }
 
@@ -91,21 +104,16 @@ pub async fn list_sessions(
 ) -> ApiResult<Json<SessionListResponse>> {
     // TODO: Implement actual session listing
     // For now, return mock data
-    let sessions = vec![
-        SessionResponse {
-            id: "session-1".to_string(),
-            name: "Test Session".to_string(),
-            provider: "anthropic".to_string(),
-            status: "active".to_string(),
-            created_at: chrono::Utc::now().timestamp(),
-            last_activity: chrono::Utc::now().timestamp(),
-        }
-    ];
+    let sessions = vec![SessionResponse {
+        id: "session-1".to_string(),
+        name: "Test Session".to_string(),
+        provider: "anthropic".to_string(),
+        status: "active".to_string(),
+        created_at: chrono::Utc::now().timestamp(),
+        last_activity: chrono::Utc::now().timestamp(),
+    }];
 
-    let response = SessionListResponse {
-        sessions,
-        total: 1,
-    };
+    let response = SessionListResponse { sessions, total: 1 };
 
     Ok(Json(response))
 }

@@ -1,11 +1,11 @@
 //! Event handling for the TUI
 
+use crate::model::AppMessage;
+use crossterm::event as crossterm_event;
 use std::path::PathBuf;
 use std::thread;
 use std::time::Duration;
 use tokio::sync::mpsc::UnboundedReceiver;
-use crossterm::event as crossterm_event;
-use crate::model::AppMessage;
 
 /// Event types for the TUI
 #[derive(Debug, Clone)]
@@ -60,7 +60,18 @@ pub enum KeyCode {
     /// Function keys
     F(u8),
     /// Individual function keys for convenience
-    F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
+    F1,
+    F2,
+    F3,
+    F4,
+    F5,
+    F6,
+    F7,
+    F8,
+    F9,
+    F10,
+    F11,
+    F12,
     /// Other keys
     Other,
 }
@@ -108,11 +119,11 @@ pub struct EventLoop {
 
 impl EventLoop {
     /// Create a new event loop
-    /// 
+    ///
     /// Spawns a thread that polls for terminal events using crossterm with a 10ms timeout.
     /// Converts crossterm events to RiceCoder Event types and sends them through an mpsc channel.
     /// Also sends periodic Tick events every 250ms for UI updates.
-    /// 
+    ///
     /// Requirements: 1.2, 1.5, 1.6
     pub fn new() -> Self {
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
@@ -153,19 +164,20 @@ impl EventLoop {
             }
         });
 
-        Self { rx: Some(rx), tx: Some(tx) }
+        Self {
+            rx: Some(rx),
+            tx: Some(tx),
+        }
     }
 
     /// Convert a crossterm event to a RiceCoder Event
-    /// 
+    ///
     /// Requirements: 1.2, 1.3, 1.4, 1.6
     fn convert_crossterm_event(event: crossterm_event::Event) -> Option<Event> {
         match event {
             // Keyboard events
             // Requirements: 1.2 - Convert crossterm::event::KeyEvent to Event::Key
-            crossterm_event::Event::Key(key) => {
-                Some(Event::Key(Self::convert_key_event(key)))
-            }
+            crossterm_event::Event::Key(key) => Some(Event::Key(Self::convert_key_event(key))),
             // Mouse events
             // Requirements: 1.3 - Convert crossterm::event::MouseEvent to Event::Mouse
             crossterm_event::Event::Mouse(mouse) => {
@@ -173,9 +185,7 @@ impl EventLoop {
             }
             // Resize events
             // Requirements: 1.4 - Convert resize events to Event::Resize
-            crossterm_event::Event::Resize(width, height) => {
-                Some(Event::Resize { width, height })
-            }
+            crossterm_event::Event::Resize(width, height) => Some(Event::Resize { width, height }),
             // Ignore focus events
             crossterm_event::Event::FocusGained | crossterm_event::Event::FocusLost => None,
             // Ignore paste events (handle separately if needed)
@@ -184,7 +194,7 @@ impl EventLoop {
     }
 
     /// Convert a crossterm KeyEvent to a RiceCoder KeyEvent
-    /// 
+    ///
     /// Requirements: 1.2 - Verify key codes and modifiers are mapped correctly
     fn convert_key_event(key: crossterm_event::KeyEvent) -> KeyEvent {
         let code = match key.code {
@@ -204,7 +214,9 @@ impl EventLoop {
 
         let modifiers = KeyModifiers {
             shift: key.modifiers.contains(crossterm_event::KeyModifiers::SHIFT),
-            ctrl: key.modifiers.contains(crossterm_event::KeyModifiers::CONTROL),
+            ctrl: key
+                .modifiers
+                .contains(crossterm_event::KeyModifiers::CONTROL),
             alt: key.modifiers.contains(crossterm_event::KeyModifiers::ALT),
         };
 
@@ -212,7 +224,7 @@ impl EventLoop {
     }
 
     /// Convert a crossterm MouseEvent to a RiceCoder MouseEvent
-    /// 
+    ///
     /// Requirements: 1.3 - Verify mouse events are mapped correctly
     fn convert_mouse_event(mouse: crossterm_event::MouseEvent) -> MouseEvent {
         let button = match mouse.kind {
@@ -243,13 +255,13 @@ impl EventLoop {
     }
 
     /// Send a drag-and-drop event with file paths
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `paths` - File paths from the drag-and-drop event
-    /// 
+    ///
     /// # Requirements
-    /// 
+    ///
     /// - Req 1.1: Create interface for receiving drag-and-drop events from ricecoder-tui
     /// - Req 1.1: Implement file path extraction from events
     pub fn send_drag_drop_event(&self, paths: Vec<PathBuf>) -> anyhow::Result<()> {
@@ -301,9 +313,21 @@ pub fn event_to_message(event: Event) -> AppMessage {
                 _ => crossterm::event::KeyCode::Null,
             },
             match key.modifiers {
-                KeyModifiers { ctrl: true, alt: false, shift: false } => crossterm::event::KeyModifiers::CONTROL,
-                KeyModifiers { ctrl: false, alt: true, shift: false } => crossterm::event::KeyModifiers::ALT,
-                KeyModifiers { ctrl: false, alt: false, shift: true } => crossterm::event::KeyModifiers::SHIFT,
+                KeyModifiers {
+                    ctrl: true,
+                    alt: false,
+                    shift: false,
+                } => crossterm::event::KeyModifiers::CONTROL,
+                KeyModifiers {
+                    ctrl: false,
+                    alt: true,
+                    shift: false,
+                } => crossterm::event::KeyModifiers::ALT,
+                KeyModifiers {
+                    ctrl: false,
+                    alt: false,
+                    shift: true,
+                } => crossterm::event::KeyModifiers::SHIFT,
                 _ => crossterm::event::KeyModifiers::empty(),
             },
         )),

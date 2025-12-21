@@ -62,18 +62,17 @@ impl ProjectDetector {
     ///
     /// A Project struct with extracted metadata, or an error if extraction fails
     pub fn extract_metadata(path: &PathBuf) -> Result<Project> {
-        let project_type = Self::detect_project_type(path)
-            .ok_or_else(|| OrchestrationError::ProjectNotFound(
-                format!("No project manifest found in {:?}", path),
-            ))?;
+        let project_type = Self::detect_project_type(path).ok_or_else(|| {
+            OrchestrationError::ProjectNotFound(format!("No project manifest found in {:?}", path))
+        })?;
 
         let name = path
             .file_name()
             .and_then(|n| n.to_str())
             .map(|s| s.to_string())
-            .ok_or_else(|| OrchestrationError::ProjectNotFound(
-                format!("Invalid project path: {:?}", path),
-            ))?;
+            .ok_or_else(|| {
+                OrchestrationError::ProjectNotFound(format!("Invalid project path: {:?}", path))
+            })?;
 
         let version = Self::extract_version(path, &project_type);
 
@@ -149,7 +148,7 @@ impl ProjectDetector {
                         return version.to_string();
                     }
                 }
-                
+
                 // Fallback to line-by-line parsing
                 for line in content.lines() {
                     if line.contains("\"version\"") && line.contains(":") {
@@ -159,7 +158,10 @@ impl ProjectDetector {
                                 .trim_matches(',')
                                 .trim_matches('"')
                                 .to_string();
-                            if !version.is_empty() && !version.contains('{') && !version.contains('}') {
+                            if !version.is_empty()
+                                && !version.contains('{')
+                                && !version.contains('}')
+                            {
                                 debug!("Extracted Node.js version: {}", version);
                                 return version;
                             }
@@ -340,8 +342,7 @@ mod tests {
     fn test_detect_java_project() {
         let temp_dir = TempDir::new().expect("failed to create temp dir");
         let project_dir = temp_dir.path().to_path_buf();
-        std::fs::write(project_dir.join("pom.xml"), "<project>")
-            .expect("failed to write pom.xml");
+        std::fs::write(project_dir.join("pom.xml"), "<project>").expect("failed to write pom.xml");
 
         let project_type = ProjectDetector::detect_project_type(&project_dir);
         assert_eq!(project_type, Some("java".to_string()));
@@ -377,8 +378,8 @@ mod tests {
         )
         .expect("failed to write Cargo.toml");
 
-        let project = ProjectDetector::extract_metadata(&project_dir)
-            .expect("failed to extract metadata");
+        let project =
+            ProjectDetector::extract_metadata(&project_dir).expect("failed to extract metadata");
 
         assert_eq!(project.project_type, "rust");
         assert_eq!(project.version, "0.2.0");
@@ -394,8 +395,8 @@ mod tests {
         )
         .expect("failed to write package.json");
 
-        let project = ProjectDetector::extract_metadata(&project_dir)
-            .expect("failed to extract metadata");
+        let project =
+            ProjectDetector::extract_metadata(&project_dir).expect("failed to extract metadata");
 
         assert_eq!(project.project_type, "nodejs");
         assert_eq!(project.version, "1.0.0");
@@ -411,8 +412,8 @@ mod tests {
         )
         .expect("failed to write pyproject.toml");
 
-        let project = ProjectDetector::extract_metadata(&project_dir)
-            .expect("failed to extract metadata");
+        let project =
+            ProjectDetector::extract_metadata(&project_dir).expect("failed to extract metadata");
 
         assert_eq!(project.project_type, "python");
         assert_eq!(project.version, "2.1.0");
@@ -445,8 +446,11 @@ mod tests {
     fn test_extract_version_missing_field() {
         let temp_dir = TempDir::new().expect("failed to create temp dir");
         let project_dir = temp_dir.path().to_path_buf();
-        std::fs::write(project_dir.join("Cargo.toml"), "[package]\nname = \"test\"\n")
-            .expect("failed to write Cargo.toml");
+        std::fs::write(
+            project_dir.join("Cargo.toml"),
+            "[package]\nname = \"test\"\n",
+        )
+        .expect("failed to write Cargo.toml");
 
         let version = ProjectDetector::extract_rust_version(&project_dir);
         assert_eq!(version, "0.1.0");

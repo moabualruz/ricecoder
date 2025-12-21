@@ -169,7 +169,6 @@ impl ThemeRegistry {
     }
 }
 
-
 impl Default for ThemeRegistry {
     fn default() -> Self {
         Self::new()

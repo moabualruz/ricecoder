@@ -113,9 +113,9 @@ impl MCPClient {
         debug!("Discovering tools from server: {}", server_id);
 
         let connections = self.connections.read().await;
-        let connection = connections
-            .get(server_id)
-            .ok_or_else(|| Error::ConnectionError(format!("Server not connected: {}", server_id)))?;
+        let connection = connections.get(server_id).ok_or_else(|| {
+            Error::ConnectionError(format!("Server not connected: {}", server_id))
+        })?;
 
         if !connection.is_connected {
             return Err(Error::ConnectionError(format!(
@@ -152,9 +152,9 @@ impl MCPClient {
         );
 
         let mut connections = self.connections.write().await;
-        let connection = connections
-            .get_mut(server_id)
-            .ok_or_else(|| Error::ConnectionError(format!("Server not connected: {}", server_id)))?;
+        let connection = connections.get_mut(server_id).ok_or_else(|| {
+            Error::ConnectionError(format!("Server not connected: {}", server_id))
+        })?;
 
         connection.tools = tools;
         info!("Registered tools for server: {}", server_id);
@@ -275,7 +275,7 @@ mod tests {
     #[tokio::test]
     async fn test_register_and_discover_tools() {
         use crate::metadata::ToolSource;
-        
+
         let client = MCPClient::new();
         client.connect("server1", "Test Server").await.unwrap();
 
@@ -313,7 +313,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_all_tools() {
         use crate::metadata::ToolSource;
-        
+
         let client = MCPClient::new();
         client.connect("server1", "Server 1").await.unwrap();
 

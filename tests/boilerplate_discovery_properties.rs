@@ -11,8 +11,8 @@ use std::fs;
 use tempfile::TempDir;
 
 // Import from ricecoder-generation crate
-use ricecoder_generation::templates::BoilerplateDiscovery;
 use ricecoder_generation::models::BoilerplateSource;
+use ricecoder_generation::templates::BoilerplateDiscovery;
 
 /// Property 5: Boilerplate Discovery Precedence
 ///
@@ -188,7 +188,10 @@ scripts: []
 
     // Should include project boilerplate directory in search paths
     assert!(
-        result.search_paths.iter().any(|p| p.ends_with("boilerplates")),
+        result
+            .search_paths
+            .iter()
+            .any(|p| p.ends_with("boilerplates")),
         "Search paths should include boilerplate directory"
     );
 }

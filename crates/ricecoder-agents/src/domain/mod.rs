@@ -39,8 +39,8 @@ pub mod conflict;
 pub mod conflict_properties;
 pub mod context;
 pub mod context_sharing_properties;
-pub mod coordinator;
 pub mod coordination_properties;
+pub mod coordinator;
 pub mod error;
 pub mod extensibility_properties;
 pub mod factory;
@@ -54,9 +54,14 @@ pub mod sequencing_properties;
 pub use config_loader::ConfigLoader;
 pub use conflict::{Conflict, ConflictDetector, ConflictReport, ConflictType};
 pub use context::SharedContextManager;
-pub use coordinator::{DomainCoordinator, DomainRequest, CoordinatedResponse, FullStackCoordination, Operation};
+pub use coordinator::{
+    CoordinatedResponse, DomainCoordinator, DomainRequest, FullStackCoordination, Operation,
+};
 pub use error::{DomainError, DomainResult};
-pub use factory::{AgentFactory, AgentConfig, CapabilityConfig, BestPracticeConfig, TechRecommendationConfig, PatternConfig, AntiPatternConfig};
+pub use factory::{
+    AgentConfig, AgentFactory, AntiPatternConfig, BestPracticeConfig, CapabilityConfig,
+    PatternConfig, TechRecommendationConfig,
+};
 pub use knowledge::KnowledgeBase;
 pub use models::{
     AntiPattern, BestPractice, DomainAgent, DomainCapability, DomainKnowledge, Pattern,

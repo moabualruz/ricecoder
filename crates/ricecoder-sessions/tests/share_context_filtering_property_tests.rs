@@ -35,10 +35,10 @@ fn arb_session_with_context() -> impl Strategy<Value = Session> {
 
             // Add custom context
             for i in 0..num_custom {
-                session
-                    .context
-                    .custom
-                    .insert(format!("key{}", i), serde_json::json!(format!("value{}", i)));
+                session.context.custom.insert(
+                    format!("key{}", i),
+                    serde_json::json!(format!("value{}", i)),
+                );
             }
 
             session

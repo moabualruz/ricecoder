@@ -54,9 +54,9 @@ proptest! {
     fn prop_theme_consistency_all_colors_valid(theme_name in theme_name_strategy()) {
         let manager = ThemeManager::new();
         manager.switch_by_name(&theme_name).expect("Failed to switch theme");
-        
+
         let theme = manager.current().expect("Failed to get current theme");
-        
+
         // Verify all colors are valid (RGB values in range 0-255)
         assert!(is_valid_color(&theme.primary), "Primary color is invalid");
         assert!(is_valid_color(&theme.secondary), "Secondary color is invalid");
@@ -78,7 +78,7 @@ proptest! {
         theme_name2 in theme_name_strategy(),
     ) {
         let manager = ThemeManager::new();
-        
+
         // Switch to first theme and capture colors
         manager.switch_by_name(&theme_name1).expect("Failed to switch to theme 1");
         let theme1 = manager.current().expect("Failed to get theme 1");
@@ -92,10 +92,10 @@ proptest! {
             theme1.warning,
             theme1.success,
         );
-        
+
         // Switch to second theme
         manager.switch_by_name(&theme_name2).expect("Failed to switch to theme 2");
-        
+
         // Switch back to first theme
         manager.switch_by_name(&theme_name1).expect("Failed to switch back to theme 1");
         let theme1_again = manager.current().expect("Failed to get theme 1 again");
@@ -109,7 +109,7 @@ proptest! {
             theme1_again.warning,
             theme1_again.success,
         );
-        
+
         // Verify colors are the same
         assert_eq!(colors1, colors1_again, "Colors changed after switching away and back");
     }
@@ -122,12 +122,12 @@ proptest! {
     fn prop_theme_consistency_all_colors_present(theme_name in theme_name_strategy()) {
         let manager = ThemeManager::new();
         manager.switch_by_name(&theme_name).expect("Failed to switch theme");
-        
+
         let theme = manager.current().expect("Failed to get current theme");
-        
+
         // Verify theme name matches
         assert_eq!(theme.name, theme_name, "Theme name mismatch");
-        
+
         // Verify all color fields are present (not None or default)
         // This is implicitly verified by the fact that we can access all fields
         // and they are valid colors
@@ -149,7 +149,7 @@ proptest! {
     fn prop_theme_consistency_name_matches(theme_name in theme_name_strategy()) {
         let manager = ThemeManager::new();
         manager.switch_by_name(&theme_name).expect("Failed to switch theme");
-        
+
         let theme = manager.current().expect("Failed to get current theme");
         assert_eq!(theme.name, theme_name, "Theme name does not match requested name");
     }
@@ -170,7 +170,7 @@ mod tests {
     fn test_theme_consistency_dark_theme() {
         let manager = ThemeManager::new();
         manager.switch_by_name("dark").unwrap();
-        
+
         let theme = manager.current().unwrap();
         assert_eq!(theme.name, "dark");
         assert!(is_valid_color(&theme.primary));
@@ -187,7 +187,7 @@ mod tests {
     fn test_theme_consistency_light_theme() {
         let manager = ThemeManager::new();
         manager.switch_by_name("light").unwrap();
-        
+
         let theme = manager.current().unwrap();
         assert_eq!(theme.name, "light");
         assert!(is_valid_color(&theme.primary));
@@ -198,7 +198,7 @@ mod tests {
     fn test_theme_consistency_all_builtin_themes() {
         let manager = ThemeManager::new();
         let themes = manager.available_themes();
-        
+
         for theme_name in themes {
             manager.switch_by_name(theme_name).unwrap();
             let theme = manager.current().unwrap();

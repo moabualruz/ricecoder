@@ -1,13 +1,13 @@
 //! Integration tests for the DI container
 
 use ricecoder_agents::use_cases::{
-    ProviderCommunityUseCase, ProviderFailoverUseCase, ProviderHealthUseCase,
-    ProviderModelUseCase, ProviderPerformanceUseCase, ProviderSwitchingUseCase,
-    SessionLifecycleUseCase, SessionSharingUseCase, SessionStateManagementUseCase,
+    ProviderCommunityUseCase, ProviderFailoverUseCase, ProviderHealthUseCase, ProviderModelUseCase,
+    ProviderPerformanceUseCase, ProviderSwitchingUseCase, SessionLifecycleUseCase,
+    SessionSharingUseCase, SessionStateManagementUseCase,
 };
 use ricecoder_di::{
-    create_application_container, create_cli_container, create_tui_container,
-    create_development_container, create_test_container, DIResult
+    create_application_container, create_cli_container, create_development_container,
+    create_test_container, create_tui_container, DIResult,
 };
 use std::sync::Arc;
 
@@ -129,7 +129,8 @@ async fn test_concurrent_service_resolution() -> DIResult<()> {
             let session_use_case = container.resolve::<SessionLifecycleUseCase>()?;
             let provider_use_case = container.resolve::<ProviderSwitchingUseCase>()?;
             let session_store = container.resolve::<ricecoder_sessions::SessionStore>()?;
-            let provider_manager = container.resolve::<ricecoder_providers::provider::manager::ProviderManager>()?;
+            let provider_manager =
+                container.resolve::<ricecoder_providers::provider::manager::ProviderManager>()?;
 
             // Perform some operations to ensure services work
             let sessions = session_use_case.list_sessions().await?;
@@ -151,9 +152,9 @@ async fn test_concurrent_service_resolution() -> DIResult<()> {
 
 #[tokio::test]
 async fn test_concurrent_singleton_behavior() -> DIResult<()> {
+    use std::collections::HashSet;
     use std::sync::Arc;
     use tokio::task;
-    use std::collections::HashSet;
 
     let container = Arc::new(create_application_container()?);
     let mut handles = vec![];
@@ -210,7 +211,10 @@ async fn test_concurrent_registration_and_resolution() -> DIResult<()> {
         let handle = task::spawn(async move {
             let store = container.resolve::<ricecoder_sessions::SessionStore>()?;
             let manager = container.resolve::<ricecoder_sessions::SessionManager>()?;
-            Ok::<_, ricecoder_di::DIError>((Arc::as_ptr(&store) as usize, Arc::as_ptr(&manager) as usize))
+            Ok::<_, ricecoder_di::DIError>((
+                Arc::as_ptr(&store) as usize,
+                Arc::as_ptr(&manager) as usize,
+            ))
         });
         handles.push(handle);
     }
@@ -311,7 +315,11 @@ async fn test_parsers_service_integration() -> DIResult<()> {
 
     // Test parser service
     let parser = container.resolve::<ricecoder_parsers::Parser>()?;
-    assert!(parser.is_registered(ricecoder_parsers::languages::Language::Rust).await);
+    assert!(
+        parser
+            .is_registered(ricecoder_parsers::languages::Language::Rust)
+            .await
+    );
 
     Ok(())
 }
@@ -328,7 +336,10 @@ async fn test_generation_services_integration() -> DIResult<()> {
     let template_engine = container.resolve::<ricecoder_generation::TemplateEngine>()?;
 
     // Basic functionality tests
-    assert!(generation_manager.list_available_boilerplates().await.is_ok());
+    assert!(generation_manager
+        .list_available_boilerplates()
+        .await
+        .is_ok());
 
     Ok(())
 }
@@ -388,8 +399,10 @@ async fn test_domain_agents_services_integration() -> DIResult<()> {
     let container = create_application_container()?;
 
     // Test domain agents services
-    let domain_agent_registry = container.resolve::<ricecoder_domain_agents::DomainAgentRegistryManager>()?;
-    let knowledge_base_manager = container.resolve::<ricecoder_domain_agents::KnowledgeBaseManager>()?;
+    let domain_agent_registry =
+        container.resolve::<ricecoder_domain_agents::DomainAgentRegistryManager>()?;
+    let knowledge_base_manager =
+        container.resolve::<ricecoder_domain_agents::KnowledgeBaseManager>()?;
 
     // Basic functionality tests
     let domains = domain_agent_registry.list_available_domains();
@@ -451,7 +464,7 @@ async fn test_different_container_builders() -> DIResult<()> {
 
 #[tokio::test]
 async fn test_lifecycle_management() -> DIResult<()> {
-    use crate::services::{LifecycleManager, Lifecycle};
+    use crate::services::{Lifecycle, LifecycleManager};
     use std::sync::Arc;
 
     // Create a mock service that implements Lifecycle
@@ -463,12 +476,14 @@ async fn test_lifecycle_management() -> DIResult<()> {
     #[async_trait::async_trait]
     impl Lifecycle for MockLifecycleService {
         async fn initialize(&self) -> DIResult<()> {
-            self.initialized.store(true, std::sync::atomic::Ordering::SeqCst);
+            self.initialized
+                .store(true, std::sync::atomic::Ordering::SeqCst);
             Ok(())
         }
 
         async fn cleanup(&self) -> DIResult<()> {
-            self.cleaned_up.store(true, std::sync::atomic::Ordering::SeqCst);
+            self.cleaned_up
+                .store(true, std::sync::atomic::Ordering::SeqCst);
             Ok(())
         }
     }
@@ -483,7 +498,9 @@ async fn test_lifecycle_management() -> DIResult<()> {
 
     // Test initialization
     lifecycle_manager.initialize_all().await?;
-    assert!(service.initialized.load(std::sync::atomic::Ordering::SeqCst));
+    assert!(service
+        .initialized
+        .load(std::sync::atomic::Ordering::SeqCst));
 
     // Test cleanup
     lifecycle_manager.cleanup_all().await?;

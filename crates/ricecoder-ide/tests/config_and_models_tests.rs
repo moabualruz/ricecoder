@@ -7,8 +7,8 @@
 
 use ricecoder_ide::*;
 use std::collections::HashMap;
-use tempfile::NamedTempFile;
 use std::io::Write;
+use tempfile::NamedTempFile;
 
 // ============================================================================
 // Configuration Loading Tests
@@ -504,7 +504,9 @@ fn test_error_types_are_distinct() {
     let path_error = IdeError::path_resolution_error("test path error");
 
     assert!(config_error.to_string().contains("Configuration error"));
-    assert!(validation_error.to_string().contains("Configuration validation error"));
+    assert!(validation_error
+        .to_string()
+        .contains("Configuration validation error"));
     assert!(path_error.to_string().contains("Path resolution error"));
 }
 

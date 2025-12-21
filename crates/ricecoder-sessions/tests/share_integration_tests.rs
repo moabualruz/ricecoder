@@ -4,8 +4,8 @@
 
 use chrono::Duration;
 use ricecoder_sessions::{
-    Message, MessageRole, Session, SessionContext, SessionMode, SharePermissions, ShareService,
-    EnterpriseSharingPolicy, DataClassification,
+    DataClassification, EnterpriseSharingPolicy, Message, MessageRole, Session, SessionContext,
+    SessionMode, SharePermissions, ShareService,
 };
 
 fn create_test_context() -> SessionContext {
@@ -33,9 +33,10 @@ async fn test_share_creation_and_access_workflow_basic() {
     session
         .history
         .push(Message::new(MessageRole::User, "Hello".to_string()));
-    session
-        .history
-        .push(Message::new(MessageRole::Assistant, "Hi there!".to_string()));
+    session.history.push(Message::new(
+        MessageRole::Assistant,
+        "Hi there!".to_string(),
+    ));
     session.context.project_path = Some("/project".to_string());
     session.context.files.push("main.rs".to_string());
 
@@ -229,10 +230,9 @@ async fn test_permission_enforcement_history_filtering() {
 
     // Add multiple messages
     for i in 0..5 {
-        session.history.push(Message::new(
-            MessageRole::User,
-            format!("Message {}", i),
-        ));
+        session
+            .history
+            .push(Message::new(MessageRole::User, format!("Message {}", i)));
     }
 
     // Test with history included
@@ -246,8 +246,7 @@ async fn test_permission_enforcement_history_filtering() {
         .generate_share_link(&session_id, perms_with_history.clone(), None)
         .unwrap();
 
-    let view_with_history =
-        share_service.create_shared_session_view(&session, &perms_with_history);
+    let view_with_history = share_service.create_shared_session_view(&session, &perms_with_history);
 
     assert_eq!(view_with_history.history.len(), 5);
 
@@ -296,8 +295,7 @@ async fn test_permission_enforcement_context_filtering() {
         include_context: true,
     };
 
-    let view_with_context =
-        share_service.create_shared_session_view(&session, &perms_with_context);
+    let view_with_context = share_service.create_shared_session_view(&session, &perms_with_context);
 
     assert_eq!(view_with_context.context.files.len(), 2);
     assert_eq!(view_with_context.context.custom.len(), 1);
@@ -543,7 +541,10 @@ async fn test_enterprise_sharing_policies() {
 
     let audit_storage = Arc::new(MemoryAuditStorage::new());
     let audit_logger = Arc::new(ricecoder_security::audit::AuditLogger::new(audit_storage));
-    let share_service = ShareService::with_audit_logging("https://enterprise.ricecoder.com".to_string(), audit_logger);
+    let share_service = ShareService::with_audit_logging(
+        "https://enterprise.ricecoder.com".to_string(),
+        audit_logger,
+    );
 
     let session = create_test_session("Enterprise Session");
     let session_id = session.id.clone();

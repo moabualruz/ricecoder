@@ -181,17 +181,11 @@ pub enum SessionError {
 
     /// Session save failed
     #[error("Failed to save session {id}: {source}")]
-    SaveFailed {
-        id: String,
-        source: std::io::Error,
-    },
+    SaveFailed { id: String, source: std::io::Error },
 
     /// Session load failed
     #[error("Failed to load session {id}: {source}")]
-    LoadFailed {
-        id: String,
-        source: std::io::Error,
-    },
+    LoadFailed { id: String, source: std::io::Error },
 
     /// Session migration failed
     #[error("Failed to migrate session {id}: {reason}")]
@@ -239,7 +233,11 @@ pub enum ToolError {
 
     /// Tool input validation failed
     #[error("Tool input validation failed: {name} - {field}: {reason}")]
-    InputValidationFailed { name: String, field: String, reason: String },
+    InputValidationFailed {
+        name: String,
+        field: String,
+        reason: String,
+    },
 
     /// Tool output parsing failed
     #[error("Tool output parsing failed: {name} - {reason}")]
@@ -388,20 +386,27 @@ pub enum KeybindError {
 
 // Conversion implementations
 
-
 impl From<ricecoder_storage::StorageError> for StorageError {
     fn from(err: ricecoder_storage::StorageError) -> Self {
         match err {
-            ricecoder_storage::StorageError::IoError { path, operation, source } => {
-                StorageError::IoError {
-                    path,
-                    operation: operation.to_string(),
-                    source,
-                }
-            }
-            ricecoder_storage::StorageError::ParseError { path, format, message } => {
-                StorageError::ParseError { path, format, message }
-            }
+            ricecoder_storage::StorageError::IoError {
+                path,
+                operation,
+                source,
+            } => StorageError::IoError {
+                path,
+                operation: operation.to_string(),
+                source,
+            },
+            ricecoder_storage::StorageError::ParseError {
+                path,
+                format,
+                message,
+            } => StorageError::ParseError {
+                path,
+                format,
+                message,
+            },
             ricecoder_storage::StorageError::ValidationError { field, message } => {
                 StorageError::ValidationError { field, message }
             }
@@ -419,31 +424,41 @@ impl From<ricecoder_storage::StorageError> for StorageError {
 
 impl From<ricecoder_keybinds::error::EngineError> for KeybindError {
     fn from(err: ricecoder_keybinds::error::EngineError) -> Self {
-        KeybindError::Engine { message: err.to_string() }
+        KeybindError::Engine {
+            message: err.to_string(),
+        }
     }
 }
 
 impl From<ricecoder_keybinds::error::RegistryError> for KeybindError {
     fn from(err: ricecoder_keybinds::error::RegistryError) -> Self {
-        KeybindError::Registry { message: err.to_string() }
+        KeybindError::Registry {
+            message: err.to_string(),
+        }
     }
 }
 
 impl From<ricecoder_keybinds::error::ProfileError> for KeybindError {
     fn from(err: ricecoder_keybinds::error::ProfileError) -> Self {
-        KeybindError::Profile { message: err.to_string() }
+        KeybindError::Profile {
+            message: err.to_string(),
+        }
     }
 }
 
 impl From<ricecoder_keybinds::error::ParseError> for KeybindError {
     fn from(err: ricecoder_keybinds::error::ParseError) -> Self {
-        KeybindError::Parse { message: err.to_string() }
+        KeybindError::Parse {
+            message: err.to_string(),
+        }
     }
 }
 
 impl From<ricecoder_keybinds::error::PersistenceError> for KeybindError {
     fn from(err: ricecoder_keybinds::error::PersistenceError) -> Self {
-        KeybindError::Persistence { message: err.to_string() }
+        KeybindError::Persistence {
+            message: err.to_string(),
+        }
     }
 }
 
@@ -451,87 +466,121 @@ impl From<ricecoder_keybinds::error::PersistenceError> for KeybindError {
 impl TuiError {
     /// Create a configuration error
     pub fn config(message: impl Into<String>) -> Self {
-        TuiError::Config { message: message.into() }
+        TuiError::Config {
+            message: message.into(),
+        }
     }
 
     /// Create a theme error
     pub fn theme(message: impl Into<String>) -> Self {
-        TuiError::Theme { message: message.into() }
+        TuiError::Theme {
+            message: message.into(),
+        }
     }
 
     /// Create a rendering error
     pub fn render(message: impl Into<String>) -> Self {
-        TuiError::Render { message: message.into() }
+        TuiError::Render {
+            message: message.into(),
+        }
     }
 
     /// Create a widget error
     pub fn widget(message: impl Into<String>) -> Self {
-        TuiError::Widget { message: message.into() }
+        TuiError::Widget {
+            message: message.into(),
+        }
     }
 
     /// Create an event error
     pub fn event(message: impl Into<String>) -> Self {
-        TuiError::Event { message: message.into() }
+        TuiError::Event {
+            message: message.into(),
+        }
     }
 
     /// Create a command error
     pub fn command(message: impl Into<String>) -> Self {
-        TuiError::Command { message: message.into() }
+        TuiError::Command {
+            message: message.into(),
+        }
     }
 
     /// Create a VCS error
     pub fn vcs(message: impl Into<String>) -> Self {
-        TuiError::Vcs { message: message.into() }
+        TuiError::Vcs {
+            message: message.into(),
+        }
     }
 
     /// Create an LSP error
     pub fn lsp(message: impl Into<String>) -> Self {
-        TuiError::Lsp { message: message.into() }
+        TuiError::Lsp {
+            message: message.into(),
+        }
     }
 
     /// Create a terminal error
     pub fn terminal(message: impl Into<String>) -> Self {
-        TuiError::Terminal { message: message.into() }
+        TuiError::Terminal {
+            message: message.into(),
+        }
     }
 
     /// Create an image error
     pub fn image(message: impl Into<String>) -> Self {
-        TuiError::Image { message: message.into() }
+        TuiError::Image {
+            message: message.into(),
+        }
     }
 
     /// Create a markdown error
     pub fn markdown(message: impl Into<String>) -> Self {
-        TuiError::Markdown { message: message.into() }
+        TuiError::Markdown {
+            message: message.into(),
+        }
     }
 
     /// Create a TOML error
     pub fn toml(message: impl Into<String>) -> Self {
-        TuiError::Toml { message: message.into() }
+        TuiError::Toml {
+            message: message.into(),
+        }
     }
 
     /// Create a task error
     pub fn task(message: impl Into<String>) -> Self {
-        TuiError::Task { message: message.into() }
+        TuiError::Task {
+            message: message.into(),
+        }
     }
 
     /// Create a performance error
     pub fn performance(message: impl Into<String>) -> Self {
-        TuiError::Performance { message: message.into() }
+        TuiError::Performance {
+            message: message.into(),
+        }
     }
 
     /// Create an accessibility error
     pub fn accessibility(message: impl Into<String>) -> Self {
-        TuiError::Accessibility { message: message.into() }
+        TuiError::Accessibility {
+            message: message.into(),
+        }
     }
 
     /// Create a security error
     pub fn security(message: impl Into<String>) -> Self {
-        TuiError::Security { message: message.into() }
+        TuiError::Security {
+            message: message.into(),
+        }
     }
 
     /// Create a network error
     pub fn network(message: impl Into<String>) -> Self {
-        TuiError::Network { message: message.into() }
+        TuiError::Network {
+            message: message.into(),
+        }
     }
 
     /// Create a validation error
@@ -544,17 +593,23 @@ impl TuiError {
 
     /// Create a state error
     pub fn state(message: impl Into<String>) -> Self {
-        TuiError::State { message: message.into() }
+        TuiError::State {
+            message: message.into(),
+        }
     }
 
     /// Create an initialization error
     pub fn init(message: impl Into<String>) -> Self {
-        TuiError::Init { message: message.into() }
+        TuiError::Init {
+            message: message.into(),
+        }
     }
 
     /// Create a shutdown error
     pub fn shutdown(message: impl Into<String>) -> Self {
-        TuiError::Shutdown { message: message.into() }
+        TuiError::Shutdown {
+            message: message.into(),
+        }
     }
 
     /// Create a timeout error
@@ -567,27 +622,36 @@ impl TuiError {
 
     /// Create a cancellation error
     pub fn cancelled(operation: impl Into<String>) -> Self {
-        TuiError::Cancelled { operation: operation.into() }
+        TuiError::Cancelled {
+            operation: operation.into(),
+        }
     }
 
     /// Create a resource exhausted error
     pub fn resource_exhausted(resource: impl Into<String>) -> Self {
-        TuiError::ResourceExhausted { resource: resource.into() }
+        TuiError::ResourceExhausted {
+            resource: resource.into(),
+        }
     }
 
     /// Create a version error
     pub fn version(message: impl Into<String>) -> Self {
-        TuiError::Version { message: message.into() }
+        TuiError::Version {
+            message: message.into(),
+        }
     }
 
     /// Create a plugin error
     pub fn plugin(message: impl Into<String>) -> Self {
-        TuiError::Plugin { message: message.into() }
+        TuiError::Plugin {
+            message: message.into(),
+        }
     }
 
     /// Create an internal error
     pub fn internal(message: impl Into<String>) -> Self {
-        TuiError::Internal { message: message.into() }
+        TuiError::Internal {
+            message: message.into(),
+        }
     }
 }
-

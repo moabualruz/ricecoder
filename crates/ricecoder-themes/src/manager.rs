@@ -1,15 +1,14 @@
 //! Theme management for the TUI
 
-use ricecoder_storage::TuiConfig;
-use ratatui::style::{Color, Color as ColorSupport};
-use crate::types::{Theme, ThemeManager as ThemeManagerTrait, ThemeError};
 use crate::loader::ThemeLoader;
 use crate::registry::ThemeRegistry;
 use crate::reset::ThemeResetManager;
+use crate::types::{Theme, ThemeError, ThemeManager as ThemeManagerTrait};
 use anyhow::Result;
+use ratatui::style::{Color, Color as ColorSupport};
+use ricecoder_storage::TuiConfig;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
-
 
 /// Type alias for theme listeners
 type ThemeListeners = Arc<Mutex<Vec<Box<dyn Fn(&Theme) + Send>>>>;
@@ -175,17 +174,15 @@ impl ThemeManager {
 
         for theme_name in theme_names {
             match ThemeStorage::load_custom_theme(&theme_name) {
-                Ok(content) => {
-                    match ThemeLoader::load_from_string(&content) {
-                        Ok(theme) => {
-                            self.register_theme(theme)?;
-                            loaded_names.push(theme_name);
-                        }
-                        Err(e) => {
-                            eprintln!("Failed to parse custom theme {}: {}", theme_name, e);
-                        }
+                Ok(content) => match ThemeLoader::load_from_string(&content) {
+                    Ok(theme) => {
+                        self.register_theme(theme)?;
+                        loaded_names.push(theme_name);
                     }
-                }
+                    Err(e) => {
+                        eprintln!("Failed to parse custom theme {}: {}", theme_name, e);
+                    }
+                },
                 Err(e) => {
                     eprintln!("Failed to load custom theme {}: {}", theme_name, e);
                 }
@@ -411,9 +408,9 @@ impl ThemeManager {
             .current_theme
             .lock()
             .map_err(|e| anyhow::anyhow!("Failed to lock theme: {}", e))?;
-            
+
         // current.adapt(support); // TODO: implement adapt method
-        
+
         // Notify listeners of change
         let listeners = self
             .listeners
@@ -422,17 +419,18 @@ impl ThemeManager {
         for listener in listeners.iter() {
             listener(&current);
         }
-        
+
         Ok(())
     }
 
     /// Preview a theme without switching to it permanently
     /// Returns the theme so the UI can render a preview
     pub fn preview_theme(&self, name: &str) -> Result<Theme> {
-        self.registry.get(name).ok_or_else(|| anyhow::anyhow!("Theme not found: {}", name))
+        self.registry
+            .get(name)
+            .ok_or_else(|| anyhow::anyhow!("Theme not found: {}", name))
     }
 }
-
 
 impl Default for ThemeManager {
     fn default() -> Self {
@@ -443,7 +441,10 @@ impl Default for ThemeManager {
 impl ThemeManagerTrait for ThemeManager {
     fn load_theme(&mut self, name: &str) -> Result<(), ThemeError> {
         if let Some(theme) = self.registry.get(name) {
-            let mut current = self.current_theme.lock().map_err(|e| ThemeError::Parse(format!("Lock error: {}", e)))?;
+            let mut current = self
+                .current_theme
+                .lock()
+                .map_err(|e| ThemeError::Parse(format!("Lock error: {}", e)))?;
             *current = theme.clone();
             Ok(())
         } else {
@@ -459,5 +460,3 @@ impl ThemeManagerTrait for ThemeManager {
         self.registry.list_all().unwrap_or_default()
     }
 }
-
-

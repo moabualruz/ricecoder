@@ -1,7 +1,7 @@
 //! Integration tests for the updates crate
 
-pub mod checker;
 pub mod analytics;
+pub mod checker;
 pub mod error;
 pub mod models;
 pub mod policy;
@@ -73,12 +73,15 @@ mod integration_tests {
 
         // Test policy evaluation
         match policy.evaluate_update(&release_info.channel, 50, &[]) {
-            policy::PolicyResult::Allowed => {},
+            policy::PolicyResult::Allowed => {}
             _ => panic!("Policy should allow this update"),
         }
 
         // Test rollback manager backup creation
-        let backup_path = rollback_manager.create_backup(&current_version).await.unwrap();
+        let backup_path = rollback_manager
+            .create_backup(&current_version)
+            .await
+            .unwrap();
         assert!(backup_path.exists());
 
         // Test backup listing
@@ -87,19 +90,29 @@ mod integration_tests {
         assert_eq!(backups[0].version, current_version);
 
         // Test staged release staging
-        staged_manager.stage_release(&release_info, "stable").await.unwrap();
+        staged_manager
+            .stage_release(&release_info, "stable")
+            .await
+            .unwrap();
 
-        let staged = staged_manager.get_staged_release("stable").await.unwrap().unwrap();
+        let staged = staged_manager
+            .get_staged_release("stable")
+            .await
+            .unwrap()
+            .unwrap();
         assert_eq!(staged.release_info.version, release_info.version);
 
         // Test analytics recording
-        analytics.record_usage(
-            300,
-            vec!["lsp".to_string()],
-            vec!["lsp".to_string()],
-            0,
-            std::collections::HashMap::new(),
-        ).await.unwrap();
+        analytics
+            .record_usage(
+                300,
+                vec!["lsp".to_string()],
+                vec!["lsp".to_string()],
+                0,
+                std::collections::HashMap::new(),
+            )
+            .await
+            .unwrap();
 
         // Verify analytics event was buffered
         let buffer = analytics.event_buffer.read().await;

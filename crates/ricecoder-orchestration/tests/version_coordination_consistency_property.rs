@@ -4,7 +4,7 @@
 
 use proptest::prelude::*;
 use ricecoder_orchestration::{
-    VersionCoordinator, Project, ProjectStatus, DependencyGraph, Version, VersionValidator,
+    DependencyGraph, Project, ProjectStatus, Version, VersionCoordinator, VersionValidator,
 };
 use std::path::PathBuf;
 

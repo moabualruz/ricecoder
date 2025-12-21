@@ -6,32 +6,32 @@
 //!
 //! Uses proptest extensively for exhaustive coverage of input spaces.
 
+use chrono::{DateTime, Utc};
 use proptest::prelude::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tokio::sync::{RwLock, Semaphore};
 use tokio::time::timeout;
-use chrono::{DateTime, Utc};
 
 // MCP imports
 use ricecoder_mcp::{
     audit::MCPAuditLogger,
-    compliance::{MCPComplianceMonitor, ComplianceReport, ComplianceReportType, ViolationSeverity},
+    compliance::{ComplianceReport, ComplianceReportType, MCPComplianceMonitor, ViolationSeverity},
     config::{MCPConfig, MCPServerConfig},
     connection_pool::{ConnectionPool, PoolConfig, PoolStats},
     error::{Error, Result, ToolError},
-    health_check::{HealthChecker, HealthCheckConfig, HealthStatus},
+    health_check::{HealthCheckConfig, HealthChecker, HealthStatus},
     metadata::{ParameterMetadata, ToolMetadata, ToolSource},
     permissions::{MCPPermissionManager, PermissionLevelConfig, PermissionRule},
-    protocol_validation::{MCPProtocolValidator},
-    rbac::{MCRBACManager, MCPAuthorizationMiddleware},
+    protocol_validation::MCPProtocolValidator,
+    rbac::{MCPAuthorizationMiddleware, MCRBACManager},
     registry::ToolRegistry,
-    server_management::{ServerConfig, ServerManager, AuthConfig, AuthType},
+    server_management::{AuthConfig, AuthType, ServerConfig, ServerManager},
     tool_execution::{MCPToolExecutor, ToolExecutionContext, ToolExecutionResult},
     transport::{
-        MCPMessage, MCPRequest, MCPResponse, MCPNotification, MCPError, MCPErrorData,
-        MCPTransport, StdioTransport, TransportConfig,
+        MCPError, MCPErrorData, MCPMessage, MCPNotification, MCPRequest, MCPResponse, MCPTransport,
+        StdioTransport, TransportConfig,
     },
 };
 
@@ -94,9 +94,9 @@ impl MCPTransport for MockTransport {
 
 fn arb_mcp_request() -> impl Strategy<Value = MCPRequest> {
     (
-        "[a-zA-Z0-9_-]{1,64}".prop_map(|s| s), // id
+        "[a-zA-Z0-9_-]{1,64}".prop_map(|s| s),   // id
         "[a-zA-Z0-9_.-]{1,128}".prop_map(|s| s), // method
-        any::<serde_json::Value>(), // params
+        any::<serde_json::Value>(),              // params
     )
         .prop_map(|(id, method, params)| MCPRequest { id, method, params })
 }
@@ -104,7 +104,7 @@ fn arb_mcp_request() -> impl Strategy<Value = MCPRequest> {
 fn arb_mcp_response() -> impl Strategy<Value = MCPResponse> {
     (
         "[a-zA-Z0-9_-]{1,64}".prop_map(|s| s), // id
-        any::<serde_json::Value>(), // result
+        any::<serde_json::Value>(),            // result
     )
         .prop_map(|(id, result)| MCPResponse { id, result })
 }
@@ -112,18 +112,22 @@ fn arb_mcp_response() -> impl Strategy<Value = MCPResponse> {
 fn arb_mcp_notification() -> impl Strategy<Value = MCPNotification> {
     (
         "[a-zA-Z0-9_.-]{1,128}".prop_map(|s| s), // method
-        any::<serde_json::Value>(), // params
+        any::<serde_json::Value>(),              // params
     )
         .prop_map(|(method, params)| MCPNotification { method, params })
 }
 
 fn arb_mcp_error_data() -> impl Strategy<Value = MCPErrorData> {
     (
-        any::<i32>(), // code
-        ".{0,1024}".prop_map(|s| s), // message
+        any::<i32>(),                                     // code
+        ".{0,1024}".prop_map(|s| s),                      // message
         proptest::option::of(any::<serde_json::Value>()), // data
     )
-        .prop_map(|(code, message, data)| MCPErrorData { code, message, data })
+        .prop_map(|(code, message, data)| MCPErrorData {
+            code,
+            message,
+            data,
+        })
 }
 
 fn arb_mcp_error() -> impl Strategy<Value = MCPError> {
@@ -166,7 +170,7 @@ fn arb_tool_execution_context() -> impl Strategy<Value = ToolExecutionContext> {
         proptest::collection::hash_map(
             "[a-zA-Z0-9_-]{1,64}".prop_map(|s| s),
             any::<serde_json::Value>(),
-            0..10
+            0..10,
         ), // parameters
         proptest::option::of("[a-zA-Z0-9_-]{1,64}".prop_map(|s| s)), // user_id
         proptest::option::of("[a-zA-Z0-9_-]{1,64}".prop_map(|s| s)), // session_id
@@ -174,19 +178,21 @@ fn arb_tool_execution_context() -> impl Strategy<Value = ToolExecutionContext> {
         proptest::collection::hash_map(
             "[a-zA-Z0-9_-]{1,64}".prop_map(|s| s),
             ".{0,256}".prop_map(|s| s),
-            0..5
+            0..5,
         ), // metadata
     )
-        .prop_map(|(tool_name, parameters, user_id, session_id, timeout, metadata)| {
-            ToolExecutionContext {
-                tool_name,
-                parameters,
-                user_id,
-                session_id,
-                timeout,
-                metadata,
-            }
-        })
+        .prop_map(
+            |(tool_name, parameters, user_id, session_id, timeout, metadata)| {
+                ToolExecutionContext {
+                    tool_name,
+                    parameters,
+                    user_id,
+                    session_id,
+                    timeout,
+                    metadata,
+                }
+            },
+        )
 }
 
 // Protocol Invariants Tests

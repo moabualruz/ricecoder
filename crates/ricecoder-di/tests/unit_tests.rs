@@ -13,7 +13,9 @@ fn test_register_and_resolve_singleton() {
     let container = DIContainer::new();
 
     // Register a service
-    container.register(|_| Ok(Arc::new(TestService { value: 42 }))).unwrap();
+    container
+        .register(|_| Ok(Arc::new(TestService { value: 42 })))
+        .unwrap();
 
     // Resolve the service
     let service1 = container.resolve::<TestService>().unwrap();
@@ -30,7 +32,9 @@ fn test_register_transient() {
     let container = DIContainer::new();
 
     // Register a transient service
-    container.register_transient(|_| Ok(Arc::new(TestService { value: 42 }))).unwrap();
+    container
+        .register_transient(|_| Ok(Arc::new(TestService { value: 42 })))
+        .unwrap();
 
     // Resolve the service multiple times
     let service1 = container.resolve::<TestService>().unwrap();
@@ -55,11 +59,16 @@ fn test_service_already_registered() {
     let container = DIContainer::new();
 
     // Register once
-    container.register(|_| Ok(Arc::new(TestService { value: 42 }))).unwrap();
+    container
+        .register(|_| Ok(Arc::new(TestService { value: 42 })))
+        .unwrap();
 
     // Try to register again
     let result = container.register(|_| Ok(Arc::new(TestService { value: 24 })));
-    assert!(matches!(result, Err(DIError::ServiceAlreadyRegistered { .. })));
+    assert!(matches!(
+        result,
+        Err(DIError::ServiceAlreadyRegistered { .. })
+    ));
 }
 
 #[test]

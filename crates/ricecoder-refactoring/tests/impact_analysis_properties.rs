@@ -3,8 +3,12 @@
 //! **Validates: Requirements REF-1.1, REF-1.2**
 
 use proptest::prelude::*;
-use ricecoder_refactoring::impact::{ImpactAnalyzer, Symbol, SymbolType, Dependency, DependencyType};
-use ricecoder_refactoring::types::{Refactoring, RefactoringTarget, RefactoringType, RefactoringOptions};
+use ricecoder_refactoring::impact::{
+    Dependency, DependencyType, ImpactAnalyzer, Symbol, SymbolType,
+};
+use ricecoder_refactoring::types::{
+    Refactoring, RefactoringOptions, RefactoringTarget, RefactoringType,
+};
 use std::path::PathBuf;
 
 /// Strategy for generating symbol names
@@ -281,7 +285,7 @@ proptest! {
         // Risk is calculated as: affected_files.len() + affected_symbols.len()
         // Low: 0-2, Medium: 3-10, High: 11+
         let total_impact = impact.affected_files.len() + impact.affected_symbols.len();
-        
+
         if total_impact <= 2 {
             prop_assert_eq!(
                 impact.risk_level,

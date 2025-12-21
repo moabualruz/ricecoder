@@ -3,9 +3,9 @@
 //! This module provides a widget for displaying images using ratatui-image,
 //! supporting multiple protocols: sixel, kitty, iTerm2, and unicode fallbacks.
 
-use ratatui_image::{picker::Picker, StatefulImage, protocol::StatefulProtocol};
-use std::path::PathBuf;
 use crate::terminal_state::TerminalCapabilities;
+use ratatui_image::{picker::Picker, protocol::StatefulProtocol, StatefulImage};
+use std::path::PathBuf;
 
 /// Image format (kept for backward compatibility)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -146,8 +146,7 @@ impl ImageWidget {
             .map_err(|e| format!("Failed to decode image: {}", e))?;
 
         // Create stateful protocol with automatic protocol detection
-        let protocol = self.picker.as_ref().unwrap()
-            .new_resize_protocol(dyn_img);
+        let protocol = self.picker.as_ref().unwrap().new_resize_protocol(dyn_img);
 
         self.path = Some(path);
         self.format = Some(format);
@@ -171,8 +170,7 @@ impl ImageWidget {
             .map_err(|e| format!("Failed to decode image data: {}", e))?;
 
         // Create stateful protocol with automatic protocol detection
-        let protocol = self.picker.as_ref().unwrap()
-            .new_resize_protocol(dyn_img);
+        let protocol = self.picker.as_ref().unwrap().new_resize_protocol(dyn_img);
 
         self.format = Some(format);
         self.protocol = Some(protocol);
@@ -403,5 +401,3 @@ impl Default for ImageWidget {
         Self::new(&capabilities)
     }
 }
-
-

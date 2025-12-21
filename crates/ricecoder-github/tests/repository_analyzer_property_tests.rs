@@ -11,14 +11,12 @@ use ricecoder_github::RepositoryAnalyzer;
 
 // Strategy for generating valid repository owners
 fn valid_owner_strategy() -> impl Strategy<Value = String> {
-    r"[a-zA-Z0-9][a-zA-Z0-9\-]{0,38}"
-        .prop_map(|s| s.to_string())
+    r"[a-zA-Z0-9][a-zA-Z0-9\-]{0,38}".prop_map(|s| s.to_string())
 }
 
 // Strategy for generating valid repository names
 fn valid_repo_strategy() -> impl Strategy<Value = String> {
-    r"[a-zA-Z0-9][a-zA-Z0-9\-_.]{0,38}"
-        .prop_map(|s| s.to_string())
+    r"[a-zA-Z0-9][a-zA-Z0-9\-_.]{0,38}".prop_map(|s| s.to_string())
 }
 
 // Property 16: Repository Metadata Fetching
@@ -59,7 +57,7 @@ proptest! {
                 !metadata.structure.directories.is_empty()
                     || !metadata.structure.files.is_empty()
             );
-            
+
             Ok(())
         })?
     }
@@ -104,7 +102,7 @@ proptest! {
             // Verify cache contains the result
             let cached = analyzer.get_cached_analysis(&owner, &repo);
             prop_assert!(cached.is_some());
-            
+
             Ok(())
         })?
     }
@@ -135,7 +133,7 @@ proptest! {
             // Verify cache no longer contains result
             let cached_after = analyzer.get_cached_analysis(&owner, &repo);
             prop_assert!(cached_after.is_none());
-            
+
             Ok(())
         })?
     }
@@ -159,7 +157,7 @@ proptest! {
             // Empty repo should fail
             let result = analyzer.fetch_repository_metadata("owner", "").await;
             prop_assert!(result.is_err());
-            
+
             Ok(())
         })?
     }

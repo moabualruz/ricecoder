@@ -92,24 +92,33 @@ impl CommunityDatabaseSync {
                     match Self::sync_from_endpoint(&client, endpoint, &config, &registry).await {
                         Ok(count) => {
                             let mut status = sync_status.write().await;
-                            status.insert(endpoint.clone(), SyncStatus {
-                                endpoint: endpoint.clone(),
-                                last_sync: Some(SystemTime::now()),
-                                success: true,
-                                error_message: None,
-                                configs_synced: count,
-                            });
-                            info!("Successfully synced {} configurations from {}", count, endpoint);
+                            status.insert(
+                                endpoint.clone(),
+                                SyncStatus {
+                                    endpoint: endpoint.clone(),
+                                    last_sync: Some(SystemTime::now()),
+                                    success: true,
+                                    error_message: None,
+                                    configs_synced: count,
+                                },
+                            );
+                            info!(
+                                "Successfully synced {} configurations from {}",
+                                count, endpoint
+                            );
                         }
                         Err(e) => {
                             let mut status = sync_status.write().await;
-                            status.insert(endpoint.clone(), SyncStatus {
-                                endpoint: endpoint.clone(),
-                                last_sync: Some(SystemTime::now()),
-                                success: false,
-                                error_message: Some(e.to_string()),
-                                configs_synced: 0,
-                            });
+                            status.insert(
+                                endpoint.clone(),
+                                SyncStatus {
+                                    endpoint: endpoint.clone(),
+                                    last_sync: Some(SystemTime::now()),
+                                    success: false,
+                                    error_message: Some(e.to_string()),
+                                    configs_synced: 0,
+                                },
+                            );
                             error!("Failed to sync from {}: {}", endpoint, e);
                         }
                     }
@@ -125,12 +134,9 @@ impl CommunityDatabaseSync {
         let mut total_synced = 0;
 
         for endpoint in &self.config.endpoints {
-            let count = Self::sync_from_endpoint(
-                &self.client,
-                endpoint,
-                &self.config,
-                &self.registry,
-            ).await?;
+            let count =
+                Self::sync_from_endpoint(&self.client, endpoint, &self.config, &self.registry)
+                    .await?;
             total_synced += count;
         }
 
@@ -151,7 +157,9 @@ impl CommunityDatabaseSync {
             .header("User-Agent", "RiceCoder-CommunitySync/1.0")
             .send()
             .await
-            .map_err(|e| ProviderError::NetworkError(format!("Failed to fetch from {}: {}", endpoint, e)))?;
+            .map_err(|e| {
+                ProviderError::NetworkError(format!("Failed to fetch from {}: {}", endpoint, e))
+            })?;
 
         if !response.status().is_success() {
             return Err(ProviderError::ProviderError(format!(
@@ -161,8 +169,9 @@ impl CommunityDatabaseSync {
             )));
         }
 
-        let community_data: CommunityDatabaseResponse = response.json().await
-            .map_err(|e| ProviderError::ParseError(format!("Failed to parse response from {}: {}", endpoint, e)))?;
+        let community_data: CommunityDatabaseResponse = response.json().await.map_err(|e| {
+            ProviderError::ParseError(format!("Failed to parse response from {}: {}", endpoint, e))
+        })?;
 
         let mut synced_count = 0;
         let mut registry_guard = registry.write().await;
@@ -171,7 +180,9 @@ impl CommunityDatabaseSync {
             // Validate the configuration
             if Self::validate_configuration(&config_data, config)? {
                 // Check if it's from a trusted source
-                let is_trusted = config.trusted_sources.contains(&config_data.metadata.contributor);
+                let is_trusted = config
+                    .trusted_sources
+                    .contains(&config_data.metadata.contributor);
 
                 // Submit the contribution
                 match registry_guard.submit_contribution(config_data.clone()) {
@@ -188,12 +199,18 @@ impl CommunityDatabaseSync {
                                 reviewed_at: SystemTime::now(),
                                 decision: crate::community::ContributionStatus::Approved,
                                 comments: "Auto-approved from trusted community source".to_string(),
-                                quality_score: config_data.quality_metrics.as_ref().map(|m| m.avg_quality_score),
+                                quality_score: config_data
+                                    .quality_metrics
+                                    .as_ref()
+                                    .map(|m| m.avg_quality_score),
                                 suggestions: vec![],
                             };
 
                             if let Err(e) = registry_guard.review_contribution(review) {
-                                warn!("Failed to auto-approve contribution {}: {}", contribution_id, e);
+                                warn!(
+                                    "Failed to auto-approve contribution {}: {}",
+                                    contribution_id, e
+                                );
                             }
                         }
 
@@ -204,7 +221,10 @@ impl CommunityDatabaseSync {
                     }
                 }
             } else {
-                warn!("Configuration validation failed for provider: {}", config_data.provider_id);
+                warn!(
+                    "Configuration validation failed for provider: {}",
+                    config_data.provider_id
+                );
             }
         }
 
@@ -267,11 +287,18 @@ impl CommunityDatabaseSync {
     /// Export approved configurations for backup/sharing
     pub async fn export_approved_configs(&self) -> Vec<CommunityProviderConfig> {
         let registry = self.registry.read().await;
-        registry.get_all_approved_configs().into_iter().cloned().collect()
+        registry
+            .get_all_approved_configs()
+            .into_iter()
+            .cloned()
+            .collect()
     }
 
     /// Import configurations from backup
-    pub async fn import_configs(&self, configs: Vec<CommunityProviderConfig>) -> Result<usize, ProviderError> {
+    pub async fn import_configs(
+        &self,
+        configs: Vec<CommunityProviderConfig>,
+    ) -> Result<usize, ProviderError> {
         let mut registry = self.registry.write().await;
         let mut imported = 0;
 
@@ -320,22 +347,30 @@ impl ContributionValidator {
     pub fn validate(&self, config: &CommunityProviderConfig) -> Result<(), ProviderError> {
         // Basic validation
         if config.provider_id.is_empty() {
-            return Err(ProviderError::ConfigError("Provider ID is required".to_string()));
+            return Err(ProviderError::ConfigError(
+                "Provider ID is required".to_string(),
+            ));
         }
 
         if config.name.is_empty() {
-            return Err(ProviderError::ConfigError("Provider name is required".to_string()));
+            return Err(ProviderError::ConfigError(
+                "Provider name is required".to_string(),
+            ));
         }
 
         if config.models.is_empty() {
-            return Err(ProviderError::ConfigError("At least one model is required".to_string()));
+            return Err(ProviderError::ConfigError(
+                "At least one model is required".to_string(),
+            ));
         }
 
         // Advanced validation based on rules
         if self.rules.require_pricing {
             let has_pricing = config.models.iter().any(|m| m.pricing.is_some());
             if !has_pricing {
-                return Err(ProviderError::ConfigError("Pricing information is required".to_string()));
+                return Err(ProviderError::ConfigError(
+                    "Pricing information is required".to_string(),
+                ));
             }
         }
 
@@ -343,7 +378,8 @@ impl ContributionValidator {
             for model in &config.models {
                 if model.capabilities.is_empty() {
                     return Err(ProviderError::ConfigError(format!(
-                        "Capabilities are required for model {}", model.id
+                        "Capabilities are required for model {}",
+                        model.id
                     )));
                 }
             }
@@ -361,8 +397,7 @@ impl ContributionValidator {
             if metrics.avg_quality_score < self.rules.min_quality_score {
                 return Err(ProviderError::ConfigError(format!(
                     "Quality score too low: {} (min {})",
-                    metrics.avg_quality_score,
-                    self.rules.min_quality_score
+                    metrics.avg_quality_score, self.rules.min_quality_score
                 )));
             }
         }
@@ -375,7 +410,8 @@ impl Default for CommunityDatabaseConfig {
     fn default() -> Self {
         Self {
             endpoints: vec![
-                "https://raw.githubusercontent.com/ricecoder-community/providers/main/configs.json".to_string(),
+                "https://raw.githubusercontent.com/ricecoder-community/providers/main/configs.json"
+                    .to_string(),
                 "https://api.ricecoder.community/providers".to_string(),
             ],
             sync_interval: Duration::from_secs(3600), // 1 hour

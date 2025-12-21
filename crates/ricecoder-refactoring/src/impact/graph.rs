@@ -123,37 +123,41 @@ impl DependencyGraph {
     /// Get all symbols that depend on a given symbol (direct dependents)
     /// Returns just the symbol names (without file paths)
     pub fn get_direct_dependents(&self, symbol_key: &str) -> Vec<String> {
-        let dependents = self.reverse_adjacency
+        let dependents = self
+            .reverse_adjacency
             .get(symbol_key)
             .cloned()
             .unwrap_or_default();
-        
+
         // Extract symbol names from composite keys (name:file)
-        dependents.iter().map(|key| {
-            if let Some(colon_pos) = key.find(':') {
-                key[..colon_pos].to_string()
-            } else {
-                key.clone()
-            }
-        }).collect()
+        dependents
+            .iter()
+            .map(|key| {
+                if let Some(colon_pos) = key.find(':') {
+                    key[..colon_pos].to_string()
+                } else {
+                    key.clone()
+                }
+            })
+            .collect()
     }
 
     /// Get all symbols that a given symbol depends on (direct dependencies)
     /// Returns just the symbol names (without file paths)
     pub fn get_direct_dependencies(&self, symbol_key: &str) -> Vec<String> {
-        let dependencies = self.adjacency
-            .get(symbol_key)
-            .cloned()
-            .unwrap_or_default();
-        
+        let dependencies = self.adjacency.get(symbol_key).cloned().unwrap_or_default();
+
         // Extract symbol names from composite keys (name:file)
-        dependencies.iter().map(|key| {
-            if let Some(colon_pos) = key.find(':') {
-                key[..colon_pos].to_string()
-            } else {
-                key.clone()
-            }
-        }).collect()
+        dependencies
+            .iter()
+            .map(|key| {
+                if let Some(colon_pos) = key.find(':') {
+                    key[..colon_pos].to_string()
+                } else {
+                    key.clone()
+                }
+            })
+            .collect()
     }
 
     /// Get all symbols transitively affected by a change to a given symbol
@@ -184,13 +188,16 @@ impl DependencyGraph {
         }
 
         // Extract symbol names from composite keys (name:file)
-        affected_keys.iter().map(|key| {
-            if let Some(colon_pos) = key.find(':') {
-                key[..colon_pos].to_string()
-            } else {
-                key.clone()
-            }
-        }).collect()
+        affected_keys
+            .iter()
+            .map(|key| {
+                if let Some(colon_pos) = key.find(':') {
+                    key[..colon_pos].to_string()
+                } else {
+                    key.clone()
+                }
+            })
+            .collect()
     }
 
     /// Get all symbols that a given symbol transitively depends on
@@ -229,7 +236,13 @@ impl DependencyGraph {
 
         for symbol_name in self.symbols.keys() {
             if !visited.contains(symbol_name) {
-                self.dfs_cycles(symbol_name, &mut visited, &mut rec_stack, &mut cycles, Vec::new());
+                self.dfs_cycles(
+                    symbol_name,
+                    &mut visited,
+                    &mut rec_stack,
+                    &mut cycles,
+                    Vec::new(),
+                );
             }
         }
 

@@ -176,7 +176,9 @@ impl KeybindMerger {
                         context,
                         default: (*existing_kb).clone(),
                         user: keybind.clone(),
-                        resolution: ConflictResolution::RemapUser("Suggest alternative key".to_string()),
+                        resolution: ConflictResolution::RemapUser(
+                            "Suggest alternative key".to_string(),
+                        ),
                     });
                 }
             }
@@ -210,10 +212,7 @@ impl KeybindMerger {
     }
 
     /// Suggest alternative keys for resolving conflicts
-    pub fn suggest_alternative_keys(
-        conflict_key: &str,
-        existing_keys: &[String],
-    ) -> Vec<String> {
+    pub fn suggest_alternative_keys(conflict_key: &str, existing_keys: &[String]) -> Vec<String> {
         // Simple suggestion logic - in practice, this could be more sophisticated
         let alternatives = vec![
             format!("Ctrl+{}", conflict_key.to_uppercase()),
@@ -228,4 +227,3 @@ impl KeybindMerger {
             .collect()
     }
 }
-

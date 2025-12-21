@@ -180,8 +180,14 @@ mod tests {
     fn test_enhanced_keyboard_navigation() {
         let mut nav = super::EnhancedKeyboardNavigation::new();
 
-        nav.register_element("btn1".to_string(), TextAlternative::new("btn1", "Button 1", ElementType::Button));
-        nav.register_element("btn2".to_string(), TextAlternative::new("btn2", "Button 2", ElementType::Button));
+        nav.register_element(
+            "btn1".to_string(),
+            TextAlternative::new("btn1", "Button 1", ElementType::Button),
+        );
+        nav.register_element(
+            "btn2".to_string(),
+            TextAlternative::new("btn2", "Button 2", ElementType::Button),
+        );
 
         // Test tab navigation
         let _ = nav.tab_next();
@@ -224,7 +230,9 @@ mod tests {
             state: crossterm::event::KeyEventState::empty(),
         }];
 
-        assert!(customizer.set_shortcut("test.action".to_string(), custom_keys.clone()).is_ok());
+        assert!(customizer
+            .set_shortcut("test.action".to_string(), custom_keys.clone())
+            .is_ok());
         assert_eq!(customizer.get_shortcut("test.action"), Some(&custom_keys));
     }
 
@@ -244,6 +252,9 @@ mod tests {
 
         let converted_back = customizer.string_to_key(&key_string);
         assert!(converted_back.is_ok());
-        assert_eq!(converted_back.unwrap().code, crossterm::event::KeyCode::Char('a'));
+        assert_eq!(
+            converted_back.unwrap().code,
+            crossterm::event::KeyCode::Char('a')
+        );
     }
 }

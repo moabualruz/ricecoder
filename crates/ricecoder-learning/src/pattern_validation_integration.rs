@@ -3,9 +3,7 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        LearningManager, Decision, DecisionContext, RuleScope, PatternValidator,
-    };
+    use crate::{Decision, DecisionContext, LearningManager, PatternValidator, RuleScope};
     use std::path::PathBuf;
 
     fn create_test_decision(
@@ -167,7 +165,10 @@ mod tests {
         let initial_confidence = initial_pattern.confidence;
 
         // Validate and update pattern
-        let validation_result = manager.validate_and_update_pattern(&pattern_id).await.unwrap();
+        let validation_result = manager
+            .validate_and_update_pattern(&pattern_id)
+            .await
+            .unwrap();
 
         assert!(validation_result.is_valid);
 
@@ -290,10 +291,8 @@ mod tests {
         let validator = PatternValidator::new();
 
         // Create a pattern
-        let mut pattern = crate::LearnedPattern::new(
-            "code_generation".to_string(),
-            "Test pattern".to_string(),
-        );
+        let mut pattern =
+            crate::LearnedPattern::new("code_generation".to_string(), "Test pattern".to_string());
 
         pattern.examples.push(crate::PatternExample {
             input: serde_json::json!({"input": "test"}),
@@ -332,10 +331,8 @@ mod tests {
         let manager = LearningManager::new(RuleScope::Session);
 
         // Create a pattern without any decisions
-        let pattern = crate::LearnedPattern::new(
-            "code_generation".to_string(),
-            "Test pattern".to_string(),
-        );
+        let pattern =
+            crate::LearnedPattern::new("code_generation".to_string(), "Test pattern".to_string());
 
         // Validate pattern with no decisions
         let validation_result = manager

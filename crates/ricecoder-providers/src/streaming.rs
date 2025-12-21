@@ -1,8 +1,7 @@
 /// Streaming response simulation for non-streaming providers
-/// 
+///
 /// This module provides utilities to simulate streaming responses by typing
 /// out non-stream responses character-by-character, creating a typing effect.
-
 use std::time::Duration;
 use tokio::time::sleep;
 
@@ -135,5 +134,3 @@ impl WordStream {
 pub fn simulate_word_stream(text: String, word_delay_ms: u64) -> WordStream {
     WordStream::new(text, word_delay_ms)
 }
-
-

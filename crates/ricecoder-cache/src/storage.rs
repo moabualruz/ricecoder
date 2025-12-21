@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use tokio::sync::RwLock;
 use tokio::fs;
+use tokio::sync::RwLock;
 
 use crate::{CacheError, Result};
 
@@ -202,8 +202,8 @@ impl CacheStorage for DiskStorage {
         self.ensure_base_dir().await?;
 
         let file_path = self.key_path(key);
-        let json_data = serde_json::to_string_pretty(value)
-            .map_err(|e| CacheError::Serialization {
+        let json_data =
+            serde_json::to_string_pretty(value).map_err(|e| CacheError::Serialization {
                 message: e.to_string(),
             })?;
 
@@ -219,8 +219,8 @@ impl CacheStorage for DiskStorage {
         }
 
         let json_data = fs::read_to_string(&file_path).await?;
-        let value: serde_json::Value = serde_json::from_str(&json_data)
-            .map_err(|e| CacheError::Deserialization {
+        let value: serde_json::Value =
+            serde_json::from_str(&json_data).map_err(|e| CacheError::Deserialization {
                 message: e.to_string(),
             })?;
 

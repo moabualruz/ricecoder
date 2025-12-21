@@ -51,14 +51,22 @@ async fn test_lifecycle_manager() {
     let component2 = TestComponent::new("component2");
 
     manager.register_component(component1, vec![]).unwrap();
-    manager.register_component(component2, vec!["component1".to_string()]).unwrap();
+    manager
+        .register_component(component2, vec!["component1".to_string()])
+        .unwrap();
 
     // Initialize
     manager.initialize_all().await.unwrap();
 
     // Check states
-    assert_eq!(manager.get_component_state("component1"), Some(LifecycleState::Ready));
-    assert_eq!(manager.get_component_state("component2"), Some(LifecycleState::Ready));
+    assert_eq!(
+        manager.get_component_state("component1"),
+        Some(LifecycleState::Ready)
+    );
+    assert_eq!(
+        manager.get_component_state("component2"),
+        Some(LifecycleState::Ready)
+    );
 
     // Start
     manager.start_all().await.unwrap();
@@ -67,6 +75,12 @@ async fn test_lifecycle_manager() {
     manager.stop_all().await.unwrap();
 
     // Check final states
-    assert_eq!(manager.get_component_state("component1"), Some(LifecycleState::ShutDown));
-    assert_eq!(manager.get_component_state("component2"), Some(LifecycleState::ShutDown));
+    assert_eq!(
+        manager.get_component_state("component1"),
+        Some(LifecycleState::ShutDown)
+    );
+    assert_eq!(
+        manager.get_component_state("component2"),
+        Some(LifecycleState::ShutDown)
+    );
 }

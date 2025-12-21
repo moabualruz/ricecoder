@@ -1,6 +1,8 @@
 //! Domain agent registry and management
 
-use crate::domain_agents::{BackendAgent, DevOpsAgent, DomainAgent, DomainAgentInput, FrontendAgent};
+use crate::domain_agents::{
+    BackendAgent, DevOpsAgent, DomainAgent, DomainAgentInput, FrontendAgent,
+};
 use crate::error::{DomainAgentError, Result};
 use crate::models::{DomainAgentMetadata, DomainAgentRegistry};
 use std::collections::HashMap;
@@ -37,28 +39,22 @@ impl DomainAgentRegistryManager {
         let frontend_agent = Arc::new(FrontendAgent::new());
         self.agents
             .insert("frontend".to_string(), frontend_agent.clone());
-        self.registry.register_agent(
-            "frontend",
-            frontend_agent.metadata().clone(),
-        );
+        self.registry
+            .register_agent("frontend", frontend_agent.metadata().clone());
 
         // Register backend agent
         let backend_agent = Arc::new(BackendAgent::new());
         self.agents
             .insert("backend".to_string(), backend_agent.clone());
-        self.registry.register_agent(
-            "backend",
-            backend_agent.metadata().clone(),
-        );
+        self.registry
+            .register_agent("backend", backend_agent.metadata().clone());
 
         // Register DevOps agent
         let devops_agent = Arc::new(DevOpsAgent::new());
         self.agents
             .insert("devops".to_string(), devops_agent.clone());
-        self.registry.register_agent(
-            "devops",
-            devops_agent.metadata().clone(),
-        );
+        self.registry
+            .register_agent("devops", devops_agent.metadata().clone());
 
         info!("Registered {} default domain agents", self.agents.len());
     }
@@ -80,7 +76,11 @@ impl DomainAgentRegistryManager {
     }
 
     /// Execute agent for domain
-    pub async fn execute_agent(&self, domain: &str, input: DomainAgentInput) -> Result<crate::domain_agents::DomainAgentOutput> {
+    pub async fn execute_agent(
+        &self,
+        domain: &str,
+        input: DomainAgentInput,
+    ) -> Result<crate::domain_agents::DomainAgentOutput> {
         let agent = self.get_agent(domain)?;
         agent.execute(input).await
     }
@@ -104,10 +104,7 @@ impl DomainAgentRegistryManager {
 
     /// Get all agent metadata
     pub fn get_all_agents_metadata(&self) -> Vec<&DomainAgentMetadata> {
-        self.registry
-            .agents
-            .values()
-            .collect()
+        self.registry.agents.values().collect()
     }
 
     /// Get registry

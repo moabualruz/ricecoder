@@ -4,8 +4,8 @@
 //! **Validates: Requirements 5.1, 5.2, 5.4, 5.5**
 
 use proptest::prelude::*;
-use ricecoder_images::{ImageDisplay, ImageMetadata, ImageFormat};
 use ricecoder_images::config::DisplayConfig;
+use ricecoder_images::{ImageDisplay, ImageFormat, ImageMetadata};
 use std::path::PathBuf;
 
 /// Strategy for generating valid image metadata
@@ -42,16 +42,16 @@ fn prop_display_includes_metadata() {
     proptest!(|(metadata in image_metadata_strategy())| {
         let display = ImageDisplay::new();
         let rendered = display.render_image(&metadata).expect("Should render image");
-        
+
         // Verify metadata is present
         let result = display.verify_metadata_present(&rendered, &metadata);
         prop_assert!(result.is_ok(), "Metadata verification should succeed");
         prop_assert!(result.unwrap(), "Metadata should be present in display");
-        
+
         // Verify format is in output
         let format = metadata.format_str().to_uppercase();
         prop_assert!(rendered.contains(&format), "Format should be in display");
-        
+
         // Verify dimensions are in output
         let (width, height) = metadata.dimensions();
         let dimensions_str = format!("{}x{}", width, height);
@@ -67,18 +67,18 @@ fn prop_display_fits_in_terminal() {
     proptest!(|(metadata in image_metadata_strategy())| {
         let display = ImageDisplay::new();
         let rendered = display.render_image(&metadata).expect("Should render image");
-        
+
         // Verify display fits in terminal
         let result = display.verify_fits_in_terminal(&rendered);
         prop_assert!(result.is_ok(), "Display should fit in terminal");
         prop_assert!(result.unwrap(), "Display should be within bounds");
-        
+
         // Verify dimensions manually
         let lines: Vec<&str> = rendered.lines().collect();
         let height = lines.len() as u32;
         let max_height = 30u32;
         prop_assert!(height <= max_height, "Height should not exceed max");
-        
+
         let max_width = 80u32;
         for line in lines {
             let width = line.chars().count() as u32;
@@ -96,13 +96,13 @@ fn prop_multiple_images_organized_vertically() {
         let display = ImageDisplay::new();
         let rendered = display.render_multiple_images(&metadata_list)
             .expect("Should render multiple images");
-        
+
         // Verify all images are present
         for metadata in &metadata_list {
             let format = metadata.format_str().to_uppercase();
             prop_assert!(rendered.contains(&format), "All images should be present");
         }
-        
+
         // Verify separators exist between images (if more than one)
         if metadata_list.len() > 1 {
             let separator_lines = rendered
@@ -111,7 +111,7 @@ fn prop_multiple_images_organized_vertically() {
                 .count();
             prop_assert!(separator_lines > 0, "Separators should exist between images");
         }
-        
+
         // Verify display fits in terminal
         let result = display.verify_fits_in_terminal(&rendered);
         prop_assert!(result.is_ok(), "Display should fit in terminal: {:?}", result);
@@ -127,7 +127,7 @@ fn prop_display_consistency_across_renders() {
         let display = ImageDisplay::new();
         let rendered1 = display.render_image(&metadata).expect("Should render image");
         let rendered2 = display.render_image(&metadata).expect("Should render image again");
-        
+
         prop_assert_eq!(rendered1, rendered2, "Renders should be identical");
     });
 }
@@ -146,16 +146,16 @@ fn prop_resizing_maintains_aspect_ratio() {
             original_width,
             original_height,
         );
-        
+
         // Calculate aspect ratios
         let original_ratio = original_width as f64 / original_height as f64;
         let resized_ratio = resized_width as f64 / resized_height as f64;
-        
+
         // Aspect ratios should be approximately equal
         // For extreme aspect ratios (very wide or very tall), integer rounding and constraint to max dimensions
         // can cause larger differences. This is acceptable as long as the resized image fits in the terminal.
         let ratio_diff = (original_ratio - resized_ratio).abs();
-        
+
         // Tolerance calculation:
         // - For normal aspect ratios: 50% of original ratio
         // - For extreme aspect ratios: higher tolerance to account for integer rounding and max dimension constraints
@@ -163,7 +163,7 @@ fn prop_resizing_maintains_aspect_ratio() {
         let percentage_tolerance = original_ratio * 0.50;
         let absolute_tolerance = 2.0;
         let tolerance = percentage_tolerance.max(absolute_tolerance);
-        
+
         prop_assert!(
             ratio_diff <= tolerance,
             "Aspect ratio should be maintained: original={}, resized={}, diff={}, tolerance={}",
@@ -172,7 +172,7 @@ fn prop_resizing_maintains_aspect_ratio() {
             ratio_diff,
             tolerance
         );
-        
+
         // Resized dimensions should not exceed max
         let max_width = 80u32;
         let max_height = 30u32;
@@ -187,7 +187,9 @@ fn prop_resizing_maintains_aspect_ratio() {
 #[test]
 fn test_empty_image_list_produces_empty_output() {
     let display = ImageDisplay::new();
-    let rendered = display.render_multiple_images(&[]).expect("Should render empty list");
+    let rendered = display
+        .render_multiple_images(&[])
+        .expect("Should render empty list");
     assert_eq!(rendered, "", "Empty list should produce empty output");
 }
 
@@ -200,7 +202,7 @@ fn prop_single_image_no_separators() {
         let display = ImageDisplay::new();
         let rendered = display.render_multiple_images(&[metadata])
             .expect("Should render single image");
-        
+
         // Single image should not have separators
         let separator_count = rendered.matches("─").count();
         prop_assert_eq!(separator_count, 0, "Single image should not have separators");
@@ -217,7 +219,7 @@ fn prop_multiple_images_have_separators() {
             let display = ImageDisplay::new();
             let rendered = display.render_multiple_images(&metadata_list)
                 .expect("Should render multiple images");
-            
+
             // Multiple images should have separator lines
             let separator_lines = rendered
                 .lines()
@@ -245,12 +247,12 @@ fn prop_display_config_respected() {
         };
         let display = ImageDisplay::with_config(config);
         let rendered = display.render_image(&metadata).expect("Should render image");
-        
+
         // Verify display respects configuration
         let lines: Vec<&str> = rendered.lines().collect();
         let height = lines.len() as u32;
         prop_assert!(height <= max_height, "Height should respect config");
-        
+
         for line in lines {
             let width = line.chars().count() as u32;
             prop_assert!(width <= max_width, "Width should respect config");
@@ -266,7 +268,7 @@ fn prop_placeholder_character_present() {
     proptest!(|(metadata in image_metadata_strategy())| {
         let display = ImageDisplay::new();
         let rendered = display.render_image(&metadata).expect("Should render image");
-        
+
         // Placeholder character should be present
         let placeholder_char = "█";
         prop_assert!(
@@ -284,7 +286,7 @@ fn prop_format_string_uppercase() {
     proptest!(|(metadata in image_metadata_strategy())| {
         let display = ImageDisplay::new();
         let rendered = display.render_image(&metadata).expect("Should render image");
-        
+
         // Format should be uppercase
         let format = metadata.format_str().to_uppercase();
         prop_assert!(rendered.contains(&format), "Format should be uppercase");
@@ -299,7 +301,7 @@ fn prop_size_displayed_in_mb() {
     proptest!(|(metadata in image_metadata_strategy())| {
         let display = ImageDisplay::new();
         let rendered = display.render_image(&metadata).expect("Should render image");
-        
+
         // Size should be in MB
         let size_mb = metadata.size_mb();
         let size_str = format!("{:.1} MB", size_mb);
@@ -325,8 +327,13 @@ fn test_custom_placeholder_character() {
         "abc123".to_string(),
     );
 
-    let rendered = display.render_image(&metadata).expect("Should render image");
-    assert!(rendered.contains("▓"), "Custom placeholder character should be used");
+    let rendered = display
+        .render_image(&metadata)
+        .expect("Should render image");
+    assert!(
+        rendered.contains("▓"),
+        "Custom placeholder character should be used"
+    );
 }
 
 /// Test: Multiple images with different formats
@@ -350,7 +357,8 @@ fn test_multiple_images_different_formats() {
         "def456".to_string(),
     );
 
-    let rendered = display.render_multiple_images(&[metadata1, metadata2])
+    let rendered = display
+        .render_multiple_images(&[metadata1, metadata2])
         .expect("Should render multiple images");
 
     // Both formats should be present

@@ -115,7 +115,12 @@ impl SessionManager {
     pub fn create_session(&self, name: String, owner: String) -> StorageResult<SessionData> {
         let now = SystemTime::now();
         let timestamp = now.duration_since(std::time::UNIX_EPOCH).unwrap();
-        let id = format!("session_{}_{}_{}", owner, timestamp.as_secs(), timestamp.subsec_nanos());
+        let id = format!(
+            "session_{}_{}_{}",
+            owner,
+            timestamp.as_secs(),
+            timestamp.subsec_nanos()
+        );
         let now = SystemTime::now();
 
         let session = SessionData {
@@ -169,11 +174,13 @@ impl SessionManager {
 
         // Load from disk
         let session_path = self.storage_path.join(format!("{}.json", session_id));
-        let content = std::fs::read_to_string(&session_path)
-            .map_err(|e| StorageError::io_error(session_path.clone(), crate::error::IoOperation::Read, e))?;
+        let content = std::fs::read_to_string(&session_path).map_err(|e| {
+            StorageError::io_error(session_path.clone(), crate::error::IoOperation::Read, e)
+        })?;
 
-        let session: SessionData = serde_json::from_str(&content)
-            .map_err(|e| StorageError::parse_error(session_path.clone(), "json".to_string(), e.to_string()))?;
+        let session: SessionData = serde_json::from_str(&content).map_err(|e| {
+            StorageError::parse_error(session_path.clone(), "json".to_string(), e.to_string())
+        })?;
 
         // Cache in memory
         {
@@ -191,17 +198,23 @@ impl SessionManager {
             .map_err(|e| StorageError::directory_creation_failed(self.storage_path.clone(), e))?;
 
         let session_path = self.storage_path.join(format!("{}.json", session.id));
-        let content = serde_json::to_string_pretty(session)
-            .map_err(|e| StorageError::parse_error(session_path.clone(), "json".to_string(), e.to_string()))?;
+        let content = serde_json::to_string_pretty(session).map_err(|e| {
+            StorageError::parse_error(session_path.clone(), "json".to_string(), e.to_string())
+        })?;
 
-        std::fs::write(&session_path, content)
-            .map_err(|e| StorageError::io_error(session_path, crate::error::IoOperation::Write, e))?;
+        std::fs::write(&session_path, content).map_err(|e| {
+            StorageError::io_error(session_path, crate::error::IoOperation::Write, e)
+        })?;
 
         Ok(())
     }
 
     /// Update session state
-    pub fn update_session_state(&self, session_id: &str, new_state: SessionState) -> StorageResult<()> {
+    pub fn update_session_state(
+        &self,
+        session_id: &str,
+        new_state: SessionState,
+    ) -> StorageResult<()> {
         let mut session = self.load_session(session_id)?;
         session.state = new_state;
         session.modified_at = SystemTime::now();
@@ -217,7 +230,12 @@ impl SessionManager {
     }
 
     /// Update session metadata
-    pub fn update_session_metadata(&self, session_id: &str, key: String, value: serde_json::Value) -> StorageResult<()> {
+    pub fn update_session_metadata(
+        &self,
+        session_id: &str,
+        key: String,
+        value: serde_json::Value,
+    ) -> StorageResult<()> {
         let mut session = self.load_session(session_id)?;
         session.metadata.insert(key, value);
         session.modified_at = SystemTime::now();
@@ -251,7 +269,11 @@ impl SessionManager {
     }
 
     /// Share a session with permissions
-    pub fn share_session(&self, session_id: &str, permissions: SessionPermissions) -> StorageResult<()> {
+    pub fn share_session(
+        &self,
+        session_id: &str,
+        permissions: SessionPermissions,
+    ) -> StorageResult<()> {
         let mut session = self.load_session(session_id)?;
         session.is_shared = true;
         session.permissions = Some(permissions);
@@ -295,8 +317,9 @@ impl SessionManager {
         // Remove from disk
         let session_path = self.storage_path.join(format!("{}.json", session_id));
         if session_path.exists() {
-            std::fs::remove_file(&session_path)
-                .map_err(|e| StorageError::io_error(session_path, crate::error::IoOperation::Delete, e))?;
+            std::fs::remove_file(&session_path).map_err(|e| {
+                StorageError::io_error(session_path, crate::error::IoOperation::Delete, e)
+            })?;
         }
 
         Ok(())
@@ -323,7 +346,9 @@ impl SessionManager {
                     if file_name.ends_with(".json") && file_name.starts_with("session_") {
                         let session_id = file_name.trim_end_matches(".json");
                         if let Ok(session) = self.load_session(session_id) {
-                            if session.owner == owner && !user_sessions.iter().any(|s| s.id == session.id) {
+                            if session.owner == owner
+                                && !user_sessions.iter().any(|s| s.id == session.id)
+                            {
                                 user_sessions.push(session);
                             }
                         }
@@ -349,7 +374,9 @@ impl SessionManager {
                             if session.is_shared {
                                 if let Some(perms) = &session.permissions {
                                     // Check if user has access
-                                    if perms.allowed_users.is_empty() || perms.allowed_users.contains(&user.to_string()) {
+                                    if perms.allowed_users.is_empty()
+                                        || perms.allowed_users.contains(&user.to_string())
+                                    {
                                         shared_sessions.push(session);
                                     }
                                 }

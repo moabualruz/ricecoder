@@ -21,9 +21,9 @@ pub mod types;
 
 pub use error::{ParserError, ParserResult};
 pub use languages::{Language, LanguageSupport};
-pub use parser::{CodeParser, Parser, ParserConfig, ParseResult};
+pub use parser::{CodeParser, ParseResult, Parser, ParserConfig};
 pub use traversal::{NodeVisitor, TreeWalker, VisitorResult};
-pub use types::{ASTNode, SyntaxTree, Position, Range, NodeType};
+pub use types::{ASTNode, NodeType, Position, Range, SyntaxTree};
 
 /// Re-export commonly used types
 pub type Result<T> = std::result::Result<T, ParserError>;

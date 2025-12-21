@@ -6,16 +6,16 @@
 //! These tests verify that session management correctly handles concurrent operations,
 //! race conditions, and sharing validation under various scenarios.
 
+use chrono::Duration as ChronoDuration;
 use proptest::prelude::*;
 use ricecoder_sessions::{
-    Session, SessionContext, SessionManager, SessionMode, SharePermissions, ShareService,
-    Message, MessageRole, SessionStore,
+    Message, MessageRole, Session, SessionContext, SessionManager, SessionMode, SessionStore,
+    SharePermissions, ShareService,
 };
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{RwLock, Semaphore};
 use tokio::time::{timeout, Duration};
-use chrono::Duration as ChronoDuration;
 
 // ============================================================================
 // Generators for property-based testing
@@ -47,7 +47,9 @@ fn arb_session_with_messages() -> impl Strategy<Value = Session> {
             } else {
                 MessageRole::Assistant
             };
-            session.history.push(Message::new(role, format!("Message {}", i)));
+            session
+                .history
+                .push(Message::new(role, format!("Message {}", i)));
         }
         session
     })
@@ -59,11 +61,13 @@ fn arb_share_permissions() -> impl Strategy<Value = SharePermissions> {
         any::<bool>(), // include_history
         any::<bool>(), // include_context
     )
-        .prop_map(|(read_only, include_history, include_context)| SharePermissions {
-            read_only,
-            include_history,
-            include_context,
-        })
+        .prop_map(
+            |(read_only, include_history, include_context)| SharePermissions {
+                read_only,
+                include_history,
+                include_context,
+            },
+        )
 }
 
 // ============================================================================

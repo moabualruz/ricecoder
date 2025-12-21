@@ -47,10 +47,7 @@ impl ImageCache {
     pub fn with_config(ttl_seconds: u64, max_size_mb: u64) -> ImageResult<Self> {
         // Try to use project cache first, fall back to user cache
         let cache_dir = if let Ok(project_cache) = std::env::current_dir() {
-            project_cache
-                .join(".agent")
-                .join("cache")
-                .join("images")
+            project_cache.join(".agent").join("cache").join("images")
         } else {
             // Fall back to user cache
             if let Ok(home) = std::env::var("HOME") {
@@ -65,8 +62,9 @@ impl ImageCache {
             }
         };
 
-        let cache_manager = CacheManager::new(&cache_dir)
-            .map_err(|e| ImageError::CacheError(format!("Failed to create cache manager: {}", e)))?;
+        let cache_manager = CacheManager::new(&cache_dir).map_err(|e| {
+            ImageError::CacheError(format!("Failed to create cache manager: {}", e))
+        })?;
 
         debug!(
             "Created image cache at: {} (TTL: {}s, Max: {}MB)",
@@ -131,8 +129,9 @@ impl ImageCache {
     /// Returns error if cache directory cannot be created
     pub fn with_temp_dir(temp_dir: &std::path::Path) -> ImageResult<Self> {
         let cache_dir = temp_dir.join("images");
-        let cache_manager = CacheManager::new(&cache_dir)
-            .map_err(|e| ImageError::CacheError(format!("Failed to create cache manager: {}", e)))?;
+        let cache_manager = CacheManager::new(&cache_dir).map_err(|e| {
+            ImageError::CacheError(format!("Failed to create cache manager: {}", e))
+        })?;
 
         Ok(Self {
             cache_manager,
@@ -311,10 +310,13 @@ mod tests {
     #[test]
     fn test_cache_set_and_get() {
         let cache = ImageCache::new().unwrap();
-        let unique_hash = format!("hash123_test_{}", std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos());
+        let unique_hash = format!(
+            "hash123_test_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        );
         let result = ImageAnalysisResult::new(
             unique_hash.clone(),
             "This is a test image".to_string(),
@@ -343,10 +345,13 @@ mod tests {
     #[test]
     fn test_cache_miss() {
         let cache = ImageCache::new().unwrap();
-        let unique_hash = format!("nonexistent_{}", std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos());
+        let unique_hash = format!(
+            "nonexistent_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        );
         let result = cache.get(&unique_hash);
         assert!(result.is_ok());
         assert!(result.unwrap().is_none());
@@ -355,10 +360,13 @@ mod tests {
     #[test]
     fn test_cache_exists() {
         let cache = ImageCache::new().unwrap();
-        let unique_hash = format!("hash_exists_{}", std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos());
+        let unique_hash = format!(
+            "hash_exists_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        );
         let result = ImageAnalysisResult::new(
             unique_hash.clone(),
             "Analysis".to_string(),
@@ -380,10 +388,13 @@ mod tests {
     #[test]
     fn test_cache_invalidate() {
         let cache = ImageCache::new().unwrap();
-        let unique_hash = format!("hash_invalidate_{}", std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos());
+        let unique_hash = format!(
+            "hash_invalidate_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        );
         let result = ImageAnalysisResult::new(
             unique_hash.clone(),
             "Analysis".to_string(),
@@ -408,20 +419,20 @@ mod tests {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        
+
         // Create a temporary cache directory
         let temp_dir = std::env::temp_dir().join(format!("ricecoder_cache_test_{}", test_id));
         let _ = std::fs::create_dir_all(&temp_dir);
-        
+
         let cache_manager = ricecoder_storage::cache::CacheManager::new(&temp_dir)
             .expect("Failed to create test cache manager");
-        
+
         let cache = ImageCache {
             cache_manager,
             ttl_seconds: 86400,
             max_size_mb: 100,
         };
-        
+
         let unique_hash = format!("hash_clear_{}", test_id);
         let result = ImageAnalysisResult::new(
             unique_hash.clone(),
@@ -437,7 +448,7 @@ mod tests {
         assert!(clear_result.is_ok());
 
         assert!(!cache.exists(&unique_hash).unwrap());
-        
+
         // Clean up
         let _ = std::fs::remove_dir_all(&temp_dir);
     }

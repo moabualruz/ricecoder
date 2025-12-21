@@ -101,12 +101,19 @@ impl MCPPermissionManager {
         }
 
         // Default to deny if no rule matches
-        warn!("No permission rule found for tool '{}', defaulting to deny", tool_id);
+        warn!(
+            "No permission rule found for tool '{}', defaulting to deny",
+            tool_id
+        );
         Ok(PermissionLevel::Deny)
     }
 
     /// Matches a tool ID against a set of rules
-    fn match_rules(&self, tool_id: &str, rules: &[PermissionRule]) -> Result<Option<PermissionLevel>> {
+    fn match_rules(
+        &self,
+        tool_id: &str,
+        rules: &[PermissionRule],
+    ) -> Result<Option<PermissionLevel>> {
         for rule in rules {
             if self.glob_matcher.match_pattern(&rule.pattern, tool_id) {
                 let level = PermissionLevelConfig::clone(&rule.level).into();

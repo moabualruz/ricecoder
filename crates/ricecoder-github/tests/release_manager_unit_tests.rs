@@ -1,8 +1,10 @@
 //! Unit tests for Release Manager
 //! Tests release creation, notes generation, and version tagging
 
-use ricecoder_github::{ReleaseManager, ReleaseOptions, SemanticVersion, ReleaseOperations, ChangelogEntry};
 use chrono::Utc;
+use ricecoder_github::{
+    ChangelogEntry, ReleaseManager, ReleaseOperations, ReleaseOptions, SemanticVersion,
+};
 
 #[tokio::test]
 async fn test_release_creation_success() {

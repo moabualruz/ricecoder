@@ -39,10 +39,7 @@ impl HealthChecker {
     pub fn record_success(&mut self, latency: Duration) -> HealthStatus {
         self.last_check = Some(Instant::now());
         self.failure_count = 0;
-        debug!(
-            latency_ms = latency.as_millis(),
-            "Health check passed"
-        );
+        debug!(latency_ms = latency.as_millis(), "Health check passed");
         HealthStatus::Healthy { latency }
     }
 

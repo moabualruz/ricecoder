@@ -175,10 +175,7 @@ impl GistManager {
         let raw_url = Some(format!("{}/raw", url));
         let html_url = Some(url.clone());
 
-        info!(
-            "Gist created successfully: id={}, url={}",
-            gist_id, url
-        );
+        info!("Gist created successfully: id={}, url={}", gist_id, url);
 
         Ok(GistCreationResult {
             gist_id,
@@ -221,10 +218,7 @@ impl GistManager {
         let filename = filename.into();
         let content = content.into();
 
-        debug!(
-            "Updating gist: id={}, filename={}",
-            gist_id, filename
-        );
+        debug!("Updating gist: id={}, filename={}", gist_id, filename);
 
         // Validate inputs
         if gist_id.is_empty() {
@@ -374,10 +368,7 @@ impl GistManager {
     ) -> Result<Gist> {
         let gist_id = gist_id.into();
 
-        debug!(
-            "Setting gist visibility: id={}, public={}",
-            gist_id, public
-        );
+        debug!("Setting gist visibility: id={}, public={}", gist_id, public);
 
         if gist_id.is_empty() {
             return Err(GitHubError::invalid_input("Gist ID cannot be empty"));
@@ -385,10 +376,7 @@ impl GistManager {
 
         let url = self.generate_gist_url(&gist_id);
 
-        info!(
-            "Gist visibility updated: id={}, public={}",
-            gist_id, public
-        );
+        info!("Gist visibility updated: id={}, public={}", gist_id, public);
 
         Ok(Gist {
             id: gist_id,
@@ -551,7 +539,12 @@ mod tests {
     async fn test_create_gist_success() {
         let manager = GistManager::new("token", "testuser");
         let result = manager
-            .create_gist("test.rs", "fn main() {}", Some("rust".to_string()), GistOptions::default())
+            .create_gist(
+                "test.rs",
+                "fn main() {}",
+                Some("rust".to_string()),
+                GistOptions::default(),
+            )
             .await;
 
         assert!(result.is_ok());
@@ -563,9 +556,7 @@ mod tests {
     #[tokio::test]
     async fn test_update_gist_empty_id() {
         let manager = GistManager::new("token", "testuser");
-        let result = manager
-            .update_gist("", "test.rs", "content", None)
-            .await;
+        let result = manager.update_gist("", "test.rs", "content", None).await;
 
         assert!(result.is_err());
     }

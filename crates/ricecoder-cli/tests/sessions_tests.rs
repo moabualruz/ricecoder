@@ -342,7 +342,7 @@ mod tests {
 
     #[test]
     fn test_share_service_get_share() {
-        use ricecoder_sessions::{ShareService, SharePermissions};
+        use ricecoder_sessions::{SharePermissions, ShareService};
 
         let service = ShareService::new();
 
@@ -381,7 +381,7 @@ mod tests {
 
     #[test]
     fn test_share_service_revoke_share() {
-        use ricecoder_sessions::{ShareService, SharePermissions};
+        use ricecoder_sessions::{SharePermissions, ShareService};
 
         let service = ShareService::new();
 
@@ -408,7 +408,7 @@ mod tests {
 
     #[test]
     fn test_share_service_list_shares() {
-        use ricecoder_sessions::{ShareService, SharePermissions};
+        use ricecoder_sessions::{SharePermissions, ShareService};
 
         let service = ShareService::new();
 
@@ -437,7 +437,10 @@ mod tests {
 
     #[test]
     fn test_share_service_create_shared_session_view_with_history() {
-        use ricecoder_sessions::{ShareService, SharePermissions, Session, SessionContext, SessionMode, Message, MessageRole};
+        use ricecoder_sessions::{
+            Message, MessageRole, Session, SessionContext, SessionMode, SharePermissions,
+            ShareService,
+        };
 
         let service = ShareService::new();
 
@@ -447,10 +450,9 @@ mod tests {
             SessionContext::new("openai".to_string(), "gpt-4".to_string(), SessionMode::Chat),
         );
 
-        session.history.push(Message::new(
-            MessageRole::User,
-            "Hello".to_string(),
-        ));
+        session
+            .history
+            .push(Message::new(MessageRole::User, "Hello".to_string()));
 
         session.history.push(Message::new(
             MessageRole::Assistant,
@@ -471,7 +473,10 @@ mod tests {
 
     #[test]
     fn test_share_service_create_shared_session_view_without_history() {
-        use ricecoder_sessions::{ShareService, SharePermissions, Session, SessionContext, SessionMode, Message, MessageRole};
+        use ricecoder_sessions::{
+            Message, MessageRole, Session, SessionContext, SessionMode, SharePermissions,
+            ShareService,
+        };
 
         let service = ShareService::new();
 
@@ -481,10 +486,9 @@ mod tests {
             SessionContext::new("openai".to_string(), "gpt-4".to_string(), SessionMode::Chat),
         );
 
-        session.history.push(Message::new(
-            MessageRole::User,
-            "Hello".to_string(),
-        ));
+        session
+            .history
+            .push(Message::new(MessageRole::User, "Hello".to_string()));
 
         session.history.push(Message::new(
             MessageRole::Assistant,
@@ -505,7 +509,9 @@ mod tests {
 
     #[test]
     fn test_share_service_create_shared_session_view_without_context() {
-        use ricecoder_sessions::{ShareService, SharePermissions, Session, SessionContext, SessionMode};
+        use ricecoder_sessions::{
+            Session, SessionContext, SessionMode, SharePermissions, ShareService,
+        };
 
         let service = ShareService::new();
 
@@ -532,7 +538,7 @@ mod tests {
 
     #[test]
     fn test_share_service_list_shares_for_session() {
-        use ricecoder_sessions::{ShareService, SharePermissions};
+        use ricecoder_sessions::{SharePermissions, ShareService};
 
         let service = ShareService::new();
 
@@ -568,7 +574,7 @@ mod tests {
 
     #[test]
     fn test_share_service_invalidate_session_shares() {
-        use ricecoder_sessions::{ShareService, SharePermissions};
+        use ricecoder_sessions::{SharePermissions, ShareService};
 
         let service = ShareService::new();
 
@@ -603,7 +609,7 @@ mod tests {
 
     #[test]
     fn test_share_service_read_only_enforcement() {
-        use ricecoder_sessions::{ShareService, SharePermissions};
+        use ricecoder_sessions::{SharePermissions, ShareService};
 
         let service = ShareService::new();
 

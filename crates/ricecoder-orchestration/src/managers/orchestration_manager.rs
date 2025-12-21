@@ -31,7 +31,10 @@ impl OrchestrationManager {
     ///
     /// A new OrchestrationManager instance
     pub fn new(workspace_root: PathBuf) -> Self {
-        debug!("Creating OrchestrationManager for workspace: {:?}", workspace_root);
+        debug!(
+            "Creating OrchestrationManager for workspace: {:?}",
+            workspace_root
+        );
 
         let workspace = Workspace {
             root: workspace_root.clone(),
@@ -107,12 +110,19 @@ impl OrchestrationManager {
     ///
     /// Result indicating success or failure
     async fn load_configuration(&self, workspace: &mut Workspace) -> Result<()> {
-        debug!("Loading workspace configuration from: {:?}", self.workspace_root);
+        debug!(
+            "Loading workspace configuration from: {:?}",
+            self.workspace_root
+        );
 
         // Try to load configuration from standard locations
         let config_paths = vec![
-            self.workspace_root.join(".ricecoder").join("workspace.yaml"),
-            self.workspace_root.join(".ricecoder").join("workspace.json"),
+            self.workspace_root
+                .join(".ricecoder")
+                .join("workspace.yaml"),
+            self.workspace_root
+                .join(".ricecoder")
+                .join("workspace.json"),
             self.workspace_root.join("ricecoder.yaml"),
             self.workspace_root.join("ricecoder.json"),
         ];

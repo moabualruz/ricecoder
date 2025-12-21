@@ -1,7 +1,7 @@
 //! Error tracking and alerting system
 
 use crate::types::*;
-use chrono::{DateTime, Utc, TimeDelta};
+use chrono::{DateTime, TimeDelta, Utc};
 use dashmap::DashMap;
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
@@ -12,7 +12,7 @@ use std::time::Duration as StdDuration;
 use tokio::sync::mpsc;
 use tokio::time;
 
-pub use crate::types::{ErrorTrackingConfig, AlertingConfig};
+pub use crate::types::{AlertingConfig, ErrorTrackingConfig};
 
 /// Global error event storage
 static ERROR_EVENTS: Lazy<DashMap<EventId, ErrorEvent>> = Lazy::new(DashMap::new);
@@ -164,7 +164,8 @@ impl ErrorTracker {
             total_errors,
             errors_by_severity: by_severity,
             errors_by_type: by_type,
-            period_start: since.unwrap_or_else(|| chrono::Utc::now() - chrono::TimeDelta::hours(24)),
+            period_start: since
+                .unwrap_or_else(|| chrono::Utc::now() - chrono::TimeDelta::hours(24)),
             period_end: chrono::Utc::now(),
         }
     }
@@ -190,7 +191,10 @@ impl ErrorTracker {
                 }
                 tags
             },
-            extra: event.context.clone().into_iter()
+            extra: event
+                .context
+                .clone()
+                .into_iter()
                 .map(|(k, v)| (k, sentry::protocol::Value::from(v)))
                 .collect(),
             ..Default::default()
@@ -280,7 +284,13 @@ impl AlertManager {
     }
 
     /// Create a new alert
-    pub fn create_alert(&self, rule_id: String, message: String, severity: Severity, labels: HashMap<String, String>) {
+    pub fn create_alert(
+        &self,
+        rule_id: String,
+        message: String,
+        severity: Severity,
+        labels: HashMap<String, String>,
+    ) {
         let alert = Alert {
             id: EventId::new_v4(),
             rule_id: rule_id.clone(),
@@ -386,7 +396,10 @@ impl AlertManager {
                     let alert = Alert {
                         id: EventId::new_v4(),
                         rule_id: rule.id.clone(),
-                        message: format!("Alert rule '{}' triggered: {}", rule.name, rule.description),
+                        message: format!(
+                            "Alert rule '{}' triggered: {}",
+                            rule.name, rule.description
+                        ),
                         severity: rule.severity,
                         status: AlertStatus::Firing,
                         created_at: chrono::Utc::now(),
@@ -554,7 +567,12 @@ impl IncidentManager {
     }
 
     /// Update incident status
-    pub fn update_incident_status(&self, incident_id: EventId, status: IncidentStatus, user: Option<String>) {
+    pub fn update_incident_status(
+        &self,
+        incident_id: EventId,
+        status: IncidentStatus,
+        user: Option<String>,
+    ) {
         if let Some(mut incident) = self.incidents.write().get_mut(&incident_id) {
             incident.status = status;
             incident.updated_at = chrono::Utc::now();
@@ -579,7 +597,13 @@ impl IncidentManager {
     }
 
     /// Add event to incident timeline
-    pub fn add_incident_event(&self, incident_id: EventId, event_type: IncidentEventType, description: String, user: Option<String>) {
+    pub fn add_incident_event(
+        &self,
+        incident_id: EventId,
+        event_type: IncidentEventType,
+        description: String,
+        user: Option<String>,
+    ) {
         if let Some(mut incident) = self.incidents.write().get_mut(&incident_id) {
             incident.timeline.push(IncidentEvent {
                 timestamp: chrono::Utc::now(),

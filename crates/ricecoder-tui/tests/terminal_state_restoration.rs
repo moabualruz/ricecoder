@@ -70,8 +70,7 @@ fn test_terminal_state_drop_restores() {
 
     // Create a scope where TerminalState will be dropped
     {
-        let state = TerminalState::capture()
-            .expect("Failed to capture terminal state");
+        let state = TerminalState::capture().expect("Failed to capture terminal state");
 
         // Verify that we're in alternate screen
         assert!(
@@ -101,8 +100,7 @@ fn test_multiple_terminal_states() {
     }
 
     // Create first state
-    let mut state1 = TerminalState::capture()
-        .expect("Failed to capture terminal state 1");
+    let mut state1 = TerminalState::capture().expect("Failed to capture terminal state 1");
 
     assert!(
         state1.in_alternate_screen(),
@@ -110,7 +108,8 @@ fn test_multiple_terminal_states() {
     );
 
     // Restore first state
-    state1.restore()
+    state1
+        .restore()
         .expect("Failed to restore terminal state 1");
 
     assert!(
@@ -119,8 +118,7 @@ fn test_multiple_terminal_states() {
     );
 
     // Create second state
-    let mut state2 = TerminalState::capture()
-        .expect("Failed to capture terminal state 2");
+    let mut state2 = TerminalState::capture().expect("Failed to capture terminal state 2");
 
     assert!(
         state2.in_alternate_screen(),
@@ -128,7 +126,8 @@ fn test_multiple_terminal_states() {
     );
 
     // Restore second state
-    state2.restore()
+    state2
+        .restore()
         .expect("Failed to restore terminal state 2");
 
     assert!(

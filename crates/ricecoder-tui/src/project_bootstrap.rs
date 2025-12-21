@@ -8,12 +8,14 @@ use crate::error::TuiResult;
 // use ricecoder_research::{ProjectAnalyzer, ProjectType, Language};
 
 // Use the proper project analyzer from ricecoder-research
-pub use ricecoder_research::{ProjectAnalyzer, models::{ProjectType, Language}};
-
+pub use ricecoder_research::{
+    models::{Language, ProjectType},
+    ProjectAnalyzer,
+};
 
 use ricecoder_storage::ConfigLoader;
-use std::path::{Path, PathBuf};
 use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 
 /// Project bootstrap configuration and state
 #[derive(Debug, Clone)]
@@ -59,7 +61,7 @@ impl ProjectBootstrap {
     pub async fn bootstrap(&mut self) -> TuiResult<BootstrapResult> {
         if self.bootstrapped {
             return Err(crate::error::TuiError::config(
-                "Project already bootstrapped".to_string()
+                "Project already bootstrapped".to_string(),
             ));
         }
 
@@ -75,7 +77,9 @@ impl ProjectBootstrap {
         let configurations = self.load_project_configurations().await?;
 
         // 4. Initialize integrations
-        let integrations = self.initialize_integrations(&project_type, &primary_language).await?;
+        let integrations = self
+            .initialize_integrations(&project_type, &primary_language)
+            .await?;
 
         self.bootstrapped = true;
 
@@ -108,7 +112,8 @@ impl ProjectBootstrap {
         } else if self.working_directory.join("package.json").exists() {
             Ok(ProjectType::Application)
         } else if self.working_directory.join("requirements.txt").exists()
-               || self.working_directory.join("pyproject.toml").exists() {
+            || self.working_directory.join("pyproject.toml").exists()
+        {
             Ok(ProjectType::Application)
         } else if self.working_directory.join("go.mod").exists() {
             Ok(ProjectType::Application)
@@ -125,12 +130,14 @@ impl ProjectBootstrap {
         } else if self.working_directory.join("package.json").exists() {
             Ok(Language::TypeScript) // Could be JavaScript, but TypeScript is more common
         } else if self.working_directory.join("requirements.txt").exists()
-               || self.working_directory.join("pyproject.toml").exists() {
+            || self.working_directory.join("pyproject.toml").exists()
+        {
             Ok(Language::Python)
         } else if self.working_directory.join("go.mod").exists() {
             Ok(Language::Go)
         } else if self.working_directory.join("pom.xml").exists()
-               || self.working_directory.join("build.gradle").exists() {
+            || self.working_directory.join("build.gradle").exists()
+        {
             Ok(Language::Java)
         } else if self.working_directory.join("composer.json").exists() {
             Ok(Language::Php)
@@ -172,108 +179,159 @@ impl ProjectBootstrap {
     }
 
     /// Load Rust-specific configuration
-    async fn load_rust_config(&self, configs: &mut HashMap<String, serde_json::Value>) -> TuiResult<()> {
+    async fn load_rust_config(
+        &self,
+        configs: &mut HashMap<String, serde_json::Value>,
+    ) -> TuiResult<()> {
         // Load Cargo.toml for project information
-        if let Ok(cargo_content) = tokio::fs::read_to_string(self.working_directory.join("Cargo.toml")).await {
+        if let Ok(cargo_content) =
+            tokio::fs::read_to_string(self.working_directory.join("Cargo.toml")).await
+        {
             if let Ok(cargo_toml) = cargo_content.parse::<toml::Value>() {
-                configs.insert("cargo".to_string(), serde_json::to_value(cargo_toml).unwrap_or_default());
+                configs.insert(
+                    "cargo".to_string(),
+                    serde_json::to_value(cargo_toml).unwrap_or_default(),
+                );
             }
         }
 
         // Set Rust-specific defaults
-        configs.insert("language".to_string(), serde_json::json!({
-            "name": "rust",
-            "lsp": "rust-analyzer",
-            "formatter": "rustfmt",
-            "test_runner": "cargo test"
-        }));
+        configs.insert(
+            "language".to_string(),
+            serde_json::json!({
+                "name": "rust",
+                "lsp": "rust-analyzer",
+                "formatter": "rustfmt",
+                "test_runner": "cargo test"
+            }),
+        );
 
         Ok(())
     }
 
     /// Load Python-specific configuration
-    async fn load_python_config(&self, configs: &mut HashMap<String, serde_json::Value>) -> TuiResult<()> {
+    async fn load_python_config(
+        &self,
+        configs: &mut HashMap<String, serde_json::Value>,
+    ) -> TuiResult<()> {
         // Load pyproject.toml or requirements.txt
-        if let Ok(pyproject_content) = tokio::fs::read_to_string(self.working_directory.join("pyproject.toml")).await {
+        if let Ok(pyproject_content) =
+            tokio::fs::read_to_string(self.working_directory.join("pyproject.toml")).await
+        {
             if let Ok(pyproject) = pyproject_content.parse::<toml::Value>() {
-                configs.insert("pyproject".to_string(), serde_json::to_value(pyproject).unwrap_or_default());
+                configs.insert(
+                    "pyproject".to_string(),
+                    serde_json::to_value(pyproject).unwrap_or_default(),
+                );
             }
         }
 
-        if let Ok(req_content) = tokio::fs::read_to_string(self.working_directory.join("requirements.txt")).await {
+        if let Ok(req_content) =
+            tokio::fs::read_to_string(self.working_directory.join("requirements.txt")).await
+        {
             configs.insert("requirements".to_string(), serde_json::json!(req_content));
         }
 
         // Set Python-specific defaults
-        configs.insert("language".to_string(), serde_json::json!({
-            "name": "python",
-            "lsp": "pylsp",
-            "formatter": "black",
-            "test_runner": "pytest"
-        }));
+        configs.insert(
+            "language".to_string(),
+            serde_json::json!({
+                "name": "python",
+                "lsp": "pylsp",
+                "formatter": "black",
+                "test_runner": "pytest"
+            }),
+        );
 
         Ok(())
     }
 
     /// Load TypeScript-specific configuration
-    async fn load_typescript_config(&self, configs: &mut HashMap<String, serde_json::Value>) -> TuiResult<()> {
+    async fn load_typescript_config(
+        &self,
+        configs: &mut HashMap<String, serde_json::Value>,
+    ) -> TuiResult<()> {
         // Load package.json
-        if let Ok(package_content) = tokio::fs::read_to_string(self.working_directory.join("package.json")).await {
+        if let Ok(package_content) =
+            tokio::fs::read_to_string(self.working_directory.join("package.json")).await
+        {
             if let Ok(package_json) = serde_json::from_str(&package_content) {
                 configs.insert("package".to_string(), package_json);
             }
         }
 
         // Load tsconfig.json
-        if let Ok(tsconfig_content) = tokio::fs::read_to_string(self.working_directory.join("tsconfig.json")).await {
+        if let Ok(tsconfig_content) =
+            tokio::fs::read_to_string(self.working_directory.join("tsconfig.json")).await
+        {
             if let Ok(tsconfig) = serde_json::from_str(&tsconfig_content) {
                 configs.insert("tsconfig".to_string(), tsconfig);
             }
         }
 
         // Set TypeScript-specific defaults
-        configs.insert("language".to_string(), serde_json::json!({
-            "name": "typescript",
-            "lsp": "typescript-language-server",
-            "formatter": "prettier",
-            "test_runner": "jest"
-        }));
+        configs.insert(
+            "language".to_string(),
+            serde_json::json!({
+                "name": "typescript",
+                "lsp": "typescript-language-server",
+                "formatter": "prettier",
+                "test_runner": "jest"
+            }),
+        );
 
         Ok(())
     }
 
     /// Load Go-specific configuration
-    async fn load_go_config(&self, configs: &mut HashMap<String, serde_json::Value>) -> TuiResult<()> {
+    async fn load_go_config(
+        &self,
+        configs: &mut HashMap<String, serde_json::Value>,
+    ) -> TuiResult<()> {
         // Load go.mod
-        if let Ok(gomod_content) = tokio::fs::read_to_string(self.working_directory.join("go.mod")).await {
+        if let Ok(gomod_content) =
+            tokio::fs::read_to_string(self.working_directory.join("go.mod")).await
+        {
             configs.insert("go_mod".to_string(), serde_json::json!(gomod_content));
         }
 
         // Set Go-specific defaults
-        configs.insert("language".to_string(), serde_json::json!({
-            "name": "go",
-            "lsp": "gopls",
-            "formatter": "gofmt",
-            "test_runner": "go test"
-        }));
+        configs.insert(
+            "language".to_string(),
+            serde_json::json!({
+                "name": "go",
+                "lsp": "gopls",
+                "formatter": "gofmt",
+                "test_runner": "go test"
+            }),
+        );
 
         Ok(())
     }
 
     /// Load generic project configuration
-    async fn load_generic_config(&self, configs: &mut HashMap<String, serde_json::Value>) -> TuiResult<()> {
-        configs.insert("language".to_string(), serde_json::json!({
-            "name": "unknown",
-            "lsp": null,
-            "formatter": null,
-            "test_runner": null
-        }));
+    async fn load_generic_config(
+        &self,
+        configs: &mut HashMap<String, serde_json::Value>,
+    ) -> TuiResult<()> {
+        configs.insert(
+            "language".to_string(),
+            serde_json::json!({
+                "name": "unknown",
+                "lsp": null,
+                "formatter": null,
+                "test_runner": null
+            }),
+        );
 
         Ok(())
     }
 
     /// Load RiceCoder project-specific configuration
-    async fn load_ricecoder_project_config(&self, configs: &mut HashMap<String, serde_json::Value>) -> TuiResult<()> {
+    async fn load_ricecoder_project_config(
+        &self,
+        configs: &mut HashMap<String, serde_json::Value>,
+    ) -> TuiResult<()> {
         // Look for .ricecoder directory or config files
         let ricecoder_config = self.working_directory.join(".ricecoder");
         if ricecoder_config.exists() {
@@ -282,7 +340,10 @@ impl ProjectBootstrap {
             if config_path.exists() {
                 if let Ok(config_content) = tokio::fs::read_to_string(&config_path).await {
                     if let Ok(config) = serde_yaml::from_str::<serde_yaml::Value>(&config_content) {
-                        configs.insert("ricecoder_project".to_string(), serde_json::to_value(config).unwrap_or_default());
+                        configs.insert(
+                            "ricecoder_project".to_string(),
+                            serde_json::to_value(config).unwrap_or_default(),
+                        );
                     }
                 }
             }
@@ -292,7 +353,11 @@ impl ProjectBootstrap {
     }
 
     /// Initialize integrations based on project type and language
-    async fn initialize_integrations(&self, _project_type: &ProjectType, language: &Language) -> TuiResult<Vec<String>> {
+    async fn initialize_integrations(
+        &self,
+        _project_type: &ProjectType,
+        language: &Language,
+    ) -> TuiResult<Vec<String>> {
         let mut integrations = Vec::new();
 
         // Language-specific integrations
@@ -383,5 +448,3 @@ impl ProjectInfo {
         }
     }
 }
-
-

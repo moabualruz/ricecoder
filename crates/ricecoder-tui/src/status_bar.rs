@@ -300,7 +300,10 @@ impl StatusBarWidget {
         // Working directory
         let dir_display = self.working_directory.display().to_string();
         let dir_short = if dir_display.len() > 30 {
-            format!("...{}", &dir_display[dir_display.len().saturating_sub(27)..])
+            format!(
+                "...{}",
+                &dir_display[dir_display.len().saturating_sub(27)..]
+            )
         } else {
             dir_display
         };
@@ -331,8 +334,16 @@ impl StatusBarWidget {
         // VCS ahead/behind info
         if let Some((ahead, behind)) = self.vcs_ahead_behind {
             if ahead > 0 || behind > 0 {
-                let ahead_text = if ahead > 0 { format!("↑{}", ahead) } else { String::new() };
-                let behind_text = if behind > 0 { format!("↓{}", behind) } else { String::new() };
+                let ahead_text = if ahead > 0 {
+                    format!("↑{}", ahead)
+                } else {
+                    String::new()
+                };
+                let behind_text = if behind > 0 {
+                    format!("↓{}", behind)
+                } else {
+                    String::new()
+                };
                 spans.push(Span::styled(
                     format!("{}{}", ahead_text, behind_text),
                     Style::default().fg(Color::Cyan),
@@ -357,7 +368,8 @@ impl StatusBarWidget {
                 TokenLimitStatus::Normal
             };
 
-            let usage_text = format!("{} {}/{} ({:.1}%)",
+            let usage_text = format!(
+                "{} {}/{} ({:.1}%)",
                 status.symbol(),
                 usage.total_tokens,
                 usage.token_limit,
@@ -388,7 +400,9 @@ impl StatusBarWidget {
         // Input mode
         spans.push(Span::styled(
             self.input_mode.display_text(),
-            Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Blue)
+                .add_modifier(Modifier::BOLD),
         ));
 
         // Recording status
@@ -428,7 +442,9 @@ impl Widget for StatusBarWidget {
         let block = Block::default()
             .borders(Borders::TOP)
             .border_style(if self.flash {
-                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Color::Gray)
             });

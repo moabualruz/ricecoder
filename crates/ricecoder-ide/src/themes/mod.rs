@@ -34,12 +34,12 @@ use std::path::Path;
 
 // Re-export theme types from ricecoder-themes and ricecoder-tui
 pub use ratatui::style::Color;
-pub use ricecoder_tui::style::ColorSupport;
-pub use ricecoder_themes::types::Theme;
-pub use ricecoder_themes::manager::ThemeManager;
 pub use ricecoder_themes::loader::ThemeLoader;
+pub use ricecoder_themes::manager::ThemeManager;
 pub use ricecoder_themes::registry::ThemeRegistry;
 pub use ricecoder_themes::reset::ThemeResetManager;
+pub use ricecoder_themes::types::Theme;
+pub use ricecoder_tui::style::ColorSupport;
 
 // Re-export integration types
 pub use integration::{IdeThemeConfig, IdeThemeIntegration};

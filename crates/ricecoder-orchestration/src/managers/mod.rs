@@ -9,13 +9,21 @@ pub mod status_reporter;
 pub mod sync_manager;
 pub mod version_coordinator;
 
-pub use batch_executor::{BatchExecutionConfig, BatchExecutionResult, BatchExecutor, ProjectOperation};
-pub use config_manager::{ConfigLoadResult, ConfigManager, ConfigSchema, ConfigSource, ValidationRule};
-pub use execution_ordering::{ExecutionLevel, ExecutionOrderer, ExecutionPlan, ParallelizationStrategy};
+pub use batch_executor::{
+    BatchExecutionConfig, BatchExecutionResult, BatchExecutor, ProjectOperation,
+};
+pub use config_manager::{
+    ConfigLoadResult, ConfigManager, ConfigSchema, ConfigSource, ValidationRule,
+};
+pub use execution_ordering::{
+    ExecutionLevel, ExecutionOrderer, ExecutionPlan, ParallelizationStrategy,
+};
 pub use orchestration_manager::OrchestrationManager;
-pub use rules_validator::{RulesValidator, RuleViolation, ValidationResult, ViolationSeverity};
+pub use rules_validator::{RuleViolation, RulesValidator, ValidationResult, ViolationSeverity};
 pub use status_reporter::{
     AggregatedMetrics, ComplianceSummary, ProjectHealthIndicator, StatusReport, StatusReporter,
 };
 pub use sync_manager::{ConflictResolution, SyncConflict, SyncLogEntry, SyncManager};
-pub use version_coordinator::{VersionCoordinator, VersionUpdatePlan, VersionUpdateResult, VersionUpdateStep};
+pub use version_coordinator::{
+    VersionCoordinator, VersionUpdatePlan, VersionUpdateResult, VersionUpdateStep,
+};

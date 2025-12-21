@@ -3,15 +3,15 @@
 //! This module provides compliance reporting capabilities for SOC 2, GDPR, HIPAA,
 //! and enterprise monitoring features for MCP operations.
 
-use chrono::{DateTime, Utc, Duration};
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{info, warn};
 
-use crate::error::{Error, Result};
 use crate::audit::MCPAuditLogger;
+use crate::error::{Error, Result};
 
 /// Compliance report types
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -105,13 +105,16 @@ impl MCPComplianceMonitor {
         violations.push_back(violation.clone());
 
         // Audit the violation
-        let _ = self.audit_logger.log_protocol_validation(
-            "compliance_violation",
-            false,
-            Some(description.clone()),
-            user_id,
-            None,
-        ).await;
+        let _ = self
+            .audit_logger
+            .log_protocol_validation(
+                "compliance_violation",
+                false,
+                Some(description.clone()),
+                user_id,
+                None,
+            )
+            .await;
 
         warn!(
             "Compliance violation recorded: {} - {} for resource {} (severity: {:?})",
@@ -183,7 +186,9 @@ impl MCPComplianceMonitor {
         start_date: DateTime<Utc>,
         end_date: DateTime<Utc>,
     ) -> Result<ComplianceReport> {
-        let violations = self.get_violations(Some(report_type.clone()), Some(start_date), None).await?;
+        let violations = self
+            .get_violations(Some(report_type.clone()), Some(start_date), None)
+            .await?;
 
         let total_violations = violations.len();
         let unresolved_violations = violations.iter().filter(|v| !v.resolved).count();
@@ -210,8 +215,14 @@ impl MCPComplianceMonitor {
 
     /// Assess overall compliance status
     fn assess_compliance_status(&self, violations: &[ComplianceViolation]) -> ComplianceStatus {
-        let critical_count = violations.iter().filter(|v| v.severity == ViolationSeverity::Critical && !v.resolved).count();
-        let high_count = violations.iter().filter(|v| v.severity == ViolationSeverity::High && !v.resolved).count();
+        let critical_count = violations
+            .iter()
+            .filter(|v| v.severity == ViolationSeverity::Critical && !v.resolved)
+            .count();
+        let high_count = violations
+            .iter()
+            .filter(|v| v.severity == ViolationSeverity::High && !v.resolved)
+            .count();
 
         if critical_count > 0 {
             ComplianceStatus::NonCompliant
@@ -343,13 +354,29 @@ impl MCPEnterpriseMonitor {
             .collect();
 
         if relevant_metrics.is_empty() {
-            return Err(Error::ValidationError("No metrics available for the specified time range".to_string()));
+            return Err(Error::ValidationError(
+                "No metrics available for the specified time range".to_string(),
+            ));
         }
 
-        let avg_servers = relevant_metrics.iter().map(|m| m.server_count).sum::<usize>() as f64 / relevant_metrics.len() as f64;
-        let avg_connections = relevant_metrics.iter().map(|m| m.active_connections).sum::<usize>() as f64 / relevant_metrics.len() as f64;
-        let total_tool_executions = relevant_metrics.iter().map(|m| m.tool_executions_total).sum::<u64>();
-        let total_auth_attempts = relevant_metrics.iter().map(|m| m.auth_attempts_total).sum::<u64>();
+        let avg_servers = relevant_metrics
+            .iter()
+            .map(|m| m.server_count)
+            .sum::<usize>() as f64
+            / relevant_metrics.len() as f64;
+        let avg_connections = relevant_metrics
+            .iter()
+            .map(|m| m.active_connections)
+            .sum::<usize>() as f64
+            / relevant_metrics.len() as f64;
+        let total_tool_executions = relevant_metrics
+            .iter()
+            .map(|m| m.tool_executions_total)
+            .sum::<u64>();
+        let total_auth_attempts = relevant_metrics
+            .iter()
+            .map(|m| m.auth_attempts_total)
+            .sum::<u64>();
 
         let report = MonitoringReport {
             generated_at: Utc::now(),
@@ -389,7 +416,10 @@ impl MCPEnterpriseMonitor {
 
         if tool_failure_rate > 0.5 || auth_failure_rate > 0.3 || latest.violations_recorded > 10 {
             HealthStatus::Critical
-        } else if tool_failure_rate > 0.2 || auth_failure_rate > 0.1 || latest.violations_recorded > 5 {
+        } else if tool_failure_rate > 0.2
+            || auth_failure_rate > 0.1
+            || latest.violations_recorded > 5
+        {
             HealthStatus::Warning
         } else {
             HealthStatus::Healthy
@@ -427,7 +457,8 @@ mod tests {
     #[tokio::test]
     async fn test_compliance_monitor_creation() {
         let storage = std::sync::Arc::new(ricecoder_security::audit::MemoryAuditStorage::new());
-        let audit_logger = std::sync::Arc::new(ricecoder_security::audit::AuditLogger::new(storage));
+        let audit_logger =
+            std::sync::Arc::new(ricecoder_security::audit::AuditLogger::new(storage));
         let mcp_audit_logger = std::sync::Arc::new(MCPAuditLogger::new(audit_logger));
 
         let monitor = MCPComplianceMonitor::new(mcp_audit_logger);
@@ -437,19 +468,22 @@ mod tests {
     #[tokio::test]
     async fn test_record_violation() {
         let storage = std::sync::Arc::new(ricecoder_security::audit::MemoryAuditStorage::new());
-        let audit_logger = std::sync::Arc::new(ricecoder_security::audit::AuditLogger::new(storage));
+        let audit_logger =
+            std::sync::Arc::new(ricecoder_security::audit::AuditLogger::new(storage));
         let mcp_audit_logger = std::sync::Arc::new(MCPAuditLogger::new(audit_logger));
 
         let monitor = MCPComplianceMonitor::new(mcp_audit_logger);
 
-        let result = monitor.record_violation(
-            ComplianceReportType::Soc2Type2,
-            ViolationSeverity::High,
-            "Test violation".to_string(),
-            "test-resource".to_string(),
-            Some("test-user".to_string()),
-            serde_json::json!({"test": "data"}),
-        ).await;
+        let result = monitor
+            .record_violation(
+                ComplianceReportType::Soc2Type2,
+                ViolationSeverity::High,
+                "Test violation".to_string(),
+                "test-resource".to_string(),
+                Some("test-user".to_string()),
+                serde_json::json!({"test": "data"}),
+            )
+            .await;
 
         assert!(result.is_ok());
     }

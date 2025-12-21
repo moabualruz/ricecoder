@@ -6,9 +6,9 @@
 //! - Support image sharing between sessions
 //! - Persist image metadata with sessions
 
+use crate::error::{ImageError, ImageResult};
 use crate::models::{ImageAnalysisResult, ImageMetadata};
 use crate::session_integration::{MessageImageMetadata, SessionImageContext};
-use crate::error::{ImageError, ImageResult};
 use std::collections::HashMap;
 
 /// Manages images within a session
@@ -184,9 +184,10 @@ impl SessionImageManager {
         analysis: ImageAnalysisResult,
     ) -> ImageResult<()> {
         if !self.image_context.has_image(hash) {
-            return Err(ImageError::InvalidFile(
-                format!("Image with hash {} not found in session", hash),
-            ));
+            return Err(ImageError::InvalidFile(format!(
+                "Image with hash {} not found in session",
+                hash
+            )));
         }
 
         self.analysis_cache.insert(hash.to_string(), analysis);
@@ -222,9 +223,10 @@ impl MultiSessionImageManager {
     /// Create a new session
     pub fn create_session(&mut self, session_id: String) -> ImageResult<()> {
         if self.sessions.contains_key(&session_id) {
-            return Err(ImageError::InvalidFile(
-                format!("Session {} already exists", session_id),
-            ));
+            return Err(ImageError::InvalidFile(format!(
+                "Session {} already exists",
+                session_id
+            )));
         }
 
         self.sessions
@@ -273,7 +275,10 @@ impl MultiSessionImageManager {
             .get_session(from_session)?
             .get_image(image_hash)?
             .ok_or_else(|| {
-                ImageError::InvalidFile(format!("Image {} not found in session {}", image_hash, from_session))
+                ImageError::InvalidFile(format!(
+                    "Image {} not found in session {}",
+                    image_hash, from_session
+                ))
             })?;
 
         // Add to target session
@@ -450,7 +455,10 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            manager.get_session("session2").unwrap().current_image_count(),
+            manager
+                .get_session("session2")
+                .unwrap()
+                .current_image_count(),
             1
         );
     }
@@ -463,9 +471,7 @@ mod tests {
         manager.add_image(metadata, None).unwrap();
 
         let analysis = create_test_analysis();
-        manager
-            .update_analysis("test_hash_123", analysis)
-            .unwrap();
+        manager.update_analysis("test_hash_123", analysis).unwrap();
 
         let image = manager.get_image("test_hash_123").unwrap().unwrap();
         assert!(image.analysis.is_some());

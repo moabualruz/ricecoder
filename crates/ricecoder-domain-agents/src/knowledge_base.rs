@@ -26,7 +26,6 @@ impl Default for KnowledgeBaseManager {
 }
 
 impl KnowledgeBaseManager {
-
     /// Load knowledge base for a domain
     pub async fn load_knowledge_base(&mut self, domain: &str) -> Result<()> {
         debug!("Loading knowledge base for domain: {}", domain);
@@ -39,7 +38,10 @@ impl KnowledgeBaseManager {
             self.knowledge_bases.insert(domain.to_string(), kb);
             info!("Loaded knowledge base for domain: {}", domain);
         } else {
-            debug!("Knowledge base not found for domain: {}, creating empty", domain);
+            debug!(
+                "Knowledge base not found for domain: {}, creating empty",
+                domain
+            );
             let kb = KnowledgeBase::new(domain, "1.0.0");
             self.knowledge_bases.insert(domain.to_string(), kb);
         }

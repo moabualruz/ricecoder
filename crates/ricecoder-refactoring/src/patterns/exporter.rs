@@ -1,7 +1,7 @@
 //! Pattern export and import functionality
 
-use crate::error::{RefactoringError, Result};
 use super::RefactoringPattern;
+use crate::error::{RefactoringError, Result};
 use serde_json;
 use serde_yaml;
 
@@ -11,50 +11,58 @@ pub struct PatternExporter;
 impl PatternExporter {
     /// Export a pattern to JSON format
     pub fn export_json(pattern: &RefactoringPattern) -> Result<String> {
-        serde_json::to_string_pretty(pattern)
-            .map_err(|e| RefactoringError::Other(format!("Failed to export pattern to JSON: {}", e)))
+        serde_json::to_string_pretty(pattern).map_err(|e| {
+            RefactoringError::Other(format!("Failed to export pattern to JSON: {}", e))
+        })
     }
 
     /// Export a pattern to YAML format
     pub fn export_yaml(pattern: &RefactoringPattern) -> Result<String> {
-        serde_yaml::to_string(pattern)
-            .map_err(|e| RefactoringError::Other(format!("Failed to export pattern to YAML: {}", e)))
+        serde_yaml::to_string(pattern).map_err(|e| {
+            RefactoringError::Other(format!("Failed to export pattern to YAML: {}", e))
+        })
     }
 
     /// Import a pattern from JSON format
     pub fn import_json(data: &str) -> Result<RefactoringPattern> {
-        serde_json::from_str(data)
-            .map_err(|e| RefactoringError::Other(format!("Failed to import pattern from JSON: {}", e)))
+        serde_json::from_str(data).map_err(|e| {
+            RefactoringError::Other(format!("Failed to import pattern from JSON: {}", e))
+        })
     }
 
     /// Import a pattern from YAML format
     pub fn import_yaml(data: &str) -> Result<RefactoringPattern> {
-        serde_yaml::from_str(data)
-            .map_err(|e| RefactoringError::Other(format!("Failed to import pattern from YAML: {}", e)))
+        serde_yaml::from_str(data).map_err(|e| {
+            RefactoringError::Other(format!("Failed to import pattern from YAML: {}", e))
+        })
     }
 
     /// Export multiple patterns to JSON format
     pub fn export_patterns_json(patterns: &[RefactoringPattern]) -> Result<String> {
-        serde_json::to_string_pretty(patterns)
-            .map_err(|e| RefactoringError::Other(format!("Failed to export patterns to JSON: {}", e)))
+        serde_json::to_string_pretty(patterns).map_err(|e| {
+            RefactoringError::Other(format!("Failed to export patterns to JSON: {}", e))
+        })
     }
 
     /// Export multiple patterns to YAML format
     pub fn export_patterns_yaml(patterns: &[RefactoringPattern]) -> Result<String> {
-        serde_yaml::to_string(patterns)
-            .map_err(|e| RefactoringError::Other(format!("Failed to export patterns to YAML: {}", e)))
+        serde_yaml::to_string(patterns).map_err(|e| {
+            RefactoringError::Other(format!("Failed to export patterns to YAML: {}", e))
+        })
     }
 
     /// Import multiple patterns from JSON format
     pub fn import_patterns_json(data: &str) -> Result<Vec<RefactoringPattern>> {
-        serde_json::from_str(data)
-            .map_err(|e| RefactoringError::Other(format!("Failed to import patterns from JSON: {}", e)))
+        serde_json::from_str(data).map_err(|e| {
+            RefactoringError::Other(format!("Failed to import patterns from JSON: {}", e))
+        })
     }
 
     /// Import multiple patterns from YAML format
     pub fn import_patterns_yaml(data: &str) -> Result<Vec<RefactoringPattern>> {
-        serde_yaml::from_str(data)
-            .map_err(|e| RefactoringError::Other(format!("Failed to import patterns from YAML: {}", e)))
+        serde_yaml::from_str(data).map_err(|e| {
+            RefactoringError::Other(format!("Failed to import patterns from YAML: {}", e))
+        })
     }
 }
 

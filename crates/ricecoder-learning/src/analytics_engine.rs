@@ -197,8 +197,8 @@ impl AnalyticsEngine {
 
         let total_rules = metrics.len();
         let total_applications: u64 = metrics.values().map(|m| m.usage_count).sum();
-        let avg_success_rate: f32 = metrics.values().map(|m| m.success_rate).sum::<f32>()
-            / total_rules as f32;
+        let avg_success_rate: f32 =
+            metrics.values().map(|m| m.success_rate).sum::<f32>() / total_rules as f32;
         let avg_confidence: f32 =
             metrics.values().map(|m| m.confidence).sum::<f32>() / total_rules as f32;
 
@@ -373,10 +373,7 @@ mod tests {
             .await
             .unwrap();
 
-        engine
-            .update_confidence("rule_1", 0.8)
-            .await
-            .unwrap();
+        engine.update_confidence("rule_1", 0.8).await.unwrap();
 
         let metrics = engine.get_rule_metrics("rule_1").await.unwrap().unwrap();
         assert_eq!(metrics.confidence, 0.8);

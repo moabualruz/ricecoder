@@ -4,7 +4,8 @@
 //! providing refactoring capabilities through LSP code actions and commands.
 
 use ricecoder_refactoring::{
-    ConfigManager, GenericRefactoringProvider, ImpactAnalyzer, ProviderRegistry, RefactoringEngine, RefactoringType,
+    ConfigManager, GenericRefactoringProvider, ImpactAnalyzer, ProviderRegistry, RefactoringEngine,
+    RefactoringType,
 };
 use serde_json::Value;
 use std::sync::Arc;
@@ -26,13 +27,13 @@ impl RefactoringHandler {
     /// Create a new refactoring handler
     pub fn new() -> Self {
         let config_manager = ConfigManager::new();
-        
+
         // Create generic provider for fallback
         let generic_provider = Arc::new(GenericRefactoringProvider::new());
-        
+
         // Create provider registry with generic fallback
         let provider_registry = ProviderRegistry::new(generic_provider);
-        
+
         let engine = Arc::new(RefactoringEngine::new(config_manager, provider_registry));
         let impact_analyzer = Arc::new(ImpactAnalyzer::new());
 
@@ -72,18 +73,13 @@ impl RefactoringHandler {
         self.impact_analyzer.clone()
     }
 
-
-
     /// Get the configuration manager
     pub fn config_manager(&self) -> Arc<ConfigManager> {
         self.config_manager.clone()
     }
 
     /// Handle refactoring request
-    pub async fn handle_refactoring_request(
-        &self,
-        params: Value,
-    ) -> Result<Value, String> {
+    pub async fn handle_refactoring_request(&self, params: Value) -> Result<Value, String> {
         if !self.enabled {
             return Err("Refactoring engine is disabled".to_string());
         }
@@ -134,14 +130,21 @@ impl RefactoringHandler {
 
     /// Get refactoring configuration for a language
     pub async fn get_language_config(&self, language: &str) -> Result<Value, String> {
-        debug!("Getting refactoring configuration for language: {}", language);
+        debug!(
+            "Getting refactoring configuration for language: {}",
+            language
+        );
 
         // Check if language is available through the provider registry
-        let provider = self.engine.provider_registry().clone().get_provider(language);
-        
+        let provider = self
+            .engine
+            .provider_registry()
+            .clone()
+            .get_provider(language);
+
         // Verify provider can handle the language
         let analysis = provider.analyze_refactoring("code", language, RefactoringType::Rename);
-        
+
         if analysis.is_ok() {
             info!("Refactoring provider available for {}", language);
             Ok(serde_json::json!({

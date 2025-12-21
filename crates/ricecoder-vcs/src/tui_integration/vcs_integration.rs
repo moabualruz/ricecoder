@@ -4,7 +4,7 @@
 //! enabling display of comprehensive VCS information including repository status, branch info,
 //! and modification indicators.
 
-use crate::{GitRepository, RepositoryStatus, Result as VcsResult, Repository};
+use crate::{GitRepository, Repository, RepositoryStatus, Result as VcsResult};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -136,8 +136,6 @@ impl VcsIntegration {
         self.status_rx.clone()
     }
 
-
-
     /// Get VCS status summary for display
     pub fn get_status_summary(&self) -> Option<String> {
         let status = self.get_status();
@@ -168,7 +166,11 @@ impl VcsIntegration {
     /// Get counts of different file states
     pub fn get_file_counts(&self) -> (usize, usize, usize) {
         let status = self.get_status();
-        (status.staged_count, status.modified_count, status.untracked_count)
+        (
+            status.staged_count,
+            status.modified_count,
+            status.untracked_count,
+        )
     }
 
     /// Start monitoring VCS status changes
@@ -237,8 +239,6 @@ impl Default for VcsIntegration {
         Self::new()
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {

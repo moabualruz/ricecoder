@@ -1,5 +1,5 @@
 /// Installation Verification Tests
-/// 
+///
 /// Tests to verify that ricecoder can be installed and used via multiple methods:
 /// - cargo install (from crates.io)
 /// - npm install (from npm registry)
@@ -10,8 +10,8 @@
 
 #[cfg(test)]
 mod installation_verification {
-    use std::process::Command;
     use std::path::Path;
+    use std::process::Command;
 
     /// Test that cargo is available and can be used to install packages
     #[test]
@@ -51,10 +51,7 @@ mod installation_verification {
         );
 
         let version = String::from_utf8_lossy(&output.stdout);
-        assert!(
-            !version.is_empty(),
-            "npm version output is empty"
-        );
+        assert!(!version.is_empty(), "npm version output is empty");
     }
 
     /// Test that docker is available and can be used to pull images
@@ -82,8 +79,7 @@ mod installation_verification {
     /// Test that the Cargo.toml is properly configured for publishing
     #[test]
     fn test_cargo_toml_configured() {
-        let cargo_toml = std::fs::read_to_string("Cargo.toml")
-            .expect("Failed to read Cargo.toml");
+        let cargo_toml = std::fs::read_to_string("Cargo.toml").expect("Failed to read Cargo.toml");
 
         assert!(
             cargo_toml.contains("version = \"0.1.6\""),
@@ -99,8 +95,8 @@ mod installation_verification {
     /// Test that package.json is properly configured for npm publishing
     #[test]
     fn test_package_json_configured() {
-        let package_json = std::fs::read_to_string("package.json")
-            .expect("Failed to read package.json");
+        let package_json =
+            std::fs::read_to_string("package.json").expect("Failed to read package.json");
 
         assert!(
             package_json.contains("\"version\": \"0.1.6\""),
@@ -121,13 +117,9 @@ mod installation_verification {
     /// Test that Dockerfile exists and is properly configured
     #[test]
     fn test_dockerfile_configured() {
-        assert!(
-            Path::new("Dockerfile").exists(),
-            "Dockerfile doesn't exist"
-        );
+        assert!(Path::new("Dockerfile").exists(), "Dockerfile doesn't exist");
 
-        let dockerfile = std::fs::read_to_string("Dockerfile")
-            .expect("Failed to read Dockerfile");
+        let dockerfile = std::fs::read_to_string("Dockerfile").expect("Failed to read Dockerfile");
 
         assert!(
             dockerfile.contains("FROM rust:"),
@@ -214,16 +206,12 @@ mod installation_verification {
             Ok(content) => content,
             Err(_) => {
                 // If UTF-8 reading fails, try reading as bytes and converting
-                let bytes = std::fs::read("README.md")
-                    .expect("Failed to read README.md");
+                let bytes = std::fs::read("README.md").expect("Failed to read README.md");
                 String::from_utf8_lossy(&bytes).to_string()
             }
         };
 
-        assert!(
-            !readme.is_empty(),
-            "README.md is empty"
-        );
+        assert!(!readme.is_empty(), "README.md is empty");
     }
 
     /// Test that release notes exist for v0.1.6
@@ -237,10 +225,7 @@ mod installation_verification {
         let release_notes = std::fs::read_to_string("RELEASE_NOTES_v0.1.6_INSTALLATION.md")
             .expect("Failed to read release notes");
 
-        assert!(
-            !release_notes.is_empty(),
-            "Release notes are empty"
-        );
+        assert!(!release_notes.is_empty(), "Release notes are empty");
     }
 
     /// Test that the binary can be built locally

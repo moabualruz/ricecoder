@@ -5,11 +5,11 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::{KnowledgeBase, AgentFactory};
     use crate::domain::factory::{
-        AgentConfig, CapabilityConfig, BestPracticeConfig, TechRecommendationConfig,
-        PatternConfig, AntiPatternConfig,
+        AgentConfig, AntiPatternConfig, BestPracticeConfig, CapabilityConfig, PatternConfig,
+        TechRecommendationConfig,
     };
+    use crate::domain::{AgentFactory, KnowledgeBase};
 
     /// Helper function to create a test agent configuration with knowledge
     fn create_agent_config_with_knowledge(
@@ -93,8 +93,14 @@ mod tests {
             "web",
             "Web Development Agent",
             vec![
-                ("Frontend Framework Selection", vec!["React", "Vue", "Angular"]),
-                ("Styling Guidance", vec!["CSS", "Tailwind CSS", "styled-components"]),
+                (
+                    "Frontend Framework Selection",
+                    vec!["React", "Vue", "Angular"],
+                ),
+                (
+                    "Styling Guidance",
+                    vec!["CSS", "Tailwind CSS", "styled-components"],
+                ),
                 ("Build Configuration", vec!["Vite", "Webpack"]),
                 ("Testing Strategy", vec!["Jest", "Vitest", "Playwright"]),
             ],
@@ -131,7 +137,8 @@ mod tests {
         }
 
         for recommendation in &web_agent.knowledge.technology_recommendations {
-            kb.add_tech_recommendation("web", recommendation.clone()).unwrap();
+            kb.add_tech_recommendation("web", recommendation.clone())
+                .unwrap();
         }
 
         for pattern in &web_agent.knowledge.patterns {
@@ -150,8 +157,15 @@ mod tests {
             // All technologies should be web-related
             for tech in &practice.technologies {
                 assert!(
-                    vec!["React", "Vue", "Angular", "CSS", "Tailwind CSS", "styled-components"]
-                        .contains(&tech.as_str()),
+                    vec![
+                        "React",
+                        "Vue",
+                        "Angular",
+                        "CSS",
+                        "Tailwind CSS",
+                        "styled-components"
+                    ]
+                    .contains(&tech.as_str()),
                     "Technology {} is not web-related",
                     tech
                 );
@@ -165,8 +179,17 @@ mod tests {
             assert_eq!(rec.domain, "web");
             // All technologies should be web-related
             assert!(
-                vec!["React", "Vue", "Angular", "Vite", "Webpack", "Jest", "Vitest", "Playwright"]
-                    .contains(&rec.technology.as_str()),
+                vec![
+                    "React",
+                    "Vue",
+                    "Angular",
+                    "Vite",
+                    "Webpack",
+                    "Jest",
+                    "Vitest",
+                    "Playwright"
+                ]
+                .contains(&rec.technology.as_str()),
                 "Technology {} is not web-related",
                 rec.technology
             );
@@ -185,8 +208,7 @@ mod tests {
             // All technologies should be web-related
             for tech in &pattern.technologies {
                 assert!(
-                    vec!["React", "Vue", "Angular", "JavaScript"]
-                        .contains(&tech.as_str()),
+                    vec!["React", "Vue", "Angular", "JavaScript"].contains(&tech.as_str()),
                     "Technology {} is not web-related",
                     tech
                 );
@@ -233,7 +255,10 @@ mod tests {
             "Backend Development Agent",
             vec![
                 ("API Design", vec!["REST", "GraphQL", "gRPC"]),
-                ("Architecture Guidance", vec!["Microservices", "Monolithic", "Serverless"]),
+                (
+                    "Architecture Guidance",
+                    vec!["Microservices", "Monolithic", "Serverless"],
+                ),
                 ("Database Design", vec!["PostgreSQL", "MongoDB", "Neo4j"]),
                 ("Scalability", vec!["Redis", "Memcached", "Load Balancers"]),
                 ("Security", vec!["OAuth 2.0", "JWT", "TLS"]),
@@ -272,7 +297,8 @@ mod tests {
         }
 
         for recommendation in &backend_agent.knowledge.technology_recommendations {
-            kb.add_tech_recommendation("backend", recommendation.clone()).unwrap();
+            kb.add_tech_recommendation("backend", recommendation.clone())
+                .unwrap();
         }
 
         for pattern in &backend_agent.knowledge.patterns {
@@ -280,7 +306,8 @@ mod tests {
         }
 
         for anti_pattern in &backend_agent.knowledge.anti_patterns {
-            kb.add_anti_pattern("backend", anti_pattern.clone()).unwrap();
+            kb.add_anti_pattern("backend", anti_pattern.clone())
+                .unwrap();
         }
 
         // Property 1: All best practices are for backend domain
@@ -291,8 +318,7 @@ mod tests {
             // All technologies should be backend-related
             for tech in &practice.technologies {
                 assert!(
-                    vec!["REST", "GraphQL", "PostgreSQL", "MongoDB"]
-                        .contains(&tech.as_str()),
+                    vec!["REST", "GraphQL", "PostgreSQL", "MongoDB"].contains(&tech.as_str()),
                     "Technology {} is not backend-related",
                     tech
                 );
@@ -306,8 +332,17 @@ mod tests {
             assert_eq!(rec.domain, "backend");
             // All technologies should be backend-related
             assert!(
-                vec!["REST", "GraphQL", "gRPC", "PostgreSQL", "MongoDB", "Redis", "OAuth 2.0", "JWT"]
-                    .contains(&rec.technology.as_str()),
+                vec![
+                    "REST",
+                    "GraphQL",
+                    "gRPC",
+                    "PostgreSQL",
+                    "MongoDB",
+                    "Redis",
+                    "OAuth 2.0",
+                    "JWT"
+                ]
+                .contains(&rec.technology.as_str()),
                 "Technology {} is not backend-related",
                 rec.technology
             );
@@ -326,8 +361,7 @@ mod tests {
             // All technologies should be backend-related
             for tech in &pattern.technologies {
                 assert!(
-                    vec!["Django", "Rails", "Java", "C#"]
-                        .contains(&tech.as_str()),
+                    vec!["Django", "Rails", "Java", "C#"].contains(&tech.as_str()),
                     "Technology {} is not backend-related",
                     tech
                 );
@@ -374,12 +408,24 @@ mod tests {
             "devops",
             "DevOps Agent",
             vec![
-                ("CI/CD Pipeline Setup", vec!["GitHub Actions", "GitLab CI", "Jenkins"]),
-                ("Infrastructure as Code", vec!["Terraform", "CloudFormation", "Ansible"]),
+                (
+                    "CI/CD Pipeline Setup",
+                    vec!["GitHub Actions", "GitLab CI", "Jenkins"],
+                ),
+                (
+                    "Infrastructure as Code",
+                    vec!["Terraform", "CloudFormation", "Ansible"],
+                ),
                 ("Containerization", vec!["Docker", "Kubernetes"]),
-                ("Observability Infrastructure", vec!["Prometheus", "Grafana", "ELK Stack"]),
+                (
+                    "Observability Infrastructure",
+                    vec!["Prometheus", "Grafana", "ELK Stack"],
+                ),
                 ("Security Scanning", vec!["Trivy", "Snyk", "SonarQube"]),
-                ("Auto-Scaling", vec!["Kubernetes", "AWS Auto Scaling", "Docker Swarm"]),
+                (
+                    "Auto-Scaling",
+                    vec!["Kubernetes", "AWS Auto Scaling", "Docker Swarm"],
+                ),
             ],
             vec![
                 ("GitHub Actions", vec!["CI/CD pipelines"]),
@@ -394,7 +440,10 @@ mod tests {
                 ("Grafana", vec!["Visualization"]),
             ],
             vec![
-                ("Infrastructure as Code", vec!["Terraform", "CloudFormation"]),
+                (
+                    "Infrastructure as Code",
+                    vec!["Terraform", "CloudFormation"],
+                ),
                 ("Monitoring and Alerting", vec!["Prometheus", "Grafana"]),
             ],
             vec![
@@ -416,7 +465,8 @@ mod tests {
         }
 
         for recommendation in &devops_agent.knowledge.technology_recommendations {
-            kb.add_tech_recommendation("devops", recommendation.clone()).unwrap();
+            kb.add_tech_recommendation("devops", recommendation.clone())
+                .unwrap();
         }
 
         for pattern in &devops_agent.knowledge.patterns {
@@ -450,8 +500,19 @@ mod tests {
             assert_eq!(rec.domain, "devops");
             // All technologies should be DevOps-related
             assert!(
-                vec!["GitHub Actions", "GitLab CI", "Jenkins", "Terraform", "CloudFormation", "Ansible", "Docker", "Kubernetes", "Prometheus", "Grafana"]
-                    .contains(&rec.technology.as_str()),
+                vec![
+                    "GitHub Actions",
+                    "GitLab CI",
+                    "Jenkins",
+                    "Terraform",
+                    "CloudFormation",
+                    "Ansible",
+                    "Docker",
+                    "Kubernetes",
+                    "Prometheus",
+                    "Grafana"
+                ]
+                .contains(&rec.technology.as_str()),
                 "Technology {} is not DevOps-related",
                 rec.technology
             );
@@ -470,8 +531,7 @@ mod tests {
             // All technologies should be DevOps-related
             for tech in &pattern.technologies {
                 assert!(
-                    vec!["Kubernetes", "Docker"]
-                        .contains(&tech.as_str()),
+                    vec!["Kubernetes", "Docker"].contains(&tech.as_str()),
                     "Technology {} is not DevOps-related",
                     tech
                 );
@@ -526,7 +586,8 @@ mod tests {
             }
 
             for recommendation in &agent.knowledge.technology_recommendations {
-                kb.add_tech_recommendation(domain, recommendation.clone()).unwrap();
+                kb.add_tech_recommendation(domain, recommendation.clone())
+                    .unwrap();
             }
 
             for pattern in &agent.knowledge.patterns {
@@ -586,18 +647,31 @@ mod tests {
         let agent = factory.create_agent("web", &config).unwrap();
 
         for recommendation in &agent.knowledge.technology_recommendations {
-            kb.add_tech_recommendation("web", recommendation.clone()).unwrap();
+            kb.add_tech_recommendation("web", recommendation.clone())
+                .unwrap();
         }
 
         // Property: All recommendations should be complete
         let tech_recs = kb.get_tech_recommendations("web").unwrap();
         for rec in &tech_recs {
             // Must have use cases
-            assert!(!rec.use_cases.is_empty(), "Technology {} has no use cases", rec.technology);
+            assert!(
+                !rec.use_cases.is_empty(),
+                "Technology {} has no use cases",
+                rec.technology
+            );
             // Must have pros
-            assert!(!rec.pros.is_empty(), "Technology {} has no pros", rec.technology);
+            assert!(
+                !rec.pros.is_empty(),
+                "Technology {} has no pros",
+                rec.technology
+            );
             // Must have cons
-            assert!(!rec.cons.is_empty(), "Technology {} has no cons", rec.technology);
+            assert!(
+                !rec.cons.is_empty(),
+                "Technology {} has no cons",
+                rec.technology
+            );
         }
     }
 

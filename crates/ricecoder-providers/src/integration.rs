@@ -175,4 +175,3 @@ impl Clone for ProviderIntegration {
         }
     }
 }
-

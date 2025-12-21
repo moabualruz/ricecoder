@@ -115,11 +115,7 @@ impl SpecCache {
             )
             .map_err(|e| SpecError::InvalidFormat(format!("Failed to cache spec: {}", e)))?;
 
-        debug!(
-            "Cached spec: {} ({} bytes)",
-            spec_path.display(),
-            json_len
-        );
+        debug!("Cached spec: {} ({} bytes)", spec_path.display(), json_len);
 
         Ok(())
     }

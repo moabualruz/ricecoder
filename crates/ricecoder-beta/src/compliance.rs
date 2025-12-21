@@ -134,7 +134,10 @@ impl ComplianceValidator {
             description: "Implementation of security controls for data protection".to_string(),
             passed: true,
             details: "All security controls verified".to_string(),
-            evidence: vec!["AES-256-GCM encryption".to_string(), "RBAC access control".to_string()],
+            evidence: vec![
+                "AES-256-GCM encryption".to_string(),
+                "RBAC access control".to_string(),
+            ],
         })
     }
 
@@ -144,7 +147,10 @@ impl ComplianceValidator {
             description: "Systems availability and business continuity".to_string(),
             passed: true,
             details: "High availability architecture implemented".to_string(),
-            evidence: vec!["Redundant systems".to_string(), "Failover mechanisms".to_string()],
+            evidence: vec![
+                "Redundant systems".to_string(),
+                "Failover mechanisms".to_string(),
+            ],
         })
     }
 
@@ -164,7 +170,10 @@ impl ComplianceValidator {
             description: "Protection of confidential information".to_string(),
             passed: true,
             details: "Confidentiality controls in place".to_string(),
-            evidence: vec!["Encryption at rest".to_string(), "Access controls".to_string()],
+            evidence: vec![
+                "Encryption at rest".to_string(),
+                "Access controls".to_string(),
+            ],
         })
     }
 
@@ -174,7 +183,10 @@ impl ComplianceValidator {
             description: "Privacy protection and data minimization".to_string(),
             passed: true,
             details: "Privacy principles implemented".to_string(),
-            evidence: vec!["Data minimization".to_string(), "Consent management".to_string()],
+            evidence: vec![
+                "Data minimization".to_string(),
+                "Consent management".to_string(),
+            ],
         })
     }
 
@@ -184,7 +196,11 @@ impl ComplianceValidator {
             description: "GDPR data protection principles".to_string(),
             passed: true,
             details: "All principles implemented".to_string(),
-            evidence: vec!["Lawfulness".to_string(), "Fairness".to_string(), "Transparency".to_string()],
+            evidence: vec![
+                "Lawfulness".to_string(),
+                "Fairness".to_string(),
+                "Transparency".to_string(),
+            ],
         })
     }
 
@@ -194,7 +210,10 @@ impl ComplianceValidator {
             description: "GDPR individual rights implementation".to_string(),
             passed: true,
             details: "Rights implemented".to_string(),
-            evidence: vec!["Right to access".to_string(), "Right to erasure".to_string()],
+            evidence: vec![
+                "Right to access".to_string(),
+                "Right to erasure".to_string(),
+            ],
         })
     }
 
@@ -204,7 +223,10 @@ impl ComplianceValidator {
             description: "72-hour breach notification capability".to_string(),
             passed: true,
             details: "Breach notification system in place".to_string(),
-            evidence: vec!["Automated detection".to_string(), "Notification workflows".to_string()],
+            evidence: vec![
+                "Automated detection".to_string(),
+                "Notification workflows".to_string(),
+            ],
         })
     }
 
@@ -214,7 +236,10 @@ impl ComplianceValidator {
             description: "DPO role and responsibilities".to_string(),
             passed: true,
             details: "DPO designated and trained".to_string(),
-            evidence: vec!["DPO appointment".to_string(), "Training records".to_string()],
+            evidence: vec![
+                "DPO appointment".to_string(),
+                "Training records".to_string(),
+            ],
         })
     }
 
@@ -224,7 +249,10 @@ impl ComplianceValidator {
             description: "HIPAA Privacy Rule compliance".to_string(),
             passed: true,
             details: "Privacy rule implemented".to_string(),
-            evidence: vec!["Notice of privacy practices".to_string(), "Individual rights".to_string()],
+            evidence: vec![
+                "Notice of privacy practices".to_string(),
+                "Individual rights".to_string(),
+            ],
         })
     }
 
@@ -234,7 +262,10 @@ impl ComplianceValidator {
             description: "HIPAA Security Rule compliance".to_string(),
             passed: true,
             details: "Security rule implemented".to_string(),
-            evidence: vec!["Administrative safeguards".to_string(), "Technical safeguards".to_string()],
+            evidence: vec![
+                "Administrative safeguards".to_string(),
+                "Technical safeguards".to_string(),
+            ],
         })
     }
 
@@ -244,7 +275,10 @@ impl ComplianceValidator {
             description: "HIPAA breach notification requirements".to_string(),
             passed: true,
             details: "Breach notification capability".to_string(),
-            evidence: vec!["Risk assessment".to_string(), "Notification procedures".to_string()],
+            evidence: vec![
+                "Risk assessment".to_string(),
+                "Notification procedures".to_string(),
+            ],
         })
     }
 

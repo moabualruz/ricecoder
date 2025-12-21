@@ -159,8 +159,7 @@ fn test_zen_with_base_url() {
 
 #[test]
 fn test_zen_with_base_url_no_key() {
-    let provider =
-        ZenProvider::with_base_url(None, "https://custom.opencode.ai/v1".to_string());
+    let provider = ZenProvider::with_base_url(None, "https://custom.opencode.ai/v1".to_string());
 
     assert!(provider.is_ok());
 }

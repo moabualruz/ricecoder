@@ -1,7 +1,7 @@
 //! Pattern validation
 
-use crate::error::{RefactoringError, Result};
 use super::RefactoringPattern;
+use crate::error::{RefactoringError, Result};
 
 /// Validates refactoring patterns
 pub struct PatternValidator;
@@ -25,8 +25,11 @@ impl PatternValidator {
 
         // Check that all placeholders in template have corresponding parameters
         let template_placeholders = Self::extract_placeholders(&pattern.template);
-        let parameter_placeholders: std::collections::HashSet<_> =
-            pattern.parameters.iter().map(|p| p.placeholder.clone()).collect();
+        let parameter_placeholders: std::collections::HashSet<_> = pattern
+            .parameters
+            .iter()
+            .map(|p| p.placeholder.clone())
+            .collect();
 
         for placeholder in template_placeholders {
             if !parameter_placeholders.contains(&placeholder) {
@@ -79,7 +82,7 @@ impl PatternValidator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::patterns::{RefactoringPattern, PatternParameter, PatternScope};
+    use crate::patterns::{PatternParameter, PatternScope, RefactoringPattern};
 
     #[test]
     fn test_validate_valid_pattern() -> Result<()> {

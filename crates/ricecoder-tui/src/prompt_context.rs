@@ -206,5 +206,3 @@ impl Default for PromptContext {
         Self::new()
     }
 }
-
-

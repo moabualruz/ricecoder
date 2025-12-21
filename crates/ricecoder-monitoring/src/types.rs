@@ -1,7 +1,7 @@
 //! Core types for the monitoring system
 
+use chrono::{DateTime, TimeDelta, Utc};
 use serde::{Deserialize, Serialize};
-use chrono::{DateTime, Utc, TimeDelta};
 use std::collections::HashMap;
 use uuid::Uuid;
 

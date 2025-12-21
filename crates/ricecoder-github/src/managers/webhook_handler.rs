@@ -414,12 +414,7 @@ impl WebhookHandler {
     }
 
     /// Verify webhook signature
-    pub fn verify_signature(
-        &self,
-        payload: &[u8],
-        signature: &str,
-        secret: &str,
-    ) -> Result<bool> {
+    pub fn verify_signature(&self, payload: &[u8], signature: &str, secret: &str) -> Result<bool> {
         use hmac::{Hmac, Mac};
         use sha2::Sha256;
 
@@ -464,16 +459,10 @@ mod tests {
             .with_event_type(WebhookEventType::PullRequest)
             .with_action("opened");
 
-        let event = WebhookEvent::new(
-            WebhookEventType::PullRequest,
-            json!({"action": "opened"}),
-        );
+        let event = WebhookEvent::new(WebhookEventType::PullRequest, json!({"action": "opened"}));
         assert!(filter.matches(&event));
 
-        let event = WebhookEvent::new(
-            WebhookEventType::PullRequest,
-            json!({"action": "closed"}),
-        );
+        let event = WebhookEvent::new(WebhookEventType::PullRequest, json!({"action": "closed"}));
         assert!(!filter.matches(&event));
     }
 

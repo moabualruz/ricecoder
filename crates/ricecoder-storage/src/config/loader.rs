@@ -118,8 +118,9 @@ impl ConfigLoader {
 
     /// Load user configuration from `~/.ricecoder/ricecoder.yaml`
     fn load_user_config() -> StorageResult<Config> {
-        let user_config_dir = dirs::home_dir()
-            .ok_or_else(|| StorageError::Internal("Could not determine home directory".to_string()))?;
+        let user_config_dir = dirs::home_dir().ok_or_else(|| {
+            StorageError::Internal("Could not determine home directory".to_string())
+        })?;
         let config_file = user_config_dir.join(".ricecoder").join("ricecoder.yaml");
 
         if config_file.exists() {
@@ -207,7 +208,10 @@ impl ConfigLoader {
         if let Some(ref api_key) = cli_args.api_key {
             // For CLI args, we assume the provider is the default or specified
             let provider = cli_args.provider.as_deref().unwrap_or("openai");
-            config.providers.api_keys.insert(provider.to_string(), api_key.clone());
+            config
+                .providers
+                .api_keys
+                .insert(provider.to_string(), api_key.clone());
         }
 
         if let Some(temp) = cli_args.temperature {
@@ -222,8 +226,6 @@ impl ConfigLoader {
 
         config
     }
-
-
 
     /// Load configuration from a file
     ///
@@ -301,22 +303,17 @@ impl ConfigLoader {
                 .map_err(|e| StorageError::Internal(format!("Failed to serialize to TOML: {}", e))),
             ConfigFormat::Json => serde_json::to_string_pretty(config)
                 .map_err(|e| StorageError::Internal(format!("Failed to serialize to JSON: {}", e))),
-            ConfigFormat::Jsonc => serde_json::to_string_pretty(config)
-                .map_err(|e| StorageError::Internal(format!("Failed to serialize to JSONC: {}", e))),
+            ConfigFormat::Jsonc => serde_json::to_string_pretty(config).map_err(|e| {
+                StorageError::Internal(format!("Failed to serialize to JSONC: {}", e))
+            }),
         }
     }
 
     /// Save configuration to a file
-    pub fn save_to_file(
-        config: &Config,
-        path: &Path,
-        format: ConfigFormat,
-    ) -> StorageResult<()> {
+    pub fn save_to_file(config: &Config, path: &Path, format: ConfigFormat) -> StorageResult<()> {
         let content = Self::serialize(config, format)?;
         std::fs::write(path, content).map_err(|e| {
             StorageError::io_error(path.to_path_buf(), crate::error::IoOperation::Write, e)
         })
     }
 }
-
-

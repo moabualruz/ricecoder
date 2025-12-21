@@ -107,7 +107,10 @@ fn test_session_background_agents() {
     assert!(session.background_agents.is_empty());
 
     // Add background agents
-    let agent1 = BackgroundAgent::new("code_review".to_string(), Some("Reviewing code".to_string()));
+    let agent1 = BackgroundAgent::new(
+        "code_review".to_string(),
+        Some("Reviewing code".to_string()),
+    );
     let agent2 = BackgroundAgent::new("diff_analysis".to_string(), None);
 
     session.background_agents.push(agent1);
@@ -117,7 +120,10 @@ fn test_session_background_agents() {
     assert_eq!(session.background_agents.len(), 2);
     assert_eq!(session.background_agents[0].agent_type, "code_review");
     assert_eq!(session.background_agents[1].agent_type, "diff_analysis");
-    assert_eq!(session.background_agents[0].task, Some("Reviewing code".to_string()));
+    assert_eq!(
+        session.background_agents[0].task,
+        Some("Reviewing code".to_string())
+    );
     assert_eq!(session.background_agents[1].task, None);
 }
 
@@ -155,23 +161,49 @@ fn test_session_context_custom_data() {
     let mut session = create_test_session("Test Session");
 
     // Add custom context data
-    session.context.custom.insert("workspace".to_string(), serde_json::json!("dev"));
-    session.context.custom.insert("priority".to_string(), serde_json::json!(1));
+    session
+        .context
+        .custom
+        .insert("workspace".to_string(), serde_json::json!("dev"));
+    session
+        .context
+        .custom
+        .insert("priority".to_string(), serde_json::json!(1));
 
     // Verify custom data is stored
     assert_eq!(session.context.custom.len(), 2);
-    assert_eq!(session.context.custom.get("workspace"), Some(&serde_json::json!("dev")));
-    assert_eq!(session.context.custom.get("priority"), Some(&serde_json::json!(1)));
+    assert_eq!(
+        session.context.custom.get("workspace"),
+        Some(&serde_json::json!("dev"))
+    );
+    assert_eq!(
+        session.context.custom.get("priority"),
+        Some(&serde_json::json!(1))
+    );
 }
 
 #[test]
 fn test_session_mode_variations() {
-    let chat_session = Session::new("Chat".to_string(),
-        SessionContext::new("openai".to_string(), "gpt-4".to_string(), SessionMode::Chat));
-    let code_session = Session::new("Code".to_string(),
-        SessionContext::new("anthropic".to_string(), "claude-3".to_string(), SessionMode::Code));
-    let vibe_session = Session::new("Vibe".to_string(),
-        SessionContext::new("openai".to_string(), "gpt-3.5".to_string(), SessionMode::Vibe));
+    let chat_session = Session::new(
+        "Chat".to_string(),
+        SessionContext::new("openai".to_string(), "gpt-4".to_string(), SessionMode::Chat),
+    );
+    let code_session = Session::new(
+        "Code".to_string(),
+        SessionContext::new(
+            "anthropic".to_string(),
+            "claude-3".to_string(),
+            SessionMode::Code,
+        ),
+    );
+    let vibe_session = Session::new(
+        "Vibe".to_string(),
+        SessionContext::new(
+            "openai".to_string(),
+            "gpt-3.5".to_string(),
+            SessionMode::Vibe,
+        ),
+    );
 
     assert_eq!(chat_session.context.mode, SessionMode::Chat);
     assert_eq!(code_session.context.mode, SessionMode::Code);
@@ -184,8 +216,14 @@ fn test_session_with_complex_history() {
 
     // Add various types of messages
     let user_msg = Message::new(MessageRole::User, "Please analyze this code".to_string());
-    let mut assistant_msg = Message::new(MessageRole::Assistant, "I'll help you analyze it".to_string());
-    assistant_msg.add_code("rust".to_string(), "fn main() { println!(\"Hello\"); }".to_string());
+    let mut assistant_msg = Message::new(
+        MessageRole::Assistant,
+        "I'll help you analyze it".to_string(),
+    );
+    assistant_msg.add_code(
+        "rust".to_string(),
+        "fn main() { println!(\"Hello\"); }".to_string(),
+    );
     assistant_msg.add_reasoning("This is a simple Rust program".to_string());
 
     let system_msg = Message::new(MessageRole::System, "Session initialized".to_string());
@@ -223,7 +261,10 @@ fn test_session_background_agent_status_transitions() {
     assert_eq!(agent.status, ricecoder_sessions::AgentStatus::Cancelled);
 
     session.background_agents.push(agent);
-    assert_eq!(session.background_agents[0].status, ricecoder_sessions::AgentStatus::Cancelled);
+    assert_eq!(
+        session.background_agents[0].status,
+        ricecoder_sessions::AgentStatus::Cancelled
+    );
 }
 
 #[test]

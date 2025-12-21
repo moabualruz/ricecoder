@@ -3,9 +3,9 @@
 use crate::commands::Command;
 use crate::error::{CliError, CliResult};
 use async_trait::async_trait;
-use std::path::PathBuf;
-use ricecoder_providers::provider::manager::ProviderManager;
 use chrono;
+use ricecoder_providers::provider::manager::ProviderManager;
+use std::path::PathBuf;
 
 /// TUI command configuration
 #[derive(Debug, Clone)]
@@ -73,28 +73,40 @@ impl Command for TuiCommand {
 }
 
 /// Load provider data for TUI initialization
-async fn load_provider_data_for_tui() -> CliResult<(Vec<ricecoder_tui::model::ProviderInfo>, Option<String>)> {
+async fn load_provider_data_for_tui(
+) -> CliResult<(Vec<ricecoder_tui::model::ProviderInfo>, Option<String>)> {
     // Get provider manager from DI container
-    let provider_manager = crate::di::get_service::<ProviderManager>()
-        .ok_or_else(|| CliError::Internal("ProviderManager not available in DI container".to_string()))?;
+    let provider_manager = crate::di::get_service::<ProviderManager>().ok_or_else(|| {
+        CliError::Internal("ProviderManager not available in DI container".to_string())
+    })?;
 
     // Get available providers
-    let available_providers = provider_manager.get_all_provider_statuses()
+    let available_providers = provider_manager
+        .get_all_provider_statuses()
         .into_iter()
         .map(|status| ricecoder_tui::model::ProviderInfo {
             id: status.id.clone(),
             name: status.name.clone(),
             state: match status.state {
-                ricecoder_providers::provider::manager::ConnectionState::Connected => ricecoder_tui::model::ProviderConnectionState::Connected,
-                ricecoder_providers::provider::manager::ConnectionState::Disconnected => ricecoder_tui::model::ProviderConnectionState::Disconnected,
-                ricecoder_providers::provider::manager::ConnectionState::Error => ricecoder_tui::model::ProviderConnectionState::Error,
-                ricecoder_providers::provider::manager::ConnectionState::Disabled => ricecoder_tui::model::ProviderConnectionState::Disabled,
+                ricecoder_providers::provider::manager::ConnectionState::Connected => {
+                    ricecoder_tui::model::ProviderConnectionState::Connected
+                }
+                ricecoder_providers::provider::manager::ConnectionState::Disconnected => {
+                    ricecoder_tui::model::ProviderConnectionState::Disconnected
+                }
+                ricecoder_providers::provider::manager::ConnectionState::Error => {
+                    ricecoder_tui::model::ProviderConnectionState::Error
+                }
+                ricecoder_providers::provider::manager::ConnectionState::Disabled => {
+                    ricecoder_tui::model::ProviderConnectionState::Disabled
+                }
             },
             models: status.models.iter().map(|m| m.id.clone()).collect(),
             error_message: status.error_message.clone(),
             last_checked: status.last_checked.map(|st| {
                 let duration = st.duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
-                chrono::DateTime::from_timestamp(duration.as_secs() as i64, duration.subsec_nanos()).unwrap_or_else(|| chrono::Utc::now())
+                chrono::DateTime::from_timestamp(duration.as_secs() as i64, duration.subsec_nanos())
+                    .unwrap_or_else(|| chrono::Utc::now())
             }),
         })
         .collect();
@@ -138,5 +150,3 @@ async fn launch_tui(config: TuiConfig) -> CliResult<()> {
 
     Ok(())
 }
-
-

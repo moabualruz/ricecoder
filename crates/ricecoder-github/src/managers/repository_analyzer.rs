@@ -128,17 +128,15 @@ impl RepositoryAnalyzer {
     ///
     /// # Errors
     /// Returns error if repository cannot be fetched
-    pub async fn fetch_repository_metadata(
-        &self,
-        owner: &str,
-        repo: &str,
-    ) -> Result<Repository> {
+    pub async fn fetch_repository_metadata(&self, owner: &str, repo: &str) -> Result<Repository> {
         // Validate inputs
         if owner.is_empty() {
             return Err(GitHubError::invalid_input("Owner cannot be empty"));
         }
         if repo.is_empty() {
-            return Err(GitHubError::invalid_input("Repository name cannot be empty"));
+            return Err(GitHubError::invalid_input(
+                "Repository name cannot be empty",
+            ));
         }
 
         // In a real implementation, this would call the GitHub API
@@ -170,17 +168,15 @@ impl RepositoryAnalyzer {
     ///
     /// # Errors
     /// Returns error if dependencies cannot be identified
-    pub async fn identify_dependencies(
-        &self,
-        owner: &str,
-        repo: &str,
-    ) -> Result<Vec<Dependency>> {
+    pub async fn identify_dependencies(&self, owner: &str, repo: &str) -> Result<Vec<Dependency>> {
         // Validate inputs
         if owner.is_empty() {
             return Err(GitHubError::invalid_input("Owner cannot be empty"));
         }
         if repo.is_empty() {
-            return Err(GitHubError::invalid_input("Repository name cannot be empty"));
+            return Err(GitHubError::invalid_input(
+                "Repository name cannot be empty",
+            ));
         }
 
         // In a real implementation, this would parse manifest files (Cargo.toml, package.json, etc.)
@@ -199,17 +195,15 @@ impl RepositoryAnalyzer {
     ///
     /// # Errors
     /// Returns error if patterns cannot be extracted
-    pub async fn extract_code_patterns(
-        &self,
-        owner: &str,
-        repo: &str,
-    ) -> Result<Vec<CodePattern>> {
+    pub async fn extract_code_patterns(&self, owner: &str, repo: &str) -> Result<Vec<CodePattern>> {
         // Validate inputs
         if owner.is_empty() {
             return Err(GitHubError::invalid_input("Owner cannot be empty"));
         }
         if repo.is_empty() {
-            return Err(GitHubError::invalid_input("Repository name cannot be empty"));
+            return Err(GitHubError::invalid_input(
+                "Repository name cannot be empty",
+            ));
         }
 
         // In a real implementation, this would analyze code files for patterns
@@ -238,7 +232,9 @@ impl RepositoryAnalyzer {
             return Err(GitHubError::invalid_input("Owner cannot be empty"));
         }
         if repo.is_empty() {
-            return Err(GitHubError::invalid_input("Repository name cannot be empty"));
+            return Err(GitHubError::invalid_input(
+                "Repository name cannot be empty",
+            ));
         }
 
         // In a real implementation, this would analyze the repository

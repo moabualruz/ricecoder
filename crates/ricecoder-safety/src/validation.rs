@@ -1,8 +1,8 @@
 //! Safety validation and approval gates
 
-use crate::constraints::{SecurityConstraint, ValidationContext, ConstraintResult};
+use crate::constraints::{ConstraintResult, SecurityConstraint, ValidationContext};
 use crate::error::{SafetyError, SafetyResult};
-use crate::risk::{RiskScorer, RiskScore, RiskContext};
+use crate::risk::{RiskContext, RiskScore, RiskScorer};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -45,7 +45,10 @@ impl SafetyValidator {
     }
 
     /// Validate an operation against all constraints
-    pub async fn validate_operation(&self, context: &ValidationContext) -> SafetyResult<ValidationResult> {
+    pub async fn validate_operation(
+        &self,
+        context: &ValidationContext,
+    ) -> SafetyResult<ValidationResult> {
         let constraints = self.constraints.read().await;
         let mut violations = Vec::new();
         let mut approval_required = Vec::new();
@@ -81,7 +84,10 @@ impl SafetyValidator {
                 ..Default::default()
             };
 
-            Some(self.risk_scorer.score_action("validate_operation", &risk_context)?)
+            Some(
+                self.risk_scorer
+                    .score_action("validate_operation", &risk_context)?,
+            )
         } else {
             None
         };
@@ -92,7 +98,7 @@ impl SafetyValidator {
                 message: "All safety checks passed".to_string(),
             })
         } else if !violations.is_empty() {
-            Ok(            ValidationResult::Failed {
+            Ok(ValidationResult::Failed {
                 violations: violations.clone(),
                 risk_score,
                 message: format!("{} safety violations detected", violations.len()),
@@ -107,7 +113,10 @@ impl SafetyValidator {
     }
 
     /// Validate a workflow execution
-    pub async fn validate_workflow(&self, workflow_context: &WorkflowValidationContext) -> SafetyResult<ValidationResult> {
+    pub async fn validate_workflow(
+        &self,
+        workflow_context: &WorkflowValidationContext,
+    ) -> SafetyResult<ValidationResult> {
         // Convert workflow context to operation context
         let operation_context = ValidationContext {
             user_id: workflow_context.user_id.clone(),
@@ -124,17 +133,15 @@ impl SafetyValidator {
         // Check for dangerous workflow patterns
         if workflow_context.step_count > 50 {
             // Large workflows might need approval
-            context.additional_data.insert(
-                "large_workflow".to_string(),
-                serde_json::json!(true)
-            );
+            context
+                .additional_data
+                .insert("large_workflow".to_string(), serde_json::json!(true));
         }
 
         if workflow_context.contains_dangerous_operations {
-            context.additional_data.insert(
-                "dangerous_operations".to_string(),
-                serde_json::json!(true)
-            );
+            context
+                .additional_data
+                .insert("dangerous_operations".to_string(), serde_json::json!(true));
         }
 
         self.validate_operation(&context).await
@@ -145,7 +152,10 @@ impl SafetyValidator {
         let gate = ApprovalGate::new(request.constraint_id.clone());
         let request_id = gate.add_request(request).await?;
 
-        self.approval_gates.write().await.insert(request_id.clone(), gate);
+        self.approval_gates
+            .write()
+            .await
+            .insert(request_id.clone(), gate);
         Ok(request_id)
     }
 
@@ -164,7 +174,12 @@ impl SafetyValidator {
     }
 
     /// Reject a pending request
-    pub async fn reject_request(&self, request_id: &str, approver_id: &str, reason: String) -> SafetyResult<()> {
+    pub async fn reject_request(
+        &self,
+        request_id: &str,
+        approver_id: &str,
+        reason: String,
+    ) -> SafetyResult<()> {
         let mut gates = self.approval_gates.write().await;
         if let Some(gate) = gates.get_mut(request_id) {
             gate.reject(approver_id, reason).await?;
@@ -268,7 +283,11 @@ impl ApprovalGate {
         *self.approval_status.write().await = ApprovalStatus::Pending;
 
         // Generate request ID
-        let request_id = format!("approval_{}_{}", self.constraint_id, chrono::Utc::now().timestamp());
+        let request_id = format!(
+            "approval_{}_{}",
+            self.constraint_id,
+            chrono::Utc::now().timestamp()
+        );
         Ok(request_id)
     }
 

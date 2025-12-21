@@ -4,7 +4,10 @@
 //! step execution with progress reporting and error handling.
 
 use crate::error::{ExecutionError, ExecutionResult};
-use crate::models::{BatchExecutionConfig, BatchExecutionOutput, BatchExecutionResult, BatchExecutionSummary, CommandOutput, ExecutionPlan, ExecutionStep, StepAction, StepResult};
+use crate::models::{
+    BatchExecutionConfig, BatchExecutionOutput, BatchExecutionResult, BatchExecutionSummary,
+    CommandOutput, ExecutionPlan, ExecutionStep, StepAction, StepResult,
+};
 use std::time::Instant;
 use tracing::{debug, error, info, warn};
 
@@ -249,7 +252,11 @@ impl StepExecutor {
     }
 
     /// Handle command execution
-    async fn handle_run_command_async(&self, command: &str, args: &[String]) -> ExecutionResult<CommandOutput> {
+    async fn handle_run_command_async(
+        &self,
+        command: &str,
+        args: &[String],
+    ) -> ExecutionResult<CommandOutput> {
         debug!(command = %command, args_count = args.len(), "Running command asynchronously");
 
         // Use async CommandHandler with default settings
@@ -258,7 +265,8 @@ impl StepExecutor {
             args,
             Some(120_000), // 2 minute timeout
             Some(true),    // Require confirmation for dangerous commands
-        ).await?;
+        )
+        .await?;
 
         Ok(output)
     }
@@ -362,7 +370,10 @@ impl StepExecutor {
 
         info!(
             "Batch execution completed: {}/{} successful, {} failed, {}ms total",
-            successful, steps.len(), failed, total_duration
+            successful,
+            steps.len(),
+            failed,
+            total_duration
         );
 
         Ok(BatchExecutionOutput { results, summary })

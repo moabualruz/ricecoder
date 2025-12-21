@@ -1,5 +1,5 @@
-use ricecoder_tui::*;
 use crate::tea::{AppModel, ReactiveState};
+use ricecoder_tui::*;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -50,11 +50,14 @@ mod tests {
         let dispatcher = EventDispatcher::new();
 
         // Dispatch an event
-        let event_id = dispatcher.dispatch_event(
-            AppMessage::ModeChanged(crate::AppMode::Command),
-            EventPriority::Normal,
-            EventSource::UserInput,
-        ).await.unwrap();
+        let event_id = dispatcher
+            .dispatch_event(
+                AppMessage::ModeChanged(crate::AppMode::Command),
+                EventPriority::Normal,
+                EventSource::UserInput,
+            )
+            .await
+            .unwrap();
 
         assert!(!event_id.is_empty());
 
@@ -68,11 +71,14 @@ mod tests {
         let dispatcher = EventDispatcher::new();
 
         // Dispatch an event
-        let event_id = dispatcher.dispatch_event(
-            AppMessage::ModeChanged(crate::AppMode::Command),
-            EventPriority::Normal,
-            EventSource::UserInput,
-        ).await.unwrap();
+        let event_id = dispatcher
+            .dispatch_event(
+                AppMessage::ModeChanged(crate::AppMode::Command),
+                EventPriority::Normal,
+                EventSource::UserInput,
+            )
+            .await
+            .unwrap();
 
         // Cancel it
         let cancelled = dispatcher.cancel_event(&event_id).await;
@@ -91,13 +97,15 @@ mod tests {
         let event_id = "test_event".to_string();
 
         // Apply optimistic update
-        updater.apply_optimistic(
-            event_id.clone(),
-            "Test update".to_string(),
-            Duration::from_secs(5),
-            || counter += 1,
-            || counter -= 1,
-        ).await;
+        updater
+            .apply_optimistic(
+                event_id.clone(),
+                "Test update".to_string(),
+                Duration::from_secs(5),
+                || counter += 1,
+                || counter -= 1,
+            )
+            .await;
 
         assert_eq!(counter, 1);
 
@@ -116,13 +124,15 @@ mod tests {
         let event_id = "test_event".to_string();
 
         // Apply optimistic update
-        updater.apply_optimistic(
-            event_id.clone(),
-            "Test update".to_string(),
-            Duration::from_secs(5),
-            || counter += 1,
-            || counter -= 1,
-        ).await;
+        updater
+            .apply_optimistic(
+                event_id.clone(),
+                "Test update".to_string(),
+                Duration::from_secs(5),
+                || counter += 1,
+                || counter -= 1,
+            )
+            .await;
 
         assert_eq!(counter, 0); // Should be rolled back
     }
@@ -132,10 +142,9 @@ mod tests {
         let manager = LoadingManager::new();
 
         // Start loading
-        manager.start_loading(
-            "test_op".to_string(),
-            "Test operation".to_string(),
-        ).await;
+        manager
+            .start_loading("test_op".to_string(), "Test operation".to_string())
+            .await;
 
         // Check active loadings
         let active = manager.get_active_loadings().await;
@@ -164,11 +173,10 @@ mod tests {
             AppMessage::CommandPaletteToggled,
         ];
 
-        let batch_id = dispatcher.dispatch_batch(
-            events,
-            BatchType::Sequential,
-            EventPriority::Normal,
-        ).await.unwrap();
+        let batch_id = dispatcher
+            .dispatch_batch(events, BatchType::Sequential, EventPriority::Normal)
+            .await
+            .unwrap();
 
         assert!(!batch_id.is_empty());
 

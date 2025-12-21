@@ -50,7 +50,10 @@ mod tests {
         let resolved = ConfigConflictResolver::resolve_conflicts(&configs);
 
         // config1 should take priority for conflicts
-        assert_eq!(resolved.providers.default_provider, Some("provider1".to_string()));
+        assert_eq!(
+            resolved.providers.default_provider,
+            Some("provider1".to_string())
+        );
         assert_eq!(resolved.defaults.model, Some("model1".to_string()));
         assert_eq!(resolved.defaults.temperature, Some(0.5));
 

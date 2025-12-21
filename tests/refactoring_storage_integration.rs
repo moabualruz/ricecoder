@@ -155,7 +155,10 @@ async fn test_storage_config_loader_list_languages() -> Result<(), Box<dyn std::
     // Create multiple language configurations
     std::fs::write(refactoring_dir.join("rust.yaml"), "language: rust")?;
     std::fs::write(refactoring_dir.join("python.yaml"), "language: python")?;
-    std::fs::write(refactoring_dir.join("typescript.yaml"), "language: typescript")?;
+    std::fs::write(
+        refactoring_dir.join("typescript.yaml"),
+        "language: typescript",
+    )?;
 
     let storage = Arc::new(MockStorageManager {
         global_path: temp_dir.path().to_path_buf(),
@@ -195,7 +198,8 @@ async fn test_storage_config_loader_has_language() -> Result<(), Box<dyn std::er
 }
 
 #[tokio::test]
-async fn test_config_manager_get_languages_from_storage() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_config_manager_get_languages_from_storage() -> Result<(), Box<dyn std::error::Error>>
+{
     let temp_dir = tempfile::tempdir()?;
     let refactoring_dir = temp_dir.path().join("refactoring/languages");
     std::fs::create_dir_all(&refactoring_dir)?;

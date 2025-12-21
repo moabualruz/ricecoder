@@ -97,7 +97,8 @@ impl ServerLifecycle {
 
         debug!("Starting server: {}", self.config.id);
 
-        let timeout_duration = Duration::from_millis(startup_timeout_ms.unwrap_or(self.config.timeout_ms));
+        let timeout_duration =
+            Duration::from_millis(startup_timeout_ms.unwrap_or(self.config.timeout_ms));
 
         match timeout(timeout_duration, self.perform_startup()).await {
             Ok(Ok(())) => {
@@ -122,7 +123,10 @@ impl ServerLifecycle {
             Err(_) => {
                 let mut info = self.lifecycle_info.write().await;
                 info.state = ServerState::Failed;
-                let error_msg = format!("Server startup timeout after {}ms", timeout_duration.as_millis());
+                let error_msg = format!(
+                    "Server startup timeout after {}ms",
+                    timeout_duration.as_millis()
+                );
                 info.last_error = Some(error_msg.clone());
 
                 error!("Server startup timeout: {}", self.config.id);

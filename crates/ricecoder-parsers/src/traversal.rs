@@ -120,7 +120,8 @@ impl TraversalUtils {
     /// Find the most specific node at a position
     pub fn most_specific_node_at(root: &ASTNode, position: Position) -> Option<&ASTNode> {
         let candidates = Self::nodes_at_position(root, position);
-        candidates.into_iter()
+        candidates
+            .into_iter()
             .min_by_key(|node| node.range.end.line - node.range.start.line)
     }
 
@@ -131,9 +132,7 @@ impl TraversalUtils {
 
     /// Get all nodes within a range
     pub fn nodes_in_range(root: &ASTNode, range: Range) -> Vec<&ASTNode> {
-        Self::find_nodes(root, |node| {
-            node.range.overlaps(&range)
-        })
+        Self::find_nodes(root, |node| node.range.overlaps(&range))
     }
 
     /// Count nodes by type
@@ -145,7 +144,8 @@ impl TraversalUtils {
 
     /// Get tree depth
     pub fn tree_depth(root: &ASTNode) -> usize {
-        root.children.iter()
+        root.children
+            .iter()
             .map(|child| Self::tree_depth(child) + 1)
             .max()
             .unwrap_or(0)
@@ -153,18 +153,12 @@ impl TraversalUtils {
 
     /// Extract text from a range of nodes
     pub fn extract_text(nodes: &[&ASTNode]) -> String {
-        let mut texts: Vec<&str> = nodes.iter()
-            .map(|node| node.text.as_str())
-            .collect();
+        let mut texts: Vec<&str> = nodes.iter().map(|node| node.text.as_str()).collect();
         texts.sort_by_key(|text| text.as_ptr()); // Sort by memory address for consistent ordering
         texts.join("")
     }
 
-    fn collect_nodes<'a, F>(
-        node: &'a ASTNode,
-        predicate: &F,
-        result: &mut Vec<&'a ASTNode>,
-    )
+    fn collect_nodes<'a, F>(node: &'a ASTNode, predicate: &F, result: &mut Vec<&'a ASTNode>)
     where
         F: Fn(&ASTNode) -> bool,
     {
@@ -312,10 +306,10 @@ impl NodeVisitor for PositionFinder {
             let is_better = match &self.found_node {
                 None => true,
                 Some(existing) => {
-                    let existing_size = (existing.range.end.line - existing.range.start.line) +
-                                       (existing.range.end.column - existing.range.start.column);
-                    let current_size = (node.range.end.line - node.range.start.line) +
-                                      (node.range.end.column - node.range.start.column);
+                    let existing_size = (existing.range.end.line - existing.range.start.line)
+                        + (existing.range.end.column - existing.range.start.column);
+                    let current_size = (node.range.end.line - node.range.start.line)
+                        + (node.range.end.column - node.range.start.column);
                     current_size < existing_size
                 }
             };
@@ -407,7 +401,11 @@ impl std::fmt::Display for TreeAnalysisStats {
         writeln!(f, "  Total nodes: {}", self.total_nodes)?;
         writeln!(f, "  Leaf nodes: {}", self.leaf_nodes)?;
         writeln!(f, "  Maximum depth: {}", self.max_depth)?;
-        writeln!(f, "  Average branch factor: {:.2}", self.average_branch_factor)?;
+        writeln!(
+            f,
+            "  Average branch factor: {:.2}",
+            self.average_branch_factor
+        )?;
         Ok(())
     }
 }

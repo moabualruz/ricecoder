@@ -1,6 +1,6 @@
-use ricecoder_tui::*;
 use crate::widgets::ChatWidget;
 use ricecoder_help::HelpDialog;
+use ricecoder_tui::*;
 
 mod tests {
     use super::*;
@@ -104,7 +104,10 @@ mod tests {
         // Create session
         let (model, _) = model.update(AppMessage::SessionCreated("new-session".to_string()));
         assert_eq!(model.sessions.session_count, 2);
-        assert_eq!(model.sessions.active_session_id, Some("new-session".to_string()));
+        assert_eq!(
+            model.sessions.active_session_id,
+            Some("new-session".to_string())
+        );
 
         // Close session
         let (model, _) = model.update(AppMessage::SessionClosed("new-session".to_string()));

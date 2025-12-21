@@ -29,13 +29,13 @@ fn get_binary_test_script_path() -> PathBuf {
         PathBuf::from("projects/ricecoder/scripts/test-binary-execution.sh"),
         PathBuf::from("scripts/test-binary-execution.sh"),
     ];
-    
+
     for path in paths {
         if path.exists() {
             return path;
         }
     }
-    
+
     PathBuf::from("../../scripts/test-binary-execution.sh")
 }
 
@@ -46,13 +46,13 @@ fn get_cli_crate_path() -> PathBuf {
         PathBuf::from("projects/ricecoder/crates/ricecoder-cli"),
         PathBuf::from("crates/ricecoder-cli"),
     ];
-    
+
     for path in paths {
         if path.join("Cargo.toml").exists() {
             return path;
         }
     }
-    
+
     PathBuf::from(".")
 }
 
@@ -198,7 +198,8 @@ fn test_cli_has_error_handling() {
     let content = fs::read_to_string(&main_rs).expect("Should read main.rs");
 
     // Check for error handling (optional - may be in other modules)
-    let _has_error_handling = content.contains("Result") || content.contains("Error") || content.contains("?");
+    let _has_error_handling =
+        content.contains("Result") || content.contains("Error") || content.contains("?");
     // Don't fail - error handling is typically in lib modules
 }
 
@@ -288,10 +289,7 @@ fn test_cli_has_public_api() {
     let content = fs::read_to_string(&lib_rs).expect("Should read lib.rs");
 
     // Check for public API
-    assert!(
-        content.contains("pub "),
-        "CLI should have public API"
-    );
+    assert!(content.contains("pub "), "CLI should have public API");
 }
 
 #[test]
@@ -300,10 +298,7 @@ fn test_cli_has_tests() {
     let src_tests = get_cli_crate_path().join("src/tests.rs");
 
     let has_tests = tests_dir.exists() || src_tests.exists();
-    assert!(
-        has_tests,
-        "CLI should have tests directory or tests module"
-    );
+    assert!(has_tests, "CLI should have tests directory or tests module");
 }
 
 #[test]

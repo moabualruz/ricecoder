@@ -1,6 +1,6 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
-use std::time::Instant;
 use std::process::{Command, Stdio};
+use std::time::Instant;
 use tempfile;
 use walkdir;
 
@@ -18,15 +18,25 @@ fn benchmark_cli_startup(c: &mut Criterion) {
     // Build the ricecoder binary first
     let build_result = Command::new("cargo")
         .args(&["build", "--release", "--bin", "ricecoder"])
-        .current_dir(env!("CARGO_MANIFEST_DIR").rsplitn(2, "/crates/").next().unwrap_or("."))
+        .current_dir(
+            env!("CARGO_MANIFEST_DIR")
+                .rsplitn(2, "/crates/")
+                .next()
+                .unwrap_or("."),
+        )
         .status();
 
     if !build_result.map(|s| s.success()).unwrap_or(false) {
         panic!("Failed to build ricecoder binary for benchmarking");
     }
 
-    let binary_path = format!("{}/target/release/ricecoder",
-        env!("CARGO_MANIFEST_DIR").rsplitn(2, "/crates/").next().unwrap_or("."));
+    let binary_path = format!(
+        "{}/target/release/ricecoder",
+        env!("CARGO_MANIFEST_DIR")
+            .rsplitn(2, "/crates/")
+            .next()
+            .unwrap_or(".")
+    );
 
     group.bench_function("help_command", |b| {
         b.iter(|| {
@@ -40,8 +50,11 @@ fn benchmark_cli_startup(c: &mut Criterion) {
             assert!(result.success());
             let elapsed = start.elapsed();
             // Assert baseline: < 3 seconds for startup
-            assert!(elapsed < std::time::Duration::from_secs(3),
-                "CLI startup exceeded 3s baseline: {:?}", elapsed);
+            assert!(
+                elapsed < std::time::Duration::from_secs(3),
+                "CLI startup exceeded 3s baseline: {:?}",
+                elapsed
+            );
             black_box(elapsed);
         });
     });
@@ -58,8 +71,11 @@ fn benchmark_cli_startup(c: &mut Criterion) {
             assert!(result.success());
             let elapsed = start.elapsed();
             // Assert baseline: < 3 seconds for startup
-            assert!(elapsed < std::time::Duration::from_secs(3),
-                "CLI startup exceeded 3s baseline: {:?}", elapsed);
+            assert!(
+                elapsed < std::time::Duration::from_secs(3),
+                "CLI startup exceeded 3s baseline: {:?}",
+                elapsed
+            );
             black_box(elapsed);
         });
     });
@@ -81,7 +97,9 @@ fn benchmark_config_loading(c: &mut Criterion) {
     let global_config = temp_dir.path().join("global_config.yaml");
     let project_config = temp_dir.path().join("project_config.yaml");
 
-    std::fs::write(&global_config, r#"
+    std::fs::write(
+        &global_config,
+        r#"
 providers:
   default_provider: zen
   api_keys:
@@ -89,21 +107,27 @@ providers:
 defaults:
   model: zen/big-pickle
   temperature: 0.7
-"#).expect("Failed to write global config");
+"#,
+    )
+    .expect("Failed to write global config");
 
-    std::fs::write(&project_config, r#"
+    std::fs::write(
+        &project_config,
+        r#"
 defaults:
   temperature: 0.8
   max_tokens: 4096
-"#).expect("Failed to write project config");
+"#,
+    )
+    .expect("Failed to write project config");
 
     group.bench_function("load_global_config", |b| {
         b.iter(|| {
             let start = Instant::now();
-            let content = std::fs::read_to_string(&global_config)
-                .expect("Failed to read global config");
-            let _config: serde_yaml::Value = serde_yaml::from_str(&content)
-                .expect("Failed to parse global config");
+            let content =
+                std::fs::read_to_string(&global_config).expect("Failed to read global config");
+            let _config: serde_yaml::Value =
+                serde_yaml::from_str(&content).expect("Failed to parse global config");
             black_box(start.elapsed());
         });
     });
@@ -111,10 +135,10 @@ defaults:
     group.bench_function("load_project_config", |b| {
         b.iter(|| {
             let start = Instant::now();
-            let content = std::fs::read_to_string(&project_config)
-                .expect("Failed to read project config");
-            let _config: serde_yaml::Value = serde_yaml::from_str(&content)
-                .expect("Failed to parse project config");
+            let content =
+                std::fs::read_to_string(&project_config).expect("Failed to read project config");
+            let _config: serde_yaml::Value =
+                serde_yaml::from_str(&content).expect("Failed to parse project config");
             black_box(start.elapsed());
         });
     });
@@ -122,15 +146,15 @@ defaults:
     group.bench_function("merge_configs", |b| {
         b.iter(|| {
             let start = Instant::now();
-            let global_content = std::fs::read_to_string(&global_config)
-                .expect("Failed to read global config");
-            let project_content = std::fs::read_to_string(&project_config)
-                .expect("Failed to read project config");
+            let global_content =
+                std::fs::read_to_string(&global_config).expect("Failed to read global config");
+            let project_content =
+                std::fs::read_to_string(&project_config).expect("Failed to read project config");
 
-            let global_config: serde_yaml::Value = serde_yaml::from_str(&global_content)
-                .expect("Failed to parse global config");
-            let project_config: serde_yaml::Value = serde_yaml::from_str(&project_content)
-                .expect("Failed to parse project config");
+            let global_config: serde_yaml::Value =
+                serde_yaml::from_str(&global_content).expect("Failed to parse global config");
+            let project_config: serde_yaml::Value =
+                serde_yaml::from_str(&project_content).expect("Failed to parse project config");
 
             // Simple merge simulation
             let _merged = merge_yaml_configs(global_config, project_config);
@@ -210,7 +234,9 @@ fn initialize_mock_provider(config: &serde_json::Value) -> Result<(), Box<dyn st
     let _provider_name = config["provider"].as_str().unwrap_or("unknown");
     let _api_key = config["api_key"].as_str().unwrap_or("");
     let _model = config["model"].as_str().unwrap_or("default");
-    let _endpoint = config["endpoint"].as_str().unwrap_or("https://mock.endpoint");
+    let _endpoint = config["endpoint"]
+        .as_str()
+        .unwrap_or("https://mock.endpoint");
 
     // Simulate some initialization work
     std::thread::sleep(std::time::Duration::from_micros(100));
@@ -239,10 +265,10 @@ fn benchmark_spec_parsing(c: &mut Criterion) {
             |b, spec_path| {
                 b.iter(|| {
                     let start = Instant::now();
-                    let content = std::fs::read_to_string(spec_path)
-                        .expect("Failed to read spec file");
-                    let _parsed: serde_yaml::Value = serde_yaml::from_str(&content)
-                        .expect("Failed to parse spec");
+                    let content =
+                        std::fs::read_to_string(spec_path).expect("Failed to read spec file");
+                    let _parsed: serde_yaml::Value =
+                        serde_yaml::from_str(&content).expect("Failed to parse spec");
                     black_box(start.elapsed());
                 });
             },
@@ -336,7 +362,9 @@ deployment:
 
     // Repeat content to reach desired size
     let repetitions = (size_kb * 1024) / base_content.len().max(1);
-    (0..repetitions.max(1)).map(|_| base_content.to_string()).collect::<String>()
+    (0..repetitions.max(1))
+        .map(|_| base_content.to_string())
+        .collect::<String>()
 }
 
 // ============================================================================
@@ -362,8 +390,7 @@ fn benchmark_file_operations(c: &mut Criterion) {
     group.bench_function("read_small_file", |b| {
         b.iter(|| {
             let start = Instant::now();
-            let _content = std::fs::read_to_string(&small_file)
-                .expect("Failed to read small file");
+            let _content = std::fs::read_to_string(&small_file).expect("Failed to read small file");
             black_box(start.elapsed());
         });
     });
@@ -371,8 +398,8 @@ fn benchmark_file_operations(c: &mut Criterion) {
     group.bench_function("read_medium_file", |b| {
         b.iter(|| {
             let start = Instant::now();
-            let _content = std::fs::read_to_string(&medium_file)
-                .expect("Failed to read medium file");
+            let _content =
+                std::fs::read_to_string(&medium_file).expect("Failed to read medium file");
             black_box(start.elapsed());
         });
     });
@@ -380,8 +407,7 @@ fn benchmark_file_operations(c: &mut Criterion) {
     group.bench_function("read_large_file", |b| {
         b.iter(|| {
             let start = Instant::now();
-            let _content = std::fs::read_to_string(&large_file)
-                .expect("Failed to read large file");
+            let _content = std::fs::read_to_string(&large_file).expect("Failed to read large file");
             black_box(start.elapsed());
         });
     });
@@ -421,15 +447,25 @@ fn benchmark_code_generation(c: &mut Criterion) {
     // Build the ricecoder binary first
     let build_result = Command::new("cargo")
         .args(&["build", "--release", "--bin", "ricecoder"])
-        .current_dir(env!("CARGO_MANIFEST_DIR").rsplitn(2, "/crates/").next().unwrap_or("."))
+        .current_dir(
+            env!("CARGO_MANIFEST_DIR")
+                .rsplitn(2, "/crates/")
+                .next()
+                .unwrap_or("."),
+        )
         .status();
 
     if !build_result.map(|s| s.success()).unwrap_or(false) {
         panic!("Failed to build ricecoder binary for benchmarking");
     }
 
-    let binary_path = format!("{}/target/release/ricecoder",
-        env!("CARGO_MANIFEST_DIR").rsplitn(2, "/crates/").next().unwrap_or("."));
+    let binary_path = format!(
+        "{}/target/release/ricecoder",
+        env!("CARGO_MANIFEST_DIR")
+            .rsplitn(2, "/crates/")
+            .next()
+            .unwrap_or(".")
+    );
 
     let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
 
@@ -456,8 +492,12 @@ fn benchmark_code_generation(c: &mut Criterion) {
                     // Note: gen might fail without proper setup, but we're measuring command dispatch time
                     let elapsed = start.elapsed();
                     // Assert baseline: < 500ms for code generation
-                    assert!(elapsed < std::time::Duration::from_millis(500),
-                        "Code generation for {} exceeded 500ms baseline: {:?}", lang, elapsed);
+                    assert!(
+                        elapsed < std::time::Duration::from_millis(500),
+                        "Code generation for {} exceeded 500ms baseline: {:?}",
+                        lang,
+                        elapsed
+                    );
                     black_box(elapsed);
                 });
             },
@@ -479,15 +519,25 @@ fn benchmark_refactoring(c: &mut Criterion) {
     // Build the ricecoder binary first
     let build_result = Command::new("cargo")
         .args(&["build", "--release", "--bin", "ricecoder"])
-        .current_dir(env!("CARGO_MANIFEST_DIR").rsplitn(2, "/crates/").next().unwrap_or("."))
+        .current_dir(
+            env!("CARGO_MANIFEST_DIR")
+                .rsplitn(2, "/crates/")
+                .next()
+                .unwrap_or("."),
+        )
         .status();
 
     if !build_result.map(|s| s.success()).unwrap_or(false) {
         panic!("Failed to build ricecoder binary for benchmarking");
     }
 
-    let binary_path = format!("{}/target/release/ricecoder",
-        env!("CARGO_MANIFEST_DIR").rsplitn(2, "/crates/").next().unwrap_or("."));
+    let binary_path = format!(
+        "{}/target/release/ricecoder",
+        env!("CARGO_MANIFEST_DIR")
+            .rsplitn(2, "/crates/")
+            .next()
+            .unwrap_or(".")
+    );
 
     let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
 
@@ -515,8 +565,11 @@ fn old_function(x: i32) -> i32 {
                 .unwrap_or_else(|_| panic!("Failed to execute refactor command"));
             let elapsed = start.elapsed();
             // Assert baseline: < 1 second for refactoring
-            assert!(elapsed < std::time::Duration::from_secs(1),
-                "Refactoring exceeded 1s baseline: {:?}", elapsed);
+            assert!(
+                elapsed < std::time::Duration::from_secs(1),
+                "Refactoring exceeded 1s baseline: {:?}",
+                elapsed
+            );
             black_box(elapsed);
         });
     });
@@ -536,15 +589,25 @@ fn benchmark_code_review(c: &mut Criterion) {
     // Build the ricecoder binary first
     let build_result = Command::new("cargo")
         .args(&["build", "--release", "--bin", "ricecoder"])
-        .current_dir(env!("CARGO_MANIFEST_DIR").rsplitn(2, "/crates/").next().unwrap_or("."))
+        .current_dir(
+            env!("CARGO_MANIFEST_DIR")
+                .rsplitn(2, "/crates/")
+                .next()
+                .unwrap_or("."),
+        )
         .status();
 
     if !build_result.map(|s| s.success()).unwrap_or(false) {
         panic!("Failed to build ricecoder binary for benchmarking");
     }
 
-    let binary_path = format!("{}/target/release/ricecoder",
-        env!("CARGO_MANIFEST_DIR").rsplitn(2, "/crates/").next().unwrap_or("."));
+    let binary_path = format!(
+        "{}/target/release/ricecoder",
+        env!("CARGO_MANIFEST_DIR")
+            .rsplitn(2, "/crates/")
+            .next()
+            .unwrap_or(".")
+    );
 
     let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
 
@@ -581,8 +644,11 @@ fn main() {
                 .unwrap_or_else(|_| panic!("Failed to execute review command"));
             let elapsed = start.elapsed();
             // Assert baseline: < 2 seconds for code review
-            assert!(elapsed < std::time::Duration::from_secs(2),
-                "Code review exceeded 2s baseline: {:?}", elapsed);
+            assert!(
+                elapsed < std::time::Duration::from_secs(2),
+                "Code review exceeded 2s baseline: {:?}",
+                elapsed
+            );
             black_box(elapsed);
         });
     });
@@ -603,15 +669,25 @@ fn benchmark_mcp_tool_execution(c: &mut Criterion) {
     // Build the ricecoder binary first
     let build_result = Command::new("cargo")
         .args(&["build", "--release", "--bin", "ricecoder"])
-        .current_dir(env!("CARGO_MANIFEST_DIR").rsplitn(2, "/crates/").next().unwrap_or("."))
+        .current_dir(
+            env!("CARGO_MANIFEST_DIR")
+                .rsplitn(2, "/crates/")
+                .next()
+                .unwrap_or("."),
+        )
         .status();
 
     if !build_result.map(|s| s.success()).unwrap_or(false) {
         panic!("Failed to build ricecoder binary for benchmarking");
     }
 
-    let binary_path = format!("{}/target/release/ricecoder",
-        env!("CARGO_MANIFEST_DIR").rsplitn(2, "/crates/").next().unwrap_or("."));
+    let binary_path = format!(
+        "{}/target/release/ricecoder",
+        env!("CARGO_MANIFEST_DIR")
+            .rsplitn(2, "/crates/")
+            .next()
+            .unwrap_or(".")
+    );
 
     let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
 
@@ -644,8 +720,11 @@ fn benchmark_mcp_tool_execution(c: &mut Criterion) {
             assert!(result.success());
             let elapsed = start.elapsed();
             // Assert baseline: < 500ms for MCP tool execution
-            assert!(elapsed < std::time::Duration::from_millis(500),
-                "MCP tool execution exceeded 500ms baseline: {:?}", elapsed);
+            assert!(
+                elapsed < std::time::Duration::from_millis(500),
+                "MCP tool execution exceeded 500ms baseline: {:?}",
+                elapsed
+            );
             black_box(elapsed);
         });
     });
@@ -680,8 +759,11 @@ fn benchmark_provider_api_calls(c: &mut Criterion) {
             std::thread::sleep(std::time::Duration::from_millis(50));
             let elapsed = start.elapsed();
             // Assert baseline: < 1 second for provider initialization
-            assert!(elapsed < std::time::Duration::from_secs(1),
-                "Provider initialization exceeded 1s baseline: {:?}", elapsed);
+            assert!(
+                elapsed < std::time::Duration::from_secs(1),
+                "Provider initialization exceeded 1s baseline: {:?}",
+                elapsed
+            );
             black_box(elapsed);
         });
     });
@@ -703,8 +785,11 @@ fn benchmark_provider_api_calls(c: &mut Criterion) {
             std::thread::sleep(std::time::Duration::from_millis(200));
             let elapsed = start.elapsed();
             // Assert baseline: < 1 second for completion calls
-            assert!(elapsed < std::time::Duration::from_secs(1),
-                "Provider completion call exceeded 1s baseline: {:?}", elapsed);
+            assert!(
+                elapsed < std::time::Duration::from_secs(1),
+                "Provider completion call exceeded 1s baseline: {:?}",
+                elapsed
+            );
             black_box(elapsed);
         });
     });
@@ -738,8 +823,11 @@ fn benchmark_session_management(c: &mut Criterion) {
             std::thread::sleep(std::time::Duration::from_micros(500));
             let elapsed = start.elapsed();
             // Assert baseline: < 200ms for session creation
-            assert!(elapsed < std::time::Duration::from_millis(200),
-                "Session creation exceeded 200ms baseline: {:?}", elapsed);
+            assert!(
+                elapsed < std::time::Duration::from_millis(200),
+                "Session creation exceeded 200ms baseline: {:?}",
+                elapsed
+            );
             black_box((session_data, elapsed));
         });
     });
@@ -758,8 +846,11 @@ fn benchmark_session_management(c: &mut Criterion) {
             std::thread::sleep(std::time::Duration::from_micros(300));
             let elapsed = start.elapsed();
             // Assert baseline: < 200ms for session save
-            assert!(elapsed < std::time::Duration::from_millis(200),
-                "Session save exceeded 200ms baseline: {:?}", elapsed);
+            assert!(
+                elapsed < std::time::Duration::from_millis(200),
+                "Session save exceeded 200ms baseline: {:?}",
+                elapsed
+            );
             black_box(elapsed);
         });
     });
@@ -789,10 +880,16 @@ fn benchmark_code_analysis(c: &mut Criterion) {
             let analysis_result = analyze_test_project(temp_dir.path());
             let elapsed = start.elapsed();
             // Assert baseline: < 5 seconds for code analysis
-            assert!(elapsed < std::time::Duration::from_secs(5),
-                "Code analysis exceeded 5s baseline: {:?}", elapsed);
-            assert!(analysis_result.total_files > 0,
-                "Should analyze at least 1 file, got {}", analysis_result.total_files);
+            assert!(
+                elapsed < std::time::Duration::from_secs(5),
+                "Code analysis exceeded 5s baseline: {:?}",
+                elapsed
+            );
+            assert!(
+                analysis_result.total_files > 0,
+                "Should analyze at least 1 file, got {}",
+                analysis_result.total_files
+            );
             black_box((analysis_result, elapsed));
         });
     });
@@ -811,7 +908,10 @@ fn create_test_project(base_dir: &tempfile::TempDir, num_files: usize, lines_per
         // Generate lines of code
         for line_num in 0..lines_per_file {
             content.push_str(&format!("/// Function {}\n", line_num));
-            content.push_str(&format!("pub fn test_function_{}_{}() {{\n", file_num, line_num));
+            content.push_str(&format!(
+                "pub fn test_function_{}_{}() {{\n",
+                file_num, line_num
+            ));
             content.push_str(&format!("    // Test implementation\n"));
             content.push_str(&format!("}}\n\n"));
         }
@@ -827,11 +927,15 @@ fn analyze_test_project(project_path: &std::path::Path) -> TestProjectAnalysis {
 
     for entry in walkdir::WalkDir::new(project_path) {
         let entry = entry.expect("Failed to read test directory entry");
-        if entry.file_type().is_file() && entry.path().extension().map_or(false, |ext| ext == "rs") {
+        if entry.file_type().is_file() && entry.path().extension().map_or(false, |ext| ext == "rs")
+        {
             total_files += 1;
             if let Ok(content) = std::fs::read_to_string(entry.path()) {
                 total_lines += content.lines().count();
-                functions_found += content.lines().filter(|line| line.contains("pub fn")).count();
+                functions_found += content
+                    .lines()
+                    .filter(|line| line.contains("pub fn"))
+                    .count();
             }
         }
     }
@@ -862,7 +966,8 @@ requirements:
 acceptance_criteria:
   - "Compiles without errors"
   - "Returns correct sum"
-"#.to_string(),
+"#
+        .to_string(),
         "python" => r#"
 name: "Test Python Function"
 description: "A simple Python function for benchmarking"
@@ -873,7 +978,8 @@ requirements:
 acceptance_criteria:
   - "Runs without errors"
   - "Returns correct sum"
-"#.to_string(),
+"#
+        .to_string(),
         "javascript" => r#"
 name: "Test JavaScript Function"
 description: "A simple JavaScript function for benchmarking"
@@ -884,7 +990,8 @@ requirements:
 acceptance_criteria:
   - "Runs without errors"
   - "Returns correct sum"
-"#.to_string(),
+"#
+        .to_string(),
         "java" => r#"
 name: "Test Java Method"
 description: "A simple Java method for benchmarking"
@@ -895,7 +1002,8 @@ requirements:
 acceptance_criteria:
   - "Compiles without errors"
   - "Returns correct sum"
-"#.to_string(),
+"#
+        .to_string(),
         "go" => r#"
 name: "Test Go Function"
 description: "A simple Go function for benchmarking"
@@ -906,7 +1014,8 @@ requirements:
 acceptance_criteria:
   - "Compiles without errors"
   - "Returns correct sum"
-"#.to_string(),
+"#
+        .to_string(),
         _ => "".to_string(),
     }
 }

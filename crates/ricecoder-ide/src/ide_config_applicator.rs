@@ -112,7 +112,10 @@ impl IdeConfigApplicator {
         config: &IdeIntegrationConfig,
         ide_type: IdeType,
     ) -> IdeResult<IdeSpecificSettings> {
-        debug!("Extracting IDE-specific settings for: {}", ide_type.as_str());
+        debug!(
+            "Extracting IDE-specific settings for: {}",
+            ide_type.as_str()
+        );
 
         match ide_type {
             IdeType::VsCode => Self::extract_vscode_settings(config),
@@ -153,7 +156,10 @@ impl IdeConfigApplicator {
             }
         }
 
-        info!("Extracted VS Code settings: {} features enabled", settings.enabled_features.len());
+        info!(
+            "Extracted VS Code settings: {} features enabled",
+            settings.enabled_features.len()
+        );
         Ok(settings)
     }
 
@@ -191,7 +197,10 @@ impl IdeConfigApplicator {
             serde_json::json!(vim_config.plugin_manager),
         );
 
-        info!("Extracted Vim settings: {} features enabled", settings.enabled_features.len());
+        info!(
+            "Extracted Vim settings: {} features enabled",
+            settings.enabled_features.len()
+        );
         Ok(settings)
     }
 
@@ -229,7 +238,10 @@ impl IdeConfigApplicator {
             serde_json::json!(emacs_config.package_manager),
         );
 
-        info!("Extracted Emacs settings: {} features enabled", settings.enabled_features.len());
+        info!(
+            "Extracted Emacs settings: {} features enabled",
+            settings.enabled_features.len()
+        );
         Ok(settings)
     }
 
@@ -238,7 +250,10 @@ impl IdeConfigApplicator {
         items: &mut Vec<CompletionItem>,
         settings: &IdeSpecificSettings,
     ) {
-        debug!("Applying IDE-specific completion behavior for: {}", settings.ide_type.as_str());
+        debug!(
+            "Applying IDE-specific completion behavior for: {}",
+            settings.ide_type.as_str()
+        );
 
         // Limit completion items based on IDE settings
         if let Some(max_items_value) = settings.get_setting("max_completion_items") {
@@ -295,7 +310,10 @@ impl IdeConfigApplicator {
         diagnostics: &mut Vec<Diagnostic>,
         settings: &IdeSpecificSettings,
     ) {
-        debug!("Applying IDE-specific diagnostics behavior for: {}", settings.ide_type.as_str());
+        debug!(
+            "Applying IDE-specific diagnostics behavior for: {}",
+            settings.ide_type.as_str()
+        );
 
         // Filter diagnostics based on minimum severity
         if let Some(min_severity_value) = settings.get_setting("min_severity") {
@@ -315,11 +333,11 @@ impl IdeConfigApplicator {
     }
 
     /// Apply IDE-specific behavior to hover information
-    pub fn apply_hover_behavior(
-        hover: &mut Option<Hover>,
-        settings: &IdeSpecificSettings,
-    ) {
-        debug!("Applying IDE-specific hover behavior for: {}", settings.ide_type.as_str());
+    pub fn apply_hover_behavior(hover: &mut Option<Hover>, settings: &IdeSpecificSettings) {
+        debug!(
+            "Applying IDE-specific hover behavior for: {}",
+            settings.ide_type.as_str()
+        );
 
         if let Some(hover_info) = hover {
             match settings.ide_type {
@@ -348,9 +366,13 @@ impl IdeConfigApplicator {
                 // Remove markdown headers
                 let line = line.trim_start_matches('#').trim();
                 // Remove markdown bold/italic
-                let line = line.replace("**", "").replace("__", "").replace("*", "").replace("_", "");
+                let line = line
+                    .replace("**", "")
+                    .replace("__", "")
+                    .replace("*", "")
+                    .replace("_", "");
                 // Remove markdown code blocks
-                
+
                 line.replace("`", "")
             })
             .collect::<Vec<_>>()
@@ -359,18 +381,17 @@ impl IdeConfigApplicator {
 
     /// Validate IDE-specific settings
     pub fn validate_settings(settings: &IdeSpecificSettings) -> IdeResult<()> {
-        debug!("Validating IDE-specific settings for: {}", settings.ide_type.as_str());
+        debug!(
+            "Validating IDE-specific settings for: {}",
+            settings.ide_type.as_str()
+        );
 
         if settings.port == 0 && settings.ide_type != IdeType::Unknown {
-            return Err(IdeError::config_error(
-                "IDE port must be greater than 0",
-            ));
+            return Err(IdeError::config_error("IDE port must be greater than 0"));
         }
 
         if settings.timeout_ms == 0 {
-            return Err(IdeError::config_error(
-                "IDE timeout must be greater than 0",
-            ));
+            return Err(IdeError::config_error("IDE timeout must be greater than 0"));
         }
 
         Ok(())
@@ -428,7 +449,10 @@ mod tests {
             .with_setting("key1".to_string(), serde_json::json!("value1"))
             .with_setting("key2".to_string(), serde_json::json!(42));
 
-        assert_eq!(settings.get_setting("key1").unwrap().as_str().unwrap(), "value1");
+        assert_eq!(
+            settings.get_setting("key1").unwrap().as_str().unwrap(),
+            "value1"
+        );
         assert_eq!(settings.get_setting("key2").unwrap().as_u64().unwrap(), 42);
         assert!(settings.get_setting("key3").is_none());
     }

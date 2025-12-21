@@ -4,28 +4,35 @@
 //! complex operations using the application services.
 
 use crate::error::AgentError;
-use crate::mcp_integration::{ExternalToolBackend, ExternalToolIntegrationService, ToolExecutionResult};
-use ricecoder_sessions::{
-    Session, SessionContext, SessionManager, SessionMode, SessionRouter, SessionStore,
-    SharePermissions, ShareService, SessionError, Message, MessageRole, BackgroundAgentManager,
-    SessionPerformanceMonitor, TokenUsageTracker, EnterpriseSharingPolicy, DataClassification,
+use crate::mcp_integration::{
+    ExternalToolBackend, ExternalToolIntegrationService, ToolExecutionResult,
 };
-use ricecoder_security::access_control::{AccessControl, Permission, ResourceType};
-use ricecoder_security::compliance::{ComplianceValidator, DataClassification as SecurityDataClassification};
-use ricecoder_security::audit::AuditLogger;
 use ricecoder_providers::{
-    provider::manager::{ModelFilter, ModelFilterCriteria, ProviderManager, ProviderStatus},
+    community::ProviderAnalytics,
+    curation::SelectionConstraints,
     models::{Capability, ModelInfo},
     performance_monitor::{PerformanceSummary, ProviderMetrics},
-    curation::SelectionConstraints,
-    community::ProviderAnalytics,
+    provider::manager::{ModelFilter, ModelFilterCriteria, ProviderManager, ProviderStatus},
+};
+use ricecoder_security::access_control::{AccessControl, Permission, ResourceType};
+use ricecoder_security::audit::AuditLogger;
+use ricecoder_security::compliance::{
+    ComplianceValidator, DataClassification as SecurityDataClassification,
+};
+use ricecoder_sessions::{
+    BackgroundAgentManager, DataClassification, EnterpriseSharingPolicy, Message, MessageRole,
+    Session, SessionContext, SessionError, SessionManager, SessionMode, SessionPerformanceMonitor,
+    SessionRouter, SessionStore, SharePermissions, ShareService, TokenUsageTracker,
 };
 use serde_json::json;
 use std::sync::Arc;
 use tracing::{debug, error, info, warn};
 
 /// Process and validate tool execution result
-pub(crate) fn process_tool_result(tool_name: &str, raw_result: &serde_json::Value) -> Result<ToolExecutionResult, AgentError> {
+pub(crate) fn process_tool_result(
+    tool_name: &str,
+    raw_result: &serde_json::Value,
+) -> Result<ToolExecutionResult, AgentError> {
     // Validate result structure
     if !raw_result.is_object() {
         return Err(AgentError::ExecutionFailed(
@@ -36,9 +43,11 @@ pub(crate) fn process_tool_result(tool_name: &str, raw_result: &serde_json::Valu
     let success = raw_result
         .get("success")
         .and_then(|v| v.as_bool())
-        .ok_or_else(|| AgentError::ExecutionFailed(
-            "Missing or invalid 'success' field in tool result".to_string(),
-        ))?;
+        .ok_or_else(|| {
+            AgentError::ExecutionFailed(
+                "Missing or invalid 'success' field in tool result".to_string(),
+            )
+        })?;
 
     let execution_time_ms = raw_result
         .get("execution_time_ms")
@@ -46,7 +55,8 @@ pub(crate) fn process_tool_result(tool_name: &str, raw_result: &serde_json::Valu
         .unwrap_or(0);
 
     // Validate execution time is reasonable
-    if execution_time_ms > 300_000 { // 5 minutes
+    if execution_time_ms > 300_000 {
+        // 5 minutes
         warn!(
             execution_time_ms = execution_time_ms,
             "Unusually long tool execution time detected"
@@ -254,13 +264,17 @@ impl ToolManagementUseCase {
 
     /// List all configured backends
     pub async fn list_backends(&self) -> Vec<String> {
-        Arc::as_ref(&self.tool_integration).get_configured_backends().await
+        Arc::as_ref(&self.tool_integration)
+            .get_configured_backends()
+            .await
     }
 
     /// Check if tool integration is operational
     pub async fn health_check(&self) -> serde_json::Value {
         let is_ready = Arc::as_ref(&self.tool_integration).is_ready().await;
-        let backends = Arc::as_ref(&self.tool_integration).get_configured_backends().await;
+        let backends = Arc::as_ref(&self.tool_integration)
+            .get_configured_backends()
+            .await;
 
         json!({
             "healthy": is_ready,
@@ -304,10 +318,7 @@ pub struct SessionLifecycleUseCase {
 
 impl SessionLifecycleUseCase {
     /// Create a new session lifecycle use case
-    pub fn new(
-        session_manager: Arc<SessionManager>,
-        session_store: Arc<SessionStore>,
-    ) -> Self {
+    pub fn new(session_manager: Arc<SessionManager>, session_store: Arc<SessionStore>) -> Self {
         Self {
             session_manager,
             session_store,
@@ -347,8 +358,14 @@ impl SessionLifecycleUseCase {
         if let Some(ref access_control) = self.access_control {
             let permission = Permission::Create;
             let resource_type = ResourceType::Session;
-            if !access_control.check_permission(user_id.as_deref(), &permission, &resource_type, None).await? {
-                return Err(AgentError::AccessDenied(format!("User {} does not have permission to create sessions", user_id.as_deref().unwrap_or("unknown"))));
+            if !access_control
+                .check_permission(user_id.as_deref(), &permission, &resource_type, None)
+                .await?
+            {
+                return Err(AgentError::AccessDenied(format!(
+                    "User {} does not have permission to create sessions",
+                    user_id.as_deref().unwrap_or("unknown")
+                )));
             }
         }
 
@@ -356,8 +373,13 @@ impl SessionLifecycleUseCase {
         if let Some(ref compliance_validator) = self.compliance_validator {
             // Check if session data classification is allowed
             let data_classification = SecurityDataClassification::Internal; // Default for sessions
-            if !compliance_validator.validate_data_classification(&data_classification).await? {
-                return Err(AgentError::ComplianceViolation("Session data classification not allowed".to_string()));
+            if !compliance_validator
+                .validate_data_classification(&data_classification)
+                .await?
+            {
+                return Err(AgentError::ComplianceViolation(
+                    "Session data classification not allowed".to_string(),
+                ));
             }
         }
 
@@ -366,7 +388,9 @@ impl SessionLifecycleUseCase {
         let session_id = session.id.clone();
 
         // Save to store for persistence (with encryption if enabled)
-        self.session_store.save(&session).await
+        self.session_store
+            .save(&session)
+            .await
             .map_err(|e| AgentError::Internal(format!("Failed to save session: {}", e)))?;
 
         // Log audit event if enabled
@@ -394,27 +418,51 @@ impl SessionLifecycleUseCase {
     }
 
     /// Load an existing session with access control
-    pub async fn load_session(&self, session_id: &str, user_id: Option<String>) -> Result<Session, AgentError> {
+    pub async fn load_session(
+        &self,
+        session_id: &str,
+        user_id: Option<String>,
+    ) -> Result<Session, AgentError> {
         debug!(session_id = %session_id, user_id = ?user_id, "Loading session");
 
         // Check access control if enabled
         if let Some(ref access_control) = self.access_control {
             let permission = Permission::Read;
             let resource_type = ResourceType::Session;
-            if !access_control.check_permission(user_id.as_deref(), &permission, &resource_type, Some(session_id)).await? {
-                return Err(AgentError::AccessDenied(format!("User {} does not have permission to access session {}", user_id.as_deref().unwrap_or("unknown"), session_id)));
+            if !access_control
+                .check_permission(
+                    user_id.as_deref(),
+                    &permission,
+                    &resource_type,
+                    Some(session_id),
+                )
+                .await?
+            {
+                return Err(AgentError::AccessDenied(format!(
+                    "User {} does not have permission to access session {}",
+                    user_id.as_deref().unwrap_or("unknown"),
+                    session_id
+                )));
             }
         }
 
-        let session = self.session_store.load(session_id).await
+        let session = self
+            .session_store
+            .load(session_id)
+            .await
             .map_err(|e| AgentError::Internal(format!("Failed to load session: {}", e)))?;
 
         // Validate compliance if enabled
         if let Some(ref compliance_validator) = self.compliance_validator {
             // Check data classification compliance
             let data_classification = SecurityDataClassification::Internal;
-            if !compliance_validator.validate_data_access(&data_classification, user_id.as_deref()).await? {
-                return Err(AgentError::ComplianceViolation("Access to session data not compliant".to_string()));
+            if !compliance_validator
+                .validate_data_access(&data_classification, user_id.as_deref())
+                .await?
+            {
+                return Err(AgentError::ComplianceViolation(
+                    "Access to session data not compliant".to_string(),
+                ));
             }
         }
 
@@ -441,27 +489,50 @@ impl SessionLifecycleUseCase {
     }
 
     /// Save a session with access control
-    pub async fn save_session(&self, session: &Session, user_id: Option<String>) -> Result<(), AgentError> {
+    pub async fn save_session(
+        &self,
+        session: &Session,
+        user_id: Option<String>,
+    ) -> Result<(), AgentError> {
         debug!(session_id = %session.id, user_id = ?user_id, "Saving session");
 
         // Check access control if enabled
         if let Some(ref access_control) = self.access_control {
             let permission = Permission::Write;
             let resource_type = ResourceType::Session;
-            if !access_control.check_permission(user_id.as_deref(), &permission, &resource_type, Some(&session.id)).await? {
-                return Err(AgentError::AccessDenied(format!("User {} does not have permission to modify session {}", user_id.as_deref().unwrap_or("unknown"), session.id)));
+            if !access_control
+                .check_permission(
+                    user_id.as_deref(),
+                    &permission,
+                    &resource_type,
+                    Some(&session.id),
+                )
+                .await?
+            {
+                return Err(AgentError::AccessDenied(format!(
+                    "User {} does not have permission to modify session {}",
+                    user_id.as_deref().unwrap_or("unknown"),
+                    session.id
+                )));
             }
         }
 
         // Validate compliance if enabled
         if let Some(ref compliance_validator) = self.compliance_validator {
             let data_classification = SecurityDataClassification::Internal;
-            if !compliance_validator.validate_data_modification(&data_classification, user_id.as_deref()).await? {
-                return Err(AgentError::ComplianceViolation("Session modification not compliant".to_string()));
+            if !compliance_validator
+                .validate_data_modification(&data_classification, user_id.as_deref())
+                .await?
+            {
+                return Err(AgentError::ComplianceViolation(
+                    "Session modification not compliant".to_string(),
+                ));
             }
         }
 
-        self.session_store.save(session).await
+        self.session_store
+            .save(session)
+            .await
             .map_err(|e| AgentError::Internal(format!("Failed to save session: {}", e)))?;
 
         // Log audit event if enabled
@@ -487,27 +558,50 @@ impl SessionLifecycleUseCase {
     }
 
     /// Delete a session with access control and compliance
-    pub async fn delete_session(&self, session_id: &str, user_id: Option<String>) -> Result<(), AgentError> {
+    pub async fn delete_session(
+        &self,
+        session_id: &str,
+        user_id: Option<String>,
+    ) -> Result<(), AgentError> {
         debug!(session_id = %session_id, user_id = ?user_id, "Deleting session");
 
         // Check access control if enabled
         if let Some(ref access_control) = self.access_control {
             let permission = Permission::Delete;
             let resource_type = ResourceType::Session;
-            if !access_control.check_permission(user_id.as_deref(), &permission, &resource_type, Some(session_id)).await? {
-                return Err(AgentError::AccessDenied(format!("User {} does not have permission to delete session {}", user_id.as_deref().unwrap_or("unknown"), session_id)));
+            if !access_control
+                .check_permission(
+                    user_id.as_deref(),
+                    &permission,
+                    &resource_type,
+                    Some(session_id),
+                )
+                .await?
+            {
+                return Err(AgentError::AccessDenied(format!(
+                    "User {} does not have permission to delete session {}",
+                    user_id.as_deref().unwrap_or("unknown"),
+                    session_id
+                )));
             }
         }
 
         // Validate compliance if enabled (check data erasure requirements)
         if let Some(ref compliance_validator) = self.compliance_validator {
             let data_classification = SecurityDataClassification::Internal;
-            if !compliance_validator.validate_data_erasure(&data_classification, user_id.as_deref()).await? {
-                return Err(AgentError::ComplianceViolation("Session deletion not compliant with data erasure requirements".to_string()));
+            if !compliance_validator
+                .validate_data_erasure(&data_classification, user_id.as_deref())
+                .await?
+            {
+                return Err(AgentError::ComplianceViolation(
+                    "Session deletion not compliant with data erasure requirements".to_string(),
+                ));
             }
         }
 
-        self.session_store.delete(session_id).await
+        self.session_store
+            .delete(session_id)
+            .await
             .map_err(|e| AgentError::Internal(format!("Failed to delete session: {}", e)))?;
 
         // Log audit event if enabled
@@ -536,7 +630,10 @@ impl SessionLifecycleUseCase {
     pub async fn list_sessions(&self, user_id: Option<String>) -> Result<Vec<Session>, AgentError> {
         debug!(user_id = ?user_id, "Listing sessions");
 
-        let all_sessions = self.session_store.list().await
+        let all_sessions = self
+            .session_store
+            .list()
+            .await
             .map_err(|e| AgentError::Internal(format!("Failed to list sessions: {}", e)))?;
 
         // Filter sessions based on access control
@@ -545,7 +642,15 @@ impl SessionLifecycleUseCase {
             for session in all_sessions {
                 let permission = Permission::Read;
                 let resource_type = ResourceType::Session;
-                if access_control.check_permission(user_id.as_deref(), &permission, &resource_type, Some(&session.id)).await? {
+                if access_control
+                    .check_permission(
+                        user_id.as_deref(),
+                        &permission,
+                        &resource_type,
+                        Some(&session.id),
+                    )
+                    .await?
+                {
                     filtered.push(session);
                 }
             }
@@ -572,7 +677,10 @@ impl SessionLifecycleUseCase {
             });
         }
 
-        info!(count = accessible_sessions.len(), "Retrieved filtered session list");
+        info!(
+            count = accessible_sessions.len(),
+            "Retrieved filtered session list"
+        );
         Ok(accessible_sessions)
     }
 }
@@ -587,10 +695,7 @@ pub struct SessionSharingUseCase {
 
 impl SessionSharingUseCase {
     /// Create a new session sharing use case
-    pub fn new(
-        share_service: Arc<ShareService>,
-        session_store: Arc<SessionStore>,
-    ) -> Self {
+    pub fn new(share_service: Arc<ShareService>, session_store: Arc<SessionStore>) -> Self {
         Self {
             share_service,
             session_store,
@@ -629,8 +734,20 @@ impl SessionSharingUseCase {
         if let Some(ref access_control) = self.access_control {
             let permission = Permission::Share;
             let resource_type = ResourceType::Session;
-            if !access_control.check_permission(user_id.as_deref(), &permission, &resource_type, Some(session_id)).await? {
-                return Err(AgentError::AccessDenied(format!("User {} does not have permission to share session {}", user_id.as_deref().unwrap_or("unknown"), session_id)));
+            if !access_control
+                .check_permission(
+                    user_id.as_deref(),
+                    &permission,
+                    &resource_type,
+                    Some(session_id),
+                )
+                .await?
+            {
+                return Err(AgentError::AccessDenied(format!(
+                    "User {} does not have permission to share session {}",
+                    user_id.as_deref().unwrap_or("unknown"),
+                    session_id
+                )));
             }
         }
 
@@ -645,13 +762,24 @@ impl SessionSharingUseCase {
                     DataClassification::Restricted => SecurityDataClassification::Restricted,
                 };
 
-                if !compliance_validator.validate_data_sharing(&data_classification, user_id.as_deref()).await? {
-                    return Err(AgentError::ComplianceViolation("Session sharing not compliant with data classification policies".to_string()));
+                if !compliance_validator
+                    .validate_data_sharing(&data_classification, user_id.as_deref())
+                    .await?
+                {
+                    return Err(AgentError::ComplianceViolation(
+                        "Session sharing not compliant with data classification policies"
+                            .to_string(),
+                    ));
                 }
 
                 // Validate enterprise sharing policy
-                if !compliance_validator.validate_enterprise_policy(&data_classification).await? {
-                    return Err(AgentError::ComplianceViolation("Enterprise sharing policy violates compliance requirements".to_string()));
+                if !compliance_validator
+                    .validate_enterprise_policy(&data_classification)
+                    .await?
+                {
+                    return Err(AgentError::ComplianceViolation(
+                        "Enterprise sharing policy violates compliance requirements".to_string(),
+                    ));
                 }
             }
         }
@@ -660,24 +788,33 @@ impl SessionSharingUseCase {
         let expires_in = expires_in_seconds.map(|secs| chrono::Duration::seconds(secs as i64));
 
         // Create share link with enterprise policy
-        let share = self.share_service.generate_share_link_with_policy(
-            session_id,
-            permissions,
-            expires_in,
-            enterprise_policy,
-            user_id.clone(),
-        ).map_err(|e| AgentError::Internal(format!("Failed to create share link: {}", e)))?;
+        let share = self
+            .share_service
+            .generate_share_link_with_policy(
+                session_id,
+                permissions,
+                expires_in,
+                enterprise_policy,
+                user_id.clone(),
+            )
+            .map_err(|e| AgentError::Internal(format!("Failed to create share link: {}", e)))?;
 
         info!(session_id = %session_id, share_id = %share.id, user_id = ?user_id, "Share link created successfully");
         Ok(share.id)
     }
 
     /// Access a shared session with compliance validation
-    pub async fn access_shared_session(&self, share_id: &str, accessing_user_id: Option<String>) -> Result<Session, AgentError> {
+    pub async fn access_shared_session(
+        &self,
+        share_id: &str,
+        accessing_user_id: Option<String>,
+    ) -> Result<Session, AgentError> {
         debug!(share_id = %share_id, accessing_user_id = ?accessing_user_id, "Accessing shared session");
 
         // Get share information
-        let share = self.share_service.get_share(share_id)
+        let share = self
+            .share_service
+            .get_share(share_id)
             .map_err(|e| AgentError::Internal(format!("Failed to get share: {}", e)))?;
 
         // Validate enterprise policy compliance if accessing user is different from creator
@@ -690,48 +827,84 @@ impl SessionSharingUseCase {
                     DataClassification::Restricted => SecurityDataClassification::Restricted,
                 };
 
-                if !compliance_validator.validate_shared_data_access(&data_classification, accessing_user_id.as_deref()).await? {
-                    return Err(AgentError::ComplianceViolation("Access to shared session data not compliant".to_string()));
+                if !compliance_validator
+                    .validate_shared_data_access(&data_classification, accessing_user_id.as_deref())
+                    .await?
+                {
+                    return Err(AgentError::ComplianceViolation(
+                        "Access to shared session data not compliant".to_string(),
+                    ));
                 }
             }
         }
 
         // Load the session
-        let session = self.session_store.load(&share.session_id).await
+        let session = self
+            .session_store
+            .load(&share.session_id)
+            .await
             .map_err(|e| AgentError::Internal(format!("Failed to load shared session: {}", e)))?;
 
         // Apply permission filters
-        let filtered_session = self.share_service.create_shared_session_view(&session, &share.permissions);
+        let filtered_session = self
+            .share_service
+            .create_shared_session_view(&session, &share.permissions);
 
         info!(share_id = %share_id, session_id = %share.session_id, accessing_user_id = ?accessing_user_id, "Shared session accessed successfully");
         Ok(filtered_session)
     }
 
     /// Revoke a share link with access control
-    pub async fn revoke_share_link(&self, share_id: &str, user_id: Option<String>) -> Result<(), AgentError> {
+    pub async fn revoke_share_link(
+        &self,
+        share_id: &str,
+        user_id: Option<String>,
+    ) -> Result<(), AgentError> {
         debug!(share_id = %share_id, user_id = ?user_id, "Revoking share link");
 
         // Get share information first to check ownership/access
-        let share = self.share_service.get_share(share_id)
-            .map_err(|e| AgentError::Internal(format!("Failed to get share for revocation: {}", e)))?;
+        let share = self.share_service.get_share(share_id).map_err(|e| {
+            AgentError::Internal(format!("Failed to get share for revocation: {}", e))
+        })?;
 
         // Check access control if enabled
         if let Some(ref access_control) = self.access_control {
             let permission = Permission::Delete;
             let resource_type = ResourceType::SessionShare;
             // Check if user can revoke this specific share
-            if !access_control.check_permission(user_id.as_deref(), &permission, &resource_type, Some(share_id)).await? {
+            if !access_control
+                .check_permission(
+                    user_id.as_deref(),
+                    &permission,
+                    &resource_type,
+                    Some(share_id),
+                )
+                .await?
+            {
                 // Also check if user owns the session
                 let session_permission = Permission::Share;
                 let session_resource_type = ResourceType::Session;
-                if !access_control.check_permission(user_id.as_deref(), &session_permission, &session_resource_type, Some(&share.session_id)).await? {
-                    return Err(AgentError::AccessDenied(format!("User {} does not have permission to revoke share {}", user_id.as_deref().unwrap_or("unknown"), share_id)));
+                if !access_control
+                    .check_permission(
+                        user_id.as_deref(),
+                        &session_permission,
+                        &session_resource_type,
+                        Some(&share.session_id),
+                    )
+                    .await?
+                {
+                    return Err(AgentError::AccessDenied(format!(
+                        "User {} does not have permission to revoke share {}",
+                        user_id.as_deref().unwrap_or("unknown"),
+                        share_id
+                    )));
                 }
             }
         }
 
         let user_id_for_revoke = user_id.clone();
-        self.share_service.revoke_share(share_id, user_id_for_revoke)
+        self.share_service
+            .revoke_share(share_id, user_id_for_revoke)
             .map_err(|e| AgentError::Internal(format!("Failed to revoke share: {}", e)))?;
 
         info!(share_id = %share_id, user_id = ?user_id, "Share link revoked successfully");
@@ -739,10 +912,15 @@ impl SessionSharingUseCase {
     }
 
     /// List active shares with access control filtering
-    pub async fn list_active_shares(&self, user_id: Option<String>) -> Result<Vec<ricecoder_sessions::SessionShare>, AgentError> {
+    pub async fn list_active_shares(
+        &self,
+        user_id: Option<String>,
+    ) -> Result<Vec<ricecoder_sessions::SessionShare>, AgentError> {
         debug!(user_id = ?user_id, "Listing active shares");
 
-        let all_shares = self.share_service.list_shares()
+        let all_shares = self
+            .share_service
+            .list_shares()
             .map_err(|e| AgentError::Internal(format!("Failed to list shares: {}", e)))?;
 
         // Filter shares based on access control
@@ -751,7 +929,15 @@ impl SessionSharingUseCase {
             for share in all_shares {
                 let permission = Permission::Read;
                 let resource_type = ResourceType::SessionShare;
-                if access_control.check_permission(user_id.as_deref(), &permission, &resource_type, Some(&share.id)).await? {
+                if access_control
+                    .check_permission(
+                        user_id.as_deref(),
+                        &permission,
+                        &resource_type,
+                        Some(&share.id),
+                    )
+                    .await?
+                {
                     filtered.push(share);
                 }
             }
@@ -765,10 +951,15 @@ impl SessionSharingUseCase {
     }
 
     /// Get share information
-    pub async fn get_share_info(&self, share_id: &str) -> Result<ricecoder_sessions::SessionShare, AgentError> {
+    pub async fn get_share_info(
+        &self,
+        share_id: &str,
+    ) -> Result<ricecoder_sessions::SessionShare, AgentError> {
         debug!(share_id = %share_id, "Getting share information");
 
-        let share = self.share_service.get_share(share_id)
+        let share = self
+            .share_service
+            .get_share(share_id)
             .map_err(|e| AgentError::Internal(format!("Failed to get share info: {}", e)))?;
 
         Ok(share)
@@ -810,19 +1001,36 @@ impl SessionStateManagementUseCase {
     }
 
     /// Get token usage for a session with access control
-    pub async fn get_token_usage(&self, session_id: &str, user_id: Option<String>) -> Result<ricecoder_sessions::TokenUsage, AgentError> {
+    pub async fn get_token_usage(
+        &self,
+        session_id: &str,
+        user_id: Option<String>,
+    ) -> Result<ricecoder_sessions::TokenUsage, AgentError> {
         debug!(session_id = %session_id, user_id = ?user_id, "Getting token usage");
 
         // Check access control if enabled
         if let Some(ref access_control) = self.access_control {
             let permission = Permission::Read;
             let resource_type = ResourceType::Session;
-            if !access_control.check_permission(user_id.as_deref(), &permission, &resource_type, Some(session_id)).await? {
-                return Err(AgentError::AccessDenied(format!("User {} does not have permission to view session token usage", user_id.as_deref().unwrap_or("unknown"))));
+            if !access_control
+                .check_permission(
+                    user_id.as_deref(),
+                    &permission,
+                    &resource_type,
+                    Some(session_id),
+                )
+                .await?
+            {
+                return Err(AgentError::AccessDenied(format!(
+                    "User {} does not have permission to view session token usage",
+                    user_id.as_deref().unwrap_or("unknown")
+                )));
             }
         }
 
-        let usage = self.session_manager.get_session_token_usage(session_id)
+        let usage = self
+            .session_manager
+            .get_session_token_usage(session_id)
             .map_err(|e| AgentError::Internal(format!("Failed to get token usage: {}", e)))?;
 
         // Log audit event if enabled
@@ -847,25 +1055,47 @@ impl SessionStateManagementUseCase {
     }
 
     /// Check if session is within token limits with compliance validation
-    pub async fn check_token_limits(&self, session_id: &str, user_id: Option<String>) -> Result<ricecoder_sessions::TokenLimitStatus, AgentError> {
+    pub async fn check_token_limits(
+        &self,
+        session_id: &str,
+        user_id: Option<String>,
+    ) -> Result<ricecoder_sessions::TokenLimitStatus, AgentError> {
         debug!(session_id = %session_id, user_id = ?user_id, "Checking token limits");
 
         // Check access control if enabled
         if let Some(ref access_control) = self.access_control {
             let permission = Permission::Read;
             let resource_type = ResourceType::Session;
-            if !access_control.check_permission(user_id.as_deref(), &permission, &resource_type, Some(session_id)).await? {
-                return Err(AgentError::AccessDenied(format!("User {} does not have permission to check session token limits", user_id.as_deref().unwrap_or("unknown"))));
+            if !access_control
+                .check_permission(
+                    user_id.as_deref(),
+                    &permission,
+                    &resource_type,
+                    Some(session_id),
+                )
+                .await?
+            {
+                return Err(AgentError::AccessDenied(format!(
+                    "User {} does not have permission to check session token limits",
+                    user_id.as_deref().unwrap_or("unknown")
+                )));
             }
         }
 
-        let status = self.session_manager.check_session_token_limits(session_id)
+        let status = self
+            .session_manager
+            .check_session_token_limits(session_id)
             .map_err(|e| AgentError::Internal(format!("Failed to check token limits: {}", e)))?;
 
         // Validate compliance if enabled (check for resource usage limits)
         if let Some(ref compliance_validator) = self.compliance_validator {
-            if !compliance_validator.validate_resource_usage(&format!("{:?}", status)).await? {
-                return Err(AgentError::ComplianceViolation("Session token usage exceeds compliance limits".to_string()));
+            if !compliance_validator
+                .validate_resource_usage(&format!("{:?}", status))
+                .await?
+            {
+                return Err(AgentError::ComplianceViolation(
+                    "Session token usage exceeds compliance limits".to_string(),
+                ));
             }
         }
 
@@ -889,15 +1119,21 @@ impl ProviderSwitchingUseCase {
         debug!(provider_id = %provider_id, "Switching to provider");
 
         // Check if provider exists and is available
-        let provider = Arc::as_ref(&self.provider_manager).get_provider(provider_id)
+        let provider = Arc::as_ref(&self.provider_manager)
+            .get_provider(provider_id)
             .map_err(|e| AgentError::Internal(format!("Provider not found: {}", e)))?;
 
         // Check provider health
-        let is_healthy = Arc::as_ref(&self.provider_manager).health_check(provider_id).await
+        let is_healthy = Arc::as_ref(&self.provider_manager)
+            .health_check(provider_id)
+            .await
             .map_err(|e| AgentError::Internal(format!("Health check failed: {}", e)))?;
 
         if !is_healthy {
-            return Err(AgentError::Internal(format!("Provider {} is not healthy", provider_id)));
+            return Err(AgentError::Internal(format!(
+                "Provider {} is not healthy",
+                provider_id
+            )));
         }
 
         info!(provider_id = %provider_id, "Successfully switched to provider");
@@ -906,7 +1142,8 @@ impl ProviderSwitchingUseCase {
 
     /// Get the current default provider
     pub fn get_current_provider(&self) -> Result<String, AgentError> {
-        let provider = Arc::as_ref(&self.provider_manager).default_provider()
+        let provider = Arc::as_ref(&self.provider_manager)
+            .default_provider()
             .map_err(|e| AgentError::Internal(format!("Failed to get default provider: {}", e)))?;
 
         Ok(provider.id().to_string())
@@ -914,7 +1151,8 @@ impl ProviderSwitchingUseCase {
 
     /// List all available providers with their status
     pub fn list_available_providers(&self) -> Vec<ProviderStatus> {
-        Arc::as_ref(&self.provider_manager).get_all_provider_statuses()
+        Arc::as_ref(&self.provider_manager)
+            .get_all_provider_statuses()
             .into_iter()
             .cloned()
             .collect()
@@ -922,14 +1160,18 @@ impl ProviderSwitchingUseCase {
 
     /// Get provider status
     pub fn get_provider_status(&self, provider_id: &str) -> Option<ProviderStatus> {
-        Arc::as_ref(&self.provider_manager).get_provider_status(provider_id).cloned()
+        Arc::as_ref(&self.provider_manager)
+            .get_provider_status(provider_id)
+            .cloned()
     }
 
     /// Auto-detect available providers
     pub async fn auto_detect_providers(&self) -> Result<Vec<String>, AgentError> {
         // Note: This requires mutable access to ProviderManager, so we'd need to modify
         // the architecture to support this. For now, return an error.
-        Err(AgentError::Internal("Auto-detection requires mutable provider manager access".to_string()))
+        Err(AgentError::Internal(
+            "Auto-detection requires mutable provider manager access".to_string(),
+        ))
     }
 }
 
@@ -946,18 +1188,25 @@ impl ProviderPerformanceUseCase {
 
     /// Get performance summary for a provider
     pub fn get_provider_performance(&self, provider_id: &str) -> Option<ProviderMetrics> {
-        Arc::as_ref(&self.provider_manager).performance_monitor().get_metrics(provider_id)
+        Arc::as_ref(&self.provider_manager)
+            .performance_monitor()
+            .get_metrics(provider_id)
     }
 
     /// Get performance summary for all providers
     pub fn get_all_provider_performance(&self) -> PerformanceSummary {
-        Arc::as_ref(&self.provider_manager).performance_monitor().get_performance_summary()
+        Arc::as_ref(&self.provider_manager)
+            .performance_monitor()
+            .get_performance_summary()
     }
 
     /// Get providers sorted by performance
     pub fn get_providers_by_performance(&self) -> Vec<(String, f64)> {
-        let all_metrics = Arc::as_ref(&self.provider_manager).performance_monitor().get_all_metrics();
-        let mut providers: Vec<_> = all_metrics.into_iter()
+        let all_metrics = Arc::as_ref(&self.provider_manager)
+            .performance_monitor()
+            .get_all_metrics();
+        let mut providers: Vec<_> = all_metrics
+            .into_iter()
             .map(|(id, metrics)| (id, metrics.avg_response_time_ms))
             .collect();
 
@@ -989,13 +1238,21 @@ impl ProviderFailoverUseCase {
     }
 
     /// Select the best provider based on constraints
-    pub fn select_best_provider(&self, constraints: Option<SelectionConstraints>) -> Option<String> {
+    pub fn select_best_provider(
+        &self,
+        constraints: Option<SelectionConstraints>,
+    ) -> Option<String> {
         Arc::as_ref(&self.provider_manager).select_best_provider(constraints.as_ref())
     }
 
     /// Select the best provider for specific model capabilities
-    pub fn select_best_provider_for_capabilities(&self, capabilities: &[Capability], constraints: Option<SelectionConstraints>) -> Option<String> {
-        Arc::as_ref(&self.provider_manager).select_best_provider_for_model(capabilities, constraints.as_ref())
+    pub fn select_best_provider_for_capabilities(
+        &self,
+        capabilities: &[Capability],
+        constraints: Option<SelectionConstraints>,
+    ) -> Option<String> {
+        Arc::as_ref(&self.provider_manager)
+            .select_best_provider_for_model(capabilities, constraints.as_ref())
     }
 
     /// Get providers sorted by quality
@@ -1021,13 +1278,18 @@ impl ProviderModelUseCase {
     }
 
     /// Filter models by specific criteria
-    pub fn filter_models(&self, models: &[ModelInfo], criteria: ModelFilterCriteria) -> Vec<ModelInfo> {
+    pub fn filter_models(
+        &self,
+        models: &[ModelInfo],
+        criteria: ModelFilterCriteria,
+    ) -> Vec<ModelInfo> {
         Arc::as_ref(&self.provider_manager).filter_models(models, criteria)
     }
 
     /// Get models for a specific provider
     pub fn get_provider_models(&self, provider_id: &str) -> Result<Vec<ModelInfo>, AgentError> {
-        let status = Arc::as_ref(&self.provider_manager).get_provider_status(provider_id)
+        let status = Arc::as_ref(&self.provider_manager)
+            .get_provider_status(provider_id)
             .ok_or_else(|| AgentError::Internal(format!("Provider {} not found", provider_id)))?;
 
         Ok(status.models.clone())
@@ -1036,8 +1298,13 @@ impl ProviderModelUseCase {
     /// Find models with specific capabilities
     pub fn find_models_with_capabilities(&self, capabilities: &[Capability]) -> Vec<ModelInfo> {
         let all_models = self.get_available_models(None);
-        all_models.into_iter()
-            .filter(|model| capabilities.iter().all(|cap| model.capabilities.contains(cap)))
+        all_models
+            .into_iter()
+            .filter(|model| {
+                capabilities
+                    .iter()
+                    .all(|cap| model.capabilities.contains(cap))
+            })
             .collect()
     }
 }
@@ -1055,16 +1322,20 @@ impl ProviderHealthUseCase {
 
     /// Check health of a specific provider
     pub async fn check_provider_health(&self, provider_id: &str) -> Result<bool, AgentError> {
-        Arc::as_ref(&self.provider_manager).health_check(provider_id).await
+        Arc::as_ref(&self.provider_manager)
+            .health_check(provider_id)
+            .await
             .map_err(|e| AgentError::Internal(format!("Health check failed: {}", e)))
     }
 
     /// Check health of all providers
     pub async fn check_all_provider_health(&self) -> Vec<(String, Result<bool, AgentError>)> {
         let results = Arc::as_ref(&self.provider_manager).health_check_all().await;
-        results.into_iter()
+        results
+            .into_iter()
             .map(|(id, result)| {
-                let mapped_result = result.map_err(|e| AgentError::Internal(format!("Health check failed: {}", e)));
+                let mapped_result =
+                    result.map_err(|e| AgentError::Internal(format!("Health check failed: {}", e)));
                 (id, mapped_result)
             })
             .collect()
@@ -1072,12 +1343,16 @@ impl ProviderHealthUseCase {
 
     /// Invalidate health check cache for a provider
     pub async fn invalidate_provider_health_cache(&self, provider_id: &str) {
-        Arc::as_ref(&self.provider_manager).invalidate_health_check(provider_id).await;
+        Arc::as_ref(&self.provider_manager)
+            .invalidate_health_check(provider_id)
+            .await;
     }
 
     /// Invalidate all health check caches
     pub async fn invalidate_all_health_caches(&self) {
-        Arc::as_ref(&self.provider_manager).invalidate_all_health_checks().await;
+        Arc::as_ref(&self.provider_manager)
+            .invalidate_all_health_checks()
+            .await;
     }
 }
 
@@ -1093,7 +1368,10 @@ impl ProviderCommunityUseCase {
     }
 
     /// Get community quality metrics for a provider
-    pub fn get_community_quality_metrics(&self, provider_id: &str) -> Option<ricecoder_providers::community::CommunityQualityMetrics> {
+    pub fn get_community_quality_metrics(
+        &self,
+        provider_id: &str,
+    ) -> Option<ricecoder_providers::community::CommunityQualityMetrics> {
         Arc::as_ref(&self.provider_manager).get_community_quality_metrics(provider_id)
     }
 
@@ -1109,12 +1387,19 @@ impl ProviderCommunityUseCase {
 
     /// Get provider analytics
     pub fn get_provider_analytics(&self, provider_id: &str) -> Option<ProviderAnalytics> {
-        Arc::as_ref(&self.provider_manager).get_provider_analytics(provider_id).cloned()
+        Arc::as_ref(&self.provider_manager)
+            .get_provider_analytics(provider_id)
+            .cloned()
     }
 
     /// Submit a provider configuration to the community
-    pub fn submit_community_config(&self, config: ricecoder_providers::community::CommunityProviderConfig) -> Result<String, AgentError> {
+    pub fn submit_community_config(
+        &self,
+        config: ricecoder_providers::community::CommunityProviderConfig,
+    ) -> Result<String, AgentError> {
         // Note: This requires mutable access, so we'd need to modify the architecture
-        Err(AgentError::Internal("Community config submission requires mutable provider manager access".to_string()))
+        Err(AgentError::Internal(
+            "Community config submission requires mutable provider manager access".to_string(),
+        ))
     }
 }

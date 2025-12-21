@@ -17,10 +17,10 @@ use futures_util::{StreamExt, TryFutureExt};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::io::{BufRead, BufReader, Write};
-use std::sync::Arc;
-use tokio::process::Command;
 use std::process::Stdio;
+use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader as AsyncBufReader};
+use tokio::process::Command;
 use tokio::sync::mpsc;
 use tracing::{debug, error, info, warn};
 
@@ -132,17 +132,20 @@ impl MCPTransport for StdioTransport {
     async fn send(&self, message: &MCPMessage) -> Result<()> {
         let mut stdin = self.stdin.lock().unwrap().take();
         if let Some(mut stdin) = stdin {
-            let json = serde_json::to_string(message)
-                .map_err(|e| Error::SerializationError(e))?;
+            let json = serde_json::to_string(message).map_err(|e| Error::SerializationError(e))?;
 
             // Add newline for message framing
             let framed_message = format!("{}\n", json);
 
             // For synchronous stdin, we need to use a different approach
 
-            stdin.write_all(framed_message.as_bytes()).await
+            stdin
+                .write_all(framed_message.as_bytes())
+                .await
                 .map_err(|e| Error::ConnectionError(format!("Failed to write to stdin: {}", e)))?;
-            stdin.flush().await
+            stdin
+                .flush()
+                .await
                 .map_err(|e| Error::ConnectionError(format!("Failed to flush stdin: {}", e)))?;
 
             debug!("Sent MCP message via stdio: {}", json);
@@ -157,16 +160,17 @@ impl MCPTransport for StdioTransport {
         let mut reader = self.stdout_reader.lock().unwrap().take();
         if let Some(mut reader) = reader {
             let mut line = String::new();
-            let bytes_read = reader.read_line(&mut line).await
-                .map_err(|e| Error::ConnectionError(format!("Failed to read from stdout: {}", e)))?;
+            let bytes_read = reader.read_line(&mut line).await.map_err(|e| {
+                Error::ConnectionError(format!("Failed to read from stdout: {}", e))
+            })?;
 
             if bytes_read == 0 {
                 *self.stdout_reader.lock().unwrap() = Some(reader);
                 return Err(Error::ConnectionError("EOF reached".to_string()));
             }
 
-            let message: MCPMessage = serde_json::from_str(line.trim())
-                .map_err(|e| Error::SerializationError(e))?;
+            let message: MCPMessage =
+                serde_json::from_str(line.trim()).map_err(|e| Error::SerializationError(e))?;
 
             debug!("Received MCP message via stdio: {:?}", message);
             *self.stdout_reader.lock().unwrap() = Some(reader);
@@ -178,7 +182,9 @@ impl MCPTransport for StdioTransport {
 
     async fn is_connected(&self) -> bool {
         let mut child_guard = self.child.lock().unwrap();
-        child_guard.as_mut().map_or(false, |c| c.try_wait().unwrap_or(None).is_none())
+        child_guard
+            .as_mut()
+            .map_or(false, |c| c.try_wait().unwrap_or(None).is_none())
     }
 
     async fn close(&self) -> Result<()> {
@@ -235,7 +241,10 @@ impl HTTPTransport {
     }
 
     /// Set OAuth token manager for OAuth2 authentication
-    pub fn with_oauth_manager(mut self, oauth_manager: std::sync::Arc<ricecoder_security::oauth::TokenManager>) -> Self {
+    pub fn with_oauth_manager(
+        mut self,
+        oauth_manager: std::sync::Arc<ricecoder_security::oauth::TokenManager>,
+    ) -> Self {
         self.oauth_manager = Some(oauth_manager);
         self
     }
@@ -253,8 +262,11 @@ impl HTTPTransport {
                 ) {
                     client_builder = client_builder.default_headers({
                         let mut headers = reqwest::header::HeaderMap::new();
-                        use base64::{Engine as _, engine::general_purpose};
-                    let auth = format!("Basic {}", general_purpose::STANDARD.encode(format!("{}:{}", username, password)));
+                        use base64::{engine::general_purpose, Engine as _};
+                        let auth = format!(
+                            "Basic {}",
+                            general_purpose::STANDARD.encode(format!("{}:{}", username, password))
+                        );
                         headers.insert("Authorization", auth.parse().unwrap());
                         headers
                     });
@@ -264,7 +276,10 @@ impl HTTPTransport {
                 if let Some(token) = auth_config.credentials.get("token") {
                     client_builder = client_builder.default_headers({
                         let mut headers = reqwest::header::HeaderMap::new();
-                        headers.insert("Authorization", format!("Bearer {}", token).parse().unwrap());
+                        headers.insert(
+                            "Authorization",
+                            format!("Bearer {}", token).parse().unwrap(),
+                        );
                         headers
                     });
                 }
@@ -276,7 +291,10 @@ impl HTTPTransport {
                 ) {
                     client_builder = client_builder.default_headers({
                         let mut headers = reqwest::header::HeaderMap::new();
-                        headers.insert(header_name.parse::<reqwest::header::HeaderName>().unwrap(), api_key.parse::<reqwest::header::HeaderValue>().unwrap());
+                        headers.insert(
+                            header_name.parse::<reqwest::header::HeaderName>().unwrap(),
+                            api_key.parse::<reqwest::header::HeaderValue>().unwrap(),
+                        );
                         headers
                     });
                 }
@@ -287,8 +305,9 @@ impl HTTPTransport {
             HTTPAuthType::None => {}
         }
 
-        let client = client_builder.build()
-            .map_err(|e| Error::ConfigValidationError(format!("Failed to build HTTP client: {}", e)))?;
+        let client = client_builder.build().map_err(|e| {
+            Error::ConfigValidationError(format!("Failed to build HTTP client: {}", e))
+        })?;
 
         Ok(Self {
             base_url: base_url.trim_end_matches('/').to_string(),
@@ -316,15 +335,24 @@ impl MCPTransport for HTTPTransport {
                                 auth_config.credentials.get("user_id"),
                             ) {
                                 if let Ok(token) = oauth_manager.validate_token(token_id) {
-                                    request_builder = request_builder.header("Authorization", format!("Bearer {}", token.access_token));
+                                    request_builder = request_builder.header(
+                                        "Authorization",
+                                        format!("Bearer {}", token.access_token),
+                                    );
                                 } else {
-                                    return Err(Error::AuthorizationError("Invalid or expired OAuth2 token".to_string()));
+                                    return Err(Error::AuthorizationError(
+                                        "Invalid or expired OAuth2 token".to_string(),
+                                    ));
                                 }
                             } else {
-                                return Err(Error::AuthorizationError("OAuth2 token_id and user_id required".to_string()));
+                                return Err(Error::AuthorizationError(
+                                    "OAuth2 token_id and user_id required".to_string(),
+                                ));
                             }
                         } else {
-                            return Err(Error::AuthorizationError("OAuth2 manager not configured".to_string()));
+                            return Err(Error::AuthorizationError(
+                                "OAuth2 manager not configured".to_string(),
+                            ));
                         }
                     }
                 }
@@ -335,7 +363,11 @@ impl MCPTransport for HTTPTransport {
                     .map_err(|e| Error::ConnectionError(format!("HTTP request failed: {}", e)))?;
 
                 if !response.status().is_success() {
-                    return Err(Error::ServerError(format!("HTTP {}: {}", response.status(), response.text().await.unwrap_or_default())));
+                    return Err(Error::ServerError(format!(
+                        "HTTP {}: {}",
+                        response.status(),
+                        response.text().await.unwrap_or_default()
+                    )));
                 }
 
                 debug!("Sent MCP request via HTTP: {} to {}", request.method, url);
@@ -343,33 +375,48 @@ impl MCPTransport for HTTPTransport {
             }
             MCPMessage::Notification(notification) => {
                 let url = format!("{}/notify/{}", self.base_url, notification.method);
-                let response = self.client
+                let response = self
+                    .client
                     .post(&url)
                     .json(&notification.params)
                     .send()
                     .await
-                    .map_err(|e| Error::ConnectionError(format!("HTTP notification failed: {}", e)))?;
+                    .map_err(|e| {
+                        Error::ConnectionError(format!("HTTP notification failed: {}", e))
+                    })?;
 
                 if !response.status().is_success() {
-                    warn!("HTTP notification failed with status: {}", response.status());
+                    warn!(
+                        "HTTP notification failed with status: {}",
+                        response.status()
+                    );
                 }
 
                 debug!("Sent MCP notification via HTTP: {}", notification.method);
                 Ok(())
             }
-            _ => Err(Error::ValidationError("HTTP transport only supports requests and notifications".to_string())),
+            _ => Err(Error::ValidationError(
+                "HTTP transport only supports requests and notifications".to_string(),
+            )),
         }
     }
 
     async fn receive(&self) -> Result<MCPMessage> {
         // HTTP transport is request-response, so receiving is not directly supported
         // In a real implementation, this might poll for responses or use webhooks
-        Err(Error::ValidationError("HTTP transport does not support receiving messages".to_string()))
+        Err(Error::ValidationError(
+            "HTTP transport does not support receiving messages".to_string(),
+        ))
     }
 
     async fn is_connected(&self) -> bool {
         // Simple connectivity check
-        match self.client.get(&format!("{}/health", self.base_url)).send().await {
+        match self
+            .client
+            .get(&format!("{}/health", self.base_url))
+            .send()
+            .await
+        {
             Ok(resp) => resp.status().is_success(),
             Err(_) => false,
         }
@@ -438,14 +485,18 @@ impl SSETransport {
             .map_err(|e| Error::ConnectionError(format!("SSE connection failed: {}", e)))?;
 
         if !response.status().is_success() {
-            return Err(Error::ConnectionError(format!("SSE connection failed with status: {}", response.status())));
+            return Err(Error::ConnectionError(format!(
+                "SSE connection failed with status: {}",
+                response.status()
+            )));
         }
 
         let mut stream = response.bytes_stream();
         let mut buffer = String::new();
 
         while let Some(chunk) = stream.next().await {
-            let chunk = chunk.map_err(|e| Error::ConnectionError(format!("SSE stream error: {}", e)))?;
+            let chunk =
+                chunk.map_err(|e| Error::ConnectionError(format!("SSE stream error: {}", e)))?;
             let text = String::from_utf8_lossy(&chunk);
 
             buffer.push_str(&text);
@@ -470,7 +521,9 @@ impl SSETransport {
 impl MCPTransport for SSETransport {
     async fn send(&self, message: &MCPMessage) -> Result<()> {
         // SSE is typically receive-only, but we could implement sending via a separate HTTP endpoint
-        Err(Error::ValidationError("SSE transport does not support sending messages".to_string()))
+        Err(Error::ValidationError(
+            "SSE transport does not support sending messages".to_string(),
+        ))
     }
 
     async fn receive(&self) -> Result<MCPMessage> {
@@ -478,8 +531,8 @@ impl MCPTransport for SSETransport {
         if let Some(mut receiver) = receiver {
             match receiver.recv().await {
                 Some(data) => {
-                    let message: MCPMessage = serde_json::from_str(&data)
-                        .map_err(|e| Error::SerializationError(e))?;
+                    let message: MCPMessage =
+                        serde_json::from_str(&data).map_err(|e| Error::SerializationError(e))?;
                     debug!("Received MCP message via SSE: {:?}", message);
                     *self.event_receiver.lock().unwrap() = Some(receiver);
                     Ok(message)
@@ -490,7 +543,9 @@ impl MCPTransport for SSETransport {
                 }
             }
         } else {
-            Err(Error::ConnectionError("SSE receiver not available".to_string()))
+            Err(Error::ConnectionError(
+                "SSE receiver not available".to_string(),
+            ))
         }
     }
 
@@ -515,14 +570,18 @@ impl TransportFactory {
     pub fn create(config: &TransportConfig) -> Result<Arc<dyn MCPTransport>> {
         match config.transport_type {
             TransportType::Stdio => {
-                let stdio_config = config.stdio_config.as_ref()
+                let stdio_config = config
+                    .stdio_config
+                    .as_ref()
                     .ok_or_else(|| Error::ConfigError("Stdio config required".to_string()))?;
                 let args: Vec<&str> = stdio_config.args.iter().map(|s| s.as_str()).collect();
                 let transport = StdioTransport::new(&stdio_config.command, &args)?;
                 Ok(Arc::new(transport))
             }
             TransportType::HTTP => {
-                let http_config = config.http_config.as_ref()
+                let http_config = config
+                    .http_config
+                    .as_ref()
                     .ok_or_else(|| Error::ConfigError("HTTP config required".to_string()))?;
                 let transport = if let Some(auth_config) = &http_config.auth_config {
                     HTTPTransport::with_auth(&http_config.base_url, auth_config.clone())?
@@ -532,7 +591,9 @@ impl TransportFactory {
                 Ok(Arc::new(transport))
             }
             TransportType::SSE => {
-                let sse_config = config.sse_config.as_ref()
+                let sse_config = config
+                    .sse_config
+                    .as_ref()
                     .ok_or_else(|| Error::ConfigError("SSE config required".to_string()))?;
                 let mut transport = SSETransport::new(&sse_config.url);
                 // Note: connect() should be called separately for SSE

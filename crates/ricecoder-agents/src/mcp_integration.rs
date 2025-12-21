@@ -40,7 +40,10 @@ impl ExternalToolBackend {
     /// Create an MCP backend
     #[cfg(feature = "mcp")]
     pub fn mcp(server_command: String, server_args: Vec<String>) -> Self {
-        Self::new("mcp".to_string(), Arc::new(MCPToolExecutor::new(server_command, server_args)))
+        Self::new(
+            "mcp".to_string(),
+            Arc::new(MCPToolExecutor::new(server_command, server_args)),
+        )
     }
 
     /// Create an MCP backend with default settings (placeholder)
@@ -50,7 +53,10 @@ impl ExternalToolBackend {
 
     /// Create an HTTP API backend
     pub fn http_api(base_url: String) -> Self {
-        Self::new("http_api".to_string(), Arc::new(HTTPToolExecutor::new(base_url)))
+        Self::new(
+            "http_api".to_string(),
+            Arc::new(HTTPToolExecutor::new(base_url)),
+        )
     }
 }
 
@@ -78,7 +84,10 @@ impl ToolBackend for ExternalToolBackend {
         info!(tool_name = %tool_name, backend_type = %self.backend_type, "Executing external tool");
 
         // Execute through the backend executor
-        let result = self.executor.execute_tool(tool_name, parameters, backend_config).await?;
+        let result = self
+            .executor
+            .execute_tool(tool_name, parameters, backend_config)
+            .await?;
 
         Ok(json!({
             "success": result.success,
@@ -178,10 +187,15 @@ impl ToolExecutor for HTTPToolExecutor {
         let start_time = std::time::Instant::now();
 
         // Construct API endpoint
-        let endpoint = format!("{}/tools/{}", self.base_url.trim_end_matches('/'), tool_name);
+        let endpoint = format!(
+            "{}/tools/{}",
+            self.base_url.trim_end_matches('/'),
+            tool_name
+        );
 
         // Make HTTP request
-        let response = self.client
+        let response = self
+            .client
             .post(&endpoint)
             .json(&parameters)
             .send()
@@ -191,7 +205,9 @@ impl ToolExecutor for HTTPToolExecutor {
         let execution_time = start_time.elapsed().as_millis() as u64;
 
         if response.status().is_success() {
-            let result: serde_json::Value = response.json().await
+            let result: serde_json::Value = response
+                .json()
+                .await
                 .map_err(|e| format!("Failed to parse response: {}", e))?;
 
             Ok(ToolExecutionResult {
@@ -201,7 +217,9 @@ impl ToolExecutor for HTTPToolExecutor {
                 execution_time_ms: execution_time,
             })
         } else {
-            let error_text = response.text().await
+            let error_text = response
+                .text()
+                .await
                 .unwrap_or_else(|_| "Unknown error".to_string());
 
             Ok(ToolExecutionResult {
@@ -252,7 +270,9 @@ impl MCPToolExecutor {
             let client = Client::new(transport);
 
             // Initialize the client
-            client.initialize().await
+            client
+                .initialize()
+                .await
                 .map_err(|e| format!("Failed to initialize MCP client: {}", e))?;
 
             *client_guard = Some(client);
@@ -279,13 +299,16 @@ impl ToolExecutor for MCPToolExecutor {
         self.ensure_client().await?;
 
         let client_guard = self.client.read().await;
-        let client = client_guard.as_ref()
+        let client = client_guard
+            .as_ref()
             .ok_or_else(|| "MCP client not initialized".to_string())?;
 
         debug!(tool_name = %tool_name, "Executing tool via MCP");
 
         // Execute tool using MCP
-        let result = client.call_tool(tool_name, parameters).await
+        let result = client
+            .call_tool(tool_name, parameters)
+            .await
             .map_err(|e| format!("MCP tool execution failed: {}", e))?;
 
         let execution_time = start_time.elapsed().as_millis() as u64;
@@ -296,15 +319,13 @@ impl ToolExecutor for MCPToolExecutor {
                 // Extract the first text content if available
                 let data = if let Some(first_content) = content.first() {
                     match first_content {
-                        rmcp::schema::ToolResultContent::Text { text } => {
-                            Some(json!(text))
-                        }
+                        rmcp::schema::ToolResultContent::Text { text } => Some(json!(text)),
                         rmcp::schema::ToolResultContent::Image { .. } => {
                             Some(json!({"type": "image", "content": "Image content not supported"}))
                         }
-                        rmcp::schema::ToolResultContent::Resource { .. } => {
-                            Some(json!({"type": "resource", "content": "Resource content not supported"}))
-                        }
+                        rmcp::schema::ToolResultContent::Resource { .. } => Some(
+                            json!({"type": "resource", "content": "Resource content not supported"}),
+                        ),
                     }
                 } else {
                     Some(json!({"content": []}))
@@ -317,14 +338,12 @@ impl ToolExecutor for MCPToolExecutor {
                     execution_time_ms: execution_time,
                 })
             }
-            rmcp::schema::CallToolResult::Error { error } => {
-                Ok(ToolExecutionResult {
-                    success: false,
-                    data: None,
-                    error: Some(error.message),
-                    execution_time_ms: execution_time,
-                })
-            }
+            rmcp::schema::CallToolResult::Error { error } => Ok(ToolExecutionResult {
+                success: false,
+                data: None,
+                error: Some(error.message),
+                execution_time_ms: execution_time,
+            }),
         }
     }
 }
@@ -428,18 +447,43 @@ impl ExternalToolIntegrationService {
     }
 
     /// Check if the operation is allowed based on security configuration
-    async fn check_security(&self, server: &str, tool: &str, session_id: Option<&str>) -> Result<(), AgentError> {
+    async fn check_security(
+        &self,
+        server: &str,
+        tool: &str,
+        session_id: Option<&str>,
+    ) -> Result<(), AgentError> {
         // Check if authentication is required
         if self.security_config.require_authentication && session_id.is_none() {
-            self.log_audit("authentication_required", server, Some(tool), session_id, false, Some("Authentication required".to_string()), None).await;
+            self.log_audit(
+                "authentication_required",
+                server,
+                Some(tool),
+                session_id,
+                false,
+                Some("Authentication required".to_string()),
+                None,
+            )
+            .await;
             return Err(AgentError::AuthenticationRequired);
         }
 
         // Check tool permissions
         if let Some(permission) = self.security_config.tool_permissions.get(tool) {
             if !permission.allowed {
-                self.log_audit("tool_not_allowed", server, Some(tool), session_id, false, Some("Tool execution not allowed".to_string()), None).await;
-                return Err(AgentError::PermissionDenied("Tool execution not allowed".to_string()));
+                self.log_audit(
+                    "tool_not_allowed",
+                    server,
+                    Some(tool),
+                    session_id,
+                    false,
+                    Some("Tool execution not allowed".to_string()),
+                    None,
+                )
+                .await;
+                return Err(AgentError::PermissionDenied(
+                    "Tool execution not allowed".to_string(),
+                ));
             }
 
             // Check authentication level
@@ -447,14 +491,34 @@ impl ExternalToolIntegrationService {
                 AuthLevel::None => {}
                 AuthLevel::Basic | AuthLevel::Session => {
                     if session_id.is_none() {
-                        self.log_audit("insufficient_auth", server, Some(tool), session_id, false, Some("Insufficient authentication level".to_string()), None).await;
+                        self.log_audit(
+                            "insufficient_auth",
+                            server,
+                            Some(tool),
+                            session_id,
+                            false,
+                            Some("Insufficient authentication level".to_string()),
+                            None,
+                        )
+                        .await;
                         return Err(AgentError::AuthenticationRequired);
                     }
                 }
                 AuthLevel::Admin => {
                     // TODO: Check admin privileges
-                    self.log_audit("admin_required", server, Some(tool), session_id, false, Some("Admin privileges required".to_string()), None).await;
-                    return Err(AgentError::PermissionDenied("Admin privileges required".to_string()));
+                    self.log_audit(
+                        "admin_required",
+                        server,
+                        Some(tool),
+                        session_id,
+                        false,
+                        Some("Admin privileges required".to_string()),
+                        None,
+                    )
+                    .await;
+                    return Err(AgentError::PermissionDenied(
+                        "Admin privileges required".to_string(),
+                    ));
                 }
             }
         }
@@ -463,9 +527,15 @@ impl ExternalToolIntegrationService {
     }
 
     /// Validate tool parameters against security rules
-    fn validate_parameters(&self, tool: &str, parameters: &serde_json::Value) -> Result<(), AgentError> {
+    fn validate_parameters(
+        &self,
+        tool: &str,
+        parameters: &serde_json::Value,
+    ) -> Result<(), AgentError> {
         if let Some(permission) = self.security_config.tool_permissions.get(tool) {
-            let param_size = serde_json::to_string(parameters).map(|s| s.len()).unwrap_or(0);
+            let param_size = serde_json::to_string(parameters)
+                .map(|s| s.len())
+                .unwrap_or(0);
 
             if param_size > permission.parameter_validation.max_size {
                 return Err(AgentError::ValidationError(format!(
@@ -475,14 +545,21 @@ impl ExternalToolIntegrationService {
             }
 
             // Validate parameter types
-            self.validate_parameter_types(parameters, &permission.parameter_validation.allowed_types)?;
+            self.validate_parameter_types(
+                parameters,
+                &permission.parameter_validation.allowed_types,
+            )?;
         }
 
         Ok(())
     }
 
     /// Validate parameter types recursively
-    fn validate_parameter_types(&self, value: &serde_json::Value, allowed_types: &[String]) -> Result<(), AgentError> {
+    fn validate_parameter_types(
+        &self,
+        value: &serde_json::Value,
+        allowed_types: &[String],
+    ) -> Result<(), AgentError> {
         let value_type = match value {
             serde_json::Value::Null => "null",
             serde_json::Value::Bool(_) => "boolean",
@@ -586,12 +663,24 @@ impl ExternalToolIntegrationService {
         let start_time = std::time::Instant::now();
 
         if !self.tool_invoker.has_backend().await {
-            self.log_audit("no_backend", "unknown", Some(tool_name), session_id.as_deref(), false, Some("No tool backend configured".to_string()), None).await;
-            return Err(AgentError::ExecutionFailed("No tool backend configured".to_string()));
+            self.log_audit(
+                "no_backend",
+                "unknown",
+                Some(tool_name),
+                session_id.as_deref(),
+                false,
+                Some("No tool backend configured".to_string()),
+                None,
+            )
+            .await;
+            return Err(AgentError::ExecutionFailed(
+                "No tool backend configured".to_string(),
+            ));
         }
 
         // Security checks
-        self.check_security("unknown", tool_name, session_id.as_deref()).await?;
+        self.check_security("unknown", tool_name, session_id.as_deref())
+            .await?;
 
         // Validate input parameters against security rules
         self.validate_parameters(tool_name, &parameters)?;
@@ -613,7 +702,16 @@ impl ExternalToolIntegrationService {
         // Log audit entry
         let success = result.is_ok();
         let error_msg = result.as_ref().err().map(|e| e.to_string());
-        self.log_audit("tool_execution", "unknown", Some(tool_name), session_id.as_deref(), success, error_msg, Some(execution_time)).await;
+        self.log_audit(
+            "tool_execution",
+            "unknown",
+            Some(tool_name),
+            session_id.as_deref(),
+            success,
+            error_msg,
+            Some(execution_time),
+        )
+        .await;
 
         result
     }
@@ -625,8 +723,15 @@ impl ExternalToolIntegrationService {
         backend: ExternalToolBackend,
     ) -> Result<(), AgentError> {
         // Configure the backend in the tool invoker
-        self.tool_invoker.configure_backend(backend).await
-            .map_err(|e| AgentError::ExecutionFailed(format!("Failed to configure backend '{}': {}", name, e)))?;
+        self.tool_invoker
+            .configure_backend(backend)
+            .await
+            .map_err(|e| {
+                AgentError::ExecutionFailed(format!(
+                    "Failed to configure backend '{}': {}",
+                    name, e
+                ))
+            })?;
 
         // Track configured backends
         let mut configured = self.configured_backends.write().await;
@@ -662,8 +767,9 @@ impl ExternalToolIntegrationService {
             // Execute with timeout
             let execution_result = tokio::time::timeout(
                 std::time::Duration::from_secs(30),
-                self.tool_invoker.invoke(input.clone())
-            ).await;
+                self.tool_invoker.invoke(input.clone()),
+            )
+            .await;
 
             match execution_result {
                 Ok(Ok(result)) => {
@@ -693,7 +799,10 @@ impl ExternalToolIntegrationService {
                                 "Retrying tool execution due to transient error"
                             );
                             last_error = Some(AgentError::ExecutionFailed(error_msg.to_string()));
-                            tokio::time::sleep(std::time::Duration::from_millis(500 * attempt as u64)).await;
+                            tokio::time::sleep(std::time::Duration::from_millis(
+                                500 * attempt as u64,
+                            ))
+                            .await;
                             continue;
                         } else {
                             return Err(AgentError::ExecutionFailed(error_msg.to_string()));
@@ -710,7 +819,8 @@ impl ExternalToolIntegrationService {
                             "Retrying tool execution due to invoker error"
                         );
                         last_error = Some(AgentError::ExecutionFailed(e));
-                        tokio::time::sleep(std::time::Duration::from_millis(500 * attempt as u64)).await;
+                        tokio::time::sleep(std::time::Duration::from_millis(500 * attempt as u64))
+                            .await;
                         continue;
                     } else {
                         return Err(AgentError::ExecutionFailed(e));
@@ -725,7 +835,8 @@ impl ExternalToolIntegrationService {
                             "Tool execution timed out, retrying"
                         );
                         last_error = Some(AgentError::Timeout(30000));
-                        tokio::time::sleep(std::time::Duration::from_millis(1000 * attempt as u64)).await;
+                        tokio::time::sleep(std::time::Duration::from_millis(1000 * attempt as u64))
+                            .await;
                         continue;
                     } else {
                         return Err(AgentError::Timeout(30000));
@@ -740,7 +851,9 @@ impl ExternalToolIntegrationService {
             max_retries = max_retries,
             "Tool execution failed after all retries"
         );
-        Err(last_error.unwrap_or_else(|| AgentError::ExecutionFailed("Unknown error after retries".to_string())))
+        Err(last_error.unwrap_or_else(|| {
+            AgentError::ExecutionFailed("Unknown error after retries".to_string())
+        }))
     }
 
     /// Determine if an error should trigger a retry
@@ -748,13 +861,13 @@ impl ExternalToolIntegrationService {
         let error_lower = error_msg.to_lowercase();
 
         // Retry on transient errors
-        error_lower.contains("timeout") ||
-        error_lower.contains("connection refused") ||
-        error_lower.contains("connection reset") ||
-        error_lower.contains("temporary failure") ||
-        error_lower.contains("server unavailable") ||
-        error_lower.contains("rate limit") ||
-        error_lower.contains("too many requests")
+        error_lower.contains("timeout")
+            || error_lower.contains("connection refused")
+            || error_lower.contains("connection reset")
+            || error_lower.contains("temporary failure")
+            || error_lower.contains("server unavailable")
+            || error_lower.contains("rate limit")
+            || error_lower.contains("too many requests")
     }
 }
 

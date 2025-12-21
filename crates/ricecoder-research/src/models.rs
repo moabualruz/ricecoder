@@ -137,8 +137,6 @@ pub struct ProjectStructure {
     pub entry_points: Vec<PathBuf>,
 }
 
-
-
 /// Project dependency
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Dependency {

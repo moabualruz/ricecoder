@@ -10,8 +10,6 @@ mod tests {
     use crate::{Decision, DecisionContext, DecisionLogger};
     use std::path::PathBuf;
 
-
-
     /// Property 1: Decision Capture Completeness
     /// For any decision, when captured, all metadata fields should be preserved
     #[tokio::test]
@@ -49,7 +47,10 @@ mod tests {
         // Verify all metadata is preserved
         assert_eq!(retrieved_decision.id, decision_id);
         assert_eq!(retrieved_decision.decision_type, decision_type);
-        assert_eq!(retrieved_decision.context.project_path, context.project_path);
+        assert_eq!(
+            retrieved_decision.context.project_path,
+            context.project_path
+        );
         assert_eq!(retrieved_decision.context.file_path, context.file_path);
         assert_eq!(retrieved_decision.context.line_number, context.line_number);
         assert_eq!(retrieved_decision.context.agent_type, context.agent_type);
@@ -98,7 +99,8 @@ mod tests {
     async fn prop_decisions_filterable_by_type() {
         let logger = DecisionLogger::new();
 
-        let mut type_counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+        let mut type_counts: std::collections::HashMap<String, usize> =
+            std::collections::HashMap::new();
 
         for i in 0..50 {
             let context = DecisionContext {
@@ -267,8 +269,10 @@ mod tests {
     async fn prop_statistics_accurately_reflect_decisions() {
         let logger = DecisionLogger::new();
 
-        let mut expected_type_counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
-        let mut expected_agent_counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+        let mut expected_type_counts: std::collections::HashMap<String, usize> =
+            std::collections::HashMap::new();
+        let mut expected_agent_counts: std::collections::HashMap<String, usize> =
+            std::collections::HashMap::new();
 
         for i in 0..50 {
             let context = DecisionContext {
@@ -280,7 +284,9 @@ mod tests {
 
             let decision_type = format!("type_{}", i % 4);
 
-            *expected_type_counts.entry(decision_type.clone()).or_insert(0) += 1;
+            *expected_type_counts
+                .entry(decision_type.clone())
+                .or_insert(0) += 1;
             *expected_agent_counts
                 .entry(context.agent_type.clone())
                 .or_insert(0) += 1;
@@ -304,7 +310,10 @@ mod tests {
 
         // Verify decision type counts
         for (decision_type, expected_count) in expected_type_counts {
-            assert_eq!(stats.decision_types.get(&decision_type), Some(&expected_count));
+            assert_eq!(
+                stats.decision_types.get(&decision_type),
+                Some(&expected_count)
+            );
         }
 
         // Verify agent type counts

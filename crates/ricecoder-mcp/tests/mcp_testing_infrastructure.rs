@@ -4,16 +4,16 @@
 //! generation, and testing utilities specifically designed for MCP (Model Context Protocol)
 //! testing, with particular focus on enterprise security scenarios.
 
-use std::collections::HashMap;
-use std::sync::Arc;
 use proptest::prelude::*;
 use serde_json::{json, Value};
+use std::collections::HashMap;
+use std::sync::Arc;
 
 // MCP imports
 use ricecoder_mcp::{
-    metadata::ToolMetadata,
-    transport::{MCPRequest, MCPResponse, MCPTransport, MCPMessage},
     error::{Error, Result},
+    metadata::ToolMetadata,
+    transport::{MCPMessage, MCPRequest, MCPResponse, MCPTransport},
 };
 
 // ============================================================================
@@ -77,13 +77,16 @@ impl MockMCPServer {
         // Handle tool listing
         if request.method == "tools/list" {
             let tools = self.tools.lock().unwrap();
-            let tools: Vec<Value> = tools.values().map(|tool| {
-                json!({
-                    "name": tool.name,
-                    "description": tool.description,
-                    "inputSchema": tool.input_schema
+            let tools: Vec<Value> = tools
+                .values()
+                .map(|tool| {
+                    json!({
+                        "name": tool.name,
+                        "description": tool.description,
+                        "inputSchema": tool.input_schema
+                    })
                 })
-            }).collect();
+                .collect();
 
             return Ok(MCPResponse {
                 id: request.id.clone(),
@@ -92,7 +95,7 @@ impl MockMCPServer {
         }
 
         Err(ricecoder_mcp::error::Error::ToolError(
-            ricecoder_mcp::error::ToolError::MethodNotFound(request.method.clone())
+            ricecoder_mcp::error::ToolError::MethodNotFound(request.method.clone()),
         ))
     }
 }
@@ -107,21 +110,19 @@ pub struct MCPProtocolDataGenerator;
 impl MCPProtocolDataGenerator {
     /// Generate a complete set of MCP protocol test scenarios
     pub fn generate_protocol_test_scenarios() -> Vec<MCPProtocolTestScenario> {
-        vec![
-            MCPProtocolTestScenario {
-                name: "basic_request_response".to_string(),
-                request: MCPRequest {
-                    id: "test-1".to_string(),
-                    method: "tools/call".to_string(),
-                    params: Some(json!({"name": "test-tool"})),
-                },
-                expected_response: Some(MCPResponse {
-                    id: "test-1".to_string(),
-                    result: json!({"result": "success"}),
-                }),
-                should_fail: false,
+        vec![MCPProtocolTestScenario {
+            name: "basic_request_response".to_string(),
+            request: MCPRequest {
+                id: "test-1".to_string(),
+                method: "tools/call".to_string(),
+                params: Some(json!({"name": "test-tool"})),
             },
-        ]
+            expected_response: Some(MCPResponse {
+                id: "test-1".to_string(),
+                result: json!({"result": "success"}),
+            }),
+            should_fail: false,
+        }]
     }
 }
 
@@ -141,18 +142,20 @@ pub struct MCPProtocolTestScenario {
 pub fn arb_enterprise_tool_metadata() -> impl Strategy<Value = ToolMetadata> {
     (
         "[a-zA-Z0-9_-]{1,64}".prop_map(|s| s), // name
-        ".{1,256}".prop_map(|s| s), // description
+        ".{1,256}".prop_map(|s| s),            // description
         arb_enterprise_input_schema(),
         proptest::collection::vec("[a-zA-Z0-9_:.-]{1,128}".prop_map(|s| s), 0..5), // permissions
         proptest::option::of(arb_enterprise_metadata()),
     )
-        .prop_map(|(name, description, input_schema, permissions_required, metadata)| ToolMetadata {
-            name,
-            description,
-            input_schema,
-            permissions_required,
-            metadata,
-        })
+        .prop_map(
+            |(name, description, input_schema, permissions_required, metadata)| ToolMetadata {
+                name,
+                description,
+                input_schema,
+                permissions_required,
+                metadata,
+            },
+        )
 }
 
 fn arb_enterprise_input_schema() -> impl Strategy<Value = Value> {

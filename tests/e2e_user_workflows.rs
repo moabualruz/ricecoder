@@ -8,7 +8,7 @@ use ricecoder_cli::commands::*;
 use ricecoder_cli::router::{Cli, Commands};
 use ricecoder_mcp::{MCPClient, ServerConfig as McpServerConfig};
 use ricecoder_security::{AccessControl, AuditLogger, ComplianceManager};
-use ricecoder_sessions::{SessionManager, models::SessionContext};
+use ricecoder_sessions::{models::SessionContext, SessionManager};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -51,11 +51,17 @@ async fn initialize_enterprise_project(project_path: &PathBuf) {
 
     // Verify enterprise security configuration was created
     let security_config = project_path.join(".agent/security.toml");
-    assert!(security_config.exists(), "Security configuration should exist");
+    assert!(
+        security_config.exists(),
+        "Security configuration should exist"
+    );
 
     // Verify access control policies
     let access_config = project_path.join(".agent/access-control.yaml");
-    assert!(access_config.exists(), "Access control configuration should exist");
+    assert!(
+        access_config.exists(),
+        "Access control configuration should exist"
+    );
 }
 
 /// Configure MCP servers with enterprise security policies
@@ -103,13 +109,14 @@ async fn create_secure_session(project_path: &PathBuf) -> Arc<SessionManager> {
     let session_context = SessionContext::new(
         "openai".to_string(),
         "gpt-4".to_string(),
-        ricecoder_sessions::models::SessionMode::Code
+        ricecoder_sessions::models::SessionMode::Code,
     );
 
     let mut session_manager = SessionManager::new(10); // session limit of 10
 
     // Create a new session with enterprise security
-    let session_id = session_manager.create_session("enterprise-workflow-test".to_string(), session_context)
+    let session_id = session_manager
+        .create_session("enterprise-workflow-test".to_string(), session_context)
         .expect("Failed to create session");
 
     // Set session context
@@ -119,44 +126,59 @@ async fn create_secure_session(project_path: &PathBuf) -> Arc<SessionManager> {
 }
 
 /// Execute a complete workflow using MCP tools with security monitoring
-async fn execute_secure_mcp_workflow(session_manager: &Arc<SessionManager>, mcp_config: &McpServerConfig) {
-    let mcp_client = McpClient::new(mcp_config.clone()).await
+async fn execute_secure_mcp_workflow(
+    session_manager: &Arc<SessionManager>,
+    mcp_config: &McpServerConfig,
+) {
+    let mcp_client = McpClient::new(mcp_config.clone())
+        .await
         .expect("Failed to create MCP client");
 
     // Connect to MCP servers
-    mcp_client.connect_all().await
+    mcp_client
+        .connect_all()
+        .await
         .expect("Failed to connect to MCP servers");
 
     // Execute file system operations with security
-    let fs_result = mcp_client.execute_tool(
-        "filesystem",
-        "list_directory",
-        serde_json::json!({
-            "path": "/tmp",
-            "include_hidden": false
-        })
-    ).await;
-    assert!(fs_result.is_ok(), "File system tool execution should succeed");
+    let fs_result = mcp_client
+        .execute_tool(
+            "filesystem",
+            "list_directory",
+            serde_json::json!({
+                "path": "/tmp",
+                "include_hidden": false
+            }),
+        )
+        .await;
+    assert!(
+        fs_result.is_ok(),
+        "File system tool execution should succeed"
+    );
 
     // Execute git operations with compliance
-    let git_result = mcp_client.execute_tool(
-        "git",
-        "get_status",
-        serde_json::json!({
-            "repository_path": "."
-        })
-    ).await;
+    let git_result = mcp_client
+        .execute_tool(
+            "git",
+            "get_status",
+            serde_json::json!({
+                "repository_path": "."
+            }),
+        )
+        .await;
     assert!(git_result.is_ok(), "Git tool execution should succeed");
 
     // Execute database query with encryption
-    let db_result = mcp_client.execute_tool(
-        "database",
-        "execute_query",
-        serde_json::json!({
-            "query": "SELECT COUNT(*) FROM users",
-            "connection_string": "encrypted://test-db"
-        })
-    ).await;
+    let db_result = mcp_client
+        .execute_tool(
+            "database",
+            "execute_query",
+            serde_json::json!({
+                "query": "SELECT COUNT(*) FROM users",
+                "connection_string": "encrypted://test-db"
+            }),
+        )
+        .await;
     assert!(db_result.is_ok(), "Database tool execution should succeed");
 
     // Validate all operations were audited
@@ -169,13 +191,20 @@ async fn validate_enterprise_audit_trail(session_manager: &Arc<SessionManager>) 
     // Note: In a real implementation, audit logs would be collected from the security/audit system
     // For this test, we verify that the session exists and has proper structure
 
-    let session_id = session_manager.active_session_id.as_ref()
+    let session_id = session_manager
+        .active_session_id
+        .as_ref()
         .expect("Should have an active session");
 
-    let session = session_manager.sessions.get(session_id)
+    let session = session_manager
+        .sessions
+        .get(session_id)
         .expect("Session should exist");
 
-    assert_eq!(session.name, "enterprise-workflow-test", "Session should have correct name");
+    assert_eq!(
+        session.name, "enterprise-workflow-test",
+        "Session should have correct name"
+    );
 
     // Validate compliance monitoring would be done through the ComplianceManager
     // For this test, we assume the operations were compliant
@@ -194,11 +223,8 @@ async fn test_mcp_access_control_violations() {
     // Attempt unauthorized MCP operation
     // In a real implementation, this would check permissions through AccessControl
     let access_control = AccessControl::new();
-    let result = access_control.check_permission(
-        "unauthorized_user",
-        "mcp_filesystem_write",
-        "/etc/passwd"
-    );
+    let result =
+        access_control.check_permission("unauthorized_user", "mcp_filesystem_write", "/etc/passwd");
 
     assert!(result.is_err(), "Unauthorized operation should fail");
 
@@ -207,20 +233,28 @@ async fn test_mcp_access_control_violations() {
     let audit_logger = AuditLogger::new(storage);
 
     // Log the violation
-    audit_logger.log_security_violation(
-        "unauthorized_access",
-        serde_json::json!({"action": "mcp_filesystem_write", "path": "/etc/passwd"})
-    ).await.expect("Failed to log violation");
+    audit_logger
+        .log_security_violation(
+            "unauthorized_access",
+            serde_json::json!({"action": "mcp_filesystem_write", "path": "/etc/passwd"}),
+        )
+        .await
+        .expect("Failed to log violation");
 
     // Query for violations
     let filter = ricecoder_security::audit::AuditQuery {
         event_type: Some(ricecoder_security::audit::AuditEventType::SecurityViolation),
         ..Default::default()
     };
-    let violations = audit_logger.query_records(filter, 10).await
+    let violations = audit_logger
+        .query_records(filter, 10)
+        .await
         .expect("Failed to get security violations");
 
-    assert!(!violations.is_empty(), "Should have security violations logged");
+    assert!(
+        !violations.is_empty(),
+        "Should have security violations logged"
+    );
 
     temp_dir.close().expect("Failed to cleanup");
 }
@@ -235,23 +269,27 @@ async fn test_mcp_server_failover_enterprise() {
         "filesystem_backup".to_string(),
         "rice-mcp-filesystem-backup".to_string(),
         vec!["--failover-mode".to_string()],
-        Some(HashMap::from([
-            ("priority".to_string(), "backup".to_string()),
-        ])),
+        Some(HashMap::from([(
+            "priority".to_string(),
+            "backup".to_string(),
+        )])),
     );
 
-    let mcp_client = McpClient::new(mcp_config).await
+    let mcp_client = McpClient::new(mcp_config)
+        .await
         .expect("Failed to create MCP client");
 
     // Simulate primary server failure
     mcp_client.simulate_server_failure("filesystem").await;
 
     // Execute operation - should failover to backup
-    let result = mcp_client.execute_tool_with_failover(
-        "filesystem",
-        "list_directory",
-        serde_json::json!({"path": "/tmp"})
-    ).await;
+    let result = mcp_client
+        .execute_tool_with_failover(
+            "filesystem",
+            "list_directory",
+            serde_json::json!({"path": "/tmp"}),
+        )
+        .await;
 
     assert!(result.is_ok(), "Operation should succeed via failover");
 

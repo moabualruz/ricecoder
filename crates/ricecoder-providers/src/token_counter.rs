@@ -115,5 +115,3 @@ impl TokenCounterTrait for TokenCounter {
         self.cache.lock().map(|c| c.len()).unwrap_or(0)
     }
 }
-
-

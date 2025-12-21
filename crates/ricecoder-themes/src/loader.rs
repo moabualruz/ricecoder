@@ -1,8 +1,8 @@
 //! Custom theme loading from YAML files
 
-use ratatui::style::{Color, Color as ColorSupport};
-use crate::types::{Theme, SyntaxTheme};
+use crate::types::{SyntaxTheme, Theme};
 use anyhow::{anyhow, Result};
+use ratatui::style::{Color, Color as ColorSupport};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -217,4 +217,3 @@ impl ThemeLoader {
         Ok(())
     }
 }
-

@@ -9,8 +9,7 @@
 
 use proptest::prelude::*;
 use ricecoder_orchestration::{
-    Project, ProjectStatus, RulesValidator, Workspace, WorkspaceRule, WorkspaceConfig,
-    RuleType,
+    Project, ProjectStatus, RuleType, RulesValidator, Workspace, WorkspaceConfig, WorkspaceRule,
 };
 use std::path::PathBuf;
 
@@ -27,14 +26,12 @@ fn project_name_strategy() -> impl Strategy<Value = String> {
 
 /// Strategy for generating projects with valid names
 fn project_strategy() -> impl Strategy<Value = Project> {
-    (project_name_strategy(), Just("rust".to_string())).prop_map(|(name, project_type)| {
-        Project {
-            path: PathBuf::from(format!("/path/{}", name)),
-            name,
-            project_type,
-            version: "0.1.0".to_string(),
-            status: ProjectStatus::Healthy,
-        }
+    (project_name_strategy(), Just("rust".to_string())).prop_map(|(name, project_type)| Project {
+        path: PathBuf::from(format!("/path/{}", name)),
+        name,
+        project_type,
+        version: "0.1.0".to_string(),
+        status: ProjectStatus::Healthy,
     })
 }
 
@@ -158,6 +155,4 @@ mod tests {
             assert_eq!(r1.violations.len(), r2.violations.len());
         }
     }
-
-
 }

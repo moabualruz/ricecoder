@@ -56,7 +56,7 @@ impl ImpactAnalyzer {
 
         // Add to dependents map: if 'to' changes, 'from' is affected
         let dependents = self.dependents_map.entry(to).or_default();
-        
+
         // Only add if not already present (avoid duplicates)
         if !dependents.contains(&from) {
             dependents.push(from);
@@ -199,10 +199,7 @@ impl ImpactAnalyzer {
     }
 
     /// Analyzes impact for multiple changes
-    pub fn analyze_multiple_impacts(
-        &self,
-        changes: &[ProjectChange],
-    ) -> Result<Vec<ImpactReport>> {
+    pub fn analyze_multiple_impacts(&self, changes: &[ProjectChange]) -> Result<Vec<ImpactReport>> {
         changes
             .iter()
             .map(|change| self.analyze_impact(change))

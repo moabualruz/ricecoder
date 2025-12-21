@@ -3,10 +3,10 @@
 //! This module provides lifecycle management for TUI application components,
 //! ensuring proper startup, initialization, and shutdown procedures.
 
-use std::fmt::Debug;
-use std::sync::{Arc, RwLock, OnceLock};
-use tracing::{debug, info, warn};
 use ricecoder_di::DIContainer;
+use std::fmt::Debug;
+use std::sync::{Arc, OnceLock, RwLock};
+use tracing::{debug, info, warn};
 
 /// Component lifecycle states
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -88,9 +88,16 @@ impl TuiLifecycleManager {
         // Check for circular dependencies (simplified check)
         for info in &*components {
             for dep in &info.dependencies {
-                if !components.iter().any(|other| other.component.read().unwrap().name() == dep.as_str()) {
-                    return Err(format!("Component '{}' depends on non-existent component '{}'",
-                                     info.component.read().unwrap().name(), dep).into());
+                if !components
+                    .iter()
+                    .any(|other| other.component.read().unwrap().name() == dep.as_str())
+                {
+                    return Err(format!(
+                        "Component '{}' depends on non-existent component '{}'",
+                        info.component.read().unwrap().name(),
+                        dep
+                    )
+                    .into());
                 }
             }
         }
@@ -116,7 +123,10 @@ impl TuiLifecycleManager {
         let mut components = self.components.write().unwrap();
         components.push(info.clone());
 
-        info!("Registered TUI component: {}", info.component.read().unwrap().name());
+        info!(
+            "Registered TUI component: {}",
+            info.component.read().unwrap().name()
+        );
         Ok(())
     }
 
@@ -222,7 +232,9 @@ impl TuiLifecycleManager {
     }
 
     /// Perform health checks on all components
-    pub async fn health_check_all(&self) -> Vec<(String, Result<(), Box<dyn std::error::Error + Send + Sync>>)> {
+    pub async fn health_check_all(
+        &self,
+    ) -> Vec<(String, Result<(), Box<dyn std::error::Error + Send + Sync>>)> {
         let components = self.components.read().unwrap().clone();
         let mut results = Vec::new();
 
@@ -244,7 +256,8 @@ impl TuiLifecycleManager {
     /// Get component state
     pub fn get_component_state(&self, name: &str) -> Option<TuiLifecycleState> {
         let components = self.components.read().unwrap();
-        components.iter()
+        components
+            .iter()
             .find(|info| info.component.read().unwrap().name() == name)
             .map(|info| info.state)
     }
@@ -252,7 +265,8 @@ impl TuiLifecycleManager {
     /// Get all component states
     pub fn get_all_component_states(&self) -> Vec<(String, TuiLifecycleState)> {
         let components = self.components.read().unwrap();
-        components.iter()
+        components
+            .iter()
             .map(|info| {
                 let name = info.component.read().unwrap().name().to_string();
                 (name, info.state)
@@ -263,8 +277,10 @@ impl TuiLifecycleManager {
     /// Update component state
     fn update_component_state(&self, name: &str, state: TuiLifecycleState) {
         let mut components = self.components.write().unwrap();
-        if let Some(info) = components.iter_mut()
-            .find(|info| info.component.read().unwrap().name() == name) {
+        if let Some(info) = components
+            .iter_mut()
+            .find(|info| info.component.read().unwrap().name() == name)
+        {
             info.state = state;
         }
     }
@@ -300,7 +316,9 @@ static TUI_LIFECYCLE_MANAGER: OnceLock<Arc<TuiLifecycleManager>> = OnceLock::new
 /// Initialize the global TUI lifecycle manager
 pub fn initialize_tui_lifecycle_manager() -> Arc<TuiLifecycleManager> {
     let manager = Arc::new(TuiLifecycleManager::new());
-    TUI_LIFECYCLE_MANAGER.set(manager.clone()).expect("TUI lifecycle manager already initialized");
+    TUI_LIFECYCLE_MANAGER
+        .set(manager.clone())
+        .expect("TUI lifecycle manager already initialized");
     manager
 }
 

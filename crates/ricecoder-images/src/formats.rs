@@ -47,10 +47,7 @@ impl ImageFormat {
         }
 
         // WebP: RIFF ... WEBP
-        if bytes.len() >= 12
-            && bytes.starts_with(b"RIFF")
-            && bytes[8..12] == *b"WEBP"
-        {
+        if bytes.len() >= 12 && bytes.starts_with(b"RIFF") && bytes[8..12] == *b"WEBP" {
             return Ok(ImageFormat::WebP);
         }
 
@@ -82,9 +79,7 @@ impl ImageFormat {
     pub fn validate_file(path: &Path, max_size_mb: u64) -> ImageResult<Self> {
         // Check file exists
         if !path.exists() {
-            return Err(ImageError::InvalidFile(
-                "File does not exist".to_string(),
-            ));
+            return Err(ImageError::InvalidFile("File does not exist".to_string()));
         }
 
         // Check file size
@@ -102,9 +97,8 @@ impl ImageFormat {
 
     /// Extract image metadata (width, height).
     pub fn extract_metadata(path: &Path) -> ImageResult<(u32, u32)> {
-        let img = image::open(path).map_err(|e| {
-            ImageError::InvalidFile(format!("Failed to open image: {}", e))
-        })?;
+        let img = image::open(path)
+            .map_err(|e| ImageError::InvalidFile(format!("Failed to open image: {}", e)))?;
 
         Ok((img.width(), img.height()))
     }

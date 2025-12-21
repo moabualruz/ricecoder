@@ -26,7 +26,9 @@ mod tests {
         assert_eq!(conflicts.len(), 1);
         assert_eq!(conflicts[0].actions.len(), 2);
         assert!(conflicts[0].actions.contains(&"editor.save".to_string()));
-        assert!(conflicts[0].actions.contains(&"editor.save_all".to_string()));
+        assert!(conflicts[0]
+            .actions
+            .contains(&"editor.save_all".to_string()));
     }
 
     #[test]

@@ -1,10 +1,10 @@
 //! Integration tests for ricecoder-industry enterprise features
 
-use ricecoder_industry::*;
-use ricecoder_industry::connections::ConnectionConfig;
 use ricecoder_industry::compliance::SecurityRule;
+use ricecoder_industry::connections::ConnectionConfig;
 use ricecoder_industry::providers::EnterpriseProviderConfig;
-use ricecoder_industry::tools::{ToolCapability, ToolMetadata, ConfigRequirement, ConfigValueType};
+use ricecoder_industry::tools::{ConfigRequirement, ConfigValueType, ToolCapability, ToolMetadata};
+use ricecoder_industry::*;
 use std::collections::HashMap;
 use tokio::test;
 
@@ -22,7 +22,10 @@ async fn test_oauth_client_flow() {
     )
     .with_scopes(vec!["read".to_string(), "write".to_string()]);
 
-    assert!(client.register_flow("test-provider".to_string(), config).await.is_ok());
+    assert!(client
+        .register_flow("test-provider".to_string(), config)
+        .await
+        .is_ok());
 
     // Test getting authorization URL (this would normally require a real server)
     // For testing, we just verify the flow is registered
@@ -100,10 +103,14 @@ async fn test_audit_logger() {
     assert_eq!(entries.len(), 2);
 
     // Test filtering by actor
-    let user_entries = logger.get_entries(Some("test-user"), None, None, None).await;
+    let user_entries = logger
+        .get_entries(Some("test-user"), None, None, None)
+        .await;
     assert_eq!(user_entries.len(), 2);
 
-    let other_entries = logger.get_entries(Some("other-user"), None, None, None).await;
+    let other_entries = logger
+        .get_entries(Some("other-user"), None, None, None)
+        .await;
     assert_eq!(other_entries.len(), 0);
 
     // Test getting stats
@@ -168,7 +175,11 @@ async fn test_compliance_manager() {
         actions: vec![compliance::SecurityAction::Log],
     };
 
-    compliance_manager.security_validator.add_rule(rule).await.unwrap();
+    compliance_manager
+        .security_validator
+        .add_rule(rule)
+        .await
+        .unwrap();
 
     // Test validation and logging
     let valid_data = serde_json::json!({
@@ -285,7 +296,10 @@ async fn test_tool_registry() {
             vec![ToolCapability::CodeAnalysis, ToolCapability::CodeGeneration]
         }
 
-        async fn execute(&self, _params: HashMap<String, serde_json::Value>) -> IndustryResult<serde_json::Value> {
+        async fn execute(
+            &self,
+            _params: HashMap<String, serde_json::Value>,
+        ) -> IndustryResult<serde_json::Value> {
             Ok(serde_json::json!({"result": "success"}))
         }
 
@@ -298,7 +312,10 @@ async fn test_tool_registry() {
             })
         }
 
-        fn validate_params(&self, params: &HashMap<String, serde_json::Value>) -> IndustryResult<()> {
+        fn validate_params(
+            &self,
+            params: &HashMap<String, serde_json::Value>,
+        ) -> IndustryResult<()> {
             if !params.contains_key("input") {
                 return Err(IndustryError::ConfigError {
                     field: "input".to_string(),
@@ -331,7 +348,10 @@ async fn test_tool_registry() {
     };
 
     // Test registering tool
-    assert!(registry.register_tool(Box::new(tool), metadata).await.is_ok());
+    assert!(registry
+        .register_tool(Box::new(tool), metadata)
+        .await
+        .is_ok());
 
     // Test listing tools
     let tools = registry.list_tools().await;
@@ -339,7 +359,9 @@ async fn test_tool_registry() {
     assert_eq!(tools[0], "test-tool");
 
     // Test listing by capability
-    let analysis_tools = registry.list_tools_by_capability(&ToolCapability::CodeAnalysis).await;
+    let analysis_tools = registry
+        .list_tools_by_capability(&ToolCapability::CodeAnalysis)
+        .await;
     assert_eq!(analysis_tools.len(), 1);
 
     // Test getting metadata
@@ -348,9 +370,7 @@ async fn test_tool_registry() {
     assert_eq!(meta.capabilities.len(), 2);
 
     // Test executing tool
-    let params = HashMap::from([
-        ("input".to_string(), serde_json::json!("test input"))
-    ]);
+    let params = HashMap::from([("input".to_string(), serde_json::json!("test input"))]);
 
     let result = registry.execute_tool("test-tool", params).await.unwrap();
     assert!(result.success);
@@ -383,7 +403,10 @@ async fn test_config_validation() {
             vec![ToolCapability::Testing]
         }
 
-        async fn execute(&self, _params: HashMap<String, serde_json::Value>) -> IndustryResult<serde_json::Value> {
+        async fn execute(
+            &self,
+            _params: HashMap<String, serde_json::Value>,
+        ) -> IndustryResult<serde_json::Value> {
             Ok(serde_json::json!({"status": "ok"}))
         }
 
@@ -391,7 +414,10 @@ async fn test_config_validation() {
             serde_json::json!({})
         }
 
-        fn validate_params(&self, _params: &HashMap<String, serde_json::Value>) -> IndustryResult<()> {
+        fn validate_params(
+            &self,
+            _params: &HashMap<String, serde_json::Value>,
+        ) -> IndustryResult<()> {
             Ok(())
         }
     }
@@ -421,7 +447,10 @@ async fn test_config_validation() {
         dependencies: vec![],
     };
 
-    registry.register_tool(Box::new(ConfigTestTool), metadata).await.unwrap();
+    registry
+        .register_tool(Box::new(ConfigTestTool), metadata)
+        .await
+        .unwrap();
 
     // Test valid configuration
     let valid_config = HashMap::from([
@@ -429,15 +458,19 @@ async fn test_config_validation() {
         ("timeout".to_string(), serde_json::json!(60)),
     ]);
 
-    let errors = registry.validate_tool_config("config-test-tool", &valid_config).await.unwrap();
+    let errors = registry
+        .validate_tool_config("config-test-tool", &valid_config)
+        .await
+        .unwrap();
     assert_eq!(errors.len(), 0);
 
     // Test missing required field
-    let invalid_config = HashMap::from([
-        ("timeout".to_string(), serde_json::json!(60)),
-    ]);
+    let invalid_config = HashMap::from([("timeout".to_string(), serde_json::json!(60))]);
 
-    let errors = registry.validate_tool_config("config-test-tool", &invalid_config).await.unwrap();
+    let errors = registry
+        .validate_tool_config("config-test-tool", &invalid_config)
+        .await
+        .unwrap();
     assert_eq!(errors.len(), 1);
     assert_eq!(errors[0].field, "api_key");
 
@@ -447,7 +480,10 @@ async fn test_config_validation() {
         ("timeout".to_string(), serde_json::json!("not-a-number")),
     ]);
 
-    let errors = registry.validate_tool_config("config-test-tool", &invalid_type_config).await.unwrap();
+    let errors = registry
+        .validate_tool_config("config-test-tool", &invalid_type_config)
+        .await
+        .unwrap();
     assert_eq!(errors.len(), 1);
     assert_eq!(errors[0].field, "timeout");
     assert!(errors[0].message.contains("invalid type"));

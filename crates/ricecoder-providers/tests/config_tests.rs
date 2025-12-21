@@ -4,7 +4,7 @@ use ricecoder_providers::*;
 mod tests {
     use super::*;
     use crate::config::ConfigurationManager;
-    use crate::models::{ProviderSettings, ProviderConfig, DefaultsConfig};
+    use crate::models::{DefaultsConfig, ProviderConfig, ProviderSettings};
     use std::collections::HashMap;
     use std::path::PathBuf;
 

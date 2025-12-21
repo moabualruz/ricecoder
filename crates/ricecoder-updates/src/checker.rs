@@ -1,14 +1,14 @@
 //! Automatic update checking with enterprise policy controls
 
 use crate::error::{Result, UpdateError};
-use crate::models::{ReleaseInfo, UpdateCheckResult, ReleaseChannel};
-use crate::policy::{UpdatePolicy, PolicyResult};
-use chrono::{DateTime, Utc, Duration};
+use crate::models::{ReleaseChannel, ReleaseInfo, UpdateCheckResult};
+use crate::policy::{PolicyResult, UpdatePolicy};
+use chrono::{DateTime, Duration, Utc};
 use reqwest::Client;
 use semver::Version;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{info, warn, error};
+use tracing::{error, info, warn};
 
 /// Update checker service
 #[derive(Clone)]
@@ -22,11 +22,7 @@ pub struct UpdateChecker {
 
 impl UpdateChecker {
     /// Create a new update checker
-    pub fn new(
-        policy: UpdatePolicy,
-        update_server_url: String,
-        current_version: Version,
-    ) -> Self {
+    pub fn new(policy: UpdatePolicy, update_server_url: String, current_version: Version) -> Self {
         Self {
             client: Client::new(),
             policy: Arc::new(RwLock::new(policy)),
@@ -89,7 +85,11 @@ impl UpdateChecker {
         };
 
         if update_available {
-            info!("Update available: {} -> {}", self.current_version, result.latest_version.as_ref().unwrap());
+            info!(
+                "Update available: {} -> {}",
+                self.current_version,
+                result.latest_version.as_ref().unwrap()
+            );
         }
 
         Ok(result)
@@ -134,16 +134,18 @@ impl UpdateChecker {
     async fn fetch_release_info(&self) -> Result<ReleaseInfo> {
         let url = format!("{}/releases/latest", self.update_server_url);
 
-        let response = self.client
+        let response = self
+            .client
             .get(&url)
             .header("User-Agent", "RiceCoder-UpdateChecker")
             .send()
             .await?;
 
         if !response.status().is_success() {
-            return Err(UpdateError::update_check(
-                format!("Server returned status: {}", response.status())
-            ));
+            return Err(UpdateError::update_check(format!(
+                "Server returned status: {}",
+                response.status()
+            )));
         }
 
         let release_info: ReleaseInfo = response.json().await?;
@@ -160,8 +162,10 @@ impl UpdateChecker {
         // Check minimum version requirement
         if let Some(min_version) = &release_info.minimum_version {
             if self.current_version < *min_version {
-                warn!("Update requires minimum version {}, current: {}",
-                    min_version, self.current_version);
+                warn!(
+                    "Update requires minimum version {}, current: {}",
+                    min_version, self.current_version
+                );
                 return false;
             }
         }
@@ -175,7 +179,9 @@ impl UpdateChecker {
 
         // Check download size (estimate based on downloads)
         let max_size = policy.max_download_size_mb();
-        let has_large_download = release_info.downloads.values()
+        let has_large_download = release_info
+            .downloads
+            .values()
             .any(|d| d.size > (max_size as u64 * 1024 * 1024));
 
         if has_large_download {
@@ -184,13 +190,26 @@ impl UpdateChecker {
 
         // Check compliance requirements
         let compliance_tags = vec![
-            if release_info.compliance.soc2_compliant { "SOC2" } else { "" },
-            if release_info.compliance.gdpr_compliant { "GDPR" } else { "" },
-            if release_info.compliance.hipaa_compliant { "HIPAA" } else { "" },
-        ].into_iter()
-         .filter(|s| !s.is_empty())
-         .map(|s| s.to_string())
-         .collect::<Vec<_>>();
+            if release_info.compliance.soc2_compliant {
+                "SOC2"
+            } else {
+                ""
+            },
+            if release_info.compliance.gdpr_compliant {
+                "GDPR"
+            } else {
+                ""
+            },
+            if release_info.compliance.hipaa_compliant {
+                "HIPAA"
+            } else {
+                ""
+            },
+        ]
+        .into_iter()
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+        .collect::<Vec<_>>();
 
         if !policy.compliance_requirements_met(&compliance_tags) {
             return false;
@@ -241,8 +260,10 @@ impl BackgroundChecker {
             match self.checker.check_for_updates().await {
                 Ok(result) => {
                     if result.update_available {
-                        info!("Background update check found new version: {}",
-                            result.latest_version.unwrap());
+                        info!(
+                            "Background update check found new version: {}",
+                            result.latest_version.unwrap()
+                        );
                         // Here we could trigger notifications or auto-download
                         // depending on policy settings
                     }
@@ -258,14 +279,15 @@ impl BackgroundChecker {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{UpdatePolicyConfig, SecurityRequirements, ReleaseChannel};
+    use crate::models::{ReleaseChannel, SecurityRequirements, UpdatePolicyConfig};
     use std::str::FromStr;
 
     #[tokio::test]
     async fn test_update_checker_creation() {
         let policy = UpdatePolicy::default();
         let version = Version::from_str("1.0.0").unwrap();
-        let checker = UpdateChecker::new(policy, "https://updates.example.com".to_string(), version);
+        let checker =
+            UpdateChecker::new(policy, "https://updates.example.com".to_string(), version);
 
         assert_eq!(checker.current_version, version);
         assert_eq!(checker.update_server_url, "https://updates.example.com");
@@ -275,7 +297,8 @@ mod tests {
     async fn test_policy_update() {
         let policy = UpdatePolicy::default();
         let version = Version::from_str("1.0.0").unwrap();
-        let checker = UpdateChecker::new(policy, "https://updates.example.com".to_string(), version);
+        let checker =
+            UpdateChecker::new(policy, "https://updates.example.com".to_string(), version);
 
         let new_config = UpdatePolicyConfig {
             auto_update_enabled: false,
@@ -292,7 +315,8 @@ mod tests {
     fn test_background_checker_creation() {
         let policy = UpdatePolicy::default();
         let version = Version::from_str("1.0.0").unwrap();
-        let checker = UpdateChecker::new(policy, "https://updates.example.com".to_string(), version);
+        let checker =
+            UpdateChecker::new(policy, "https://updates.example.com".to_string(), version);
         let interval = Duration::hours(24);
 
         let background = BackgroundChecker::new(checker, interval);

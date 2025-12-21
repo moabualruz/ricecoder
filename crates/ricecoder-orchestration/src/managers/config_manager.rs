@@ -119,14 +119,24 @@ impl ConfigManager {
         // Load defaults
         let defaults = self.load_defaults();
         config = self.merge_configs(config, defaults.clone());
-        for key in defaults.settings.as_object().unwrap_or(&Default::default()).keys() {
+        for key in defaults
+            .settings
+            .as_object()
+            .unwrap_or(&Default::default())
+            .keys()
+        {
             sources.insert(key.clone(), ConfigSource::Defaults);
         }
 
         // Load user-level configuration
         if let Ok(user_config) = self.load_user_config().await {
             config = self.merge_configs(config, user_config.clone());
-            for key in user_config.settings.as_object().unwrap_or(&Default::default()).keys() {
+            for key in user_config
+                .settings
+                .as_object()
+                .unwrap_or(&Default::default())
+                .keys()
+            {
                 sources.insert(key.clone(), ConfigSource::User);
             }
         }
@@ -134,7 +144,12 @@ impl ConfigManager {
         // Load project-level configuration
         if let Ok(project_config) = self.load_project_config().await {
             config = self.merge_configs(config, project_config.clone());
-            for key in project_config.settings.as_object().unwrap_or(&Default::default()).keys() {
+            for key in project_config
+                .settings
+                .as_object()
+                .unwrap_or(&Default::default())
+                .keys()
+            {
                 sources.insert(key.clone(), ConfigSource::Project);
             }
         }
@@ -142,7 +157,12 @@ impl ConfigManager {
         // Load workspace-level configuration
         if let Ok(workspace_config) = self.load_workspace_config().await {
             config = self.merge_configs(config, workspace_config.clone());
-            for key in workspace_config.settings.as_object().unwrap_or(&Default::default()).keys() {
+            for key in workspace_config
+                .settings
+                .as_object()
+                .unwrap_or(&Default::default())
+                .keys()
+            {
                 sources.insert(key.clone(), ConfigSource::Workspace);
             }
         }
@@ -186,18 +206,21 @@ impl ConfigManager {
     async fn load_user_config(&self) -> Result<WorkspaceConfig> {
         let user_home = std::env::var("HOME")
             .or_else(|_| std::env::var("USERPROFILE"))
-            .map_err(|_| crate::error::OrchestrationError::ConfigurationError(
-                "Could not determine user home directory".to_string(),
-            ))?;
+            .map_err(|_| {
+                crate::error::OrchestrationError::ConfigurationError(
+                    "Could not determine user home directory".to_string(),
+                )
+            })?;
 
         let config_path = PathBuf::from(user_home)
             .join(".ricecoder")
             .join("config.yaml");
 
         if !config_path.exists() {
-            return Err(OrchestrationError::ConfigurationError(
-                format!("User config not found: {}", config_path.display()),
-            ));
+            return Err(OrchestrationError::ConfigurationError(format!(
+                "User config not found: {}",
+                config_path.display()
+            )));
         }
 
         self.load_config_from_file(&config_path).await
@@ -205,9 +228,7 @@ impl ConfigManager {
 
     /// Loads project-level configuration from .ricecoder/project.yaml
     async fn load_project_config(&self) -> Result<WorkspaceConfig> {
-        let config_path = self.workspace_root
-            .join(".ricecoder")
-            .join("project.yaml");
+        let config_path = self.workspace_root.join(".ricecoder").join("project.yaml");
 
         if !config_path.exists() {
             return Err(crate::error::OrchestrationError::ConfigurationError(
@@ -220,7 +241,8 @@ impl ConfigManager {
 
     /// Loads workspace-level configuration from .ricecoder/workspace.yaml
     async fn load_workspace_config(&self) -> Result<WorkspaceConfig> {
-        let config_path = self.workspace_root
+        let config_path = self
+            .workspace_root
             .join(".ricecoder")
             .join("workspace.yaml");
 
@@ -245,7 +267,11 @@ impl ConfigManager {
     }
 
     /// Merges two configurations, with the second overriding the first
-    pub fn merge_configs(&self, mut base: WorkspaceConfig, override_config: WorkspaceConfig) -> WorkspaceConfig {
+    pub fn merge_configs(
+        &self,
+        mut base: WorkspaceConfig,
+        override_config: WorkspaceConfig,
+    ) -> WorkspaceConfig {
         // Merge rules
         for rule in override_config.rules {
             if let Some(pos) = base.rules.iter().position(|r| r.name == rule.name) {
@@ -531,7 +557,10 @@ mod tests {
             settings: json!({"key1": "value1"}),
         };
 
-        assert_eq!(manager.get_setting("key1"), Some(&Value::String("value1".to_string())));
+        assert_eq!(
+            manager.get_setting("key1"),
+            Some(&Value::String("value1".to_string()))
+        );
         assert_eq!(manager.get_setting("nonexistent"), None);
     }
 
@@ -543,8 +572,13 @@ mod tests {
             settings: json!({}),
         };
 
-        assert!(manager.set_setting("key1".to_string(), Value::String("value1".to_string())).is_ok());
-        assert_eq!(manager.get_setting("key1"), Some(&Value::String("value1".to_string())));
+        assert!(manager
+            .set_setting("key1".to_string(), Value::String("value1".to_string()))
+            .is_ok());
+        assert_eq!(
+            manager.get_setting("key1"),
+            Some(&Value::String("value1".to_string()))
+        );
     }
 
     #[test]
@@ -605,8 +639,12 @@ mod tests {
     #[test]
     fn test_config_schema_default() {
         let schema = ConfigSchema::default();
-        assert!(schema.validation_rules.contains_key("max_parallel_operations"));
-        assert!(schema.validation_rules.contains_key("transaction_timeout_ms"));
+        assert!(schema
+            .validation_rules
+            .contains_key("max_parallel_operations"));
+        assert!(schema
+            .validation_rules
+            .contains_key("transaction_timeout_ms"));
         assert!(schema.validation_rules.contains_key("enable_audit_logging"));
     }
 
@@ -621,9 +659,15 @@ mod tests {
             pattern: None,
         };
 
-        assert!(manager.validate_value("test", &Value::Number(5.into()), &rule).is_ok());
-        assert!(manager.validate_value("test", &Value::Number(0.into()), &rule).is_err());
-        assert!(manager.validate_value("test", &Value::Number(11.into()), &rule).is_err());
+        assert!(manager
+            .validate_value("test", &Value::Number(5.into()), &rule)
+            .is_ok());
+        assert!(manager
+            .validate_value("test", &Value::Number(0.into()), &rule)
+            .is_err());
+        assert!(manager
+            .validate_value("test", &Value::Number(11.into()), &rule)
+            .is_err());
     }
 
     #[test]
@@ -637,8 +681,12 @@ mod tests {
             pattern: None,
         };
 
-        assert!(manager.validate_value("test", &Value::String("value".to_string()), &rule).is_ok());
-        assert!(manager.validate_value("test", &Value::Number(5.into()), &rule).is_err());
+        assert!(manager
+            .validate_value("test", &Value::String("value".to_string()), &rule)
+            .is_ok());
+        assert!(manager
+            .validate_value("test", &Value::Number(5.into()), &rule)
+            .is_err());
     }
 
     #[test]
@@ -652,7 +700,11 @@ mod tests {
             pattern: None,
         };
 
-        assert!(manager.validate_value("test", &Value::Bool(true), &rule).is_ok());
-        assert!(manager.validate_value("test", &Value::String("true".to_string()), &rule).is_err());
+        assert!(manager
+            .validate_value("test", &Value::Bool(true), &rule)
+            .is_ok());
+        assert!(manager
+            .validate_value("test", &Value::String("true".to_string()), &rule)
+            .is_err());
     }
 }

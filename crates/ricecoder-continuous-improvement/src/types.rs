@@ -1,9 +1,9 @@
 //! Common types for the continuous improvement pipeline
 
-use serde::{Deserialize, Serialize};
-use chrono::{DateTime, Utc, TimeDelta};
-use std::collections::HashMap;
+use chrono::{DateTime, TimeDelta, Utc};
 use ricecoder_monitoring::types::ComplianceStatus;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Configuration for the continuous improvement pipeline
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -41,7 +41,7 @@ impl Default for FeedbackPipelineConfig {
         Self {
             enabled: true,
             collection_interval: TimeDelta::seconds(300), // 5 minutes
-            analysis_interval: TimeDelta::seconds(3600), // 1 hour
+            analysis_interval: TimeDelta::seconds(3600),  // 1 hour
             enterprise_focus: true,
         }
     }
@@ -62,7 +62,7 @@ impl Default for AnalyticsPipelineConfig {
             enabled: true,
             collection_interval: TimeDelta::seconds(600), // 10 minutes
             prioritization_interval: TimeDelta::seconds(7200), // 2 hours
-            feature_adoption_threshold: 10.0, // 10% adoption rate
+            feature_adoption_threshold: 10.0,             // 10% adoption rate
         }
     }
 }
@@ -98,9 +98,9 @@ pub struct EscalationThresholds {
 impl Default for EscalationThresholds {
     fn default() -> Self {
         Self {
-            error_rate_threshold: 5.0, // 5% error rate
+            error_rate_threshold: 5.0,               // 5% error rate
             performance_degradation_threshold: 20.0, // 20% degradation
-            security_incident_threshold: 3, // 3 security incidents
+            security_incident_threshold: 3,          // 3 security incidents
         }
     }
 }

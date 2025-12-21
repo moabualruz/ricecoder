@@ -147,5 +147,3 @@ pub enum StorageState {
     /// Storage is available but read-only (e.g., offline mode)
     ReadOnly { cached_at: String },
 }
-
-

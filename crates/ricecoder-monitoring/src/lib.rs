@@ -1,26 +1,26 @@
-use chrono::{Utc, TimeDelta};
+use chrono::{TimeDelta, Utc};
 
-pub mod analytics;
-pub mod error_tracking;
-pub mod types;
-pub mod compliance;
 pub mod alerting;
+pub mod analytics;
+pub mod anomaly_detection;
+pub mod compliance;
+pub mod dashboards;
+pub mod error_tracking;
 pub mod metrics;
 pub mod performance;
-pub mod anomaly_detection;
-pub mod dashboards;
 pub mod reporting;
+pub mod types;
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::*;
-    use crate::metrics::MetricsCollector;
-    use crate::error_tracking::ErrorTracker;
-    use crate::performance::PerformanceMonitor;
     use crate::analytics::AnalyticsEngine;
-    use crate::dashboards::DashboardManager;
     use crate::compliance::ComplianceEngine;
+    use crate::dashboards::DashboardManager;
+    use crate::error_tracking::ErrorTracker;
+    use crate::metrics::MetricsCollector;
+    use crate::performance::PerformanceMonitor;
+    use crate::types::*;
     use std::collections::HashMap;
 
     #[tokio::test]

@@ -1,9 +1,9 @@
 //! Unit tests for the refactoring engine
 
 use ricecoder_refactoring::{
-    RefactoringEngine, Refactoring, RefactoringType, RefactoringTarget, RefactoringOptions,
-    ConfigManager, GenericRefactoringProvider, RustRefactoringProvider, TypeScriptRefactoringProvider,
-    PythonRefactoringProvider, ProviderRegistry, RefactoringProvider,
+    ConfigManager, GenericRefactoringProvider, ProviderRegistry, PythonRefactoringProvider,
+    Refactoring, RefactoringEngine, RefactoringOptions, RefactoringProvider, RefactoringTarget,
+    RefactoringType, RustRefactoringProvider, TypeScriptRefactoringProvider,
 };
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -86,7 +86,8 @@ fn test_rust_provider_creation() {
 #[test]
 fn test_typescript_provider_creation() {
     let provider = TypeScriptRefactoringProvider::new();
-    let analysis = provider.analyze_refactoring("function main() {}", "typescript", RefactoringType::Rename);
+    let analysis =
+        provider.analyze_refactoring("function main() {}", "typescript", RefactoringType::Rename);
 
     assert!(analysis.is_ok());
     let analysis = analysis.unwrap();
@@ -212,7 +213,11 @@ fn test_rust_provider_validate_invalid_braces() {
 #[test]
 fn test_typescript_provider_validate_valid_code() {
     let provider = TypeScriptRefactoringProvider::new();
-    let result = provider.validate_refactoring("function main() {}", "function main() { console.log(); }", "typescript");
+    let result = provider.validate_refactoring(
+        "function main() {}",
+        "function main() { console.log(); }",
+        "typescript",
+    );
 
     assert!(result.is_ok());
     let validation = result.unwrap();

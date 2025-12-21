@@ -5,7 +5,10 @@ fn test_theme_default() {
     let theme = Theme::default();
     assert_eq!(theme.name, "dark");
     // Test that colors are set
-    assert!(matches!(theme.primary, ratatui::style::Color::Rgb(255, 255, 255)));
+    assert!(matches!(
+        theme.primary,
+        ratatui::style::Color::Rgb(255, 255, 255)
+    ));
 }
 
 #[test]

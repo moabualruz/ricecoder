@@ -1,8 +1,8 @@
 //! Benchmark runner that orchestrates the evaluation
 
 use crate::error::BenchmarkError;
-use crate::exercise::Exercise;
 use crate::evaluator::{Evaluator, TestResult};
+use crate::exercise::Exercise;
 use crate::results::{BenchmarkResults, ExerciseResult};
 use ricecoder_providers::ProviderManager;
 use std::collections::HashSet;
@@ -49,7 +49,11 @@ impl BenchmarkRunner {
             exercises
         };
 
-        let run_id = format!("{}-{}", model.replace("/", "-"), chrono::Utc::now().format("%Y-%m-%d-%H-%M-%S"));
+        let run_id = format!(
+            "{}-{}",
+            model.replace("/", "-"),
+            chrono::Utc::now().format("%Y-%m-%d-%H-%M-%S")
+        );
         let mut results = BenchmarkResults::new(run_id.clone(), model.to_string(), exercises.len());
 
         // Create results directory
@@ -68,7 +72,14 @@ impl BenchmarkRunner {
 
             let task = task::spawn(async move {
                 let _permit = semaphore.acquire().await.unwrap();
-                Self::run_single_exercise(exercise, &provider_manager, &model, max_attempts, &run_dir).await
+                Self::run_single_exercise(
+                    exercise,
+                    &provider_manager,
+                    &model,
+                    max_attempts,
+                    &run_dir,
+                )
+                .await
             });
             tasks.push(task);
         }
@@ -155,7 +166,8 @@ impl BenchmarkRunner {
         let cost = 0.0; // Would need to track from provider
         let error_output = test_output.contains("error") || test_output.contains("Error");
         let malformed_response = false; // Would need to detect
-        let syntax_errors = test_output.lines()
+        let syntax_errors = test_output
+            .lines()
             .filter(|line| line.contains("SyntaxError") || line.contains("syntax error"))
             .count();
 
@@ -181,7 +193,10 @@ impl BenchmarkRunner {
     ) -> Result<String, BenchmarkError> {
         // TODO: Implement proper LLM integration with ricecoder-providers
         // For now, return a placeholder response
-        Ok(format!("// TODO: Implement based on instructions:\n{}", instructions))
+        Ok(format!(
+            "// TODO: Implement based on instructions:\n{}",
+            instructions
+        ))
     }
 
     fn apply_llm_response(
@@ -194,7 +209,10 @@ impl BenchmarkRunner {
         // For now, just create a placeholder implementation
 
         for solution_file in &exercise.get_solution_files() {
-            if !exercise.get_ignore_files().contains(&solution_file.to_string_lossy().to_string()) {
+            if !exercise
+                .get_ignore_files()
+                .contains(&solution_file.to_string_lossy().to_string())
+            {
                 let file_path = exercise_dir.join(solution_file.file_name().unwrap());
                 if !file_path.exists() {
                     // Create a basic implementation
@@ -215,7 +233,10 @@ impl BenchmarkRunner {
         Ok(())
     }
 
-    fn load_exercises(&self, languages: Option<Vec<String>>) -> Result<Vec<Exercise>, BenchmarkError> {
+    fn load_exercises(
+        &self,
+        languages: Option<Vec<String>>,
+    ) -> Result<Vec<Exercise>, BenchmarkError> {
         let mut exercises = vec![];
 
         for entry in WalkDir::new(&self.exercises_dir) {

@@ -33,8 +33,8 @@
 //! ```
 
 use crate::clipboard::{CopyFeedback, CopyOperation};
-use std::collections::HashMap;
 use chrono::{DateTime, Local};
+use std::collections::HashMap;
 
 /// Message in the chat
 #[derive(Debug, Clone)]
@@ -82,7 +82,6 @@ pub enum ToolStatus {
 /// Streaming message state
 #[derive(Debug, Clone)]
 pub struct StreamingMessage {
-
     /// Accumulated content
     pub content: String,
     /// Whether streaming is active
@@ -281,7 +280,12 @@ pub struct ChatWidget {
     /// Selected action in menu
     pub selected_action: Option<usize>,
     /// Reactive update subscription (for automatic UI updates)
-    pub reactive_subscription: Option<tokio::sync::broadcast::Receiver<(crate::reactive_ui_updates::UpdateType, crate::StateDiff)>>,
+    pub reactive_subscription: Option<
+        tokio::sync::broadcast::Receiver<(
+            crate::reactive_ui_updates::UpdateType,
+            crate::StateDiff,
+        )>,
+    >,
 
     // Component trait fields
     /// Unique component identifier
@@ -641,12 +645,20 @@ impl ChatWidget {
     }
 
     /// Subscribe to reactive UI updates for automatic re-rendering
-    pub fn subscribe_to_reactive_updates(&mut self, receiver: tokio::sync::broadcast::Receiver<(crate::reactive_ui_updates::UpdateType, crate::StateDiff)>) {
+    pub fn subscribe_to_reactive_updates(
+        &mut self,
+        receiver: tokio::sync::broadcast::Receiver<(
+            crate::reactive_ui_updates::UpdateType,
+            crate::StateDiff,
+        )>,
+    ) {
         self.reactive_subscription = Some(receiver);
     }
 
     /// Process any pending reactive updates
-    pub async fn process_reactive_updates(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn process_reactive_updates(
+        &mut self,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         if let Some(ref mut rx) = self.reactive_subscription {
             // Collect all pending updates first to avoid borrow issues
             let mut updates = Vec::new();
@@ -663,7 +675,11 @@ impl ChatWidget {
     }
 
     /// Handle a reactive update
-    async fn handle_reactive_update(&mut self, update_type: crate::reactive_ui_updates::UpdateType, diff: crate::StateDiff) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn handle_reactive_update(
+        &mut self,
+        update_type: crate::reactive_ui_updates::UpdateType,
+        diff: crate::StateDiff,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // For chat widget, react to message-related state changes
         for change in &diff.changes {
             match change {
@@ -749,12 +765,17 @@ impl crate::Component for ChatWidget {
         self.id.clone()
     }
 
-    fn render(&self, frame: &mut ratatui::Frame, area: ratatui::layout::Rect, _model: &crate::AppModel) {
+    fn render(
+        &self,
+        frame: &mut ratatui::Frame,
+        area: ratatui::layout::Rect,
+        _model: &crate::AppModel,
+    ) {
         // Use existing render logic
         // For now, just render a placeholder - in a real implementation,
         // this would call the existing render methods
-        use ratatui::widgets::{Block, Borders, Paragraph};
         use ratatui::text::Line;
+        use ratatui::widgets::{Block, Borders, Paragraph};
 
         let content = vec![
             Line::from("Chat Widget - Component Architecture"),
@@ -764,12 +785,9 @@ impl crate::Component for ChatWidget {
             Line::from(format!("Streaming: {}", self.is_streaming)),
         ];
 
-        let block = Block::default()
-            .title("Chat")
-            .borders(Borders::ALL);
+        let block = Block::default().title("Chat").borders(Borders::ALL);
 
-        let paragraph = Paragraph::new(content)
-            .block(block);
+        let paragraph = Paragraph::new(content).block(block);
 
         frame.render_widget(paragraph, area);
     }
@@ -916,5 +934,3 @@ impl Default for ChatWidget {
         Self::new()
     }
 }
-
-

@@ -4,4 +4,4 @@ pub mod analyzer;
 pub mod graph;
 
 pub use analyzer::ImpactAnalyzer;
-pub use graph::{DependencyGraph, Symbol, SymbolType, Dependency, DependencyType};
+pub use graph::{Dependency, DependencyGraph, DependencyType, Symbol, SymbolType};

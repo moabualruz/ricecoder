@@ -10,14 +10,12 @@ use std::collections::HashMap;
 
 // Strategy for generating valid workflow names
 fn workflow_name_strategy() -> impl Strategy<Value = String> {
-    r"[a-zA-Z0-9_\-\.]{1,50}\.ya?ml"
-        .prop_map(|s| s.to_string())
+    r"[a-zA-Z0-9_\-\.]{1,50}\.ya?ml".prop_map(|s| s.to_string())
 }
 
 // Strategy for generating valid branch names
 fn branch_name_strategy() -> impl Strategy<Value = String> {
-    r"[a-zA-Z0-9_\-/]{1,50}"
-        .prop_map(|s| s.to_string())
+    r"[a-zA-Z0-9_\-/]{1,50}".prop_map(|s| s.to_string())
 }
 
 // Strategy for generating valid run IDs
@@ -256,11 +254,8 @@ proptest! {
 // Additional property: Status tracking with zero run ID should fail
 #[test]
 fn prop_workflow_status_tracking_rejects_zero_run_id() {
-    let actions = ActionsIntegration::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let actions =
+        ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let rt = tokio::runtime::Runtime::new().unwrap();
     let result = rt.block_on(actions.track_workflow_status(0));
@@ -272,11 +267,8 @@ fn prop_workflow_status_tracking_rejects_zero_run_id() {
 // Additional property: Retry with zero run ID should fail
 #[test]
 fn prop_workflow_retry_rejects_zero_run_id() {
-    let actions = ActionsIntegration::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let actions =
+        ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let rt = tokio::runtime::Runtime::new().unwrap();
     let result = rt.block_on(actions.retry_workflow(0));

@@ -111,7 +111,8 @@ impl FileEditTool {
         for edit_input in &input.edits {
             // Create backup for this specific file if not already done
             let backup_path = if input.create_backups {
-                backups.iter()
+                backups
+                    .iter()
                     .find(|(path, _)| path == &edit_input.file_path)
                     .map(|(_, backup)| backup.clone())
             } else {
@@ -196,8 +197,9 @@ impl FileEditTool {
             let path = std::path::Path::new(file_path);
             if path.exists() {
                 let backup_path = format!("{}.backup", file_path);
-                std::fs::copy(file_path, &backup_path)
-                    .map_err(|e| ToolError::new("BACKUP_ERROR", format!("Failed to create backup: {}", e)))?;
+                std::fs::copy(file_path, &backup_path).map_err(|e| {
+                    ToolError::new("BACKUP_ERROR", format!("Failed to create backup: {}", e))
+                })?;
                 backups.push((file_path.clone(), backup_path));
             }
         }
@@ -210,8 +212,9 @@ impl FileEditTool {
         for result in results {
             if result.result.success {
                 if let Some(backup_path) = &result.backup_path {
-                    std::fs::copy(backup_path, &result.input.file_path)
-                        .map_err(|e| ToolError::new("ROLLBACK_ERROR", format!("Failed to rollback: {}", e)))?;
+                    std::fs::copy(backup_path, &result.input.file_path).map_err(|e| {
+                        ToolError::new("ROLLBACK_ERROR", format!("Failed to rollback: {}", e))
+                    })?;
                 }
             }
         }
@@ -221,8 +224,9 @@ impl FileEditTool {
     /// Apply edit using the best available strategy
     pub fn edit_file(input: &FileEditInput) -> Result<FileEditOutput, ToolError> {
         let file_path = Path::new(&input.file_path);
-        let content = std::fs::read_to_string(file_path)
-            .map_err(|e| ToolError::new("FILE_READ_ERROR", format!("Failed to read file: {}", e)))?;
+        let content = std::fs::read_to_string(file_path).map_err(|e| {
+            ToolError::new("FILE_READ_ERROR", format!("Failed to read file: {}", e))
+        })?;
 
         let mut strategies_attempted = Vec::new();
         let mut closest_match: Option<ClosestMatchInfo> = None;
@@ -294,7 +298,7 @@ impl FileEditTool {
         // For now, return an error indicating this needs implementation
         return Err(ToolError::new(
             "DIFF_NOT_IMPLEMENTED",
-            "Unified diff application not yet implemented"
+            "Unified diff application not yet implemented",
         ));
 
         // Write back the content (unchanged for now)
@@ -535,8 +539,9 @@ impl EditStrategy for LineByLineStrategy {
                 // Check if subsequent lines match
                 let mut matches = true;
                 for j in 1..old_lines.len() {
-                    if i + j >= content_lines.len() ||
-                       content_lines[i + j].trim() != old_lines[j].trim() {
+                    if i + j >= content_lines.len()
+                        || content_lines[i + j].trim() != old_lines[j].trim()
+                    {
                         matches = false;
                         break;
                     }
@@ -626,14 +631,16 @@ fn normalize_indentation(text: &str) -> String {
     }
 
     // Find the minimum indentation
-    let min_indent = lines.iter()
+    let min_indent = lines
+        .iter()
         .filter(|line| !line.trim().is_empty())
         .map(|line| line.len() - line.trim_start().len())
         .min()
         .unwrap_or(0);
 
     // Remove the common indentation
-    lines.iter()
+    lines
+        .iter()
         .map(|line| {
             if line.len() >= min_indent {
                 &line[min_indent..]

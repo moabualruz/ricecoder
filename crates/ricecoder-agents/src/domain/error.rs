@@ -137,7 +137,10 @@ mod tests {
     fn test_domain_error_conflict_error() {
         let error = DomainError::conflict_error("conflicting recommendations");
         assert!(matches!(error, DomainError::ConflictError(_)));
-        assert_eq!(error.to_string(), "Conflict error: conflicting recommendations");
+        assert_eq!(
+            error.to_string(),
+            "Conflict error: conflicting recommendations"
+        );
     }
 
     #[test]

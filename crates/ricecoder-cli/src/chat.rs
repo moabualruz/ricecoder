@@ -2,9 +2,9 @@
 
 use crate::error::{CliError, CliResult};
 use crate::output::OutputStyle;
+use ricecoder_providers::provider::Provider;
 use rustyline::DefaultEditor;
 use std::sync::Arc;
-use ricecoder_providers::provider::Provider;
 
 /// Chat session manager
 pub struct ChatSession {
@@ -109,7 +109,7 @@ impl ChatSession {
     fn simulate_streaming(text: &str) -> CliResult<()> {
         use std::thread;
         use std::time::Duration;
-        
+
         for ch in text.chars() {
             print!("{}", ch);
             std::io::Write::flush(&mut std::io::stdout())
@@ -151,7 +151,7 @@ impl ChatSession {
             Ok(mut stream) => {
                 // Consume the streaming response and collect all chunks
                 let mut full_response = String::new();
-                
+
                 while let Some(result) = stream.next().await {
                     match result {
                         Ok(chunk) => {
@@ -166,14 +166,14 @@ impl ChatSession {
                         }
                     }
                 }
-                
+
                 Ok(full_response)
             }
             Err(_) => {
                 // Fall back to non-streaming if streaming is not supported
                 let mut request = request;
                 request.stream = false;
-                
+
                 let response = provider
                     .chat(request)
                     .await
@@ -196,5 +196,3 @@ impl ChatSession {
         &self.history
     }
 }
-
-

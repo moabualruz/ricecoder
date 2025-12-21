@@ -37,11 +37,8 @@ mod tests {
 
     #[test]
     fn test_exponential_backoff() {
-        let mut backoff = ExponentialBackoff::new(
-            Duration::from_millis(100),
-            Duration::from_secs(10),
-            2.0,
-        );
+        let mut backoff =
+            ExponentialBackoff::new(Duration::from_millis(100), Duration::from_secs(10), 2.0);
 
         let delay1 = backoff.next_delay();
         assert!(delay1.as_millis() >= 90 && delay1.as_millis() <= 110);
@@ -55,11 +52,8 @@ mod tests {
 
     #[test]
     fn test_exponential_backoff_max_delay() {
-        let mut backoff = ExponentialBackoff::new(
-            Duration::from_millis(100),
-            Duration::from_secs(1),
-            2.0,
-        );
+        let mut backoff =
+            ExponentialBackoff::new(Duration::from_millis(100), Duration::from_secs(1), 2.0);
 
         // Skip to high attempt number
         for _ in 0..10 {
@@ -73,11 +67,8 @@ mod tests {
 
     #[test]
     fn test_exponential_backoff_reset() {
-        let mut backoff = ExponentialBackoff::new(
-            Duration::from_millis(100),
-            Duration::from_secs(10),
-            2.0,
-        );
+        let mut backoff =
+            ExponentialBackoff::new(Duration::from_millis(100), Duration::from_secs(10), 2.0);
 
         backoff.next_delay();
         backoff.next_delay();

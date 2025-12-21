@@ -39,14 +39,12 @@ fn platform_strategy() -> impl Strategy<Value = String> {
 
 /// Strategy for generating version strings
 fn version_strategy() -> impl Strategy<Value = String> {
-    r"0\.[0-9]\.[0-9]"
-        .prop_map(|v| format!("v{}", v))
+    r"0\.[0-9]\.[0-9]".prop_map(|v| format!("v{}", v))
 }
 
 /// Strategy for generating configuration content
 fn config_content_strategy() -> impl Strategy<Value = String> {
-    r"[a-zA-Z0-9_\-=:\s\n]+"
-        .prop_map(|s| format!("config_key: {}\n", s))
+    r"[a-zA-Z0-9_\-=:\s\n]+".prop_map(|s| format!("config_key: {}\n", s))
 }
 
 /// Strategy for generating SHA256 checksums
@@ -201,7 +199,7 @@ fn prop_cross_platform_execution() {
 
 /// Property 5: Static Linking Verification
 /// For any Linux binary, it SHALL be statically linked
-/// 
+///
 /// This property verifies that Linux binaries are statically linked by:
 /// 1. Checking that binary files exist for both x86_64 and aarch64 architectures
 /// 2. Verifying that binaries are marked as statically linked (no external dependencies)
@@ -236,9 +234,9 @@ fn prop_static_linking_verification() {
         let metadata = fs::read_to_string(&metadata_path).unwrap();
         assert!(metadata.contains("static_linked: true"), "Binary should be marked as statically linked");
         assert!(metadata.contains("musl"), "Binary should use MUSL for static linking");
-        
+
         // Verify architecture is correct
-        assert!(metadata.contains(&arch) || metadata.contains("x86_64-unknown-linux-musl"), 
+        assert!(metadata.contains(&arch) || metadata.contains("x86_64-unknown-linux-musl"),
                 "Metadata should contain correct architecture");
 
         // Verify that the binary target uses MUSL (not glibc)

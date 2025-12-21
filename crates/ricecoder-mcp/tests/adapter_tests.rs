@@ -7,15 +7,15 @@
 //! - MCPToolExecutor adapter
 //! - Concrete implementations of ports
 
+use ricecoder_mcp::metadata::ToolSource;
+use ricecoder_mcp::permissions::MCPPermissionManager;
+use ricecoder_mcp::tool_execution::{MCPToolExecutor, ToolExecutionContext};
+use ricecoder_mcp::transport::{MCPMessage, MCPRequest, MCPResponse, MCPTransport, StdioTransport};
+use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::RwLock;
-use ricecoder_mcp::transport::{StdioTransport, MCPMessage, MCPRequest, MCPResponse, MCPTransport};
-use ricecoder_mcp::tool_execution::{MCPToolExecutor, ToolExecutionContext};
-use ricecoder_mcp::permissions::MCPPermissionManager;
-use ricecoder_mcp::metadata::ToolSource;
-use serde_json::json;
 
 /// **Adapter Test 3.1: StdioTransport initialization**
 /// **Validates: Stdio transport adapter setup**
@@ -54,11 +54,7 @@ fn test_mcp_tool_executor_initialization() {
     }
 
     let transport = Arc::new(MockTransport);
-    let executor = MCPToolExecutor::new(
-        "test-server".to_string(),
-        transport,
-        permission_manager,
-    );
+    let executor = MCPToolExecutor::new("test-server".to_string(), transport, permission_manager);
 
     // Test that executor was created successfully
     assert_eq!(executor.server_id, "test-server");
@@ -141,11 +137,7 @@ async fn test_tool_execution_stats_tracking() {
     }
 
     let transport = Arc::new(MockTransport);
-    let executor = MCPToolExecutor::new(
-        "test-server".to_string(),
-        transport,
-        permission_manager,
-    );
+    let executor = MCPToolExecutor::new("test-server".to_string(), transport, permission_manager);
 
     // Initially no stats
     {
@@ -237,7 +229,7 @@ fn test_marshaler_adapter() {
 /// **Validates: Health monitoring implementation**
 #[test]
 fn test_health_check_adapter() {
-    use ricecoder_mcp::health_check::{HealthChecker, HealthCheckConfig};
+    use ricecoder_mcp::health_check::{HealthCheckConfig, HealthChecker};
 
     let config = HealthCheckConfig {
         interval: Duration::from_secs(30),
@@ -279,7 +271,7 @@ fn test_protocol_validation_adapter() {
 /// **Validates: Server lifecycle management**
 #[test]
 fn test_server_management_adapter() {
-    use ricecoder_mcp::server_management::{ServerManager, ServerConfig};
+    use ricecoder_mcp::server_management::{ServerConfig, ServerManager};
 
     let config = ServerConfig {
         id: "test-server".to_string(),
@@ -327,7 +319,9 @@ async fn test_tool_execution_workflow() {
                     // Simulate successful tool execution
                     Ok(())
                 }
-                _ => Err(ricecoder_mcp::error::Error::ProtocolError("Invalid request".to_string())),
+                _ => Err(ricecoder_mcp::error::Error::ProtocolError(
+                    "Invalid request".to_string(),
+                )),
             }
         }
 

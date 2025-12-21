@@ -109,8 +109,6 @@ impl Default for GlobalLspSettings {
     }
 }
 
-
-
 /// State of an LSP client connection
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ClientState {

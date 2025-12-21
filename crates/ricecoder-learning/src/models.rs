@@ -77,12 +77,7 @@ pub struct Rule {
 
 impl Rule {
     /// Create a new rule
-    pub fn new(
-        scope: RuleScope,
-        pattern: String,
-        action: String,
-        source: RuleSource,
-    ) -> Self {
+    pub fn new(scope: RuleScope, pattern: String, action: String, source: RuleSource) -> Self {
         Self {
             id: Uuid::new_v4().to_string(),
             scope,
@@ -341,10 +336,8 @@ mod tests {
 
     #[test]
     fn test_pattern_creation() {
-        let pattern = LearnedPattern::new(
-            "code_generation".to_string(),
-            "Test pattern".to_string(),
-        );
+        let pattern =
+            LearnedPattern::new("code_generation".to_string(), "Test pattern".to_string());
 
         assert_eq!(pattern.pattern_type, "code_generation");
         assert_eq!(pattern.description, "Test pattern");
@@ -354,10 +347,8 @@ mod tests {
 
     #[test]
     fn test_pattern_serialization() {
-        let pattern = LearnedPattern::new(
-            "refactoring".to_string(),
-            "Refactoring pattern".to_string(),
-        );
+        let pattern =
+            LearnedPattern::new("refactoring".to_string(), "Refactoring pattern".to_string());
 
         let json = serde_json::to_string(&pattern).expect("Failed to serialize");
         let deserialized: LearnedPattern =

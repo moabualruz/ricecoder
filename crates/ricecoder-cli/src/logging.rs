@@ -70,5 +70,3 @@ pub fn debug(message: &str) {
 pub fn info(message: &str) {
     log_at_level(VerbosityLevel::Normal, message);
 }
-
-

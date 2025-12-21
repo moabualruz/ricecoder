@@ -21,12 +21,8 @@ fn arb_session_context() -> impl Strategy<Value = SessionContext> {
 }
 
 fn arb_session_with_history() -> impl Strategy<Value = Session> {
-    (
-        "[a-z0-9]{1,20}",
-        arb_session_context(),
-        1..10usize,
-    )
-        .prop_map(|(name, context, num_messages)| {
+    ("[a-z0-9]{1,20}", arb_session_context(), 1..10usize).prop_map(
+        |(name, context, num_messages)| {
             let mut session = Session::new(name, context);
 
             // Add messages
@@ -42,7 +38,8 @@ fn arb_session_with_history() -> impl Strategy<Value = Session> {
             }
 
             session
-        })
+        },
+    )
 }
 
 proptest! {

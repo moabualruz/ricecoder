@@ -214,8 +214,12 @@ impl DependencyManager {
         ];
 
         let outdated_count = dependencies.iter().filter(|d| d.is_outdated).count();
-        let vulnerable_count = dependencies.iter().filter(|d| !d.vulnerabilities.is_empty()).count();
-        let total_vulnerabilities: usize = dependencies.iter().map(|d| d.vulnerabilities.len()).sum();
+        let vulnerable_count = dependencies
+            .iter()
+            .filter(|d| !d.vulnerabilities.is_empty())
+            .count();
+        let total_vulnerabilities: usize =
+            dependencies.iter().map(|d| d.vulnerabilities.len()).sum();
 
         Ok(DependencyScanResult {
             dependencies,
@@ -226,7 +230,10 @@ impl DependencyManager {
     }
 
     /// Suggests dependency updates based on scan results
-    pub fn suggest_updates(&self, scan_result: &DependencyScanResult) -> Result<Vec<DependencyUpdateSuggestion>, DependencyError> {
+    pub fn suggest_updates(
+        &self,
+        scan_result: &DependencyScanResult,
+    ) -> Result<Vec<DependencyUpdateSuggestion>, DependencyError> {
         let mut suggestions = Vec::new();
 
         for dep in &scan_result.dependencies {
@@ -241,10 +248,17 @@ impl DependencyManager {
             };
 
             let risk_level = if !dep.vulnerabilities.is_empty()
-                || dep.latest_version.as_ref().is_some_and(|v| is_major_version_bump(&dep.current_version, v))
+                || dep
+                    .latest_version
+                    .as_ref()
+                    .is_some_and(|v| is_major_version_bump(&dep.current_version, v))
             {
                 UpdateRiskLevel::High
-            } else if dep.latest_version.as_ref().is_some_and(|v| is_minor_version_bump(&dep.current_version, v)) {
+            } else if dep
+                .latest_version
+                .as_ref()
+                .is_some_and(|v| is_minor_version_bump(&dep.current_version, v))
+            {
                 UpdateRiskLevel::Medium
             } else {
                 UpdateRiskLevel::Low
@@ -261,12 +275,18 @@ impl DependencyManager {
     }
 
     /// Creates a PR for dependency updates
-    pub fn create_update_pr(&self, suggestions: &[DependencyUpdateSuggestion]) -> Result<DependencyUpdatePrResult, DependencyError> {
+    pub fn create_update_pr(
+        &self,
+        suggestions: &[DependencyUpdateSuggestion],
+    ) -> Result<DependencyUpdatePrResult, DependencyError> {
         if suggestions.is_empty() {
             return Err(DependencyError::NoUpdatesAvailable);
         }
 
-        let updated_deps: Vec<String> = suggestions.iter().map(|s| s.dependency.name.clone()).collect();
+        let updated_deps: Vec<String> = suggestions
+            .iter()
+            .map(|s| s.dependency.name.clone())
+            .collect();
         let branch_name = format!("deps/update-{}", updated_deps.join("-"));
 
         Ok(DependencyUpdatePrResult {
@@ -278,7 +298,10 @@ impl DependencyManager {
     }
 
     /// Verifies that dependency updates don't break builds
-    pub fn verify_update(&self, _pr_number: u32) -> Result<DependencyUpdateVerificationResult, DependencyError> {
+    pub fn verify_update(
+        &self,
+        _pr_number: u32,
+    ) -> Result<DependencyUpdateVerificationResult, DependencyError> {
         Ok(DependencyUpdateVerificationResult {
             build_passed: true,
             status_message: "Build passed successfully".to_string(),
@@ -288,8 +311,12 @@ impl DependencyManager {
     }
 
     /// Tracks security vulnerabilities in dependencies
-    pub fn track_vulnerabilities(&self, scan_result: &DependencyScanResult) -> Result<VulnerabilityReport, DependencyError> {
-        let mut vulnerabilities_by_severity: HashMap<VulnerabilitySeverity, Vec<Vulnerability>> = HashMap::new();
+    pub fn track_vulnerabilities(
+        &self,
+        scan_result: &DependencyScanResult,
+    ) -> Result<VulnerabilityReport, DependencyError> {
+        let mut vulnerabilities_by_severity: HashMap<VulnerabilitySeverity, Vec<Vulnerability>> =
+            HashMap::new();
 
         for dep in &scan_result.dependencies {
             for vuln in &dep.vulnerabilities {
@@ -300,10 +327,18 @@ impl DependencyManager {
             }
         }
 
-        let critical_count = vulnerabilities_by_severity.get(&VulnerabilitySeverity::Critical).map_or(0, |v| v.len());
-        let high_count = vulnerabilities_by_severity.get(&VulnerabilitySeverity::High).map_or(0, |v| v.len());
-        let medium_count = vulnerabilities_by_severity.get(&VulnerabilitySeverity::Medium).map_or(0, |v| v.len());
-        let low_count = vulnerabilities_by_severity.get(&VulnerabilitySeverity::Low).map_or(0, |v| v.len());
+        let critical_count = vulnerabilities_by_severity
+            .get(&VulnerabilitySeverity::Critical)
+            .map_or(0, |v| v.len());
+        let high_count = vulnerabilities_by_severity
+            .get(&VulnerabilitySeverity::High)
+            .map_or(0, |v| v.len());
+        let medium_count = vulnerabilities_by_severity
+            .get(&VulnerabilitySeverity::Medium)
+            .map_or(0, |v| v.len());
+        let low_count = vulnerabilities_by_severity
+            .get(&VulnerabilitySeverity::Low)
+            .map_or(0, |v| v.len());
 
         Ok(VulnerabilityReport {
             total_vulnerabilities: scan_result.total_vulnerabilities,
@@ -418,7 +453,12 @@ mod tests {
         let suggestions = manager.suggest_updates(&scan_result).unwrap();
         let security_suggestions: Vec<_> = suggestions
             .iter()
-            .filter(|s| matches!(s.reason, UpdateReason::SecurityVulnerability | UpdateReason::OutdatedAndVulnerable))
+            .filter(|s| {
+                matches!(
+                    s.reason,
+                    UpdateReason::SecurityVulnerability | UpdateReason::OutdatedAndVulnerable
+                )
+            })
             .collect();
         assert!(!security_suggestions.is_empty());
     }
@@ -453,7 +493,10 @@ mod tests {
         let manager = DependencyManager::new("owner".to_string(), "repo".to_string());
         let scan_result = manager.scan_dependencies().unwrap();
         let report = manager.track_vulnerabilities(&scan_result).unwrap();
-        assert_eq!(report.total_vulnerabilities, scan_result.total_vulnerabilities);
+        assert_eq!(
+            report.total_vulnerabilities,
+            scan_result.total_vulnerabilities
+        );
         assert!(report.critical_count > 0 || report.high_count > 0);
     }
 
@@ -509,8 +552,14 @@ mod tests {
     #[test]
     fn test_update_reason_display() {
         assert_eq!(UpdateReason::Outdated.to_string(), "Outdated");
-        assert_eq!(UpdateReason::SecurityVulnerability.to_string(), "Security Vulnerability");
-        assert_eq!(UpdateReason::OutdatedAndVulnerable.to_string(), "Outdated and Vulnerable");
+        assert_eq!(
+            UpdateReason::SecurityVulnerability.to_string(),
+            "Security Vulnerability"
+        );
+        assert_eq!(
+            UpdateReason::OutdatedAndVulnerable.to_string(),
+            "Outdated and Vulnerable"
+        );
     }
 
     #[test]

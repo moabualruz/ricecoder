@@ -141,7 +141,11 @@ fn test_non_interactive_init_respects_provider() {
 
         let result = run_init_non_interactive(project_path, provider, None, false);
 
-        assert!(result.is_ok(), "Init should succeed for provider: {}", provider);
+        assert!(
+            result.is_ok(),
+            "Init should succeed for provider: {}",
+            provider
+        );
 
         let config_content = result.expect("Init should succeed");
         assert!(

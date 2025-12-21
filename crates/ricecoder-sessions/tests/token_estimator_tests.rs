@@ -14,7 +14,9 @@ mod tests {
     #[test]
     fn test_token_estimation() {
         let mut estimator = TokenEstimator::new();
-        let estimate = estimator.estimate_tokens("Hello world", Some("gpt-3.5-turbo")).unwrap();
+        let estimate = estimator
+            .estimate_tokens("Hello world", Some("gpt-3.5-turbo"))
+            .unwrap();
 
         assert_eq!(estimate.model, "gpt-3.5-turbo");
         assert_eq!(estimate.characters, 11);
@@ -26,9 +28,18 @@ mod tests {
     fn test_token_limit_status() {
         let estimator = TokenEstimator::new();
 
-        assert_eq!(estimator.check_token_limits(1000, "gpt-3.5-turbo"), TokenLimitStatus::Normal);
-        assert_eq!(estimator.check_token_limits(3500, "gpt-3.5-turbo"), TokenLimitStatus::Warning);
-        assert_eq!(estimator.check_token_limits(3800, "gpt-3.5-turbo"), TokenLimitStatus::Critical);
+        assert_eq!(
+            estimator.check_token_limits(1000, "gpt-3.5-turbo"),
+            TokenLimitStatus::Normal
+        );
+        assert_eq!(
+            estimator.check_token_limits(3500, "gpt-3.5-turbo"),
+            TokenLimitStatus::Warning
+        );
+        assert_eq!(
+            estimator.check_token_limits(3800, "gpt-3.5-turbo"),
+            TokenLimitStatus::Critical
+        );
     }
 
     #[test]

@@ -136,9 +136,7 @@ impl ProjectManager {
                 .column_mappings
                 .get(&ColumnStatus::Todo)
                 .copied()
-                .ok_or_else(|| {
-                    GitHubError::config_error("Todo column not configured")
-                })?,
+                .ok_or_else(|| GitHubError::config_error("Todo column not configured"))?,
             note: Some(format!("Issue #{}: {}", issue.number, issue.title)),
         };
 
@@ -161,17 +159,12 @@ impl ProjectManager {
                 .column_mappings
                 .get(&ColumnStatus::InReview)
                 .copied()
-                .ok_or_else(|| {
-                    GitHubError::config_error("In Review column not configured")
-                })?,
+                .ok_or_else(|| GitHubError::config_error("In Review column not configured"))?,
             note: Some(format!("PR #{}: {}", pr.number, pr.title)),
         };
 
         self.cards_cache.insert(card.id, card.clone());
-        info!(
-            "Created project card from PR #{}: {}",
-            pr.number, pr.title
-        );
+        info!("Created project card from PR #{}: {}", pr.number, pr.title);
 
         Ok(card)
     }
@@ -344,7 +337,10 @@ mod tests {
     fn test_set_column_mapping() {
         let mut manager = ProjectManager::new(1, "Test Project");
         manager.set_column_mapping(ColumnStatus::Todo, 100);
-        assert_eq!(manager.column_mappings().get(&ColumnStatus::Todo), Some(&100));
+        assert_eq!(
+            manager.column_mappings().get(&ColumnStatus::Todo),
+            Some(&100)
+        );
     }
 
     #[test]

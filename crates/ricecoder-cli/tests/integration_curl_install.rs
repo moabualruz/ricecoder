@@ -28,13 +28,13 @@ fn get_install_script_path() -> PathBuf {
         PathBuf::from("projects/ricecoder/scripts/install.sh"),
         PathBuf::from("scripts/install.sh"),
     ];
-    
+
     for path in paths {
         if path.exists() {
             return path;
         }
     }
-    
+
     // Return the most likely path if none exist
     PathBuf::from("../../scripts/install.sh")
 }
@@ -51,11 +51,7 @@ fn verify_script_syntax(script_path: &Path) -> bool {
     }
 
     // Verify script syntax with bash -n
-    match Command::new("bash")
-        .arg("-n")
-        .arg(script_path)
-        .output()
-    {
+    match Command::new("bash").arg("-n").arg(script_path).output() {
         Ok(output) => output.status.success(),
         Err(_) => false,
     }
@@ -100,19 +96,13 @@ fn test_install_script_is_executable() {
     let permissions = metadata.permissions();
 
     // Check if file is readable
-    assert!(
-        !permissions.readonly(),
-        "Install script should be readable"
-    );
+    assert!(!permissions.readonly(), "Install script should be readable");
 }
 
 #[test]
 fn test_install_script_syntax() {
     let script_path = get_install_script_path();
-    assert!(
-        script_path.exists(),
-        "Install script should exist"
-    );
+    assert!(script_path.exists(), "Install script should exist");
 
     // Only test syntax if bash is available
     if command_exists("bash") {
@@ -222,10 +212,7 @@ fn test_install_script_supports_multiple_platforms() {
     let content = fs::read_to_string(&script_path).expect("Should read script");
 
     // Check for platform support
-    assert!(
-        content.contains("linux"),
-        "Script should support Linux"
-    );
+    assert!(content.contains("linux"), "Script should support Linux");
     assert!(
         content.contains("macos") || content.contains("Darwin"),
         "Script should support macOS"
@@ -484,14 +471,8 @@ fn test_install_script_color_output() {
         content.contains("033"),
         "Script should use ANSI color codes"
     );
-    assert!(
-        content.contains("GREEN"),
-        "Script should have GREEN color"
-    );
-    assert!(
-        content.contains("RED"),
-        "Script should have RED color"
-    );
+    assert!(content.contains("GREEN"), "Script should have GREEN color");
+    assert!(content.contains("RED"), "Script should have RED color");
 }
 
 #[test]

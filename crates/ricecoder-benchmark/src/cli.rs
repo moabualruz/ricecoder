@@ -90,22 +90,19 @@ pub async fn run_cli(cli: Cli) -> Result<(), BenchmarkError> {
                 concurrent,
                 exercises_dir,
                 results_dir,
-            ).await
+            )
+            .await
         }
 
         Commands::List {
             languages,
             exercises_dir,
-        } => {
-            list_exercises(languages, exercises_dir)
-        }
+        } => list_exercises(languages, exercises_dir),
 
         Commands::Summary {
             results_dir,
             run_id,
-        } => {
-            show_summary(results_dir, run_id)
-        }
+        } => show_summary(results_dir, run_id),
     }
 }
 
@@ -126,14 +123,11 @@ async fn run_benchmark(
 
     let languages = languages.map(|l| l.split(',').map(|s| s.trim().to_string()).collect());
 
-    let runner = BenchmarkRunner::new(
-        exercises_dir,
-        results_dir,
-        provider_manager,
-        concurrent,
-    );
+    let runner = BenchmarkRunner::new(exercises_dir, results_dir, provider_manager, concurrent);
 
-    let results = runner.run_benchmark(&model, languages, max_attempts, num_exercises).await?;
+    let results = runner
+        .run_benchmark(&model, languages, max_attempts, num_exercises)
+        .await?;
 
     println!("{}", results.summary());
 
@@ -144,7 +138,8 @@ fn list_exercises(languages: Option<String>, exercises_dir: PathBuf) -> Result<(
     use crate::exercise::Exercise;
     use walkdir::WalkDir;
 
-    let languages: Option<Vec<String>> = languages.map(|l| l.split(',').map(|s| s.trim().to_string()).collect());
+    let languages: Option<Vec<String>> =
+        languages.map(|l| l.split(',').map(|s| s.trim().to_string()).collect());
 
     println!("Available exercises:");
     println!("====================");
@@ -183,7 +178,10 @@ fn show_summary(results_dir: PathBuf, run_id: Option<String>) -> Result<(), Benc
             let entry = entry?;
             if entry.file_name() == "results.json" {
                 let metadata = entry.metadata()?;
-                let modified = metadata.modified()?.duration_since(std::time::UNIX_EPOCH)?.as_secs();
+                let modified = metadata
+                    .modified()?
+                    .duration_since(std::time::UNIX_EPOCH)?
+                    .as_secs();
                 if modified > latest_time {
                     latest_time = modified;
                     latest_file = Some(entry.path().to_path_buf());

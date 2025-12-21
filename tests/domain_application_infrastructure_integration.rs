@@ -8,9 +8,9 @@
 //! - ricecoder-storage (infrastructure persistence)
 
 use ricecoder_domain::{entities::*, value_objects::*};
-use ricecoder_orchestration::{OrchestrationManager, WorkspaceScanner, Workspace};
-use ricecoder_permissions::{PermissionManager, PermissionLevel, ToolPermission};
-use ricecoder_security::{encryption::KeyManager, compliance::ComplianceManager};
+use ricecoder_orchestration::{OrchestrationManager, Workspace, WorkspaceScanner};
+use ricecoder_permissions::{PermissionLevel, PermissionManager, ToolPermission};
+use ricecoder_security::{compliance::ComplianceManager, encryption::KeyManager};
 use ricecoder_storage::{StorageManager, StorageMode};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -35,11 +35,17 @@ impl StorageManager for MockStorageManager {
         StorageMode::Merged
     }
 
-    fn global_resource_path(&self, _resource_type: ricecoder_storage::types::ResourceType) -> PathBuf {
+    fn global_resource_path(
+        &self,
+        _resource_type: ricecoder_storage::types::ResourceType,
+    ) -> PathBuf {
         self.global_path.join("resources")
     }
 
-    fn project_resource_path(&self, _resource_type: ricecoder_storage::types::ResourceType) -> Option<PathBuf> {
+    fn project_resource_path(
+        &self,
+        _resource_type: ricecoder_storage::types::ResourceType,
+    ) -> Option<PathBuf> {
         self.project_path.as_ref().map(|p| p.join("resources"))
     }
 
@@ -49,7 +55,8 @@ impl StorageManager for MockStorageManager {
 }
 
 #[tokio::test]
-async fn test_domain_orchestration_permissions_integration() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_domain_orchestration_permissions_integration(
+) -> Result<(), Box<dyn std::error::Error>> {
     let temp_dir = tempdir()?;
     let workspace_root = temp_dir.path().to_path_buf();
 
@@ -85,23 +92,27 @@ async fn test_domain_orchestration_permissions_integration() -> Result<(), Box<d
     let permission_manager = PermissionManager::new(storage.clone());
 
     // Set up enterprise permissions for projects
-    permission_manager.add_permission(
-        &project1.id.to_string(),
-        ToolPermission {
-            tool_name: "cargo_build".to_string(),
-            level: PermissionLevel::Allow,
-            requires_prompt: false,
-        },
-    ).await?;
+    permission_manager
+        .add_permission(
+            &project1.id.to_string(),
+            ToolPermission {
+                tool_name: "cargo_build".to_string(),
+                level: PermissionLevel::Allow,
+                requires_prompt: false,
+            },
+        )
+        .await?;
 
-    permission_manager.add_permission(
-        &project2.id.to_string(),
-        ToolPermission {
-            tool_name: "pip_install".to_string(),
-            level: PermissionLevel::Ask,
-            requires_prompt: true,
-        },
-    ).await?;
+    permission_manager
+        .add_permission(
+            &project2.id.to_string(),
+            ToolPermission {
+                tool_name: "pip_install".to_string(),
+                level: PermissionLevel::Ask,
+                requires_prompt: true,
+            },
+        )
+        .await?;
 
     // Test orchestration scanning with permissions
     let scanner = WorkspaceScanner::new(workspace_root.clone());
@@ -111,22 +122,30 @@ async fn test_domain_orchestration_permissions_integration() -> Result<(), Box<d
 
     // Test permission checks during orchestration operations
     for project in &discovered_projects {
-        let can_build = permission_manager.check_permission(
-            &project.id.to_string(),
-            "cargo_build"
-        ).await?;
+        let can_build = permission_manager
+            .check_permission(&project.id.to_string(), "cargo_build")
+            .await?;
 
         // Verify enterprise permission enforcement
         if project.name.contains("project1") {
-            assert_eq!(can_build, PermissionLevel::Allow, "Project1 should allow cargo_build");
+            assert_eq!(
+                can_build,
+                PermissionLevel::Allow,
+                "Project1 should allow cargo_build"
+            );
         }
     }
 
     // Test compliance integration
     let compliance_manager = ComplianceManager::new();
-    let compliance_report = compliance_manager.validate_workspace(&workspace_root).await?;
+    let compliance_report = compliance_manager
+        .validate_workspace(&workspace_root)
+        .await?;
 
-    assert!(compliance_report.is_compliant, "Workspace should be compliant");
+    assert!(
+        compliance_report.is_compliant,
+        "Workspace should be compliant"
+    );
 
     // Clean up
     orchestration.shutdown().await?;
@@ -135,7 +154,8 @@ async fn test_domain_orchestration_permissions_integration() -> Result<(), Box<d
 }
 
 #[tokio::test]
-async fn test_session_domain_integration_with_encryption() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_session_domain_integration_with_encryption() -> Result<(), Box<dyn std::error::Error>>
+{
     let temp_dir = tempdir()?;
     let storage_path = temp_dir.path().to_path_buf();
 
@@ -182,7 +202,8 @@ async fn test_session_domain_integration_with_encryption() -> Result<(), Box<dyn
 }
 
 #[tokio::test]
-async fn test_provider_domain_integration_with_compliance() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_provider_domain_integration_with_compliance() -> Result<(), Box<dyn std::error::Error>>
+{
     let temp_dir = tempdir()?;
 
     // Create domain provider
@@ -201,21 +222,30 @@ async fn test_provider_domain_integration_with_compliance() -> Result<(), Box<dy
     let compliance_manager = ComplianceManager::new();
     let compliance_result = compliance_manager.validate_provider(&provider).await?;
 
-    assert!(compliance_result.is_compliant, "Provider should be compliant");
-    assert!(compliance_result.violations.is_empty(), "Should have no violations");
+    assert!(
+        compliance_result.is_compliant,
+        "Provider should be compliant"
+    );
+    assert!(
+        compliance_result.violations.is_empty(),
+        "Should have no violations"
+    );
 
     // Test data classification
     let sensitive_data = "API_KEY=sk-1234567890abcdef";
     let classification = compliance_manager.classify_data(sensitive_data)?;
 
-    assert!(classification.contains(&ricecoder_security::compliance::DataClassification::Sensitive),
-            "Should classify API key as sensitive");
+    assert!(
+        classification.contains(&ricecoder_security::compliance::DataClassification::Sensitive),
+        "Should classify API key as sensitive"
+    );
 
     Ok(())
 }
 
 #[tokio::test]
-async fn test_analysis_result_domain_orchestration_integration() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_analysis_result_domain_orchestration_integration(
+) -> Result<(), Box<dyn std::error::Error>> {
     let temp_dir = tempdir()?;
     let workspace_root = temp_dir.path().to_path_buf();
 
@@ -227,14 +257,13 @@ async fn test_analysis_result_domain_orchestration_integration() -> Result<(), B
     let project = Project::new(
         "analysis-test".to_string(),
         ProgrammingLanguage::Rust,
-        workspace_root.join("test-project").to_string_lossy().to_string(),
+        workspace_root
+            .join("test-project")
+            .to_string_lossy()
+            .to_string(),
     )?;
 
-    let mut analysis = AnalysisResult::new(
-        project.id.clone(),
-        None,
-        AnalysisType::Security,
-    );
+    let mut analysis = AnalysisResult::new(project.id.clone(), None, AnalysisType::Security);
 
     let metrics = ricecoder_domain::entities::AnalysisMetrics {
         lines_of_code: 150,
@@ -254,13 +283,19 @@ async fn test_analysis_result_domain_orchestration_integration() -> Result<(), B
 
     // Test orchestration impact analysis
     let impact_report = orchestration.analyze_impact(&project.id).await?;
-    assert!(impact_report.details.is_empty() || !impact_report.details.is_empty(), "Impact analysis should work");
+    assert!(
+        impact_report.details.is_empty() || !impact_report.details.is_empty(),
+        "Impact analysis should work"
+    );
 
     // Test compliance monitoring of analysis results
     let compliance_manager = ComplianceManager::new();
     let audit_result = compliance_manager.audit_analysis_result(&analysis).await?;
 
-    assert!(audit_result.is_compliant, "Analysis result should be compliant");
+    assert!(
+        audit_result.is_compliant,
+        "Analysis result should be compliant"
+    );
 
     // Clean up
     orchestration.shutdown().await?;
@@ -269,7 +304,8 @@ async fn test_analysis_result_domain_orchestration_integration() -> Result<(), B
 }
 
 #[tokio::test]
-async fn test_enterprise_workspace_orchestration_with_security() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_enterprise_workspace_orchestration_with_security(
+) -> Result<(), Box<dyn std::error::Error>> {
     let temp_dir = tempdir()?;
     let workspace_root = temp_dir.path().to_path_buf();
 
@@ -300,23 +336,27 @@ async fn test_enterprise_workspace_orchestration_with_security() -> Result<(), B
     let compliance_manager = ComplianceManager::new();
 
     // Set up role-based permissions
-    permission_manager.add_permission(
-        "engineering",
-        ToolPermission {
-            tool_name: "deploy".to_string(),
-            level: PermissionLevel::Ask,
-            requires_prompt: true,
-        },
-    ).await?;
+    permission_manager
+        .add_permission(
+            "engineering",
+            ToolPermission {
+                tool_name: "deploy".to_string(),
+                level: PermissionLevel::Ask,
+                requires_prompt: true,
+            },
+        )
+        .await?;
 
-    permission_manager.add_permission(
-        "security",
-        ToolPermission {
-            tool_name: "security_scan".to_string(),
-            level: PermissionLevel::Allow,
-            requires_prompt: false,
-        },
-    ).await?;
+    permission_manager
+        .add_permission(
+            "security",
+            ToolPermission {
+                tool_name: "security_scan".to_string(),
+                level: PermissionLevel::Allow,
+                requires_prompt: false,
+            },
+        )
+        .await?;
 
     // Test enterprise workspace scanning
     let scanner = WorkspaceScanner::new(workspace_root.clone());
@@ -325,12 +365,20 @@ async fn test_enterprise_workspace_orchestration_with_security() -> Result<(), B
     assert!(!projects.is_empty(), "Should discover enterprise projects");
 
     // Test compliance validation across workspace
-    let compliance_report = compliance_manager.validate_workspace(&workspace_root).await?;
-    assert!(compliance_report.is_compliant, "Enterprise workspace should be compliant");
+    let compliance_report = compliance_manager
+        .validate_workspace(&workspace_root)
+        .await?;
+    assert!(
+        compliance_report.is_compliant,
+        "Enterprise workspace should be compliant"
+    );
 
     // Test orchestration with security constraints
     let status_report = orchestration.generate_status_report().await?;
-    assert!(status_report.projects_analyzed > 0, "Should analyze projects");
+    assert!(
+        status_report.projects_analyzed > 0,
+        "Should analyze projects"
+    );
 
     // Clean up
     orchestration.shutdown().await?;

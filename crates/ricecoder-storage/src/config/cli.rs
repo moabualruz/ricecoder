@@ -69,8 +69,6 @@ pub struct CliArgs {
     pub experimental: bool,
 }
 
-
-
 impl CliArgs {
     /// Parse CLI arguments
     pub fn parse() -> Self {
@@ -90,4 +88,3 @@ impl CliArgs {
             || self.experimental
     }
 }
-

@@ -96,19 +96,20 @@ impl SemanticFeatures {
                             field_mappings: Default::default(),
                             transform: None,
                         };
-                        
+
                         let mapped_items = self.completion_mapper.map(&response, &rules)?;
-                        
+
                         // Convert mapped items to CompletionItem
                         let items = mapped_items
                             .into_iter()
                             .filter_map(|item| {
                                 let label = item.get("label")?.as_str()?.to_string();
-                                let insert_text = item.get("insertText")
+                                let insert_text = item
+                                    .get("insertText")
                                     .and_then(|v| v.as_str())
                                     .unwrap_or(&label)
                                     .to_string();
-                                
+
                                 Some(CompletionItem::new(
                                     label,
                                     ricecoder_completion::types::CompletionItemKind::Variable,
@@ -116,7 +117,7 @@ impl SemanticFeatures {
                                 ))
                             })
                             .collect();
-                        
+
                         Ok(Some(items))
                     }
                     Err(e) => {
@@ -197,16 +198,16 @@ impl SemanticFeatures {
                             field_mappings: Default::default(),
                             transform: None,
                         };
-                        
+
                         let hover_value = self.hover_mapper.map(&response, &rules)?;
-                        
+
                         // Convert Value to String
                         let hover_info = if let Some(s) = hover_value.as_str() {
                             s.to_string()
                         } else {
                             hover_value.to_string()
                         };
-                        
+
                         Ok(Some(hover_info))
                     }
                     Err(e) => {
@@ -368,7 +369,9 @@ fn parse_locations(response: &Value) -> Result<Vec<(String, Range)>> {
     };
 
     for item in items {
-        if let (Some(uri), Some(range)) = (item.get("uri").and_then(|v| v.as_str()), item.get("range")) {
+        if let (Some(uri), Some(range)) =
+            (item.get("uri").and_then(|v| v.as_str()), item.get("range"))
+        {
             if let Some(parsed_range) = parse_range(range) {
                 locations.push((uri.to_string(), parsed_range));
             }

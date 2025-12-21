@@ -249,7 +249,9 @@ impl AgentFactory {
 
         // Validate capabilities
         if config.capabilities.is_empty() {
-            return Err(DomainError::config_error("At least one capability is required"));
+            return Err(DomainError::config_error(
+                "At least one capability is required",
+            ));
         }
 
         // Validate each capability
@@ -277,9 +279,8 @@ impl AgentFactory {
     ///
     /// Returns parsed configuration
     pub fn load_from_json(&self, json: &str) -> DomainResult<AgentConfig> {
-        serde_json::from_str(json).map_err(|e| {
-            DomainError::serialization_error(format!("Failed to parse JSON: {}", e))
-        })
+        serde_json::from_str(json)
+            .map_err(|e| DomainError::serialization_error(format!("Failed to parse JSON: {}", e)))
     }
 
     /// Load configuration from YAML
@@ -430,7 +431,10 @@ mod tests {
         let agent = factory.create_agent("web", &config).unwrap();
 
         assert_eq!(agent.knowledge.technology_recommendations.len(), 1);
-        assert_eq!(agent.knowledge.technology_recommendations[0].technology, "React");
+        assert_eq!(
+            agent.knowledge.technology_recommendations[0].technology,
+            "React"
+        );
     }
 
     #[test]

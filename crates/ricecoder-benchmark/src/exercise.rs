@@ -63,7 +63,11 @@ impl Exercise {
             .to_string();
 
         Ok(Exercise {
-            name: path.file_name().unwrap_or_default().to_string_lossy().to_string(),
+            name: path
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .to_string(),
             language,
             path: path.to_path_buf(),
             config,
@@ -74,13 +78,19 @@ impl Exercise {
     }
 
     pub fn get_solution_files(&self) -> Vec<PathBuf> {
-        self.config.files.solution.iter()
+        self.config
+            .files
+            .solution
+            .iter()
             .map(|f| self.path.join(f))
             .collect()
     }
 
     pub fn get_test_files(&self) -> Vec<PathBuf> {
-        self.config.files.test.iter()
+        self.config
+            .files
+            .test
+            .iter()
             .map(|f| self.path.join(f))
             .collect()
     }
@@ -117,11 +127,21 @@ impl Exercise {
         }
 
         // Add file list
-        let solution_files: Vec<_> = self.config.files.solution.iter()
+        let solution_files: Vec<_> = self
+            .config
+            .files
+            .solution
+            .iter()
             .filter(|f| !self.get_ignore_files().contains(*f))
             .collect();
-        let file_list = solution_files.iter()
-            .map(|f| Path::new(f).file_name().unwrap_or_default().to_string_lossy())
+        let file_list = solution_files
+            .iter()
+            .map(|f| {
+                Path::new(f)
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+            })
             .collect::<Vec<_>>()
             .join(" ");
 

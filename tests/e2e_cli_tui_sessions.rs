@@ -5,7 +5,7 @@
 
 use ricecoder_cli::commands::*;
 use ricecoder_cli::router::{Cli, Commands};
-use ricecoder_sessions::{SessionManager, models::SessionContext};
+use ricecoder_sessions::{models::SessionContext, SessionManager};
 use ricecoder_tui::{TuiApp, TuiConfig};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -23,7 +23,10 @@ async fn test_cli_multi_session_workflow() {
     let project_path = temp_dir.path().to_path_buf();
 
     // Initialize project
-    let init_result = execute_cli_command(&project_path, vec!["rice", "init", &project_path.to_string_lossy()]);
+    let init_result = execute_cli_command(
+        &project_path,
+        vec!["rice", "init", &project_path.to_string_lossy()],
+    );
     assert!(init_result.is_ok(), "Init command should succeed");
 
     // Create multiple sessions
@@ -52,7 +55,10 @@ async fn test_cli_multi_session_workflow() {
 }
 
 /// Execute CLI command and return result
-fn execute_cli_command(project_path: &PathBuf, args: Vec<&str>) -> Result<(), Box<dyn std::error::Error>> {
+fn execute_cli_command(
+    project_path: &PathBuf,
+    args: Vec<&str>,
+) -> Result<(), Box<dyn std::error::Error>> {
     // Parse CLI arguments
     let cli = Cli::try_parse_from(args)?;
 
@@ -62,7 +68,9 @@ fn execute_cli_command(project_path: &PathBuf, args: Vec<&str>) -> Result<(), Bo
             let cmd = InitCommand::new(path);
             cmd.execute()?;
         }
-        Some(Commands::Sessions { action: Some(session_action) }) => {
+        Some(Commands::Sessions {
+            action: Some(session_action),
+        }) => {
             let cmd = SessionsCommand::new(session_action);
             cmd.execute()?;
         }
@@ -82,11 +90,12 @@ fn create_session_via_cli(name: &str) -> String {
     let session_context = SessionContext::new(
         "openai".to_string(),
         "gpt-4".to_string(),
-        ricecoder_sessions::models::SessionMode::Chat
+        ricecoder_sessions::models::SessionMode::Chat,
     );
 
     let mut session_manager = SessionManager::new(10);
-    let session_id = session_manager.create_session(name.to_string(), session_context)
+    let session_id = session_manager
+        .create_session(name.to_string(), session_context)
         .expect("Failed to create session");
 
     session_id
@@ -107,9 +116,11 @@ fn execute_chat_command_in_session(message: &str) {
 /// List sessions via CLI command
 fn list_sessions_via_cli() -> Vec<String> {
     // In test implementation, return mock session IDs
-    vec!["session-development-session".to_string(),
-         "session-testing-session".to_string(),
-         "session-production-session".to_string()]
+    vec![
+        "session-development-session".to_string(),
+        "session-testing-session".to_string(),
+        "session-production-session".to_string(),
+    ]
 }
 
 /// Validate that sessions maintain isolation
@@ -125,8 +136,11 @@ fn validate_session_isolation(session1_id: &str, session2_id: &str, session3_id:
 /// Test concurrent session operations
 #[tokio::test]
 async fn test_concurrent_session_operations() {
-    let session_manager = Arc::new(SessionManager::new(SessionConfig::default()).await
-        .expect("Failed to create session manager"));
+    let session_manager = Arc::new(
+        SessionManager::new(SessionConfig::default())
+            .await
+            .expect("Failed to create session manager"),
+    );
 
     // Create multiple sessions concurrently
     let mut handles = vec![];
@@ -135,11 +149,15 @@ async fn test_concurrent_session_operations() {
         let manager = session_manager.clone();
         let handle = tokio::spawn(async move {
             let session_name = format!("concurrent-session-{}", i);
-            let session_id = manager.create_session(&session_name).await
+            let session_id = manager
+                .create_session(&session_name)
+                .await
                 .expect("Failed to create session");
 
             // Perform operations in session
-            manager.set_active_session(&session_id).await
+            manager
+                .set_active_session(&session_id)
+                .await
                 .expect("Failed to set active session");
 
             // Simulate some work
@@ -161,7 +179,9 @@ async fn test_concurrent_session_operations() {
 
     // Validate all sessions are independent
     for session_id in session_ids {
-        let session_info = session_manager.get_session_info(&session_id).await
+        let session_info = session_manager
+            .get_session_info(&session_id)
+            .await
             .expect("Failed to get session info");
         assert!(session_info.name.starts_with("concurrent-session-"));
     }
@@ -179,25 +199,35 @@ async fn test_session_persistence_across_restarts() {
     };
 
     // Create session manager and session
-    let session_manager1 = SessionManager::new(session_config.clone()).await
+    let session_manager1 = SessionManager::new(session_config.clone())
+        .await
         .expect("Failed to create first session manager");
 
-    let session_id = session_manager1.create_session("persistent-session").await
+    let session_id = session_manager1
+        .create_session("persistent-session")
+        .await
         .expect("Failed to create session");
 
-    session_manager1.set_active_session(&session_id).await
+    session_manager1
+        .set_active_session(&session_id)
+        .await
         .expect("Failed to set active session");
 
     // Add some data to session
-    session_manager1.add_message_to_session(&session_id, "Test message").await
+    session_manager1
+        .add_message_to_session(&session_id, "Test message")
+        .await
         .expect("Failed to add message");
 
     // Simulate restart by creating new session manager
-    let session_manager2 = SessionManager::new(session_config).await
+    let session_manager2 = SessionManager::new(session_config)
+        .await
         .expect("Failed to create second session manager");
 
     // Verify session persists
-    let session_info = session_manager2.get_session_info(&session_id).await
+    let session_info = session_manager2
+        .get_session_info(&session_id)
+        .await
         .expect("Failed to get session info");
 
     assert_eq!(session_info.name, "persistent-session");
@@ -225,23 +255,32 @@ async fn test_tui_session_management() {
     };
 
     // Create TUI app
-    let mut tui_app = TuiApp::new(tui_config).await
+    let mut tui_app = TuiApp::new(tui_config)
+        .await
         .expect("Failed to create TUI app");
 
     // Test session creation in TUI
-    tui_app.create_new_session("tui-session").await
+    tui_app
+        .create_new_session("tui-session")
+        .await
         .expect("Failed to create session in TUI");
 
     // Test session switching in TUI
-    tui_app.switch_to_session("tui-session").await
+    tui_app
+        .switch_to_session("tui-session")
+        .await
         .expect("Failed to switch session in TUI");
 
     // Test message sending in TUI
-    tui_app.send_message("Hello from TUI").await
+    tui_app
+        .send_message("Hello from TUI")
+        .await
         .expect("Failed to send message in TUI");
 
     // Validate session state
-    let current_session = tui_app.get_current_session().await
+    let current_session = tui_app
+        .get_current_session()
+        .await
         .expect("Failed to get current session");
 
     assert_eq!(current_session.name, "tui-session");
@@ -262,24 +301,33 @@ async fn test_session_recovery_after_crash() {
         ..Default::default()
     };
 
-    let session_manager = SessionManager::new(session_config).await
+    let session_manager = SessionManager::new(session_config)
+        .await
         .expect("Failed to create session manager");
 
     // Create session with data
-    let session_id = session_manager.create_session("recovery-test").await
+    let session_id = session_manager
+        .create_session("recovery-test")
+        .await
         .expect("Failed to create session");
 
-    session_manager.set_active_session(&session_id).await
+    session_manager
+        .set_active_session(&session_id)
+        .await
         .expect("Failed to set active session");
 
     // Add messages
     for i in 0..5 {
-        session_manager.add_message_to_session(&session_id, &format!("Message {}", i)).await
+        session_manager
+            .add_message_to_session(&session_id, &format!("Message {}", i))
+            .await
             .expect("Failed to add message");
     }
 
     // Simulate crash by forcing state save
-    session_manager.force_save_state().await
+    session_manager
+        .force_save_state()
+        .await
         .expect("Failed to save state");
 
     // Simulate recovery by creating new manager
@@ -289,11 +337,14 @@ async fn test_session_recovery_after_crash() {
         ..Default::default()
     };
 
-    let recovered_manager = SessionManager::new(recovery_config).await
+    let recovered_manager = SessionManager::new(recovery_config)
+        .await
         .expect("Failed to create recovered session manager");
 
     // Verify session was recovered
-    let recovered_session = recovered_manager.get_session_info(&session_id).await
+    let recovered_session = recovered_manager
+        .get_session_info(&session_id)
+        .await
         .expect("Failed to get recovered session");
 
     assert_eq!(recovered_session.name, "recovery-test");
@@ -305,11 +356,16 @@ async fn test_session_recovery_after_crash() {
 /// Test multi-user session sharing and collaboration
 #[tokio::test]
 async fn test_multi_user_session_sharing() {
-    let session_manager = Arc::new(SessionManager::new(SessionConfig::default()).await
-        .expect("Failed to create session manager"));
+    let session_manager = Arc::new(
+        SessionManager::new(SessionConfig::default())
+            .await
+            .expect("Failed to create session manager"),
+    );
 
     // Create shared session
-    let session_id = session_manager.create_shared_session("collaborative-session", vec!["user1", "user2"]).await
+    let session_id = session_manager
+        .create_shared_session("collaborative-session", vec!["user1", "user2"])
+        .await
         .expect("Failed to create shared session");
 
     // Simulate multiple users accessing the session
@@ -322,15 +378,21 @@ async fn test_multi_user_session_sharing() {
 
         let handle = tokio::spawn(async move {
             // User switches to shared session
-            manager.set_active_session_for_user(&session, &user).await
+            manager
+                .set_active_session_for_user(&session, &user)
+                .await
                 .expect("Failed to set active session for user");
 
             // User adds message
-            manager.add_message_to_session(&session, &format!("Message from {}", user)).await
+            manager
+                .add_message_to_session(&session, &format!("Message from {}", user))
+                .await
                 .expect("Failed to add message");
 
             // User reads messages
-            let messages = manager.get_session_messages(&session).await
+            let messages = manager
+                .get_session_messages(&session)
+                .await
                 .expect("Failed to get messages");
 
             messages.len()
@@ -348,11 +410,19 @@ async fn test_multi_user_session_sharing() {
 
     // Validate collaboration
     assert_eq!(message_counts.len(), 2, "Should have 2 users");
-    assert!(message_counts.iter().all(|&count| count >= 2), "Each user should see at least 2 messages");
+    assert!(
+        message_counts.iter().all(|&count| count >= 2),
+        "Each user should see at least 2 messages"
+    );
 
     // Check final session state
-    let final_session = session_manager.get_session_info(&session_id).await
+    let final_session = session_manager
+        .get_session_info(&session_id)
+        .await
         .expect("Failed to get final session");
 
-    assert_eq!(final_session.message_count, 2, "Should have 2 messages total");
+    assert_eq!(
+        final_session.message_count, 2,
+        "Should have 2 messages total"
+    );
 }

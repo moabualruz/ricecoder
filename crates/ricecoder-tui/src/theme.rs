@@ -3,7 +3,7 @@
 //! This module provides theme-related functionality by re-exporting
 //! from the ricecoder-themes crate.
 
-pub use ricecoder_themes::manager::ThemeManager;
 pub use ricecoder_themes::loader::ThemeLoader;
+pub use ricecoder_themes::manager::ThemeManager;
 pub use ricecoder_themes::registry::ThemeRegistry;
 pub use ricecoder_themes::reset::ThemeResetManager;

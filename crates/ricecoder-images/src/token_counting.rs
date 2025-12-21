@@ -120,8 +120,8 @@ impl ImageTokenCounter {
 
         // Resolution factor: additional tokens based on image size
         // Roughly 1 token per 512 pixels
-        let resolution_factor = ((metadata.width as usize * metadata.height as usize) / 512)
-            .min(1000); // Cap at 1000 to avoid excessive token counts
+        let resolution_factor =
+            ((metadata.width as usize * metadata.height as usize) / 512).min(1000); // Cap at 1000 to avoid excessive token counts
 
         base_tokens + resolution_factor
     }
@@ -195,11 +195,7 @@ impl ImageTokenCounter {
     /// Count tokens for image analysis prompt.
     ///
     /// This counts tokens for the analysis prompt text that accompanies the image.
-    pub fn count_prompt_tokens(
-        &self,
-        prompt: &str,
-        model: &str,
-    ) -> ImageResult<usize> {
+    pub fn count_prompt_tokens(&self, prompt: &str, model: &str) -> ImageResult<usize> {
         self.token_counter
             .count(prompt, model)
             .map_err(|e| ImageError::AnalysisFailed(format!("Token counting failed: {}", e)))

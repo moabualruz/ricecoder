@@ -5,7 +5,7 @@
 
 use ricecoder_cli::commands::*;
 use ricecoder_providers::{ProviderManager, ProviderRegistry};
-use ricecoder_security::{ComplianceManager, AuditLogger};
+use ricecoder_security::{AuditLogger, ComplianceManager};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -17,8 +17,11 @@ use tokio::time::timeout;
 /// execute requests with compliance monitoring, handle failures gracefully.
 #[tokio::test]
 async fn test_api_provider_switching_workflow() {
-    let provider_manager = Arc::new(ProviderManager::new().await
-        .expect("Failed to create provider manager"));
+    let provider_manager = Arc::new(
+        ProviderManager::new()
+            .await
+            .expect("Failed to create provider manager"),
+    );
 
     // Configure multiple providers
     configure_test_providers(&provider_manager).await;
@@ -47,7 +50,9 @@ async fn configure_test_providers(provider_manager: &Arc<ProviderManager>) {
         ])),
         ..Default::default()
     };
-    provider_manager.add_provider("openai", openai_config).await
+    provider_manager
+        .add_provider("openai", openai_config)
+        .await
         .expect("Failed to add OpenAI provider");
 
     // Configure Anthropic provider
@@ -62,7 +67,9 @@ async fn configure_test_providers(provider_manager: &Arc<ProviderManager>) {
         ])),
         ..Default::default()
     };
-    provider_manager.add_provider("anthropic", anthropic_config).await
+    provider_manager
+        .add_provider("anthropic", anthropic_config)
+        .await
         .expect("Failed to add Anthropic provider");
 
     // Configure local provider
@@ -72,33 +79,47 @@ async fn configure_test_providers(provider_manager: &Arc<ProviderManager>) {
         models: vec!["llama2".to_string(), "codellama".to_string()],
         ..Default::default()
     };
-    provider_manager.add_provider("local", local_config).await
+    provider_manager
+        .add_provider("local", local_config)
+        .await
         .expect("Failed to add local provider");
 }
 
 /// Test switching between providers
 async fn test_provider_switching(provider_manager: &Arc<ProviderManager>) {
     // Start with OpenAI
-    provider_manager.set_active_provider("openai").await
+    provider_manager
+        .set_active_provider("openai")
+        .await
         .expect("Failed to set active provider");
 
-    let active_provider = provider_manager.get_active_provider().await
+    let active_provider = provider_manager
+        .get_active_provider()
+        .await
         .expect("Failed to get active provider");
     assert_eq!(active_provider.id, "openai");
 
     // Switch to Anthropic
-    provider_manager.set_active_provider("anthropic").await
+    provider_manager
+        .set_active_provider("anthropic")
+        .await
         .expect("Failed to switch provider");
 
-    let active_provider = provider_manager.get_active_provider().await
+    let active_provider = provider_manager
+        .get_active_provider()
+        .await
         .expect("Failed to get active provider");
     assert_eq!(active_provider.id, "anthropic");
 
     // Switch to local
-    provider_manager.set_active_provider("local").await
+    provider_manager
+        .set_active_provider("local")
+        .await
         .expect("Failed to switch provider");
 
-    let active_provider = provider_manager.get_active_provider().await
+    let active_provider = provider_manager
+        .get_active_provider()
+        .await
         .expect("Failed to get active provider");
     assert_eq!(active_provider.id, "local");
 }
@@ -106,62 +127,78 @@ async fn test_provider_switching(provider_manager: &Arc<ProviderManager>) {
 /// Test compliance monitoring during API operations
 async fn test_compliance_monitoring(provider_manager: &Arc<ProviderManager>) {
     let compliance_monitor = Arc::new(ComplianceMonitor::new(provider_manager.clone()));
-    compliance_monitor.start_monitoring().await
+    compliance_monitor
+        .start_monitoring()
+        .await
         .expect("Failed to start compliance monitoring");
 
     // Execute API calls with different providers
     for provider_id in ["openai", "anthropic", "local"] {
-        provider_manager.set_active_provider(provider_id).await
+        provider_manager
+            .set_active_provider(provider_id)
+            .await
             .expect("Failed to set provider");
 
         // Execute test request
-        let result = provider_manager.execute_request(
-            "test prompt",
-            Some("gpt-4".to_string()),
-            None
-        ).await;
+        let result = provider_manager
+            .execute_request("test prompt", Some("gpt-4".to_string()), None)
+            .await;
 
         // Result may fail due to mock keys, but compliance should be monitored
         let _ = result;
     }
 
     // Check compliance status
-    let compliance_status = compliance_monitor.get_compliance_status().await
+    let compliance_status = compliance_monitor
+        .get_compliance_status()
+        .await
         .expect("Failed to get compliance status");
 
-    assert!(compliance_status.api_calls_logged >= 3, "Should have logged API calls");
+    assert!(
+        compliance_status.api_calls_logged >= 3,
+        "Should have logged API calls"
+    );
 
-    compliance_monitor.stop_monitoring().await
+    compliance_monitor
+        .stop_monitoring()
+        .await
         .expect("Failed to stop monitoring");
 }
 
 /// Test provider failover scenarios
 async fn test_provider_failover(provider_manager: &Arc<ProviderManager>) {
     // Set up failover chain: openai -> anthropic -> local
-    provider_manager.configure_failover_chain(vec!["openai", "anthropic", "local"]).await
+    provider_manager
+        .configure_failover_chain(vec!["openai", "anthropic", "local"])
+        .await
         .expect("Failed to configure failover");
 
     // Simulate OpenAI failure
-    provider_manager.simulate_provider_failure("openai", true).await;
+    provider_manager
+        .simulate_provider_failure("openai", true)
+        .await;
 
     // Execute request - should failover to Anthropic
-    let result = provider_manager.execute_request_with_failover(
-        "test prompt",
-        Some("gpt-4".to_string()),
-        None
-    ).await;
+    let result = provider_manager
+        .execute_request_with_failover("test prompt", Some("gpt-4".to_string()), None)
+        .await;
 
     // Should succeed via failover or fail gracefully
     match result {
         Ok(_) => {
-            let active_provider = provider_manager.get_active_provider().await
+            let active_provider = provider_manager
+                .get_active_provider()
+                .await
                 .expect("Failed to get active provider");
             assert!(active_provider.id == "anthropic" || active_provider.id == "local");
         }
         Err(_) => {
             // Verify failover was attempted
             let failover_attempts = provider_manager.get_failover_attempts().await;
-            assert!(!failover_attempts.is_empty(), "Should have failover attempts");
+            assert!(
+                !failover_attempts.is_empty(),
+                "Should have failover attempts"
+            );
         }
     }
 }
@@ -169,8 +206,11 @@ async fn test_provider_failover(provider_manager: &Arc<ProviderManager>) {
 /// Test API rate limiting and throttling
 #[tokio::test]
 async fn test_api_rate_limiting() {
-    let provider_manager = Arc::new(ProviderManager::new().await
-        .expect("Failed to create provider manager"));
+    let provider_manager = Arc::new(
+        ProviderManager::new()
+            .await
+            .expect("Failed to create provider manager"),
+    );
 
     // Configure provider with strict rate limits
     let config = ProviderConfig {
@@ -183,39 +223,52 @@ async fn test_api_rate_limiting() {
         ..Default::default()
     };
 
-    provider_manager.add_provider("rate-limited", config).await
+    provider_manager
+        .add_provider("rate-limited", config)
+        .await
         .expect("Failed to add provider");
 
-    provider_manager.set_active_provider("rate-limited").await
+    provider_manager
+        .set_active_provider("rate-limited")
+        .await
         .expect("Failed to set active provider");
 
     // Execute requests rapidly
     let mut results = vec![];
     for i in 0..5 {
-        let result = provider_manager.execute_request(
-            &format!("Request {}", i),
-            Some("gpt-4".to_string()),
-            None
-        ).await;
+        let result = provider_manager
+            .execute_request(&format!("Request {}", i), Some("gpt-4".to_string()), None)
+            .await;
         results.push(result);
     }
 
     // Some requests should be rate limited
     let rate_limited_count = results.iter().filter(|r| r.is_err()).count();
-    assert!(rate_limited_count > 0, "Some requests should be rate limited");
+    assert!(
+        rate_limited_count > 0,
+        "Some requests should be rate limited"
+    );
 
     // Check rate limit status
-    let rate_limit_status = provider_manager.get_rate_limit_status().await
+    let rate_limit_status = provider_manager
+        .get_rate_limit_status()
+        .await
         .expect("Failed to get rate limit status");
 
-    assert!(rate_limit_status.requests_remaining < 2, "Should have used rate limit quota");
+    assert!(
+        rate_limit_status.requests_remaining < 2,
+        "Should have used rate limit quota"
+    );
 }
 
 /// Test API error handling and recovery
 #[tokio::test]
 async fn test_api_error_handling_recovery() {
-    let provider_manager = Arc::new(ProviderManager::new().await
-        .expect("Failed to create provider manager"));
+    let provider_manager = Arc::new(
+        ProviderManager::new()
+            .await
+            .expect("Failed to create provider manager"),
+    );
 
     let config = ProviderConfig {
         provider_type: ProviderType::OpenAI,
@@ -227,20 +280,22 @@ async fn test_api_error_handling_recovery() {
         ..Default::default()
     };
 
-    provider_manager.add_provider("error-test", config).await
+    provider_manager
+        .add_provider("error-test", config)
+        .await
         .expect("Failed to add provider");
 
-    provider_manager.set_active_provider("error-test").await
+    provider_manager
+        .set_active_provider("error-test")
+        .await
         .expect("Failed to set active provider");
 
     let start_time = Instant::now();
 
     // Execute request that will fail and retry
-    let result = provider_manager.execute_request(
-        "test prompt",
-        Some("gpt-4".to_string()),
-        None
-    ).await;
+    let result = provider_manager
+        .execute_request("test prompt", Some("gpt-4".to_string()), None)
+        .await;
 
     let duration = start_time.elapsed();
 
@@ -248,10 +303,15 @@ async fn test_api_error_handling_recovery() {
     assert!(result.is_err(), "Request should fail with invalid key");
 
     // Should have taken some time due to retries
-    assert!(duration > Duration::from_millis(300), "Should have retry delays");
+    assert!(
+        duration > Duration::from_millis(300),
+        "Should have retry delays"
+    );
 
     // Check retry statistics
-    let retry_stats = provider_manager.get_retry_statistics().await
+    let retry_stats = provider_manager
+        .get_retry_statistics()
+        .await
         .expect("Failed to get retry statistics");
 
     assert!(retry_stats.total_retries > 0, "Should have retry attempts");
@@ -260,8 +320,11 @@ async fn test_api_error_handling_recovery() {
 /// Test API compliance validation
 #[tokio::test]
 async fn test_api_compliance_validation() {
-    let provider_manager = Arc::new(ProviderManager::new().await
-        .expect("Failed to create provider manager"));
+    let provider_manager = Arc::new(
+        ProviderManager::new()
+            .await
+            .expect("Failed to create provider manager"),
+    );
 
     let compliance_monitor = Arc::new(ComplianceMonitor::new(provider_manager.clone()));
 
@@ -277,31 +340,41 @@ async fn test_api_compliance_validation() {
         ..Default::default()
     };
 
-    provider_manager.add_provider("compliant", config).await
+    provider_manager
+        .add_provider("compliant", config)
+        .await
         .expect("Failed to add provider");
 
-    compliance_monitor.start_monitoring().await
+    compliance_monitor
+        .start_monitoring()
+        .await
         .expect("Failed to start monitoring");
 
     // Test compliant request
-    let compliant_result = provider_manager.execute_compliant_request(
-        "Please analyze this code structure",
-        Some("gpt-4".to_string()),
-        None
-    ).await;
+    let compliant_result = provider_manager
+        .execute_compliant_request(
+            "Please analyze this code structure",
+            Some("gpt-4".to_string()),
+            None,
+        )
+        .await;
 
     // Test non-compliant request (contains PII)
-    let non_compliant_result = provider_manager.execute_compliant_request(
-        "Analyze data for user john.doe@email.com with SSN 123-45-6789",
-        Some("gpt-4".to_string()),
-        None
-    ).await;
+    let non_compliant_result = provider_manager
+        .execute_compliant_request(
+            "Analyze data for user john.doe@email.com with SSN 123-45-6789",
+            Some("gpt-4".to_string()),
+            None,
+        )
+        .await;
 
     // Non-compliant request should be blocked or flagged
     match non_compliant_result {
         Ok(_) => {
             // If it succeeded, check that it was flagged
-            let violations = compliance_monitor.get_violations().await
+            let violations = compliance_monitor
+                .get_violations()
+                .await
                 .expect("Failed to get violations");
             assert!(!violations.is_empty(), "Should have compliance violations");
         }
@@ -310,15 +383,20 @@ async fn test_api_compliance_validation() {
         }
     }
 
-    compliance_monitor.stop_monitoring().await
+    compliance_monitor
+        .stop_monitoring()
+        .await
         .expect("Failed to stop monitoring");
 }
 
 /// Test concurrent API requests with provider management
 #[tokio::test]
 async fn test_concurrent_api_requests() {
-    let provider_manager = Arc::new(ProviderManager::new().await
-        .expect("Failed to create provider manager"));
+    let provider_manager = Arc::new(
+        ProviderManager::new()
+            .await
+            .expect("Failed to create provider manager"),
+    );
 
     // Configure provider
     let config = ProviderConfig {
@@ -327,7 +405,9 @@ async fn test_concurrent_api_requests() {
         ..Default::default()
     };
 
-    provider_manager.add_provider("concurrent", config).await
+    provider_manager
+        .add_provider("concurrent", config)
+        .await
         .expect("Failed to add provider");
 
     // Execute multiple concurrent requests
@@ -336,14 +416,18 @@ async fn test_concurrent_api_requests() {
     for i in 0..10 {
         let manager = provider_manager.clone();
         let handle = tokio::spawn(async move {
-            manager.set_active_provider("concurrent").await
+            manager
+                .set_active_provider("concurrent")
+                .await
                 .expect("Failed to set provider");
 
-            let result = manager.execute_request(
-                &format!("Concurrent request {}", i),
-                Some("gpt-4".to_string()),
-                None
-            ).await;
+            let result = manager
+                .execute_request(
+                    &format!("Concurrent request {}", i),
+                    Some("gpt-4".to_string()),
+                    None,
+                )
+                .await;
 
             result.is_ok()
         });
@@ -363,17 +447,25 @@ async fn test_concurrent_api_requests() {
     assert!(success_count >= 0, "Should have completed requests");
 
     // Check concurrency metrics
-    let concurrency_stats = provider_manager.get_concurrency_statistics().await
+    let concurrency_stats = provider_manager
+        .get_concurrency_statistics()
+        .await
         .expect("Failed to get concurrency statistics");
 
-    assert!(concurrency_stats.total_requests >= 10, "Should have handled all requests");
+    assert!(
+        concurrency_stats.total_requests >= 10,
+        "Should have handled all requests"
+    );
 }
 
 /// Test API performance validation
 #[tokio::test]
 async fn test_api_performance_validation() {
-    let provider_manager = Arc::new(ProviderManager::new().await
-        .expect("Failed to create provider manager"));
+    let provider_manager = Arc::new(
+        ProviderManager::new()
+            .await
+            .expect("Failed to create provider manager"),
+    );
 
     let config = ProviderConfig {
         provider_type: ProviderType::OpenAI,
@@ -385,10 +477,14 @@ async fn test_api_performance_validation() {
         ..Default::default()
     };
 
-    provider_manager.add_provider("performance", config).await
+    provider_manager
+        .add_provider("performance", config)
+        .await
         .expect("Failed to add provider");
 
-    provider_manager.set_active_provider("performance").await
+    provider_manager
+        .set_active_provider("performance")
+        .await
         .expect("Failed to set provider");
 
     let start_time = Instant::now();
@@ -397,11 +493,13 @@ async fn test_api_performance_validation() {
     let mut latencies = vec![];
     for i in 0..5 {
         let request_start = Instant::now();
-        let _result = provider_manager.execute_request(
-            &format!("Performance test request {}", i),
-            Some("gpt-4".to_string()),
-            None
-        ).await;
+        let _result = provider_manager
+            .execute_request(
+                &format!("Performance test request {}", i),
+                Some("gpt-4".to_string()),
+                None,
+            )
+            .await;
         let latency = request_start.elapsed();
         latencies.push(latency);
     }
@@ -410,11 +508,15 @@ async fn test_api_performance_validation() {
     let avg_latency = latencies.iter().sum::<Duration>() / latencies.len() as u32;
 
     // Check performance targets
-    let performance_report = provider_manager.get_performance_report().await
+    let performance_report = provider_manager
+        .get_performance_report()
+        .await
         .expect("Failed to get performance report");
 
-    assert!(performance_report.average_latency <= Duration::from_secs(5),
-        "Average latency should meet target");
+    assert!(
+        performance_report.average_latency <= Duration::from_secs(5),
+        "Average latency should meet target"
+    );
 
     // Throughput should be reasonable
     let throughput = 5.0 / total_duration.as_secs_f64();

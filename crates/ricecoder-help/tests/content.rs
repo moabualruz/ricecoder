@@ -19,7 +19,7 @@ fn test_help_item_with_keywords() {
 fn test_help_item_matches() {
     let item = HelpItem::new("Test Title", "Some content")
         .with_keywords(vec!["test".to_string(), "example".to_string()]);
-    
+
     assert!(item.matches("title"));
     assert!(item.matches("Title"));
     assert!(item.matches("content"));
@@ -34,7 +34,7 @@ fn test_help_category_creation() {
         .with_description("Test description")
         .add_item("Item 1", "Content 1")
         .add_item("Item 2", "Content 2");
-    
+
     assert_eq!(category.name, "Test Category");
     assert_eq!(category.description, "Test description");
     assert_eq!(category.items.len(), 2);
@@ -45,7 +45,7 @@ fn test_help_category_search() {
     let category = HelpCategory::new("Test")
         .add_item("First Item", "First content")
         .add_item("Second Item", "Second content");
-    
+
     let results = category.search("first");
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].title, "First Item");
@@ -56,20 +56,19 @@ fn test_help_content_creation() {
     let content = HelpContent::new()
         .add_category(HelpCategory::new("Category 1"))
         .add_shortcut("Ctrl+Q", "Quit");
-    
+
     assert_eq!(content.categories.len(), 1);
     assert_eq!(content.shortcuts.len(), 1);
 }
 
 #[test]
 fn test_help_content_search() {
-    let content = HelpContent::new()
-        .add_category(
-            HelpCategory::new("Commands")
-                .add_item("help", "Show help")
-                .add_item("exit", "Exit application")
-        );
-    
+    let content = HelpContent::new().add_category(
+        HelpCategory::new("Commands")
+            .add_item("help", "Show help")
+            .add_item("exit", "Exit application"),
+    );
+
     let results = content.search("help");
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].1.title, "help");
@@ -78,16 +77,16 @@ fn test_help_content_search() {
 #[test]
 fn test_default_ricecoder_help() {
     let help = HelpContent::default_ricecoder_help();
-    
+
     // Should have multiple categories
     assert!(help.categories.len() >= 6);
-    
+
     // Should have shortcuts
     assert!(!help.shortcuts.is_empty());
-    
+
     // Should have Getting Started category
     assert!(help.get_category("Getting Started").is_some());
-    
+
     // Should have Commands category
     assert!(help.get_category("Commands").is_some());
 }

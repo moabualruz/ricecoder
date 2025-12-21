@@ -27,8 +27,6 @@ pub struct TextAreaWidget {
     max_height: u16,
 }
 
-
-
 impl TextAreaWidget {
     /// Create a new text area widget
     pub fn new(vim_mode: bool, max_height: u16) -> Self {
@@ -38,7 +36,11 @@ impl TextAreaWidget {
         Self {
             textarea,
             vim_mode,
-            vim_state: if vim_mode { VimMode::Normal } else { VimMode::Insert },
+            vim_state: if vim_mode {
+                VimMode::Normal
+            } else {
+                VimMode::Insert
+            },
             max_height,
         }
     }
@@ -72,17 +74,21 @@ impl TextAreaWidget {
         self.vim_state
     }
 
-
-
     /// Get character count
     pub fn char_count(&self) -> usize {
-        self.textarea.lines().iter().map(|line| line.chars().count()).sum::<usize>() +
-        self.textarea.lines().len().saturating_sub(1) // Add newlines between lines
+        self.textarea
+            .lines()
+            .iter()
+            .map(|line| line.chars().count())
+            .sum::<usize>()
+            + self.textarea.lines().len().saturating_sub(1) // Add newlines between lines
     }
 
     /// Get word count
     pub fn word_count(&self) -> usize {
-        self.textarea.lines().iter()
+        self.textarea
+            .lines()
+            .iter()
             .flat_map(|line| line.split_whitespace())
             .filter(|word| !word.is_empty())
             .count()

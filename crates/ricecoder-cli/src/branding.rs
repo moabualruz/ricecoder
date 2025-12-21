@@ -123,5 +123,3 @@ pub struct TerminalCapabilities {
     pub width: u16,
     pub height: u16,
 }
-
-

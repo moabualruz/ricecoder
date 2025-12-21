@@ -1,14 +1,14 @@
 //! API server implementation
 
-use axum::Router;
-use std::net::SocketAddr;
-use tower::ServiceBuilder;
-use tower_http::trace::TraceLayer;
 use crate::{
     middleware::{auth, logging, rate_limit},
     routes,
     state::AppState,
 };
+use axum::Router;
+use std::net::SocketAddr;
+use tower::ServiceBuilder;
+use tower_http::trace::TraceLayer;
 
 /// API server
 pub struct ApiServer {
@@ -23,9 +23,18 @@ impl ApiServer {
             .layer(
                 ServiceBuilder::new()
                     .layer(TraceLayer::new_for_http())
-                    .layer(axum::middleware::from_fn_with_state(state.clone(), logging::logging_middleware))
-                    .layer(axum::middleware::from_fn_with_state(state.clone(), rate_limit::rate_limit_middleware))
-                    .layer(axum::middleware::from_fn_with_state(state.clone(), auth::auth_middleware))
+                    .layer(axum::middleware::from_fn_with_state(
+                        state.clone(),
+                        logging::logging_middleware,
+                    ))
+                    .layer(axum::middleware::from_fn_with_state(
+                        state.clone(),
+                        rate_limit::rate_limit_middleware,
+                    ))
+                    .layer(axum::middleware::from_fn_with_state(
+                        state.clone(),
+                        auth::auth_middleware,
+                    )),
             )
             .with_state(state);
 

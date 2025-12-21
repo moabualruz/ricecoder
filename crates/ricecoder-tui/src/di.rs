@@ -12,7 +12,11 @@ static DI_CONTAINER: OnceLock<Arc<DIContainer>> = OnceLock::new();
 /// Initialize the DI container for the TUI
 pub fn initialize_di_container() -> DIResult<()> {
     let container = create_application_container()?;
-    DI_CONTAINER.set(Arc::new(container)).map_err(|_| ricecoder_di::DIError::ServiceAlreadyRegistered { service_type: "DIContainer".to_string() })?;
+    DI_CONTAINER.set(Arc::new(container)).map_err(|_| {
+        ricecoder_di::DIError::ServiceAlreadyRegistered {
+            service_type: "DIContainer".to_string(),
+        }
+    })?;
     Ok(())
 }
 
@@ -26,8 +30,7 @@ pub fn get_service<T>() -> Option<Arc<T>>
 where
     T: Send + Sync + 'static,
 {
-    get_di_container()
-        .and_then(|container| container.resolve::<T>().ok())
+    get_di_container().and_then(|container| container.resolve::<T>().ok())
 }
 
 /// Initialize DI container with specific features
@@ -49,4 +52,3 @@ pub fn reset_di_container() {
     // OnceLock cannot be reset, so this is a no-op for now
     // In tests, use separate containers
 }
-

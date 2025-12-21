@@ -163,5 +163,3 @@ impl HealthCheckCache {
         self
     }
 }
-
-

@@ -83,7 +83,11 @@ impl ParserWarning {
     }
 
     /// Create a warning with position information
-    pub fn with_position(message: String, position: crate::types::Position, severity: WarningSeverity) -> Self {
+    pub fn with_position(
+        message: String,
+        position: crate::types::Position,
+        severity: WarningSeverity,
+    ) -> Self {
         Self {
             message,
             position: Some(position),

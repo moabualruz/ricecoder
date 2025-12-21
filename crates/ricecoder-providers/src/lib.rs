@@ -26,9 +26,19 @@ pub mod token_counter;
 
 // Re-export commonly used types
 pub use api_key::ApiKeyManager;
-pub use audit_log::{AuditEventType, AuditLogger, AuditLogEntry};
+pub use audit_log::{AuditEventType, AuditLogEntry, AuditLogger};
 pub use cache::ProviderCache;
+pub use community::{
+    CommunityProviderConfig, CommunityProviderRegistry, ContributionMetadata, ContributionReview,
+    ContributionStatus, ProviderAnalytics, ProviderUpdate, ProviderUsage, UpdateType,
+};
+pub use curation::{
+    CurationConfig, ProviderCurator, QualityScore, ReliabilityStatus, SelectionConstraints,
+};
 pub use error::ProviderError;
+pub use evaluation::{
+    BenchmarkResult, ContinuousEvaluator, PerformanceMetrics, ProviderEvaluation, ProviderEvaluator,
+};
 pub use health_check::{HealthCheckCache, HealthCheckResult};
 pub use integration::ProviderIntegration;
 pub use models::{
@@ -37,27 +47,18 @@ pub use models::{
 pub use performance_monitor::{
     PerformanceSummary, PerformanceThresholds, ProviderMetrics, ProviderPerformanceMonitor,
 };
-pub use community::{
-    CommunityProviderConfig, CommunityProviderRegistry, ContributionMetadata,
-    ContributionReview, ContributionStatus, ProviderAnalytics, ProviderUpdate,
-    ProviderUsage, UpdateType,
-};
-pub use curation::{
-    CurationConfig, ProviderCurator, QualityScore, ReliabilityStatus, SelectionConstraints,
-};
-pub use evaluation::{
-    BenchmarkResult, ContinuousEvaluator, PerformanceMetrics, ProviderEvaluation, ProviderEvaluator,
-};
-pub use sync::{
-    CommunityDatabaseConfig, CommunityDatabaseSync, ContributionValidator, SyncStatus, ValidationRules,
-};
 pub use provider::manager::{ConnectionState, ModelFilter, ModelFilterCriteria, ProviderStatus};
 pub use provider::{Provider, ProviderManager, ProviderRegistry};
 pub use providers::{
-    AnthropicProvider, AzureOpenAiProvider, CohereProvider, GcpVertexProvider, GoogleProvider, OllamaProvider, OpenAiProvider, ReplicateProvider, TogetherProvider, ZenProvider,
+    AnthropicProvider, AzureOpenAiProvider, CohereProvider, GcpVertexProvider, GoogleProvider,
+    OllamaProvider, OpenAiProvider, ReplicateProvider, TogetherProvider, ZenProvider,
 };
 pub use rate_limiter::{ExponentialBackoff, RateLimiterRegistry, TokenBucketLimiter};
 pub use redaction::{contains_sensitive_info, redact, Redacted, RedactionFilter};
 pub use security_headers::{SecurityHeadersBuilder, SecurityHeadersValidator};
 pub use streaming::{simulate_stream, simulate_word_stream, SimulatedStream, WordStream};
+pub use sync::{
+    CommunityDatabaseConfig, CommunityDatabaseSync, ContributionValidator, SyncStatus,
+    ValidationRules,
+};
 pub use token_counter::{TokenCounter, TokenCounterTrait};

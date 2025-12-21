@@ -3,13 +3,13 @@
 //! Supports OpenCode's curated set of AI models via the Zen API.
 
 use async_trait::async_trait;
+use futures::{stream, StreamExt};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use std::result::Result;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tracing::{debug, error, warn};
-use futures::{stream, StreamExt};
-use std::result::Result;
 
 use crate::error::ProviderError;
 use crate::models::{Capability, ChatRequest, ChatResponse, FinishReason, ModelInfo, TokenUsage};
@@ -350,15 +350,15 @@ impl ZenProvider {
     }
 
     /// Get the appropriate endpoint for a given model type
-    /// 
+    ///
     /// Different model families use different endpoints:
     /// - GPT models use `/v1/responses`
     /// - Claude models use `/v1/messages`
     /// - Generic models use `/v1/chat/completions`
-    /// 
+    ///
     /// # Arguments
     /// * `model_id` - The model identifier (e.g., "gpt-4", "claude-3", "zen-gpt4")
-    /// 
+    ///
     /// # Returns
     /// The endpoint path for the model type
     pub fn endpoint_for_model(&self, model_id: &str) -> &'static str {
@@ -379,7 +379,6 @@ impl ZenProvider {
         text: &str,
         model: String,
     ) -> Result<crate::provider::ChatStream, ProviderError> {
-
         let lines: Vec<String> = text
             .lines()
             .filter(|line| !line.is_empty() && !line.starts_with(':'))
@@ -416,7 +415,10 @@ impl ZenProvider {
                         }
                     }
                     Err(e) => {
-                        return Some(Err(ProviderError::ParseError(format!("Failed to parse streaming chunk: {}", e))));
+                        return Some(Err(ProviderError::ParseError(format!(
+                            "Failed to parse streaming chunk: {}",
+                            e
+                        ))));
                     }
                 }
             }
@@ -582,7 +584,6 @@ impl Provider for ZenProvider {
         &self,
         mut request: ChatRequest,
     ) -> Result<crate::provider::ChatStream, ProviderError> {
-
         // Enable streaming in the request
         request.stream = true;
 
@@ -591,7 +592,10 @@ impl Provider for ZenProvider {
         let max_retries = 3;
 
         loop {
-            debug!("Sending streaming chat request to Zen API (attempt {})", retries + 1);
+            debug!(
+                "Sending streaming chat request to Zen API (attempt {})",
+                retries + 1
+            );
 
             let response = self
                 .client
@@ -830,5 +834,3 @@ struct ZenStreamChoice {
 struct ZenStreamDelta {
     content: Option<String>,
 }
-
-

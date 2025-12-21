@@ -62,8 +62,9 @@ impl DependencyValidator {
             .ok_or_else(|| OrchestrationError::ProjectNotFound(dependency.to.clone()))?;
 
         // Validate version constraint
-        let is_compatible = VersionValidator::is_compatible(&dependency.version_constraint, target_version)?;
-        
+        let is_compatible =
+            VersionValidator::is_compatible(&dependency.version_constraint, target_version)?;
+
         if !is_compatible {
             return Err(OrchestrationError::DependencyValidationFailed(format!(
                 "Version {} does not satisfy constraint {}",
@@ -75,11 +76,7 @@ impl DependencyValidator {
     }
 
     /// Validates a version update for a project
-    pub fn validate_version_update(
-        &self,
-        project_name: &str,
-        new_version: &str,
-    ) -> Result<()> {
+    pub fn validate_version_update(&self, project_name: &str, new_version: &str) -> Result<()> {
         // Get all projects that depend on this project
         let dependents = self.get_dependents(project_name);
 
@@ -147,7 +144,11 @@ impl DependencyValidator {
     }
 
     /// Validates that a new version doesn't break any dependents
-    pub fn validate_no_breaking_changes(&self, project_name: &str, new_version: &str) -> Result<()> {
+    pub fn validate_no_breaking_changes(
+        &self,
+        project_name: &str,
+        new_version: &str,
+    ) -> Result<()> {
         if !self.is_breaking_change(project_name, new_version)? {
             return Ok(());
         }
@@ -280,7 +281,10 @@ mod tests {
 
         validator.register_project(&project);
 
-        assert_eq!(validator.project_versions.get("project-a"), Some(&"1.2.3".to_string()));
+        assert_eq!(
+            validator.project_versions.get("project-a"),
+            Some(&"1.2.3".to_string())
+        );
     }
 
     #[test]

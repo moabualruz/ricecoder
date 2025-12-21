@@ -99,31 +99,98 @@ impl Error {
     pub fn user_message(&self) -> String {
         match self {
             Error::ServerError(msg) => format!("MCP server error: {}", msg),
-            Error::ConfigError(msg) => format!("Configuration error: {}. Please check your configuration files.", msg),
+            Error::ConfigError(msg) => format!(
+                "Configuration error: {}. Please check your configuration files.",
+                msg
+            ),
             Error::ValidationError(msg) => format!("Validation error: {}", msg),
-            Error::TimeoutError(ms) => format!("Operation timed out after {}ms. Please try again or increase the timeout.", ms),
-            Error::ToolNotFound(tool_id) => format!("Tool '{}' not found. Please check the tool ID and try again.", tool_id),
-            Error::PermissionDenied(tool_id) => format!("Permission denied for tool '{}'. Contact your administrator.", tool_id),
-            Error::ExecutionError(msg) => format!("Tool execution failed: {}. Please check the tool parameters and try again.", msg),
-            Error::ParameterValidationError(msg) => format!("Invalid tool parameters: {}. Please provide valid parameters.", msg),
-            Error::OutputValidationError(msg) => format!("Tool returned invalid output: {}. Please contact the tool provider.", msg),
-            Error::NamingConflict(msg) => format!("Naming conflict detected: {}. Please use a qualified tool name.", msg),
-            Error::ConnectionError(msg) => format!("Connection error: {}. Please check your network connection.", msg),
-            Error::SerializationError(msg) => format!("Serialization error: {}. Please check the data format.", msg),
-            Error::StorageError(msg) => format!("Storage error: {}. Please check your storage configuration.", msg),
+            Error::TimeoutError(ms) => format!(
+                "Operation timed out after {}ms. Please try again or increase the timeout.",
+                ms
+            ),
+            Error::ToolNotFound(tool_id) => format!(
+                "Tool '{}' not found. Please check the tool ID and try again.",
+                tool_id
+            ),
+            Error::PermissionDenied(tool_id) => format!(
+                "Permission denied for tool '{}'. Contact your administrator.",
+                tool_id
+            ),
+            Error::ExecutionError(msg) => format!(
+                "Tool execution failed: {}. Please check the tool parameters and try again.",
+                msg
+            ),
+            Error::ParameterValidationError(msg) => format!(
+                "Invalid tool parameters: {}. Please provide valid parameters.",
+                msg
+            ),
+            Error::OutputValidationError(msg) => format!(
+                "Tool returned invalid output: {}. Please contact the tool provider.",
+                msg
+            ),
+            Error::NamingConflict(msg) => format!(
+                "Naming conflict detected: {}. Please use a qualified tool name.",
+                msg
+            ),
+            Error::ConnectionError(msg) => format!(
+                "Connection error: {}. Please check your network connection.",
+                msg
+            ),
+            Error::SerializationError(msg) => format!(
+                "Serialization error: {}. Please check the data format.",
+                msg
+            ),
+            Error::StorageError(msg) => format!(
+                "Storage error: {}. Please check your storage configuration.",
+                msg
+            ),
             Error::IoError(msg) => format!("IO error: {}. Please check file permissions.", msg),
-            Error::InternalError(msg) => format!("Internal error: {}. Please contact support.", msg),
-            Error::ServerDisconnected(server_id) => format!("Server '{}' disconnected. Attempting to reconnect...", server_id),
-            Error::ReconnectionFailed(msg) => format!("Failed to reconnect to server: {}. Please check the server status.", msg),
-            Error::MaxRetriesExceeded(msg) => format!("Maximum reconnection attempts exceeded: {}. Please check the server.", msg),
-            Error::ExecutionInterrupted => "Tool execution was interrupted. Please try again.".to_string(),
-            Error::InvalidToolParameters(msg) => format!("Invalid tool parameters: {}. Please provide valid parameters.", msg),
-            Error::InvalidToolOutput(msg) => format!("Tool returned invalid output: {}. Please contact the tool provider.", msg),
-            Error::ConfigValidationError(msg) => format!("Configuration validation failed: {}. Please fix your configuration.", msg),
-            Error::ToolRegistrationError(msg) => format!("Tool registration failed: {}. Please check the tool definition.", msg),
-            Error::MultipleNamingConflicts(msg) => format!("Multiple naming conflicts detected: {}. Please use qualified tool names.", msg),
-            Error::ServerNotFound(server_id) => format!("Server '{}' not found. Please check the server ID.", server_id),
-            Error::AuthorizationError(msg) => format!("Authorization error: {}. Please check your permissions.", msg),
+            Error::InternalError(msg) => {
+                format!("Internal error: {}. Please contact support.", msg)
+            }
+            Error::ServerDisconnected(server_id) => format!(
+                "Server '{}' disconnected. Attempting to reconnect...",
+                server_id
+            ),
+            Error::ReconnectionFailed(msg) => format!(
+                "Failed to reconnect to server: {}. Please check the server status.",
+                msg
+            ),
+            Error::MaxRetriesExceeded(msg) => format!(
+                "Maximum reconnection attempts exceeded: {}. Please check the server.",
+                msg
+            ),
+            Error::ExecutionInterrupted => {
+                "Tool execution was interrupted. Please try again.".to_string()
+            }
+            Error::InvalidToolParameters(msg) => format!(
+                "Invalid tool parameters: {}. Please provide valid parameters.",
+                msg
+            ),
+            Error::InvalidToolOutput(msg) => format!(
+                "Tool returned invalid output: {}. Please contact the tool provider.",
+                msg
+            ),
+            Error::ConfigValidationError(msg) => format!(
+                "Configuration validation failed: {}. Please fix your configuration.",
+                msg
+            ),
+            Error::ToolRegistrationError(msg) => format!(
+                "Tool registration failed: {}. Please check the tool definition.",
+                msg
+            ),
+            Error::MultipleNamingConflicts(msg) => format!(
+                "Multiple naming conflicts detected: {}. Please use qualified tool names.",
+                msg
+            ),
+            Error::ServerNotFound(server_id) => format!(
+                "Server '{}' not found. Please check the server ID.",
+                server_id
+            ),
+            Error::AuthorizationError(msg) => format!(
+                "Authorization error: {}. Please check your permissions.",
+                msg
+            ),
         }
     }
 

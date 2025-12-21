@@ -95,7 +95,11 @@ impl ValidationEngine {
     }
 
     /// Validate TypeScript syntax
-    fn validate_typescript_syntax(code: &str, errors: &mut Vec<String>, warnings: &mut Vec<String>) {
+    fn validate_typescript_syntax(
+        code: &str,
+        errors: &mut Vec<String>,
+        warnings: &mut Vec<String>,
+    ) {
         let open_braces = code.matches('{').count();
         let close_braces = code.matches('}').count();
         let open_parens = code.matches('(').count();
@@ -206,9 +210,12 @@ impl ValidationEngine {
             .arg("--test-threads=1")
             .current_dir(project_path)
             .output()
-            .map_err(|e| crate::error::RefactoringError::ValidationFailed(
-                format!("Failed to run cargo tests: {}", e)
-            ))?;
+            .map_err(|e| {
+                crate::error::RefactoringError::ValidationFailed(format!(
+                    "Failed to run cargo tests: {}",
+                    e
+                ))
+            })?;
 
         let stdout = String::from_utf8_lossy(&output.stdout).to_string();
         let stderr = String::from_utf8_lossy(&output.stderr).to_string();
@@ -237,9 +244,12 @@ impl ValidationEngine {
             .arg("test")
             .current_dir(project_path)
             .output()
-            .map_err(|e| crate::error::RefactoringError::ValidationFailed(
-                format!("Failed to run npm tests: {}", e)
-            ))?;
+            .map_err(|e| {
+                crate::error::RefactoringError::ValidationFailed(format!(
+                    "Failed to run npm tests: {}",
+                    e
+                ))
+            })?;
 
         let stdout = String::from_utf8_lossy(&output.stdout).to_string();
         let stderr = String::from_utf8_lossy(&output.stderr).to_string();
@@ -268,9 +278,12 @@ impl ValidationEngine {
             .arg("-v")
             .current_dir(project_path)
             .output()
-            .map_err(|e| crate::error::RefactoringError::ValidationFailed(
-                format!("Failed to run pytest: {}", e)
-            ))?;
+            .map_err(|e| {
+                crate::error::RefactoringError::ValidationFailed(format!(
+                    "Failed to run pytest: {}",
+                    e
+                ))
+            })?;
 
         let stdout = String::from_utf8_lossy(&output.stdout).to_string();
         let stderr = String::from_utf8_lossy(&output.stderr).to_string();
@@ -345,7 +358,9 @@ impl ValidationEngine {
         for line in output.lines() {
             // Try to extract numbers from common test output formats
             // Handles formats like "3 passed, 2 failed" or "5 passed"
-            let parts: Vec<&str> = line.split(|c: char| c == ',' || c.is_whitespace()).collect();
+            let parts: Vec<&str> = line
+                .split(|c: char| c == ',' || c.is_whitespace())
+                .collect();
             let mut i = 0;
             while i < parts.len() {
                 if let Ok(num) = parts[i].parse::<usize>() {
@@ -372,7 +387,9 @@ impl ValidationEngine {
 
         for line in output.lines() {
             // Parse lines like "5 passed in 0.12s" or "3 failed, 2 passed"
-            let parts: Vec<&str> = line.split(|c: char| c == ',' || c.is_whitespace()).collect();
+            let parts: Vec<&str> = line
+                .split(|c: char| c == ',' || c.is_whitespace())
+                .collect();
             let mut i = 0;
             while i < parts.len() {
                 if let Ok(num) = parts[i].parse::<usize>() {
@@ -557,7 +574,8 @@ mod tests {
     #[test]
     fn test_parse_rust_test_output_success() {
         let output = "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out";
-        let (tests_run, tests_passed, tests_failed) = ValidationEngine::parse_rust_test_output(output);
+        let (tests_run, tests_passed, tests_failed) =
+            ValidationEngine::parse_rust_test_output(output);
         assert_eq!(tests_run, 5);
         assert_eq!(tests_passed, 5);
         assert_eq!(tests_failed, 0);
@@ -565,8 +583,10 @@ mod tests {
 
     #[test]
     fn test_parse_rust_test_output_with_failures() {
-        let output = "test result: FAILED. 3 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out";
-        let (tests_run, tests_passed, tests_failed) = ValidationEngine::parse_rust_test_output(output);
+        let output =
+            "test result: FAILED. 3 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out";
+        let (tests_run, tests_passed, tests_failed) =
+            ValidationEngine::parse_rust_test_output(output);
         assert_eq!(tests_run, 5);
         assert_eq!(tests_passed, 3);
         assert_eq!(tests_failed, 2);
@@ -575,7 +595,8 @@ mod tests {
     #[test]
     fn test_parse_rust_test_output_no_tests() {
         let output = "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out";
-        let (tests_run, tests_passed, tests_failed) = ValidationEngine::parse_rust_test_output(output);
+        let (tests_run, tests_passed, tests_failed) =
+            ValidationEngine::parse_rust_test_output(output);
         assert_eq!(tests_run, 0);
         assert_eq!(tests_passed, 0);
         assert_eq!(tests_failed, 0);
@@ -584,7 +605,8 @@ mod tests {
     #[test]
     fn test_parse_npm_test_output_success() {
         let output = "5 passed";
-        let (_tests_run, tests_passed, tests_failed) = ValidationEngine::parse_npm_test_output(output);
+        let (_tests_run, tests_passed, tests_failed) =
+            ValidationEngine::parse_npm_test_output(output);
         assert_eq!(tests_passed, 5);
         assert_eq!(tests_failed, 0);
     }
@@ -592,7 +614,8 @@ mod tests {
     #[test]
     fn test_parse_npm_test_output_with_failures() {
         let output = "3 passed, 2 failed";
-        let (_tests_run, tests_passed, tests_failed) = ValidationEngine::parse_npm_test_output(output);
+        let (_tests_run, tests_passed, tests_failed) =
+            ValidationEngine::parse_npm_test_output(output);
         assert_eq!(tests_passed, 3);
         assert_eq!(tests_failed, 2);
     }
@@ -600,7 +623,8 @@ mod tests {
     #[test]
     fn test_parse_pytest_output_success() {
         let output = "5 passed in 0.12s";
-        let (_tests_run, tests_passed, tests_failed) = ValidationEngine::parse_pytest_output(output);
+        let (_tests_run, tests_passed, tests_failed) =
+            ValidationEngine::parse_pytest_output(output);
         assert_eq!(tests_passed, 5);
         assert_eq!(tests_failed, 0);
     }
@@ -608,7 +632,8 @@ mod tests {
     #[test]
     fn test_parse_pytest_output_with_failures() {
         let output = "3 failed, 2 passed in 0.15s";
-        let (_tests_run, tests_passed, tests_failed) = ValidationEngine::parse_pytest_output(output);
+        let (_tests_run, tests_passed, tests_failed) =
+            ValidationEngine::parse_pytest_output(output);
         assert_eq!(tests_passed, 2);
         assert_eq!(tests_failed, 3);
     }

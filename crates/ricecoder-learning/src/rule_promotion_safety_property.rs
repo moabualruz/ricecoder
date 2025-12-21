@@ -4,42 +4,24 @@
 
 #[cfg(test)]
 mod tests {
-    use proptest::prelude::*;
     use crate::{
         models::{Rule, RuleScope, RuleSource},
         rule_promoter::RulePromoter,
     };
+    use proptest::prelude::*;
 
     /// Strategy for generating valid rules in project scope
     fn project_rule_strategy() -> impl Strategy<Value = Rule> {
-        (
-            "[a-z_][a-z0-9_]{0,19}",
-            "[a-z_][a-z0-9_]{0,19}",
-        )
-            .prop_map(|(pattern, action)| {
-                Rule::new(
-                    RuleScope::Project,
-                    pattern,
-                    action,
-                    RuleSource::Learned,
-                )
-            })
+        ("[a-z_][a-z0-9_]{0,19}", "[a-z_][a-z0-9_]{0,19}").prop_map(|(pattern, action)| {
+            Rule::new(RuleScope::Project, pattern, action, RuleSource::Learned)
+        })
     }
 
     /// Strategy for generating valid rules in global scope
     fn global_rule_strategy() -> impl Strategy<Value = Rule> {
-        (
-            "[a-z_][a-z0-9_]{0,19}",
-            "[a-z_][a-z0-9_]{0,19}",
-        )
-            .prop_map(|(pattern, action)| {
-                Rule::new(
-                    RuleScope::Global,
-                    pattern,
-                    action,
-                    RuleSource::Learned,
-                )
-            })
+        ("[a-z_][a-z0-9_]{0,19}", "[a-z_][a-z0-9_]{0,19}").prop_map(|(pattern, action)| {
+            Rule::new(RuleScope::Global, pattern, action, RuleSource::Learned)
+        })
     }
 
     /// Property 6: Rule Promotion Safety

@@ -11,7 +11,7 @@ fn arb_lsp_server_config() -> impl Strategy<Value = String> {
     (
         "[a-z]+",
         "[a-z]+",
-        "[a-z_]+",  // Executable names should be alphanumeric with underscores
+        "[a-z_]+", // Executable names should be alphanumeric with underscores
         1000u64..100000u64,
         1u32..10u32,
         0u64..1000000u64,

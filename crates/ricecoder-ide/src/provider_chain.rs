@@ -51,7 +51,10 @@ impl ProviderRegistry {
         language: String,
         provider: Arc<dyn IdeProvider>,
     ) {
-        debug!("Registering configured rules provider for language: {}", language);
+        debug!(
+            "Registering configured rules provider for language: {}",
+            language
+        );
         self.configured_providers.insert(language, provider);
     }
 
@@ -112,7 +115,10 @@ impl ProviderRegistry {
 
     /// Unregister a configured rules provider for a language
     pub fn unregister_configured_provider(&mut self, language: &str) {
-        debug!("Unregistering configured rules provider for language: {}", language);
+        debug!(
+            "Unregistering configured rules provider for language: {}",
+            language
+        );
         self.configured_providers.remove(language);
     }
 
@@ -139,7 +145,10 @@ impl ProviderChainManager {
     }
 
     /// Get completions through the provider chain
-    pub async fn get_completions(&self, params: &CompletionParams) -> IdeResult<Vec<CompletionItem>> {
+    pub async fn get_completions(
+        &self,
+        params: &CompletionParams,
+    ) -> IdeResult<Vec<CompletionItem>> {
         debug!(
             "Getting completions for language: {} through provider chain",
             params.language
@@ -209,7 +218,10 @@ impl ProviderChainManager {
         match provider.get_hover(params).await {
             Ok(hover) => {
                 if hover.is_some() {
-                    info!("Successfully got hover information for language: {}", params.language);
+                    info!(
+                        "Successfully got hover information for language: {}",
+                        params.language
+                    );
                 }
                 Ok(hover)
             }
@@ -236,7 +248,10 @@ impl ProviderChainManager {
         match provider.get_definition(params).await {
             Ok(location) => {
                 if location.is_some() {
-                    info!("Successfully got definition for language: {}", params.language);
+                    info!(
+                        "Successfully got definition for language: {}",
+                        params.language
+                    );
                 }
                 Ok(location)
             }
@@ -327,7 +342,10 @@ mod tests {
 
     #[async_trait]
     impl IdeProvider for MockProvider {
-        async fn get_completions(&self, _params: &CompletionParams) -> IdeResult<Vec<CompletionItem>> {
+        async fn get_completions(
+            &self,
+            _params: &CompletionParams,
+        ) -> IdeResult<Vec<CompletionItem>> {
             Ok(vec![CompletionItem {
                 label: "test".to_string(),
                 kind: CompletionItemKind::Function,

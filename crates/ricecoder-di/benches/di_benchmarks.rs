@@ -58,15 +58,19 @@ fn benchmark_service_registration(c: &mut Criterion) {
 fn benchmark_service_resolution(c: &mut Criterion) {
     // Setup container with registered services
     let container = DIContainer::new();
-    container.register(|_| {
-        let service = Arc::new(TestService::new(42));
-        Ok(service)
-    }).unwrap();
+    container
+        .register(|_| {
+            let service = Arc::new(TestService::new(42));
+            Ok(service)
+        })
+        .unwrap();
 
-    container.register_transient(|_| {
-        let service = Arc::new(TestService::new(42));
-        Ok(service)
-    }).unwrap();
+    container
+        .register_transient(|_| {
+            let service = Arc::new(TestService::new(42));
+            Ok(service)
+        })
+        .unwrap();
 
     c.bench_function("resolve_singleton_service", |b| {
         b.iter(|| {
@@ -101,10 +105,12 @@ fn benchmark_container_operations(c: &mut Criterion) {
 
     c.bench_function("check_service_registration", |b| {
         let container = DIContainer::new();
-        container.register(|_| {
-            let service = Arc::new(TestService::new(42));
-            Ok(service)
-        }).unwrap();
+        container
+            .register(|_| {
+                let service = Arc::new(TestService::new(42));
+                Ok(service)
+            })
+            .unwrap();
 
         b.iter(|| {
             let result = container.is_registered::<TestService>();
@@ -116,18 +122,24 @@ fn benchmark_container_operations(c: &mut Criterion) {
         b.iter(|| {
             let container = DIContainer::new();
             // Register a few services
-            container.register(|_| {
-                let service = Arc::new(TestService::new(1));
-                Ok(service)
-            }).unwrap();
-            container.register(|_| {
-                let service = Arc::new(TestService::new(2));
-                Ok(service)
-            }).unwrap();
-            container.register(|_| {
-                let service = Arc::new(TestService::new(3));
-                Ok(service)
-            }).unwrap();
+            container
+                .register(|_| {
+                    let service = Arc::new(TestService::new(1));
+                    Ok(service)
+                })
+                .unwrap();
+            container
+                .register(|_| {
+                    let service = Arc::new(TestService::new(2));
+                    Ok(service)
+                })
+                .unwrap();
+            container
+                .register(|_| {
+                    let service = Arc::new(TestService::new(3));
+                    Ok(service)
+                })
+                .unwrap();
 
             let count = container.service_count();
             black_box(count)
@@ -141,18 +153,24 @@ fn benchmark_memory_usage(c: &mut Criterion) {
             let container = DIContainer::new();
 
             // Register multiple services to measure memory scaling
-            container.register(|_| {
-                let service = Arc::new(TestService::new(1));
-                Ok(service)
-            }).unwrap();
-            container.register(|_| {
-                let service = Arc::new(TestService::new(2));
-                Ok(service)
-            }).unwrap();
-            container.register(|_| {
-                let service = Arc::new(TestService::new(3));
-                Ok(service)
-            }).unwrap();
+            container
+                .register(|_| {
+                    let service = Arc::new(TestService::new(1));
+                    Ok(service)
+                })
+                .unwrap();
+            container
+                .register(|_| {
+                    let service = Arc::new(TestService::new(2));
+                    Ok(service)
+                })
+                .unwrap();
+            container
+                .register(|_| {
+                    let service = Arc::new(TestService::new(3));
+                    Ok(service)
+                })
+                .unwrap();
 
             // Force resolution to create instances
             for _ in 0..3 {

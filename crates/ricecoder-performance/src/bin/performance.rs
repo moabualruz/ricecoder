@@ -1,8 +1,8 @@
 use clap::{Parser, Subcommand};
 use ricecoder_performance::{
-    PerformanceValidator, PerformanceBaseline, PerformanceRegressionDetector,
-    PerformanceProfiler, OptimizationPipeline, EnterpriseMonitor, AlertConfig,
-    AlertDestination, AlertSeverity, create_default_pipeline, EnterpriseSimulator
+    create_default_pipeline, AlertConfig, AlertDestination, AlertSeverity, EnterpriseMonitor,
+    EnterpriseSimulator, OptimizationPipeline, PerformanceBaseline, PerformanceProfiler,
+    PerformanceRegressionDetector, PerformanceValidator,
 };
 use std::path::PathBuf;
 
@@ -121,10 +121,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 None
             };
 
-            let validator = PerformanceValidator::new(
-                binary.to_string_lossy().to_string(),
-                baseline_data,
-            );
+            let validator =
+                PerformanceValidator::new(binary.to_string_lossy().to_string(), baseline_data);
 
             let results = validator.run_all_validations().await?;
 
@@ -132,7 +130,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let mut all_passed = true;
 
             for result in results {
-                let status = if result.passed { "✅ PASS" } else { "❌ FAIL" };
+                let status = if result.passed {
+                    "✅ PASS"
+                } else {
+                    "❌ FAIL"
+                };
                 println!("\n{}: {}", result.test_name, status);
 
                 if !result.messages.is_empty() {
@@ -141,10 +143,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
 
-                println!("  📊 P95: {:.2}ms",
-                    result.metrics.p95_time_ns as f64 / 1_000_000.0);
-                println!("  🧠 Memory: {:.1}MB",
-                    result.metrics.peak_memory_bytes as f64 / (1024.0 * 1024.0));
+                println!(
+                    "  📊 P95: {:.2}ms",
+                    result.metrics.p95_time_ns as f64 / 1_000_000.0
+                );
+                println!(
+                    "  🧠 Memory: {:.1}MB",
+                    result.metrics.peak_memory_bytes as f64 / (1024.0 * 1024.0)
+                );
 
                 if !result.passed {
                     all_passed = false;
@@ -161,10 +167,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         Commands::UpdateBaseline { binary, baseline } => {
-            let validator = PerformanceValidator::new(
-                binary.to_string_lossy().to_string(),
-                None,
-            );
+            let validator = PerformanceValidator::new(binary.to_string_lossy().to_string(), None);
 
             let results = validator.run_all_validations().await?;
             let mut baseline_data = PerformanceBaseline::new();
@@ -197,19 +200,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 for regression in regressions {
                     match regression {
                         ricecoder_performance::RegressionAlert::PerformanceDegradation {
-                            test_name, degradation_percent, ..
+                            test_name,
+                            degradation_percent,
+                            ..
                         } => {
-                            println!("  📉 {}: {:.1}% performance degradation", test_name, degradation_percent);
+                            println!(
+                                "  📉 {}: {:.1}% performance degradation",
+                                test_name, degradation_percent
+                            );
                         }
                         ricecoder_performance::RegressionAlert::MemoryRegression {
-                            test_name, increase_percent, ..
+                            test_name,
+                            increase_percent,
+                            ..
                         } => {
-                            println!("  🧠 {}: {:.1}% memory increase", test_name, increase_percent);
+                            println!(
+                                "  🧠 {}: {:.1}% memory increase",
+                                test_name, increase_percent
+                            );
                         }
                         ricecoder_performance::RegressionAlert::TargetExceeded {
-                            test_name, exceed_percent, ..
+                            test_name,
+                            exceed_percent,
+                            ..
                         } => {
-                            println!("  🎯 {}: {:.1}% over target threshold", test_name, exceed_percent);
+                            println!(
+                                "  🎯 {}: {:.1}% over target threshold",
+                                test_name, exceed_percent
+                            );
                         }
                     }
                 }
@@ -251,7 +269,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        Commands::Optimize { binary, baseline, output } => {
+        Commands::Optimize {
+            binary,
+            baseline,
+            output,
+        } => {
             let baseline_data = baseline
                 .map(|path| PerformanceBaseline::load_from_file(path))
                 .transpose()?;
@@ -262,24 +284,35 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
 
             // Run optimization on a sample workload
-            let optimization_result = pipeline.run_optimization(|profiler| {
-                // Simulate some work to profile
-                profiler.profile_function("sample_workload", || {
-                    let _ = std::process::Command::new(&binary)
-                        .arg("--help")
-                        .output();
-                });
-            }).await;
+            let optimization_result = pipeline
+                .run_optimization(|profiler| {
+                    // Simulate some work to profile
+                    profiler.profile_function("sample_workload", || {
+                        let _ = std::process::Command::new(&binary).arg("--help").output();
+                    });
+                })
+                .await;
 
             // Generate optimization report
             let mut report = format!("=== Performance Optimization Report ===\n");
-            report.push_str(&format!("Total Duration: {:.2}s\n", optimization_result.profile_result.total_duration.as_secs_f64()));
-            report.push_str(&format!("Expected Improvement: {:.1}%\n\n", optimization_result.expected_improvement_percent));
+            report.push_str(&format!(
+                "Total Duration: {:.2}s\n",
+                optimization_result
+                    .profile_result
+                    .total_duration
+                    .as_secs_f64()
+            ));
+            report.push_str(&format!(
+                "Expected Improvement: {:.1}%\n\n",
+                optimization_result.expected_improvement_percent
+            ));
 
             report.push_str("=== Applied Optimizations ===\n");
             for opt in &optimization_result.applied_optimizations {
-                report.push_str(&format!("• {}: {} (+{:.1}%)\n",
-                    opt.name, opt.description, opt.expected_improvement_percent));
+                report.push_str(&format!(
+                    "• {}: {} (+{:.1}%)\n",
+                    opt.name, opt.description, opt.expected_improvement_percent
+                ));
             }
 
             report.push_str("\n=== Optimization Suggestions ===\n");
@@ -290,8 +323,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     ricecoder_performance::OptimizationPriority::Medium => "ℹ️",
                     ricecoder_performance::OptimizationPriority::Low => "📝",
                 };
-                report.push_str(&format!("{} {}: {} (Expected: +{:.1}%)\n",
-                    priority_icon, suggestion.title, suggestion.description, suggestion.expected_improvement_percent));
+                report.push_str(&format!(
+                    "{} {}: {} (Expected: +{:.1}%)\n",
+                    priority_icon,
+                    suggestion.title,
+                    suggestion.description,
+                    suggestion.expected_improvement_percent
+                ));
             }
 
             match output {
@@ -305,7 +343,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        Commands::Monitor { binary, baseline, interval, slack_webhook, email_recipients } => {
+        Commands::Monitor {
+            binary,
+            baseline,
+            interval,
+            slack_webhook,
+            email_recipients,
+        } => {
             let baseline_data = PerformanceBaseline::load_from_file(baseline)?;
 
             // Configure alert destinations
@@ -317,7 +361,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             if let Some(recipients_str) = email_recipients {
                 // Note: In a real implementation, you'd need proper SMTP config
-                let recipients: Vec<String> = recipients_str.split(',').map(|s| s.trim().to_string()).collect();
+                let recipients: Vec<String> = recipients_str
+                    .split(',')
+                    .map(|s| s.trim().to_string())
+                    .collect();
                 destinations.push(AlertDestination::Email {
                     smtp_config: ricecoder_performance::SmtpConfig {
                         host: "smtp.example.com".to_string(),
@@ -375,11 +422,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        Commands::Simulate { binary: _, duration, output } => {
+        Commands::Simulate {
+            binary: _,
+            duration,
+            output,
+        } => {
             let simulator = EnterpriseSimulator::enterprise_scale();
             let simulation_duration = std::time::Duration::from_secs(duration);
 
-            println!("🚀 Starting enterprise workload simulation for {:?}", simulation_duration);
+            println!(
+                "🚀 Starting enterprise workload simulation for {:?}",
+                simulation_duration
+            );
             let result = simulator.run_simulation(simulation_duration).await?;
 
             // Generate and output report

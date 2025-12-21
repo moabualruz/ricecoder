@@ -44,15 +44,15 @@ pub mod types;
 // Re-export commonly used types
 pub use cache::{CacheEntry, CacheInvalidationStrategy, CacheManager};
 pub use cache_implementations::{
-    CacheStats, ConfigCache as ConfigCacheImpl, ProviderCache, ProjectAnalysisCache, SpecCache,
+    CacheStats, ConfigCache as ConfigCacheImpl, ProjectAnalysisCache, ProviderCache, SpecCache,
 };
+pub use config::hot_reload::{ConfigConflictResolver, HotReloadManager};
 pub use config::{
     CliArgs, Config, ConfigLoader, ConfigMerger, DefaultsConfig, DocumentLoader, EnvOverrides,
-    ProvidersConfig, StorageModeHandler, TuiConfig, TuiAccessibilityConfig,
+    ProvidersConfig, StorageModeHandler, TuiAccessibilityConfig, TuiConfig,
 };
 pub use config_cache::ConfigCache;
 pub use error::{IoOperation, StorageError, StorageResult};
-pub use config::hot_reload::{ConfigConflictResolver, HotReloadManager};
 pub use global_store::GlobalStore;
 pub use manager::{PathResolver, StorageManager};
 pub use project_store::ProjectStore;

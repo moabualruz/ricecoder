@@ -3,11 +3,11 @@
 //! **Validates: Requirements 4.1, 4.2, 4.3, 5.1, 5.2, 5.3**
 
 use chrono::Duration;
+use ricecoder_security::audit::{AuditEventType, AuditLogger, MemoryAuditStorage};
 use ricecoder_sessions::{
     BackgroundAgent, Message, MessageRole, Session, SessionContext, SessionError, SessionManager,
     SessionMode, SessionStatus, SharePermissions, ShareService,
 };
-use ricecoder_security::audit::{AuditEventType, AuditLogger, MemoryAuditStorage};
 use std::sync::Arc;
 
 fn create_test_context() -> SessionContext {
@@ -40,7 +40,8 @@ fn test_session_validation_invalid_names() {
 #[test]
 fn test_session_context_validation() {
     // Valid context
-    let valid_context = SessionContext::new("openai".to_string(), "gpt-4".to_string(), SessionMode::Chat);
+    let valid_context =
+        SessionContext::new("openai".to_string(), "gpt-4".to_string(), SessionMode::Chat);
     assert_eq!(valid_context.provider, "openai");
     assert_eq!(valid_context.model, "gpt-4");
     assert_eq!(valid_context.mode, SessionMode::Chat);
@@ -57,8 +58,12 @@ fn test_session_manager_error_handling() {
     let context = create_test_context();
 
     // Create sessions up to limit
-    manager.create_session("Session 1".to_string(), context.clone()).unwrap();
-    manager.create_session("Session 2".to_string(), context.clone()).unwrap();
+    manager
+        .create_session("Session 1".to_string(), context.clone())
+        .unwrap();
+    manager
+        .create_session("Session 2".to_string(), context.clone())
+        .unwrap();
 
     // Attempt to create beyond limit
     let result = manager.create_session("Session 3".to_string(), context);
@@ -128,7 +133,9 @@ fn test_share_service_validation_errors() {
     };
 
     // Valid share creation
-    let share = service.generate_share_link(&session.id, permissions.clone(), None).unwrap();
+    let share = service
+        .generate_share_link(&session.id, permissions.clone(), None)
+        .unwrap();
     assert!(!share.id.is_empty());
 
     // Attempt to get non-existent share
@@ -155,7 +162,9 @@ fn test_expired_share_handling() {
     };
 
     // Create share that expires immediately
-    let share = service.generate_share_link(&session.id, permissions, Some(Duration::seconds(-1))).unwrap();
+    let share = service
+        .generate_share_link(&session.id, permissions, Some(Duration::seconds(-1)))
+        .unwrap();
 
     // Attempt to get expired share
     let result = service.get_share(&share.id);
@@ -180,20 +189,25 @@ fn test_compliance_audit_logging() {
     };
 
     // Generate share (should log)
-    let share = service.generate_share_link(&session.id, permissions.clone(), None).unwrap();
+    let share = service
+        .generate_share_link(&session.id, permissions.clone(), None)
+        .unwrap();
 
     // Access share (should log)
     let _retrieved = service.get_share(&share.id).unwrap();
 
     // Revoke share (should log)
-    service.revoke_share(&share.id, Some("admin@test.com".to_string())).unwrap();
+    service
+        .revoke_share(&share.id, Some("admin@test.com".to_string()))
+        .unwrap();
 
     // Check audit events
     let events = audit_storage.get_events().unwrap();
     assert!(!events.is_empty());
 
     // Should have multiple audit events
-    let audit_events: Vec<_> = events.iter()
+    let audit_events: Vec<_> = events
+        .iter()
         .filter(|e| e.event_type == AuditEventType::DataAccess)
         .collect();
     assert!(!audit_events.is_empty());
@@ -238,7 +252,8 @@ fn test_concurrent_access_error_handling() {
         let permissions_clone = permissions.clone();
 
         let handle = std::thread::spawn(move || {
-            let result = service_clone.generate_share_link(&session_clone.id, permissions_clone, None);
+            let result =
+                service_clone.generate_share_link(&session_clone.id, permissions_clone, None);
             result
         });
         handles.push(handle);
@@ -274,7 +289,7 @@ fn test_input_sanitization_and_validation() {
         "Name123",
         "🚀 Emoji Name",
         "a".repeat(255), // Long name
-        "", // Empty name
+        "",              // Empty name
     ];
 
     let context = create_test_context();
@@ -296,9 +311,15 @@ fn test_resource_limit_enforcement() {
     let context = create_test_context();
 
     // Create sessions up to limit
-    let _s1 = manager.create_session("S1".to_string(), context.clone()).unwrap();
-    let _s2 = manager.create_session("S2".to_string(), context.clone()).unwrap();
-    let _s3 = manager.create_session("S3".to_string(), context.clone()).unwrap();
+    let _s1 = manager
+        .create_session("S1".to_string(), context.clone())
+        .unwrap();
+    let _s2 = manager
+        .create_session("S2".to_string(), context.clone())
+        .unwrap();
+    let _s3 = manager
+        .create_session("S3".to_string(), context.clone())
+        .unwrap();
 
     // Attempt to create one more
     let result = manager.create_session("S4".to_string(), context);
@@ -334,7 +355,9 @@ fn test_error_message_quality() {
     let context = create_test_context();
 
     // Create one session
-    manager.create_session("Test".to_string(), context.clone()).unwrap();
+    manager
+        .create_session("Test".to_string(), context.clone())
+        .unwrap();
 
     // Try to create another (should fail)
     let result = manager.create_session("Test2".to_string(), context);
@@ -365,7 +388,9 @@ fn test_graceful_degradation() {
     };
 
     // This should work
-    let share = service.generate_share_link(&session.id, permissions, None).unwrap();
+    let share = service
+        .generate_share_link(&session.id, permissions, None)
+        .unwrap();
 
     // Try to get a non-existent share (should fail gracefully)
     let result = service.get_share("nonexistent");

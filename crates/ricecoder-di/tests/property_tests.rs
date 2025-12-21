@@ -19,7 +19,8 @@ impl TestService {
 
 /// Generate arbitrary test services
 fn arb_test_service() -> impl Strategy<Value = TestService> {
-    (any::<i32>(), prop::collection::vec(any::<u8>(), 0..1000)).prop_map(|(value, data)| TestService::new(value, data))
+    (any::<i32>(), prop::collection::vec(any::<u8>(), 0..1000))
+        .prop_map(|(value, data)| TestService::new(value, data))
 }
 
 /// Test that singleton services always return the same instance

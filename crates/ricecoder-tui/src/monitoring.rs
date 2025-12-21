@@ -56,18 +56,33 @@ impl MemorySafetyMonitor {
 
     /// Record unsafe operation detection
     pub fn record_unsafe_operation(&self, description: String) {
-        self.unsafe_operations_detected.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        self.record_incident(SafetyIncidentType::UnsafeCodeDetected, description, SafetySeverity::High);
+        self.unsafe_operations_detected
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        self.record_incident(
+            SafetyIncidentType::UnsafeCodeDetected,
+            description,
+            SafetySeverity::High,
+        );
     }
 
     /// Record memory violation
     pub fn record_memory_violation(&self, description: String) {
-        self.memory_violations.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        self.record_incident(SafetyIncidentType::MemoryViolation, description, SafetySeverity::Critical);
+        self.memory_violations
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        self.record_incident(
+            SafetyIncidentType::MemoryViolation,
+            description,
+            SafetySeverity::Critical,
+        );
     }
 
     /// Record safety incident
-    pub fn record_incident(&self, incident_type: SafetyIncidentType, description: String, severity: SafetySeverity) {
+    pub fn record_incident(
+        &self,
+        incident_type: SafetyIncidentType,
+        description: String,
+        severity: SafetySeverity,
+    ) {
         let incident = SafetyIncident {
             timestamp: Instant::now(),
             incident_type,
@@ -89,8 +104,12 @@ impl MemorySafetyMonitor {
     pub fn perform_safety_check(&self) -> SafetyCheckResult {
         *self.last_safety_check.lock().unwrap() = Instant::now();
 
-        let unsafe_ops = self.unsafe_operations_detected.load(std::sync::atomic::Ordering::Relaxed);
-        let violations = self.memory_violations.load(std::sync::atomic::Ordering::Relaxed);
+        let unsafe_ops = self
+            .unsafe_operations_detected
+            .load(std::sync::atomic::Ordering::Relaxed);
+        let violations = self
+            .memory_violations
+            .load(std::sync::atomic::Ordering::Relaxed);
 
         let incidents = self.safety_incidents.lock().unwrap().clone();
 
@@ -98,7 +117,10 @@ impl MemorySafetyMonitor {
             unsafe_operations_count: unsafe_ops,
             memory_violations_count: violations,
             total_incidents: incidents.len(),
-            critical_incidents: incidents.iter().filter(|i| matches!(i.severity, SafetySeverity::Critical)).count(),
+            critical_incidents: incidents
+                .iter()
+                .filter(|i| matches!(i.severity, SafetySeverity::Critical))
+                .count(),
             last_check: Instant::now(),
         }
     }
@@ -139,7 +161,7 @@ pub enum ComplianceStatus {
 pub struct UserExperienceMetrics {
     response_times: Vec<(String, Duration)>,
     error_rates: HashMap<String, (u32, u32)>, // (errors, total_operations)
-    user_satisfaction: Vec<f64>, // 1-5 scale
+    user_satisfaction: Vec<f64>,              // 1-5 scale
     feature_adoption: HashMap<String, Instant>, // When features were first used
     workflow_efficiency: Vec<WorkflowMetrics>,
 }
@@ -168,7 +190,9 @@ impl UserExperienceMetrics {
 
     /// Record operation result (success/failure)
     pub fn record_operation_result(&mut self, operation: &str, success: bool) {
-        let (errors, total) = self.error_rates.entry(operation.to_string())
+        let (errors, total) = self
+            .error_rates
+            .entry(operation.to_string())
             .or_insert((0, 0));
 
         *total += 1;
@@ -191,7 +215,8 @@ impl UserExperienceMetrics {
 
     /// Record feature adoption (first use)
     pub fn record_feature_adoption(&mut self, feature: &str) {
-        self.feature_adoption.entry(feature.to_string())
+        self.feature_adoption
+            .entry(feature.to_string())
             .or_insert_with(Instant::now);
     }
 
@@ -220,7 +245,9 @@ impl UserExperienceMetrics {
 
     /// Get average response time for an operation
     pub fn average_response_time(&self, operation: &str) -> Option<Duration> {
-        let times: Vec<_> = self.response_times.iter()
+        let times: Vec<_> = self
+            .response_times
+            .iter()
             .filter(|(op, _)| op == operation)
             .map(|(_, time)| *time)
             .collect();
@@ -256,14 +283,17 @@ impl UserExperienceMetrics {
 
     /// Get workflow completion rate
     pub fn workflow_completion_rate(&self, workflow_name: &str) -> Option<f64> {
-        let workflows: Vec<_> = self.workflow_efficiency.iter()
+        let workflows: Vec<_> = self
+            .workflow_efficiency
+            .iter()
             .filter(|w| w.workflow_name == workflow_name)
             .collect();
 
         if workflows.is_empty() {
             None
         } else {
-            let completed = workflows.iter()
+            let completed = workflows
+                .iter()
                 .filter(|w| w.steps_completed == w.total_steps)
                 .count();
             Some(completed as f64 / workflows.len() as f64)
@@ -274,7 +304,9 @@ impl UserExperienceMetrics {
     pub fn generate_report(&self) -> UserExperienceReport {
         UserExperienceReport {
             average_response_times: self.calculate_avg_response_times(),
-            error_rates: self.error_rates.iter()
+            error_rates: self
+                .error_rates
+                .iter()
                 .map(|(op, (errors, total))| (op.clone(), *errors as f64 / *total as f64))
                 .collect(),
             average_satisfaction: self.average_satisfaction(),
@@ -414,7 +446,8 @@ impl MonitoringSystem {
     pub fn record_frame_render(&mut self, render_time: Duration) {
         if self.enabled {
             self.performance_monitor.record_frame_render(render_time);
-            self.metrics_collector.record_metric("frame_render_time", render_time.as_micros() as f64);
+            self.metrics_collector
+                .record_metric("frame_render_time", render_time.as_micros() as f64);
         }
     }
 
@@ -430,7 +463,8 @@ impl MonitoringSystem {
     pub fn record_memory_usage(&mut self, bytes: usize) {
         if self.enabled {
             self.performance_monitor.record_memory_usage(bytes);
-            self.metrics_collector.record_metric("memory_usage", bytes as f64);
+            self.metrics_collector
+                .record_metric("memory_usage", bytes as f64);
         }
     }
 
@@ -454,13 +488,22 @@ impl MonitoringSystem {
             metrics.insert("performance.fps".to_string(), serde_json::json!(fps));
         }
         if let Some(avg_render_time) = self.performance_monitor.average_render_time() {
-            metrics.insert("performance.avg_render_time_ms".to_string(), serde_json::json!(avg_render_time.as_millis()));
+            metrics.insert(
+                "performance.avg_render_time_ms".to_string(),
+                serde_json::json!(avg_render_time.as_millis()),
+            );
         }
 
         // Usage metrics
         let analytics = self.usage_analytics.generate_report();
-        metrics.insert("usage.total_actions".to_string(), serde_json::json!(analytics.total_actions));
-        metrics.insert("usage.unique_features".to_string(), serde_json::json!(analytics.unique_features_used));
+        metrics.insert(
+            "usage.total_actions".to_string(),
+            serde_json::json!(analytics.total_actions),
+        );
+        metrics.insert(
+            "usage.unique_features".to_string(),
+            serde_json::json!(analytics.unique_features_used),
+        );
 
         // System metrics
         for (key, value) in self.metrics_collector.get_snapshot() {
@@ -519,7 +562,8 @@ impl PerformanceMonitor {
 
         // Remove entries older than 5 minutes
         let five_minutes_ago = now - Duration::from_secs(300);
-        self.memory_usage.retain(|(time, _)| *time > five_minutes_ago);
+        self.memory_usage
+            .retain(|(time, _)| *time > five_minutes_ago);
     }
 
     /// Get current FPS
@@ -725,12 +769,15 @@ impl UsageAnalytics {
     pub fn record_action(&mut self, action: &str, context: Option<&str>) {
         let now = Instant::now();
 
-        let stats = self.actions.entry(action.to_string()).or_insert_with(|| ActionStats {
-            count: 0,
-            first_used: now,
-            last_used: now,
-            contexts: Vec::new(),
-        });
+        let stats = self
+            .actions
+            .entry(action.to_string())
+            .or_insert_with(|| ActionStats {
+                count: 0,
+                first_used: now,
+                last_used: now,
+                contexts: Vec::new(),
+            });
 
         stats.count += 1;
         stats.last_used = now;
@@ -789,7 +836,12 @@ impl UsageAnalytics {
     }
 
     /// Update performance metrics for anonymous statistics
-    pub fn update_performance_metrics(&mut self, avg_fps: f64, avg_render_time_ms: f64, peak_memory_mb: f64) {
+    pub fn update_performance_metrics(
+        &mut self,
+        avg_fps: f64,
+        avg_render_time_ms: f64,
+        peak_memory_mb: f64,
+    ) {
         if let Some(stats) = &mut self.anonymous_stats {
             stats.performance_metrics.avg_fps = avg_fps;
             stats.performance_metrics.avg_render_time_ms = avg_render_time_ms;
@@ -800,7 +852,10 @@ impl UsageAnalytics {
     /// Record an error for anonymous statistics
     pub fn record_error(&mut self, error_category: &str) {
         if let Some(stats) = &mut self.anonymous_stats {
-            *stats.error_counts.entry(error_category.to_string()).or_insert(0) += 1;
+            *stats
+                .error_counts
+                .entry(error_category.to_string())
+                .or_insert(0) += 1;
         }
     }
 
@@ -811,7 +866,8 @@ impl UsageAnalytics {
 
     /// Export anonymous statistics as JSON (for telemetry)
     pub fn export_anonymous_statistics(&self) -> Option<String> {
-        self.anonymous_stats.as_ref()
+        self.anonymous_stats
+            .as_ref()
             .and_then(|stats| serde_json::to_string(stats).ok())
     }
 
@@ -822,9 +878,7 @@ impl UsageAnalytics {
         let unique_features = self.features_used.len();
 
         let avg_session_duration = if !self.sessions.is_empty() {
-            let total_duration: Duration = self.sessions.iter()
-                .filter_map(|s| s.duration)
-                .sum();
+            let total_duration: Duration = self.sessions.iter().filter_map(|s| s.duration).sum();
             total_duration / self.sessions.len() as u32
         } else {
             Duration::new(0, 0)
@@ -843,7 +897,9 @@ impl UsageAnalytics {
 
     /// Get most used actions
     fn get_most_used_actions(&self, limit: usize) -> Vec<(String, usize)> {
-        let mut actions: Vec<_> = self.actions.iter()
+        let mut actions: Vec<_> = self
+            .actions
+            .iter()
             .map(|(name, stats)| (name.clone(), stats.count))
             .collect();
 
@@ -881,7 +937,10 @@ impl MetricsCollector {
 
     /// Record a histogram value
     pub fn record_histogram(&mut self, name: &str, value: f64) {
-        self.histograms.entry(name.to_string()).or_insert_with(Vec::new).push(value);
+        self.histograms
+            .entry(name.to_string())
+            .or_insert_with(Vec::new)
+            .push(value);
 
         // Keep only last 1000 samples
         if let Some(samples) = self.histograms.get_mut(name) {
@@ -999,7 +1058,9 @@ impl PerformanceProfiler {
     /// Add a checkpoint to the current profile
     pub fn checkpoint(&mut self, profile_name: &str, checkpoint_name: &str) {
         if let Some(session) = self.active_profiles.get_mut(profile_name) {
-            session.checkpoints.push((checkpoint_name.to_string(), Instant::now()));
+            session
+                .checkpoints
+                .push((checkpoint_name.to_string(), Instant::now()));
 
             // Sample memory usage at checkpoints
             if let Some(memory) = get_memory_usage() {
@@ -1018,12 +1079,14 @@ impl PerformanceProfiler {
                 if i == 0 {
                     checkpoints.push((name.clone(), Duration::new(0, 0)));
                 } else {
-                    let duration = time.duration_since(session.checkpoints[i-1].1);
+                    let duration = time.duration_since(session.checkpoints[i - 1].1);
                     checkpoints.push((name.clone(), duration));
                 }
             }
 
-            let memory_peak = session.memory_samples.iter()
+            let memory_peak = session
+                .memory_samples
+                .iter()
                 .map(|(_, mem)| *mem)
                 .max()
                 .unwrap_or(0);
@@ -1031,9 +1094,12 @@ impl PerformanceProfiler {
             let memory_avg = if session.memory_samples.is_empty() {
                 0
             } else {
-                session.memory_samples.iter()
+                session
+                    .memory_samples
+                    .iter()
                     .map(|(_, mem)| *mem)
-                    .sum::<usize>() / session.memory_samples.len()
+                    .sum::<usize>()
+                    / session.memory_samples.len()
             };
 
             let profile = CompletedProfile {
@@ -1057,7 +1123,9 @@ impl PerformanceProfiler {
         let active_profiles = self.active_profiles.len();
 
         let avg_duration = if !self.completed_profiles.is_empty() {
-            let total: Duration = self.completed_profiles.iter()
+            let total: Duration = self
+                .completed_profiles
+                .iter()
                 .map(|p| p.total_duration)
                 .sum();
             total / self.completed_profiles.len() as u32
@@ -1069,7 +1137,9 @@ impl PerformanceProfiler {
             total_profiles,
             active_profiles,
             average_duration: avg_duration,
-            slowest_profile: self.completed_profiles.iter()
+            slowest_profile: self
+                .completed_profiles
+                .iter()
                 .max_by_key(|p| p.total_duration)
                 .map(|p| p.name.clone()),
         }
@@ -1081,10 +1151,7 @@ impl PerformanceProfiler {
 
         for profile in &self.completed_profiles {
             for (checkpoint_name, duration) in &profile.checkpoints {
-                output.push_str(&format!("{} {}\n",
-                    checkpoint_name,
-                    duration.as_nanos()
-                ));
+                output.push_str(&format!("{} {}\n", checkpoint_name, duration.as_nanos()));
             }
         }
 
@@ -1161,19 +1228,40 @@ impl MonitoringReport {
             output.push_str(&format!("- FPS: {:.1}\n", fps));
         }
         if let Some(avg_time) = self.performance.average_render_time {
-            output.push_str(&format!("- Average Render Time: {:.2}ms\n", avg_time.as_millis()));
+            output.push_str(&format!(
+                "- Average Render Time: {:.2}ms\n",
+                avg_time.as_millis()
+            ));
         }
         if let Some(peak_mem) = self.performance.peak_memory_usage {
-            output.push_str(&format!("- Peak Memory: {:.2}MB\n", peak_mem as f64 / 1024.0 / 1024.0));
+            output.push_str(&format!(
+                "- Peak Memory: {:.2}MB\n",
+                peak_mem as f64 / 1024.0 / 1024.0
+            ));
         }
-        output.push_str(&format!("- Total Frames: {}\n", self.performance.total_frames));
+        output.push_str(&format!(
+            "- Total Frames: {}\n",
+            self.performance.total_frames
+        ));
 
         output.push_str("\n## Usage Analytics\n");
-        output.push_str(&format!("- Total Actions: {}\n", self.analytics.total_actions));
-        output.push_str(&format!("- Unique Actions: {}\n", self.analytics.unique_actions));
-        output.push_str(&format!("- Features Used: {}\n", self.analytics.unique_features_used));
+        output.push_str(&format!(
+            "- Total Actions: {}\n",
+            self.analytics.total_actions
+        ));
+        output.push_str(&format!(
+            "- Unique Actions: {}\n",
+            self.analytics.unique_actions
+        ));
+        output.push_str(&format!(
+            "- Features Used: {}\n",
+            self.analytics.unique_features_used
+        ));
         output.push_str(&format!("- Sessions: {}\n", self.analytics.total_sessions));
-        output.push_str(&format!("- Avg Session Duration: {:.1}s\n", self.analytics.average_session_duration.as_secs_f64()));
+        output.push_str(&format!(
+            "- Avg Session Duration: {:.1}s\n",
+            self.analytics.average_session_duration.as_secs_f64()
+        ));
 
         if !self.analytics.most_used_actions.is_empty() {
             output.push_str("\n## Most Used Actions\n");
@@ -1184,15 +1272,26 @@ impl MonitoringReport {
 
         output.push_str("\n## User Experience Metrics\n");
         for (operation, time) in &self.ux_metrics.average_response_times {
-            output.push_str(&format!("- {} response time: {:.2}ms\n", operation, time.as_millis()));
+            output.push_str(&format!(
+                "- {} response time: {:.2}ms\n",
+                operation,
+                time.as_millis()
+            ));
         }
         for (operation, rate) in &self.ux_metrics.error_rates {
-            output.push_str(&format!("- {} error rate: {:.2}%\n", operation, rate * 100.0));
+            output.push_str(&format!(
+                "- {} error rate: {:.2}%\n",
+                operation,
+                rate * 100.0
+            ));
         }
         if let Some(satisfaction) = self.ux_metrics.average_satisfaction {
             output.push_str(&format!("- Average satisfaction: {:.1}/5\n", satisfaction));
         }
-        output.push_str(&format!("- Features adopted: {}\n", self.ux_metrics.feature_adoption_count));
+        output.push_str(&format!(
+            "- Features adopted: {}\n",
+            self.ux_metrics.feature_adoption_count
+        ));
 
         output.push_str("\n## System Metrics\n");
         for (key, value) in &self.metrics {
@@ -1202,4 +1301,3 @@ impl MonitoringReport {
         output
     }
 }
-

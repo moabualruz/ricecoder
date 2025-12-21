@@ -124,8 +124,7 @@ impl ExponentialBackoff {
 
     /// Get the next backoff duration
     pub fn next_delay(&mut self) -> Duration {
-        let delay = self.initial_delay.as_secs_f64()
-            * self.multiplier.powi(self.attempt as i32);
+        let delay = self.initial_delay.as_secs_f64() * self.multiplier.powi(self.attempt as i32);
         let delay = Duration::from_secs_f64(delay);
         let delay = delay.min(self.max_delay);
 
@@ -215,5 +214,3 @@ impl Default for RateLimiterRegistry {
         Self::new()
     }
 }
-
-

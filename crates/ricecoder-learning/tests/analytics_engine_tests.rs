@@ -1,7 +1,7 @@
 /// Integration tests for AnalyticsEngine and rule export/import functionality
 use ricecoder_learning::{
-    AnalyticsEngine, AnalyticsInsights, RuleMetrics, RuleExporter, RuleImporter, RuleExport,
-    Rule, RuleScope, RuleSource, LearningManager,
+    AnalyticsEngine, AnalyticsInsights, LearningManager, Rule, RuleExport, RuleExporter,
+    RuleImporter, RuleMetrics, RuleScope, RuleSource,
 };
 use std::path::PathBuf;
 
@@ -30,7 +30,7 @@ fn create_test_rule_with_scope(id: &str, scope: RuleScope) -> Rule {
 #[tokio::test]
 async fn test_analytics_engine_record_single_success() {
     let engine = AnalyticsEngine::new();
-    
+
     engine
         .record_application("rule_1".to_string(), true, 10.0)
         .await
@@ -46,7 +46,7 @@ async fn test_analytics_engine_record_single_success() {
 #[tokio::test]
 async fn test_analytics_engine_record_multiple_applications() {
     let engine = AnalyticsEngine::new();
-    
+
     engine
         .record_application("rule_1".to_string(), true, 10.0)
         .await
@@ -70,7 +70,7 @@ async fn test_analytics_engine_record_multiple_applications() {
 #[tokio::test]
 async fn test_analytics_engine_get_all_metrics() {
     let engine = AnalyticsEngine::new();
-    
+
     engine
         .record_application("rule_1".to_string(), true, 10.0)
         .await
@@ -91,16 +91,13 @@ async fn test_analytics_engine_get_all_metrics() {
 #[tokio::test]
 async fn test_analytics_engine_update_confidence() {
     let engine = AnalyticsEngine::new();
-    
+
     engine
         .record_application("rule_1".to_string(), true, 10.0)
         .await
         .unwrap();
 
-    engine
-        .update_confidence("rule_1", 0.95)
-        .await
-        .unwrap();
+    engine.update_confidence("rule_1", 0.95).await.unwrap();
 
     let metrics = engine.get_rule_metrics("rule_1").await.unwrap().unwrap();
     assert_eq!(metrics.confidence, 0.95);
@@ -109,7 +106,7 @@ async fn test_analytics_engine_update_confidence() {
 #[tokio::test]
 async fn test_analytics_engine_invalid_confidence() {
     let engine = AnalyticsEngine::new();
-    
+
     engine
         .record_application("rule_1".to_string(), true, 10.0)
         .await
@@ -125,7 +122,7 @@ async fn test_analytics_engine_invalid_confidence() {
 #[tokio::test]
 async fn test_analytics_engine_generate_insights_empty() {
     let engine = AnalyticsEngine::new();
-    
+
     let insights = engine.generate_insights().await.unwrap();
     assert_eq!(insights.total_rules, 0);
     assert_eq!(insights.total_applications, 0);
@@ -138,7 +135,7 @@ async fn test_analytics_engine_generate_insights_empty() {
 #[tokio::test]
 async fn test_analytics_engine_generate_insights_with_data() {
     let engine = AnalyticsEngine::new();
-    
+
     // Record applications for multiple rules
     engine
         .record_application("rule_1".to_string(), true, 10.0)
@@ -167,7 +164,7 @@ async fn test_analytics_engine_generate_insights_with_data() {
 #[tokio::test]
 async fn test_analytics_engine_clear_metrics() {
     let engine = AnalyticsEngine::new();
-    
+
     engine
         .record_application("rule_1".to_string(), true, 10.0)
         .await
@@ -185,7 +182,7 @@ async fn test_analytics_engine_clear_metrics() {
 #[tokio::test]
 async fn test_analytics_engine_get_metrics_by_scope() {
     let engine = AnalyticsEngine::new();
-    
+
     engine
         .record_application("rule_1".to_string(), true, 10.0)
         .await
@@ -210,7 +207,7 @@ async fn test_analytics_engine_get_metrics_by_scope() {
 #[tokio::test]
 async fn test_rule_exporter_export_rules() {
     let rules = vec![create_test_rule("rule_1"), create_test_rule("rule_2")];
-    
+
     let export = RuleExporter::export_rules(rules, Some("Test export".to_string())).unwrap();
     assert_eq!(export.rules.len(), 2);
     assert_eq!(export.metadata.rule_count, 2);
@@ -220,7 +217,7 @@ async fn test_rule_exporter_export_rules() {
 #[tokio::test]
 async fn test_rule_exporter_export_to_json() {
     let rules = vec![create_test_rule("rule_1")];
-    
+
     let json = RuleExporter::export_to_json(rules, None).unwrap();
     assert!(json.contains("version") && json.contains("1.0"));
     assert!(json.contains("rule_count") && json.contains("1"));
@@ -308,7 +305,7 @@ async fn test_rule_importer_validate_invalid_success_rate() {
 #[tokio::test]
 async fn test_learning_manager_record_rule_application() {
     let manager = LearningManager::new(RuleScope::Global);
-    
+
     manager
         .record_rule_application("rule_1".to_string(), true, 10.0)
         .await
@@ -324,7 +321,7 @@ async fn test_learning_manager_record_rule_application() {
 #[tokio::test]
 async fn test_learning_manager_get_all_rule_metrics() {
     let manager = LearningManager::new(RuleScope::Global);
-    
+
     manager
         .record_rule_application("rule_1".to_string(), true, 10.0)
         .await
@@ -341,7 +338,7 @@ async fn test_learning_manager_get_all_rule_metrics() {
 #[tokio::test]
 async fn test_learning_manager_update_rule_confidence() {
     let manager = LearningManager::new(RuleScope::Global);
-    
+
     manager
         .record_rule_application("rule_1".to_string(), true, 10.0)
         .await
@@ -359,7 +356,7 @@ async fn test_learning_manager_update_rule_confidence() {
 #[tokio::test]
 async fn test_learning_manager_generate_analytics_insights() {
     let manager = LearningManager::new(RuleScope::Global);
-    
+
     manager
         .record_rule_application("rule_1".to_string(), true, 10.0)
         .await
@@ -382,7 +379,7 @@ async fn test_learning_manager_generate_analytics_insights() {
 #[tokio::test]
 async fn test_learning_manager_clear_analytics_metrics() {
     let manager = LearningManager::new(RuleScope::Global);
-    
+
     manager
         .record_rule_application("rule_1".to_string(), true, 10.0)
         .await
@@ -400,7 +397,7 @@ async fn test_learning_manager_clear_analytics_metrics() {
 #[tokio::test]
 async fn test_learning_manager_export_rules_with_metrics() {
     let manager = LearningManager::new(RuleScope::Session);
-    
+
     let rule = create_test_rule_with_scope("rule_export_1", RuleScope::Session);
     manager.store_rule(rule).await.unwrap();
 
@@ -416,7 +413,7 @@ async fn test_learning_manager_export_rules_with_metrics() {
 #[tokio::test]
 async fn test_learning_manager_export_rules_to_file() {
     let manager = LearningManager::new(RuleScope::Session);
-    
+
     let rule = create_test_rule_with_scope("export_file_rule_1", RuleScope::Session);
     manager.store_rule(rule).await.unwrap();
 
@@ -435,7 +432,7 @@ async fn test_learning_manager_export_rules_to_file() {
 #[tokio::test]
 async fn test_learning_manager_import_rules_from_json() {
     let manager = LearningManager::new(RuleScope::Global);
-    
+
     let rules = vec![create_test_rule("rule_1"), create_test_rule("rule_2")];
     let export = RuleExport::new(rules, None);
     let json = export.to_json().unwrap();
@@ -447,7 +444,7 @@ async fn test_learning_manager_import_rules_from_json() {
 #[tokio::test]
 async fn test_learning_manager_import_and_validate_rules() {
     let manager = LearningManager::new(RuleScope::Global);
-    
+
     let mut rules = vec![create_test_rule("rule_1")];
     let mut invalid_rule = create_test_rule("rule_2");
     invalid_rule.action = String::new(); // Invalid: empty action
@@ -464,17 +461,17 @@ async fn test_learning_manager_import_and_validate_rules() {
 #[tokio::test]
 async fn test_learning_manager_store_imported_rules() {
     let manager = LearningManager::new(RuleScope::Session);
-    
+
     // Create rules with unique IDs
     let mut rules = vec![
         create_test_rule_with_scope("unique_store_import_1", RuleScope::Session),
         create_test_rule_with_scope("unique_store_import_2", RuleScope::Session),
     ];
-    
+
     // Change the pattern to make them unique
     rules[0].pattern = "pattern_1".to_string();
     rules[1].pattern = "pattern_2".to_string();
-    
+
     let stored_ids = manager.store_imported_rules(rules).await.unwrap();
 
     assert_eq!(stored_ids.len(), 2);
@@ -483,7 +480,7 @@ async fn test_learning_manager_store_imported_rules() {
 #[tokio::test]
 async fn test_analytics_engine_average_application_time() {
     let engine = AnalyticsEngine::new();
-    
+
     engine
         .record_application("rule_1".to_string(), true, 10.0)
         .await
@@ -504,7 +501,7 @@ async fn test_analytics_engine_average_application_time() {
 #[tokio::test]
 async fn test_analytics_engine_top_and_bottom_performing_rules() {
     let engine = AnalyticsEngine::new();
-    
+
     // Create rules with different success rates
     for i in 1..=5 {
         for _ in 0..i {

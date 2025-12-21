@@ -54,14 +54,18 @@ impl Range {
 
     /// Check if this range contains a position
     pub fn contains(&self, position: Position) -> bool {
-        (position.line > self.start.line || (position.line == self.start.line && position.column >= self.start.column)) &&
-        (position.line < self.end.line || (position.line == self.end.line && position.column <= self.end.column))
+        (position.line > self.start.line
+            || (position.line == self.start.line && position.column >= self.start.column))
+            && (position.line < self.end.line
+                || (position.line == self.end.line && position.column <= self.end.column))
     }
 
     /// Check if this range overlaps with another range
     pub fn overlaps(&self, other: &Range) -> bool {
-        self.contains(other.start) || self.contains(other.end) ||
-        other.contains(self.start) || other.contains(self.end)
+        self.contains(other.start)
+            || self.contains(other.end)
+            || other.contains(self.start)
+            || other.contains(self.end)
     }
 }
 
@@ -184,14 +188,16 @@ impl ASTNode {
 
     /// Get child nodes of a specific type
     pub fn children_of_type(&self, node_type: &NodeType) -> Vec<&ASTNode> {
-        self.children.iter()
+        self.children
+            .iter()
             .filter(|child| &child.node_type == node_type)
             .collect()
     }
 
     /// Find the first child of a specific type
     pub fn first_child_of_type(&self, node_type: &NodeType) -> Option<&ASTNode> {
-        self.children.iter()
+        self.children
+            .iter()
             .find(|child| &child.node_type == node_type)
     }
 
@@ -228,7 +234,8 @@ impl ASTNode {
 
     /// Get node depth in the tree
     pub fn depth(&self) -> usize {
-        self.children.iter()
+        self.children
+            .iter()
             .map(|child| child.depth() + 1)
             .max()
             .unwrap_or(0)
@@ -283,7 +290,11 @@ impl SyntaxTree {
         self.find_node_at_position(&self.root, position)
     }
 
-    fn find_node_at_position<'a>(&'a self, node: &'a ASTNode, position: Position) -> Option<&'a ASTNode> {
+    fn find_node_at_position<'a>(
+        &'a self,
+        node: &'a ASTNode,
+        position: Position,
+    ) -> Option<&'a ASTNode> {
         // Check if position is in this node
         if node.contains_position(position) {
             // Check children first (more specific)
@@ -314,7 +325,11 @@ impl SyntaxTree {
     }
 
     fn count_nodes(&self, node: &ASTNode) -> usize {
-        1 + node.children.iter().map(|child| self.count_nodes(child)).sum::<usize>()
+        1 + node
+            .children
+            .iter()
+            .map(|child| self.count_nodes(child))
+            .sum::<usize>()
     }
 
     fn count_node_types(&self, node: &ASTNode) -> HashMap<NodeType, usize> {

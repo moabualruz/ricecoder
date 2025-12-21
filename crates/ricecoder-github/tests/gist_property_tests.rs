@@ -33,8 +33,7 @@ fn language_strategy() -> impl Strategy<Value = Option<String>> {
 
 // Strategy for generating gist descriptions
 fn description_strategy() -> impl Strategy<Value = String> {
-    r"[a-zA-Z0-9 \-_.,]{0,100}"
-        .prop_map(|s| s.trim().to_string())
+    r"[a-zA-Z0-9 \-_.,]{0,100}".prop_map(|s| s.trim().to_string())
 }
 
 // Strategy for generating tags
@@ -44,8 +43,7 @@ fn tags_strategy() -> impl Strategy<Value = Vec<String>> {
 
 // Strategy for generating gist IDs
 fn gist_id_strategy() -> impl Strategy<Value = String> {
-    r"[a-f0-9]{8,16}"
-        .prop_map(|s| s.to_string())
+    r"[a-f0-9]{8,16}".prop_map(|s| s.to_string())
 }
 
 // Strategy for generating gist options

@@ -226,5 +226,3 @@ impl Default for ChatInputWidget {
         Self::new()
     }
 }
-
-

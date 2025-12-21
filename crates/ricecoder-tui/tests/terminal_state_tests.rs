@@ -125,7 +125,10 @@ mod tests {
         let mut capabilities = TerminalCapabilities::detect();
         capabilities.is_tmux = true;
 
-        assert_eq!(capabilities.get_tmux_passthrough_prefix(), Some("\x1bPtmux;\x1b"));
+        assert_eq!(
+            capabilities.get_tmux_passthrough_prefix(),
+            Some("\x1bPtmux;\x1b")
+        );
         assert_eq!(capabilities.get_tmux_passthrough_suffix(), Some("\x1b\\"));
 
         // Test without TMUX

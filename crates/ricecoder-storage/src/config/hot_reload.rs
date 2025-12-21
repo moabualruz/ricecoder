@@ -16,9 +16,15 @@ use tokio::time::{Duration, Instant};
 #[derive(Debug, Clone)]
 pub enum ConfigChangeEvent {
     /// Configuration file was modified
-    FileModified { path: PathBuf, config_type: ConfigType },
+    FileModified {
+        path: PathBuf,
+        config_type: ConfigType,
+    },
     /// Configuration was reloaded successfully
-    Reloaded { old_config: Arc<Config>, new_config: Arc<Config> },
+    Reloaded {
+        old_config: Arc<Config>,
+        new_config: Arc<Config>,
+    },
     /// Configuration reload failed
     ReloadFailed { path: PathBuf, error: String },
     /// Configuration validation failed
@@ -132,9 +138,18 @@ impl HotReloadManager {
     pub async fn start_watching(&mut self) -> StorageResult<()> {
         // Watch standard configuration paths
         let paths = vec![
-            (Some(crate::manager::PathResolver::resolve_global_path()?), ConfigType::Global),
-            (Some(crate::manager::PathResolver::resolve_user_path()?), ConfigType::User),
-            (Some(crate::manager::PathResolver::resolve_project_path()), ConfigType::Project),
+            (
+                Some(crate::manager::PathResolver::resolve_global_path()?),
+                ConfigType::Global,
+            ),
+            (
+                Some(crate::manager::PathResolver::resolve_user_path()?),
+                ConfigType::User,
+            ),
+            (
+                Some(crate::manager::PathResolver::resolve_project_path()),
+                ConfigType::Project,
+            ),
         ];
 
         for (path_option, config_type) in paths {
@@ -200,10 +215,13 @@ impl HotReloadManager {
                     }
                     Err(e) => {
                         tracing::error!("Failed to reload configuration: {}", e);
-                        let _ = self.watcher.event_sender.send(ConfigChangeEvent::ReloadFailed {
-                            path,
-                            error: e.to_string(),
-                        });
+                        let _ = self
+                            .watcher
+                            .event_sender
+                            .send(ConfigChangeEvent::ReloadFailed {
+                                path,
+                                error: e.to_string(),
+                            });
                     }
                 }
             } // Other events are handled elsewhere
@@ -224,7 +242,13 @@ impl HotReloadManager {
 
     /// Stop watching all files
     pub async fn stop_watching(&mut self) -> StorageResult<()> {
-        for path in self.watcher.watched_paths.keys().cloned().collect::<Vec<_>>() {
+        for path in self
+            .watcher
+            .watched_paths
+            .keys()
+            .cloned()
+            .collect::<Vec<_>>()
+        {
             self.watcher.unwatch_file(&path)?;
         }
         Ok(())
@@ -236,8 +260,16 @@ pub struct ConfigMigrator;
 
 impl ConfigMigrator {
     /// Migrate configuration from an older version
-    pub fn migrate_config(config: &mut Config, from_version: &str, to_version: &str) -> StorageResult<()> {
-        tracing::info!("Migrating configuration from {} to {}", from_version, to_version);
+    pub fn migrate_config(
+        config: &mut Config,
+        from_version: &str,
+        to_version: &str,
+    ) -> StorageResult<()> {
+        tracing::info!(
+            "Migrating configuration from {} to {}",
+            from_version,
+            to_version
+        );
 
         // Example migration: add new default values
         if from_version < "1.1.0" && to_version >= "1.1.0" {
@@ -295,7 +327,10 @@ impl ConfigConflictResolver {
 
         for (key, value) in &source.providers.endpoints {
             if !target.providers.endpoints.contains_key(key) {
-                target.providers.endpoints.insert(key.clone(), value.clone());
+                target
+                    .providers
+                    .endpoints
+                    .insert(key.clone(), value.clone());
             }
         }
 
@@ -329,4 +364,3 @@ impl ConfigConflictResolver {
         }
     }
 }
-

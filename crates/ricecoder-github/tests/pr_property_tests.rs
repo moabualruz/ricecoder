@@ -24,8 +24,7 @@ fn valid_description_strategy() -> impl Strategy<Value = String> {
 
 // Strategy for generating valid branch names
 fn valid_branch_strategy() -> impl Strategy<Value = String> {
-    r"feature/[a-z0-9\-]{1,50}"
-        .prop_map(|s| s.to_lowercase())
+    r"feature/[a-z0-9\-]{1,50}".prop_map(|s| s.to_lowercase())
 }
 
 // Strategy for generating file changes

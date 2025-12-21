@@ -4,7 +4,7 @@
 //! and implementation plan generation
 
 use proptest::prelude::*;
-use ricecoder_github::{IssueManager, IssueStatus, ParsedRequirement, IssueProgressUpdate};
+use ricecoder_github::{IssueManager, IssueProgressUpdate, IssueStatus, ParsedRequirement};
 
 // Strategy for generating valid issue numbers
 fn issue_number_strategy() -> impl Strategy<Value = u32> {

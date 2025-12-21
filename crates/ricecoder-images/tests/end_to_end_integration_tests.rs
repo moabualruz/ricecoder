@@ -8,12 +8,12 @@
 //! **Requirements: 1.1, 2.1, 5.1**
 
 use ricecoder_images::{
-    ImageHandler, ImageAnalyzer, ImageCache, ImageDisplay, ImageConfig,
-    MessageImages, MessageImageMetadata, SessionImageManager, ImageMetadata, ImageFormat,
+    ImageAnalyzer, ImageCache, ImageConfig, ImageDisplay, ImageFormat, ImageHandler, ImageMetadata,
+    MessageImageMetadata, MessageImages, SessionImageManager,
 };
+use std::io::Write;
 use std::path::PathBuf;
 use tempfile::NamedTempFile;
-use std::io::Write;
 
 /// Test complete workflow: drag-and-drop → validation
 #[test]
@@ -111,7 +111,7 @@ fn test_workflow_add_to_prompt_context() {
 #[test]
 fn test_workflow_cache_integration() {
     use chrono::Utc;
-    
+
     let cache = ImageCache::new().unwrap();
 
     let hash = "test_hash";
@@ -175,7 +175,7 @@ fn test_workflow_error_recovery() {
 #[test]
 fn test_workflow_multiple_images_with_cache() {
     use chrono::Utc;
-    
+
     let cache = ImageCache::new().unwrap();
 
     // Add multiple images to cache
@@ -273,7 +273,7 @@ fn test_workflow_image_removal() {
 #[test]
 fn test_workflow_cache_invalidation() {
     use chrono::Utc;
-    
+
     let cache = ImageCache::new().unwrap();
 
     let hash = "test_hash";
@@ -352,7 +352,7 @@ fn test_workflow_format_validation() {
 #[test]
 fn test_workflow_path_extraction() {
     let paths = ImageHandler::extract_paths_from_event(
-        "/path/to/image1.png\n/path/to/image2.jpg\n/path/to/image3.gif"
+        "/path/to/image1.png\n/path/to/image2.jpg\n/path/to/image3.gif",
     );
 
     assert_eq!(paths.len(), 3);

@@ -3,10 +3,10 @@
 use crate::error::Result;
 use crate::providers::ProviderRegistry;
 use crate::types::RefactoringConfig;
+use ricecoder_storage::manager::StorageManager;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use ricecoder_storage::manager::StorageManager;
 
 /// Manages refactoring configurations and providers with storage integration
 pub struct ConfigManager {
@@ -94,7 +94,7 @@ impl ConfigManager {
         if let Some(storage) = &self.storage {
             use crate::config::storage_loader::StorageConfigLoader;
             let loader = StorageConfigLoader::new(storage.clone());
-            
+
             // Check if configuration exists in storage
             if loader.has_language_config(language)? {
                 let config = loader.load_language_config(language)?;

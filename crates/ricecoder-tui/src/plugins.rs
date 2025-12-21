@@ -7,14 +7,14 @@ use crate::error::TuiResult;
 use crate::model::{AppMessage, AppModel};
 use crate::Component;
 use ratatui::prelude::*;
-use std::collections::HashMap;
-use std::path::PathBuf;
-use tokio::sync::RwLock;
 use serde::{Deserialize, Serialize};
-use std::fs;
-use walkdir::WalkDir;
 use std::any::Any;
+use std::collections::HashMap;
+use std::fs;
+use std::path::PathBuf;
 use std::sync::Arc;
+use tokio::sync::RwLock;
+use walkdir::WalkDir;
 
 /// Unique identifier for a plugin
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -119,8 +119,6 @@ pub struct EnhancedPluginMetadata {
     pub capabilities: Vec<PluginCapability>,
 }
 
-
-
 /// Core plugin trait that all plugins must implement
 #[async_trait::async_trait]
 pub trait Plugin: Send + Sync {
@@ -173,7 +171,11 @@ pub trait Plugin: Send + Sync {
     fn enhanced_metadata(&self) -> EnhancedPluginMetadata {
         EnhancedPluginMetadata {
             base: self.metadata(),
-            version: PluginVersion { major: 1, minor: 0, patch: 0 },
+            version: PluginVersion {
+                major: 1,
+                minor: 0,
+                patch: 0,
+            },
             license: None,
             min_tui_version: None,
             max_tui_version: None,
@@ -209,7 +211,12 @@ pub trait CommandPlugin: Plugin {
     fn available_commands(&self) -> Vec<PluginCommand>;
 
     /// Execute a command
-    async fn execute_command(&mut self, command: &str, args: &[String], context: &PluginContext) -> TuiResult<CommandResult>;
+    async fn execute_command(
+        &mut self,
+        command: &str,
+        args: &[String],
+        context: &PluginContext,
+    ) -> TuiResult<CommandResult>;
 }
 
 /// Theme plugin trait for plugins that provide themes
@@ -265,7 +272,11 @@ impl ThemePluginImpl {
                     homepage: None,
                     repository: None,
                 },
-                version: PluginVersion { major: 1, minor: 0, patch: 0 },
+                version: PluginVersion {
+                    major: 1,
+                    minor: 0,
+                    patch: 0,
+                },
                 license: Some("MIT".to_string()),
                 min_tui_version: None,
                 max_tui_version: None,
@@ -291,8 +302,9 @@ impl ThemePluginImpl {
             let entry = entry?;
             let path = entry.path();
 
-            if path.extension().and_then(|s| s.to_str()) == Some("yaml") ||
-               path.extension().and_then(|s| s.to_str()) == Some("yml") {
+            if path.extension().and_then(|s| s.to_str()) == Some("yaml")
+                || path.extension().and_then(|s| s.to_str()) == Some("yml")
+            {
                 match self.load_theme_from_file(&path) {
                     Ok(theme) => self.add_theme(theme),
                     Err(e) => tracing::warn!("Failed to load theme from {}: {}", path.display(), e),
@@ -309,36 +321,44 @@ impl ThemePluginImpl {
         let theme_data: serde_json::Value = serde_yaml::from_str(&content)?;
 
         // Extract theme metadata from the YAML
-        let id = file_path.file_stem()
+        let id = file_path
+            .file_stem()
             .and_then(|s| s.to_str())
             .unwrap_or("unknown")
             .to_string();
 
-        let name = theme_data.get("name")
+        let name = theme_data
+            .get("name")
             .and_then(|v| v.as_str())
             .unwrap_or(&id)
             .to_string();
 
-        let description = theme_data.get("description")
+        let description = theme_data
+            .get("description")
             .and_then(|v| v.as_str())
             .unwrap_or("A theme")
             .to_string();
 
-        let author = theme_data.get("author")
+        let author = theme_data
+            .get("author")
             .and_then(|v| v.as_str())
             .unwrap_or("Unknown")
             .to_string();
 
-        let version = theme_data.get("version")
+        let version = theme_data
+            .get("version")
             .and_then(|v| v.as_str())
             .unwrap_or("1.0.0")
             .to_string();
 
-        let tags = theme_data.get("tags")
+        let tags = theme_data
+            .get("tags")
             .and_then(|v| v.as_array())
-            .map(|arr| arr.iter()
-                .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                .collect())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                    .collect()
+            })
             .unwrap_or_default();
 
         Ok(PluginTheme {
@@ -356,16 +376,22 @@ impl ThemePluginImpl {
     pub fn validate_theme(&self, theme: &PluginTheme) -> TuiResult<()> {
         // Check required fields
         if theme.id.is_empty() {
-            return Err(crate::error::TuiError::Plugin { message: "Theme ID cannot be empty".to_string() });
+            return Err(crate::error::TuiError::Plugin {
+                message: "Theme ID cannot be empty".to_string(),
+            });
         }
 
         if theme.name.is_empty() {
-            return Err(crate::error::TuiError::Plugin { message: "Theme name cannot be empty".to_string() });
+            return Err(crate::error::TuiError::Plugin {
+                message: "Theme name cannot be empty".to_string(),
+            });
         }
 
         // Validate theme data structure (basic check)
         if !theme.theme_data.is_object() {
-            return Err(crate::error::TuiError::Plugin { message: "Theme data must be a JSON object".to_string() });
+            return Err(crate::error::TuiError::Plugin {
+                message: "Theme data must be a JSON object".to_string(),
+            });
         }
 
         Ok(())
@@ -399,8 +425,11 @@ impl Plugin for ThemePluginImpl {
             self.validate_theme(theme)?;
         }
 
-        tracing::info!("Theme plugin {} initialized with {} themes",
-                      self.metadata().name, self.themes.len());
+        tracing::info!(
+            "Theme plugin {} initialized with {} themes",
+            self.metadata().name,
+            self.themes.len()
+        );
         Ok(())
     }
 
@@ -410,9 +439,15 @@ impl Plugin for ThemePluginImpl {
                 let theme_id = msg.trim_start_matches("activate_theme:");
                 if let Some(theme) = self.themes.iter().find(|t| t.id == theme_id) {
                     self.active_theme = Some(theme_id.to_string());
-                    vec![PluginMessage::Custom(format!("theme_activated:{}", theme_id))]
+                    vec![PluginMessage::Custom(format!(
+                        "theme_activated:{}",
+                        theme_id
+                    ))]
                 } else {
-                    vec![PluginMessage::Error(format!("Theme not found: {}", theme_id))]
+                    vec![PluginMessage::Error(format!(
+                        "Theme not found: {}",
+                        theme_id
+                    ))]
                 }
             }
             _ => vec![],
@@ -422,9 +457,11 @@ impl Plugin for ThemePluginImpl {
     async fn render(&self, area: Rect, model: &AppModel) -> TuiResult<Vec<Line>> {
         let mut lines = Vec::new();
 
-        lines.push(Line::from(format!("🎨 {} - {} themes",
-                                    self.metadata().name,
-                                    self.themes.len())));
+        lines.push(Line::from(format!(
+            "🎨 {} - {} themes",
+            self.metadata().name,
+            self.themes.len()
+        )));
 
         if let Some(active) = &self.active_theme {
             lines.push(Line::from(format!("Active theme: {}", active)));
@@ -439,8 +476,10 @@ impl Plugin for ThemePluginImpl {
             } else {
                 ""
             };
-            lines.push(Line::from(format!("  • {} - {}{}",
-                                        theme.name, theme.description, active_marker)));
+            lines.push(Line::from(format!(
+                "  • {} - {}{}",
+                theme.name, theme.description, active_marker
+            )));
         }
 
         Ok(lines)
@@ -466,12 +505,12 @@ impl ThemePlugin for ThemePluginImpl {
             tracing::info!("Applied theme: {}", theme.name);
             Ok(())
         } else {
-            Err(crate::error::TuiError::Plugin { message: format!("Theme not found: {}", theme_id) })
+            Err(crate::error::TuiError::Plugin {
+                message: format!("Theme not found: {}", theme_id),
+            })
         }
     }
 }
-
-
 
 /// Command execution result
 #[derive(Debug, Clone)]
@@ -510,7 +549,10 @@ impl EnhancedPluginRegistry {
     }
 
     /// Register a UI component plugin
-    pub fn register_ui_component(&mut self, component: Box<dyn UiComponentPlugin>) -> TuiResult<()> {
+    pub fn register_ui_component(
+        &mut self,
+        component: Box<dyn UiComponentPlugin>,
+    ) -> TuiResult<()> {
         let id = component.id();
         // TODO: Fix clone_box method
         // self.register_plugin(component.clone_box())?;
@@ -580,7 +622,6 @@ pub struct PluginRegistry {
 
 // Keep the original PluginRegistry for backward compatibility
 
-
 impl PluginRegistry {
     /// Create a new plugin registry
     pub fn new() -> Self {
@@ -593,10 +634,9 @@ impl PluginRegistry {
     pub fn register<P: Plugin + 'static>(&mut self, plugin: P) -> TuiResult<()> {
         let id = plugin.id();
         if self.plugins.contains_key(&id) {
-            return Err(crate::error::TuiError::Plugin { message: format!(
-                "Plugin with ID '{}' already registered",
-                id.0
-            ) });
+            return Err(crate::error::TuiError::Plugin {
+                message: format!("Plugin with ID '{}' already registered", id.0),
+            });
         }
         self.plugins.insert(id, Box::new(plugin));
         Ok(())
@@ -605,10 +645,9 @@ impl PluginRegistry {
     /// Unregister a plugin
     pub fn unregister(&mut self, id: &PluginId) -> TuiResult<()> {
         if self.plugins.remove(id).is_none() {
-            return Err(crate::error::TuiError::Plugin { message: format!(
-                "Plugin with ID '{}' not found",
-                id.0
-            ) });
+            return Err(crate::error::TuiError::Plugin {
+                message: format!("Plugin with ID '{}' not found", id.0),
+            });
         }
         Ok(())
     }
@@ -664,7 +703,7 @@ impl PluginSandbox {
             max_memory_mb: 50, // 50MB default limit
             timeout_ms: 5000,  // 5 second timeout
             allowed_commands: vec![],
-            max_file_size_mb: 10, // 10MB max file size
+            max_file_size_mb: 10,       // 10MB max file size
             rate_limit_per_second: 100, // 100 operations per second
         }
     }
@@ -707,12 +746,12 @@ impl PluginSandbox {
             }
             PluginOperation::NetworkAccess => {
                 return Err(crate::error::TuiError::Plugin {
-                    message: "Network access not allowed for plugins".to_string()
+                    message: "Network access not allowed for plugins".to_string(),
                 });
             }
             PluginOperation::SystemCommand => {
                 return Err(crate::error::TuiError::Plugin {
-                    message: "System commands not allowed for plugins".to_string()
+                    message: "System commands not allowed for plugins".to_string(),
                 });
             }
         }
@@ -723,26 +762,33 @@ impl PluginSandbox {
     fn validate_file_access(&self, path: &PathBuf) -> TuiResult<()> {
         // Check if path is within allowed directories
         let is_allowed = self.allowed_paths.iter().any(|allowed| {
-            path.starts_with(allowed) || path.canonicalize()
-                .map(|canonical| canonical.starts_with(allowed))
-                .unwrap_or(false)
+            path.starts_with(allowed)
+                || path
+                    .canonicalize()
+                    .map(|canonical| canonical.starts_with(allowed))
+                    .unwrap_or(false)
         });
 
         if !is_allowed {
-            return Err(crate::error::TuiError::Plugin { message: format!(
-                "Plugin attempted to access unauthorized path: {}",
-                path.display()
-            ) });
+            return Err(crate::error::TuiError::Plugin {
+                message: format!(
+                    "Plugin attempted to access unauthorized path: {}",
+                    path.display()
+                ),
+            });
         }
 
         // Check file size if it exists
         if let Ok(metadata) = std::fs::metadata(path) {
             let size_mb = metadata.len() / (1024 * 1024);
             if size_mb > self.max_file_size_mb as u64 {
-                return Err(crate::error::TuiError::Plugin { message: format!(
-                    "Plugin attempted to access file larger than {}MB limit: {}",
-                    self.max_file_size_mb, path.display()
-                ) });
+                return Err(crate::error::TuiError::Plugin {
+                    message: format!(
+                        "Plugin attempted to access file larger than {}MB limit: {}",
+                        self.max_file_size_mb,
+                        path.display()
+                    ),
+                });
             }
         }
 
@@ -756,16 +802,27 @@ impl PluginSandbox {
             for permission in permissions {
                 match permission.as_str() {
                     "network" | "system" | "admin" => {
-                        return Err(crate::error::TuiError::Plugin { message: format!(
-                            "Plugin requests dangerous permission: {}", permission
-                        ) });
+                        return Err(crate::error::TuiError::Plugin {
+                            message: format!(
+                                "Plugin requests dangerous permission: {}",
+                                permission
+                            ),
+                        });
                     }
                     "filesystem" | "config" => {
                         // These are allowed but logged
-                        tracing::info!("Plugin {} requests permission: {}", manifest.name, permission);
+                        tracing::info!(
+                            "Plugin {} requests permission: {}",
+                            manifest.name,
+                            permission
+                        );
                     }
                     _ => {
-                        tracing::warn!("Plugin {} requests unknown permission: {}", manifest.name, permission);
+                        tracing::warn!(
+                            "Plugin {} requests unknown permission: {}",
+                            manifest.name,
+                            permission
+                        );
                     }
                 }
             }
@@ -774,9 +831,12 @@ impl PluginSandbox {
         // Validate entry point exists and is safe
         let entry_path = PathBuf::from(&manifest.entry_point);
         if entry_path.is_absolute() || entry_path.starts_with("..") {
-            return Err(crate::error::TuiError::Plugin { message: format!(
-                "Plugin entry point contains unsafe path: {}", manifest.entry_point
-            ) });
+            return Err(crate::error::TuiError::Plugin {
+                message: format!(
+                    "Plugin entry point contains unsafe path: {}",
+                    manifest.entry_point
+                ),
+            });
         }
 
         Ok(())
@@ -808,7 +868,8 @@ impl RateLimiter {
         let now = std::time::Instant::now();
 
         // Remove operations older than 1 second
-        self.operations.retain(|&time| now.duration_since(time).as_secs() < 1);
+        self.operations
+            .retain(|&time| now.duration_since(time).as_secs() < 1);
 
         if self.operations.len() >= self.max_per_second {
             false
@@ -882,7 +943,7 @@ impl PluginManager {
             active_plugins: RwLock::new(HashMap::new()),
             extensions: RwLock::new(ExtensionManager::new()),
         }
-}
+    }
 
     /// Register a plugin
     pub async fn register_plugin<P: Plugin + 'static>(&self, plugin: P) -> TuiResult<PluginId> {
@@ -897,12 +958,17 @@ impl PluginManager {
     /// Load and initialize a plugin
     pub async fn load_plugin(&self, id: &PluginId, model: &AppModel) -> TuiResult<()> {
         let mut registry = self.registry.write().await;
-        let plugin = registry.get_mut(id).ok_or_else(|| {
-            crate::error::TuiError::Plugin { message: format!("Plugin '{}' not found", id.0) }
-        })?;
+        let plugin = registry
+            .get_mut(id)
+            .ok_or_else(|| crate::error::TuiError::Plugin {
+                message: format!("Plugin '{}' not found", id.0),
+            })?;
 
         let mut active_plugins = self.active_plugins.write().await;
-        let previous_state = active_plugins.get(id).copied().unwrap_or(PluginState::Uninitialized);
+        let previous_state = active_plugins
+            .get(id)
+            .copied()
+            .unwrap_or(PluginState::Uninitialized);
 
         // Check if plugin is already active
         if previous_state == PluginState::Active {
@@ -967,11 +1033,17 @@ impl PluginManager {
     }
 
     /// Send a message to a plugin
-    pub async fn send_message(&self, target: &PluginId, message: PluginMessage) -> TuiResult<Vec<PluginMessage>> {
+    pub async fn send_message(
+        &self,
+        target: &PluginId,
+        message: PluginMessage,
+    ) -> TuiResult<Vec<PluginMessage>> {
         let mut registry = self.registry.write().await;
-        let plugin = registry.get_mut(target).ok_or_else(|| {
-            crate::error::TuiError::Plugin { message: format!("Plugin '{}' not found", target.0) }
-        })?;
+        let plugin = registry
+            .get_mut(target)
+            .ok_or_else(|| crate::error::TuiError::Plugin {
+                message: format!("Plugin '{}' not found", target.0),
+            })?;
 
         let responses = plugin.handle_message(&message).await;
         Ok(responses)
@@ -996,8 +1068,10 @@ impl PluginManager {
                         let plugin_version = plugin.version();
 
                         // Create a simple line with plugin info instead of calling render
-                        let line = Line::from(format!("Plugin: {} v{} (ID: {})",
-                                                    plugin_name, plugin_version, plugin_id.0));
+                        let line = Line::from(format!(
+                            "Plugin: {} v{} (ID: {})",
+                            plugin_name, plugin_version, plugin_id.0
+                        ));
                         all_lines.push(line);
                     }
                 }
@@ -1009,7 +1083,9 @@ impl PluginManager {
 
     /// Get the state of a plugin
     pub async fn get_plugin_state(&self, id: &PluginId) -> PluginState {
-        self.active_plugins.read().await
+        self.active_plugins
+            .read()
+            .await
             .get(id)
             .copied()
             .unwrap_or(PluginState::Uninitialized)
@@ -1018,7 +1094,8 @@ impl PluginManager {
     /// List all registered plugins with their states
     pub async fn list_plugins(&self) -> Vec<(PluginId, PluginState)> {
         let active_plugins = self.active_plugins.read().await;
-        active_plugins.iter()
+        active_plugins
+            .iter()
             .map(|(id, state)| (id.clone(), *state))
             .collect()
     }
@@ -1032,7 +1109,10 @@ impl PluginManager {
     }
 
     /// Discover plugins in a directory
-    pub async fn discover_plugins(&self, search_paths: &[PathBuf]) -> TuiResult<Vec<DiscoveredPlugin>> {
+    pub async fn discover_plugins(
+        &self,
+        search_paths: &[PathBuf],
+    ) -> TuiResult<Vec<DiscoveredPlugin>> {
         let mut discovered = Vec::new();
 
         for search_path in search_paths {
@@ -1044,7 +1124,8 @@ impl PluginManager {
                 if entry.file_type().is_file() && entry.file_name() == "plugin.json" {
                     match self.load_plugin_manifest(&entry.path().to_path_buf()).await {
                         Ok(manifest) => {
-                            let plugin_dir = entry.path().parent().unwrap_or(search_path).to_path_buf();
+                            let plugin_dir =
+                                entry.path().parent().unwrap_or(search_path).to_path_buf();
                             discovered.push(DiscoveredPlugin {
                                 manifest,
                                 manifest_path: entry.path().to_path_buf(),
@@ -1052,7 +1133,11 @@ impl PluginManager {
                             });
                         }
                         Err(e) => {
-                            tracing::warn!("Failed to load plugin manifest {}: {}", entry.path().display(), e);
+                            tracing::warn!(
+                                "Failed to load plugin manifest {}: {}",
+                                entry.path().display(),
+                                e
+                            );
                         }
                     }
                 }
@@ -1064,21 +1149,27 @@ impl PluginManager {
 
     /// Load a plugin manifest from file
     async fn load_plugin_manifest(&self, path: &PathBuf) -> TuiResult<PluginManifest> {
-        let content = tokio::fs::read_to_string(path).await
-            .map_err(|e| crate::error::TuiError::Plugin { message: format!(
-                "Failed to read plugin manifest {}: {}", path.display(), e
-            ) })?;
+        let content =
+            tokio::fs::read_to_string(path)
+                .await
+                .map_err(|e| crate::error::TuiError::Plugin {
+                    message: format!("Failed to read plugin manifest {}: {}", path.display(), e),
+                })?;
 
-        let manifest: PluginManifest = serde_json::from_str(&content)
-            .map_err(|e| crate::error::TuiError::Plugin { message: format!(
-                "Failed to parse plugin manifest {}: {}", path.display(), e
-            ) })?;
+        let manifest: PluginManifest =
+            serde_json::from_str(&content).map_err(|e| crate::error::TuiError::Plugin {
+                message: format!("Failed to parse plugin manifest {}: {}", path.display(), e),
+            })?;
 
         Ok(manifest)
     }
 
     /// Load a discovered plugin
-    pub async fn load_discovered_plugin(&self, discovered: &DiscoveredPlugin, model: &AppModel) -> TuiResult<PluginId> {
+    pub async fn load_discovered_plugin(
+        &self,
+        discovered: &DiscoveredPlugin,
+        model: &AppModel,
+    ) -> TuiResult<PluginId> {
         // Validate plugin manifest for security
         self.sandbox.validate_manifest(&discovered.manifest)?;
 
@@ -1087,7 +1178,8 @@ impl PluginManager {
         let plugin = PlaceholderPlugin::new(discovered.manifest.clone());
 
         self.register_plugin(plugin).await?;
-        self.load_plugin(&PluginId::from(discovered.manifest.id.clone()), model).await?;
+        self.load_plugin(&PluginId::from(discovered.manifest.id.clone()), model)
+            .await?;
 
         Ok(PluginId::from(discovered.manifest.id.clone()))
     }
@@ -1143,14 +1235,15 @@ impl PluginManager {
         let registry = self.registry.read().await;
         let active_plugins = self.active_plugins.read().await;
 
-        registry.get(id).map(|plugin| {
-            PluginInfo {
-                id: plugin.id(),
-                name: plugin.name().to_string(),
-                version: plugin.version().to_string(),
-                metadata: plugin.metadata(),
-                state: active_plugins.get(&plugin.id()).copied().unwrap_or(PluginState::Uninitialized),
-            }
+        registry.get(id).map(|plugin| PluginInfo {
+            id: plugin.id(),
+            name: plugin.name().to_string(),
+            version: plugin.version().to_string(),
+            metadata: plugin.metadata(),
+            state: active_plugins
+                .get(&plugin.id())
+                .copied()
+                .unwrap_or(PluginState::Uninitialized),
         })
     }
 
@@ -1161,9 +1254,9 @@ impl PluginManager {
             drop(active_plugins);
             self.load_plugin(id, model).await
         } else {
-            Err(crate::error::TuiError::Plugin { message: format!(
-                "Plugin '{}' is not disabled", id.0
-            ) })
+            Err(crate::error::TuiError::Plugin {
+                message: format!("Plugin '{}' is not disabled", id.0),
+            })
         }
     }
 
@@ -1175,9 +1268,9 @@ impl PluginManager {
             tracing::info!("Plugin '{}' disabled", id.0);
             Ok(())
         } else {
-            Err(crate::error::TuiError::Plugin { message: format!(
-                "Plugin '{}' is not active", id.0
-            ) })
+            Err(crate::error::TuiError::Plugin {
+                message: format!("Plugin '{}' is not active", id.0),
+            })
         }
     }
 
@@ -1187,35 +1280,59 @@ impl PluginManager {
     }
 
     /// Register component extensions from a plugin
-    pub async fn register_component_extensions(&self, plugin_id: &PluginId, extensions: Vec<(String, Box<dyn ComponentExtension>)>) -> TuiResult<()> {
+    pub async fn register_component_extensions(
+        &self,
+        plugin_id: &PluginId,
+        extensions: Vec<(String, Box<dyn ComponentExtension>)>,
+    ) -> TuiResult<()> {
         let mut ext_manager = self.extensions.write().await;
         let count = extensions.len();
         for (component_id, extension) in extensions {
             ext_manager.register_component_extension(&component_id, extension);
         }
-        tracing::info!("Plugin '{}' registered {} component extensions", plugin_id.0, count);
+        tracing::info!(
+            "Plugin '{}' registered {} component extensions",
+            plugin_id.0,
+            count
+        );
         Ok(())
     }
 
     /// Register command extensions from a plugin
-    pub async fn register_command_extensions(&self, plugin_id: &PluginId, extensions: Vec<(String, Box<dyn CommandExtension>)>) -> TuiResult<()> {
+    pub async fn register_command_extensions(
+        &self,
+        plugin_id: &PluginId,
+        extensions: Vec<(String, Box<dyn CommandExtension>)>,
+    ) -> TuiResult<()> {
         let mut ext_manager = self.extensions.write().await;
         let count = extensions.len();
         for (command, extension) in extensions {
             ext_manager.register_command_extension(&command, extension);
         }
-        tracing::info!("Plugin '{}' registered {} command extensions", plugin_id.0, count);
+        tracing::info!(
+            "Plugin '{}' registered {} command extensions",
+            plugin_id.0,
+            count
+        );
         Ok(())
     }
 
     /// Register theme extensions from a plugin
-    pub async fn register_theme_extensions(&self, plugin_id: &PluginId, extensions: Vec<Box<dyn ThemeExtension>>) -> TuiResult<()> {
+    pub async fn register_theme_extensions(
+        &self,
+        plugin_id: &PluginId,
+        extensions: Vec<Box<dyn ThemeExtension>>,
+    ) -> TuiResult<()> {
         let mut ext_manager = self.extensions.write().await;
         let count = extensions.len();
         for extension in extensions {
             ext_manager.register_theme_extension(extension);
         }
-        tracing::info!("Plugin '{}' registered {} theme extensions", plugin_id.0, count);
+        tracing::info!(
+            "Plugin '{}' registered {} theme extensions",
+            plugin_id.0,
+            count
+        );
         Ok(())
     }
 }
@@ -1243,13 +1360,22 @@ pub trait ComponentExtension: Send + Sync {
     }
 
     /// Called after component rendering to allow modifications
-    async fn post_render(&self, component_id: &str, lines: &mut Vec<Line<'static>>) -> TuiResult<()> {
+    async fn post_render(
+        &self,
+        component_id: &str,
+        lines: &mut Vec<Line<'static>>,
+    ) -> TuiResult<()> {
         let _ = (component_id, lines);
         Ok(())
     }
 
     /// Called when component receives input
-    async fn on_input(&self, component_id: &str, input: &str, model: &AppModel) -> TuiResult<Option<String>> {
+    async fn on_input(
+        &self,
+        component_id: &str,
+        input: &str,
+        model: &AppModel,
+    ) -> TuiResult<Option<String>> {
         let _ = (component_id, input, model);
         Ok(None)
     }
@@ -1268,7 +1394,12 @@ pub trait CommandExtension: Send + Sync {
     }
 
     /// Called after command execution
-    async fn post_execute(&self, command: &str, result: &TuiResult<()>, model: &AppModel) -> TuiResult<()> {
+    async fn post_execute(
+        &self,
+        command: &str,
+        result: &TuiResult<()>,
+        model: &AppModel,
+    ) -> TuiResult<()> {
         let _ = (command, result, model);
         Ok(())
     }
@@ -1331,7 +1462,11 @@ impl ExtensionManager {
     }
 
     /// Register a component extension
-    pub fn register_component_extension(&mut self, component_id: &str, extension: Box<dyn ComponentExtension>) {
+    pub fn register_component_extension(
+        &mut self,
+        component_id: &str,
+        extension: Box<dyn ComponentExtension>,
+    ) {
         self.component_extensions
             .entry(component_id.to_string())
             .or_insert_with(Vec::new)
@@ -1339,7 +1474,11 @@ impl ExtensionManager {
     }
 
     /// Register a command extension
-    pub fn register_command_extension(&mut self, command: &str, extension: Box<dyn CommandExtension>) {
+    pub fn register_command_extension(
+        &mut self,
+        command: &str,
+        extension: Box<dyn CommandExtension>,
+    ) {
         self.command_extensions
             .entry(command.to_string())
             .or_insert_with(Vec::new)
@@ -1373,7 +1512,11 @@ impl ExtensionManager {
     }
 
     /// Execute component pre-render extensions
-    pub async fn execute_component_pre_render(&self, component_id: &str, model: &AppModel) -> TuiResult<()> {
+    pub async fn execute_component_pre_render(
+        &self,
+        component_id: &str,
+        model: &AppModel,
+    ) -> TuiResult<()> {
         for extension in self.get_component_extensions(component_id) {
             extension.pre_render(component_id, model).await?;
         }
@@ -1381,7 +1524,11 @@ impl ExtensionManager {
     }
 
     /// Execute component post-render extensions
-    pub async fn execute_component_post_render(&self, component_id: &str, lines: &mut Vec<Line<'static>>) -> TuiResult<()> {
+    pub async fn execute_component_post_render(
+        &self,
+        component_id: &str,
+        lines: &mut Vec<Line<'static>>,
+    ) -> TuiResult<()> {
         for extension in self.get_component_extensions(component_id) {
             extension.post_render(component_id, lines).await?;
         }
@@ -1389,7 +1536,12 @@ impl ExtensionManager {
     }
 
     /// Execute command pre-execute extensions
-    pub async fn execute_command_pre_execute(&self, command: &str, args: &[String], model: &AppModel) -> TuiResult<()> {
+    pub async fn execute_command_pre_execute(
+        &self,
+        command: &str,
+        args: &[String],
+        model: &AppModel,
+    ) -> TuiResult<()> {
         for extension in self.get_command_extensions(command) {
             extension.pre_execute(command, args, model).await?;
         }
@@ -1397,7 +1549,12 @@ impl ExtensionManager {
     }
 
     /// Execute command post-execute extensions
-    pub async fn execute_command_post_execute(&self, command: &str, result: &TuiResult<()>, model: &AppModel) -> TuiResult<()> {
+    pub async fn execute_command_post_execute(
+        &self,
+        command: &str,
+        result: &TuiResult<()>,
+        model: &AppModel,
+    ) -> TuiResult<()> {
         for extension in self.get_command_extensions(command) {
             extension.post_execute(command, result, model).await?;
         }
@@ -1466,7 +1623,11 @@ impl Plugin for PlaceholderPlugin {
     }
 
     async fn handle_message(&mut self, message: &PluginMessage) -> Vec<PluginMessage> {
-        tracing::debug!("Placeholder plugin {} received message: {:?}", self.name(), message);
+        tracing::debug!(
+            "Placeholder plugin {} received message: {:?}",
+            self.name(),
+            message
+        );
         // For now, just echo the message back
         vec![message.clone()]
     }
@@ -1539,7 +1700,11 @@ impl ThemeMarketplace {
                 author: "Nord Theme".to_string(),
                 version: "1.3.2".to_string(),
                 download_url: "https://example.com/themes/nord-extended.zip".to_string(),
-                tags: vec!["cold".to_string(), "arctic".to_string(), "extended".to_string()],
+                tags: vec![
+                    "cold".to_string(),
+                    "arctic".to_string(),
+                    "extended".to_string(),
+                ],
                 preview_image: Some("https://example.com/previews/nord-extended.png".to_string()),
                 rating: Some(4.6),
                 downloads: Some(8920),
@@ -1551,9 +1716,13 @@ impl ThemeMarketplace {
 
     /// Install a theme from the marketplace
     pub async fn install_theme(&mut self, theme_id: &str) -> TuiResult<()> {
-        let marketplace_theme = self.available_themes.iter()
+        let marketplace_theme = self
+            .available_themes
+            .iter()
             .find(|t| t.id == theme_id)
-            .ok_or_else(|| crate::error::TuiError::Plugin { message: format!("Theme not found in marketplace: {}", theme_id) })?
+            .ok_or_else(|| crate::error::TuiError::Plugin {
+                message: format!("Theme not found in marketplace: {}", theme_id),
+            })?
             .clone();
 
         // In a real implementation, this would download and extract the theme
@@ -1588,10 +1757,12 @@ impl ThemeMarketplace {
         theme_plugin.add_theme(plugin_theme.clone());
 
         // Register the theme plugin
-        self.registry.register_theme_plugin(Box::new(theme_plugin))?;
+        self.registry
+            .register_theme_plugin(Box::new(theme_plugin))?;
 
         // Mark as installed
-        self.installed_themes.insert(theme_id.to_string(), plugin_theme);
+        self.installed_themes
+            .insert(theme_id.to_string(), plugin_theme);
 
         tracing::info!("Installed theme: {}", marketplace_theme.name);
         Ok(())
@@ -1600,11 +1771,14 @@ impl ThemeMarketplace {
     /// Uninstall a theme
     pub async fn uninstall_theme(&mut self, theme_id: &str) -> TuiResult<()> {
         if self.installed_themes.remove(theme_id).is_some() {
-            self.registry.unregister(&PluginId::from(theme_id.to_string()));
+            self.registry
+                .unregister(&PluginId::from(theme_id.to_string()));
             tracing::info!("Uninstalled theme: {}", theme_id);
             Ok(())
         } else {
-            Err(crate::error::TuiError::Plugin { message: format!("Theme not installed: {}", theme_id) })
+            Err(crate::error::TuiError::Plugin {
+                message: format!("Theme not installed: {}", theme_id),
+            })
         }
     }
 
@@ -1621,12 +1795,16 @@ impl ThemeMarketplace {
     /// Search themes by query
     pub fn search_themes(&self, query: &str) -> Vec<&MarketplaceTheme> {
         let query_lower = query.to_lowercase();
-        self.available_themes.iter()
-            .filter(|theme|
-                theme.name.to_lowercase().contains(&query_lower) ||
-                theme.description.to_lowercase().contains(&query_lower) ||
-                theme.tags.iter().any(|tag| tag.to_lowercase().contains(&query_lower))
-            )
+        self.available_themes
+            .iter()
+            .filter(|theme| {
+                theme.name.to_lowercase().contains(&query_lower)
+                    || theme.description.to_lowercase().contains(&query_lower)
+                    || theme
+                        .tags
+                        .iter()
+                        .any(|tag| tag.to_lowercase().contains(&query_lower))
+            })
             .collect()
     }
 

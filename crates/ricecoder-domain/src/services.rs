@@ -1,8 +1,8 @@
 //! Domain services - business logic that doesn't belong to entities
 
 use crate::entities::*;
-use crate::value_objects::*;
 use crate::errors::*;
+use crate::value_objects::*;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
@@ -74,7 +74,8 @@ pub trait ProviderService {
     async fn get_provider_models(&self, provider_id: &str) -> DomainResult<Vec<ModelInfo>>;
 
     /// Validate provider configuration
-    async fn validate_provider_config(&self, provider: &Provider) -> DomainResult<ValidationResult>;
+    async fn validate_provider_config(&self, provider: &Provider)
+        -> DomainResult<ValidationResult>;
 }
 
 /// Service for code analysis
@@ -87,7 +88,10 @@ pub trait AnalysisService {
     async fn analyze_project(&self, project: &Project) -> DomainResult<Vec<AnalysisResult>>;
 
     /// Get analysis history for a project
-    async fn get_analysis_history(&self, project_id: &ProjectId) -> DomainResult<Vec<AnalysisResult>>;
+    async fn get_analysis_history(
+        &self,
+        project_id: &ProjectId,
+    ) -> DomainResult<Vec<AnalysisResult>>;
 
     /// Get analysis result by ID
     async fn get_analysis_result(&self, id: &str) -> DomainResult<Option<AnalysisResult>>;
@@ -97,7 +101,11 @@ pub trait AnalysisService {
 #[async_trait]
 pub trait FileService {
     /// Load file from path
-    async fn load_file(&self, project_id: &ProjectId, relative_path: &str) -> DomainResult<CodeFile>;
+    async fn load_file(
+        &self,
+        project_id: &ProjectId,
+        relative_path: &str,
+    ) -> DomainResult<CodeFile>;
 
     /// Save file content
     async fn save_file(&self, file: &CodeFile) -> DomainResult<()>;
@@ -106,7 +114,11 @@ pub trait FileService {
     async fn list_project_files(&self, project_id: &ProjectId) -> DomainResult<Vec<CodeFile>>;
 
     /// Search files by pattern
-    async fn search_files(&self, project_id: &ProjectId, pattern: &str) -> DomainResult<Vec<CodeFile>>;
+    async fn search_files(
+        &self,
+        project_id: &ProjectId,
+        pattern: &str,
+    ) -> DomainResult<Vec<CodeFile>>;
 }
 
 /// Validation result for domain operations
@@ -154,12 +166,17 @@ pub struct BusinessRulesValidator;
 
 impl BusinessRulesValidator {
     /// Validate project creation rules
-    pub fn validate_project_creation(name: &str, language: ProgrammingLanguage) -> ValidationResult {
+    pub fn validate_project_creation(
+        name: &str,
+        language: ProgrammingLanguage,
+    ) -> ValidationResult {
         let mut result = ValidationResult::valid();
 
         // Rule: Project names should be meaningful
         if name.len() < 3 {
-            result.add_warning("Project name is very short, consider a more descriptive name".to_string());
+            result.add_warning(
+                "Project name is very short, consider a more descriptive name".to_string(),
+            );
         }
 
         // Rule: Certain languages have specific requirements
@@ -173,7 +190,10 @@ impl BusinessRulesValidator {
             ProgrammingLanguage::Python => {
                 // Python projects should follow PEP 8
                 if name.contains('_') {
-                    result.add_warning("Python project names typically use hyphens instead of underscores".to_string());
+                    result.add_warning(
+                        "Python project names typically use hyphens instead of underscores"
+                            .to_string(),
+                    );
                 }
             }
             _ => {}
@@ -183,7 +203,10 @@ impl BusinessRulesValidator {
     }
 
     /// Validate session operations
-    pub fn validate_session_operation(session: &Session, operation: SessionOperation) -> ValidationResult {
+    pub fn validate_session_operation(
+        session: &Session,
+        operation: SessionOperation,
+    ) -> ValidationResult {
         let mut result = ValidationResult::valid();
 
         match operation {
@@ -203,21 +226,37 @@ impl BusinessRulesValidator {
     }
 
     /// Validate analysis operations
-    pub fn validate_analysis_operation(file: &CodeFile, analysis_type: AnalysisType) -> ValidationResult {
+    pub fn validate_analysis_operation(
+        file: &CodeFile,
+        analysis_type: AnalysisType,
+    ) -> ValidationResult {
         let mut result = ValidationResult::valid();
 
         // Rule: Don't analyze empty files
         if file.is_empty() {
-            result.add_warning("Analyzing empty files may not provide meaningful results".to_string());
+            result.add_warning(
+                "Analyzing empty files may not provide meaningful results".to_string(),
+            );
         }
 
         // Rule: Certain analyses require minimum file size
         match analysis_type {
             AnalysisType::Complexity if file.size_bytes < 100 => {
-                result.add_warning("Complexity analysis may not be meaningful for very small files".to_string());
+                result.add_warning(
+                    "Complexity analysis may not be meaningful for very small files".to_string(),
+                );
             }
-            AnalysisType::Dependencies if !matches!(file.language, ProgrammingLanguage::Rust | ProgrammingLanguage::Go) => {
-                result.add_warning(format!("Dependency analysis is most useful for languages like {}, not {}", ProgrammingLanguage::Rust, file.language));
+            AnalysisType::Dependencies
+                if !matches!(
+                    file.language,
+                    ProgrammingLanguage::Rust | ProgrammingLanguage::Go
+                ) =>
+            {
+                result.add_warning(format!(
+                    "Dependency analysis is most useful for languages like {}, not {}",
+                    ProgrammingLanguage::Rust,
+                    file.language
+                ));
             }
             _ => {}
         }

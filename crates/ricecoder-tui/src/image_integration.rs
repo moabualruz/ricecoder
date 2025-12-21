@@ -154,5 +154,3 @@ impl Default for ImageIntegration {
         Self::new()
     }
 }
-
-

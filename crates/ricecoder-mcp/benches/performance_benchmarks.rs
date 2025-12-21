@@ -1,11 +1,11 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use ricecoder_mcp::{
-    ToolMarshaler,
-    transport::{MCPMessage, MCPRequest, MCPResponse, MCPNotification},
-    protocol_validation::MCPProtocolValidator,
-    permissions::MCPPermissionManager,
-    registry::ToolRegistry,
     metadata::{ToolMetadata, ToolSource},
+    permissions::MCPPermissionManager,
+    protocol_validation::MCPProtocolValidator,
+    registry::ToolRegistry,
+    transport::{MCPMessage, MCPNotification, MCPRequest, MCPResponse},
+    ToolMarshaler,
 };
 use serde_json::json;
 use std::sync::Arc;
@@ -121,7 +121,8 @@ fn benchmark_json_serialization(c: &mut Criterion) {
 }
 
 fn benchmark_json_deserialization(c: &mut Criterion) {
-    let json_str = black_box(r#"{
+    let json_str = black_box(
+        r#"{
         "type": "request",
         "data": {
             "id": "bench-deserialize",
@@ -132,7 +133,9 @@ fn benchmark_json_deserialization(c: &mut Criterion) {
                 "nested": {"key": "value"}
             }
         }
-    }"#.to_string());
+    }"#
+        .to_string(),
+    );
 
     c.bench_function("json_deserialization", |b| {
         b.iter(|| serde_json::from_str::<MCPMessage>(&json_str))

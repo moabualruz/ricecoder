@@ -66,12 +66,14 @@ mod tests {
         let updates = RealTimeUpdates::new(error_manager);
 
         // Create a stream
-        let stream = updates.create_stream(
-            "test_stream".to_string(),
-            StreamType::BackgroundTask,
-            "Background Task".to_string(),
-            "Running background work".to_string(),
-        ).await;
+        let stream = updates
+            .create_stream(
+                "test_stream".to_string(),
+                StreamType::BackgroundTask,
+                "Background Task".to_string(),
+                "Running background work".to_string(),
+            )
+            .await;
 
         // Get the stream back
         let retrieved = updates.get_stream("test_stream").await;
@@ -93,8 +95,12 @@ mod tests {
         assert_eq!(indicator.status().await, OperationStatus::Queued);
 
         // Update progress
-        indicator.update_from_stream(&StreamData::ProgressUpdate(0.75)).await;
-        indicator.update_from_stream(&StreamData::StatusUpdate(OperationStatus::Running)).await;
+        indicator
+            .update_from_stream(&StreamData::ProgressUpdate(0.75))
+            .await;
+        indicator
+            .update_from_stream(&StreamData::StatusUpdate(OperationStatus::Running))
+            .await;
 
         assert_eq!(indicator.progress().await, Some(0.75));
         assert_eq!(indicator.status().await, OperationStatus::Running);

@@ -9,7 +9,7 @@ use serde_json::json;
 /// Strategy for generating valid LSP diagnostic severities
 fn lsp_severity_strategy() -> impl Strategy<Value = Option<u64>> {
     prop_oneof![
-        Just(None), // Default to error
+        Just(None),    // Default to error
         Just(Some(1)), // Error
         Just(Some(2)), // Warning
         Just(Some(3)), // Information
@@ -19,12 +19,14 @@ fn lsp_severity_strategy() -> impl Strategy<Value = Option<u64>> {
 
 /// Strategy for generating valid LSP ranges
 fn lsp_range_strategy() -> impl Strategy<Value = serde_json::Value> {
-    (0..1000u64, 0..200u64, 0..1000u64, 0..200u64).prop_map(|(start_line, start_char, end_line, end_char)| {
-        json!({
-            "start": {"line": start_line, "character": start_char},
-            "end": {"line": end_line, "character": end_char}
-        })
-    })
+    (0..1000u64, 0..200u64, 0..1000u64, 0..200u64).prop_map(
+        |(start_line, start_char, end_line, end_char)| {
+            json!({
+                "start": {"line": start_line, "character": start_char},
+                "end": {"line": end_line, "character": end_char}
+            })
+        },
+    )
 }
 
 /// Strategy for generating LSP diagnostic messages

@@ -5,8 +5,8 @@
 
 use async_trait::async_trait;
 use ricecoder_tools::provider::{Provider, ProviderRegistry};
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 /// Mock provider for testing
 struct MockProvider {
@@ -149,9 +149,7 @@ async fn prop_fallback_chain_completeness() {
         name: "builtin".to_string(),
         should_fail: false,
     });
-    registry
-        .register_builtin_provider("tool1", builtin)
-        .await;
+    registry.register_builtin_provider("tool1", builtin).await;
 
     let (_, selection) = registry.get_provider("tool1").await.unwrap();
     assert_eq!(selection.provider_name, "builtin");
@@ -194,7 +192,10 @@ async fn prop_provider_selection_has_trace_id() {
     }
 
     // Verify trace IDs are unique (UUIDs)
-    let unique_count = trace_ids.iter().collect::<std::collections::HashSet<_>>().len();
+    let unique_count = trace_ids
+        .iter()
+        .collect::<std::collections::HashSet<_>>()
+        .len();
     assert_eq!(unique_count, trace_ids.len());
 }
 

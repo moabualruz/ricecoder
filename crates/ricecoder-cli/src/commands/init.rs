@@ -3,8 +3,8 @@
 use super::Command;
 use crate::error::{CliError, CliResult};
 use crate::output::OutputStyle;
-use std::io::{self, Write};
 use async_trait::async_trait;
+use std::io::{self, Write};
 
 /// Initialize a new ricecoder project
 pub struct InitCommand {
@@ -53,9 +53,7 @@ impl InitCommand {
         io::stdout().flush().map_err(CliError::Io)?;
 
         let mut input = String::new();
-        io::stdin()
-            .read_line(&mut input)
-            .map_err(CliError::Io)?;
+        io::stdin().read_line(&mut input).map_err(CliError::Io)?;
 
         Ok(input.trim().to_string())
     }
@@ -80,9 +78,7 @@ impl InitCommand {
         println!();
         println!("This wizard will help you set up a new RiceCoder project.");
         println!();
-        println!("{}",
-            style.list_item("Create project configuration")
-        );
+        println!("{}", style.list_item("Create project configuration"));
         println!("{}", style.list_item("Set up AI provider"));
         println!("{}", style.list_item("Configure storage"));
         println!();
@@ -102,14 +98,35 @@ impl InitCommand {
         println!("{}", style.numbered_item(2, "Start the interactive chat"));
         println!("   rice chat");
         println!();
-        println!("{}", style.numbered_item(3, "Generate code from specifications"));
+        println!(
+            "{}",
+            style.numbered_item(3, "Generate code from specifications")
+        );
         println!("   rice gen --spec my-spec.md");
         println!();
         println!("{}", style.section("Learn More"));
         println!();
-        println!("{}", style.link("Documentation", "https://github.com/moabualruz/ricecoder/wiki/docs"));
-        println!("{}", style.link("Examples", "https://github.com/moabualruz/ricecoder/wiki/examples"));
-        println!("{}", style.link("Troubleshooting", "https://github.com/moabualruz/ricecoder/wiki"));
+        println!(
+            "{}",
+            style.link(
+                "Documentation",
+                "https://github.com/moabualruz/ricecoder/wiki/docs"
+            )
+        );
+        println!(
+            "{}",
+            style.link(
+                "Examples",
+                "https://github.com/moabualruz/ricecoder/wiki/examples"
+            )
+        );
+        println!(
+            "{}",
+            style.link(
+                "Troubleshooting",
+                "https://github.com/moabualruz/ricecoder/wiki"
+            )
+        );
         println!();
     }
 
@@ -164,12 +181,15 @@ impl Command for InitCommand {
         // Check if configuration already exists
         let config_path = format!("{}/.agent/ricecoder.toml", path);
         let config_exists = std::path::Path::new(&config_path).exists();
-        
+
         // If config exists and force flag is not set, skip creation but don't error
         // This makes init idempotent - running it multiple times is safe
         if config_exists && !self.force {
             // Configuration already exists, nothing to do
-            println!("{}", style.info(&format!("Configuration already exists at {}", config_path)));
+            println!(
+                "{}",
+                style.info(&format!("Configuration already exists at {}", config_path))
+            );
             return Ok(());
         }
 
@@ -290,16 +310,24 @@ For more information, see: https://github.com/moabualruz/ricecoder/wiki
             project_name, project_description
         );
 
-        std::fs::write(format!("{}/README.md", path), readme)
-            .map_err(CliError::Io)?;
+        std::fs::write(format!("{}/README.md", path), readme).map_err(CliError::Io)?;
 
         // Print success message
         println!();
-        println!("{}", style.success(&format!("Initialized ricecoder project at {}", path)));
+        println!(
+            "{}",
+            style.success(&format!("Initialized ricecoder project at {}", path))
+        );
         println!();
         println!("Created files:");
-        println!("{}", style.list_item(".agent/ricecoder.toml - Project configuration"));
-        println!("{}", style.list_item(".agent/example-spec.md - Example specification"));
+        println!(
+            "{}",
+            style.list_item(".agent/ricecoder.toml - Project configuration")
+        );
+        println!(
+            "{}",
+            style.list_item(".agent/example-spec.md - Example specification")
+        );
         println!("{}", style.list_item("README.md - Project documentation"));
         println!();
 

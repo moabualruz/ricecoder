@@ -136,12 +136,7 @@ impl ToolMetadata {
 
 impl ParameterMetadata {
     /// Creates a new parameter metadata
-    pub fn new(
-        name: String,
-        type_: String,
-        description: String,
-        required: bool,
-    ) -> Self {
+    pub fn new(name: String, type_: String, description: String, required: bool) -> Self {
         Self {
             name,
             type_,
@@ -285,6 +280,9 @@ mod tests {
         )
         .with_default(Value::String("default_value".to_string()));
 
-        assert_eq!(param.default, Some(Value::String("default_value".to_string())));
+        assert_eq!(
+            param.default,
+            Some(Value::String("default_value".to_string()))
+        );
     }
 }

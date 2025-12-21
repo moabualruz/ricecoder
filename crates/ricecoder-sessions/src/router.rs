@@ -43,7 +43,9 @@ impl SessionRouter {
         let session_id = session.id.clone();
 
         // Create token usage tracker for this session
-        let tracker = self.token_estimator.create_usage_tracker(&session.context.model)?;
+        let tracker = self
+            .token_estimator
+            .create_usage_tracker(&session.context.model)?;
         self.token_trackers.insert(session_id.clone(), tracker);
 
         self.sessions.insert(session_id.clone(), session.clone());
@@ -71,7 +73,9 @@ impl SessionRouter {
             .ok_or(SessionError::NotFound(session_id.clone()))?;
 
         // Estimate tokens for the message
-        let token_estimate = self.token_estimator.estimate_tokens(message_content, Some(&session.context.model))?;
+        let token_estimate = self
+            .token_estimator
+            .estimate_tokens(message_content, Some(&session.context.model))?;
 
         // Create a message with token count and add it to the session history
         let mut message = Message::new(MessageRole::User, message_content.to_string());
@@ -107,7 +111,9 @@ impl SessionRouter {
             .ok_or(SessionError::NotFound(session_id.to_string()))?;
 
         // Estimate tokens for the message
-        let token_estimate = self.token_estimator.estimate_tokens(message_content, Some(&session.context.model))?;
+        let token_estimate = self
+            .token_estimator
+            .estimate_tokens(message_content, Some(&session.context.model))?;
 
         // Create a message with token count and add it to the session history
         let mut message = Message::new(MessageRole::User, message_content.to_string());
@@ -172,14 +178,20 @@ impl SessionRouter {
     }
 
     /// Record an AI completion response for token tracking
-    pub fn record_completion(&mut self, session_id: &str, completion_text: &str) -> SessionResult<()> {
+    pub fn record_completion(
+        &mut self,
+        session_id: &str,
+        completion_text: &str,
+    ) -> SessionResult<()> {
         let session = self
             .sessions
             .get(session_id)
             .ok_or(SessionError::NotFound(session_id.to_string()))?;
 
         // Estimate tokens for the completion
-        let token_estimate = self.token_estimator.estimate_tokens(completion_text, Some(&session.context.model))?;
+        let token_estimate = self
+            .token_estimator
+            .estimate_tokens(completion_text, Some(&session.context.model))?;
 
         // Create completion message and add to session history
         let mut message = Message::new(MessageRole::Assistant, completion_text.to_string());
@@ -199,16 +211,25 @@ impl SessionRouter {
     }
 
     /// Get token usage for a session
-    pub fn get_session_token_usage(&self, session_id: &str) -> SessionResult<crate::token_estimator::TokenUsage> {
-        let tracker = self.token_trackers
+    pub fn get_session_token_usage(
+        &self,
+        session_id: &str,
+    ) -> SessionResult<crate::token_estimator::TokenUsage> {
+        let tracker = self
+            .token_trackers
             .get(session_id)
-            .ok_or(SessionError::NotFound(format!("Token tracker for session {} not found", session_id)))?;
+            .ok_or(SessionError::NotFound(format!(
+                "Token tracker for session {} not found",
+                session_id
+            )))?;
 
         Ok(tracker.current_usage())
     }
 
     /// Get token usage for the active session
-    pub fn get_active_session_token_usage(&self) -> SessionResult<crate::token_estimator::TokenUsage> {
+    pub fn get_active_session_token_usage(
+        &self,
+    ) -> SessionResult<crate::token_estimator::TokenUsage> {
         let session_id = self
             .active_session_id
             .as_ref()
@@ -218,9 +239,14 @@ impl SessionRouter {
     }
 
     /// Check if a session is approaching token limits
-    pub fn check_session_token_limits(&self, session_id: &str) -> SessionResult<crate::token_estimator::TokenLimitStatus> {
+    pub fn check_session_token_limits(
+        &self,
+        session_id: &str,
+    ) -> SessionResult<crate::token_estimator::TokenLimitStatus> {
         let usage = self.get_session_token_usage(session_id)?;
-        Ok(self.token_estimator.check_token_limits(usage.total_tokens, &usage.model))
+        Ok(self
+            .token_estimator
+            .check_token_limits(usage.total_tokens, &usage.model))
     }
 
     /// Get which session a message belongs to
@@ -276,5 +302,3 @@ impl Default for SessionRouter {
         Self::new()
     }
 }
-
-

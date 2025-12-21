@@ -4,9 +4,7 @@
 //! **Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5, 3.6**
 
 use proptest::prelude::*;
-use ricecoder_tools::{
-    Todo, TodoPriority, TodoreadInput, TodoStatus, TodoTools, TodowriteInput,
-};
+use ricecoder_tools::{Todo, TodoPriority, TodoStatus, TodoTools, TodoreadInput, TodowriteInput};
 use std::collections::HashSet;
 use tempfile::TempDir;
 

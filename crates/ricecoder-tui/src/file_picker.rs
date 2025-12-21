@@ -12,9 +12,9 @@ use ratatui::{
     Frame,
 };
 
+use ratatui_explorer::FileExplorer;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
-use ratatui_explorer::FileExplorer;
 
 /// Result of file selection
 #[derive(Debug, Clone)]
@@ -145,8 +145,6 @@ impl FilePickerWidget {
         }
     }
 
-
-
     /// Get file information for a path
     fn get_file_info(&self, path: &Path) -> FileInfo {
         let metadata = path.metadata().ok();
@@ -167,14 +165,10 @@ impl FilePickerWidget {
         }
     }
 
-
-
     /// Handle backspace for search (delegates to FileExplorer)
     pub fn backspace(&mut self) {
         // FileExplorer handles backspace through its internal state
     }
-
-
 
     /// Select all visible items (delegates to FileExplorer)
     pub fn select_all(&mut self) {
@@ -222,10 +216,14 @@ impl FilePickerWidget {
 
     /// Confirm selection and return selected files
     pub fn confirm_selection(&mut self) -> Result<Vec<FileSelection>, FilePickerError> {
-        let selected_files = self.selected_files().into_iter().map(|path| {
-            let info = self.get_file_info(&path);
-            (path, info)
-        }).collect::<Vec<_>>();
+        let selected_files = self
+            .selected_files()
+            .into_iter()
+            .map(|path| {
+                let info = self.get_file_info(&path);
+                (path, info)
+            })
+            .collect::<Vec<_>>();
         let mut results = Vec::new();
 
         for (path, info) in selected_files {
@@ -269,8 +267,8 @@ impl FilePickerWidget {
 
     /// Read file content with size limits
     fn read_file_content(&self, path: &Path) -> Result<String, FilePickerError> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| FilePickerError::ReadError(e.to_string()))?;
+        let content =
+            std::fs::read_to_string(path).map_err(|e| FilePickerError::ReadError(e.to_string()))?;
 
         // Double-check size limit
         if content.len() as u64 > self.max_file_size {
@@ -307,14 +305,10 @@ impl FilePickerWidget {
         self.externally_modified.contains(path)
     }
 
-
-
     /// Navigate down (delegates to FileExplorer)
     pub fn navigate_down(&mut self) {
         // FileExplorer handles navigation through its internal state
     }
-
-
 
     /// Render the file picker
     pub fn render(&mut self, f: &mut Frame, area: Rect) {
@@ -329,7 +323,9 @@ impl FilePickerWidget {
         let popup_area = self.centered_rect(80, 80, area);
 
         let main_block = Block::default()
-            .title("File Picker - Type to search, ↑↓ to navigate, Space to select, Enter to confirm")
+            .title(
+                "File Picker - Type to search, ↑↓ to navigate, Space to select, Enter to confirm",
+            )
             .borders(Borders::ALL)
             .border_style(Style::default().fg(Color::Cyan));
 
@@ -343,8 +339,6 @@ impl FilePickerWidget {
         // Render FileExplorer widget using widget() method
         f.render_widget(&self.explorer.widget(), inner_area);
     }
-
-
 
     /// Create a centered rectangle
     fn centered_rect(&self, percent_x: u16, percent_y: u16, r: Rect) -> Rect {
@@ -373,7 +367,12 @@ impl crate::Component for FilePickerWidget {
         self.id.clone()
     }
 
-    fn render(&self, frame: &mut ratatui::Frame, area: ratatui::layout::Rect, _model: &crate::AppModel) {
+    fn render(
+        &self,
+        frame: &mut ratatui::Frame,
+        area: ratatui::layout::Rect,
+        _model: &crate::AppModel,
+    ) {
         if !self.visible {
             return;
         }
@@ -383,9 +382,7 @@ impl crate::Component for FilePickerWidget {
 
         // Use the existing render method
         // For now, create a simple placeholder render
-        let block = Block::default()
-            .title("File Picker")
-            .borders(Borders::ALL);
+        let block = Block::default().title("File Picker").borders(Borders::ALL);
 
         let content = vec![
             Line::from("File Picker - Component Architecture"),
@@ -562,4 +559,3 @@ pub fn fuzzy_match(query: &str, text: &str) -> Option<Vec<(usize, usize)>> {
         None
     }
 }
-

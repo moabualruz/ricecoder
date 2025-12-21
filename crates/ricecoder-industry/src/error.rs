@@ -43,5 +43,8 @@ pub enum IndustryError {
     RateLimitExceeded { resource: String },
 
     #[error("Permission denied: {permission} for {resource}")]
-    PermissionDenied { permission: String, resource: String },
+    PermissionDenied {
+        permission: String,
+        resource: String,
+    },
 }

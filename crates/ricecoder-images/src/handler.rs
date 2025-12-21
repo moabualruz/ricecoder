@@ -35,9 +35,9 @@ impl ImageHandler {
     /// The sanitized path, or an error if path traversal is detected
     fn sanitize_path(path: &Path) -> ImageResult<PathBuf> {
         // Normalize the path to resolve .. and . components
-        let normalized = path.canonicalize().map_err(|_| {
-            ImageError::PathTraversalError
-        })?;
+        let normalized = path
+            .canonicalize()
+            .map_err(|_| ImageError::PathTraversalError)?;
 
         // Ensure the path is absolute and doesn't contain suspicious patterns
         if !normalized.is_absolute() {
@@ -69,23 +69,20 @@ impl ImageHandler {
 
         // Validate file exists and is readable
         if !sanitized_path.exists() {
-            return Err(ImageError::InvalidFile(
-                format!("File does not exist: {}", sanitized_path.display()),
-            ));
+            return Err(ImageError::InvalidFile(format!(
+                "File does not exist: {}",
+                sanitized_path.display()
+            )));
         }
 
         // Check if it's a file (not a directory)
         if !sanitized_path.is_file() {
-            return Err(ImageError::InvalidFile(
-                "Path is not a file".to_string(),
-            ));
+            return Err(ImageError::InvalidFile("Path is not a file".to_string()));
         }
 
         // Validate format and size
-        let format = ImageFormat::validate_file(
-            &sanitized_path,
-            self.config.analysis.max_image_size_mb,
-        )?;
+        let format =
+            ImageFormat::validate_file(&sanitized_path, self.config.analysis.max_image_size_mb)?;
 
         // Extract metadata (width, height)
         let (width, height) = ImageFormat::extract_metadata(&sanitized_path)?;
@@ -143,13 +140,11 @@ impl ImageHandler {
         if self.config.is_format_supported(format_str) {
             Ok(())
         } else {
-            Err(ImageError::FormatNotSupported(
-                format!(
-                    "Format '{}' is not supported. Supported formats: {}",
-                    format_str,
-                    self.config.supported_formats_string()
-                ),
-            ))
+            Err(ImageError::FormatNotSupported(format!(
+                "Format '{}' is not supported. Supported formats: {}",
+                format_str,
+                self.config.supported_formats_string()
+            )))
         }
     }
 
@@ -166,10 +161,7 @@ impl ImageHandler {
     /// # Requirements
     ///
     /// - Req 1.1: Handle multiple files in single drag-and-drop
-    pub fn handle_dropped_files(
-        &self,
-        paths: &[PathBuf],
-    ) -> (Vec<ImageMetadata>, Vec<ImageError>) {
+    pub fn handle_dropped_files(&self, paths: &[PathBuf]) -> (Vec<ImageMetadata>, Vec<ImageError>) {
         let mut images = Vec::new();
         let mut errors = Vec::new();
 
@@ -205,7 +197,7 @@ impl ImageHandler {
     pub fn extract_paths_from_event(event_data: &str) -> Vec<PathBuf> {
         // First try to split by newlines (most common for drag-and-drop)
         let lines: Vec<&str> = event_data.lines().collect();
-        
+
         if lines.len() > 1 || (lines.len() == 1 && !lines[0].contains(' ')) {
             // Multiple lines or single line without spaces - use line splitting
             return lines
@@ -214,7 +206,7 @@ impl ImageHandler {
                 .map(PathBuf::from)
                 .collect();
         }
-        
+
         // Single line with spaces - split by whitespace
         event_data
             .split_whitespace()
@@ -239,24 +231,20 @@ impl ImageHandler {
     pub fn check_file_accessible(path: &Path) -> ImageResult<()> {
         // Check if file exists
         if !path.exists() {
-            return Err(ImageError::InvalidFile(
-                format!("File does not exist: {}", path.display()),
-            ));
+            return Err(ImageError::InvalidFile(format!(
+                "File does not exist: {}",
+                path.display()
+            )));
         }
 
         // Check if it's a file (not a directory)
         if !path.is_file() {
-            return Err(ImageError::InvalidFile(
-                "Path is not a file".to_string(),
-            ));
+            return Err(ImageError::InvalidFile("Path is not a file".to_string()));
         }
 
         // Try to open the file to check permissions
-        std::fs::File::open(path).map_err(|e| {
-            ImageError::InvalidFile(
-                format!("Cannot read file: {}", e),
-            )
-        })?;
+        std::fs::File::open(path)
+            .map_err(|e| ImageError::InvalidFile(format!("Cannot read file: {}", e)))?;
 
         Ok(())
     }
@@ -280,7 +268,7 @@ impl ImageHandler {
         event_data: &str,
     ) -> (Vec<ImageMetadata>, Vec<ImageError>) {
         let paths = Self::extract_paths_from_event(event_data);
-        
+
         let mut images = Vec::new();
         let mut errors = Vec::new();
 
@@ -325,7 +313,7 @@ mod tests {
     fn test_sanitize_path_valid() {
         let temp_dir = tempfile::tempdir().unwrap();
         let temp_path = temp_dir.path().to_path_buf();
-        
+
         let result = ImageHandler::sanitize_path(&temp_path);
         assert!(result.is_ok());
     }
@@ -341,7 +329,7 @@ mod tests {
     fn test_read_image_nonexistent_file() {
         let config = ImageConfig::default();
         let handler = ImageHandler::new(config);
-        
+
         let result = handler.read_image(Path::new("/nonexistent/image.png"));
         assert!(result.is_err());
     }
@@ -420,7 +408,7 @@ mod tests {
 
         let hash = handler.calculate_file_hash(temp_file.path());
         assert!(hash.is_ok());
-        
+
         let hash_str = hash.unwrap();
         // SHA256 of "test content" should be a 64-character hex string
         assert_eq!(hash_str.len(), 64);
@@ -447,7 +435,7 @@ mod tests {
     fn test_extract_paths_from_event_single_line() {
         let event_data = "/path/to/image.png";
         let paths = ImageHandler::extract_paths_from_event(event_data);
-        
+
         assert_eq!(paths.len(), 1);
         assert_eq!(paths[0], PathBuf::from("/path/to/image.png"));
     }
@@ -456,7 +444,7 @@ mod tests {
     fn test_extract_paths_from_event_multiple_lines() {
         let event_data = "/path/to/image1.png\n/path/to/image2.jpg\n/path/to/image3.gif";
         let paths = ImageHandler::extract_paths_from_event(event_data);
-        
+
         assert_eq!(paths.len(), 3);
         assert_eq!(paths[0], PathBuf::from("/path/to/image1.png"));
         assert_eq!(paths[1], PathBuf::from("/path/to/image2.jpg"));
@@ -467,7 +455,7 @@ mod tests {
     fn test_extract_paths_from_event_space_separated() {
         let event_data = "/path/to/image1.png /path/to/image2.jpg";
         let paths = ImageHandler::extract_paths_from_event(event_data);
-        
+
         assert_eq!(paths.len(), 2);
         assert_eq!(paths[0], PathBuf::from("/path/to/image1.png"));
         assert_eq!(paths[1], PathBuf::from("/path/to/image2.jpg"));
@@ -477,7 +465,7 @@ mod tests {
     fn test_extract_paths_from_event_empty() {
         let event_data = "";
         let paths = ImageHandler::extract_paths_from_event(event_data);
-        
+
         assert_eq!(paths.len(), 0);
     }
 
@@ -518,7 +506,7 @@ mod tests {
 
         let event_data = "/nonexistent/image1.png\n/nonexistent/image2.jpg";
         let (images, errors) = handler.process_drag_drop_event(event_data);
-        
+
         assert_eq!(images.len(), 0);
         assert_eq!(errors.len(), 2);
     }
@@ -533,7 +521,7 @@ mod tests {
 
         let event_data = format!("{}\n/nonexistent/image.png", temp_path);
         let (_images, errors) = handler.process_drag_drop_event(&event_data);
-        
+
         // One file exists but is not a valid image, one doesn't exist
         assert_eq!(errors.len(), 2);
     }
@@ -550,7 +538,7 @@ mod tests {
 
         let result = limited_handler.validate_format(ImageFormat::Jpeg);
         assert!(result.is_err());
-        
+
         let error_msg = result.unwrap_err().to_string();
         assert!(error_msg.contains("not supported"));
         assert!(error_msg.contains("png"));
@@ -569,7 +557,7 @@ mod tests {
 
         let result = handler.read_image(temp_file.path());
         assert!(result.is_err());
-        
+
         let error_msg = result.unwrap_err().to_string();
         assert!(error_msg.contains("too large") || error_msg.contains("exceeds"));
     }
@@ -586,7 +574,7 @@ mod tests {
 
         let result = handler.read_image(temp_file.path());
         assert!(result.is_err());
-        
+
         let error_msg = result.unwrap_err().to_string();
         assert!(error_msg.contains("Invalid") || error_msg.contains("invalid"));
     }
@@ -596,7 +584,7 @@ mod tests {
         // Test that path traversal attempts are blocked
         let suspicious_path = PathBuf::from("../../../etc/passwd");
         let result = ImageHandler::sanitize_path(&suspicious_path);
-        
+
         // Should fail because the path doesn't exist
         assert!(result.is_err());
     }
@@ -609,7 +597,7 @@ mod tests {
         // Try to read a file with path traversal
         let suspicious_path = Path::new("../../../etc/passwd");
         let result = handler.read_image(suspicious_path);
-        
+
         assert!(result.is_err());
         let error_msg = result.unwrap_err().to_string();
         // Should contain either path traversal error or file not found
@@ -647,7 +635,7 @@ mod tests {
         // This will fail because it's not a complete valid PNG, but we can verify
         // that the error is about the image format, not the file access
         let result = handler.read_image(temp_file.path());
-        
+
         // The error should be about invalid image, not file access
         if let Err(e) = result {
             let error_msg = e.to_string();
@@ -667,10 +655,10 @@ mod tests {
         ];
 
         let (_images, errors) = handler.handle_dropped_files(&paths);
-        
+
         // All files should fail
         assert_eq!(errors.len(), 3);
-        
+
         // All errors should be about file not existing
         for error in errors {
             let error_msg = error.to_string();

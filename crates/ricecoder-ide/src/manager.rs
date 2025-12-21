@@ -135,7 +135,10 @@ impl IdeIntegrationManager {
                             "VS Code integration is not enabled in configuration",
                         ));
                     }
-                    info!("VS Code connection established on port {}", vscode_config.port);
+                    info!(
+                        "VS Code connection established on port {}",
+                        vscode_config.port
+                    );
                     Ok(())
                 } else {
                     Err(IdeError::communication_error(

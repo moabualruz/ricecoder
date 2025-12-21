@@ -17,7 +17,7 @@ use crate::permissions::{MCPPermissionManager, PermissionLevelConfig};
 use crate::transport::{MCPMessage, MCPRequest, MCPResponse, MCPTransport};
 
 // Import cache types
-use ricecoder_cache::{Cache, CacheConfig, CacheBuilder, CacheStorage, MemoryStorage};
+use ricecoder_cache::{Cache, CacheBuilder, CacheConfig, CacheStorage, MemoryStorage};
 
 /// Tool execution context
 #[derive(Debug, Clone)]
@@ -49,7 +49,11 @@ pub trait ToolExecutor: Send + Sync {
     async fn execute(&self, context: &ToolExecutionContext) -> Result<ToolExecutionResult>;
 
     /// Validate tool parameters
-    async fn validate_parameters(&self, tool_name: &str, parameters: &HashMap<String, serde_json::Value>) -> Result<()>;
+    async fn validate_parameters(
+        &self,
+        tool_name: &str,
+        parameters: &HashMap<String, serde_json::Value>,
+    ) -> Result<()>;
 
     /// Get tool metadata
     async fn get_tool_metadata(&self, tool_name: &str) -> Result<Option<ToolMetadata>>;
@@ -61,7 +65,11 @@ pub trait ToolExecutor: Send + Sync {
     fn generate_cache_key(&self, context: &ToolExecutionContext) -> String;
 
     /// Check if a cached result is still valid for the current context
-    fn is_cache_result_valid(&self, cached_result: &ToolExecutionResult, context: &ToolExecutionContext) -> bool;
+    fn is_cache_result_valid(
+        &self,
+        cached_result: &ToolExecutionResult,
+        context: &ToolExecutionContext,
+    ) -> bool;
 }
 
 /// MCP tool executor that communicates with MCP servers
@@ -118,7 +126,10 @@ impl MCPToolExecutor {
     }
 
     /// Set analytics aggregator
-    pub fn with_analytics(mut self, analytics: Arc<crate::analytics::MCPAnalyticsAggregator>) -> Self {
+    pub fn with_analytics(
+        mut self,
+        analytics: Arc<crate::analytics::MCPAnalyticsAggregator>,
+    ) -> Self {
         self.analytics = Some(analytics);
         self
     }
@@ -153,8 +164,8 @@ impl MCPToolExecutor {
     pub fn with_caching(mut self) -> Self {
         let cache_config = CacheConfig {
             default_ttl: Some(Duration::from_secs(300)), // 5 minutes default TTL
-            max_entries: Some(1000), // Max 1000 cached results
-            max_size_bytes: Some(50 * 1024 * 1024), // 50MB max cache size
+            max_entries: Some(1000),                     // Max 1000 cached results
+            max_size_bytes: Some(50 * 1024 * 1024),      // 50MB max cache size
             enable_metrics: true,
         };
         let cache = CacheBuilder::new()
@@ -196,19 +207,22 @@ impl MCPToolExecutor {
     /// Update execution statistics
     async fn update_stats(&self, tool_name: &str, success: bool, execution_time_ms: u64) {
         let mut stats = self.execution_stats.write().await;
-        let tool_stats = stats.entry(tool_name.to_string()).or_insert_with(|| ToolExecutionStats {
-            tool_name: tool_name.to_string(),
-            total_calls: 0,
-            successful_calls: 0,
-            failed_calls: 0,
-            total_execution_time_ms: 0,
-            average_execution_time_ms: 0.0,
-            last_execution: None,
-        });
+        let tool_stats = stats
+            .entry(tool_name.to_string())
+            .or_insert_with(|| ToolExecutionStats {
+                tool_name: tool_name.to_string(),
+                total_calls: 0,
+                successful_calls: 0,
+                failed_calls: 0,
+                total_execution_time_ms: 0,
+                average_execution_time_ms: 0.0,
+                last_execution: None,
+            });
 
         tool_stats.total_calls += 1;
         tool_stats.total_execution_time_ms += execution_time_ms;
-        tool_stats.average_execution_time_ms = tool_stats.total_execution_time_ms as f64 / tool_stats.total_calls as f64;
+        tool_stats.average_execution_time_ms =
+            tool_stats.total_execution_time_ms as f64 / tool_stats.total_calls as f64;
         tool_stats.last_execution = Some(SystemTime::now());
 
         if success {
@@ -244,7 +258,10 @@ impl ToolExecutor for MCPToolExecutor {
             if let Ok(Some(cached_result)) = cache.get::<ToolExecutionResult>(&cache_key).await {
                 // Check if cached result is still valid (not expired based on our logic)
                 if self.is_cache_result_valid(&cached_result, context) {
-                    debug!("Cache hit for tool '{}' with key '{}'", context.tool_name, cache_key);
+                    debug!(
+                        "Cache hit for tool '{}' with key '{}'",
+                        context.tool_name, cache_key
+                    );
                     return Ok(cached_result);
                 } else {
                     // Remove expired cached result
@@ -254,7 +271,8 @@ impl ToolExecutor for MCPToolExecutor {
         }
 
         // Check permissions (MCP permission manager)
-        let has_mcp_permission = self.permission_manager
+        let has_mcp_permission = self
+            .permission_manager
             .check_permission(&context.tool_name, context.user_id.as_deref());
 
         if has_mcp_permission.is_ok() {
@@ -274,14 +292,16 @@ impl ToolExecutor for MCPToolExecutor {
 
             // Audit logging for permission denial
             if let Some(ref audit_logger) = self.audit_logger {
-                let _ = audit_logger.log_tool_permission_check(
-                    &self.server_id,
-                    &context.tool_name,
-                    false,
-                    "Permission denied by MCP permission manager",
-                    context.user_id.as_ref().map(|s| s.clone()),
-                    context.session_id.as_ref().map(|s| s.clone()),
-                ).await;
+                let _ = audit_logger
+                    .log_tool_permission_check(
+                        &self.server_id,
+                        &context.tool_name,
+                        false,
+                        "Permission denied by MCP permission manager",
+                        context.user_id.as_ref().map(|s| s.clone()),
+                        context.session_id.as_ref().map(|s| s.clone()),
+                    )
+                    .await;
             }
 
             return Ok(result);
@@ -317,14 +337,16 @@ impl ToolExecutor for MCPToolExecutor {
 
                 // Audit logging for RBAC denial
                 if let Some(ref audit_logger) = self.audit_logger {
-                    let _ = audit_logger.log_tool_permission_check(
-                        &self.server_id,
-                        &context.tool_name,
-                        false,
-                        "Access denied by RBAC",
-                        context.user_id.as_ref().map(|s| s.clone()),
-                        context.session_id.as_ref().map(|s| s.clone()),
-                    ).await;
+                    let _ = audit_logger
+                        .log_tool_permission_check(
+                            &self.server_id,
+                            &context.tool_name,
+                            false,
+                            "Access denied by RBAC",
+                            context.user_id.as_ref().map(|s| s.clone()),
+                            context.session_id.as_ref().map(|s| s.clone()),
+                        )
+                        .await;
                 }
 
                 return Ok(result);
@@ -332,7 +354,8 @@ impl ToolExecutor for MCPToolExecutor {
         }
 
         // Validate parameters
-        self.validate_parameters(&context.tool_name, &context.parameters).await?;
+        self.validate_parameters(&context.tool_name, &context.parameters)
+            .await?;
 
         // Create MCP request
         let request_id = format!("req_{}", uuid::Uuid::new_v4().simple());
@@ -346,13 +369,17 @@ impl ToolExecutor for MCPToolExecutor {
         let message = MCPMessage::Request(request);
 
         // Send request
-        debug!("Executing tool '{}' with parameters: {:?}", context.tool_name, context.parameters);
+        debug!(
+            "Executing tool '{}' with parameters: {:?}",
+            context.tool_name, context.parameters
+        );
         self.transport.send(&message).await?;
 
         // Wait for response with timeout
         let timeout_result = tokio::time::timeout(context.timeout, self.transport.receive()).await;
 
-        let execution_time_ms = start_time.elapsed()
+        let execution_time_ms = start_time
+            .elapsed()
             .unwrap_or(Duration::from_secs(0))
             .as_millis() as u64;
 
@@ -361,7 +388,8 @@ impl ToolExecutor for MCPToolExecutor {
                 if response.id == request_id {
                     // Successful execution
                     let success = true;
-                    self.update_stats(&context.tool_name, success, execution_time_ms).await;
+                    self.update_stats(&context.tool_name, success, execution_time_ms)
+                        .await;
 
                     let result = ToolExecutionResult {
                         tool_name: context.tool_name.clone(),
@@ -378,7 +406,10 @@ impl ToolExecutor for MCPToolExecutor {
                         if let Err(e) = cache.set(&cache_key, result.clone(), None).await {
                             warn!("Failed to cache tool result: {}", e);
                         } else {
-                            debug!("Cached successful result for tool '{}' with key '{}'", context.tool_name, cache_key);
+                            debug!(
+                                "Cached successful result for tool '{}' with key '{}'",
+                                context.tool_name, cache_key
+                            );
                         }
                     }
 
@@ -386,17 +417,18 @@ impl ToolExecutor for MCPToolExecutor {
                 } else {
                     // Response ID mismatch
                     let success = false;
-                    self.update_stats(&context.tool_name, success, execution_time_ms).await;
+                    self.update_stats(&context.tool_name, success, execution_time_ms)
+                        .await;
 
                     ToolExecutionResult {
                         tool_name: context.tool_name.clone(),
                         success: false,
                         result: None,
                         error: Some(ToolError::new(
-                        context.tool_name.clone(),
-                        "Response ID mismatch".to_string(),
-                        "execution_error".to_string(),
-                    )),
+                            context.tool_name.clone(),
+                            "Response ID mismatch".to_string(),
+                            "execution_error".to_string(),
+                        )),
                         execution_time_ms,
                         timestamp: start_time,
                         metadata: context.metadata.clone(),
@@ -406,11 +438,15 @@ impl ToolExecutor for MCPToolExecutor {
             Ok(Ok(MCPMessage::Error(mcp_error))) => {
                 // MCP error response
                 let success = false;
-                self.update_stats(&context.tool_name, success, execution_time_ms).await;
+                self.update_stats(&context.tool_name, success, execution_time_ms)
+                    .await;
 
                 let tool_error = ToolError::new(
                     context.tool_name.clone(),
-                    format!("MCP error {}: {}", mcp_error.error.code, mcp_error.error.message),
+                    format!(
+                        "MCP error {}: {}",
+                        mcp_error.error.code, mcp_error.error.message
+                    ),
                     "execution_error".to_string(),
                 );
 
@@ -427,7 +463,8 @@ impl ToolExecutor for MCPToolExecutor {
             Ok(Ok(_)) => {
                 // Unexpected message type
                 let success = false;
-                self.update_stats(&context.tool_name, success, execution_time_ms).await;
+                self.update_stats(&context.tool_name, success, execution_time_ms)
+                    .await;
 
                 ToolExecutionResult {
                     tool_name: context.tool_name.clone(),
@@ -446,7 +483,8 @@ impl ToolExecutor for MCPToolExecutor {
             Ok(Err(e)) => {
                 // Transport error
                 let success = false;
-                self.update_stats(&context.tool_name, success, execution_time_ms).await;
+                self.update_stats(&context.tool_name, success, execution_time_ms)
+                    .await;
 
                 ToolExecutionResult {
                     tool_name: context.tool_name.clone(),
@@ -465,7 +503,8 @@ impl ToolExecutor for MCPToolExecutor {
             Err(_) => {
                 // Timeout
                 let success = false;
-                self.update_stats(&context.tool_name, success, execution_time_ms).await;
+                self.update_stats(&context.tool_name, success, execution_time_ms)
+                    .await;
 
                 ToolExecutionResult {
                     tool_name: context.tool_name.clone(),
@@ -485,24 +524,28 @@ impl ToolExecutor for MCPToolExecutor {
 
         // Audit logging
         if let Some(ref audit_logger) = self.audit_logger {
-            let _ = audit_logger.log_tool_execution(
-                &self.server_id,
-                &result.tool_name,
-                &result,
-                context.user_id.clone(),
-                context.session_id.clone(),
-            ).await;
+            let _ = audit_logger
+                .log_tool_execution(
+                    &self.server_id,
+                    &result.tool_name,
+                    &result,
+                    context.user_id.clone(),
+                    context.session_id.clone(),
+                )
+                .await;
         }
 
         // Analytics
         if let Some(ref analytics) = self.analytics {
-            let _ = analytics.record_tool_execution(
-                &self.server_id,
-                &result.tool_name,
-                &result,
-                context.user_id.clone(),
-                context.session_id.clone(),
-            ).await;
+            let _ = analytics
+                .record_tool_execution(
+                    &self.server_id,
+                    &result.tool_name,
+                    &result,
+                    context.user_id.clone(),
+                    context.session_id.clone(),
+                )
+                .await;
         }
 
         Ok(result)
@@ -515,7 +558,9 @@ impl ToolExecutor for MCPToolExecutor {
 
         let mut hasher = DefaultHasher::new();
         context.tool_name.hash(&mut hasher);
-        serde_json::to_string(&context.parameters).unwrap_or_default().hash(&mut hasher);
+        serde_json::to_string(&context.parameters)
+            .unwrap_or_default()
+            .hash(&mut hasher);
         context.user_id.hash(&mut hasher);
         // Note: We don't include session_id in cache key as results should be consistent across sessions
 
@@ -523,7 +568,11 @@ impl ToolExecutor for MCPToolExecutor {
     }
 
     /// Check if a cached result is still valid for the current context
-    fn is_cache_result_valid(&self, cached_result: &ToolExecutionResult, context: &ToolExecutionContext) -> bool {
+    fn is_cache_result_valid(
+        &self,
+        cached_result: &ToolExecutionResult,
+        context: &ToolExecutionContext,
+    ) -> bool {
         // Basic validity checks:
         // 1. Tool name matches
         // 2. Result is not too old (we rely on cache TTL for this)
@@ -532,7 +581,11 @@ impl ToolExecutor for MCPToolExecutor {
         cached_result.tool_name == context.tool_name && cached_result.success
     }
 
-    async fn validate_parameters(&self, tool_name: &str, parameters: &HashMap<String, serde_json::Value>) -> Result<()> {
+    async fn validate_parameters(
+        &self,
+        tool_name: &str,
+        parameters: &HashMap<String, serde_json::Value>,
+    ) -> Result<()> {
         // Get tool metadata to validate parameters
         if let Some(metadata) = self.get_tool_metadata(tool_name).await? {
             for param_meta in &metadata.parameters {
@@ -541,14 +594,16 @@ impl ToolExecutor for MCPToolExecutor {
                         // Basic type validation
                         if let Err(e) = self.validate_parameter_value(&param_meta, value) {
                             return Err(Error::ParameterValidationError(format!(
-                                "Parameter '{}' validation failed: {}", param_meta.name, e
+                                "Parameter '{}' validation failed: {}",
+                                param_meta.name, e
                             )));
                         }
                     }
                     None => {
                         if param_meta.required {
                             return Err(Error::ParameterValidationError(format!(
-                                "Required parameter '{}' is missing", param_meta.name
+                                "Required parameter '{}' is missing",
+                                param_meta.name
                             )));
                         }
                     }
@@ -575,32 +630,46 @@ impl ToolExecutor for MCPToolExecutor {
 }
 
 impl MCPToolExecutor {
-    fn validate_parameter_value(&self, param_meta: &ParameterMetadata, value: &serde_json::Value) -> Result<()> {
+    fn validate_parameter_value(
+        &self,
+        param_meta: &ParameterMetadata,
+        value: &serde_json::Value,
+    ) -> Result<()> {
         // Basic type validation based on parameter type
         match param_meta.type_.as_str() {
             "string" => {
                 if !value.is_string() {
-                    return Err(Error::ParameterValidationError("Expected string".to_string()));
+                    return Err(Error::ParameterValidationError(
+                        "Expected string".to_string(),
+                    ));
                 }
             }
             "number" => {
                 if !value.is_number() {
-                    return Err(Error::ParameterValidationError("Expected number".to_string()));
+                    return Err(Error::ParameterValidationError(
+                        "Expected number".to_string(),
+                    ));
                 }
             }
             "boolean" => {
                 if !value.is_boolean() {
-                    return Err(Error::ParameterValidationError("Expected boolean".to_string()));
+                    return Err(Error::ParameterValidationError(
+                        "Expected boolean".to_string(),
+                    ));
                 }
             }
             "object" => {
                 if !value.is_object() {
-                    return Err(Error::ParameterValidationError("Expected object".to_string()));
+                    return Err(Error::ParameterValidationError(
+                        "Expected object".to_string(),
+                    ));
                 }
             }
             "array" => {
                 if !value.is_array() {
-                    return Err(Error::ParameterValidationError("Expected array".to_string()));
+                    return Err(Error::ParameterValidationError(
+                        "Expected array".to_string(),
+                    ));
                 }
             }
             _ => {
@@ -743,7 +812,7 @@ pub enum ProcessedData {
     Text(String),
     Number(f64),
     Boolean(bool),
-    Array(usize), // Length
+    Array(usize),  // Length
     Object(usize), // Number of fields
     Empty,
 }

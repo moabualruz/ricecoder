@@ -20,4 +20,6 @@ pub use branding::{BrandingManager, TerminalCapabilities};
 pub use error::{CliError, CliResult};
 pub use logging::{init_logging, VerbosityLevel};
 pub use router::{Cli, CommandRouter, Commands};
-pub use sync_utils::{safe_lock, safe_lock_optional, safe_lock_or_default, SafeLockable, SyncError, SyncResult};
+pub use sync_utils::{
+    safe_lock, safe_lock_optional, safe_lock_or_default, SafeLockable, SyncError, SyncResult,
+};

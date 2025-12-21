@@ -4,10 +4,10 @@
 //! and coordinating layout between different UI components.
 
 use crate::app::App;
-use crate::model::AppMode;
 use crate::components::{DialogWidget, ListWidget, MenuWidget, SplitViewWidget, TabWidget};
 use crate::diff::DiffWidget;
 use crate::layout::Rect;
+use crate::model::AppMode;
 use crate::prompt::PromptWidget;
 use crate::widgets::ChatWidget;
 use anyhow::Result;
@@ -65,9 +65,9 @@ impl WidgetContainer {
             AppMode::Chat => Some(&mut self.chat as &mut dyn std::any::Any),
             AppMode::Diff => Some(&mut self.diff as &mut dyn std::any::Any),
             AppMode::Command => Some(&mut self.prompt as &mut dyn std::any::Any),
-            AppMode::Mcp => None, // TODO: Add MCP widget
+            AppMode::Mcp => None,      // TODO: Add MCP widget
             AppMode::Provider => None, // TODO: Add Provider widget
-            AppMode::Session => None, // TODO: Add Session widget
+            AppMode::Session => None,  // TODO: Add Session widget
             AppMode::Help => Some(&mut self.menu as &mut dyn std::any::Any),
         }
     }
@@ -494,5 +494,3 @@ pub enum LayoutInfo {
     /// Help mode layout
     Help(HelpLayout),
 }
-
-

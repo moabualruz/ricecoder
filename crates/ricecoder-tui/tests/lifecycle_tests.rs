@@ -51,14 +51,22 @@ async fn test_tui_lifecycle_manager() {
     let component2 = TestTuiComponent::new("tui_component2");
 
     manager.register_component(component1, vec![]).unwrap();
-    manager.register_component(component2, vec!["tui_component1".to_string()]).unwrap();
+    manager
+        .register_component(component2, vec!["tui_component1".to_string()])
+        .unwrap();
 
     // Initialize
     manager.initialize_all().await.unwrap();
 
     // Check states
-    assert_eq!(manager.get_component_state("tui_component1"), Some(TuiLifecycleState::Ready));
-    assert_eq!(manager.get_component_state("tui_component2"), Some(TuiLifecycleState::Ready));
+    assert_eq!(
+        manager.get_component_state("tui_component1"),
+        Some(TuiLifecycleState::Ready)
+    );
+    assert_eq!(
+        manager.get_component_state("tui_component2"),
+        Some(TuiLifecycleState::Ready)
+    );
 
     // Start
     manager.start_all().await.unwrap();
@@ -67,6 +75,12 @@ async fn test_tui_lifecycle_manager() {
     manager.stop_all().await.unwrap();
 
     // Check final states
-    assert_eq!(manager.get_component_state("tui_component1"), Some(TuiLifecycleState::ShutDown));
-    assert_eq!(manager.get_component_state("tui_component2"), Some(TuiLifecycleState::ShutDown));
+    assert_eq!(
+        manager.get_component_state("tui_component1"),
+        Some(TuiLifecycleState::ShutDown)
+    );
+    assert_eq!(
+        manager.get_component_state("tui_component2"),
+        Some(TuiLifecycleState::ShutDown)
+    );
 }

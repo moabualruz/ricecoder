@@ -91,7 +91,11 @@ pub struct DiscussionManager {
 
 impl DiscussionManager {
     /// Create a new DiscussionManager
-    pub fn new(token: impl Into<String>, owner: impl Into<String>, repo: impl Into<String>) -> Self {
+    pub fn new(
+        token: impl Into<String>,
+        owner: impl Into<String>,
+        repo: impl Into<String>,
+    ) -> Self {
         Self {
             token: token.into(),
             owner: owner.into(),
@@ -367,7 +371,8 @@ impl DiscussionManager {
         (SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
-            .as_secs() % 100000) as u32
+            .as_secs()
+            % 100000) as u32
     }
 
     /// Generate a response ID
@@ -445,9 +450,7 @@ mod tests {
     async fn test_generate_summary() {
         let manager = DiscussionManager::new("test_token", "testowner", "testrepo");
 
-        let result = manager
-            .generate_summary(1, "Test Discussion")
-            .await;
+        let result = manager.generate_summary(1, "Test Discussion").await;
 
         assert!(result.is_ok());
         let summary = result.unwrap();

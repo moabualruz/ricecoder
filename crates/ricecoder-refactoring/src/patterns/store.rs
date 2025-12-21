@@ -1,7 +1,7 @@
 //! Pattern storage and retrieval
 
+use super::{PatternScope, RefactoringPattern};
 use crate::error::{RefactoringError, Result};
-use super::{RefactoringPattern, PatternScope};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -82,7 +82,10 @@ impl PatternStore {
             return Ok(());
         }
 
-        Err(RefactoringError::Other(format!("Pattern not found: {}", name)))
+        Err(RefactoringError::Other(format!(
+            "Pattern not found: {}",
+            name
+        )))
     }
 
     /// Clear all patterns

@@ -269,10 +269,10 @@ mod tests {
     async fn test_ide_theme_integration_switch_theme() {
         let config = IdeThemeConfig::default();
         let mut integration = IdeThemeIntegration::new(config);
-        
+
         integration.switch_theme("light").unwrap();
         assert_eq!(integration.current_theme_name(), "light");
-        
+
         integration.switch_theme("dracula").unwrap();
         assert_eq!(integration.current_theme_name(), "dracula");
     }
@@ -281,7 +281,7 @@ mod tests {
     async fn test_ide_theme_integration_switch_invalid_theme() {
         let config = IdeThemeConfig::default();
         let mut integration = IdeThemeIntegration::new(config);
-        
+
         let result = integration.switch_theme("invalid");
         assert!(result.is_err());
     }

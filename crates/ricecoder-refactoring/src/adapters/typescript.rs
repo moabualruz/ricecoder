@@ -98,7 +98,11 @@ impl RefactoringProvider for TypeScriptRefactoringProvider {
         match refactoring.refactoring_type {
             RefactoringType::Rename => {
                 // TypeScript rename: use word boundaries
-                Self::apply_typescript_rename(code, &refactoring.target.symbol, &refactoring.target.symbol)
+                Self::apply_typescript_rename(
+                    code,
+                    &refactoring.target.symbol,
+                    &refactoring.target.symbol,
+                )
             }
             _ => Ok(code.to_string()),
         }
@@ -148,7 +152,11 @@ mod tests {
     #[test]
     fn test_typescript_provider_analyze() -> Result<()> {
         let provider = TypeScriptRefactoringProvider::new();
-        let analysis = provider.analyze_refactoring("function main() {}", "typescript", RefactoringType::Rename)?;
+        let analysis = provider.analyze_refactoring(
+            "function main() {}",
+            "typescript",
+            RefactoringType::Rename,
+        )?;
 
         assert!(analysis.applicable);
         assert_eq!(analysis.complexity, 4);
@@ -159,7 +167,11 @@ mod tests {
     #[test]
     fn test_typescript_provider_validate_valid() -> Result<()> {
         let provider = TypeScriptRefactoringProvider::new();
-        let result = provider.validate_refactoring("function main() {}", "function main() { console.log(); }", "typescript")?;
+        let result = provider.validate_refactoring(
+            "function main() {}",
+            "function main() { console.log(); }",
+            "typescript",
+        )?;
 
         assert!(result.passed);
 
@@ -169,7 +181,11 @@ mod tests {
     #[test]
     fn test_typescript_provider_validate_invalid_braces() -> Result<()> {
         let provider = TypeScriptRefactoringProvider::new();
-        let result = provider.validate_refactoring("function main() {}", "function main() { ", "typescript")?;
+        let result = provider.validate_refactoring(
+            "function main() {}",
+            "function main() { ",
+            "typescript",
+        )?;
 
         assert!(!result.passed);
 
@@ -178,9 +194,17 @@ mod tests {
 
     #[test]
     fn test_is_valid_typescript() {
-        assert!(TypeScriptRefactoringProvider::is_valid_typescript("function main() {}"));
-        assert!(TypeScriptRefactoringProvider::is_valid_typescript("const x = [1, 2, 3];"));
-        assert!(!TypeScriptRefactoringProvider::is_valid_typescript("function main() {"));
-        assert!(!TypeScriptRefactoringProvider::is_valid_typescript("const x = [1, 2, 3;"));
+        assert!(TypeScriptRefactoringProvider::is_valid_typescript(
+            "function main() {}"
+        ));
+        assert!(TypeScriptRefactoringProvider::is_valid_typescript(
+            "const x = [1, 2, 3];"
+        ));
+        assert!(!TypeScriptRefactoringProvider::is_valid_typescript(
+            "function main() {"
+        ));
+        assert!(!TypeScriptRefactoringProvider::is_valid_typescript(
+            "const x = [1, 2, 3;"
+        ));
     }
 }

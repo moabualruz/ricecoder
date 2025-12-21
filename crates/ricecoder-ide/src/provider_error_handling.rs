@@ -5,7 +5,7 @@
 
 use crate::error::{IdeError, IdeResult};
 use std::fmt;
-use tracing::{debug, warn, error};
+use tracing::{debug, error, warn};
 
 /// Provider chain error context
 #[derive(Debug, Clone)]
@@ -92,11 +92,7 @@ impl ProviderErrorHandler {
     }
 
     /// Handle timeout error with suggestions
-    pub fn handle_timeout_error(
-        language: &str,
-        operation: &str,
-        timeout_ms: u64,
-    ) -> IdeError {
+    pub fn handle_timeout_error(language: &str, operation: &str, timeout_ms: u64) -> IdeError {
         warn!(
             "Timeout for {} operation on language '{}' after {}ms",
             operation, language, timeout_ms

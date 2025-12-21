@@ -9,7 +9,9 @@ use std::time::{Duration, SystemTime};
 
 use crate::error::ProviderError;
 use crate::models::{ModelInfo, TokenUsage};
-use crate::performance_monitor::{PerformanceThresholds, ProviderMetrics, ProviderPerformanceMonitor};
+use crate::performance_monitor::{
+    PerformanceThresholds, ProviderMetrics, ProviderPerformanceMonitor,
+};
 
 /// Quality score for a provider (0.0 to 1.0)
 #[derive(Debug, Clone)]
@@ -165,8 +167,8 @@ impl ReliabilityTracker {
 
     /// Check if provider should be avoided
     pub fn should_avoid(&self, config: &CurationConfig) -> bool {
-        self.consecutive_failures >= config.max_consecutive_failures ||
-        self.reliability_score() < config.min_reliability_score
+        self.consecutive_failures >= config.max_consecutive_failures
+            || self.reliability_score() < config.min_reliability_score
     }
 }
 
@@ -180,7 +182,10 @@ pub struct ProviderCurator {
 
 impl ProviderCurator {
     /// Create a new provider curator
-    pub fn new(config: CurationConfig, performance_monitor: Arc<ProviderPerformanceMonitor>) -> Self {
+    pub fn new(
+        config: CurationConfig,
+        performance_monitor: Arc<ProviderPerformanceMonitor>,
+    ) -> Self {
         Self {
             config,
             quality_scores: HashMap::new(),
@@ -203,10 +208,10 @@ impl ProviderCurator {
         let cost_score = self.calculate_cost_score(&metrics);
         let feature_score = self.calculate_feature_score(models);
 
-        let overall = (speed_score * self.config.speed_weight) +
-                     (reliability_score * self.config.reliability_weight) +
-                     (cost_score * self.config.cost_weight) +
-                     (feature_score * 0.1); // Features get 10% weight
+        let overall = (speed_score * self.config.speed_weight)
+            + (reliability_score * self.config.reliability_weight)
+            + (cost_score * self.config.cost_weight)
+            + (feature_score * 0.1); // Features get 10% weight
 
         QualityScore {
             overall: overall.min(1.0),
@@ -295,17 +300,33 @@ impl ProviderCurator {
             }
 
             // Check for advanced capabilities
-            let has_vision = models.iter().any(|m| m.capabilities.contains(&crate::models::Capability::Vision));
-            let has_function_calling = models.iter().any(|m| m.capabilities.contains(&crate::models::Capability::FunctionCalling));
-            let has_streaming = models.iter().any(|m| m.capabilities.contains(&crate::models::Capability::Streaming));
+            let has_vision = models
+                .iter()
+                .any(|m| m.capabilities.contains(&crate::models::Capability::Vision));
+            let has_function_calling = models.iter().any(|m| {
+                m.capabilities
+                    .contains(&crate::models::Capability::FunctionCalling)
+            });
+            let has_streaming = models.iter().any(|m| {
+                m.capabilities
+                    .contains(&crate::models::Capability::Streaming)
+            });
 
-            if has_vision { score += 0.2; }
-            if has_function_calling { score += 0.2; }
-            if has_streaming { score += 0.2; }
+            if has_vision {
+                score += 0.2;
+            }
+            if has_function_calling {
+                score += 0.2;
+            }
+            if has_streaming {
+                score += 0.2;
+            }
 
             // Check for free models
             let has_free_models = models.iter().any(|m| m.is_free);
-            if has_free_models { score += 0.1; }
+            if has_free_models {
+                score += 0.1;
+            }
 
             score.min(1.0f64)
         }
@@ -331,7 +352,8 @@ impl ProviderCurator {
 
     /// Record a successful request for reliability tracking
     pub fn record_success(&mut self, provider_id: &str) {
-        let tracker = self.reliability_trackers
+        let tracker = self
+            .reliability_trackers
             .entry(provider_id.to_string())
             .or_insert_with(|| ReliabilityTracker::new(provider_id.to_string()));
         tracker.record_success();
@@ -339,7 +361,8 @@ impl ProviderCurator {
 
     /// Record a failed request for reliability tracking
     pub fn record_failure(&mut self, provider_id: &str) {
-        let tracker = self.reliability_trackers
+        let tracker = self
+            .reliability_trackers
             .entry(provider_id.to_string())
             .or_insert_with(|| ReliabilityTracker::new(provider_id.to_string()));
         tracker.record_failure();
@@ -351,7 +374,11 @@ impl ProviderCurator {
     }
 
     /// Select the best provider based on quality scores and constraints
-    pub fn select_best_provider(&self, provider_ids: &[String], constraints: Option<&SelectionConstraints>) -> Option<String> {
+    pub fn select_best_provider(
+        &self,
+        provider_ids: &[String],
+        constraints: Option<&SelectionConstraints>,
+    ) -> Option<String> {
         let default_constraints = SelectionConstraints::default();
         let constraints = constraints.unwrap_or(&default_constraints);
 
@@ -359,15 +386,29 @@ impl ProviderCurator {
             .iter()
             .filter(|id| self.is_provider_eligible(id, constraints))
             .max_by(|a, b| {
-                let score_a = self.quality_scores.get(*a).map(|s| s.overall).unwrap_or(0.0);
-                let score_b = self.quality_scores.get(*b).map(|s| s.overall).unwrap_or(0.0);
-                score_a.partial_cmp(&score_b).unwrap_or(std::cmp::Ordering::Equal)
+                let score_a = self
+                    .quality_scores
+                    .get(*a)
+                    .map(|s| s.overall)
+                    .unwrap_or(0.0);
+                let score_b = self
+                    .quality_scores
+                    .get(*b)
+                    .map(|s| s.overall)
+                    .unwrap_or(0.0);
+                score_a
+                    .partial_cmp(&score_b)
+                    .unwrap_or(std::cmp::Ordering::Equal)
             })
             .cloned()
     }
 
     /// Check if a provider is eligible based on constraints
-    pub fn is_provider_eligible(&self, provider_id: &str, constraints: &SelectionConstraints) -> bool {
+    pub fn is_provider_eligible(
+        &self,
+        provider_id: &str,
+        constraints: &SelectionConstraints,
+    ) -> bool {
         // Check quality score
         if let Some(score) = self.quality_scores.get(provider_id) {
             if score.overall < constraints.min_quality_score {
@@ -401,7 +442,11 @@ impl ProviderCurator {
         let mut providers: Vec<(String, f64)> = provider_ids
             .iter()
             .map(|id| {
-                let score = self.quality_scores.get(id).map(|s| s.overall).unwrap_or(0.0);
+                let score = self
+                    .quality_scores
+                    .get(id)
+                    .map(|s| s.overall)
+                    .unwrap_or(0.0);
                 (id.clone(), score)
             })
             .collect();
@@ -461,17 +506,15 @@ mod tests {
         let monitor = Arc::new(ProviderPerformanceMonitor::default());
         let curator = ProviderCurator::default(monitor);
 
-        let models = vec![
-            ModelInfo {
-                id: "gpt-4".to_string(),
-                name: "GPT-4".to_string(),
-                provider: "openai".to_string(),
-                context_window: 8192,
-                capabilities: vec![Capability::Chat, Capability::FunctionCalling],
-                pricing: None,
-                is_free: false,
-            }
-        ];
+        let models = vec![ModelInfo {
+            id: "gpt-4".to_string(),
+            name: "GPT-4".to_string(),
+            provider: "openai".to_string(),
+            context_window: 8192,
+            capabilities: vec![Capability::Chat, Capability::FunctionCalling],
+            pricing: None,
+            is_free: false,
+        }];
 
         let score = curator.calculate_quality_score("openai", &models);
         assert!(score.overall >= 0.0 && score.overall <= 1.0);
@@ -505,24 +548,30 @@ mod tests {
 
         // Set up quality scores
         let mut provider_models = HashMap::new();
-        provider_models.insert("provider_a".to_string(), vec![ModelInfo {
-            id: "model1".to_string(),
-            name: "Model 1".to_string(),
-            provider: "provider_a".to_string(),
-            context_window: 4096,
-            capabilities: vec![Capability::Chat],
-            pricing: None,
-            is_free: false,
-        }]);
-        provider_models.insert("provider_b".to_string(), vec![ModelInfo {
-            id: "model2".to_string(),
-            name: "Model 2".to_string(),
-            provider: "provider_b".to_string(),
-            context_window: 8192,
-            capabilities: vec![Capability::Chat, Capability::FunctionCalling],
-            pricing: None,
-            is_free: false,
-        }]);
+        provider_models.insert(
+            "provider_a".to_string(),
+            vec![ModelInfo {
+                id: "model1".to_string(),
+                name: "Model 1".to_string(),
+                provider: "provider_a".to_string(),
+                context_window: 4096,
+                capabilities: vec![Capability::Chat],
+                pricing: None,
+                is_free: false,
+            }],
+        );
+        provider_models.insert(
+            "provider_b".to_string(),
+            vec![ModelInfo {
+                id: "model2".to_string(),
+                name: "Model 2".to_string(),
+                provider: "provider_b".to_string(),
+                context_window: 8192,
+                capabilities: vec![Capability::Chat, Capability::FunctionCalling],
+                pricing: None,
+                is_free: false,
+            }],
+        );
 
         curator.update_quality_scores(&provider_models);
 

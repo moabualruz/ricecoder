@@ -47,7 +47,10 @@ impl MCRBACManager {
         );
 
         if !has_server_access {
-            debug!("Principal {} denied access to MCP server {}", principal.id, server_id);
+            debug!(
+                "Principal {} denied access to MCP server {}",
+                principal.id, server_id
+            );
             return Ok(false);
         }
 
@@ -56,14 +59,20 @@ impl MCRBACManager {
             if let Some(security_roles) = self.role_mappings.get(role_name) {
                 for security_role in security_roles {
                     if principal.roles.contains(security_role) {
-                        debug!("Principal {} granted access to MCP server {} via role {}", principal.id, server_id, security_role);
+                        debug!(
+                            "Principal {} granted access to MCP server {} via role {}",
+                            principal.id, server_id, security_role
+                        );
                         return Ok(true);
                     }
                 }
             }
         }
 
-        debug!("Principal {} has no role-based access to MCP server {}", principal.id, server_id);
+        debug!(
+            "Principal {} has no role-based access to MCP server {}",
+            principal.id, server_id
+        );
         Ok(false)
     }
 
@@ -75,14 +84,19 @@ impl MCRBACManager {
         agent_id: Option<&str>,
     ) -> Result<bool> {
         // First check MCP permission manager
-        let mcp_permission = self.permission_manager.check_permission(tool_id, agent_id)?;
+        let mcp_permission = self
+            .permission_manager
+            .check_permission(tool_id, agent_id)?;
 
         match mcp_permission {
             ricecoder_permissions::PermissionLevel::Allow => {
                 // Check RBAC for additional restrictions
                 let has_rbac_access = self.check_rbac_tool_access(principal, tool_id)?;
                 if !has_rbac_access {
-                    warn!("RBAC denied tool execution for principal {} on tool {}", principal.id, tool_id);
+                    warn!(
+                        "RBAC denied tool execution for principal {} on tool {}",
+                        principal.id, tool_id
+                    );
                     return Ok(false);
                 }
                 Ok(true)
@@ -92,7 +106,10 @@ impl MCRBACManager {
                 self.check_rbac_tool_access(principal, tool_id)
             }
             ricecoder_permissions::PermissionLevel::Deny => {
-                debug!("MCP permission manager denied tool execution for {} on {}", principal.id, tool_id);
+                debug!(
+                    "MCP permission manager denied tool execution for {} on {}",
+                    principal.id, tool_id
+                );
                 Ok(false)
             }
         }
@@ -108,12 +125,16 @@ impl MCRBACManager {
         let tool_permission = match tool_id {
             t if t.starts_with("file-") => ricecoder_security::access_control::Permission::Write,
             t if t.starts_with("read-") => ricecoder_security::access_control::Permission::Read,
-            t if t.starts_with("execute-") => ricecoder_security::access_control::Permission::Execute,
+            t if t.starts_with("execute-") => {
+                ricecoder_security::access_control::Permission::Execute
+            }
             t if t.starts_with("admin-") => ricecoder_security::access_control::Permission::Admin,
             _ => ricecoder_security::access_control::Permission::Execute, // Default to execute
         };
 
-        let has_permission = self.access_control.has_permission(principal, &tool_permission);
+        let has_permission = self
+            .access_control
+            .has_permission(principal, &tool_permission);
 
         debug!(
             "RBAC check for principal {} on tool {} (permission: {:?}): {}",
@@ -140,10 +161,19 @@ impl MCRBACManager {
 
         // Add tool execution permissions based on RBAC
         let tool_permissions = [
-            ("file", ricecoder_security::access_control::Permission::Write),
+            (
+                "file",
+                ricecoder_security::access_control::Permission::Write,
+            ),
             ("read", ricecoder_security::access_control::Permission::Read),
-            ("execute", ricecoder_security::access_control::Permission::Execute),
-            ("admin", ricecoder_security::access_control::Permission::Admin),
+            (
+                "execute",
+                ricecoder_security::access_control::Permission::Execute,
+            ),
+            (
+                "admin",
+                ricecoder_security::access_control::Permission::Admin,
+            ),
         ];
 
         for (prefix, perm) in &tool_permissions {
@@ -171,19 +201,21 @@ impl MCRBACManager {
             ricecoder_security::audit::AuditEventType::SecurityViolation
         };
 
-        audit_logger.log_event(ricecoder_security::audit::AuditEvent {
-            event_type,
-            user_id: Some(principal.id.clone()),
-            session_id: None,
-            action: action.to_string(),
-            resource: resource.to_string(),
-            metadata: serde_json::json!({
-                "allowed": allowed,
-                "reason": reason,
-                "principal_roles": principal.roles,
-                "rbac_check": true
-            }),
-        }).await?;
+        audit_logger
+            .log_event(ricecoder_security::audit::AuditEvent {
+                event_type,
+                user_id: Some(principal.id.clone()),
+                session_id: None,
+                action: action.to_string(),
+                resource: resource.to_string(),
+                metadata: serde_json::json!({
+                    "allowed": allowed,
+                    "reason": reason,
+                    "principal_roles": principal.roles,
+                    "rbac_check": true
+                }),
+            })
+            .await?;
 
         info!(
             "Audited RBAC decision: {} {} access to {} for principal {}: {}",
@@ -222,16 +254,24 @@ impl MCPAuthorizationMiddleware {
         principal: &ricecoder_security::access_control::Principal,
         server_id: &str,
     ) -> Result<()> {
-        let allowed = self.rbac_manager.check_server_access(principal, server_id)?;
+        let allowed = self
+            .rbac_manager
+            .check_server_access(principal, server_id)?;
 
-        self.rbac_manager.audit_access_decision(
-            &self.audit_logger,
-            principal,
-            &format!("mcp:server:{}", server_id),
-            "access",
-            allowed,
-            if allowed { "RBAC check passed" } else { "RBAC check failed" },
-        ).await?;
+        self.rbac_manager
+            .audit_access_decision(
+                &self.audit_logger,
+                principal,
+                &format!("mcp:server:{}", server_id),
+                "access",
+                allowed,
+                if allowed {
+                    "RBAC check passed"
+                } else {
+                    "RBAC check failed"
+                },
+            )
+            .await?;
 
         if !allowed {
             return Err(Error::AuthorizationError(format!(
@@ -250,16 +290,24 @@ impl MCPAuthorizationMiddleware {
         tool_id: &str,
         agent_id: Option<&str>,
     ) -> Result<()> {
-        let allowed = self.rbac_manager.check_tool_execution_permission(principal, tool_id, agent_id)?;
+        let allowed = self
+            .rbac_manager
+            .check_tool_execution_permission(principal, tool_id, agent_id)?;
 
-        self.rbac_manager.audit_access_decision(
-            &self.audit_logger,
-            principal,
-            &format!("mcp:tool:{}", tool_id),
-            "execute",
-            allowed,
-            if allowed { "RBAC and permission check passed" } else { "RBAC or permission check failed" },
-        ).await?;
+        self.rbac_manager
+            .audit_access_decision(
+                &self.audit_logger,
+                principal,
+                &format!("mcp:tool:{}", tool_id),
+                "execute",
+                allowed,
+                if allowed {
+                    "RBAC and permission check passed"
+                } else {
+                    "RBAC or permission check failed"
+                },
+            )
+            .await?;
 
         if !allowed {
             return Err(Error::AuthorizationError(format!(
@@ -298,7 +346,10 @@ mod tests {
         );
 
         assert_eq!(rbac_manager.role_mappings.len(), 1);
-        assert_eq!(rbac_manager.role_mappings["mcp-admin"], vec!["admin", "user"]);
+        assert_eq!(
+            rbac_manager.role_mappings["mcp-admin"],
+            vec!["admin", "user"]
+        );
     }
 
     #[test]
@@ -306,17 +357,17 @@ mod tests {
         let mut access_control = AccessControl::new();
 
         // Add admin role
-        access_control.add_custom_role("admin".to_string(), vec![Permission::ApiKeyAccess, Permission::Admin]);
+        access_control.add_custom_role(
+            "admin".to_string(),
+            vec![Permission::ApiKeyAccess, Permission::Admin],
+        );
 
         let access_control = Arc::new(access_control);
         let permission_manager = Arc::new(MCPPermissionManager::new());
         let mut rbac_manager = MCRBACManager::new(access_control, permission_manager);
 
         // Add role mapping
-        rbac_manager.add_role_mapping(
-            "mcp-admin".to_string(),
-            vec!["admin".to_string()],
-        );
+        rbac_manager.add_role_mapping("mcp-admin".to_string(), vec!["admin".to_string()]);
 
         // Test principal with admin role
         let admin_principal = Principal {

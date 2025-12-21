@@ -1,6 +1,8 @@
 //! LSP client connection management
 
-use super::protocol::{JsonRpcHandler, JsonRpcNotification, JsonRpcRequest, JsonRpcResponse, RequestId};
+use super::protocol::{
+    JsonRpcHandler, JsonRpcNotification, JsonRpcRequest, JsonRpcResponse, RequestId,
+};
 use crate::error::{ExternalLspError, Result};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -57,11 +59,14 @@ impl LspConnection {
         method: impl Into<String>,
         params: Option<Value>,
         timeout: Duration,
-    ) -> Result<(JsonRpcRequest, tokio::sync::oneshot::Receiver<Result<Value>>)> {
+    ) -> Result<(
+        JsonRpcRequest,
+        tokio::sync::oneshot::Receiver<Result<Value>>,
+    )> {
         let request = self.handler.create_request(method.into(), params);
-        let request_id = request.id.ok_or_else(|| {
-            ExternalLspError::ProtocolError("Request ID not set".to_string())
-        })?;
+        let request_id = request
+            .id
+            .ok_or_else(|| ExternalLspError::ProtocolError("Request ID not set".to_string()))?;
 
         let (tx, rx) = tokio::sync::oneshot::channel();
 
@@ -73,7 +78,10 @@ impl LspConnection {
             response_tx: tx,
         };
 
-        self.pending_requests.write().await.insert(request_id, pending);
+        self.pending_requests
+            .write()
+            .await
+            .insert(request_id, pending);
 
         Ok((request, rx))
     }
@@ -155,7 +163,9 @@ impl LspConnection {
     /// Handle a notification from the server
     pub async fn handle_notification(&self, notification: JsonRpcNotification) -> Result<()> {
         // Broadcast notification to all subscribers
-        let _ = self.notification_tx.send((notification.method, notification.params));
+        let _ = self
+            .notification_tx
+            .send((notification.method, notification.params));
         Ok(())
     }
 
@@ -165,10 +175,7 @@ impl LspConnection {
     }
 
     /// Handle textDocument/publishDiagnostics notification
-    pub async fn handle_publish_diagnostics(
-        &self,
-        params: Option<Value>,
-    ) -> Result<()> {
+    pub async fn handle_publish_diagnostics(&self, params: Option<Value>) -> Result<()> {
         self.handle_notification(JsonRpcNotification {
             jsonrpc: "2.0".to_string(),
             method: "textDocument/publishDiagnostics".to_string(),
@@ -554,9 +561,12 @@ mod tests {
         let conn = LspConnection::new();
         let mut rx = conn.subscribe_notifications();
 
-        conn.send_did_save("file:///test.rs".to_string(), Some("fn main() {}".to_string()))
-            .await
-            .unwrap();
+        conn.send_did_save(
+            "file:///test.rs".to_string(),
+            Some("fn main() {}".to_string()),
+        )
+        .await
+        .unwrap();
 
         let (method, params) = rx.recv().await.unwrap();
         assert_eq!(method, "textDocument/didSave");

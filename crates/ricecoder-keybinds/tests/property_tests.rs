@@ -3,9 +3,9 @@
 //! **Validates: Requirements 1.2, 1.3**
 
 use proptest::prelude::*;
-use ricecoder_keybinds::{Keybind, KeyCombo, Modifier, Key, KeybindRegistry, ConflictDetector};
-use std::str::FromStr;
+use ricecoder_keybinds::{ConflictDetector, Key, KeyCombo, Keybind, KeybindRegistry, Modifier};
 use std::collections::HashSet;
+use std::str::FromStr;
 
 /// Strategy for generating valid modifiers
 fn modifier_strategy() -> impl Strategy<Value = Modifier> {
@@ -147,7 +147,7 @@ proptest! {
     #[test]
     fn prop_keybind_consistency(keybinds in prop::collection::vec(keybind_strategy(), 1..20)) {
         let mut registry = KeybindRegistry::new();
-        
+
         // Register all keybinds
         for keybind in keybinds.iter() {
             // Skip keybinds that would cause conflicts
@@ -159,16 +159,16 @@ proptest! {
         // For each registered keybind, verify lookup consistency
         for keybind in registry.all_keybinds() {
             let action_id = &keybind.action_id;
-            
+
             // Lookup by action multiple times
             let lookup1 = registry.lookup_by_action(action_id);
             let lookup2 = registry.lookup_by_action(action_id);
             let lookup3 = registry.lookup_by_action(action_id);
-            
+
             // All lookups should return the same result
             assert_eq!(lookup1, lookup2, "Lookup by action should be deterministic");
             assert_eq!(lookup2, lookup3, "Lookup by action should be deterministic");
-            
+
             // Verify the returned keybind matches
             if let Some(found) = lookup1 {
                 assert_eq!(found.action_id, keybind.action_id);
@@ -183,11 +183,11 @@ proptest! {
                 let lookup1 = registry.lookup_by_key(&key_combo);
                 let lookup2 = registry.lookup_by_key(&key_combo);
                 let lookup3 = registry.lookup_by_key(&key_combo);
-                
+
                 // All lookups should return the same result
                 assert_eq!(lookup1, lookup2, "Lookup by key should be deterministic");
                 assert_eq!(lookup2, lookup3, "Lookup by key should be deterministic");
-                
+
                 // Verify the returned action matches
                 if let Some(action) = lookup1 {
                     assert_eq!(action, keybind.action_id.as_str());
@@ -206,25 +206,25 @@ proptest! {
         profile2_keybinds in prop::collection::vec(keybind_strategy(), 1..10),
     ) {
         use ricecoder_keybinds::ProfileManager;
-        
+
         let mut manager = ProfileManager::new();
-        
+
         // Create two profiles with different keybinds
         let _ = manager.create_profile("profile1", profile1_keybinds.clone());
         let _ = manager.create_profile("profile2", profile2_keybinds.clone());
-        
+
         // Get profile1 keybinds
         let profile1 = manager.get_profile("profile1");
         let profile1_actions: HashSet<String> = profile1
             .map(|p| p.keybinds.iter().map(|kb| kb.action_id.clone()).collect())
             .unwrap_or_default();
-        
+
         // Get profile2 keybinds
         let profile2 = manager.get_profile("profile2");
         let profile2_actions: HashSet<String> = profile2
             .map(|p| p.keybinds.iter().map(|kb| kb.action_id.clone()).collect())
             .unwrap_or_default();
-        
+
         // Verify profiles are isolated - modifying one doesn't affect the other
         // (This is verified by the fact that they maintain separate keybind lists)
         assert_eq!(
@@ -232,7 +232,7 @@ proptest! {
             profile1.map(|p| p.keybinds.len()).unwrap_or(0),
             "Profile1 should maintain its keybinds"
         );
-        
+
         assert_eq!(
             profile2_actions.len(),
             profile2.map(|p| p.keybinds.len()).unwrap_or(0),
@@ -252,7 +252,7 @@ proptest! {
         let conflicts = ConflictDetector::detect(&keybinds);
 
         // Build a map of key strings to action IDs
-        let mut key_to_actions: std::collections::HashMap<String, HashSet<String>> = 
+        let mut key_to_actions: std::collections::HashMap<String, HashSet<String>> =
             std::collections::HashMap::new();
 
         for keybind in &keybinds {
@@ -291,15 +291,15 @@ proptest! {
                 key_to_actions.get(&key_str).map_or(false, |actions| actions.len() > 1),
                 "Detected conflict should have multiple actions"
             );
-            
+
             // Verify all conflicting actions are reported
             let expected_actions: HashSet<String> = key_to_actions
                 .get(&key_str)
                 .map(|actions| actions.clone())
                 .unwrap_or_default();
-            
+
             let detected_actions: HashSet<String> = conflict.actions.iter().cloned().collect();
-            
+
             assert_eq!(
                 expected_actions, detected_actions,
                 "All conflicting actions should be reported"
@@ -327,41 +327,41 @@ proptest! {
         )
     ) {
         use ricecoder_keybinds::KeybindEngine;
-        
+
         let mut engine = KeybindEngine::new();
-        
+
         // Store the original defaults
         let original_keybinds = default_keybinds.clone();
-        
+
         // Manually set defaults (simulating load_defaults_from_file)
         engine.set_defaults(original_keybinds.clone());
-        
+
         // Apply defaults
         let _ = engine.apply_defaults();
-        
+
         // Modify keybinds
         let custom_keybinds = vec![
             Keybind::new("custom.action", "Ctrl+Q", "custom", "Custom action"),
         ];
         let _ = engine.apply_keybinds(custom_keybinds);
-        
+
         // Reset to defaults
         let _ = engine.reset_to_defaults();
-        
+
         // Verify all defaults are restored
         let restored_keybinds = engine.get_defaults();
-        
+
         assert_eq!(
             restored_keybinds.len(),
             original_keybinds.len(),
             "All default keybinds should be restored"
         );
-        
+
         // Verify each default keybind is restored exactly
         for original in &original_keybinds {
             let found = restored_keybinds.iter().find(|kb| kb.action_id == original.action_id);
             assert!(found.is_some(), "Default keybind {} should be restored", original.action_id);
-            
+
             let found = found.unwrap();
             assert_eq!(found.action_id, original.action_id, "Action ID should match");
             assert_eq!(found.key, original.key, "Key should match");
@@ -478,7 +478,7 @@ mod unit_tests {
         let kb = Keybind::new("editor.save", "Ctrl+S", "editing", "Save file");
         let json = serde_json::to_string(&kb).unwrap();
         let deserialized: Keybind = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(kb.action_id, deserialized.action_id);
         assert_eq!(kb.key, deserialized.key);
     }
@@ -488,7 +488,7 @@ mod unit_tests {
         let kb = Keybind::new_default("editor.undo", "Ctrl+Z", "editing", "Undo");
         let json = serde_json::to_string(&kb).unwrap();
         let deserialized: Keybind = serde_json::from_str(&json).unwrap();
-        
+
         assert!(deserialized.is_default);
     }
 
@@ -498,7 +498,7 @@ mod unit_tests {
             modifiers: vec![Modifier::Ctrl, Modifier::Shift],
             key: Key::Char('z'),
         };
-        
+
         let display = combo.to_string();
         assert!(display.contains("Ctrl"));
         assert!(display.contains("Shift"));

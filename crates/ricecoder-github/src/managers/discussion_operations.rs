@@ -113,7 +113,7 @@ impl DiscussionOperations {
         // Simple categorization based on keywords
         let title_lower = title.to_lowercase();
         let body_lower = body.to_lowercase();
-        
+
         let category = if title_lower.contains("bug") || body_lower.contains("error") {
             "bug-report"
         } else if title_lower.contains("help") || title_lower.contains("question") {
@@ -276,10 +276,7 @@ impl DiscussionOperations {
             ));
         }
 
-        info!(
-            "Discussion {} marked as resolved",
-            discussion_number
-        );
+        info!("Discussion {} marked as resolved", discussion_number);
 
         Ok(())
     }

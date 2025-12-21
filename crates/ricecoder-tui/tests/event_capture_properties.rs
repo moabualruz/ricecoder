@@ -1,12 +1,14 @@
 //! Property-based tests for TUI event capture completeness
 //! Tests that all terminal events are properly captured and converted
 //! Uses proptest for random test case generation
-//! 
+//!
 //! **Feature: ricecoder-published-issues, Property 6: TUI Event Capture Completeness**
 //! **Validates: Requirements 1.2, 1.3, 1.4**
 
 use proptest::prelude::*;
-use ricecoder_tui::event::{Event, EventLoop, KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent};
+use ricecoder_tui::event::{
+    Event, EventLoop, KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent,
+};
 use std::time::Duration;
 use tokio::time::timeout;
 
@@ -18,9 +20,15 @@ use tokio::time::timeout;
 fn arb_key_code() -> impl Strategy<Value = KeyCode> {
     prop_oneof![
         // Character keys
-        prop::string::string_regex("[a-z]").unwrap().prop_map(|s| KeyCode::Char(s.chars().next().unwrap())),
-        prop::string::string_regex("[A-Z]").unwrap().prop_map(|s| KeyCode::Char(s.chars().next().unwrap())),
-        prop::string::string_regex("[0-9]").unwrap().prop_map(|s| KeyCode::Char(s.chars().next().unwrap())),
+        prop::string::string_regex("[a-z]")
+            .unwrap()
+            .prop_map(|s| KeyCode::Char(s.chars().next().unwrap())),
+        prop::string::string_regex("[A-Z]")
+            .unwrap()
+            .prop_map(|s| KeyCode::Char(s.chars().next().unwrap())),
+        prop::string::string_regex("[0-9]")
+            .unwrap()
+            .prop_map(|s| KeyCode::Char(s.chars().next().unwrap())),
         // Special characters
         Just(KeyCode::Enter),
         Just(KeyCode::Esc),
@@ -67,7 +75,11 @@ fn arb_mouse_coords() -> impl Strategy<Value = (u16, u16)> {
 
 /// Generate valid mouse events
 fn arb_mouse_event() -> impl Strategy<Value = MouseEvent> {
-    (arb_mouse_coords(), arb_mouse_button()).prop_map(|((x, y), button)| MouseEvent { x, y, button })
+    (arb_mouse_coords(), arb_mouse_button()).prop_map(|((x, y), button)| MouseEvent {
+        x,
+        y,
+        button,
+    })
 }
 
 /// Generate valid terminal resize dimensions
@@ -80,10 +92,10 @@ fn arb_terminal_size() -> impl Strategy<Value = (u16, u16)> {
 // ============================================================================
 
 /// Property 1: Event loop can be created and polled without panicking
-/// 
+///
 /// For any event loop instance, polling should not panic and should return
 /// either an event or None without crashing.
-/// 
+///
 /// **Validates: Requirements 1.2, 1.5, 1.6**
 #[tokio::test]
 async fn prop_event_loop_creation_and_polling() {
@@ -111,10 +123,10 @@ async fn prop_event_loop_creation_and_polling() {
 }
 
 /// Property 2: Key events maintain their code and modifiers through conversion
-/// 
+///
 /// For any key event, the code and modifiers should be preserved when
 /// converted and sent through the event loop.
-/// 
+///
 /// **Validates: Requirements 1.2**
 #[test]
 fn prop_key_event_conversion_preserves_data() {
@@ -142,10 +154,10 @@ fn prop_key_event_conversion_preserves_data() {
 }
 
 /// Property 3: Mouse events maintain their coordinates and button through conversion
-/// 
+///
 /// For any mouse event, the coordinates and button should be preserved when
 /// converted and sent through the event loop.
-/// 
+///
 /// **Validates: Requirements 1.3**
 #[test]
 fn prop_mouse_event_conversion_preserves_data() {
@@ -164,10 +176,10 @@ fn prop_mouse_event_conversion_preserves_data() {
 }
 
 /// Property 4: Resize events maintain their dimensions
-/// 
+///
 /// For any terminal resize event, the width and height should be valid
 /// and non-zero.
-/// 
+///
 /// **Validates: Requirements 1.4**
 #[test]
 fn prop_resize_event_has_valid_dimensions() {
@@ -183,10 +195,10 @@ fn prop_resize_event_has_valid_dimensions() {
 }
 
 /// Property 5: Event loop sends tick events periodically
-/// 
+///
 /// For any event loop instance, tick events should be sent at regular intervals
 /// (approximately every 250ms).
-/// 
+///
 /// **Validates: Requirements 1.5, 1.6**
 #[tokio::test]
 async fn prop_event_loop_sends_tick_events() {
@@ -222,10 +234,10 @@ async fn prop_event_loop_sends_tick_events() {
 }
 
 /// Property 6: Event loop handles channel closure gracefully
-/// 
+///
 /// For any event loop instance, when the receiver is dropped, the event loop
 /// should exit gracefully without panicking.
-/// 
+///
 /// **Validates: Requirements 1.7**
 #[tokio::test]
 async fn prop_event_loop_handles_channel_closure() {
@@ -241,10 +253,10 @@ async fn prop_event_loop_handles_channel_closure() {
 }
 
 /// Property 7: Key event modifiers are independent
-/// 
+///
 /// For any key event, each modifier (shift, ctrl, alt) should be independent
 /// and not affect the others.
-/// 
+///
 /// **Validates: Requirements 1.2**
 #[test]
 fn prop_key_modifiers_are_independent() {
@@ -269,10 +281,10 @@ fn prop_key_modifiers_are_independent() {
 }
 
 /// Property 8: Mouse button types are distinct
-/// 
+///
 /// For any mouse button, it should be one of the three valid types and
 /// should be distinguishable from the others.
-/// 
+///
 /// **Validates: Requirements 1.3**
 #[test]
 fn prop_mouse_buttons_are_distinct() {

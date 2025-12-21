@@ -30,16 +30,16 @@
 //! - Compliance with enterprise security policies
 
 pub mod auth;
-pub mod connections;
 pub mod compliance;
+pub mod connections;
 pub mod error;
 pub mod providers;
 pub mod tools;
 
 // Re-export commonly used types
 pub use auth::{OAuthClient, OAuthConfig, OAuthFlow, OAuthToken};
-pub use connections::{ToolConnection, ToolConnector, ConnectionManager};
 pub use compliance::{AuditLogger, ComplianceManager, SecurityValidator};
+pub use connections::{ConnectionManager, ToolConnection, ToolConnector};
 pub use error::{IndustryError, IndustryResult};
 pub use providers::{EnterpriseProvider, ProviderManager};
 pub use tools::{IndustryTool, ToolRegistry};

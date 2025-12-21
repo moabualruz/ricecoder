@@ -19,7 +19,10 @@ impl std::fmt::Debug for OptimisticUpdater {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("OptimisticUpdater")
             .field("pending_updates", &self.pending_updates)
-            .field("rollback_strategies", &format!("<{} strategies>", self.rollback_strategies.len()))
+            .field(
+                "rollback_strategies",
+                &format!("<{} strategies>", self.rollback_strategies.len()),
+            )
             .finish()
     }
 }
@@ -95,11 +98,14 @@ impl LoadingManager {
     /// Start a loading operation
     pub async fn start_loading(&self, id: String, message: String) {
         let mut loaders = self.active_loaders.write().await;
-        loaders.insert(id, LoadingState {
-            message,
-            start_time: std::time::Instant::now(),
-            progress: None,
-        });
+        loaders.insert(
+            id,
+            LoadingState {
+                message,
+                start_time: std::time::Instant::now(),
+                progress: None,
+            },
+        );
     }
 
     /// Update loading progress
@@ -178,7 +184,13 @@ impl VirtualRenderer {
     }
 
     /// Render a virtual node
-    fn render_node(&self, node: &VirtualNode, buffer: &mut ratatui::buffer::Buffer, x: u16, y: u16) {
+    fn render_node(
+        &self,
+        node: &VirtualNode,
+        buffer: &mut ratatui::buffer::Buffer,
+        x: u16,
+        y: u16,
+    ) {
         // Simplified rendering logic
         match &node.content {
             VirtualContent::Text(text) => {

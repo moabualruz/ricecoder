@@ -141,21 +141,21 @@ impl CommandHandler {
     pub fn handle(command: &str, args: &[String]) -> ExecutionResult<CommandOutput> {
         // Run the async version on a blocking task
         tokio::task::block_in_place(|| {
-            tokio::runtime::Handle::current().block_on(async {
-                Self::handle_async(command, args, None, Some(false)).await
-            })
+            tokio::runtime::Handle::current()
+                .block_on(async { Self::handle_async(command, args, None, Some(false)).await })
         })
     }
 
     /// Execute command asynchronously with streaming output
-    async fn execute_command_async(command: &str, args: &[String]) -> ExecutionResult<CommandOutput> {
-        use tokio::process::Command;
+    async fn execute_command_async(
+        command: &str,
+        args: &[String],
+    ) -> ExecutionResult<CommandOutput> {
         use std::process::Stdio;
+        use tokio::process::Command;
 
         let mut cmd = Command::new(command);
-        cmd.args(args)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
+        cmd.args(args).stdout(Stdio::piped()).stderr(Stdio::piped());
 
         let start_time = std::time::Instant::now();
 
@@ -208,28 +208,24 @@ impl CommandHandler {
         // Dangerous command patterns
         let dangerous_patterns = [
             // File system destruction
-            r"\brm\s+-rf\s+/?[^/]",  // rm -rf / or rm -rf /* (but allow rm -rf /tmp/something)
-            r"\brm\s+-rf\s+/\s*$",   // rm -rf /
-            r"\bdd\s+if=/dev/zero",  // dd if=/dev/zero (disk wiping)
-            r"\bmkfs\.",             // mkfs commands (filesystem formatting)
+            r"\brm\s+-rf\s+/?[^/]", // rm -rf / or rm -rf /* (but allow rm -rf /tmp/something)
+            r"\brm\s+-rf\s+/\s*$",  // rm -rf /
+            r"\bdd\s+if=/dev/zero", // dd if=/dev/zero (disk wiping)
+            r"\bmkfs\.",            // mkfs commands (filesystem formatting)
             r"\bfdisk\s+.*\bdelete", // fdisk delete operations
-
             // System control
-            r"\bshutdown\b",         // shutdown commands
-            r"\breboot\b",          // reboot commands
-            r"\bhalt\b",            // halt commands
-
+            r"\bshutdown\b", // shutdown commands
+            r"\breboot\b",   // reboot commands
+            r"\bhalt\b",     // halt commands
             // Privilege escalation
-            r"\bsudo\b",            // sudo usage
-            r"\bsu\b",              // su usage
-
+            r"\bsudo\b", // sudo usage
+            r"\bsu\b",   // su usage
             // Network dangerous
             r"\bcurl\s+.*\|\s*bash", // curl | bash patterns
             r"\bwget\s+.*\|\s*bash", // wget | bash patterns
-
             // Process killing
-            r"\bkill\s+-9\s+-1",    // kill -9 -1 (kill all processes)
-            r"\bpkill\s+-9\s+.*",   // pkill -9 patterns
+            r"\bkill\s+-9\s+-1",  // kill -9 -1 (kill all processes)
+            r"\bpkill\s+-9\s+.*", // pkill -9 patterns
         ];
 
         for pattern in &dangerous_patterns {
@@ -250,9 +246,11 @@ impl CommandHandler {
 
         // Initialize tree-sitter parser
         let mut parser = tree_sitter::Parser::new();
-        parser.set_language(tree_sitter_bash::language().into()).map_err(|e| {
-            ExecutionError::ValidationError(format!("Failed to load bash grammar: {}", e))
-        })?;
+        parser
+            .set_language(tree_sitter_bash::language().into())
+            .map_err(|e| {
+                ExecutionError::ValidationError(format!("Failed to load bash grammar: {}", e))
+            })?;
 
         // Parse the command
         let tree = parser.parse(&full_command, None).ok_or_else(|| {

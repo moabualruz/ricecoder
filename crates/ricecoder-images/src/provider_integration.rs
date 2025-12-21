@@ -30,12 +30,7 @@ pub struct ImageData {
 
 impl ImageData {
     /// Create image data from raw bytes.
-    pub fn from_bytes(
-        format: &str,
-        data: &[u8],
-        width: u32,
-        height: u32,
-    ) -> Self {
+    pub fn from_bytes(format: &str, data: &[u8], width: u32, height: u32) -> Self {
         let base64_data = base64_encode(data);
         Self {
             format: format.to_string(),

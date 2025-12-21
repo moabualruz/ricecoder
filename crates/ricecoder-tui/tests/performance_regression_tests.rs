@@ -3,8 +3,8 @@
 //! Validates Requirements 6.1, 6.2, 12.2
 
 use proptest::prelude::*;
-use std::time::{Duration, Instant};
 use ricecoder_tui::{Layout, Rect, Theme};
+use std::time::{Duration, Instant};
 
 // ============================================================================
 // Generators for Performance Tests
@@ -12,10 +12,7 @@ use ricecoder_tui::{Layout, Rect, Theme};
 
 /// Generate various terminal sizes for layout testing
 fn arb_terminal_sizes() -> impl Strategy<Value = Vec<(u16, u16)>> {
-    prop::collection::vec(
-        (80u16..=400, 24u16..=200),
-        1..20
-    )
+    prop::collection::vec((80u16..=400, 24u16..=200), 1..20)
 }
 
 /// Generate layout configurations
@@ -27,7 +24,7 @@ fn arb_layout_configs() -> impl Strategy<Value = Vec<ricecoder_tui::Constraint>>
             Just(ricecoder_tui::Constraint::Length(10)),
             Just(ricecoder_tui::Constraint::Percentage(50)),
         ],
-        1..10
+        1..10,
     )
 }
 
@@ -305,9 +302,13 @@ impl PerformanceBenchmark {
 
     pub fn assert_performance(&self, name: &str, max_avg_time: Duration) {
         if let Some(result) = self.results.iter().find(|r| r.name == name) {
-            assert!(result.avg_time_per_iteration < max_avg_time,
-                   "Performance regression in '{}': avg time {:?} exceeds limit {:?}",
-                   name, result.avg_time_per_iteration, max_avg_time);
+            assert!(
+                result.avg_time_per_iteration < max_avg_time,
+                "Performance regression in '{}': avg time {:?} exceeds limit {:?}",
+                name,
+                result.avg_time_per_iteration,
+                max_avg_time
+            );
         } else {
             panic!("Benchmark '{}' not found", name);
         }

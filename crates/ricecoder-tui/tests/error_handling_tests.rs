@@ -22,13 +22,9 @@ mod tests {
 
     #[test]
     fn test_error_boundary() {
-        let boundary = ErrorBoundary::new(
-            "test_component",
-            "fallback_value",
-            |error| {
-                println!("Error handled: {}", error);
-            },
-        );
+        let boundary = ErrorBoundary::new("test_component", "fallback_value", |error| {
+            println!("Error handled: {}", error);
+        });
 
         // Test successful operation
         let result = futures::executor::block_on(boundary.execute(|| Ok("success")));
@@ -59,12 +55,14 @@ mod tests {
         assert_eq!(data, Some(vec![1, 2, 3]));
 
         // Test crash recording
-        recovery.record_crash(
-            "Test crash".to_string(),
-            Some("stack trace".to_string()),
-            HashMap::new(),
-            vec!["action1".to_string()],
-        ).await;
+        recovery
+            .record_crash(
+                "Test crash".to_string(),
+                Some("stack trace".to_string()),
+                HashMap::new(),
+                vec!["action1".to_string()],
+            )
+            .await;
 
         let reports = recovery.get_crash_reports().await;
         assert_eq!(reports.len(), 1);
@@ -76,20 +74,22 @@ mod tests {
         let retry = RetryMechanism::new(3, Duration::from_millis(10));
 
         let mut attempts = 0;
-        let result = retry.execute(|| async {
-            attempts += 1;
-            if attempts < 3 {
-                Err(RiceError::new(
-                    "Retry test",
-                    ErrorCategory::Network,
-                    ErrorSeverity::Medium,
-                    "test",
-                    "test",
-                ))
-            } else {
-                Ok("success")
-            }
-        }).await;
+        let result = retry
+            .execute(|| async {
+                attempts += 1;
+                if attempts < 3 {
+                    Err(RiceError::new(
+                        "Retry test",
+                        ErrorCategory::Network,
+                        ErrorSeverity::Medium,
+                        "test",
+                        "test",
+                    ))
+                } else {
+                    Ok("success")
+                }
+            })
+            .await;
 
         assert!(result.is_ok());
         assert_eq!(attempts, 3);
@@ -107,7 +107,9 @@ mod tests {
             "test",
         );
 
-        logger.log_error(LogLevel::Error, error, HashMap::new()).await;
+        logger
+            .log_error(LogLevel::Error, error, HashMap::new())
+            .await;
 
         let logs = logger.get_logs(None).await;
         assert_eq!(logs.len(), 1);

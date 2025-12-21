@@ -78,7 +78,9 @@ impl IdeProvider for RustProvider {
         if params.source.contains("let ") && !params.source.contains("let _") {
             // Check for unused variables
             if let Some(var_name) = Self::extract_variable_name(&params.source) {
-                if !params.source.contains(&format!("_{}", var_name)) && !params.source.contains(&var_name[1..]) {
+                if !params.source.contains(&format!("_{}", var_name))
+                    && !params.source.contains(&var_name[1..])
+                {
                     diagnostics.push(Diagnostic {
                         range: Range {
                             start: Position {
@@ -193,7 +195,9 @@ impl IdeProvider for TypeScriptProvider {
         if params.source.contains("const ") && !params.source.contains("const _") {
             // Check for unused variables
             if let Some(var_name) = Self::extract_variable_name(&params.source) {
-                if !params.source.contains(&format!("_{}", var_name)) && !params.source.contains(&var_name[1..]) {
+                if !params.source.contains(&format!("_{}", var_name))
+                    && !params.source.contains(&var_name[1..])
+                {
                     diagnostics.push(Diagnostic {
                         range: Range {
                             start: Position {
@@ -308,7 +312,9 @@ impl IdeProvider for PythonProvider {
         if params.source.contains("import ") {
             // Check for unused imports
             if let Some(module_name) = Self::extract_import_name(&params.source) {
-                if !params.source.contains(&module_name) || params.source.matches(&module_name).count() == 1 {
+                if !params.source.contains(&module_name)
+                    || params.source.matches(&module_name).count() == 1
+                {
                     diagnostics.push(Diagnostic {
                         range: Range {
                             start: Position {

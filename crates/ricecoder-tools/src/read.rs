@@ -180,9 +180,8 @@ impl FileReadTool {
         }
 
         // Read file content
-        let content_bytes = fs::read(&input.file_path).map_err(|e| {
-            ToolError::new("IO_ERROR", format!("Failed to read file: {}", e))
-        })?;
+        let content_bytes = fs::read(&input.file_path)
+            .map_err(|e| ToolError::new("IO_ERROR", format!("Failed to read file: {}", e)))?;
 
         // Detect if binary
         let detect_binary = input.detect_binary.unwrap_or(true);
@@ -204,15 +203,23 @@ impl FileReadTool {
 
         // Convert to string
         let content = String::from_utf8(content_bytes).map_err(|e| {
-            ToolError::new("ENCODING_ERROR", format!("File contains invalid UTF-8: {}", e))
+            ToolError::new(
+                "ENCODING_ERROR",
+                format!("File contains invalid UTF-8: {}", e),
+            )
         })?;
 
         // Apply line filtering if specified
-        let (filtered_content, lines_read, total_lines) = if input.start_line.is_some() || input.end_line.is_some() {
-            Self::filter_lines(&content, input.start_line, input.end_line)?
-        } else {
-            (content.clone(), content.lines().count(), Some(content.lines().count()))
-        };
+        let (filtered_content, lines_read, total_lines) =
+            if input.start_line.is_some() || input.end_line.is_some() {
+                Self::filter_lines(&content, input.start_line, input.end_line)?
+            } else {
+                (
+                    content.clone(),
+                    content.lines().count(),
+                    Some(content.lines().count()),
+                )
+            };
 
         // Create preview
         let preview = if filtered_content.len() > 500 {
@@ -317,12 +324,16 @@ impl FileReadTool {
         // Validate line ranges
         if let (Some(start), Some(end)) = (input.start_line, input.end_line) {
             if start > end {
-                return Err(ToolError::new("INVALID_INPUT",
-                    "Start line cannot be greater than end line"));
+                return Err(ToolError::new(
+                    "INVALID_INPUT",
+                    "Start line cannot be greater than end line",
+                ));
             }
             if start == 0 {
-                return Err(ToolError::new("INVALID_INPUT",
-                    "Line numbers are 1-indexed, start cannot be 0"));
+                return Err(ToolError::new(
+                    "INVALID_INPUT",
+                    "Line numbers are 1-indexed, start cannot be 0",
+                ));
             }
         }
 
@@ -331,7 +342,8 @@ impl FileReadTool {
 
     /// Check if content passes the content filter
     fn passes_content_filter(path: &Path, filter: &ContentFilter) -> Result<bool, ToolError> {
-        let extension = path.extension()
+        let extension = path
+            .extension()
             .and_then(|ext| ext.to_str())
             .unwrap_or("")
             .to_lowercase();
@@ -340,7 +352,10 @@ impl FileReadTool {
             ContentFilter::All => Ok(true),
             ContentFilter::TextOnly => {
                 // Consider common text file extensions
-                let text_extensions = ["txt", "md", "rs", "py", "js", "ts", "json", "yaml", "yml", "toml", "xml", "html", "css"];
+                let text_extensions = [
+                    "txt", "md", "rs", "py", "js", "ts", "json", "yaml", "yml", "toml", "xml",
+                    "html", "css",
+                ];
                 Ok(text_extensions.contains(&extension.as_str()))
             }
             ContentFilter::AllowedExtensions(allowed) => {
@@ -360,10 +375,17 @@ impl FileReadTool {
         }
 
         // Check ratio of non-printable characters
-        let non_printable = bytes.iter().filter(|&&b| {
-            // Allow common whitespace and control characters
-            !b.is_ascii_graphic() && !b.is_ascii_whitespace() && b != b'\t' && b != b'\n' && b != b'\r'
-        }).count();
+        let non_printable = bytes
+            .iter()
+            .filter(|&&b| {
+                // Allow common whitespace and control characters
+                !b.is_ascii_graphic()
+                    && !b.is_ascii_whitespace()
+                    && b != b'\t'
+                    && b != b'\n'
+                    && b != b'\r'
+            })
+            .count();
 
         let ratio = non_printable as f64 / bytes.len() as f64;
         ratio > 0.3 // More than 30% non-printable characters
@@ -391,12 +413,18 @@ impl FileReadTool {
     }
 
     /// Filter content to specific line range
-    fn filter_lines(content: &str, start_line: Option<usize>, end_line: Option<usize>) -> Result<(String, usize, Option<usize>), ToolError> {
+    fn filter_lines(
+        content: &str,
+        start_line: Option<usize>,
+        end_line: Option<usize>,
+    ) -> Result<(String, usize, Option<usize>), ToolError> {
         let lines: Vec<&str> = content.lines().collect();
         let total_lines = lines.len();
 
         let start_idx = start_line.map(|l| l.saturating_sub(1)).unwrap_or(0);
-        let end_idx = end_line.map(|l| l.saturating_sub(1)).unwrap_or(total_lines.saturating_sub(1));
+        let end_idx = end_line
+            .map(|l| l.saturating_sub(1))
+            .unwrap_or(total_lines.saturating_sub(1));
 
         if start_idx >= total_lines {
             return Ok((String::new(), 0, Some(total_lines)));
@@ -500,7 +528,11 @@ mod tests {
         let result = FileReadTool::read_file(&input).unwrap();
         assert!(!result.success);
         assert!(result.is_binary);
-        assert!(result.error.as_ref().unwrap().contains("Binary file detected"));
+        assert!(result
+            .error
+            .as_ref()
+            .unwrap()
+            .contains("Binary file detected"));
     }
 
     #[test]
@@ -562,6 +594,10 @@ mod tests {
 
         let result = FileReadTool::read_file(&input).unwrap();
         assert!(!result.success);
-        assert!(result.error.as_ref().unwrap().contains("rejected by content filter"));
+        assert!(result
+            .error
+            .as_ref()
+            .unwrap()
+            .contains("rejected by content filter"));
     }
 }

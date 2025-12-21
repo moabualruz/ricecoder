@@ -132,14 +132,18 @@ impl PreviewGenerator {
 
             // Collect removed lines
             let removed_start = i;
-            while i < original_lines.len() && (j >= new_lines.len() || original_lines[i] != new_lines[j]) {
+            while i < original_lines.len()
+                && (j >= new_lines.len() || original_lines[i] != new_lines[j])
+            {
                 hunk_lines.push(format!("-{}", original_lines[i]));
                 i += 1;
             }
 
             // Collect added lines
             let added_start = j;
-            while j < new_lines.len() && (i >= original_lines.len() || original_lines[i] != new_lines[j]) {
+            while j < new_lines.len()
+                && (i >= original_lines.len() || original_lines[i] != new_lines[j])
+            {
                 hunk_lines.push(format!("+{}", new_lines[j]));
                 j += 1;
             }

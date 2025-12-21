@@ -22,14 +22,16 @@ impl ConfigLoader {
 
     /// Load configuration from a YAML string
     pub fn load_from_string(content: &str) -> Result<LspServerRegistry> {
-        let registry: LspServerRegistry = serde_yaml::from_str(content).map_err(|e| {
-            ExternalLspError::ConfigError(format!("Failed to parse YAML: {}", e))
-        })?;
+        let registry: LspServerRegistry = serde_yaml::from_str(content)
+            .map_err(|e| ExternalLspError::ConfigError(format!("Failed to parse YAML: {}", e)))?;
 
         // Validate configuration
         Self::validate(&registry)?;
 
-        info!("Successfully loaded LSP configuration with {} languages", registry.servers.len());
+        info!(
+            "Successfully loaded LSP configuration with {} languages",
+            registry.servers.len()
+        );
 
         Ok(registry)
     }

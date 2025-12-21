@@ -85,19 +85,13 @@ impl RulePromoter {
     }
 
     /// Request promotion of a rule from project to global scope
-    pub fn request_promotion(
-        &mut self,
-        rule: Rule,
-        global_rules: &[Rule],
-    ) -> Result<RuleReview> {
+    pub fn request_promotion(&mut self, rule: Rule, global_rules: &[Rule]) -> Result<RuleReview> {
         // Validate that the rule is from project scope
         if rule.scope != RuleScope::Project {
-            return Err(LearningError::RulePromotionFailed(
-                format!(
-                    "Can only promote rules from project scope, rule is in {} scope",
-                    rule.scope
-                ),
-            ));
+            return Err(LearningError::RulePromotionFailed(format!(
+                "Can only promote rules from project scope, rule is in {} scope",
+                rule.scope
+            )));
         }
 
         // Check for conflicts with existing global rules
@@ -141,20 +135,13 @@ impl RulePromoter {
     }
 
     /// Approve a pending promotion
-    pub fn approve_promotion(
-        &mut self,
-        rule_id: &str,
-        reason: Option<String>,
-    ) -> Result<Rule> {
-        let mut rule_review = self
-            .pending_promotions
-            .remove(rule_id)
-            .ok_or_else(|| {
-                LearningError::RulePromotionFailed(format!(
-                    "No pending promotion found for rule '{}'",
-                    rule_id
-                ))
-            })?;
+    pub fn approve_promotion(&mut self, rule_id: &str, reason: Option<String>) -> Result<Rule> {
+        let mut rule_review = self.pending_promotions.remove(rule_id).ok_or_else(|| {
+            LearningError::RulePromotionFailed(format!(
+                "No pending promotion found for rule '{}'",
+                rule_id
+            ))
+        })?;
 
         // Update the rule to be in global scope and mark as promoted
         let mut promoted_rule = rule_review.rule.clone();
@@ -182,20 +169,13 @@ impl RulePromoter {
     }
 
     /// Reject a pending promotion
-    pub fn reject_promotion(
-        &mut self,
-        rule_id: &str,
-        reason: Option<String>,
-    ) -> Result<()> {
-        let mut rule_review = self
-            .pending_promotions
-            .remove(rule_id)
-            .ok_or_else(|| {
-                LearningError::RulePromotionFailed(format!(
-                    "No pending promotion found for rule '{}'",
-                    rule_id
-                ))
-            })?;
+    pub fn reject_promotion(&mut self, rule_id: &str, reason: Option<String>) -> Result<()> {
+        let mut rule_review = self.pending_promotions.remove(rule_id).ok_or_else(|| {
+            LearningError::RulePromotionFailed(format!(
+                "No pending promotion found for rule '{}'",
+                rule_id
+            ))
+        })?;
 
         // Update promotion metadata
         rule_review.promotion_metadata.approved = false;
@@ -260,7 +240,9 @@ impl RulePromoter {
     ) -> Vec<PromotionHistoryEntry> {
         self.promotion_history
             .iter()
-            .filter(|entry| entry.source_scope == source_scope && entry.target_scope == target_scope)
+            .filter(|entry| {
+                entry.source_scope == source_scope && entry.target_scope == target_scope
+            })
             .cloned()
             .collect()
     }
@@ -284,11 +266,7 @@ impl RulePromoter {
     }
 
     /// Validate a promoted rule against global rules
-    pub fn validate_promotion(
-        &self,
-        promoted_rule: &Rule,
-        global_rules: &[Rule],
-    ) -> Result<()> {
+    pub fn validate_promotion(&self, promoted_rule: &Rule, global_rules: &[Rule]) -> Result<()> {
         // Check that the rule is in global scope
         if promoted_rule.scope != RuleScope::Global {
             return Err(LearningError::RulePromotionFailed(
@@ -341,17 +319,16 @@ impl RulePromoter {
         let conflicts = ConflictResolver::find_conflicts(std::slice::from_ref(&rule))
             .into_iter()
             .filter(|(r1, r2)| {
-                global_rules.iter().any(|gr| {
-                    (gr.id == r1.id || gr.id == r2.id)
-                        && (gr.id != rule.id)
-                })
+                global_rules
+                    .iter()
+                    .any(|gr| (gr.id == r1.id || gr.id == r2.id) && (gr.id != rule.id))
             })
             .flat_map(|(r1, r2)| vec![r1, r2])
             .collect::<Vec<_>>();
 
-        let version_changes = previous_version.as_ref().map(|prev| {
-            Self::compare_versions(prev, &rule)
-        });
+        let version_changes = previous_version
+            .as_ref()
+            .map(|prev| Self::compare_versions(prev, &rule));
 
         let promotion_metadata = PromotionMetadata {
             requested_at: Utc::now(),
@@ -548,7 +525,9 @@ mod tests {
             RuleSource::Learned,
         );
 
-        let conflicts = promoter.detect_conflicts(&project_rule, &[global_rule]).unwrap();
+        let conflicts = promoter
+            .detect_conflicts(&project_rule, &[global_rule])
+            .unwrap();
         assert_eq!(conflicts.len(), 1);
     }
 

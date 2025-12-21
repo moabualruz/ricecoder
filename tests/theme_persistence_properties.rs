@@ -31,12 +31,12 @@ proptest! {
     fn prop_theme_persistence_in_memory(theme_name in theme_name_strategy()) {
         let manager = ThemeManager::new();
         manager.switch_by_name(&theme_name).expect("Failed to switch theme");
-        
+
         // Access the theme multiple times and verify it's the same
         let theme1 = manager.current().expect("Failed to get current theme");
         let theme2 = manager.current().expect("Failed to get current theme");
         let theme3 = manager.current().expect("Failed to get current theme");
-        
+
         // Verify all accesses return the same theme
         assert_eq!(theme1.name, theme_name);
         assert_eq!(theme2.name, theme_name);
@@ -53,12 +53,12 @@ proptest! {
     fn prop_theme_persistence_name_consistency(theme_name in theme_name_strategy()) {
         let manager = ThemeManager::new();
         manager.switch_by_name(&theme_name).expect("Failed to switch theme");
-        
+
         // Get the theme name multiple times
         let name1 = manager.current_name().expect("Failed to get theme name");
         let name2 = manager.current_name().expect("Failed to get theme name");
         let name3 = manager.current_name().expect("Failed to get theme name");
-        
+
         // Verify all accesses return the same name
         assert_eq!(name1, theme_name);
         assert_eq!(name2, theme_name);
@@ -75,12 +75,12 @@ proptest! {
     fn prop_theme_persistence_colors_persist(theme_name in theme_name_strategy()) {
         let manager = ThemeManager::new();
         manager.switch_by_name(&theme_name).expect("Failed to switch theme");
-        
+
         // Get the theme colors multiple times
         let theme1 = manager.current().expect("Failed to get current theme");
         let theme2 = manager.current().expect("Failed to get current theme");
         let theme3 = manager.current().expect("Failed to get current theme");
-        
+
         // Verify all colors are the same across accesses
         assert_eq!(theme1.primary, theme2.primary);
         assert_eq!(theme2.primary, theme3.primary);
@@ -101,7 +101,7 @@ mod tests {
     fn test_theme_persistence_dark_theme() {
         let manager = ThemeManager::new();
         manager.switch_by_name("dark").unwrap();
-        
+
         // Verify theme persists in memory
         assert_eq!(manager.current().unwrap().name, "dark");
         assert_eq!(manager.current().unwrap().name, "dark");
@@ -112,7 +112,7 @@ mod tests {
     fn test_theme_persistence_light_theme() {
         let manager = ThemeManager::new();
         manager.switch_by_name("light").unwrap();
-        
+
         // Verify theme persists in memory
         assert_eq!(manager.current().unwrap().name, "light");
         assert_eq!(manager.current().unwrap().name, "light");
@@ -122,11 +122,18 @@ mod tests {
     #[test]
     fn test_theme_persistence_multiple_accesses() {
         let manager = ThemeManager::new();
-        
+
         // Test multiple themes
-        for theme_name in &["dark", "light", "dracula", "monokai", "nord", "high-contrast"] {
+        for theme_name in &[
+            "dark",
+            "light",
+            "dracula",
+            "monokai",
+            "nord",
+            "high-contrast",
+        ] {
             manager.switch_by_name(theme_name).unwrap();
-            
+
             // Verify theme persists across multiple accesses
             assert_eq!(manager.current().unwrap().name, *theme_name);
             assert_eq!(manager.current().unwrap().name, *theme_name);
@@ -138,11 +145,11 @@ mod tests {
     fn test_theme_persistence_colors_consistent() {
         let manager = ThemeManager::new();
         manager.switch_by_name("dark").unwrap();
-        
+
         let theme1 = manager.current().unwrap();
         let theme2 = manager.current().unwrap();
         let theme3 = manager.current().unwrap();
-        
+
         // Verify colors are consistent across accesses
         assert_eq!(theme1.primary, theme2.primary);
         assert_eq!(theme2.primary, theme3.primary);

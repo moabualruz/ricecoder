@@ -189,16 +189,18 @@ impl<'a> DiagnosticsWidget<'a> {
     pub fn diagnostics_by_file(&self) -> HashMap<String, Vec<&DiagnosticItem>> {
         let mut grouped = HashMap::new();
         for diagnostic in self.diagnostics {
-            grouped.entry(diagnostic.file_path.clone())
-                  .or_insert_with(Vec::new)
-                  .push(diagnostic);
+            grouped
+                .entry(diagnostic.file_path.clone())
+                .or_insert_with(Vec::new)
+                .push(diagnostic);
         }
         grouped
     }
 
     /// Get diagnostics by severity
     pub fn diagnostics_by_severity(&self, severity: DiagnosticSeverity) -> Vec<&DiagnosticItem> {
-        self.diagnostics.iter()
+        self.diagnostics
+            .iter()
             .filter(|d| d.severity == severity)
             .collect()
     }
@@ -207,9 +209,7 @@ impl<'a> DiagnosticsWidget<'a> {
 impl<'a> Widget for DiagnosticsWidget<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         if self.diagnostics.is_empty() {
-            let block = Block::default()
-                .title("Diagnostics")
-                .borders(Borders::ALL);
+            let block = Block::default().title("Diagnostics").borders(Borders::ALL);
             let inner_area = block.inner(area);
             block.render(area, buf);
 
@@ -227,50 +227,59 @@ impl<'a> Widget for DiagnosticsWidget<'a> {
         block.render(area, buf);
 
         // Create list items for diagnostics
-        let items: Vec<ListItem> = self.diagnostics.iter().enumerate().map(|(i, diagnostic)| {
-            let mut spans = Vec::new();
+        let items: Vec<ListItem> = self
+            .diagnostics
+            .iter()
+            .enumerate()
+            .map(|(i, diagnostic)| {
+                let mut spans = Vec::new();
 
-            // Severity symbol
-            spans.push(Span::styled(
-                diagnostic.severity.symbol(),
-                Style::default().fg(diagnostic.severity.color())
-            ));
-            spans.push(Span::raw(" "));
-
-            // Message
-            spans.push(Span::raw(&diagnostic.message));
-
-            // Code if available
-            if let Some(ref code) = diagnostic.code {
-                spans.push(Span::raw(" "));
+                // Severity symbol
                 spans.push(Span::styled(
-                    format!("[{}]", code),
-                    Style::default().fg(Color::Cyan).add_modifier(Modifier::ITALIC)
+                    diagnostic.severity.symbol(),
+                    Style::default().fg(diagnostic.severity.color()),
                 ));
-            }
+                spans.push(Span::raw(" "));
 
-            // Location
-            let location = if self.show_file_paths {
-                format!(" ({}:{}:{})", diagnostic.file_path, diagnostic.line + 1, diagnostic.column + 1)
-            } else {
-                format!(" ({}:{})", diagnostic.line + 1, diagnostic.column + 1)
-            };
-            spans.push(Span::styled(
-                location,
-                Style::default().fg(Color::Gray)
-            ));
+                // Message
+                spans.push(Span::raw(&diagnostic.message));
 
-            let style = if Some(i) == self.selected_index {
-                Style::default().bg(Color::Blue).fg(Color::White)
-            } else {
-                Style::default()
-            };
+                // Code if available
+                if let Some(ref code) = diagnostic.code {
+                    spans.push(Span::raw(" "));
+                    spans.push(Span::styled(
+                        format!("[{}]", code),
+                        Style::default()
+                            .fg(Color::Cyan)
+                            .add_modifier(Modifier::ITALIC),
+                    ));
+                }
 
-            ListItem::new(Line::from(spans)).style(style)
-        }).collect();
+                // Location
+                let location = if self.show_file_paths {
+                    format!(
+                        " ({}:{}:{})",
+                        diagnostic.file_path,
+                        diagnostic.line + 1,
+                        diagnostic.column + 1
+                    )
+                } else {
+                    format!(" ({}:{})", diagnostic.line + 1, diagnostic.column + 1)
+                };
+                spans.push(Span::styled(location, Style::default().fg(Color::Gray)));
 
-        let list = List::new(items)
-            .highlight_style(Style::default().bg(Color::Blue).fg(Color::White));
+                let style = if Some(i) == self.selected_index {
+                    Style::default().bg(Color::Blue).fg(Color::White)
+                } else {
+                    Style::default()
+                };
+
+                ListItem::new(Line::from(spans)).style(style)
+            })
+            .collect();
+
+        let list =
+            List::new(items).highlight_style(Style::default().bg(Color::Blue).fg(Color::White));
 
         list.render(inner_area, buf);
     }
@@ -301,7 +310,10 @@ impl<'a> Widget for DiagnosticDetailWidget<'a> {
 
             // Severity and message
             lines.push(Line::from(vec![
-                Span::styled(diagnostic.severity.symbol(), Style::default().fg(diagnostic.severity.color())),
+                Span::styled(
+                    diagnostic.severity.symbol(),
+                    Style::default().fg(diagnostic.severity.color()),
+                ),
                 Span::raw(" "),
                 Span::styled(&diagnostic.message, Style::default().fg(Color::White)),
             ]));
@@ -319,7 +331,10 @@ impl<'a> Widget for DiagnosticDetailWidget<'a> {
                     if diagnostic.source.is_some() {
                         source_spans.push(Span::raw(" "));
                     }
-                    source_spans.push(Span::styled(format!("({})", code), Style::default().fg(Color::Yellow)));
+                    source_spans.push(Span::styled(
+                        format!("({})", code),
+                        Style::default().fg(Color::Yellow),
+                    ));
                 }
 
                 lines.push(Line::from(source_spans));
@@ -329,35 +344,52 @@ impl<'a> Widget for DiagnosticDetailWidget<'a> {
             lines.push(Line::from(vec![
                 Span::styled("Location: ", Style::default().fg(Color::Cyan)),
                 Span::raw(&diagnostic.file_path),
-                Span::raw(format!(":{}:{}", diagnostic.line + 1, diagnostic.column + 1)),
+                Span::raw(format!(
+                    ":{}:{}",
+                    diagnostic.line + 1,
+                    diagnostic.column + 1
+                )),
             ]));
 
             // Range if multi-line
-            if let (Some(end_line), Some(end_column)) = (diagnostic.end_line, diagnostic.end_column) {
+            if let (Some(end_line), Some(end_column)) = (diagnostic.end_line, diagnostic.end_column)
+            {
                 if end_line != diagnostic.line || end_column != diagnostic.column {
                     lines.push(Line::from(vec![
                         Span::styled("Range: ", Style::default().fg(Color::Cyan)),
-                        Span::raw(format!("{}:{}-{}:{}", diagnostic.line + 1, diagnostic.column + 1, end_line + 1, end_column + 1)),
+                        Span::raw(format!(
+                            "{}:{}-{}:{}",
+                            diagnostic.line + 1,
+                            diagnostic.column + 1,
+                            end_line + 1,
+                            end_column + 1
+                        )),
                     ]));
                 }
             }
 
             // Related information
             if !diagnostic.related_information.is_empty() {
-                lines.push(Line::from(Span::styled("Related:", Style::default().fg(Color::Cyan))));
+                lines.push(Line::from(Span::styled(
+                    "Related:",
+                    Style::default().fg(Color::Cyan),
+                )));
                 for related in &diagnostic.related_information {
                     lines.push(Line::from(vec![
                         Span::raw("  • "),
                         Span::raw(&related.location.file_path),
-                        Span::raw(format!(":{}:{}", related.location.line + 1, related.location.column + 1)),
+                        Span::raw(format!(
+                            ":{}:{}",
+                            related.location.line + 1,
+                            related.location.column + 1
+                        )),
                         Span::raw(" - "),
                         Span::raw(&related.message),
                     ]));
                 }
             }
 
-            let paragraph = Paragraph::new(lines)
-                .wrap(Wrap { trim: true });
+            let paragraph = Paragraph::new(lines).wrap(Wrap { trim: true });
 
             paragraph.render(inner_area, buf);
         } else {
@@ -464,7 +496,13 @@ mod tests {
     fn test_diagnostics_widget_with_items() {
         let diagnostics = vec![
             DiagnosticItem::new(DiagnosticSeverity::Error, "Error message", "file.rs", 1, 0),
-            DiagnosticItem::new(DiagnosticSeverity::Warning, "Warning message", "file.rs", 2, 0),
+            DiagnosticItem::new(
+                DiagnosticSeverity::Warning,
+                "Warning message",
+                "file.rs",
+                2,
+                0,
+            ),
         ];
         let widget = DiagnosticsWidget::new(&diagnostics);
         assert_eq!(widget.len(), 2);

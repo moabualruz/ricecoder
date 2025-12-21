@@ -5,11 +5,11 @@
 
 use crate::accessibility::{FocusManager, KeyboardNavigationManager, ScreenReaderAnnouncer};
 use crate::components::Component;
-use ricecoder_storage::TuiConfig;
-use ricecoder_themes::Theme;
 use crate::terminal_state::TerminalCapabilities;
 use crate::widgets::ChatWidget;
 use ricecoder_help::HelpDialog;
+use ricecoder_storage::TuiConfig;
+use ricecoder_themes::Theme;
 
 // Stub type for TUI isolation - TokenUsage moved to ricecoder-sessions
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -334,11 +334,7 @@ pub enum Subscription {
 
 impl AppModel {
     /// Create initial application state
-    pub fn init(
-        config: TuiConfig,
-        theme: Theme,
-        terminal_caps: TerminalCapabilities,
-    ) -> Self {
+    pub fn init(config: TuiConfig, theme: Theme, terminal_caps: TerminalCapabilities) -> Self {
         Self::init_with_providers(config, theme, terminal_caps, Vec::new(), None)
     }
 
@@ -531,14 +527,18 @@ impl AppModel {
 }
 
 /// Messages that can update the application state
-#[derive(Clone)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum AppMessage {
     // User Input
     KeyPress(crossterm::event::KeyEvent),
     MouseEvent(crossterm::event::MouseEvent),
-    Resize { width: u16, height: u16 },
-    Scroll { delta: isize },
+    Resize {
+        width: u16,
+        height: u16,
+    },
+    Scroll {
+        delta: isize,
+    },
 
     // UI Events
     ModeChanged(AppMode),
@@ -575,19 +575,36 @@ pub enum AppMessage {
     // MCP Events
     McpServerAdded(String),
     McpServerRemoved(String),
-    McpToolExecuted { server: String, tool: String, result: serde_json::Value },
-    McpToolExecutionFailed { server: String, tool: String, error: String },
+    McpToolExecuted {
+        server: String,
+        tool: String,
+        result: serde_json::Value,
+    },
+    McpToolExecutionFailed {
+        server: String,
+        tool: String,
+        error: String,
+    },
 
     // Provider Events
     ProviderSwitched(String),
-    ProviderStatusUpdated { provider_id: String, status: ProviderConnectionState },
-    ProviderMetricsUpdated { provider_id: String, metrics: ProviderMetrics },
+    ProviderStatusUpdated {
+        provider_id: String,
+        status: ProviderConnectionState,
+    },
+    ProviderMetricsUpdated {
+        provider_id: String,
+        metrics: ProviderMetrics,
+    },
     ProviderSelected(String),
     ProviderViewModeChanged(ProviderViewMode),
     ProviderFilterChanged(String),
 
     // Component Events
-    ComponentMessage { component_id: String, message: String },
+    ComponentMessage {
+        component_id: String,
+        message: String,
+    },
 
     // System Events
     Tick,
@@ -595,8 +612,7 @@ pub enum AppMessage {
 }
 
 /// Result of a command execution
-#[derive(Clone)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct CommandResult {
     pub command: String,
     pub success: bool,
@@ -681,8 +697,7 @@ impl MessageBatchProcessor {
     pub fn add_message(&mut self, message: AppMessage, priority: MessagePriority) {
         // Check if we should start a new batch or add to existing
         if let Some(last_batch) = self.batches.back_mut() {
-            if last_batch.messages.len() < self.max_batch_size &&
-               last_batch.priority == priority {
+            if last_batch.messages.len() < self.max_batch_size && last_batch.priority == priority {
                 // Add to existing batch
                 last_batch.messages.push(message);
                 return;
@@ -697,7 +712,9 @@ impl MessageBatchProcessor {
         };
 
         // Insert based on priority (higher priority first)
-        let insert_pos = self.batches.iter()
+        let insert_pos = self
+            .batches
+            .iter()
             .position(|b| b.priority < priority)
             .unwrap_or(self.batches.len());
 
@@ -831,9 +848,9 @@ impl StateDiff {
 
     /// Check if UI needs full re-render
     pub fn needs_full_render(&self) -> bool {
-        self.changes.iter().any(|c| {
-            matches!(c, StateChange::Mode(_) | StateChange::Theme)
-        })
+        self.changes
+            .iter()
+            .any(|c| matches!(c, StateChange::Mode(_) | StateChange::Theme))
     }
 }
 
@@ -846,4 +863,3 @@ impl Default for AppModel {
         )
     }
 }
-

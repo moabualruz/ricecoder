@@ -71,12 +71,10 @@ impl ClientPool {
                     "Removed idle LSP client to make room"
                 );
             } else {
-                return Err(crate::error::ExternalLspError::ProtocolError(
-                    format!(
-                        "Client pool at capacity ({}) and no idle clients to remove",
-                        self.max_processes
-                    ),
-                ));
+                return Err(crate::error::ExternalLspError::ProtocolError(format!(
+                    "Client pool at capacity ({}) and no idle clients to remove",
+                    self.max_processes
+                )));
             }
         }
 
@@ -141,10 +139,7 @@ impl ClientPool {
 
         for language in &idle_languages {
             clients.remove(language);
-            debug!(
-                language = language,
-                "Cleaned up idle LSP client"
-            );
+            debug!(language = language, "Cleaned up idle LSP client");
         }
 
         idle_languages.len()
@@ -168,10 +163,7 @@ impl ClientPool {
         let mut clients = self.clients.write().await;
         let count = clients.len();
         clients.clear();
-        info!(
-            count = count,
-            "Cleared all LSP clients from pool"
-        );
+        info!(count = count, "Cleared all LSP clients from pool");
     }
 }
 

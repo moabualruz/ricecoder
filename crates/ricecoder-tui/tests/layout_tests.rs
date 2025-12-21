@@ -105,8 +105,8 @@ mod tests {
         let rects = layout.split_vertical(rect, &constraints);
 
         assert_eq!(rects.len(), 3);
-        assert_eq!(rects[0].height, 5);  // Fixed
-        assert_eq!(rects[2].height, 3);  // Fixed
+        assert_eq!(rects[0].height, 5); // Fixed
+        assert_eq!(rects[2].height, 3); // Fixed
         assert_eq!(rects[1].height, 12); // Fill (20 - 5 - 3)
     }
 
@@ -162,7 +162,7 @@ mod tests {
 
         // Chat area should use remaining space
         assert_eq!(areas.chat.x, 25); // After sidebar
-        assert_eq!(areas.chat.y, 7);  // After banner
+        assert_eq!(areas.chat.y, 7); // After banner
         assert_eq!(areas.chat.width, 75); // Remaining width
 
         // Input and status should be at bottom
@@ -246,11 +246,17 @@ mod tests {
 
         // Hide sidebar (narrow width)
         let layout = Layout::new(70, 40);
-        assert_eq!(layout.degradation_level(&config), DegradationLevel::HideSidebar);
+        assert_eq!(
+            layout.degradation_level(&config),
+            DegradationLevel::HideSidebar
+        );
 
         // Reduce banner (short height)
         let layout = Layout::new(100, 25);
-        assert_eq!(layout.degradation_level(&config), DegradationLevel::ReduceBanner);
+        assert_eq!(
+            layout.degradation_level(&config),
+            DegradationLevel::ReduceBanner
+        );
 
         // Minimal layout
         let layout = Layout::new(60, 15);
@@ -258,7 +264,10 @@ mod tests {
 
         // Too small
         let layout = Layout::new(30, 8);
-        assert_eq!(layout.degradation_level(&config), DegradationLevel::TooSmall);
+        assert_eq!(
+            layout.degradation_level(&config),
+            DegradationLevel::TooSmall
+        );
     }
 
     #[test]

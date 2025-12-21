@@ -21,5 +21,3 @@ pub fn generate_completions(shell: &str) -> Result<(), String> {
     generate(shell, &mut cmd, "rice", &mut io::stdout());
     Ok(())
 }
-
-

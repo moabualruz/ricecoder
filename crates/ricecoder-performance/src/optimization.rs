@@ -1,10 +1,10 @@
 //! Performance optimization pipeline
 
-use crate::profiler::{PerformanceProfiler, ProfileResult};
-use crate::monitor::PerformanceMetrics;
 use crate::baseline::PerformanceBaseline;
-use std::collections::HashMap;
+use crate::monitor::PerformanceMetrics;
+use crate::profiler::{PerformanceProfiler, ProfileResult};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Optimization pipeline for automated performance improvements
 pub struct OptimizationPipeline {
@@ -36,7 +36,10 @@ impl OptimizationPipeline {
     }
 
     /// Run the optimization pipeline
-    pub async fn run_optimization(&mut self, target_function: impl FnOnce(&mut PerformanceProfiler)) -> OptimizationResult {
+    pub async fn run_optimization(
+        &mut self,
+        target_function: impl FnOnce(&mut PerformanceProfiler),
+    ) -> OptimizationResult {
         // Profile the current performance
         self.profiler.start_profiling();
         target_function(&mut self.profiler);
@@ -57,7 +60,8 @@ impl OptimizationPipeline {
         }
 
         // Calculate expected improvements
-        let expected_improvement = applied_optimizations.iter()
+        let expected_improvement = applied_optimizations
+            .iter()
             .map(|opt| opt.expected_improvement_percent)
             .sum();
 
@@ -155,7 +159,8 @@ pub struct MemoryOptimizationRule;
 impl OptimizationRule for MemoryOptimizationRule {
     fn analyze(&self, profile: &ProfileResult) -> Option<AppliedOptimization> {
         // Check for high memory usage patterns
-        let high_memory_paths: Vec<String> = profile.metrics
+        let high_memory_paths: Vec<String> = profile
+            .metrics
             .iter()
             .filter(|(_, metrics)| metrics.peak_memory_bytes > 100 * 1024 * 1024) // 100MB
             .map(|(path, _)| path.clone())
@@ -174,7 +179,8 @@ impl OptimizationRule for MemoryOptimizationRule {
     }
 
     fn suggest_optimization(&self, profile: &ProfileResult) -> Option<OptimizationSuggestion> {
-        let memory_hogs: Vec<String> = profile.metrics
+        let memory_hogs: Vec<String> = profile
+            .metrics
             .iter()
             .filter(|(_, metrics)| metrics.peak_memory_bytes > 50 * 1024 * 1024) // 50MB
             .map(|(path, _)| path.clone())
@@ -183,7 +189,9 @@ impl OptimizationRule for MemoryOptimizationRule {
         if !memory_hogs.is_empty() {
             return Some(OptimizationSuggestion {
                 title: "Reduce Memory Allocations".to_string(),
-                description: "Consider using memory pools or object reuse for frequently allocated objects".to_string(),
+                description:
+                    "Consider using memory pools or object reuse for frequently allocated objects"
+                        .to_string(),
                 priority: OptimizationPriority::High,
                 effort: OptimizationEffort::Medium,
                 expected_improvement_percent: 20.0,
@@ -201,7 +209,8 @@ pub struct CpuOptimizationRule;
 impl OptimizationRule for CpuOptimizationRule {
     fn analyze(&self, profile: &ProfileResult) -> Option<AppliedOptimization> {
         // Check for CPU-intensive paths
-        let cpu_intensive_paths: Vec<String> = profile.metrics
+        let cpu_intensive_paths: Vec<String> = profile
+            .metrics
             .iter()
             .filter(|(_, metrics)| metrics.avg_cpu_percent > 80.0)
             .map(|(path, _)| path.clone())
@@ -220,7 +229,8 @@ impl OptimizationRule for CpuOptimizationRule {
     }
 
     fn suggest_optimization(&self, profile: &ProfileResult) -> Option<OptimizationSuggestion> {
-        let slow_paths: Vec<String> = profile.metrics
+        let slow_paths: Vec<String> = profile
+            .metrics
             .iter()
             .filter(|(_, metrics)| metrics.p95_time_ns > 1_000_000_000) // 1 second
             .map(|(path, _)| path.clone())
@@ -247,7 +257,8 @@ pub struct CachingOptimizationRule;
 impl OptimizationRule for CachingOptimizationRule {
     fn analyze(&self, profile: &ProfileResult) -> Option<AppliedOptimization> {
         // Check for frequently called functions that could benefit from caching
-        let cacheable_paths: Vec<String> = profile.metrics
+        let cacheable_paths: Vec<String> = profile
+            .metrics
             .iter()
             .filter(|(_, metrics)| metrics.sample_size > 1000)
             .map(|(path, _)| path.clone())
@@ -256,7 +267,8 @@ impl OptimizationRule for CachingOptimizationRule {
         if !cacheable_paths.is_empty() {
             return Some(AppliedOptimization {
                 name: "Result Caching".to_string(),
-                description: "Added intelligent caching for frequently called functions".to_string(),
+                description: "Added intelligent caching for frequently called functions"
+                    .to_string(),
                 expected_improvement_percent: 40.0,
                 affected_paths: cacheable_paths,
             });
@@ -266,7 +278,8 @@ impl OptimizationRule for CachingOptimizationRule {
     }
 
     fn suggest_optimization(&self, profile: &ProfileResult) -> Option<OptimizationSuggestion> {
-        let frequently_called: Vec<String> = profile.metrics
+        let frequently_called: Vec<String> = profile
+            .metrics
             .iter()
             .filter(|(_, metrics)| metrics.sample_size > 100)
             .map(|(path, _)| path.clone())
@@ -275,7 +288,9 @@ impl OptimizationRule for CachingOptimizationRule {
         if !frequently_called.is_empty() {
             return Some(OptimizationSuggestion {
                 title: "Implement Caching".to_string(),
-                description: "Add caching for functions called >100 times to reduce redundant computation".to_string(),
+                description:
+                    "Add caching for functions called >100 times to reduce redundant computation"
+                        .to_string(),
                 priority: OptimizationPriority::Medium,
                 effort: OptimizationEffort::Low,
                 expected_improvement_percent: 35.0,

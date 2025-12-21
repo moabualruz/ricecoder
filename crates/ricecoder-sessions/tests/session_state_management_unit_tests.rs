@@ -33,7 +33,9 @@ fn test_session_manager_create_single_session() {
     let mut manager = SessionManager::new(10);
     let context = create_test_context();
 
-    let session = manager.create_session("Test Session".to_string(), context).unwrap();
+    let session = manager
+        .create_session("Test Session".to_string(), context)
+        .unwrap();
 
     assert_eq!(manager.session_count(), 1);
     assert_eq!(manager.get_active_session().unwrap().id, session.id);
@@ -45,9 +47,15 @@ fn test_session_manager_multiple_sessions() {
     let mut manager = SessionManager::new(5);
     let context = create_test_context();
 
-    let session1 = manager.create_session("Session 1".to_string(), context.clone()).unwrap();
-    let session2 = manager.create_session("Session 2".to_string(), context.clone()).unwrap();
-    let session3 = manager.create_session("Session 3".to_string(), context).unwrap();
+    let session1 = manager
+        .create_session("Session 1".to_string(), context.clone())
+        .unwrap();
+    let session2 = manager
+        .create_session("Session 2".to_string(), context.clone())
+        .unwrap();
+    let session3 = manager
+        .create_session("Session 3".to_string(), context)
+        .unwrap();
 
     assert_eq!(manager.session_count(), 3);
 
@@ -68,9 +76,15 @@ fn test_session_manager_switch_sessions() {
     let mut manager = SessionManager::new(5);
     let context = create_test_context();
 
-    let session1 = manager.create_session("Session 1".to_string(), context.clone()).unwrap();
-    let session2 = manager.create_session("Session 2".to_string(), context.clone()).unwrap();
-    let session3 = manager.create_session("Session 3".to_string(), context).unwrap();
+    let session1 = manager
+        .create_session("Session 1".to_string(), context.clone())
+        .unwrap();
+    let session2 = manager
+        .create_session("Session 2".to_string(), context.clone())
+        .unwrap();
+    let session3 = manager
+        .create_session("Session 3".to_string(), context)
+        .unwrap();
 
     // Initially session3 should be active
     assert_eq!(manager.get_active_session().unwrap().id, session3.id);
@@ -93,9 +107,15 @@ fn test_session_manager_delete_sessions() {
     let mut manager = SessionManager::new(5);
     let context = create_test_context();
 
-    let session1 = manager.create_session("Session 1".to_string(), context.clone()).unwrap();
-    let session2 = manager.create_session("Session 2".to_string(), context.clone()).unwrap();
-    let session3 = manager.create_session("Session 3".to_string(), context).unwrap();
+    let session1 = manager
+        .create_session("Session 1".to_string(), context.clone())
+        .unwrap();
+    let session2 = manager
+        .create_session("Session 2".to_string(), context.clone())
+        .unwrap();
+    let session3 = manager
+        .create_session("Session 3".to_string(), context)
+        .unwrap();
 
     assert_eq!(manager.session_count(), 3);
 
@@ -122,8 +142,12 @@ fn test_session_manager_limit_enforcement() {
     let context = create_test_context();
 
     // Create up to the limit
-    manager.create_session("Session 1".to_string(), context.clone()).unwrap();
-    manager.create_session("Session 2".to_string(), context.clone()).unwrap();
+    manager
+        .create_session("Session 1".to_string(), context.clone())
+        .unwrap();
+    manager
+        .create_session("Session 2".to_string(), context.clone())
+        .unwrap();
     assert_eq!(manager.session_count(), 2);
 
     // Attempt to create beyond limit should fail
@@ -137,8 +161,12 @@ fn test_session_manager_get_session_by_id() {
     let mut manager = SessionManager::new(5);
     let context = create_test_context();
 
-    let session1 = manager.create_session("Session 1".to_string(), context.clone()).unwrap();
-    let session2 = manager.create_session("Session 2".to_string(), context).unwrap();
+    let session1 = manager
+        .create_session("Session 1".to_string(), context.clone())
+        .unwrap();
+    let session2 = manager
+        .create_session("Session 2".to_string(), context)
+        .unwrap();
 
     // Get existing sessions
     let retrieved1 = manager.get_session(&session1.id).unwrap();
@@ -158,8 +186,12 @@ fn test_session_manager_close_session() {
     let mut manager = SessionManager::new(5);
     let context = create_test_context();
 
-    let session1 = manager.create_session("Session 1".to_string(), context.clone()).unwrap();
-    let session2 = manager.create_session("Session 2".to_string(), context).unwrap();
+    let session1 = manager
+        .create_session("Session 1".to_string(), context.clone())
+        .unwrap();
+    let session2 = manager
+        .create_session("Session 2".to_string(), context)
+        .unwrap();
 
     assert_eq!(manager.session_count(), 2);
 
@@ -197,8 +229,12 @@ fn test_session_manager_state_consistency_after_operations() {
     let context = create_test_context();
 
     // Create sessions
-    let session1 = manager.create_session("Session 1".to_string(), context.clone()).unwrap();
-    let session2 = manager.create_session("Session 2".to_string(), context.clone()).unwrap();
+    let session1 = manager
+        .create_session("Session 1".to_string(), context.clone())
+        .unwrap();
+    let session2 = manager
+        .create_session("Session 2".to_string(), context.clone())
+        .unwrap();
 
     // Verify initial state
     assert_eq!(manager.session_count(), 2);
@@ -215,7 +251,9 @@ fn test_session_manager_state_consistency_after_operations() {
     assert_eq!(manager.get_active_session().unwrap().id, session1.id);
 
     // Create new session and verify
-    let session3 = manager.create_session("Session 3".to_string(), context).unwrap();
+    let session3 = manager
+        .create_session("Session 3".to_string(), context)
+        .unwrap();
     assert_eq!(manager.session_count(), 2);
     assert_eq!(manager.get_active_session().unwrap().id, session3.id);
 }
@@ -331,7 +369,9 @@ fn test_background_agent_manager_agent_lifecycle() {
     let mut agent_manager = BackgroundAgentManager::new();
 
     // Create agent
-    let agent_id = agent_manager.create_agent("test_agent".to_string(), Some("Testing".to_string())).unwrap();
+    let agent_id = agent_manager
+        .create_agent("test_agent".to_string(), Some("Testing".to_string()))
+        .unwrap();
 
     // Verify agent exists
     let agents = agent_manager.list_agents();
@@ -339,11 +379,16 @@ fn test_background_agent_manager_agent_lifecycle() {
     assert_eq!(agents[0].id, agent_id);
 
     // Update agent status
-    agent_manager.update_agent_status(&agent_id, ricecoder_sessions::AgentStatus::Completed).unwrap();
+    agent_manager
+        .update_agent_status(&agent_id, ricecoder_sessions::AgentStatus::Completed)
+        .unwrap();
 
     // Verify status update
     let updated_agents = agent_manager.list_agents();
-    assert_eq!(updated_agents[0].status, ricecoder_sessions::AgentStatus::Completed);
+    assert_eq!(
+        updated_agents[0].status,
+        ricecoder_sessions::AgentStatus::Completed
+    );
 
     // Remove agent
     agent_manager.remove_agent(&agent_id).unwrap();
@@ -359,8 +404,12 @@ fn test_background_agent_manager_concurrent_operations() {
     for i in 0..5 {
         let manager_clone = Arc::clone(&agent_manager);
         let handle = std::thread::spawn(move || {
-            let mut manager = tokio::runtime::Runtime::new().unwrap().block_on(manager_clone.lock());
-            let agent_id = manager.create_agent(format!("agent_{}", i), Some(format!("Task {}", i))).unwrap();
+            let mut manager = tokio::runtime::Runtime::new()
+                .unwrap()
+                .block_on(manager_clone.lock());
+            let agent_id = manager
+                .create_agent(format!("agent_{}", i), Some(format!("Task {}", i)))
+                .unwrap();
             agent_id
         });
         handles.push(handle);
@@ -373,7 +422,9 @@ fn test_background_agent_manager_concurrent_operations() {
     }
 
     // Verify all agents were created
-    let manager = tokio::runtime::Runtime::new().unwrap().block_on(agent_manager.lock());
+    let manager = tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(agent_manager.lock());
     assert_eq!(manager.list_agents().len(), 5);
 
     // Verify all agent IDs are unique

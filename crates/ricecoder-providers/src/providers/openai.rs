@@ -321,5 +321,3 @@ struct OpenAiUsage {
     completion_tokens: usize,
     total_tokens: usize,
 }
-
-

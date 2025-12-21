@@ -124,7 +124,10 @@ mod tests {
         };
 
         let result = mapper.map(&response, &rules).unwrap();
-        assert_eq!(result["documentation"], "A function that returns an integer");
+        assert_eq!(
+            result["documentation"],
+            "A function that returns an integer"
+        );
         assert_eq!(result["signature"], "fn foo() -> i32");
     }
 

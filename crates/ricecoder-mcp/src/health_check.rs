@@ -109,7 +109,10 @@ impl HealthChecker {
     }
 
     /// Set analytics aggregator
-    pub fn with_analytics(mut self, analytics: Arc<crate::analytics::MCPAnalyticsAggregator>) -> Self {
+    pub fn with_analytics(
+        mut self,
+        analytics: Arc<crate::analytics::MCPAnalyticsAggregator>,
+    ) -> Self {
         self.analytics = Some(analytics);
         self
     }
@@ -154,9 +157,9 @@ impl HealthChecker {
         debug!("Checking health of server: {}", server_id);
 
         let mut availability = self.availability.write().await;
-        let server_avail = availability
-            .get_mut(server_id)
-            .ok_or_else(|| Error::ConnectionError(format!("Server not registered: {}", server_id)))?;
+        let server_avail = availability.get_mut(server_id).ok_or_else(|| {
+            Error::ConnectionError(format!("Server not registered: {}", server_id))
+        })?;
 
         // Simulate health check (in real implementation, would ping the server)
         let start_time = std::time::Instant::now();
@@ -169,7 +172,9 @@ impl HealthChecker {
 
             // Analytics
             if let Some(ref analytics) = self.analytics {
-                let _ = analytics.record_health_check(server_id, true, check_duration, None, None).await;
+                let _ = analytics
+                    .record_health_check(server_id, true, check_duration, None, None)
+                    .await;
             }
 
             Ok(true)
@@ -179,7 +184,9 @@ impl HealthChecker {
 
             // Analytics
             if let Some(ref analytics) = self.analytics {
-                let _ = analytics.record_health_check(server_id, false, check_duration, None, None).await;
+                let _ = analytics
+                    .record_health_check(server_id, false, check_duration, None, None)
+                    .await;
             }
 
             Ok(false)
@@ -257,11 +264,18 @@ impl HealthChecker {
     ///
     /// # Returns
     /// Result indicating success or failure
-    pub async fn reconnect_with_backoff<F>(&self, server_id: &str, mut on_reconnect: F) -> Result<()>
+    pub async fn reconnect_with_backoff<F>(
+        &self,
+        server_id: &str,
+        mut on_reconnect: F,
+    ) -> Result<()>
     where
         F: FnMut() -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + Send>>,
     {
-        debug!("Starting reconnection with backoff for server: {}", server_id);
+        debug!(
+            "Starting reconnection with backoff for server: {}",
+            server_id
+        );
 
         let mut backoff_ms = 100u64;
         let mut attempt = 0;

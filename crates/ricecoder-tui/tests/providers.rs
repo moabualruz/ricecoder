@@ -22,7 +22,10 @@ async fn test_provider_factory_creation() {
     let sessions = session_provider.get_active_sessions().await.unwrap();
     assert!(sessions.is_empty());
 
-    let result = command_provider.execute_command(ricecoder_commands::Command::Save).await.unwrap();
+    let result = command_provider
+        .execute_command(ricecoder_commands::Command::Save)
+        .await
+        .unwrap();
     assert!(result.success);
 
     let help = help_provider.get_help_content("test").await.unwrap();

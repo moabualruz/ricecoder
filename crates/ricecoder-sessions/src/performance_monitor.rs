@@ -88,7 +88,10 @@ impl SessionPerformanceMonitor {
             }
 
             // Update session duration
-            if let Ok(duration) = session_metrics.last_activity.duration_since(session_metrics.created_at) {
+            if let Ok(duration) = session_metrics
+                .last_activity
+                .duration_since(session_metrics.created_at)
+            {
                 session_metrics.session_duration_seconds = duration.as_secs();
             }
         }
@@ -116,9 +119,7 @@ impl SessionPerformanceMonitor {
         let mut metrics = self.metrics.lock().unwrap();
 
         if let Some(session_metrics) = metrics.get_mut(session_id) {
-            session_metrics.total_tokens = Some(
-                session_metrics.total_tokens.unwrap_or(0) + tokens
-            );
+            session_metrics.total_tokens = Some(session_metrics.total_tokens.unwrap_or(0) + tokens);
         }
 
         self.global_stats.record_token_usage(tokens);
@@ -164,9 +165,7 @@ impl SessionPerformanceMonitor {
         let threshold = now - inactivity_threshold;
 
         let initial_count = metrics.len();
-        metrics.retain(|_, session_metrics| {
-            session_metrics.last_activity > threshold
-        });
+        metrics.retain(|_, session_metrics| session_metrics.last_activity > threshold);
 
         let removed_count = initial_count - metrics.len();
         self.global_stats.record_cleanup(removed_count);
@@ -182,9 +181,11 @@ impl SessionPerformanceMonitor {
         let total_sessions = metrics.len();
         let total_messages: u64 = metrics.values().map(|m| m.message_count).sum();
         let avg_response_time: f64 = if total_messages > 0 {
-            metrics.values()
+            metrics
+                .values()
                 .map(|m| m.avg_response_time_ms * m.message_count as f64)
-                .sum::<f64>() / total_messages as f64
+                .sum::<f64>()
+                / total_messages as f64
         } else {
             0.0
         };
@@ -247,7 +248,8 @@ impl GlobalSessionStats {
     fn record_tool_invocation(&self, success: bool) {
         self.total_tool_invocations.fetch_add(1, Ordering::Relaxed);
         if success {
-            self.successful_tool_invocations.fetch_add(1, Ordering::Relaxed);
+            self.successful_tool_invocations
+                .fetch_add(1, Ordering::Relaxed);
         }
     }
 
@@ -256,9 +258,11 @@ impl GlobalSessionStats {
     }
 
     fn record_cleanup(&self, removed_count: usize) {
-        self.cleanup_sessions_removed.fetch_add(removed_count as u64, Ordering::Relaxed);
+        self.cleanup_sessions_removed
+            .fetch_add(removed_count as u64, Ordering::Relaxed);
         if self.total_sessions_active.load(Ordering::Relaxed) >= removed_count as u64 {
-            self.total_sessions_active.fetch_sub(removed_count as u64, Ordering::Relaxed);
+            self.total_sessions_active
+                .fetch_sub(removed_count as u64, Ordering::Relaxed);
         }
     }
 

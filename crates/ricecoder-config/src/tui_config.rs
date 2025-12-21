@@ -59,9 +59,9 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json;
-use toml;
 use std::fs;
 use std::path::PathBuf;
+use toml;
 
 /// Focus indicator style
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
@@ -76,8 +76,6 @@ pub enum FocusIndicatorStyle {
     /// None
     None,
 }
-
-
 
 /// Animation configuration
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -161,8 +159,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 /// TUI configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[derive(PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct TuiConfig {
     /// Theme name
     pub theme: String,
@@ -216,7 +213,9 @@ impl TuiConfig {
     }
 
     /// Load configuration with full hierarchy and runtime overrides
-    pub fn load_with_hierarchy_and_overrides(runtime_overrides: Option<&TuiConfig>) -> Result<Self> {
+    pub fn load_with_hierarchy_and_overrides(
+        runtime_overrides: Option<&TuiConfig>,
+    ) -> Result<Self> {
         // Start with defaults
         let mut config = Self::default();
 
@@ -277,16 +276,26 @@ impl TuiConfig {
 
             for path in &config_paths {
                 if path.exists() {
-                    let content = fs::read_to_string(path)
-                        .map_err(|e| anyhow::anyhow!("Failed to read project config {}: {}", path.display(), e))?;
+                    let content = fs::read_to_string(path).map_err(|e| {
+                        anyhow::anyhow!("Failed to read project config {}: {}", path.display(), e)
+                    })?;
 
                     let config: TuiConfig = match path.extension().and_then(|s| s.to_str()) {
-                        Some("yaml") | Some("yml") => serde_yaml::from_str(&content)
-                            .map_err(|e| anyhow::anyhow!("Failed to parse YAML config {}: {}", path.display(), e))?,
-                        Some("json") => serde_json::from_str(&content)
-                            .map_err(|e| anyhow::anyhow!("Failed to parse JSON config {}: {}", path.display(), e))?,
-                        Some("toml") => toml::from_str(&content)
-                            .map_err(|e| anyhow::anyhow!("Failed to parse TOML config {}: {}", path.display(), e))?,
+                        Some("yaml") | Some("yml") => {
+                            serde_yaml::from_str(&content).map_err(|e| {
+                                anyhow::anyhow!(
+                                    "Failed to parse YAML config {}: {}",
+                                    path.display(),
+                                    e
+                                )
+                            })?
+                        }
+                        Some("json") => serde_json::from_str(&content).map_err(|e| {
+                            anyhow::anyhow!("Failed to parse JSON config {}: {}", path.display(), e)
+                        })?,
+                        Some("toml") => toml::from_str(&content).map_err(|e| {
+                            anyhow::anyhow!("Failed to parse TOML config {}: {}", path.display(), e)
+                        })?,
                         _ => continue,
                     };
 
@@ -392,8 +401,12 @@ impl TuiConfig {
         }
 
         // Validate accessibility config
-        if self.accessibility.font_size_multiplier < 1.0 || self.accessibility.font_size_multiplier > 2.0 {
-            return Err(anyhow::anyhow!("Font size multiplier must be between 1.0 and 2.0"));
+        if self.accessibility.font_size_multiplier < 1.0
+            || self.accessibility.font_size_multiplier > 2.0
+        {
+            return Err(anyhow::anyhow!(
+                "Font size multiplier must be between 1.0 and 2.0"
+            ));
         }
 
         Ok(())
@@ -645,10 +658,19 @@ impl ConfigManager {
     /// Get available configuration presets
     pub fn available_presets() -> Vec<(ConfigPreset, &'static str)> {
         vec![
-            (ConfigPreset::Developer, "Developer-friendly settings with dark theme and vim mode"),
-            (ConfigPreset::Accessibility, "High contrast and screen reader optimized"),
+            (
+                ConfigPreset::Developer,
+                "Developer-friendly settings with dark theme and vim mode",
+            ),
+            (
+                ConfigPreset::Accessibility,
+                "High contrast and screen reader optimized",
+            ),
             (ConfigPreset::Minimal, "Clean, minimal interface"),
-            (ConfigPreset::Presentation, "Light theme optimized for presentations"),
+            (
+                ConfigPreset::Presentation,
+                "Light theme optimized for presentations",
+            ),
         ]
     }
 
@@ -657,13 +679,25 @@ impl ConfigManager {
         let config = self.config.read().await;
 
         // Try to match against presets
-        if config.theme == "dracula" && config.vim_mode && !config.accessibility.screen_reader_enabled {
+        if config.theme == "dracula"
+            && config.vim_mode
+            && !config.accessibility.screen_reader_enabled
+        {
             Some(ConfigPreset::Developer)
-        } else if config.theme == "high-contrast-light" && config.accessibility.screen_reader_enabled && config.accessibility.high_contrast_enabled {
+        } else if config.theme == "high-contrast-light"
+            && config.accessibility.screen_reader_enabled
+            && config.accessibility.high_contrast_enabled
+        {
             Some(ConfigPreset::Accessibility)
-        } else if config.theme == "dark" && !config.vim_mode && !config.accessibility.screen_reader_enabled {
+        } else if config.theme == "dark"
+            && !config.vim_mode
+            && !config.accessibility.screen_reader_enabled
+        {
             Some(ConfigPreset::Minimal)
-        } else if config.theme == "solarized-light" && !config.vim_mode && !config.accessibility.screen_reader_enabled {
+        } else if config.theme == "solarized-light"
+            && !config.vim_mode
+            && !config.accessibility.screen_reader_enabled
+        {
             Some(ConfigPreset::Presentation)
         } else {
             None
@@ -686,15 +720,25 @@ impl TuiConfig {
 
         // Create parent directories if they don't exist
         if let Some(parent) = config_path.parent() {
-            fs::create_dir_all(parent)
-                .map_err(|e| anyhow::anyhow!("Failed to create config directory {}: {}", parent.display(), e))?;
+            fs::create_dir_all(parent).map_err(|e| {
+                anyhow::anyhow!(
+                    "Failed to create config directory {}: {}",
+                    parent.display(),
+                    e
+                )
+            })?;
         }
 
         let yaml_content = serde_yaml::to_string(self)
             .map_err(|e| anyhow::anyhow!("Failed to serialize config to YAML: {}", e))?;
 
-        fs::write(&config_path, yaml_content)
-            .map_err(|e| anyhow::anyhow!("Failed to write YAML config file {}: {}", config_path.display(), e))?;
+        fs::write(&config_path, yaml_content).map_err(|e| {
+            anyhow::anyhow!(
+                "Failed to write YAML config file {}: {}",
+                config_path.display(),
+                e
+            )
+        })?;
 
         Ok(())
     }
@@ -707,15 +751,25 @@ impl TuiConfig {
 
         // Create parent directories if they don't exist
         if let Some(parent) = config_path.parent() {
-            fs::create_dir_all(parent)
-                .map_err(|e| anyhow::anyhow!("Failed to create config directory {}: {}", parent.display(), e))?;
+            fs::create_dir_all(parent).map_err(|e| {
+                anyhow::anyhow!(
+                    "Failed to create config directory {}: {}",
+                    parent.display(),
+                    e
+                )
+            })?;
         }
 
         let json_content = serde_json::to_string_pretty(self)
             .map_err(|e| anyhow::anyhow!("Failed to serialize config to JSON: {}", e))?;
 
-        fs::write(&config_path, json_content)
-            .map_err(|e| anyhow::anyhow!("Failed to write JSON config file {}: {}", config_path.display(), e))?;
+        fs::write(&config_path, json_content).map_err(|e| {
+            anyhow::anyhow!(
+                "Failed to write JSON config file {}: {}",
+                config_path.display(),
+                e
+            )
+        })?;
 
         Ok(())
     }
@@ -728,15 +782,25 @@ impl TuiConfig {
 
         // Create parent directories if they don't exist
         if let Some(parent) = config_path.parent() {
-            fs::create_dir_all(parent)
-                .map_err(|e| anyhow::anyhow!("Failed to create config directory {}: {}", parent.display(), e))?;
+            fs::create_dir_all(parent).map_err(|e| {
+                anyhow::anyhow!(
+                    "Failed to create config directory {}: {}",
+                    parent.display(),
+                    e
+                )
+            })?;
         }
 
         let toml_content = toml::to_string_pretty(self)
             .map_err(|e| anyhow::anyhow!("Failed to serialize config to TOML: {}", e))?;
 
-        fs::write(&config_path, toml_content)
-            .map_err(|e| anyhow::anyhow!("Failed to write TOML config file {}: {}", config_path.display(), e))?;
+        fs::write(&config_path, toml_content).map_err(|e| {
+            anyhow::anyhow!(
+                "Failed to write TOML config file {}: {}",
+                config_path.display(),
+                e
+            )
+        })?;
 
         Ok(())
     }
@@ -787,11 +851,21 @@ impl TuiConfig {
         let config_path = Self::yaml_config_path()?;
 
         if config_path.exists() {
-            let content = fs::read_to_string(&config_path)
-                .map_err(|e| anyhow::anyhow!("Failed to read YAML config file {}: {}", config_path.display(), e))?;
+            let content = fs::read_to_string(&config_path).map_err(|e| {
+                anyhow::anyhow!(
+                    "Failed to read YAML config file {}: {}",
+                    config_path.display(),
+                    e
+                )
+            })?;
 
-            let config: TuiConfig = serde_yaml::from_str(&content)
-                .map_err(|e| anyhow::anyhow!("Failed to parse YAML config file {}: {}", config_path.display(), e))?;
+            let config: TuiConfig = serde_yaml::from_str(&content).map_err(|e| {
+                anyhow::anyhow!(
+                    "Failed to parse YAML config file {}: {}",
+                    config_path.display(),
+                    e
+                )
+            })?;
 
             config.validate()?;
             Ok(config)
@@ -805,11 +879,21 @@ impl TuiConfig {
         let config_path = Self::json_config_path()?;
 
         if config_path.exists() {
-            let content = fs::read_to_string(&config_path)
-                .map_err(|e| anyhow::anyhow!("Failed to read JSON config file {}: {}", config_path.display(), e))?;
+            let content = fs::read_to_string(&config_path).map_err(|e| {
+                anyhow::anyhow!(
+                    "Failed to read JSON config file {}: {}",
+                    config_path.display(),
+                    e
+                )
+            })?;
 
-            let config: TuiConfig = serde_json::from_str(&content)
-                .map_err(|e| anyhow::anyhow!("Failed to parse JSON config file {}: {}", config_path.display(), e))?;
+            let config: TuiConfig = serde_json::from_str(&content).map_err(|e| {
+                anyhow::anyhow!(
+                    "Failed to parse JSON config file {}: {}",
+                    config_path.display(),
+                    e
+                )
+            })?;
 
             config.validate()?;
             Ok(config)
@@ -823,11 +907,21 @@ impl TuiConfig {
         let config_path = Self::toml_config_path()?;
 
         if config_path.exists() {
-            let content = fs::read_to_string(&config_path)
-                .map_err(|e| anyhow::anyhow!("Failed to read TOML config file {}: {}", config_path.display(), e))?;
+            let content = fs::read_to_string(&config_path).map_err(|e| {
+                anyhow::anyhow!(
+                    "Failed to read TOML config file {}: {}",
+                    config_path.display(),
+                    e
+                )
+            })?;
 
-            let config: TuiConfig = toml::from_str(&content)
-                .map_err(|e| anyhow::anyhow!("Failed to parse TOML config file {}: {}", config_path.display(), e))?;
+            let config: TuiConfig = toml::from_str(&content).map_err(|e| {
+                anyhow::anyhow!(
+                    "Failed to parse TOML config file {}: {}",
+                    config_path.display(),
+                    e
+                )
+            })?;
 
             config.validate()?;
             Ok(config)

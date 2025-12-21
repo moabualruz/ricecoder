@@ -42,9 +42,18 @@ mod tests {
             let sequenced = coordinator.sequence_operations(operations.clone()).unwrap();
 
             // Property: Operations should be sorted by priority
-            assert_eq!(sequenced[0].priority, 1, "First operation should have priority 1");
-            assert_eq!(sequenced[1].priority, 2, "Second operation should have priority 2");
-            assert_eq!(sequenced[2].priority, 3, "Third operation should have priority 3");
+            assert_eq!(
+                sequenced[0].priority, 1,
+                "First operation should have priority 1"
+            );
+            assert_eq!(
+                sequenced[1].priority, 2,
+                "Second operation should have priority 2"
+            );
+            assert_eq!(
+                sequenced[2].priority, 3,
+                "Third operation should have priority 3"
+            );
 
             // Property: Setup should come first
             assert_eq!(sequenced[0].id, "setup", "Setup should be first");
@@ -82,11 +91,23 @@ mod tests {
         // Property: All sequences should be identical
         let first = &results[0];
         for result in &results[1..] {
-            assert_eq!(result.len(), first.len(), "All sequences should have same length");
+            assert_eq!(
+                result.len(),
+                first.len(),
+                "All sequences should have same length"
+            );
 
             for (i, op) in result.iter().enumerate() {
-                assert_eq!(op.id, first[i].id, "Operation {} ID should be consistent", i);
-                assert_eq!(op.priority, first[i].priority, "Operation {} priority should be consistent", i);
+                assert_eq!(
+                    op.id, first[i].id,
+                    "Operation {} ID should be consistent",
+                    i
+                );
+                assert_eq!(
+                    op.priority, first[i].priority,
+                    "Operation {} priority should be consistent",
+                    i
+                );
             }
         }
     }
@@ -109,13 +130,22 @@ mod tests {
             let sequenced = coordinator.sequence_operations(operations.clone()).unwrap();
 
             // Property: Infrastructure setup should come first
-            assert_eq!(sequenced[0].id, "infra-setup", "Infrastructure setup should be first");
+            assert_eq!(
+                sequenced[0].id, "infra-setup",
+                "Infrastructure setup should be first"
+            );
 
             // Property: Database migration should come second
-            assert_eq!(sequenced[1].id, "db-migrate", "Database migration should be second");
+            assert_eq!(
+                sequenced[1].id, "db-migrate",
+                "Database migration should be second"
+            );
 
             // Property: Application deployment should come last
-            assert_eq!(sequenced[2].id, "app-deploy", "Application deployment should be last");
+            assert_eq!(
+                sequenced[2].id, "app-deploy",
+                "Application deployment should be last"
+            );
 
             // Property: Each operation should come after its dependencies
             let mut seen_ids = std::collections::HashSet::new();
@@ -143,7 +173,10 @@ mod tests {
             let sequenced = coordinator.sequence_operations(vec![]).unwrap();
 
             // Property: Empty input should produce empty output
-            assert!(sequenced.is_empty(), "Empty input should produce empty output");
+            assert!(
+                sequenced.is_empty(),
+                "Empty input should produce empty output"
+            );
         }
     }
 
@@ -156,12 +189,20 @@ mod tests {
         let operation = create_operation("single", "Single Operation", 5, vec![]);
 
         for _ in 0..5 {
-            let sequenced = coordinator.sequence_operations(vec![operation.clone()]).unwrap();
+            let sequenced = coordinator
+                .sequence_operations(vec![operation.clone()])
+                .unwrap();
 
             // Property: Single operation should be returned unchanged
             assert_eq!(sequenced.len(), 1, "Should have one operation");
-            assert_eq!(sequenced[0].id, "single", "Operation ID should be preserved");
-            assert_eq!(sequenced[0].priority, 5, "Operation priority should be preserved");
+            assert_eq!(
+                sequenced[0].id, "single",
+                "Operation ID should be preserved"
+            );
+            assert_eq!(
+                sequenced[0].priority, 5,
+                "Operation priority should be preserved"
+            );
         }
     }
 
@@ -229,7 +270,11 @@ mod tests {
             }
 
             // Property: App deployment should come last (depends on db and cache)
-            assert_eq!(sequenced[sequenced.len() - 1].id, "app", "App deployment should be last");
+            assert_eq!(
+                sequenced[sequenced.len() - 1].id,
+                "app",
+                "App deployment should be last"
+            );
         }
     }
 

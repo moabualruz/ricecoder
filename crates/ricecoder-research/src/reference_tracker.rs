@@ -56,20 +56,20 @@ impl ReferenceTracker {
                 context: "Tree-sitter parser could not generate an abstract syntax tree for reference tracking".to_string(),
             })?;
 
-        let mut references = Vec::new();
-        let root = tree.root_node();
+            let mut references = Vec::new();
+            let root = tree.root_node();
 
-        // Extract references based on language
-        Self::track_references_recursive(
-            &root,
-            content,
-            path,
-            language,
-            known_symbols,
-            &mut references,
-        )?;
+            // Extract references based on language
+            Self::track_references_recursive(
+                &root,
+                content,
+                path,
+                language,
+                known_symbols,
+                &mut references,
+            )?;
 
-        Ok(references)
+            Ok(references)
         }
         #[cfg(not(feature = "parsers"))]
         {

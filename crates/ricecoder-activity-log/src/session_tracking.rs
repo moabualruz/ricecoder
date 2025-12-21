@@ -2,7 +2,7 @@
 
 use crate::error::{ActivityLogError, ActivityLogResult};
 use crate::events::{ActivityEvent, EventCategory, LogLevel};
-use chrono::{DateTime, Utc, Duration};
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tokio::sync::RwLock;
@@ -51,7 +51,11 @@ impl SessionTracker {
     }
 
     /// Start tracking a new session
-    pub async fn start_session(&self, session_id: String, user_id: String) -> ActivityLogResult<()> {
+    pub async fn start_session(
+        &self,
+        session_id: String,
+        user_id: String,
+    ) -> ActivityLogResult<()> {
         let mut activities = self.activities.write().await;
 
         // Check session limit
@@ -85,13 +89,20 @@ impl SessionTracker {
     }
 
     /// End tracking a session
-    pub async fn end_session(&self, session_id: &str) -> ActivityLogResult<Option<SessionActivity>> {
+    pub async fn end_session(
+        &self,
+        session_id: &str,
+    ) -> ActivityLogResult<Option<SessionActivity>> {
         let mut activities = self.activities.write().await;
         Ok(activities.remove(session_id))
     }
 
     /// Record activity for a session
-    pub async fn record_activity(&self, session_id: &str, event: &ActivityEvent) -> ActivityLogResult<()> {
+    pub async fn record_activity(
+        &self,
+        session_id: &str,
+        event: &ActivityEvent,
+    ) -> ActivityLogResult<()> {
         let mut activities = self.activities.write().await;
 
         if let Some(activity) = activities.get_mut(session_id) {
@@ -99,7 +110,10 @@ impl SessionTracker {
             activity.event_count += 1;
 
             // Update category counts
-            *activity.events_by_category.entry(event.category.clone()).or_insert(0) += 1;
+            *activity
+                .events_by_category
+                .entry(event.category.clone())
+                .or_insert(0) += 1;
 
             // Update level counts
             *activity.events_by_level.entry(event.level).or_insert(0) += 1;
@@ -110,7 +124,8 @@ impl SessionTracker {
             // Update duration and rate
             activity.duration_seconds = (Utc::now() - activity.started_at).num_seconds() as u64;
             if activity.duration_seconds > 0 {
-                activity.events_per_minute = (activity.event_count as f64 * 60.0) / activity.duration_seconds as f64;
+                activity.events_per_minute =
+                    (activity.event_count as f64 * 60.0) / activity.duration_seconds as f64;
             }
 
             // Update risk score
@@ -132,7 +147,9 @@ impl SessionTracker {
 
     /// Get sessions by user
     pub async fn get_sessions_by_user(&self, user_id: &str) -> Vec<SessionActivity> {
-        self.activities.read().await
+        self.activities
+            .read()
+            .await
             .values()
             .filter(|activity| activity.user_id == user_id)
             .cloned()
@@ -144,7 +161,8 @@ impl SessionTracker {
         let activities = self.activities.read().await;
 
         let total_sessions = activities.len();
-        let active_sessions = activities.values()
+        let active_sessions = activities
+            .values()
             .filter(|activity| {
                 // Consider active if activity in last 30 minutes
                 let thirty_minutes_ago = Utc::now() - Duration::minutes(30);
@@ -159,7 +177,8 @@ impl SessionTracker {
             0.0
         };
 
-        let high_risk_sessions = activities.values()
+        let high_risk_sessions = activities
+            .values()
             .filter(|activity| activity.risk_score > 70)
             .count();
 
@@ -173,7 +192,10 @@ impl SessionTracker {
     }
 
     /// Clean up inactive sessions
-    pub async fn cleanup_inactive_sessions(&self, max_age_minutes: i64) -> ActivityLogResult<usize> {
+    pub async fn cleanup_inactive_sessions(
+        &self,
+        max_age_minutes: i64,
+    ) -> ActivityLogResult<usize> {
         let mut activities = self.activities.write().await;
         let cutoff_time = Utc::now() - Duration::minutes(max_age_minutes);
 
@@ -213,8 +235,11 @@ impl SessionTracker {
         }
 
         // Many error/critical events increase risk
-        let error_count = activity.events_by_level.get(&LogLevel::Error).unwrap_or(&0) +
-                         activity.events_by_level.get(&LogLevel::Critical).unwrap_or(&0);
+        let error_count = activity.events_by_level.get(&LogLevel::Error).unwrap_or(&0)
+            + activity
+                .events_by_level
+                .get(&LogLevel::Critical)
+                .unwrap_or(&0);
         if error_count > 10 {
             score += 25;
         } else if error_count > 5 {
@@ -222,7 +247,10 @@ impl SessionTracker {
         }
 
         // Security events always increase risk
-        let security_events = activity.events_by_category.get(&EventCategory::Security).unwrap_or(&0);
+        let security_events = activity
+            .events_by_category
+            .get(&EventCategory::Security)
+            .unwrap_or(&0);
         score += (*security_events as u8).min(20);
 
         // Long duration with high activity might indicate automated behavior

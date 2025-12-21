@@ -1,13 +1,13 @@
 //! Tests for service registration functionality
 
-use ricecoder_di::*;
 use ricecoder_agents::use_cases::{
-    ProviderCommunityUseCase, ProviderFailoverUseCase, ProviderHealthUseCase,
-    ProviderModelUseCase, ProviderPerformanceUseCase, ProviderSwitchingUseCase,
-    SessionLifecycleUseCase, SessionSharingUseCase, SessionStateManagementUseCase,
+    ProviderCommunityUseCase, ProviderFailoverUseCase, ProviderHealthUseCase, ProviderModelUseCase,
+    ProviderPerformanceUseCase, ProviderSwitchingUseCase, SessionLifecycleUseCase,
+    SessionSharingUseCase, SessionStateManagementUseCase,
 };
-use ricecoder_sessions::{SessionManager, SessionStore, ShareService};
+use ricecoder_di::*;
 use ricecoder_providers::provider::manager::ProviderManager;
+use ricecoder_sessions::{SessionManager, SessionStore, ShareService};
 
 #[test]
 fn test_register_infrastructure_services() {
@@ -23,7 +23,7 @@ fn test_register_infrastructure_services() {
     // Check optional services based on features
     #[cfg(feature = "storage")]
     {
-        use ricecoder_storage::{StorageManager, FileStorage, MemoryStorage};
+        use ricecoder_storage::{FileStorage, MemoryStorage, StorageManager};
         assert!(container.is_registered::<StorageManager>());
         assert!(container.is_registered::<FileStorage>());
         assert!(container.is_registered::<MemoryStorage>());
@@ -31,7 +31,7 @@ fn test_register_infrastructure_services() {
 
     #[cfg(feature = "research")]
     {
-        use ricecoder_research::{ResearchManager, CodebaseScanner, SemanticIndexer};
+        use ricecoder_research::{CodebaseScanner, ResearchManager, SemanticIndexer};
         assert!(container.is_registered::<ResearchManager>());
         assert!(container.is_registered::<CodebaseScanner>());
         assert!(container.is_registered::<SemanticIndexer>());
@@ -46,7 +46,7 @@ fn test_register_infrastructure_services() {
 
     #[cfg(feature = "execution")]
     {
-        use ricecoder_execution::{ExecutionEngine, CommandExecutor};
+        use ricecoder_execution::{CommandExecutor, ExecutionEngine};
         assert!(container.is_registered::<ExecutionEngine>());
         assert!(container.is_registered::<CommandExecutor>());
     }
@@ -60,14 +60,14 @@ fn test_register_infrastructure_services() {
 
     #[cfg(feature = "tools")]
     {
-        use ricecoder_tools::{ToolRegistry, ToolExecutor};
+        use ricecoder_tools::{ToolExecutor, ToolRegistry};
         assert!(container.is_registered::<ToolRegistry>());
         assert!(container.is_registered::<ToolExecutor>());
     }
 
     #[cfg(feature = "config")]
     {
-        use ricecoder_config::{ConfigManager, ConfigLoader};
+        use ricecoder_config::{ConfigLoader, ConfigManager};
         assert!(container.is_registered::<ConfigManager>());
         assert!(container.is_registered::<ConfigLoader>());
     }
@@ -82,14 +82,14 @@ fn test_register_infrastructure_services() {
 
     #[cfg(feature = "orchestration")]
     {
-        use ricecoder_orchestration::{WorkspaceOrchestrator, OperationManager};
+        use ricecoder_orchestration::{OperationManager, WorkspaceOrchestrator};
         assert!(container.is_registered::<WorkspaceOrchestrator>());
         assert!(container.is_registered::<OperationManager>());
     }
 
     #[cfg(feature = "specs")]
     {
-        use ricecoder_specs::{SpecManager, SpecValidator, SpecCache};
+        use ricecoder_specs::{SpecCache, SpecManager, SpecValidator};
         assert!(container.is_registered::<SpecManager>());
         assert!(container.is_registered::<SpecValidator>());
         assert!(container.is_registered::<SpecCache>());
@@ -97,7 +97,7 @@ fn test_register_infrastructure_services() {
 
     #[cfg(feature = "undo-redo")]
     {
-        use ricecoder_undo_redo::{UndoManager, RedoManager, HistoryManager};
+        use ricecoder_undo_redo::{HistoryManager, RedoManager, UndoManager};
         assert!(container.is_registered::<UndoManager>());
         assert!(container.is_registered::<RedoManager>());
         assert!(container.is_registered::<HistoryManager>());
@@ -105,7 +105,7 @@ fn test_register_infrastructure_services() {
 
     #[cfg(feature = "vcs")]
     {
-        use ricecoder_vcs::{VCSManager, GitIntegration, RepositoryManager};
+        use ricecoder_vcs::{GitIntegration, RepositoryManager, VCSManager};
         assert!(container.is_registered::<VCSManager>());
         assert!(container.is_registered::<GitIntegration>());
         assert!(container.is_registered::<RepositoryManager>());
@@ -113,7 +113,9 @@ fn test_register_infrastructure_services() {
 
     #[cfg(feature = "permissions")]
     {
-        use ricecoder_permissions::{PermissionManager, PermissionChecker, AuditLogger as PermissionAuditLogger};
+        use ricecoder_permissions::{
+            AuditLogger as PermissionAuditLogger, PermissionChecker, PermissionManager,
+        };
         assert!(container.is_registered::<PermissionManager>());
         assert!(container.is_registered::<PermissionChecker>());
         assert!(container.is_registered::<PermissionAuditLogger>());
@@ -137,7 +139,7 @@ fn test_register_infrastructure_services() {
 
     #[cfg(feature = "domain")]
     {
-        use ricecoder_domain::{DomainService, Repository, EntityManager};
+        use ricecoder_domain::{DomainService, EntityManager, Repository};
         assert!(container.is_registered::<DomainService>());
         assert!(container.is_registered::<Repository>());
         assert!(container.is_registered::<EntityManager>());
@@ -161,7 +163,7 @@ fn test_register_infrastructure_services() {
 
     #[cfg(feature = "safety")]
     {
-        use ricecoder_safety::{SafetyMonitor, RiskAssessor, ConstraintValidator};
+        use ricecoder_safety::{ConstraintValidator, RiskAssessor, SafetyMonitor};
         assert!(container.is_registered::<SafetyMonitor>());
         assert!(container.is_registered::<RiskAssessor>());
         assert!(container.is_registered::<ConstraintValidator>());
@@ -177,7 +179,7 @@ fn test_register_infrastructure_services() {
 
     #[cfg(feature = "themes")]
     {
-        use ricecoder_themes::{ThemeManager, ThemeLoader, ThemeRegistry};
+        use ricecoder_themes::{ThemeLoader, ThemeManager, ThemeRegistry};
         assert!(container.is_registered::<ThemeManager>());
         assert!(container.is_registered::<ThemeLoader>());
         assert!(container.is_registered::<ThemeRegistry>());
@@ -185,7 +187,7 @@ fn test_register_infrastructure_services() {
 
     #[cfg(feature = "images")]
     {
-        use ricecoder_images::{ImageHandler, ImageAnalyzer, ImageCache};
+        use ricecoder_images::{ImageAnalyzer, ImageCache, ImageHandler};
         assert!(container.is_registered::<ImageHandler>());
         assert!(container.is_registered::<ImageAnalyzer>());
         assert!(container.is_registered::<ImageCache>());

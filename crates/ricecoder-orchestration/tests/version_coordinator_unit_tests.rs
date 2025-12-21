@@ -2,7 +2,7 @@
 //! Tests version update propagation, constraint validation, and edge cases
 
 use ricecoder_orchestration::{
-    VersionCoordinator, Project, ProjectStatus, DependencyGraph, Version, VersionValidator,
+    DependencyGraph, Project, ProjectStatus, Version, VersionCoordinator, VersionValidator,
 };
 use std::path::PathBuf;
 
@@ -32,7 +32,10 @@ fn test_register_single_project() {
     let project = create_project("test-project", "1.0.0");
     coordinator.register_project(&project);
 
-    assert_eq!(coordinator.get_version("test-project"), Some("1.0.0".to_string()));
+    assert_eq!(
+        coordinator.get_version("test-project"),
+        Some("1.0.0".to_string())
+    );
     assert_eq!(coordinator.get_all_projects().len(), 1);
 }
 
@@ -50,9 +53,18 @@ fn test_register_multiple_projects() {
     coordinator.register_project(&project3);
 
     assert_eq!(coordinator.get_all_projects().len(), 3);
-    assert_eq!(coordinator.get_version("project1"), Some("1.0.0".to_string()));
-    assert_eq!(coordinator.get_version("project2"), Some("2.0.0".to_string()));
-    assert_eq!(coordinator.get_version("project3"), Some("3.0.0".to_string()));
+    assert_eq!(
+        coordinator.get_version("project1"),
+        Some("1.0.0".to_string())
+    );
+    assert_eq!(
+        coordinator.get_version("project2"),
+        Some("2.0.0".to_string())
+    );
+    assert_eq!(
+        coordinator.get_version("project3"),
+        Some("3.0.0".to_string())
+    );
 }
 
 #[test]
@@ -96,7 +108,10 @@ fn test_update_version_success() {
     assert!(result.success);
     assert_eq!(result.old_version, "1.0.0");
     assert_eq!(result.new_version, "1.1.0");
-    assert_eq!(coordinator.get_version("test-project"), Some("1.1.0".to_string()));
+    assert_eq!(
+        coordinator.get_version("test-project"),
+        Some("1.1.0".to_string())
+    );
 }
 
 #[test]
@@ -130,7 +145,9 @@ fn test_validate_version_update_compatible() {
     coordinator.register_constraint("test-project", "^1.0.0".to_string());
 
     // 1.1.0 satisfies ^1.0.0
-    assert!(coordinator.validate_version_update("test-project", "1.1.0").unwrap());
+    assert!(coordinator
+        .validate_version_update("test-project", "1.1.0")
+        .unwrap());
 }
 
 #[test]
@@ -143,7 +160,9 @@ fn test_validate_version_update_incompatible() {
     coordinator.register_constraint("test-project", "^1.0.0".to_string());
 
     // 2.0.0 does not satisfy ^1.0.0
-    assert!(coordinator.validate_version_update("test-project", "2.0.0").is_err());
+    assert!(coordinator
+        .validate_version_update("test-project", "2.0.0")
+        .is_err());
 }
 
 #[test]
@@ -155,7 +174,9 @@ fn test_validate_version_update_no_constraints() {
     coordinator.register_project(&project);
 
     // No constraints, any valid version should be accepted
-    assert!(coordinator.validate_version_update("test-project", "2.0.0").unwrap());
+    assert!(coordinator
+        .validate_version_update("test-project", "2.0.0")
+        .unwrap());
 }
 
 #[test]
@@ -167,7 +188,9 @@ fn test_is_breaking_change_major_version() {
     coordinator.register_project(&project);
 
     // Major version change is breaking
-    assert!(coordinator.is_breaking_change("test-project", "2.0.0").unwrap());
+    assert!(coordinator
+        .is_breaking_change("test-project", "2.0.0")
+        .unwrap());
 }
 
 #[test]
@@ -179,7 +202,9 @@ fn test_is_breaking_change_minor_version() {
     coordinator.register_project(&project);
 
     // Minor version change is not breaking
-    assert!(!coordinator.is_breaking_change("test-project", "1.1.0").unwrap());
+    assert!(!coordinator
+        .is_breaking_change("test-project", "1.1.0")
+        .unwrap());
 }
 
 #[test]
@@ -191,7 +216,9 @@ fn test_is_breaking_change_patch_version() {
     coordinator.register_project(&project);
 
     // Patch version change is not breaking
-    assert!(!coordinator.is_breaking_change("test-project", "1.0.1").unwrap());
+    assert!(!coordinator
+        .is_breaking_change("test-project", "1.0.1")
+        .unwrap());
 }
 
 #[test]
@@ -344,10 +371,14 @@ fn test_version_update_with_multiple_constraints() {
     coordinator.register_constraint("test-project", "~1.2.0".to_string());
 
     // 1.2.5 satisfies both constraints
-    assert!(coordinator.validate_version_update("test-project", "1.2.5").unwrap());
+    assert!(coordinator
+        .validate_version_update("test-project", "1.2.5")
+        .unwrap());
 
     // 1.3.0 satisfies ^1.0.0 but not ~1.2.0
-    assert!(coordinator.validate_version_update("test-project", "1.3.0").is_err());
+    assert!(coordinator
+        .validate_version_update("test-project", "1.3.0")
+        .is_err());
 }
 
 #[test]
@@ -369,7 +400,10 @@ fn test_version_update_sequence() {
     assert_eq!(result2.new_version, "1.2.0");
 
     // Verify final version
-    assert_eq!(coordinator.get_version("test-project"), Some("1.2.0".to_string()));
+    assert_eq!(
+        coordinator.get_version("test-project"),
+        Some("1.2.0".to_string())
+    );
 }
 
 #[test]
@@ -382,11 +416,21 @@ fn test_caret_constraint_validation() {
     coordinator.register_constraint("test-project", "^1.2.3".to_string());
 
     // ^1.2.3 allows >=1.2.3 and <2.0.0
-    assert!(coordinator.validate_version_update("test-project", "1.2.3").unwrap());
-    assert!(coordinator.validate_version_update("test-project", "1.2.4").unwrap());
-    assert!(coordinator.validate_version_update("test-project", "1.3.0").unwrap());
-    assert!(coordinator.validate_version_update("test-project", "1.9.9").unwrap());
-    assert!(coordinator.validate_version_update("test-project", "2.0.0").is_err());
+    assert!(coordinator
+        .validate_version_update("test-project", "1.2.3")
+        .unwrap());
+    assert!(coordinator
+        .validate_version_update("test-project", "1.2.4")
+        .unwrap());
+    assert!(coordinator
+        .validate_version_update("test-project", "1.3.0")
+        .unwrap());
+    assert!(coordinator
+        .validate_version_update("test-project", "1.9.9")
+        .unwrap());
+    assert!(coordinator
+        .validate_version_update("test-project", "2.0.0")
+        .is_err());
 }
 
 #[test]
@@ -399,10 +443,18 @@ fn test_tilde_constraint_validation() {
     coordinator.register_constraint("test-project", "~1.2.3".to_string());
 
     // ~1.2.3 allows >=1.2.3 and <1.3.0
-    assert!(coordinator.validate_version_update("test-project", "1.2.3").unwrap());
-    assert!(coordinator.validate_version_update("test-project", "1.2.4").unwrap());
-    assert!(coordinator.validate_version_update("test-project", "1.3.0").is_err());
-    assert!(coordinator.validate_version_update("test-project", "2.0.0").is_err());
+    assert!(coordinator
+        .validate_version_update("test-project", "1.2.3")
+        .unwrap());
+    assert!(coordinator
+        .validate_version_update("test-project", "1.2.4")
+        .unwrap());
+    assert!(coordinator
+        .validate_version_update("test-project", "1.3.0")
+        .is_err());
+    assert!(coordinator
+        .validate_version_update("test-project", "2.0.0")
+        .is_err());
 }
 
 #[test]
@@ -415,9 +467,15 @@ fn test_greater_or_equal_constraint_validation() {
     coordinator.register_constraint("test-project", ">=1.0.0".to_string());
 
     // >=1.0.0 allows any version >= 1.0.0
-    assert!(coordinator.validate_version_update("test-project", "1.0.0").unwrap());
-    assert!(coordinator.validate_version_update("test-project", "1.1.0").unwrap());
-    assert!(coordinator.validate_version_update("test-project", "2.0.0").unwrap());
+    assert!(coordinator
+        .validate_version_update("test-project", "1.0.0")
+        .unwrap());
+    assert!(coordinator
+        .validate_version_update("test-project", "1.1.0")
+        .unwrap());
+    assert!(coordinator
+        .validate_version_update("test-project", "2.0.0")
+        .unwrap());
 }
 
 #[test]
@@ -488,7 +546,10 @@ fn test_edge_case_zero_version() {
     let project = create_project("test-project", "0.0.0");
     coordinator.register_project(&project);
 
-    assert_eq!(coordinator.get_version("test-project"), Some("0.0.0".to_string()));
+    assert_eq!(
+        coordinator.get_version("test-project"),
+        Some("0.0.0".to_string())
+    );
 
     let result = coordinator.update_version("test-project", "0.0.1").unwrap();
     assert_eq!(result.new_version, "0.0.1");
@@ -502,5 +563,8 @@ fn test_edge_case_large_version_numbers() {
     let project = create_project("test-project", "999.999.999");
     coordinator.register_project(&project);
 
-    assert_eq!(coordinator.get_version("test-project"), Some("999.999.999".to_string()));
+    assert_eq!(
+        coordinator.get_version("test-project"),
+        Some("999.999.999".to_string())
+    );
 }

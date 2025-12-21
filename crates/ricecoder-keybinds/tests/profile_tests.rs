@@ -158,7 +158,9 @@ mod tests {
             Keybind::new("editor.undo", "Ctrl+Z", "editing", "Undo"),
         ];
 
-        manager.create_profile("my_profile", keybinds.clone()).unwrap();
+        manager
+            .create_profile("my_profile", keybinds.clone())
+            .unwrap();
 
         let profile = manager.get_profile("my_profile").unwrap();
 

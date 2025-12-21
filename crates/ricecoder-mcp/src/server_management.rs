@@ -8,13 +8,13 @@ use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
-use tokio::sync::{RwLock, mpsc};
+use tokio::sync::{mpsc, RwLock};
 use tokio::time;
 use tracing::{debug, error, info, warn};
 
 use crate::error::{Error, Result};
 use crate::metadata::ToolMetadata;
-use crate::transport::{MCPTransport, TransportConfig, TransportFactory, MCPMessage, MCPRequest};
+use crate::transport::{MCPMessage, MCPRequest, MCPTransport, TransportConfig, TransportFactory};
 
 /// Server connection state
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -131,7 +131,10 @@ impl ServerManager {
     }
 
     /// Set compliance monitor
-    pub fn with_compliance_monitor(mut self, compliance_monitor: Arc<crate::compliance::MCPComplianceMonitor>) -> Self {
+    pub fn with_compliance_monitor(
+        mut self,
+        compliance_monitor: Arc<crate::compliance::MCPComplianceMonitor>,
+    ) -> Self {
         self.compliance_monitor = Some(compliance_monitor);
         self
     }
@@ -159,7 +162,10 @@ impl ServerManager {
     }
 
     /// Set analytics aggregator
-    pub fn with_analytics(mut self, analytics: Arc<crate::analytics::MCPAnalyticsAggregator>) -> Self {
+    pub fn with_analytics(
+        mut self,
+        analytics: Arc<crate::analytics::MCPAnalyticsAggregator>,
+    ) -> Self {
         self.analytics = Some(analytics);
         self
     }
@@ -170,7 +176,11 @@ impl ServerManager {
     }
 
     /// Register a server with the manager and authorization check
-    pub async fn register_server_with_auth(&self, config: ServerConfig, user_id: Option<&str>) -> Result<()> {
+    pub async fn register_server_with_auth(
+        &self,
+        config: ServerConfig,
+        user_id: Option<&str>,
+    ) -> Result<()> {
         // RBAC check for server registration
         if let (Some(ref rbac_manager), Some(user_id)) = (&self.rbac_manager, user_id) {
             // Create a basic principal for RBAC check
@@ -184,18 +194,20 @@ impl ServerManager {
 
             // Record compliance event
             if let Some(ref compliance_monitor) = self.compliance_monitor {
-                let _ = compliance_monitor.record_violation(
-                    crate::compliance::ComplianceReportType::Soc2Type2,
-                    crate::compliance::ViolationSeverity::Low,
-                    "Server registration performed".to_string(),
-                    format!("mcp:server:{}", config.id),
-                    Some(user_id.to_string()),
-                    serde_json::json!({
-                        "action": "server_registration",
-                        "server_id": config.id,
-                        "auto_start": config.auto_start
-                    }),
-                ).await;
+                let _ = compliance_monitor
+                    .record_violation(
+                        crate::compliance::ComplianceReportType::Soc2Type2,
+                        crate::compliance::ViolationSeverity::Low,
+                        "Server registration performed".to_string(),
+                        format!("mcp:server:{}", config.id),
+                        Some(user_id.to_string()),
+                        serde_json::json!({
+                            "action": "server_registration",
+                            "server_id": config.id,
+                            "auto_start": config.auto_start
+                        }),
+                    )
+                    .await;
             }
         }
 
@@ -221,7 +233,9 @@ impl ServerManager {
 
         // Audit logging
         if let Some(ref audit_logger) = self.audit_logger {
-            let _ = audit_logger.log_server_registration(&config, user_id.map(|s| s.to_string()), None).await;
+            let _ = audit_logger
+                .log_server_registration(&config, user_id.map(|s| s.to_string()), None)
+                .await;
         }
 
         if config.auto_start {
@@ -246,8 +260,11 @@ impl ServerManager {
                 if let Some(registration) = servers.get_mut(server_id) {
                     registration.transport = Some(transport);
 
-                     // Try to discover tools again
-                     match self.discover_tools_from_server(config, &*transport_clone).await {
+                    // Try to discover tools again
+                    match self
+                        .discover_tools_from_server(config, &*transport_clone)
+                        .await
+                    {
                         Ok(tools) => {
                             registration.tools = tools.clone();
                             registration.health.tools_available = tools.len();
@@ -255,30 +272,41 @@ impl ServerManager {
                             registration.health.last_seen = Some(SystemTime::now());
                             registration.health.connection_attempts += 1;
 
-                            info!("Successfully reconnected to server: {} with {} tools", server_id, tools.len());
+                            info!(
+                                "Successfully reconnected to server: {} with {} tools",
+                                server_id,
+                                tools.len()
+                            );
 
                             // Audit logging
                             if let Some(ref audit_logger) = self.audit_logger {
-                                let _ = audit_logger.log_server_connection(server_id, true, None, None, None).await;
+                                let _ = audit_logger
+                                    .log_server_connection(server_id, true, None, None, None)
+                                    .await;
                             }
 
                             Ok(())
                         }
                         Err(e) => {
                             registration.health.state = ServerState::Error;
-                            registration.health.last_error = Some(format!("Tool discovery failed after reconnection: {}", e));
+                            registration.health.last_error =
+                                Some(format!("Tool discovery failed after reconnection: {}", e));
                             Err(e)
                         }
                     }
                 } else {
-                    Err(Error::ServerError(format!("Server {} not found during reconnection", server_id)))
+                    Err(Error::ServerError(format!(
+                        "Server {} not found during reconnection",
+                        server_id
+                    )))
                 }
             }
             Err(e) => {
                 let mut servers = self.servers.write().await;
                 if let Some(registration) = servers.get_mut(server_id) {
                     registration.health.connection_attempts += 1;
-                    registration.health.last_error = Some(format!("Transport creation failed: {}", e));
+                    registration.health.last_error =
+                        Some(format!("Transport creation failed: {}", e));
                 }
                 Err(e)
             }
@@ -311,17 +339,15 @@ impl ServerManager {
                             name: "Read File".to_string(),
                             description: "Read the contents of a file".to_string(),
                             category: "filesystem".to_string(),
-                             parameters: vec![
-                                  crate::metadata::ParameterMetadata {
-                                      name: "path".to_string(),
-                                      type_: "string".to_string(),
-                                      description: "Path to the file to read".to_string(),
-                                      required: true,
-                                      default: None,
-                                  }
-                             ],
+                            parameters: vec![crate::metadata::ParameterMetadata {
+                                name: "path".to_string(),
+                                type_: "string".to_string(),
+                                description: "Path to the file to read".to_string(),
+                                required: true,
+                                default: None,
+                            }],
                             return_type: "string".to_string(),
-                             source: crate::metadata::ToolSource::Mcp(config.id.clone()),
+                            source: crate::metadata::ToolSource::Mcp(config.id.clone()),
                             server_id: Some(config.id.clone()),
                         },
                         ToolMetadata {
@@ -329,58 +355,51 @@ impl ServerManager {
                             name: "List Directory".to_string(),
                             description: "List contents of a directory".to_string(),
                             category: "filesystem".to_string(),
-                             parameters: vec![
-                                  crate::metadata::ParameterMetadata {
-                                      name: "path".to_string(),
-                                      type_: "string".to_string(),
-                                      description: "Path to the directory".to_string(),
-                                      required: true,
-                                      default: None,
-                                  }
-                             ],
+                            parameters: vec![crate::metadata::ParameterMetadata {
+                                name: "path".to_string(),
+                                type_: "string".to_string(),
+                                description: "Path to the directory".to_string(),
+                                required: true,
+                                default: None,
+                            }],
                             return_type: "array".to_string(),
-                             source: crate::metadata::ToolSource::Mcp(config.id.clone()),
+                            source: crate::metadata::ToolSource::Mcp(config.id.clone()),
                             server_id: Some(config.id.clone()),
                         },
                     ],
-                    "git" => vec![
-                        ToolMetadata {
-                            id: "git_status".to_string(),
-                            name: "Git Status".to_string(),
-                            description: "Get the status of a git repository".to_string(),
-                            category: "git".to_string(),
-                             parameters: vec![
-                                  crate::metadata::ParameterMetadata {
-                                      name: "repo_path".to_string(),
-                                      type_: "string".to_string(),
-                                      description: "Path to the git repository".to_string(),
-                                      required: true,
-                                      default: None,
-                                  }
-                             ],
-                            return_type: "object".to_string(),
-                             source: crate::metadata::ToolSource::Mcp(config.id.clone()),
-                            server_id: Some(config.id.clone()),
-                        },
-                    ],
-                    _ => vec![
-                        ToolMetadata {
-                            id: format!("{}_tool", config.id),
-                            name: format!("{} Tool", config.name),
-                            description: format!("A tool from {}", config.name),
-                            category: "general".to_string(),
-                            parameters: vec![],
-                            return_type: "string".to_string(),
-                             source: crate::metadata::ToolSource::Mcp(config.id.clone()),
-                            server_id: Some(config.id.clone()),
-                        },
-                    ],
+                    "git" => vec![ToolMetadata {
+                        id: "git_status".to_string(),
+                        name: "Git Status".to_string(),
+                        description: "Get the status of a git repository".to_string(),
+                        category: "git".to_string(),
+                        parameters: vec![crate::metadata::ParameterMetadata {
+                            name: "repo_path".to_string(),
+                            type_: "string".to_string(),
+                            description: "Path to the git repository".to_string(),
+                            required: true,
+                            default: None,
+                        }],
+                        return_type: "object".to_string(),
+                        source: crate::metadata::ToolSource::Mcp(config.id.clone()),
+                        server_id: Some(config.id.clone()),
+                    }],
+                    _ => vec![ToolMetadata {
+                        id: format!("{}_tool", config.id),
+                        name: format!("{} Tool", config.name),
+                        description: format!("A tool from {}", config.name),
+                        category: "general".to_string(),
+                        parameters: vec![],
+                        return_type: "string".to_string(),
+                        source: crate::metadata::ToolSource::Mcp(config.id.clone()),
+                        server_id: Some(config.id.clone()),
+                    }],
                 };
 
                 Ok(tools)
             }
             Err(e) => Err(Error::ConnectionError(format!(
-                "Failed to send tools/list request: {}", e
+                "Failed to send tools/list request: {}",
+                e
             ))),
         }
     }
@@ -406,7 +425,9 @@ impl ServerManager {
     pub async fn start_server(&self, server_id: &str) -> Result<()> {
         let mut servers = self.servers.write().await;
         if let Some(registration) = servers.get_mut(server_id) {
-            if registration.health.state == ServerState::Stopped || registration.health.state == ServerState::Disconnected {
+            if registration.health.state == ServerState::Stopped
+                || registration.health.state == ServerState::Disconnected
+            {
                 // In a real implementation, this would start the transport
                 // For now, just set the state
                 registration.health.state = ServerState::Starting;
@@ -425,14 +446,18 @@ impl ServerManager {
     pub async fn stop_server(&self, server_id: &str) -> Result<()> {
         let mut servers = self.servers.write().await;
         if let Some(registration) = servers.get_mut(server_id) {
-            if registration.health.state == ServerState::Connected || registration.health.state == ServerState::Connecting {
+            if registration.health.state == ServerState::Connected
+                || registration.health.state == ServerState::Connecting
+            {
                 registration.health.state = ServerState::Stopped;
                 registration.transport = None;
                 info!("Stopped server: {}", server_id);
 
                 // Audit logging
                 if let Some(ref audit_logger) = self.audit_logger {
-                    let _ = audit_logger.log_server_connection(server_id, false, None, None, None).await;
+                    let _ = audit_logger
+                        .log_server_connection(server_id, false, None, None, None)
+                        .await;
                 }
             }
         } else {
@@ -456,14 +481,20 @@ impl ServerManager {
     /// Get server registration by ID
     pub async fn get_server(&self, server_id: &str) -> Result<ServerRegistration> {
         let servers = self.servers.read().await;
-        servers.get(server_id).cloned().ok_or_else(|| Error::ServerNotFound(server_id.to_string()))
+        servers
+            .get(server_id)
+            .cloned()
+            .ok_or_else(|| Error::ServerNotFound(server_id.to_string()))
     }
 
     /// Enable a tool for a server
     pub async fn enable_tool(&self, server_id: &str, tool_id: &str) -> Result<()> {
         let mut servers = self.servers.write().await;
         if let Some(registration) = servers.get_mut(server_id) {
-            registration.config.enabled_tools.insert(tool_id.to_string());
+            registration
+                .config
+                .enabled_tools
+                .insert(tool_id.to_string());
             info!("Enabled tool {} for server {}", tool_id, server_id);
             Ok(())
         } else {
@@ -501,7 +532,9 @@ impl ServerManager {
 
             // Audit logging
             if let Some(ref audit_logger) = self.audit_logger {
-                let _ = audit_logger.log_server_unregistration(server_id, None, None).await;
+                let _ = audit_logger
+                    .log_server_unregistration(server_id, None, None)
+                    .await;
             }
 
             Ok(())
@@ -587,19 +620,32 @@ impl HealthMonitor {
                 registration.health.last_error = Some("Connection lost".to_string());
 
                 // Implement reconnection logic
-                if registration.health.connection_attempts < registration.config.max_reconnect_attempts {
-                    warn!("Server {} disconnected, attempting reconnection (attempt {}/{})",
-                          server_id, registration.health.connection_attempts + 1, registration.config.max_reconnect_attempts);
+                if registration.health.connection_attempts
+                    < registration.config.max_reconnect_attempts
+                {
+                    warn!(
+                        "Server {} disconnected, attempting reconnection (attempt {}/{})",
+                        server_id,
+                        registration.health.connection_attempts + 1,
+                        registration.config.max_reconnect_attempts
+                    );
 
                     // Try to reconnect
-                    if let Err(reconnect_err) = self.attempt_reconnection(server_id, &registration.config).await {
-                        error!("Reconnection failed for server {}: {}", server_id, reconnect_err);
-                        registration.health.last_error = Some(format!("Reconnection failed: {}", reconnect_err));
+                    if let Err(reconnect_err) = self
+                        .attempt_reconnection(server_id, &registration.config)
+                        .await
+                    {
+                        error!(
+                            "Reconnection failed for server {}: {}",
+                            server_id, reconnect_err
+                        );
+                        registration.health.last_error =
+                            Some(format!("Reconnection failed: {}", reconnect_err));
                     }
-                 } else {
-                     error!("Max reconnection attempts reached for server {}", server_id);
-                     registration.health.state = ServerState::Error;
-                 }
+                } else {
+                    error!("Max reconnection attempts reached for server {}", server_id);
+                    registration.health.state = ServerState::Error;
+                }
             }
 
             registration.health.tools_available = registration.tools.len();
@@ -627,14 +673,18 @@ impl HealthMonitor {
                     info!("Successfully reconnected to server: {}", server_id);
                     Ok(())
                 } else {
-                    Err(crate::error::Error::ServerError(format!("Server {} not found during reconnection", server_id)))
+                    Err(crate::error::Error::ServerError(format!(
+                        "Server {} not found during reconnection",
+                        server_id
+                    )))
                 }
             }
             Err(e) => {
                 let mut servers = self.servers.write().await;
                 if let Some(registration) = servers.get_mut(server_id) {
                     registration.health.connection_attempts += 1;
-                    registration.health.last_error = Some(format!("Transport creation failed: {}", e));
+                    registration.health.last_error =
+                        Some(format!("Transport creation failed: {}", e));
                 }
                 Err(e)
             }
@@ -666,19 +716,21 @@ impl FileSystemDiscoveryProvider {
 #[async_trait]
 impl ServerDiscoveryProvider for FileSystemDiscoveryProvider {
     async fn parse_server_config(&self, path: &std::path::Path) -> Result<ServerConfig> {
-        let content = tokio::fs::read_to_string(path).await
+        let content = tokio::fs::read_to_string(path)
+            .await
             .map_err(|e| Error::IoError(e))?;
 
         let extension = path.extension().unwrap_or_default();
 
         let config: ServerConfig = if extension == "json" {
-            serde_json::from_str(&content)
-                .map_err(|e| Error::SerializationError(e))?
+            serde_json::from_str(&content).map_err(|e| Error::SerializationError(e))?
         } else if extension == "yaml" || extension == "yml" {
             serde_yaml::from_str(&content)
                 .map_err(|e| Error::ConfigError(format!("YAML parsing error: {}", e)))?
         } else {
-            return Err(Error::ValidationError("Unsupported config file format".to_string()));
+            return Err(Error::ValidationError(
+                "Unsupported config file format".to_string(),
+            ));
         };
 
         Ok(config)
@@ -694,9 +746,10 @@ impl ServerDiscoveryProvider for FileSystemDiscoveryProvider {
                     if let Ok(file_type) = entry.file_type().await {
                         if file_type.is_file() {
                             if let Some(extension) = entry.path().extension() {
-                                if extension == "json" || extension == "yaml" || extension == "yml" {
+                                if extension == "json" || extension == "yaml" || extension == "yml"
+                                {
                                     // Parse server configuration files
-                                     match <FileSystemDiscoveryProvider as ServerDiscoveryProvider>::parse_server_config(self, &entry.path()).await {
+                                    match <FileSystemDiscoveryProvider as ServerDiscoveryProvider>::parse_server_config(self, &entry.path()).await {
                                         Ok(config) => {
                                             results.push(DiscoveryResult {
                                                 server_id: config.id,
@@ -719,8 +772,6 @@ impl ServerDiscoveryProvider for FileSystemDiscoveryProvider {
 
         Ok(results)
     }
-
-
 }
 
 #[cfg(test)]
@@ -787,11 +838,17 @@ mod tests {
 
         // Enable a tool
         assert!(manager.enable_tool("test_server", "grep").await.is_ok());
-        assert!(manager.is_tool_enabled("test_server", "grep").await.unwrap());
+        assert!(manager
+            .is_tool_enabled("test_server", "grep")
+            .await
+            .unwrap());
 
         // Disable the tool
         assert!(manager.disable_tool("test_server", "grep").await.is_ok());
-        assert!(!manager.is_tool_enabled("test_server", "grep").await.unwrap());
+        assert!(!manager
+            .is_tool_enabled("test_server", "grep")
+            .await
+            .unwrap());
     }
 
     #[test]

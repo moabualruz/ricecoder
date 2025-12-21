@@ -4,8 +4,8 @@
 //! **Validates: Requirements ELSP-1.1, ELSP-1.4**
 
 use proptest::prelude::*;
-use ricecoder_external_lsp::types::{ClientState, LspServerConfig};
 use ricecoder_external_lsp::process::ProcessManager;
+use ricecoder_external_lsp::types::{ClientState, LspServerConfig};
 use std::collections::HashMap;
 
 /// Strategy for generating valid LSP server configurations
@@ -18,8 +18,8 @@ fn arb_lsp_server_config() -> impl Strategy<Value = LspServerConfig> {
         1u32..10u32,
         0u64..1000000u64,
     )
-        .prop_map(|(lang, ext, exe, timeout, restarts, idle)| {
-            LspServerConfig {
+        .prop_map(
+            |(lang, ext, exe, timeout, restarts, idle)| LspServerConfig {
                 language: lang,
                 extensions: vec![format!(".{}", ext)],
                 executable: exe,
@@ -31,8 +31,8 @@ fn arb_lsp_server_config() -> impl Strategy<Value = LspServerConfig> {
                 max_restarts: restarts,
                 idle_timeout_ms: idle,
                 output_mapping: None,
-            }
-        })
+            },
+        )
 }
 
 proptest! {

@@ -7,39 +7,37 @@
 //! - Terminal display with ASCII fallback
 //! - Multi-image support
 
-pub mod error;
-pub mod config;
-pub mod formats;
-pub mod models;
-pub mod handler;
-pub mod cache;
 pub mod analyzer;
-pub mod display;
-pub mod banner;
-pub mod provider_integration;
-pub mod token_counting;
 pub mod audit_logging;
+pub mod banner;
+pub mod cache;
+pub mod config;
+pub mod display;
+pub mod error;
+pub mod formats;
+pub mod handler;
+pub mod models;
+pub mod provider_integration;
 pub mod session_integration;
 pub mod session_manager;
+pub mod token_counting;
 
-pub use error::{ImageError, ImageResult};
-pub use config::{ImageConfig, DisplayConfig};
-pub use formats::ImageFormat;
-pub use models::{ImageMetadata, ImageAnalysisResult, ImageCacheEntry};
-pub use handler::ImageHandler;
-pub use cache::ImageCache;
-pub use analyzer::{ImageAnalyzer, AnalysisRetryContext};
-pub use display::ImageDisplay;
-pub use banner::{
-    BannerRenderer, BannerCache, BannerConfig, BannerOutput, 
-    TerminalCapabilities, ColorDepth, ThemeColors,
-};
-pub use provider_integration::{
-    ImageData, ChatRequestWithImages, ProviderImageFormat, ImageAuditLogEntry,
-};
-pub use token_counting::ImageTokenCounter;
+pub use analyzer::{AnalysisRetryContext, ImageAnalyzer};
 pub use audit_logging::ImageAuditLogger;
-pub use session_integration::{
-    MessageImageMetadata, MessageImages, SessionImageContext,
+pub use banner::{
+    BannerCache, BannerConfig, BannerOutput, BannerRenderer, ColorDepth, TerminalCapabilities,
+    ThemeColors,
 };
-pub use session_manager::{SessionImageManager, MultiSessionImageManager};
+pub use cache::ImageCache;
+pub use config::{DisplayConfig, ImageConfig};
+pub use display::ImageDisplay;
+pub use error::{ImageError, ImageResult};
+pub use formats::ImageFormat;
+pub use handler::ImageHandler;
+pub use models::{ImageAnalysisResult, ImageCacheEntry, ImageMetadata};
+pub use provider_integration::{
+    ChatRequestWithImages, ImageAuditLogEntry, ImageData, ProviderImageFormat,
+};
+pub use session_integration::{MessageImageMetadata, MessageImages, SessionImageContext};
+pub use session_manager::{MultiSessionImageManager, SessionImageManager};
+pub use token_counting::ImageTokenCounter;

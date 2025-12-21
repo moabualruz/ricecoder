@@ -85,7 +85,11 @@ mod integration_tests {
         checkpoint1_state.insert("file1.txt".to_string(), "checkpoint1 content".to_string());
         checkpoint1_state.insert("file2.txt".to_string(), "file2 content".to_string());
         let cp1_id = manager
-            .create_checkpoint("Checkpoint 1", "First checkpoint", checkpoint1_state.clone())
+            .create_checkpoint(
+                "Checkpoint 1",
+                "First checkpoint",
+                checkpoint1_state.clone(),
+            )
             .unwrap();
 
         // Modify state
@@ -101,7 +105,11 @@ mod integration_tests {
         checkpoint2_state.insert("file2.txt".to_string(), "modified file2".to_string());
         checkpoint2_state.insert("file3.txt".to_string(), "new file".to_string());
         let cp2_id = manager
-            .create_checkpoint("Checkpoint 2", "Second checkpoint", checkpoint2_state.clone())
+            .create_checkpoint(
+                "Checkpoint 2",
+                "Second checkpoint",
+                checkpoint2_state.clone(),
+            )
             .unwrap();
 
         // Verify both checkpoints exist
@@ -110,7 +118,10 @@ mod integration_tests {
         // Rollback to checkpoint 1
         manager.rollback_to(&cp1_id).unwrap();
         let current = manager.get_current_state();
-        assert_eq!(current.get("file1.txt"), Some(&"checkpoint1 content".to_string()));
+        assert_eq!(
+            current.get("file1.txt"),
+            Some(&"checkpoint1 content".to_string())
+        );
         assert_eq!(current.get("file2.txt"), Some(&"file2 content".to_string()));
         // Note: file3.txt remains in current state (rollback doesn't delete files not in checkpoint)
         assert_eq!(current.get("file3.txt"), Some(&"new file".to_string()));
@@ -122,8 +133,14 @@ mod integration_tests {
         // Rollback to checkpoint 2
         manager.rollback_to(&cp2_id).unwrap();
         let current = manager.get_current_state();
-        assert_eq!(current.get("file1.txt"), Some(&"modified content".to_string()));
-        assert_eq!(current.get("file2.txt"), Some(&"modified file2".to_string()));
+        assert_eq!(
+            current.get("file1.txt"),
+            Some(&"modified content".to_string())
+        );
+        assert_eq!(
+            current.get("file2.txt"),
+            Some(&"modified file2".to_string())
+        );
         assert_eq!(current.get("file3.txt"), Some(&"new file".to_string()));
 
         // Verify checkpoint 1 is still intact
@@ -164,18 +181,15 @@ mod integration_tests {
             let mut checkpoint_state = HashMap::new();
             checkpoint_state.insert("file1.txt".to_string(), "content1".to_string());
             checkpoint_state.insert("file2.txt".to_string(), "content2".to_string());
-            let checkpoint = Checkpoint::new("Session 1 Checkpoint", "desc", checkpoint_state)
-                .unwrap();
+            let checkpoint =
+                Checkpoint::new("Session 1 Checkpoint", "desc", checkpoint_state).unwrap();
 
             // Save snapshot
-            let snapshot = HistorySnapshot::new(
-                vec![change1, change2],
-                {
-                    let mut map = HashMap::new();
-                    map.insert(checkpoint.id.clone(), checkpoint);
-                    map
-                },
-            );
+            let snapshot = HistorySnapshot::new(vec![change1, change2], {
+                let mut map = HashMap::new();
+                map.insert(checkpoint.id.clone(), checkpoint);
+                map
+            });
 
             store.save_history(snapshot).unwrap();
         }
@@ -399,10 +413,7 @@ mod integration_tests {
             for i in 0..3 {
                 let mut file_states = HashMap::new();
                 for j in 0..=i {
-                    file_states.insert(
-                        format!("file{}.txt", j),
-                        format!("content{}", j),
-                    );
+                    file_states.insert(format!("file{}.txt", j), format!("content{}", j));
                 }
                 let checkpoint = Checkpoint::new(
                     format!("Checkpoint {}", i),
@@ -445,14 +456,7 @@ mod integration_tests {
         let mut checkpoint_manager = CheckpointManager::new();
 
         // Record changes
-        let change1 = Change::new(
-            "file.txt",
-            "",
-            "state1",
-            "Create",
-            ChangeType::Create,
-        )
-        .unwrap();
+        let change1 = Change::new("file.txt", "", "state1", "Create", ChangeType::Create).unwrap();
 
         let change2 = Change::new(
             "file.txt",

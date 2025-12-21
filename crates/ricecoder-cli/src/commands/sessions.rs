@@ -9,10 +9,10 @@ fn format_timestamp(ts: i64) -> String {
     let dt = DateTime::<Utc>::from_timestamp(ts, 0).unwrap_or_else(|| DateTime::<Utc>::UNIX_EPOCH);
     dt.format("%Y-%m-%d %H:%M:%S").to_string()
 }
-use ricecoder_sessions::{SessionContext, SessionMode, SharePermissions};
 use ricecoder_agents::use_cases::{SessionLifecycleUseCase, SessionSharingUseCase};
-use std::sync::Arc;
+use ricecoder_sessions::{SessionContext, SessionMode, SharePermissions};
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 
 /// Sessions command action
 #[derive(Debug, Clone)]
@@ -48,8 +48,6 @@ pub enum SessionsAction {
     /// Import a session from a file
     Import { file: String, name: Option<String> },
 }
-
-
 
 /// Sessions command handler
 pub struct SessionsCommand {
@@ -99,8 +97,15 @@ async fn show_session_info(id: &str) -> CliResult<()> {
 }
 
 /// Share a session
-async fn share_session(expires_in: Option<u64>, no_history: bool, no_context: bool) -> CliResult<()> {
-    println!("Sharing session with expires_in: {:?}, no_history: {}, no_context: {}", expires_in, no_history, no_context);
+async fn share_session(
+    expires_in: Option<u64>,
+    no_history: bool,
+    no_context: bool,
+) -> CliResult<()> {
+    println!(
+        "Sharing session with expires_in: {:?}, no_history: {}, no_context: {}",
+        expires_in, no_history, no_context
+    );
     // TODO: Implement session sharing
     Ok(())
 }
@@ -154,10 +159,14 @@ impl SessionsCommand {
     }
 
     /// Get session use cases from DI container
-    fn get_use_cases(&self) -> CliResult<(Arc<SessionLifecycleUseCase>, Arc<SessionSharingUseCase>)> {
+    fn get_use_cases(
+        &self,
+    ) -> CliResult<(Arc<SessionLifecycleUseCase>, Arc<SessionSharingUseCase>)> {
         // TODO: For now, return an error since session services are not fully implemented
         // This prevents the command from hanging while trying to access non-existent services
-        Err(CliError::Internal("Session services are not yet implemented".to_string()))
+        Err(CliError::Internal(
+            "Session services are not yet implemented".to_string(),
+        ))
 
         /*
         // Get services from DI container
@@ -170,7 +179,6 @@ impl SessionsCommand {
         Ok((session_lifecycle, session_sharing))
         */
     }
-
 
     /// List all sessions
     async fn list_sessions(&self) -> CliResult<()> {
@@ -214,13 +222,23 @@ impl SessionsCommand {
     async fn create_session(&self, name: &str) -> CliResult<()> {
         // Validate session name
         if name.trim().is_empty() {
-            return Err(CliError::Internal("Session name cannot be empty".to_string()));
+            return Err(CliError::Internal(
+                "Session name cannot be empty".to_string(),
+            ));
         }
         if name.len() > 100 {
-            return Err(CliError::Internal("Session name too long (max 100 characters)".to_string()));
+            return Err(CliError::Internal(
+                "Session name too long (max 100 characters)".to_string(),
+            ));
         }
-        if !name.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-') {
-            return Err(CliError::Internal("Session name can only contain alphanumeric characters, underscores, and hyphens".to_string()));
+        if !name
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '_' || c == '-')
+        {
+            return Err(CliError::Internal(
+                "Session name can only contain alphanumeric characters, underscores, and hyphens"
+                    .to_string(),
+            ));
         }
 
         println!("Creating session: {}", name);
@@ -257,8 +275,16 @@ impl SessionsCommand {
     }
 
     /// Share a session
-    async fn share_session(&self, expires_in: Option<u64>, no_history: bool, no_context: bool) -> CliResult<()> {
-        println!("Sharing session with expires_in: {:?}, no_history: {}, no_context: {}", expires_in, no_history, no_context);
+    async fn share_session(
+        &self,
+        expires_in: Option<u64>,
+        no_history: bool,
+        no_context: bool,
+    ) -> CliResult<()> {
+        println!(
+            "Sharing session with expires_in: {:?}, no_history: {}, no_context: {}",
+            expires_in, no_history, no_context
+        );
         // TODO: Implement session sharing
         Ok(())
     }
@@ -316,13 +342,22 @@ impl Command for SessionsCommand {
             SessionsAction::Rename { id, name } => self.rename_session(id, name).await,
             SessionsAction::Switch { id } => self.switch_session(id).await,
             SessionsAction::Info { id } => self.show_session_info(id).await,
-            SessionsAction::Share { expires_in, no_history, no_context } => self.share_session(*expires_in, *no_history, *no_context).await,
+            SessionsAction::Share {
+                expires_in,
+                no_history,
+                no_context,
+            } => {
+                self.share_session(*expires_in, *no_history, *no_context)
+                    .await
+            }
             SessionsAction::ShareList => self.list_shares().await,
             SessionsAction::ShareRevoke { share_id } => self.revoke_share(share_id).await,
             SessionsAction::ShareInfo { share_id } => self.show_share_info(share_id).await,
             SessionsAction::ShareView { share_id } => self.view_shared_session(share_id).await,
             SessionsAction::Export { id, file } => self.export_session(id, file).await,
-            SessionsAction::Import { file, name } => self.import_session(file, name.as_deref()).await,
+            SessionsAction::Import { file, name } => {
+                self.import_session(file, name.as_deref()).await
+            }
         }
     }
 }

@@ -43,7 +43,11 @@ fn default_retry_backoff() -> u64 {
 
 impl GitHubConfig {
     /// Create a new GitHub configuration
-    pub fn new(token: impl Into<String>, owner: impl Into<String>, repo: impl Into<String>) -> Self {
+    pub fn new(
+        token: impl Into<String>,
+        owner: impl Into<String>,
+        repo: impl Into<String>,
+    ) -> Self {
         Self {
             token: token.into(),
             owner: owner.into(),
@@ -135,7 +139,9 @@ impl GitHubManager {
         let client = octocrab::OctocrabBuilder::new()
             .personal_token(config.token.clone())
             .build()
-            .map_err(|e| GitHubError::auth_error(format!("Failed to create GitHub client: {}", e)))?;
+            .map_err(|e| {
+                GitHubError::auth_error(format!("Failed to create GitHub client: {}", e))
+            })?;
 
         // Test authentication by getting the current user
         client
@@ -203,10 +209,7 @@ impl GitHubManager {
         if let Some(limit) = self.rate_limit.read().await.as_ref() {
             let wait_time = limit.time_until_reset();
             if wait_time > 0 {
-                warn!(
-                    wait_seconds = wait_time,
-                    "Rate limited, waiting for reset"
-                );
+                warn!(wait_seconds = wait_time, "Rate limited, waiting for reset");
                 tokio::time::sleep(Duration::from_secs(wait_time + 1)).await;
             }
         }

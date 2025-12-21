@@ -1,6 +1,6 @@
-use ricecoder_tui::*;
 use crate::widgets::ChatWidget;
 use ricecoder_help::HelpDialog;
+use ricecoder_tui::*;
 
 mod tests {
     use super::*;
@@ -94,7 +94,9 @@ mod tests {
         let model = create_test_model();
         let mut reactive = ReactiveState::new(model);
 
-        let diff = reactive.update(AppMessage::ModeChanged(AppMode::Command)).unwrap();
+        let diff = reactive
+            .update(AppMessage::ModeChanged(AppMode::Command))
+            .unwrap();
         assert!(diff.has_change(&StateChange::Mode(AppMode::Command)));
 
         assert!(reactive.can_undo());

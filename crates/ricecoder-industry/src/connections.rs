@@ -197,10 +197,12 @@ impl ToolConnector {
             "PUT" => self.http_client.put(&url),
             "DELETE" => self.http_client.delete(&url),
             "PATCH" => self.http_client.patch(&url),
-            _ => return Err(IndustryError::ConnectionError {
-                tool: self.config.tool.clone(),
-                message: format!("Unsupported HTTP method: {}", method),
-            }),
+            _ => {
+                return Err(IndustryError::ConnectionError {
+                    tool: self.config.tool.clone(),
+                    message: format!("Unsupported HTTP method: {}", method),
+                })
+            }
         };
 
         // Add authentication headers
@@ -212,8 +214,9 @@ impl ToolConnector {
                 request = request.header(header_name, key);
             }
             AuthMethod::Basic { username, password } => {
-                use base64::{Engine as _, engine::general_purpose};
-                let credentials = general_purpose::STANDARD.encode(format!("{}:{}", username, password));
+                use base64::{engine::general_purpose, Engine as _};
+                let credentials =
+                    general_purpose::STANDARD.encode(format!("{}:{}", username, password));
                 request = request.header("Authorization", format!("Basic {}", credentials));
             }
             AuthMethod::PersonalAccessToken { header_name, token } => {
@@ -245,9 +248,7 @@ impl ToolConnection for ToolConnector {
 
     fn status(&self) -> ConnectionStatus {
         // This is a simplified implementation - in practice, you'd want to return the current status
-        futures::executor::block_on(async {
-            self.status.read().await.clone()
-        })
+        futures::executor::block_on(async { self.status.read().await.clone() })
     }
 
     async fn test_connection(&mut self) -> IndustryResult<bool> {
@@ -272,7 +273,8 @@ impl ToolConnection for ToolConnector {
             Ok(true)
         } else {
             let error_msg = result.unwrap_err().to_string();
-            self.update_status(ConnectionStatus::Failed(error_msg)).await;
+            self.update_status(ConnectionStatus::Failed(error_msg))
+                .await;
             Ok(false)
         }
     }
@@ -287,9 +289,12 @@ impl ToolConnection for ToolConnector {
         let request = self.build_request(method, endpoint, body, headers)?;
 
         let start_time = std::time::Instant::now();
-        let response = request.send().await.map_err(|e| IndustryError::NetworkError {
-            message: format!("Request failed: {}", e),
-        })?;
+        let response = request
+            .send()
+            .await
+            .map_err(|e| IndustryError::NetworkError {
+                message: format!("Request failed: {}", e),
+            })?;
 
         let response_time = start_time.elapsed().as_millis() as u64;
 
@@ -304,11 +309,13 @@ impl ToolConnection for ToolConnector {
             });
         }
 
-        let response_json: serde_json::Value = response.json().await.map_err(|e| {
-            IndustryError::SerializationError {
-                message: format!("Failed to parse response: {}", e),
-            }
-        })?;
+        let response_json: serde_json::Value =
+            response
+                .json()
+                .await
+                .map_err(|e| IndustryError::SerializationError {
+                    message: format!("Failed to parse response: {}", e),
+                })?;
 
         self.update_health(true, response_time).await;
         Ok(response_json)

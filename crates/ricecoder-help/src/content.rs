@@ -20,34 +20,34 @@ impl HelpItem {
             keywords: Vec::new(),
         }
     }
-    
+
     /// Add keywords for search
     pub fn with_keywords(mut self, keywords: Vec<String>) -> Self {
         self.keywords = keywords;
         self
     }
-    
+
     /// Check if this item matches a search query
     pub fn matches(&self, query: &str) -> bool {
         let query_lower = query.to_lowercase();
-        
+
         // Check title
         if self.title.to_lowercase().contains(&query_lower) {
             return true;
         }
-        
+
         // Check content
         if self.content.to_lowercase().contains(&query_lower) {
             return true;
         }
-        
+
         // Check keywords
         for keyword in &self.keywords {
             if keyword.to_lowercase().contains(&query_lower) {
                 return true;
             }
         }
-        
+
         false
     }
 }
@@ -69,19 +69,19 @@ impl HelpCategory {
             items: Vec::new(),
         }
     }
-    
+
     /// Set category description
     pub fn with_description(mut self, description: impl Into<String>) -> Self {
         self.description = description.into();
         self
     }
-    
+
     /// Add a help item to this category
     pub fn add_item(mut self, title: impl Into<String>, content: impl Into<String>) -> Self {
         self.items.push(HelpItem::new(title, content));
         self
     }
-    
+
     /// Add a help item with keywords
     pub fn add_item_with_keywords(
         mut self,
@@ -89,13 +89,17 @@ impl HelpCategory {
         content: impl Into<String>,
         keywords: Vec<String>,
     ) -> Self {
-        self.items.push(HelpItem::new(title, content).with_keywords(keywords));
+        self.items
+            .push(HelpItem::new(title, content).with_keywords(keywords));
         self
     }
-    
+
     /// Search for items in this category
     pub fn search(&self, query: &str) -> Vec<&HelpItem> {
-        self.items.iter().filter(|item| item.matches(query)).collect()
+        self.items
+            .iter()
+            .filter(|item| item.matches(query))
+            .collect()
     }
 }
 
@@ -114,37 +118,37 @@ impl HelpContent {
             shortcuts: HashMap::new(),
         }
     }
-    
+
     /// Add a category to the help content
     pub fn add_category(mut self, category: HelpCategory) -> Self {
         self.categories.push(category);
         self
     }
-    
+
     /// Add a keyboard shortcut
     pub fn add_shortcut(mut self, key: impl Into<String>, description: impl Into<String>) -> Self {
         self.shortcuts.insert(key.into(), description.into());
         self
     }
-    
+
     /// Search across all categories
     pub fn search(&self, query: &str) -> Vec<(&HelpCategory, &HelpItem)> {
         let mut results = Vec::new();
-        
+
         for category in &self.categories {
             for item in category.search(query) {
                 results.push((category, item));
             }
         }
-        
+
         results
     }
-    
+
     /// Get a category by name
     pub fn get_category(&self, name: &str) -> Option<&HelpCategory> {
         self.categories.iter().find(|cat| cat.name == name)
     }
-    
+
     /// Create default help content for RiceCoder
     pub fn default_ricecoder_help() -> Self {
         Self::new()
@@ -338,7 +342,9 @@ impl HelpSystem for HelpContent {
     }
 
     fn search_topics(&self, query: &str) -> Vec<&HelpItem> {
-        self.search(query).into_iter().map(|(_, item)| item).collect()
+        self.search(query)
+            .into_iter()
+            .map(|(_, item)| item)
+            .collect()
     }
 }
-

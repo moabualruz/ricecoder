@@ -99,7 +99,12 @@ impl MCPAuditLogger {
                 event_type,
                 user_id: user_id.clone(),
                 session_id: session_id.clone(),
-                action: if success { "server_connect" } else { "server_connect_failed" }.to_string(),
+                action: if success {
+                    "server_connect"
+                } else {
+                    "server_connect_failed"
+                }
+                .to_string(),
                 resource: format!("mcp_server:{}", server_id),
                 metadata: serde_json::json!({
                     "server_id": server_id,
@@ -110,9 +115,15 @@ impl MCPAuditLogger {
             .await?;
 
         if success {
-            info!("Audited successful MCP server connection: {} by user {:?}", server_id, user_id);
+            info!(
+                "Audited successful MCP server connection: {} by user {:?}",
+                server_id, user_id
+            );
         } else {
-            info!("Audited failed MCP server connection: {} by user {:?}: {:?}", server_id, user_id, error_message);
+            info!(
+                "Audited failed MCP server connection: {} by user {:?}: {:?}",
+                server_id, user_id, error_message
+            );
         }
         Ok(())
     }
@@ -160,7 +171,12 @@ impl MCPAuditLogger {
                 event_type: ricecoder_security::audit::AuditEventType::Authorization,
                 user_id: user_id.clone(),
                 session_id: session_id.clone(),
-                action: if enabled { "tool_enable" } else { "tool_disable" }.to_string(),
+                action: if enabled {
+                    "tool_enable"
+                } else {
+                    "tool_disable"
+                }
+                .to_string(),
                 resource: format!("mcp_tool:{}.{}", server_id, tool_name),
                 metadata: serde_json::json!({
                     "server_id": server_id,
@@ -252,7 +268,12 @@ impl MCPAuditLogger {
                 event_type,
                 user_id: user_id.clone(),
                 session_id: session_id.clone(),
-                action: if allowed { "tool_access_granted" } else { "tool_access_denied" }.to_string(),
+                action: if allowed {
+                    "tool_access_granted"
+                } else {
+                    "tool_access_denied"
+                }
+                .to_string(),
                 resource: format!("mcp_tool:{}.{}", server_id, tool_name),
                 metadata: serde_json::json!({
                     "server_id": server_id,
@@ -294,7 +315,10 @@ impl MCPAuditLogger {
             })
             .await?;
 
-        info!("Audited MCP connection pool event: {} for server {}", event_type, server_id);
+        info!(
+            "Audited MCP connection pool event: {} for server {}",
+            event_type, server_id
+        );
         Ok(())
     }
 
@@ -318,7 +342,12 @@ impl MCPAuditLogger {
                 event_type,
                 user_id: user_id.clone(),
                 session_id: session_id.clone(),
-                action: if healthy { "health_check_passed" } else { "health_check_failed" }.to_string(),
+                action: if healthy {
+                    "health_check_passed"
+                } else {
+                    "health_check_failed"
+                }
+                .to_string(),
                 resource: format!("mcp_server:{}", server_id),
                 metadata: serde_json::json!({
                     "server_id": server_id,
@@ -357,7 +386,12 @@ impl MCPAuditLogger {
                 event_type,
                 user_id: user_id.clone(),
                 session_id: session_id.clone(),
-                action: if valid { "protocol_validation_passed" } else { "protocol_validation_failed" }.to_string(),
+                action: if valid {
+                    "protocol_validation_passed"
+                } else {
+                    "protocol_validation_failed"
+                }
+                .to_string(),
                 resource: "mcp_protocol".to_string(),
                 metadata: serde_json::json!({
                     "message_type": message_type,

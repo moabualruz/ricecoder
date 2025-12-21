@@ -248,8 +248,7 @@ mod tests {
     fn test_config_serialization() {
         let config = ImageConfig::default();
         let yaml = serde_yaml::to_string(&config).expect("Failed to serialize");
-        let deserialized: ImageConfig =
-            serde_yaml::from_str(&yaml).expect("Failed to deserialize");
+        let deserialized: ImageConfig = serde_yaml::from_str(&yaml).expect("Failed to deserialize");
         assert_eq!(config.cache.ttl_seconds, deserialized.cache.ttl_seconds);
         assert_eq!(config.display.max_width, deserialized.display.max_width);
     }

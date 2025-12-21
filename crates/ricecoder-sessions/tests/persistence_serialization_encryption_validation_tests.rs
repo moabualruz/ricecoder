@@ -30,7 +30,10 @@ fn test_session_serialization_roundtrip() {
     assert_eq!(deserialized.context.model, session.context.model);
     assert_eq!(deserialized.context.mode, session.context.mode);
     assert_eq!(deserialized.history.len(), session.history.len());
-    assert_eq!(deserialized.background_agents.len(), session.background_agents.len());
+    assert_eq!(
+        deserialized.background_agents.len(),
+        session.background_agents.len()
+    );
 }
 
 #[test]
@@ -40,8 +43,14 @@ fn test_session_serialization_with_complex_data() {
     // Add files and custom data
     session.context.files.push("src/main.rs".to_string());
     session.context.files.push("Cargo.toml".to_string());
-    session.context.custom.insert("workspace".to_string(), serde_json::json!("dev"));
-    session.context.custom.insert("version".to_string(), serde_json::json!(1.0));
+    session
+        .context
+        .custom
+        .insert("workspace".to_string(), serde_json::json!("dev"));
+    session
+        .context
+        .custom
+        .insert("version".to_string(), serde_json::json!(1.0));
 
     // Serialize and deserialize
     let json = serde_json::to_string(&session).unwrap();
@@ -49,11 +58,23 @@ fn test_session_serialization_with_complex_data() {
 
     // Verify complex data preserved
     assert_eq!(deserialized.context.files.len(), 2);
-    assert!(deserialized.context.files.contains(&"src/main.rs".to_string()));
-    assert!(deserialized.context.files.contains(&"Cargo.toml".to_string()));
+    assert!(deserialized
+        .context
+        .files
+        .contains(&"src/main.rs".to_string()));
+    assert!(deserialized
+        .context
+        .files
+        .contains(&"Cargo.toml".to_string()));
     assert_eq!(deserialized.context.custom.len(), 2);
-    assert_eq!(deserialized.context.custom.get("workspace"), Some(&serde_json::json!("dev")));
-    assert_eq!(deserialized.context.custom.get("version"), Some(&serde_json::json!(1.0)));
+    assert_eq!(
+        deserialized.context.custom.get("workspace"),
+        Some(&serde_json::json!("dev"))
+    );
+    assert_eq!(
+        deserialized.context.custom.get("version"),
+        Some(&serde_json::json!(1.0))
+    );
 }
 
 #[test]
@@ -63,9 +84,8 @@ fn test_encryption_validation() {
     let archive_dir = temp_dir.path().join("archive");
 
     let rt = Runtime::new().unwrap();
-    let mut store = rt.block_on(async {
-        SessionStore::with_dirs(sessions_dir.clone(), archive_dir).unwrap()
-    });
+    let mut store =
+        rt.block_on(async { SessionStore::with_dirs(sessions_dir.clone(), archive_dir).unwrap() });
 
     // Enable encryption
     store.enable_encryption("test-password").unwrap();
@@ -96,12 +116,13 @@ fn test_enterprise_encryption_validation() {
     let archive_dir = temp_dir.path().join("archive");
 
     let rt = Runtime::new().unwrap();
-    let mut store = rt.block_on(async {
-        SessionStore::with_dirs(sessions_dir.clone(), archive_dir).unwrap()
-    });
+    let mut store =
+        rt.block_on(async { SessionStore::with_dirs(sessions_dir.clone(), archive_dir).unwrap() });
 
     // Enable enterprise encryption
-    store.enable_enterprise_encryption("enterprise-password").unwrap();
+    store
+        .enable_enterprise_encryption("enterprise-password")
+        .unwrap();
 
     let session = create_test_session("Enterprise Encryption Test");
 
@@ -129,9 +150,8 @@ fn test_corrupted_file_handling() {
     let archive_dir = temp_dir.path().join("archive");
 
     let rt = Runtime::new().unwrap();
-    let store = rt.block_on(async {
-        SessionStore::with_dirs(sessions_dir.clone(), archive_dir).unwrap()
-    });
+    let store =
+        rt.block_on(async { SessionStore::with_dirs(sessions_dir.clone(), archive_dir).unwrap() });
 
     let session = create_test_session("Corruption Test");
     let session_id = session.id.clone();
@@ -155,9 +175,7 @@ fn test_missing_file_handling() {
     let archive_dir = temp_dir.path().join("archive");
 
     let rt = Runtime::new().unwrap();
-    let store = rt.block_on(async {
-        SessionStore::with_dirs(sessions_dir, archive_dir).unwrap()
-    });
+    let store = rt.block_on(async { SessionStore::with_dirs(sessions_dir, archive_dir).unwrap() });
 
     // Attempt to load non-existent session
     let result = rt.block_on(store.load("nonexistent-id"));
@@ -171,9 +189,8 @@ fn test_file_permission_handling() {
     let archive_dir = temp_dir.path().join("archive");
 
     let rt = Runtime::new().unwrap();
-    let store = rt.block_on(async {
-        SessionStore::with_dirs(sessions_dir.clone(), archive_dir).unwrap()
-    });
+    let store =
+        rt.block_on(async { SessionStore::with_dirs(sessions_dir.clone(), archive_dir).unwrap() });
 
     let session = create_test_session("Permission Test");
 
@@ -208,7 +225,7 @@ fn test_large_file_handling() {
         session.context.files.push(format!("file_{}.rs", i));
         session.context.custom.insert(
             format!("key_{}", i),
-            serde_json::json!(format!("value_{}", "x".repeat(100)))
+            serde_json::json!(format!("value_{}", "x".repeat(100))),
         );
     }
 
@@ -217,7 +234,11 @@ fn test_large_file_handling() {
 
     // Should be reasonably sized
     let size_kb = json.len() / 1024;
-    assert!(size_kb > 100, "Session should be substantial: {} KB", size_kb);
+    assert!(
+        size_kb > 100,
+        "Session should be substantial: {} KB",
+        size_kb
+    );
 
     // Deserialize (should not fail)
     let deserialized: Session = serde_json::from_str(&json).unwrap();
@@ -248,9 +269,9 @@ fn test_concurrent_file_access() {
     let archive_dir = temp_dir.path().join("archive");
 
     let rt = Runtime::new().unwrap();
-    let store = Arc::new(rt.block_on(async {
-        SessionStore::with_dirs(sessions_dir, archive_dir).unwrap()
-    }));
+    let store = Arc::new(
+        rt.block_on(async { SessionStore::with_dirs(sessions_dir, archive_dir).unwrap() }),
+    );
 
     let session = create_test_session("Concurrent Access Test");
     let session_id = session.id.clone();
@@ -289,9 +310,8 @@ fn test_encryption_key_validation() {
     let archive_dir = temp_dir.path().join("archive");
 
     let rt = Runtime::new().unwrap();
-    let mut store = rt.block_on(async {
-        SessionStore::with_dirs(sessions_dir, archive_dir).unwrap()
-    });
+    let mut store =
+        rt.block_on(async { SessionStore::with_dirs(sessions_dir, archive_dir).unwrap() });
 
     // Test with empty password
     let result = store.enable_encryption("");
@@ -313,9 +333,8 @@ fn test_enterprise_encryption_key_validation() {
     let archive_dir = temp_dir.path().join("archive");
 
     let rt = Runtime::new().unwrap();
-    let mut store = rt.block_on(async {
-        SessionStore::with_dirs(sessions_dir, archive_dir).unwrap()
-    });
+    let mut store =
+        rt.block_on(async { SessionStore::with_dirs(sessions_dir, archive_dir).unwrap() });
 
     // Test with empty password
     let result = store.enable_enterprise_encryption("");

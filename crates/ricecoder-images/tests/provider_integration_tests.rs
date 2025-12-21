@@ -8,8 +8,8 @@
 //! **Requirements: 2.1, 2.2**
 
 use ricecoder_images::{
-    ImageAnalyzer, ImageMetadata, ImageFormat, ImageData,
-    ChatRequestWithImages, ProviderImageFormat,
+    ChatRequestWithImages, ImageAnalyzer, ImageData, ImageFormat, ImageMetadata,
+    ProviderImageFormat,
 };
 use ricecoder_providers::models::{ChatRequest, Message};
 use std::path::PathBuf;
@@ -431,11 +431,26 @@ fn test_image_metadata_hash() {
 /// Test provider format for different providers
 #[test]
 fn test_provider_format_for_providers() {
-    assert_eq!(ProviderImageFormat::for_provider("openai"), ProviderImageFormat::OpenAi);
-    assert_eq!(ProviderImageFormat::for_provider("anthropic"), ProviderImageFormat::Anthropic);
-    assert_eq!(ProviderImageFormat::for_provider("google"), ProviderImageFormat::Google);
-    assert_eq!(ProviderImageFormat::for_provider("ollama"), ProviderImageFormat::Ollama);
-    assert_eq!(ProviderImageFormat::for_provider("unknown"), ProviderImageFormat::Generic);
+    assert_eq!(
+        ProviderImageFormat::for_provider("openai"),
+        ProviderImageFormat::OpenAi
+    );
+    assert_eq!(
+        ProviderImageFormat::for_provider("anthropic"),
+        ProviderImageFormat::Anthropic
+    );
+    assert_eq!(
+        ProviderImageFormat::for_provider("google"),
+        ProviderImageFormat::Google
+    );
+    assert_eq!(
+        ProviderImageFormat::for_provider("ollama"),
+        ProviderImageFormat::Ollama
+    );
+    assert_eq!(
+        ProviderImageFormat::for_provider("unknown"),
+        ProviderImageFormat::Generic
+    );
 }
 
 /// Test chat request add multiple images

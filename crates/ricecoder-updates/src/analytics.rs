@@ -1,14 +1,14 @@
 //! Distribution analytics, monitoring, and enterprise usage tracking
 
 use crate::error::{Result, UpdateError};
-use crate::models::{UsageAnalytics, EnterpriseUsageReport, SecurityIncident};
-use chrono::{DateTime, Utc, Duration};
+use crate::models::{EnterpriseUsageReport, SecurityIncident, UsageAnalytics};
+use chrono::{DateTime, Duration, Utc};
 use reqwest::Client;
 use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{info, warn, error};
+use tracing::{error, info, warn};
 use uuid::Uuid;
 
 /// Analytics collector service
@@ -50,7 +50,14 @@ impl AnalyticsCollector {
     }
 
     /// Record usage analytics
-    pub async fn record_usage(&self, duration_seconds: u64, commands: Vec<String>, features: Vec<String>, error_count: u32, performance_metrics: HashMap<String, f64>) -> Result<()> {
+    pub async fn record_usage(
+        &self,
+        duration_seconds: u64,
+        commands: Vec<String>,
+        features: Vec<String>,
+        error_count: u32,
+        performance_metrics: HashMap<String, f64>,
+    ) -> Result<()> {
         let analytics = UsageAnalytics {
             installation_id: self.installation_id,
             session_id: self.session_id,
@@ -70,7 +77,10 @@ impl AnalyticsCollector {
     }
 
     /// Record update operation
-    pub async fn record_update_operation(&self, operation: crate::models::UpdateOperation) -> Result<()> {
+    pub async fn record_update_operation(
+        &self,
+        operation: crate::models::UpdateOperation,
+    ) -> Result<()> {
         let event = AnalyticsEvent::UpdateOperation(operation);
         self.buffer_event(event).await;
         Ok(())
@@ -84,7 +94,11 @@ impl AnalyticsCollector {
     }
 
     /// Generate enterprise usage report
-    pub async fn generate_enterprise_report(&self, period_start: DateTime<Utc>, period_end: DateTime<Utc>) -> Result<EnterpriseUsageReport> {
+    pub async fn generate_enterprise_report(
+        &self,
+        period_start: DateTime<Utc>,
+        period_end: DateTime<Utc>,
+    ) -> Result<EnterpriseUsageReport> {
         // In a real implementation, this would aggregate data from a database
         // For now, return a mock report
         let report = EnterpriseUsageReport {
@@ -140,7 +154,8 @@ impl AnalyticsCollector {
             "events": events
         });
 
-        let response = self.client
+        let response = self
+            .client
             .post(&self.analytics_endpoint)
             .header("Content-Type", "application/json")
             .header("User-Agent", "RiceCoder-Analytics")
@@ -152,7 +167,10 @@ impl AnalyticsCollector {
             let status = response.status();
             let error_text = response.text().await.unwrap_or_default();
             warn!("Analytics flush failed: {} - {}", status, error_text);
-            return Err(UpdateError::analytics(format!("Server returned status: {}", status)));
+            return Err(UpdateError::analytics(format!(
+                "Server returned status: {}",
+                status
+            )));
         }
 
         info!("Analytics events flushed successfully");
@@ -274,8 +292,15 @@ impl EnterpriseDashboard {
     }
 
     /// Export analytics data for compliance
-    pub async fn export_compliance_data(&self, start: DateTime<Utc>, end: DateTime<Utc>) -> Result<String> {
-        let report = self.collector.generate_enterprise_report(start, end).await?;
+    pub async fn export_compliance_data(
+        &self,
+        start: DateTime<Utc>,
+        end: DateTime<Utc>,
+    ) -> Result<String> {
+        let report = self
+            .collector
+            .generate_enterprise_report(start, end)
+            .await?;
 
         // Export as JSON
         serde_json::to_string_pretty(&report)
@@ -366,7 +391,10 @@ mod tests {
 
         assert_eq!(collector.current_version, version);
         assert_eq!(collector.platform, "linux-x86_64");
-        assert_eq!(collector.analytics_endpoint, "https://analytics.example.com");
+        assert_eq!(
+            collector.analytics_endpoint,
+            "https://analytics.example.com"
+        );
     }
 
     #[tokio::test]
@@ -383,7 +411,10 @@ mod tests {
         let mut performance = HashMap::new();
         performance.insert("response_time".to_string(), 100.0);
 
-        collector.record_usage(300, commands.clone(), features.clone(), 0, performance).await.unwrap();
+        collector
+            .record_usage(300, commands.clone(), features.clone(), 0, performance)
+            .await
+            .unwrap();
 
         // Check that event was buffered
         let buffer = collector.event_buffer.read().await;

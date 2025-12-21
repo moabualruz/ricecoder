@@ -363,8 +363,7 @@ mod tests {
         };
 
         let json = serde_json::to_string(&project).expect("serialization failed");
-        let deserialized: Project =
-            serde_json::from_str(&json).expect("deserialization failed");
+        let deserialized: Project = serde_json::from_str(&json).expect("deserialization failed");
 
         assert_eq!(project.name, deserialized.name);
         assert_eq!(project.project_type, deserialized.project_type);
@@ -375,11 +374,13 @@ mod tests {
         let workspace = Workspace::default();
 
         let json = serde_json::to_string(&workspace).expect("serialization failed");
-        let deserialized: Workspace =
-            serde_json::from_str(&json).expect("deserialization failed");
+        let deserialized: Workspace = serde_json::from_str(&json).expect("deserialization failed");
 
         assert_eq!(workspace.projects.len(), deserialized.projects.len());
-        assert_eq!(workspace.dependencies.len(), deserialized.dependencies.len());
+        assert_eq!(
+            workspace.dependencies.len(),
+            deserialized.dependencies.len()
+        );
     }
 
     #[test]
@@ -421,7 +422,10 @@ mod tests {
 
     #[test]
     fn test_rule_type_variants() {
-        assert_eq!(RuleType::DependencyConstraint, RuleType::DependencyConstraint);
+        assert_eq!(
+            RuleType::DependencyConstraint,
+            RuleType::DependencyConstraint
+        );
         assert_ne!(RuleType::DependencyConstraint, RuleType::NamingConvention);
         assert_ne!(RuleType::NamingConvention, RuleType::ArchitecturalBoundary);
     }
@@ -474,10 +478,7 @@ mod tests {
         let detail = ImpactDetail {
             project: "project-a".to_string(),
             reason: "Breaking API change".to_string(),
-            required_actions: vec![
-                "Update imports".to_string(),
-                "Run tests".to_string(),
-            ],
+            required_actions: vec!["Update imports".to_string(), "Run tests".to_string()],
         };
 
         assert_eq!(detail.project, "project-a");

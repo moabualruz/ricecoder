@@ -1,10 +1,10 @@
 //! Session manager for lifecycle management and session switching
 
 use crate::error::{SessionError, SessionResult};
-use crate::models::{Session, SessionContext, MessagePart};
+use crate::models::{MessagePart, Session, SessionContext};
 use crate::token_estimator::{TokenEstimator, TokenUsageTracker};
-use std::collections::{HashMap, HashSet};
 use chrono::{Duration, Utc};
+use std::collections::{HashMap, HashSet};
 
 /// Manages session lifecycle and switching
 #[derive(Debug)]
@@ -50,7 +50,9 @@ impl SessionManager {
         let session_id = session.id.clone();
 
         // Create token usage tracker for this session
-        let tracker = self.token_estimator.create_usage_tracker(&session.context.model)?;
+        let tracker = self
+            .token_estimator
+            .create_usage_tracker(&session.context.model)?;
         self.token_trackers.insert(session_id.clone(), tracker);
 
         self.sessions.insert(session_id.clone(), session.clone());
@@ -153,31 +155,49 @@ impl SessionManager {
             tracker.record_prompt(tokens);
             Ok(())
         } else {
-            Err(SessionError::NotFound(format!("Token tracker for session {} not found", session_id)))
+            Err(SessionError::NotFound(format!(
+                "Token tracker for session {} not found",
+                session_id
+            )))
         }
     }
 
     /// Record token usage for a completion message
-    pub fn record_completion_tokens(&mut self, session_id: &str, tokens: usize) -> SessionResult<()> {
+    pub fn record_completion_tokens(
+        &mut self,
+        session_id: &str,
+        tokens: usize,
+    ) -> SessionResult<()> {
         if let Some(tracker) = self.token_trackers.get_mut(session_id) {
             tracker.record_completion(tokens);
             Ok(())
         } else {
-            Err(SessionError::NotFound(format!("Token tracker for session {} not found", session_id)))
+            Err(SessionError::NotFound(format!(
+                "Token tracker for session {} not found",
+                session_id
+            )))
         }
     }
 
     /// Get token usage for a session
-    pub fn get_session_token_usage(&self, session_id: &str) -> SessionResult<crate::token_estimator::TokenUsage> {
+    pub fn get_session_token_usage(
+        &self,
+        session_id: &str,
+    ) -> SessionResult<crate::token_estimator::TokenUsage> {
         if let Some(tracker) = self.token_trackers.get(session_id) {
             Ok(tracker.current_usage())
         } else {
-            Err(SessionError::NotFound(format!("Token tracker for session {} not found", session_id)))
+            Err(SessionError::NotFound(format!(
+                "Token tracker for session {} not found",
+                session_id
+            )))
         }
     }
 
     /// Get token usage for the active session
-    pub fn get_active_session_token_usage(&self) -> SessionResult<crate::token_estimator::TokenUsage> {
+    pub fn get_active_session_token_usage(
+        &self,
+    ) -> SessionResult<crate::token_estimator::TokenUsage> {
         let session_id = self
             .active_session_id
             .as_ref()
@@ -187,19 +207,32 @@ impl SessionManager {
     }
 
     /// Check if a session is approaching token limits
-    pub fn check_session_token_limits(&self, session_id: &str) -> SessionResult<crate::token_estimator::TokenLimitStatus> {
+    pub fn check_session_token_limits(
+        &self,
+        session_id: &str,
+    ) -> SessionResult<crate::token_estimator::TokenLimitStatus> {
         let usage = self.get_session_token_usage(session_id)?;
-        Ok(self.token_estimator.check_token_limits(usage.total_tokens, &usage.model))
+        Ok(self
+            .token_estimator
+            .check_token_limits(usage.total_tokens, &usage.model))
     }
 
     /// Estimate tokens for content using the active session's model
-    pub fn estimate_tokens_for_active_session(&mut self, content: &str) -> SessionResult<crate::token_estimator::TokenEstimate> {
+    pub fn estimate_tokens_for_active_session(
+        &mut self,
+        content: &str,
+    ) -> SessionResult<crate::token_estimator::TokenEstimate> {
         let session = self.get_active_session()?;
-        self.token_estimator.estimate_tokens(content, Some(&session.context.model))
+        self.token_estimator
+            .estimate_tokens(content, Some(&session.context.model))
     }
 
     /// Estimate tokens for content using a specific model
-    pub fn estimate_tokens_with_model(&mut self, content: &str, model: &str) -> SessionResult<crate::token_estimator::TokenEstimate> {
+    pub fn estimate_tokens_with_model(
+        &mut self,
+        content: &str,
+        model: &str,
+    ) -> SessionResult<crate::token_estimator::TokenEstimate> {
         self.token_estimator.estimate_tokens(content, Some(model))
     }
 
@@ -228,15 +261,27 @@ impl SessionManager {
                     MessagePart::Text(text) => {
                         // Simple keyword extraction (could be enhanced with NLP)
                         let lower_text = text.to_lowercase();
-                        if lower_text.contains("error") || lower_text.contains("bug") || lower_text.contains("fix") {
+                        if lower_text.contains("error")
+                            || lower_text.contains("bug")
+                            || lower_text.contains("fix")
+                        {
                             topics.push("Bug Fix");
-                        } else if lower_text.contains("feature") || lower_text.contains("implement") || lower_text.contains("add") {
+                        } else if lower_text.contains("feature")
+                            || lower_text.contains("implement")
+                            || lower_text.contains("add")
+                        {
                             topics.push("Feature Development");
-                        } else if lower_text.contains("refactor") || lower_text.contains("clean") || lower_text.contains("optimize") {
+                        } else if lower_text.contains("refactor")
+                            || lower_text.contains("clean")
+                            || lower_text.contains("optimize")
+                        {
                             topics.push("Code Refactoring");
                         } else if lower_text.contains("test") || lower_text.contains("testing") {
                             topics.push("Testing");
-                        } else if lower_text.contains("documentation") || lower_text.contains("docs") || lower_text.contains("readme") {
+                        } else if lower_text.contains("documentation")
+                            || lower_text.contains("docs")
+                            || lower_text.contains("readme")
+                        {
                             topics.push("Documentation");
                         }
                     }
@@ -258,7 +303,11 @@ impl SessionManager {
             if tools_used.is_empty() {
                 format!("{} Session", primary_topic)
             } else {
-                format!("{} with {}", primary_topic, tools_used.into_iter().next().unwrap())
+                format!(
+                    "{} with {}",
+                    primary_topic,
+                    tools_used.into_iter().next().unwrap()
+                )
             }
         } else if !tools_used.is_empty() {
             format!("Tool Usage: {}", tools_used.into_iter().next().unwrap())
@@ -297,15 +346,26 @@ impl SessionManager {
                 match part {
                     MessagePart::Text(text) => {
                         let lower_text = text.to_lowercase();
-                        if lower_text.contains("error") || lower_text.contains("bug") || lower_text.contains("fix") {
+                        if lower_text.contains("error")
+                            || lower_text.contains("bug")
+                            || lower_text.contains("fix")
+                        {
                             summary.topics.push("Bug Fixes".to_string());
-                        } else if lower_text.contains("feature") || lower_text.contains("implement") || lower_text.contains("add") {
+                        } else if lower_text.contains("feature")
+                            || lower_text.contains("implement")
+                            || lower_text.contains("add")
+                        {
                             summary.topics.push("Feature Development".to_string());
-                        } else if lower_text.contains("refactor") || lower_text.contains("clean") || lower_text.contains("optimize") {
+                        } else if lower_text.contains("refactor")
+                            || lower_text.contains("clean")
+                            || lower_text.contains("optimize")
+                        {
                             summary.topics.push("Code Refactoring".to_string());
                         } else if lower_text.contains("test") || lower_text.contains("testing") {
                             summary.topics.push("Testing".to_string());
-                        } else if lower_text.contains("documentation") || lower_text.contains("docs") {
+                        } else if lower_text.contains("documentation")
+                            || lower_text.contains("docs")
+                        {
                             summary.topics.push("Documentation".to_string());
                         }
                     }
@@ -332,7 +392,9 @@ impl SessionManager {
 
     /// Update session title (manual override)
     pub fn update_session_title(&mut self, session_id: &str, title: String) -> SessionResult<()> {
-        let session = self.sessions.get_mut(session_id)
+        let session = self
+            .sessions
+            .get_mut(session_id)
             .ok_or_else(|| SessionError::NotFound(session_id.to_string()))?;
 
         session.name = title;
@@ -367,6 +429,4 @@ pub struct SessionSummary {
 mod tests {
     use super::*;
     use crate::models::SessionMode;
-
-
 }

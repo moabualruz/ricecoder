@@ -4,21 +4,21 @@
 //! automated issue detection, and continuous security monitoring to drive
 //! product improvement and roadmap planning.
 
-pub mod feedback_pipeline;
 pub mod analytics_pipeline;
-pub mod issue_detection_pipeline;
-pub mod security_monitoring_pipeline;
-pub mod roadmap_planning;
-pub mod types;
 pub mod config;
+pub mod feedback_pipeline;
+pub mod issue_detection_pipeline;
+pub mod roadmap_planning;
+pub mod security_monitoring_pipeline;
+pub mod types;
 
-pub use feedback_pipeline::FeedbackPipeline;
 pub use analytics_pipeline::AnalyticsPipeline;
-pub use issue_detection_pipeline::IssueDetectionPipeline;
-pub use security_monitoring_pipeline::SecurityMonitoringPipeline;
-pub use roadmap_planning::RoadmapPlanner;
-pub use types::*;
 pub use config::*;
+pub use feedback_pipeline::FeedbackPipeline;
+pub use issue_detection_pipeline::IssueDetectionPipeline;
+pub use roadmap_planning::RoadmapPlanner;
+pub use security_monitoring_pipeline::SecurityMonitoringPipeline;
+pub use types::*;
 
 /// Main continuous improvement orchestrator
 pub struct ContinuousImprovementPipeline {
@@ -36,8 +36,12 @@ impl ContinuousImprovementPipeline {
         Self {
             feedback_pipeline: FeedbackPipeline::new(config.feedback_config.clone()),
             analytics_pipeline: AnalyticsPipeline::new(config.analytics_config.clone()),
-            issue_detection_pipeline: IssueDetectionPipeline::new(config.issue_detection_config.clone()),
-            security_monitoring_pipeline: SecurityMonitoringPipeline::new(config.security_config.clone()),
+            issue_detection_pipeline: IssueDetectionPipeline::new(
+                config.issue_detection_config.clone(),
+            ),
+            security_monitoring_pipeline: SecurityMonitoringPipeline::new(
+                config.security_config.clone(),
+            ),
             roadmap_planner: RoadmapPlanner::new(config.roadmap_config.clone()),
             config: config.clone(),
         }
@@ -74,7 +78,9 @@ impl ContinuousImprovementPipeline {
     }
 
     /// Generate improvement recommendations
-    pub async fn generate_recommendations(&self) -> Result<ImprovementRecommendations, ContinuousImprovementError> {
+    pub async fn generate_recommendations(
+        &self,
+    ) -> Result<ImprovementRecommendations, ContinuousImprovementError> {
         // Collect data from all pipelines
         let feedback_insights = self.feedback_pipeline.get_insights().await?;
         let analytics_insights = self.analytics_pipeline.get_insights().await?;
@@ -82,12 +88,14 @@ impl ContinuousImprovementPipeline {
         let security_insights = self.security_monitoring_pipeline.get_insights().await?;
 
         // Generate roadmap recommendations
-        self.roadmap_planner.generate_recommendations(
-            &feedback_insights,
-            &analytics_insights,
-            &issue_insights,
-            &security_insights,
-        ).await
+        self.roadmap_planner
+            .generate_recommendations(
+                &feedback_insights,
+                &analytics_insights,
+                &issue_insights,
+                &security_insights,
+            )
+            .await
     }
 
     /// Get pipeline health status
@@ -120,7 +128,7 @@ mod tests {
     async fn test_pipeline_creation() {
         let config = ContinuousImprovementConfig::default();
         let pipeline = ContinuousImprovementPipeline::new(config);
-        
+
         // Test that pipeline can be created
         assert!(true);
     }

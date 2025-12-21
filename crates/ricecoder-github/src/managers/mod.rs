@@ -13,9 +13,9 @@ pub mod discussion_manager;
 pub mod discussion_operations;
 pub mod documentation_generator;
 pub mod documentation_operations;
-pub mod github_manager;
 pub mod gist_manager;
 pub mod gist_operations;
+pub mod github_manager;
 pub mod issue_manager;
 pub mod issue_operations;
 pub mod pr_manager;
@@ -38,12 +38,12 @@ pub use actions_operations::{
     WorkflowIterationResult,
 };
 pub use branch_manager::{
-    BranchCreationResult, BranchDeletionResult, BranchInfo, BranchLifecycleResult,
-    BranchManager, BranchProtection,
+    BranchCreationResult, BranchDeletionResult, BranchInfo, BranchLifecycleResult, BranchManager,
+    BranchProtection,
 };
 pub use code_review_agent::{
-    CodeQualityIssue, CodeReviewAgent, CodeReviewResult, CodeReviewStandards,
-    CodeReviewSuggestion, IssueSeverity,
+    CodeQualityIssue, CodeReviewAgent, CodeReviewResult, CodeReviewStandards, CodeReviewSuggestion,
+    IssueSeverity,
 };
 pub use code_review_operations::{
     ApprovalCondition, CodeReviewMetrics, CodeReviewOperations, ConditionalApprovalResult,
@@ -51,7 +51,7 @@ pub use code_review_operations::{
 pub use dependency_manager::{
     Dependency, DependencyError, DependencyManager, DependencyScanResult, DependencyUpdatePrResult,
     DependencyUpdateSuggestion, DependencyUpdateVerificationResult, UpdateReason, UpdateRiskLevel,
-    Vulnerability, VulnerabilitySeverity, VulnerabilityReport,
+    Vulnerability, VulnerabilityReport, VulnerabilitySeverity,
 };
 pub use dependency_operations::{
     BuildVerificationResult, DependencyOperations, DependencyPinningResult, PinningConfig,
@@ -73,16 +73,16 @@ pub use documentation_operations::{
     DocumentationCommit, DocumentationOperations, DocumentationTemplate, MaintenanceStatus,
     MaintenanceTask, PublishingResult,
 };
-pub use github_manager::GitHubManager;
 pub use gist_manager::{
     GistCreationResult, GistLifecycleResult, GistManager, GistMetadata, GistOptions,
     GistUpdateResult,
 };
 pub use gist_operations::{
-    GistBatchResult, GistOperations, GistOrganizationResult, GistSearchCriteria,
-    GistSearchResult, GistSharingConfig, GistSharingResult,
+    GistBatchResult, GistOperations, GistOrganizationResult, GistSearchCriteria, GistSearchResult,
+    GistSharingConfig, GistSharingResult,
 };
-pub use issue_manager::{IssueManager, ImplementationPlan, ParsedRequirement, PlanTask};
+pub use github_manager::GitHubManager;
+pub use issue_manager::{ImplementationPlan, IssueManager, ParsedRequirement, PlanTask};
 pub use issue_operations::{IssueComment, IssueOperations, PrLink, StatusChange};
 pub use pr_manager::{PrManager, PrOptions, PrTemplate, TaskContext};
 pub use pr_operations::{
@@ -102,13 +102,13 @@ pub use release_operations::{
     Changelog, ChangelogEntry, ReleaseOperations, ReleasePublishingResult, ReleaseTemplate,
 };
 pub use repository_analyzer::{
-    CodebaseSummary, CodePattern, RepositoryAnalysis, RepositoryAnalyzer,
+    CodePattern, CodebaseSummary, RepositoryAnalysis, RepositoryAnalyzer,
 };
 pub use webhook_handler::{
     EventFilter, WebhookEvent, WebhookEventType, WebhookHandler, WebhookHandlerConfig,
     WebhookProcessingResult, WorkflowTrigger,
 };
 pub use webhook_operations::{
-    WebhookErrorDetails, WebhookErrorHandlingResult, WebhookEventLogger, WebhookEventLogEntry,
+    WebhookErrorDetails, WebhookErrorHandlingResult, WebhookEventLogEntry, WebhookEventLogger,
     WebhookEventStatistics, WebhookOperations, WebhookRetryConfig,
 };

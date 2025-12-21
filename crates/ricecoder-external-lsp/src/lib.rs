@@ -77,14 +77,16 @@ pub use client::{
     ServerCapabilities,
 };
 pub use error::{ExternalLspError, Result};
-pub use mapping::{CompletionMapper, DiagnosticsMapper, HoverMapper, JsonPathParser, OutputTransformer};
+pub use mapping::{
+    CompletionMapper, DiagnosticsMapper, HoverMapper, JsonPathParser, OutputTransformer,
+};
 pub use merger::{CompletionMerger, DiagnosticsMerger, HoverMerger};
 pub use process::{ClientPool, HealthChecker, ProcessManager};
 pub use registry::{ConfigLoader, DefaultServerConfigs, ServerDiscovery};
 pub use semantic::SemanticFeatures;
 pub use storage_integration::StorageConfigLoader;
 pub use types::{
-    ClientState, CompletionMappingRules, DiagnosticsMappingRules, ExternalLspResult, GlobalLspSettings,
-    HealthStatus, HoverMappingRules, LspServerConfig, LspServerRegistry, MergeConfig, OutputMappingConfig,
-    ResultSource,
+    ClientState, CompletionMappingRules, DiagnosticsMappingRules, ExternalLspResult,
+    GlobalLspSettings, HealthStatus, HoverMappingRules, LspServerConfig, LspServerRegistry,
+    MergeConfig, OutputMappingConfig, ResultSource,
 };

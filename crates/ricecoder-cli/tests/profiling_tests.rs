@@ -6,11 +6,8 @@ mod tests {
 
     #[test]
     fn test_performance_metrics() {
-        let metrics = PerformanceMetrics::new(
-            "test_op".to_string(),
-            Duration::from_millis(100),
-            10,
-        );
+        let metrics =
+            PerformanceMetrics::new("test_op".to_string(), Duration::from_millis(100), 10);
 
         assert_eq!(metrics.name, "test_op");
         assert_eq!(metrics.duration, Duration::from_millis(100));
@@ -20,11 +17,8 @@ mod tests {
 
     #[test]
     fn test_performance_metrics_meets_target() {
-        let metrics = PerformanceMetrics::new(
-            "test_op".to_string(),
-            Duration::from_millis(100),
-            10,
-        );
+        let metrics =
+            PerformanceMetrics::new("test_op".to_string(), Duration::from_millis(100), 10);
 
         assert!(metrics.meets_target(Duration::from_millis(20)));
         assert!(!metrics.meets_target(Duration::from_millis(5)));

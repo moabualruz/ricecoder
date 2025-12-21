@@ -41,9 +41,10 @@ impl SharedContextManager {
     /// * `key` - Context key
     /// * `value` - Context value
     pub fn update_context(&self, key: &str, value: serde_json::Value) -> DomainResult<()> {
-        let mut context = self.context.write().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire write lock: {}", e))
-        })?;
+        let mut context = self
+            .context
+            .write()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire write lock: {}", e)))?;
 
         context.cross_domain_state.insert(key.to_string(), value);
         Ok(())
@@ -59,9 +60,10 @@ impl SharedContextManager {
     ///
     /// Returns the context value if found
     pub fn get_context(&self, key: &str) -> DomainResult<serde_json::Value> {
-        let context = self.context.read().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire read lock: {}", e))
-        })?;
+        let context = self
+            .context
+            .read()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire read lock: {}", e)))?;
 
         context
             .cross_domain_state
@@ -76,9 +78,10 @@ impl SharedContextManager {
     ///
     /// * `project_type` - Project type
     pub fn set_project_type(&self, project_type: &str) -> DomainResult<()> {
-        let mut context = self.context.write().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire write lock: {}", e))
-        })?;
+        let mut context = self
+            .context
+            .write()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire write lock: {}", e)))?;
 
         context.project_type = project_type.to_string();
         Ok(())
@@ -86,9 +89,10 @@ impl SharedContextManager {
 
     /// Get project type
     pub fn get_project_type(&self) -> DomainResult<String> {
-        let context = self.context.read().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire read lock: {}", e))
-        })?;
+        let context = self
+            .context
+            .read()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire read lock: {}", e)))?;
 
         Ok(context.project_type.clone())
     }
@@ -99,9 +103,10 @@ impl SharedContextManager {
     ///
     /// * `technology` - Technology to add
     pub fn add_technology(&self, technology: &str) -> DomainResult<()> {
-        let mut context = self.context.write().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire write lock: {}", e))
-        })?;
+        let mut context = self
+            .context
+            .write()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire write lock: {}", e)))?;
 
         if !context.tech_stack.contains(&technology.to_string()) {
             context.tech_stack.push(technology.to_string());
@@ -112,9 +117,10 @@ impl SharedContextManager {
 
     /// Get tech stack
     pub fn get_tech_stack(&self) -> DomainResult<Vec<String>> {
-        let context = self.context.read().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire read lock: {}", e))
-        })?;
+        let context = self
+            .context
+            .read()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire read lock: {}", e)))?;
 
         Ok(context.tech_stack.clone())
     }
@@ -125,9 +131,10 @@ impl SharedContextManager {
     ///
     /// * `constraint` - Constraint to add
     pub fn add_constraint(&self, constraint: &str) -> DomainResult<()> {
-        let mut context = self.context.write().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire write lock: {}", e))
-        })?;
+        let mut context = self
+            .context
+            .write()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire write lock: {}", e)))?;
 
         if !context.constraints.contains(&constraint.to_string()) {
             context.constraints.push(constraint.to_string());
@@ -138,9 +145,10 @@ impl SharedContextManager {
 
     /// Get constraints
     pub fn get_constraints(&self) -> DomainResult<Vec<String>> {
-        let context = self.context.read().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire read lock: {}", e))
-        })?;
+        let context = self
+            .context
+            .read()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire read lock: {}", e)))?;
 
         Ok(context.constraints.clone())
     }
@@ -156,9 +164,10 @@ impl SharedContextManager {
         agent_id: &str,
         recommendations: Vec<Recommendation>,
     ) -> DomainResult<()> {
-        let mut agent_recs = self.agent_recommendations.write().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire write lock: {}", e))
-        })?;
+        let mut agent_recs = self
+            .agent_recommendations
+            .write()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire write lock: {}", e)))?;
 
         agent_recs.insert(agent_id.to_string(), recommendations);
         Ok(())
@@ -174,21 +183,20 @@ impl SharedContextManager {
     ///
     /// Returns recommendations from the agent
     pub fn get_agent_recommendations(&self, agent_id: &str) -> DomainResult<Vec<Recommendation>> {
-        let agent_recs = self.agent_recommendations.read().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire read lock: {}", e))
-        })?;
+        let agent_recs = self
+            .agent_recommendations
+            .read()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire read lock: {}", e)))?;
 
-        Ok(agent_recs
-            .get(agent_id)
-            .cloned()
-            .unwrap_or_default())
+        Ok(agent_recs.get(agent_id).cloned().unwrap_or_default())
     }
 
     /// Get all agent recommendations
     pub fn get_all_recommendations(&self) -> DomainResult<Vec<Recommendation>> {
-        let agent_recs = self.agent_recommendations.read().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire read lock: {}", e))
-        })?;
+        let agent_recs = self
+            .agent_recommendations
+            .read()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire read lock: {}", e)))?;
 
         let mut all_recs = Vec::new();
         for recs in agent_recs.values() {
@@ -200,24 +208,27 @@ impl SharedContextManager {
 
     /// Get shared context
     pub fn get_shared_context(&self) -> DomainResult<SharedContext> {
-        let context = self.context.read().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire read lock: {}", e))
-        })?;
+        let context = self
+            .context
+            .read()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire read lock: {}", e)))?;
 
         Ok(context.clone())
     }
 
     /// Clear all context
     pub fn clear(&self) -> DomainResult<()> {
-        let mut context = self.context.write().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire write lock: {}", e))
-        })?;
+        let mut context = self
+            .context
+            .write()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire write lock: {}", e)))?;
 
         *context = SharedContext::default();
 
-        let mut agent_recs = self.agent_recommendations.write().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire write lock: {}", e))
-        })?;
+        let mut agent_recs = self
+            .agent_recommendations
+            .write()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire write lock: {}", e)))?;
 
         agent_recs.clear();
 
@@ -384,7 +395,10 @@ mod tests {
 
         assert!(manager.get_project_type().unwrap().is_empty());
         assert!(manager.get_tech_stack().unwrap().is_empty());
-        assert!(manager.get_agent_recommendations("web-agent").unwrap().is_empty());
+        assert!(manager
+            .get_agent_recommendations("web-agent")
+            .unwrap()
+            .is_empty());
     }
 
     #[test]

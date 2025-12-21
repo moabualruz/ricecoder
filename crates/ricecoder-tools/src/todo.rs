@@ -42,11 +42,10 @@ impl std::str::FromStr for TodoStatus {
             "in_progress" => Ok(TodoStatus::InProgress),
             "completed" => Ok(TodoStatus::Completed),
             "blocked" => Ok(TodoStatus::Blocked),
-            _ => Err(ToolError::new(
-                "INVALID_STATUS",
-                format!("Invalid todo status: {}", s),
-            )
-            .with_suggestion("Use one of: pending, in_progress, completed, blocked")),
+            _ => Err(
+                ToolError::new("INVALID_STATUS", format!("Invalid todo status: {}", s))
+                    .with_suggestion("Use one of: pending, in_progress, completed, blocked"),
+            ),
         }
     }
 }
@@ -85,11 +84,10 @@ impl std::str::FromStr for TodoPriority {
             "medium" => Ok(TodoPriority::Medium),
             "high" => Ok(TodoPriority::High),
             "critical" => Ok(TodoPriority::Critical),
-            _ => Err(ToolError::new(
-                "INVALID_PRIORITY",
-                format!("Invalid todo priority: {}", s),
-            )
-            .with_suggestion("Use one of: low, medium, high, critical")),
+            _ => Err(
+                ToolError::new("INVALID_PRIORITY", format!("Invalid todo priority: {}", s))
+                    .with_suggestion("Use one of: low, medium, high, critical"),
+            ),
         }
     }
 }
@@ -121,8 +119,10 @@ impl Todo {
 
         // Validate title is non-empty
         if title.trim().is_empty() {
-            return Err(ToolError::new("INVALID_TITLE", "Todo title cannot be empty")
-                .with_suggestion("Provide a non-empty title for the todo"));
+            return Err(
+                ToolError::new("INVALID_TITLE", "Todo title cannot be empty")
+                    .with_suggestion("Provide a non-empty title for the todo"),
+            );
         }
 
         Ok(Self {
@@ -191,11 +191,10 @@ impl TodoStorage {
         if let Some(home_dir) = dirs::home_dir() {
             Ok(home_dir.join(".ricecoder").join("todos.json"))
         } else {
-            Err(ToolError::new(
-                "HOME_DIR_NOT_FOUND",
-                "Could not determine home directory",
+            Err(
+                ToolError::new("HOME_DIR_NOT_FOUND", "Could not determine home directory")
+                    .with_suggestion("Set the HOME environment variable"),
             )
-            .with_suggestion("Set the HOME environment variable"))
         }
     }
 
@@ -321,18 +320,21 @@ impl TodoTools {
     /// Write todos with timeout enforcement (500ms)
     ///
     /// Attempts to use MCP provider if available, falls back to built-in implementation.
-    pub async fn write_todos_with_timeout(&self, input: TodowriteInput) -> Result<TodowriteOutput, ToolError> {
+    pub async fn write_todos_with_timeout(
+        &self,
+        input: TodowriteInput,
+    ) -> Result<TodowriteOutput, ToolError> {
         let timeout_duration = std::time::Duration::from_millis(500);
-        
-        match tokio::time::timeout(timeout_duration, async {
-            self.write_todos_internal(input)
-        }).await {
+
+        match tokio::time::timeout(timeout_duration, async { self.write_todos_internal(input) })
+            .await
+        {
             Ok(result) => result,
-            Err(_) => {
-                Err(ToolError::new("TIMEOUT", "Todo write operation exceeded 500ms timeout")
+            Err(_) => Err(
+                ToolError::new("TIMEOUT", "Todo write operation exceeded 500ms timeout")
                     .with_details("Operation took too long to complete")
-                    .with_suggestion("Try again or check system performance"))
-            }
+                    .with_suggestion("Try again or check system performance"),
+            ),
         }
     }
 
@@ -401,18 +403,21 @@ impl TodoTools {
     /// Read todos with timeout enforcement (500ms)
     ///
     /// Attempts to use MCP provider if available, falls back to built-in implementation.
-    pub async fn read_todos_with_timeout(&self, input: TodoreadInput) -> Result<TodoreadOutput, ToolError> {
+    pub async fn read_todos_with_timeout(
+        &self,
+        input: TodoreadInput,
+    ) -> Result<TodoreadOutput, ToolError> {
         let timeout_duration = std::time::Duration::from_millis(500);
-        
-        match tokio::time::timeout(timeout_duration, async {
-            self.read_todos_internal(input)
-        }).await {
+
+        match tokio::time::timeout(timeout_duration, async { self.read_todos_internal(input) })
+            .await
+        {
             Ok(result) => result,
-            Err(_) => {
-                Err(ToolError::new("TIMEOUT", "Todo read operation exceeded 500ms timeout")
+            Err(_) => Err(
+                ToolError::new("TIMEOUT", "Todo read operation exceeded 500ms timeout")
                     .with_details("Operation took too long to complete")
-                    .with_suggestion("Try again or check system performance"))
-            }
+                    .with_suggestion("Try again or check system performance"),
+            ),
         }
     }
 
@@ -425,8 +430,10 @@ impl TodoTools {
 
     /// Internal read todos implementation
     fn read_todos_internal(&self, input: TodoreadInput) -> Result<TodoreadOutput, ToolError> {
-        debug!("Reading todos with filters: status={:?}, priority={:?}", 
-               input.status_filter, input.priority_filter);
+        debug!(
+            "Reading todos with filters: status={:?}, priority={:?}",
+            input.status_filter, input.priority_filter
+        );
 
         // Try MCP provider first
         if let Some(_provider) = &self.mcp_provider {
@@ -481,11 +488,9 @@ impl TodoTools {
             .collect();
 
         // Sort by priority (descending) then by id
-        filtered.sort_by(|a, b| {
-            match b.priority.cmp(&a.priority) {
-                std::cmp::Ordering::Equal => a.id.cmp(&b.id),
-                other => other,
-            }
+        filtered.sort_by(|a, b| match b.priority.cmp(&a.priority) {
+            std::cmp::Ordering::Equal => a.id.cmp(&b.id),
+            other => other,
         });
 
         info!("Read {} todos (filtered from total)", filtered.len());
@@ -537,7 +542,10 @@ mod tests {
 
     #[test]
     fn test_todo_status_parsing() {
-        assert_eq!("pending".parse::<TodoStatus>().unwrap(), TodoStatus::Pending);
+        assert_eq!(
+            "pending".parse::<TodoStatus>().unwrap(),
+            TodoStatus::Pending
+        );
         assert_eq!(
             "in_progress".parse::<TodoStatus>().unwrap(),
             TodoStatus::InProgress
@@ -546,7 +554,10 @@ mod tests {
             "completed".parse::<TodoStatus>().unwrap(),
             TodoStatus::Completed
         );
-        assert_eq!("blocked".parse::<TodoStatus>().unwrap(), TodoStatus::Blocked);
+        assert_eq!(
+            "blocked".parse::<TodoStatus>().unwrap(),
+            TodoStatus::Blocked
+        );
         assert!("invalid".parse::<TodoStatus>().is_err());
     }
 
@@ -586,7 +597,8 @@ mod tests {
         let todo1 = Todo::new("1", "First todo", TodoStatus::Pending, TodoPriority::High)
             .unwrap()
             .with_description("First description");
-        let todo2 = Todo::new("2", "Second todo", TodoStatus::Completed, TodoPriority::Low).unwrap();
+        let todo2 =
+            Todo::new("2", "Second todo", TodoStatus::Completed, TodoPriority::Low).unwrap();
 
         todos.insert(todo1.id.clone(), todo1);
         todos.insert(todo2.id.clone(), todo2);
@@ -639,14 +651,17 @@ mod tests {
         // Write initial todos
         let todo1 = Todo::new("1", "First", TodoStatus::Pending, TodoPriority::High).unwrap();
         tools
-            .write_todos(TodowriteInput {
-                todos: vec![todo1],
-            })
+            .write_todos(TodowriteInput { todos: vec![todo1] })
             .unwrap();
 
         // Update the todo
-        let updated_todo =
-            Todo::new("1", "First (updated)", TodoStatus::Completed, TodoPriority::Low).unwrap();
+        let updated_todo = Todo::new(
+            "1",
+            "First (updated)",
+            TodoStatus::Completed,
+            TodoPriority::Low,
+        )
+        .unwrap();
         let write_result = tools
             .write_todos(TodowriteInput {
                 todos: vec![updated_todo],
@@ -677,8 +692,13 @@ mod tests {
 
         // Write todos with different statuses
         let todo1 = Todo::new("1", "Pending", TodoStatus::Pending, TodoPriority::High).unwrap();
-        let todo2 =
-            Todo::new("2", "Completed", TodoStatus::Completed, TodoPriority::Medium).unwrap();
+        let todo2 = Todo::new(
+            "2",
+            "Completed",
+            TodoStatus::Completed,
+            TodoPriority::Medium,
+        )
+        .unwrap();
 
         tools
             .write_todos(TodowriteInput {
@@ -735,9 +755,7 @@ mod tests {
         // Write todos with timeout enforcement (should complete well within 500ms)
         let todo = Todo::new("1", "Test", TodoStatus::Pending, TodoPriority::High).unwrap();
         let result = tools
-            .write_todos_with_timeout(TodowriteInput {
-                todos: vec![todo],
-            })
+            .write_todos_with_timeout(TodowriteInput { todos: vec![todo] })
             .await;
 
         assert!(result.is_ok());
@@ -754,9 +772,7 @@ mod tests {
         // Write a todo first
         let todo = Todo::new("1", "Test", TodoStatus::Pending, TodoPriority::High).unwrap();
         tools
-            .write_todos(TodowriteInput {
-                todos: vec![todo],
-            })
+            .write_todos(TodowriteInput { todos: vec![todo] })
             .unwrap();
 
         // Read todos with timeout enforcement (should complete well within 500ms)

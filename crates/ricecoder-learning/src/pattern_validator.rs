@@ -110,7 +110,8 @@ impl PatternValidator {
         let match_factor = (matching_count as f32 / 5.0).min(1.0);
 
         // Combined confidence recommendation
-        let confidence = (validation_factor * 0.5) + (occurrence_factor * 0.25) + (match_factor * 0.25);
+        let confidence =
+            (validation_factor * 0.5) + (occurrence_factor * 0.25) + (match_factor * 0.25);
 
         confidence.clamp(0.0, 1.0)
     }
@@ -149,11 +150,16 @@ impl PatternValidator {
 
         let valid_count = validation_results.iter().filter(|r| r.is_valid).count();
         let invalid_count = validation_results.len() - valid_count;
-        let avg_score: f32 = validation_results.iter().map(|r| r.validation_score).sum::<f32>()
+        let avg_score: f32 = validation_results
+            .iter()
+            .map(|r| r.validation_score)
+            .sum::<f32>()
             / validation_results.len() as f32;
-        let avg_confidence: f32 =
-            validation_results.iter().map(|r| r.confidence_recommendation).sum::<f32>()
-                / validation_results.len() as f32;
+        let avg_confidence: f32 = validation_results
+            .iter()
+            .map(|r| r.confidence_recommendation)
+            .sum::<f32>()
+            / validation_results.len() as f32;
         let total_mismatches: usize = validation_results.iter().map(|r| r.mismatches.len()).sum();
 
         ValidationStatistics {
@@ -263,7 +269,8 @@ mod tests {
             serde_json::json!({"output": "result"}),
         );
 
-        let mut pattern = LearnedPattern::new("code_generation".to_string(), "Test pattern".to_string());
+        let mut pattern =
+            LearnedPattern::new("code_generation".to_string(), "Test pattern".to_string());
         pattern.examples.push(PatternExample {
             input: serde_json::json!({"input": "test"}),
             output: serde_json::json!({"output": "result"}),
@@ -289,7 +296,8 @@ mod tests {
             serde_json::json!({"output": "result"}),
         );
 
-        let mut pattern = LearnedPattern::new("code_generation".to_string(), "Test pattern".to_string());
+        let mut pattern =
+            LearnedPattern::new("code_generation".to_string(), "Test pattern".to_string());
         pattern.examples.push(PatternExample {
             input: serde_json::json!({"input": "different"}),
             output: serde_json::json!({"output": "different"}),
@@ -325,7 +333,8 @@ mod tests {
             serde_json::json!({"output": "result"}),
         );
 
-        let mut pattern = LearnedPattern::new("code_generation".to_string(), "Test pattern".to_string());
+        let mut pattern =
+            LearnedPattern::new("code_generation".to_string(), "Test pattern".to_string());
         pattern.examples.push(PatternExample {
             input: serde_json::json!({"input": "test"}),
             output: serde_json::json!({"output": "result"}),
@@ -370,7 +379,8 @@ mod tests {
             serde_json::json!({"output": "different"}),
         );
 
-        let mut pattern = LearnedPattern::new("code_generation".to_string(), "Test pattern".to_string());
+        let mut pattern =
+            LearnedPattern::new("code_generation".to_string(), "Test pattern".to_string());
         pattern.examples.push(PatternExample {
             input: serde_json::json!({"input": "test"}),
             output: serde_json::json!({"output": "result"}),
@@ -403,7 +413,8 @@ mod tests {
             serde_json::json!({"output": "result"}),
         );
 
-        let mut pattern1 = LearnedPattern::new("code_generation".to_string(), "Pattern 1".to_string());
+        let mut pattern1 =
+            LearnedPattern::new("code_generation".to_string(), "Pattern 1".to_string());
         pattern1.examples.push(PatternExample {
             input: serde_json::json!({"input": "test"}),
             output: serde_json::json!({"output": "result"}),
@@ -495,7 +506,8 @@ mod tests {
             serde_json::json!({"output": "result"}),
         );
 
-        let mut pattern = LearnedPattern::new("refactoring".to_string(), "Test pattern".to_string());
+        let mut pattern =
+            LearnedPattern::new("refactoring".to_string(), "Test pattern".to_string());
         pattern.examples.push(PatternExample {
             input: serde_json::json!({"input": "test"}),
             output: serde_json::json!({"output": "result"}),

@@ -1,7 +1,7 @@
 //! Compliance reporting and enterprise monitoring
 
 use crate::types::*;
-use chrono::{DateTime, Utc, TimeDelta};
+use chrono::{DateTime, TimeDelta, Utc};
 use dashmap::DashMap;
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
@@ -80,7 +80,9 @@ impl ComplianceEngine {
     }
 
     /// Generate compliance reports for all configured standards
-    async fn generate_compliance_reports(standards: &[String]) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn generate_compliance_reports(
+        standards: &[String],
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         for standard in standards {
             let report = Self::generate_standard_report(standard).await?;
             COMPLIANCE_REPORTS.insert(report.id, report);
@@ -90,7 +92,9 @@ impl ComplianceEngine {
     }
 
     /// Generate a compliance report for a specific standard
-    async fn generate_standard_report(standard: &str) -> Result<ComplianceReport, Box<dyn std::error::Error + Send + Sync>> {
+    async fn generate_standard_report(
+        standard: &str,
+    ) -> Result<ComplianceReport, Box<dyn std::error::Error + Send + Sync>> {
         let period_end = chrono::Utc::now();
         let period_start = period_end - chrono::TimeDelta::days(30); // Monthly reports
 
@@ -98,7 +102,10 @@ impl ComplianceEngine {
 
         let status = if findings.iter().any(|f| f.status == ComplianceStatus::Fail) {
             ComplianceStatus::Fail
-        } else if findings.iter().any(|f| f.status == ComplianceStatus::Warning) {
+        } else if findings
+            .iter()
+            .any(|f| f.status == ComplianceStatus::Warning)
+        {
             ComplianceStatus::Warning
         } else {
             ComplianceStatus::Pass
@@ -116,7 +123,11 @@ impl ComplianceEngine {
     }
 
     /// Assess compliance for a specific standard
-    async fn assess_compliance(standard: &str, start: DateTime<Utc>, end: DateTime<Utc>) -> Vec<ComplianceFinding> {
+    async fn assess_compliance(
+        standard: &str,
+        start: DateTime<Utc>,
+        end: DateTime<Utc>,
+    ) -> Vec<ComplianceFinding> {
         match standard.to_uppercase().as_str() {
             "SOC2" => Self::assess_soc2_compliance(start, end).await,
             "GDPR" => Self::assess_gdpr_compliance(start, end).await,
@@ -133,12 +144,16 @@ impl ComplianceEngine {
     }
 
     /// Assess SOC 2 compliance
-    async fn assess_soc2_compliance(start: DateTime<Utc>, end: DateTime<Utc>) -> Vec<ComplianceFinding> {
+    async fn assess_soc2_compliance(
+        start: DateTime<Utc>,
+        end: DateTime<Utc>,
+    ) -> Vec<ComplianceFinding> {
         let mut findings = Vec::new();
 
         // Check audit logging
         let audit_logs_count = Self::count_audit_logs(start, end);
-        if audit_logs_count < 1000 { // Arbitrary threshold
+        if audit_logs_count < 1000 {
+            // Arbitrary threshold
             findings.push(ComplianceFinding {
                 rule_id: "soc2.audit_logging".to_string(),
                 description: "Audit logging coverage is below expected levels".to_string(),
@@ -146,8 +161,14 @@ impl ComplianceEngine {
                 status: ComplianceStatus::Fail,
                 evidence: {
                     let mut evidence = HashMap::new();
-                    evidence.insert("audit_logs_count".to_string(), serde_json::Value::Number(audit_logs_count.into()));
-                    evidence.insert("expected_minimum".to_string(), serde_json::Value::Number(1000.into()));
+                    evidence.insert(
+                        "audit_logs_count".to_string(),
+                        serde_json::Value::Number(audit_logs_count.into()),
+                    );
+                    evidence.insert(
+                        "expected_minimum".to_string(),
+                        serde_json::Value::Number(1000.into()),
+                    );
                     evidence
                 },
             });
@@ -159,7 +180,10 @@ impl ComplianceEngine {
                 status: ComplianceStatus::Pass,
                 evidence: {
                     let mut evidence = HashMap::new();
-                    evidence.insert("audit_logs_count".to_string(), serde_json::Value::Number(audit_logs_count.into()));
+                    evidence.insert(
+                        "audit_logs_count".to_string(),
+                        serde_json::Value::Number(audit_logs_count.into()),
+                    );
                     evidence
                 },
             });
@@ -195,7 +219,10 @@ impl ComplianceEngine {
                 status: ComplianceStatus::Fail,
                 evidence: {
                     let mut evidence = HashMap::new();
-                    evidence.insert("access_violations".to_string(), serde_json::Value::Number(access_violations.into()));
+                    evidence.insert(
+                        "access_violations".to_string(),
+                        serde_json::Value::Number(access_violations.into()),
+                    );
                     evidence
                 },
             });
@@ -213,7 +240,10 @@ impl ComplianceEngine {
     }
 
     /// Assess GDPR compliance
-    async fn assess_gdpr_compliance(start: DateTime<Utc>, end: DateTime<Utc>) -> Vec<ComplianceFinding> {
+    async fn assess_gdpr_compliance(
+        start: DateTime<Utc>,
+        end: DateTime<Utc>,
+    ) -> Vec<ComplianceFinding> {
         let mut findings = Vec::new();
 
         // Check data retention
@@ -246,7 +276,10 @@ impl ComplianceEngine {
                 status: ComplianceStatus::Fail,
                 evidence: {
                     let mut evidence = HashMap::new();
-                    evidence.insert("consent_violations".to_string(), serde_json::Value::Number(consent_violations.into()));
+                    evidence.insert(
+                        "consent_violations".to_string(),
+                        serde_json::Value::Number(consent_violations.into()),
+                    );
                     evidence
                 },
             });
@@ -270,7 +303,10 @@ impl ComplianceEngine {
                 status: ComplianceStatus::Pass,
                 evidence: {
                     let mut evidence = HashMap::new();
-                    evidence.insert("portability_requests".to_string(), serde_json::Value::Number(portability_requests.into()));
+                    evidence.insert(
+                        "portability_requests".to_string(),
+                        serde_json::Value::Number(portability_requests.into()),
+                    );
                     evidence
                 },
             });
@@ -280,7 +316,10 @@ impl ComplianceEngine {
     }
 
     /// Assess HIPAA compliance
-    async fn assess_hipaa_compliance(start: DateTime<Utc>, end: DateTime<Utc>) -> Vec<ComplianceFinding> {
+    async fn assess_hipaa_compliance(
+        start: DateTime<Utc>,
+        end: DateTime<Utc>,
+    ) -> Vec<ComplianceFinding> {
         let mut findings = Vec::new();
 
         // Check PHI access logging
@@ -293,7 +332,10 @@ impl ComplianceEngine {
                 status: ComplianceStatus::Pass,
                 evidence: {
                     let mut evidence = HashMap::new();
-                    evidence.insert("phi_access_count".to_string(), serde_json::Value::Number(phi_access_count.into()));
+                    evidence.insert(
+                        "phi_access_count".to_string(),
+                        serde_json::Value::Number(phi_access_count.into()),
+                    );
                     evidence
                 },
             });
@@ -309,7 +351,10 @@ impl ComplianceEngine {
                 status: ComplianceStatus::Fail,
                 evidence: {
                     let mut evidence = HashMap::new();
-                    evidence.insert("breach_count".to_string(), serde_json::Value::Number(breaches.into()));
+                    evidence.insert(
+                        "breach_count".to_string(),
+                        serde_json::Value::Number(breaches.into()),
+                    );
                     evidence
                 },
             });
@@ -347,12 +392,16 @@ impl ComplianceEngine {
     }
 
     /// Assess ISO 27001 compliance
-    async fn assess_iso27001_compliance(start: DateTime<Utc>, end: DateTime<Utc>) -> Vec<ComplianceFinding> {
+    async fn assess_iso27001_compliance(
+        start: DateTime<Utc>,
+        end: DateTime<Utc>,
+    ) -> Vec<ComplianceFinding> {
         let mut findings = Vec::new();
 
         // Check risk assessments
         let risk_assessments = Self::count_risk_assessments(start, end);
-        if risk_assessments < 4 { // Quarterly assessments
+        if risk_assessments < 4 {
+            // Quarterly assessments
             findings.push(ComplianceFinding {
                 rule_id: "iso27001.risk_assessment".to_string(),
                 description: "Risk assessments are not performed frequently enough".to_string(),
@@ -360,7 +409,10 @@ impl ComplianceEngine {
                 status: ComplianceStatus::Warning,
                 evidence: {
                     let mut evidence = HashMap::new();
-                    evidence.insert("risk_assessments".to_string(), serde_json::Value::Number(risk_assessments.into()));
+                    evidence.insert(
+                        "risk_assessments".to_string(),
+                        serde_json::Value::Number(risk_assessments.into()),
+                    );
                     evidence.insert("required".to_string(), serde_json::Value::Number(4.into()));
                     evidence
                 },
@@ -373,7 +425,10 @@ impl ComplianceEngine {
                 status: ComplianceStatus::Pass,
                 evidence: {
                     let mut evidence = HashMap::new();
-                    evidence.insert("risk_assessments".to_string(), serde_json::Value::Number(risk_assessments.into()));
+                    evidence.insert(
+                        "risk_assessments".to_string(),
+                        serde_json::Value::Number(risk_assessments.into()),
+                    );
                     evidence
                 },
             });
@@ -381,15 +436,20 @@ impl ComplianceEngine {
 
         // Check access control reviews
         let access_reviews = Self::count_access_reviews(start, end);
-        if access_reviews < 12 { // Monthly reviews
+        if access_reviews < 12 {
+            // Monthly reviews
             findings.push(ComplianceFinding {
                 rule_id: "iso27001.access_reviews".to_string(),
-                description: "Access control reviews are not performed frequently enough".to_string(),
+                description: "Access control reviews are not performed frequently enough"
+                    .to_string(),
                 severity: Severity::Medium,
                 status: ComplianceStatus::Warning,
                 evidence: {
                     let mut evidence = HashMap::new();
-                    evidence.insert("access_reviews".to_string(), serde_json::Value::Number(access_reviews.into()));
+                    evidence.insert(
+                        "access_reviews".to_string(),
+                        serde_json::Value::Number(access_reviews.into()),
+                    );
                     evidence.insert("required".to_string(), serde_json::Value::Number(12.into()));
                     evidence
                 },
@@ -402,7 +462,10 @@ impl ComplianceEngine {
                 status: ComplianceStatus::Pass,
                 evidence: {
                     let mut evidence = HashMap::new();
-                    evidence.insert("access_reviews".to_string(), serde_json::Value::Number(access_reviews.into()));
+                    evidence.insert(
+                        "access_reviews".to_string(),
+                        serde_json::Value::Number(access_reviews.into()),
+                    );
                     evidence
                 },
             });
@@ -412,7 +475,11 @@ impl ComplianceEngine {
     }
 
     /// Get compliance reports
-    pub fn get_compliance_reports(&self, standard: Option<&str>, limit: Option<usize>) -> Vec<ComplianceReport> {
+    pub fn get_compliance_reports(
+        &self,
+        standard: Option<&str>,
+        limit: Option<usize>,
+    ) -> Vec<ComplianceReport> {
         let mut reports: Vec<_> = COMPLIANCE_REPORTS
             .iter()
             .filter_map(|entry| {
@@ -442,28 +509,35 @@ impl ComplianceEngine {
     pub fn get_compliance_summary(&self) -> ComplianceSummary {
         let reports = self.get_compliance_reports(None, Some(10)); // Last 10 reports
 
-        let standards_status = reports.iter()
-            .fold(HashMap::new(), |mut acc, report| {
-                acc.insert(report.report_type.clone(), report.status);
-                acc
-            });
+        let standards_status = reports.iter().fold(HashMap::new(), |mut acc, report| {
+            acc.insert(report.report_type.clone(), report.status);
+            acc
+        });
 
-        let overall_status = if standards_status.values().any(|s| *s == ComplianceStatus::Fail) {
+        let overall_status = if standards_status
+            .values()
+            .any(|s| *s == ComplianceStatus::Fail)
+        {
             ComplianceStatus::Fail
-        } else if standards_status.values().any(|s| *s == ComplianceStatus::Warning) {
+        } else if standards_status
+            .values()
+            .any(|s| *s == ComplianceStatus::Warning)
+        {
             ComplianceStatus::Warning
         } else {
             ComplianceStatus::Pass
         };
 
-        let total_findings = reports.iter()
-            .map(|r| r.findings.len())
-            .sum::<usize>();
+        let total_findings = reports.iter().map(|r| r.findings.len()).sum::<usize>();
 
-        let critical_findings = reports.iter()
-            .map(|r| r.findings.iter()
-                .filter(|f| f.severity == Severity::Critical)
-                .count())
+        let critical_findings = reports
+            .iter()
+            .map(|r| {
+                r.findings
+                    .iter()
+                    .filter(|f| f.severity == Severity::Critical)
+                    .count()
+            })
             .sum::<usize>();
 
         ComplianceSummary {
@@ -554,7 +628,14 @@ impl AuditLogger {
     }
 
     /// Log an audit event
-    pub fn log_event(&self, event_type: &str, user_id: Option<String>, resource: &str, action: &str, details: HashMap<String, serde_json::Value>) {
+    pub fn log_event(
+        &self,
+        event_type: &str,
+        user_id: Option<String>,
+        resource: &str,
+        action: &str,
+        details: HashMap<String, serde_json::Value>,
+    ) {
         let event = AuditEvent {
             id: EventId::new_v4(),
             timestamp: chrono::Utc::now(),
@@ -623,10 +704,22 @@ pub struct DataRetentionManager {
 impl DataRetentionManager {
     pub fn new() -> Self {
         let mut policies = HashMap::new();
-        policies.insert("audit_logs".to_string(), TimeDelta::seconds(60 * 60 * 24 * 2555)); // 7 years
-        policies.insert("user_sessions".to_string(), TimeDelta::seconds(60 * 60 * 24 * 365)); // 1 year
-        policies.insert("analytics_events".to_string(), TimeDelta::seconds(60 * 60 * 24 * 90)); // 90 days
-        policies.insert("error_logs".to_string(), TimeDelta::seconds(60 * 60 * 24 * 30)); // 30 days
+        policies.insert(
+            "audit_logs".to_string(),
+            TimeDelta::seconds(60 * 60 * 24 * 2555),
+        ); // 7 years
+        policies.insert(
+            "user_sessions".to_string(),
+            TimeDelta::seconds(60 * 60 * 24 * 365),
+        ); // 1 year
+        policies.insert(
+            "analytics_events".to_string(),
+            TimeDelta::seconds(60 * 60 * 24 * 90),
+        ); // 90 days
+        policies.insert(
+            "error_logs".to_string(),
+            TimeDelta::seconds(60 * 60 * 24 * 30),
+        ); // 30 days
 
         Self { policies }
     }
@@ -639,19 +732,35 @@ impl DataRetentionManager {
             match data_type.as_str() {
                 "audit_logs" => {
                     // Clean up audit logs
-                    tracing::info!("Applying retention policy for {}: deleting records older than {:?}", data_type, cutoff);
+                    tracing::info!(
+                        "Applying retention policy for {}: deleting records older than {:?}",
+                        data_type,
+                        cutoff
+                    );
                 }
                 "user_sessions" => {
                     // Clean up old sessions
-                    tracing::info!("Applying retention policy for {}: deleting records older than {:?}", data_type, cutoff);
+                    tracing::info!(
+                        "Applying retention policy for {}: deleting records older than {:?}",
+                        data_type,
+                        cutoff
+                    );
                 }
                 "analytics_events" => {
                     // Clean up old analytics events
-                    tracing::info!("Applying retention policy for {}: deleting records older than {:?}", data_type, cutoff);
+                    tracing::info!(
+                        "Applying retention policy for {}: deleting records older than {:?}",
+                        data_type,
+                        cutoff
+                    );
                 }
                 "error_logs" => {
                     // Clean up old error logs
-                    tracing::info!("Applying retention policy for {}: deleting records older than {:?}", data_type, cutoff);
+                    tracing::info!(
+                        "Applying retention policy for {}: deleting records older than {:?}",
+                        data_type,
+                        cutoff
+                    );
                 }
                 _ => {}
             }

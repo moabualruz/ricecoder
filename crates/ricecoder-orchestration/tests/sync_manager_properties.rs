@@ -33,10 +33,10 @@ proptest! {
         let rt = tokio::runtime::Runtime::new().unwrap();
         let manager = SyncManager::new();
         let conflicts = rt.block_on(manager.get_conflicts());
-        
+
         // Initially no conflicts
         prop_assert_eq!(conflicts.len(), 0);
-        
+
         // Verify project name is valid
         prop_assert!(!project.is_empty());
     }
@@ -48,10 +48,10 @@ proptest! {
         let rt = tokio::runtime::Runtime::new().unwrap();
         let manager = SyncManager::new();
         let log = rt.block_on(manager.get_sync_log());
-        
+
         // Log should be a valid collection
         prop_assert!(log.len() >= 0);
-        
+
         // All entries should have valid structure
         for entry in log {
             prop_assert!(!entry.timestamp.is_empty());
@@ -67,12 +67,12 @@ proptest! {
     ) {
         let rt = tokio::runtime::Runtime::new().unwrap();
         let mut managers = Vec::new();
-        
+
         // Create multiple managers
         for _ in 0..count {
             managers.push(SyncManager::new());
         }
-        
+
         // Each should have independent state
         for manager in &managers {
             let conflicts = rt.block_on(manager.get_conflicts());

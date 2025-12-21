@@ -257,7 +257,9 @@ async fn test_learning_manager_apply_rules_to_context() {
         "fn test() {}".to_string(),
     );
 
-    let results = manager.apply_rules_to_context(&[rule1, rule2], &context).await;
+    let results = manager
+        .apply_rules_to_context(&[rule1, rule2], &context)
+        .await;
     assert_eq!(results.len(), 2);
     assert!(results[0].matched);
     assert!(results[1].matched);
@@ -289,7 +291,9 @@ async fn test_learning_manager_apply_rules_with_precedence() {
         "fn test() {}".to_string(),
     );
 
-    let result = manager.apply_rules_with_precedence(&[rule1, rule2], &context).await;
+    let result = manager
+        .apply_rules_with_precedence(&[rule1, rule2], &context)
+        .await;
     assert!(result.is_some());
     let result = result.unwrap();
     assert_eq!(result.action, Some("add_error_handling".to_string()));
@@ -593,7 +597,8 @@ fn test_rule_application_multiple_matching_rules_precedence() {
         "fn test() {}".to_string(),
     );
 
-    let result = RuleApplicationEngine::apply_rules_with_precedence(&[rule1, rule2, rule3], &context);
+    let result =
+        RuleApplicationEngine::apply_rules_with_precedence(&[rule1, rule2, rule3], &context);
     assert!(result.is_some());
     let result = result.unwrap();
     assert_eq!(result.action, Some("add_error_handling".to_string()));

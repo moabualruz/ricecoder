@@ -4,8 +4,8 @@
 //! Implementations will be provided by infrastructure crates.
 
 use crate::entities::*;
-use crate::value_objects::*;
 use crate::errors::*;
+use crate::value_objects::*;
 use async_trait::async_trait;
 
 /// Repository for project entities
@@ -68,7 +68,8 @@ pub trait AnalysisRepository {
     async fn find_by_type(&self, analysis_type: AnalysisType) -> DomainResult<Vec<AnalysisResult>>;
 
     /// Delete old results (cleanup)
-    async fn delete_older_than(&self, cutoff: chrono::DateTime<chrono::Utc>) -> DomainResult<usize>;
+    async fn delete_older_than(&self, cutoff: chrono::DateTime<chrono::Utc>)
+        -> DomainResult<usize>;
 }
 
 /// Repository for file entities
@@ -84,10 +85,18 @@ pub trait FileRepository {
     async fn find_by_project(&self, project_id: &ProjectId) -> DomainResult<Vec<CodeFile>>;
 
     /// Find by path
-    async fn find_by_path(&self, project_id: &ProjectId, relative_path: &str) -> DomainResult<Option<CodeFile>>;
+    async fn find_by_path(
+        &self,
+        project_id: &ProjectId,
+        relative_path: &str,
+    ) -> DomainResult<Option<CodeFile>>;
 
     /// Search files by content pattern
-    async fn search_content(&self, project_id: &ProjectId, pattern: &str) -> DomainResult<Vec<CodeFile>>;
+    async fn search_content(
+        &self,
+        project_id: &ProjectId,
+        pattern: &str,
+    ) -> DomainResult<Vec<CodeFile>>;
 
     /// Delete file
     async fn delete(&self, id: &FileId) -> DomainResult<()>;
@@ -150,8 +159,12 @@ pub trait UnitOfWork: Send + Sync {
 /// Transaction delegate to work around dyn async trait limitations
 pub trait TransactionDelegate: Send + Sync {
     /// Commit transaction
-    fn commit(self: Box<Self>) -> std::pin::Pin<Box<dyn std::future::Future<Output = DomainResult<()>> + Send>>;
+    fn commit(
+        self: Box<Self>,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = DomainResult<()>> + Send>>;
 
     /// Rollback transaction
-    fn rollback(self: Box<Self>) -> std::pin::Pin<Box<dyn std::future::Future<Output = DomainResult<()>> + Send>>;
+    fn rollback(
+        self: Box<Self>,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = DomainResult<()>> + Send>>;
 }

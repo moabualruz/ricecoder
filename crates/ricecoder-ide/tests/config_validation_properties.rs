@@ -181,7 +181,10 @@ fn test_empty_builtin_languages_rejected() {
     };
 
     let result = ConfigValidator::validate_complete(&config);
-    assert!(result.is_err(), "Empty builtin languages should be rejected");
+    assert!(
+        result.is_err(),
+        "Empty builtin languages should be rejected"
+    );
 
     let error_msg = result.unwrap_err().to_string();
     assert!(

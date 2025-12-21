@@ -6,17 +6,17 @@
 //! - Live data synchronization with file watching and session sync
 //! - Conflict resolution for concurrent edits
 
-use crate::error_handling::{ErrorManager, RiceError, ErrorCategory, ErrorSeverity};
+use crate::error_handling::{ErrorCategory, ErrorManager, ErrorSeverity, RiceError};
 use crate::model::{AppModel, StateChange};
+use crate::real_time_updates::{RealTimeUpdates, StreamData, StreamType};
 use crate::tea::ReactiveState;
 use crate::StateDiff;
-use crate::real_time_updates::{RealTimeUpdates, StreamData, StreamType};
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use tokio::sync::{RwLock, mpsc, broadcast};
-use tokio::time::{Instant, Duration, interval};
+use tokio::sync::{broadcast, mpsc, RwLock};
+use tokio::time::{interval, Duration, Instant};
 use tokio_util::sync::CancellationToken;
 
 /// Reactive update types
@@ -218,7 +218,10 @@ impl ReactiveRenderer {
     }
 
     /// Process update batches
-    async fn process_update_batches(batches: Vec<UpdateBatch>, sender: &broadcast::Sender<(UpdateType, StateDiff)>) {
+    async fn process_update_batches(
+        batches: Vec<UpdateBatch>,
+        sender: &broadcast::Sender<(UpdateType, StateDiff)>,
+    ) {
         // Sort by priority
         let mut sorted_batches = batches;
         sorted_batches.sort_by_key(|b| b.priority);
@@ -235,7 +238,7 @@ impl ReactiveRenderer {
     /// Process pending updates
     async fn process_pending_updates(
         pending: &Arc<RwLock<HashSet<StateChange>>>,
-        sender: &broadcast::Sender<(UpdateType, StateDiff)>
+        sender: &broadcast::Sender<(UpdateType, StateDiff)>,
     ) {
         let updates: Vec<StateChange> = pending.read().await.iter().cloned().collect();
         if !updates.is_empty() {
@@ -343,8 +346,16 @@ impl LiveDataSynchronizer {
     }
 
     /// Watch a file or directory for changes
-    pub async fn watch_path(&self, path: PathBuf, recursive: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let mode = if recursive { RecursiveMode::Recursive } else { RecursiveMode::NonRecursive };
+    pub async fn watch_path(
+        &self,
+        path: PathBuf,
+        recursive: bool,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let mode = if recursive {
+            RecursiveMode::Recursive
+        } else {
+            RecursiveMode::NonRecursive
+        };
 
         let mut watcher_guard = self.file_watcher.write().await;
         if let Some(watcher) = watcher_guard.as_mut() {
@@ -356,7 +367,10 @@ impl LiveDataSynchronizer {
     }
 
     /// Stop watching a path
-    pub async fn unwatch_path(&self, path: &Path) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn unwatch_path(
+        &self,
+        path: &Path,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mut watcher_guard = self.file_watcher.write().await;
         if let Some(watcher) = watcher_guard.as_mut() {
             watcher.unwatch(path)?;
@@ -367,18 +381,26 @@ impl LiveDataSynchronizer {
     }
 
     /// Synchronize session data
-    pub async fn sync_session(&self, session_id: String, event: SessionSyncEvent) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn sync_session(
+        &self,
+        session_id: String,
+        event: SessionSyncEvent,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mut sessions = self.session_sync.write().await;
 
-        let state = sessions.entry(session_id.clone()).or_insert(SessionSyncState {
-            last_sync: Instant::now(),
-            version: 0,
-            pending_changes: Vec::new(),
-        });
+        let state = sessions
+            .entry(session_id.clone())
+            .or_insert(SessionSyncState {
+                last_sync: Instant::now(),
+                version: 0,
+                pending_changes: Vec::new(),
+            });
 
         // Check for conflicts
         if let Some(conflict) = self.detect_session_conflict(&session_id, &event).await? {
-            let _ = self.update_sender.send(LiveDataEvent::ConflictDetected(conflict));
+            let _ = self
+                .update_sender
+                .send(LiveDataEvent::ConflictDetected(conflict));
             return Ok(());
         }
 
@@ -387,7 +409,9 @@ impl LiveDataSynchronizer {
         state.version += 1;
         state.last_sync = Instant::now();
 
-        let _ = self.update_sender.send(LiveDataEvent::SessionChanged(event));
+        let _ = self
+            .update_sender
+            .send(LiveDataEvent::SessionChanged(event));
 
         Ok(())
     }
@@ -398,9 +422,12 @@ impl LiveDataSynchronizer {
         let update_sender = self.update_sender.clone();
         let cancellation_token = self.cancellation_token.clone();
 
-        let mut watcher = RecommendedWatcher::new(move |res| {
-            let _ = tx.blocking_send(res);
-        }, notify::Config::default())?;
+        let mut watcher = RecommendedWatcher::new(
+            move |res| {
+                let _ = tx.blocking_send(res);
+            },
+            notify::Config::default(),
+        )?;
 
         *self.file_watcher.write().await = Some(watcher);
 
@@ -496,7 +523,11 @@ impl LiveDataSynchronizer {
     }
 
     /// Detect session conflicts
-    async fn detect_session_conflict(&self, _session_id: &str, _event: &SessionSyncEvent) -> Result<Option<ConflictInfo>, Box<dyn std::error::Error + Send + Sync>> {
+    async fn detect_session_conflict(
+        &self,
+        _session_id: &str,
+        _event: &SessionSyncEvent,
+    ) -> Result<Option<ConflictInfo>, Box<dyn std::error::Error + Send + Sync>> {
         // In a real implementation, this would check against remote state
         // For now, return None (no conflicts)
         Ok(None)
@@ -533,7 +564,8 @@ impl ConflictResolver {
 
     /// Resolve a conflict
     pub fn resolve(&self, conflict: &ConflictInfo) -> ConflictResolution {
-        self.strategies.get(&conflict.resource_id)
+        self.strategies
+            .get(&conflict.resource_id)
             .copied()
             .unwrap_or(ConflictResolution::Prompt)
     }
@@ -618,4 +650,3 @@ impl ReactiveUICoordinator {
         *self.is_running.read().await
     }
 }
-

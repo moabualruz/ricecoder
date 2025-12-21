@@ -9,9 +9,8 @@
 
 use proptest::prelude::*;
 use ricecoder_refactoring::{
-    ConfigManager, RefactoringEngine, RefactoringType,
-    adapters::GenericRefactoringProvider,
-    providers::ProviderRegistry,
+    adapters::GenericRefactoringProvider, providers::ProviderRegistry, ConfigManager,
+    RefactoringEngine, RefactoringType,
 };
 use std::sync::Arc;
 
@@ -251,7 +250,8 @@ mod tests {
         let engine = create_test_engine();
 
         let provider = engine.provider_registry().clone().get_provider("cobol");
-        let analysis = provider.analyze_refactoring("PROGRAM MAIN", "cobol", RefactoringType::Rename);
+        let analysis =
+            provider.analyze_refactoring("PROGRAM MAIN", "cobol", RefactoringType::Rename);
 
         assert!(analysis.is_ok());
         let analysis = analysis.unwrap();
@@ -263,7 +263,8 @@ mod tests {
         let engine = create_test_engine();
 
         let provider = engine.provider_registry().clone().get_provider("lisp");
-        let analysis = provider.analyze_refactoring("(defn main [] nil)", "lisp", RefactoringType::Rename);
+        let analysis =
+            provider.analyze_refactoring("(defn main [] nil)", "lisp", RefactoringType::Rename);
 
         assert!(analysis.is_ok());
         let analysis = analysis.unwrap();
@@ -275,7 +276,8 @@ mod tests {
         let engine = create_test_engine();
 
         let provider = engine.provider_registry().clone().get_provider("haskell");
-        let analysis = provider.analyze_refactoring("main :: IO ()", "haskell", RefactoringType::Rename);
+        let analysis =
+            provider.analyze_refactoring("main :: IO ()", "haskell", RefactoringType::Rename);
 
         assert!(analysis.is_ok());
         let analysis = analysis.unwrap();
@@ -286,8 +288,12 @@ mod tests {
     fn test_unknown_language_custom_dsl() {
         let engine = create_test_engine();
 
-        let provider = engine.provider_registry().clone().get_provider("custom_dsl");
-        let analysis = provider.analyze_refactoring("custom code", "custom_dsl", RefactoringType::Rename);
+        let provider = engine
+            .provider_registry()
+            .clone()
+            .get_provider("custom_dsl");
+        let analysis =
+            provider.analyze_refactoring("custom code", "custom_dsl", RefactoringType::Rename);
 
         assert!(analysis.is_ok());
         let analysis = analysis.unwrap();

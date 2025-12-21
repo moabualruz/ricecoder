@@ -60,10 +60,14 @@ impl ConfigManagerTrait for ConfigManager {
     fn validate_config(&self, config: &AppConfig) -> Result<()> {
         // Basic validation
         if config.editor.tab_size == 0 {
-            return Err(ConfigError::Validation("Tab size must be greater than 0".to_string()));
+            return Err(ConfigError::Validation(
+                "Tab size must be greater than 0".to_string(),
+            ));
         }
         if config.ui.font_size == 0 {
-            return Err(ConfigError::Validation("Font size must be greater than 0".to_string()));
+            return Err(ConfigError::Validation(
+                "Font size must be greater than 0".to_string(),
+            ));
         }
         Ok(())
     }

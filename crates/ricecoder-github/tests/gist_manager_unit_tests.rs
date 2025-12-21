@@ -27,12 +27,7 @@ async fn test_create_gist_with_valid_inputs() {
 async fn test_create_gist_with_empty_filename() {
     let manager = GistManager::new("test_token", "testuser");
     let result = manager
-        .create_gist(
-            "",
-            "content",
-            None,
-            GistOptions::default(),
-        )
+        .create_gist("", "content", None, GistOptions::default())
         .await;
 
     assert!(result.is_err());
@@ -42,12 +37,7 @@ async fn test_create_gist_with_empty_filename() {
 async fn test_create_gist_with_empty_content() {
     let manager = GistManager::new("test_token", "testuser");
     let result = manager
-        .create_gist(
-            "test.rs",
-            "",
-            None,
-            GistOptions::default(),
-        )
+        .create_gist("test.rs", "", None, GistOptions::default())
         .await;
 
     assert!(result.is_err());
@@ -118,9 +108,7 @@ async fn test_update_gist_with_valid_inputs() {
 #[tokio::test]
 async fn test_update_gist_with_empty_id() {
     let manager = GistManager::new("test_token", "testuser");
-    let result = manager
-        .update_gist("", "test.rs", "content", None)
-        .await;
+    let result = manager.update_gist("", "test.rs", "content", None).await;
 
     assert!(result.is_err());
 }
@@ -128,9 +116,7 @@ async fn test_update_gist_with_empty_id() {
 #[tokio::test]
 async fn test_update_gist_with_empty_filename() {
     let manager = GistManager::new("test_token", "testuser");
-    let result = manager
-        .update_gist("abc123", "", "content", None)
-        .await;
+    let result = manager.update_gist("abc123", "", "content", None).await;
 
     assert!(result.is_err());
 }
@@ -138,9 +124,7 @@ async fn test_update_gist_with_empty_filename() {
 #[tokio::test]
 async fn test_update_gist_with_empty_content() {
     let manager = GistManager::new("test_token", "testuser");
-    let result = manager
-        .update_gist("abc123", "test.rs", "", None)
-        .await;
+    let result = manager.update_gist("abc123", "test.rs", "", None).await;
 
     assert!(result.is_err());
 }
@@ -215,7 +199,9 @@ async fn test_update_gist_metadata() {
         category: Some("snippet".to_string()),
     };
 
-    let result = manager.update_gist_metadata("abc123", metadata.clone()).await;
+    let result = manager
+        .update_gist_metadata("abc123", metadata.clone())
+        .await;
 
     assert!(result.is_ok());
     let updated = result.unwrap();

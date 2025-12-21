@@ -88,5 +88,3 @@ impl<T> ToolResult<T> {
         }
     }
 }
-
-

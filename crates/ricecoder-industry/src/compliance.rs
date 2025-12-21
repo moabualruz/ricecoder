@@ -75,10 +75,7 @@ pub enum SecuritySeverity {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum SecurityCondition {
     /// Check if a field matches a pattern
-    PatternMatch {
-        field: String,
-        pattern: String,
-    },
+    PatternMatch { field: String, pattern: String },
     /// Check if a value is within a range
     RangeCheck {
         field: String,
@@ -86,14 +83,9 @@ pub enum SecurityCondition {
         max: Option<f64>,
     },
     /// Check if a field is required
-    RequiredField {
-        field: String,
-    },
+    RequiredField { field: String },
     /// Check if a value is in an allowed list
-    AllowedValues {
-        field: String,
-        values: Vec<String>,
-    },
+    AllowedValues { field: String, values: Vec<String> },
     /// Custom validation function (placeholder for extensibility)
     Custom {
         validator: String,
@@ -234,9 +226,9 @@ impl AuditLogger {
         let mut filtered: Vec<_> = entries
             .iter()
             .filter(|entry| {
-                actor.map_or(true, |a| entry.actor.contains(a)) &&
-                action.map_or(true, |a| entry.action.contains(a)) &&
-                resource.map_or(true, |r| entry.resource.contains(r))
+                actor.map_or(true, |a| entry.actor.contains(a))
+                    && action.map_or(true, |a| entry.action.contains(a))
+                    && resource.map_or(true, |r| entry.resource.contains(r))
             })
             .cloned()
             .collect();
@@ -318,7 +310,10 @@ impl SecurityValidator {
     }
 
     /// Validate data against all security rules
-    pub async fn validate(&self, data: &serde_json::Value) -> IndustryResult<Vec<SecurityViolation>> {
+    pub async fn validate(
+        &self,
+        data: &serde_json::Value,
+    ) -> IndustryResult<Vec<SecurityViolation>> {
         let rules = self.rules.read().await;
         let mut violations = Vec::new();
 
@@ -332,11 +327,13 @@ impl SecurityValidator {
     }
 
     /// Check a single security rule
-    async fn check_rule(&self, rule: &SecurityRule, data: &serde_json::Value) -> IndustryResult<Option<SecurityViolation>> {
+    async fn check_rule(
+        &self,
+        rule: &SecurityRule,
+        data: &serde_json::Value,
+    ) -> IndustryResult<Option<SecurityViolation>> {
         let violated = match &rule.condition {
-            SecurityCondition::RequiredField { field } => {
-                !Self::has_field(data, field)
-            }
+            SecurityCondition::RequiredField { field } => !Self::has_field(data, field),
             SecurityCondition::PatternMatch { field, pattern } => {
                 if let Some(value) = Self::get_field_value(data, field) {
                     if let Some(str_value) = value.as_str() {
@@ -397,7 +394,10 @@ impl SecurityValidator {
     }
 
     /// Get a field value from JSON data using dot notation
-    fn get_field_value<'a>(data: &'a serde_json::Value, field_path: &str) -> Option<&'a serde_json::Value> {
+    fn get_field_value<'a>(
+        data: &'a serde_json::Value,
+        field_path: &str,
+    ) -> Option<&'a serde_json::Value> {
         let mut current = data;
         for part in field_path.split('.') {
             match current.get(part) {
@@ -521,11 +521,13 @@ impl ComplianceManager {
             // Log validation failure
             let violation_details: Vec<_> = violations
                 .iter()
-                .map(|v| serde_json::json!({
-                    "rule_id": v.rule_id,
-                    "severity": format!("{:?}", v.severity),
-                    "description": v.description
-                }))
+                .map(|v| {
+                    serde_json::json!({
+                        "rule_id": v.rule_id,
+                        "severity": format!("{:?}", v.severity),
+                        "description": v.description
+                    })
+                })
                 .collect();
 
             self.audit_logger
@@ -534,7 +536,10 @@ impl ComplianceManager {
                     action,
                     resource,
                     "Security validation failed".to_string(),
-                    HashMap::from([("violations".to_string(), serde_json::json!(violation_details))]),
+                    HashMap::from([(
+                        "violations".to_string(),
+                        serde_json::json!(violation_details),
+                    )]),
                     source,
                     session_id,
                 )

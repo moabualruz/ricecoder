@@ -2,23 +2,25 @@
 
 use async_trait::async_trait;
 use oauth2::{
-    basic::BasicClient, reqwest::async_http_client, AuthorizationCode as OAuthAuthorizationCode, AuthUrl, ClientId, ClientSecret,
-    CsrfToken, PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, Scope, TokenResponse, TokenUrl,
+    basic::BasicClient, reqwest::async_http_client, AuthUrl,
+    AuthorizationCode as OAuthAuthorizationCode, ClientId, ClientSecret, CsrfToken,
+    PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, Scope, TokenResponse, TokenUrl,
 };
 use openidconnect::{
     core::{CoreAuthenticationFlow, CoreClient, CoreProviderMetadata},
     reqwest::async_http_client as oidc_http_client,
     AccessTokenHash, AuthorizationCode as OidcAuthorizationCode, ClientId as OidcClientId,
-    ClientSecret as OidcClientSecret, CsrfToken as OidcCsrfToken, IssuerUrl,
-    Nonce, OAuth2TokenResponse, PkceCodeChallenge as OidcPkceCodeChallenge,
-    PkceCodeVerifier as OidcPkceCodeVerifier, RedirectUrl as OidcRedirectUrl, Scope as OidcScope, SubjectIdentifier, TokenResponse as OidcTokenResponse,
+    ClientSecret as OidcClientSecret, CsrfToken as OidcCsrfToken, IssuerUrl, Nonce,
+    OAuth2TokenResponse, PkceCodeChallenge as OidcPkceCodeChallenge,
+    PkceCodeVerifier as OidcPkceCodeVerifier, RedirectUrl as OidcRedirectUrl, Scope as OidcScope,
+    SubjectIdentifier, TokenResponse as OidcTokenResponse,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use url::Url;
 use uuid;
 
-use crate::{audit::AuditLogger, SecurityError, Result};
+use crate::{audit::AuditLogger, Result, SecurityError};
 
 /// OAuth 2.0 provider configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -113,11 +115,17 @@ impl OAuthClient {
     }
 
     /// Generate authorization URL for OAuth 2.0 flow
-    pub fn generate_auth_url(&self, provider_name: &str, scopes: &[String]) -> Result<(Url, CsrfToken, oauth2::PkceCodeVerifier)> {
-        let client = self.providers.get(provider_name)
-            .ok_or_else(|| SecurityError::Validation {
-                message: format!("OAuth provider '{}' not found", provider_name),
-            })?;
+    pub fn generate_auth_url(
+        &self,
+        provider_name: &str,
+        scopes: &[String],
+    ) -> Result<(Url, CsrfToken, oauth2::PkceCodeVerifier)> {
+        let client =
+            self.providers
+                .get(provider_name)
+                .ok_or_else(|| SecurityError::Validation {
+                    message: format!("OAuth provider '{}' not found", provider_name),
+                })?;
 
         let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
 
@@ -141,10 +149,12 @@ impl OAuthClient {
         code: &str,
         pkce_verifier: oauth2::PkceCodeVerifier,
     ) -> Result<OAuthToken> {
-        let client = self.providers.get(provider_name)
-            .ok_or_else(|| SecurityError::Validation {
-                message: format!("OAuth provider '{}' not found", provider_name),
-            })?;
+        let client =
+            self.providers
+                .get(provider_name)
+                .ok_or_else(|| SecurityError::Validation {
+                    message: format!("OAuth provider '{}' not found", provider_name),
+                })?;
 
         let token_result = client
             .exchange_code(OAuthAuthorizationCode::new(code.to_string()))
@@ -160,7 +170,12 @@ impl OAuthClient {
             token_type: token_result.token_type().as_ref().to_string(),
             expires_in: token_result.expires_in().map(|d| d.as_secs()),
             refresh_token: token_result.refresh_token().map(|t| t.secret().clone()),
-            scope: token_result.scopes().map(|s| s.iter().map(|scope| scope.as_str()).collect::<Vec<_>>().join(" ")),
+            scope: token_result.scopes().map(|s| {
+                s.iter()
+                    .map(|scope| scope.as_str())
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            }),
             id_token: None, // OAuth 2.0 doesn't have ID tokens
         };
 
@@ -200,11 +215,17 @@ impl OidcClient {
     }
 
     /// Generate authorization URL for OIDC flow
-    pub fn generate_auth_url(&mut self, provider_name: &str, scopes: &[String]) -> Result<(Url, OidcCsrfToken, Nonce, OidcPkceCodeVerifier)> {
-        let client = self.providers.get(provider_name)
-            .ok_or_else(|| SecurityError::Validation {
-                message: format!("OIDC provider '{}' not found", provider_name),
-            })?;
+    pub fn generate_auth_url(
+        &mut self,
+        provider_name: &str,
+        scopes: &[String],
+    ) -> Result<(Url, OidcCsrfToken, Nonce, OidcPkceCodeVerifier)> {
+        let client =
+            self.providers
+                .get(provider_name)
+                .ok_or_else(|| SecurityError::Validation {
+                    message: format!("OIDC provider '{}' not found", provider_name),
+                })?;
 
         let (pkce_challenge, pkce_verifier) = OidcPkceCodeChallenge::new_random_sha256();
         let nonce = Nonce::new_random();
@@ -238,12 +259,16 @@ impl OidcClient {
         pkce_verifier: OidcPkceCodeVerifier,
         csrf_token: &str,
     ) -> Result<(OAuthToken, UserInfo)> {
-        let client = self.providers.get(provider_name)
-            .ok_or_else(|| SecurityError::Validation {
-                message: format!("OIDC provider '{}' not found", provider_name),
-            })?;
+        let client =
+            self.providers
+                .get(provider_name)
+                .ok_or_else(|| SecurityError::Validation {
+                    message: format!("OIDC provider '{}' not found", provider_name),
+                })?;
 
-        let nonce = self.nonces.remove(csrf_token)
+        let nonce = self
+            .nonces
+            .remove(csrf_token)
             .ok_or_else(|| SecurityError::Validation {
                 message: "Invalid or expired CSRF token".to_string(),
             })?;
@@ -259,26 +284,35 @@ impl OidcClient {
 
         // Verify ID token
         let id_token_verifier = client.id_token_verifier();
-        let id_token = token_result.id_token().ok_or_else(|| SecurityError::Validation {
-            message: "Missing ID token in OIDC response".to_string(),
-        })?;
-
-        let claims = id_token
-            .claims(&id_token_verifier, &nonce)
-            .map_err(|e| SecurityError::Validation {
-                message: format!("ID token verification failed: {}", e),
+        let id_token = token_result
+            .id_token()
+            .ok_or_else(|| SecurityError::Validation {
+                message: "Missing ID token in OIDC response".to_string(),
             })?;
+
+        let claims =
+            id_token
+                .claims(&id_token_verifier, &nonce)
+                .map_err(|e| SecurityError::Validation {
+                    message: format!("ID token verification failed: {}", e),
+                })?;
 
         // Extract user info from ID token claims
         let user_info = UserInfo {
             subject: claims.subject().to_string(),
             email: claims.email().map(|e| e.as_str().to_string()),
             email_verified: claims.email_verified(),
-            name: Some(claims.name().map_or("".to_string(), |n| n.get(None).map_or("".to_string(), |s| s.to_string()))),
-            given_name: Some(claims.given_name().map_or("".to_string(), |n| n.get(None).map_or("".to_string(), |s| s.to_string()))),
-            family_name: Some(claims.family_name().map_or("".to_string(), |n| n.get(None).map_or("".to_string(), |s| s.to_string()))),
+            name: Some(claims.name().map_or("".to_string(), |n| {
+                n.get(None).map_or("".to_string(), |s| s.to_string())
+            })),
+            given_name: Some(claims.given_name().map_or("".to_string(), |n| {
+                n.get(None).map_or("".to_string(), |s| s.to_string())
+            })),
+            family_name: Some(claims.family_name().map_or("".to_string(), |n| {
+                n.get(None).map_or("".to_string(), |s| s.to_string())
+            })),
             preferred_username: claims.preferred_username().map(|u| u.as_str().to_string()),
-            groups: vec![], // Would need custom claims for groups
+            groups: vec![],             // Would need custom claims for groups
             attributes: HashMap::new(), // Additional custom claims
         };
 
@@ -287,8 +321,13 @@ impl OidcClient {
             token_type: token_result.token_type().as_ref().to_string(),
             expires_in: token_result.expires_in().map(|d| d.as_secs()),
             refresh_token: token_result.refresh_token().map(|t| t.secret().clone()),
-            scope: token_result.scopes().map(|s| s.iter().map(|scope| scope.as_str()).collect::<Vec<_>>().join(" ")),
-             id_token: Some(id_token.to_string()),
+            scope: token_result.scopes().map(|s| {
+                s.iter()
+                    .map(|scope| scope.as_str())
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            }),
+            id_token: Some(id_token.to_string()),
         };
 
         Ok((token, user_info))
@@ -317,12 +356,20 @@ impl TokenManager {
     }
 
     /// Generate OAuth authorization URL
-    pub fn generate_oauth_auth_url(&self, provider_name: &str, scopes: &[String]) -> Result<(Url, CsrfToken, oauth2::PkceCodeVerifier)> {
+    pub fn generate_oauth_auth_url(
+        &self,
+        provider_name: &str,
+        scopes: &[String],
+    ) -> Result<(Url, CsrfToken, oauth2::PkceCodeVerifier)> {
         self.oauth_client.generate_auth_url(provider_name, scopes)
     }
 
     /// Generate OIDC authorization URL
-    pub fn generate_oidc_auth_url(&mut self, provider_name: &str, scopes: &[String]) -> Result<(Url, OidcCsrfToken, Nonce, OidcPkceCodeVerifier)> {
+    pub fn generate_oidc_auth_url(
+        &mut self,
+        provider_name: &str,
+        scopes: &[String],
+    ) -> Result<(Url, OidcCsrfToken, Nonce, OidcPkceCodeVerifier)> {
         self.oidc_client.generate_auth_url(provider_name, scopes)
     }
 
@@ -334,23 +381,28 @@ impl TokenManager {
         pkce_verifier: oauth2::PkceCodeVerifier,
         user_id: &str,
     ) -> Result<String> {
-        let token = self.oauth_client.exchange_code(provider_name, code, pkce_verifier).await?;
+        let token = self
+            .oauth_client
+            .exchange_code(provider_name, code, pkce_verifier)
+            .await?;
         let token_id = format!("oauth_{}_{}", provider_name, uuid::Uuid::new_v4());
 
         self.stored_tokens.insert(token_id.clone(), token);
 
         // Audit token issuance
-        self.audit_logger.log_event(crate::audit::AuditEvent {
-            event_type: crate::audit::AuditEventType::Authentication,
-            user_id: Some(user_id.to_string()),
-            session_id: None,
-            action: "oauth_token_issued".to_string(),
-            resource: format!("oauth_provider:{}", provider_name),
-            metadata: serde_json::json!({
-                "provider": provider_name,
-                "token_type": "oauth2"
-            }),
-        }).await?;
+        self.audit_logger
+            .log_event(crate::audit::AuditEvent {
+                event_type: crate::audit::AuditEventType::Authentication,
+                user_id: Some(user_id.to_string()),
+                session_id: None,
+                action: "oauth_token_issued".to_string(),
+                resource: format!("oauth_provider:{}", provider_name),
+                metadata: serde_json::json!({
+                    "provider": provider_name,
+                    "token_type": "oauth2"
+                }),
+            })
+            .await?;
 
         Ok(token_id)
     }
@@ -364,24 +416,29 @@ impl TokenManager {
         csrf_token: &str,
         user_id: &str,
     ) -> Result<(String, UserInfo)> {
-        let (token, user_info) = self.oidc_client.exchange_code(provider_name, code, pkce_verifier, csrf_token).await?;
+        let (token, user_info) = self
+            .oidc_client
+            .exchange_code(provider_name, code, pkce_verifier, csrf_token)
+            .await?;
         let token_id = format!("oidc_{}_{}", provider_name, uuid::Uuid::new_v4());
 
         self.stored_tokens.insert(token_id.clone(), token);
 
         // Audit token issuance
-        self.audit_logger.log_event(crate::audit::AuditEvent {
-            event_type: crate::audit::AuditEventType::Authentication,
-            user_id: Some(user_id.to_string()),
-            session_id: None,
-            action: "oidc_token_issued".to_string(),
-            resource: format!("oidc_provider:{}", provider_name),
-            metadata: serde_json::json!({
-                "provider": provider_name,
-                "subject": user_info.subject,
-                "token_type": "oidc"
-            }),
-        }).await?;
+        self.audit_logger
+            .log_event(crate::audit::AuditEvent {
+                event_type: crate::audit::AuditEventType::Authentication,
+                user_id: Some(user_id.to_string()),
+                session_id: None,
+                action: "oidc_token_issued".to_string(),
+                resource: format!("oidc_provider:{}", provider_name),
+                metadata: serde_json::json!({
+                    "provider": provider_name,
+                    "subject": user_info.subject,
+                    "token_type": "oidc"
+                }),
+            })
+            .await?;
 
         Ok((token_id, user_info))
     }
@@ -395,23 +452,26 @@ impl TokenManager {
     pub async fn revoke_token(&mut self, token_id: &str, user_id: &str) -> Result<()> {
         if self.stored_tokens.remove(token_id).is_some() {
             // Audit token revocation
-            self.audit_logger.log_event(crate::audit::AuditEvent {
-                event_type: crate::audit::AuditEventType::Authentication,
-                user_id: Some(user_id.to_string()),
-                session_id: None,
-                action: "token_revoked".to_string(),
-                resource: format!("token:{}", token_id),
-                metadata: serde_json::json!({
-                    "token_id": token_id
-                }),
-            }).await?;
+            self.audit_logger
+                .log_event(crate::audit::AuditEvent {
+                    event_type: crate::audit::AuditEventType::Authentication,
+                    user_id: Some(user_id.to_string()),
+                    session_id: None,
+                    action: "token_revoked".to_string(),
+                    resource: format!("token:{}", token_id),
+                    metadata: serde_json::json!({
+                        "token_id": token_id
+                    }),
+                })
+                .await?;
         }
         Ok(())
     }
 
     /// Validate token (basic expiry check)
     pub fn validate_token(&self, token_id: &str) -> Result<&OAuthToken> {
-        self.stored_tokens.get(token_id)
+        self.stored_tokens
+            .get(token_id)
             .ok_or_else(|| SecurityError::Validation {
                 message: "Token not found".to_string(),
             })

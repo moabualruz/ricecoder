@@ -213,7 +213,8 @@ fn test_integration_strategies_unknown_domain() {
 fn test_domain_expertise_assessment() {
     let coordinator = DomainCoordinator::new();
 
-    let assessment = coordinator.assess_domain_expertise("web-development", &["react", "typescript"]);
+    let assessment =
+        coordinator.assess_domain_expertise("web-development", &["react", "typescript"]);
     assert!(assessment.is_ok());
 
     let result = assessment.unwrap();
@@ -359,7 +360,9 @@ fn test_domain_analysis_result_debug_formatting() {
 #[test]
 fn test_technology_recommendation_formatting() {
     let coordinator = DomainCoordinator::new();
-    let recommendations = coordinator.recommend_technologies("web-development", &["frontend"]).unwrap();
+    let recommendations = coordinator
+        .recommend_technologies("web-development", &["frontend"])
+        .unwrap();
 
     if !recommendations.is_empty() {
         let formatted = format!("{}", recommendations[0]);
@@ -392,7 +395,9 @@ fn test_best_practice_formatting() {
 #[test]
 fn test_architecture_pattern_formatting() {
     let coordinator = DomainCoordinator::new();
-    let patterns = coordinator.suggest_architecture_patterns("web-development", &["scalability"]).unwrap();
+    let patterns = coordinator
+        .suggest_architecture_patterns("web-development", &["scalability"])
+        .unwrap();
 
     if !patterns.is_empty() {
         let formatted = format!("{}", patterns[0]);
@@ -403,7 +408,9 @@ fn test_architecture_pattern_formatting() {
 #[test]
 fn test_integration_strategy_formatting() {
     let coordinator = DomainCoordinator::new();
-    let strategies = coordinator.get_integration_strategies("web-development", &["api"]).unwrap();
+    let strategies = coordinator
+        .get_integration_strategies("web-development", &["api"])
+        .unwrap();
 
     if !strategies.is_empty() {
         let formatted = format!("{}", strategies[0]);
@@ -414,7 +421,9 @@ fn test_integration_strategy_formatting() {
 #[test]
 fn test_expertise_assessment_formatting() {
     let coordinator = DomainCoordinator::new();
-    let assessment = coordinator.assess_domain_expertise("web-development", &["react"]).unwrap();
+    let assessment = coordinator
+        .assess_domain_expertise("web-development", &["react"])
+        .unwrap();
 
     let formatted = format!("{}", assessment);
     assert!(formatted.contains("Expertise Assessment"));
@@ -424,7 +433,9 @@ fn test_expertise_assessment_formatting() {
 #[test]
 fn test_learning_path_formatting() {
     let coordinator = DomainCoordinator::new();
-    let path = coordinator.generate_learning_path("web-development", "beginner").unwrap();
+    let path = coordinator
+        .generate_learning_path("web-development", "beginner")
+        .unwrap();
 
     let formatted = format!("{}", path);
     assert!(formatted.contains("Learning Path"));
@@ -434,7 +445,9 @@ fn test_learning_path_formatting() {
 #[test]
 fn test_code_review_guideline_formatting() {
     let coordinator = DomainCoordinator::new();
-    let guidelines = coordinator.get_code_review_guidelines("web-development").unwrap();
+    let guidelines = coordinator
+        .get_code_review_guidelines("web-development")
+        .unwrap();
 
     if !guidelines.is_empty() {
         let formatted = format!("{}", guidelines[0]);
@@ -445,7 +458,9 @@ fn test_code_review_guideline_formatting() {
 #[test]
 fn test_performance_tip_formatting() {
     let coordinator = DomainCoordinator::new();
-    let tips = coordinator.get_performance_optimization_tips("web-development").unwrap();
+    let tips = coordinator
+        .get_performance_optimization_tips("web-development")
+        .unwrap();
 
     if !tips.is_empty() {
         let formatted = format!("{}", tips[0]);
@@ -456,7 +471,9 @@ fn test_performance_tip_formatting() {
 #[test]
 fn test_security_consideration_formatting() {
     let coordinator = DomainCoordinator::new();
-    let considerations = coordinator.get_security_considerations("web-development").unwrap();
+    let considerations = coordinator
+        .get_security_considerations("web-development")
+        .unwrap();
 
     if !considerations.is_empty() {
         let formatted = format!("{}", considerations[0]);

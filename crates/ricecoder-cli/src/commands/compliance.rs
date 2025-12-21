@@ -4,15 +4,15 @@
 use super::Command;
 use crate::error::{CliError, CliResult};
 use crate::output::OutputStyle;
-use chrono::{DateTime, Utc, Duration};
+use async_trait::async_trait;
+use chrono::{DateTime, Duration, Utc};
+use ricecoder_mcp::audit::MCPAuditLogger;
 use ricecoder_mcp::compliance::{
-    ComplianceReportType, MCPComplianceMonitor, MCPEnterpriseMonitor,
-    MCPMonitoringMetrics, ViolationSeverity
+    ComplianceReportType, MCPComplianceMonitor, MCPEnterpriseMonitor, MCPMonitoringMetrics,
+    ViolationSeverity,
 };
 use ricecoder_security::audit::{AuditLogger, MemoryAuditStorage};
-use ricecoder_mcp::audit::MCPAuditLogger;
 use std::sync::Arc;
-use async_trait::async_trait;
 
 /// Manage compliance reporting and automation
 pub struct ComplianceCommand {
@@ -62,18 +62,30 @@ impl ComplianceCommand {
         let end_date = Utc::now();
         let start_date = end_date - Duration::days(30); // Last 30 days
 
-        let report = monitor.generate_report(
-            report_type.clone(),
-            start_date,
-            end_date,
-        ).await.map_err(|e| CliError::Internal(format!("MCP error: {}", e)))?;
+        let report = monitor
+            .generate_report(report_type.clone(), start_date, end_date)
+            .await
+            .map_err(|e| CliError::Internal(format!("MCP error: {}", e)))?;
 
         println!("Report Type: {:?}", report.report_type);
-        println!("Generated: {}", report.generated_at.format("%Y-%m-%d %H:%M:%S UTC"));
-        println!("Period: {} to {}", report.period_start.format("%Y-%m-%d"), report.period_end.format("%Y-%m-%d"));
+        println!(
+            "Generated: {}",
+            report.generated_at.format("%Y-%m-%d %H:%M:%S UTC")
+        );
+        println!(
+            "Period: {} to {}",
+            report.period_start.format("%Y-%m-%d"),
+            report.period_end.format("%Y-%m-%d")
+        );
         println!();
-        println!("Total Violations: {}", style.number(report.total_violations));
-        println!("Unresolved Violations: {}", style.number(report.unresolved_violations));
+        println!(
+            "Total Violations: {}",
+            style.number(report.total_violations)
+        );
+        println!(
+            "Unresolved Violations: {}",
+            style.number(report.unresolved_violations)
+        );
         println!();
         println!("Severity Breakdown:");
         for (severity, count) in &report.severity_breakdown {
@@ -86,7 +98,8 @@ impl ComplianceCommand {
             println!();
             println!("Recent Violations (last 10):");
             for violation in report.violations.iter().take(10) {
-                println!("  {} - {} ({:?})",
+                println!(
+                    "  {} - {} ({:?})",
                     violation.timestamp.format("%Y-%m-%d %H:%M"),
                     violation.description,
                     violation.severity
@@ -188,7 +201,9 @@ impl ComplianceCommand {
             println!("{}", style.success("All compliance validations passed!"));
         } else {
             println!("{}", style.error("Some compliance validations failed!"));
-            return Err(CliError::Validation { message: "Compliance validation failed".to_string() });
+            return Err(CliError::Validation {
+                message: "Compliance validation failed".to_string(),
+            });
         }
 
         Ok(())
@@ -207,23 +222,37 @@ impl ComplianceCommand {
 
         match current_metrics {
             Some(metrics) => {
-                println!("📊 Current Metrics (as of {})", metrics.timestamp.format("%Y-%m-%d %H:%M:%S UTC"));
+                println!(
+                    "📊 Current Metrics (as of {})",
+                    metrics.timestamp.format("%Y-%m-%d %H:%M:%S UTC")
+                );
                 println!();
                 println!("MCP Servers: {}", style.number(metrics.server_count));
-                println!("Active Connections: {}", style.number(metrics.active_connections));
-                println!("Tool Executions: {} total ({} success, {} failed)",
+                println!(
+                    "Active Connections: {}",
+                    style.number(metrics.active_connections)
+                );
+                println!(
+                    "Tool Executions: {} total ({} success, {} failed)",
                     style.number(metrics.tool_executions_total.try_into().unwrap()),
                     style.number(metrics.tool_executions_success.try_into().unwrap()),
                     style.number(metrics.tool_executions_failed.try_into().unwrap())
                 );
-                println!("Auth Attempts: {} total ({} success, {} failed)",
+                println!(
+                    "Auth Attempts: {} total ({} success, {} failed)",
                     style.number(metrics.auth_attempts_total.try_into().unwrap()),
                     style.number(metrics.auth_attempts_success.try_into().unwrap()),
                     style.number(metrics.auth_attempts_failed.try_into().unwrap())
                 );
-                println!("Compliance Violations: {}", style.number(metrics.violations_recorded));
+                println!(
+                    "Compliance Violations: {}",
+                    style.number(metrics.violations_recorded)
+                );
                 println!("Active Sessions: {}", style.number(metrics.active_sessions));
-                println!("Average Response Time: {:.2}ms", metrics.average_response_time_ms);
+                println!(
+                    "Average Response Time: {:.2}ms",
+                    metrics.average_response_time_ms
+                );
             }
             None => {
                 println!("ℹ️  No monitoring metrics available yet");

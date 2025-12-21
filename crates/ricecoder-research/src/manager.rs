@@ -176,7 +176,7 @@ impl ResearchManager {
         debug!("Step 6: Building project context");
         let context = ProjectContext {
             project_type,
-            languages: vec![], // Would be populated by project analyzer
+            languages: vec![],  // Would be populated by project analyzer
             frameworks: vec![], // Would be populated by project analyzer
             structure,
             patterns,
@@ -190,12 +190,19 @@ impl ResearchManager {
             standards,
         };
 
-        info!("Core project analysis completed successfully for {:?}", root);
+        info!(
+            "Core project analysis completed successfully for {:?}",
+            root
+        );
         Ok(context)
     }
 
     /// Search the codebase using the search engine
-    pub fn search(&self, query: &str, options: &crate::search_engine::SearchOptions) -> Vec<crate::models::SearchResult> {
+    pub fn search(
+        &self,
+        query: &str,
+        options: &crate::search_engine::SearchOptions,
+    ) -> Vec<crate::models::SearchResult> {
         self.search_engine.search_by_name(query, options)
     }
 
@@ -214,7 +221,11 @@ impl ResearchManager {
     }
 
     /// Track references in code
-    pub fn track_references(&self, file_path: &Path, content: &str) -> Result<crate::reference_tracker::ReferenceTrackingResult, ResearchError> {
+    pub fn track_references(
+        &self,
+        file_path: &Path,
+        content: &str,
+    ) -> Result<crate::reference_tracker::ReferenceTrackingResult, ResearchError> {
         // This would use the semantic index to track references
         // For now, return a basic result
         Ok(crate::reference_tracker::ReferenceTrackingResult {
@@ -245,4 +256,3 @@ impl ResearchManager {
         self.pattern_detector.as_ref()
     }
 }
-

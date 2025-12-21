@@ -6,4 +6,4 @@
 pub mod vcs_integration;
 
 // Re-export public API
-pub use vcs_integration::{VcsStatus, VcsIntegration};
+pub use vcs_integration::{VcsIntegration, VcsStatus};

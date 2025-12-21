@@ -101,7 +101,10 @@ impl FileWatcher {
         }
 
         if !path.is_dir() {
-            return Err(FileError::InvalidPath(format!("Path is not a directory: {}", path.display())));
+            return Err(FileError::InvalidPath(format!(
+                "Path is not a directory: {}",
+                path.display()
+            )));
         }
 
         // Initialize watcher if not already done
@@ -116,7 +119,8 @@ impl FileWatcher {
                     }
                 },
                 Config::default(),
-            ).map_err(|e| FileError::WatcherError(format!("Failed to create watcher: {}", e)))?;
+            )
+            .map_err(|e| FileError::WatcherError(format!("Failed to create watcher: {}", e)))?;
 
             self.watcher = Some(watcher);
         }
@@ -129,7 +133,8 @@ impl FileWatcher {
             RecursiveMode::NonRecursive
         };
 
-        watcher.watch(path, mode)
+        watcher
+            .watch(path, mode)
             .map_err(|e| FileError::WatcherError(format!("Failed to watch path: {}", e)))?;
 
         // Track watched directories
@@ -142,7 +147,8 @@ impl FileWatcher {
     /// Stop watching a directory
     pub fn unwatch(&mut self, path: &Path) -> Result<(), FileError> {
         if let Some(watcher) = &mut self.watcher {
-            watcher.unwatch(path)
+            watcher
+                .unwatch(path)
                 .map_err(|e| FileError::WatcherError(format!("Failed to unwatch path: {}", e)))?;
 
             // Remove from tracked directories
@@ -151,7 +157,9 @@ impl FileWatcher {
             info!("Stopped watching directory: {}", path.display());
             Ok(())
         } else {
-            Err(FileError::WatcherError("Watcher not initialized".to_string()))
+            Err(FileError::WatcherError(
+                "Watcher not initialized".to_string(),
+            ))
         }
     }
 
@@ -159,7 +167,9 @@ impl FileWatcher {
     pub fn start(&mut self) -> Result<(), FileError> {
         let mut running = self.running.lock().unwrap();
         if *running {
-            return Err(FileError::WatcherError("Watcher already running".to_string()));
+            return Err(FileError::WatcherError(
+                "Watcher already running".to_string(),
+            ));
         }
         *running = true;
         drop(running);

@@ -195,10 +195,7 @@ impl CapabilityNegotiator {
     }
 
     /// Check if server supports a capability
-    pub fn supports_capability(
-        capabilities: &ServerCapabilities,
-        capability: &str,
-    ) -> bool {
+    pub fn supports_capability(capabilities: &ServerCapabilities, capability: &str) -> bool {
         match capability {
             "completion" => capabilities.completion_provider.is_some(),
             "hover" => capabilities.hover_provider.is_some(),
@@ -297,9 +294,15 @@ mod tests {
             text_document_sync: None,
         };
 
-        assert!(CapabilityNegotiator::supports_capability(&caps, "completion"));
+        assert!(CapabilityNegotiator::supports_capability(
+            &caps,
+            "completion"
+        ));
         assert!(CapabilityNegotiator::supports_capability(&caps, "hover"));
-        assert!(!CapabilityNegotiator::supports_capability(&caps, "definition"));
+        assert!(!CapabilityNegotiator::supports_capability(
+            &caps,
+            "definition"
+        ));
     }
 
     #[test]

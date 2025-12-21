@@ -98,7 +98,11 @@ impl RefactoringProvider for PythonRefactoringProvider {
         match refactoring.refactoring_type {
             RefactoringType::Rename => {
                 // Python rename: use word boundaries
-                Self::apply_python_rename(code, &refactoring.target.symbol, &refactoring.target.symbol)
+                Self::apply_python_rename(
+                    code,
+                    &refactoring.target.symbol,
+                    &refactoring.target.symbol,
+                )
             }
             _ => Ok(code.to_string()),
         }
@@ -148,7 +152,8 @@ mod tests {
     #[test]
     fn test_python_provider_analyze() -> Result<()> {
         let provider = PythonRefactoringProvider::new();
-        let analysis = provider.analyze_refactoring("def main():", "python", RefactoringType::Rename)?;
+        let analysis =
+            provider.analyze_refactoring("def main():", "python", RefactoringType::Rename)?;
 
         assert!(analysis.applicable);
         assert_eq!(analysis.complexity, 3);
@@ -159,7 +164,8 @@ mod tests {
     #[test]
     fn test_python_provider_validate_valid() -> Result<()> {
         let provider = PythonRefactoringProvider::new();
-        let result = provider.validate_refactoring("def main():", "def main():\n    print()", "python")?;
+        let result =
+            provider.validate_refactoring("def main():", "def main():\n    print()", "python")?;
 
         assert!(result.passed);
 

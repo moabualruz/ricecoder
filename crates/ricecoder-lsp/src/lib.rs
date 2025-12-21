@@ -70,8 +70,8 @@ pub use refactoring::RefactoringHandler;
 pub use semantic::SemanticAnalyzer;
 pub use server::LspServer;
 pub use tui_integration::{
-    DiagnosticDetailWidget, DiagnosticItem, DiagnosticLocation, DiagnosticRelatedInformation,
-    DiagnosticSeverity, DiagnosticsWidget, HoverWidget, language_from_file_path,
-    lsp_diagnostics_to_tui, lsp_hover_to_text,
+    language_from_file_path, lsp_diagnostics_to_tui, lsp_hover_to_text, DiagnosticDetailWidget,
+    DiagnosticItem, DiagnosticLocation, DiagnosticRelatedInformation, DiagnosticSeverity,
+    DiagnosticsWidget, HoverWidget,
 };
 pub use types::{CodeAction, Diagnostic, HoverInfo, Position, Range};

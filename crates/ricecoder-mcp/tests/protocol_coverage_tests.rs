@@ -3,11 +3,15 @@
 //! Targeted tests for complex protocol scenarios and edge cases
 //! to improve coverage in protocol validation components.
 
-use std::collections::HashMap;
-use ricecoder_mcp::protocol_validation::{MCPProtocolValidator, MCPComplianceChecker, MCPErrorHandler};
-use ricecoder_mcp::transport::{MCPMessage, MCPRequest, MCPResponse, MCPNotification, MCPError, MCPErrorData};
 use ricecoder_mcp::error::{Error, Result};
+use ricecoder_mcp::protocol_validation::{
+    MCPComplianceChecker, MCPErrorHandler, MCPProtocolValidator,
+};
+use ricecoder_mcp::transport::{
+    MCPError, MCPErrorData, MCPMessage, MCPNotification, MCPRequest, MCPResponse,
+};
 use serde_json::json;
+use std::collections::HashMap;
 
 /// **Protocol Test P.1: Complex JSON Schema Validation**
 /// **Validates: Deeply nested and complex JSON structures**
@@ -19,7 +23,8 @@ fn test_complex_json_schema_validation() {
     let mut nested = json!({"level": 0});
     let mut current = &mut nested;
 
-    for i in 1..50 { // Deep nesting
+    for i in 1..50 {
+        // Deep nesting
         *current = json!({
             "level": i,
             "nested": {"data": "value"}
@@ -49,12 +54,12 @@ fn test_unicode_internationalization_handling() {
     let validator = MCPProtocolValidator::new();
 
     let unicode_strings = vec![
-        "Hello 世界", // Chinese
-        "Hello 🌍🚀", // Emojis
-        "Hello naïve café", // Accented characters
+        "Hello 世界",               // Chinese
+        "Hello 🌍🚀",               // Emojis
+        "Hello naïve café",         // Accented characters
         "Hello \u{1F600}\u{1F601}", // Unicode escapes
-        "Hello \u{0000}\u{FFFF}", // Edge Unicode values
-        "Hello \u{10FFFF}", // Maximum Unicode code point
+        "Hello \u{0000}\u{FFFF}",   // Edge Unicode values
+        "Hello \u{10FFFF}",         // Maximum Unicode code point
     ];
 
     for unicode_str in unicode_strings {
@@ -180,17 +185,17 @@ fn test_message_id_validation_edge_cases() {
     let validator = MCPProtocolValidator::new();
 
     let edge_case_ids = vec![
-        "", // Empty
-        "a", // Single char
-        "a".repeat(1000), // Very long
-        "123", // Numbers only
-        "abc-123_def.456", // Valid chars
-        "id with spaces", // Spaces
-        "id\nwith\nnewlines", // Newlines
-        "id\twith\ttabs", // Tabs
-        "id\x00with\x00nulls", // Null bytes
-        "🚀-id-🌟", // Unicode
-        "id/with/slashes", // Slashes
+        "",                           // Empty
+        "a",                          // Single char
+        "a".repeat(1000),             // Very long
+        "123",                        // Numbers only
+        "abc-123_def.456",            // Valid chars
+        "id with spaces",             // Spaces
+        "id\nwith\nnewlines",         // Newlines
+        "id\twith\ttabs",             // Tabs
+        "id\x00with\x00nulls",        // Null bytes
+        "🚀-id-🌟",                   // Unicode
+        "id/with/slashes",            // Slashes
         "id?with=query&params=value", // Query params
     ];
 
@@ -219,9 +224,14 @@ fn test_method_name_validation_complex_cases() {
         "method-with-dashes",
         "method.with.numbers123",
         "a.b.c.d.e.f.g.h.i.j.k.l.m.n.o.p", // Deep hierarchy
-        "tool.execute", "tool.list", "tool.describe",
-        "workspace.files.read", "workspace.files.write",
-        "resources.list", "resources.read", "resources.write",
+        "tool.execute",
+        "tool.list",
+        "tool.describe",
+        "workspace.files.read",
+        "workspace.files.write",
+        "resources.list",
+        "resources.read",
+        "resources.write",
         "completion.complete",
         "logging.setLevel",
     ];
@@ -306,10 +316,10 @@ fn test_malformed_json_recovery() {
 
     // Test with valid JSON that contains edge cases
     let edge_case_params = vec![
-        json!({}), // Empty object
-        json!([]), // Empty array
-        json!(null), // Null value
-        json!({"key": null}), // Null in object
+        json!({}),                                     // Empty object
+        json!([]),                                     // Empty array
+        json!(null),                                   // Null value
+        json!({"key": null}),                          // Null in object
         json!([null, "string", 123, true, false, []]), // Mixed array
     ];
 
@@ -417,12 +427,32 @@ fn test_error_handler_complex_scenarios() {
 
     // Test various error types and recovery strategies
     let test_errors = vec![
-        (Error::ConnectionError("Network timeout".to_string()), "connection_timeout"),
-        (Error::AuthenticationError("Invalid token".to_string()), "auth_failure"),
-        (Error::ValidationError("Invalid input format".to_string()), "validation_error"),
-        (Error::SerializationError(serde_json::from_str::<serde_json::Value>("invalid").unwrap_err()), "serialization_error"),
-        (Error::ServerError("Internal server error".to_string()), "server_error"),
-        (Error::ConfigError("Missing configuration".to_string()), "config_error"),
+        (
+            Error::ConnectionError("Network timeout".to_string()),
+            "connection_timeout",
+        ),
+        (
+            Error::AuthenticationError("Invalid token".to_string()),
+            "auth_failure",
+        ),
+        (
+            Error::ValidationError("Invalid input format".to_string()),
+            "validation_error",
+        ),
+        (
+            Error::SerializationError(
+                serde_json::from_str::<serde_json::Value>("invalid").unwrap_err(),
+            ),
+            "serialization_error",
+        ),
+        (
+            Error::ServerError("Internal server error".to_string()),
+            "server_error",
+        ),
+        (
+            Error::ConfigError("Missing configuration".to_string()),
+            "config_error",
+        ),
     ];
 
     for (error, context) in test_errors {
@@ -450,10 +480,19 @@ fn test_compliance_checker_enterprise_scenarios() {
 
     // Test various compliance scenarios
     let compliance_scenarios = vec![
-        ("tool_execution", json!({"tool": "read_file", "user": "admin"})),
-        ("permission_check", json!({"resource": "sensitive_data", "action": "read"})),
+        (
+            "tool_execution",
+            json!({"tool": "read_file", "user": "admin"}),
+        ),
+        (
+            "permission_check",
+            json!({"resource": "sensitive_data", "action": "read"}),
+        ),
         ("audit_log", json!({"event": "access", "severity": "high"})),
-        ("data_transmission", json!({"encrypted": true, "size": 1024})),
+        (
+            "data_transmission",
+            json!({"encrypted": true, "size": 1024}),
+        ),
         ("authentication", json!({"method": "oauth2", "mfa": true})),
     ];
 
@@ -493,7 +532,11 @@ fn test_memory_performance_stress_testing() {
     let duration = start_time.elapsed();
 
     // Should complete in reasonable time
-    assert!(duration.as_secs() < 5, "Stress test took too long: {:?}", duration);
+    assert!(
+        duration.as_secs() < 5,
+        "Stress test took too long: {:?}",
+        duration
+    );
 
     // All results should be either Ok or Err (no panics)
     assert!(results.iter().all(|r| r.is_ok() || r.is_err()));

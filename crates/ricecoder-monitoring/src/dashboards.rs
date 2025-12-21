@@ -131,6 +131,8 @@ impl DashboardRenderer {
     /// Render dashboard as HTML (placeholder)
     pub fn render_dashboard_html(&self, _dashboard: &Dashboard) -> String {
         // In a real implementation, this would generate HTML with charts
-        "<html><body><h1>Dashboard</h1><p>Dashboard visualization would go here</p></body></html>".to_string().to_string()
+        "<html><body><h1>Dashboard</h1><p>Dashboard visualization would go here</p></body></html>"
+            .to_string()
+            .to_string()
     }
 }

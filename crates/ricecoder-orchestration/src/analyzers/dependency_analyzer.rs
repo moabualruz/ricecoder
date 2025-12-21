@@ -56,7 +56,11 @@ impl DependencyAnalyzer {
                 let _version = trimmed[eq_pos + 1..].trim();
 
                 // Only add if it looks like a project dependency (no special chars)
-                if !dep_name.is_empty() && dep_name.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {
+                if !dep_name.is_empty()
+                    && dep_name
+                        .chars()
+                        .all(|c| c.is_alphanumeric() || c == '-' || c == '_')
+                {
                     let dependency = ProjectDependency {
                         from: project_name.to_string(),
                         to: dep_name.to_string(),
@@ -80,7 +84,10 @@ impl DependencyAnalyzer {
     }
 
     /// Gets all transitive dependencies of a project
-    pub fn get_transitive_dependencies(&self, project_name: &str) -> Result<Vec<ProjectDependency>> {
+    pub fn get_transitive_dependencies(
+        &self,
+        project_name: &str,
+    ) -> Result<Vec<ProjectDependency>> {
         let mut transitive = Vec::new();
         let mut visited = HashSet::new();
         let mut queue = VecDeque::new();
@@ -245,7 +252,10 @@ impl DependencyAnalyzer {
         // Build adjacency list and calculate in-degrees
         for (from, deps) in &self.dependencies {
             for dep in deps {
-                adj_list.entry(from.clone()).or_default().push(dep.to.clone());
+                adj_list
+                    .entry(from.clone())
+                    .or_default()
+                    .push(dep.to.clone());
                 *in_degree.entry(dep.to.clone()).or_insert(0) += 1;
             }
         }

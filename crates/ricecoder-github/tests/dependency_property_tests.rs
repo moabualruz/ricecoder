@@ -3,8 +3,7 @@
 //! Tests that verify correctness properties for dependency scanning, updates, and security tracking.
 
 use ricecoder_github::managers::{
-    DependencyManager, DependencyOperations, PinningConfig, UpdateReason,
-    VulnerabilitySeverity,
+    DependencyManager, DependencyOperations, PinningConfig, UpdateReason, VulnerabilitySeverity,
 };
 
 // Property 51: Dependency Scanning
@@ -16,10 +15,15 @@ use ricecoder_github::managers::{
 fn property_51_dependency_scanning() {
     for _ in 0..100 {
         let manager = DependencyManager::new("owner".to_string(), "repo".to_string());
-        let result = manager.scan_dependencies().expect("Scanning should succeed");
+        let result = manager
+            .scan_dependencies()
+            .expect("Scanning should succeed");
 
         // Property: Scanning should return non-empty results
-        assert!(!result.dependencies.is_empty(), "Should find at least one dependency");
+        assert!(
+            !result.dependencies.is_empty(),
+            "Should find at least one dependency"
+        );
 
         // Property: Outdated count should match actual outdated dependencies
         let actual_outdated = result.dependencies.iter().filter(|d| d.is_outdated).count();
@@ -31,7 +35,10 @@ fn property_51_dependency_scanning() {
         // Property: All dependencies should have valid names
         for dep in &result.dependencies {
             assert!(!dep.name.is_empty(), "Dependency name should not be empty");
-            assert!(!dep.current_version.is_empty(), "Current version should not be empty");
+            assert!(
+                !dep.current_version.is_empty(),
+                "Current version should not be empty"
+            );
         }
     }
 }
@@ -45,7 +52,9 @@ fn property_51_dependency_scanning() {
 fn property_52_dependency_update_suggestions() {
     for _ in 0..100 {
         let manager = DependencyManager::new("owner".to_string(), "repo".to_string());
-        let scan_result = manager.scan_dependencies().expect("Scanning should succeed");
+        let scan_result = manager
+            .scan_dependencies()
+            .expect("Scanning should succeed");
         let suggestions = manager
             .suggest_updates(&scan_result)
             .expect("Suggesting updates should succeed");
@@ -57,7 +66,8 @@ fn property_52_dependency_update_suggestions() {
             .filter(|d| d.is_outdated || !d.vulnerabilities.is_empty())
             .count();
         assert_eq!(
-            suggestions.len(), expected_suggestions,
+            suggestions.len(),
+            expected_suggestions,
             "Should have suggestions for all outdated or vulnerable dependencies"
         );
 
@@ -94,7 +104,9 @@ fn property_52_dependency_update_suggestions() {
 fn property_53_dependency_update_pr_creation() {
     for _ in 0..100 {
         let manager = DependencyManager::new("owner".to_string(), "repo".to_string());
-        let scan_result = manager.scan_dependencies().expect("Scanning should succeed");
+        let scan_result = manager
+            .scan_dependencies()
+            .expect("Scanning should succeed");
         let suggestions = manager
             .suggest_updates(&scan_result)
             .expect("Suggesting updates should succeed");
@@ -121,7 +133,10 @@ fn property_53_dependency_update_pr_creation() {
             );
 
             // Property: Branch name should be valid
-            assert!(!pr_result.branch_name.is_empty(), "Branch name should not be empty");
+            assert!(
+                !pr_result.branch_name.is_empty(),
+                "Branch name should not be empty"
+            );
             assert!(
                 pr_result.branch_name.starts_with("deps/"),
                 "Branch name should start with deps/"
@@ -172,7 +187,9 @@ fn property_54_dependency_update_verification() {
 fn property_55_vulnerability_tracking() {
     for _ in 0..100 {
         let manager = DependencyManager::new("owner".to_string(), "repo".to_string());
-        let scan_result = manager.scan_dependencies().expect("Scanning should succeed");
+        let scan_result = manager
+            .scan_dependencies()
+            .expect("Scanning should succeed");
         let report = manager
             .track_vulnerabilities(&scan_result)
             .expect("Tracking vulnerabilities should succeed");
@@ -184,7 +201,8 @@ fn property_55_vulnerability_tracking() {
         );
 
         // Property: Vulnerability counts should sum to total
-        let sum = report.critical_count + report.high_count + report.medium_count + report.low_count;
+        let sum =
+            report.critical_count + report.high_count + report.medium_count + report.low_count;
         assert_eq!(
             sum, report.total_vulnerabilities,
             "Vulnerability counts should sum to total"
@@ -207,11 +225,14 @@ fn property_55_vulnerability_tracking() {
 fn property_pinning_preserves_all_dependencies() {
     for _ in 0..100 {
         let manager = DependencyManager::new("owner".to_string(), "repo".to_string());
-        let scan_result = manager.scan_dependencies().expect("Scanning should succeed");
+        let scan_result = manager
+            .scan_dependencies()
+            .expect("Scanning should succeed");
         let config = PinningConfig::default();
 
-        let pinning_result = DependencyOperations::apply_pinning(&scan_result.dependencies, &config)
-            .expect("Pinning should succeed");
+        let pinning_result =
+            DependencyOperations::apply_pinning(&scan_result.dependencies, &config)
+                .expect("Pinning should succeed");
 
         // Property: All dependencies should be pinned
         assert_eq!(
@@ -236,7 +257,9 @@ fn property_pinning_preserves_all_dependencies() {
 fn property_security_report_includes_all_vulnerabilities() {
     for _ in 0..100 {
         let manager = DependencyManager::new("owner".to_string(), "repo".to_string());
-        let scan_result = manager.scan_dependencies().expect("Scanning should succeed");
+        let scan_result = manager
+            .scan_dependencies()
+            .expect("Scanning should succeed");
 
         let report = DependencyOperations::generate_security_report(&scan_result.dependencies)
             .expect("Generating report should succeed");
@@ -267,10 +290,13 @@ fn property_security_report_includes_all_vulnerabilities() {
 fn property_update_recommendations_complete() {
     for _ in 0..100 {
         let manager = DependencyManager::new("owner".to_string(), "repo".to_string());
-        let scan_result = manager.scan_dependencies().expect("Scanning should succeed");
+        let scan_result = manager
+            .scan_dependencies()
+            .expect("Scanning should succeed");
 
-        let recommendations = DependencyOperations::generate_recommendations(&scan_result.dependencies)
-            .expect("Generating recommendations should succeed");
+        let recommendations =
+            DependencyOperations::generate_recommendations(&scan_result.dependencies)
+                .expect("Generating recommendations should succeed");
 
         // Property: Should have recommendations for all outdated or vulnerable dependencies
         let expected_count = scan_result
@@ -279,7 +305,8 @@ fn property_update_recommendations_complete() {
             .filter(|d| d.is_outdated || !d.vulnerabilities.is_empty())
             .count();
         assert_eq!(
-            recommendations.len(), expected_count,
+            recommendations.len(),
+            expected_count,
             "Should have recommendations for all outdated or vulnerable dependencies"
         );
 
@@ -330,9 +357,6 @@ fn property_update_safety_consistent() {
             .expect("Safety check should succeed");
 
         // Property: Same input should produce same output
-        assert_eq!(
-            result1, result2,
-            "Update safety check should be consistent"
-        );
+        assert_eq!(result1, result2, "Update safety check should be consistent");
     }
 }

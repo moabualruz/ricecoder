@@ -6,13 +6,13 @@
 //! - Resource-aware task spawning
 //! - Async processing pipelines
 
+use futures::FutureExt;
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tokio::sync::{RwLock, Semaphore, mpsc};
+use tokio::sync::{mpsc, RwLock, Semaphore};
 use tokio::task::{self, JoinHandle};
 use tracing::{debug, info, warn};
-use futures::FutureExt;
 
 /// Task priority levels
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -66,7 +66,12 @@ impl TaskScheduler {
     /// Create a new task scheduler
     pub fn new(max_concurrent: usize, max_queue_size: usize) -> Self {
         let mut task_queue = HashMap::new();
-        for &priority in &[TaskPriority::Critical, TaskPriority::High, TaskPriority::Normal, TaskPriority::Low] {
+        for &priority in &[
+            TaskPriority::Critical,
+            TaskPriority::High,
+            TaskPriority::Normal,
+            TaskPriority::Low,
+        ] {
             task_queue.insert(priority, VecDeque::new());
         }
 
@@ -117,7 +122,12 @@ impl TaskScheduler {
 
             // Find highest priority non-empty queue
             let mut found_task = None;
-            for priority in &[TaskPriority::Critical, TaskPriority::High, TaskPriority::Normal, TaskPriority::Low] {
+            for priority in &[
+                TaskPriority::Critical,
+                TaskPriority::High,
+                TaskPriority::Normal,
+                TaskPriority::Low,
+            ] {
                 if let Some(priority_queue) = queue.get_mut(priority) {
                     if let Some(task) = priority_queue.pop_front() {
                         found_task = Some(task);
@@ -287,7 +297,8 @@ pub enum TaskSchedulerError {
 
 /// Async processing pipeline for batch operations
 pub struct AsyncPipeline<T, R> {
-    processors: Vec<Arc<dyn Fn(T) -> futures::future::BoxFuture<'static, R> + Send + Sync + 'static>>,
+    processors:
+        Vec<Arc<dyn Fn(T) -> futures::future::BoxFuture<'static, R> + Send + Sync + 'static>>,
     concurrency_limit: usize,
 }
 
@@ -310,7 +321,11 @@ where
         F: Fn(T) -> Fut + Send + Sync + 'static,
         Fut: std::future::Future<Output = R> + Send + 'static,
     {
-        self.processors.push(Arc::new(move |input| processor(input).boxed()) as Arc<dyn Fn(T) -> futures::future::BoxFuture<'static, R> + Send + Sync + 'static>);
+        self.processors
+            .push(Arc::new(move |input| processor(input).boxed())
+                as Arc<
+                    dyn Fn(T) -> futures::future::BoxFuture<'static, R> + Send + Sync + 'static,
+                >);
         self
     }
 
@@ -324,10 +339,15 @@ where
         let mut handles = Vec::new();
 
         for item in items {
-            let permit = semaphore.clone().acquire_owned().await
+            let permit = semaphore
+                .clone()
+                .acquire_owned()
+                .await
                 .map_err(|_| AsyncPipelineError::ConcurrencyLimitReached)?;
 
-            let processor = self.processors.first()
+            let processor = self
+                .processors
+                .first()
                 .ok_or(AsyncPipelineError::NoProcessors)?
                 .clone();
 
@@ -399,16 +419,26 @@ impl ResourceAwareSpawner {
     {
         // Acquire CPU resources
         let cpu_permits = if cpu_cores > 0 {
-            Some(self.cpu_semaphore.clone().acquire_many_owned(cpu_cores as u32).await
-                .map_err(|_| ResourceAwareSpawnerError::ResourceLimitExceeded)?)
+            Some(
+                self.cpu_semaphore
+                    .clone()
+                    .acquire_many_owned(cpu_cores as u32)
+                    .await
+                    .map_err(|_| ResourceAwareSpawnerError::ResourceLimitExceeded)?,
+            )
         } else {
             None
         };
 
         // Acquire memory resources
         let memory_permits = if memory_mb > 0 {
-            Some(self.memory_semaphore.clone().acquire_many_owned(memory_mb as u32).await
-                .map_err(|_| ResourceAwareSpawnerError::ResourceLimitExceeded)?)
+            Some(
+                self.memory_semaphore
+                    .clone()
+                    .acquire_many_owned(memory_mb as u32)
+                    .await
+                    .map_err(|_| ResourceAwareSpawnerError::ResourceLimitExceeded)?,
+            )
         } else {
             None
         };
@@ -416,33 +446,39 @@ impl ResourceAwareSpawner {
         // Track resource usage
         {
             let mut active = self.active_tasks.write().await;
-            active.insert(task_id.clone(), TaskResourceUsage {
-                cpu_cores,
-                memory_mb,
-                start_time: Instant::now(),
-            });
+            active.insert(
+                task_id.clone(),
+                TaskResourceUsage {
+                    cpu_cores,
+                    memory_mb,
+                    start_time: Instant::now(),
+                },
+            );
         }
 
         // Spawn the task
         let active_tasks = self.active_tasks.clone();
-            let handle = task::spawn(async move {
-                let start_time = Instant::now();
-                debug!("Starting resource-aware task {}", task_id);
+        let handle = task::spawn(async move {
+            let start_time = Instant::now();
+            debug!("Starting resource-aware task {}", task_id);
 
-                // Execute the task
-                task().await;
+            // Execute the task
+            task().await;
 
-                let duration = start_time.elapsed();
-                debug!("Completed resource-aware task {} in {:?}", task_id, duration);
+            let duration = start_time.elapsed();
+            debug!(
+                "Completed resource-aware task {} in {:?}",
+                task_id, duration
+            );
 
-                // Release resources
-                drop(cpu_permits);
-                drop(memory_permits);
+            // Release resources
+            drop(cpu_permits);
+            drop(memory_permits);
 
-                // Remove from tracking
-                let mut active = active_tasks.write().await;
-                active.remove(&task_id);
-            });
+            // Remove from tracking
+            let mut active = active_tasks.write().await;
+            active.remove(&task_id);
+        });
 
         Ok(handle)
     }

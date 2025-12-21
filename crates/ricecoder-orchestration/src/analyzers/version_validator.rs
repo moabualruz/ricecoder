@@ -22,28 +22,32 @@ impl Version {
             )));
         }
 
-        let major = parts[0]
-            .parse::<u32>()
-            .map_err(|_| OrchestrationError::VersionConstraintViolation(format!(
+        let major = parts[0].parse::<u32>().map_err(|_| {
+            OrchestrationError::VersionConstraintViolation(format!(
                 "Invalid major version: {}",
                 parts[0]
-            )))?;
+            ))
+        })?;
 
-        let minor = parts[1]
-            .parse::<u32>()
-            .map_err(|_| OrchestrationError::VersionConstraintViolation(format!(
+        let minor = parts[1].parse::<u32>().map_err(|_| {
+            OrchestrationError::VersionConstraintViolation(format!(
                 "Invalid minor version: {}",
                 parts[1]
-            )))?;
+            ))
+        })?;
 
-        let patch = parts[2]
-            .parse::<u32>()
-            .map_err(|_| OrchestrationError::VersionConstraintViolation(format!(
+        let patch = parts[2].parse::<u32>().map_err(|_| {
+            OrchestrationError::VersionConstraintViolation(format!(
                 "Invalid patch version: {}",
                 parts[2]
-            )))?;
+            ))
+        })?;
 
-        Ok(Version { major, minor, patch })
+        Ok(Version {
+            major,
+            minor,
+            patch,
+        })
     }
 
     /// Converts version to string

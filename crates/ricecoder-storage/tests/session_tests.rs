@@ -8,7 +8,9 @@ fn test_session_creation() {
     let temp_dir = TempDir::new().unwrap();
     let manager = SessionManager::new(temp_dir.path().to_path_buf());
 
-    let session = manager.create_session("Test Session".to_string(), "test_user".to_string()).unwrap();
+    let session = manager
+        .create_session("Test Session".to_string(), "test_user".to_string())
+        .unwrap();
 
     assert_eq!(session.name, "Test Session");
     assert_eq!(session.owner, "test_user");
@@ -22,7 +24,9 @@ fn test_session_persistence() {
     let manager = SessionManager::new(temp_dir.path().to_path_buf());
 
     // Create and save session
-    let mut session = manager.create_session("Persistent Session".to_string(), "test_user".to_string()).unwrap();
+    let mut session = manager
+        .create_session("Persistent Session".to_string(), "test_user".to_string())
+        .unwrap();
     session.state.command_history.push("ls -la".to_string());
     manager.save_session(&session).unwrap();
 
@@ -39,8 +43,12 @@ fn test_session_listing() {
     let manager = SessionManager::new(temp_dir.path().to_path_buf());
 
     // Create multiple sessions
-    let session1 = manager.create_session("Session 1".to_string(), "user1".to_string()).unwrap();
-    let session2 = manager.create_session("Session 2".to_string(), "user2".to_string()).unwrap();
+    let session1 = manager
+        .create_session("Session 1".to_string(), "user1".to_string())
+        .unwrap();
+    let session2 = manager
+        .create_session("Session 2".to_string(), "user2".to_string())
+        .unwrap();
 
     let sessions = manager.list_sessions().unwrap();
     assert_eq!(sessions.len(), 2);
@@ -55,7 +63,9 @@ fn test_session_deletion() {
     let temp_dir = TempDir::new().unwrap();
     let manager = SessionManager::new(temp_dir.path().to_path_buf());
 
-    let session = manager.create_session("To Delete".to_string(), "test_user".to_string()).unwrap();
+    let session = manager
+        .create_session("To Delete".to_string(), "test_user".to_string())
+        .unwrap();
     manager.save_session(&session).unwrap();
 
     // Verify session exists
@@ -73,7 +83,9 @@ fn test_session_update() {
     let temp_dir = TempDir::new().unwrap();
     let manager = SessionManager::new(temp_dir.path().to_path_buf());
 
-    let mut session = manager.create_session("Original Name".to_string(), "test_user".to_string()).unwrap();
+    let mut session = manager
+        .create_session("Original Name".to_string(), "test_user".to_string())
+        .unwrap();
     session.name = "Updated Name".to_string();
     session.state.command_history.push("pwd".to_string());
 
@@ -90,7 +102,9 @@ fn test_session_sharing() {
     let temp_dir = TempDir::new().unwrap();
     let manager = SessionManager::new(temp_dir.path().to_path_buf());
 
-    let mut session = manager.create_session("Shared Session".to_string(), "owner".to_string()).unwrap();
+    let mut session = manager
+        .create_session("Shared Session".to_string(), "owner".to_string())
+        .unwrap();
     session.is_shared = true;
     session.shared_with = vec!["user1".to_string(), "user2".to_string()];
 
@@ -108,14 +122,23 @@ fn test_session_metadata() {
     let temp_dir = TempDir::new().unwrap();
     let manager = SessionManager::new(temp_dir.path().to_path_buf());
 
-    let mut session = manager.create_session("Meta Session".to_string(), "test_user".to_string()).unwrap();
-    session.metadata.insert("project".to_string(), "ricecoder".to_string());
-    session.metadata.insert("version".to_string(), "0.1.0".to_string());
+    let mut session = manager
+        .create_session("Meta Session".to_string(), "test_user".to_string())
+        .unwrap();
+    session
+        .metadata
+        .insert("project".to_string(), "ricecoder".to_string());
+    session
+        .metadata
+        .insert("version".to_string(), "0.1.0".to_string());
 
     manager.save_session(&session).unwrap();
 
     let loaded = manager.load_session(&session.id).unwrap();
-    assert_eq!(loaded.metadata.get("project"), Some(&"ricecoder".to_string()));
+    assert_eq!(
+        loaded.metadata.get("project"),
+        Some(&"ricecoder".to_string())
+    );
     assert_eq!(loaded.metadata.get("version"), Some(&"0.1.0".to_string()));
 }
 
@@ -124,9 +147,15 @@ fn test_session_search() {
     let temp_dir = TempDir::new().unwrap();
     let manager = SessionManager::new(temp_dir.path().to_path_buf());
 
-    manager.create_session("Alpha Project".to_string(), "user1".to_string()).unwrap();
-    manager.create_session("Beta Project".to_string(), "user1".to_string()).unwrap();
-    manager.create_session("Gamma Tool".to_string(), "user2".to_string()).unwrap();
+    manager
+        .create_session("Alpha Project".to_string(), "user1".to_string())
+        .unwrap();
+    manager
+        .create_session("Beta Project".to_string(), "user1".to_string())
+        .unwrap();
+    manager
+        .create_session("Gamma Tool".to_string(), "user2".to_string())
+        .unwrap();
 
     let results = manager.search_sessions("Project").unwrap();
     assert_eq!(results.len(), 2);
@@ -162,7 +191,9 @@ fn test_session_backup_and_restore() {
     let manager = SessionManager::new(temp_dir.path().to_path_buf());
 
     // Create test session
-    let session = manager.create_session("Backup Test".to_string(), "test_user".to_string()).unwrap();
+    let session = manager
+        .create_session("Backup Test".to_string(), "test_user".to_string())
+        .unwrap();
     manager.save_session(&session).unwrap();
 
     // Backup sessions
@@ -179,16 +210,16 @@ fn test_concurrent_session_access() {
     let temp_dir = TempDir::new().unwrap();
     let manager = SessionManager::new(temp_dir.path().to_path_buf());
 
-    let session = manager.create_session("Concurrent Test".to_string(), "test_user".to_string()).unwrap();
+    let session = manager
+        .create_session("Concurrent Test".to_string(), "test_user".to_string())
+        .unwrap();
     manager.save_session(&session).unwrap();
 
     // Test concurrent reads (should work)
     let manager_clone = manager.clone();
     let session_id = session.id.clone();
 
-    let handle = std::thread::spawn(move || {
-        manager_clone.load_session(&session_id).unwrap()
-    });
+    let handle = std::thread::spawn(move || manager_clone.load_session(&session_id).unwrap());
 
     let loaded_session = handle.join().unwrap();
     assert_eq!(loaded_session.name, "Concurrent Test");
@@ -199,7 +230,9 @@ fn test_session_size_limits() {
     let temp_dir = TempDir::new().unwrap();
     let manager = SessionManager::new(temp_dir.path().to_path_buf());
 
-    let mut session = manager.create_session("Size Test".to_string(), "test_user".to_string()).unwrap();
+    let mut session = manager
+        .create_session("Size Test".to_string(), "test_user".to_string())
+        .unwrap();
 
     // Add many commands to test size limits
     for i in 0..1000 {
@@ -218,8 +251,12 @@ fn test_session_cleanup() {
     let manager = SessionManager::new(temp_dir.path().to_path_buf());
 
     // Create sessions with old timestamps
-    let mut session1 = manager.create_session("Old Session 1".to_string(), "user1".to_string()).unwrap();
-    let mut session2 = manager.create_session("Old Session 2".to_string(), "user2".to_string()).unwrap();
+    let mut session1 = manager
+        .create_session("Old Session 1".to_string(), "user1".to_string())
+        .unwrap();
+    let mut session2 = manager
+        .create_session("Old Session 2".to_string(), "user2".to_string())
+        .unwrap();
 
     // Simulate old timestamps (30 days ago)
     let old_time = chrono::Utc::now() - chrono::Duration::days(30);
@@ -243,9 +280,15 @@ fn test_session_statistics() {
     let temp_dir = TempDir::new().unwrap();
     let manager = SessionManager::new(temp_dir.path().to_path_buf());
 
-    manager.create_session("Stats Session 1".to_string(), "user1".to_string()).unwrap();
-    manager.create_session("Stats Session 2".to_string(), "user1".to_string()).unwrap();
-    manager.create_session("Stats Session 3".to_string(), "user2".to_string()).unwrap();
+    manager
+        .create_session("Stats Session 1".to_string(), "user1".to_string())
+        .unwrap();
+    manager
+        .create_session("Stats Session 2".to_string(), "user1".to_string())
+        .unwrap();
+    manager
+        .create_session("Stats Session 3".to_string(), "user2".to_string())
+        .unwrap();
 
     let stats = manager.get_statistics().unwrap();
 
@@ -261,7 +304,9 @@ fn test_session_export_import() {
 
     let manager = SessionManager::new(temp_dir.path().to_path_buf());
 
-    let session = manager.create_session("Export Test".to_string(), "test_user".to_string()).unwrap();
+    let session = manager
+        .create_session("Export Test".to_string(), "test_user".to_string())
+        .unwrap();
     manager.save_session(&session).unwrap();
 
     // Export session

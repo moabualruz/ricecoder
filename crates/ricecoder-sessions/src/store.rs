@@ -2,7 +2,7 @@
 
 use crate::error::{SessionError, SessionResult};
 use crate::models::Session;
-use base64::{Engine, engine::general_purpose};
+use base64::{engine::general_purpose, Engine};
 use chrono::{DateTime, Utc};
 use ricecoder_security::encryption::{CustomerKeyManager, EncryptedData, KeyManager};
 use std::fs;
@@ -54,7 +54,10 @@ impl SessionStore {
 
     /// Create a session store with custom directories (for testing)
     pub fn with_dirs(sessions_dir: PathBuf, archive_dir: PathBuf) -> SessionResult<Self> {
-        let backup_dir = sessions_dir.parent().unwrap_or(&sessions_dir).join("backup");
+        let backup_dir = sessions_dir
+            .parent()
+            .unwrap_or(&sessions_dir)
+            .join("backup");
         fs::create_dir_all(&sessions_dir)?;
         fs::create_dir_all(&archive_dir)?;
         fs::create_dir_all(&backup_dir)?;
@@ -148,10 +151,12 @@ impl SessionStore {
             if let Some(ref customer_key_manager) = self.customer_key_manager {
                 // Use enterprise encryption with customer-managed keys
                 let customer_key = customer_key_manager.generate_customer_key()?;
-                let encrypted = customer_key_manager.encrypt_with_customer_key(&json_data, &customer_key)?;
+                let encrypted =
+                    customer_key_manager.encrypt_with_customer_key(&json_data, &customer_key)?;
 
                 // Store customer key encrypted with master key
-                let encrypted_key = key_manager.encrypt_api_key(&general_purpose::STANDARD.encode(&customer_key))?;
+                let encrypted_key = key_manager
+                    .encrypt_api_key(&general_purpose::STANDARD.encode(&customer_key))?;
 
                 // Combine encrypted data and encrypted key
                 let combined = serde_json::json!({
@@ -195,8 +200,10 @@ impl SessionStore {
             if let Some(ref customer_key_manager) = self.customer_key_manager {
                 // Handle enterprise encryption
                 let combined: serde_json::Value = serde_json::from_str(&file_data)?;
-                let encrypted_session: EncryptedData = serde_json::from_value(combined["encrypted_session"].clone())?;
-                let encrypted_key: EncryptedData = serde_json::from_value(combined["encrypted_key"].clone())?;
+                let encrypted_session: EncryptedData =
+                    serde_json::from_value(combined["encrypted_session"].clone())?;
+                let encrypted_key: EncryptedData =
+                    serde_json::from_value(combined["encrypted_key"].clone())?;
 
                 // Decrypt customer key
                 let customer_key_b64 = key_manager.decrypt_api_key(&encrypted_key)?;
@@ -343,7 +350,10 @@ impl SessionStore {
                                                 debug!("Cleaned up old session: {}", session_id);
                                             }
                                             Err(e) => {
-                                                warn!("Failed to clean up session {}: {}", session_id, e);
+                                                warn!(
+                                                    "Failed to clean up session {}: {}",
+                                                    session_id, e
+                                                );
                                             }
                                         }
                                     }
@@ -385,7 +395,10 @@ impl SessionStore {
                                             debug!("Cleaned up stale session: {}", session_id);
                                         }
                                         Err(e) => {
-                                            warn!("Failed to clean up stale session {}: {}", session_id, e);
+                                            warn!(
+                                                "Failed to clean up stale session {}: {}",
+                                                session_id, e
+                                            );
                                         }
                                     }
                                 }
@@ -412,7 +425,10 @@ impl SessionStore {
     }
 
     /// Perform comprehensive garbage collection
-    pub async fn garbage_collect(&self, config: &GarbageCollectionConfig) -> SessionResult<GarbageCollectionResult> {
+    pub async fn garbage_collect(
+        &self,
+        config: &GarbageCollectionConfig,
+    ) -> SessionResult<GarbageCollectionResult> {
         let mut result = GarbageCollectionResult::default();
 
         // Clean up old sessions
@@ -472,8 +488,8 @@ impl SessionStore {
         let count = entries
             .filter_map(|entry| entry.ok())
             .filter(|entry| {
-                entry.path().is_file() &&
-                entry.path().extension().map_or(false, |ext| ext == "json")
+                entry.path().is_file()
+                    && entry.path().extension().map_or(false, |ext| ext == "json")
             })
             .count();
         Ok(count)
@@ -567,7 +583,8 @@ impl SessionStore {
 
             // Encrypt the archive
             let tar_gz_data = fs::read(&tar_gz_path).await?;
-            let encrypted_data = key_manager.encrypt_api_key(&general_purpose::STANDARD.encode(&tar_gz_data))?;
+            let encrypted_data =
+                key_manager.encrypt_api_key(&general_purpose::STANDARD.encode(&tar_gz_data))?;
 
             // Write encrypted data
             let encrypted_json = serde_json::to_string(&encrypted_data)?;
@@ -585,7 +602,11 @@ impl SessionStore {
     }
 
     /// Enterprise recovery: Restore sessions from encrypted backup
-    pub async fn restore_enterprise_backup(&self, backup_path: &Path, master_password: Option<&str>) -> SessionResult<usize> {
+    pub async fn restore_enterprise_backup(
+        &self,
+        backup_path: &Path,
+        master_password: Option<&str>,
+    ) -> SessionResult<usize> {
         use tokio::fs;
 
         let mut restored_count = 0;
@@ -615,7 +636,12 @@ impl SessionStore {
             let mut entries = fs::read_dir(&sessions_dir).await?;
             while let Some(entry) = entries.next_entry().await? {
                 if entry.file_type().await?.is_file() {
-                    let dest_path = self.session_path(&entry.file_name().to_string_lossy().trim_end_matches(".json"));
+                    let dest_path = self.session_path(
+                        &entry
+                            .file_name()
+                            .to_string_lossy()
+                            .trim_end_matches(".json"),
+                    );
                     fs::copy(entry.path(), dest_path).await?;
                 }
             }
@@ -627,7 +653,12 @@ impl SessionStore {
             let mut entries = fs::read_dir(&archive_dir).await?;
             while let Some(entry) = entries.next_entry().await? {
                 if entry.file_type().await?.is_file() {
-                    let dest_path = self.archive_path(&entry.file_name().to_string_lossy().trim_end_matches(".json"));
+                    let dest_path = self.archive_path(
+                        &entry
+                            .file_name()
+                            .to_string_lossy()
+                            .trim_end_matches(".json"),
+                    );
                     fs::copy(entry.path(), dest_path).await?;
                 }
             }
@@ -642,7 +673,13 @@ impl SessionStore {
         use tokio::process::Command;
 
         let output = Command::new("tar")
-            .args(&["-czf", &dest_path.to_string_lossy(), "-C", &source_dir.to_string_lossy(), "."])
+            .args(&[
+                "-czf",
+                &dest_path.to_string_lossy(),
+                "-C",
+                &source_dir.to_string_lossy(),
+                ".",
+            ])
             .output()
             .await?;
 
@@ -661,7 +698,12 @@ impl SessionStore {
         use tokio::process::Command;
 
         let output = Command::new("tar")
-            .args(&["-xzf", &archive_path.to_string_lossy(), "-C", &dest_dir.to_string_lossy()])
+            .args(&[
+                "-xzf",
+                &archive_path.to_string_lossy(),
+                "-C",
+                &dest_dir.to_string_lossy(),
+            ])
             .output()
             .await?;
 
@@ -696,8 +738,16 @@ impl SessionStore {
                     backups.push(EnterpriseBackupInfo {
                         id: file_name.to_string(),
                         path: path.clone(),
-                        created_at: entry.metadata()?.modified().ok()
-                            .and_then(|t| DateTime::from_timestamp(t.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs() as i64, 0))
+                        created_at: entry
+                            .metadata()?
+                            .modified()
+                            .ok()
+                            .and_then(|t| {
+                                DateTime::from_timestamp(
+                                    t.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs() as i64,
+                                    0,
+                                )
+                            })
                             .unwrap_or_else(|| Utc::now()),
                         size_bytes: entry.metadata()?.len(),
                         encrypted: true,
@@ -708,8 +758,16 @@ impl SessionStore {
                     backups.push(EnterpriseBackupInfo {
                         id: file_name.to_string(),
                         path: path.clone(),
-                        created_at: entry.metadata()?.modified().ok()
-                            .and_then(|t| DateTime::from_timestamp(t.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs() as i64, 0))
+                        created_at: entry
+                            .metadata()?
+                            .modified()
+                            .ok()
+                            .and_then(|t| {
+                                DateTime::from_timestamp(
+                                    t.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs() as i64,
+                                    0,
+                                )
+                            })
                             .unwrap_or_else(|| Utc::now()),
                         size_bytes: entry.metadata()?.len(),
                         encrypted: false,

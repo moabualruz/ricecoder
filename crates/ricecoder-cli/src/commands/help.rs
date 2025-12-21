@@ -2,8 +2,8 @@
 
 use super::Command;
 use crate::error::CliResult;
-use async_trait::async_trait;
 use crate::output::OutputStyle;
+use async_trait::async_trait;
 
 /// Help and tutorial command
 pub struct HelpCommand {
@@ -17,10 +17,15 @@ impl HelpCommand {
 
     fn show_main_help(&self) {
         let style = OutputStyle::default();
-        println!("{}", style.section("RiceCoder - Spec-Driven Code Generation"));
+        println!(
+            "{}",
+            style.section("RiceCoder - Spec-Driven Code Generation")
+        );
         println!();
         println!("RiceCoder is a terminal-first, spec-driven coding assistant that helps you");
-        println!("write better code through research-first project analysis and AI-powered generation.");
+        println!(
+            "write better code through research-first project analysis and AI-powered generation."
+        );
         println!();
 
         println!("{}", style.section("Quick Start"));
@@ -37,8 +42,14 @@ impl HelpCommand {
 
         println!("{}", style.section("Available Commands"));
         println!();
-        println!("{}", style.key_value("init", "Initialize a new ricecoder project"));
-        println!("{}", style.key_value("gen", "Generate code from specifications"));
+        println!(
+            "{}",
+            style.key_value("init", "Initialize a new ricecoder project")
+        );
+        println!(
+            "{}",
+            style.key_value("gen", "Generate code from specifications")
+        );
         println!("{}", style.key_value("chat", "Interactive chat mode"));
         println!("{}", style.key_value("config", "Manage configuration"));
         println!("{}", style.key_value("lsp", "Start LSP server"));
@@ -65,15 +76,30 @@ impl HelpCommand {
 
         println!("{}", style.section("Resources"));
         println!();
-        println!("{}", style.link("Documentation", "https://github.com/moabualruz/ricecoder/wiki/docs"));
-        println!("{}", style.link("Examples", "https://github.com/moabualruz/ricecoder/wiki/examples"));
-        println!("{}", style.link("GitHub", "https://github.com/ricecoder/ricecoder"));
+        println!(
+            "{}",
+            style.link(
+                "Documentation",
+                "https://github.com/moabualruz/ricecoder/wiki/docs"
+            )
+        );
+        println!(
+            "{}",
+            style.link(
+                "Examples",
+                "https://github.com/moabualruz/ricecoder/wiki/examples"
+            )
+        );
+        println!(
+            "{}",
+            style.link("GitHub", "https://github.com/ricecoder/ricecoder")
+        );
         println!();
     }
 
     fn show_command_help(&self, command: &str) {
         use crate::accessibility::{AccessibilityFeatures, KeyboardShortcuts};
-        
+
         let style = OutputStyle::default();
         match command {
             "shortcuts" => {
@@ -93,11 +119,17 @@ impl HelpCommand {
                 println!("   rice init [PATH]");
                 println!();
                 println!("{}", style.header("Arguments"));
-                println!("{}", style.key_value("PATH", "Project directory (default: current)"));
+                println!(
+                    "{}",
+                    style.key_value("PATH", "Project directory (default: current)")
+                );
                 println!();
                 println!("{}", style.header("What it does"));
                 println!("{}", style.list_item("Creates .agent/ directory"));
-                println!("{}", style.list_item("Generates ricecoder.toml configuration"));
+                println!(
+                    "{}",
+                    style.list_item("Generates ricecoder.toml configuration")
+                );
                 println!("{}", style.list_item("Creates example specification"));
                 println!("{}", style.list_item("Creates README.md"));
                 println!();
@@ -114,7 +146,10 @@ impl HelpCommand {
                 println!("   rice gen --spec <FILE>");
                 println!();
                 println!("{}", style.header("Options"));
-                println!("{}", style.key_value("--spec FILE", "Specification file to use"));
+                println!(
+                    "{}",
+                    style.key_value("--spec FILE", "Specification file to use")
+                );
                 println!("{}", style.key_value("--provider", "AI provider to use"));
                 println!("{}", style.key_value("--output", "Output directory"));
                 println!();
@@ -131,7 +166,10 @@ impl HelpCommand {
                 println!("   rice chat [MESSAGE]");
                 println!();
                 println!("{}", style.header("Arguments"));
-                println!("{}", style.key_value("MESSAGE", "Initial message (optional)"));
+                println!(
+                    "{}",
+                    style.key_value("MESSAGE", "Initial message (optional)")
+                );
                 println!();
                 println!("{}", style.header("Commands in chat"));
                 println!("{}", style.key_value("/exit", "Exit chat mode"));
@@ -180,8 +218,14 @@ impl HelpCommand {
         println!("   rice init my-project");
         println!();
         println!("This creates:");
-        println!("{}", style.list_item(".agent/ricecoder.toml - Configuration"));
-        println!("{}", style.list_item(".agent/example-spec.md - Example specification"));
+        println!(
+            "{}",
+            style.list_item(".agent/ricecoder.toml - Configuration")
+        );
+        println!(
+            "{}",
+            style.list_item(".agent/example-spec.md - Example specification")
+        );
         println!("{}", style.list_item("README.md - Project documentation"));
         println!();
 
@@ -227,7 +271,10 @@ impl HelpCommand {
 
         println!("{}", style.section("Tips & Tricks"));
         println!();
-        println!("{}", style.tip("Use detailed specifications for better results"));
+        println!(
+            "{}",
+            style.tip("Use detailed specifications for better results")
+        );
         println!("{}", style.tip("Include examples in your requirements"));
         println!("{}", style.tip("Review generated code before using"));
         println!("{}", style.tip("Use chat mode for interactive refinement"));
@@ -235,9 +282,27 @@ impl HelpCommand {
 
         println!("{}", style.section("Learn More"));
         println!();
-        println!("{}", style.link("Full Documentation", "https://github.com/moabualruz/ricecoder/wiki/docs"));
-        println!("{}", style.link("Examples", "https://github.com/moabualruz/ricecoder/wiki/examples"));
-        println!("{}", style.link("Best Practices", "https://github.com/moabualruz/ricecoder/wiki"));
+        println!(
+            "{}",
+            style.link(
+                "Full Documentation",
+                "https://github.com/moabualruz/ricecoder/wiki/docs"
+            )
+        );
+        println!(
+            "{}",
+            style.link(
+                "Examples",
+                "https://github.com/moabualruz/ricecoder/wiki/examples"
+            )
+        );
+        println!(
+            "{}",
+            style.link(
+                "Best Practices",
+                "https://github.com/moabualruz/ricecoder/wiki"
+            )
+        );
         println!();
     }
 
@@ -257,13 +322,19 @@ impl HelpCommand {
         println!("   3. Check: https://github.com/moabualruz/ricecoder/wiki");
         println!();
 
-        println!("{}", style.header("Q: \"Configuration error: File not found\""));
+        println!(
+            "{}",
+            style.header("Q: \"Configuration error: File not found\"")
+        );
         println!();
         println!("A: Initialize your project first:");
         println!("   rice init");
         println!();
 
-        println!("{}", style.header("Q: \"Generation failed: Invalid specification\""));
+        println!(
+            "{}",
+            style.header("Q: \"Generation failed: Invalid specification\"")
+        );
         println!();
         println!("A: Check your specification format:");
         println!("   1. Review the example: .agent/example-spec.md");
@@ -271,7 +342,10 @@ impl HelpCommand {
         println!("   3. Check: https://github.com/moabualruz/ricecoder/wiki");
         println!();
 
-        println!("{}", style.header("Q: \"Network error: Connection refused\""));
+        println!(
+            "{}",
+            style.header("Q: \"Network error: Connection refused\"")
+        );
         println!();
         println!("A: Check your network connection:");
         println!("   1. Verify internet connectivity");
@@ -283,9 +357,22 @@ impl HelpCommand {
         println!();
         println!("If you can't find the answer:");
         println!();
-        println!("{}", style.list_item("Check the documentation: https://github.com/moabualruz/ricecoder/wiki/docs"));
-        println!("{}", style.list_item("Search GitHub issues: https://github.com/ricecoder/ricecoder/issues"));
-        println!("{}", style.list_item("Ask in discussions: https://github.com/ricecoder/ricecoder/discussions"));
+        println!(
+            "{}",
+            style.list_item(
+                "Check the documentation: https://github.com/moabualruz/ricecoder/wiki/docs"
+            )
+        );
+        println!(
+            "{}",
+            style.list_item("Search GitHub issues: https://github.com/ricecoder/ricecoder/issues")
+        );
+        println!(
+            "{}",
+            style.list_item(
+                "Ask in discussions: https://github.com/ricecoder/ricecoder/discussions"
+            )
+        );
         println!();
     }
 }

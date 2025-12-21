@@ -7,10 +7,8 @@
 
 #[cfg(test)]
 mod tests {
+    use crate::domain::factory::{AgentConfig, CapabilityConfig, TechRecommendationConfig};
     use crate::domain::{AgentFactory, DomainRegistry};
-    use crate::domain::factory::{
-        AgentConfig, CapabilityConfig, TechRecommendationConfig,
-    };
 
     /// Helper function to create a test agent configuration
     fn create_agent_config(
@@ -65,8 +63,14 @@ mod tests {
             "web",
             "Web Development Agent",
             vec![
-                ("Frontend Framework Selection", vec!["React", "Vue", "Angular"]),
-                ("Styling Guidance", vec!["CSS", "Tailwind CSS", "styled-components"]),
+                (
+                    "Frontend Framework Selection",
+                    vec!["React", "Vue", "Angular"],
+                ),
+                (
+                    "Styling Guidance",
+                    vec!["CSS", "Tailwind CSS", "styled-components"],
+                ),
                 ("Build Configuration", vec!["Vite", "Webpack"]),
                 ("Testing Strategy", vec!["Jest", "Vitest", "Playwright"]),
             ],
@@ -111,10 +115,7 @@ mod tests {
         assert!(capability_names.contains(&&"Testing Strategy".to_string()));
 
         // Property 5: Web agent has web technologies
-        let web_techs: Vec<_> = capabilities
-            .iter()
-            .flat_map(|c| &c.technologies)
-            .collect();
+        let web_techs: Vec<_> = capabilities.iter().flat_map(|c| &c.technologies).collect();
         assert!(web_techs.contains(&&"React".to_string()));
         assert!(web_techs.contains(&&"Vue".to_string()));
         assert!(web_techs.contains(&&"Angular".to_string()));
@@ -182,7 +183,10 @@ mod tests {
             "Backend Development Agent",
             vec![
                 ("API Design", vec!["REST", "GraphQL", "gRPC"]),
-                ("Architecture Guidance", vec!["Microservices", "Monolithic", "Serverless"]),
+                (
+                    "Architecture Guidance",
+                    vec!["Microservices", "Monolithic", "Serverless"],
+                ),
                 ("Database Design", vec!["PostgreSQL", "MongoDB", "Neo4j"]),
                 ("Scalability", vec!["Redis", "Memcached", "Load Balancers"]),
                 ("Security", vec!["OAuth 2.0", "JWT", "TLS"]),
@@ -204,7 +208,9 @@ mod tests {
         let backend_agent = factory.create_agent("backend", &backend_config).unwrap();
 
         // Register backend agent
-        registry.register_agent("backend", backend_agent.clone()).unwrap();
+        registry
+            .register_agent("backend", backend_agent.clone())
+            .unwrap();
 
         // Property 1: Backend agent is registered
         assert!(registry.has_domain("backend").unwrap());
@@ -231,10 +237,7 @@ mod tests {
         assert!(capability_names.contains(&&"Observability".to_string()));
 
         // Property 5: Backend agent has backend technologies
-        let backend_techs: Vec<_> = capabilities
-            .iter()
-            .flat_map(|c| &c.technologies)
-            .collect();
+        let backend_techs: Vec<_> = capabilities.iter().flat_map(|c| &c.technologies).collect();
         assert!(backend_techs.contains(&&"REST".to_string()));
         assert!(backend_techs.contains(&&"GraphQL".to_string()));
         assert!(backend_techs.contains(&&"gRPC".to_string()));
@@ -301,12 +304,24 @@ mod tests {
             "devops",
             "DevOps Agent",
             vec![
-                ("CI/CD Pipeline Setup", vec!["GitHub Actions", "GitLab CI", "Jenkins"]),
-                ("Infrastructure as Code", vec!["Terraform", "CloudFormation", "Ansible"]),
+                (
+                    "CI/CD Pipeline Setup",
+                    vec!["GitHub Actions", "GitLab CI", "Jenkins"],
+                ),
+                (
+                    "Infrastructure as Code",
+                    vec!["Terraform", "CloudFormation", "Ansible"],
+                ),
                 ("Containerization", vec!["Docker", "Kubernetes"]),
-                ("Observability Infrastructure", vec!["Prometheus", "Grafana", "ELK Stack"]),
+                (
+                    "Observability Infrastructure",
+                    vec!["Prometheus", "Grafana", "ELK Stack"],
+                ),
                 ("Security Scanning", vec!["Trivy", "Snyk", "SonarQube"]),
-                ("Auto-Scaling", vec!["Kubernetes", "AWS Auto Scaling", "Docker Swarm"]),
+                (
+                    "Auto-Scaling",
+                    vec!["Kubernetes", "AWS Auto Scaling", "Docker Swarm"],
+                ),
             ],
             vec![
                 ("GitHub Actions", vec!["CI/CD pipelines"]),
@@ -326,7 +341,9 @@ mod tests {
         let devops_agent = factory.create_agent("devops", &devops_config).unwrap();
 
         // Register DevOps agent
-        registry.register_agent("devops", devops_agent.clone()).unwrap();
+        registry
+            .register_agent("devops", devops_agent.clone())
+            .unwrap();
 
         // Property 1: DevOps agent is registered
         assert!(registry.has_domain("devops").unwrap());
@@ -353,10 +370,7 @@ mod tests {
         assert!(capability_names.contains(&&"Auto-Scaling".to_string()));
 
         // Property 5: DevOps agent has DevOps technologies
-        let devops_techs: Vec<_> = capabilities
-            .iter()
-            .flat_map(|c| &c.technologies)
-            .collect();
+        let devops_techs: Vec<_> = capabilities.iter().flat_map(|c| &c.technologies).collect();
         assert!(devops_techs.contains(&&"GitHub Actions".to_string()));
         assert!(devops_techs.contains(&&"GitLab CI".to_string()));
         assert!(devops_techs.contains(&&"Jenkins".to_string()));

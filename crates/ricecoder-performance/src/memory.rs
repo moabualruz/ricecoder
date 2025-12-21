@@ -1,7 +1,7 @@
 //! Memory profiling utilities
 
-use sysinfo::{System, Pid};
 use std::time::{Duration, Instant};
+use sysinfo::{Pid, System};
 
 /// Memory profiler for tracking memory usage
 pub struct MemoryProfiler {
@@ -17,10 +17,7 @@ impl MemoryProfiler {
 
         let process_id = sysinfo::get_current_pid().ok();
 
-        Self {
-            system,
-            process_id,
-        }
+        Self { system, process_id }
     }
 
     /// Get current memory usage in bytes

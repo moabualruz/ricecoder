@@ -1,15 +1,15 @@
 //! Continuous security monitoring and compliance validation pipeline
 
 use crate::types::*;
-use ricecoder_monitoring::compliance::{ComplianceEngine, AuditLogger};
-use ricecoder_monitoring::types::{ComplianceStatus, ComplianceConfig};
+use ricecoder_monitoring::compliance::{AuditLogger, ComplianceEngine};
+use ricecoder_monitoring::types::{ComplianceConfig, ComplianceStatus};
 use ricecoder_updates::checker::UpdateChecker;
 use ricecoder_updates::policy::UpdatePolicy;
-use tokio::sync::mpsc;
-use tokio::time;
+use semver::Version;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use semver::Version;
+use tokio::sync::mpsc;
+use tokio::time;
 
 /// Security monitoring pipeline for continuous security monitoring and compliance
 pub struct SecurityMonitoringPipeline {
@@ -38,8 +38,14 @@ impl SecurityMonitoringPipeline {
         Self {
             config,
             compliance_engine: Arc::new(Mutex::new(ComplianceEngine::new(compliance_config))),
-            audit_logger: Arc::new(Mutex::new(AuditLogger::new(chrono::TimeDelta::seconds(86400 * 2555)))),
-            update_checker: Arc::new(Mutex::new(UpdateChecker::new(update_policy, update_server_url, current_version))),
+            audit_logger: Arc::new(Mutex::new(AuditLogger::new(chrono::TimeDelta::seconds(
+                86400 * 2555,
+            )))),
+            update_checker: Arc::new(Mutex::new(UpdateChecker::new(
+                update_policy,
+                update_server_url,
+                current_version,
+            ))),
             shutdown_tx: None,
             monitoring_task: None,
         }
@@ -53,7 +59,11 @@ impl SecurityMonitoringPipeline {
 
         tracing::info!("Starting security monitoring pipeline");
 
-        self.compliance_engine.lock().unwrap().start().await
+        self.compliance_engine
+            .lock()
+            .unwrap()
+            .start()
+            .await
             .map_err(|e| ContinuousImprovementError::SecurityMonitoringError(e.to_string()))?;
 
         let (shutdown_tx, mut shutdown_rx) = mpsc::channel(1);
@@ -68,8 +78,10 @@ impl SecurityMonitoringPipeline {
         let update_checker = Arc::clone(&self.update_checker);
 
         let task = tokio::spawn(async move {
-            let mut monitoring_interval_timer = time::interval(monitoring_interval.to_std().unwrap());
-            let mut compliance_interval_timer = time::interval(compliance_check_interval.to_std().unwrap());
+            let mut monitoring_interval_timer =
+                time::interval(monitoring_interval.to_std().unwrap());
+            let mut compliance_interval_timer =
+                time::interval(compliance_check_interval.to_std().unwrap());
             let mut update_interval_timer = time::interval(update_check_interval.to_std().unwrap());
 
             loop {
@@ -112,7 +124,11 @@ impl SecurityMonitoringPipeline {
             let _ = task.await;
         }
 
-        self.compliance_engine.lock().unwrap().stop().await
+        self.compliance_engine
+            .lock()
+            .unwrap()
+            .stop()
+            .await
             .map_err(|e| ContinuousImprovementError::SecurityMonitoringError(e.to_string()))?;
 
         tracing::info!("Security monitoring pipeline stopped");
@@ -128,12 +144,19 @@ impl SecurityMonitoringPipeline {
         action: &str,
         details: HashMap<String, serde_json::Value>,
     ) {
-        self.audit_logger.lock().unwrap().log_event(event_type, user_id, resource, action, details);
+        self.audit_logger
+            .lock()
+            .unwrap()
+            .log_event(event_type, user_id, resource, action, details);
     }
 
     /// Get security insights
     pub async fn get_insights(&self) -> Result<SecurityInsights, ContinuousImprovementError> {
-        let compliance_summary = self.compliance_engine.lock().unwrap().get_compliance_summary();
+        let compliance_summary = self
+            .compliance_engine
+            .lock()
+            .unwrap()
+            .get_compliance_summary();
 
         // Get compliance status
         let compliance_status = compliance_summary.standards_status;
@@ -184,7 +207,10 @@ impl SecurityMonitoringPipeline {
         let suspicious_activities = Self::detect_suspicious_activities();
 
         if !suspicious_activities.is_empty() {
-            tracing::warn!("Suspicious activities detected: {:?}", suspicious_activities);
+            tracing::warn!(
+                "Suspicious activities detected: {:?}",
+                suspicious_activities
+            );
 
             for activity in suspicious_activities {
                 audit_logger.lock().unwrap().log_event(
@@ -194,7 +220,10 @@ impl SecurityMonitoringPipeline {
                     "detected",
                     HashMap::from([
                         ("activity".to_string(), serde_json::Value::String(activity)),
-                        ("severity".to_string(), serde_json::Value::String("high".to_string())),
+                        (
+                            "severity".to_string(),
+                            serde_json::Value::String("high".to_string()),
+                        ),
                     ]),
                 );
             }
@@ -209,18 +238,34 @@ impl SecurityMonitoringPipeline {
         compliance_engine: &Mutex<ComplianceEngine>,
         standards: &[String],
     ) -> Result<(), ContinuousImprovementError> {
-        tracing::info!("Performing compliance checks for standards: {:?}", standards);
+        tracing::info!(
+            "Performing compliance checks for standards: {:?}",
+            standards
+        );
 
         for standard in standards {
             // Generate compliance report (simplified - would run actual checks)
-            let reports = compliance_engine.lock().unwrap().get_compliance_reports(Some(standard), Some(1));
+            let reports = compliance_engine
+                .lock()
+                .unwrap()
+                .get_compliance_reports(Some(standard), Some(1));
 
             if let Some(report) = reports.first() {
                 tracing::info!(
                     "Compliance check for {}: {} ({:.1}% score)",
                     standard,
-                    if report.status == ComplianceStatus::Pass { "PASS" } else { "FAIL" },
-                    (report.findings.iter().filter(|f| f.status == ComplianceStatus::Pass).count() as f64 / report.findings.len() as f64) * 100.0
+                    if report.status == ComplianceStatus::Pass {
+                        "PASS"
+                    } else {
+                        "FAIL"
+                    },
+                    (report
+                        .findings
+                        .iter()
+                        .filter(|f| f.status == ComplianceStatus::Pass)
+                        .count() as f64
+                        / report.findings.len() as f64)
+                        * 100.0
                 );
             }
         }

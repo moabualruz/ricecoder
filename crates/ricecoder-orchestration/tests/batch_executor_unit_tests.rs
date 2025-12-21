@@ -30,9 +30,10 @@ impl ProjectOperation for TestOperation {
 
         if let Some(ref fail_on) = self.should_fail_on {
             if &project.name == fail_on {
-                return Err(OrchestrationError::BatchExecutionFailed(
-                    format!("Intentional failure on {}", project.name),
-                ));
+                return Err(OrchestrationError::BatchExecutionFailed(format!(
+                    "Intentional failure on {}",
+                    project.name
+                )));
             }
         }
 
@@ -228,7 +229,10 @@ async fn test_batch_executor_transaction_storage() {
     assert!(transaction.is_some());
     let txn = transaction.unwrap();
     assert_eq!(txn.id, result.transaction_id);
-    assert_eq!(txn.state, ricecoder_orchestration::TransactionState::Committed);
+    assert_eq!(
+        txn.state,
+        ricecoder_orchestration::TransactionState::Committed
+    );
 }
 
 #[tokio::test]
@@ -357,10 +361,7 @@ async fn test_batch_executor_empty_project_list() {
         should_fail_on: None,
     });
 
-    let result = executor
-        .execute_batch(vec![], operation)
-        .await
-        .unwrap();
+    let result = executor.execute_batch(vec![], operation).await.unwrap();
 
     assert_eq!(result.successful_projects.len(), 0);
     assert_eq!(result.failed_projects.len(), 0);

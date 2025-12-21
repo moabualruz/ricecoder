@@ -97,7 +97,8 @@ impl RiceError {
         let operation = operation.into();
         let error_id = format!("{}_{}", component, uuid::Uuid::new_v4().simple());
 
-        let user_friendly_message = Self::generate_user_friendly_message(&message, category, severity);
+        let user_friendly_message =
+            Self::generate_user_friendly_message(&message, category, severity);
         let recovery_suggestions = Self::generate_recovery_suggestions(category, severity);
 
         Self {
@@ -129,28 +130,43 @@ impl RiceError {
     }
 
     /// Generate user-friendly error message
-    fn generate_user_friendly_message(original: &str, category: ErrorCategory, severity: ErrorSeverity) -> String {
+    fn generate_user_friendly_message(
+        original: &str,
+        category: ErrorCategory,
+        severity: ErrorSeverity,
+    ) -> String {
         match (category, severity) {
-            (ErrorCategory::Network, ErrorSeverity::High) =>
-                "Connection lost. Please check your internet connection and try again.".to_string(),
-            (ErrorCategory::FileSystem, ErrorSeverity::High) =>
-                "Unable to access file. Please check if the file exists and you have permission.".to_string(),
-            (ErrorCategory::Configuration, ErrorSeverity::Medium) =>
-                "Configuration issue detected. Some features may not work as expected.".to_string(),
-            (ErrorCategory::Authentication, ErrorSeverity::High) =>
-                "Authentication failed. Please check your credentials and try again.".to_string(),
-            (ErrorCategory::Validation, ErrorSeverity::Medium) =>
-                "Invalid input provided. Please check your input and try again.".to_string(),
-            (ErrorCategory::Rendering, ErrorSeverity::High) =>
-                "Display error occurred. The interface may not render correctly.".to_string(),
-            (ErrorCategory::State, ErrorSeverity::Critical) =>
-                "Application state corrupted. Please restart the application.".to_string(),
+            (ErrorCategory::Network, ErrorSeverity::High) => {
+                "Connection lost. Please check your internet connection and try again.".to_string()
+            }
+            (ErrorCategory::FileSystem, ErrorSeverity::High) => {
+                "Unable to access file. Please check if the file exists and you have permission."
+                    .to_string()
+            }
+            (ErrorCategory::Configuration, ErrorSeverity::Medium) => {
+                "Configuration issue detected. Some features may not work as expected.".to_string()
+            }
+            (ErrorCategory::Authentication, ErrorSeverity::High) => {
+                "Authentication failed. Please check your credentials and try again.".to_string()
+            }
+            (ErrorCategory::Validation, ErrorSeverity::Medium) => {
+                "Invalid input provided. Please check your input and try again.".to_string()
+            }
+            (ErrorCategory::Rendering, ErrorSeverity::High) => {
+                "Display error occurred. The interface may not render correctly.".to_string()
+            }
+            (ErrorCategory::State, ErrorSeverity::Critical) => {
+                "Application state corrupted. Please restart the application.".to_string()
+            }
             _ => format!("An error occurred: {}", original),
         }
     }
 
     /// Generate recovery suggestions
-    fn generate_recovery_suggestions(category: ErrorCategory, severity: ErrorSeverity) -> Vec<String> {
+    fn generate_recovery_suggestions(
+        category: ErrorCategory,
+        severity: ErrorSeverity,
+    ) -> Vec<String> {
         match (category, severity) {
             (ErrorCategory::Network, _) => vec![
                 "Check your internet connection".to_string(),
@@ -187,7 +203,10 @@ impl RiceError {
 
     /// Check if error is retryable
     fn is_retryable(category: ErrorCategory) -> bool {
-        matches!(category, ErrorCategory::Network | ErrorCategory::ExternalService)
+        matches!(
+            category,
+            ErrorCategory::Network | ErrorCategory::ExternalService
+        )
     }
 }
 
@@ -265,7 +284,10 @@ where
                     match self.recovery_strategy {
                         RecoveryStrategy::Fallback => {
                             return Err(RiceError::new(
-                                format!("Component {} failed too many times, using fallback", self.component_name),
+                                format!(
+                                    "Component {} failed too many times, using fallback",
+                                    self.component_name
+                                ),
                                 ErrorCategory::System,
                                 ErrorSeverity::High,
                                 &self.component_name,
@@ -458,7 +480,11 @@ impl RetryMechanism {
 
                     // Calculate delay with exponential backoff
                     let delay = self.calculate_delay(attempt);
-                    tracing::warn!("Operation failed (attempt {}), retrying in {:?}", attempt, delay);
+                    tracing::warn!(
+                        "Operation failed (attempt {}), retrying in {:?}",
+                        attempt,
+                        delay
+                    );
 
                     tokio::time::sleep(delay).await;
                 }
@@ -468,7 +494,8 @@ impl RetryMechanism {
 
     /// Calculate delay for exponential backoff
     fn calculate_delay(&self, attempt: u32) -> Duration {
-        let delay_ms = self.base_delay.as_millis() as f32 * self.backoff_factor.powi(attempt.saturating_sub(1) as i32);
+        let delay_ms = self.base_delay.as_millis() as f32
+            * self.backoff_factor.powi(attempt.saturating_sub(1) as i32);
         let delay_ms = delay_ms.min(self.max_delay.as_millis() as f32) as u64;
         Duration::from_millis(delay_ms)
     }
@@ -538,7 +565,12 @@ impl ErrorLogger {
     }
 
     /// Log an error
-    pub async fn log_error(&self, level: LogLevel, error: RiceError, context: HashMap<String, String>) {
+    pub async fn log_error(
+        &self,
+        level: LogLevel,
+        error: RiceError,
+        context: HashMap<String, String>,
+    ) {
         let entry = LogEntry {
             timestamp: Instant::now(),
             level,
@@ -646,16 +678,18 @@ impl ErrorManager {
     /// Handle an error with appropriate recovery
     pub async fn handle_error(&self, error: RiceError) -> Result<(), RiceError> {
         // Log the error
-        self.logger.log_error(
-            match error.severity {
-                ErrorSeverity::Low => LogLevel::Info,
-                ErrorSeverity::Medium => LogLevel::Warning,
-                ErrorSeverity::High => LogLevel::Error,
-                ErrorSeverity::Critical => LogLevel::Critical,
-            },
-            error.clone(),
-            HashMap::new(),
-        ).await;
+        self.logger
+            .log_error(
+                match error.severity {
+                    ErrorSeverity::Low => LogLevel::Info,
+                    ErrorSeverity::Medium => LogLevel::Warning,
+                    ErrorSeverity::High => LogLevel::Error,
+                    ErrorSeverity::Critical => LogLevel::Critical,
+                },
+                error.clone(),
+                HashMap::new(),
+            )
+            .await;
 
         // Update error counts
         {
@@ -667,12 +701,14 @@ impl ErrorManager {
         match error.severity {
             ErrorSeverity::Critical => {
                 // Record crash for critical errors
-                self.crash_recovery.record_crash(
-                    error.message.clone(),
-                    error.technical_details.clone(),
-                    HashMap::new(),
-                    vec![format!("Operation: {}", error.operation)],
-                ).await;
+                self.crash_recovery
+                    .record_crash(
+                        error.message.clone(),
+                        error.technical_details.clone(),
+                        HashMap::new(),
+                        vec![format!("Operation: {}", error.operation)],
+                    )
+                    .await;
 
                 Err(error)
             }
@@ -703,4 +739,3 @@ impl ErrorManager {
         total_errors > 10 // Arbitrary threshold
     }
 }
-

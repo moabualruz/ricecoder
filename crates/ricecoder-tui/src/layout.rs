@@ -29,7 +29,7 @@ pub enum ConstraintType {
 impl Constraint {
     /// Create a constraint with a percentage
     pub fn percentage(percentage: u16) -> Self {
-        Self { 
+        Self {
             constraint_type: ConstraintType::Percentage,
             value: percentage.min(100),
         }
@@ -37,7 +37,7 @@ impl Constraint {
 
     /// Create a constraint for fixed size
     pub fn fixed(size: u16) -> Self {
-        Self { 
+        Self {
             constraint_type: ConstraintType::Fixed,
             value: size,
         }
@@ -45,7 +45,7 @@ impl Constraint {
 
     /// Create a constraint for minimum size
     pub fn min(size: u16) -> Self {
-        Self { 
+        Self {
             constraint_type: ConstraintType::Min,
             value: size,
         }
@@ -53,7 +53,7 @@ impl Constraint {
 
     /// Create a constraint for maximum size
     pub fn max(size: u16) -> Self {
-        Self { 
+        Self {
             constraint_type: ConstraintType::Max,
             value: size,
         }
@@ -61,7 +61,7 @@ impl Constraint {
 
     /// Create a constraint to fill remaining space
     pub fn fill(ratio: u16) -> Self {
-        Self { 
+        Self {
             constraint_type: ConstraintType::Fill,
             value: ratio.max(1),
         }
@@ -212,8 +212,8 @@ impl Default for LayoutConfig {
 impl Layout {
     /// Create a new layout
     pub fn new(width: u16, height: u16) -> Self {
-        Self { 
-            width, 
+        Self {
+            width,
             height,
             previous_areas: None,
             last_resize: None,
@@ -235,7 +235,8 @@ impl Layout {
 
     /// Check if resize performance meets the 16ms requirement
     pub fn meets_resize_performance_requirement(&self) -> bool {
-        self.resize_duration_ms.map_or(true, |duration| duration <= 16)
+        self.resize_duration_ms
+            .map_or(true, |duration| duration <= 16)
     }
 
     /// Get the current degradation level based on terminal size
@@ -270,16 +271,21 @@ impl Layout {
 
     /// Handle resize event and return updated areas with scroll position preservation
     /// Requirement 2.2: Recalculate layout within 16ms
-    pub fn handle_resize(&mut self, new_width: u16, new_height: u16, config: &LayoutConfig) -> (LayoutAreas, Option<ScrollAdjustment>) {
+    pub fn handle_resize(
+        &mut self,
+        new_width: u16,
+        new_height: u16,
+        config: &LayoutConfig,
+    ) -> (LayoutAreas, Option<ScrollAdjustment>) {
         let start_time = Instant::now();
         let old_areas = self.previous_areas;
-        
+
         // Update dimensions
         self.resize(new_width, new_height);
-        
+
         // Calculate new areas
         let new_areas = self.calculate_areas(config);
-        
+
         // Calculate scroll adjustment if we had previous areas
         let scroll_adjustment = if let Some(old) = old_areas {
             self.calculate_scroll_adjustment(&old, &new_areas)
@@ -296,18 +302,25 @@ impl Layout {
 
         // Log performance warning if resize takes too long
         if duration.as_millis() > 16 {
-            eprintln!("Warning: Layout resize took {}ms (requirement: ≤16ms)", duration.as_millis());
+            eprintln!(
+                "Warning: Layout resize took {}ms (requirement: ≤16ms)",
+                duration.as_millis()
+            );
         }
 
         (new_areas, scroll_adjustment)
     }
 
     /// Calculate scroll position adjustment for resize
-    fn calculate_scroll_adjustment(&self, old_areas: &LayoutAreas, new_areas: &LayoutAreas) -> Option<ScrollAdjustment> {
+    fn calculate_scroll_adjustment(
+        &self,
+        old_areas: &LayoutAreas,
+        new_areas: &LayoutAreas,
+    ) -> Option<ScrollAdjustment> {
         // Calculate height difference in chat area
         let old_chat_height = old_areas.chat.height;
         let new_chat_height = new_areas.chat.height;
-        
+
         if old_chat_height != new_chat_height {
             Some(ScrollAdjustment {
                 height_delta: new_chat_height as i32 - old_chat_height as i32,
@@ -321,12 +334,14 @@ impl Layout {
     /// Get warning message for degraded layout
     pub fn get_degradation_warning(&self, config: &LayoutConfig) -> Option<String> {
         match self.degradation_level(config) {
-            DegradationLevel::TooSmall => {
-                Some(format!("Terminal too small ({}x{}). Minimum: 40x10", self.width, self.height))
-            }
-            DegradationLevel::Minimal => {
-                Some(format!("Minimal layout active ({}x{}). Recommended: 80x24+", self.width, self.height))
-            }
+            DegradationLevel::TooSmall => Some(format!(
+                "Terminal too small ({}x{}). Minimum: 40x10",
+                self.width, self.height
+            )),
+            DegradationLevel::Minimal => Some(format!(
+                "Minimal layout active ({}x{}). Recommended: 80x24+",
+                self.width, self.height
+            )),
             DegradationLevel::ReduceBanner => {
                 Some("Banner height reduced due to small terminal height".to_string())
             }
@@ -344,7 +359,11 @@ impl Layout {
     }
 
     /// Calculate layout areas with specific degradation level
-    pub fn calculate_areas_with_degradation(&self, config: &LayoutConfig, degradation: DegradationLevel) -> LayoutAreas {
+    pub fn calculate_areas_with_degradation(
+        &self,
+        config: &LayoutConfig,
+        degradation: DegradationLevel,
+    ) -> LayoutAreas {
         let mut current_y = 0;
         let mut current_x = 0;
         let mut remaining_width = self.width;
@@ -367,7 +386,11 @@ impl Layout {
                 } else {
                     0
                 };
-                (reduced_banner_height, config.sidebar_enabled && self.width >= 80, config.input_height)
+                (
+                    reduced_banner_height,
+                    config.sidebar_enabled && self.width >= 80,
+                    config.input_height,
+                )
             }
             DegradationLevel::HideSidebar => {
                 // Hide sidebar but keep banner
@@ -375,7 +398,11 @@ impl Layout {
             }
             DegradationLevel::Full => {
                 // Full layout
-                (config.banner_height, config.sidebar_enabled, config.input_height)
+                (
+                    config.banner_height,
+                    config.sidebar_enabled,
+                    config.input_height,
+                )
             }
         };
 
@@ -392,12 +419,7 @@ impl Layout {
         // Status bar area (bottom, reserve 1 line)
         let status_height = 1;
         remaining_height = remaining_height.saturating_sub(status_height);
-        let status = Rect::new(
-            0,
-            current_y + remaining_height,
-            self.width,
-            status_height,
-        );
+        let status = Rect::new(0, current_y + remaining_height, self.width, status_height);
 
         // Input area (bottom, above status bar)
         let actual_input_height = input_height.min(remaining_height / 2).max(1);
@@ -410,9 +432,10 @@ impl Layout {
         );
 
         // Sidebar area (left side of remaining area)
-        let sidebar = if sidebar_enabled 
-            && config.sidebar_width > 0 
-            && remaining_width > config.sidebar_width + config.min_chat_width // Ensure minimum chat width
+        let sidebar = if sidebar_enabled
+            && config.sidebar_width > 0
+            && remaining_width > config.sidebar_width + config.min_chat_width
+        // Ensure minimum chat width
         {
             let area = Rect::new(current_x, current_y, config.sidebar_width, remaining_height);
             current_x += config.sidebar_width;
@@ -591,26 +614,41 @@ impl Layout {
         // Check each area fits within terminal bounds
         if let Some(banner) = areas.banner {
             if !self.rect_fits_within(&banner, &terminal_rect) {
-                return Err(format!("Banner area {:?} exceeds terminal bounds {:?}", banner, terminal_rect));
+                return Err(format!(
+                    "Banner area {:?} exceeds terminal bounds {:?}",
+                    banner, terminal_rect
+                ));
             }
         }
 
         if let Some(sidebar) = areas.sidebar {
             if !self.rect_fits_within(&sidebar, &terminal_rect) {
-                return Err(format!("Sidebar area {:?} exceeds terminal bounds {:?}", sidebar, terminal_rect));
+                return Err(format!(
+                    "Sidebar area {:?} exceeds terminal bounds {:?}",
+                    sidebar, terminal_rect
+                ));
             }
         }
 
         if !self.rect_fits_within(&areas.chat, &terminal_rect) {
-            return Err(format!("Chat area {:?} exceeds terminal bounds {:?}", areas.chat, terminal_rect));
+            return Err(format!(
+                "Chat area {:?} exceeds terminal bounds {:?}",
+                areas.chat, terminal_rect
+            ));
         }
 
         if !self.rect_fits_within(&areas.input, &terminal_rect) {
-            return Err(format!("Input area {:?} exceeds terminal bounds {:?}", areas.input, terminal_rect));
+            return Err(format!(
+                "Input area {:?} exceeds terminal bounds {:?}",
+                areas.input, terminal_rect
+            ));
         }
 
         if !self.rect_fits_within(&areas.status, &terminal_rect) {
-            return Err(format!("Status area {:?} exceeds terminal bounds {:?}", areas.status, terminal_rect));
+            return Err(format!(
+                "Status area {:?} exceeds terminal bounds {:?}",
+                areas.status, terminal_rect
+            ));
         }
 
         // Check for overlaps between areas
@@ -630,7 +668,10 @@ impl Layout {
                 let (name1, rect1) = all_areas[i];
                 let (name2, rect2) = all_areas[j];
                 if self.rects_overlap(&rect1, &rect2) {
-                    return Err(format!("Areas {} and {} overlap: {:?} and {:?}", name1, name2, rect1, rect2));
+                    return Err(format!(
+                        "Areas {} and {} overlap: {:?} and {:?}",
+                        name1, name2, rect1, rect2
+                    ));
                 }
             }
         }
@@ -654,4 +695,3 @@ impl Layout {
             || rect2.bottom() <= rect1.y)
     }
 }
-

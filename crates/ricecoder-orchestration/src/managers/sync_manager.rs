@@ -84,12 +84,9 @@ impl SyncManager {
         {
             let mut transactions = self.transactions.write().await;
 
-            let transaction = transactions
-                .get_mut(txn_id)
-                .ok_or_else(|| OrchestrationError::TransactionFailed(format!(
-                    "Transaction not found: {}",
-                    txn_id
-                )))?;
+            let transaction = transactions.get_mut(txn_id).ok_or_else(|| {
+                OrchestrationError::TransactionFailed(format!("Transaction not found: {}", txn_id))
+            })?;
 
             if transaction.state != TransactionState::Pending {
                 return Err(OrchestrationError::TransactionFailed(format!(
@@ -122,12 +119,9 @@ impl SyncManager {
         {
             let mut transactions = self.transactions.write().await;
 
-            let transaction = transactions
-                .get_mut(txn_id)
-                .ok_or_else(|| OrchestrationError::RollbackFailed(format!(
-                    "Transaction not found: {}",
-                    txn_id
-                )))?;
+            let transaction = transactions.get_mut(txn_id).ok_or_else(|| {
+                OrchestrationError::RollbackFailed(format!("Transaction not found: {}", txn_id))
+            })?;
 
             if transaction.state == TransactionState::RolledBack {
                 return Ok(());
@@ -220,11 +214,17 @@ impl SyncManager {
                 target,
                 "version_sync",
                 "in_progress",
-                &format!("Updating to version {} from {}", new_version, source_project),
+                &format!(
+                    "Updating to version {} from {}",
+                    new_version, source_project
+                ),
             )
             .await;
 
-            if let Err(e) = self.validate_version_compatibility(target, new_version).await {
+            if let Err(e) = self
+                .validate_version_compatibility(target, new_version)
+                .await
+            {
                 self.log_operation(
                     target,
                     "version_sync",
@@ -287,7 +287,8 @@ impl SyncManager {
         .await;
 
         let mut conflicts = self.conflicts.write().await;
-        conflicts.retain(|c| c.project != conflict.project || c.description != conflict.description);
+        conflicts
+            .retain(|c| c.project != conflict.project || c.description != conflict.description);
 
         Ok(())
     }
@@ -304,13 +305,7 @@ impl SyncManager {
         self.sync_log.write().await.clear();
     }
 
-    async fn log_operation(
-        &self,
-        project: &str,
-        operation: &str,
-        status: &str,
-        details: &str,
-    ) {
+    async fn log_operation(&self, project: &str, operation: &str, status: &str, details: &str) {
         let entry = SyncLogEntry {
             timestamp: chrono::Utc::now().to_rfc3339(),
             project: project.to_string(),
@@ -340,11 +335,7 @@ impl SyncManager {
         Ok(())
     }
 
-    async fn validate_version_compatibility(
-        &self,
-        _project: &str,
-        _version: &str,
-    ) -> Result<()> {
+    async fn validate_version_compatibility(&self, _project: &str, _version: &str) -> Result<()> {
         Ok(())
     }
 }

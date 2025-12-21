@@ -347,22 +347,16 @@ mod tests {
 
     #[test]
     fn test_actions_integration_creation() {
-        let actions = ActionsIntegration::new(
-            "token".to_string(),
-            "owner".to_string(),
-            "repo".to_string(),
-        );
+        let actions =
+            ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
         assert_eq!(actions.owner, "owner");
         assert_eq!(actions.repo, "repo");
     }
 
     #[tokio::test]
     async fn test_trigger_workflow_with_empty_workflow() {
-        let actions = ActionsIntegration::new(
-            "token".to_string(),
-            "owner".to_string(),
-            "repo".to_string(),
-        );
+        let actions =
+            ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
         let request = WorkflowTriggerRequest {
             workflow: String::new(),
             ref_branch: "main".to_string(),
@@ -374,11 +368,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_trigger_workflow_with_empty_branch() {
-        let actions = ActionsIntegration::new(
-            "token".to_string(),
-            "owner".to_string(),
-            "repo".to_string(),
-        );
+        let actions =
+            ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
         let request = WorkflowTriggerRequest {
             workflow: "test.yml".to_string(),
             ref_branch: String::new(),
@@ -390,11 +381,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_trigger_workflow_success() {
-        let actions = ActionsIntegration::new(
-            "token".to_string(),
-            "owner".to_string(),
-            "repo".to_string(),
-        );
+        let actions =
+            ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
         let request = WorkflowTriggerRequest {
             workflow: "test.yml".to_string(),
             ref_branch: "main".to_string(),
@@ -408,22 +396,16 @@ mod tests {
 
     #[tokio::test]
     async fn test_track_workflow_status_with_zero_id() {
-        let actions = ActionsIntegration::new(
-            "token".to_string(),
-            "owner".to_string(),
-            "repo".to_string(),
-        );
+        let actions =
+            ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
         let result = actions.track_workflow_status(0).await;
         assert!(result.is_err());
     }
 
     #[tokio::test]
     async fn test_track_workflow_status_success() {
-        let actions = ActionsIntegration::new(
-            "token".to_string(),
-            "owner".to_string(),
-            "repo".to_string(),
-        );
+        let actions =
+            ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
         let result = actions.track_workflow_status(12345).await;
         assert!(result.is_ok());
         let status = result.unwrap();
@@ -432,22 +414,16 @@ mod tests {
 
     #[tokio::test]
     async fn test_diagnose_ci_failure_with_zero_id() {
-        let actions = ActionsIntegration::new(
-            "token".to_string(),
-            "owner".to_string(),
-            "repo".to_string(),
-        );
+        let actions =
+            ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
         let result = actions.diagnose_ci_failure(0).await;
         assert!(result.is_err());
     }
 
     #[tokio::test]
     async fn test_diagnose_ci_failure_success() {
-        let actions = ActionsIntegration::new(
-            "token".to_string(),
-            "owner".to_string(),
-            "repo".to_string(),
-        );
+        let actions =
+            ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
         let result = actions.diagnose_ci_failure(12345).await;
         assert!(result.is_ok());
         let diagnostics = result.unwrap();
@@ -456,22 +432,16 @@ mod tests {
 
     #[tokio::test]
     async fn test_retry_workflow_with_zero_id() {
-        let actions = ActionsIntegration::new(
-            "token".to_string(),
-            "owner".to_string(),
-            "repo".to_string(),
-        );
+        let actions =
+            ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
         let result = actions.retry_workflow(0).await;
         assert!(result.is_err());
     }
 
     #[tokio::test]
     async fn test_retry_workflow_success() {
-        let actions = ActionsIntegration::new(
-            "token".to_string(),
-            "owner".to_string(),
-            "repo".to_string(),
-        );
+        let actions =
+            ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
         let result = actions.retry_workflow(12345).await;
         assert!(result.is_ok());
         let retry_result = result.unwrap();
@@ -480,22 +450,16 @@ mod tests {
 
     #[tokio::test]
     async fn test_summarize_ci_results_with_zero_id() {
-        let actions = ActionsIntegration::new(
-            "token".to_string(),
-            "owner".to_string(),
-            "repo".to_string(),
-        );
+        let actions =
+            ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
         let result = actions.summarize_ci_results(0).await;
         assert!(result.is_err());
     }
 
     #[tokio::test]
     async fn test_summarize_ci_results_success() {
-        let actions = ActionsIntegration::new(
-            "token".to_string(),
-            "owner".to_string(),
-            "repo".to_string(),
-        );
+        let actions =
+            ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
         let result = actions.summarize_ci_results(12345).await;
         assert!(result.is_ok());
         let summary = result.unwrap();

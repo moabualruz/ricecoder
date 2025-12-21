@@ -176,7 +176,8 @@ impl CommandPaletteWidget {
                 let desc_lower = command.description.to_lowercase();
 
                 // Check if query matches name or description
-                let (text, matches) = if let Some(matches) = fuzzy_match(&query_lower, &name_lower) {
+                let (text, matches) = if let Some(matches) = fuzzy_match(&query_lower, &name_lower)
+                {
                     (&command.display_name, matches)
                 } else if let Some(matches) = fuzzy_match(&query_lower, &desc_lower) {
                     (&command.description, matches)
@@ -198,7 +199,8 @@ impl CommandPaletteWidget {
         }
 
         // Ensure selected index is valid
-        if self.selected_index >= self.filtered_commands.len() && !self.filtered_commands.is_empty() {
+        if self.selected_index >= self.filtered_commands.len() && !self.filtered_commands.is_empty()
+        {
             self.selected_index = self.filtered_commands.len() - 1;
         }
     }
@@ -254,7 +256,8 @@ impl CommandPaletteWidget {
         // Results list
         let visible_items = self.filtered_commands.len().min(self.max_visible_items);
         let start_index = if self.selected_index >= self.max_visible_items {
-            self.selected_index.saturating_sub(self.max_visible_items - 1)
+            self.selected_index
+                .saturating_sub(self.max_visible_items - 1)
         } else {
             0
         };
@@ -284,9 +287,10 @@ impl CommandPaletteWidget {
                     .unwrap_or_default();
 
                 let full_text = format!("{}{}", display_text, shortcut_text);
-                let desc_line = Line::from(vec![
-                    Span::styled(desc_text, Style::default().fg(Color::Gray)),
-                ]);
+                let desc_line = Line::from(vec![Span::styled(
+                    desc_text,
+                    Style::default().fg(Color::Gray),
+                )]);
 
                 let style = if is_selected {
                     Style::default().bg(Color::Blue).fg(Color::White)
@@ -294,10 +298,7 @@ impl CommandPaletteWidget {
                     Style::default()
                 };
 
-                ListItem::new(vec![
-                    Line::from(full_text).style(style),
-                    desc_line,
-                ])
+                ListItem::new(vec![Line::from(full_text).style(style), desc_line])
             })
             .collect();
 
@@ -361,7 +362,12 @@ impl crate::Component for CommandPaletteWidget {
         self.id.clone()
     }
 
-    fn render(&self, frame: &mut ratatui::Frame, area: ratatui::layout::Rect, _model: &crate::AppModel) {
+    fn render(
+        &self,
+        frame: &mut ratatui::Frame,
+        area: ratatui::layout::Rect,
+        _model: &crate::AppModel,
+    ) {
         if !self.visible {
             return;
         }
@@ -380,7 +386,10 @@ impl crate::Component for CommandPaletteWidget {
 
         // Render search input
         let search_text = if self.query.is_empty() {
-            Span::styled("Type to search commands...", Style::default().fg(Color::Gray))
+            Span::styled(
+                "Type to search commands...",
+                Style::default().fg(Color::Gray),
+            )
         } else {
             Span::raw(&self.query)
         };
@@ -389,8 +398,7 @@ impl crate::Component for CommandPaletteWidget {
             .title("Command Palette")
             .borders(Borders::ALL);
 
-        let search_paragraph = Paragraph::new(Line::from(search_text))
-            .block(search_block);
+        let search_paragraph = Paragraph::new(Line::from(search_text)).block(search_block);
 
         frame.render_widget(search_paragraph, chunks[0]);
 
@@ -409,7 +417,9 @@ impl crate::Component for CommandPaletteWidget {
                 // Add matching text with highlight
                 spans.push(Span::styled(
                     &command.display_name[start..end],
-                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD),
                 ));
                 last_end = end;
             }
@@ -422,7 +432,10 @@ impl crate::Component for CommandPaletteWidget {
             // Add description and shortcut
             let mut line_spans = spans;
             line_spans.push(Span::raw(" - "));
-            line_spans.push(Span::styled(&command.description, Style::default().fg(Color::Gray)));
+            line_spans.push(Span::styled(
+                &command.description,
+                Style::default().fg(Color::Gray),
+            ));
 
             if let Some(shortcut) = &command.shortcut {
                 line_spans.push(Span::raw(" ("));
@@ -439,8 +452,7 @@ impl crate::Component for CommandPaletteWidget {
             list_items.push(ListItem::new(Line::from(line_spans)).style(style));
         }
 
-        let list = List::new(list_items)
-            .block(Block::default().borders(Borders::ALL));
+        let list = List::new(list_items).block(Block::default().borders(Borders::ALL));
 
         frame.render_widget(list, chunks[1]);
     }
@@ -459,7 +471,8 @@ impl crate::Component for CommandPaletteWidget {
                     }
                     crossterm::event::KeyCode::Enter => {
                         // Execute selected command
-                        if let Some((command, _)) = self.filtered_commands.get(self.selected_index) {
+                        if let Some((command, _)) = self.filtered_commands.get(self.selected_index)
+                        {
                             // TODO: Execute command
                             tracing::info!("Executing command: {}", command.name);
                             self.hide();
@@ -535,7 +548,8 @@ impl crate::Component for CommandPaletteWidget {
     }
 
     fn validate(&self) -> Result<(), String> {
-        if self.selected_index >= self.filtered_commands.len() && !self.filtered_commands.is_empty() {
+        if self.selected_index >= self.filtered_commands.len() && !self.filtered_commands.is_empty()
+        {
             return Err("Selected index out of bounds".to_string());
         }
         Ok(())
@@ -627,4 +641,3 @@ fn fuzzy_match(query: &str, text: &str) -> Option<Vec<(usize, usize)>> {
         None
     }
 }
-

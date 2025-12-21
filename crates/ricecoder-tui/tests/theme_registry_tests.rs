@@ -1,4 +1,4 @@
-use ricecoder_tui::{ThemeRegistry, Theme};
+use ricecoder_tui::{Theme, ThemeRegistry};
 
 #[test]
 fn test_registry_creation() {

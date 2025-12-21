@@ -108,10 +108,8 @@ impl BatchExecutor {
         let execution_order = self.determine_execution_order(&graph, &projects)?;
 
         // Filter to only projects that are in the execution order
-        let projects_map: HashMap<String, Project> = projects
-            .into_iter()
-            .map(|p| (p.name.clone(), p))
-            .collect();
+        let projects_map: HashMap<String, Project> =
+            projects.into_iter().map(|p| (p.name.clone(), p)).collect();
 
         let mut successful_projects = Vec::new();
         let mut failed_projects = Vec::new();
@@ -136,8 +134,12 @@ impl BatchExecutor {
                         if self.config.fail_fast {
                             // Rollback if configured
                             if self.config.auto_rollback {
-                                self.rollback_operations(&projects_map, &executed_operations, &operation)
-                                    .await?;
+                                self.rollback_operations(
+                                    &projects_map,
+                                    &executed_operations,
+                                    &operation,
+                                )
+                                .await?;
                             }
 
                             return Ok(BatchExecutionResult {
@@ -216,13 +218,7 @@ impl BatchExecutor {
 
     /// Gets all transactions
     pub async fn get_all_transactions(&self) -> Result<Vec<Transaction>> {
-        Ok(self
-            .transactions
-            .lock()
-            .await
-            .values()
-            .cloned()
-            .collect())
+        Ok(self.transactions.lock().await.values().cloned().collect())
     }
 
     /// Clears all transactions
@@ -344,10 +340,7 @@ mod tests {
         });
 
         let result = executor
-            .execute_batch(
-                vec![project_a, project_b, project_c],
-                operation.clone(),
-            )
+            .execute_batch(vec![project_a, project_b, project_c], operation.clone())
             .await
             .unwrap();
 
@@ -356,9 +349,21 @@ mod tests {
         assert_eq!(result.execution_order.len(), 3);
 
         // Verify order: A should come before B, B before C
-        let a_idx = result.execution_order.iter().position(|x| x == "project-a").unwrap();
-        let b_idx = result.execution_order.iter().position(|x| x == "project-b").unwrap();
-        let c_idx = result.execution_order.iter().position(|x| x == "project-c").unwrap();
+        let a_idx = result
+            .execution_order
+            .iter()
+            .position(|x| x == "project-a")
+            .unwrap();
+        let b_idx = result
+            .execution_order
+            .iter()
+            .position(|x| x == "project-b")
+            .unwrap();
+        let c_idx = result
+            .execution_order
+            .iter()
+            .position(|x| x == "project-c")
+            .unwrap();
 
         assert!(a_idx < b_idx);
         assert!(b_idx < c_idx);

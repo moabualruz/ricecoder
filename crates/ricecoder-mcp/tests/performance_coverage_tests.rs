@@ -3,16 +3,16 @@
 //! Tests to ensure performance targets are maintained while preserving coverage.
 //! Focuses on optimizing test execution time and resource usage.
 
+use ricecoder_mcp::connection_pool::{ConnectionPool, PoolConfig};
+use ricecoder_mcp::metadata::{ToolMetadata, ToolSource};
+use ricecoder_mcp::permissions::MCPPermissionManager;
+use ricecoder_mcp::registry::ToolRegistry;
+use ricecoder_mcp::tool_execution::{ToolExecutionContext, ToolExecutionResult};
+use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
-use ricecoder_mcp::tool_execution::{ToolExecutionContext, ToolExecutionResult};
-use ricecoder_mcp::permissions::MCPPermissionManager;
-use ricecoder_mcp::registry::ToolRegistry;
-use ricecoder_mcp::metadata::{ToolMetadata, ToolSource};
-use ricecoder_mcp::connection_pool::{ConnectionPool, PoolConfig};
-use serde_json::json;
 
 /// **Performance Test Perf.1: Tool Registry Lookup Performance**
 /// **Validates: Tool registry operations complete within performance targets**
@@ -53,8 +53,11 @@ async fn test_tool_registry_lookup_performance() {
     let lookups_per_second = lookup_count as f64 / duration.as_secs_f64();
 
     // Performance assertion: should handle at least 1000 lookups per second
-    assert!(lookups_per_second > 1000.0,
-        "Lookup performance too slow: {} lookups/sec", lookups_per_second);
+    assert!(
+        lookups_per_second > 1000.0,
+        "Lookup performance too slow: {} lookups/sec",
+        lookups_per_second
+    );
 }
 
 /// **Performance Test Perf.2: Permission Manager Scalability**
@@ -88,8 +91,11 @@ async fn test_permission_manager_scalability() {
     let checks_per_second = check_count as f64 / duration.as_secs_f64();
 
     // Performance assertion: should handle at least 2000 checks per second
-    assert!(checks_per_second > 2000.0,
-        "Permission checking too slow: {} checks/sec", checks_per_second);
+    assert!(
+        checks_per_second > 2000.0,
+        "Permission checking too slow: {} checks/sec",
+        checks_per_second
+    );
 }
 
 /// **Performance Test Perf.3: Connection Pool Throughput**
@@ -135,8 +141,11 @@ async fn test_connection_pool_throughput() {
     let operations_per_second = num_operations as f64 / duration.as_secs_f64();
 
     // Performance assertion: should handle at least 500 operations per second
-    assert!(operations_per_second > 500.0,
-        "Connection pool throughput too low: {} ops/sec", operations_per_second);
+    assert!(
+        operations_per_second > 500.0,
+        "Connection pool throughput too low: {} ops/sec",
+        operations_per_second
+    );
 }
 
 /// **Performance Test Perf.4: Memory Usage Optimization**
@@ -188,13 +197,19 @@ async fn test_memory_usage_optimization() {
     let final_tools = registry.read().await.tool_count();
 
     // Verify no memory leaks (tool count should remain stable)
-    assert_eq!(final_tools, initial_tools,
-        "Memory leak detected: tool count changed from {} to {}", initial_tools, final_tools);
+    assert_eq!(
+        final_tools, initial_tools,
+        "Memory leak detected: tool count changed from {} to {}",
+        initial_tools, final_tools
+    );
 
     // Performance check
     let operations_per_second = operation_count as f64 / test_duration.as_secs_f64();
-    assert!(operations_per_second > 1000.0,
-        "Operation throughput too low: {} ops/sec", operations_per_second);
+    assert!(
+        operations_per_second > 1000.0,
+        "Operation throughput too low: {} ops/sec",
+        operations_per_second
+    );
 }
 
 /// **Performance Test Perf.5: Concurrent Operation Optimization**
@@ -273,16 +288,19 @@ async fn test_concurrent_operation_optimization() {
     let operations_per_second = total_operations as f64 / duration.as_secs_f64();
 
     // Performance assertion: should handle at least 5000 operations per second
-    assert!(operations_per_second > 5000.0,
-        "Concurrent operations too slow: {} ops/sec", operations_per_second);
+    assert!(
+        operations_per_second > 5000.0,
+        "Concurrent operations too slow: {} ops/sec",
+        operations_per_second
+    );
 }
 
 /// **Performance Test Perf.6: Cache Effectiveness Under Load**
 /// **Validates: Caching improves performance under load**
 #[tokio::test]
 async fn test_cache_effectiveness_under_load() {
-    use ricecoder_cache::{Cache, CacheConfig};
     use ricecoder_cache::storage::MemoryStorage;
+    use ricecoder_cache::{Cache, CacheConfig};
 
     let cache_storage = Arc::new(MemoryStorage::new());
     let cache_config = CacheConfig {
@@ -341,13 +359,19 @@ async fn test_cache_effectiveness_under_load() {
     let operations_per_second = (total_hits + total_misses) as f64 / duration.as_secs_f64();
 
     // Performance assertions
-    assert!(operations_per_second > 10000.0,
-        "Cache operations too slow: {} ops/sec", operations_per_second);
+    assert!(
+        operations_per_second > 10000.0,
+        "Cache operations too slow: {} ops/sec",
+        operations_per_second
+    );
 
     // Cache effectiveness: should have high hit rate
     let hit_rate = total_hits as f64 / (total_hits + total_misses) as f64;
-    assert!(hit_rate > 0.8,
-        "Cache hit rate too low: {:.2}%", hit_rate * 100.0);
+    assert!(
+        hit_rate > 0.8,
+        "Cache hit rate too low: {:.2}%",
+        hit_rate * 100.0
+    );
 }
 
 /// **Performance Test Perf.7: Serialization/Deserialization Speed**
@@ -357,24 +381,26 @@ fn test_serialization_deserialization_speed() {
     use ricecoder_mcp::transport::{MCPMessage, MCPRequest, MCPResponse};
 
     // Create test messages of various sizes
-    let messages: Vec<MCPMessage> = (0..100).map(|i| {
-        MCPMessage::Request(MCPRequest {
-            id: format!("perf-test-{}", i),
-            method: "test.performance".to_string(),
-            params: json!({
-                "index": i,
-                "data": "x".repeat(100), // 100 bytes of data
-                "nested": {
-                    "array": vec![1, 2, 3, 4, 5],
-                    "object": {
-                        "key1": "value1",
-                        "key2": i,
-                        "key3": true
+    let messages: Vec<MCPMessage> = (0..100)
+        .map(|i| {
+            MCPMessage::Request(MCPRequest {
+                id: format!("perf-test-{}", i),
+                method: "test.performance".to_string(),
+                params: json!({
+                    "index": i,
+                    "data": "x".repeat(100), // 100 bytes of data
+                    "nested": {
+                        "array": vec![1, 2, 3, 4, 5],
+                        "object": {
+                            "key1": "value1",
+                            "key2": i,
+                            "key3": true
+                        }
                     }
-                }
-            }),
+                }),
+            })
         })
-    }).collect();
+        .collect();
 
     // Test serialization performance
     let serialize_start = Instant::now();
@@ -396,10 +422,16 @@ fn test_serialization_deserialization_speed() {
     let serialize_throughput = messages.len() as f64 / serialize_duration.as_secs_f64();
     let deserialize_throughput = messages.len() as f64 / deserialize_duration.as_secs_f64();
 
-    assert!(serialize_throughput > 1000.0,
-        "Serialization too slow: {} msg/sec", serialize_throughput);
-    assert!(deserialize_throughput > 1000.0,
-        "Deserialization too slow: {} msg/sec", deserialize_throughput);
+    assert!(
+        serialize_throughput > 1000.0,
+        "Serialization too slow: {} msg/sec",
+        serialize_throughput
+    );
+    assert!(
+        deserialize_throughput > 1000.0,
+        "Deserialization too slow: {} msg/sec",
+        deserialize_throughput
+    );
 }
 
 /// **Performance Test Perf.8: Resource Cleanup Efficiency**
@@ -450,12 +482,18 @@ async fn test_resource_cleanup_efficiency() {
 
     // Verify final state
     let final_count = registry.read().await.tool_count();
-    assert_eq!(final_count, total_tools_created,
-        "Tool registry lost tools: expected {}, got {}", total_tools_created, final_count);
+    assert_eq!(
+        final_count, total_tools_created,
+        "Tool registry lost tools: expected {}, got {}",
+        total_tools_created, final_count
+    );
 
     // Performance check
-    assert!(tools_per_second > 1000.0,
-        "Tool creation too slow: {} tools/sec", tools_per_second);
+    assert!(
+        tools_per_second > 1000.0,
+        "Tool creation too slow: {} tools/sec",
+        tools_per_second
+    );
 }
 
 /// **Performance Test Perf.9: Error Handling Performance**
@@ -486,8 +524,11 @@ async fn test_error_handling_performance() {
     let errors_per_second = error_count as f64 / duration.as_secs_f64();
 
     // Performance assertion: should handle at least 10000 errors per second
-    assert!(errors_per_second > 10000.0,
-        "Error handling too slow: {} errors/sec", errors_per_second);
+    assert!(
+        errors_per_second > 10000.0,
+        "Error handling too slow: {} errors/sec",
+        errors_per_second
+    );
 }
 
 /// **Performance Test Perf.10: Memory Leak Prevention**
@@ -543,12 +584,19 @@ async fn test_memory_leak_prevention() {
 
     // The registry size should be manageable (not growing without bound)
     // Allow some growth for the test tools, but not excessive
-    assert!(final_registry_size < initial_registry_size + cycles + 100,
+    assert!(
+        final_registry_size < initial_registry_size + cycles + 100,
         "Potential memory leak: registry grew from {} to {} tools over {} cycles",
-        initial_registry_size, final_registry_size, cycles);
+        initial_registry_size,
+        final_registry_size,
+        cycles
+    );
 
     // Performance check
     let cycles_per_second = cycles as f64 / test_duration.as_secs_f64();
-    assert!(cycles_per_second > 100.0,
-        "Operation throughput too low: {} cycles/sec", cycles_per_second);
+    assert!(
+        cycles_per_second > 100.0,
+        "Operation throughput too low: {} cycles/sec",
+        cycles_per_second
+    );
 }

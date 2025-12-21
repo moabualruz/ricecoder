@@ -107,7 +107,9 @@ impl ConflictDetector {
         // Check each pair of recommendations for conflicts
         for i in 0..recommendations.len() {
             for j in (i + 1)..recommendations.len() {
-                if let Some(conflict) = self.check_conflict(&recommendations[i], &recommendations[j]) {
+                if let Some(conflict) =
+                    self.check_conflict(&recommendations[i], &recommendations[j])
+                {
                     conflicts.push(conflict);
                 }
             }
@@ -117,11 +119,7 @@ impl ConflictDetector {
     }
 
     /// Check if two recommendations conflict
-    fn check_conflict(
-        &self,
-        rec_a: &Recommendation,
-        rec_b: &Recommendation,
-    ) -> Option<Conflict> {
+    fn check_conflict(&self, rec_a: &Recommendation, rec_b: &Recommendation) -> Option<Conflict> {
         // Check for incompatible technologies
         if self.are_technologies_incompatible(&rec_a.technologies, &rec_b.technologies) {
             return Some(Conflict {
@@ -314,7 +312,10 @@ impl ConflictDetector {
             }
         }
 
-        output.push_str(&format!("Suggested Resolution: {}\n", report.suggested_resolution));
+        output.push_str(&format!(
+            "Suggested Resolution: {}\n",
+            report.suggested_resolution
+        ));
 
         output
     }
@@ -338,18 +339,26 @@ impl ConflictDetector {
                     conflict.recommendation_a.technologies.join(", "),
                     conflict.recommendation_b.technologies.join(", ")
                 ));
-                suggestions.push("Evaluate pros and cons of each option based on project requirements".to_string());
+                suggestions.push(
+                    "Evaluate pros and cons of each option based on project requirements"
+                        .to_string(),
+                );
                 suggestions.push("Consider team expertise and ecosystem maturity".to_string());
             }
             ConflictType::Contradictory => {
                 suggestions.push("Review the rationale for each recommendation".to_string());
-                suggestions.push("Identify the underlying requirements that led to each recommendation".to_string());
-                suggestions.push("Prioritize recommendations based on project constraints".to_string());
+                suggestions.push(
+                    "Identify the underlying requirements that led to each recommendation"
+                        .to_string(),
+                );
+                suggestions
+                    .push("Prioritize recommendations based on project constraints".to_string());
             }
             ConflictType::RequiresSequencing => {
                 suggestions.push("Determine the correct order of operations".to_string());
                 suggestions.push("Ensure dependencies are satisfied before proceeding".to_string());
-                suggestions.push("Document the sequencing requirements for future reference".to_string());
+                suggestions
+                    .push("Document the sequencing requirements for future reference".to_string());
             }
         }
 
@@ -378,19 +387,28 @@ impl ConflictDetector {
             }
             ConflictType::Contradictory => {
                 analysis.push_str("Contradictory\n");
-                analysis.push_str("These recommendations contradict each other and cannot both be implemented.\n");
+                analysis.push_str(
+                    "These recommendations contradict each other and cannot both be implemented.\n",
+                );
             }
             ConflictType::RequiresSequencing => {
                 analysis.push_str("Requires Sequencing\n");
-                analysis.push_str("These recommendations must be implemented in a specific order.\n");
+                analysis
+                    .push_str("These recommendations must be implemented in a specific order.\n");
             }
         }
 
         analysis.push_str("\n--- Recommendation A ---\n");
         analysis.push_str(&format!("Domain: {}\n", conflict.recommendation_a.domain));
-        analysis.push_str(&format!("Category: {}\n", conflict.recommendation_a.category));
+        analysis.push_str(&format!(
+            "Category: {}\n",
+            conflict.recommendation_a.category
+        ));
         analysis.push_str(&format!("Content: {}\n", conflict.recommendation_a.content));
-        analysis.push_str(&format!("Rationale: {}\n", conflict.recommendation_a.rationale));
+        analysis.push_str(&format!(
+            "Rationale: {}\n",
+            conflict.recommendation_a.rationale
+        ));
         analysis.push_str(&format!(
             "Technologies: {}\n",
             conflict.recommendation_a.technologies.join(", ")
@@ -398,9 +416,15 @@ impl ConflictDetector {
 
         analysis.push_str("\n--- Recommendation B ---\n");
         analysis.push_str(&format!("Domain: {}\n", conflict.recommendation_b.domain));
-        analysis.push_str(&format!("Category: {}\n", conflict.recommendation_b.category));
+        analysis.push_str(&format!(
+            "Category: {}\n",
+            conflict.recommendation_b.category
+        ));
         analysis.push_str(&format!("Content: {}\n", conflict.recommendation_b.content));
-        analysis.push_str(&format!("Rationale: {}\n", conflict.recommendation_b.rationale));
+        analysis.push_str(&format!(
+            "Rationale: {}\n",
+            conflict.recommendation_b.rationale
+        ));
         analysis.push_str(&format!(
             "Technologies: {}\n",
             conflict.recommendation_b.technologies.join(", ")
@@ -569,8 +593,7 @@ mod tests {
         };
 
         let json = serde_json::to_string(&conflict).expect("serialization failed");
-        let deserialized: Conflict =
-            serde_json::from_str(&json).expect("deserialization failed");
+        let deserialized: Conflict = serde_json::from_str(&json).expect("deserialization failed");
 
         assert_eq!(deserialized.conflict_type, conflict.conflict_type);
     }

@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
-use tracing::{debug, warn, trace};
+use tracing::{debug, trace, warn};
 use uuid::Uuid;
 
 /// Trait for tool providers
@@ -97,7 +97,10 @@ impl ProviderRegistry {
     ) {
         let tool_name = tool_name.into();
         debug!("Registering built-in provider for tool: {}", tool_name);
-        self.builtin_providers.write().await.insert(tool_name, provider);
+        self.builtin_providers
+            .write()
+            .await
+            .insert(tool_name, provider);
     }
 
     /// Check if an MCP provider is available (with cache)
@@ -123,7 +126,11 @@ impl ProviderRegistry {
             },
         );
 
-        trace!("MCP availability check for tool: {} = {}", tool_name, available);
+        trace!(
+            "MCP availability check for tool: {} = {}",
+            tool_name,
+            available
+        );
         available
     }
 
@@ -150,11 +157,14 @@ impl ProviderRegistry {
                     "Using MCP provider for tool"
                 );
                 self.notify_provider_selected(selection).await;
-                return Ok((provider.clone(), ProviderSelection {
-                    provider_name: "mcp".to_string(),
-                    trace_id,
-                    is_fallback: false,
-                }));
+                return Ok((
+                    provider.clone(),
+                    ProviderSelection {
+                        provider_name: "mcp".to_string(),
+                        trace_id,
+                        is_fallback: false,
+                    },
+                ));
             }
         }
 
@@ -189,7 +199,10 @@ impl ProviderRegistry {
     }
 
     /// Get a provider without selection information (simplified API)
-    pub async fn get_provider_simple(&self, tool_name: &str) -> Result<Arc<dyn Provider>, ToolError> {
+    pub async fn get_provider_simple(
+        &self,
+        tool_name: &str,
+    ) -> Result<Arc<dyn Provider>, ToolError> {
         self.get_provider(tool_name)
             .await
             .map(|(provider, _)| provider)

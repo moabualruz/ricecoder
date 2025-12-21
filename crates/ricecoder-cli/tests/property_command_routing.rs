@@ -80,13 +80,13 @@ fn prop_default_command_equivalence() {
     proptest!(|(verbose in any::<bool>(), quiet in any::<bool>(), dry_run in any::<bool>())| {
         // When no subcommand is provided, the system should default to TUI
         // with the same global options applied
-        
+
         // Verify that global options can be combined
         // (verbose and quiet are mutually exclusive in practice, but the parser should handle it)
         let _verbose = verbose;
         let _quiet = quiet;
         let _dry_run = dry_run;
-        
+
         // The default command should be TUI with no additional arguments
         // This is verified by the router implementation which defaults to Commands::Tui
         // when command is None

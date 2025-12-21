@@ -94,7 +94,11 @@ pub trait ToolPermissionChecker: Send + Sync {
     /// # Returns
     ///
     /// The permission decision
-    fn check_permission(&self, tool_id: &str, agent_id: Option<&str>) -> Result<ToolPermissionDecision>;
+    fn check_permission(
+        &self,
+        tool_id: &str,
+        agent_id: Option<&str>,
+    ) -> Result<ToolPermissionDecision>;
 
     /// Check permission and return whether execution is allowed
     fn is_allowed(&self, tool_id: &str, agent_id: Option<&str>) -> Result<bool> {
@@ -220,7 +224,11 @@ impl ToolPermissionEnforcer {
     }
 
     /// Gets the permission decision for a tool
-    pub fn get_decision(&self, tool_id: &str, agent_id: Option<&str>) -> Result<ToolPermissionDecision> {
+    pub fn get_decision(
+        &self,
+        tool_id: &str,
+        agent_id: Option<&str>,
+    ) -> Result<ToolPermissionDecision> {
         self.checker.check_permission(tool_id, agent_id)
     }
 
@@ -304,7 +312,8 @@ impl PermissionAwareToolExecution {
                 )))
             }
             ToolPermissionLevel::Deny => {
-                self.enforcer.log_denial(tool_id, agent_id, "Permission denied");
+                self.enforcer
+                    .log_denial(tool_id, agent_id, "Permission denied");
                 Err(crate::error::Error::PermissionDenied(format!(
                     "Tool execution denied: {}",
                     tool_id
@@ -334,12 +343,14 @@ mod tests {
                 ToolPermissionLevel::Deny
             };
 
-            Ok(ToolPermissionDecision::new(
-                tool_id.to_string(),
-                level,
-                "Mock decision".to_string(),
+            Ok(
+                ToolPermissionDecision::new(
+                    tool_id.to_string(),
+                    level,
+                    "Mock decision".to_string(),
+                )
+                .with_agent(agent_id.unwrap_or("unknown").to_string()),
             )
-            .with_agent(agent_id.unwrap_or("unknown").to_string()))
         }
     }
 

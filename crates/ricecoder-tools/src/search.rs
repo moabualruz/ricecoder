@@ -150,8 +150,10 @@ impl SearchTool {
     pub fn validate_query(query: &str) -> Result<(), ToolError> {
         // Check for empty query
         if query.trim().is_empty() {
-            return Err(ToolError::new("INVALID_QUERY", "Search query cannot be empty")
-                .with_suggestion("Provide a non-empty search query"));
+            return Err(
+                ToolError::new("INVALID_QUERY", "Search query cannot be empty")
+                    .with_suggestion("Provide a non-empty search query"),
+            );
         }
 
         // Check query length (reasonable limit)
@@ -165,15 +167,18 @@ impl SearchTool {
         let sql_patterns = [
             r"(?i)(union|select|insert|update|delete|drop|create|alter|exec|execute)",
             r"(?i)(--|;|/\*|\*/|xp_|sp_)",
-            r"'.*=.*'",  // Pattern matching for quoted comparisons like '1'='1'
-            r#"".*=.*""#,  // Pattern matching for double-quoted comparisons
+            r"'.*=.*'",   // Pattern matching for quoted comparisons like '1'='1'
+            r#"".*=.*""#, // Pattern matching for double-quoted comparisons
         ];
 
         for pattern in &sql_patterns {
             if let Ok(re) = Regex::new(pattern) {
                 if re.is_match(query) {
-                    return Err(ToolError::new("INVALID_QUERY", "Query contains suspicious patterns")
-                        .with_suggestion("Use a simple search query without SQL keywords"));
+                    return Err(ToolError::new(
+                        "INVALID_QUERY",
+                        "Query contains suspicious patterns",
+                    )
+                    .with_suggestion("Use a simple search query without SQL keywords"));
                 }
             }
         }
@@ -263,11 +268,8 @@ impl SearchTool {
         let offset = input.get_offset();
 
         // Apply pagination
-        let paginated: Vec<SearchResult> = mock_results
-            .into_iter()
-            .skip(offset)
-            .take(limit)
-            .collect();
+        let paginated: Vec<SearchResult> =
+            mock_results.into_iter().skip(offset).take(limit).collect();
 
         Ok(SearchOutput::new(paginated, 3))
     }
@@ -278,5 +280,3 @@ impl Default for SearchTool {
         Self::new()
     }
 }
-
-

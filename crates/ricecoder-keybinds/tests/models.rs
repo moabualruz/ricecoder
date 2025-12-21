@@ -56,8 +56,13 @@ fn test_keybind_manager_trait() {
     }
 
     impl KeybindManager for MockKeybindManager {
-        fn bind(&mut self, action: String, key_combo: KeyCombo) -> Result<(), crate::error::RegistryError> {
-            let keybind = Keybind::new(action.clone(), key_combo.to_string(), "test", "Test action");
+        fn bind(
+            &mut self,
+            action: String,
+            key_combo: KeyCombo,
+        ) -> Result<(), crate::error::RegistryError> {
+            let keybind =
+                Keybind::new(action.clone(), key_combo.to_string(), "test", "Test action");
             self.bindings.insert(action, keybind);
             Ok(())
         }

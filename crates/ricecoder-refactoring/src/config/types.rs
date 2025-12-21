@@ -1,7 +1,7 @@
 //! Configuration types for refactoring engine
 
-use serde::{Deserialize, Serialize};
 use crate::types::{RefactoringRule, RefactoringTransformation};
+use serde::{Deserialize, Serialize};
 
 /// Configuration for a language's refactoring rules
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -58,13 +58,19 @@ impl LanguageConfig {
 
             if transformation.from_pattern.is_empty() {
                 return Err(crate::error::RefactoringError::InvalidConfiguration(
-                    format!("Transformation '{}' has empty from_pattern", transformation.name),
+                    format!(
+                        "Transformation '{}' has empty from_pattern",
+                        transformation.name
+                    ),
                 ));
             }
 
             if transformation.to_pattern.is_empty() {
                 return Err(crate::error::RefactoringError::InvalidConfiguration(
-                    format!("Transformation '{}' has empty to_pattern", transformation.name),
+                    format!(
+                        "Transformation '{}' has empty to_pattern",
+                        transformation.name
+                    ),
                 ));
             }
         }

@@ -7,10 +7,10 @@
 //!
 //! **Requirements: 1.1, 5.1**
 
-use ricecoder_images::{ImageHandler, ImageDisplay, ImageConfig};
+use ricecoder_images::{ImageConfig, ImageDisplay, ImageHandler};
+use std::io::Write;
 use std::path::PathBuf;
 use tempfile::NamedTempFile;
-use std::io::Write;
 
 /// Test drag-and-drop event handling with single file
 #[test]

@@ -1,9 +1,9 @@
+use crate::error::Result;
+use chrono::{DateTime, Duration, Utc};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use chrono::{DateTime, Utc, Duration};
-use serde::{Deserialize, Serialize};
-use crate::error::Result;
 
 /// Types of operations that can be tracked in MCP analytics
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -49,7 +49,14 @@ impl MCPAnalyticsAggregator {
         usage_data.push(data);
     }
 
-    pub async fn record_tool_execution(&self, server_id: &str, tool_name: &str, result: &crate::tool_execution::ToolExecutionResult, user_id: Option<String>, session_id: Option<String>) {
+    pub async fn record_tool_execution(
+        &self,
+        server_id: &str,
+        tool_name: &str,
+        result: &crate::tool_execution::ToolExecutionResult,
+        user_id: Option<String>,
+        session_id: Option<String>,
+    ) {
         use crate::tool_execution::ToolExecutionResult;
         let data = MCPUsageData {
             timestamp: chrono::Utc::now(),
@@ -66,7 +73,14 @@ impl MCPAnalyticsAggregator {
         self.record_usage(data).await;
     }
 
-    pub async fn record_health_check(&self, server_id: &str, success: bool, duration_ms: u64, user_id: Option<String>, session_id: Option<String>) {
+    pub async fn record_health_check(
+        &self,
+        server_id: &str,
+        success: bool,
+        duration_ms: u64,
+        user_id: Option<String>,
+        session_id: Option<String>,
+    ) {
         let data = MCPUsageData {
             timestamp: chrono::Utc::now(),
             server_id: server_id.to_string(),
@@ -76,7 +90,11 @@ impl MCPAnalyticsAggregator {
             session_id,
             success,
             execution_time_ms: Some(duration_ms),
-            error_message: if success { None } else { Some("Health check failed".to_string()) },
+            error_message: if success {
+                None
+            } else {
+                Some("Health check failed".to_string())
+            },
             metadata: std::collections::HashMap::new(),
         };
         self.record_usage(data).await;
@@ -157,8 +175,14 @@ impl MCPEnterpriseDashboard {
         let failed_operations = total_operations - successful_operations;
 
         let average_execution_time_ms = if !filtered_data.is_empty() {
-            let total_time: u64 = filtered_data.iter().filter_map(|d| d.execution_time_ms).sum();
-            let count = filtered_data.iter().filter(|d| d.execution_time_ms.is_some()).count();
+            let total_time: u64 = filtered_data
+                .iter()
+                .filter_map(|d| d.execution_time_ms)
+                .sum();
+            let count = filtered_data
+                .iter()
+                .filter(|d| d.execution_time_ms.is_some())
+                .count();
             if count > 0 {
                 Some(total_time as f64 / count as f64)
             } else {
@@ -170,7 +194,9 @@ impl MCPEnterpriseDashboard {
 
         let mut operations_by_type = HashMap::new();
         for data in &filtered_data {
-            *operations_by_type.entry(data.operation_type.clone()).or_insert(0) += 1;
+            *operations_by_type
+                .entry(data.operation_type.clone())
+                .or_insert(0) += 1;
         }
 
         let mut tool_counts = HashMap::new();
@@ -204,10 +230,17 @@ impl MCPEnterpriseDashboard {
         };
 
         let key_metrics = KeyMetrics {
-            total_tool_executions: filtered_data.iter().filter(|d| matches!(d.operation_type, OperationType::ToolExecution)).count() as u64,
+            total_tool_executions: filtered_data
+                .iter()
+                .filter(|d| matches!(d.operation_type, OperationType::ToolExecution))
+                .count() as u64,
             active_servers: active_servers_count,
             average_response_time_ms: average_execution_time_ms.unwrap_or(0.0),
-            error_rate: if total_operations > 0 { failed_operations as f64 / total_operations as f64 } else { 0.0 },
+            error_rate: if total_operations > 0 {
+                failed_operations as f64 / total_operations as f64
+            } else {
+                0.0
+            },
             concurrent_connections: 0, // Placeholder
         };
 

@@ -10,20 +10,18 @@
 //! - Cache hit rates are monitored and reported
 
 use proptest::prelude::*;
-use ricecoder_lsp::cache::{SemanticCache, AstCache, SymbolIndexCache, hash_input};
+use ricecoder_lsp::cache::{hash_input, AstCache, SemanticCache, SymbolIndexCache};
 use ricecoder_lsp::types::SemanticInfo;
 use std::collections::HashMap;
 
 /// Strategy for generating document URIs
 fn uri_strategy() -> impl Strategy<Value = String> {
-    r"file://[a-z0-9_]+\.(rs|ts|py)"
-        .prop_map(|s| s)
+    r"file://[a-z0-9_]+\.(rs|ts|py)".prop_map(|s| s)
 }
 
 /// Strategy for generating code content
 fn code_strategy() -> impl Strategy<Value = String> {
-    r"[a-z\s\n\{\}\(\);:,=]+"
-        .prop_map(|s| s)
+    r"[a-z\s\n\{\}\(\);:,=]+".prop_map(|s| s)
 }
 
 proptest! {
@@ -37,17 +35,17 @@ proptest! {
         let cache = AstCache::new();
         let hash = hash_input(&code);
         let ast = format!("AST for {}", code);
-        
+
         // Store AST
         cache.put(uri.clone(), hash, ast.clone());
-        
+
         // Retrieve AST multiple times
         let cached1 = cache.get(&uri, hash);
         let cached2 = cache.get(&uri, hash);
-        
+
         prop_assert_eq!(cached1, Some(ast.clone()));
         prop_assert_eq!(cached2, Some(ast.clone()));
-        
+
         // Both retrievals should be cache hits
         let metrics = cache.metrics();
         prop_assert_eq!(metrics.hits, 2);
@@ -65,21 +63,21 @@ proptest! {
         let cache = AstCache::new();
         let hash1 = hash_input(&code1);
         let hash2 = hash_input(&code2);
-        
+
         // Store first version
         cache.put(uri.clone(), hash1, "AST1".to_string());
-        
+
         // Verify it's cached
         let cached = cache.get(&uri, hash1);
         prop_assert_eq!(cached, Some("AST1".to_string()));
-        
+
         // Invalidate cache
         cache.invalidate(&uri);
-        
+
         // Verify it's no longer cached
         let cached = cache.get(&uri, hash1);
         prop_assert_eq!(cached, None);
-        
+
         // Metrics should show invalidation
         let metrics = cache.metrics();
         prop_assert_eq!(metrics.invalidations, 1);
@@ -95,16 +93,16 @@ proptest! {
     ) {
         let cache = SymbolIndexCache::new();
         let hash = hash_input(&code);
-        
+
         // Create symbol index
         let mut index = HashMap::new();
         for (i, symbol) in symbols.iter().enumerate() {
             index.insert(symbol.clone(), i);
         }
-        
+
         // Store index
         cache.put(uri.clone(), hash, index.clone());
-        
+
         // Retrieve index
         let cached = cache.get(&uri, hash);
         prop_assert_eq!(cached, Some(index));
@@ -118,22 +116,22 @@ proptest! {
         codes in prop::collection::vec(code_strategy(), 2..10)
     ) {
         let cache = SemanticCache::new();
-        
+
         // Store multiple entries
         for (i, uri) in uris.iter().enumerate() {
             let code = &codes[i % codes.len()];
             let hash = hash_input(code);
-            
+
             let mut info = SemanticInfo::new();
             info.imports.push(format!("import{}", i));
             cache.put(uri.clone(), hash, info);
         }
-        
+
         // Verify all entries are cached
         for (i, uri) in uris.iter().enumerate() {
             let code = &codes[i % codes.len()];
             let hash = hash_input(code);
-            
+
             let cached = cache.get(uri, hash);
             prop_assert!(cached.is_some());
             prop_assert_eq!(cached.unwrap().imports.len(), 1);
@@ -149,11 +147,11 @@ proptest! {
         let cache = SemanticCache::new();
         let mut expected_hits = 0;
         let mut expected_misses = 0;
-        
+
         for (i, op) in operations.iter().enumerate() {
             let uri = format!("file://test{}.rs", op % 5);
             let hash = hash_input(&format!("code{}", op));
-            
+
             if i % 3 == 0 {
                 // Store
                 let mut info = SemanticInfo::new();
@@ -173,10 +171,10 @@ proptest! {
                 expected_misses += 1;
             }
         }
-        
+
         let metrics = cache.metrics();
         let hit_rate = metrics.hit_rate();
-        
+
         // Hit rate should be between 0 and 100%
         prop_assert!(hit_rate >= 0.0 && hit_rate <= 100.0);
     }
@@ -188,17 +186,17 @@ proptest! {
         codes in prop::collection::vec("[a-z]{10,100}", 5..20)
     ) {
         let cache = SemanticCache::with_size(10 * 1024); // 10KB limit
-        
+
         // Store multiple entries
         for (i, code) in codes.iter().enumerate() {
             let uri = format!("file://test{}.rs", i);
             let hash = hash_input(code);
-            
+
             let mut info = SemanticInfo::new();
             info.imports.push(format!("import{}", i));
             cache.put(uri, hash, info);
         }
-        
+
         // Cache should have processed entries
         let metrics = cache.metrics();
         prop_assert!(metrics.hits + metrics.misses >= 0);
@@ -213,20 +211,20 @@ proptest! {
     ) {
         let cache = AstCache::new();
         let hash = hash_input(&code);
-        
+
         // Store
         cache.put(uri.clone(), hash, "AST".to_string());
-        
+
         // Verify hit
         let _cached = cache.get(&uri, hash);
-        
+
         // Invalidate
         cache.invalidate(&uri);
-        
+
         // Verify miss
         let _cached = cache.get(&uri, hash);
         let _cached = cache.get(&uri, hash);
-        
+
         let metrics = cache.metrics();
         prop_assert_eq!(metrics.hits, 1);
         prop_assert_eq!(metrics.misses, 2);
@@ -241,22 +239,22 @@ proptest! {
         codes in prop::collection::vec(code_strategy(), 2..10)
     ) {
         let cache = AstCache::new();
-        
+
         // Store multiple entries
         for (i, uri) in uris.iter().enumerate() {
             let code = &codes[i % codes.len()];
             let hash = hash_input(code);
             cache.put(uri.clone(), hash, format!("AST{}", i));
         }
-        
+
         // Clear cache
         cache.clear();
-        
+
         // Verify all entries are gone
         for (i, uri) in uris.iter().enumerate() {
             let code = &codes[i % codes.len()];
             let hash = hash_input(code);
-            
+
             let cached = cache.get(uri, hash);
             prop_assert_eq!(cached, None);
         }
@@ -273,9 +271,9 @@ mod unit_tests {
         let uri = "file://test.rs".to_string();
         let code = "fn main() {}";
         let hash = hash_input(code);
-        
+
         cache.put(uri.clone(), hash, "AST".to_string());
-        
+
         let cached = cache.get(&uri, hash);
         assert_eq!(cached, Some("AST".to_string()));
     }
@@ -285,10 +283,10 @@ mod unit_tests {
         let cache = AstCache::new();
         let uri = "file://test.rs".to_string();
         let hash = hash_input("code");
-        
+
         cache.put(uri.clone(), hash, "AST".to_string());
         cache.invalidate(&uri);
-        
+
         let cached = cache.get(&uri, hash);
         assert_eq!(cached, None);
     }
@@ -298,12 +296,12 @@ mod unit_tests {
         let cache = SymbolIndexCache::new();
         let uri = "file://test.rs".to_string();
         let hash = hash_input("code");
-        
+
         let mut index = HashMap::new();
         index.insert("main".to_string(), 0);
-        
+
         cache.put(uri.clone(), hash, index.clone());
-        
+
         let cached = cache.get(&uri, hash);
         assert_eq!(cached, Some(index));
     }
@@ -311,18 +309,18 @@ mod unit_tests {
     #[test]
     fn test_semantic_cache_hit_rate() {
         let cache = SemanticCache::new();
-        
+
         // Store entry
         let hash = hash_input("code");
         let mut info = SemanticInfo::new();
         cache.put("file://test.rs".to_string(), hash, info);
-        
+
         // Hit
         let _cached = cache.get("file://test.rs", hash);
-        
+
         // Miss
         let _cached = cache.get("file://test.rs", hash + 1);
-        
+
         let metrics = cache.metrics();
         assert_eq!(metrics.hits, 1);
         assert_eq!(metrics.misses, 1);
@@ -332,12 +330,12 @@ mod unit_tests {
     #[test]
     fn test_cache_clear() {
         let cache = AstCache::new();
-        
+
         cache.put("file://test1.rs".to_string(), 1, "AST1".to_string());
         cache.put("file://test2.rs".to_string(), 2, "AST2".to_string());
-        
+
         cache.clear();
-        
+
         assert_eq!(cache.get("file://test1.rs", 1), None);
         assert_eq!(cache.get("file://test2.rs", 2), None);
     }
@@ -345,10 +343,10 @@ mod unit_tests {
     #[test]
     fn test_cache_invalidation_metrics() {
         let cache = AstCache::new();
-        
+
         cache.put("file://test.rs".to_string(), 1, "AST".to_string());
         cache.invalidate("file://test.rs");
-        
+
         let metrics = cache.metrics();
         assert_eq!(metrics.invalidations, 1);
     }

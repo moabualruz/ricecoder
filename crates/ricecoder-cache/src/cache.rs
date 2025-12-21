@@ -1,6 +1,5 @@
 //! Main cache implementation with multi-level support
 
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -121,10 +120,9 @@ impl Cache {
         }
 
         // Serialize entry to JSON
-        let json_value = serde_json::to_value(&entry)
-            .map_err(|e| CacheError::Serialization {
-                message: e.to_string(),
-            })?;
+        let json_value = serde_json::to_value(&entry).map_err(|e| CacheError::Serialization {
+            message: e.to_string(),
+        })?;
 
         // Store in primary storage
         self.primary_storage.set(key, &json_value).await?;
@@ -141,8 +139,10 @@ impl Cache {
 
         // Update metrics
         if self.config.enable_metrics {
-            self.metrics.record_store(timer.elapsed_ms(), entry.size_bytes);
-            self.metrics.set_entry_count(self.primary_storage.len().await.unwrap_or(0) as usize);
+            self.metrics
+                .record_store(timer.elapsed_ms(), entry.size_bytes);
+            self.metrics
+                .set_entry_count(self.primary_storage.len().await.unwrap_or(0) as usize);
         }
 
         // Update entries metadata
@@ -158,19 +158,26 @@ impl Cache {
     }
 
     /// Retrieve a value from the cache
-    pub async fn get<T: for<'de> Deserialize<'de> + Clone + Serialize>(&self, key: &str) -> Result<Option<T>> {
+    pub async fn get<T: for<'de> Deserialize<'de> + Clone + Serialize>(
+        &self,
+        key: &str,
+    ) -> Result<Option<T>> {
         let timer = OperationTimer::start();
 
         // Try primary storage first
         if let Some(json_value) = self.primary_storage.get(key).await? {
-            let entry: CacheEntry<T> = serde_json::from_value(json_value)
-                .map_err(|e| CacheError::Deserialization {
+            let entry: CacheEntry<T> =
+                serde_json::from_value(json_value).map_err(|e| CacheError::Deserialization {
                     message: e.to_string(),
                 })?;
 
             // Check invalidation strategy
             if let Some(ref strategy) = self.strategy {
-                if strategy.should_invalidate(key, entry.created_at, &entry.metadata).await.unwrap_or(false) {
+                if strategy
+                    .should_invalidate(key, entry.created_at, &entry.metadata)
+                    .await
+                    .unwrap_or(false)
+                {
                     // Entry should be invalidated
                     let _ = self.primary_storage.remove(key).await;
                     let mut entries = self.entries.write().await;
@@ -205,14 +212,19 @@ impl Cache {
         // Try secondary storage
         if let Some(ref secondary) = self.secondary_storage {
             if let Some(json_value) = secondary.get(key).await? {
-                let entry: CacheEntry<T> = serde_json::from_value(json_value)
-                    .map_err(|e| CacheError::Deserialization {
+                let entry: CacheEntry<T> = serde_json::from_value(json_value).map_err(|e| {
+                    CacheError::Deserialization {
                         message: e.to_string(),
-                    })?;
+                    }
+                })?;
 
                 // Check invalidation strategy
                 if let Some(ref strategy) = self.strategy {
-                    if strategy.should_invalidate(key, entry.created_at, &entry.metadata).await.unwrap_or(false) {
+                    if strategy
+                        .should_invalidate(key, entry.created_at, &entry.metadata)
+                        .await
+                        .unwrap_or(false)
+                    {
                         let _ = secondary.remove(key).await;
                         return Ok(None);
                     }
@@ -221,7 +233,10 @@ impl Cache {
                 if !entry.is_expired() {
                     // Cache hit in secondary storage
                     // Promote to primary storage
-                    let _ = self.primary_storage.set(key, &serde_json::to_value(&entry).unwrap()).await;
+                    let _ = self
+                        .primary_storage
+                        .set(key, &serde_json::to_value(&entry).unwrap())
+                        .await;
 
                     if self.config.enable_metrics {
                         self.metrics.record_hit(timer.elapsed_ms());
@@ -243,14 +258,19 @@ impl Cache {
         // Try tertiary storage
         if let Some(ref tertiary) = self.tertiary_storage {
             if let Some(json_value) = tertiary.get(key).await? {
-                let entry: CacheEntry<T> = serde_json::from_value(json_value)
-                    .map_err(|e| CacheError::Deserialization {
+                let entry: CacheEntry<T> = serde_json::from_value(json_value).map_err(|e| {
+                    CacheError::Deserialization {
                         message: e.to_string(),
-                    })?;
+                    }
+                })?;
 
                 // Check invalidation strategy
                 if let Some(ref strategy) = self.strategy {
-                    if strategy.should_invalidate(key, entry.created_at, &entry.metadata).await.unwrap_or(false) {
+                    if strategy
+                        .should_invalidate(key, entry.created_at, &entry.metadata)
+                        .await
+                        .unwrap_or(false)
+                    {
                         let _ = tertiary.remove(key).await;
                         return Ok(None);
                     }
@@ -341,7 +361,8 @@ impl Cache {
         entries.remove(key);
 
         if self.config.enable_metrics && removed {
-            self.metrics.set_entry_count(self.primary_storage.len().await.unwrap_or(0) as usize);
+            self.metrics
+                .set_entry_count(self.primary_storage.len().await.unwrap_or(0) as usize);
         }
 
         Ok(removed)
@@ -439,10 +460,9 @@ impl CacheBuilder {
 
     /// Build the cache
     pub fn build(self) -> Result<Cache> {
-        let primary_storage = self.primary_storage
-            .ok_or_else(|| CacheError::Storage {
-                message: "Primary storage is required".to_string(),
-            })?;
+        let primary_storage = self.primary_storage.ok_or_else(|| CacheError::Storage {
+            message: "Primary storage is required".to_string(),
+        })?;
 
         let mut cache = Cache::with_config(primary_storage, self.config);
 
@@ -500,7 +520,10 @@ mod tests {
         let cache = Cache::new(storage);
 
         // Set with short TTL
-        cache.set("key1", "value1", Some(Duration::from_millis(100))).await.unwrap();
+        cache
+            .set("key1", "value1", Some(Duration::from_millis(100)))
+            .await
+            .unwrap();
 
         // Should exist immediately
         let value: Option<String> = cache.get("key1").await.unwrap();

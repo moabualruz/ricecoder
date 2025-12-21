@@ -263,7 +263,12 @@ impl WorkflowState {
     }
 
     /// Mark a step as completed
-    pub fn complete_step(&mut self, step_id: String, output: Option<serde_json::Value>, duration_ms: u64) {
+    pub fn complete_step(
+        &mut self,
+        step_id: String,
+        output: Option<serde_json::Value>,
+        duration_ms: u64,
+    ) {
         if let Some(result) = self.step_results.get_mut(&step_id) {
             result.status = StepStatus::Completed;
             result.output = output;

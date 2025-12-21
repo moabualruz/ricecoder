@@ -232,7 +232,7 @@ impl FileSystemPersistence {
     }
 
     /// Create a new file system persistence with the default storage location
-    /// 
+    ///
     /// The default storage location is `projects/ricecoder/config/keybinds/`
     /// This function will create the directory if it doesn't exist.
     pub fn with_default_location() -> Result<Self, PersistenceError> {
@@ -261,5 +261,3 @@ impl FileSystemPersistence {
         &self.config_dir
     }
 }
-
-

@@ -93,7 +93,9 @@ impl RulesValidator {
             }
         }
 
-        let passed = violations.iter().all(|v| v.severity == ViolationSeverity::Warning);
+        let passed = violations
+            .iter()
+            .all(|v| v.severity == ViolationSeverity::Warning);
 
         Ok(ValidationResult {
             passed,
@@ -233,7 +235,8 @@ impl RulesValidator {
     /// Checks if a project name follows naming conventions
     fn is_valid_project_name(&self, name: &str) -> bool {
         // Project names should be lowercase with hyphens
-        name.chars().all(|c| c.is_ascii_lowercase() || c == '-' || c.is_ascii_digit())
+        name.chars()
+            .all(|c| c.is_ascii_lowercase() || c == '-' || c.is_ascii_digit())
             && !name.starts_with('-')
             && !name.ends_with('-')
     }
@@ -287,7 +290,9 @@ impl RulesValidator {
                 continue;
             }
 
-            if rule.rule_type == RuleType::NamingConvention && !self.is_valid_project_name(&project.name) {
+            if rule.rule_type == RuleType::NamingConvention
+                && !self.is_valid_project_name(&project.name)
+            {
                 violations.push(RuleViolation {
                     rule_name: rule.name.clone(),
                     rule_type: rule.rule_type,
@@ -301,7 +306,9 @@ impl RulesValidator {
             }
         }
 
-        let passed = violations.iter().all(|v| v.severity == ViolationSeverity::Warning);
+        let passed = violations
+            .iter()
+            .all(|v| v.severity == ViolationSeverity::Warning);
 
         Ok(ValidationResult {
             passed,
@@ -337,7 +344,9 @@ impl RulesValidator {
             }
         }
 
-        let passed = violations.iter().all(|v| v.severity == ViolationSeverity::Warning);
+        let passed = violations
+            .iter()
+            .all(|v| v.severity == ViolationSeverity::Warning);
 
         Ok(ValidationResult {
             passed,
@@ -536,14 +545,12 @@ mod tests {
     #[test]
     fn test_has_path() {
         let mut workspace = create_test_workspace();
-        workspace.dependencies = vec![
-            ProjectDependency {
-                from: "project-a".to_string(),
-                to: "project-b".to_string(),
-                dependency_type: crate::models::DependencyType::Direct,
-                version_constraint: "^0.1.0".to_string(),
-            },
-        ];
+        workspace.dependencies = vec![ProjectDependency {
+            from: "project-a".to_string(),
+            to: "project-b".to_string(),
+            dependency_type: crate::models::DependencyType::Direct,
+            version_constraint: "^0.1.0".to_string(),
+        }];
 
         let validator = RulesValidator::new(workspace);
 

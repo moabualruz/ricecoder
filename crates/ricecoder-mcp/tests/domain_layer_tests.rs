@@ -7,10 +7,12 @@
 //! - Error types and validation
 
 use proptest::prelude::*;
+use ricecoder_mcp::error::{Error, ToolError};
 use ricecoder_mcp::metadata::{ParameterMetadata, ToolMetadata, ToolSource};
 use ricecoder_mcp::registry::ToolRegistry;
-use ricecoder_mcp::transport::{MCPError, MCPErrorData, MCPMessage, MCPNotification, MCPRequest, MCPResponse};
-use ricecoder_mcp::error::{Error, ToolError};
+use ricecoder_mcp::transport::{
+    MCPError, MCPErrorData, MCPMessage, MCPNotification, MCPRequest, MCPResponse,
+};
 use serde_json::{json, Value};
 
 /// **Domain Test 1.1: ToolMetadata creation and validation**
@@ -155,7 +157,10 @@ fn test_parameter_metadata_with_defaults() {
     .with_default(Value::String("default_value".to_string()));
 
     assert_eq!(param.name, "param1");
-    assert_eq!(param.default, Some(Value::String("default_value".to_string())));
+    assert_eq!(
+        param.default,
+        Some(Value::String("default_value".to_string()))
+    );
 }
 
 /// **Domain Test 1.7: ToolRegistry basic operations**

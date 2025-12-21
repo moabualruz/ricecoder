@@ -141,13 +141,20 @@ impl FileStatus {
     pub fn from_git2_status(status: git2::Status) -> Self {
         if status.contains(git2::Status::CONFLICTED) {
             FileStatus::Conflicted
-        } else if status.contains(git2::Status::WT_MODIFIED) || status.contains(git2::Status::INDEX_MODIFIED) {
+        } else if status.contains(git2::Status::WT_MODIFIED)
+            || status.contains(git2::Status::INDEX_MODIFIED)
+        {
             FileStatus::Modified
-        } else if status.contains(git2::Status::WT_NEW) || status.contains(git2::Status::INDEX_NEW) {
+        } else if status.contains(git2::Status::WT_NEW) || status.contains(git2::Status::INDEX_NEW)
+        {
             FileStatus::Added
-        } else if status.contains(git2::Status::WT_DELETED) || status.contains(git2::Status::INDEX_DELETED) {
+        } else if status.contains(git2::Status::WT_DELETED)
+            || status.contains(git2::Status::INDEX_DELETED)
+        {
             FileStatus::Deleted
-        } else if status.contains(git2::Status::WT_RENAMED) || status.contains(git2::Status::INDEX_RENAMED) {
+        } else if status.contains(git2::Status::WT_RENAMED)
+            || status.contains(git2::Status::INDEX_RENAMED)
+        {
             FileStatus::Renamed
         } else if status.contains(git2::Status::IGNORED) {
             FileStatus::Ignored

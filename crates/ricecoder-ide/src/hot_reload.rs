@@ -60,20 +60,15 @@ impl HotReloadManager {
 
     /// Check if configuration file has changed
     pub async fn check_config_changed(&self) -> IdeResult<bool> {
-        let metadata = tokio::fs::metadata(&self.config_path)
-            .await
-            .map_err(|e| {
-                IdeError::config_error(format!(
-                    "Failed to check configuration file metadata: {}",
-                    e
-                ))
-            })?;
-
-        let modified = metadata.modified().map_err(|e| {
+        let metadata = tokio::fs::metadata(&self.config_path).await.map_err(|e| {
             IdeError::config_error(format!(
-                "Failed to get file modification time: {}",
+                "Failed to check configuration file metadata: {}",
                 e
             ))
+        })?;
+
+        let modified = metadata.modified().map_err(|e| {
+            IdeError::config_error(format!("Failed to get file modification time: {}", e))
         })?;
 
         let mut last_modified = self.last_modified.write().await;
@@ -192,7 +187,10 @@ mod tests {
     async fn test_register_provider_availability_callback() {
         let manager = HotReloadManager::new("/tmp/config.yaml");
         let callback = Box::new(|_: &str, _: bool| {});
-        assert!(manager.on_provider_availability_change(callback).await.is_ok());
+        assert!(manager
+            .on_provider_availability_change(callback)
+            .await
+            .is_ok());
     }
 
     #[tokio::test]

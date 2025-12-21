@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 
 use crate::error::RegistryError;
-use crate::models::{Context, Keybind, KeyCombo};
+use crate::models::{Context, KeyCombo, Keybind};
 
 /// Registry for storing and looking up keybinds
 pub struct KeybindRegistry {
@@ -35,9 +35,9 @@ impl KeybindRegistry {
         }
 
         // Parse the key combination
-        let key_combo = keybind.parse_key().map_err(|e| {
-            RegistryError::InvalidActionIdFormat(format!("Invalid key: {}", e))
-        })?;
+        let key_combo = keybind
+            .parse_key()
+            .map_err(|e| RegistryError::InvalidActionIdFormat(format!("Invalid key: {}", e)))?;
 
         let key_str = key_combo.to_string();
 
@@ -101,7 +101,11 @@ impl KeybindRegistry {
 
     /// Lookup action ID by key combination with context hierarchy
     /// Searches from most specific to least specific context
-    pub fn lookup_by_key_with_contexts(&self, key: &KeyCombo, contexts: &[Context]) -> Option<&str> {
+    pub fn lookup_by_key_with_contexts(
+        &self,
+        key: &KeyCombo,
+        contexts: &[Context],
+    ) -> Option<&str> {
         let key_str = key.to_string();
 
         // Sort contexts by priority (highest first)
@@ -110,7 +114,7 @@ impl KeybindRegistry {
 
         // Try context-specific lookups in priority order
         for context in &sorted_contexts {
-        if let Some(action_id) = self.by_key_context.get(&(*context, key_str.clone())) {
+            if let Some(action_id) = self.by_key_context.get(&(*context, key_str.clone())) {
                 return Some(action_id.as_str());
             }
         }
@@ -138,9 +142,9 @@ impl KeybindRegistry {
     pub fn unregister(&mut self, action_id: &str) -> Result<(), RegistryError> {
         if let Some(keybind) = self.by_action.remove(action_id) {
             // Remove from key mappings
-            let key_combo = keybind.parse_key().map_err(|e| {
-                RegistryError::InvalidActionIdFormat(format!("Invalid key: {}", e))
-            })?;
+            let key_combo = keybind
+                .parse_key()
+                .map_err(|e| RegistryError::InvalidActionIdFormat(format!("Invalid key: {}", e)))?;
             let key_str = key_combo.to_string();
 
             if keybind.contexts.is_empty() {
@@ -212,5 +216,3 @@ impl Default for KeybindRegistry {
         Self::new()
     }
 }
-
-

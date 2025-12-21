@@ -71,14 +71,16 @@ impl Component for ProviderManager {
         self.id.clone()
     }
 
-
-
     fn render(&self, frame: &mut Frame, area: Rect, _model: &crate::model::AppModel) {
         // This component delegates rendering to the main view functions
         // The actual rendering is handled in view.rs render_provider_mode
     }
 
-    fn update(&mut self, _message: &crate::model::AppMessage, _model: &crate::model::AppModel) -> bool {
+    fn update(
+        &mut self,
+        _message: &crate::model::AppMessage,
+        _model: &crate::model::AppModel,
+    ) -> bool {
         false
     }
 
@@ -106,7 +108,10 @@ impl Component for ProviderManager {
 
     fn set_bounds(&mut self, _bounds: ratatui::layout::Rect) {}
 
-    fn handle_focus(&mut self, _direction: crate::components::FocusDirection) -> crate::components::FocusResult {
+    fn handle_focus(
+        &mut self,
+        _direction: crate::components::FocusDirection,
+    ) -> crate::components::FocusResult {
         crate::components::FocusResult::Boundary
     }
 
@@ -166,10 +171,7 @@ pub struct ProviderStatusWidget {
 
 impl ProviderStatusWidget {
     pub fn new(id: ComponentId) -> Self {
-        Self {
-            id,
-            provider: None,
-        }
+        Self { id, provider: None }
     }
 
     pub fn update_provider(&mut self, provider: ProviderInfo) {
@@ -186,7 +188,11 @@ impl Component for ProviderStatusWidget {
         // Status rendering is handled in the main view functions
     }
 
-    fn update(&mut self, _message: &crate::model::AppMessage, _model: &crate::model::AppModel) -> bool {
+    fn update(
+        &mut self,
+        _message: &crate::model::AppMessage,
+        _model: &crate::model::AppModel,
+    ) -> bool {
         false
     }
 
@@ -214,7 +220,10 @@ impl Component for ProviderStatusWidget {
 
     fn set_bounds(&mut self, _bounds: ratatui::layout::Rect) {}
 
-    fn handle_focus(&mut self, _direction: crate::components::FocusDirection) -> crate::components::FocusResult {
+    fn handle_focus(
+        &mut self,
+        _direction: crate::components::FocusDirection,
+    ) -> crate::components::FocusResult {
         crate::components::FocusResult::Boundary
     }
 
@@ -272,10 +281,7 @@ pub struct ProviderPerformanceWidget {
 
 impl ProviderPerformanceWidget {
     pub fn new(id: ComponentId) -> Self {
-        Self {
-            id,
-            metrics: None,
-        }
+        Self { id, metrics: None }
     }
 
     pub fn update_metrics(&mut self, metrics: ProviderMetrics) {
@@ -292,7 +298,11 @@ impl Component for ProviderPerformanceWidget {
         // Performance rendering is handled in the main view functions
     }
 
-    fn update(&mut self, _message: &crate::model::AppMessage, _model: &crate::model::AppModel) -> bool {
+    fn update(
+        &mut self,
+        _message: &crate::model::AppMessage,
+        _model: &crate::model::AppModel,
+    ) -> bool {
         false
     }
 
@@ -320,7 +330,10 @@ impl Component for ProviderPerformanceWidget {
 
     fn set_bounds(&mut self, _bounds: ratatui::layout::Rect) {}
 
-    fn handle_focus(&mut self, _direction: crate::components::FocusDirection) -> crate::components::FocusResult {
+    fn handle_focus(
+        &mut self,
+        _direction: crate::components::FocusDirection,
+    ) -> crate::components::FocusResult {
         crate::components::FocusResult::Boundary
     }
 

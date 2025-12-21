@@ -183,22 +183,33 @@ impl CodeReviewResult {
 
     /// Check if has critical issues
     pub fn has_critical_issues(&self) -> bool {
-        self.issues.iter().any(|i| i.severity == IssueSeverity::Critical)
+        self.issues
+            .iter()
+            .any(|i| i.severity == IssueSeverity::Critical)
     }
 
     /// Get critical issues count
     pub fn critical_issues_count(&self) -> usize {
-        self.issues.iter().filter(|i| i.severity == IssueSeverity::Critical).count()
+        self.issues
+            .iter()
+            .filter(|i| i.severity == IssueSeverity::Critical)
+            .count()
     }
 
     /// Get warnings count
     pub fn warnings_count(&self) -> usize {
-        self.issues.iter().filter(|i| i.severity == IssueSeverity::Warning).count()
+        self.issues
+            .iter()
+            .filter(|i| i.severity == IssueSeverity::Warning)
+            .count()
     }
 
     /// Get info count
     pub fn info_count(&self) -> usize {
-        self.issues.iter().filter(|i| i.severity == IssueSeverity::Info).count()
+        self.issues
+            .iter()
+            .filter(|i| i.severity == IssueSeverity::Info)
+            .count()
     }
 }
 
@@ -287,58 +298,53 @@ impl CodeReviewAgent {
         for file in &pr.files {
             // Check for large files
             if file.additions + file.deletions > 500 {
-                issues.push(
-                    CodeQualityIssue::new(
-                        IssueSeverity::Warning,
-                        "Large file change",
-                        format!(
-                            "File {} has {} lines changed, consider breaking into smaller changes",
-                            file.path,
-                            file.additions + file.deletions
-                        ),
-                        &file.path,
-                    )
-                );
+                issues.push(CodeQualityIssue::new(
+                    IssueSeverity::Warning,
+                    "Large file change",
+                    format!(
+                        "File {} has {} lines changed, consider breaking into smaller changes",
+                        file.path,
+                        file.additions + file.deletions
+                    ),
+                    &file.path,
+                ));
             }
 
             // Check for excessive deletions
             if file.deletions > file.additions * 2 {
-                issues.push(
-                    CodeQualityIssue::new(
-                        IssueSeverity::Info,
-                        "Large deletion",
-                        format!(
-                            "File {} has significant deletions ({} lines)",
-                            file.path, file.deletions
-                        ),
-                        &file.path,
-                    )
-                );
+                issues.push(CodeQualityIssue::new(
+                    IssueSeverity::Info,
+                    "Large deletion",
+                    format!(
+                        "File {} has significant deletions ({} lines)",
+                        file.path, file.deletions
+                    ),
+                    &file.path,
+                ));
             }
         }
 
         // Check PR body for common issues
         if pr.body.is_empty() {
-            issues.push(
-                CodeQualityIssue::new(
-                    IssueSeverity::Warning,
-                    "Missing PR description",
-                    "PR body is empty, please provide a description of changes",
-                    "PR",
-                )
-            );
+            issues.push(CodeQualityIssue::new(
+                IssueSeverity::Warning,
+                "Missing PR description",
+                "PR body is empty, please provide a description of changes",
+                "PR",
+            ));
         }
 
         // Check PR title length
         if pr.title.len() > 100 {
-            issues.push(
-                CodeQualityIssue::new(
-                    IssueSeverity::Info,
-                    "Long PR title",
-                    format!("PR title is {} characters, consider shortening", pr.title.len()),
-                    "PR",
-                )
-            );
+            issues.push(CodeQualityIssue::new(
+                IssueSeverity::Info,
+                "Long PR title",
+                format!(
+                    "PR title is {} characters, consider shortening",
+                    pr.title.len()
+                ),
+                "PR",
+            ));
         }
 
         info!(
@@ -351,7 +357,10 @@ impl CodeReviewAgent {
     }
 
     /// Generate code review suggestions
-    pub fn generate_suggestions(&self, issues: &[CodeQualityIssue]) -> Result<Vec<CodeReviewSuggestion>> {
+    pub fn generate_suggestions(
+        &self,
+        issues: &[CodeQualityIssue],
+    ) -> Result<Vec<CodeReviewSuggestion>> {
         debug!(
             issue_count = issues.len(),
             "Generating code review suggestions"
@@ -360,12 +369,9 @@ impl CodeReviewAgent {
         let mut suggestions = Vec::new();
 
         for issue in issues {
-            let suggestion = CodeReviewSuggestion::new(
-                &issue.title,
-                &issue.description,
-                &issue.file_path,
-            )
-            .with_line_number(issue.line_number.unwrap_or(0));
+            let suggestion =
+                CodeReviewSuggestion::new(&issue.title, &issue.description, &issue.file_path)
+                    .with_line_number(issue.line_number.unwrap_or(0));
 
             let suggestion = if issue.severity == IssueSeverity::Critical {
                 suggestion.as_critical()
@@ -395,14 +401,12 @@ impl CodeReviewAgent {
 
         // Check for minimum file count
         if pr.files.is_empty() {
-            issues.push(
-                CodeQualityIssue::new(
-                    IssueSeverity::Critical,
-                    "No files changed",
-                    "PR has no file changes",
-                    "PR",
-                )
-            );
+            issues.push(CodeQualityIssue::new(
+                IssueSeverity::Critical,
+                "No files changed",
+                "PR has no file changes",
+                "PR",
+            ));
         }
 
         // Check for branch naming convention
@@ -564,8 +568,7 @@ impl CodeReviewAgent {
         let suggestions = self.generate_suggestions(&all_issues)?;
 
         // Create result
-        let mut result = CodeReviewResult::new(pr.number)
-            .with_issues(all_issues);
+        let mut result = CodeReviewResult::new(pr.number).with_issues(all_issues);
 
         // Add suggestions
         result = result.with_suggestions(suggestions);
@@ -636,13 +639,9 @@ mod tests {
 
     #[test]
     fn test_code_quality_issue_with_line_number() {
-        let issue = CodeQualityIssue::new(
-            IssueSeverity::Critical,
-            "Test",
-            "Description",
-            "test.rs",
-        )
-        .with_line_number(42);
+        let issue =
+            CodeQualityIssue::new(IssueSeverity::Critical, "Test", "Description", "test.rs")
+                .with_line_number(42);
         assert_eq!(issue.line_number, Some(42));
     }
 
@@ -670,12 +669,8 @@ mod tests {
 
     #[test]
     fn test_code_review_result_with_issue() {
-        let issue = CodeQualityIssue::new(
-            IssueSeverity::Critical,
-            "Test",
-            "Description",
-            "test.rs",
-        );
+        let issue =
+            CodeQualityIssue::new(IssueSeverity::Critical, "Test", "Description", "test.rs");
         let result = CodeReviewResult::new(123).with_issue(issue);
         assert_eq!(result.issues.len(), 1);
         assert_eq!(result.critical_issues_count(), 1);
@@ -690,12 +685,8 @@ mod tests {
             "Description",
             "test.rs",
         );
-        let warning = CodeQualityIssue::new(
-            IssueSeverity::Warning,
-            "Warning",
-            "Description",
-            "test.rs",
-        );
+        let warning =
+            CodeQualityIssue::new(IssueSeverity::Warning, "Warning", "Description", "test.rs");
         let result = CodeReviewResult::new(123)
             .with_issue(critical)
             .with_issue(warning);
@@ -742,7 +733,9 @@ mod tests {
         let mut pr = create_test_pr();
         pr.body.clear();
         let issues = agent.analyze_code(&pr).unwrap();
-        assert!(issues.iter().any(|i| i.title.contains("Missing PR description")));
+        assert!(issues
+            .iter()
+            .any(|i| i.title.contains("Missing PR description")));
     }
 
     #[test]

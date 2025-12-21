@@ -211,7 +211,8 @@ impl CodeEditorWidget {
     /// Add a line of code
     pub fn add_line(&mut self, content: impl Into<String>) {
         let line_number = self.lines.len() + 1;
-        self.lines.push(CodeLine::new(line_number, content, self.language));
+        self.lines
+            .push(CodeLine::new(line_number, content, self.language));
     }
 
     /// Clear all code
@@ -462,5 +463,3 @@ impl Widget for &CodeEditorWidget {
         }
     }
 }
-
-

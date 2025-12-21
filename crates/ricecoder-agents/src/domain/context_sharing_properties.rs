@@ -81,12 +81,18 @@ mod tests {
         manager.add_technology("PostgreSQL").unwrap();
         manager.add_technology("Redis").unwrap();
         manager.add_constraint("Must be scalable").unwrap();
-        manager.add_constraint("Must support high availability").unwrap();
+        manager
+            .add_constraint("Must support high availability")
+            .unwrap();
 
         // Store recommendations from multiple agents
         let web_recs = vec![create_recommendation("web", "framework", "React")];
         let backend_recs = vec![create_recommendation("backend", "database", "PostgreSQL")];
-        let devops_recs = vec![create_recommendation("devops", "orchestration", "Kubernetes")];
+        let devops_recs = vec![create_recommendation(
+            "devops",
+            "orchestration",
+            "Kubernetes",
+        )];
 
         manager
             .store_agent_recommendations("web-agent", web_recs)

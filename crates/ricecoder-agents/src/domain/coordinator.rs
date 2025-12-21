@@ -137,7 +137,11 @@ impl DomainCoordinator {
 
         // If no domains inferred, default to all
         if domains.is_empty() {
-            domains = vec!["web".to_string(), "backend".to_string(), "devops".to_string()];
+            domains = vec![
+                "web".to_string(),
+                "backend".to_string(),
+                "devops".to_string(),
+            ];
         }
 
         Ok(domains)
@@ -186,10 +190,7 @@ impl DomainCoordinator {
     /// # Returns
     ///
     /// Returns sequenced operations
-    pub fn sequence_operations(
-        &self,
-        operations: Vec<Operation>,
-    ) -> DomainResult<Vec<Operation>> {
+    pub fn sequence_operations(&self, operations: Vec<Operation>) -> DomainResult<Vec<Operation>> {
         // Sort operations by dependency order
         let mut sequenced = operations;
         sequenced.sort_by_key(|op| op.priority);
@@ -232,10 +233,7 @@ impl DomainCoordinator {
             // Group recommendations by domain
             let mut by_domain: HashMap<String, Vec<&Recommendation>> = HashMap::new();
             for rec in recommendations {
-                by_domain
-                    .entry(rec.domain.clone())
-                    .or_default()
-                    .push(rec);
+                by_domain.entry(rec.domain.clone()).or_default().push(rec);
             }
 
             // Verify each domain has recommendations
@@ -270,10 +268,7 @@ impl DomainCoordinator {
         // Group recommendations by domain
         let mut by_domain: HashMap<String, Vec<Recommendation>> = HashMap::new();
         for rec in recommendations {
-            by_domain
-                .entry(rec.domain.clone())
-                .or_default()
-                .push(rec);
+            by_domain.entry(rec.domain.clone()).or_default().push(rec);
         }
 
         // Ensure all three domains are represented for full-stack

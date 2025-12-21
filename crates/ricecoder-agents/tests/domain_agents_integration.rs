@@ -1,9 +1,9 @@
 //! Integration tests for domain agents multi-agent coordination
 
 use ricecoder_agents::domain::{
-    DomainRegistry, KnowledgeBase, SharedContextManager, DomainCoordinator, DomainRequest,
-    DomainAgent, DomainCapability, DomainKnowledge, Recommendation, BestPractice,
-    TechRecommendation, AgentFactory, AgentConfig, CapabilityConfig,
+    AgentConfig, AgentFactory, BestPractice, CapabilityConfig, DomainAgent, DomainCapability,
+    DomainCoordinator, DomainKnowledge, DomainRegistry, DomainRequest, KnowledgeBase,
+    Recommendation, SharedContextManager, TechRecommendation,
 };
 use std::collections::HashMap;
 
@@ -12,14 +12,12 @@ fn create_test_agent(domain: &str) -> DomainAgent {
     DomainAgent {
         id: format!("{}-agent", domain),
         domain: domain.to_string(),
-        capabilities: vec![
-            DomainCapability {
-                name: "Test Capability".to_string(),
-                description: "A test capability".to_string(),
-                technologies: vec!["Tech1".to_string()],
-                patterns: vec![],
-            },
-        ],
+        capabilities: vec![DomainCapability {
+            name: "Test Capability".to_string(),
+            description: "A test capability".to_string(),
+            technologies: vec!["Tech1".to_string()],
+            patterns: vec![],
+        }],
         knowledge: DomainKnowledge::default(),
     }
 }
@@ -42,14 +40,24 @@ fn test_multi_agent_coordination_cross_domain_workflows() {
     let coordinator = DomainCoordinator::new();
 
     // Register agents for multiple domains
-    registry.register_agent("web", create_test_agent("web")).unwrap();
-    registry.register_agent("backend", create_test_agent("backend")).unwrap();
-    registry.register_agent("devops", create_test_agent("devops")).unwrap();
+    registry
+        .register_agent("web", create_test_agent("web"))
+        .unwrap();
+    registry
+        .register_agent("backend", create_test_agent("backend"))
+        .unwrap();
+    registry
+        .register_agent("devops", create_test_agent("devops"))
+        .unwrap();
 
     // Create a cross-domain request
     let request = DomainRequest {
         id: "req-1".to_string(),
-        domains: vec!["web".to_string(), "backend".to_string(), "devops".to_string()],
+        domains: vec![
+            "web".to_string(),
+            "backend".to_string(),
+            "devops".to_string(),
+        ],
         content: "Help me set up a full-stack application".to_string(),
         context: HashMap::new(),
     };
@@ -71,20 +79,30 @@ fn test_multi_agent_coordination_context_sharing() {
     let context_manager = SharedContextManager::new();
 
     // Set up shared context
-    context_manager.set_project_type("full-stack-web-app").unwrap();
+    context_manager
+        .set_project_type("full-stack-web-app")
+        .unwrap();
     context_manager.add_technology("React").unwrap();
     context_manager.add_technology("Node.js").unwrap();
     context_manager.add_technology("PostgreSQL").unwrap();
-    context_manager.add_constraint("Must support modern browsers").unwrap();
+    context_manager
+        .add_constraint("Must support modern browsers")
+        .unwrap();
 
     // Store recommendations from different agents
     let web_recs = vec![create_test_recommendation("web")];
     let backend_recs = vec![create_test_recommendation("backend")];
     let devops_recs = vec![create_test_recommendation("devops")];
 
-    context_manager.store_agent_recommendations("web-agent", web_recs).unwrap();
-    context_manager.store_agent_recommendations("backend-agent", backend_recs).unwrap();
-    context_manager.store_agent_recommendations("devops-agent", devops_recs).unwrap();
+    context_manager
+        .store_agent_recommendations("web-agent", web_recs)
+        .unwrap();
+    context_manager
+        .store_agent_recommendations("backend-agent", backend_recs)
+        .unwrap();
+    context_manager
+        .store_agent_recommendations("devops-agent", devops_recs)
+        .unwrap();
 
     // Verify all agents have access to shared context
     let project_type = context_manager.get_project_type().unwrap();
@@ -124,8 +142,12 @@ fn test_multi_agent_coordination_conflict_detection() {
     assert_eq!(coordinated.total_recommendations, 3);
 
     // Detect conflicts
-    let coordination = coordinator.coordinate_full_stack(coordinated.recommendations).unwrap();
-    let conflicts = coordinator.detect_full_stack_conflicts(&coordination).unwrap();
+    let coordination = coordinator
+        .coordinate_full_stack(coordinated.recommendations)
+        .unwrap();
+    let conflicts = coordinator
+        .detect_full_stack_conflicts(&coordination)
+        .unwrap();
 
     // Webpack and Vite are incompatible
     assert!(!conflicts.is_empty());
@@ -217,7 +239,9 @@ fn test_full_stack_planning_consistency_validation() {
     let coordination = coordinator.coordinate_full_stack(recommendations).unwrap();
 
     // Ensure full-stack consistency
-    assert!(coordinator.ensure_full_stack_consistency(&coordination).unwrap());
+    assert!(coordinator
+        .ensure_full_stack_consistency(&coordination)
+        .unwrap());
 }
 
 /// Test 13.5: Custom domain support - adding new domains through configuration
@@ -231,13 +255,11 @@ fn test_custom_domain_support_adding_domains() {
         domain: "mobile".to_string(),
         name: "Mobile Development Agent".to_string(),
         description: "Agent for mobile development".to_string(),
-        capabilities: vec![
-            CapabilityConfig {
-                name: "Framework Selection".to_string(),
-                description: "Select mobile frameworks".to_string(),
-                technologies: vec!["React Native".to_string(), "Flutter".to_string()],
-            },
-        ],
+        capabilities: vec![CapabilityConfig {
+            name: "Framework Selection".to_string(),
+            description: "Select mobile frameworks".to_string(),
+            technologies: vec!["React Native".to_string(), "Flutter".to_string()],
+        }],
         best_practices: vec![],
         technology_recommendations: vec![],
         patterns: vec![],
@@ -262,11 +284,24 @@ fn test_custom_domain_support_auto_discovery() {
     let registry = DomainRegistry::new();
 
     // Register multiple domains including custom ones
-    registry.register_agent("web", create_test_agent("web")).unwrap();
-    registry.register_agent("backend", create_test_agent("backend")).unwrap();
-    registry.register_agent("devops", create_test_agent("devops")).unwrap();
-    registry.register_agent("custom-mobile", create_test_agent("custom-mobile")).unwrap();
-    registry.register_agent("custom-data-science", create_test_agent("custom-data-science")).unwrap();
+    registry
+        .register_agent("web", create_test_agent("web"))
+        .unwrap();
+    registry
+        .register_agent("backend", create_test_agent("backend"))
+        .unwrap();
+    registry
+        .register_agent("devops", create_test_agent("devops"))
+        .unwrap();
+    registry
+        .register_agent("custom-mobile", create_test_agent("custom-mobile"))
+        .unwrap();
+    registry
+        .register_agent(
+            "custom-data-science",
+            create_test_agent("custom-data-science"),
+        )
+        .unwrap();
 
     // Discover all domains
     let domains = registry.discover_domains().unwrap();
@@ -290,13 +325,11 @@ fn test_custom_domain_support_creating_agents() {
         domain: "mobile".to_string(),
         name: "Mobile Agent".to_string(),
         description: "Mobile development".to_string(),
-        capabilities: vec![
-            CapabilityConfig {
-                name: "Framework Selection".to_string(),
-                description: "Select frameworks".to_string(),
-                technologies: vec!["React Native".to_string()],
-            },
-        ],
+        capabilities: vec![CapabilityConfig {
+            name: "Framework Selection".to_string(),
+            description: "Select frameworks".to_string(),
+            technologies: vec!["React Native".to_string()],
+        }],
         best_practices: vec![],
         technology_recommendations: vec![],
         patterns: vec![],
@@ -307,13 +340,11 @@ fn test_custom_domain_support_creating_agents() {
         domain: "data-science".to_string(),
         name: "Data Science Agent".to_string(),
         description: "Data science development".to_string(),
-        capabilities: vec![
-            CapabilityConfig {
-                name: "Framework Selection".to_string(),
-                description: "Select frameworks".to_string(),
-                technologies: vec!["TensorFlow".to_string(), "PyTorch".to_string()],
-            },
-        ],
+        capabilities: vec![CapabilityConfig {
+            name: "Framework Selection".to_string(),
+            description: "Select frameworks".to_string(),
+            technologies: vec!["TensorFlow".to_string(), "PyTorch".to_string()],
+        }],
         best_practices: vec![],
         technology_recommendations: vec![],
         patterns: vec![],
@@ -322,7 +353,9 @@ fn test_custom_domain_support_creating_agents() {
 
     // Create agents from configurations
     let mobile_agent = factory.create_agent("mobile", &mobile_config).unwrap();
-    let data_science_agent = factory.create_agent("data-science", &data_science_config).unwrap();
+    let data_science_agent = factory
+        .create_agent("data-science", &data_science_config)
+        .unwrap();
 
     // Verify agents are created correctly
     assert_eq!(mobile_agent.domain, "mobile");
@@ -343,9 +376,15 @@ fn test_full_integration_workflow() {
     let coordinator = DomainCoordinator::new();
 
     // Step 1: Register agents
-    registry.register_agent("web", create_test_agent("web")).unwrap();
-    registry.register_agent("backend", create_test_agent("backend")).unwrap();
-    registry.register_agent("devops", create_test_agent("devops")).unwrap();
+    registry
+        .register_agent("web", create_test_agent("web"))
+        .unwrap();
+    registry
+        .register_agent("backend", create_test_agent("backend"))
+        .unwrap();
+    registry
+        .register_agent("devops", create_test_agent("devops"))
+        .unwrap();
 
     // Step 2: Set up shared context
     context_manager.set_project_type("full-stack-app").unwrap();
@@ -354,27 +393,41 @@ fn test_full_integration_workflow() {
     context_manager.add_technology("Docker").unwrap();
 
     // Step 3: Add knowledge to knowledge base
-    knowledge_base.add_best_practice("web", BestPractice {
-        title: "Component-Based Architecture".to_string(),
-        description: "Use components".to_string(),
-        domain: "web".to_string(),
-        technologies: vec!["React".to_string()],
-        implementation: "Break UI into components".to_string(),
-    }).unwrap();
+    knowledge_base
+        .add_best_practice(
+            "web",
+            BestPractice {
+                title: "Component-Based Architecture".to_string(),
+                description: "Use components".to_string(),
+                domain: "web".to_string(),
+                technologies: vec!["React".to_string()],
+                implementation: "Break UI into components".to_string(),
+            },
+        )
+        .unwrap();
 
-    knowledge_base.add_tech_recommendation("backend", TechRecommendation {
-        technology: "Node.js".to_string(),
-        domain: "backend".to_string(),
-        use_cases: vec!["APIs".to_string()],
-        pros: vec!["JavaScript ecosystem".to_string()],
-        cons: vec!["Single-threaded".to_string()],
-        alternatives: vec!["Python".to_string()],
-    }).unwrap();
+    knowledge_base
+        .add_tech_recommendation(
+            "backend",
+            TechRecommendation {
+                technology: "Node.js".to_string(),
+                domain: "backend".to_string(),
+                use_cases: vec!["APIs".to_string()],
+                pros: vec!["JavaScript ecosystem".to_string()],
+                cons: vec!["Single-threaded".to_string()],
+                alternatives: vec!["Python".to_string()],
+            },
+        )
+        .unwrap();
 
     // Step 4: Create and route request
     let request = DomainRequest {
         id: "req-1".to_string(),
-        domains: vec!["web".to_string(), "backend".to_string(), "devops".to_string()],
+        domains: vec![
+            "web".to_string(),
+            "backend".to_string(),
+            "devops".to_string(),
+        ],
         content: "Help me build a full-stack application".to_string(),
         context: HashMap::new(),
     };
@@ -390,18 +443,28 @@ fn test_full_integration_workflow() {
     ];
 
     // Step 6: Store recommendations in context
-    context_manager.store_agent_recommendations("web-agent", vec![recommendations[0].clone()]).unwrap();
-    context_manager.store_agent_recommendations("backend-agent", vec![recommendations[1].clone()]).unwrap();
-    context_manager.store_agent_recommendations("devops-agent", vec![recommendations[2].clone()]).unwrap();
+    context_manager
+        .store_agent_recommendations("web-agent", vec![recommendations[0].clone()])
+        .unwrap();
+    context_manager
+        .store_agent_recommendations("backend-agent", vec![recommendations[1].clone()])
+        .unwrap();
+    context_manager
+        .store_agent_recommendations("devops-agent", vec![recommendations[2].clone()])
+        .unwrap();
 
     // Step 7: Coordinate responses
     let coordinated = coordinator.coordinate_responses(recommendations).unwrap();
     assert_eq!(coordinated.domain_count, 3);
 
     // Step 8: Validate full-stack coordination
-    let coordination = coordinator.coordinate_full_stack(coordinated.recommendations).unwrap();
+    let coordination = coordinator
+        .coordinate_full_stack(coordinated.recommendations)
+        .unwrap();
     assert!(coordination.is_full_stack);
-    assert!(coordinator.ensure_full_stack_consistency(&coordination).unwrap());
+    assert!(coordinator
+        .ensure_full_stack_consistency(&coordination)
+        .unwrap());
 
     // Step 9: Verify all agents are available
     for domain in &routed_domains {
@@ -425,25 +488,39 @@ fn test_multi_domain_coordination_with_knowledge() {
     let coordinator = DomainCoordinator::new();
 
     // Register agents
-    registry.register_agent("web", create_test_agent("web")).unwrap();
-    registry.register_agent("backend", create_test_agent("backend")).unwrap();
+    registry
+        .register_agent("web", create_test_agent("web"))
+        .unwrap();
+    registry
+        .register_agent("backend", create_test_agent("backend"))
+        .unwrap();
 
     // Add knowledge for each domain
-    knowledge_base.add_best_practice("web", BestPractice {
-        title: "Responsive Design".to_string(),
-        description: "Design for all screen sizes".to_string(),
-        domain: "web".to_string(),
-        technologies: vec!["CSS".to_string()],
-        implementation: "Use media queries".to_string(),
-    }).unwrap();
+    knowledge_base
+        .add_best_practice(
+            "web",
+            BestPractice {
+                title: "Responsive Design".to_string(),
+                description: "Design for all screen sizes".to_string(),
+                domain: "web".to_string(),
+                technologies: vec!["CSS".to_string()],
+                implementation: "Use media queries".to_string(),
+            },
+        )
+        .unwrap();
 
-    knowledge_base.add_best_practice("backend", BestPractice {
-        title: "API Versioning".to_string(),
-        description: "Version your APIs".to_string(),
-        domain: "backend".to_string(),
-        technologies: vec!["REST".to_string()],
-        implementation: "Use URL versioning".to_string(),
-    }).unwrap();
+    knowledge_base
+        .add_best_practice(
+            "backend",
+            BestPractice {
+                title: "API Versioning".to_string(),
+                description: "Version your APIs".to_string(),
+                domain: "backend".to_string(),
+                technologies: vec!["REST".to_string()],
+                implementation: "Use URL versioning".to_string(),
+            },
+        )
+        .unwrap();
 
     // Get knowledge for each domain
     let web_practices = knowledge_base.get_best_practices("web").unwrap();
@@ -475,13 +552,11 @@ fn test_custom_domain_integration_workflow() {
         domain: "custom-mobile".to_string(),
         name: "Custom Mobile Agent".to_string(),
         description: "Custom mobile development".to_string(),
-        capabilities: vec![
-            CapabilityConfig {
-                name: "Framework Selection".to_string(),
-                description: "Select mobile frameworks".to_string(),
-                technologies: vec!["React Native".to_string(), "Flutter".to_string()],
-            },
-        ],
+        capabilities: vec![CapabilityConfig {
+            name: "Framework Selection".to_string(),
+            description: "Select mobile frameworks".to_string(),
+            technologies: vec!["React Native".to_string(), "Flutter".to_string()],
+        }],
         best_practices: vec![],
         technology_recommendations: vec![],
         patterns: vec![],
@@ -489,10 +564,14 @@ fn test_custom_domain_integration_workflow() {
     };
 
     // Create agent from custom configuration
-    let custom_agent = factory.create_agent("custom-mobile", &custom_config).unwrap();
+    let custom_agent = factory
+        .create_agent("custom-mobile", &custom_config)
+        .unwrap();
 
     // Register custom agent
-    registry.register_agent("custom-mobile", custom_agent).unwrap();
+    registry
+        .register_agent("custom-mobile", custom_agent)
+        .unwrap();
 
     // Create request for custom domain
     let request = DomainRequest {

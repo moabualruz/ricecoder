@@ -234,7 +234,10 @@ custom = {}
 
         let config = ConfigLoader::cli_args_to_config(&cli_args);
 
-        assert_eq!(config.providers.default_provider, Some("openai".to_string()));
+        assert_eq!(
+            config.providers.default_provider,
+            Some("openai".to_string())
+        );
         assert_eq!(config.defaults.model, Some("gpt-4".to_string()));
         assert_eq!(config.defaults.temperature, Some(0.8));
         assert_eq!(config.defaults.max_tokens, Some(1000));

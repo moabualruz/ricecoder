@@ -245,8 +245,10 @@ impl MCPConfigLoader {
         if content.starts_with("---") {
             if let Some(end_idx) = content[3..].find("---") {
                 let frontmatter = &content[3..end_idx + 3];
-                let tools: Vec<CustomToolConfig> = serde_yaml::from_str(frontmatter)
-                    .map_err(|e| Error::ConfigError(format!("Failed to parse markdown frontmatter: {}", e)))?;
+                let tools: Vec<CustomToolConfig> =
+                    serde_yaml::from_str(frontmatter).map_err(|e| {
+                        Error::ConfigError(format!("Failed to parse markdown frontmatter: {}", e))
+                    })?;
                 return Ok(tools);
             }
         }
@@ -524,12 +526,11 @@ permissions: []
             max_retries: 3,
         });
 
-        MCPConfigLoader::save_to_file(&config, &config_path)
-            .expect("Failed to save config");
+        MCPConfigLoader::save_to_file(&config, &config_path).expect("Failed to save config");
         assert!(config_path.exists());
 
-        let loaded_config = MCPConfigLoader::load_from_file(&config_path)
-            .expect("Failed to load config");
+        let loaded_config =
+            MCPConfigLoader::load_from_file(&config_path).expect("Failed to load config");
         assert_eq!(loaded_config.servers.len(), 1);
         assert_eq!(loaded_config.servers[0].id, "test-server");
     }

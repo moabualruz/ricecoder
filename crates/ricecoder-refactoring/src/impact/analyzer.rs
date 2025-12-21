@@ -1,9 +1,9 @@
 //! Impact analysis for refactoring operations
 
+#[allow(unused_imports)]
+use super::graph::{Dependency, DependencyGraph, DependencyType, Symbol, SymbolType};
 use crate::error::Result;
 use crate::types::{ImpactAnalysis, Refactoring, RefactoringTarget, RiskLevel};
-#[allow(unused_imports)]
-use super::graph::{DependencyGraph, Symbol, SymbolType, Dependency, DependencyType};
 use std::collections::HashSet;
 use std::path::PathBuf;
 
@@ -40,7 +40,7 @@ impl ImpactAnalyzer {
     pub fn analyze(&self, refactoring: &Refactoring) -> Result<ImpactAnalysis> {
         let affected_symbols = self.find_affected_symbols(&refactoring.target)?;
         let affected_files = self.find_affected_files(&affected_symbols)?;
-        
+
         let affected_symbols_vec: Vec<String> = affected_symbols.iter().cloned().collect();
         let risk_level = Self::calculate_risk_level(&affected_files, &affected_symbols_vec);
         let estimated_effort = Self::estimate_effort(&affected_files, &affected_symbols_vec);
@@ -63,7 +63,7 @@ impl ImpactAnalyzer {
 
         // Create a composite key for the target symbol (name:file)
         let target_key = format!("{}:{}", target.symbol, target.file.display());
-        
+
         // Find all symbols that transitively depend on the target
         // get_transitive_dependents returns just symbol names (not composite keys)
         let transitive_dependents = self.graph.get_transitive_dependents(&target_key);
@@ -79,9 +79,10 @@ impl ImpactAnalyzer {
 
         // Get all symbols from the graph
         let all_symbols = self.graph.get_symbols();
-        
+
         // Build a map of symbol names to their files
-        let mut symbol_files: std::collections::HashMap<String, Vec<String>> = std::collections::HashMap::new();
+        let mut symbol_files: std::collections::HashMap<String, Vec<String>> =
+            std::collections::HashMap::new();
         for symbol in all_symbols {
             symbol_files
                 .entry(symbol.name.clone())
@@ -139,9 +140,8 @@ impl ImpactAnalyzer {
 
         // Check for high-risk changes
         if analysis.risk_level == RiskLevel::High {
-            breaking_changes.push(
-                "High-risk refactoring: affects many symbols and files".to_string(),
-            );
+            breaking_changes
+                .push("High-risk refactoring: affects many symbols and files".to_string());
         }
 
         // Check for circular dependencies
@@ -165,14 +165,17 @@ impl ImpactAnalyzer {
                 recommendations.push("Low-risk refactoring. Safe to proceed.".to_string());
             }
             RiskLevel::Medium => {
-                recommendations.push("Medium-risk refactoring. Review affected symbols carefully.".to_string());
+                recommendations.push(
+                    "Medium-risk refactoring. Review affected symbols carefully.".to_string(),
+                );
                 recommendations.push("Consider running tests after refactoring.".to_string());
             }
             RiskLevel::High => {
                 recommendations.push("High-risk refactoring. Proceed with caution.".to_string());
                 recommendations.push("Create a backup before applying changes.".to_string());
                 recommendations.push("Run comprehensive tests after refactoring.".to_string());
-                recommendations.push("Consider breaking the refactoring into smaller steps.".to_string());
+                recommendations
+                    .push("Consider breaking the refactoring into smaller steps.".to_string());
             }
         }
 
@@ -324,7 +327,9 @@ mod tests {
 
     #[test]
     fn test_risk_level_high() {
-        let files: Vec<PathBuf> = (0..15).map(|i| PathBuf::from(format!("src/file{}.rs", i))).collect();
+        let files: Vec<PathBuf> = (0..15)
+            .map(|i| PathBuf::from(format!("src/file{}.rs", i)))
+            .collect();
         let symbols: Vec<String> = (0..10).map(|i| format!("symbol{}", i)).collect();
         let risk = ImpactAnalyzer::calculate_risk_level(&files, &symbols);
         assert_eq!(risk, RiskLevel::High);

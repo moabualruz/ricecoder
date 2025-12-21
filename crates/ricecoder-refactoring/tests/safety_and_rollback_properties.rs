@@ -3,30 +3,27 @@
 //! **Feature: ricecoder-refactoring, Property 1: Refactoring Reversibility**
 //! **Validates: Requirements REF-2.1, REF-2.4**
 
+use chrono::Utc;
 use proptest::prelude::*;
 use ricecoder_refactoring::{
-    RollbackHandler, SafetyChecker, Refactoring, RefactoringType, RefactoringTarget,
-    RefactoringOptions,
+    Refactoring, RefactoringOptions, RefactoringTarget, RefactoringType, RollbackHandler,
+    SafetyChecker,
 };
 use std::path::PathBuf;
-use chrono::Utc;
 
 /// Strategy for generating file paths
 fn file_path_strategy() -> impl Strategy<Value = PathBuf> {
-    r"[a-z0-9_]+\.rs"
-        .prop_map(|name| PathBuf::from(format!("src/{}", name)))
+    r"[a-z0-9_]+\.rs".prop_map(|name| PathBuf::from(format!("src/{}", name)))
 }
 
 /// Strategy for generating symbol names
 fn symbol_strategy() -> impl Strategy<Value = String> {
-    r"[a-z_][a-z0-9_]{0,20}"
-        .prop_map(|s| s.to_string())
+    r"[a-z_][a-z0-9_]{0,20}".prop_map(|s| s.to_string())
 }
 
 /// Strategy for generating code content
 fn code_content_strategy() -> impl Strategy<Value = String> {
-    r"[a-zA-Z0-9\s\n\{\}\(\)\[\];:,\.\-\+\*/=]+"
-        .prop_map(|s| s.to_string())
+    r"[a-zA-Z0-9\s\n\{\}\(\)\[\];:,\.\-\+\*/=]+".prop_map(|s| s.to_string())
 }
 
 /// Strategy for generating refactoring types
@@ -45,7 +42,9 @@ fn refactoring_type_strategy() -> impl Strategy<Value = RefactoringType> {
 /// Strategy for generating file content pairs (original, modified)
 fn file_content_pair_strategy() -> impl Strategy<Value = (String, String)> {
     (code_content_strategy(), code_content_strategy())
-        .prop_filter("content must be different", |(orig, modified)| orig != modified)
+        .prop_filter("content must be different", |(orig, modified)| {
+            orig != modified
+        })
 }
 
 proptest! {

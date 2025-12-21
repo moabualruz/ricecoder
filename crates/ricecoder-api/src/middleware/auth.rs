@@ -1,12 +1,12 @@
 //! Authentication middleware
 
+use crate::{models::UserInfo, state::AppState};
 use axum::{
     extract::State,
     http::{Request, StatusCode},
     middleware::Next,
     response::{IntoResponse, Response},
 };
-use crate::{models::UserInfo, state::AppState};
 
 /// Authentication middleware
 pub async fn auth_middleware(
@@ -52,4 +52,3 @@ pub async fn auth_middleware(
     let response = next.run(request).await;
     Ok(response)
 }
-

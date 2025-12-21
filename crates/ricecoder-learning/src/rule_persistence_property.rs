@@ -23,7 +23,11 @@ mod tests {
         // Store the rule
         let store_result = storage.store_rule(rule.clone()).await;
         assert!(store_result.is_ok(), "Failed to store rule");
-        assert_eq!(store_result.unwrap(), rule_id, "Returned rule ID should match");
+        assert_eq!(
+            store_result.unwrap(),
+            rule_id,
+            "Returned rule ID should match"
+        );
 
         // Retrieve the rule
         let retrieve_result = storage.get_rule(&rule_id).await;
@@ -38,10 +42,22 @@ mod tests {
         assert_eq!(retrieved.action, rule.action, "Rule action should match");
         assert_eq!(retrieved.source, rule.source, "Rule source should match");
         assert_eq!(retrieved.version, rule.version, "Rule version should match");
-        assert_eq!(retrieved.confidence, rule.confidence, "Rule confidence should match");
-        assert_eq!(retrieved.usage_count, rule.usage_count, "Rule usage count should match");
-        assert_eq!(retrieved.success_rate, rule.success_rate, "Rule success rate should match");
-        assert_eq!(retrieved.metadata, rule.metadata, "Rule metadata should match");
+        assert_eq!(
+            retrieved.confidence, rule.confidence,
+            "Rule confidence should match"
+        );
+        assert_eq!(
+            retrieved.usage_count, rule.usage_count,
+            "Rule usage count should match"
+        );
+        assert_eq!(
+            retrieved.success_rate, rule.success_rate,
+            "Rule success rate should match"
+        );
+        assert_eq!(
+            retrieved.metadata, rule.metadata,
+            "Rule metadata should match"
+        );
     }
 
     #[tokio::test]
@@ -79,9 +95,21 @@ mod tests {
             let original = &rules[i];
 
             assert_eq!(retrieved.id, original.id, "Rule {} ID should match", i);
-            assert_eq!(retrieved.pattern, original.pattern, "Rule {} pattern should match", i);
-            assert_eq!(retrieved.action, original.action, "Rule {} action should match", i);
-            assert_eq!(retrieved.confidence, original.confidence, "Rule {} confidence should match", i);
+            assert_eq!(
+                retrieved.pattern, original.pattern,
+                "Rule {} pattern should match",
+                i
+            );
+            assert_eq!(
+                retrieved.action, original.action,
+                "Rule {} action should match",
+                i
+            );
+            assert_eq!(
+                retrieved.confidence, original.confidence,
+                "Rule {} confidence should match",
+                i
+            );
         }
     }
 
@@ -140,7 +168,11 @@ mod tests {
         let listed = storage.list_rules().await.unwrap();
 
         // Verify count matches
-        assert_eq!(listed.len(), rules.len(), "Listed rules count should match stored count");
+        assert_eq!(
+            listed.len(),
+            rules.len(),
+            "Listed rules count should match stored count"
+        );
 
         // Verify all rules are present
         for original in &rules {
@@ -233,11 +265,19 @@ mod tests {
         let filtered = storage.filter_by_scope(RuleScope::Session).await.unwrap();
 
         // All rules should be returned since they're all Session scope
-        assert_eq!(filtered.len(), rules.len(), "All rules should match Session scope");
+        assert_eq!(
+            filtered.len(),
+            rules.len(),
+            "All rules should match Session scope"
+        );
 
         // Verify all returned rules have Session scope
         for rule in &filtered {
-            assert_eq!(rule.scope, RuleScope::Session, "Filtered rule should have Session scope");
+            assert_eq!(
+                rule.scope,
+                RuleScope::Session,
+                "Filtered rule should have Session scope"
+            );
         }
     }
 }

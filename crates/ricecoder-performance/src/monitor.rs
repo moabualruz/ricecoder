@@ -1,9 +1,9 @@
 //! Performance monitoring and metrics collection
 
-use serde::{Deserialize, Serialize};
-use std::time::{Duration, Instant};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
+use std::time::{Duration, Instant};
 
 /// Performance metrics for a test run
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -88,7 +88,9 @@ impl PerformanceMonitor {
         }
 
         // Convert durations to nanoseconds
-        let mut times_ns: Vec<u64> = self.measurements.iter()
+        let mut times_ns: Vec<u64> = self
+            .measurements
+            .iter()
             .map(|d| d.as_nanos() as u64)
             .collect();
         times_ns.sort();
@@ -96,19 +98,27 @@ impl PerformanceMonitor {
         // Calculate statistics
         let mean_time_ns = times_ns.iter().sum::<u64>() / sample_size as u64;
 
-        let variance = times_ns.iter()
+        let variance = times_ns
+            .iter()
             .map(|t| {
                 let diff = *t as i64 - mean_time_ns as i64;
                 (diff * diff) as u64
             })
-            .sum::<u64>() / sample_size as u64;
+            .sum::<u64>()
+            / sample_size as u64;
         let std_dev_ns = (variance as f64).sqrt() as u64;
 
         let p95_index = (sample_size as f64 * 0.95) as usize;
         let p99_index = (sample_size as f64 * 0.99) as usize;
 
-        let p95_time_ns = times_ns.get(p95_index).copied().unwrap_or(*times_ns.last().unwrap());
-        let p99_time_ns = times_ns.get(p99_index).copied().unwrap_or(*times_ns.last().unwrap());
+        let p95_time_ns = times_ns
+            .get(p95_index)
+            .copied()
+            .unwrap_or(*times_ns.last().unwrap());
+        let p99_time_ns = times_ns
+            .get(p99_index)
+            .copied()
+            .unwrap_or(*times_ns.last().unwrap());
 
         PerformanceMetrics {
             test_name: self.test_name.clone(),

@@ -90,17 +90,19 @@ impl StorageConfigLoader {
         debug!("Loading project config from: {:?}", project_config_path);
 
         if project_config_path.exists() {
-            let content = std::fs::read_to_string(&project_config_path)
-                .map_err(|e| crate::error::ExternalLspError::ConfigError(format!(
+            let content = std::fs::read_to_string(&project_config_path).map_err(|e| {
+                crate::error::ExternalLspError::ConfigError(format!(
                     "Failed to read project config: {}",
                     e
-                )))?;
+                ))
+            })?;
 
-            let config: Value = serde_yaml::from_str(&content)
-                .map_err(|e| crate::error::ExternalLspError::ConfigError(format!(
+            let config: Value = serde_yaml::from_str(&content).map_err(|e| {
+                crate::error::ExternalLspError::ConfigError(format!(
                     "Failed to parse project config: {}",
                     e
-                )))?;
+                ))
+            })?;
 
             Ok(config)
         } else {
@@ -114,24 +116,28 @@ impl StorageConfigLoader {
     fn load_user_config(&self) -> Result<Value> {
         // Try to load from ~/.ricecoder/lsp-servers.yaml
         let home_dir = dirs::home_dir().ok_or_else(|| {
-            crate::error::ExternalLspError::ConfigError("Could not determine home directory".to_string())
+            crate::error::ExternalLspError::ConfigError(
+                "Could not determine home directory".to_string(),
+            )
         })?;
-        
+
         let user_config_path = home_dir.join(".ricecoder/lsp-servers.yaml");
         debug!("Loading user config from: {:?}", user_config_path);
 
         if user_config_path.exists() {
-            let content = std::fs::read_to_string(&user_config_path)
-                .map_err(|e| crate::error::ExternalLspError::ConfigError(format!(
+            let content = std::fs::read_to_string(&user_config_path).map_err(|e| {
+                crate::error::ExternalLspError::ConfigError(format!(
                     "Failed to read user config: {}",
                     e
-                )))?;
+                ))
+            })?;
 
-            let config: Value = serde_yaml::from_str(&content)
-                .map_err(|e| crate::error::ExternalLspError::ConfigError(format!(
+            let config: Value = serde_yaml::from_str(&content).map_err(|e| {
+                crate::error::ExternalLspError::ConfigError(format!(
                     "Failed to parse user config: {}",
                     e
-                )))?;
+                ))
+            })?;
 
             Ok(config)
         } else {
@@ -145,51 +151,65 @@ impl StorageConfigLoader {
     fn load_builtin_config(&self) -> Result<Value> {
         // Create built-in defaults for common LSP servers
         let mut servers: HashMap<String, Vec<LspServerConfig>> = HashMap::new();
-        
+
         // Rust
-        servers.insert("rust".to_string(), vec![LspServerConfig {
-            language: "rust".to_string(),
-            extensions: vec![".rs".to_string()],
-            executable: "rust-analyzer".to_string(),
-            args: vec![],
-            env: HashMap::new(),
-            init_options: None,
-            enabled: true,
-            timeout_ms: 5000,
-            max_restarts: 3,
-            idle_timeout_ms: 300000,
-            output_mapping: None,
-        }]);
-        
+        servers.insert(
+            "rust".to_string(),
+            vec![LspServerConfig {
+                language: "rust".to_string(),
+                extensions: vec![".rs".to_string()],
+                executable: "rust-analyzer".to_string(),
+                args: vec![],
+                env: HashMap::new(),
+                init_options: None,
+                enabled: true,
+                timeout_ms: 5000,
+                max_restarts: 3,
+                idle_timeout_ms: 300000,
+                output_mapping: None,
+            }],
+        );
+
         // TypeScript
-        servers.insert("typescript".to_string(), vec![LspServerConfig {
-            language: "typescript".to_string(),
-            extensions: vec![".ts".to_string(), ".tsx".to_string(), ".js".to_string(), ".jsx".to_string()],
-            executable: "typescript-language-server".to_string(),
-            args: vec!["--stdio".to_string()],
-            env: HashMap::new(),
-            init_options: None,
-            enabled: true,
-            timeout_ms: 5000,
-            max_restarts: 3,
-            idle_timeout_ms: 300000,
-            output_mapping: None,
-        }]);
-        
+        servers.insert(
+            "typescript".to_string(),
+            vec![LspServerConfig {
+                language: "typescript".to_string(),
+                extensions: vec![
+                    ".ts".to_string(),
+                    ".tsx".to_string(),
+                    ".js".to_string(),
+                    ".jsx".to_string(),
+                ],
+                executable: "typescript-language-server".to_string(),
+                args: vec!["--stdio".to_string()],
+                env: HashMap::new(),
+                init_options: None,
+                enabled: true,
+                timeout_ms: 5000,
+                max_restarts: 3,
+                idle_timeout_ms: 300000,
+                output_mapping: None,
+            }],
+        );
+
         // Python
-        servers.insert("python".to_string(), vec![LspServerConfig {
-            language: "python".to_string(),
-            extensions: vec![".py".to_string()],
-            executable: "pylsp".to_string(),
-            args: vec![],
-            env: HashMap::new(),
-            init_options: None,
-            enabled: true,
-            timeout_ms: 5000,
-            max_restarts: 3,
-            idle_timeout_ms: 300000,
-            output_mapping: None,
-        }]);
+        servers.insert(
+            "python".to_string(),
+            vec![LspServerConfig {
+                language: "python".to_string(),
+                extensions: vec![".py".to_string()],
+                executable: "pylsp".to_string(),
+                args: vec![],
+                env: HashMap::new(),
+                init_options: None,
+                enabled: true,
+                timeout_ms: 5000,
+                max_restarts: 3,
+                idle_timeout_ms: 300000,
+                output_mapping: None,
+            }],
+        );
 
         let config_value = serde_json::json!({
             "servers": servers,
@@ -200,7 +220,7 @@ impl StorageConfigLoader {
                 "health_check_interval_ms": 30000
             }
         });
-        
+
         Ok(config_value)
     }
 
@@ -214,9 +234,9 @@ impl StorageConfigLoader {
         // Merge servers
         if let Some(config_servers) = config.get("servers").and_then(|v| v.as_object()) {
             for (language, server_configs) in config_servers {
-                if let Ok(configs) = serde_json::from_value::<Vec<LspServerConfig>>(
-                    server_configs.clone(),
-                ) {
+                if let Ok(configs) =
+                    serde_json::from_value::<Vec<LspServerConfig>>(server_configs.clone())
+                {
                     servers.insert(language.clone(), configs);
                 }
             }
@@ -230,8 +250,7 @@ impl StorageConfigLoader {
             if let Some(timeout) = global.get("default_timeout_ms").and_then(|v| v.as_u64()) {
                 global_settings.default_timeout_ms = timeout;
             }
-            if let Some(enable_fallback) = global.get("enable_fallback").and_then(|v| v.as_bool())
-            {
+            if let Some(enable_fallback) = global.get("enable_fallback").and_then(|v| v.as_bool()) {
                 global_settings.enable_fallback = enable_fallback;
             }
             if let Some(health_check) = global
@@ -262,7 +281,7 @@ impl StorageConfigLoader {
             debug!("Resolved executable: {} -> {:?}", executable, path);
             return Ok(path);
         }
-        
+
         // Try to find in PATH
         if let Ok(path_env) = std::env::var("PATH") {
             for path_dir in std::env::split_paths(&path_env) {
@@ -273,14 +292,14 @@ impl StorageConfigLoader {
                 }
             }
         }
-        
+
         // Fall back to checking current directory
         let current_path = PathBuf::from(executable);
         if current_path.exists() {
             debug!("Resolved executable: {} -> {:?}", executable, current_path);
             return Ok(current_path);
         }
-        
+
         warn!("Could not resolve executable: {}", executable);
         Err(crate::error::ExternalLspError::ServerNotFound {
             executable: executable.to_string(),
@@ -295,11 +314,11 @@ impl StorageConfigLoader {
     /// * `_state` - Server state to cache
     pub fn cache_server_state(&self, language: &str, _state: Value) -> Result<()> {
         debug!("Caching server state for language: {}", language);
-        
+
         // Use storage manager to cache state
         // This would integrate with ricecoder-storage's caching system
         // For now, this is a placeholder for future implementation
-        
+
         Ok(())
     }
 
@@ -314,11 +333,11 @@ impl StorageConfigLoader {
     /// Cached server state, or None if not found
     pub fn load_cached_server_state(&self, language: &str) -> Result<Option<Value>> {
         debug!("Loading cached server state for language: {}", language);
-        
+
         // Use storage manager to load cached state
         // This would integrate with ricecoder-storage's caching system
         // For now, this is a placeholder for future implementation
-        
+
         Ok(None)
     }
 }

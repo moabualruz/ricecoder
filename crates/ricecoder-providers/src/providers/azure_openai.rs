@@ -9,10 +9,12 @@ use std::sync::Arc;
 use tracing::{debug, error, warn};
 
 use crate::error::ProviderError;
-use crate::token_counter::TokenCounterTrait;
-use crate::models::{Capability, ChatRequest, ChatResponse, FinishReason, ModelInfo, Pricing, TokenUsage};
+use crate::models::{
+    Capability, ChatRequest, ChatResponse, FinishReason, ModelInfo, Pricing, TokenUsage,
+};
 use crate::provider::Provider;
 use crate::token_counter::TokenCounter;
+use crate::token_counter::TokenCounterTrait;
 
 /// Azure OpenAI provider implementation
 pub struct AzureOpenAiProvider {
@@ -140,7 +142,11 @@ impl Provider for AzureOpenAiProvider {
                 name: "GPT-4 Turbo".to_string(),
                 provider: self.name().to_string(),
                 context_window: 128000,
-                capabilities: vec![Capability::Chat, Capability::FunctionCalling, Capability::Vision],
+                capabilities: vec![
+                    Capability::Chat,
+                    Capability::FunctionCalling,
+                    Capability::Vision,
+                ],
                 pricing: Some(Pricing {
                     input_per_1k_tokens: 0.01,
                     output_per_1k_tokens: 0.03,
@@ -216,10 +222,15 @@ impl Provider for AzureOpenAiProvider {
         Self::convert_response(openai_response, request.model)
     }
 
-    async fn chat_stream(&self, _request: ChatRequest) -> Result<crate::provider::ChatStream, ProviderError> {
+    async fn chat_stream(
+        &self,
+        _request: ChatRequest,
+    ) -> Result<crate::provider::ChatStream, ProviderError> {
         // Streaming implementation would go here
         // For now, return an error indicating streaming is not implemented
-        Err(ProviderError::ProviderError("Streaming not yet implemented for Azure OpenAI".to_string()))
+        Err(ProviderError::ProviderError(
+            "Streaming not yet implemented for Azure OpenAI".to_string(),
+        ))
     }
 
     fn count_tokens(&self, content: &str, model: &str) -> Result<usize, ProviderError> {
@@ -230,7 +241,9 @@ impl Provider for AzureOpenAiProvider {
         // Simple health check - try to get models or make a minimal request
         // For Azure OpenAI, we could try a minimal chat request or check deployment status
         // For now, just return true if we have valid configuration
-        Ok(!self.api_key.is_empty() && !self.base_url.is_empty() && !self.deployment_name.is_empty())
+        Ok(!self.api_key.is_empty()
+            && !self.base_url.is_empty()
+            && !self.deployment_name.is_empty())
     }
 }
 

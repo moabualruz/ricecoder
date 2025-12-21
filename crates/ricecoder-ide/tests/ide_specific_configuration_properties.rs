@@ -8,10 +8,9 @@
 
 use proptest::prelude::*;
 use ricecoder_ide::{
-    IdeConfigApplicator, IdeIntegrationConfig, IdeSpecificSettings, IdeType, VsCodeConfig,
-    TerminalConfig, ProviderChainConfig, ExternalLspConfig, BuiltinProvidersConfig,
-    DiagnosticSeverity, Hover, Position, Range, CompletionItem, CompletionItemKind,
-    Diagnostic,
+    BuiltinProvidersConfig, CompletionItem, CompletionItemKind, Diagnostic, DiagnosticSeverity,
+    ExternalLspConfig, Hover, IdeConfigApplicator, IdeIntegrationConfig, IdeSpecificSettings,
+    IdeType, Position, ProviderChainConfig, Range, TerminalConfig, VsCodeConfig,
 };
 use std::collections::HashMap;
 

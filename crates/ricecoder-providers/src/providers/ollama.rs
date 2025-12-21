@@ -4,12 +4,12 @@
 //! Ollama allows running large language models locally without sending code to external services.
 
 use async_trait::async_trait;
+use futures::StreamExt;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tokio::time::sleep;
-use futures::StreamExt;
 use tracing::{debug, error, info, warn};
 
 use super::ollama_config::OllamaConfig;

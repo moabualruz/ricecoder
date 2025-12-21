@@ -49,19 +49,11 @@ pub trait ExternalLspClient: Send + Sync {
     ) -> LspResult<Option<Value>>;
 
     /// Forward diagnostics request to external LSP
-    fn forward_diagnostics(
-        &self,
-        language: &str,
-        uri: &str,
-    ) -> LspResult<Option<Value>>;
+    fn forward_diagnostics(&self, language: &str, uri: &str) -> LspResult<Option<Value>>;
 
     /// Forward hover request to external LSP
-    fn forward_hover(
-        &self,
-        language: &str,
-        uri: &str,
-        position: Value,
-    ) -> LspResult<Option<Value>>;
+    fn forward_hover(&self, language: &str, uri: &str, position: Value)
+        -> LspResult<Option<Value>>;
 
     /// Forward definition request to external LSP
     fn forward_definition(
@@ -130,7 +122,10 @@ impl LspProxy {
         // Try external LSP first
         if let Some(external_lsp) = &self.external_lsp {
             if external_lsp.is_available(language) {
-                debug!("Routing completion to external LSP for language: {}", language);
+                debug!(
+                    "Routing completion to external LSP for language: {}",
+                    language
+                );
                 match external_lsp.forward_completion(language, uri, position, context) {
                     Ok(Some(result)) => {
                         info!("Received completion from external LSP");
@@ -183,7 +178,10 @@ impl LspProxy {
         // Try external LSP first
         if let Some(external_lsp) = &self.external_lsp {
             if external_lsp.is_available(language) {
-                debug!("Routing diagnostics to external LSP for language: {}", language);
+                debug!(
+                    "Routing diagnostics to external LSP for language: {}",
+                    language
+                );
                 match external_lsp.forward_diagnostics(language, uri) {
                     Ok(Some(result)) => {
                         info!("Received diagnostics from external LSP");
@@ -293,7 +291,10 @@ impl LspProxy {
         // Try external LSP first
         if let Some(external_lsp) = &self.external_lsp {
             if external_lsp.is_available(language) {
-                debug!("Routing definition to external LSP for language: {}", language);
+                debug!(
+                    "Routing definition to external LSP for language: {}",
+                    language
+                );
                 match external_lsp.forward_definition(language, uri, position) {
                     Ok(Some(result)) => {
                         info!("Received definition from external LSP");
@@ -348,7 +349,10 @@ impl LspProxy {
         // Try external LSP first
         if let Some(external_lsp) = &self.external_lsp {
             if external_lsp.is_available(language) {
-                debug!("Routing references to external LSP for language: {}", language);
+                debug!(
+                    "Routing references to external LSP for language: {}",
+                    language
+                );
                 match external_lsp.forward_references(language, uri, position) {
                     Ok(Some(result)) => {
                         info!("Received references from external LSP");
@@ -406,13 +410,10 @@ mod tests {
     #[test]
     fn test_proxy_fallback() {
         let proxy = LspProxy::new();
-        let result = proxy.route_completion(
-            "rust",
-            "file:///test.rs",
-            Value::Null,
-            Value::Null,
-            || Ok(Value::Array(vec![])),
-        );
+        let result =
+            proxy.route_completion("rust", "file:///test.rs", Value::Null, Value::Null, || {
+                Ok(Value::Array(vec![]))
+            });
         assert!(result.is_ok());
     }
 }

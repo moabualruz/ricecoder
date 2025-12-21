@@ -7,8 +7,8 @@
 //!
 //! **Requirements: 3.1, 3.2, 3.3**
 
-use ricecoder_images::{ImageCache, ImageAnalysisResult};
 use chrono::Utc;
+use ricecoder_images::{ImageAnalysisResult, ImageCache};
 
 /// Test cache creation
 #[test]

@@ -111,14 +111,21 @@ impl ToolOrchestrator {
     }
 
     /// Execute a tool pipeline
-    pub async fn execute_pipeline(&self, context: &PipelineExecutionContext) -> Result<PipelineExecutionResult> {
+    pub async fn execute_pipeline(
+        &self,
+        context: &PipelineExecutionContext,
+    ) -> Result<PipelineExecutionResult> {
         let start_time = SystemTime::now();
 
         // Get pipeline
         let pipeline = {
             let pipelines = self.pipelines.read().await;
-            pipelines.get(&context.pipeline_id).cloned()
-                .ok_or_else(|| Error::ValidationError(format!("Pipeline not found: {}", context.pipeline_id)))?
+            pipelines
+                .get(&context.pipeline_id)
+                .cloned()
+                .ok_or_else(|| {
+                    Error::ValidationError(format!("Pipeline not found: {}", context.pipeline_id))
+                })?
         };
 
         info!("Executing pipeline: {} ({})", pipeline.name, pipeline.id);
@@ -159,18 +166,28 @@ impl ToolOrchestrator {
         }
 
         // Update statistics
-        self.update_pipeline_stats(&context.pipeline_id, success, execution_time_ms).await?;
+        self.update_pipeline_stats(&context.pipeline_id, success, execution_time_ms)
+            .await?;
 
-        info!("Pipeline execution completed: {} (success: {}, time: {}ms)",
-              context.pipeline_id, success, execution_time_ms);
+        info!(
+            "Pipeline execution completed: {} (success: {}, time: {}ms)",
+            context.pipeline_id, success, execution_time_ms
+        );
 
         Ok(result)
     }
 
     /// Execute individual tool
-    pub async fn execute_tool(&self, context: &ToolExecutionContext) -> Result<ToolExecutionResult> {
+    pub async fn execute_tool(
+        &self,
+        context: &ToolExecutionContext,
+    ) -> Result<ToolExecutionResult> {
         // Check cache first
-        let cache_key = format!("tool_{}_{}", context.tool_name, serde_json::to_string(&context.parameters)?);
+        let cache_key = format!(
+            "tool_{}_{}",
+            context.tool_name,
+            serde_json::to_string(&context.parameters)?
+        );
 
         if let Ok(Some(cached_result)) = self.cache.get::<ToolExecutionResult>(&cache_key).await {
             debug!("Tool result served from cache: {}", context.tool_name);
@@ -203,14 +220,19 @@ impl ToolOrchestrator {
     /// Validate pipeline configuration
     async fn validate_pipeline(&self, pipeline: &ToolPipeline) -> Result<()> {
         if pipeline.steps.is_empty() {
-            return Err(Error::ValidationError("Pipeline must have at least one step".to_string()));
+            return Err(Error::ValidationError(
+                "Pipeline must have at least one step".to_string(),
+            ));
         }
 
         // Check for duplicate step IDs
         let mut step_ids = HashSet::new();
         for step in &pipeline.steps {
             if !step_ids.insert(&step.step_id) {
-                return Err(Error::ValidationError(format!("Duplicate step ID: {}", step.step_id)));
+                return Err(Error::ValidationError(format!(
+                    "Duplicate step ID: {}",
+                    step.step_id
+                )));
             }
         }
 
@@ -220,7 +242,8 @@ impl ToolOrchestrator {
             for dep in &step.depends_on {
                 if !step_id_set.contains(dep) {
                     return Err(Error::ValidationError(format!(
-                        "Step '{}' depends on unknown step '{}'", step.step_id, dep
+                        "Step '{}' depends on unknown step '{}'",
+                        step.step_id, dep
                     )));
                 }
             }
@@ -297,7 +320,11 @@ impl ToolOrchestrator {
 
         while !pending_steps.is_empty() {
             // Check timeout
-            if SystemTime::now().duration_since(start_time).unwrap_or(max_time) > max_time {
+            if SystemTime::now()
+                .duration_since(start_time)
+                .unwrap_or(max_time)
+                > max_time
+            {
                 return Err(Error::TimeoutError(pipeline.max_execution_time_seconds));
             }
 
@@ -309,7 +336,10 @@ impl ToolOrchestrator {
                 let step = pending_steps[i];
 
                 // Check if all dependencies are satisfied
-                let deps_satisfied = step.depends_on.iter().all(|dep| completed_steps.contains(dep));
+                let deps_satisfied = step
+                    .depends_on
+                    .iter()
+                    .all(|dep| completed_steps.contains(dep));
 
                 if deps_satisfied {
                     // Execute the step
@@ -325,7 +355,9 @@ impl ToolOrchestrator {
 
             // If no steps were executed, we have a circular dependency or unsatisfiable dependencies
             if !executed_any && !pending_steps.is_empty() {
-                return Err(Error::ValidationError("Pipeline has circular or unsatisfiable dependencies".to_string()));
+                return Err(Error::ValidationError(
+                    "Pipeline has circular or unsatisfiable dependencies".to_string(),
+                ));
             }
 
             // Small delay to prevent busy waiting
@@ -367,7 +399,11 @@ impl ToolOrchestrator {
                 Ok(result) => {
                     last_error = result.error;
                     if attempt < step.retry_count {
-                        warn!("Tool execution failed (attempt {}), retrying: {}", attempt + 1, step.tool_name);
+                        warn!(
+                            "Tool execution failed (attempt {}), retrying: {}",
+                            attempt + 1,
+                            step.tool_name
+                        );
                         tokio::time::sleep(Duration::from_millis(100 * (attempt + 1) as u64)).await;
                     }
                 }
@@ -378,7 +414,11 @@ impl ToolOrchestrator {
                         "execution_error".to_string(),
                     ));
                     if attempt < step.retry_count {
-                        warn!("Tool execution error (attempt {}), retrying: {}", attempt + 1, e);
+                        warn!(
+                            "Tool execution error (attempt {}), retrying: {}",
+                            attempt + 1,
+                            e
+                        );
                         tokio::time::sleep(Duration::from_millis(100 * (attempt + 1) as u64)).await;
                     }
                 }
@@ -386,8 +426,12 @@ impl ToolOrchestrator {
         }
 
         // Return the last error if all retries failed
-        Err(Error::ExecutionError(format!("Tool '{}' failed after {} attempts: {:?}",
-                                         step.tool_name, step.retry_count + 1, last_error)))
+        Err(Error::ExecutionError(format!(
+            "Tool '{}' failed after {} attempts: {:?}",
+            step.tool_name,
+            step.retry_count + 1,
+            last_error
+        )))
     }
 
     /// Resolve parameter references from previous step results
@@ -412,10 +456,18 @@ impl ToolOrchestrator {
     }
 
     /// Check pipeline cache
-    async fn check_pipeline_cache(&self, context: &PipelineExecutionContext) -> Result<Option<PipelineExecutionResult>> {
-        let cache_key = format!("pipeline_{}_{}", context.pipeline_id, serde_json::to_string(&context.parameters)?);
+    async fn check_pipeline_cache(
+        &self,
+        context: &PipelineExecutionContext,
+    ) -> Result<Option<PipelineExecutionResult>> {
+        let cache_key = format!(
+            "pipeline_{}_{}",
+            context.pipeline_id,
+            serde_json::to_string(&context.parameters)?
+        );
 
-        if let Ok(Some(cached_result)) = self.cache.get::<PipelineExecutionResult>(&cache_key).await {
+        if let Ok(Some(cached_result)) = self.cache.get::<PipelineExecutionResult>(&cache_key).await
+        {
             // Check if cache is still valid (not older than pipeline definition)
             if let Some(pipeline) = self.pipelines.read().await.get(&context.pipeline_id) {
                 if cached_result.completed_at > pipeline.created_at {
@@ -433,27 +485,40 @@ impl ToolOrchestrator {
         context: &PipelineExecutionContext,
         result: &PipelineExecutionResult,
     ) -> Result<()> {
-        let cache_key = format!("pipeline_{}_{}", context.pipeline_id, serde_json::to_string(&context.parameters)?);
+        let cache_key = format!(
+            "pipeline_{}_{}",
+            context.pipeline_id,
+            serde_json::to_string(&context.parameters)?
+        );
         let _ = self.cache.set(&cache_key, result.clone(), None).await;
         Ok(())
     }
 
     /// Update pipeline execution statistics
-    async fn update_pipeline_stats(&self, pipeline_id: &str, success: bool, execution_time_ms: u64) -> Result<()> {
+    async fn update_pipeline_stats(
+        &self,
+        pipeline_id: &str,
+        success: bool,
+        execution_time_ms: u64,
+    ) -> Result<()> {
         let mut stats = self.execution_stats.write().await;
-        let pipeline_stats = stats.entry(pipeline_id.to_string()).or_insert_with(|| PipelineStats {
-            pipeline_id: pipeline_id.to_string(),
-            total_executions: 0,
-            successful_executions: 0,
-            failed_executions: 0,
-            total_execution_time_ms: 0,
-            average_execution_time_ms: 0.0,
-            last_execution: None,
-        });
+        let pipeline_stats =
+            stats
+                .entry(pipeline_id.to_string())
+                .or_insert_with(|| PipelineStats {
+                    pipeline_id: pipeline_id.to_string(),
+                    total_executions: 0,
+                    successful_executions: 0,
+                    failed_executions: 0,
+                    total_execution_time_ms: 0,
+                    average_execution_time_ms: 0.0,
+                    last_execution: None,
+                });
 
         pipeline_stats.total_executions += 1;
         pipeline_stats.total_execution_time_ms += execution_time_ms;
-        pipeline_stats.average_execution_time_ms = pipeline_stats.total_execution_time_ms as f64 / pipeline_stats.total_executions as f64;
+        pipeline_stats.average_execution_time_ms =
+            pipeline_stats.total_execution_time_ms as f64 / pipeline_stats.total_executions as f64;
         pipeline_stats.last_execution = Some(SystemTime::now());
 
         if success {
@@ -506,7 +571,15 @@ mod tests {
                 tool_name: context.tool_name.clone(),
                 success,
                 result: Some(serde_json::json!({"output": "mock result"})),
-                error: if success { None } else { Some(ToolError::new("mock".to_string(), "Mock failure".to_string(), "test".to_string())) },
+                error: if success {
+                    None
+                } else {
+                    Some(ToolError::new(
+                        "mock".to_string(),
+                        "Mock failure".to_string(),
+                        "test".to_string(),
+                    ))
+                },
                 execution_time_ms: 10,
                 timestamp: SystemTime::now(),
                 metadata: HashMap::new(),
@@ -514,14 +587,26 @@ mod tests {
         }
 
         fn generate_cache_key(&self, context: &ToolExecutionContext) -> String {
-            format!("mock:{}:{}", context.tool_name, serde_json::to_string(&context.parameters).unwrap_or_default())
+            format!(
+                "mock:{}:{}",
+                context.tool_name,
+                serde_json::to_string(&context.parameters).unwrap_or_default()
+            )
         }
 
-        fn is_cache_result_valid(&self, _cached_result: &ToolExecutionResult, _context: &ToolExecutionContext) -> bool {
+        fn is_cache_result_valid(
+            &self,
+            _cached_result: &ToolExecutionResult,
+            _context: &ToolExecutionContext,
+        ) -> bool {
             true // Mock always considers cache valid
         }
 
-        async fn validate_parameters(&self, _tool_name: &str, _parameters: &HashMap<String, serde_json::Value>) -> Result<()> {
+        async fn validate_parameters(
+            &self,
+            _tool_name: &str,
+            _parameters: &HashMap<String, serde_json::Value>,
+        ) -> Result<()> {
             Ok(())
         }
 
@@ -543,16 +628,14 @@ mod tests {
             id: "test_pipeline".to_string(),
             name: "Test Pipeline".to_string(),
             description: "A test pipeline".to_string(),
-            steps: vec![
-                PipelineStep {
-                    tool_name: "echo".to_string(),
-                    parameters: HashMap::new(),
-                    depends_on: vec![],
-                    timeout_seconds: Some(30),
-                    retry_count: 0,
-                    step_id: "step1".to_string(),
-                },
-            ],
+            steps: vec![PipelineStep {
+                tool_name: "echo".to_string(),
+                parameters: HashMap::new(),
+                depends_on: vec![],
+                timeout_seconds: Some(30),
+                retry_count: 0,
+                step_id: "step1".to_string(),
+            }],
             max_execution_time_seconds: 60,
             created_at: SystemTime::now(),
         };
@@ -573,16 +656,14 @@ mod tests {
             id: "test_pipeline".to_string(),
             name: "Test Pipeline".to_string(),
             description: "A test pipeline".to_string(),
-            steps: vec![
-                PipelineStep {
-                    tool_name: "echo".to_string(),
-                    parameters: HashMap::new(),
-                    depends_on: vec![],
-                    timeout_seconds: Some(30),
-                    retry_count: 0,
-                    step_id: "step1".to_string(),
-                },
-            ],
+            steps: vec![PipelineStep {
+                tool_name: "echo".to_string(),
+                parameters: HashMap::new(),
+                depends_on: vec![],
+                timeout_seconds: Some(30),
+                retry_count: 0,
+                step_id: "step1".to_string(),
+            }],
             max_execution_time_seconds: 60,
             created_at: SystemTime::now(),
         };
@@ -618,7 +699,10 @@ mod tests {
             created_at: SystemTime::now(),
         };
 
-        assert!(orchestrator.register_pipeline(empty_pipeline).await.is_err());
+        assert!(orchestrator
+            .register_pipeline(empty_pipeline)
+            .await
+            .is_err());
 
         // Test pipeline with circular dependency
         let circular_pipeline = ToolPipeline {
@@ -647,7 +731,10 @@ mod tests {
             created_at: SystemTime::now(),
         };
 
-        orchestrator.register_pipeline(circular_pipeline).await.unwrap();
+        orchestrator
+            .register_pipeline(circular_pipeline)
+            .await
+            .unwrap();
 
         let context = PipelineExecutionContext {
             pipeline_id: "circular".to_string(),

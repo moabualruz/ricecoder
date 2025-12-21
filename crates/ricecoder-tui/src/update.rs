@@ -4,8 +4,8 @@
 //! in response to messages. All functions are pure and return new state instances.
 
 use crate::model::*;
-use ricecoder_themes::Theme;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use ricecoder_themes::Theme;
 
 /// Commands that produce side effects
 #[derive(Clone)]
@@ -58,15 +58,36 @@ impl AppModel {
             AppMessage::FileSelected(path) => self.handle_file_selected(path),
             AppMessage::McpServerAdded(server) => self.handle_mcp_server_added(server),
             AppMessage::McpServerRemoved(server) => self.handle_mcp_server_removed(server),
-            AppMessage::McpToolExecuted { server, tool, result } => self.handle_mcp_tool_executed(server, tool, result),
-            AppMessage::McpToolExecutionFailed { server, tool, error } => self.handle_mcp_tool_execution_failed(server, tool, error),
+            AppMessage::McpToolExecuted {
+                server,
+                tool,
+                result,
+            } => self.handle_mcp_tool_executed(server, tool, result),
+            AppMessage::McpToolExecutionFailed {
+                server,
+                tool,
+                error,
+            } => self.handle_mcp_tool_execution_failed(server, tool, error),
             AppMessage::ProviderSwitched(provider_id) => self.handle_provider_switched(provider_id),
-            AppMessage::ProviderStatusUpdated { provider_id, status } => self.handle_provider_status_updated(provider_id, status),
-            AppMessage::ProviderMetricsUpdated { provider_id, metrics } => self.handle_provider_metrics_updated(provider_id, metrics),
+            AppMessage::ProviderStatusUpdated {
+                provider_id,
+                status,
+            } => self.handle_provider_status_updated(provider_id, status),
+            AppMessage::ProviderMetricsUpdated {
+                provider_id,
+                metrics,
+            } => self.handle_provider_metrics_updated(provider_id, metrics),
             AppMessage::ProviderSelected(provider_id) => self.handle_provider_selected(provider_id),
-            AppMessage::ProviderViewModeChanged(mode) => self.handle_provider_view_mode_changed(mode),
-            AppMessage::ProviderFilterChanged(filter) => self.handle_provider_filter_changed(filter),
-            AppMessage::ComponentMessage { component_id, message } => self.handle_component_message(component_id, message),
+            AppMessage::ProviderViewModeChanged(mode) => {
+                self.handle_provider_view_mode_changed(mode)
+            }
+            AppMessage::ProviderFilterChanged(filter) => {
+                self.handle_provider_filter_changed(filter)
+            }
+            AppMessage::ComponentMessage {
+                component_id,
+                message,
+            } => self.handle_component_message(component_id, message),
             AppMessage::Tick => self.handle_tick(),
             AppMessage::ExitRequested => self.handle_exit_requested(),
         }
@@ -183,7 +204,13 @@ impl AppModel {
             }
             KeyCode::Char('e') => {
                 // Edit selected session
-                if let Some(selected_session) = self.sessions.browser.sessions.get(self.sessions.browser.selected_index).cloned() {
+                if let Some(selected_session) = self
+                    .sessions
+                    .browser
+                    .sessions
+                    .get(self.sessions.browser.selected_index)
+                    .cloned()
+                {
                     let mut new_state = self;
                     new_state.sessions.editor = SessionEditorState {
                         is_editing: true,
@@ -199,7 +226,13 @@ impl AppModel {
             }
             KeyCode::Char('s') => {
                 // Share selected session
-                if let Some(selected_session) = self.sessions.browser.sessions.get(self.sessions.browser.selected_index).cloned() {
+                if let Some(selected_session) = self
+                    .sessions
+                    .browser
+                    .sessions
+                    .get(self.sessions.browser.selected_index)
+                    .cloned()
+                {
                     let mut new_state = self;
                     new_state.sessions.sharing = SessionSharingState {
                         is_sharing: true,
@@ -224,14 +257,22 @@ impl AppModel {
             KeyCode::Down => {
                 // Navigate down in session list
                 let mut new_state = self;
-                if new_state.sessions.browser.selected_index < new_state.sessions.browser.sessions.len().saturating_sub(1) {
+                if new_state.sessions.browser.selected_index
+                    < new_state.sessions.browser.sessions.len().saturating_sub(1)
+                {
                     new_state.sessions.browser.selected_index += 1;
                 }
                 (new_state, vec![])
             }
             KeyCode::Enter => {
                 // Activate selected session
-                if let Some(selected_session) = self.sessions.browser.sessions.get(self.sessions.browser.selected_index).cloned() {
+                if let Some(selected_session) = self
+                    .sessions
+                    .browser
+                    .sessions
+                    .get(self.sessions.browser.selected_index)
+                    .cloned()
+                {
                     (self.with_active_session(Some(selected_session.id)), vec![])
                 } else {
                     (self, vec![])
@@ -244,9 +285,18 @@ impl AppModel {
     fn handle_provider_key(self, key: KeyEvent) -> (Self, Vec<Command>) {
         match key.code {
             KeyCode::Char('l') => (self.with_provider_view_mode(ProviderViewMode::List), vec![]),
-            KeyCode::Char('s') => (self.with_provider_view_mode(ProviderViewMode::Status), vec![]),
-            KeyCode::Char('p') => (self.with_provider_view_mode(ProviderViewMode::Performance), vec![]),
-            KeyCode::Char('a') => (self.with_provider_view_mode(ProviderViewMode::Analytics), vec![]),
+            KeyCode::Char('s') => (
+                self.with_provider_view_mode(ProviderViewMode::Status),
+                vec![],
+            ),
+            KeyCode::Char('p') => (
+                self.with_provider_view_mode(ProviderViewMode::Performance),
+                vec![],
+            ),
+            KeyCode::Char('a') => (
+                self.with_provider_view_mode(ProviderViewMode::Analytics),
+                vec![],
+            ),
             KeyCode::Up => self.select_previous_provider(),
             KeyCode::Down => self.select_next_provider(),
             KeyCode::Enter => self.switch_to_selected_provider(),
@@ -406,12 +456,22 @@ impl AppModel {
         (self, vec![])
     }
 
-    fn handle_mcp_tool_executed(self, server: String, tool: String, result: serde_json::Value) -> (Self, Vec<Command>) {
+    fn handle_mcp_tool_executed(
+        self,
+        server: String,
+        tool: String,
+        result: serde_json::Value,
+    ) -> (Self, Vec<Command>) {
         // TODO: Implement MCP tool executed handling
         (self, vec![])
     }
 
-    fn handle_mcp_tool_execution_failed(self, server: String, tool: String, error: String) -> (Self, Vec<Command>) {
+    fn handle_mcp_tool_execution_failed(
+        self,
+        server: String,
+        tool: String,
+        error: String,
+    ) -> (Self, Vec<Command>) {
         // TODO: Implement MCP tool execution failed handling
         (self, vec![])
     }
@@ -421,15 +481,28 @@ impl AppModel {
         (self, vec![Command::SwitchProvider(provider_id)])
     }
 
-    fn handle_provider_status_updated(mut self, provider_id: String, status: ProviderConnectionState) -> (Self, Vec<Command>) {
-        if let Some(provider) = self.providers.available_providers.iter_mut().find(|p| p.id == provider_id) {
+    fn handle_provider_status_updated(
+        mut self,
+        provider_id: String,
+        status: ProviderConnectionState,
+    ) -> (Self, Vec<Command>) {
+        if let Some(provider) = self
+            .providers
+            .available_providers
+            .iter_mut()
+            .find(|p| p.id == provider_id)
+        {
             provider.state = status;
             provider.last_checked = Some(chrono::Utc::now());
         }
         (self, vec![])
     }
 
-    fn handle_provider_metrics_updated(mut self, provider_id: String, metrics: ProviderMetrics) -> (Self, Vec<Command>) {
+    fn handle_provider_metrics_updated(
+        mut self,
+        provider_id: String,
+        metrics: ProviderMetrics,
+    ) -> (Self, Vec<Command>) {
         self.providers.provider_metrics.insert(provider_id, metrics);
         (self, vec![])
     }
@@ -449,7 +522,11 @@ impl AppModel {
         (self, vec![])
     }
 
-    fn handle_component_message(self, _component_id: String, _message: String) -> (Self, Vec<Command>) {
+    fn handle_component_message(
+        self,
+        _component_id: String,
+        _message: String,
+    ) -> (Self, Vec<Command>) {
         // TODO: Implement component message handling
         (self, vec![])
     }
@@ -466,7 +543,9 @@ impl AppModel {
             return (self, vec![]);
         }
 
-        let current_index = self.providers.selected_provider
+        let current_index = self
+            .providers
+            .selected_provider
             .as_ref()
             .and_then(|selected| filtered_providers.iter().position(|p| p.id == *selected))
             .unwrap_or(0);
@@ -487,7 +566,9 @@ impl AppModel {
             return (self, vec![]);
         }
 
-        let current_index = self.providers.selected_provider
+        let current_index = self
+            .providers
+            .selected_provider
             .as_ref()
             .and_then(|selected| filtered_providers.iter().position(|p| p.id == *selected))
             .unwrap_or(0);
@@ -515,11 +596,14 @@ impl AppModel {
         if filter.is_empty() {
             self.providers.available_providers.iter().collect()
         } else {
-            self.providers.available_providers.iter()
-                .filter(|p| p.name.to_lowercase().contains(&filter.to_lowercase()) ||
-                         p.id.to_lowercase().contains(&filter.to_lowercase()))
+            self.providers
+                .available_providers
+                .iter()
+                .filter(|p| {
+                    p.name.to_lowercase().contains(&filter.to_lowercase())
+                        || p.id.to_lowercase().contains(&filter.to_lowercase())
+                })
                 .collect()
         }
     }
 }
-

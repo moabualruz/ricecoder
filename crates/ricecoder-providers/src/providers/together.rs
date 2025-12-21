@@ -9,10 +9,12 @@ use std::sync::Arc;
 use tracing::{debug, error};
 
 use crate::error::ProviderError;
-use crate::token_counter::TokenCounterTrait;
-use crate::models::{Capability, ChatRequest, ChatResponse, FinishReason, ModelInfo, Pricing, TokenUsage};
+use crate::models::{
+    Capability, ChatRequest, ChatResponse, FinishReason, ModelInfo, Pricing, TokenUsage,
+};
 use crate::provider::Provider;
 use crate::token_counter::TokenCounter;
+use crate::token_counter::TokenCounterTrait;
 
 /// Together AI provider implementation
 pub struct TogetherProvider {
@@ -51,7 +53,9 @@ impl TogetherProvider {
             .choices
             .first()
             .and_then(|c| c.text.as_ref())
-            .ok_or_else(|| ProviderError::ProviderError("No content in Together AI response".to_string()))?
+            .ok_or_else(|| {
+                ProviderError::ProviderError("No content in Together AI response".to_string())
+            })?
             .clone();
 
         let finish_reason = match response
@@ -144,7 +148,8 @@ impl Provider for TogetherProvider {
         debug!("Sending chat request to Together AI: {}", request.model);
 
         let together_request = TogetherChatRequest {
-            prompt: request.messages
+            prompt: request
+                .messages
                 .iter()
                 .map(|m| format!("{}: {}", m.role, m.content))
                 .collect::<Vec<_>>()
@@ -186,8 +191,13 @@ impl Provider for TogetherProvider {
         Self::convert_response(together_response, request.model)
     }
 
-    async fn chat_stream(&self, _request: ChatRequest) -> Result<crate::provider::ChatStream, ProviderError> {
-        Err(ProviderError::ProviderError("Streaming not yet implemented for Together AI".to_string()))
+    async fn chat_stream(
+        &self,
+        _request: ChatRequest,
+    ) -> Result<crate::provider::ChatStream, ProviderError> {
+        Err(ProviderError::ProviderError(
+            "Streaming not yet implemented for Together AI".to_string(),
+        ))
     }
 
     fn count_tokens(&self, content: &str, model: &str) -> Result<usize, ProviderError> {

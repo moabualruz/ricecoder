@@ -29,15 +29,13 @@ mod tests {
 
     #[test]
     fn test_log_entry_with_module() {
-        let entry = LogEntry::new(LogLevel::Debug, "Debug message")
-            .with_module("test_module");
+        let entry = LogEntry::new(LogLevel::Debug, "Debug message").with_module("test_module");
         assert_eq!(entry.module, Some("test_module".to_string()));
     }
 
     #[test]
     fn test_log_entry_format() {
-        let entry = LogEntry::new(LogLevel::Info, "Test message")
-            .with_module("app");
+        let entry = LogEntry::new(LogLevel::Info, "Test message").with_module("app");
         let formatted = entry.format();
         assert!(formatted.contains("INFO"));
         assert!(formatted.contains("Test message"));

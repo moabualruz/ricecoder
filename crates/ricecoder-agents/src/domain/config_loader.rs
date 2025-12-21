@@ -50,13 +50,11 @@ impl ConfigLoader {
     ///
     /// Returns a new ConfigLoader instance with schema validation enabled
     pub fn with_schema(schema_json: &str) -> DomainResult<Self> {
-        let schema_value: Value = serde_json::from_str(schema_json).map_err(|e| {
-            DomainError::config_error(format!("Failed to parse schema: {}", e))
-        })?;
+        let schema_value: Value = serde_json::from_str(schema_json)
+            .map_err(|e| DomainError::config_error(format!("Failed to parse schema: {}", e)))?;
 
-        let schema = JSONSchema::compile(&schema_value).map_err(|e| {
-            DomainError::config_error(format!("Failed to compile schema: {}", e))
-        })?;
+        let schema = JSONSchema::compile(&schema_value)
+            .map_err(|e| DomainError::config_error(format!("Failed to compile schema: {}", e)))?;
 
         Ok(Self {
             schema: Some(Arc::new(schema)),
@@ -82,15 +80,11 @@ impl ConfigLoader {
     /// ```
     pub fn load_from_file(&self, path: &Path) -> DomainResult<AgentConfig> {
         // Read file
-        let content = fs::read_to_string(path).map_err(|e| {
-            DomainError::config_error(format!("Failed to read file: {}", e))
-        })?;
+        let content = fs::read_to_string(path)
+            .map_err(|e| DomainError::config_error(format!("Failed to read file: {}", e)))?;
 
         // Determine format based on extension
-        let extension = path
-            .extension()
-            .and_then(|ext| ext.to_str())
-            .unwrap_or("");
+        let extension = path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
 
         match extension {
             "yaml" | "yml" => self.load_from_yaml(&content),
@@ -112,9 +106,8 @@ impl ConfigLoader {
     /// Returns the loaded configuration
     pub fn load_from_yaml(&self, yaml: &str) -> DomainResult<AgentConfig> {
         // Parse YAML to JSON value
-        let value: Value = serde_yaml::from_str(yaml).map_err(|e| {
-            DomainError::config_error(format!("Failed to parse YAML: {}", e))
-        })?;
+        let value: Value = serde_yaml::from_str(yaml)
+            .map_err(|e| DomainError::config_error(format!("Failed to parse YAML: {}", e)))?;
 
         // Validate against schema if available
         if let Some(schema) = &self.schema {
@@ -144,9 +137,8 @@ impl ConfigLoader {
     /// Returns the loaded configuration
     pub fn load_from_json(&self, json: &str) -> DomainResult<AgentConfig> {
         // Parse JSON
-        let value: Value = serde_json::from_str(json).map_err(|e| {
-            DomainError::config_error(format!("Failed to parse JSON: {}", e))
-        })?;
+        let value: Value = serde_json::from_str(json)
+            .map_err(|e| DomainError::config_error(format!("Failed to parse JSON: {}", e)))?;
 
         // Validate against schema if available
         if let Some(schema) = &self.schema {
@@ -707,7 +699,10 @@ best_practices:
 
         let config = loader.load_from_yaml(yaml).unwrap();
         assert_eq!(config.best_practices.len(), 1);
-        assert_eq!(config.best_practices[0].title, "Component-Based Architecture");
+        assert_eq!(
+            config.best_practices[0].title,
+            "Component-Based Architecture"
+        );
     }
 
     #[test]

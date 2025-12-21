@@ -6,19 +6,19 @@
 //! - Cross-cutting concerns (audit, compliance, RBAC)
 //! - High coverage achievement (85%+)
 
+use ricecoder_mcp::audit::MCPAuditLogger;
+use ricecoder_mcp::compliance::{ComplianceReport, MCPComplianceMonitor};
+use ricecoder_mcp::error::{Error, Result};
+use ricecoder_mcp::metadata::{ToolMetadata, ToolSource};
+use ricecoder_mcp::permissions::{MCPPermissionManager, PermissionLevelConfig, PermissionRule};
+use ricecoder_mcp::rbac::{MCPAuthorizationMiddleware, MCRBACManager};
+use ricecoder_mcp::tool_execution::{ToolExecutionContext, ToolExecutionResult};
+use ricecoder_mcp::transport::{MCPMessage, MCPRequest, MCPResponse, MCPTransport};
+use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::RwLock;
-use ricecoder_mcp::tool_execution::{ToolExecutionContext, ToolExecutionResult};
-use ricecoder_mcp::permissions::{MCPPermissionManager, PermissionLevelConfig, PermissionRule};
-use ricecoder_mcp::audit::MCPAuditLogger;
-use ricecoder_mcp::rbac::{MCRBACManager, MCPAuthorizationMiddleware};
-use ricecoder_mcp::compliance::{MCPComplianceMonitor, ComplianceReport};
-use ricecoder_mcp::transport::{MCPMessage, MCPRequest, MCPResponse, MCPTransport};
-use ricecoder_mcp::metadata::{ToolMetadata, ToolSource};
-use ricecoder_mcp::error::{Error, Result};
-use serde_json::json;
 
 /// **Integration Test 4.1: Complete tool execution pipeline with security**
 /// **Validates: End-to-end security integration**
@@ -31,7 +31,9 @@ async fn test_complete_tool_execution_pipeline_with_security() {
         level: PermissionLevelConfig::Allow,
         agent_id: Some("trusted-agent".to_string()),
     };
-    permission_manager.add_agent_rule("trusted-agent".to_string(), allow_rule).unwrap();
+    permission_manager
+        .add_agent_rule("trusted-agent".to_string(), allow_rule)
+        .unwrap();
 
     // Mock audit logger
     struct MockAuditLogger;
@@ -138,17 +140,38 @@ async fn test_rbac_permission_enforcement() {
     rbac_manager.create_role("user".to_string()).await.unwrap();
 
     // Assign permissions to roles
-    rbac_manager.assign_permission_to_role("admin", "tool:*").await.unwrap();
-    rbac_manager.assign_permission_to_role("user", "tool:read").await.unwrap();
+    rbac_manager
+        .assign_permission_to_role("admin", "tool:*")
+        .await
+        .unwrap();
+    rbac_manager
+        .assign_permission_to_role("user", "tool:read")
+        .await
+        .unwrap();
 
     // Assign users to roles
-    rbac_manager.assign_user_to_role("admin-user", "admin").await.unwrap();
-    rbac_manager.assign_user_to_role("normal-user", "user").await.unwrap();
+    rbac_manager
+        .assign_user_to_role("admin-user", "admin")
+        .await
+        .unwrap();
+    rbac_manager
+        .assign_user_to_role("normal-user", "user")
+        .await
+        .unwrap();
 
     // Test permission checks
-    assert!(rbac_manager.check_permission("admin-user", "tool:write").await.unwrap());
-    assert!(rbac_manager.check_permission("normal-user", "tool:read").await.unwrap());
-    assert!(!rbac_manager.check_permission("normal-user", "tool:write").await.unwrap());
+    assert!(rbac_manager
+        .check_permission("admin-user", "tool:write")
+        .await
+        .unwrap());
+    assert!(rbac_manager
+        .check_permission("normal-user", "tool:read")
+        .await
+        .unwrap());
+    assert!(!rbac_manager
+        .check_permission("normal-user", "tool:write")
+        .await
+        .unwrap());
 }
 
 /// **Integration Test 4.4: Audit logging integration**
@@ -228,10 +251,14 @@ async fn test_error_recovery_enterprise() {
     let handler = RetryHandler::new(config);
 
     // Test recovery strategy selection
-    let strategy = ricecoder_mcp::error_recovery::determine_recovery_strategy(&Error::ConnectionError("Network failure".to_string()));
+    let strategy = ricecoder_mcp::error_recovery::determine_recovery_strategy(
+        &Error::ConnectionError("Network failure".to_string()),
+    );
     assert!(matches!(strategy, RecoveryStrategy::Retry));
 
-    let strategy = ricecoder_mcp::error_recovery::determine_recovery_strategy(&Error::AuthenticationError("Invalid token".to_string()));
+    let strategy = ricecoder_mcp::error_recovery::determine_recovery_strategy(
+        &Error::AuthenticationError("Invalid token".to_string()),
+    );
     assert!(matches!(strategy, RecoveryStrategy::Fail));
 }
 
@@ -284,15 +311,25 @@ fn test_permission_escalation_prevention() {
         level: PermissionLevelConfig::Allow,
         agent_id: Some("user".to_string()),
     };
-    manager.add_agent_rule("user".to_string(), allow_rule).unwrap();
+    manager
+        .add_agent_rule("user".to_string(), allow_rule)
+        .unwrap();
 
     // Test that dangerous tools are denied
-    let permission = manager.check_permission("dangerous-tool", Some("user")).unwrap();
-    assert!(matches!(permission, ricecoder_permissions::PermissionLevel::Deny));
+    let permission = manager
+        .check_permission("dangerous-tool", Some("user"))
+        .unwrap();
+    assert!(matches!(
+        permission,
+        ricecoder_permissions::PermissionLevel::Deny
+    ));
 
     // Test that safe tools are allowed
     let permission = manager.check_permission("safe-tool", Some("user")).unwrap();
-    assert!(matches!(permission, ricecoder_permissions::PermissionLevel::Allow));
+    assert!(matches!(
+        permission,
+        ricecoder_permissions::PermissionLevel::Allow
+    ));
 }
 
 /// **Security Test 4.10: Input validation and sanitization**
@@ -373,17 +410,38 @@ async fn test_secure_communication_channels() {
 #[test]
 fn test_edge_case_coverage() {
     // Test empty strings
-    let tool = ToolMetadata::new("".to_string(), "name".to_string(), "desc".to_string(), "cat".to_string(), "type".to_string(), ToolSource::Custom);
+    let tool = ToolMetadata::new(
+        "".to_string(),
+        "name".to_string(),
+        "desc".to_string(),
+        "cat".to_string(),
+        "type".to_string(),
+        ToolSource::Custom,
+    );
     assert!(tool.validate().is_err());
 
     // Test very long strings
     let long_name = "a".repeat(1000);
-    let tool = ToolMetadata::new("id".to_string(), long_name, "desc".to_string(), "cat".to_string(), "type".to_string(), ToolSource::Custom);
+    let tool = ToolMetadata::new(
+        "id".to_string(),
+        long_name,
+        "desc".to_string(),
+        "cat".to_string(),
+        "type".to_string(),
+        ToolSource::Custom,
+    );
     assert!(tool.validate().is_ok()); // Should handle long names
 
     // Test special characters
     let special_name = "tool_123-ABC.DEF";
-    let tool = ToolMetadata::new(special_name.to_string(), "name".to_string(), "desc".to_string(), "cat".to_string(), "type".to_string(), ToolSource::Custom);
+    let tool = ToolMetadata::new(
+        special_name.to_string(),
+        "name".to_string(),
+        "desc".to_string(),
+        "cat".to_string(),
+        "type".to_string(),
+        ToolSource::Custom,
+    );
     assert!(tool.validate().is_ok());
 }
 
@@ -395,7 +453,8 @@ fn test_error_condition_coverage() {
 
     // Test all error variants
     let not_found = Error::ToolNotFound("missing-tool".to_string());
-    let execution_error = Error::ToolExecutionError(ToolError::ExecutionFailed("reason".to_string()));
+    let execution_error =
+        Error::ToolExecutionError(ToolError::ExecutionFailed("reason".to_string()));
     let validation_error = Error::ValidationError("invalid input".to_string());
     let connection_error = Error::ConnectionError("network down".to_string());
     let auth_error = Error::AuthenticationError("bad token".to_string());

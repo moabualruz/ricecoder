@@ -288,9 +288,19 @@ technology_recommendations:
         // Verify nested fields
         assert_eq!(agent.capabilities[0].technologies.len(), 3);
         assert_eq!(agent.knowledge.best_practices[0].technologies.len(), 2);
-        assert_eq!(agent.knowledge.technology_recommendations[0].use_cases.len(), 2);
+        assert_eq!(
+            agent.knowledge.technology_recommendations[0]
+                .use_cases
+                .len(),
+            2
+        );
         assert_eq!(agent.knowledge.technology_recommendations[0].pros.len(), 2);
-        assert_eq!(agent.knowledge.technology_recommendations[0].alternatives.len(), 2);
+        assert_eq!(
+            agent.knowledge.technology_recommendations[0]
+                .alternatives
+                .len(),
+            2
+        );
     }
 
     // ========================================================================
@@ -698,10 +708,7 @@ technology_recommendations:
         // Verify error message is clear
         if let Err(e) = result {
             let error_msg = e.to_string();
-            assert!(
-                !error_msg.is_empty(),
-                "Error message should not be empty"
-            );
+            assert!(!error_msg.is_empty(), "Error message should not be empty");
             // Error should mention validation or schema
             assert!(
                 error_msg.to_lowercase().contains("validation")
@@ -781,7 +788,10 @@ technology_recommendations:
         let invalid_result = loader.load_from_file(&invalid_file);
 
         // Verify invalid configuration fails
-        assert!(invalid_result.is_err(), "Configuration missing domain field should fail");
+        assert!(
+            invalid_result.is_err(),
+            "Configuration missing domain field should fail"
+        );
 
         // Verify existing configuration is still intact
         let existing_again = loader

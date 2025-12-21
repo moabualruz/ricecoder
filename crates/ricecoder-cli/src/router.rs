@@ -2,9 +2,9 @@
 // Adapted from automation/src/cli/router.rs
 
 use crate::commands::*;
-use ricecoder_mcp::compliance::ComplianceReportType;
 use crate::error::{CliError, CliResult};
 use clap::{Parser, Subcommand};
+use ricecoder_mcp::compliance::ComplianceReportType;
 
 /// RiceCoder - Terminal-first, spec-driven coding assistant
 #[derive(Parser, Debug)]
@@ -662,19 +662,39 @@ impl CommandRouter {
                 let compliance_action = match action {
                     Some(ComplianceSubcommand::Report { standard }) => {
                         let report_type = match standard.to_lowercase().as_str() {
-                            "soc2" => compliance::ComplianceAction::Report(ComplianceReportType::Soc2Type2),
-                            "gdpr" => compliance::ComplianceAction::Report(ComplianceReportType::Gdpr),
-                            "hipaa" => compliance::ComplianceAction::Report(ComplianceReportType::Hipaa),
-                            _ => return Err(CliError::InvalidArgument { message: format!("Unknown compliance standard: {}", standard) }),
+                            "soc2" => compliance::ComplianceAction::Report(
+                                ComplianceReportType::Soc2Type2,
+                            ),
+                            "gdpr" => {
+                                compliance::ComplianceAction::Report(ComplianceReportType::Gdpr)
+                            }
+                            "hipaa" => {
+                                compliance::ComplianceAction::Report(ComplianceReportType::Hipaa)
+                            }
+                            _ => {
+                                return Err(CliError::InvalidArgument {
+                                    message: format!("Unknown compliance standard: {}", standard),
+                                })
+                            }
                         };
                         report_type
                     }
                     Some(ComplianceSubcommand::Check { standard }) => {
                         let report_type = match standard.to_lowercase().as_str() {
-                            "soc2" => compliance::ComplianceAction::Check(ComplianceReportType::Soc2Type2),
-                            "gdpr" => compliance::ComplianceAction::Check(ComplianceReportType::Gdpr),
-                            "hipaa" => compliance::ComplianceAction::Check(ComplianceReportType::Hipaa),
-                            _ => return Err(CliError::InvalidArgument { message: format!("Unknown compliance standard: {}", standard) }),
+                            "soc2" => {
+                                compliance::ComplianceAction::Check(ComplianceReportType::Soc2Type2)
+                            }
+                            "gdpr" => {
+                                compliance::ComplianceAction::Check(ComplianceReportType::Gdpr)
+                            }
+                            "hipaa" => {
+                                compliance::ComplianceAction::Check(ComplianceReportType::Hipaa)
+                            }
+                            _ => {
+                                return Err(CliError::InvalidArgument {
+                                    message: format!("Unknown compliance standard: {}", standard),
+                                })
+                            }
                         };
                         report_type
                     }
@@ -779,28 +799,41 @@ impl CommandRouter {
                 let providers_action = match action {
                     Some(ProvidersSubcommand::List) | None => providers::ProvidersAction::List,
                     Some(ProvidersSubcommand::Switch { provider_id }) => {
-                        providers::ProvidersAction::Switch { provider_id: provider_id.clone() }
-                    }
-                    Some(ProvidersSubcommand::Status { provider_id }) => {
-                        providers::ProvidersAction::Status { provider_id: provider_id.clone() }
-                    }
-                    Some(ProvidersSubcommand::Performance { provider_id }) => {
-                        providers::ProvidersAction::Performance { provider_id: provider_id.clone() }
-                    }
-                    Some(ProvidersSubcommand::Health { provider_id }) => {
-                        providers::ProvidersAction::Health { provider_id: provider_id.clone() }
-                    }
-                    Some(ProvidersSubcommand::Models { provider_id, filter }) => {
-                        providers::ProvidersAction::Models {
+                        providers::ProvidersAction::Switch {
                             provider_id: provider_id.clone(),
-                            filter: filter.clone(),
                         }
                     }
+                    Some(ProvidersSubcommand::Status { provider_id }) => {
+                        providers::ProvidersAction::Status {
+                            provider_id: provider_id.clone(),
+                        }
+                    }
+                    Some(ProvidersSubcommand::Performance { provider_id }) => {
+                        providers::ProvidersAction::Performance {
+                            provider_id: provider_id.clone(),
+                        }
+                    }
+                    Some(ProvidersSubcommand::Health { provider_id }) => {
+                        providers::ProvidersAction::Health {
+                            provider_id: provider_id.clone(),
+                        }
+                    }
+                    Some(ProvidersSubcommand::Models {
+                        provider_id,
+                        filter,
+                    }) => providers::ProvidersAction::Models {
+                        provider_id: provider_id.clone(),
+                        filter: filter.clone(),
+                    },
                     Some(ProvidersSubcommand::Failover { provider_id }) => {
-                        providers::ProvidersAction::Failover { provider_id: provider_id.clone() }
+                        providers::ProvidersAction::Failover {
+                            provider_id: provider_id.clone(),
+                        }
                     }
                     Some(ProvidersSubcommand::Community { provider_id }) => {
-                        providers::ProvidersAction::Community { provider_id: provider_id.clone() }
+                        providers::ProvidersAction::Community {
+                            provider_id: provider_id.clone(),
+                        }
                     }
                 };
                 let cmd = ProvidersCommand::new(providers_action);
@@ -809,13 +842,15 @@ impl CommandRouter {
             Commands::Mcp { action } => {
                 let mcp_action = match action {
                     Some(McpSubcommand::List) | None => mcp::McpAction::List,
-                    Some(McpSubcommand::Add { name, command, args }) => {
-                        mcp::McpAction::Add {
-                            name: name.clone(),
-                            command: command.clone(),
-                            args: args.clone(),
-                        }
-                    }
+                    Some(McpSubcommand::Add {
+                        name,
+                        command,
+                        args,
+                    }) => mcp::McpAction::Add {
+                        name: name.clone(),
+                        command: command.clone(),
+                        args: args.clone(),
+                    },
                     Some(McpSubcommand::Remove { name }) => {
                         mcp::McpAction::Remove { name: name.clone() }
                     }
@@ -826,9 +861,15 @@ impl CommandRouter {
                         mcp::McpAction::Test { name: name.clone() }
                     }
                     Some(McpSubcommand::Tools) => mcp::McpAction::Tools,
-                    Some(McpSubcommand::Execute { server, tool, parameters }) => {
-                        let params: serde_json::Value = serde_json::from_str(parameters)
-                            .map_err(|e| CliError::Internal(format!("Invalid JSON parameters: {}", e)))?;
+                    Some(McpSubcommand::Execute {
+                        server,
+                        tool,
+                        parameters,
+                    }) => {
+                        let params: serde_json::Value =
+                            serde_json::from_str(parameters).map_err(|e| {
+                                CliError::Internal(format!("Invalid JSON parameters: {}", e))
+                            })?;
                         mcp::McpAction::Execute {
                             server: server.clone(),
                             tool: tool.clone(),
@@ -880,7 +921,18 @@ impl CommandRouter {
 
     /// Find similar command for suggestions
     pub fn find_similar(command: &str) -> Option<String> {
-        let commands = ["init", "gen", "chat", "refactor", "review", "config", "sessions", "providers", "mcp", "tui"];
+        let commands = [
+            "init",
+            "gen",
+            "chat",
+            "refactor",
+            "review",
+            "config",
+            "sessions",
+            "providers",
+            "mcp",
+            "tui",
+        ];
 
         // Simple similarity check: commands that start with same letter
         commands
@@ -889,5 +941,3 @@ impl CommandRouter {
             .map(|s| s.to_string())
     }
 }
-
-

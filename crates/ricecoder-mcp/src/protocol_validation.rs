@@ -10,7 +10,9 @@ use std::sync::Arc;
 use tracing::{debug, warn};
 
 use crate::error::{Error, Result};
-use crate::transport::{MCPMessage, MCPRequest, MCPResponse, MCPNotification, MCPError, MCPErrorData};
+use crate::transport::{
+    MCPError, MCPErrorData, MCPMessage, MCPNotification, MCPRequest, MCPResponse,
+};
 
 /// MCP protocol validator
 pub struct MCPProtocolValidator {
@@ -88,13 +90,15 @@ impl MCPProtocolValidator {
         if let Some(ref audit_logger) = self.audit_logger {
             let valid = result.is_ok();
             let error_details = result.as_ref().err().map(|e| e.to_string());
-            let _ = audit_logger.log_protocol_validation(
-                message_type,
-                valid,
-                error_details,
-                None, // user_id
-                None, // session_id
-            ).await;
+            let _ = audit_logger
+                .log_protocol_validation(
+                    message_type,
+                    valid,
+                    error_details,
+                    None, // user_id
+                    None, // session_id
+                )
+                .await;
         }
 
         result
@@ -104,7 +108,9 @@ impl MCPProtocolValidator {
     pub fn validate_request(&self, request: &MCPRequest) -> Result<()> {
         // Validate request ID
         if request.id.is_empty() {
-            return Err(Error::ValidationError("Request ID cannot be empty".to_string()));
+            return Err(Error::ValidationError(
+                "Request ID cannot be empty".to_string(),
+            ));
         }
 
         if request.id.len() > 256 {
@@ -112,12 +118,16 @@ impl MCPProtocolValidator {
         }
 
         if !self.id_pattern.is_match(&request.id) {
-            return Err(Error::ValidationError("Invalid request ID format".to_string()));
+            return Err(Error::ValidationError(
+                "Invalid request ID format".to_string(),
+            ));
         }
 
         // Validate method name
         if request.method.is_empty() {
-            return Err(Error::ValidationError("Method name cannot be empty".to_string()));
+            return Err(Error::ValidationError(
+                "Method name cannot be empty".to_string(),
+            ));
         }
 
         if request.method.len() > 256 {
@@ -125,13 +135,18 @@ impl MCPProtocolValidator {
         }
 
         if !self.method_name_pattern.is_match(&request.method) {
-            return Err(Error::ValidationError("Invalid method name format".to_string()));
+            return Err(Error::ValidationError(
+                "Invalid method name format".to_string(),
+            ));
         }
 
         // Validate parameters (basic JSON validation is handled by serde)
         self.validate_json_value(&request.params, "request parameters")?;
 
-        debug!("Validated MCP request: {} -> {}", request.id, request.method);
+        debug!(
+            "Validated MCP request: {} -> {}",
+            request.id, request.method
+        );
         Ok(())
     }
 
@@ -139,7 +154,9 @@ impl MCPProtocolValidator {
     pub fn validate_response(&self, response: &MCPResponse) -> Result<()> {
         // Validate response ID
         if response.id.is_empty() {
-            return Err(Error::ValidationError("Response ID cannot be empty".to_string()));
+            return Err(Error::ValidationError(
+                "Response ID cannot be empty".to_string(),
+            ));
         }
 
         if response.id.len() > 256 {
@@ -147,7 +164,9 @@ impl MCPProtocolValidator {
         }
 
         if !self.id_pattern.is_match(&response.id) {
-            return Err(Error::ValidationError("Invalid response ID format".to_string()));
+            return Err(Error::ValidationError(
+                "Invalid response ID format".to_string(),
+            ));
         }
 
         // Validate result
@@ -161,15 +180,21 @@ impl MCPProtocolValidator {
     pub fn validate_notification(&self, notification: &MCPNotification) -> Result<()> {
         // Validate method name
         if notification.method.is_empty() {
-            return Err(Error::ValidationError("Notification method cannot be empty".to_string()));
+            return Err(Error::ValidationError(
+                "Notification method cannot be empty".to_string(),
+            ));
         }
 
         if notification.method.len() > 256 {
-            return Err(Error::ValidationError("Notification method too long".to_string()));
+            return Err(Error::ValidationError(
+                "Notification method too long".to_string(),
+            ));
         }
 
         if !self.method_name_pattern.is_match(&notification.method) {
-            return Err(Error::ValidationError("Invalid notification method format".to_string()));
+            return Err(Error::ValidationError(
+                "Invalid notification method format".to_string(),
+            ));
         }
 
         // Validate parameters
@@ -184,7 +209,9 @@ impl MCPProtocolValidator {
         // Validate error ID if present
         if let Some(ref id) = error.id {
             if id.is_empty() {
-                return Err(Error::ValidationError("Error ID cannot be empty".to_string()));
+                return Err(Error::ValidationError(
+                    "Error ID cannot be empty".to_string(),
+                ));
             }
 
             if id.len() > 256 {
@@ -192,7 +219,9 @@ impl MCPProtocolValidator {
             }
 
             if !self.id_pattern.is_match(id) {
-                return Err(Error::ValidationError("Invalid error ID format".to_string()));
+                return Err(Error::ValidationError(
+                    "Invalid error ID format".to_string(),
+                ));
             }
         }
 
@@ -201,7 +230,9 @@ impl MCPProtocolValidator {
 
         // Validate error message
         if error.error.message.is_empty() {
-            return Err(Error::ValidationError("Error message cannot be empty".to_string()));
+            return Err(Error::ValidationError(
+                "Error message cannot be empty".to_string(),
+            ));
         }
 
         if error.error.message.len() > 1024 {
@@ -213,7 +244,10 @@ impl MCPProtocolValidator {
             self.validate_json_value(data, "error data")?;
         }
 
-        debug!("Validated MCP error: {} - {}", error.error.code, error.error.message);
+        debug!(
+            "Validated MCP error: {} - {}",
+            error.error.code, error.error.message
+        );
         Ok(())
     }
 
@@ -223,7 +257,8 @@ impl MCPProtocolValidator {
         let json_string = serde_json::to_string(value)
             .map_err(|e| Error::ValidationError(format!("JSON serialization failed: {}", e)))?;
 
-        if json_string.len() > 10 * 1024 * 1024 { // 10MB limit
+        if json_string.len() > 10 * 1024 * 1024 {
+            // 10MB limit
             return Err(Error::ValidationError(format!(
                 "{} too large ({} bytes, max 10MB)",
                 context,
@@ -238,7 +273,12 @@ impl MCPProtocolValidator {
     }
 
     /// Validate JSON nesting depth
-    fn validate_json_depth(&self, value: &serde_json::Value, current_depth: usize, context: &str) -> Result<()> {
+    fn validate_json_depth(
+        &self,
+        value: &serde_json::Value,
+        current_depth: usize,
+        context: &str,
+    ) -> Result<()> {
         const MAX_DEPTH: usize = 32;
 
         if current_depth > MAX_DEPTH {
@@ -321,7 +361,9 @@ impl MCPErrorHandler {
             -32001 => Error::ToolNotFound(message.clone()),
             -32002 => Error::ExecutionError(format!("Tool execution failed: {}", message)),
             -32003 => Error::PermissionDenied(message.clone()),
-            -32004 => Error::ParameterValidationError(format!("Invalid tool parameters: {}", message)),
+            -32004 => {
+                Error::ParameterValidationError(format!("Invalid tool parameters: {}", message))
+            }
             // Enterprise error codes (2025-06-18)
             -32005 => Error::ExecutionError(format!("Audit logging failure: {}", message)),
             -32006 => Error::ConnectionError(format!("Connection pool exhausted: {}", message)),
@@ -341,8 +383,12 @@ impl MCPErrorHandler {
         let (code, message) = match error {
             Error::ValidationError(msg) => (-32600, format!("Invalid request: {}", msg)),
             Error::ToolNotFound(name) => (-32001, format!("Tool not found: {}", name)),
-            Error::ParameterValidationError(msg) => (-32004, format!("Invalid parameters: {}", msg)),
-            Error::PermissionDenied(tool) => (-32003, format!("Permission denied for tool: {}", tool)),
+            Error::ParameterValidationError(msg) => {
+                (-32004, format!("Invalid parameters: {}", msg))
+            }
+            Error::PermissionDenied(tool) => {
+                (-32003, format!("Permission denied for tool: {}", tool))
+            }
             Error::ExecutionError(msg) => (-32002, format!("Execution failed: {}", msg)),
             Error::TimeoutError(ms) => (-32000, format!("Timeout after {}ms", ms)),
             Error::ServerError(msg) => (-32000, msg.clone()),
@@ -403,7 +449,8 @@ impl MCPComplianceChecker {
     /// Create a new compliance checker with audit logging
     pub fn with_audit_logger(audit_logger: Arc<crate::audit::MCPAuditLogger>) -> Self {
         Self {
-            validator: MCPProtocolValidator::with_audit_logger(audit_logger.clone()).expect("Failed to create validator"),
+            validator: MCPProtocolValidator::with_audit_logger(audit_logger.clone())
+                .expect("Failed to create validator"),
             error_handler: MCPErrorHandler::new(),
             audit_logger: Some(audit_logger),
         }
@@ -525,7 +572,9 @@ mod tests {
             params: serde_json::json!({}),
         };
 
-        assert!(validator.validate_notification(&invalid_notification).is_err());
+        assert!(validator
+            .validate_notification(&invalid_notification)
+            .is_err());
     }
 
     #[test]
@@ -533,8 +582,14 @@ mod tests {
         let handler = MCPErrorHandler::new();
 
         // Test known error codes
-        assert_eq!(handler.get_error_description(-32601), Some("Method not found"));
-        assert_eq!(handler.get_error_description(-32001), Some("Tool not found"));
+        assert_eq!(
+            handler.get_error_description(-32601),
+            Some("Method not found")
+        );
+        assert_eq!(
+            handler.get_error_description(-32001),
+            Some("Tool not found")
+        );
 
         // Test error classification
         assert!(handler.is_client_error(-32600)); // Invalid request

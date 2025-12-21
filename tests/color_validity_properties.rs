@@ -37,7 +37,7 @@ proptest! {
     fn prop_color_validity_rgb_values(r in rgb_value_strategy(), g in rgb_value_strategy(), b in rgb_value_strategy()) {
         // Create a color with any valid RGB values
         let color = Color::new(r, g, b);
-        
+
         // Verify the color was created successfully
         assert_eq!(color.r, r);
         assert_eq!(color.g, g);
@@ -52,39 +52,39 @@ proptest! {
     fn prop_color_validity_theme_colors(theme_name in theme_name_strategy()) {
         let manager = ThemeManager::new();
         manager.switch_by_name(&theme_name).expect("Failed to switch theme");
-        
+
         let theme = manager.current().expect("Failed to get current theme");
-        
+
         // Verify all colors are valid (have RGB values)
         // The Color type ensures validity, but we verify the values are accessible
         let _ = theme.primary.r;
         let _ = theme.primary.g;
         let _ = theme.primary.b;
-        
+
         let _ = theme.secondary.r;
         let _ = theme.secondary.g;
         let _ = theme.secondary.b;
-        
+
         let _ = theme.accent.r;
         let _ = theme.accent.g;
         let _ = theme.accent.b;
-        
+
         let _ = theme.background.r;
         let _ = theme.background.g;
         let _ = theme.background.b;
-        
+
         let _ = theme.foreground.r;
         let _ = theme.foreground.g;
         let _ = theme.foreground.b;
-        
+
         let _ = theme.error.r;
         let _ = theme.error.g;
         let _ = theme.error.b;
-        
+
         let _ = theme.warning.r;
         let _ = theme.warning.g;
         let _ = theme.warning.b;
-        
+
         let _ = theme.success.r;
         let _ = theme.success.g;
         let _ = theme.success.b;
@@ -98,7 +98,7 @@ proptest! {
     fn prop_color_validity_equality(r in rgb_value_strategy(), g in rgb_value_strategy(), b in rgb_value_strategy()) {
         let color1 = Color::new(r, g, b);
         let color2 = Color::new(r, g, b);
-        
+
         // Verify colors with same RGB values are equal
         assert_eq!(color1, color2);
     }
@@ -118,7 +118,7 @@ proptest! {
     ) {
         let color1 = Color::new(r1, g1, b1);
         let color2 = Color::new(r2, g2, b2);
-        
+
         // If colors have different RGB values, they should not be equal
         if (r1, g1, b1) != (r2, g2, b2) {
             assert_ne!(color1, color2);
@@ -174,24 +174,24 @@ mod tests {
     fn test_color_validity_all_themes() {
         let manager = ThemeManager::new();
         let themes = manager.available_themes();
-        
+
         for theme_name in themes {
             manager.switch_by_name(theme_name).unwrap();
             let theme = manager.current().unwrap();
-            
+
             // Verify all colors are valid (accessible)
             let _ = theme.primary.r;
             let _ = theme.primary.g;
             let _ = theme.primary.b;
-            
+
             let _ = theme.secondary.r;
             let _ = theme.secondary.g;
             let _ = theme.secondary.b;
-            
+
             let _ = theme.background.r;
             let _ = theme.background.g;
             let _ = theme.background.b;
-            
+
             let _ = theme.foreground.r;
             let _ = theme.foreground.g;
             let _ = theme.foreground.b;

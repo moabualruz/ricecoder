@@ -1,9 +1,9 @@
 //! LSP server process management
 
-pub mod manager;
 pub mod health;
+pub mod manager;
 pub mod pool;
 
-pub use manager::ProcessManager;
 pub use health::HealthChecker;
+pub use manager::ProcessManager;
 pub use pool::ClientPool;

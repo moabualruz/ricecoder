@@ -8,13 +8,13 @@
 
 use proptest::prelude::*;
 use ricecoder_providers::{
-    models::{Message, MessageRole},
-    provider::{ProviderManager, ProviderRegistry},
-    ChatRequest, ChatResponse, ModelInfo, Provider, ProviderError, TokenUsage,
-    rate_limiter::{RateLimiter, TokenBucketLimiter},
     cache::ProviderCache,
     health_check::HealthChecker,
+    models::{Message, MessageRole},
     performance_monitor::PerformanceMonitor,
+    provider::{ProviderManager, ProviderRegistry},
+    rate_limiter::{RateLimiter, TokenBucketLimiter},
+    ChatRequest, ChatResponse, ModelInfo, Provider, ProviderError, TokenUsage,
 };
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -93,7 +93,9 @@ impl Provider for MockProvider {
         tokio::time::sleep(self.response_delay).await;
 
         if self.should_fail {
-            return Err(ProviderError::ProviderError("Mock provider failure".to_string()));
+            return Err(ProviderError::ProviderError(
+                "Mock provider failure".to_string(),
+            ));
         }
 
         Ok(ChatResponse {
@@ -104,8 +106,13 @@ impl Provider for MockProvider {
         })
     }
 
-    async fn chat_stream(&self, _request: ChatRequest) -> Result<ricecoder_providers::ChatStream, ProviderError> {
-        Err(ProviderError::NotFound("Streaming not implemented".to_string()))
+    async fn chat_stream(
+        &self,
+        _request: ChatRequest,
+    ) -> Result<ricecoder_providers::ChatStream, ProviderError> {
+        Err(ProviderError::NotFound(
+            "Streaming not implemented".to_string(),
+        ))
     }
 
     fn count_tokens(&self, content: &str, _model: &str) -> Result<usize, ProviderError> {
@@ -123,24 +130,30 @@ impl Provider for MockProvider {
 
 fn arb_chat_request() -> impl Strategy<Value = ChatRequest> {
     (
-        "[a-zA-Z0-9_-]{1,50}".prop_map(|s| s), // model
+        "[a-zA-Z0-9_-]{1,50}".prop_map(|s| s),       // model
         prop::collection::vec(arb_message(), 1..10), // messages
         proptest::option::of((0.0..2.0f32).prop_map(|f| f as f64)), // temperature
-        proptest::option::of((1..1000usize)), // max_tokens
-        any::<bool>(), // stream
+        proptest::option::of((1..1000usize)),        // max_tokens
+        any::<bool>(),                               // stream
     )
-        .prop_map(|(model, messages, temperature, max_tokens, stream)| ChatRequest {
-            model,
-            messages,
-            temperature,
-            max_tokens,
-            stream,
-        })
+        .prop_map(
+            |(model, messages, temperature, max_tokens, stream)| ChatRequest {
+                model,
+                messages,
+                temperature,
+                max_tokens,
+                stream,
+            },
+        )
 }
 
 fn arb_message() -> impl Strategy<Value = Message> {
     (
-        prop_oneof![Just(MessageRole::User), Just(MessageRole::Assistant), Just(MessageRole::System)],
+        prop_oneof![
+            Just(MessageRole::User),
+            Just(MessageRole::Assistant),
+            Just(MessageRole::System)
+        ],
         ".{1,500}".prop_map(|s| s), // content
     )
         .prop_map(|(role, content)| Message { role, content })
@@ -149,8 +162,8 @@ fn arb_message() -> impl Strategy<Value = Message> {
 fn arb_provider_config() -> impl Strategy<Value = (String, bool, u64)> {
     (
         "[a-zA-Z0-9_-]{1,20}".prop_map(|s| s), // provider_id
-        any::<bool>(), // should_fail
-        (10..500u64), // response_delay_ms
+        any::<bool>(),                         // should_fail
+        (10..500u64),                          // response_delay_ms
     )
 }
 

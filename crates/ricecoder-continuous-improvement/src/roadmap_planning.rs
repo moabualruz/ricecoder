@@ -1,11 +1,11 @@
 //! Roadmap planning and prioritization
 
 use crate::types::*;
+use chrono::TimeDelta;
 use ricecoder_monitoring::types::ComplianceStatus;
+use std::collections::HashMap;
 use tokio::sync::mpsc;
 use tokio::time;
-use std::collections::HashMap;
-use chrono::TimeDelta;
 
 /// Roadmap planner for generating and managing product roadmap
 pub struct RoadmapPlanner {
@@ -94,7 +94,8 @@ impl RoadmapPlanner {
         recommendations.extend(self.generate_feedback_recommendations(feedback_insights));
 
         // Generate recommendations from analytics
-        let (analytics_recs, analytics_priorities) = self.generate_analytics_recommendations(analytics_insights);
+        let (analytics_recs, analytics_priorities) =
+            self.generate_analytics_recommendations(analytics_insights);
         recommendations.extend(analytics_recs);
         priorities.extend(analytics_priorities);
 
@@ -109,7 +110,8 @@ impl RoadmapPlanner {
 
         // Sort recommendations by priority and impact
         recommendations.sort_by(|a, b| {
-            b.priority.cmp(&a.priority)
+            b.priority
+                .cmp(&a.priority)
                 .then(b.impact_score.partial_cmp(&a.impact_score).unwrap())
         });
 
@@ -132,7 +134,10 @@ impl RoadmapPlanner {
         weights: &PrioritizationWeights,
         enterprise_focus: bool,
     ) -> Result<(), ContinuousImprovementError> {
-        tracing::info!("Performing roadmap planning with enterprise focus: {}", enterprise_focus);
+        tracing::info!(
+            "Performing roadmap planning with enterprise focus: {}",
+            enterprise_focus
+        );
 
         // In real implementation, this would analyze all data sources
         // and generate/update the roadmap
@@ -142,7 +147,10 @@ impl RoadmapPlanner {
     }
 
     /// Generate recommendations from feedback
-    fn generate_feedback_recommendations(&self, feedback: &FeedbackInsights) -> Vec<ImprovementRecommendation> {
+    fn generate_feedback_recommendations(
+        &self,
+        feedback: &FeedbackInsights,
+    ) -> Vec<ImprovementRecommendation> {
         let mut recommendations = Vec::new();
 
         // Address top pain points
@@ -196,7 +204,10 @@ impl RoadmapPlanner {
     }
 
     /// Generate recommendations from analytics
-    fn generate_analytics_recommendations(&self, analytics: &AnalyticsInsights) -> (Vec<ImprovementRecommendation>, Vec<FeaturePriority>) {
+    fn generate_analytics_recommendations(
+        &self,
+        analytics: &AnalyticsInsights,
+    ) -> (Vec<ImprovementRecommendation>, Vec<FeaturePriority>) {
         let mut recommendations = Vec::new();
         let mut priorities = Vec::new();
 
@@ -217,9 +228,22 @@ impl RoadmapPlanner {
                 current_priority: priority.clone(),
                 usage_score: *usage,
                 feedback_score: 5.0, // Would be calculated from feedback
-                issue_score: 3.0, // Would be calculated from issues
-                enterprise_score: if self.config.enterprise_focus { 8.0 } else { 5.0 },
-                overall_score: self.calculate_overall_score(*usage, 5.0, 3.0, if self.config.enterprise_focus { 8.0 } else { 5.0 }),
+                issue_score: 3.0,    // Would be calculated from issues
+                enterprise_score: if self.config.enterprise_focus {
+                    8.0
+                } else {
+                    5.0
+                },
+                overall_score: self.calculate_overall_score(
+                    *usage,
+                    5.0,
+                    3.0,
+                    if self.config.enterprise_focus {
+                        8.0
+                    } else {
+                        5.0
+                    },
+                ),
                 trend: PriorityTrend::Stable,
             });
 
@@ -228,15 +252,22 @@ impl RoadmapPlanner {
                 recommendations.push(ImprovementRecommendation {
                     id: format!("analytics-optimize-{}", feature),
                     title: format!("Optimize performance for {}", feature),
-                    description: format!("High usage feature {} needs performance optimization", feature),
+                    description: format!(
+                        "High usage feature {} needs performance optimization",
+                        feature
+                    ),
                     category: RecommendationCategory::PerformanceImprovement,
                     priority,
                     effort_estimate: EffortLevel::Medium,
                     impact_score: 8.0,
-                    rationale: format!("High usage ({} events) indicates performance optimization opportunity", usage),
-                    supporting_data: HashMap::from([
-                        ("usage_count".to_string(), serde_json::Value::Number((*usage as u64).into())),
-                    ]),
+                    rationale: format!(
+                        "High usage ({} events) indicates performance optimization opportunity",
+                        usage
+                    ),
+                    supporting_data: HashMap::from([(
+                        "usage_count".to_string(),
+                        serde_json::Value::Number((*usage as u64).into()),
+                    )]),
                 });
             }
         }
@@ -245,7 +276,10 @@ impl RoadmapPlanner {
     }
 
     /// Generate recommendations from issues
-    fn generate_issue_recommendations(&self, issues: &IssueInsights) -> Vec<ImprovementRecommendation> {
+    fn generate_issue_recommendations(
+        &self,
+        issues: &IssueInsights,
+    ) -> Vec<ImprovementRecommendation> {
         let mut recommendations = Vec::new();
 
         // Address critical issues
@@ -297,7 +331,10 @@ impl RoadmapPlanner {
     }
 
     /// Generate recommendations from security insights
-    fn generate_security_recommendations(&self, security: &SecurityInsights) -> Vec<ImprovementRecommendation> {
+    fn generate_security_recommendations(
+        &self,
+        security: &SecurityInsights,
+    ) -> Vec<ImprovementRecommendation> {
         let mut recommendations = Vec::new();
 
         // Address security vulnerabilities
@@ -336,7 +373,10 @@ impl RoadmapPlanner {
     }
 
     /// Generate roadmap items from recommendations
-    fn generate_roadmap_items(&self, recommendations: &[ImprovementRecommendation]) -> Vec<RoadmapItem> {
+    fn generate_roadmap_items(
+        &self,
+        recommendations: &[ImprovementRecommendation],
+    ) -> Vec<RoadmapItem> {
         let mut roadmap_items = Vec::new();
 
         for rec in recommendations {
@@ -349,20 +389,27 @@ impl RoadmapPlanner {
                     category: match rec.category {
                         RecommendationCategory::FeatureEnhancement => RoadmapCategory::Feature,
                         RecommendationCategory::BugFix => RoadmapCategory::Feature,
-                        RecommendationCategory::PerformanceImprovement => RoadmapCategory::Infrastructure,
+                        RecommendationCategory::PerformanceImprovement => {
+                            RoadmapCategory::Infrastructure
+                        }
                         RecommendationCategory::SecurityEnhancement => RoadmapCategory::Security,
                         RecommendationCategory::UserExperience => RoadmapCategory::Feature,
-                        RecommendationCategory::EnterpriseIntegration => RoadmapCategory::Enterprise,
-                        RecommendationCategory::ComplianceImprovement => RoadmapCategory::Compliance,
+                        RecommendationCategory::EnterpriseIntegration => {
+                            RoadmapCategory::Enterprise
+                        }
+                        RecommendationCategory::ComplianceImprovement => {
+                            RoadmapCategory::Compliance
+                        }
                     },
                     priority: rec.priority,
-                    estimated_completion: chrono::Utc::now() + match rec.effort_estimate {
-                        EffortLevel::Small => TimeDelta::weeks(2),
-                        EffortLevel::Medium => TimeDelta::weeks(4),
-                        EffortLevel::Large => TimeDelta::weeks(8),
-                        EffortLevel::ExtraLarge => TimeDelta::weeks(16),
-                        EffortLevel::High => TimeDelta::weeks(6),
-                    },
+                    estimated_completion: chrono::Utc::now()
+                        + match rec.effort_estimate {
+                            EffortLevel::Small => TimeDelta::weeks(2),
+                            EffortLevel::Medium => TimeDelta::weeks(4),
+                            EffortLevel::Large => TimeDelta::weeks(8),
+                            EffortLevel::ExtraLarge => TimeDelta::weeks(16),
+                            EffortLevel::High => TimeDelta::weeks(6),
+                        },
                     dependencies: vec![],
                     stakeholders: vec!["Product Team".to_string(), "Engineering".to_string()],
                 });
@@ -373,11 +420,17 @@ impl RoadmapPlanner {
     }
 
     /// Calculate overall priority score
-    fn calculate_overall_score(&self, usage: f64, feedback: f64, issues: f64, enterprise: f64) -> f64 {
+    fn calculate_overall_score(
+        &self,
+        usage: f64,
+        feedback: f64,
+        issues: f64,
+        enterprise: f64,
+    ) -> f64 {
         let weights = &self.config.prioritization_weights;
-        (usage * weights.usage_analytics_weight / 100.0) +
-        (feedback * weights.user_feedback_weight / 100.0) +
-        (issues * weights.issue_impact_weight / 100.0) +
-        (enterprise * weights.enterprise_value_weight / 100.0)
+        (usage * weights.usage_analytics_weight / 100.0)
+            + (feedback * weights.user_feedback_weight / 100.0)
+            + (issues * weights.issue_impact_weight / 100.0)
+            + (enterprise * weights.enterprise_value_weight / 100.0)
     }
 }

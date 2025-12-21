@@ -1,8 +1,8 @@
 //! Version coordination across dependent projects
 
+use crate::analyzers::{DependencyGraph, Version, VersionValidator};
 use crate::error::{OrchestrationError, Result};
 use crate::models::Project;
-use crate::analyzers::{Version, VersionValidator, DependencyGraph};
 use std::collections::{HashMap, HashSet};
 
 /// Coordinates version updates across dependent projects
@@ -84,7 +84,8 @@ impl VersionCoordinator {
 
     /// Registers a project with its current version
     pub fn register_project(&mut self, project: &Project) {
-        self.project_versions.insert(project.name.clone(), project.version.clone());
+        self.project_versions
+            .insert(project.name.clone(), project.version.clone());
     }
 
     /// Registers a dependency constraint
@@ -119,12 +120,16 @@ impl VersionCoordinator {
 
         // Validate that the new version is compatible with all dependent constraints
         if let Some(constraints) = self.version_constraints.get(project) {
-            VersionValidator::validate_update(&old_version, new_version, 
-                &constraints.iter().map(|s| s.as_str()).collect::<Vec<_>>())?;
+            VersionValidator::validate_update(
+                &old_version,
+                new_version,
+                &constraints.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
+            )?;
         }
 
         // Update the version
-        self.project_versions.insert(project.to_string(), new_version.to_string());
+        self.project_versions
+            .insert(project.to_string(), new_version.to_string());
 
         Ok(VersionUpdateResult {
             project: project.to_string(),
@@ -155,10 +160,8 @@ impl VersionCoordinator {
             // Validate version format
             if let Err(e) = Version::parse(&new_version) {
                 plan.is_valid = false;
-                plan.validation_errors.push(format!(
-                    "Invalid version for {}: {}",
-                    project, e
-                ));
+                plan.validation_errors
+                    .push(format!("Invalid version for {}: {}", project, e));
                 continue;
             }
 
@@ -167,13 +170,15 @@ impl VersionCoordinator {
                 Some(v) => v.clone(),
                 None => {
                     plan.is_valid = false;
-                    plan.validation_errors.push(format!("Project not found: {}", project));
+                    plan.validation_errors
+                        .push(format!("Project not found: {}", project));
                     continue;
                 }
             };
 
             // Check if breaking change
-            let is_breaking = match VersionValidator::is_breaking_change(&old_version, &new_version) {
+            let is_breaking = match VersionValidator::is_breaking_change(&old_version, &new_version)
+            {
                 Ok(b) => b,
                 Err(e) => {
                     plan.is_valid = false;
@@ -210,11 +215,7 @@ impl VersionCoordinator {
     }
 
     /// Validates that a version update maintains all constraints
-    pub fn validate_version_update(
-        &self,
-        project: &str,
-        new_version: &str,
-    ) -> Result<bool> {
+    pub fn validate_version_update(&self, project: &str, new_version: &str) -> Result<bool> {
         // Get current version
         let current_version = self
             .project_versions
@@ -299,7 +300,10 @@ mod tests {
         };
 
         coordinator.register_project(&project);
-        assert_eq!(coordinator.get_version("test-project"), Some("1.0.0".to_string()));
+        assert_eq!(
+            coordinator.get_version("test-project"),
+            Some("1.0.0".to_string())
+        );
     }
 
     #[test]
@@ -329,7 +333,10 @@ mod tests {
         assert!(result.success);
         assert_eq!(result.old_version, "1.0.0");
         assert_eq!(result.new_version, "1.1.0");
-        assert_eq!(coordinator.get_version("test-project"), Some("1.1.0".to_string()));
+        assert_eq!(
+            coordinator.get_version("test-project"),
+            Some("1.1.0".to_string())
+        );
     }
 
     #[test]
@@ -372,10 +379,14 @@ mod tests {
         coordinator.register_constraint("test-project", "^1.0.0".to_string());
 
         // Valid update
-        assert!(coordinator.validate_version_update("test-project", "1.1.0").unwrap());
+        assert!(coordinator
+            .validate_version_update("test-project", "1.1.0")
+            .unwrap());
 
         // Invalid update (breaks constraint)
-        assert!(coordinator.validate_version_update("test-project", "2.0.0").is_err());
+        assert!(coordinator
+            .validate_version_update("test-project", "2.0.0")
+            .is_err());
     }
 
     #[test]
@@ -392,10 +403,14 @@ mod tests {
         coordinator.register_project(&project);
 
         // Minor version change is not breaking
-        assert!(!coordinator.is_breaking_change("test-project", "1.1.0").unwrap());
+        assert!(!coordinator
+            .is_breaking_change("test-project", "1.1.0")
+            .unwrap());
 
         // Major version change is breaking
-        assert!(coordinator.is_breaking_change("test-project", "2.0.0").unwrap());
+        assert!(coordinator
+            .is_breaking_change("test-project", "2.0.0")
+            .unwrap());
     }
 
     #[test]
@@ -492,8 +507,14 @@ mod tests {
         coordinator.register_project(&project2);
 
         assert_eq!(coordinator.get_all_projects().len(), 2);
-        assert_eq!(coordinator.get_version("project1"), Some("1.0.0".to_string()));
-        assert_eq!(coordinator.get_version("project2"), Some("2.0.0".to_string()));
+        assert_eq!(
+            coordinator.get_version("project1"),
+            Some("1.0.0".to_string())
+        );
+        assert_eq!(
+            coordinator.get_version("project2"),
+            Some("2.0.0".to_string())
+        );
     }
 
     #[test]

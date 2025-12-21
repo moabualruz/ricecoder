@@ -3,7 +3,7 @@
 //! This module contains unit tests for the FilePickerWidget functionality,
 //! including creation, visibility, navigation, fuzzy search, and file selection.
 
-use ricecoder_tui::file_picker::{FilePickerWidget, fuzzy_match};
+use ricecoder_tui::file_picker::{fuzzy_match, FilePickerWidget};
 
 #[cfg(test)]
 mod tests {

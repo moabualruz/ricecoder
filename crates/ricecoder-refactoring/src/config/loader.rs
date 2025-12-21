@@ -10,8 +10,9 @@ pub struct ConfigLoader;
 impl ConfigLoader {
     /// Load configuration from a YAML file
     pub fn load_from_yaml(path: &Path) -> Result<RefactoringConfig> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| RefactoringError::ConfigError(format!("Failed to read config file: {}", e)))?;
+        let content = std::fs::read_to_string(path).map_err(|e| {
+            RefactoringError::ConfigError(format!("Failed to read config file: {}", e))
+        })?;
 
         serde_yaml::from_str(&content)
             .map_err(|e| RefactoringError::ConfigError(format!("Failed to parse YAML: {}", e)))
@@ -19,8 +20,9 @@ impl ConfigLoader {
 
     /// Load configuration from a JSON file
     pub fn load_from_json(path: &Path) -> Result<RefactoringConfig> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| RefactoringError::ConfigError(format!("Failed to read config file: {}", e)))?;
+        let content = std::fs::read_to_string(path).map_err(|e| {
+            RefactoringError::ConfigError(format!("Failed to read config file: {}", e))
+        })?;
 
         serde_json::from_str(&content)
             .map_err(|e| RefactoringError::ConfigError(format!("Failed to parse JSON: {}", e)))
@@ -64,7 +66,7 @@ mod tests {
         use tempfile::TempDir;
         let dir = TempDir::new()?;
         let file_path = dir.path().join("config.yaml");
-        
+
         let yaml_content = r#"
 language: rust
 extensions:

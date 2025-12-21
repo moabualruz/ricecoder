@@ -56,7 +56,10 @@ impl PatternMatcher {
     }
 
     /// Match multiple rules against code
-    pub fn match_rules(code: &str, rules: &[RefactoringRule]) -> Result<HashMap<String, Vec<MatchResult>>> {
+    pub fn match_rules(
+        code: &str,
+        rules: &[RefactoringRule],
+    ) -> Result<HashMap<String, Vec<MatchResult>>> {
         let mut all_matches = HashMap::new();
 
         for rule in rules {
@@ -72,10 +75,7 @@ impl PatternMatcher {
     }
 
     /// Check if a refactoring type is applicable based on matched patterns
-    pub fn is_applicable(
-        refactoring_type: RefactoringType,
-        matched_patterns: &[&str],
-    ) -> bool {
+    pub fn is_applicable(refactoring_type: RefactoringType, matched_patterns: &[&str]) -> bool {
         match refactoring_type {
             RefactoringType::Rename => {
                 // Rename is applicable if we found a symbol
@@ -99,7 +99,9 @@ impl PatternMatcher {
             }
             RefactoringType::ChangeSignature => {
                 // ChangeSignature is applicable if we found function signatures
-                matched_patterns.iter().any(|p| p.contains("fn") || p.contains("function"))
+                matched_patterns
+                    .iter()
+                    .any(|p| p.contains("fn") || p.contains("function"))
             }
             RefactoringType::Simplify => {
                 // Simplify is applicable if we found simplifiable patterns

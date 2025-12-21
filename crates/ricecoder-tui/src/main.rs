@@ -1,33 +1,25 @@
 //! RiceCoder TUI - Terminal User Interface entry point
 
 use anyhow::Result;
-use std::fmt;
-use ricecoder_tui::{
-    accessibility::*, app::App, banner::*, model::*, update::*, clipboard::*,
-    code_editor_widget::*, command_blocks::*, command_palette::*, components::*,
-    di::*, lifecycle::*, diff::*, error::*,
-    event::*, event_dispatcher::*, providers::*, file_picker::*,
-    image_integration::*, image_widget::*, input::*, integration::*,
-    layout::*, logger_widget::*, markdown::*, performance::*,
-    popup_widget::*, progressive_enhancement::*, prompt::*,
-    prompt_context::*, scrollview_widget::*, status_bar::*,
-    style::*, terminal_state::*, textarea_widget::*,
-    tree_widget::*, ui_components::*, widgets::*,
-    plugins::*, monitoring::*,
-    reactive_ui_updates::*, real_time_updates::*,
-    render_pipeline::*,
-    project_bootstrap::*,
-    CancellationToken,
-};
-use ricecoder_tui::view::view;
 use ricecoder_storage::TuiConfig;
+use ricecoder_tui::view::view;
+use ricecoder_tui::{
+    accessibility::*, app::App, banner::*, clipboard::*, code_editor_widget::*, command_blocks::*,
+    command_palette::*, components::*, di::*, diff::*, error::*, event::*, event_dispatcher::*,
+    file_picker::*, image_integration::*, image_widget::*, input::*, integration::*, layout::*,
+    lifecycle::*, logger_widget::*, markdown::*, model::*, monitoring::*, performance::*,
+    plugins::*, popup_widget::*, progressive_enhancement::*, project_bootstrap::*, prompt::*,
+    prompt_context::*, providers::*, reactive_ui_updates::*, real_time_updates::*,
+    render_pipeline::*, scrollview_widget::*, status_bar::*, style::*, terminal_state::*,
+    textarea_widget::*, tree_widget::*, ui_components::*, update::*, widgets::*, CancellationToken,
+};
+use std::fmt;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+use tokio::sync::mpsc;
 use tokio::sync::Semaphore;
 use tokio::task::JoinHandle;
-use tokio::sync::mpsc;
-
 
 /// Resource that needs cleanup during shutdown
 #[async_trait::async_trait]
@@ -56,7 +48,7 @@ impl Default for TimeoutConfig {
             ui_operations: Duration::from_millis(100), // 100ms for responsive UI
             io_operations: Duration::from_secs(30),    // 30s for I/O operations
             plugin_operations: Duration::from_secs(10), // 10s for plugin operations
-            background_tasks: Duration::from_secs(60),  // 1min for background tasks
+            background_tasks: Duration::from_secs(60), // 1min for background tasks
             command_execution: Duration::from_secs(300), // 5min for command execution
         }
     }
@@ -345,13 +337,22 @@ impl AsyncRuntimeManager {
     }
 
     /// Submit a job to the background queue
-    pub fn submit_job(&self, task: ricecoder_tui::JobTask, priority: ricecoder_tui::JobPriority) -> ricecoder_tui::JobId {
+    pub fn submit_job(
+        &self,
+        task: ricecoder_tui::JobTask,
+        priority: ricecoder_tui::JobPriority,
+    ) -> ricecoder_tui::JobId {
         let mut queue = self.job_queue.write().unwrap();
         queue.submit_job(task, priority)
     }
 
     /// Submit a job with completion callback
-    pub fn submit_job_with_callback<F>(&self, task: ricecoder_tui::JobTask, priority: ricecoder_tui::JobPriority, callback: F) -> ricecoder_tui::JobId
+    pub fn submit_job_with_callback<F>(
+        &self,
+        task: ricecoder_tui::JobTask,
+        priority: ricecoder_tui::JobPriority,
+        callback: F,
+    ) -> ricecoder_tui::JobId
     where
         F: Fn(ricecoder_tui::JobResult) + Send + Sync + 'static,
     {
@@ -378,7 +379,10 @@ impl AsyncRuntimeManager {
     }
 
     /// Subscribe to progress updates for a job
-    pub fn subscribe_job_progress(&self, job_id: &ricecoder_tui::JobId) -> Option<tokio::sync::broadcast::Receiver<ricecoder_tui::ProgressUpdate>> {
+    pub fn subscribe_job_progress(
+        &self,
+        job_id: &ricecoder_tui::JobId,
+    ) -> Option<tokio::sync::broadcast::Receiver<ricecoder_tui::ProgressUpdate>> {
         let queue = self.job_queue.read().unwrap();
         None // TODO: fix return type
     }
@@ -391,7 +395,12 @@ impl AsyncRuntimeManager {
     /// Get progress statistics
     pub fn progress_stats(&self) -> ricecoder_tui::ProgressStats {
         let queue = self.job_queue.read().unwrap();
-        ricecoder_tui::ProgressStats { total_trackers: 0, active_trackers: 0, completed_trackers: 0, failed_trackers: 0 }
+        ricecoder_tui::ProgressStats {
+            total_trackers: 0,
+            active_trackers: 0,
+            completed_trackers: 0,
+            failed_trackers: 0,
+        }
     }
 
     /// Enable performance profiling
@@ -480,7 +489,11 @@ impl AsyncRuntimeManager {
     }
 
     /// Execute an operation with type-specific timeout
-    async fn execute_with_timeout<F, Fut, T>(&self, operation_type: OperationType, operation: F) -> Result<T, TimeoutError>
+    async fn execute_with_timeout<F, Fut, T>(
+        &self,
+        operation_type: OperationType,
+        operation: F,
+    ) -> Result<T, TimeoutError>
     where
         F: FnOnce() -> Fut,
         Fut: std::future::Future<Output = T> + Send + 'static,
@@ -530,7 +543,11 @@ pub struct TimeoutError {
 
 impl std::fmt::Display for TimeoutError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?} operation timed out after {:?}", self.operation_type, self.timeout)
+        write!(
+            f,
+            "{:?} operation timed out after {:?}",
+            self.operation_type, self.timeout
+        )
     }
 }
 
@@ -590,8 +607,11 @@ impl CleanupResource for PerformanceTrackerCleanup {
         if let Some(tracker) = self.tracker.take() {
             tracing::debug!("Cleaning up performance tracker");
             let stats = tracker.metrics();
-            tracing::info!("Final performance stats: {:.1} FPS, {:.1}ms avg frame time",
-                          stats.current_fps, stats.average_frame_time_ms);
+            tracing::info!(
+                "Final performance stats: {:.1} FPS, {:.1}ms avg frame time",
+                stats.current_fps,
+                stats.average_frame_time_ms
+            );
         }
         Ok(())
     }
@@ -626,7 +646,7 @@ async fn main() -> Result<()> {
     // Capture terminal state before TUI initialization
     // Requirements: 4.1, 10.1 - Detect capabilities and capture terminal state before TUI initialization
     let mut terminal_state = TerminalState::capture()?;
-    
+
     // Log detected capabilities for debugging and adaptation
     // Requirements: 4.1 - Log detected capabilities via ricecoder-logging
     let caps = terminal_state.capabilities();
@@ -648,7 +668,7 @@ async fn main() -> Result<()> {
     if caps.should_reduce_graphics() {
         tracing::info!("SSH session detected - reducing graphics complexity");
     }
-    
+
     if caps.should_wrap_osc52() {
         tracing::info!("TMUX session detected - will wrap OSC 52 sequences for clipboard");
     }
@@ -734,7 +754,8 @@ async fn main() -> Result<()> {
         &mut event_rx,
         runtime_manager.cancellation_token(),
         terminal_state.capabilities(),
-    ).await;
+    )
+    .await;
 
     // Restore terminal state on exit (normal, Ctrl+C, or error)
     // Requirements: 10.2, 10.3 - Restore terminal on normal exit, Ctrl+C, and error exit
@@ -770,8 +791,8 @@ async fn run_tea_event_loop(
     capabilities: &ricecoder_tui::TerminalCapabilities,
 ) -> Result<()> {
     use crossterm::{
+        event::{DisableMouseCapture, EnableMouseCapture},
         execute,
-        event::{EnableMouseCapture, DisableMouseCapture},
         terminal::{EnterAlternateScreen, LeaveAlternateScreen},
     };
     use ratatui::backend::CrosstermBackend;
@@ -871,7 +892,8 @@ async fn run_tea_event_loop(
 
         tracing::info!("TEA event loop exited successfully");
         Ok::<(), anyhow::Error>(())
-    }.await;
+    }
+    .await;
 
     // Clean up terminal
     if capabilities.mouse_support {
@@ -881,10 +903,7 @@ async fn run_tea_event_loop(
             LeaveAlternateScreen
         )?;
     } else {
-        execute!(
-            terminal.backend_mut(),
-            LeaveAlternateScreen
-        )?;
+        execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
     }
     terminal.show_cursor()?;
 

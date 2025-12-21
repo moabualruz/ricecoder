@@ -153,10 +153,15 @@ mod tests {
             }
 
             async fn chat(&self, _request: ChatRequest) -> Result<ChatResponse, ProviderError> {
-                Err(ProviderError::ProviderError("Simulated failure".to_string()))
+                Err(ProviderError::ProviderError(
+                    "Simulated failure".to_string(),
+                ))
             }
 
-            async fn chat_stream(&self, _request: ChatRequest) -> Result<ChatStream, ProviderError> {
+            async fn chat_stream(
+                &self,
+                _request: ChatRequest,
+            ) -> Result<ChatStream, ProviderError> {
                 Err(ProviderError::NotFound("Not implemented".to_string()))
             }
 
@@ -225,7 +230,10 @@ mod tests {
         };
 
         manager.chat(request.clone()).await.unwrap();
-        manager.chat_with_provider(&manager.get_provider("test2").unwrap(), request).await.unwrap();
+        manager
+            .chat_with_provider(&manager.get_provider("test2").unwrap(), request)
+            .await
+            .unwrap();
 
         // Get performance summary
         let summary = manager.performance_monitor().get_performance_summary();
@@ -266,7 +274,10 @@ mod tests {
 
         // Make requests to build performance data
         manager.chat(request.clone()).await.unwrap();
-        manager.chat_with_provider(&manager.get_provider("provider2").unwrap(), request.clone()).await.unwrap();
+        manager
+            .chat_with_provider(&manager.get_provider("provider2").unwrap(), request.clone())
+            .await
+            .unwrap();
 
         // Update quality scores
         manager.update_provider_quality_scores();
@@ -362,7 +373,10 @@ mod tests {
                 })
             }
 
-            async fn chat_stream(&self, _request: ChatRequest) -> Result<ChatStream, ProviderError> {
+            async fn chat_stream(
+                &self,
+                _request: ChatRequest,
+            ) -> Result<ChatStream, ProviderError> {
                 Err(ProviderError::NotFound("Not implemented".to_string()))
             }
 
@@ -392,7 +406,8 @@ mod tests {
         manager.update_provider_state("regular_provider", ConnectionState::Connected, None);
 
         // Select provider for vision capability
-        let vision_provider_id = manager.select_best_provider_for_model(&[Capability::Vision], None);
+        let vision_provider_id =
+            manager.select_best_provider_for_model(&[Capability::Vision], None);
         assert_eq!(vision_provider_id, Some("vision_provider".to_string()));
 
         // Select provider for regular chat (should work with any)
@@ -479,18 +494,39 @@ mod tests {
         let mut manager = ProviderManager::new(registry, "test".to_string());
 
         // Simulate usage data by directly recording analytics
-        manager.community_registry_mut().record_usage("provider_x", ProviderUsage {
-            success: true, tokens_used: 100, cost: 0.01, response_time_ms: 500,
-            model: "model1".to_string(), error_type: None,
-        });
-        manager.community_registry_mut().record_usage("provider_x", ProviderUsage {
-            success: true, tokens_used: 200, cost: 0.02, response_time_ms: 600,
-            model: "model1".to_string(), error_type: None,
-        });
-        manager.community_registry_mut().record_usage("provider_y", ProviderUsage {
-            success: true, tokens_used: 50, cost: 0.005, response_time_ms: 300,
-            model: "model2".to_string(), error_type: None,
-        });
+        manager.community_registry_mut().record_usage(
+            "provider_x",
+            ProviderUsage {
+                success: true,
+                tokens_used: 100,
+                cost: 0.01,
+                response_time_ms: 500,
+                model: "model1".to_string(),
+                error_type: None,
+            },
+        );
+        manager.community_registry_mut().record_usage(
+            "provider_x",
+            ProviderUsage {
+                success: true,
+                tokens_used: 200,
+                cost: 0.02,
+                response_time_ms: 600,
+                model: "model1".to_string(),
+                error_type: None,
+            },
+        );
+        manager.community_registry_mut().record_usage(
+            "provider_y",
+            ProviderUsage {
+                success: true,
+                tokens_used: 50,
+                cost: 0.005,
+                response_time_ms: 300,
+                model: "model2".to_string(),
+                error_type: None,
+            },
+        );
 
         let popular = manager.get_popular_providers(2);
         assert_eq!(popular.len(), 2);

@@ -1,14 +1,14 @@
 //! Refactoring patterns for reusable transformations
 
+pub mod exporter;
+pub mod matcher;
 pub mod store;
 pub mod validator;
-pub mod matcher;
-pub mod exporter;
 
+pub use exporter::PatternExporter;
+pub use matcher::PatternMatcher;
 pub use store::PatternStore;
 pub use validator::PatternValidator;
-pub use matcher::PatternMatcher;
-pub use exporter::PatternExporter;
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

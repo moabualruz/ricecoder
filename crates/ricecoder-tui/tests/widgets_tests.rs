@@ -1,6 +1,5 @@
+use ricecoder_tui::widgets::{MessageAction, StreamingMessage};
 use ricecoder_tui::{ChatWidget, Message, MessageAuthor};
-use ricecoder_tui::widgets::{StreamingMessage, MessageAction};
-
 
 #[test]
 fn test_message_creation() {
@@ -353,8 +352,7 @@ fn test_streaming_message_is_complete() {
 
 #[test]
 fn test_message_extract_code_blocks() {
-    let msg =
-        Message::assistant("Here's some code:\n```rust\nfn main() {}\n```\nAnd more text");
+    let msg = Message::assistant("Here's some code:\n```rust\nfn main() {}\n```\nAnd more text");
     let blocks = msg.extract_code_blocks();
     assert_eq!(blocks.len(), 1);
     assert!(blocks[0].contains("fn main()"));

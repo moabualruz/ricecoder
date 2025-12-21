@@ -37,7 +37,11 @@ impl GenericProvider {
     /// Get unique words from text
     fn get_unique_words(text: &str) -> Vec<String> {
         let words = Self::extract_words(text);
-        let mut unique: Vec<String> = words.into_iter().collect::<HashSet<_>>().into_iter().collect();
+        let mut unique: Vec<String> = words
+            .into_iter()
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect();
         unique.sort();
         unique
     }
@@ -51,7 +55,9 @@ impl GenericProvider {
         let open_brackets = source.matches('[').count();
         let close_brackets = source.matches(']').count();
 
-        open_braces != close_braces || open_parens != close_parens || open_brackets != close_brackets
+        open_braces != close_braces
+            || open_parens != close_parens
+            || open_brackets != close_brackets
     }
 }
 
@@ -240,7 +246,9 @@ mod tests {
         assert!(result.is_ok());
         let diagnostics = result.unwrap();
         assert!(!diagnostics.is_empty());
-        assert!(diagnostics.iter().any(|d| d.message.contains("Trailing whitespace")));
+        assert!(diagnostics
+            .iter()
+            .any(|d| d.message.contains("Trailing whitespace")));
     }
 
     #[tokio::test]

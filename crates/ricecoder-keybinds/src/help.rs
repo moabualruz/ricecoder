@@ -97,7 +97,11 @@ impl KeybindHelp {
     }
 
     /// Paginate keybinds
-    pub fn paginate<'a>(keybinds: &[&'a Keybind], page: usize, page_size: usize) -> Page<&'a Keybind> {
+    pub fn paginate<'a>(
+        keybinds: &[&'a Keybind],
+        page: usize,
+        page_size: usize,
+    ) -> Page<&'a Keybind> {
         if page_size == 0 {
             return Page {
                 items: Vec::new(),
@@ -126,5 +130,3 @@ impl KeybindHelp {
         }
     }
 }
-
-

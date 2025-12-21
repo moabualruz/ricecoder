@@ -101,10 +101,10 @@ proptest! {
     fn test_search_input_limit_constraints_property(limit in 1usize..200usize) {
         let input = SearchInput::new("test").with_limit(limit);
         let effective_limit = input.get_limit();
-        
+
         // Limit should never exceed 100
         prop_assert!(effective_limit <= 100);
-        
+
         // If requested limit <= 100, it should be honored
         if limit <= 100 {
             prop_assert_eq!(effective_limit, limit);
@@ -130,10 +130,10 @@ proptest! {
             .collect();
 
         let output = SearchOutput::new(results.clone(), total_count);
-        
+
         // Results count should match
         prop_assert_eq!(output.results.len(), result_count);
-        
+
         // Total count should be preserved
         prop_assert_eq!(output.total_count, total_count);
     }
@@ -148,11 +148,11 @@ proptest! {
         rank in 0usize..100usize
     ) {
         let result = SearchResult::new(title.clone(), url.clone(), snippet.clone(), rank);
-        
+
         // Serialization should preserve all fields
         let json = serde_json::to_string(&result).unwrap();
         let deserialized: SearchResult = serde_json::from_str(&json).unwrap();
-        
+
         prop_assert_eq!(deserialized.title, title);
         prop_assert_eq!(deserialized.url, url);
         prop_assert_eq!(deserialized.snippet, snippet);
@@ -164,7 +164,7 @@ proptest! {
     #[test]
     fn test_search_tool_empty_query_rejection_property(query in "[ \t\n]*") {
         let result = SearchTool::validate_query(&query);
-        
+
         // Empty or whitespace-only queries should be rejected
         if query.trim().is_empty() {
             prop_assert!(result.is_err());
@@ -176,7 +176,7 @@ proptest! {
     #[test]
     fn test_search_tool_long_query_rejection_property(query in "[a-zA-Z0-9 ]{1001,2000}") {
         let result = SearchTool::validate_query(&query);
-        
+
         // Queries longer than 1000 characters should be rejected
         if query.len() > 1000 {
             prop_assert!(result.is_err());
@@ -188,7 +188,7 @@ proptest! {
     #[test]
     fn test_search_tool_valid_query_acceptance_property(query in "[a-zA-Z0-9 ]{1,100}") {
         let result = SearchTool::validate_query(&query);
-        
+
         // Valid queries should be accepted
         if !query.trim().is_empty() && query.len() <= 1000 {
             prop_assert!(result.is_ok());
@@ -207,13 +207,11 @@ proptest! {
         ]
     ) {
         let result = SearchTool::validate_query(query);
-        
+
         // SQL injection patterns should be rejected
         prop_assert!(result.is_err());
     }
 }
-
-
 
 proptest! {
     #[test]
@@ -247,11 +245,11 @@ proptest! {
             .collect();
 
         let output = SearchOutput::new(results, total_count);
-        
+
         // Serialization should preserve structure
         let json = serde_json::to_string(&output).unwrap();
         let deserialized: SearchOutput = serde_json::from_str(&json).unwrap();
-        
+
         prop_assert_eq!(deserialized.results.len(), result_count);
         prop_assert_eq!(deserialized.total_count, total_count);
     }

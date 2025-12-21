@@ -99,8 +99,10 @@ impl McpCommand {
             return Ok(HashMap::new());
         }
 
-        let servers: HashMap<String, McpServerConfig> = serde_json::from_str(&content)
-            .map_err(|e| CliError::Internal(format!("Failed to parse MCP servers config: {}", e)))?;
+        let servers: HashMap<String, McpServerConfig> =
+            serde_json::from_str(&content).map_err(|e| {
+                CliError::Internal(format!("Failed to parse MCP servers config: {}", e))
+            })?;
 
         Ok(servers)
     }
@@ -109,11 +111,13 @@ impl McpCommand {
     fn save_servers(servers: &HashMap<String, McpServerConfig>) -> CliResult<()> {
         let config_file = Self::servers_config_file()?;
 
-        let content = serde_json::to_string_pretty(servers)
-            .map_err(|e| CliError::Internal(format!("Failed to serialize MCP servers config: {}", e)))?;
+        let content = serde_json::to_string_pretty(servers).map_err(|e| {
+            CliError::Internal(format!("Failed to serialize MCP servers config: {}", e))
+        })?;
 
-        std::fs::write(&config_file, content)
-            .map_err(|e| CliError::Internal(format!("Failed to write MCP servers config: {}", e)))?;
+        std::fs::write(&config_file, content).map_err(|e| {
+            CliError::Internal(format!("Failed to write MCP servers config: {}", e))
+        })?;
 
         Ok(())
     }
@@ -124,12 +128,20 @@ impl Command for McpCommand {
     async fn execute(&self) -> CliResult<()> {
         match &self.action {
             McpAction::List => list_servers(),
-            McpAction::Add { name, command, args } => add_server(name, command, args.clone()),
+            McpAction::Add {
+                name,
+                command,
+                args,
+            } => add_server(name, command, args.clone()),
             McpAction::Remove { name } => remove_server(name),
             McpAction::Info { name } => show_server_info(name),
             McpAction::Test { name } => test_server(name),
             McpAction::Tools => list_tools(),
-            McpAction::Execute { server, tool, parameters } => execute_tool(server, tool, parameters),
+            McpAction::Execute {
+                server,
+                tool,
+                parameters,
+            } => execute_tool(server, tool, parameters),
             McpAction::Status => show_status(),
         }
     }
@@ -175,7 +187,10 @@ fn add_server(name: &str, command: &str, args: Vec<String>) -> CliResult<()> {
     let mut servers = McpCommand::load_servers()?;
 
     if servers.contains_key(name) {
-        return Err(CliError::Internal(format!("MCP server '{}' already exists", name)));
+        return Err(CliError::Internal(format!(
+            "MCP server '{}' already exists",
+            name
+        )));
     }
 
     let server = McpServerConfig {
@@ -202,7 +217,10 @@ fn remove_server(name: &str) -> CliResult<()> {
     let mut servers = McpCommand::load_servers()?;
 
     if !servers.contains_key(name) {
-        return Err(CliError::Internal(format!("MCP server '{}' not found", name)));
+        return Err(CliError::Internal(format!(
+            "MCP server '{}' not found",
+            name
+        )));
     }
 
     servers.remove(name);
@@ -216,7 +234,8 @@ fn remove_server(name: &str) -> CliResult<()> {
 fn show_server_info(name: &str) -> CliResult<()> {
     let servers = McpCommand::load_servers()?;
 
-    let server = servers.get(name)
+    let server = servers
+        .get(name)
         .ok_or_else(|| CliError::Internal(format!("MCP server '{}' not found", name)))?;
 
     println!("MCP Server: {}", server.name);
@@ -226,7 +245,8 @@ fn show_server_info(name: &str) -> CliResult<()> {
     println!("  Health Status: {}", server.health_status);
 
     if let Some(last_check) = server.last_health_check {
-        println!("  Last Health Check: {} seconds ago",
+        println!(
+            "  Last Health Check: {} seconds ago",
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .map(|d| d.as_secs())
@@ -244,7 +264,8 @@ fn show_server_info(name: &str) -> CliResult<()> {
 fn test_server(name: &str) -> CliResult<()> {
     let mut servers = McpCommand::load_servers()?;
 
-    let server = servers.get_mut(name)
+    let server = servers
+        .get_mut(name)
         .ok_or_else(|| CliError::Internal(format!("MCP server '{}' not found", name)))?;
 
     println!("Testing MCP server: {}...", name);
@@ -259,7 +280,11 @@ fn test_server(name: &str) -> CliResult<()> {
         .unwrap_or(0);
 
     server.last_health_check = Some(now);
-    server.health_status = if is_healthy { "healthy".to_string() } else { "unhealthy".to_string() };
+    server.health_status = if is_healthy {
+        "healthy".to_string()
+    } else {
+        "unhealthy".to_string()
+    };
 
     McpCommand::save_servers(&servers)?;
 
@@ -285,7 +310,8 @@ fn simulate_health_check(_command: &str, _args: &[String]) -> bool {
     let seed = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
-        .as_nanos() % 100;
+        .as_nanos()
+        % 100;
 
     seed > 20 // 80% success rate for demo
 }
@@ -354,15 +380,22 @@ fn get_mock_tools_for_server(server_name: &str) -> Vec<String> {
 fn execute_tool(server: &str, tool: &str, parameters: &serde_json::Value) -> CliResult<()> {
     let servers = McpCommand::load_servers()?;
 
-    let server_config = servers.get(server)
+    let server_config = servers
+        .get(server)
         .ok_or_else(|| CliError::Internal(format!("MCP server '{}' not found", server)))?;
 
     if !server_config.enabled {
-        return Err(CliError::Internal(format!("MCP server '{}' is disabled", server)));
+        return Err(CliError::Internal(format!(
+            "MCP server '{}' is disabled",
+            server
+        )));
     }
 
     println!("Executing tool '{}' on server '{}'...", tool, server);
-    println!("Parameters: {}", serde_json::to_string_pretty(parameters).unwrap_or_default());
+    println!(
+        "Parameters: {}",
+        serde_json::to_string_pretty(parameters).unwrap_or_default()
+    );
 
     // In a real implementation, this would:
     // 1. Connect to the MCP server
@@ -372,13 +405,20 @@ fn execute_tool(server: &str, tool: &str, parameters: &serde_json::Value) -> Cli
     // For now, simulate tool execution
     let result = simulate_tool_execution(server, tool, parameters);
 
-    println!("Result: {}", serde_json::to_string_pretty(&result).unwrap_or_default());
+    println!(
+        "Result: {}",
+        serde_json::to_string_pretty(&result).unwrap_or_default()
+    );
 
     Ok(())
 }
 
 /// Simulate tool execution (placeholder)
-fn simulate_tool_execution(server: &str, tool: &str, _parameters: &serde_json::Value) -> serde_json::Value {
+fn simulate_tool_execution(
+    server: &str,
+    tool: &str,
+    _parameters: &serde_json::Value,
+) -> serde_json::Value {
     match (server, tool) {
         ("filesystem", "read_file") => json!({
             "success": true,
@@ -452,11 +492,16 @@ fn show_status() -> CliResult<()> {
             _ => "🟡",
         };
 
-        println!("  {} {} - {} ({})",
+        println!(
+            "  {} {} - {} ({})",
             status_icon,
             name,
             server.command,
-            if server.enabled { &server.health_status } else { "disabled" }
+            if server.enabled {
+                &server.health_status
+            } else {
+                "disabled"
+            }
         );
     }
 

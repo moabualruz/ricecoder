@@ -33,19 +33,19 @@ proptest! {
         theme_name2 in theme_name_strategy(),
     ) {
         let manager = ThemeManager::new();
-        
+
         // Switch to first theme
         manager.switch_by_name(&theme_name1).expect("Failed to switch to theme 1");
         let _theme1 = manager.current().expect("Failed to get theme 1");
-        
+
         // Switch to second theme
         manager.switch_by_name(&theme_name2).expect("Failed to switch to theme 2");
         let theme2 = manager.current().expect("Failed to get theme 2");
-        
+
         // Verify all colors from theme2 are present
         // If theme switching is atomic, all colors should be from theme2
         assert_eq!(theme2.name, theme_name2);
-        
+
         // Verify we're not in a partial state (all colors should be from the same theme)
         // This is guaranteed by the fact that we got a complete theme object
         let _ = theme2.primary;
@@ -66,12 +66,12 @@ proptest! {
     fn prop_theme_switching_atomicity_consistent_state(theme_name in theme_name_strategy()) {
         let manager = ThemeManager::new();
         manager.switch_by_name(&theme_name).expect("Failed to switch theme");
-        
+
         let theme = manager.current().expect("Failed to get current theme");
-        
+
         // Verify the theme name matches
         assert_eq!(theme.name, theme_name);
-        
+
         // Verify all colors are from the same theme (consistent state)
         // Get the theme again to verify consistency
         let theme_again = manager.current().expect("Failed to get current theme again");
@@ -91,14 +91,14 @@ proptest! {
         theme_names in prop::collection::vec(theme_name_strategy(), 1..5),
     ) {
         let manager = ThemeManager::new();
-        
+
         for theme_name in theme_names {
             manager.switch_by_name(&theme_name).expect("Failed to switch theme");
             let theme = manager.current().expect("Failed to get current theme");
-            
+
             // Verify the theme is complete (not partial)
             assert_eq!(theme.name, theme_name);
-            
+
             // Verify all color fields are present
             let _ = theme.primary;
             let _ = theme.secondary;
@@ -119,10 +119,10 @@ proptest! {
     fn prop_theme_switching_atomicity_name_consistency(theme_name in theme_name_strategy()) {
         let manager = ThemeManager::new();
         manager.switch_by_name(&theme_name).expect("Failed to switch theme");
-        
+
         let theme = manager.current().expect("Failed to get current theme");
         let current_name = manager.current_name().expect("Failed to get current name");
-        
+
         // Verify theme name is consistent
         assert_eq!(theme.name, theme_name);
         assert_eq!(current_name, theme_name);
@@ -137,15 +137,15 @@ mod tests {
     #[test]
     fn test_theme_switching_atomicity_dark_to_light() {
         let manager = ThemeManager::new();
-        
+
         manager.switch_by_name("dark").unwrap();
         let dark_theme = manager.current().unwrap();
         assert_eq!(dark_theme.name, "dark");
-        
+
         manager.switch_by_name("light").unwrap();
         let light_theme = manager.current().unwrap();
         assert_eq!(light_theme.name, "light");
-        
+
         // Verify we're not in a partial state
         assert_ne!(dark_theme.primary, light_theme.primary);
     }
@@ -154,11 +154,11 @@ mod tests {
     fn test_theme_switching_atomicity_all_themes() {
         let manager = ThemeManager::new();
         let themes = manager.available_themes();
-        
+
         for theme_name in themes {
             manager.switch_by_name(theme_name).unwrap();
             let theme = manager.current().unwrap();
-            
+
             // Verify theme is complete
             assert_eq!(theme.name, theme_name);
             let _ = theme.primary;
@@ -171,14 +171,21 @@ mod tests {
     #[test]
     fn test_theme_switching_atomicity_multiple_switches() {
         let manager = ThemeManager::new();
-        
-        let themes = vec!["dark", "light", "dracula", "monokai", "nord", "high-contrast"];
-        
+
+        let themes = vec![
+            "dark",
+            "light",
+            "dracula",
+            "monokai",
+            "nord",
+            "high-contrast",
+        ];
+
         for theme_name in themes {
             manager.switch_by_name(theme_name).unwrap();
             let theme = manager.current().unwrap();
             assert_eq!(theme.name, theme_name);
-            
+
             // Verify consistency
             let theme_again = manager.current().unwrap();
             assert_eq!(theme.name, theme_again.name);
@@ -189,11 +196,11 @@ mod tests {
     #[test]
     fn test_theme_switching_atomicity_name_consistency() {
         let manager = ThemeManager::new();
-        
+
         manager.switch_by_name("dracula").unwrap();
         let theme = manager.current().unwrap();
         let current_name = manager.current_name().unwrap();
-        
+
         assert_eq!(theme.name, "dracula");
         assert_eq!(current_name, "dracula");
         assert_eq!(theme.name, current_name);

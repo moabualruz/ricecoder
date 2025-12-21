@@ -305,5 +305,3 @@ struct AnthropicUsage {
     input_tokens: usize,
     output_tokens: usize,
 }
-
-

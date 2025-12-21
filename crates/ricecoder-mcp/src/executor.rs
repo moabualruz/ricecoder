@@ -127,7 +127,12 @@ impl CustomToolExecutor {
     }
 
     /// Validates a single parameter type
-    fn validate_parameter_type(&self, name: &str, expected_type: &str, value: &Value) -> Result<()> {
+    fn validate_parameter_type(
+        &self,
+        name: &str,
+        expected_type: &str,
+        value: &Value,
+    ) -> Result<()> {
         let type_matches = match expected_type {
             "string" => value.is_string(),
             "number" => value.is_number(),
@@ -341,8 +346,14 @@ mod tests {
     #[tokio::test]
     async fn test_list_tools() {
         let executor = CustomToolExecutor::new();
-        executor.register_tool(create_test_tool("tool1")).await.unwrap();
-        executor.register_tool(create_test_tool("tool2")).await.unwrap();
+        executor
+            .register_tool(create_test_tool("tool1"))
+            .await
+            .unwrap();
+        executor
+            .register_tool(create_test_tool("tool2"))
+            .await
+            .unwrap();
 
         let tools = executor.list_tools().await;
         assert_eq!(tools.len(), 2);
@@ -351,7 +362,10 @@ mod tests {
     #[tokio::test]
     async fn test_has_tool() {
         let executor = CustomToolExecutor::new();
-        executor.register_tool(create_test_tool("tool1")).await.unwrap();
+        executor
+            .register_tool(create_test_tool("tool1"))
+            .await
+            .unwrap();
 
         assert!(executor.has_tool("tool1").await);
         assert!(!executor.has_tool("tool2").await);
@@ -360,8 +374,14 @@ mod tests {
     #[tokio::test]
     async fn test_clear_tools() {
         let executor = CustomToolExecutor::new();
-        executor.register_tool(create_test_tool("tool1")).await.unwrap();
-        executor.register_tool(create_test_tool("tool2")).await.unwrap();
+        executor
+            .register_tool(create_test_tool("tool1"))
+            .await
+            .unwrap();
+        executor
+            .register_tool(create_test_tool("tool2"))
+            .await
+            .unwrap();
 
         assert_eq!(executor.tool_count().await, 2);
         executor.clear_tools().await;

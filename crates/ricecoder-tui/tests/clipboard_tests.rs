@@ -68,11 +68,7 @@ mod tests {
     #[test]
     fn test_clipboard_manager_copy_command_block() {
         let manager = ClipboardManager::new();
-        let result = manager.copy_command_block(
-            "cargo build",
-            "Compiling...\nFinished",
-            "success",
-        );
+        let result = manager.copy_command_block("cargo build", "Compiling...\nFinished", "success");
         // Just verify the function doesn't panic
         let _ = result;
     }
@@ -139,10 +135,7 @@ mod tests {
     #[test]
     fn test_copy_conversation_transcript() {
         let manager = ClipboardManager::new();
-        let messages = vec![
-            ("user", "Hello"),
-            ("assistant", "Hi there!"),
-        ];
+        let messages = vec![("user", "Hello"), ("assistant", "Hi there!")];
         let result = manager.copy_conversation_transcript(&messages);
         // Just verify the function doesn't panic
         let _ = result;

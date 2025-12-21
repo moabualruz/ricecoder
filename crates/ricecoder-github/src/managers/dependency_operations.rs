@@ -2,7 +2,9 @@
 //!
 //! Additional operations for dependency management including verification and security tracking.
 
-use super::dependency_manager::{Dependency, DependencyError, DependencyUpdateSuggestion, VulnerabilitySeverity};
+use super::dependency_manager::{
+    Dependency, DependencyError, DependencyUpdateSuggestion, VulnerabilitySeverity,
+};
 use std::collections::HashMap;
 
 /// Result of dependency pinning operation
@@ -77,7 +79,14 @@ impl DependencyOperations {
             let pinned_version = if config.pin_major && config.pin_minor && config.pin_patch {
                 dep.current_version.clone()
             } else if config.pin_major && config.pin_minor {
-                format!("{}.*", dep.current_version.split('.').take(2).collect::<Vec<_>>().join("."))
+                format!(
+                    "{}.*",
+                    dep.current_version
+                        .split('.')
+                        .take(2)
+                        .collect::<Vec<_>>()
+                        .join(".")
+                )
             } else if config.pin_major {
                 format!("{}.*", dep.current_version.split('.').next().unwrap_or("0"))
             } else {
@@ -160,11 +169,19 @@ impl DependencyOperations {
 
         for dep in dependencies {
             if !dep.vulnerabilities.is_empty() {
-                let severity = dep.vulnerabilities.iter().map(|v| v.severity).max().unwrap_or(VulnerabilitySeverity::Low);
+                let severity = dep
+                    .vulnerabilities
+                    .iter()
+                    .map(|v| v.severity)
+                    .max()
+                    .unwrap_or(VulnerabilitySeverity::Low);
                 recommendations.push(UpdateRecommendation {
                     dependency_name: dep.name.clone(),
                     current_version: dep.current_version.clone(),
-                    recommended_version: dep.latest_version.clone().unwrap_or_else(|| dep.current_version.clone()),
+                    recommended_version: dep
+                        .latest_version
+                        .clone()
+                        .unwrap_or_else(|| dep.current_version.clone()),
                     reason: format!("Security vulnerability with {} severity", severity),
                     priority: match severity {
                         VulnerabilitySeverity::Critical => UpdatePriority::Critical,
@@ -177,7 +194,10 @@ impl DependencyOperations {
                 recommendations.push(UpdateRecommendation {
                     dependency_name: dep.name.clone(),
                     current_version: dep.current_version.clone(),
-                    recommended_version: dep.latest_version.clone().unwrap_or_else(|| dep.current_version.clone()),
+                    recommended_version: dep
+                        .latest_version
+                        .clone()
+                        .unwrap_or_else(|| dep.current_version.clone()),
                     reason: "Newer version available".to_string(),
                     priority: UpdatePriority::Low,
                 });
@@ -289,7 +309,10 @@ mod tests {
 
         let result = DependencyOperations::apply_pinning(&deps, &config).unwrap();
         assert_eq!(result.pinned_dependencies.len(), 1);
-        assert_eq!(result.pinning_config.get("tokio"), Some(&"1.35.0".to_string()));
+        assert_eq!(
+            result.pinning_config.get("tokio"),
+            Some(&"1.35.0".to_string())
+        );
     }
 
     #[test]
@@ -387,21 +410,19 @@ mod tests {
 
     #[test]
     fn test_security_report_risk_score() {
-        let deps = vec![
-            Dependency {
-                name: "dep1".to_string(),
-                current_version: "1.0.0".to_string(),
-                latest_version: None,
-                is_outdated: false,
-                vulnerabilities: vec![Vulnerability {
-                    cve_id: "CVE-2023-0001".to_string(),
-                    severity: VulnerabilitySeverity::Critical,
-                    description: "Critical issue".to_string(),
-                    affected_versions: vec!["1.0.0".to_string()],
-                }],
-                dep_type: "runtime".to_string(),
-            },
-        ];
+        let deps = vec![Dependency {
+            name: "dep1".to_string(),
+            current_version: "1.0.0".to_string(),
+            latest_version: None,
+            is_outdated: false,
+            vulnerabilities: vec![Vulnerability {
+                cve_id: "CVE-2023-0001".to_string(),
+                severity: VulnerabilitySeverity::Critical,
+                description: "Critical issue".to_string(),
+                affected_versions: vec!["1.0.0".to_string()],
+            }],
+            dep_type: "runtime".to_string(),
+        }];
 
         let report = DependencyOperations::generate_security_report(&deps).unwrap();
         assert!(report.risk_score > 0.0);

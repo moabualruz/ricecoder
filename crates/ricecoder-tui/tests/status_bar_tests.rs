@@ -52,4 +52,3 @@ fn test_input_mode_display() {
     assert_eq!(InputMode::Visual.display_text(), "VISUAL");
     assert_eq!(InputMode::Command.display_text(), "COMMAND");
 }
-

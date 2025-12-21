@@ -9,10 +9,12 @@ use std::sync::Arc;
 use tracing::{debug, error, warn};
 
 use crate::error::ProviderError;
-use crate::token_counter::TokenCounterTrait;
-use crate::models::{Capability, ChatRequest, ChatResponse, FinishReason, ModelInfo, Pricing, TokenUsage};
+use crate::models::{
+    Capability, ChatRequest, ChatResponse, FinishReason, ModelInfo, Pricing, TokenUsage,
+};
 use crate::provider::Provider;
 use crate::token_counter::TokenCounter;
+use crate::token_counter::TokenCounterTrait;
 
 /// GCP Vertex AI provider implementation
 pub struct GcpVertexProvider {
@@ -81,7 +83,9 @@ impl GcpVertexProvider {
             .and_then(|c| c.content.as_ref())
             .and_then(|content| content.parts.first())
             .map(|part| part.text.clone())
-            .ok_or_else(|| ProviderError::ProviderError("No content in Gemini response".to_string()))?;
+            .ok_or_else(|| {
+                ProviderError::ProviderError("No content in Gemini response".to_string())
+            })?;
 
         let finish_reason = match response
             .candidates
@@ -127,7 +131,11 @@ impl Provider for GcpVertexProvider {
                 name: "Gemini 1.5 Pro".to_string(),
                 provider: self.name().to_string(),
                 context_window: 1048576, // 1M tokens
-                capabilities: vec![Capability::Chat, Capability::FunctionCalling, Capability::Vision],
+                capabilities: vec![
+                    Capability::Chat,
+                    Capability::FunctionCalling,
+                    Capability::Vision,
+                ],
                 pricing: Some(Pricing {
                     input_per_1k_tokens: 0.00125,
                     output_per_1k_tokens: 0.005,
@@ -139,7 +147,11 @@ impl Provider for GcpVertexProvider {
                 name: "Gemini 1.5 Flash".to_string(),
                 provider: self.name().to_string(),
                 context_window: 1048576, // 1M tokens
-                capabilities: vec![Capability::Chat, Capability::FunctionCalling, Capability::Vision],
+                capabilities: vec![
+                    Capability::Chat,
+                    Capability::FunctionCalling,
+                    Capability::Vision,
+                ],
                 pricing: Some(Pricing {
                     input_per_1k_tokens: 0.000075,
                     output_per_1k_tokens: 0.0003,
@@ -182,7 +194,8 @@ impl Provider for GcpVertexProvider {
                 contents: vec![GeminiContent {
                     role: "user".to_string(),
                     parts: vec![GeminiPart {
-                        text: request.messages
+                        text: request
+                            .messages
                             .iter()
                             .map(|m| m.content.as_str())
                             .collect::<Vec<_>>()
@@ -236,9 +249,14 @@ impl Provider for GcpVertexProvider {
         }
     }
 
-    async fn chat_stream(&self, _request: ChatRequest) -> Result<crate::provider::ChatStream, ProviderError> {
+    async fn chat_stream(
+        &self,
+        _request: ChatRequest,
+    ) -> Result<crate::provider::ChatStream, ProviderError> {
         // Streaming implementation would go here
-        Err(ProviderError::ProviderError("Streaming not yet implemented for GCP Vertex AI".to_string()))
+        Err(ProviderError::ProviderError(
+            "Streaming not yet implemented for GCP Vertex AI".to_string(),
+        ))
     }
 
     fn count_tokens(&self, content: &str, model: &str) -> Result<usize, ProviderError> {
@@ -247,7 +265,9 @@ impl Provider for GcpVertexProvider {
 
     async fn health_check(&self) -> Result<bool, ProviderError> {
         // Check if we have valid configuration
-        Ok(!self.project_id.is_empty() && !self.location.is_empty() && !self.access_token.is_empty())
+        Ok(!self.project_id.is_empty()
+            && !self.location.is_empty()
+            && !self.access_token.is_empty())
     }
 }
 

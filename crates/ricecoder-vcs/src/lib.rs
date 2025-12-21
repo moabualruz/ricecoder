@@ -33,11 +33,11 @@ pub mod status;
 pub mod tui_integration;
 pub mod types;
 
-pub use error::{VcsError, Result};
+pub use error::{Result, VcsError};
 pub use git::GitRepository;
 pub use repository::Repository;
 pub use status::{FileStatus, ModificationIndicator, RepositoryStatus};
-pub use tui_integration::{VcsStatus, VcsIntegration};
+pub use tui_integration::{VcsIntegration, VcsStatus};
 pub use types::{Branch, ModifiedFile};
 
 #[cfg(test)]
@@ -60,10 +60,10 @@ mod tests {
     fn test_file_status_display() {
         let file = ModifiedFile::new("test.txt", FileStatus::Modified);
         assert_eq!(file.status_display(), "M");
-        
+
         let file = ModifiedFile::new("test.txt", FileStatus::Added);
         assert_eq!(file.status_display(), "A");
-        
+
         let file = ModifiedFile::new("test.txt", FileStatus::Untracked);
         assert_eq!(file.status_display(), "?");
     }
@@ -73,10 +73,10 @@ mod tests {
         let branch = Branch::new("main").current();
         let status = RepositoryStatus::new(branch, "/test/repo");
         assert_eq!(status.summary(), "Clean");
-        
+
         let status = status.with_counts(2, 1, 1, false);
         assert_eq!(status.summary(), "1S 2M 1U");
-        
+
         let status = status.with_counts(0, 0, 0, true);
         assert_eq!(status.summary(), "C");
     }
@@ -108,12 +108,27 @@ mod tests {
     #[test]
     fn test_file_status_from_git2() {
         use git2::Status;
-        
-        assert_eq!(FileStatus::from_git2_status(Status::WT_MODIFIED), FileStatus::Modified);
-        assert_eq!(FileStatus::from_git2_status(Status::WT_NEW), FileStatus::Added);
-        assert_eq!(FileStatus::from_git2_status(Status::WT_DELETED), FileStatus::Deleted);
-        assert_eq!(FileStatus::from_git2_status(Status::CONFLICTED), FileStatus::Conflicted);
-        assert_eq!(FileStatus::from_git2_status(Status::IGNORED), FileStatus::Ignored);
+
+        assert_eq!(
+            FileStatus::from_git2_status(Status::WT_MODIFIED),
+            FileStatus::Modified
+        );
+        assert_eq!(
+            FileStatus::from_git2_status(Status::WT_NEW),
+            FileStatus::Added
+        );
+        assert_eq!(
+            FileStatus::from_git2_status(Status::WT_DELETED),
+            FileStatus::Deleted
+        );
+        assert_eq!(
+            FileStatus::from_git2_status(Status::CONFLICTED),
+            FileStatus::Conflicted
+        );
+        assert_eq!(
+            FileStatus::from_git2_status(Status::IGNORED),
+            FileStatus::Ignored
+        );
     }
 
     #[test]

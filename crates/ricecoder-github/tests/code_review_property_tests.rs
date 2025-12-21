@@ -2,12 +2,12 @@
 //!
 //! These tests verify correctness properties that should hold across all valid inputs
 
+use chrono::Utc;
 use proptest::prelude::*;
 use ricecoder_github::{
     models::{FileChange, PrStatus},
     CodeQualityIssue, CodeReviewAgent, CodeReviewStandards, IssueSeverity,
 };
-use chrono::Utc;
 
 // Strategy for generating valid PR titles
 fn valid_title_strategy() -> impl Strategy<Value = String> {
@@ -25,8 +25,7 @@ fn valid_body_strategy() -> impl Strategy<Value = String> {
 
 // Strategy for generating valid branch names
 fn valid_branch_strategy() -> impl Strategy<Value = String> {
-    r"(feature|bugfix|hotfix)/[a-z0-9\-]{1,50}"
-        .prop_map(|s| s.to_lowercase())
+    r"(feature|bugfix|hotfix)/[a-z0-9\-]{1,50}".prop_map(|s| s.to_lowercase())
 }
 
 // Strategy for generating file changes
@@ -53,18 +52,20 @@ fn pull_request_strategy() -> impl Strategy<Value = ricecoder_github::models::Pu
         valid_branch_strategy(),
         prop::collection::vec(file_change_strategy(), 1..5),
     )
-        .prop_map(|(title, body, branch, files)| ricecoder_github::models::PullRequest {
-            id: 1,
-            number: 123,
-            title,
-            body,
-            branch,
-            base: "main".to_string(),
-            status: PrStatus::Open,
-            files,
-            created_at: Utc::now(),
-            updated_at: Utc::now(),
-        })
+        .prop_map(
+            |(title, body, branch, files)| ricecoder_github::models::PullRequest {
+                id: 1,
+                number: 123,
+                title,
+                body,
+                branch,
+                base: "main".to_string(),
+                status: PrStatus::Open,
+                files,
+                created_at: Utc::now(),
+                updated_at: Utc::now(),
+            },
+        )
 }
 
 // Strategy for generating code quality issues

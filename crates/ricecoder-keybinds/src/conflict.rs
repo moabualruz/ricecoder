@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use crate::models::{Keybind, KeyCombo};
+use crate::models::{KeyCombo, Keybind};
 
 /// Represents a conflict between multiple keybinds
 #[derive(Debug, Clone)]
@@ -43,10 +43,7 @@ impl ConflictDetector {
         for (key_str, actions) in key_to_actions {
             if actions.len() > 1 {
                 if let Ok(key_combo) = key_str.parse() {
-                    conflicts.push(Conflict {
-                        key_combo,
-                        actions,
-                    });
+                    conflicts.push(Conflict { key_combo, actions });
                 }
             }
         }
@@ -76,10 +73,7 @@ impl ConflictDetector {
             suggestions.push(Resolution {
                 action_id: action_id.clone(),
                 suggested_key,
-                reason: format!(
-                    "Suggested alternative for {} action",
-                    category
-                ),
+                reason: format!("Suggested alternative for {} action", category),
             });
         }
 
@@ -97,5 +91,3 @@ impl ConflictDetector {
         }
     }
 }
-
-

@@ -80,8 +80,12 @@ async fn test_webhook_handler_multiple_triggers() {
 
     assert!(result.matched_filter);
     assert_eq!(result.workflows_triggered.len(), 2);
-    assert!(result.workflows_triggered.contains(&"workflow-1".to_string()));
-    assert!(result.workflows_triggered.contains(&"workflow-2".to_string()));
+    assert!(result
+        .workflows_triggered
+        .contains(&"workflow-1".to_string()));
+    assert!(result
+        .workflows_triggered
+        .contains(&"workflow-2".to_string()));
 }
 
 #[tokio::test]
@@ -141,10 +145,7 @@ fn test_event_filter_matches_action() {
         .with_event_type(WebhookEventType::PullRequest)
         .with_action("opened");
 
-    let event = WebhookEvent::new(
-        WebhookEventType::PullRequest,
-        json!({"action": "opened"}),
-    );
+    let event = WebhookEvent::new(WebhookEventType::PullRequest, json!({"action": "opened"}));
 
     assert!(filter.matches(&event));
 }
@@ -175,10 +176,7 @@ fn test_event_filter_no_match_different_action() {
         .with_event_type(WebhookEventType::PullRequest)
         .with_action("opened");
 
-    let event = WebhookEvent::new(
-        WebhookEventType::PullRequest,
-        json!({"action": "closed"}),
-    );
+    let event = WebhookEvent::new(WebhookEventType::PullRequest, json!({"action": "closed"}));
 
     assert!(!filter.matches(&event));
 }

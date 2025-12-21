@@ -4,24 +4,20 @@
 
 #[cfg(test)]
 mod tests {
-    use proptest::prelude::*;
     use crate::{Decision, DecisionContext, PatternCapturer};
+    use proptest::prelude::*;
     use std::path::PathBuf;
 
     /// Strategy for generating decision contexts
     fn decision_context_strategy() -> impl Strategy<Value = DecisionContext> {
-        (
-            "/project",
-            "/project/src/main.rs",
-            0u32..1000,
-            "test_agent",
-        )
-            .prop_map(|(project, file, line, agent)| DecisionContext {
+        ("/project", "/project/src/main.rs", 0u32..1000, "test_agent").prop_map(
+            |(project, file, line, agent)| DecisionContext {
                 project_path: PathBuf::from(project),
                 file_path: PathBuf::from(file),
                 line_number: line,
                 agent_type: agent.to_string(),
-            })
+            },
+        )
     }
 
     /// Strategy for generating JSON values

@@ -19,13 +19,15 @@ pub mod regression;
 pub mod simulation;
 pub mod validation;
 
-pub use baseline::{PerformanceBaseline, BaselineData};
+pub use baseline::{BaselineData, PerformanceBaseline};
 pub use detector::PerformanceRegressionDetector;
-pub use enterprise::{EnterpriseMonitor, AlertConfig, AlertDestination, AlertSeverity, SmtpConfig};
+pub use enterprise::{AlertConfig, AlertDestination, AlertSeverity, EnterpriseMonitor, SmtpConfig};
 pub use memory::MemoryProfiler;
-pub use monitor::{PerformanceMonitor, PerformanceMetrics};
-pub use optimization::{OptimizationPipeline, OptimizationResult, OptimizationPriority, create_default_pipeline};
+pub use monitor::{PerformanceMetrics, PerformanceMonitor};
+pub use optimization::{
+    create_default_pipeline, OptimizationPipeline, OptimizationPriority, OptimizationResult,
+};
 pub use profiler::{PerformanceProfiler, ProfileResult};
 pub use regression::{RegressionAlert, RegressionConfig};
 pub use simulation::{EnterpriseSimulator, SimulationResult};
-pub use validation::{ValidationResult, PerformanceValidator};
+pub use validation::{PerformanceValidator, ValidationResult};

@@ -1,4 +1,4 @@
-use ricecoder_tui::{ThemeLoader, Theme, ColorSupport, ThemeYaml};
+use ricecoder_tui::{ColorSupport, Theme, ThemeLoader, ThemeYaml};
 use std::path::PathBuf;
 use tempfile::TempDir;
 
@@ -120,12 +120,12 @@ error: '#ef4444'
 warning: '#f59e0b'
 success: '#22c55e'
 "#;
-    
+
     // Test 16-color adaptation (should map to ANSI 16 colors)
     let theme = ThemeLoader::load_from_string_adapted(yaml_content, ColorSupport::Color16).unwrap();
     assert_eq!(theme.name, "test");
     // Primary #0078ff (Blue-ish) should probably map to Blue (0, 0, 255)
     assert_eq!(theme.primary.r, 0);
-    assert_eq!(theme.primary.g, 0); 
+    assert_eq!(theme.primary.g, 0);
     assert_eq!(theme.primary.b, 255);
 }

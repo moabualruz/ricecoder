@@ -50,7 +50,6 @@ normalize_doc_attributes = false
 format_macro_matchers = false
 format_macro_bodies = true
 hex_literal_case = "Lower"
-trailing_comma = "Vertical"
 use_field_init_shorthand = false
 force_explicit_abi = true
 condense_wildcard_suffixes = false

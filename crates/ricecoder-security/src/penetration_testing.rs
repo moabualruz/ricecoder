@@ -80,7 +80,10 @@ pub trait PenetrationTester: Send + Sync {
     async fn test_csrf(&self, target_url: &str) -> anyhow::Result<CsrfTestResult>;
 
     /// Run comprehensive penetration test suite
-    async fn run_full_penetration_test(&self, target_url: &str) -> anyhow::Result<Vec<PenetrationTestResult>>;
+    async fn run_full_penetration_test(
+        &self,
+        target_url: &str,
+    ) -> anyhow::Result<Vec<PenetrationTestResult>>;
 }
 
 /// Default penetration tester implementation
@@ -113,14 +116,17 @@ impl PenetrationTester for DefaultPenetrationTester {
         // Test each payload (in a real implementation, this would make HTTP requests)
         for payload in payloads {
             // Simulate testing logic
-            if self.is_sql_injection_vulnerable(target_url, payload).await? {
+            if self
+                .is_sql_injection_vulnerable(target_url, payload)
+                .await?
+            {
                 vulnerable_endpoints.push(target_url.to_string());
                 injection_payloads.push(payload.to_string());
 
                 // Simulate data extraction
                 extracted_data.insert(
                     payload.to_string(),
-                    vec!["Extracted data would appear here".to_string()]
+                    vec!["Extracted data would appear here".to_string()],
                 );
             }
         }
@@ -187,7 +193,10 @@ impl PenetrationTester for DefaultPenetrationTester {
         })
     }
 
-    async fn run_full_penetration_test(&self, target_url: &str) -> anyhow::Result<Vec<PenetrationTestResult>> {
+    async fn run_full_penetration_test(
+        &self,
+        target_url: &str,
+    ) -> anyhow::Result<Vec<PenetrationTestResult>> {
         let mut results = Vec::new();
 
         // SQL Injection test
@@ -199,16 +208,21 @@ impl PenetrationTester for DefaultPenetrationTester {
             results.push(PenetrationTestResult {
                 test_name: "SQL Injection".to_string(),
                 target: target_url.to_string(),
-                vulnerabilities_found: sql_result.injection_payloads.into_iter().map(|payload| {
-                    PenetrationVulnerability {
+                vulnerabilities_found: sql_result
+                    .injection_payloads
+                    .into_iter()
+                    .map(|payload| PenetrationVulnerability {
                         vulnerability_type: PenetrationTestType::SqlInjection,
                         severity: crate::vulnerability::VulnerabilitySeverity::Critical,
-                        description: format!("SQL injection vulnerability found with payload: {}", payload),
+                        description: format!(
+                            "SQL injection vulnerability found with payload: {}",
+                            payload
+                        ),
                         proof_of_concept: payload.clone(),
                         remediation: "Use prepared statements or parameterized queries".to_string(),
                         cwe_id: Some("CWE-89".to_string()),
-                    }
-                }).collect(),
+                    })
+                    .collect(),
                 test_duration: sql_duration,
                 success: true,
                 timestamp: chrono::Utc::now(),
@@ -224,16 +238,19 @@ impl PenetrationTester for DefaultPenetrationTester {
             results.push(PenetrationTestResult {
                 test_name: "Cross-Site Scripting (XSS)".to_string(),
                 target: target_url.to_string(),
-                vulnerabilities_found: xss_result.xss_payloads.into_iter().map(|payload| {
-                    PenetrationVulnerability {
+                vulnerabilities_found: xss_result
+                    .xss_payloads
+                    .into_iter()
+                    .map(|payload| PenetrationVulnerability {
                         vulnerability_type: PenetrationTestType::Xss,
                         severity: crate::vulnerability::VulnerabilitySeverity::High,
                         description: format!("XSS vulnerability found with payload: {}", payload),
                         proof_of_concept: payload.clone(),
-                        remediation: "Sanitize user input and use Content Security Policy".to_string(),
+                        remediation: "Sanitize user input and use Content Security Policy"
+                            .to_string(),
                         cwe_id: Some("CWE-79".to_string()),
-                    }
-                }).collect(),
+                    })
+                    .collect(),
                 test_duration: xss_duration,
                 success: true,
                 timestamp: chrono::Utc::now(),
@@ -271,7 +288,11 @@ impl PenetrationTester for DefaultPenetrationTester {
 }
 
 impl DefaultPenetrationTester {
-    async fn is_sql_injection_vulnerable(&self, _target_url: &str, _payload: &str) -> anyhow::Result<bool> {
+    async fn is_sql_injection_vulnerable(
+        &self,
+        _target_url: &str,
+        _payload: &str,
+    ) -> anyhow::Result<bool> {
         // In a real implementation, this would make HTTP requests with the payload
         // and check for SQL error responses or data leakage
         // For simulation, return false (no vulnerability)
@@ -296,7 +317,10 @@ impl DefaultPenetrationTester {
         Ok(false)
     }
 
-    async fn run_additional_security_tests(&self, target_url: &str) -> anyhow::Result<Vec<PenetrationTestResult>> {
+    async fn run_additional_security_tests(
+        &self,
+        target_url: &str,
+    ) -> anyhow::Result<Vec<PenetrationTestResult>> {
         let mut results = Vec::new();
 
         // Test for command injection
@@ -342,7 +366,10 @@ impl DefaultPenetrationTester {
         Ok(results)
     }
 
-    async fn test_command_injection(&self, _target_url: &str) -> anyhow::Result<CommandInjectionResult> {
+    async fn test_command_injection(
+        &self,
+        _target_url: &str,
+    ) -> anyhow::Result<CommandInjectionResult> {
         // Simulate command injection test
         Ok(CommandInjectionResult {
             vulnerable: false,

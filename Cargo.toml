@@ -65,10 +65,10 @@ members = [
      "crates/ricecoder-cache",
      "crates/ricecoder-parsers",
      "crates/ricecoder-workflows",
-    "crates/ricecoder-execution",
-    "crates/ricecoder-sessions",
-    "crates/ricegrep",
-    "crates/ricecoder-modes",
+     "crates/ricecoder-execution",
+     "crates/ricecoder-sessions",
+     "crates/ricegrep",
+     "crates/ricecoder-modes",
     "crates/ricecoder-lsp",
      "crates/ricecoder-completion",
     "crates/ricecoder-di",
@@ -97,11 +97,10 @@ members = [
         "crates/ricecoder-safety",
        "crates/ricecoder-benchmark",
         "crates/ricecoder-performance",
-        "crates/ricecoder-monitoring",
-         "crates/ricecoder-updates",
-         "crates/ricecoder-continuous-improvement",
-    "crates/ricegrep",
- ]
+         "crates/ricecoder-monitoring",
+          "crates/ricecoder-updates",
+          "crates/ricecoder-continuous-improvement",
+  ]
 resolver = "2"
 
 [workspace.package]
@@ -194,10 +193,6 @@ octocrab = { version = "0.32", default-features = false, features = ["native-tls
 notify = "6.1"
 rustls = { git = "https://github.com/rustls/rustls", tag = "v/0.23.31", default-features = false, features = ["ring"] }
 rustls-webpki = { git = "https://github.com/rustls/webpki", tag = "v/0.103.4", default-features = false, features = ["ring"] }
-
-[patch.crates-io]
-jsonwebtoken = { git = "https://github.com/jedisct1/rust-jwt-simple", package = "jwt-simple", tag = "0.12.13" }
-
 
 [dev-dependencies]
 proptest = { workspace = true }

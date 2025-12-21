@@ -5,10 +5,10 @@ use super::Command;
 use crate::chat::ChatSession;
 use crate::error::{CliError, CliResult};
 use crate::output::OutputStyle;
-use ricecoder_storage::{ConfigLoader, PathResolver};
-use ricecoder_providers::provider::ProviderRegistry;
-use ricecoder_providers::models::ChatRequest;
 use async_trait::async_trait;
+use ricecoder_providers::models::ChatRequest;
+use ricecoder_providers::provider::ProviderRegistry;
+use ricecoder_storage::{ConfigLoader, PathResolver};
 
 /// Interactive chat mode
 pub struct ChatCommand {
@@ -34,7 +34,8 @@ impl ChatCommand {
         }
 
         // Load configuration to get default provider
-        let config = ConfigLoader::new().load_merged()
+        let config = ConfigLoader::new()
+            .load_merged()
             .map_err(|e| CliError::Config(format!("Failed to load configuration: {}", e)))?;
 
         // Use configured default provider or fall back to "zen"
@@ -66,7 +67,8 @@ impl ChatCommand {
         }
 
         // Load configuration to get default model
-        let config = ConfigLoader::new().load_merged()
+        let config = ConfigLoader::new()
+            .load_merged()
             .map_err(|e| CliError::Config(format!("Failed to load configuration: {}", e)))?;
 
         // Use configured default model or fall back to "zen/big-pickle"
@@ -110,7 +112,11 @@ impl ChatCommand {
     }
 
     /// Process initial message by sending to provider and getting response
-    async fn process_initial_message(&self, message: &str, session: &mut ChatSession) -> CliResult<()> {
+    async fn process_initial_message(
+        &self,
+        message: &str,
+        session: &mut ChatSession,
+    ) -> CliResult<()> {
         let style = OutputStyle::default();
 
         // Add user message to history
@@ -185,7 +191,7 @@ impl ChatCommand {
             Ok(mut stream) => {
                 // Consume the streaming response and collect all chunks
                 let mut full_response = String::new();
-                
+
                 while let Some(result) = stream.next().await {
                     match result {
                         Ok(chunk) => {
@@ -200,14 +206,14 @@ impl ChatCommand {
                         }
                     }
                 }
-                
+
                 Ok(full_response)
             }
             Err(_) => {
                 // Fall back to non-streaming if streaming is not supported
                 let mut request = request;
                 request.stream = false;
-                
+
                 let response = provider
                     .chat(request)
                     .await
@@ -219,23 +225,24 @@ impl ChatCommand {
     }
 
     /// Create and initialize a provider for the chat session
-    async fn create_provider(&self) -> CliResult<std::sync::Arc<dyn ricecoder_providers::provider::Provider>> {
+    async fn create_provider(
+        &self,
+    ) -> CliResult<std::sync::Arc<dyn ricecoder_providers::provider::Provider>> {
         // Get API key from environment or use empty string for free models
         let api_key = std::env::var("OPENCODE_API_KEY").ok();
 
         // Create and return the appropriate provider based on configuration
         match self.get_provider()?.as_str() {
             "zen" => {
-                let zen_provider = ricecoder_providers::ZenProvider::new(api_key)
-                    .map_err(|e| CliError::Provider(format!("Failed to create Zen provider: {}", e)))?;
+                let zen_provider = ricecoder_providers::ZenProvider::new(api_key).map_err(|e| {
+                    CliError::Provider(format!("Failed to create Zen provider: {}", e))
+                })?;
                 Ok(std::sync::Arc::new(zen_provider))
             }
-            provider_name => {
-                Err(CliError::Provider(format!(
-                    "Unsupported provider: {}",
-                    provider_name
-                )))
-            }
+            provider_name => Err(CliError::Provider(format!(
+                "Unsupported provider: {}",
+                provider_name
+            ))),
         }
     }
 

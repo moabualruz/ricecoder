@@ -115,9 +115,7 @@ async fn test_extract_insights_invalid_discussion_number() {
 async fn test_generate_summary_success() {
     let manager = DiscussionManager::new("test_token", "testowner", "testrepo");
 
-    let result = manager
-        .generate_summary(1, "Test Discussion")
-        .await;
+    let result = manager.generate_summary(1, "Test Discussion").await;
 
     assert!(result.is_ok());
     let summary = result.unwrap();
@@ -229,24 +227,14 @@ async fn test_categorize_discussion_general() {
 
 #[tokio::test]
 async fn test_categorize_discussion_invalid_number() {
-    let result = DiscussionOperations::categorize_discussion(
-        0,
-        "Test",
-        "Test body",
-    )
-    .await;
+    let result = DiscussionOperations::categorize_discussion(0, "Test", "Test body").await;
 
     assert!(result.is_err());
 }
 
 #[tokio::test]
 async fn test_categorize_discussion_empty_title() {
-    let result = DiscussionOperations::categorize_discussion(
-        1,
-        "",
-        "Test body",
-    )
-    .await;
+    let result = DiscussionOperations::categorize_discussion(1, "", "Test body").await;
 
     assert!(result.is_err());
 }

@@ -171,7 +171,10 @@ impl BranchManager {
     ///
     /// # Returns
     /// Result containing the deletion result
-    pub async fn delete_branch(&self, branch_name: impl Into<String>) -> Result<BranchDeletionResult> {
+    pub async fn delete_branch(
+        &self,
+        branch_name: impl Into<String>,
+    ) -> Result<BranchDeletionResult> {
         let branch_name = branch_name.into();
 
         debug!(
@@ -235,10 +238,7 @@ impl BranchManager {
     /// # Returns
     /// Result containing a list of branch names
     pub async fn list_branches(&self) -> Result<Vec<String>> {
-        debug!(
-            "Listing branches: repo={}/{}",
-            self.owner, self.repo
-        );
+        debug!("Listing branches: repo={}/{}", self.owner, self.repo);
 
         // Return default branches
         Ok(vec!["main".to_string(), "develop".to_string()])
@@ -288,7 +288,10 @@ impl BranchManager {
     ///
     /// # Returns
     /// Result containing the lifecycle result
-    pub async fn unprotect_branch(&self, branch_name: impl Into<String>) -> Result<BranchLifecycleResult> {
+    pub async fn unprotect_branch(
+        &self,
+        branch_name: impl Into<String>,
+    ) -> Result<BranchLifecycleResult> {
         let branch_name = branch_name.into();
 
         debug!(
@@ -335,17 +338,19 @@ impl BranchManager {
         );
 
         if old_name.is_empty() {
-            return Err(GitHubError::invalid_input("Old branch name cannot be empty"));
+            return Err(GitHubError::invalid_input(
+                "Old branch name cannot be empty",
+            ));
         }
 
         if new_name.is_empty() {
-            return Err(GitHubError::invalid_input("New branch name cannot be empty"));
+            return Err(GitHubError::invalid_input(
+                "New branch name cannot be empty",
+            ));
         }
 
         if !self.is_valid_branch_name(&new_name) {
-            return Err(GitHubError::invalid_input(
-                "Invalid new branch name format",
-            ));
+            return Err(GitHubError::invalid_input("Invalid new branch name format"));
         }
 
         info!(
@@ -399,9 +404,8 @@ impl BranchManager {
             return false;
         }
 
-        name.chars().all(|c| {
-            c.is_alphanumeric() || c == '-' || c == '_' || c == '/' || c == '.'
-        })
+        name.chars()
+            .all(|c| c.is_alphanumeric() || c == '-' || c == '_' || c == '/' || c == '.')
     }
 }
 
@@ -504,11 +508,7 @@ mod tests {
     async fn test_create_branch_with_commit_sha() {
         let manager = BranchManager::new("token", "owner", "repo");
         let result = manager
-            .create_branch(
-                "feature/test",
-                "main",
-                Some("abc123def456".to_string()),
-            )
+            .create_branch("feature/test", "main", Some("abc123def456".to_string()))
             .await;
 
         assert!(result.is_ok());
@@ -657,9 +657,7 @@ mod tests {
     #[tokio::test]
     async fn test_rename_branch_success() {
         let manager = BranchManager::new("token", "owner", "repo");
-        let result = manager
-            .rename_branch("feature/old", "feature/new")
-            .await;
+        let result = manager.rename_branch("feature/old", "feature/new").await;
 
         assert!(result.is_ok());
         let lifecycle = result.unwrap();

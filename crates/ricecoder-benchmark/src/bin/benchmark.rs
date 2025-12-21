@@ -1,5 +1,5 @@
 use clap::Parser;
-use ricecoder_benchmark::cli::{Cli, run_cli};
+use ricecoder_benchmark::cli::{run_cli, Cli};
 use std::process;
 
 #[tokio::main]

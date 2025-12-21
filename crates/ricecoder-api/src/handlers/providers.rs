@@ -1,15 +1,15 @@
 //! Provider management API handlers
 
-use axum::{
-    extract::{Path, Query, State},
-    Json,
-};
-use serde::Deserialize;
 use crate::{
     error::{ApiError, ApiResult},
     models::{ExecuteToolRequest, ExecuteToolResponse},
     state::AppState,
 };
+use axum::{
+    extract::{Path, Query, State},
+    Json,
+};
+use serde::Deserialize;
 
 /// Query parameters for provider listing
 #[derive(Debug, Deserialize, utoipa::IntoParams, utoipa::ToSchema)]
@@ -144,7 +144,10 @@ pub async fn get_provider(
             status: "connected".to_string(),
             models: vec!["gpt-4".to_string(), "gpt-3.5-turbo".to_string()],
         })),
-        _ => Err(ApiError::BadRequest(format!("Provider '{}' not found", provider_id))),
+        _ => Err(ApiError::BadRequest(format!(
+            "Provider '{}' not found",
+            provider_id
+        ))),
     }
 }
 
@@ -212,7 +215,9 @@ pub async fn switch_provider(
         (status = 500, description = "Internal server error")
     )
 )]
-pub async fn get_current_provider(State(_state): State<AppState>) -> ApiResult<Json<ProviderResponse>> {
+pub async fn get_current_provider(
+    State(_state): State<AppState>,
+) -> ApiResult<Json<ProviderResponse>> {
     // TODO: Implement actual current provider retrieval
     // For now, return mock data
     Ok(Json(ProviderResponse {

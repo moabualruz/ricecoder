@@ -5,9 +5,7 @@
 //! **Feature: ricecoder-orchestration, Integration Tests: Synchronization**
 //! **Validates: Requirements 2.2**
 
-use ricecoder_orchestration::{
-    Operation, SyncManager, TransactionState,
-};
+use ricecoder_orchestration::{Operation, SyncManager, TransactionState};
 
 /// Helper to create a test operation
 fn create_test_operation(id: &str, project: &str, operation_type: &str) -> Operation {
@@ -50,7 +48,11 @@ async fn integration_test_cross_project_updates() {
     sync_manager.commit_transaction(&txn_id).await.unwrap();
 
     // Verify: Transaction is committed
-    let committed = sync_manager.get_transaction(&txn_id).await.unwrap().unwrap();
+    let committed = sync_manager
+        .get_transaction(&txn_id)
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(committed.state, TransactionState::Committed);
 }
 
@@ -100,10 +102,7 @@ async fn integration_test_transaction_management() {
     let txn_id = sync_manager.start_transaction(operations).await.unwrap();
 
     // Verify: Transaction can be retrieved by ID
-    let retrieved = sync_manager
-        .get_transaction(&txn_id)
-        .await
-        .unwrap();
+    let retrieved = sync_manager.get_transaction(&txn_id).await.unwrap();
     assert!(retrieved.is_some());
     assert_eq!(retrieved.unwrap().id, txn_id);
 }
@@ -160,9 +159,7 @@ async fn integration_test_sync_logging() {
     let sync_manager = SyncManager::new();
 
     // Create operations
-    let operations = vec![
-        create_test_operation("op-1", "project-1", "update"),
-    ];
+    let operations = vec![create_test_operation("op-1", "project-1", "update")];
 
     // Start transaction
     let txn_id = sync_manager.start_transaction(operations).await.unwrap();
@@ -215,8 +212,16 @@ async fn integration_test_multiple_transactions() {
     // Verify: Transactions are independent
     sync_manager.commit_transaction(&txn_id1).await.unwrap();
 
-    let committed1 = sync_manager.get_transaction(&txn_id1).await.unwrap().unwrap();
-    let pending2 = sync_manager.get_transaction(&txn_id2).await.unwrap().unwrap();
+    let committed1 = sync_manager
+        .get_transaction(&txn_id1)
+        .await
+        .unwrap()
+        .unwrap();
+    let pending2 = sync_manager
+        .get_transaction(&txn_id2)
+        .await
+        .unwrap()
+        .unwrap();
 
     assert_eq!(committed1.state, TransactionState::Committed);
     assert_eq!(pending2.state, TransactionState::Pending);
@@ -245,7 +250,11 @@ async fn integration_test_transaction_with_multiple_operations() {
     let txn_id = sync_manager.start_transaction(operations).await.unwrap();
 
     // Verify: Transaction contains all operations
-    let txn = sync_manager.get_transaction(&txn_id).await.unwrap().unwrap();
+    let txn = sync_manager
+        .get_transaction(&txn_id)
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(txn.operations.len(), 4);
 
     // Verify: Operations are in correct order
@@ -271,12 +280,20 @@ async fn integration_test_transaction_state_transitions() {
 
     // Start transaction (Pending state)
     let txn_id = sync_manager.start_transaction(operations).await.unwrap();
-    let txn = sync_manager.get_transaction(&txn_id).await.unwrap().unwrap();
+    let txn = sync_manager
+        .get_transaction(&txn_id)
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(txn.state, TransactionState::Pending);
 
     // Commit transaction (Committed state)
     sync_manager.commit_transaction(&txn_id).await.unwrap();
-    let txn = sync_manager.get_transaction(&txn_id).await.unwrap().unwrap();
+    let txn = sync_manager
+        .get_transaction(&txn_id)
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(txn.state, TransactionState::Committed);
 
     // Verify: Cannot commit again

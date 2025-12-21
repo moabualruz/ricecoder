@@ -113,8 +113,11 @@ impl SafetyMonitor {
                 metrics.validations_failed += 1;
 
                 // Check for critical violations
-                let critical_count = violations.iter()
-                    .filter(|v| matches!(v.severity, crate::constraints::ConstraintSeverity::Critical))
+                let critical_count = violations
+                    .iter()
+                    .filter(|v| {
+                        matches!(v.severity, crate::constraints::ConstraintSeverity::Critical)
+                    })
                     .count();
 
                 metrics.critical_violations += critical_count as u64;
@@ -127,10 +130,12 @@ impl SafetyMonitor {
                         format!("{} critical safety violations detected", critical_count),
                         None,
                         None,
-                        HashMap::from([
-                            ("violation_count".to_string(), serde_json::json!(critical_count)),
-                        ]),
-                    ).await?;
+                        HashMap::from([(
+                            "violation_count".to_string(),
+                            serde_json::json!(critical_count),
+                        )]),
+                    )
+                    .await?;
                 }
             }
             ValidationResult::ApprovalRequired { requests, .. } => {
@@ -151,7 +156,8 @@ impl SafetyMonitor {
         // Update average risk score
         let total_assessments = metrics.risk_assessments as f64;
         let current_avg = metrics.average_risk_score;
-        metrics.average_risk_score = (current_avg * (total_assessments - 1.0) + score.score as f64) / total_assessments;
+        metrics.average_risk_score =
+            (current_avg * (total_assessments - 1.0) + score.score as f64) / total_assessments;
 
         // Track high-risk operations
         if score.level >= RiskLevel::High {
@@ -168,7 +174,8 @@ impl SafetyMonitor {
                     ("risk_score".to_string(), serde_json::json!(score.score)),
                     ("risk_level".to_string(), serde_json::json!(score.level)),
                 ]),
-            ).await?;
+            )
+            .await?;
         }
 
         metrics.last_updated = chrono::Utc::now();
@@ -231,7 +238,10 @@ impl SafetyMonitor {
     }
 
     /// Add an alert handler
-    pub async fn add_alert_handler(&self, handler: Box<dyn AlertHandler + Send + Sync>) -> SafetyResult<()> {
+    pub async fn add_alert_handler(
+        &self,
+        handler: Box<dyn AlertHandler + Send + Sync>,
+    ) -> SafetyResult<()> {
         self.alert_handlers.write().await.push(handler);
         Ok(())
     }
@@ -283,7 +293,9 @@ impl SafetyMonitor {
         let metrics = self.metrics.read().await;
         let mut alerts = Vec::new();
 
-        if metrics.validations_failed as f64 / metrics.total_validations as f64 > thresholds.max_failure_rate {
+        if metrics.validations_failed as f64 / metrics.total_validations as f64
+            > thresholds.max_failure_rate
+        {
             alerts.push(SafetyAlert {
                 id: uuid::Uuid::new_v4().to_string(),
                 level: AlertLevel::Critical,
@@ -297,8 +309,16 @@ impl SafetyMonitor {
                 session_id: None,
                 timestamp: chrono::Utc::now(),
                 data: HashMap::from([
-                    ("failure_rate".to_string(), serde_json::json!((metrics.validations_failed as f64 / metrics.total_validations as f64))),
-                    ("threshold".to_string(), serde_json::json!(thresholds.max_failure_rate)),
+                    (
+                        "failure_rate".to_string(),
+                        serde_json::json!(
+                            (metrics.validations_failed as f64 / metrics.total_validations as f64)
+                        ),
+                    ),
+                    (
+                        "threshold".to_string(),
+                        serde_json::json!(thresholds.max_failure_rate),
+                    ),
                 ]),
             });
         }
@@ -316,8 +336,14 @@ impl SafetyMonitor {
                 session_id: None,
                 timestamp: chrono::Utc::now(),
                 data: HashMap::from([
-                    ("average_risk".to_string(), serde_json::json!(metrics.average_risk_score)),
-                    ("threshold".to_string(), serde_json::json!(thresholds.max_average_risk_score)),
+                    (
+                        "average_risk".to_string(),
+                        serde_json::json!(metrics.average_risk_score),
+                    ),
+                    (
+                        "threshold".to_string(),
+                        serde_json::json!(thresholds.max_average_risk_score),
+                    ),
                 ]),
             });
         }

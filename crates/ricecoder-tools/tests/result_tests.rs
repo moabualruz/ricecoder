@@ -2,7 +2,10 @@
 //!
 //! Tests for ToolResult, ResultMetadata, and ToolErrorInfo structures.
 
-use ricecoder_tools::{error::ToolError, result::{ResultMetadata, ToolErrorInfo, ToolResult}};
+use ricecoder_tools::{
+    error::ToolError,
+    result::{ResultMetadata, ToolErrorInfo, ToolResult},
+};
 
 #[test]
 fn test_result_metadata_creation() {

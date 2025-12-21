@@ -61,7 +61,9 @@ impl CompletionMapper {
             transform: rules.transform.clone(),
         };
 
-        let results = self.transformer.transform_completion(&wrapped, &default_rules)?;
+        let results = self
+            .transformer
+            .transform_completion(&wrapped, &default_rules)?;
 
         if results.is_empty() {
             return Err(crate::error::ExternalLspError::TransformationError(

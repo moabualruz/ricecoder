@@ -16,22 +16,13 @@ impl SecurityHeadersBuilder {
         let mut headers = HashMap::new();
 
         // Prevent clickjacking
-        headers.insert(
-            "X-Frame-Options".to_string(),
-            "DENY".to_string(),
-        );
+        headers.insert("X-Frame-Options".to_string(), "DENY".to_string());
 
         // Prevent MIME type sniffing
-        headers.insert(
-            "X-Content-Type-Options".to_string(),
-            "nosniff".to_string(),
-        );
+        headers.insert("X-Content-Type-Options".to_string(), "nosniff".to_string());
 
         // Enable XSS protection (for older browsers)
-        headers.insert(
-            "X-XSS-Protection".to_string(),
-            "1; mode=block".to_string(),
-        );
+        headers.insert("X-XSS-Protection".to_string(), "1; mode=block".to_string());
 
         // Referrer policy
         headers.insert(
@@ -125,12 +116,8 @@ impl SecurityHeadersValidator {
     /// Check if a header value is secure
     pub fn is_secure_header(name: &str, value: &str) -> bool {
         match name {
-            "X-Frame-Options" => {
-                value == "DENY" || value == "SAMEORIGIN"
-            }
-            "X-Content-Type-Options" => {
-                value == "nosniff"
-            }
+            "X-Frame-Options" => value == "DENY" || value == "SAMEORIGIN",
+            "X-Content-Type-Options" => value == "nosniff",
             "Referrer-Policy" => {
                 matches!(
                     value,
@@ -144,9 +131,7 @@ impl SecurityHeadersValidator {
                         | "unsafe-url"
                 )
             }
-            "Strict-Transport-Security" => {
-                value.contains("max-age=") && value.contains("31536000")
-            }
+            "Strict-Transport-Security" => value.contains("max-age=") && value.contains("31536000"),
             "Content-Security-Policy" => {
                 !value.contains("unsafe-inline") || value.contains("'unsafe-inline'")
             }
@@ -154,5 +139,3 @@ impl SecurityHeadersValidator {
         }
     }
 }
-
-

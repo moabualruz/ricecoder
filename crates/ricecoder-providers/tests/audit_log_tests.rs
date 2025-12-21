@@ -83,7 +83,8 @@ mod tests {
         let log_path = temp_dir.path().join("audit.log");
 
         let logger = AuditLogger::new(log_path.clone());
-        let result = logger.log_authentication_attempt("openai", "system", "success", "Valid API key");
+        let result =
+            logger.log_authentication_attempt("openai", "system", "success", "Valid API key");
         assert!(result.is_ok());
 
         let content = std::fs::read_to_string(&log_path).unwrap();
@@ -96,7 +97,12 @@ mod tests {
         let log_path = temp_dir.path().join("audit.log");
 
         let logger = AuditLogger::new(log_path.clone());
-        let result = logger.log_authorization_decision("tool:read_file", "system", true, "Permission granted");
+        let result = logger.log_authorization_decision(
+            "tool:read_file",
+            "system",
+            true,
+            "Permission granted",
+        );
         assert!(result.is_ok());
 
         let content = std::fs::read_to_string(&log_path).unwrap();
@@ -124,9 +130,15 @@ mod tests {
 
         let logger = AuditLogger::new(log_path.clone());
 
-        logger.log_api_key_access("openai", "system", "success").unwrap();
-        logger.log_api_key_access("anthropic", "system", "success").unwrap();
-        logger.log_authentication_attempt("openai", "system", "success", "Valid key").unwrap();
+        logger
+            .log_api_key_access("openai", "system", "success")
+            .unwrap();
+        logger
+            .log_api_key_access("anthropic", "system", "success")
+            .unwrap();
+        logger
+            .log_authentication_attempt("openai", "system", "success", "Valid key")
+            .unwrap();
 
         let content = std::fs::read_to_string(&log_path).unwrap();
         let lines: Vec<&str> = content.lines().collect();

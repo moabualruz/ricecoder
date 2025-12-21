@@ -251,7 +251,9 @@ impl LearningManager {
 
     /// Get decisions by type
     pub async fn get_decisions_by_type(&self, decision_type: &str) -> Vec<Decision> {
-        self.decision_logger.get_history_by_type(decision_type).await
+        self.decision_logger
+            .get_history_by_type(decision_type)
+            .await
     }
 
     /// Get decisions by context
@@ -271,7 +273,9 @@ impl LearningManager {
 
     /// Replay decisions for a specific context
     pub async fn replay_decisions_for_context(&self, context: &DecisionContext) -> Vec<Decision> {
-        self.decision_logger.replay_decisions_for_context(context).await
+        self.decision_logger
+            .replay_decisions_for_context(context)
+            .await
     }
 
     /// Get the number of captured decisions
@@ -296,7 +300,8 @@ impl LearningManager {
 
         // Check for conflicts with existing rules
         let existing_rules = self.rule_storage.list_rules().await?;
-        self.rule_validator.check_conflicts(&rule, &existing_rules)?;
+        self.rule_validator
+            .check_conflicts(&rule, &existing_rules)?;
 
         // Store the validated rule
         self.rule_storage.store_rule(rule).await
@@ -332,7 +337,10 @@ impl LearningManager {
     }
 
     /// Get a detailed validation report for a rule
-    pub fn validate_rule_with_report(&self, rule: &Rule) -> crate::rule_validator::ValidationReport {
+    pub fn validate_rule_with_report(
+        &self,
+        rule: &Rule,
+    ) -> crate::rule_validator::ValidationReport {
         self.rule_validator.validate_with_report(rule)
     }
 
@@ -348,13 +356,18 @@ impl LearningManager {
     }
 
     /// Get rules by source
-    pub async fn get_rules_by_source(&self, source: crate::models::RuleSource) -> Result<Vec<Rule>> {
+    pub async fn get_rules_by_source(
+        &self,
+        source: crate::models::RuleSource,
+    ) -> Result<Vec<Rule>> {
         self.rule_storage.get_rules_by_source(source).await
     }
 
     /// Get rules by confidence
     pub async fn get_rules_by_confidence(&self, min_confidence: f32) -> Result<Vec<Rule>> {
-        self.rule_storage.get_rules_by_confidence(min_confidence).await
+        self.rule_storage
+            .get_rules_by_confidence(min_confidence)
+            .await
     }
 
     /// Get rules sorted by usage
@@ -369,7 +382,9 @@ impl LearningManager {
 
     /// Get rules by success rate
     pub async fn get_rules_by_success_rate(&self, min_success_rate: f32) -> Result<Vec<Rule>> {
-        self.rule_storage.get_rules_by_success_rate(min_success_rate).await
+        self.rule_storage
+            .get_rules_by_success_rate(min_success_rate)
+            .await
     }
 
     /// Get rule count
@@ -413,7 +428,9 @@ impl LearningManager {
     /// Get all rules for a pattern, applying scope precedence
     pub async fn get_rules_by_pattern_with_precedence(&self, pattern: &str) -> Result<Vec<Rule>> {
         let rules = self.get_rules().await?;
-        Ok(ConflictResolver::get_rules_by_pattern_with_precedence(&rules, pattern))
+        Ok(ConflictResolver::get_rules_by_pattern_with_precedence(
+            &rules, pattern,
+        ))
     }
 
     /// Resolve conflicts in all rules by applying scope precedence
@@ -456,12 +473,7 @@ impl LearningManager {
 
     /// Get all patterns
     pub async fn get_patterns(&self) -> Vec<LearnedPattern> {
-        self.patterns
-            .read()
-            .await
-            .values()
-            .cloned()
-            .collect()
+        self.patterns.read().await.values().cloned().collect()
     }
 
     /// Get patterns by type
@@ -488,8 +500,9 @@ impl LearningManager {
     pub fn get_scope_path(&self, scope: RuleScope) -> Result<PathBuf> {
         match scope {
             RuleScope::Global => {
-                let home = dirs::home_dir()
-                    .ok_or_else(|| LearningError::PathResolutionFailed("Home directory not found".to_string()))?;
+                let home = dirs::home_dir().ok_or_else(|| {
+                    LearningError::PathResolutionFailed("Home directory not found".to_string())
+                })?;
                 Ok(home.join(".ricecoder").join("rules"))
             }
             RuleScope::Project => Ok(PathBuf::from(".ricecoder/rules")),
@@ -511,14 +524,18 @@ impl LearningManager {
         &self,
     ) -> Result<Vec<(LearnedPattern, crate::pattern_capturer::PatternAnalysis)>> {
         let decisions = self.get_decisions().await;
-        let results = self.pattern_capturer.extract_patterns_with_analysis(&decisions)?;
+        let results = self
+            .pattern_capturer
+            .extract_patterns_with_analysis(&decisions)?;
         Ok(results)
     }
 
     /// Validate a pattern against historical decisions
     pub async fn validate_pattern(&self, pattern: &LearnedPattern) -> Result<f32> {
         let decisions = self.get_decisions().await;
-        let validation_score = self.pattern_capturer.validate_pattern(pattern, &decisions)?;
+        let validation_score = self
+            .pattern_capturer
+            .validate_pattern(pattern, &decisions)?;
         Ok(validation_score)
     }
 
@@ -530,7 +547,8 @@ impl LearningManager {
     ) -> Result<()> {
         let mut patterns = self.patterns.write().await;
         if let Some(pattern) = patterns.get_mut(pattern_id) {
-            self.pattern_capturer.update_confidence(pattern, validation_score)?;
+            self.pattern_capturer
+                .update_confidence(pattern, validation_score)?;
             Ok(())
         } else {
             Err(LearningError::PatternNotFound(pattern_id.to_string()))
@@ -543,7 +561,9 @@ impl LearningManager {
         pattern: &LearnedPattern,
     ) -> Result<crate::pattern_validator::ValidationResult> {
         let decisions = self.get_decisions().await;
-        let validation_result = self.pattern_validator.validate_pattern(pattern, &decisions)?;
+        let validation_result = self
+            .pattern_validator
+            .validate_pattern(pattern, &decisions)?;
         Ok(validation_result)
     }
 
@@ -553,7 +573,9 @@ impl LearningManager {
         patterns: &[LearnedPattern],
     ) -> Result<Vec<crate::pattern_validator::ValidationResult>> {
         let decisions = self.get_decisions().await;
-        let validation_results = self.pattern_validator.validate_patterns(patterns, &decisions)?;
+        let validation_results = self
+            .pattern_validator
+            .validate_patterns(patterns, &decisions)?;
         Ok(validation_results)
     }
 
@@ -563,7 +585,9 @@ impl LearningManager {
     ) -> Result<crate::pattern_validator::ValidationStatistics> {
         let patterns: Vec<_> = self.patterns.read().await.values().cloned().collect();
         let validation_results = self.validate_patterns(&patterns).await?;
-        let stats = self.pattern_validator.get_validation_statistics(&validation_results);
+        let stats = self
+            .pattern_validator
+            .get_validation_statistics(&validation_results);
         Ok(stats)
     }
 
@@ -610,7 +634,11 @@ impl LearningManager {
     /// Get patterns sorted by confidence
     pub async fn get_patterns_by_confidence_sorted(&self) -> Vec<LearnedPattern> {
         let mut patterns: Vec<_> = self.patterns.read().await.values().cloned().collect();
-        patterns.sort_by(|a, b| b.confidence.partial_cmp(&a.confidence).unwrap_or(std::cmp::Ordering::Equal));
+        patterns.sort_by(|a, b| {
+            b.confidence
+                .partial_cmp(&a.confidence)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         patterns
     }
 
@@ -632,7 +660,10 @@ impl LearningManager {
     }
 
     /// Request promotion of a rule from project to global scope
-    pub async fn request_rule_promotion(&self, rule: Rule) -> Result<crate::rule_promoter::RuleReview> {
+    pub async fn request_rule_promotion(
+        &self,
+        rule: Rule,
+    ) -> Result<crate::rule_promoter::RuleReview> {
         // Get global rules for conflict checking
         let global_rules = self.rule_storage.list_rules().await?;
 
@@ -642,7 +673,10 @@ impl LearningManager {
     }
 
     /// Get a pending promotion for review
-    pub async fn get_pending_promotion(&self, rule_id: &str) -> Result<crate::rule_promoter::RuleReview> {
+    pub async fn get_pending_promotion(
+        &self,
+        rule_id: &str,
+    ) -> Result<crate::rule_promoter::RuleReview> {
         let promoter = self.rule_promoter.read().await;
         promoter.get_pending_promotion(rule_id)
     }
@@ -660,11 +694,7 @@ impl LearningManager {
     }
 
     /// Approve a pending promotion and store the promoted rule
-    pub async fn approve_promotion(
-        &self,
-        rule_id: &str,
-        reason: Option<String>,
-    ) -> Result<Rule> {
+    pub async fn approve_promotion(&self, rule_id: &str, reason: Option<String>) -> Result<Rule> {
         // Approve the promotion
         let mut promoter = self.rule_promoter.write().await;
         let promoted_rule = promoter.approve_promotion(rule_id, reason)?;
@@ -685,11 +715,7 @@ impl LearningManager {
     }
 
     /// Reject a pending promotion
-    pub async fn reject_promotion(
-        &self,
-        rule_id: &str,
-        reason: Option<String>,
-    ) -> Result<()> {
+    pub async fn reject_promotion(&self, rule_id: &str, reason: Option<String>) -> Result<()> {
         let mut promoter = self.rule_promoter.write().await;
         promoter.reject_promotion(rule_id, reason)
     }
@@ -710,13 +736,17 @@ impl LearningManager {
     }
 
     /// Get approved promotions from history
-    pub async fn get_approved_promotions(&self) -> Vec<crate::rule_promoter::PromotionHistoryEntry> {
+    pub async fn get_approved_promotions(
+        &self,
+    ) -> Vec<crate::rule_promoter::PromotionHistoryEntry> {
         let promoter = self.rule_promoter.read().await;
         promoter.get_approved_promotions()
     }
 
     /// Get rejected promotions from history
-    pub async fn get_rejected_promotions(&self) -> Vec<crate::rule_promoter::PromotionHistoryEntry> {
+    pub async fn get_rejected_promotions(
+        &self,
+    ) -> Vec<crate::rule_promoter::PromotionHistoryEntry> {
         let promoter = self.rule_promoter.read().await;
         promoter.get_rejected_promotions()
     }
@@ -806,7 +836,11 @@ impl LearningManager {
         context: &crate::rule_application::GenerationContext,
     ) -> Result<Vec<Rule>> {
         let rules = self.get_rules().await?;
-        Ok(crate::rule_application::RuleApplicationEngine::get_matching_rules_sorted(&rules, context))
+        Ok(
+            crate::rule_application::RuleApplicationEngine::get_matching_rules_sorted(
+                &rules, context,
+            ),
+        )
     }
 
     /// Get matching rules sorted by usage
@@ -815,7 +849,11 @@ impl LearningManager {
         context: &crate::rule_application::GenerationContext,
     ) -> Result<Vec<Rule>> {
         let rules = self.get_rules().await?;
-        Ok(crate::rule_application::RuleApplicationEngine::get_matching_rules_by_usage(&rules, context))
+        Ok(
+            crate::rule_application::RuleApplicationEngine::get_matching_rules_by_usage(
+                &rules, context,
+            ),
+        )
     }
 
     /// Get matching rules sorted by success rate
@@ -824,7 +862,11 @@ impl LearningManager {
         context: &crate::rule_application::GenerationContext,
     ) -> Result<Vec<Rule>> {
         let rules = self.get_rules().await?;
-        Ok(crate::rule_application::RuleApplicationEngine::get_matching_rules_by_success(&rules, context))
+        Ok(
+            crate::rule_application::RuleApplicationEngine::get_matching_rules_by_success(
+                &rules, context,
+            ),
+        )
     }
 
     /// Apply learned rules to guide code generation
@@ -836,7 +878,11 @@ impl LearningManager {
         let rules = self.get_rules_for_scope().await?;
 
         // Apply rules with precedence to get the best matching rule
-        if let Some(result) = crate::rule_application::RuleApplicationEngine::apply_rules_with_precedence(&rules, context) {
+        if let Some(result) =
+            crate::rule_application::RuleApplicationEngine::apply_rules_with_precedence(
+                &rules, context,
+            )
+        {
             Ok(result.action)
         } else {
             Ok(None)
@@ -869,11 +915,8 @@ impl LearningManager {
         language: String,
         input: String,
     ) -> Result<Option<String>> {
-        let context = crate::rule_application::GenerationContext::new(
-            generation_type,
-            language,
-            input,
-        );
+        let context =
+            crate::rule_application::GenerationContext::new(generation_type, language, input);
 
         self.apply_learned_rules_to_generation(&context).await
     }
@@ -895,7 +938,10 @@ impl LearningManager {
     }
 
     /// Get metrics for a specific rule
-    pub async fn get_rule_metrics(&self, rule_id: &str) -> Result<Option<crate::analytics_engine::RuleMetrics>> {
+    pub async fn get_rule_metrics(
+        &self,
+        rule_id: &str,
+    ) -> Result<Option<crate::analytics_engine::RuleMetrics>> {
         self.analytics_engine.get_rule_metrics(rule_id).await
     }
 
@@ -906,11 +952,15 @@ impl LearningManager {
 
     /// Update rule confidence based on validation results
     pub async fn update_rule_confidence(&self, rule_id: &str, new_confidence: f32) -> Result<()> {
-        self.analytics_engine.update_confidence(rule_id, new_confidence).await
+        self.analytics_engine
+            .update_confidence(rule_id, new_confidence)
+            .await
     }
 
     /// Generate analytics insights
-    pub async fn generate_analytics_insights(&self) -> Result<crate::analytics_engine::AnalyticsInsights> {
+    pub async fn generate_analytics_insights(
+        &self,
+    ) -> Result<crate::analytics_engine::AnalyticsInsights> {
         self.analytics_engine.generate_insights().await
     }
 
@@ -925,7 +975,9 @@ impl LearningManager {
         scope: RuleScope,
     ) -> Result<Vec<crate::analytics_engine::RuleMetrics>> {
         let rules = self.get_rules().await?;
-        self.analytics_engine.get_metrics_by_scope(&rules, scope).await
+        self.analytics_engine
+            .get_metrics_by_scope(&rules, scope)
+            .await
     }
 
     /// Export rules with metrics to JSON
@@ -955,10 +1007,7 @@ impl LearningManager {
     }
 
     /// Import and validate rules, returning both valid and invalid rules
-    pub async fn import_and_validate_rules(
-        &self,
-        json: &str,
-    ) -> Result<(Vec<Rule>, Vec<String>)> {
+    pub async fn import_and_validate_rules(&self, json: &str) -> Result<(Vec<Rule>, Vec<String>)> {
         crate::rule_exchange::RuleImporter::import_and_validate(json)
     }
 
@@ -1111,10 +1160,8 @@ mod tests {
     async fn test_store_pattern() {
         let manager = LearningManager::new(RuleScope::Session);
 
-        let pattern = LearnedPattern::new(
-            "code_generation".to_string(),
-            "Test pattern".to_string(),
-        );
+        let pattern =
+            LearnedPattern::new("code_generation".to_string(), "Test pattern".to_string());
 
         let pattern_id = pattern.id.clone();
         let result = manager.store_pattern(pattern).await;
@@ -1130,20 +1177,11 @@ mod tests {
     async fn test_get_patterns_by_type() {
         let manager = LearningManager::new(RuleScope::Session);
 
-        let pattern1 = LearnedPattern::new(
-            "code_generation".to_string(),
-            "Pattern 1".to_string(),
-        );
+        let pattern1 = LearnedPattern::new("code_generation".to_string(), "Pattern 1".to_string());
 
-        let pattern2 = LearnedPattern::new(
-            "refactoring".to_string(),
-            "Pattern 2".to_string(),
-        );
+        let pattern2 = LearnedPattern::new("refactoring".to_string(), "Pattern 2".to_string());
 
-        let pattern3 = LearnedPattern::new(
-            "code_generation".to_string(),
-            "Pattern 3".to_string(),
-        );
+        let pattern3 = LearnedPattern::new("code_generation".to_string(), "Pattern 3".to_string());
 
         manager.store_pattern(pattern1).await.unwrap();
         manager.store_pattern(pattern2).await.unwrap();
@@ -1572,16 +1610,11 @@ mod tests {
     async fn test_get_patterns_by_confidence() {
         let manager = LearningManager::new(RuleScope::Session);
 
-        let mut pattern1 = LearnedPattern::new(
-            "code_generation".to_string(),
-            "Pattern 1".to_string(),
-        );
+        let mut pattern1 =
+            LearnedPattern::new("code_generation".to_string(), "Pattern 1".to_string());
         pattern1.confidence = 0.8;
 
-        let mut pattern2 = LearnedPattern::new(
-            "refactoring".to_string(),
-            "Pattern 2".to_string(),
-        );
+        let mut pattern2 = LearnedPattern::new("refactoring".to_string(), "Pattern 2".to_string());
         pattern2.confidence = 0.3;
 
         manager.store_pattern(pattern1).await.unwrap();
@@ -1596,22 +1629,14 @@ mod tests {
     async fn test_get_patterns_by_confidence_sorted() {
         let manager = LearningManager::new(RuleScope::Session);
 
-        let mut pattern1 = LearnedPattern::new(
-            "code_generation".to_string(),
-            "Pattern 1".to_string(),
-        );
+        let mut pattern1 =
+            LearnedPattern::new("code_generation".to_string(), "Pattern 1".to_string());
         pattern1.confidence = 0.5;
 
-        let mut pattern2 = LearnedPattern::new(
-            "refactoring".to_string(),
-            "Pattern 2".to_string(),
-        );
+        let mut pattern2 = LearnedPattern::new("refactoring".to_string(), "Pattern 2".to_string());
         pattern2.confidence = 0.9;
 
-        let mut pattern3 = LearnedPattern::new(
-            "analysis".to_string(),
-            "Pattern 3".to_string(),
-        );
+        let mut pattern3 = LearnedPattern::new("analysis".to_string(), "Pattern 3".to_string());
         pattern3.confidence = 0.7;
 
         manager.store_pattern(pattern1).await.unwrap();
@@ -1628,22 +1653,14 @@ mod tests {
     async fn test_get_patterns_by_occurrences() {
         let manager = LearningManager::new(RuleScope::Session);
 
-        let mut pattern1 = LearnedPattern::new(
-            "code_generation".to_string(),
-            "Pattern 1".to_string(),
-        );
+        let mut pattern1 =
+            LearnedPattern::new("code_generation".to_string(), "Pattern 1".to_string());
         pattern1.occurrences = 5;
 
-        let mut pattern2 = LearnedPattern::new(
-            "refactoring".to_string(),
-            "Pattern 2".to_string(),
-        );
+        let mut pattern2 = LearnedPattern::new("refactoring".to_string(), "Pattern 2".to_string());
         pattern2.occurrences = 10;
 
-        let mut pattern3 = LearnedPattern::new(
-            "analysis".to_string(),
-            "Pattern 3".to_string(),
-        );
+        let mut pattern3 = LearnedPattern::new("analysis".to_string(), "Pattern 3".to_string());
         pattern3.occurrences = 3;
 
         manager.store_pattern(pattern1).await.unwrap();
@@ -1663,15 +1680,9 @@ mod tests {
 
         assert_eq!(manager.pattern_count().await, 0);
 
-        let pattern1 = LearnedPattern::new(
-            "code_generation".to_string(),
-            "Pattern 1".to_string(),
-        );
+        let pattern1 = LearnedPattern::new("code_generation".to_string(), "Pattern 1".to_string());
 
-        let pattern2 = LearnedPattern::new(
-            "refactoring".to_string(),
-            "Pattern 2".to_string(),
-        );
+        let pattern2 = LearnedPattern::new("refactoring".to_string(), "Pattern 2".to_string());
 
         manager.store_pattern(pattern1).await.unwrap();
         manager.store_pattern(pattern2).await.unwrap();
@@ -1683,10 +1694,7 @@ mod tests {
     async fn test_clear_patterns() {
         let manager = LearningManager::new(RuleScope::Session);
 
-        let pattern = LearnedPattern::new(
-            "code_generation".to_string(),
-            "Pattern".to_string(),
-        );
+        let pattern = LearnedPattern::new("code_generation".to_string(), "Pattern".to_string());
 
         manager.store_pattern(pattern).await.unwrap();
         assert_eq!(manager.pattern_count().await, 1);
@@ -1752,7 +1760,9 @@ mod tests {
         let rule_id = rule.id.clone();
         manager.request_rule_promotion(rule).await.unwrap();
 
-        let result = manager.approve_promotion(&rule_id, Some("Looks good".to_string())).await;
+        let result = manager
+            .approve_promotion(&rule_id, Some("Looks good".to_string()))
+            .await;
         assert!(result.is_ok());
 
         let promoted_rule = result.unwrap();
@@ -1776,7 +1786,9 @@ mod tests {
         let rule_id = rule.id.clone();
         manager.request_rule_promotion(rule).await.unwrap();
 
-        let result = manager.reject_promotion(&rule_id, Some("Not ready".to_string())).await;
+        let result = manager
+            .reject_promotion(&rule_id, Some("Not ready".to_string()))
+            .await;
         assert!(result.is_ok());
 
         assert_eq!(manager.pending_promotion_count().await, 0);

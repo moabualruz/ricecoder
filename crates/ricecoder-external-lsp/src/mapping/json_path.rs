@@ -61,9 +61,7 @@ impl JsonPathParser {
                 remaining = &remaining[1..];
 
                 // Find the end of the field name
-                let end = remaining
-                    .find(['.', '['])
-                    .unwrap_or(remaining.len());
+                let end = remaining.find(['.', '[']).unwrap_or(remaining.len());
 
                 if end == 0 {
                     return Err(ExternalLspError::JsonPathError(
@@ -114,7 +112,11 @@ impl JsonPathParser {
     }
 
     /// Recursively extract values following the path segments
-    fn extract_recursive(value: &Value, segments: &[PathSegment], index: usize) -> Result<Vec<Value>> {
+    fn extract_recursive(
+        value: &Value,
+        segments: &[PathSegment],
+        index: usize,
+    ) -> Result<Vec<Value>> {
         if index >= segments.len() {
             return Ok(vec![value.clone()]);
         }
@@ -125,14 +127,12 @@ impl JsonPathParser {
                 Self::extract_recursive(value, segments, index + 1)
             }
             PathSegment::Field(field) => {
-                let next_value = value
-                    .get(field)
-                    .ok_or_else(|| {
-                        ExternalLspError::JsonPathError(format!(
-                            "Field '{}' not found in JSON object",
-                            field
-                        ))
-                    })?;
+                let next_value = value.get(field).ok_or_else(|| {
+                    ExternalLspError::JsonPathError(format!(
+                        "Field '{}' not found in JSON object",
+                        field
+                    ))
+                })?;
 
                 Self::extract_recursive(next_value, segments, index + 1)
             }

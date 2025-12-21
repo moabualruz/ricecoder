@@ -237,5 +237,3 @@ impl Default for ProfileManager {
         Self::new()
     }
 }
-
-

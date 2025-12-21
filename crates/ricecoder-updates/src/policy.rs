@@ -1,7 +1,7 @@
 //! Enterprise policy management for updates
 
 use crate::error::{Result, UpdateError};
-use crate::models::{ReleaseChannel, UpdatePolicyConfig, SecurityRequirements};
+use crate::models::{ReleaseChannel, SecurityRequirements, UpdatePolicyConfig};
 use ricecoder_security::access_control::{Permission, Role};
 use std::collections::HashSet;
 
@@ -66,18 +66,22 @@ impl UpdatePolicy {
     }
 
     /// Validate security requirements for an update
-    pub fn validate_security_requirements(&self, has_signature: bool, has_checksum: bool) -> Result<()> {
+    pub fn validate_security_requirements(
+        &self,
+        has_signature: bool,
+        has_checksum: bool,
+    ) -> Result<()> {
         let reqs = &self.config.security_requirements;
 
         if reqs.require_signature && !has_signature {
             return Err(UpdateError::policy_violation(
-                "Update requires signature verification but none provided"
+                "Update requires signature verification but none provided",
             ));
         }
 
         if reqs.require_checksum && !has_checksum {
             return Err(UpdateError::policy_violation(
-                "Update requires checksum verification but none provided"
+                "Update requires checksum verification but none provided",
             ));
         }
 
@@ -91,14 +95,18 @@ impl UpdatePolicy {
 
     /// Get organization ID if enterprise features enabled
     pub fn organization_id(&self) -> Option<&str> {
-        self.config.enterprise_settings.as_ref()
+        self.config
+            .enterprise_settings
+            .as_ref()
             .map(|e| e.organization_id.as_str())
     }
 
     /// Check if compliance requirements are met
     pub fn compliance_requirements_met(&self, compliance_tags: &[String]) -> bool {
         if let Some(enterprise) = &self.config.enterprise_settings {
-            enterprise.compliance_requirements.iter()
+            enterprise
+                .compliance_requirements
+                .iter()
                 .all(|req| compliance_tags.contains(req))
         } else {
             true // No enterprise requirements
@@ -112,8 +120,11 @@ impl UpdatePolicy {
 
     /// Check if user has specific permission
     fn has_permission(&self, permission: Permission) -> bool {
-        self.user_permissions.contains(&permission) ||
-        self.user_roles.iter().any(|role| role.has_permission(&permission))
+        self.user_permissions.contains(&permission)
+            || self
+                .user_roles
+                .iter()
+                .any(|role| role.has_permission(&permission))
     }
 
     /// Check if user has specific role
@@ -158,7 +169,12 @@ pub enum PolicyResult {
 
 impl UpdatePolicy {
     /// Evaluate policy for an update operation
-    pub fn evaluate_update(&self, channel: &ReleaseChannel, size_mb: u32, compliance_tags: &[String]) -> PolicyResult {
+    pub fn evaluate_update(
+        &self,
+        channel: &ReleaseChannel,
+        size_mb: u32,
+        compliance_tags: &[String],
+    ) -> PolicyResult {
         // Check if channel is allowed
         if !self.channel_allowed(channel) {
             return PolicyResult::Denied(format!("Release channel {:?} is not allowed", channel));
@@ -166,8 +182,10 @@ impl UpdatePolicy {
 
         // Check download size
         if !self.download_size_allowed(size_mb) {
-            return PolicyResult::Denied(format!("Download size {}MB exceeds limit {}MB",
-                size_mb, self.config.max_download_size_mb));
+            return PolicyResult::Denied(format!(
+                "Download size {}MB exceeds limit {}MB",
+                size_mb, self.config.max_download_size_mb
+            ));
         }
 
         // Check compliance requirements

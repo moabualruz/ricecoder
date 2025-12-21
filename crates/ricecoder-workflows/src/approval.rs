@@ -4,9 +4,9 @@
 //! Handles human-in-the-loop approvals with timeout and status tracking.
 
 use crate::error::{WorkflowError, WorkflowResult};
+use chrono::{DateTime, Duration, Utc};
 use std::collections::HashMap;
 use std::sync::RwLock;
-use chrono::{DateTime, Utc, Duration};
 
 /// Approval status
 #[derive(Debug, Clone, PartialEq)]
@@ -106,9 +106,10 @@ impl ApprovalGate {
             status: ApprovalStatus::Pending,
         };
 
-        let mut requests = self.requests.write().map_err(|_| {
-            WorkflowError::StateError("Failed to acquire write lock".to_string())
-        })?;
+        let mut requests = self
+            .requests
+            .write()
+            .map_err(|_| WorkflowError::StateError("Failed to acquire write lock".to_string()))?;
 
         requests.insert(request_id.clone(), request);
 
@@ -117,9 +118,10 @@ impl ApprovalGate {
 
     /// Approve a request
     pub fn approve(&self, request_id: &str, comments: Option<String>) -> WorkflowResult<()> {
-        let mut requests = self.requests.write().map_err(|_| {
-            WorkflowError::StateError("Failed to acquire write lock".to_string())
-        })?;
+        let mut requests = self
+            .requests
+            .write()
+            .map_err(|_| WorkflowError::StateError("Failed to acquire write lock".to_string()))?;
 
         if let Some(request) = requests.get_mut(request_id) {
             if request.is_timed_out() {
@@ -132,9 +134,7 @@ impl ApprovalGate {
             }
 
             if !matches!(request.status, ApprovalStatus::Pending) {
-                return Err(WorkflowError::Invalid(
-                    "Request is not pending".to_string(),
-                ));
+                return Err(WorkflowError::Invalid("Request is not pending".to_string()));
             }
 
             request.status = ApprovalStatus::Approved {
@@ -145,17 +145,19 @@ impl ApprovalGate {
 
             Ok(())
         } else {
-            Err(WorkflowError::Invalid(
-                format!("Approval request {} not found", request_id),
-            ))
+            Err(WorkflowError::Invalid(format!(
+                "Approval request {} not found",
+                request_id
+            )))
         }
     }
 
     /// Reject a request
     pub fn reject(&self, request_id: &str, comments: Option<String>) -> WorkflowResult<()> {
-        let mut requests = self.requests.write().map_err(|_| {
-            WorkflowError::StateError("Failed to acquire write lock".to_string())
-        })?;
+        let mut requests = self
+            .requests
+            .write()
+            .map_err(|_| WorkflowError::StateError("Failed to acquire write lock".to_string()))?;
 
         if let Some(request) = requests.get_mut(request_id) {
             if request.is_timed_out() {
@@ -168,9 +170,7 @@ impl ApprovalGate {
             }
 
             if !matches!(request.status, ApprovalStatus::Pending) {
-                return Err(WorkflowError::Invalid(
-                    "Request is not pending".to_string(),
-                ));
+                return Err(WorkflowError::Invalid("Request is not pending".to_string()));
             }
 
             request.status = ApprovalStatus::Rejected {
@@ -181,17 +181,19 @@ impl ApprovalGate {
 
             Ok(())
         } else {
-            Err(WorkflowError::Invalid(
-                format!("Approval request {} not found", request_id),
-            ))
+            Err(WorkflowError::Invalid(format!(
+                "Approval request {} not found",
+                request_id
+            )))
         }
     }
 
     /// Check if a request is approved
     pub fn is_approved(&self, request_id: &str) -> WorkflowResult<bool> {
-        let requests = self.requests.read().map_err(|_| {
-            WorkflowError::StateError("Failed to acquire read lock".to_string())
-        })?;
+        let requests = self
+            .requests
+            .read()
+            .map_err(|_| WorkflowError::StateError("Failed to acquire read lock".to_string()))?;
 
         if let Some(request) = requests.get(request_id) {
             if request.is_timed_out() {
@@ -199,17 +201,19 @@ impl ApprovalGate {
             }
             Ok(matches!(request.status, ApprovalStatus::Approved { .. }))
         } else {
-            Err(WorkflowError::Invalid(
-                format!("Approval request {} not found", request_id),
-            ))
+            Err(WorkflowError::Invalid(format!(
+                "Approval request {} not found",
+                request_id
+            )))
         }
     }
 
     /// Check if a request is rejected
     pub fn is_rejected(&self, request_id: &str) -> WorkflowResult<bool> {
-        let requests = self.requests.read().map_err(|_| {
-            WorkflowError::StateError("Failed to acquire read lock".to_string())
-        })?;
+        let requests = self
+            .requests
+            .read()
+            .map_err(|_| WorkflowError::StateError("Failed to acquire read lock".to_string()))?;
 
         if let Some(request) = requests.get(request_id) {
             if request.is_timed_out() {
@@ -217,17 +221,19 @@ impl ApprovalGate {
             }
             Ok(matches!(request.status, ApprovalStatus::Rejected { .. }))
         } else {
-            Err(WorkflowError::Invalid(
-                format!("Approval request {} not found", request_id),
-            ))
+            Err(WorkflowError::Invalid(format!(
+                "Approval request {} not found",
+                request_id
+            )))
         }
     }
 
     /// Check if a request is still pending
     pub fn is_pending(&self, request_id: &str) -> WorkflowResult<bool> {
-        let requests = self.requests.read().map_err(|_| {
-            WorkflowError::StateError("Failed to acquire read lock".to_string())
-        })?;
+        let requests = self
+            .requests
+            .read()
+            .map_err(|_| WorkflowError::StateError("Failed to acquire read lock".to_string()))?;
 
         if let Some(request) = requests.get(request_id) {
             if request.is_timed_out() {
@@ -235,24 +241,27 @@ impl ApprovalGate {
             }
             Ok(matches!(request.status, ApprovalStatus::Pending))
         } else {
-            Err(WorkflowError::Invalid(
-                format!("Approval request {} not found", request_id),
-            ))
+            Err(WorkflowError::Invalid(format!(
+                "Approval request {} not found",
+                request_id
+            )))
         }
     }
 
     /// Get the request status
     pub fn get_request_status(&self, request_id: &str) -> WorkflowResult<ApprovalRequest> {
-        let requests = self.requests.read().map_err(|_| {
-            WorkflowError::StateError("Failed to acquire read lock".to_string())
-        })?;
+        let requests = self
+            .requests
+            .read()
+            .map_err(|_| WorkflowError::StateError("Failed to acquire read lock".to_string()))?;
 
         if let Some(request) = requests.get(request_id) {
             Ok(request.clone())
         } else {
-            Err(WorkflowError::Invalid(
-                format!("Approval request {} not found", request_id),
-            ))
+            Err(WorkflowError::Invalid(format!(
+                "Approval request {} not found",
+                request_id
+            )))
         }
     }
 

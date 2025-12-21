@@ -42,10 +42,7 @@ pub trait ProviderChain: Send + Sync {
     async fn get_definition(&self, params: &DefinitionParams) -> IdeResult<Option<Location>>;
 
     /// Register a provider availability change callback
-    fn on_provider_availability_changed(
-        &self,
-        callback: Box<dyn Fn(ProviderChange) + Send + Sync>,
-    );
+    fn on_provider_availability_changed(&self, callback: Box<dyn Fn(ProviderChange) + Send + Sync>);
 
     /// Reload configuration without restart
     async fn reload_configuration(&self) -> IdeResult<()>;

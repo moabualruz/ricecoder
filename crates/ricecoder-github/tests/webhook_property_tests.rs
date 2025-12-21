@@ -3,9 +3,7 @@
 //! These tests verify correctness properties that should hold across all valid webhook events
 
 use proptest::prelude::*;
-use ricecoder_github::{
-    EventFilter, WebhookEvent, WebhookEventType, WebhookOperations,
-};
+use ricecoder_github::{EventFilter, WebhookEvent, WebhookEventType, WebhookOperations};
 use serde_json::json;
 
 // Strategy for generating webhook event types

@@ -261,7 +261,10 @@ impl DocumentationGenerator {
 
     /// Generate README from project structure
     pub fn generate_readme(&self) -> Result<String> {
-        debug!("Generating README for project: {}", self.readme_config.project_name);
+        debug!(
+            "Generating README for project: {}",
+            self.readme_config.project_name
+        );
 
         let mut readme = String::new();
 
@@ -299,7 +302,10 @@ impl DocumentationGenerator {
             readme.push_str("## Installation\n\n");
             readme.push_str("Add this to your `Cargo.toml`:\n\n");
             readme.push_str("```toml\n");
-            readme.push_str(&format!("{} = \"0.1\"\n", self.readme_config.project_name.to_lowercase()));
+            readme.push_str(&format!(
+                "{} = \"0.1\"\n",
+                self.readme_config.project_name.to_lowercase()
+            ));
             readme.push_str("```\n\n");
         }
 
@@ -326,7 +332,8 @@ impl DocumentationGenerator {
         // Contributing
         if self.readme_config.include_contributing {
             readme.push_str("## Contributing\n\n");
-            readme.push_str("Contributions are welcome! Please see CONTRIBUTING.md for details.\n\n");
+            readme
+                .push_str("Contributions are welcome! Please see CONTRIBUTING.md for details.\n\n");
         }
 
         // License
@@ -368,7 +375,8 @@ impl DocumentationGenerator {
                 // Look for function signature after doc comment
                 if j < lines.len() {
                     let sig_line = lines[j];
-                    if sig_line.trim().starts_with("pub fn ") || sig_line.trim().starts_with("fn ") {
+                    if sig_line.trim().starts_with("pub fn ") || sig_line.trim().starts_with("fn ")
+                    {
                         // Extract function name
                         if let Some(start) = sig_line.find("fn ") {
                             let after_fn = &sig_line[start + 3..];
@@ -433,18 +441,24 @@ impl DocumentationGenerator {
         let lines: Vec<&str> = code.lines().collect();
         for i in 0..lines.len() {
             let line = lines[i];
-            if line.trim().starts_with("pub fn ") && (i == 0 || !lines[i - 1].trim().starts_with("///")) {
+            if line.trim().starts_with("pub fn ")
+                && (i == 0 || !lines[i - 1].trim().starts_with("///"))
+            {
                 if let Some(start) = line.find("fn ") {
                     let after_fn = &line[start + 3..];
                     if let Some(paren_pos) = after_fn.find('(') {
                         let func_name = after_fn[..paren_pos].trim();
-                        coverage = coverage.with_gap(format!("Function '{}' is not documented", func_name));
+                        coverage = coverage
+                            .with_gap(format!("Function '{}' is not documented", func_name));
                     }
                 }
             }
         }
 
-        info!("Documentation coverage: {:.1}%", coverage.coverage_percentage);
+        info!(
+            "Documentation coverage: {:.1}%",
+            coverage.coverage_percentage
+        );
         Ok(coverage)
     }
 
@@ -484,7 +498,9 @@ mod tests {
         };
 
         let generator = DocumentationGenerator::new(config);
-        let readme = generator.generate_readme().expect("Failed to generate README");
+        let readme = generator
+            .generate_readme()
+            .expect("Failed to generate README");
 
         assert!(readme.contains("# TestProject"));
         assert!(readme.contains("A test project"));
@@ -511,10 +527,14 @@ pub fn another_function() {
 "#;
 
         let mut generator = DocumentationGenerator::new(ReadmeConfig::default());
-        let api_docs = generator.extract_api_documentation(code).expect("Failed to extract API docs");
+        let api_docs = generator
+            .extract_api_documentation(code)
+            .expect("Failed to extract API docs");
 
         assert!(!api_docs.is_empty());
-        assert!(api_docs.iter().any(|doc| doc.name.contains("test_function")));
+        assert!(api_docs
+            .iter()
+            .any(|doc| doc.name.contains("test_function")));
     }
 
     #[test]
@@ -527,7 +547,9 @@ pub fn undocumented() {}
 "#;
 
         let generator = DocumentationGenerator::new(ReadmeConfig::default());
-        let coverage = generator.calculate_coverage(code).expect("Failed to calculate coverage");
+        let coverage = generator
+            .calculate_coverage(code)
+            .expect("Failed to calculate coverage");
 
         assert!(coverage.total_items > 0);
         assert!(coverage.coverage_percentage >= 0.0 && coverage.coverage_percentage <= 100.0);

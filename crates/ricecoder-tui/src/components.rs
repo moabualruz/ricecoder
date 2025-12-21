@@ -1,6 +1,6 @@
 //! Interactive UI components and Component Architecture for TEA
 
-use crate::model::{AppMessage, AppModel, AppMode};
+use crate::model::{AppMessage, AppMode, AppModel};
 use ratatui::layout::Rect;
 use ratatui::Frame;
 use std::any::Any;
@@ -126,7 +126,8 @@ pub mod messaging {
         /// Subscribe a component to messages from other components
         pub async fn subscribe(&self, subscription: ComponentSubscription) {
             let mut subscriptions = self.subscriptions.write().await;
-            subscriptions.entry(subscription.subscriber_id.clone())
+            subscriptions
+                .entry(subscription.subscriber_id.clone())
                 .or_insert_with(Vec::new)
                 .push(subscription);
         }
@@ -141,7 +142,9 @@ pub mod messaging {
         pub async fn unsubscribe_from(&self, component_id: &ComponentId, filter: &MessageFilter) {
             let mut subscriptions = self.subscriptions.write().await;
             if let Some(subs) = subscriptions.get_mut(component_id) {
-                subs.retain(|sub| std::mem::discriminant(&sub.filter) != std::mem::discriminant(filter));
+                subs.retain(|sub| {
+                    std::mem::discriminant(&sub.filter) != std::mem::discriminant(filter)
+                });
             }
         }
 
@@ -466,7 +469,9 @@ impl ComponentRegistry {
 
     /// Send a message from a component to the message bus
     pub async fn send_component_message(&self, component_id: &ComponentId, message: AppMessage) {
-        self.message_bus.send_message(message, component_id.clone()).await;
+        self.message_bus
+            .send_message(message, component_id.clone())
+            .await;
     }
 
     /// Register a component
@@ -535,18 +540,18 @@ impl ComponentRegistry {
         };
 
         let new_index = match direction {
-            FocusDirection::Forward => {
-                match current_index {
-                    Some(idx) => Some((idx + 1) % self.focus_order.len()),
-                    None => Some(0),
-                }
-            }
-            FocusDirection::Backward => {
-                match current_index {
-                    Some(idx) => Some(if idx == 0 { self.focus_order.len() - 1 } else { idx - 1 }),
-                    None => Some(self.focus_order.len().saturating_sub(1)),
-                }
-            }
+            FocusDirection::Forward => match current_index {
+                Some(idx) => Some((idx + 1) % self.focus_order.len()),
+                None => Some(0),
+            },
+            FocusDirection::Backward => match current_index {
+                Some(idx) => Some(if idx == 0 {
+                    self.focus_order.len() - 1
+                } else {
+                    idx - 1
+                }),
+                None => Some(self.focus_order.len().saturating_sub(1)),
+            },
             FocusDirection::First => Some(0),
             FocusDirection::Last => Some(self.focus_order.len().saturating_sub(1)),
             _ => current_index,
@@ -565,7 +570,8 @@ impl ComponentRegistry {
 
     /// Get the currently focused component
     pub fn focused(&self) -> Option<&dyn Component> {
-        self.current_focus.as_ref()
+        self.current_focus
+            .as_ref()
             .and_then(|id| self.components.get(id))
             .map(|c| c.as_ref())
     }
@@ -703,8 +709,6 @@ pub struct StateChangeEvent {
     pub new_value: serde_json::Value,
 }
 
-
-
 /// Event propagation control
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EventPropagation {
@@ -792,7 +796,11 @@ impl EventDispatcher {
     }
 
     /// Dispatch an event with bubbling
-    pub async fn dispatch_event(&mut self, event: InputEvent, target_id: ComponentId) -> Vec<EventResult> {
+    pub async fn dispatch_event(
+        &mut self,
+        event: InputEvent,
+        target_id: ComponentId,
+    ) -> Vec<EventResult> {
         let mut results = Vec::new();
 
         // Build propagation path (simplified - in practice would build full component tree)
@@ -904,18 +912,31 @@ impl EventDispatcher {
                 };
 
                 let modifiers = crate::event::KeyModifiers {
-                    ctrl: key.modifiers.contains(crossterm::event::KeyModifiers::CONTROL),
+                    ctrl: key
+                        .modifiers
+                        .contains(crossterm::event::KeyModifiers::CONTROL),
                     alt: key.modifiers.contains(crossterm::event::KeyModifiers::ALT),
-                    shift: key.modifiers.contains(crossterm::event::KeyModifiers::SHIFT),
+                    shift: key
+                        .modifiers
+                        .contains(crossterm::event::KeyModifiers::SHIFT),
                 };
 
-                Some(ComponentEvent::Keyboard(crate::event::KeyEvent { code: key_code, modifiers }))
+                Some(ComponentEvent::Keyboard(crate::event::KeyEvent {
+                    code: key_code,
+                    modifiers,
+                }))
             }
             AppMessage::MouseEvent(mouse) => {
                 let button = match mouse.kind {
-                    crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Left) => Some(crate::event::MouseButton::Left),
-                    crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Right) => Some(crate::event::MouseButton::Right),
-                    crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Middle) => Some(crate::event::MouseButton::Middle),
+                    crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Left) => {
+                        Some(crate::event::MouseButton::Left)
+                    }
+                    crossterm::event::MouseEventKind::Down(
+                        crossterm::event::MouseButton::Right,
+                    ) => Some(crate::event::MouseButton::Right),
+                    crossterm::event::MouseEventKind::Down(
+                        crossterm::event::MouseButton::Middle,
+                    ) => Some(crate::event::MouseButton::Middle),
                     _ => None,
                 };
 
@@ -945,27 +966,40 @@ impl Default for EventDispatcher {
 macro_rules! impl_event_component {
     ($type:ty) => {
         impl EventComponent for $type {
-            fn handle_event(&mut self, event: &ComponentEvent, _context: &EventContext) -> EventResult {
+            fn handle_event(
+                &mut self,
+                event: &ComponentEvent,
+                _context: &EventContext,
+            ) -> EventResult {
                 // Default implementation - delegate to existing update method if available
                 // This is a simplified implementation
                 let handled = match event {
                     ComponentEvent::Keyboard(key_event) => {
                         // Convert back to AppMessage for compatibility
                         let message = match key_event.key {
-                            crate::event::KeyCode::Char(c) => AppMessage::KeyPress(crossterm::event::KeyEvent::new(
-                                crossterm::event::KeyCode::Char(c),
-                                // Convert modifiers back
-                                if key_event.modifiers.ctrl { crossterm::event::KeyModifiers::CONTROL }
-                                else if key_event.modifiers.alt { crossterm::event::KeyModifiers::ALT }
-                                else if key_event.modifiers.shift { crossterm::event::KeyModifiers::SHIFT }
-                                else { crossterm::event::KeyModifiers::empty() }
-                            )),
+                            crate::event::KeyCode::Char(c) => {
+                                AppMessage::KeyPress(crossterm::event::KeyEvent::new(
+                                    crossterm::event::KeyCode::Char(c),
+                                    // Convert modifiers back
+                                    if key_event.modifiers.ctrl {
+                                        crossterm::event::KeyModifiers::CONTROL
+                                    } else if key_event.modifiers.alt {
+                                        crossterm::event::KeyModifiers::ALT
+                                    } else if key_event.modifiers.shift {
+                                        crossterm::event::KeyModifiers::SHIFT
+                                    } else {
+                                        crossterm::event::KeyModifiers::empty()
+                                    },
+                                ))
+                            }
                             // Add other key mappings as needed
-                            _ => return EventResult {
-                                propagation: EventPropagation::Continue,
-                                handled: false,
-                                data: None,
-                            },
+                            _ => {
+                                return EventResult {
+                                    propagation: EventPropagation::Continue,
+                                    handled: false,
+                                    data: None,
+                                }
+                            }
                         };
 
                         self.update(&message, &AppModel::default()) // Simplified - would need real model
@@ -974,7 +1008,11 @@ macro_rules! impl_event_component {
                 };
 
                 EventResult {
-                    propagation: if handled { EventPropagation::Consume } else { EventPropagation::Continue },
+                    propagation: if handled {
+                        EventPropagation::Consume
+                    } else {
+                        EventPropagation::Continue
+                    },
                     handled,
                     data: None,
                 }
@@ -2118,5 +2156,3 @@ impl Default for VimKeybindings {
         Self::new()
     }
 }
-
-

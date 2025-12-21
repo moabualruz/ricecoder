@@ -22,7 +22,10 @@ mod tests {
         builder.add_header("Custom-Header", "custom-value");
 
         let headers = builder.build();
-        assert_eq!(headers.get("Custom-Header"), Some(&"custom-value".to_string()));
+        assert_eq!(
+            headers.get("Custom-Header"),
+            Some(&"custom-value".to_string())
+        );
     }
 
     #[test]
@@ -52,8 +55,14 @@ mod tests {
         let mut headers = HashMap::new();
         headers.insert("X-Frame-Options".to_string(), "DENY".to_string());
         headers.insert("X-Content-Type-Options".to_string(), "nosniff".to_string());
-        headers.insert("Referrer-Policy".to_string(), "strict-origin-when-cross-origin".to_string());
-        headers.insert("Strict-Transport-Security".to_string(), "max-age=31536000".to_string());
+        headers.insert(
+            "Referrer-Policy".to_string(),
+            "strict-origin-when-cross-origin".to_string(),
+        );
+        headers.insert(
+            "Strict-Transport-Security".to_string(),
+            "max-age=31536000".to_string(),
+        );
 
         let result = SecurityHeadersValidator::validate(&headers);
         assert!(result.is_ok());
@@ -70,22 +79,49 @@ mod tests {
 
     #[test]
     fn test_security_headers_validator_is_secure_header() {
-        assert!(SecurityHeadersValidator::is_secure_header("X-Frame-Options", "DENY"));
-        assert!(SecurityHeadersValidator::is_secure_header("X-Frame-Options", "SAMEORIGIN"));
-        assert!(!SecurityHeadersValidator::is_secure_header("X-Frame-Options", "ALLOW-FROM"));
+        assert!(SecurityHeadersValidator::is_secure_header(
+            "X-Frame-Options",
+            "DENY"
+        ));
+        assert!(SecurityHeadersValidator::is_secure_header(
+            "X-Frame-Options",
+            "SAMEORIGIN"
+        ));
+        assert!(!SecurityHeadersValidator::is_secure_header(
+            "X-Frame-Options",
+            "ALLOW-FROM"
+        ));
 
-        assert!(SecurityHeadersValidator::is_secure_header("X-Content-Type-Options", "nosniff"));
-        assert!(!SecurityHeadersValidator::is_secure_header("X-Content-Type-Options", "sniff"));
+        assert!(SecurityHeadersValidator::is_secure_header(
+            "X-Content-Type-Options",
+            "nosniff"
+        ));
+        assert!(!SecurityHeadersValidator::is_secure_header(
+            "X-Content-Type-Options",
+            "sniff"
+        ));
 
-        assert!(SecurityHeadersValidator::is_secure_header("Referrer-Policy", "no-referrer"));
-        assert!(SecurityHeadersValidator::is_secure_header("Referrer-Policy", "strict-origin-when-cross-origin"));
+        assert!(SecurityHeadersValidator::is_secure_header(
+            "Referrer-Policy",
+            "no-referrer"
+        ));
+        assert!(SecurityHeadersValidator::is_secure_header(
+            "Referrer-Policy",
+            "strict-origin-when-cross-origin"
+        ));
     }
 
     #[test]
     fn test_security_headers_builder_default_values() {
         let builder = SecurityHeadersBuilder::new();
         assert_eq!(builder.get_header("X-Frame-Options"), Some("DENY"));
-        assert_eq!(builder.get_header("X-Content-Type-Options"), Some("nosniff"));
-        assert!(builder.get_header("Strict-Transport-Security").unwrap().contains("31536000"));
+        assert_eq!(
+            builder.get_header("X-Content-Type-Options"),
+            Some("nosniff")
+        );
+        assert!(builder
+            .get_header("Strict-Transport-Security")
+            .unwrap()
+            .contains("31536000"));
     }
 }

@@ -385,7 +385,11 @@ mod tests {
     async fn test_organize_gist_success() {
         let ops = GistOperations::new("token", "testuser");
         let result = ops
-            .organize_gist("abc123", vec!["rust".to_string()], Some("snippet".to_string()))
+            .organize_gist(
+                "abc123",
+                vec!["rust".to_string()],
+                Some("snippet".to_string()),
+            )
             .await;
 
         assert!(result.is_ok());

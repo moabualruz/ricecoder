@@ -22,12 +22,14 @@ mod tests {
             prop::collection::vec(".*", 1..3),
             ".*",
         )
-            .prop_map(|(domain, category, content, technologies, rationale)| Recommendation {
-                domain: domain.to_string(),
-                category: category.to_string(),
-                content,
-                technologies,
-                rationale,
+            .prop_map(|(domain, category, content, technologies, rationale)| {
+                Recommendation {
+                    domain: domain.to_string(),
+                    category: category.to_string(),
+                    content,
+                    technologies,
+                    rationale,
+                }
             })
     }
 

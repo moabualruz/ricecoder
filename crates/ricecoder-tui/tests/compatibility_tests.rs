@@ -33,7 +33,10 @@ mod terminal_compatibility_tests {
         assert_eq!(advanced_terminal.colors, 256);
         assert!(advanced_terminal.unicode);
         assert!(advanced_terminal.mouse);
-        assert!(matches!(advanced_terminal.graphics, TerminalGraphics::Sixel));
+        assert!(matches!(
+            advanced_terminal.graphics,
+            TerminalGraphics::Sixel
+        ));
     }
 
     #[test]
@@ -327,9 +330,9 @@ mod remote_session_compatibility_tests {
         // Test that capabilities are adjusted for remote sessions
 
         let remote_caps = TerminalCapabilities {
-            colors: 8, // Limited colors over SSH
-            unicode: false, // May not support Unicode
-            mouse: false, // Mouse may not work over SSH
+            colors: 8,                        // Limited colors over SSH
+            unicode: false,                   // May not support Unicode
+            mouse: false,                     // Mouse may not work over SSH
             graphics: TerminalGraphics::None, // Graphics protocols may not work
             width: 80,
             height: 24,
@@ -395,8 +398,12 @@ mod comprehensive_compatibility_validation {
             enhancement.detect_capabilities(caps);
 
             for feature in &expected_features {
-                assert!(enhancement.is_feature_enabled(feature),
-                       "Feature '{}' should be enabled for terminal caps: {:?}", feature, caps);
+                assert!(
+                    enhancement.is_feature_enabled(feature),
+                    "Feature '{}' should be enabled for terminal caps: {:?}",
+                    feature,
+                    caps
+                );
             }
         }
     }

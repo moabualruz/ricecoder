@@ -21,8 +21,8 @@ pub mod strategy;
 pub use cache::{Cache, CacheBuilder, CacheConfig};
 pub use error::CacheError;
 pub use metrics::{CacheMetrics, CacheStats};
-pub use storage::{CacheEntry, CacheStorage, MemoryStorage, DiskStorage};
-pub use strategy::{CacheStrategy, TtlStrategy, FileChangeStrategy};
+pub use storage::{CacheEntry, CacheStorage, DiskStorage, MemoryStorage};
+pub use strategy::{CacheStrategy, FileChangeStrategy, TtlStrategy};
 
 /// Re-export commonly used types
 pub type Result<T> = std::result::Result<T, CacheError>;

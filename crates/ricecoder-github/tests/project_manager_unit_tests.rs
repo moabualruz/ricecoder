@@ -3,7 +3,7 @@
 //! These tests verify specific functionality and edge cases
 
 use ricecoder_github::{
-    models::{Issue, IssueStatus, PullRequest, PrStatus},
+    models::{Issue, IssueStatus, PrStatus, PullRequest},
     AutomationRule, ColumnStatus, ProjectManager,
 };
 
@@ -110,7 +110,10 @@ fn test_create_card_fails_without_column_mapping() {
 
     let result = manager.create_card_from_issue(&issue);
     assert!(result.is_err());
-    assert!(result.unwrap_err().to_string().contains("Todo column not configured"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("Todo column not configured"));
 }
 
 #[test]

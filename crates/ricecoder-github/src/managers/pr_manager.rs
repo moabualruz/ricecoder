@@ -1,7 +1,7 @@
 //! PR Manager - Handles pull request creation and management
 
 use crate::errors::{GitHubError, Result};
-use crate::models::{FileChange, PullRequest, PrStatus};
+use crate::models::{FileChange, PrStatus, PullRequest};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tracing::{debug, info};
@@ -19,7 +19,9 @@ impl Default for PrTemplate {
     fn default() -> Self {
         Self {
             title_template: "{{title}}".to_string(),
-            body_template: "## Description\n\n{{description}}\n\n## Related Issues\n\n{{related_issues}}".to_string(),
+            body_template:
+                "## Description\n\n{{description}}\n\n## Related Issues\n\n{{related_issues}}"
+                    .to_string(),
         }
     }
 }
@@ -156,28 +158,32 @@ impl PrManager {
     }
 
     /// Generate PR title from task context
-    pub fn generate_title(&self, context: &TaskContext, template: Option<&PrTemplate>) -> Result<String> {
+    pub fn generate_title(
+        &self,
+        context: &TaskContext,
+        template: Option<&PrTemplate>,
+    ) -> Result<String> {
         let template = template.unwrap_or(&self.default_template);
         let title = self.apply_template(&template.title_template, context)?;
 
         if title.is_empty() {
-            return Err(GitHubError::invalid_input(
-                "Generated PR title is empty",
-            ));
+            return Err(GitHubError::invalid_input("Generated PR title is empty"));
         }
 
         Ok(title)
     }
 
     /// Generate PR body from task context
-    pub fn generate_body(&self, context: &TaskContext, template: Option<&PrTemplate>) -> Result<String> {
+    pub fn generate_body(
+        &self,
+        context: &TaskContext,
+        template: Option<&PrTemplate>,
+    ) -> Result<String> {
         let template = template.unwrap_or(&self.default_template);
         let body = self.apply_template(&template.body_template, context)?;
 
         if body.is_empty() {
-            return Err(GitHubError::invalid_input(
-                "Generated PR body is empty",
-            ));
+            return Err(GitHubError::invalid_input("Generated PR body is empty"));
         }
 
         Ok(body)
@@ -283,13 +289,17 @@ impl PrManager {
 
         // Create PR object
         let pr = PullRequest {
-            id: 0, // Will be assigned by GitHub
+            id: 0,     // Will be assigned by GitHub
             number: 0, // Will be assigned by GitHub
             title,
             body,
             branch: options.branch,
             base: options.base_branch,
-            status: if options.draft { PrStatus::Draft } else { PrStatus::Open },
+            status: if options.draft {
+                PrStatus::Draft
+            } else {
+                PrStatus::Open
+            },
             files: context.files,
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
@@ -310,10 +320,7 @@ impl PrManager {
             return Ok(());
         }
 
-        debug!(
-            issue_count = issue_numbers.len(),
-            "Linking PR to issues"
-        );
+        debug!(issue_count = issue_numbers.len(), "Linking PR to issues");
 
         // Add close keywords to PR body
         let close_keywords = issue_numbers
@@ -327,10 +334,7 @@ impl PrManager {
             pr.body.push_str(&close_keywords);
         }
 
-        info!(
-            issue_count = issue_numbers.len(),
-            "PR linked to issues"
-        );
+        info!(issue_count = issue_numbers.len(), "PR linked to issues");
 
         Ok(())
     }
@@ -441,8 +445,8 @@ mod tests {
     #[test]
     fn test_apply_template_with_metadata() {
         let manager = PrManager::new();
-        let context = TaskContext::new("Test", "Description")
-            .with_metadata("custom_field", "custom_value");
+        let context =
+            TaskContext::new("Test", "Description").with_metadata("custom_field", "custom_value");
         let template = "Title: {{title}}, Custom: {{custom_field}}";
         let result = manager.apply_template(template, &context).unwrap();
         assert_eq!(result, "Title: Test, Custom: custom_value");
@@ -475,8 +479,7 @@ mod tests {
     #[test]
     fn test_create_pr_from_context() {
         let manager = PrManager::new();
-        let context = TaskContext::new("Test PR", "This is a test")
-            .with_issue(123);
+        let context = TaskContext::new("Test PR", "This is a test").with_issue(123);
         let options = PrOptions::new("feature/test");
         let pr = manager.create_pr_from_context(context, options).unwrap();
         assert_eq!(pr.title, "Test PR");

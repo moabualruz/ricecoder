@@ -4,26 +4,26 @@ use crate::accessibility::{
     FocusManager, KeyboardNavigationManager, ScreenReaderAnnouncer, StateChangeEvent,
 };
 use crate::components::Component;
-use ricecoder_storage::TuiConfig;
-use crate::error_handling::{ErrorManager, RiceError, ErrorCategory, ErrorSeverity};
+use crate::error_handling::{ErrorCategory, ErrorManager, ErrorSeverity, RiceError};
 use crate::event::{Event, EventLoop};
 use crate::image_integration::ImageIntegration;
 use crate::integration::WidgetIntegration;
+use crate::model::{AppMode, PendingOperation};
 use crate::render::Renderer;
 use crate::style::Theme;
-use crate::terminal_state::TerminalCapabilities;
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use crate::theme::ThemeManager;
-use crate::model::{PendingOperation, AppMode};
 use crate::tea::ReactiveState;
+use crate::terminal_state::TerminalCapabilities;
+use crate::theme::ThemeManager;
 use anyhow::Result;
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::backend::CrosstermBackend;
-use ratatui::Terminal;
-use ratatui::widgets::{Block, Borders, Paragraph};
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
+use ratatui::prelude::*;
 use ratatui::style::{Color, Style};
 use ratatui::text::Line;
-use ratatui::prelude::*;
+use ratatui::widgets::{Block, Borders, Paragraph};
+use ratatui::Terminal;
+use ricecoder_storage::TuiConfig;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -88,9 +88,8 @@ impl App {
         );
 
         // Create reactive state manager
-        let reactive_state = std::sync::Arc::new(tokio::sync::RwLock::new(
-            ReactiveState::new(initial_model)
-        ));
+        let reactive_state =
+            std::sync::Arc::new(tokio::sync::RwLock::new(ReactiveState::new(initial_model)));
 
         // Create event dispatcher
         let event_dispatcher = crate::EventDispatcher::new();
@@ -138,13 +137,15 @@ impl App {
         );
 
         // Start reactive systems
-        reactive_ui.start().await.map_err(|e| RiceError::new(
-            format!("Failed to start reactive UI: {}", e),
-            ErrorCategory::System,
-            ErrorSeverity::High,
-            "app",
-            "new",
-        ))?;
+        reactive_ui.start().await.map_err(|e| {
+            RiceError::new(
+                format!("Failed to start reactive UI: {}", e),
+                ErrorCategory::System,
+                ErrorSeverity::High,
+                "app",
+                "new",
+            )
+        })?;
 
         let mut app = Self {
             mode: AppMode::Chat,
@@ -212,9 +213,8 @@ impl App {
         );
 
         // Create reactive state manager
-        let reactive_state = std::sync::Arc::new(tokio::sync::RwLock::new(
-            ReactiveState::new(initial_model)
-        ));
+        let reactive_state =
+            std::sync::Arc::new(tokio::sync::RwLock::new(ReactiveState::new(initial_model)));
 
         // Create event dispatcher
         let event_dispatcher = crate::EventDispatcher::new();
@@ -436,9 +436,13 @@ impl App {
 
     /// Get virtual scrolling info for UI feedback
     pub fn get_scroll_info(&self) -> (Option<(usize, usize)>, Option<(usize, usize)>) {
-        let chat_scroll = self.chat_virtual_list.as_ref()
+        let chat_scroll = self
+            .chat_virtual_list
+            .as_ref()
             .map(|vl| vl.scroll_position());
-        let command_scroll = self.command_virtual_list.as_ref()
+        let command_scroll = self
+            .command_virtual_list
+            .as_ref()
             .map(|vl| vl.scroll_position());
 
         (chat_scroll, command_scroll)
@@ -449,10 +453,12 @@ impl App {
         if let Some(loader) = &mut self.chat_lazy_loader {
             if !(loader.is_loading()) && !(loader.is_fully_loaded()) {
                 // Start loading
-                self.loading_manager.start_loading(
-                    "chat_messages".to_string(),
-                    "Loading more messages...".to_string(),
-                ).await;
+                self.loading_manager
+                    .start_loading(
+                        "chat_messages".to_string(),
+                        "Loading more messages...".to_string(),
+                    )
+                    .await;
 
                 // loader.load_next_batch().await;
 
@@ -473,10 +479,12 @@ impl App {
         if let Some(loader) = &mut self.command_lazy_loader {
             if !(loader.is_loading()) && !(loader.is_fully_loaded()) {
                 // Start loading
-                self.loading_manager.start_loading(
-                    "command_history".to_string(),
-                    "Loading command history...".to_string(),
-                ).await;
+                self.loading_manager
+                    .start_loading(
+                        "command_history".to_string(),
+                        "Loading command history...".to_string(),
+                    )
+                    .await;
 
                 // loader.load_next_batch().await;
 
@@ -487,20 +495,24 @@ impl App {
                 }
 
                 // Complete loading
-                self.loading_manager.complete_loading("command_history").await;
+                self.loading_manager
+                    .complete_loading("command_history")
+                    .await;
             }
         }
     }
 
     /// Check if more data can be loaded
     pub fn can_load_more_chat(&self) -> bool {
-        self.chat_lazy_loader.as_ref()
+        self.chat_lazy_loader
+            .as_ref()
             .map(|loader| !loader.is_fully_loaded())
             .unwrap_or(false)
     }
 
     pub fn can_load_more_commands(&self) -> bool {
-        self.command_lazy_loader.as_ref()
+        self.command_lazy_loader
+            .as_ref()
             .map(|loader| !loader.is_fully_loaded())
             .unwrap_or(false)
     }
@@ -667,8 +679,16 @@ impl App {
     }
 
     /// Create a new real-time stream
-    pub async fn create_stream(&self, operation_id: String, stream_type: crate::StreamType, name: String, description: String) -> std::sync::Arc<crate::RealTimeStream> {
-        self.real_time_updates.create_stream(operation_id, stream_type, name, description).await
+    pub async fn create_stream(
+        &self,
+        operation_id: String,
+        stream_type: crate::StreamType,
+        name: String,
+        description: String,
+    ) -> std::sync::Arc<crate::RealTimeStream> {
+        self.real_time_updates
+            .create_stream(operation_id, stream_type, name, description)
+            .await
     }
 
     /// Get active real-time streams
@@ -687,12 +707,16 @@ impl App {
     }
 
     /// Start processing real-time updates (should be called in a separate task)
-    pub async fn start_real_time_processing(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn start_real_time_processing(
+        &self,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         self.real_time_updates.process_updates().await
     }
 
     /// Process reactive UI updates in the main event loop
-    pub async fn process_reactive_updates(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn process_reactive_updates(
+        &mut self,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // Process reactive updates for chat widget
         self.chat.process_reactive_updates().await?;
 

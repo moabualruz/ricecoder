@@ -2,11 +2,10 @@
 
 use crate::app::App;
 use crate::diff::{DiffLineType, DiffViewType, DiffWidget};
-use crate::markdown::{MarkdownParser, MarkdownElement};
+use crate::markdown::{MarkdownElement, MarkdownParser};
 use crate::style::Theme;
 use crate::widgets::{Message, MessageAuthor, ToolStatus};
 use ratatui::prelude::*;
-
 
 /// Renderer for the TUI
 pub struct Renderer;
@@ -18,23 +17,27 @@ impl Renderer {
     }
 
     /// Render the application
-    /// 
+    ///
     /// This method renders the entire TUI application using ratatui.
     /// It sets up the layout and renders all widgets based on the current app state.
-    /// 
+    ///
     /// Note: This is a stateless render function that works with the terminal
     /// managed by the main event loop. The terminal is initialized once in main.rs
     /// and reused for all render calls.
-    /// 
+    ///
     /// Requirements: 1.2 - Render the TUI interface
     pub fn render(&self, app: &App) -> anyhow::Result<()> {
         // This is a placeholder that demonstrates the rendering structure.
         // In a real implementation, this would be called from within a terminal.draw() closure.
         // The actual rendering happens in the main event loop in main.rs.
-        
+
         tracing::debug!(
             "Rendering TUI - Mode: {}, Messages: {}, Input: {}",
-            app.reactive_state.blocking_read().current().mode.display_name(),
+            app.reactive_state
+                .blocking_read()
+                .current()
+                .mode
+                .display_name(),
             app.chat.messages.len(),
             app.chat.input
         );
@@ -56,15 +59,22 @@ impl Renderer {
         let chunks = Layout::default()
             .direction(ratatui::layout::Direction::Vertical)
             .constraints([
-                Constraint::Length(1),  // Mode indicator
-                Constraint::Min(5),      // Chat area
-                Constraint::Length(3),   // Input area
-                Constraint::Length(1),   // Status bar
+                Constraint::Length(1), // Mode indicator
+                Constraint::Min(5),    // Chat area
+                Constraint::Length(3), // Input area
+                Constraint::Length(1), // Status bar
             ])
             .split(area);
 
         // Render mode indicator
-        let mode_text = format!("Mode: {}", app.reactive_state.blocking_read().current().mode.display_name());
+        let mode_text = format!(
+            "Mode: {}",
+            app.reactive_state
+                .blocking_read()
+                .current()
+                .mode
+                .display_name()
+        );
         let mode_block = ratatui::widgets::Block::default()
             .title("RiceCoder")
             .borders(ratatui::widgets::Borders::BOTTOM);
@@ -80,17 +90,23 @@ impl Renderer {
 
         let messages = &app.chat.messages;
         let mut text_lines = Vec::new();
-        
+
         if messages.is_empty() {
-            text_lines.push(Line::from("Welcome to RiceCoder TUI! Type your message below."));
+            text_lines.push(Line::from(
+                "Welcome to RiceCoder TUI! Type your message below.",
+            ));
         } else {
             for (i, msg) in messages.iter().enumerate() {
                 // Simple message rendering - just show the message text
                 let author_str = if i % 2 == 0 { "User" } else { "RiceCoder" };
                 let author_style = if i % 2 == 0 {
-                    Style::default().fg(app.reactive_state.blocking_read().current().theme.primary).add_modifier(Modifier::BOLD)
+                    Style::default()
+                        .fg(app.reactive_state.blocking_read().current().theme.primary)
+                        .add_modifier(Modifier::BOLD)
                 } else {
-                    Style::default().fg(app.reactive_state.blocking_read().current().theme.secondary).add_modifier(Modifier::BOLD)
+                    Style::default()
+                        .fg(app.reactive_state.blocking_read().current().theme.secondary)
+                        .add_modifier(Modifier::BOLD)
                 };
 
                 text_lines.push(Line::from(Span::styled(
@@ -102,7 +118,12 @@ impl Renderer {
                 let content_style = if i % 2 == 0 {
                     Style::default().fg(app.reactive_state.blocking_read().current().theme.primary)
                 } else {
-                    Style::default().fg(app.reactive_state.blocking_read().current().theme.secondary)
+                    Style::default().fg(app
+                        .reactive_state
+                        .blocking_read()
+                        .current()
+                        .theme
+                        .secondary)
                 };
 
                 // Split message into lines and render
@@ -119,7 +140,7 @@ impl Renderer {
             .block(chat_block)
             .wrap(ratatui::widgets::Wrap { trim: true })
             .scroll((0, 0)); // TODO: Add scroll support
-            
+
         f.render_widget(chat_paragraph, chunks[1]);
 
         // Render input area
@@ -157,22 +178,27 @@ impl Renderer {
         content: &str,
         theme: &Theme,
         text_lines: &mut Vec<Line>,
-        base_style: Style
+        base_style: Style,
     ) {
         let elements = MarkdownParser::parse(content);
         let mut current_line_spans = Vec::new();
-        
+
         for element in elements {
             if element.is_block() {
                 if !current_line_spans.is_empty() {
                     text_lines.push(Line::from(std::mem::take(&mut current_line_spans)));
                 }
-                
+
                 match element {
                     MarkdownElement::Header(level, text) => {
-                        let style = Style::default().fg(theme.accent.to_ratatui()).add_modifier(Modifier::BOLD);
+                        let style = Style::default()
+                            .fg(theme.accent.to_ratatui())
+                            .add_modifier(Modifier::BOLD);
                         let prefix = "#".repeat(level as usize);
-                        text_lines.push(Line::from(Span::styled(format!("{} {}", prefix, text), style)));
+                        text_lines.push(Line::from(Span::styled(
+                            format!("{} {}", prefix, text),
+                            style,
+                        )));
                     }
                     MarkdownElement::CodeBlock(lang, code) => {
                         let highlighted = MarkdownParser::highlight(&code, lang.as_deref());
@@ -192,21 +218,27 @@ impl Renderer {
                         current_line_spans.push(Span::styled(text, base_style));
                     }
                     MarkdownElement::Bold(text) => {
-                        current_line_spans.push(Span::styled(text, base_style.add_modifier(Modifier::BOLD)));
+                        current_line_spans
+                            .push(Span::styled(text, base_style.add_modifier(Modifier::BOLD)));
                     }
                     MarkdownElement::Italic(text) => {
-                        current_line_spans.push(Span::styled(text, base_style.add_modifier(Modifier::ITALIC)));
+                        current_line_spans.push(Span::styled(
+                            text,
+                            base_style.add_modifier(Modifier::ITALIC),
+                        ));
                     }
                     MarkdownElement::Code(text) => {
                         current_line_spans.push(Span::styled(
-                            text, 
-                            Style::default().bg(Color::DarkGray).fg(Color::White)
+                            text,
+                            Style::default().bg(Color::DarkGray).fg(Color::White),
                         ));
                     }
                     MarkdownElement::Link(text, _url) => {
                         current_line_spans.push(Span::styled(
-                            text, 
-                            Style::default().fg(Color::Blue).add_modifier(Modifier::UNDERLINED)
+                            text,
+                            Style::default()
+                                .fg(Color::Blue)
+                                .add_modifier(Modifier::UNDERLINED),
                         ));
                     }
                     MarkdownElement::Newline => {
@@ -216,7 +248,7 @@ impl Renderer {
                 }
             }
         }
-        
+
         if !current_line_spans.is_empty() {
             text_lines.push(Line::from(current_line_spans));
         }
@@ -255,7 +287,6 @@ impl Renderer {
         );
         lines.push(Line::from(header));
         lines.push(Line::from(""));
-
 
         // Render each hunk
         for (hunk_idx, hunk) in diff.hunks.iter().enumerate() {
@@ -342,7 +373,6 @@ impl Renderer {
         lines.push(Line::from(header));
         lines.push(Line::from(""));
 
-
         // Column headers
         let col_width = (area.width as usize).saturating_sub(20) / 2;
         let header_left = format!("Original ({:width$})", "", width = col_width);
@@ -413,5 +443,3 @@ impl Default for Renderer {
         Self::new()
     }
 }
-
-

@@ -1,6 +1,6 @@
 //! Compliance reporting for SOC 2, GDPR, and HIPAA
 
-use chrono::{DateTime, Utc, Duration};
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -153,7 +153,9 @@ impl ComplianceReporter {
         findings.extend(key_findings);
 
         // Assess audit logging integrity
-        let audit_findings = self.assess_audit_trail_integrity(period_start, period_end).await?;
+        let audit_findings = self
+            .assess_audit_trail_integrity(period_start, period_end)
+            .await?;
         findings.extend(audit_findings);
 
         // Assess access controls
@@ -174,7 +176,9 @@ impl ComplianceReporter {
         };
 
         // Log report generation
-        self.audit_logger.log_compliance_report("SOC2_Type_II", "system").await?;
+        self.audit_logger
+            .log_compliance_report("SOC2_Type_II", "system")
+            .await?;
 
         Ok(report)
     }
@@ -196,7 +200,9 @@ impl ComplianceReporter {
         findings.extend(rights_findings);
 
         // Assess consent management
-        let consent_findings = self.assess_consent_management(period_start, period_end).await?;
+        let consent_findings = self
+            .assess_consent_management(period_start, period_end)
+            .await?;
         findings.extend(consent_findings);
 
         let overall_status = self.determine_overall_status(&findings);
@@ -213,7 +219,9 @@ impl ComplianceReporter {
         };
 
         // Log report generation
-        self.audit_logger.log_compliance_report("GDPR", "system").await?;
+        self.audit_logger
+            .log_compliance_report("GDPR", "system")
+            .await?;
 
         Ok(report)
     }
@@ -252,7 +260,9 @@ impl ComplianceReporter {
         };
 
         // Log report generation
-        self.audit_logger.log_compliance_report("HIPAA", "system").await?;
+        self.audit_logger
+            .log_compliance_report("HIPAA", "system")
+            .await?;
 
         Ok(report)
     }
@@ -266,7 +276,9 @@ impl ComplianceReporter {
         let mut findings = Vec::new();
 
         // Assess analytics opt-in/opt-out
-        let opt_in_findings = self.assess_analytics_consent(period_start, period_end).await?;
+        let opt_in_findings = self
+            .assess_analytics_consent(period_start, period_end)
+            .await?;
         findings.extend(opt_in_findings);
 
         // Assess data minimization
@@ -291,7 +303,9 @@ impl ComplianceReporter {
         };
 
         // Log report generation
-        self.audit_logger.log_compliance_report("Privacy_Analytics", "system").await?;
+        self.audit_logger
+            .log_compliance_report("Privacy_Analytics", "system")
+            .await?;
 
         Ok(report)
     }
@@ -300,21 +314,23 @@ impl ComplianceReporter {
 
     async fn assess_customer_key_management(&self) -> Result<Vec<ComplianceFinding>> {
         // In a real implementation, this would check actual key management
-        let findings = vec![
-            ComplianceFinding {
-                id: "soc2-key-001".to_string(),
-                category: "Customer-Managed Keys".to_string(),
-                severity: FindingSeverity::Info,
-                description: "Customer-managed encryption keys are implemented".to_string(),
-                evidence: serde_json::json!({"status": "implemented"}),
-                remediation: "Ensure regular key rotation".to_string(),
-                status: FindingStatus::Resolved,
-            }
-        ];
+        let findings = vec![ComplianceFinding {
+            id: "soc2-key-001".to_string(),
+            category: "Customer-Managed Keys".to_string(),
+            severity: FindingSeverity::Info,
+            description: "Customer-managed encryption keys are implemented".to_string(),
+            evidence: serde_json::json!({"status": "implemented"}),
+            remediation: "Ensure regular key rotation".to_string(),
+            status: FindingStatus::Resolved,
+        }];
         Ok(findings)
     }
 
-    async fn assess_audit_trail_integrity(&self, _start: DateTime<Utc>, _end: DateTime<Utc>) -> Result<Vec<ComplianceFinding>> {
+    async fn assess_audit_trail_integrity(
+        &self,
+        _start: DateTime<Utc>,
+        _end: DateTime<Utc>,
+    ) -> Result<Vec<ComplianceFinding>> {
         // Check audit log integrity
         let query = AuditQuery {
             start_time: Some(_start),
@@ -324,177 +340,165 @@ impl ComplianceReporter {
 
         let records = self.audit_logger.query_records(query, 1000).await?;
 
-        let findings = vec![
-            ComplianceFinding {
-                id: "soc2-audit-001".to_string(),
-                category: "Audit Trail Integrity".to_string(),
-                severity: FindingSeverity::Info,
-                description: format!("Found {} audit records in period", records.len()),
-                evidence: serde_json::json!({"record_count": records.len()}),
-                remediation: "Ensure tamper-proof audit logging".to_string(),
-                status: FindingStatus::Resolved,
-            }
-        ];
+        let findings = vec![ComplianceFinding {
+            id: "soc2-audit-001".to_string(),
+            category: "Audit Trail Integrity".to_string(),
+            severity: FindingSeverity::Info,
+            description: format!("Found {} audit records in period", records.len()),
+            evidence: serde_json::json!({"record_count": records.len()}),
+            remediation: "Ensure tamper-proof audit logging".to_string(),
+            status: FindingStatus::Resolved,
+        }];
         Ok(findings)
     }
 
     async fn assess_access_controls(&self) -> Result<Vec<ComplianceFinding>> {
         // Assess access control implementation
-        let findings = vec![
-            ComplianceFinding {
-                id: "soc2-access-001".to_string(),
-                category: "Access Controls".to_string(),
-                severity: FindingSeverity::Info,
-                description: "RBAC access controls are implemented".to_string(),
-                evidence: serde_json::json!({"status": "implemented"}),
-                remediation: "Regular access review required".to_string(),
-                status: FindingStatus::Resolved,
-            }
-        ];
+        let findings = vec![ComplianceFinding {
+            id: "soc2-access-001".to_string(),
+            category: "Access Controls".to_string(),
+            severity: FindingSeverity::Info,
+            description: "RBAC access controls are implemented".to_string(),
+            evidence: serde_json::json!({"status": "implemented"}),
+            remediation: "Regular access review required".to_string(),
+            status: FindingStatus::Resolved,
+        }];
         Ok(findings)
     }
 
     async fn assess_data_processing(&self) -> Result<Vec<ComplianceFinding>> {
-        let findings = vec![
-            ComplianceFinding {
-                id: "gdpr-data-001".to_string(),
-                category: "Data Processing".to_string(),
-                severity: FindingSeverity::Info,
-                description: "Data processing inventory is maintained".to_string(),
-                evidence: serde_json::json!({"status": "maintained"}),
-                remediation: "Regular review of processing activities".to_string(),
-                status: FindingStatus::Resolved,
-            }
-        ];
+        let findings = vec![ComplianceFinding {
+            id: "gdpr-data-001".to_string(),
+            category: "Data Processing".to_string(),
+            severity: FindingSeverity::Info,
+            description: "Data processing inventory is maintained".to_string(),
+            evidence: serde_json::json!({"status": "maintained"}),
+            remediation: "Regular review of processing activities".to_string(),
+            status: FindingStatus::Resolved,
+        }];
         Ok(findings)
     }
 
     async fn assess_data_subject_rights(&self) -> Result<Vec<ComplianceFinding>> {
-        let findings = vec![
-            ComplianceFinding {
-                id: "gdpr-rights-001".to_string(),
-                category: "Data Subject Rights".to_string(),
-                severity: FindingSeverity::Info,
-                description: "Right to erasure and portability implemented".to_string(),
-                evidence: serde_json::json!({"status": "implemented"}),
-                remediation: "Ensure timely response to requests".to_string(),
-                status: FindingStatus::Resolved,
-            }
-        ];
+        let findings = vec![ComplianceFinding {
+            id: "gdpr-rights-001".to_string(),
+            category: "Data Subject Rights".to_string(),
+            severity: FindingSeverity::Info,
+            description: "Right to erasure and portability implemented".to_string(),
+            evidence: serde_json::json!({"status": "implemented"}),
+            remediation: "Ensure timely response to requests".to_string(),
+            status: FindingStatus::Resolved,
+        }];
         Ok(findings)
     }
 
-    async fn assess_consent_management(&self, _start: DateTime<Utc>, _end: DateTime<Utc>) -> Result<Vec<ComplianceFinding>> {
-        let findings = vec![
-            ComplianceFinding {
-                id: "gdpr-consent-001".to_string(),
-                category: "Consent Management".to_string(),
-                severity: FindingSeverity::Info,
-                description: "Consent management system implemented".to_string(),
-                evidence: serde_json::json!({"status": "implemented"}),
-                remediation: "Regular consent audit required".to_string(),
-                status: FindingStatus::Resolved,
-            }
-        ];
+    async fn assess_consent_management(
+        &self,
+        _start: DateTime<Utc>,
+        _end: DateTime<Utc>,
+    ) -> Result<Vec<ComplianceFinding>> {
+        let findings = vec![ComplianceFinding {
+            id: "gdpr-consent-001".to_string(),
+            category: "Consent Management".to_string(),
+            severity: FindingSeverity::Info,
+            description: "Consent management system implemented".to_string(),
+            evidence: serde_json::json!({"status": "implemented"}),
+            remediation: "Regular consent audit required".to_string(),
+            status: FindingStatus::Resolved,
+        }];
         Ok(findings)
     }
 
     async fn assess_security_safeguards(&self) -> Result<Vec<ComplianceFinding>> {
-        let findings = vec![
-            ComplianceFinding {
-                id: "hipaa-security-001".to_string(),
-                category: "Security Safeguards".to_string(),
-                severity: FindingSeverity::Info,
-                description: "Technical safeguards implemented".to_string(),
-                evidence: serde_json::json!({"status": "implemented"}),
-                remediation: "Regular security assessment required".to_string(),
-                status: FindingStatus::Resolved,
-            }
-        ];
+        let findings = vec![ComplianceFinding {
+            id: "hipaa-security-001".to_string(),
+            category: "Security Safeguards".to_string(),
+            severity: FindingSeverity::Info,
+            description: "Technical safeguards implemented".to_string(),
+            evidence: serde_json::json!({"status": "implemented"}),
+            remediation: "Regular security assessment required".to_string(),
+            status: FindingStatus::Resolved,
+        }];
         Ok(findings)
     }
 
     async fn assess_privacy_protections(&self) -> Result<Vec<ComplianceFinding>> {
-        let findings = vec![
-            ComplianceFinding {
-                id: "hipaa-privacy-001".to_string(),
-                category: "Privacy Protections".to_string(),
-                severity: FindingSeverity::Info,
-                description: "Privacy rule compliance implemented".to_string(),
-                evidence: serde_json::json!({"status": "implemented"}),
-                remediation: "Regular privacy training required".to_string(),
-                status: FindingStatus::Resolved,
-            }
-        ];
+        let findings = vec![ComplianceFinding {
+            id: "hipaa-privacy-001".to_string(),
+            category: "Privacy Protections".to_string(),
+            severity: FindingSeverity::Info,
+            description: "Privacy rule compliance implemented".to_string(),
+            evidence: serde_json::json!({"status": "implemented"}),
+            remediation: "Regular privacy training required".to_string(),
+            status: FindingStatus::Resolved,
+        }];
         Ok(findings)
     }
 
     async fn assess_breach_procedures(&self) -> Result<Vec<ComplianceFinding>> {
-        let findings = vec![
-            ComplianceFinding {
-                id: "hipaa-breach-001".to_string(),
-                category: "Breach Procedures".to_string(),
-                severity: FindingSeverity::Info,
-                description: "Breach notification procedures implemented".to_string(),
-                evidence: serde_json::json!({"status": "implemented"}),
-                remediation: "Regular breach simulation testing".to_string(),
-                status: FindingStatus::Resolved,
-            }
-        ];
+        let findings = vec![ComplianceFinding {
+            id: "hipaa-breach-001".to_string(),
+            category: "Breach Procedures".to_string(),
+            severity: FindingSeverity::Info,
+            description: "Breach notification procedures implemented".to_string(),
+            evidence: serde_json::json!({"status": "implemented"}),
+            remediation: "Regular breach simulation testing".to_string(),
+            status: FindingStatus::Resolved,
+        }];
         Ok(findings)
     }
 
-    async fn assess_analytics_consent(&self, _start: DateTime<Utc>, _end: DateTime<Utc>) -> Result<Vec<ComplianceFinding>> {
-        let findings = vec![
-            ComplianceFinding {
-                id: "privacy-optin-001".to_string(),
-                category: "Analytics Consent".to_string(),
-                severity: FindingSeverity::Info,
-                description: "Opt-in analytics implemented".to_string(),
-                evidence: serde_json::json!({"status": "implemented"}),
-                remediation: "Regular consent verification".to_string(),
-                status: FindingStatus::Resolved,
-            }
-        ];
+    async fn assess_analytics_consent(
+        &self,
+        _start: DateTime<Utc>,
+        _end: DateTime<Utc>,
+    ) -> Result<Vec<ComplianceFinding>> {
+        let findings = vec![ComplianceFinding {
+            id: "privacy-optin-001".to_string(),
+            category: "Analytics Consent".to_string(),
+            severity: FindingSeverity::Info,
+            description: "Opt-in analytics implemented".to_string(),
+            evidence: serde_json::json!({"status": "implemented"}),
+            remediation: "Regular consent verification".to_string(),
+            status: FindingStatus::Resolved,
+        }];
         Ok(findings)
     }
 
     async fn assess_data_minimization(&self) -> Result<Vec<ComplianceFinding>> {
-        let findings = vec![
-            ComplianceFinding {
-                id: "privacy-minimize-001".to_string(),
-                category: "Data Minimization".to_string(),
-                severity: FindingSeverity::Info,
-                description: "Data minimization practices implemented".to_string(),
-                evidence: serde_json::json!({"status": "implemented"}),
-                remediation: "Regular data inventory review".to_string(),
-                status: FindingStatus::Resolved,
-            }
-        ];
+        let findings = vec![ComplianceFinding {
+            id: "privacy-minimize-001".to_string(),
+            category: "Data Minimization".to_string(),
+            severity: FindingSeverity::Info,
+            description: "Data minimization practices implemented".to_string(),
+            evidence: serde_json::json!({"status": "implemented"}),
+            remediation: "Regular data inventory review".to_string(),
+            status: FindingStatus::Resolved,
+        }];
         Ok(findings)
     }
 
     async fn assess_log_retention(&self) -> Result<Vec<ComplianceFinding>> {
-        let findings = vec![
-            ComplianceFinding {
-                id: "privacy-retention-001".to_string(),
-                category: "Log Retention".to_string(),
-                severity: FindingSeverity::Info,
-                description: "90-day log retention implemented".to_string(),
-                evidence: serde_json::json!({"retention_days": 90}),
-                remediation: "Automated cleanup procedures".to_string(),
-                status: FindingStatus::Resolved,
-            }
-        ];
+        let findings = vec![ComplianceFinding {
+            id: "privacy-retention-001".to_string(),
+            category: "Log Retention".to_string(),
+            severity: FindingSeverity::Info,
+            description: "90-day log retention implemented".to_string(),
+            evidence: serde_json::json!({"retention_days": 90}),
+            remediation: "Automated cleanup procedures".to_string(),
+            status: FindingStatus::Resolved,
+        }];
         Ok(findings)
     }
 
     fn determine_overall_status(&self, findings: &[ComplianceFinding]) -> ComplianceStatus {
-        let critical_count = findings.iter()
+        let critical_count = findings
+            .iter()
             .filter(|f| matches!(f.severity, FindingSeverity::Critical))
             .count();
 
-        let high_count = findings.iter()
+        let high_count = findings
+            .iter()
             .filter(|f| matches!(f.severity, FindingSeverity::High))
             .count();
 
@@ -601,7 +605,10 @@ mod tests {
         let start = Utc::now() - Duration::days(30);
         let end = Utc::now();
 
-        let report = reporter.generate_privacy_analytics_report(start, end).await.unwrap();
+        let report = reporter
+            .generate_privacy_analytics_report(start, end)
+            .await
+            .unwrap();
 
         assert_eq!(report.report_type, ReportType::PrivacyAnalytics);
         assert!(!report.findings.is_empty());
@@ -613,17 +620,15 @@ mod tests {
         let audit_logger = Arc::new(AuditLogger::new(storage));
         let reporter = ComplianceReporter::new(audit_logger);
 
-        let findings = vec![
-            ComplianceFinding {
-                id: "test-001".to_string(),
-                category: "Test".to_string(),
-                severity: FindingSeverity::Critical,
-                description: "Critical finding".to_string(),
-                evidence: serde_json::json!({"test": true}),
-                remediation: "Fix it".to_string(),
-                status: FindingStatus::Open,
-            }
-        ];
+        let findings = vec![ComplianceFinding {
+            id: "test-001".to_string(),
+            category: "Test".to_string(),
+            severity: FindingSeverity::Critical,
+            description: "Critical finding".to_string(),
+            evidence: serde_json::json!({"test": true}),
+            remediation: "Fix it".to_string(),
+            status: FindingStatus::Open,
+        }];
 
         let status = reporter.determine_overall_status(&findings);
         assert!(matches!(status, ComplianceStatus::NonCompliant));

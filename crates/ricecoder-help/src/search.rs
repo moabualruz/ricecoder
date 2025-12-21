@@ -39,69 +39,69 @@ impl HelpSearch {
             case_sensitive: false,
         }
     }
-    
+
     /// Set case sensitivity
     pub fn set_case_sensitive(&mut self, case_sensitive: bool) {
         self.case_sensitive = case_sensitive;
     }
-    
+
     /// Get current query
     pub fn query(&self) -> &str {
         &self.query
     }
-    
+
     /// Get search results
     pub fn results(&self) -> &[SearchResult] {
         &self.results
     }
-    
+
     /// Get selected result index
     pub fn selected_index(&self) -> usize {
         self.selected_index
     }
-    
+
     /// Get selected result
     pub fn selected_result(&self) -> Option<&SearchResult> {
         self.results.get(self.selected_index)
     }
-    
+
     /// Move selection up
     pub fn select_previous(&mut self) {
         if !self.results.is_empty() && self.selected_index > 0 {
             self.selected_index -= 1;
         }
     }
-    
+
     /// Move selection down
     pub fn select_next(&mut self) {
         if self.selected_index + 1 < self.results.len() {
             self.selected_index += 1;
         }
     }
-    
+
     /// Clear search
     pub fn clear(&mut self) {
         self.query.clear();
         self.results.clear();
         self.selected_index = 0;
     }
-    
+
     /// Update search query and perform search
     pub fn search(&mut self, content: &HelpContent, query: &str) -> Result<()> {
         self.query = query.to_string();
         self.results.clear();
         self.selected_index = 0;
-        
+
         if query.trim().is_empty() {
             return Ok(());
         }
-        
+
         let search_query = if self.case_sensitive {
             query.to_string()
         } else {
             query.to_lowercase()
         };
-        
+
         // Search through all categories and items
         for category in &content.categories {
             for item in &category.items {
@@ -110,7 +110,7 @@ impl HelpSearch {
                 }
             }
         }
-        
+
         // Sort results by relevance (title matches first, then content, then keywords)
         self.results.sort_by(|a, b| {
             use std::cmp::Ordering;
@@ -124,10 +124,10 @@ impl HelpSearch {
                 (MatchType::Keyword, MatchType::Keyword) => Ordering::Equal,
             }
         });
-        
+
         Ok(())
     }
-    
+
     /// Search within a single item
     fn search_item(
         &self,
@@ -140,13 +140,13 @@ impl HelpSearch {
         } else {
             item.title.to_lowercase()
         };
-        
+
         let content_text = if self.case_sensitive {
             item.content.clone()
         } else {
             item.content.to_lowercase()
         };
-        
+
         // Check title match
         if let Some(positions) = self.find_matches(&title_text, query) {
             return Some(SearchResult {
@@ -157,7 +157,7 @@ impl HelpSearch {
                 match_positions: positions,
             });
         }
-        
+
         // Check content match
         if let Some(positions) = self.find_matches(&content_text, query) {
             return Some(SearchResult {
@@ -168,7 +168,7 @@ impl HelpSearch {
                 match_positions: positions,
             });
         }
-        
+
         // Check keyword matches
         for keyword in &item.keywords {
             let keyword_text = if self.case_sensitive {
@@ -176,7 +176,7 @@ impl HelpSearch {
             } else {
                 keyword.to_lowercase()
             };
-            
+
             if let Some(positions) = self.find_matches(&keyword_text, query) {
                 return Some(SearchResult {
                     category_name: category.name.clone(),
@@ -187,53 +187,53 @@ impl HelpSearch {
                 });
             }
         }
-        
+
         None
     }
-    
+
     /// Find all match positions in text
     fn find_matches(&self, text: &str, query: &str) -> Option<Vec<(usize, usize)>> {
         let mut positions = Vec::new();
         let mut start = 0;
-        
+
         while let Some(pos) = text[start..].find(query) {
             let absolute_pos = start + pos;
             positions.push((absolute_pos, absolute_pos + query.len()));
             start = absolute_pos + 1;
         }
-        
+
         if positions.is_empty() {
             None
         } else {
             Some(positions)
         }
     }
-    
+
     /// Get highlighted text with match positions
     pub fn highlight_matches(&self, text: &str, positions: &[(usize, usize)]) -> Vec<TextSegment> {
         if positions.is_empty() {
             return vec![TextSegment::Normal(text.to_string())];
         }
-        
+
         let mut segments = Vec::new();
         let mut last_end = 0;
-        
+
         for &(start, end) in positions {
             // Add text before match
             if start > last_end {
                 segments.push(TextSegment::Normal(text[last_end..start].to_string()));
             }
-            
+
             // Add highlighted match
             segments.push(TextSegment::Highlighted(text[start..end].to_string()));
             last_end = end;
         }
-        
+
         // Add remaining text
         if last_end < text.len() {
             segments.push(TextSegment::Normal(text[last_end..].to_string()));
         }
-        
+
         segments
     }
 }
@@ -268,9 +268,9 @@ mod tests {
     fn test_search_basic() {
         let mut search = HelpSearch::new();
         let content = HelpContent::default_ricecoder_help();
-        
+
         search.search(&content, "help").unwrap();
-        
+
         assert!(!search.results().is_empty());
         assert_eq!(search.query(), "help");
     }
@@ -279,9 +279,9 @@ mod tests {
     fn test_search_case_insensitive() {
         let mut search = HelpSearch::new();
         let content = HelpContent::default_ricecoder_help();
-        
+
         search.search(&content, "HELP").unwrap();
-        
+
         assert!(!search.results().is_empty());
     }
 
@@ -290,13 +290,13 @@ mod tests {
         let mut search = HelpSearch::new();
         search.set_case_sensitive(true);
         let content = HelpContent::default_ricecoder_help();
-        
+
         search.search(&content, "help").unwrap();
         let case_insensitive_count = search.results().len();
-        
+
         search.search(&content, "HELP").unwrap();
         let case_sensitive_count = search.results().len();
-        
+
         // Case sensitive should find fewer results
         assert!(case_sensitive_count <= case_insensitive_count);
     }
@@ -305,15 +305,15 @@ mod tests {
     fn test_search_navigation() {
         let mut search = HelpSearch::new();
         let content = HelpContent::default_ricecoder_help();
-        
+
         search.search(&content, "help").unwrap();
-        
+
         if search.results().len() > 1 {
             assert_eq!(search.selected_index(), 0);
-            
+
             search.select_next();
             assert_eq!(search.selected_index(), 1);
-            
+
             search.select_previous();
             assert_eq!(search.selected_index(), 0);
         }
@@ -323,10 +323,10 @@ mod tests {
     fn test_search_clear() {
         let mut search = HelpSearch::new();
         let content = HelpContent::default_ricecoder_help();
-        
+
         search.search(&content, "help").unwrap();
         assert!(!search.results().is_empty());
-        
+
         search.clear();
         assert_eq!(search.query(), "");
         assert_eq!(search.results().len(), 0);
@@ -337,7 +337,7 @@ mod tests {
     fn test_find_matches() {
         let search = HelpSearch::new();
         let positions = search.find_matches("hello world hello", "hello").unwrap();
-        
+
         assert_eq!(positions.len(), 2);
         assert_eq!(positions[0], (0, 5));
         assert_eq!(positions[1], (12, 17));
@@ -348,7 +348,7 @@ mod tests {
         let search = HelpSearch::new();
         let positions = vec![(0, 5), (12, 17)];
         let segments = search.highlight_matches("hello world hello", &positions);
-        
+
         assert_eq!(segments.len(), 3); // highlighted, normal, highlighted
         match &segments[0] {
             TextSegment::Highlighted(text) => assert_eq!(text, "hello"),

@@ -96,5 +96,3 @@ impl PathResolver {
         Ok(path.to_path_buf())
     }
 }
-
-

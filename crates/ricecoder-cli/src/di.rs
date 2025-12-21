@@ -26,8 +26,7 @@ pub fn get_service<T>() -> Option<Arc<T>>
 where
     T: Send + Sync + 'static,
 {
-    get_di_container()
-        .and_then(|container| container.resolve::<T>().ok())
+    get_di_container().and_then(|container| container.resolve::<T>().ok())
 }
 
 /// Initialize DI container with specific features
@@ -49,4 +48,3 @@ pub fn reset_di_container() {
     // OnceLock cannot be reset, so this is a no-op for now
     // In tests, use separate containers
 }
-

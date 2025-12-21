@@ -58,4 +58,3 @@ fn prop_timeout_duration_conversion() {
         prop_assert!(larger_duration > duration);
     });
 }
-

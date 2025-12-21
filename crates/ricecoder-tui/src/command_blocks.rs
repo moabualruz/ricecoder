@@ -559,5 +559,3 @@ impl Default for CommandBlocksWidget {
         Self::new()
     }
 }
-
-

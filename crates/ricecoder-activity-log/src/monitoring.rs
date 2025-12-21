@@ -96,7 +96,10 @@ impl PerformanceMonitor {
     }
 
     /// Check if performance thresholds are exceeded
-    pub async fn check_thresholds(&self, thresholds: &PerformanceThresholds) -> Vec<PerformanceAlert> {
+    pub async fn check_thresholds(
+        &self,
+        thresholds: &PerformanceThresholds,
+    ) -> Vec<PerformanceAlert> {
         let metrics = self.metrics.read().await;
         let mut alerts = Vec::new();
 
@@ -150,7 +153,9 @@ impl PerformanceMonitor {
         let elapsed = self.start_time.elapsed().as_secs_f64();
         if elapsed > 0.0 {
             metrics.events_per_second = total_events as f64 / elapsed;
-            metrics.peak_events_per_second = metrics.peak_events_per_second.max(metrics.events_per_second);
+            metrics.peak_events_per_second = metrics
+                .peak_events_per_second
+                .max(metrics.events_per_second);
         }
 
         // Calculate average processing time
@@ -166,8 +171,8 @@ impl PerformanceMonitor {
         }
 
         // Estimate memory usage (simplified)
-        metrics.memory_usage_bytes = (total_events * std::mem::size_of::<ActivityEvent>() as u64) +
-                                   (times.len() as u64 * std::mem::size_of::<Duration>() as u64);
+        metrics.memory_usage_bytes = (total_events * std::mem::size_of::<ActivityEvent>() as u64)
+            + (times.len() as u64 * std::mem::size_of::<Duration>() as u64);
 
         metrics.last_updated = chrono::Utc::now();
     }
@@ -193,7 +198,7 @@ impl Default for PerformanceThresholds {
         Self {
             max_events_per_second: 1000.0,
             max_avg_processing_time_us: 10000.0, // 10ms
-            max_error_rate: 0.05, // 5%
+            max_error_rate: 0.05,                // 5%
             max_queue_depth: 10000,
             max_memory_usage_bytes: 100 * 1024 * 1024, // 100MB
         }
@@ -279,7 +284,10 @@ impl MetricsCollector {
     }
 
     /// Check all monitors for threshold violations
-    pub async fn check_all_thresholds(&self, thresholds: &PerformanceThresholds) -> HashMap<String, Vec<PerformanceAlert>> {
+    pub async fn check_all_thresholds(
+        &self,
+        thresholds: &PerformanceThresholds,
+    ) -> HashMap<String, Vec<PerformanceAlert>> {
         let monitors = self.monitors.read().await;
         let mut results = HashMap::new();
 

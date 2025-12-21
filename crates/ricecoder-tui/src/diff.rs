@@ -285,5 +285,3 @@ impl Default for DiffWidget {
         Self::new()
     }
 }
-
-

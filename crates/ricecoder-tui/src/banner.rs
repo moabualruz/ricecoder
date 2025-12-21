@@ -1,15 +1,15 @@
 //! Banner component widget for ricecoder-tui.
 
 use crate::layout::Rect as LayoutRect;
-use ricecoder_images::{
-    BannerRenderer, BannerConfig, BannerOutput, TerminalCapabilities, 
-    ColorDepth, ThemeColors as ImageThemeColors
-};
 use ratatui::{
     buffer::Buffer,
     style::{Color, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph, Widget},
+};
+use ricecoder_images::{
+    BannerConfig, BannerOutput, BannerRenderer, ColorDepth, TerminalCapabilities,
+    ThemeColors as ImageThemeColors,
 };
 use std::path::PathBuf;
 use tracing::{debug, warn};
@@ -93,9 +93,9 @@ impl BannerComponent {
         // For now, use conservative defaults
         // In a full implementation, this would query the terminal
         TerminalCapabilities {
-            supports_sixel: false, // Most terminals don't support sixel
-            supports_unicode: true, // Most modern terminals support Unicode
-            supports_color: true,   // Most terminals support color
+            supports_sixel: false,             // Most terminals don't support sixel
+            supports_unicode: true,            // Most modern terminals support Unicode
+            supports_color: true,              // Most terminals support color
             color_depth: ColorDepth::Color256, // Common color depth
         }
     }
@@ -112,8 +112,11 @@ impl BannerComponent {
         }
 
         let capabilities = self.detect_terminal_capabilities();
-        
-        match self.renderer.render(&self.config, &capabilities, self.theme_colors.as_ref()) {
+
+        match self
+            .renderer
+            .render(&self.config, &capabilities, self.theme_colors.as_ref())
+        {
             Ok(output) => {
                 let rendered = match output {
                     BannerOutput::Sixel(data) => data,
@@ -121,7 +124,7 @@ impl BannerComponent {
                     BannerOutput::Ascii(data) => data,
                     BannerOutput::Text(data) => data,
                 };
-                
+
                 // Cache the output
                 self.cached_output = Some(rendered.clone());
                 rendered
@@ -179,7 +182,7 @@ impl Widget for &mut BannerComponent {
         debug!("Rendering banner in area: {:?}", area);
 
         let banner_text = self.render_banner();
-        
+
         // Use the area directly since it's already ratatui::layout::Rect
         let ratatui_area = area;
 
@@ -270,4 +273,3 @@ impl BannerArea {
         self.config = config;
     }
 }
-

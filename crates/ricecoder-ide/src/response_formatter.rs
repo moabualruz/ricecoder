@@ -180,7 +180,10 @@ impl ResponseFormatter {
 
     /// Format error response
     pub fn format_error(code: i32, message: &str) -> Value {
-        debug!("Formatting error response: code={}, message={}", code, message);
+        debug!(
+            "Formatting error response: code={}, message={}",
+            code, message
+        );
 
         json!({
             "jsonrpc": "2.0",
@@ -224,23 +227,21 @@ mod tests {
 
     #[test]
     fn test_format_diagnostics() {
-        let diagnostics = vec![
-            Diagnostic {
-                range: Range {
-                    start: Position {
-                        line: 1,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: 1,
-                        character: 10,
-                    },
+        let diagnostics = vec![Diagnostic {
+            range: Range {
+                start: Position {
+                    line: 1,
+                    character: 0,
                 },
-                severity: DiagnosticSeverity::Error,
-                message: "Test error".to_string(),
-                source: "test".to_string(),
+                end: Position {
+                    line: 1,
+                    character: 10,
+                },
             },
-        ];
+            severity: DiagnosticSeverity::Error,
+            message: "Test error".to_string(),
+            source: "test".to_string(),
+        }];
 
         let result = ResponseFormatter::format_diagnostics(&diagnostics);
         assert!(result.get("diagnostics").is_some());
@@ -309,17 +310,38 @@ mod tests {
 
     #[test]
     fn test_format_completion_kind() {
-        assert_eq!(ResponseFormatter::format_completion_kind(CompletionItemKind::Text), 1);
-        assert_eq!(ResponseFormatter::format_completion_kind(CompletionItemKind::Function), 3);
-        assert_eq!(ResponseFormatter::format_completion_kind(CompletionItemKind::Variable), 6);
+        assert_eq!(
+            ResponseFormatter::format_completion_kind(CompletionItemKind::Text),
+            1
+        );
+        assert_eq!(
+            ResponseFormatter::format_completion_kind(CompletionItemKind::Function),
+            3
+        );
+        assert_eq!(
+            ResponseFormatter::format_completion_kind(CompletionItemKind::Variable),
+            6
+        );
     }
 
     #[test]
     fn test_format_diagnostic_severity() {
-        assert_eq!(ResponseFormatter::format_diagnostic_severity(DiagnosticSeverity::Error), 1);
-        assert_eq!(ResponseFormatter::format_diagnostic_severity(DiagnosticSeverity::Warning), 2);
-        assert_eq!(ResponseFormatter::format_diagnostic_severity(DiagnosticSeverity::Information), 3);
-        assert_eq!(ResponseFormatter::format_diagnostic_severity(DiagnosticSeverity::Hint), 4);
+        assert_eq!(
+            ResponseFormatter::format_diagnostic_severity(DiagnosticSeverity::Error),
+            1
+        );
+        assert_eq!(
+            ResponseFormatter::format_diagnostic_severity(DiagnosticSeverity::Warning),
+            2
+        );
+        assert_eq!(
+            ResponseFormatter::format_diagnostic_severity(DiagnosticSeverity::Information),
+            3
+        );
+        assert_eq!(
+            ResponseFormatter::format_diagnostic_severity(DiagnosticSeverity::Hint),
+            4
+        );
     }
 
     #[test]

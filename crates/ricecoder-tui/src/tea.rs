@@ -9,10 +9,10 @@
 //! - `tea.rs`: Contains ReactiveState manager and TEA orchestration
 
 use crate::model::*;
-use crate::update::Command;
-use ricecoder_storage::TuiConfig;
 use crate::style::Theme;
 use crate::terminal_state::TerminalCapabilities;
+use crate::update::Command;
+use ricecoder_storage::TuiConfig;
 
 // StateDiff and StateChange are now in model.rs
 
@@ -81,7 +81,12 @@ impl StateDebugger {
     }
 
     /// Take a state snapshot
-    pub fn snapshot(&mut self, model: &AppModel, message: Option<&AppMessage>, diff: Option<&StateDiff>) {
+    pub fn snapshot(
+        &mut self,
+        model: &AppModel,
+        message: Option<&AppMessage>,
+        diff: Option<&StateDiff>,
+    ) {
         if !self.enabled {
             return;
         }
@@ -100,7 +105,13 @@ impl StateDebugger {
     }
 
     /// Log a state change
-    pub fn log_change(&mut self, message: &AppMessage, previous_state: &AppModel, new_state: &AppModel, diff: &StateDiff) {
+    pub fn log_change(
+        &mut self,
+        message: &AppMessage,
+        previous_state: &AppModel,
+        new_state: &AppModel,
+        diff: &StateDiff,
+    ) {
         if !self.enabled {
             return;
         }
@@ -224,10 +235,12 @@ impl ReactiveState {
         let diff = new_state.diff(&self.current);
 
         // Log change in debugger
-        self.debugger.log_change(&message, &previous, &new_state, &diff);
+        self.debugger
+            .log_change(&message, &previous, &new_state, &diff);
 
         // Take snapshot
-        self.debugger.snapshot(&new_state, Some(&message), Some(&diff));
+        self.debugger
+            .snapshot(&new_state, Some(&message), Some(&diff));
 
         // Store previous state in history
         self.history.push(previous);
@@ -288,7 +301,8 @@ impl ReactiveState {
     pub fn flush_batches(&mut self) -> Result<Vec<StateDiff>, String> {
         // Temporarily reduce batch timeout to force processing
         let original_timeout = self.message_processor.batch_timeout();
-        self.message_processor.set_batch_timeout(std::time::Duration::from_nanos(1));
+        self.message_processor
+            .set_batch_timeout(std::time::Duration::from_nanos(1));
 
         let result = self.process_batches();
 

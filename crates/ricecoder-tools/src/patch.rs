@@ -84,16 +84,15 @@ impl PatchTool {
             }
 
             // Parse hunk header: @@ -orig_start,orig_count +new_start,new_count @@
-            let hunk_header = line
-                .trim_start_matches("@@")
-                .trim_end_matches("@@")
-                .trim();
+            let hunk_header = line.trim_start_matches("@@").trim_end_matches("@@").trim();
 
             let parts: Vec<&str> = hunk_header.split_whitespace().collect();
             if parts.len() < 2 {
-                return Err(ToolError::new("INVALID_PATCH", "Invalid hunk header format")
-                    .with_details(format!("Hunk header: {}", line))
-                    .with_suggestion("Ensure patch is in unified diff format"));
+                return Err(
+                    ToolError::new("INVALID_PATCH", "Invalid hunk header format")
+                        .with_details(format!("Hunk header: {}", line))
+                        .with_suggestion("Ensure patch is in unified diff format"),
+                );
             }
 
             let (orig_start, _orig_count) = Self::parse_range(parts[0])?;
@@ -111,7 +110,9 @@ impl PatchTool {
                     lines.next();
                     continue;
                 }
-                if hunk_line.is_empty() || hunk_line.starts_with("-") || hunk_line.starts_with("+")
+                if hunk_line.is_empty()
+                    || hunk_line.starts_with("-")
+                    || hunk_line.starts_with("+")
                     || hunk_line.starts_with(" ")
                 {
                     hunk_lines.push(lines.next().unwrap().to_string());
@@ -141,22 +142,24 @@ impl PatchTool {
 
         match parts.len() {
             1 => {
-                let start = parts[0]
-                    .parse::<usize>()
-                    .map_err(|_| ToolError::new("INVALID_PATCH", "Invalid line number in hunk header"))?;
+                let start = parts[0].parse::<usize>().map_err(|_| {
+                    ToolError::new("INVALID_PATCH", "Invalid line number in hunk header")
+                })?;
                 Ok((start, 1))
             }
             2 => {
-                let start = parts[0]
-                    .parse::<usize>()
-                    .map_err(|_| ToolError::new("INVALID_PATCH", "Invalid line number in hunk header"))?;
-                let count = parts[1]
-                    .parse::<usize>()
-                    .map_err(|_| ToolError::new("INVALID_PATCH", "Invalid line count in hunk header"))?;
+                let start = parts[0].parse::<usize>().map_err(|_| {
+                    ToolError::new("INVALID_PATCH", "Invalid line number in hunk header")
+                })?;
+                let count = parts[1].parse::<usize>().map_err(|_| {
+                    ToolError::new("INVALID_PATCH", "Invalid line count in hunk header")
+                })?;
                 Ok((start, count))
             }
-            _ => Err(ToolError::new("INVALID_PATCH", "Invalid range specification")
-                .with_details(format!("Range: {}", range_spec))),
+            _ => Err(
+                ToolError::new("INVALID_PATCH", "Invalid range specification")
+                    .with_details(format!("Range: {}", range_spec)),
+            ),
         }
     }
 
@@ -266,16 +269,18 @@ impl PatchTool {
     /// Apply a patch to a file with timeout enforcement (1 second)
     pub async fn apply_patch_with_timeout(input: &PatchInput) -> Result<PatchOutput, ToolError> {
         let timeout_duration = std::time::Duration::from_secs(1);
-        
+
         match tokio::time::timeout(timeout_duration, async {
             Self::apply_patch_internal(input)
-        }).await {
+        })
+        .await
+        {
             Ok(result) => result,
-            Err(_) => {
-                Err(ToolError::new("TIMEOUT", "Patch operation exceeded 1 second timeout")
+            Err(_) => Err(
+                ToolError::new("TIMEOUT", "Patch operation exceeded 1 second timeout")
                     .with_details(format!("File: {}", input.file_path))
-                    .with_suggestion("Try applying the patch again or check file size"))
-            }
+                    .with_suggestion("Try applying the patch again or check file size"),
+            ),
         }
     }
 
@@ -291,15 +296,17 @@ impl PatchTool {
 
         // Read the file
         let file_path = Path::new(&input.file_path);
-        let file_content = std::fs::read_to_string(file_path)
-            .map_err(|e| {
-                if e.kind() == std::io::ErrorKind::NotFound {
-                    ToolError::new("FILE_NOT_FOUND", format!("File not found: {}", input.file_path))
-                        .with_suggestion("Ensure the file path is correct")
-                } else {
-                    ToolError::from(e)
-                }
-            })?;
+        let file_content = std::fs::read_to_string(file_path).map_err(|e| {
+            if e.kind() == std::io::ErrorKind::NotFound {
+                ToolError::new(
+                    "FILE_NOT_FOUND",
+                    format!("File not found: {}", input.file_path),
+                )
+                .with_suggestion("Ensure the file path is correct")
+            } else {
+                ToolError::from(e)
+            }
+        })?;
 
         let mut file_lines: Vec<String> = file_content.lines().map(|s| s.to_string()).collect();
 
@@ -413,7 +420,10 @@ pub mod provider {
                     Ok(result)
                 }
                 Err(e) => {
-                    warn!("MCP patch provider failed, would fall back to built-in: {}", e);
+                    warn!(
+                        "MCP patch provider failed, would fall back to built-in: {}",
+                        e
+                    );
                     Err(e)
                 }
             }
@@ -424,8 +434,8 @@ pub mod provider {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::NamedTempFile;
     use std::io::Write;
+    use tempfile::NamedTempFile;
 
     #[test]
     fn test_parse_range_single_line() {

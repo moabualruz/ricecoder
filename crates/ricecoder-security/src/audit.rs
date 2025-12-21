@@ -73,11 +73,7 @@ pub struct AuditRecord {
 #[async_trait::async_trait]
 pub trait AuditStorage: Send + Sync + std::fmt::Debug {
     async fn store_record(&self, record: &AuditRecord) -> Result<()>;
-    async fn query_records(
-        &self,
-        filter: AuditQuery,
-        limit: usize,
-    ) -> Result<Vec<AuditRecord>>;
+    async fn query_records(&self, filter: AuditQuery, limit: usize) -> Result<Vec<AuditRecord>>;
 }
 
 /// Audit query for filtering records
@@ -113,17 +109,15 @@ impl AuditStorage for MemoryAuditStorage {
         Ok(())
     }
 
-    async fn query_records(
-        &self,
-        filter: AuditQuery,
-        limit: usize,
-    ) -> Result<Vec<AuditRecord>> {
+    async fn query_records(&self, filter: AuditQuery, limit: usize) -> Result<Vec<AuditRecord>> {
         let records = self.records.lock().unwrap();
         let mut filtered: Vec<AuditRecord> = records
             .iter()
             .filter(|record| {
                 if let Some(ref event_type) = filter.event_type {
-                    if std::mem::discriminant(event_type) != std::mem::discriminant(&record.event_type) {
+                    if std::mem::discriminant(event_type)
+                        != std::mem::discriminant(&record.event_type)
+                    {
                         return false;
                     }
                 }
@@ -311,7 +305,12 @@ impl AuditLogger {
             event_type: AuditEventType::ConsentChange,
             user_id: Some(user_id.to_string()),
             session_id: None,
-            action: if granted { "consent_granted" } else { "consent_revoked" }.to_string(),
+            action: if granted {
+                "consent_granted"
+            } else {
+                "consent_revoked"
+            }
+            .to_string(),
             resource: format!("user_consent:{}", user_id),
             metadata: serde_json::json!({
                 "consent_type": consent_type,
@@ -344,16 +343,21 @@ impl AuditLogger {
     }
 
     /// Log analytics opt-in/opt-out
-    pub async fn log_analytics_consent(
-        &self,
-        user_id: &str,
-        opted_in: bool,
-    ) -> Result<()> {
+    pub async fn log_analytics_consent(&self, user_id: &str, opted_in: bool) -> Result<()> {
         let event = AuditEvent {
-            event_type: if opted_in { AuditEventType::AnalyticsOptIn } else { AuditEventType::AnalyticsOptOut },
+            event_type: if opted_in {
+                AuditEventType::AnalyticsOptIn
+            } else {
+                AuditEventType::AnalyticsOptOut
+            },
             user_id: Some(user_id.to_string()),
             session_id: None,
-            action: if opted_in { "analytics_opt_in" } else { "analytics_opt_out" }.to_string(),
+            action: if opted_in {
+                "analytics_opt_in"
+            } else {
+                "analytics_opt_out"
+            }
+            .to_string(),
             resource: format!("user_analytics:{}", user_id),
             metadata: serde_json::json!({
                 "opted_in": opted_in,
@@ -364,11 +368,7 @@ impl AuditLogger {
     }
 
     /// Log compliance report generation
-    pub async fn log_compliance_report(
-        &self,
-        report_type: &str,
-        generated_by: &str,
-    ) -> Result<()> {
+    pub async fn log_compliance_report(&self, report_type: &str, generated_by: &str) -> Result<()> {
         let event = AuditEvent {
             event_type: AuditEventType::ComplianceReportGenerated,
             user_id: Some(generated_by.to_string()),

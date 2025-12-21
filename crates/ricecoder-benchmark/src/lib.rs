@@ -46,9 +46,15 @@ mod tests {
         };
 
         // Create a test file that would timeout
-        std::fs::write(temp_dir.path().join("test.py"), "import time; time.sleep(300)").unwrap();
+        std::fs::write(
+            temp_dir.path().join("test.py"),
+            "import time; time.sleep(300)",
+        )
+        .unwrap();
 
-        let result = Evaluator::run_tests(&exercise, temp_dir.path()).await.unwrap();
+        let result = Evaluator::run_tests(&exercise, temp_dir.path())
+            .await
+            .unwrap();
         assert!(!result.passed);
         assert!(result.timeout);
     }

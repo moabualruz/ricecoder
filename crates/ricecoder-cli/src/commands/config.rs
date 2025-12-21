@@ -3,9 +3,9 @@
 
 use super::Command;
 use crate::error::{CliError, CliResult};
-use async_trait::async_trait;
 use crate::output::OutputStyle;
-use ricecoder_storage::{ConfigLoader, PathResolver, Config};
+use async_trait::async_trait;
+use ricecoder_storage::{Config, ConfigLoader, PathResolver};
 use std::path::PathBuf;
 
 /// Manage configuration
@@ -27,13 +27,13 @@ impl ConfigCommand {
 
     /// Get the configuration directory path using PathResolver
     fn get_config_dir() -> CliResult<PathBuf> {
-        PathResolver::resolve_global_path()
-            .map_err(|e| CliError::Config(e.to_string()))
+        PathResolver::resolve_global_path().map_err(|e| CliError::Config(e.to_string()))
     }
 
     /// Load configuration from files using ConfigLoader
     fn load_config() -> CliResult<Config> {
-        ConfigLoader::new().load_merged()
+        ConfigLoader::new()
+            .load_merged()
             .map_err(|e| CliError::Config(e.to_string()))
     }
 
@@ -54,7 +54,11 @@ impl ConfigCommand {
 
         // Display API keys (masked)
         for (provider, key) in &config.providers.api_keys {
-            let masked = if key.is_empty() { "(not set)" } else { "***masked***" };
+            let masked = if key.is_empty() {
+                "(not set)"
+            } else {
+                "***masked***"
+            };
             println!(
                 "  {} = {}",
                 style.code(&format!("providers.{}.api_key", provider)),
@@ -105,11 +109,13 @@ impl ConfigCommand {
                     .strip_prefix("providers.")
                     .and_then(|s| s.strip_suffix(".api_key"))
                     .unwrap_or("");
-                config
-                    .providers
-                    .api_keys
-                    .get(provider)
-                    .map(|k| if k.is_empty() { "(not set)".to_string() } else { "***masked***".to_string() })
+                config.providers.api_keys.get(provider).map(|k| {
+                    if k.is_empty() {
+                        "(not set)".to_string()
+                    } else {
+                        "***masked***".to_string()
+                    }
+                })
             }
             _ => None,
         };
@@ -161,13 +167,19 @@ impl ConfigCommand {
                     .and_then(|s| s.strip_suffix(".api_key"))
                     .unwrap_or("");
                 if !provider.is_empty() {
-                    config.providers.api_keys.insert(provider.to_string(), value.to_string());
+                    config
+                        .providers
+                        .api_keys
+                        .insert(provider.to_string(), value.to_string());
                 } else {
                     return Err(CliError::Config(format!("Invalid key format: {}", key)));
                 }
             }
             _ => {
-                return Err(CliError::Config(format!("Unknown configuration key: {}", key)));
+                return Err(CliError::Config(format!(
+                    "Unknown configuration key: {}",
+                    key
+                )));
             }
         }
 

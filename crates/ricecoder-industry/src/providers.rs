@@ -244,26 +244,29 @@ impl GenericEnterpriseProvider {
             "PUT" => self.http_client.put(&url),
             "DELETE" => self.http_client.delete(&url),
             "PATCH" => self.http_client.patch(&url),
-            _ => return Err(IndustryError::ProviderError {
-                provider: self.config.name.clone(),
-                message: format!("Unsupported HTTP method: {}", method),
-            }),
+            _ => {
+                return Err(IndustryError::ProviderError {
+                    provider: self.config.name.clone(),
+                    message: format!("Unsupported HTTP method: {}", method),
+                })
+            }
         };
 
         // Add authentication headers
         match &self.config.auth_config.method {
-            crate::connections::            AuthMethod::ApiKey { header_name, key } => {
+            crate::connections::AuthMethod::ApiKey { header_name, key } => {
                 request = request.header(header_name.as_str(), key);
             }
             crate::connections::AuthMethod::OAuth { .. } => {
                 // OAuth tokens should be provided in headers parameter
             }
             crate::connections::AuthMethod::Basic { username, password } => {
-                use base64::{Engine as _, engine::general_purpose};
-                let credentials = general_purpose::STANDARD.encode(format!("{}:{}", username, password));
+                use base64::{engine::general_purpose, Engine as _};
+                let credentials =
+                    general_purpose::STANDARD.encode(format!("{}:{}", username, password));
                 request = request.header("Authorization", format!("Basic {}", credentials));
             }
-            crate::connections::            AuthMethod::PersonalAccessToken { header_name, token } => {
+            crate::connections::AuthMethod::PersonalAccessToken { header_name, token } => {
                 request = request.header(header_name.as_str(), token);
             }
         }
@@ -296,15 +299,11 @@ impl EnterpriseProvider for GenericEnterpriseProvider {
     }
 
     fn health(&self) -> ProviderHealth {
-        futures::executor::block_on(async {
-            self.metrics.read().await.health.clone()
-        })
+        futures::executor::block_on(async { self.metrics.read().await.health.clone() })
     }
 
     fn metrics(&self) -> ProviderMetrics {
-        futures::executor::block_on(async {
-            self.metrics.read().await.clone()
-        })
+        futures::executor::block_on(async { self.metrics.read().await.clone() })
     }
 
     async fn test_connectivity(&self) -> IndustryResult<bool> {
@@ -331,9 +330,12 @@ impl EnterpriseProvider for GenericEnterpriseProvider {
         let request = self.build_request(endpoint, method, body, headers)?;
 
         let start_time = std::time::Instant::now();
-        let response = request.send().await.map_err(|e| IndustryError::NetworkError {
-            message: format!("Provider request failed: {}", e),
-        })?;
+        let response = request
+            .send()
+            .await
+            .map_err(|e| IndustryError::NetworkError {
+                message: format!("Provider request failed: {}", e),
+            })?;
 
         let response_time = start_time.elapsed().as_millis() as f64;
 
@@ -348,11 +350,13 @@ impl EnterpriseProvider for GenericEnterpriseProvider {
             });
         }
 
-        let response_json: serde_json::Value = response.json().await.map_err(|e| {
-            IndustryError::SerializationError {
-                message: format!("Failed to parse provider response: {}", e),
-            }
-        })?;
+        let response_json: serde_json::Value =
+            response
+                .json()
+                .await
+                .map_err(|e| IndustryError::SerializationError {
+                    message: format!("Failed to parse provider response: {}", e),
+                })?;
 
         self.update_metrics(true, response_time).await;
         Ok(response_json)
@@ -366,7 +370,7 @@ impl EnterpriseProvider for GenericEnterpriseProvider {
             ProviderType::Google => model.starts_with("gemini-") || model.starts_with("palm-"),
             ProviderType::AzureOpenAI => model.starts_with("gpt-"),
             ProviderType::AWSBedrock => true, // AWS Bedrock supports many models
-            ProviderType::Custom(_) => true, // Assume custom providers support all models
+            ProviderType::Custom(_) => true,  // Assume custom providers support all models
         }
     }
 

@@ -122,11 +122,7 @@ impl OutputTransformer {
     }
 
     /// Transform a hover response using the provided rules
-    pub fn transform_hover(
-        &self,
-        response: &Value,
-        rules: &HoverMappingRules,
-    ) -> Result<Value> {
+    pub fn transform_hover(&self, response: &Value, rules: &HoverMappingRules) -> Result<Value> {
         // Extract content using JSON path
         let content_parser = JsonPathParser::parse(&rules.content_path)?;
         let content = content_parser.extract_single(response)?;
@@ -277,7 +273,9 @@ mod tests {
             transform: None,
         };
 
-        let results = transformer.transform_diagnostics(&response, &rules).unwrap();
+        let results = transformer
+            .transform_diagnostics(&response, &rules)
+            .unwrap();
         assert_eq!(results.len(), 2);
         assert_eq!(results[0]["message"], "error");
     }

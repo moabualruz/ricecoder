@@ -17,4 +17,3 @@ use crate::style::Theme;
 use crate::terminal_state::TerminalCapabilities;
 use std::collections::HashMap;
 */
-

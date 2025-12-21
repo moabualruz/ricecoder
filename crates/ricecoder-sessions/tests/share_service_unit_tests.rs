@@ -178,7 +178,9 @@ fn test_import_shared_session() {
         .generate_share_link(&session.id, permissions, None)
         .unwrap();
 
-    let imported = service.import_shared_session(&share.id, &session, None).unwrap();
+    let imported = service
+        .import_shared_session(&share.id, &session, None)
+        .unwrap();
 
     // Imported session should have different ID
     assert_ne!(imported.id, session.id);
@@ -355,7 +357,9 @@ fn test_share_preserves_session_metadata() {
         .generate_share_link(&session.id, permissions, None)
         .unwrap();
 
-    let imported = service.import_shared_session(&share.id, &session, None).unwrap();
+    let imported = service
+        .import_shared_session(&share.id, &session, None)
+        .unwrap();
 
     // Metadata should be preserved
     assert_eq!(imported.context.provider, "anthropic");

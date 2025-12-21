@@ -53,7 +53,14 @@ impl Theme {
 
     /// Get all available theme names
     pub fn available_themes() -> Vec<&'static str> {
-        vec!["dark", "light", "monokai", "dracula", "nord", "high-contrast"]
+        vec![
+            "dark",
+            "light",
+            "monokai",
+            "dracula",
+            "nord",
+            "high-contrast",
+        ]
     }
 
     /// Create a default dark theme

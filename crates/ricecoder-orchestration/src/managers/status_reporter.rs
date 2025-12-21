@@ -161,8 +161,20 @@ impl StatusReporter {
                 max_dependencies: 0,
                 min_dependencies: 0,
                 total_rules: self.workspace.config.rules.len(),
-                enabled_rules: self.workspace.config.rules.iter().filter(|r| r.enabled).count(),
-                disabled_rules: self.workspace.config.rules.iter().filter(|r| !r.enabled).count(),
+                enabled_rules: self
+                    .workspace
+                    .config
+                    .rules
+                    .iter()
+                    .filter(|r| r.enabled)
+                    .count(),
+                disabled_rules: self
+                    .workspace
+                    .config
+                    .rules
+                    .iter()
+                    .filter(|r| !r.enabled)
+                    .count(),
             });
         }
 
@@ -209,13 +221,27 @@ impl StatusReporter {
             max_dependencies: max_deps,
             min_dependencies: min_deps,
             total_rules: self.workspace.config.rules.len(),
-            enabled_rules: self.workspace.config.rules.iter().filter(|r| r.enabled).count(),
-            disabled_rules: self.workspace.config.rules.iter().filter(|r| !r.enabled).count(),
+            enabled_rules: self
+                .workspace
+                .config
+                .rules
+                .iter()
+                .filter(|r| r.enabled)
+                .count(),
+            disabled_rules: self
+                .workspace
+                .config
+                .rules
+                .iter()
+                .filter(|r| !r.enabled)
+                .count(),
         })
     }
 
     /// Gets health indicators for all projects
-    pub fn get_project_health_indicators(&self) -> Result<Vec<ProjectHealthIndicator>, OrchestrationError> {
+    pub fn get_project_health_indicators(
+        &self,
+    ) -> Result<Vec<ProjectHealthIndicator>, OrchestrationError> {
         let mut indicators = Vec::new();
 
         for project in &self.workspace.projects {
@@ -251,7 +277,10 @@ impl StatusReporter {
     }
 
     /// Tracks project health over time (returns current snapshot)
-    pub fn track_project_health(&self, project_name: &str) -> Result<ProjectHealthIndicator, OrchestrationError> {
+    pub fn track_project_health(
+        &self,
+        project_name: &str,
+    ) -> Result<ProjectHealthIndicator, OrchestrationError> {
         let project = self
             .workspace
             .projects
@@ -285,7 +314,13 @@ impl StatusReporter {
     /// Generates a summary of workspace compliance
     pub fn generate_compliance_summary(&self) -> Result<ComplianceSummary, OrchestrationError> {
         let total_rules = self.workspace.config.rules.len();
-        let enabled_rules = self.workspace.config.rules.iter().filter(|r| r.enabled).count();
+        let enabled_rules = self
+            .workspace
+            .config
+            .rules
+            .iter()
+            .filter(|r| r.enabled)
+            .count();
 
         let mut violations = Vec::new();
 
@@ -331,7 +366,9 @@ pub struct ComplianceSummary {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{DependencyType, Project, ProjectDependency, WorkspaceConfig, WorkspaceRule, RuleType};
+    use crate::models::{
+        DependencyType, Project, ProjectDependency, RuleType, WorkspaceConfig, WorkspaceRule,
+    };
 
     fn create_test_workspace() -> Workspace {
         let mut workspace = Workspace::default();
@@ -414,7 +451,9 @@ mod tests {
         let workspace = create_test_workspace();
         let reporter = StatusReporter::new(workspace);
 
-        let report = reporter.generate_report().expect("report generation failed");
+        let report = reporter
+            .generate_report()
+            .expect("report generation failed");
 
         assert_eq!(report.total_projects, 3);
         assert_eq!(report.total_dependencies, 2);
@@ -429,7 +468,9 @@ mod tests {
         let workspace = create_test_workspace();
         let reporter = StatusReporter::new(workspace);
 
-        let metrics = reporter.collect_metrics().expect("metrics collection failed");
+        let metrics = reporter
+            .collect_metrics()
+            .expect("metrics collection failed");
 
         assert_eq!(metrics.total_rules, 2);
         assert_eq!(metrics.enabled_rules, 2);
@@ -494,7 +535,9 @@ mod tests {
         let workspace = Workspace::default();
         let reporter = StatusReporter::new(workspace);
 
-        let report = reporter.generate_report().expect("report generation failed");
+        let report = reporter
+            .generate_report()
+            .expect("report generation failed");
 
         assert_eq!(report.total_projects, 0);
         assert_eq!(report.total_dependencies, 0);
@@ -505,7 +548,9 @@ mod tests {
         let workspace = Workspace::default();
         let reporter = StatusReporter::new(workspace);
 
-        let metrics = reporter.collect_metrics().expect("metrics collection failed");
+        let metrics = reporter
+            .collect_metrics()
+            .expect("metrics collection failed");
 
         assert_eq!(metrics.avg_dependencies_per_project, 0.0);
         assert_eq!(metrics.max_dependencies, 0);
@@ -516,7 +561,9 @@ mod tests {
         let workspace = create_test_workspace();
         let reporter = StatusReporter::new(workspace);
 
-        let report = reporter.generate_report().expect("report generation failed");
+        let report = reporter
+            .generate_report()
+            .expect("report generation failed");
 
         // Verify timestamp is in ISO 8601 format
         assert!(!report.timestamp.is_empty());
@@ -528,7 +575,9 @@ mod tests {
         let workspace = create_test_workspace();
         let reporter = StatusReporter::new(workspace);
 
-        let report = reporter.generate_report().expect("report generation failed");
+        let report = reporter
+            .generate_report()
+            .expect("report generation failed");
 
         assert_eq!(report.project_statuses.len(), 3);
         assert_eq!(
@@ -593,9 +642,12 @@ mod tests {
         let workspace = create_test_workspace();
         let reporter = StatusReporter::new(workspace);
 
-        let metrics = reporter.collect_metrics().expect("metrics collection failed");
+        let metrics = reporter
+            .collect_metrics()
+            .expect("metrics collection failed");
 
-        let total = metrics.healthy_percentage + metrics.warning_percentage + metrics.critical_percentage;
+        let total =
+            metrics.healthy_percentage + metrics.warning_percentage + metrics.critical_percentage;
         // Should be approximately 100 (allowing for floating point precision)
         assert!((total - 100.0).abs() < 0.1);
     }

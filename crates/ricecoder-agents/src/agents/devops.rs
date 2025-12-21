@@ -70,15 +70,13 @@ impl DevOpsAgent {
             },
             DomainCapability {
                 name: "Containerization".to_string(),
-                description: "Recommendations for Docker and Kubernetes configuration"
-                    .to_string(),
+                description: "Recommendations for Docker and Kubernetes configuration".to_string(),
                 technologies: vec!["Docker".to_string(), "Kubernetes".to_string()],
                 patterns: vec![],
             },
             DomainCapability {
                 name: "Observability Infrastructure".to_string(),
-                description: "Recommendations for monitoring, logging, and alerting"
-                    .to_string(),
+                description: "Recommendations for monitoring, logging, and alerting".to_string(),
                 technologies: vec![
                     "Prometheus".to_string(),
                     "Grafana".to_string(),
@@ -357,10 +355,7 @@ impl DevOpsAgent {
                         "Remediation guidance".to_string(),
                         "Multiple scanning types".to_string(),
                     ],
-                    cons: vec![
-                        "Paid service".to_string(),
-                        "Limited free tier".to_string(),
-                    ],
+                    cons: vec!["Paid service".to_string(), "Limited free tier".to_string()],
                     alternatives: vec!["Trivy".to_string(), "Dependabot".to_string()],
                 },
                 TechRecommendation {
@@ -601,7 +596,11 @@ mod tests {
                 .technology_recommendations
                 .iter()
                 .any(|r| r.technology == tool);
-            assert!(found, "Container tool {} not found in recommendations", tool);
+            assert!(
+                found,
+                "Container tool {} not found in recommendations",
+                tool
+            );
         }
     }
 
@@ -653,9 +652,7 @@ mod tests {
         assert!(terraform_rec
             .alternatives
             .contains(&"CloudFormation".to_string()));
-        assert!(terraform_rec
-            .alternatives
-            .contains(&"Ansible".to_string()));
+        assert!(terraform_rec.alternatives.contains(&"Ansible".to_string()));
     }
 
     #[test]
@@ -669,9 +666,7 @@ mod tests {
             .find(|r| r.technology == "Kubernetes")
             .expect("Kubernetes recommendation not found");
 
-        assert!(k8s_rec
-            .alternatives
-            .contains(&"Docker Swarm".to_string()));
+        assert!(k8s_rec.alternatives.contains(&"Docker Swarm".to_string()));
         assert!(k8s_rec.alternatives.contains(&"AWS ECS".to_string()));
     }
 
@@ -686,9 +681,7 @@ mod tests {
             .find(|r| r.technology == "GitHub Actions")
             .expect("GitHub Actions recommendation not found");
 
-        assert!(github_rec
-            .alternatives
-            .contains(&"GitLab CI".to_string()));
+        assert!(github_rec.alternatives.contains(&"GitLab CI".to_string()));
         assert!(github_rec.alternatives.contains(&"Jenkins".to_string()));
     }
 

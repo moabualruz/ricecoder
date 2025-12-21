@@ -68,24 +68,22 @@ pub use config_hot_reload::ConfigHotReloadCoordinator;
 pub use config_validation::ConfigValidator;
 pub use configured_rules_provider::ConfiguredRulesProvider;
 pub use editor_config::{
-    CompletionSettings, DiagnosticsSettings, EmacsConfig, EditorConfigError, HoverSettings,
+    CompletionSettings, DiagnosticsSettings, EditorConfigError, EmacsConfig, HoverSettings,
     TerminalEditorConfig, VimConfig,
 };
 pub use error::IdeError;
 pub use external_lsp_provider::ExternalLspProvider;
 pub use generic_provider::GenericProvider;
-pub use hot_reload::{HotReloadManager, ConfigChangeCallback, ProviderAvailabilityCallback};
+pub use hot_reload::{ConfigChangeCallback, HotReloadManager, ProviderAvailabilityCallback};
 pub use ide_config_applicator::{IdeConfigApplicator, IdeSpecificSettings, IdeType};
-pub use lsp_monitor::{LspMonitor, LspHealthStatus};
+pub use lsp_monitor::{LspHealthStatus, LspMonitor};
 pub use manager::IdeIntegrationManager;
 pub use provider::{IdeProvider, ProviderChain};
 pub use provider_chain::{ProviderChainManager, ProviderRegistry};
-pub use provider_error_handling::{
-    ProviderErrorContext, ProviderErrorHandler, RecoveryStrategy,
-};
+pub use provider_error_handling::{ProviderErrorContext, ProviderErrorHandler, RecoveryStrategy};
 pub use response_formatter::ResponseFormatter;
 pub use themes::{
-    Color, ColorSupport, IdeThemeConfig, IdeThemeIntegration, IdeThemeManager, Theme,
-    ThemeLoader, ThemeManager, ThemeRegistry, ThemeResetManager,
+    Color, ColorSupport, IdeThemeConfig, IdeThemeIntegration, IdeThemeManager, Theme, ThemeLoader,
+    ThemeManager, ThemeRegistry, ThemeResetManager,
 };
 pub use types::*;

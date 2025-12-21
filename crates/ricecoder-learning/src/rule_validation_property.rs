@@ -8,8 +8,8 @@
 
 #[cfg(test)]
 mod tests {
-    use proptest::prelude::*;
     use crate::{Rule, RuleScope, RuleSource, RuleValidator};
+    use proptest::prelude::*;
 
     /// Strategy for generating valid rule patterns
     fn valid_pattern_strategy() -> impl Strategy<Value = String> {
@@ -44,12 +44,7 @@ mod tests {
             valid_success_rate_strategy(),
         )
             .prop_map(|(pattern, action, confidence, success_rate)| {
-                let mut rule = Rule::new(
-                    RuleScope::Global,
-                    pattern,
-                    action,
-                    RuleSource::Learned,
-                );
+                let mut rule = Rule::new(RuleScope::Global, pattern, action, RuleSource::Learned);
                 rule.confidence = confidence;
                 rule.success_rate = success_rate;
                 rule

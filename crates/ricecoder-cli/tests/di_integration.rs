@@ -1,12 +1,12 @@
 //! Integration tests for component wiring
 
-use ricecoder_cli::di;
 use ricecoder_agents::use_cases::{
-    SessionLifecycleUseCase, SessionSharingUseCase, ProviderSwitchingUseCase,
-    ProviderPerformanceUseCase,
+    ProviderPerformanceUseCase, ProviderSwitchingUseCase, SessionLifecycleUseCase,
+    SessionSharingUseCase,
 };
-use ricecoder_sessions::{SessionManager, SessionStore};
+use ricecoder_cli::di;
 use ricecoder_providers::provider::manager::ProviderManager;
+use ricecoder_sessions::{SessionManager, SessionStore};
 
 #[test]
 fn test_di_container_initialization() {
@@ -34,13 +34,19 @@ fn test_core_service_resolution() {
 
     // Test core infrastructure services
     let session_manager = di::get_service::<SessionManager>();
-    assert!(session_manager.is_some(), "SessionManager should be available");
+    assert!(
+        session_manager.is_some(),
+        "SessionManager should be available"
+    );
 
     let session_store = di::get_service::<SessionStore>();
     assert!(session_store.is_some(), "SessionStore should be available");
 
     let provider_manager = di::get_service::<ProviderManager>();
-    assert!(provider_manager.is_some(), "ProviderManager should be available");
+    assert!(
+        provider_manager.is_some(),
+        "ProviderManager should be available"
+    );
 }
 
 #[test]
@@ -52,16 +58,28 @@ fn test_use_case_resolution() {
 
     // Test use cases
     let session_lifecycle = di::get_service::<SessionLifecycleUseCase>();
-    assert!(session_lifecycle.is_some(), "SessionLifecycleUseCase should be available");
+    assert!(
+        session_lifecycle.is_some(),
+        "SessionLifecycleUseCase should be available"
+    );
 
     let session_sharing = di::get_service::<SessionSharingUseCase>();
-    assert!(session_sharing.is_some(), "SessionSharingUseCase should be available");
+    assert!(
+        session_sharing.is_some(),
+        "SessionSharingUseCase should be available"
+    );
 
     let provider_switching = di::get_service::<ProviderSwitchingUseCase>();
-    assert!(provider_switching.is_some(), "ProviderSwitchingUseCase should be available");
+    assert!(
+        provider_switching.is_some(),
+        "ProviderSwitchingUseCase should be available"
+    );
 
     let provider_performance = di::get_service::<ProviderPerformanceUseCase>();
-    assert!(provider_performance.is_some(), "ProviderPerformanceUseCase should be available");
+    assert!(
+        provider_performance.is_some(),
+        "ProviderPerformanceUseCase should be available"
+    );
 }
 
 #[test]
@@ -79,7 +97,10 @@ fn test_service_singleton_behavior() {
     assert!(service2.is_some());
 
     // Should be the same instance (singleton)
-    assert!(std::sync::Arc::ptr_eq(&service1.unwrap(), &service2.unwrap()));
+    assert!(std::sync::Arc::ptr_eq(
+        &service1.unwrap(),
+        &service2.unwrap()
+    ));
 }
 
 #[test]
@@ -110,16 +131,25 @@ fn test_storage_services() {
     di::reset_di_container();
     di::initialize_di_container().unwrap();
 
-    use ricecoder_storage::{StorageManager, FileStorage, MemoryStorage};
+    use ricecoder_storage::{FileStorage, MemoryStorage, StorageManager};
 
     let storage_manager = di::get_service::<StorageManager>();
-    assert!(storage_manager.is_some(), "StorageManager should be available when storage feature is enabled");
+    assert!(
+        storage_manager.is_some(),
+        "StorageManager should be available when storage feature is enabled"
+    );
 
     let file_storage = di::get_service::<FileStorage>();
-    assert!(file_storage.is_some(), "FileStorage should be available when storage feature is enabled");
+    assert!(
+        file_storage.is_some(),
+        "FileStorage should be available when storage feature is enabled"
+    );
 
     let memory_storage = di::get_service::<MemoryStorage>();
-    assert!(memory_storage.is_some(), "MemoryStorage should be available when storage feature is enabled");
+    assert!(
+        memory_storage.is_some(),
+        "MemoryStorage should be available when storage feature is enabled"
+    );
 }
 
 #[cfg(feature = "research")]
@@ -130,14 +160,23 @@ fn test_research_services() {
     di::reset_di_container();
     di::initialize_di_container().unwrap();
 
-    use ricecoder_research::{ResearchManager, CodebaseScanner, SemanticIndexer};
+    use ricecoder_research::{CodebaseScanner, ResearchManager, SemanticIndexer};
 
     let research_manager = di::get_service::<ResearchManager>();
-    assert!(research_manager.is_some(), "ResearchManager should be available when research feature is enabled");
+    assert!(
+        research_manager.is_some(),
+        "ResearchManager should be available when research feature is enabled"
+    );
 
     let codebase_scanner = di::get_service::<CodebaseScanner>();
-    assert!(codebase_scanner.is_some(), "CodebaseScanner should be available when research feature is enabled");
+    assert!(
+        codebase_scanner.is_some(),
+        "CodebaseScanner should be available when research feature is enabled"
+    );
 
     let semantic_indexer = di::get_service::<SemanticIndexer>();
-    assert!(semantic_indexer.is_some(), "SemanticIndexer should be available when research feature is enabled");
+    assert!(
+        semantic_indexer.is_some(),
+        "SemanticIndexer should be available when research feature is enabled"
+    );
 }

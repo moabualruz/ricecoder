@@ -17,7 +17,10 @@ pub struct AlertRuleEngine;
 
 impl AlertRuleEngine {
     /// Evaluate alert rules against metrics
-    pub fn evaluate_rules(rules: &[AlertRule], metrics: &HashMap<String, Vec<DataPoint>>) -> Vec<Alert> {
+    pub fn evaluate_rules(
+        rules: &[AlertRule],
+        metrics: &HashMap<String, Vec<DataPoint>>,
+    ) -> Vec<Alert> {
         let mut alerts = Vec::new();
 
         for rule in rules.iter().filter(|r| r.enabled) {
@@ -39,7 +42,10 @@ impl AlertRuleEngine {
                     return Some(Alert {
                         id: EventId::new_v4(),
                         rule_id: rule.id.clone(),
-                        message: format!("Alert rule '{}' triggered: {} >= {}", rule.name, latest.value, rule.threshold),
+                        message: format!(
+                            "Alert rule '{}' triggered: {} >= {}",
+                            rule.name, latest.value, rule.threshold
+                        ),
                         severity: rule.severity,
                         status: AlertStatus::Firing,
                         created_at: chrono::Utc::now(),

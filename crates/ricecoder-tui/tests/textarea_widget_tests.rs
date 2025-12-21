@@ -45,8 +45,8 @@ fn test_textarea_vim_mode_enabled() {
     let textarea = TextAreaWidget::new(true, 10);
     assert_eq!(textarea.vim_mode(), VimMode::Normal);
 
-        let textarea = TextAreaWidget::new(false, 10);
-        assert_eq!(textarea.vim_mode(), VimMode::Insert);
+    let textarea = TextAreaWidget::new(false, 10);
+    assert_eq!(textarea.vim_mode(), VimMode::Insert);
 }
 
 #[test]

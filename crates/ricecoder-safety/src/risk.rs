@@ -128,13 +128,19 @@ impl RiskScorer {
                         factors.user_factors.insert(rule.name.clone(), rule_score);
                     }
                     RiskCategory::Operation => {
-                        factors.operation_factors.insert(rule.name.clone(), rule_score);
+                        factors
+                            .operation_factors
+                            .insert(rule.name.clone(), rule_score);
                     }
                     RiskCategory::Environment => {
-                        factors.environment_factors.insert(rule.name.clone(), rule_score);
+                        factors
+                            .environment_factors
+                            .insert(rule.name.clone(), rule_score);
                     }
                     RiskCategory::Historical => {
-                        factors.historical_factors.insert(rule.name.clone(), rule_score);
+                        factors
+                            .historical_factors
+                            .insert(rule.name.clone(), rule_score);
                     }
                 }
 
@@ -155,12 +161,13 @@ impl RiskScorer {
         if let Some(user_id) = &context.user_id {
             if let Some(history) = self.historical_data.get(user_id) {
                 if !history.is_empty() {
-                    let avg_historical_score = history.iter()
-                        .map(|s| s.score as f64)
-                        .sum::<f64>() / history.len() as f64;
+                    let avg_historical_score =
+                        history.iter().map(|s| s.score as f64).sum::<f64>() / history.len() as f64;
                     let historical_factor = (avg_historical_score * 0.3) as u8;
                     total_score = total_score.saturating_add(historical_factor);
-                    factors.historical_factors.insert("historical_average".to_string(), historical_factor);
+                    factors
+                        .historical_factors
+                        .insert("historical_average".to_string(), historical_factor);
                 }
             }
         }
@@ -205,11 +212,10 @@ impl RiskScorer {
             let max_score = *scores.iter().max().unwrap_or(&0);
             let min_score = *scores.iter().min().unwrap_or(&0);
 
-            let level_distribution = history.iter()
-                .fold(HashMap::new(), |mut acc, score| {
-                    *acc.entry(score.level).or_insert(0) += 1;
-                    acc
-                });
+            let level_distribution = history.iter().fold(HashMap::new(), |mut acc, score| {
+                *acc.entry(score.level).or_insert(0) += 1;
+                acc
+            });
 
             RiskStats {
                 user_id: user_id.to_string(),
@@ -255,7 +261,11 @@ impl RiskScorer {
         self.add_rule(RiskRule {
             name: "file_deletion".to_string(),
             category: RiskCategory::Operation,
-            condition: Box::new(|ctx| ctx.operation_type.as_ref().map_or(false, |op| op.contains("delete"))),
+            condition: Box::new(|ctx| {
+                ctx.operation_type
+                    .as_ref()
+                    .map_or(false, |op| op.contains("delete"))
+            }),
             score_calculator: Box::new(|_| 40),
             recommendations: vec![
                 "File deletion operation - ensure proper authorization".to_string(),

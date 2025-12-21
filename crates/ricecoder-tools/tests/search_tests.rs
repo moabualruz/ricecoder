@@ -41,7 +41,12 @@ fn test_search_result_creation() {
 
 #[test]
 fn test_search_output_creation() {
-    let results = vec![SearchResult::new("Title", "https://example.com", "Snippet", 1)];
+    let results = vec![SearchResult::new(
+        "Title",
+        "https://example.com",
+        "Snippet",
+        1,
+    )];
     let output = SearchOutput::new(results.clone(), 1);
     assert_eq!(output.results, results);
     assert_eq!(output.total_count, 1);
@@ -154,7 +159,12 @@ fn test_search_result_serialization() {
 
 #[test]
 fn test_search_output_serialization() {
-    let results = vec![SearchResult::new("Title", "https://example.com", "Snippet", 1)];
+    let results = vec![SearchResult::new(
+        "Title",
+        "https://example.com",
+        "Snippet",
+        1,
+    )];
     let output = SearchOutput::new(results, 1);
     let json = serde_json::to_string(&output).unwrap();
     assert!(json.contains("\"results\""));

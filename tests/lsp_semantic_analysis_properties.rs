@@ -10,7 +10,7 @@
 //! - Symbol index lookup returns correct results
 
 use proptest::prelude::*;
-use ricecoder_lsp::semantic::{SemanticAnalyzerFactory, LanguageDetector};
+use ricecoder_lsp::semantic::{LanguageDetector, SemanticAnalyzerFactory};
 use ricecoder_lsp::types::Language;
 use std::path::Path;
 
@@ -49,7 +49,10 @@ fn python_code_strategy() -> impl Strategy<Value = String> {
         Just("class Point:\n    def __init__(self, x, y):\n        self.x = x".to_string()),
         Just("import os\nimport sys".to_string()),
         Just("MAX_SIZE = 100".to_string()),
-        Just("def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)".to_string()),
+        Just(
+            "def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)"
+                .to_string()
+        ),
         Just("class Iterator:\n    def __next__(self):\n        pass".to_string()),
         Just("from typing import List, Dict".to_string()),
         Just("x: str = 'hello'".to_string()),
@@ -335,4 +338,3 @@ fn prop_semantic_analyzer_thread_safe() {
         assert!(result2.is_ok());
     });
 }
-

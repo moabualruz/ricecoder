@@ -1,9 +1,9 @@
 //! Performance regression detection and alerting
 
-use serde::{Deserialize, Serialize};
-use chrono::{DateTime, Utc};
-use crate::baseline::{PerformanceBaseline, BaselineData};
+use crate::baseline::{BaselineData, PerformanceBaseline};
 use crate::monitor::PerformanceMetrics;
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 /// Regression alert types
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -51,7 +51,7 @@ impl Default for RegressionConfig {
             performance_threshold_percent: 10.0, // 10% degradation
             memory_threshold_percent: 20.0,      // 20% memory increase
             enable_alerting: true,
-            alert_cooldown_seconds: 3600,        // 1 hour
+            alert_cooldown_seconds: 3600, // 1 hour
         }
     }
 }
@@ -82,7 +82,8 @@ impl RegressionDetector {
             // Check for performance regression
             let baseline_data_opt = self.baseline.get_baseline(&metric.test_name).cloned();
             if let Some(baseline_data) = baseline_data_opt {
-                let alerts_for_test = self.check_performance_regression(&baseline_data, metric, now);
+                let alerts_for_test =
+                    self.check_performance_regression(&baseline_data, metric, now);
                 alerts.extend(alerts_for_test);
             }
 
@@ -98,7 +99,9 @@ impl RegressionDetector {
             let baseline_data_opt = self.baseline.get_baseline(&metric.test_name).cloned();
             if let Some(baseline_data) = baseline_data_opt {
                 if let Some(target) = baseline_data.target_threshold_ns {
-                    if let Some(alert) = self.check_target_exceeded(&metric.test_name, target, metric, now) {
+                    if let Some(alert) =
+                        self.check_target_exceeded(&metric.test_name, target, metric, now)
+                    {
                         alerts.push(alert);
                     }
                 }
@@ -118,17 +121,22 @@ impl RegressionDetector {
         let mut alerts = Vec::new();
 
         // Check if we're within cooldown period
-        if let Some(last_alert) = self.last_alert_times.get(&format!("perf_{}", current.test_name)) {
+        if let Some(last_alert) = self
+            .last_alert_times
+            .get(&format!("perf_{}", current.test_name))
+        {
             if (now - *last_alert).num_seconds() < self.config.alert_cooldown_seconds as i64 {
                 return alerts;
             }
         }
 
         let degradation_percent = ((current.p95_time_ns as f64 - baseline.p95_time_ns as f64)
-            / baseline.p95_time_ns as f64) * 100.0;
+            / baseline.p95_time_ns as f64)
+            * 100.0;
 
         if degradation_percent > self.config.performance_threshold_percent {
-            self.last_alert_times.insert(format!("perf_{}", current.test_name), now);
+            self.last_alert_times
+                .insert(format!("perf_{}", current.test_name), now);
             alerts.push(RegressionAlert::PerformanceDegradation {
                 test_name: current.test_name.clone(),
                 baseline_p95_ns: baseline.p95_time_ns,
@@ -149,7 +157,10 @@ impl RegressionDetector {
         now: DateTime<Utc>,
     ) -> Option<RegressionAlert> {
         // Check if we're within cooldown period
-        if let Some(last_alert) = self.last_alert_times.get(&format!("mem_{}", current.test_name)) {
+        if let Some(last_alert) = self
+            .last_alert_times
+            .get(&format!("mem_{}", current.test_name))
+        {
             if (now - *last_alert).num_seconds() < self.config.alert_cooldown_seconds as i64 {
                 return None;
             }
@@ -158,10 +169,12 @@ impl RegressionDetector {
         // Calculate memory baseline (simplified - using a fixed baseline for now)
         let baseline_memory = 50 * 1024 * 1024; // 50MB baseline
         let increase_percent = ((current.peak_memory_bytes as f64 - baseline_memory as f64)
-            / baseline_memory as f64) * 100.0;
+            / baseline_memory as f64)
+            * 100.0;
 
         if increase_percent > self.config.memory_threshold_percent {
-            self.last_alert_times.insert(format!("mem_{}", current.test_name), now);
+            self.last_alert_times
+                .insert(format!("mem_{}", current.test_name), now);
             return Some(RegressionAlert::MemoryRegression {
                 test_name: current.test_name.clone(),
                 baseline_memory_bytes: baseline_memory,
@@ -189,10 +202,11 @@ impl RegressionDetector {
         }
 
         if current.p95_time_ns > target_ns {
-            let exceed_percent = ((current.p95_time_ns as f64 - target_ns as f64)
-                / target_ns as f64) * 100.0;
+            let exceed_percent =
+                ((current.p95_time_ns as f64 - target_ns as f64) / target_ns as f64) * 100.0;
 
-            self.last_alert_times.insert(format!("target_{}", test_name), now);
+            self.last_alert_times
+                .insert(format!("target_{}", test_name), now);
             return Some(RegressionAlert::TargetExceeded {
                 test_name: test_name.to_string(),
                 target_ns,
@@ -207,7 +221,8 @@ impl RegressionDetector {
     /// Update baseline with new measurements
     pub fn update_baseline(&mut self, metrics: &[PerformanceMetrics]) {
         for metric in metrics {
-            self.baseline.update_baseline(metric.test_name.clone(), metric);
+            self.baseline
+                .update_baseline(metric.test_name.clone(), metric);
         }
     }
 

@@ -74,7 +74,10 @@ impl SessionIntegration {
     }
 
     /// Add a message to the active session
-    pub fn add_message_to_active(&mut self, message_content: &str) -> crate::error::SessionResult<String> {
+    pub fn add_message_to_active(
+        &mut self,
+        message_content: &str,
+    ) -> crate::error::SessionResult<String> {
         // Get session info first
         let session = self.manager.get_active_session()?;
         let session_id = session.id.clone();
@@ -82,7 +85,9 @@ impl SessionIntegration {
 
         // Estimate tokens for the message
         let token_count = {
-            let token_estimate = self.manager.estimate_tokens_with_model(message_content, &model)?;
+            let token_estimate = self
+                .manager
+                .estimate_tokens_with_model(message_content, &model)?;
             token_estimate.tokens
         };
 
@@ -100,7 +105,8 @@ impl SessionIntegration {
         self.manager.update_session(session)?;
 
         // Record prompt tokens
-        self.manager.record_prompt_tokens(&session_id, token_count)?;
+        self.manager
+            .record_prompt_tokens(&session_id, token_count)?;
 
         Ok(session_id)
     }
@@ -124,7 +130,9 @@ impl SessionIntegration {
     }
 
     /// Get token usage for the active session
-    pub fn get_active_session_token_usage(&self) -> crate::error::SessionResult<crate::token_estimator::TokenUsage> {
+    pub fn get_active_session_token_usage(
+        &self,
+    ) -> crate::error::SessionResult<crate::token_estimator::TokenUsage> {
         self.manager.get_active_session_token_usage()
     }
 
@@ -152,7 +160,8 @@ impl SessionIntegration {
         // Record prompt tokens
         if let Some(session_id) = self.manager.active_session_id() {
             let session_id = session_id.to_string();
-            self.manager.record_prompt_tokens(&session_id, token_count)?;
+            self.manager
+                .record_prompt_tokens(&session_id, token_count)?;
         }
 
         Ok(())
@@ -173,4 +182,3 @@ impl Default for SessionIntegration {
         Self::new(10) // Default to 10 concurrent sessions
     }
 }
-

@@ -23,7 +23,9 @@ fn test_readme_generation_with_all_sections() {
     };
 
     let generator = DocumentationGenerator::new(config);
-    let readme = generator.generate_readme().expect("Failed to generate README");
+    let readme = generator
+        .generate_readme()
+        .expect("Failed to generate README");
 
     assert!(readme.contains("# TestProject"));
     assert!(readme.contains("A test project"));
@@ -48,7 +50,9 @@ fn test_readme_generation_with_minimal_sections() {
     };
 
     let generator = DocumentationGenerator::new(config);
-    let readme = generator.generate_readme().expect("Failed to generate README");
+    let readme = generator
+        .generate_readme()
+        .expect("Failed to generate README");
 
     assert!(readme.contains("# MinimalProject"));
     assert!(!readme.contains("## Table of Contents"));
@@ -224,9 +228,7 @@ fn test_documentation_operations_commit() {
         .with_file("README.md")
         .with_file("API.md");
 
-    let result = ops
-        .commit_documentation(commit)
-        .expect("Failed to commit");
+    let result = ops.commit_documentation(commit).expect("Failed to commit");
 
     assert!(result.success);
     assert!(result.commit_hash.is_some());
@@ -279,9 +281,7 @@ fn test_documentation_operations_update_task_status() {
     ops.update_task_status("Task 1", MaintenanceStatus::Completed)
         .expect("Failed to update");
 
-    let updated = ops
-        .get_maintenance_task("Task 1")
-        .expect("Task not found");
+    let updated = ops.get_maintenance_task("Task 1").expect("Task not found");
 
     assert_eq!(updated.status, MaintenanceStatus::Completed);
 }
@@ -295,10 +295,8 @@ fn test_documentation_operations_commit_history() {
     let commit1 = DocumentationCommit::new("First commit").with_file("README.md");
     let commit2 = DocumentationCommit::new("Second commit").with_file("API.md");
 
-    ops.commit_documentation(commit1)
-        .expect("Failed to commit");
-    ops.commit_documentation(commit2)
-        .expect("Failed to commit");
+    ops.commit_documentation(commit1).expect("Failed to commit");
+    ops.commit_documentation(commit2).expect("Failed to commit");
 
     let history = ops.get_commit_history();
     assert_eq!(history.len(), 2);
@@ -425,8 +423,7 @@ fn test_documentation_operations_get_all_maintenance_tasks() {
 
 #[test]
 fn test_documentation_template_with_variables() {
-    let template = DocumentationTemplate::new("test", "Hello {{name}}")
-        .with_variable("name");
+    let template = DocumentationTemplate::new("test", "Hello {{name}}").with_variable("name");
 
     assert_eq!(template.variables.len(), 1);
     assert!(template.variables.contains(&"name".to_string()));

@@ -4,12 +4,12 @@
 //! including lazy loading of message history, efficient diff rendering,
 //! memory management, and 60 FPS rendering targets.
 
+use crate::CancellationToken;
 use std::collections::{HashMap, VecDeque};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, Weak};
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
-use crate::CancellationToken;
 
 /// Configuration for lazy loading
 #[derive(Debug, Clone)]
@@ -507,7 +507,8 @@ impl<T> ContentCache<T> {
 
             if let Some(key) = key_to_remove {
                 if let Some(removed_item) = cache.remove(&key) {
-                    self.current_size.fetch_sub(removed_item.size_bytes, Ordering::Relaxed);
+                    self.current_size
+                        .fetch_sub(removed_item.size_bytes, Ordering::Relaxed);
                 }
             } else {
                 break;
@@ -574,7 +575,10 @@ impl std::fmt::Debug for JobQueue {
         f.debug_struct("JobQueue")
             .field("queue", &self.queue)
             .field("active_jobs", &self.active_jobs)
-            .field("completion_callbacks", &format!("<{} callbacks>", self.completion_callbacks.len()))
+            .field(
+                "completion_callbacks",
+                &format!("<{} callbacks>", self.completion_callbacks.len()),
+            )
             .field("progress_reporter", &"<progress_reporter>")
             .field("max_concurrent", &self.max_concurrent)
             .field("next_id", &self.next_id)
@@ -607,7 +611,9 @@ impl PartialOrd for Job {
 impl Ord for Job {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         // Higher priority first, then by creation time (older first)
-        other.priority.cmp(&self.priority)
+        other
+            .priority
+            .cmp(&self.priority)
             .then_with(|| self.created_at.cmp(&other.created_at))
     }
 }
@@ -622,13 +628,25 @@ pub enum JobPriority {
 
 pub enum JobTask {
     /// Generic async function
-    Async(Box<dyn FnOnce() -> std::pin::Pin<Box<dyn std::future::Future<Output = JobResult> + Send>> + Send + Sync>),
+    Async(
+        Box<
+            dyn FnOnce() -> std::pin::Pin<Box<dyn std::future::Future<Output = JobResult> + Send>>
+                + Send
+                + Sync,
+        >,
+    ),
     /// File operation
-    FileOperation { path: std::path::PathBuf, operation: FileOperationType },
+    FileOperation {
+        path: std::path::PathBuf,
+        operation: FileOperationType,
+    },
     /// Network request
     NetworkRequest { url: String, method: String },
     /// Custom task with data
-    Custom { name: String, data: serde_json::Value },
+    Custom {
+        name: String,
+        data: serde_json::Value,
+    },
 }
 
 impl std::fmt::Debug for JobTask {
@@ -636,10 +654,18 @@ impl std::fmt::Debug for JobTask {
         match self {
             JobTask::Async(_) => write!(f, "JobTask::Async(<function>)"),
             JobTask::FileOperation { path, operation } => {
-                write!(f, "JobTask::FileOperation {{ path: {:?}, operation: {:?} }}", path, operation)
+                write!(
+                    f,
+                    "JobTask::FileOperation {{ path: {:?}, operation: {:?} }}",
+                    path, operation
+                )
             }
             JobTask::NetworkRequest { url, method } => {
-                write!(f, "JobTask::NetworkRequest {{ url: {:?}, method: {:?} }}", url, method)
+                write!(
+                    f,
+                    "JobTask::NetworkRequest {{ url: {:?}, method: {:?} }}",
+                    url, method
+                )
             }
             JobTask::Custom { name, data } => {
                 write!(f, "JobTask::Custom {{ name: {:?}, data: <json> }}", name)
@@ -679,8 +705,6 @@ pub enum JobResult {
     Cancelled,
 }
 
-
-
 impl JobQueue {
     /// Create a new job queue
     pub fn new() -> Self {
@@ -711,12 +735,18 @@ impl JobQueue {
     }
 
     /// Submit a job with completion callback
-    pub fn submit_job_with_callback<F>(&mut self, task: JobTask, priority: JobPriority, callback: F) -> JobId
+    pub fn submit_job_with_callback<F>(
+        &mut self,
+        task: JobTask,
+        priority: JobPriority,
+        callback: F,
+    ) -> JobId
     where
         F: Fn(JobResult) + Send + Sync + 'static,
     {
         let id = self.submit_job(task, priority);
-        self.completion_callbacks.insert(id.clone(), Box::new(callback));
+        self.completion_callbacks
+            .insert(id.clone(), Box::new(callback));
         id
     }
 
@@ -752,7 +782,10 @@ impl JobQueue {
 
         for job_id in completed_jobs {
             if let Some(active_job) = self.active_jobs.remove(&job_id) {
-                let result = active_job.handle.await.unwrap_or(JobResult::Error("Task panicked".to_string()));
+                let result = active_job
+                    .handle
+                    .await
+                    .unwrap_or(JobResult::Error("Task panicked".to_string()));
 
                 // Call completion callback if registered
                 if let Some(callback) = self.completion_callbacks.remove(&job_id) {
@@ -770,10 +803,13 @@ impl JobQueue {
         let job_id = job.id.clone();
 
         // Take the task out of the job, leaving a dummy task
-        let task = std::mem::replace(&mut job.task, JobTask::Custom {
-            name: "completed".to_string(),
-            data: serde_json::Value::Null,
-        });
+        let task = std::mem::replace(
+            &mut job.task,
+            JobTask::Custom {
+                name: "completed".to_string(),
+                data: serde_json::Value::Null,
+            },
+        );
 
         let handle = tokio::spawn(async move {
             tokio::select! {
@@ -788,100 +824,119 @@ impl JobQueue {
             cancel_token,
         };
 
-        self.active_jobs.insert(active_job.job.id.clone(), active_job);
+        self.active_jobs
+            .insert(active_job.job.id.clone(), active_job);
     }
 
     /// Execute a job task with progress reporting
-    async fn execute_job_task(task: JobTask, _progress_reporter: Arc<RwLock<ProgressReporter>>, _job_id: &JobId) -> JobResult {
+    async fn execute_job_task(
+        task: JobTask,
+        _progress_reporter: Arc<RwLock<ProgressReporter>>,
+        _job_id: &JobId,
+    ) -> JobResult {
         // TODO: Implement progress reporting
         match task {
             JobTask::Async(future_fn) => {
                 let future = future_fn();
                 future.await
             }
-            JobTask::FileOperation { path, operation } => {
-                match operation {
-                    FileOperationType::Read => {
-                        match tokio::fs::read(&path).await {
-                            Ok(data) => JobResult::Success(serde_json::Value::String(String::from_utf8_lossy(&data).to_string())),
-                            Err(e) => JobResult::Error(format!("Failed to read file {}: {}", path.display(), e)),
-                        }
+            JobTask::FileOperation { path, operation } => match operation {
+                FileOperationType::Read => match tokio::fs::read(&path).await {
+                    Ok(data) => JobResult::Success(serde_json::Value::String(
+                        String::from_utf8_lossy(&data).to_string(),
+                    )),
+                    Err(e) => {
+                        JobResult::Error(format!("Failed to read file {}: {}", path.display(), e))
                     }
-                    FileOperationType::Write(data) => {
-                        match tokio::fs::write(&path, &data).await {
-                            Ok(_) => JobResult::Success(serde_json::Value::Null),
-                            Err(e) => JobResult::Error(format!("Failed to write file {}: {}", path.display(), e)),
-                        }
+                },
+                FileOperationType::Write(data) => match tokio::fs::write(&path, &data).await {
+                    Ok(_) => JobResult::Success(serde_json::Value::Null),
+                    Err(e) => {
+                        JobResult::Error(format!("Failed to write file {}: {}", path.display(), e))
                     }
-                    FileOperationType::Delete => {
-                        match tokio::fs::remove_file(&path).await {
-                            Ok(_) => JobResult::Success(serde_json::Value::Null),
-                            Err(e) => JobResult::Error(format!("Failed to delete file {}: {}", path.display(), e)),
-                        }
+                },
+                FileOperationType::Delete => match tokio::fs::remove_file(&path).await {
+                    Ok(_) => JobResult::Success(serde_json::Value::Null),
+                    Err(e) => {
+                        JobResult::Error(format!("Failed to delete file {}: {}", path.display(), e))
                     }
-                    FileOperationType::Copy(dest) => {
-                        match tokio::fs::copy(&path, &dest).await {
-                            Ok(_) => JobResult::Success(serde_json::Value::Null),
-                            Err(e) => JobResult::Error(format!("Failed to copy file {} to {}: {}", path.display(), dest.display(), e)),
-                        }
-                    }
-                }
-            }
+                },
+                FileOperationType::Copy(dest) => match tokio::fs::copy(&path, &dest).await {
+                    Ok(_) => JobResult::Success(serde_json::Value::Null),
+                    Err(e) => JobResult::Error(format!(
+                        "Failed to copy file {} to {}: {}",
+                        path.display(),
+                        dest.display(),
+                        e
+                    )),
+                },
+            },
             JobTask::NetworkRequest { url, method } => {
                 // TODO: Implement actual network request
                 tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-                JobResult::Success(serde_json::Value::String("Network request completed".to_string()))
+                JobResult::Success(serde_json::Value::String(
+                    "Network request completed".to_string(),
+                ))
             }
             JobTask::Custom { name, data } => {
                 // TODO: Implement custom task execution
                 tokio::time::sleep(std::time::Duration::from_millis(50)).await;
-                JobResult::Success(serde_json::Value::String(format!("Custom task '{}' completed", name)))
+                JobResult::Success(serde_json::Value::String(format!(
+                    "Custom task '{}' completed",
+                    name
+                )))
             }
         }
     }
 
     /// Execute file operations
-    async fn execute_file_operation(path: std::path::PathBuf, operation: FileOperationType) -> JobResult {
+    async fn execute_file_operation(
+        path: std::path::PathBuf,
+        operation: FileOperationType,
+    ) -> JobResult {
         match operation {
-            FileOperationType::Read => {
-                match tokio::fs::read(&path).await {
-                    Ok(data) => JobResult::Success(serde_json::json!({
-                        "operation": "read",
-                        "path": path.to_string_lossy(),
-                        "size": data.len()
-                    })),
-                    Err(e) => JobResult::Error(format!("Failed to read file {}: {}", path.display(), e)),
+            FileOperationType::Read => match tokio::fs::read(&path).await {
+                Ok(data) => JobResult::Success(serde_json::json!({
+                    "operation": "read",
+                    "path": path.to_string_lossy(),
+                    "size": data.len()
+                })),
+                Err(e) => {
+                    JobResult::Error(format!("Failed to read file {}: {}", path.display(), e))
                 }
-            }
-            FileOperationType::Write(data) => {
-                match tokio::fs::write(&path, data).await {
-                    Ok(()) => JobResult::Success(serde_json::json!({
-                        "operation": "write",
-                        "path": path.to_string_lossy()
-                    })),
-                    Err(e) => JobResult::Error(format!("Failed to write file {}: {}", path.display(), e)),
+            },
+            FileOperationType::Write(data) => match tokio::fs::write(&path, data).await {
+                Ok(()) => JobResult::Success(serde_json::json!({
+                    "operation": "write",
+                    "path": path.to_string_lossy()
+                })),
+                Err(e) => {
+                    JobResult::Error(format!("Failed to write file {}: {}", path.display(), e))
                 }
-            }
-            FileOperationType::Delete => {
-                match tokio::fs::remove_file(&path).await {
-                    Ok(()) => JobResult::Success(serde_json::json!({
-                        "operation": "delete",
-                        "path": path.to_string_lossy()
-                    })),
-                    Err(e) => JobResult::Error(format!("Failed to delete file {}: {}", path.display(), e)),
+            },
+            FileOperationType::Delete => match tokio::fs::remove_file(&path).await {
+                Ok(()) => JobResult::Success(serde_json::json!({
+                    "operation": "delete",
+                    "path": path.to_string_lossy()
+                })),
+                Err(e) => {
+                    JobResult::Error(format!("Failed to delete file {}: {}", path.display(), e))
                 }
-            }
-            FileOperationType::Copy(dest) => {
-                match tokio::fs::copy(&path, &dest).await {
-                    Ok(bytes) => JobResult::Success(serde_json::json!({
-                        "operation": "copy",
-                        "from": path.to_string_lossy(),
-                        "to": dest.to_string_lossy(),
-                        "bytes": bytes
-                    })),
-                    Err(e) => JobResult::Error(format!("Failed to copy {} to {}: {}", path.display(), dest.display(), e)),
-                }
-            }
+            },
+            FileOperationType::Copy(dest) => match tokio::fs::copy(&path, &dest).await {
+                Ok(bytes) => JobResult::Success(serde_json::json!({
+                    "operation": "copy",
+                    "from": path.to_string_lossy(),
+                    "to": dest.to_string_lossy(),
+                    "bytes": bytes
+                })),
+                Err(e) => JobResult::Error(format!(
+                    "Failed to copy {} to {}: {}",
+                    path.display(),
+                    dest.display(),
+                    e
+                )),
+            },
         }
     }
 
@@ -918,7 +973,10 @@ impl JobQueue {
     }
 
     /// Subscribe to progress updates for a job
-    pub async fn subscribe_progress(&self, job_id: &JobId) -> Option<tokio::sync::broadcast::Receiver<ProgressUpdate>> {
+    pub async fn subscribe_progress(
+        &self,
+        job_id: &JobId,
+    ) -> Option<tokio::sync::broadcast::Receiver<ProgressUpdate>> {
         let operation_id = format!("job_{}", job_id.0);
         let reporter = self.progress_reporter.read().await;
         reporter.subscribe(&operation_id)
@@ -989,7 +1047,11 @@ impl ProgressReporter {
     }
 
     /// Create a progress tracker for an operation
-    pub fn create_tracker(&mut self, operation_id: &str, total_steps: usize) -> &mut ProgressTracker {
+    pub fn create_tracker(
+        &mut self,
+        operation_id: &str,
+        total_steps: usize,
+    ) -> &mut ProgressTracker {
         let tracker = ProgressTracker {
             operation_id: operation_id.to_string(),
             total_steps,
@@ -1010,7 +1072,12 @@ impl ProgressReporter {
     }
 
     /// Create a nested progress tracker
-    pub fn create_nested_tracker(&mut self, parent_id: &str, operation_id: &str, total_steps: usize) -> Option<&mut ProgressTracker> {
+    pub fn create_nested_tracker(
+        &mut self,
+        parent_id: &str,
+        operation_id: &str,
+        total_steps: usize,
+    ) -> Option<&mut ProgressTracker> {
         if let Some(parent_tracker) = self.trackers.get_mut(parent_id) {
             let tracker = ProgressTracker {
                 operation_id: operation_id.to_string(),
@@ -1034,7 +1101,12 @@ impl ProgressReporter {
     }
 
     /// Update progress for an operation
-    pub fn update_progress(&mut self, operation_id: &str, step: usize, message: &str) -> Result<(), String> {
+    pub fn update_progress(
+        &mut self,
+        operation_id: &str,
+        step: usize,
+        message: &str,
+    ) -> Result<(), String> {
         if let Some(tracker) = self.trackers.get_mut(operation_id) {
             tracker.current_step = step.min(tracker.total_steps);
             tracker.status = ProgressStatus::Running;
@@ -1112,9 +1184,11 @@ impl ProgressReporter {
     }
 
     /// Subscribe to progress updates for an operation
-    pub fn subscribe(&self, operation_id: &str) -> Option<tokio::sync::broadcast::Receiver<ProgressUpdate>> {
-        self.channels.get(operation_id)
-            .map(|tx| tx.subscribe())
+    pub fn subscribe(
+        &self,
+        operation_id: &str,
+    ) -> Option<tokio::sync::broadcast::Receiver<ProgressUpdate>> {
+        self.channels.get(operation_id).map(|tx| tx.subscribe())
     }
 
     /// Get progress tracker for an operation
@@ -1124,14 +1198,24 @@ impl ProgressReporter {
 
     /// Get all active trackers
     pub fn active_trackers(&self) -> Vec<&ProgressTracker> {
-        self.trackers.values().filter(|t| t.status == ProgressStatus::Running).collect()
+        self.trackers
+            .values()
+            .filter(|t| t.status == ProgressStatus::Running)
+            .collect()
     }
 
     /// Clean up completed trackers
     pub fn cleanup_completed(&mut self) {
-        let completed: Vec<String> = self.trackers.iter()
+        let completed: Vec<String> = self
+            .trackers
+            .iter()
             .filter(|(_, tracker)| {
-                matches!(tracker.status, ProgressStatus::Completed | ProgressStatus::Failed(_) | ProgressStatus::Cancelled)
+                matches!(
+                    tracker.status,
+                    ProgressStatus::Completed
+                        | ProgressStatus::Failed(_)
+                        | ProgressStatus::Cancelled
+                )
             })
             .map(|(id, _)| id.clone())
             .collect();
@@ -1146,10 +1230,14 @@ impl ProgressReporter {
     pub fn stats(&self) -> ProgressStats {
         let total_trackers = self.trackers.len();
         let active_trackers = self.active_trackers().len();
-        let completed_trackers = self.trackers.values()
+        let completed_trackers = self
+            .trackers
+            .values()
             .filter(|t| matches!(t.status, ProgressStatus::Completed))
             .count();
-        let failed_trackers = self.trackers.values()
+        let failed_trackers = self
+            .trackers
+            .values()
             .filter(|t| matches!(t.status, ProgressStatus::Failed(_)))
             .count();
 
@@ -1293,7 +1381,10 @@ impl PerformanceProfiler {
             name: name.to_string(),
             start_time: profiler_guard.session_start.elapsed(),
             duration: std::time::Duration::from_nanos(0),
-            parent_index: profiler_guard.active_spans.last().map(|_| profiler_guard.spans.len().saturating_sub(1)),
+            parent_index: profiler_guard
+                .active_spans
+                .last()
+                .map(|_| profiler_guard.spans.len().saturating_sub(1)),
             thread_id: get_current_thread_id(),
             metadata: std::collections::HashMap::new(),
         };
@@ -1317,7 +1408,7 @@ impl PerformanceProfiler {
             // Add metadata about duration
             completed_span.metadata.insert(
                 "duration_ms".to_string(),
-                format!("{:.3}", completed_span.duration.as_millis())
+                format!("{:.3}", completed_span.duration.as_millis()),
             );
 
             self.spans.push(completed_span);
@@ -1362,9 +1453,7 @@ impl PerformanceProfiler {
         let active_spans = self.active_spans.len();
         let session_duration = self.session_start.elapsed();
 
-        let total_duration: std::time::Duration = self.spans.iter()
-            .map(|s| s.duration)
-            .sum();
+        let total_duration: std::time::Duration = self.spans.iter().map(|s| s.duration).sum();
 
         let avg_span_duration = if total_spans > 0 {
             total_duration / total_spans as u32
@@ -1393,14 +1482,22 @@ impl PerformanceProfiler {
     pub fn validate_memory_safety(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // Check that active spans don't exceed reasonable limits
         if self.active_spans.len() > self.max_spans {
-            return Err(format!("Active spans ({}) exceed maximum allowed ({})",
-                             self.active_spans.len(), self.max_spans).into());
+            return Err(format!(
+                "Active spans ({}) exceed maximum allowed ({})",
+                self.active_spans.len(),
+                self.max_spans
+            )
+            .into());
         }
 
         // Check that total spans don't exceed reasonable limits
         if self.spans.len() > self.max_spans * 2 {
-            return Err(format!("Total spans ({}) significantly exceed maximum allowed ({})",
-                             self.spans.len(), self.max_spans).into());
+            return Err(format!(
+                "Total spans ({}) significantly exceed maximum allowed ({})",
+                self.spans.len(),
+                self.max_spans
+            )
+            .into());
         }
 
         // Validate span data integrity
@@ -1491,10 +1588,13 @@ impl CpuMonitor {
             return None;
         }
 
-        let avg_user = recent_samples.iter().map(|s| s.user_percent).sum::<f64>() / recent_samples.len() as f64;
-        let avg_system = recent_samples.iter().map(|s| s.system_percent).sum::<f64>() / recent_samples.len() as f64;
+        let avg_user = recent_samples.iter().map(|s| s.user_percent).sum::<f64>()
+            / recent_samples.len() as f64;
+        let avg_system = recent_samples.iter().map(|s| s.system_percent).sum::<f64>()
+            / recent_samples.len() as f64;
         let avg_total = avg_user + avg_system;
-        let avg_threads = recent_samples.iter().map(|s| s.thread_count).sum::<usize>() / recent_samples.len();
+        let avg_threads =
+            recent_samples.iter().map(|s| s.thread_count).sum::<usize>() / recent_samples.len();
 
         Some(CpuStats {
             user_percent: avg_user,
@@ -1707,7 +1807,7 @@ impl Default for HistoryLimits {
             max_messages: 10000,
             max_sessions: 100,
             max_undo_steps: 100,
-            max_cache_size: 100 * 1024 * 1024, // 100MB
+            max_cache_size: 100 * 1024 * 1024,   // 100MB
             max_memory_usage: 500 * 1024 * 1024, // 500MB
         }
     }
@@ -1765,5 +1865,3 @@ impl ThemeSwitchPerformance {
         self.last_switch_time_ms < 100 && self.average_switch_time_ms < 100
     }
 }
-
-

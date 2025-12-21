@@ -43,49 +43,46 @@
 //! - **SecurityValidator**: Rule validation logic, JSON field access
 //! - **ComplianceManager**: Check aggregation, summary calculations
 
+use chrono::{DateTime, Utc};
 use proptest::prelude::*;
 use ricecoder_industry::compliance::*;
 use serde_json::{json, Value as JsonValue};
 use std::collections::HashMap;
-use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 /// Generate arbitrary audit entries for testing
 fn audit_entry_strategy() -> impl Strategy<Value = AuditEntry> {
     (
-        "[a-zA-Z0-9_-]{1,50}", // actor
-        "[a-zA-Z0-9_-]{1,50}", // action
+        "[a-zA-Z0-9_-]{1,50}",    // actor
+        "[a-zA-Z0-9_-]{1,50}",    // action
         "[a-zA-Z0-9_./-]{1,100}", // resource
         prop_oneof![
             Just(AuditResult::Success),
             "[a-zA-Z0-9\\s]{1,100}".prop_map(AuditResult::Failure),
             "[a-zA-Z0-9\\s]{1,100}".prop_map(AuditResult::Denied),
         ],
-        hashmap_strategy(), // context
-        "[0-9.]{7,15}", // source (IP-like)
+        hashmap_strategy(),                      // context
+        "[0-9.]{7,15}",                          // source (IP-like)
         prop::option::of("[a-zA-Z0-9_-]{1,50}"), // session_id
-    ).prop_map(|(actor, action, resource, result, context, source, session_id)| {
-        AuditEntry {
-            id: Uuid::new_v4(),
-            timestamp: Utc::now(),
-            actor,
-            action,
-            resource,
-            result,
-            context,
-            source,
-            session_id,
-        }
-    })
+    )
+        .prop_map(
+            |(actor, action, resource, result, context, source, session_id)| AuditEntry {
+                id: Uuid::new_v4(),
+                timestamp: Utc::now(),
+                actor,
+                action,
+                resource,
+                result,
+                context,
+                source,
+                session_id,
+            },
+        )
 }
 
 /// Generate arbitrary hashmaps for context data
 fn hashmap_strategy() -> impl Strategy<Value = HashMap<String, JsonValue>> {
-    prop::collection::hash_map(
-        "[a-zA-Z_][a-zA-Z0-9_]{0,20}",
-        json_value_strategy(),
-        0..10
-    )
+    prop::collection::hash_map("[a-zA-Z_][a-zA-Z0-9_]{0,20}", json_value_strategy(), 0..10)
 }
 
 /// Generate arbitrary JSON values
@@ -96,36 +93,39 @@ fn json_value_strategy() -> impl Strategy<Value = JsonValue> {
         any::<bool>().prop_map(JsonValue::Bool),
     ];
     leaf.prop_recursive(
-        3, // max depth
+        3,  // max depth
         20, // max size
-        2, // items per collection
-        |inner| prop_oneof![
-            prop::collection::vec(inner.clone(), 0..5).prop_map(JsonValue::Array),
-            prop::collection::hash_map("[a-zA-Z_][a-zA-Z0-9_]{0,10}", inner, 0..5)
-                .prop_map(JsonValue::Object),
-        ]
+        2,  // items per collection
+        |inner| {
+            prop_oneof![
+                prop::collection::vec(inner.clone(), 0..5).prop_map(JsonValue::Array),
+                prop::collection::hash_map("[a-zA-Z_][a-zA-Z0-9_]{0,10}", inner, 0..5)
+                    .prop_map(JsonValue::Object),
+            ]
+        },
     )
 }
 
 /// Generate arbitrary security rules
 fn security_rule_strategy() -> impl Strategy<Value = SecurityRule> {
     (
-        "[a-zA-Z0-9_-]{1,30}", // id
-        "[a-zA-Z0-9\\s]{1,50}", // name
+        "[a-zA-Z0-9_-]{1,30}",   // id
+        "[a-zA-Z0-9\\s]{1,50}",  // name
         "[a-zA-Z0-9\\s]{1,100}", // description
         security_severity_strategy(),
         security_condition_strategy(),
         security_actions_strategy(),
-    ).prop_map(|(id, name, description, severity, condition, actions)| {
-        SecurityRule {
-            id,
-            name,
-            description,
-            severity,
-            condition,
-            actions,
-        }
-    })
+    )
+        .prop_map(
+            |(id, name, description, severity, condition, actions)| SecurityRule {
+                id,
+                name,
+                description,
+                severity,
+                condition,
+                actions,
+            },
+        )
 }
 
 /// Generate security severity levels
@@ -142,19 +142,25 @@ fn security_severity_strategy() -> impl Strategy<Value = SecuritySeverity> {
 fn security_condition_strategy() -> impl Strategy<Value = SecurityCondition> {
     prop_oneof![
         "[a-zA-Z_][a-zA-Z0-9_.]{0,50}".prop_map(|field| SecurityCondition::RequiredField { field }),
-        ("[a-zA-Z_][a-zA-Z0-9_.]{0,30}", "[a-zA-Z0-9.*+?^$(){}\\[\\]\\\\|]{1,50}").prop_map(|(field, pattern)| {
-            SecurityCondition::PatternMatch { field, pattern }
-        }),
-        ("[a-zA-Z_][a-zA-Z0-9_.]{0,30}", any::<f64>(), any::<f64>()).prop_map(|(field, min, max)| {
-            SecurityCondition::RangeCheck {
-                field,
-                min: if min.is_finite() { Some(min) } else { None },
-                max: if max.is_finite() { Some(max) } else { None },
+        (
+            "[a-zA-Z_][a-zA-Z0-9_.]{0,30}",
+            "[a-zA-Z0-9.*+?^$(){}\\[\\]\\\\|]{1,50}"
+        )
+            .prop_map(|(field, pattern)| { SecurityCondition::PatternMatch { field, pattern } }),
+        ("[a-zA-Z_][a-zA-Z0-9_.]{0,30}", any::<f64>(), any::<f64>()).prop_map(
+            |(field, min, max)| {
+                SecurityCondition::RangeCheck {
+                    field,
+                    min: if min.is_finite() { Some(min) } else { None },
+                    max: if max.is_finite() { Some(max) } else { None },
+                }
             }
-        }),
-        ("[a-zA-Z_][a-zA-Z0-9_.]{0,30}", prop::collection::vec("[a-zA-Z0-9_-]{1,20}", 1..10)).prop_map(|(field, values)| {
-            SecurityCondition::AllowedValues { field, values }
-        }),
+        ),
+        (
+            "[a-zA-Z_][a-zA-Z0-9_.]{0,30}",
+            prop::collection::vec("[a-zA-Z0-9_-]{1,20}", 1..10)
+        )
+            .prop_map(|(field, values)| { SecurityCondition::AllowedValues { field, values } }),
     ]
 }
 
@@ -167,26 +173,25 @@ fn security_actions_strategy() -> impl Strategy<Value = Vec<SecurityAction>> {
             Just(SecurityAction::Alert),
             Just(SecurityAction::RequireAuth),
         ],
-        1..4
+        1..4,
     )
 }
 
 /// Generate compliance checks
 fn compliance_check_strategy() -> impl Strategy<Value = ComplianceCheck> {
     (
-        "[a-zA-Z0-9_-]{1,30}", // id
+        "[a-zA-Z0-9_-]{1,30}",  // id
         "[a-zA-Z0-9\\s]{1,50}", // name
         compliance_result_strategy(),
         "[a-zA-Z0-9\\s]{1,100}", // details
-    ).prop_map(|(id, name, result, details)| {
-        ComplianceCheck {
+    )
+        .prop_map(|(id, name, result, details)| ComplianceCheck {
             id,
             name,
             result,
             details,
             timestamp: Utc::now(),
-        }
-    })
+        })
 }
 
 /// Generate compliance results

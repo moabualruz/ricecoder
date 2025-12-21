@@ -52,7 +52,10 @@ impl IdeProvider for FailingMockProvider {
         }
     }
 
-    async fn get_definition(&self, _params: &DefinitionParams) -> Result<Option<Location>, IdeError> {
+    async fn get_definition(
+        &self,
+        _params: &DefinitionParams,
+    ) -> Result<Option<Location>, IdeError> {
         if self.should_fail {
             Err(IdeError::lsp_error(format!("{} failed", self.name)))
         } else {

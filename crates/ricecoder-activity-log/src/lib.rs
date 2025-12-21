@@ -54,9 +54,9 @@ pub mod storage;
 // Re-export commonly used types
 pub use audit::{AuditLogger, AuditTrail, ComplianceEvent};
 pub use error::{ActivityLogError, ActivityLogResult};
-pub use events::{ActivityEvent, LogLevel, EventCategory};
-pub use logger::{ActivityLogger, LoggerConfig};
-pub use monitoring::{PerformanceMonitor, MetricsCollector};
-pub use session_tracking::{SessionTracker, SessionActivity};
+pub use events::{ActivityEvent, EventCategory, LogLevel};
 pub use logger::LogStorage;
+pub use logger::{ActivityLogger, LoggerConfig};
+pub use monitoring::{MetricsCollector, PerformanceMonitor};
+pub use session_tracking::{SessionActivity, SessionTracker};
 pub use storage::RetentionPolicy;

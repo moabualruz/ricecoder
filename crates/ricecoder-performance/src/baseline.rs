@@ -1,10 +1,10 @@
 //! Performance baseline management and storage
 
+use crate::monitor::PerformanceMetrics;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
-use chrono::{DateTime, Utc};
-use crate::monitor::PerformanceMetrics;
 
 /// Performance baseline data for a specific test
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -87,18 +87,22 @@ impl PerformanceBaseline {
     /// Get target threshold for a test name
     fn get_target_threshold(&self, test_name: &str) -> Option<u64> {
         match test_name {
-            "cli_startup" => Some(3_000_000_000), // 3 seconds
-            "response_time" => Some(500_000_000),  // 500ms
-            "config_loading" => Some(500_000_000), // 500ms
-            "provider_init" => Some(1_000_000_000), // 1 second
-            "spec_parsing" => Some(1_000_000_000), // 1 second
+            "cli_startup" => Some(3_000_000_000),     // 3 seconds
+            "response_time" => Some(500_000_000),     // 500ms
+            "config_loading" => Some(500_000_000),    // 500ms
+            "provider_init" => Some(1_000_000_000),   // 1 second
+            "spec_parsing" => Some(1_000_000_000),    // 1 second
             "file_operations" => Some(5_000_000_000), // 5 seconds
             _ => None,
         }
     }
 
     /// Check if current metrics exceed baseline thresholds
-    pub fn check_thresholds(&self, test_name: &str, current_metrics: &PerformanceMetrics) -> Vec<String> {
+    pub fn check_thresholds(
+        &self,
+        test_name: &str,
+        current_metrics: &PerformanceMetrics,
+    ) -> Vec<String> {
         let mut violations = Vec::new();
 
         if let Some(baseline) = self.get_baseline(test_name) {

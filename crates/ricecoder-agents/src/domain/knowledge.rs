@@ -1,7 +1,7 @@
 //! Knowledge base for domain-specific expertise
 
 use crate::domain::error::{DomainError, DomainResult};
-use crate::domain::models::{BestPractice, Pattern, TechRecommendation, AntiPattern};
+use crate::domain::models::{AntiPattern, BestPractice, Pattern, TechRecommendation};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
@@ -44,9 +44,10 @@ impl KnowledgeBase {
     /// * `domain` - Domain identifier
     /// * `practice` - Best practice to add
     pub fn add_best_practice(&self, domain: &str, practice: BestPractice) -> DomainResult<()> {
-        let mut practices = self.best_practices.write().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire write lock: {}", e))
-        })?;
+        let mut practices = self
+            .best_practices
+            .write()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire write lock: {}", e)))?;
 
         practices
             .entry(domain.to_string())
@@ -66,14 +67,12 @@ impl KnowledgeBase {
     ///
     /// Returns a vector of best practices for the domain
     pub fn get_best_practices(&self, domain: &str) -> DomainResult<Vec<BestPractice>> {
-        let practices = self.best_practices.read().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire read lock: {}", e))
-        })?;
+        let practices = self
+            .best_practices
+            .read()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire read lock: {}", e)))?;
 
-        Ok(practices
-            .get(domain)
-            .cloned()
-            .unwrap_or_default())
+        Ok(practices.get(domain).cloned().unwrap_or_default())
     }
 
     /// Add a technology recommendation
@@ -87,9 +86,10 @@ impl KnowledgeBase {
         domain: &str,
         recommendation: TechRecommendation,
     ) -> DomainResult<()> {
-        let mut recommendations = self.tech_recommendations.write().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire write lock: {}", e))
-        })?;
+        let mut recommendations = self
+            .tech_recommendations
+            .write()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire write lock: {}", e)))?;
 
         recommendations
             .entry(domain.to_string())
@@ -109,14 +109,12 @@ impl KnowledgeBase {
     ///
     /// Returns a vector of technology recommendations for the domain
     pub fn get_tech_recommendations(&self, domain: &str) -> DomainResult<Vec<TechRecommendation>> {
-        let recommendations = self.tech_recommendations.read().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire read lock: {}", e))
-        })?;
+        let recommendations = self
+            .tech_recommendations
+            .read()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire read lock: {}", e)))?;
 
-        Ok(recommendations
-            .get(domain)
-            .cloned()
-            .unwrap_or_default())
+        Ok(recommendations.get(domain).cloned().unwrap_or_default())
     }
 
     /// Get technology recommendation by technology name
@@ -149,9 +147,10 @@ impl KnowledgeBase {
     /// * `domain` - Domain identifier
     /// * `pattern` - Pattern to add
     pub fn add_pattern(&self, domain: &str, pattern: Pattern) -> DomainResult<()> {
-        let mut patterns = self.patterns.write().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire write lock: {}", e))
-        })?;
+        let mut patterns = self
+            .patterns
+            .write()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire write lock: {}", e)))?;
 
         patterns
             .entry(domain.to_string())
@@ -171,14 +170,12 @@ impl KnowledgeBase {
     ///
     /// Returns a vector of patterns for the domain
     pub fn get_patterns(&self, domain: &str) -> DomainResult<Vec<Pattern>> {
-        let patterns = self.patterns.read().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire read lock: {}", e))
-        })?;
+        let patterns = self
+            .patterns
+            .read()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire read lock: {}", e)))?;
 
-        Ok(patterns
-            .get(domain)
-            .cloned()
-            .unwrap_or_default())
+        Ok(patterns.get(domain).cloned().unwrap_or_default())
     }
 
     /// Add an anti-pattern
@@ -188,9 +185,10 @@ impl KnowledgeBase {
     /// * `domain` - Domain identifier
     /// * `anti_pattern` - Anti-pattern to add
     pub fn add_anti_pattern(&self, domain: &str, anti_pattern: AntiPattern) -> DomainResult<()> {
-        let mut anti_patterns = self.anti_patterns.write().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire write lock: {}", e))
-        })?;
+        let mut anti_patterns = self
+            .anti_patterns
+            .write()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire write lock: {}", e)))?;
 
         anti_patterns
             .entry(domain.to_string())
@@ -210,14 +208,12 @@ impl KnowledgeBase {
     ///
     /// Returns a vector of anti-patterns for the domain
     pub fn get_anti_patterns(&self, domain: &str) -> DomainResult<Vec<AntiPattern>> {
-        let anti_patterns = self.anti_patterns.read().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire read lock: {}", e))
-        })?;
+        let anti_patterns = self
+            .anti_patterns
+            .read()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire read lock: {}", e)))?;
 
-        Ok(anti_patterns
-            .get(domain)
-            .cloned()
-            .unwrap_or_default())
+        Ok(anti_patterns.get(domain).cloned().unwrap_or_default())
     }
 
     /// Clear all knowledge for a domain
@@ -226,24 +222,28 @@ impl KnowledgeBase {
     ///
     /// * `domain` - Domain identifier
     pub fn clear_domain(&self, domain: &str) -> DomainResult<()> {
-        let mut practices = self.best_practices.write().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire write lock: {}", e))
-        })?;
+        let mut practices = self
+            .best_practices
+            .write()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire write lock: {}", e)))?;
         practices.remove(domain);
 
-        let mut recommendations = self.tech_recommendations.write().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire write lock: {}", e))
-        })?;
+        let mut recommendations = self
+            .tech_recommendations
+            .write()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire write lock: {}", e)))?;
         recommendations.remove(domain);
 
-        let mut patterns = self.patterns.write().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire write lock: {}", e))
-        })?;
+        let mut patterns = self
+            .patterns
+            .write()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire write lock: {}", e)))?;
         patterns.remove(domain);
 
-        let mut anti_patterns = self.anti_patterns.write().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire write lock: {}", e))
-        })?;
+        let mut anti_patterns = self
+            .anti_patterns
+            .write()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire write lock: {}", e)))?;
         anti_patterns.remove(domain);
 
         Ok(())
@@ -251,24 +251,28 @@ impl KnowledgeBase {
 
     /// Clear all knowledge
     pub fn clear_all(&self) -> DomainResult<()> {
-        let mut practices = self.best_practices.write().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire write lock: {}", e))
-        })?;
+        let mut practices = self
+            .best_practices
+            .write()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire write lock: {}", e)))?;
         practices.clear();
 
-        let mut recommendations = self.tech_recommendations.write().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire write lock: {}", e))
-        })?;
+        let mut recommendations = self
+            .tech_recommendations
+            .write()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire write lock: {}", e)))?;
         recommendations.clear();
 
-        let mut patterns = self.patterns.write().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire write lock: {}", e))
-        })?;
+        let mut patterns = self
+            .patterns
+            .write()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire write lock: {}", e)))?;
         patterns.clear();
 
-        let mut anti_patterns = self.anti_patterns.write().map_err(|e| {
-            DomainError::internal(format!("Failed to acquire write lock: {}", e))
-        })?;
+        let mut anti_patterns = self
+            .anti_patterns
+            .write()
+            .map_err(|e| DomainError::internal(format!("Failed to acquire write lock: {}", e)))?;
         anti_patterns.clear();
 
         Ok(())
@@ -403,8 +407,10 @@ mod tests {
     fn test_clear_domain() {
         let kb = KnowledgeBase::new();
 
-        kb.add_best_practice("web", create_test_practice("web")).unwrap();
-        kb.add_tech_recommendation("web", create_test_recommendation("web")).unwrap();
+        kb.add_best_practice("web", create_test_practice("web"))
+            .unwrap();
+        kb.add_tech_recommendation("web", create_test_recommendation("web"))
+            .unwrap();
 
         kb.clear_domain("web").unwrap();
 
@@ -416,8 +422,10 @@ mod tests {
     fn test_clear_all() {
         let kb = KnowledgeBase::new();
 
-        kb.add_best_practice("web", create_test_practice("web")).unwrap();
-        kb.add_best_practice("backend", create_test_practice("backend")).unwrap();
+        kb.add_best_practice("web", create_test_practice("web"))
+            .unwrap();
+        kb.add_best_practice("backend", create_test_practice("backend"))
+            .unwrap();
 
         kb.clear_all().unwrap();
 
@@ -429,8 +437,10 @@ mod tests {
     fn test_multiple_domains() {
         let kb = KnowledgeBase::new();
 
-        kb.add_best_practice("web", create_test_practice("web")).unwrap();
-        kb.add_best_practice("backend", create_test_practice("backend")).unwrap();
+        kb.add_best_practice("web", create_test_practice("web"))
+            .unwrap();
+        kb.add_best_practice("backend", create_test_practice("backend"))
+            .unwrap();
 
         let web_practices = kb.get_best_practices("web").unwrap();
         let backend_practices = kb.get_best_practices("backend").unwrap();
@@ -449,7 +459,8 @@ mod tests {
     fn test_multiple_practices_per_domain() {
         let kb = KnowledgeBase::new();
 
-        kb.add_best_practice("web", create_test_practice("web")).unwrap();
+        kb.add_best_practice("web", create_test_practice("web"))
+            .unwrap();
         let mut practice2 = create_test_practice("web");
         practice2.title = "Practice 2".to_string();
         kb.add_best_practice("web", practice2).unwrap();
@@ -462,7 +473,8 @@ mod tests {
     fn test_multiple_recommendations_per_domain() {
         let kb = KnowledgeBase::new();
 
-        kb.add_tech_recommendation("web", create_test_recommendation("web")).unwrap();
+        kb.add_tech_recommendation("web", create_test_recommendation("web"))
+            .unwrap();
         let mut rec2 = create_test_recommendation("web");
         rec2.technology = "Vue".to_string();
         kb.add_tech_recommendation("web", rec2).unwrap();

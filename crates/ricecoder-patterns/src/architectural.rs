@@ -54,9 +54,18 @@ impl ArchitecturalPatternDetector {
     }
 
     /// Detect layered architecture pattern
-    async fn detect_layered_architecture(&self, root: &Path) -> PatternResult<Option<DetectedPattern>> {
+    async fn detect_layered_architecture(
+        &self,
+        root: &Path,
+    ) -> PatternResult<Option<DetectedPattern>> {
         // Look for common layered architecture directory structure
-        let layer_dirs = ["presentation", "application", "domain", "infrastructure", "interfaces"];
+        let layer_dirs = [
+            "presentation",
+            "application",
+            "domain",
+            "infrastructure",
+            "interfaces",
+        ];
 
         let mut found_layers = Vec::new();
         for layer in &layer_dirs {
@@ -80,7 +89,10 @@ impl ArchitecturalPatternDetector {
                     snippet: format!("Found layers: {:?}", found_layers),
                 }],
                 metadata: HashMap::from([
-                    ("pattern_type".to_string(), serde_json::json!("architectural")),
+                    (
+                        "pattern_type".to_string(),
+                        serde_json::json!("architectural"),
+                    ),
                     ("layers".to_string(), serde_json::json!(found_layers)),
                 ]),
             }))
@@ -90,7 +102,10 @@ impl ArchitecturalPatternDetector {
     }
 
     /// Detect microservices architecture pattern
-    async fn detect_microservices_pattern(&self, root: &Path) -> PatternResult<Option<DetectedPattern>> {
+    async fn detect_microservices_pattern(
+        &self,
+        root: &Path,
+    ) -> PatternResult<Option<DetectedPattern>> {
         // Look for services directory or multiple Cargo.toml files
         let services_dir = root.join("services");
         let has_services_dir = services_dir.exists() && services_dir.is_dir();
@@ -119,7 +134,10 @@ impl ArchitecturalPatternDetector {
                     snippet: format!("Found {} service components", cargo_count),
                 }],
                 metadata: HashMap::from([
-                    ("pattern_type".to_string(), serde_json::json!("architectural")),
+                    (
+                        "pattern_type".to_string(),
+                        serde_json::json!("architectural"),
+                    ),
                     ("service_count".to_string(), serde_json::json!(cargo_count)),
                 ]),
             }))
@@ -129,7 +147,10 @@ impl ArchitecturalPatternDetector {
     }
 
     /// Detect event-driven architecture pattern
-    async fn detect_event_driven_pattern(&self, root: &Path) -> PatternResult<Option<DetectedPattern>> {
+    async fn detect_event_driven_pattern(
+        &self,
+        root: &Path,
+    ) -> PatternResult<Option<DetectedPattern>> {
         // Look for event-related patterns
         let event_indicators = ["events", "handlers", "listeners", "pubsub", "message"];
 
@@ -154,8 +175,14 @@ impl ArchitecturalPatternDetector {
                     snippet: format!("Found event indicators: {:?}", found_indicators),
                 }],
                 metadata: HashMap::from([
-                    ("pattern_type".to_string(), serde_json::json!("architectural")),
-                    ("indicators".to_string(), serde_json::json!(found_indicators)),
+                    (
+                        "pattern_type".to_string(),
+                        serde_json::json!("architectural"),
+                    ),
+                    (
+                        "indicators".to_string(),
+                        serde_json::json!(found_indicators),
+                    ),
                 ]),
             }))
         } else {
@@ -164,18 +191,21 @@ impl ArchitecturalPatternDetector {
     }
 
     /// Detect monolithic architecture pattern
-    async fn detect_monolithic_pattern(&self, root: &Path) -> PatternResult<Option<DetectedPattern>> {
+    async fn detect_monolithic_pattern(
+        &self,
+        root: &Path,
+    ) -> PatternResult<Option<DetectedPattern>> {
         // Monolithic is the default if no other patterns are detected
         // Look for single main application structure
-        let has_single_src = root.join("src").join("main.rs").exists() ||
-                           root.join("src").join("lib.rs").exists();
+        let has_single_src =
+            root.join("src").join("main.rs").exists() || root.join("src").join("lib.rs").exists();
         let has_single_cargo = root.join("Cargo.toml").exists();
 
         if has_single_src && has_single_cargo {
             // Check if it's not microservices or layered
             let services_dir = root.join("services");
-            let has_layers = root.join("src").join("domain").exists() &&
-                           root.join("src").join("application").exists();
+            let has_layers = root.join("src").join("domain").exists()
+                && root.join("src").join("application").exists();
 
             if !services_dir.exists() && !has_layers {
                 Ok(Some(DetectedPattern {
@@ -188,9 +218,10 @@ impl ArchitecturalPatternDetector {
                         column: 1,
                         snippet: "Single application structure detected".to_string(),
                     }],
-                    metadata: HashMap::from([
-                        ("pattern_type".to_string(), serde_json::json!("architectural")),
-                    ]),
+                    metadata: HashMap::from([(
+                        "pattern_type".to_string(),
+                        serde_json::json!("architectural"),
+                    )]),
                 }))
             } else {
                 Ok(None)

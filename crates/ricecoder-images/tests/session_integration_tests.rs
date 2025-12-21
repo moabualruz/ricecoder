@@ -8,8 +8,7 @@
 //! **Requirements: 1.4, 2.1**
 
 use ricecoder_images::{
-    SessionImageManager, MessageImages, MessageImageMetadata,
-    ImageMetadata, ImageFormat,
+    ImageFormat, ImageMetadata, MessageImageMetadata, MessageImages, SessionImageManager,
 };
 use std::path::PathBuf;
 
@@ -193,12 +192,7 @@ fn test_session_images_different_sizes() {
 fn test_session_images_different_dimensions() {
     let mut manager = SessionImageManager::new("session_1".to_string());
 
-    let dimensions = vec![
-        (640, 480),
-        (800, 600),
-        (1024, 768),
-        (1920, 1080),
-    ];
+    let dimensions = vec![(640, 480), (800, 600), (1024, 768), (1920, 1080)];
 
     for (i, (width, height)) in dimensions.iter().enumerate() {
         let metadata = ImageMetadata::new(
@@ -227,12 +221,7 @@ fn test_message_image_metadata_creation() {
         "hash".to_string(),
     );
 
-    let image_meta = MessageImageMetadata::new(
-        "hash".to_string(),
-        metadata,
-        None,
-        false,
-    );
+    let image_meta = MessageImageMetadata::new("hash".to_string(), metadata, None, false);
 
     assert_eq!(image_meta.hash, "hash");
     assert!(!image_meta.was_cached);

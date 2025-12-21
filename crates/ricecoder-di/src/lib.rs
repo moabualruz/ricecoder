@@ -42,7 +42,10 @@ pub enum DIError {
     DependencyResolutionFailed { message: String },
 
     #[error("Service health check failed: {service_type} - {reason}")]
-    HealthCheckFailed { service_type: String, reason: String },
+    HealthCheckFailed {
+        service_type: String,
+        reason: String,
+    },
 
     #[error("Circular dependency detected: {service_chain}")]
     CircularDependency { service_chain: String },
@@ -66,7 +69,8 @@ struct ServiceDescriptor {
     factory: Box<dyn Fn(&DIContainer) -> DIResult<Arc<dyn Any + Send + Sync>> + Send + Sync>,
     lifetime: ServiceLifetime,
     instance: Option<Arc<dyn Any + Send + Sync>>,
-    health_check: Option<Box<dyn Fn(&Arc<dyn Any + Send + Sync>) -> DIResult<HealthStatus> + Send + Sync>>,
+    health_check:
+        Option<Box<dyn Fn(&Arc<dyn Any + Send + Sync>) -> DIResult<HealthStatus> + Send + Sync>>,
 }
 
 /// Service scope for managing scoped service instances
@@ -90,7 +94,8 @@ impl ServiceScope {
     {
         let type_id = TypeId::of::<T>();
         let instances = self.scoped_instances.read().unwrap();
-        instances.get(&type_id)
+        instances
+            .get(&type_id)
             .and_then(|instance| instance.clone().downcast::<T>().ok())
     }
 
@@ -172,10 +177,12 @@ impl DIContainer {
             });
         }
 
-        let wrapped_factory = Box::new(move |container: &DIContainer| -> DIResult<Arc<dyn Any + Send + Sync>> {
-            let result = factory(container)?;
-            Ok(result as Arc<dyn Any + Send + Sync>)
-        });
+        let wrapped_factory = Box::new(
+            move |container: &DIContainer| -> DIResult<Arc<dyn Any + Send + Sync>> {
+                let result = factory(container)?;
+                Ok(result as Arc<dyn Any + Send + Sync>)
+            },
+        );
 
         let descriptor = ServiceDescriptor {
             factory: wrapped_factory,
@@ -205,10 +212,12 @@ impl DIContainer {
             });
         }
 
-        let wrapped_factory = Box::new(move |container: &DIContainer| -> DIResult<Arc<dyn Any + Send + Sync>> {
-            let result = factory(container)?;
-            Ok(result as Arc<dyn Any + Send + Sync>)
-        });
+        let wrapped_factory = Box::new(
+            move |container: &DIContainer| -> DIResult<Arc<dyn Any + Send + Sync>> {
+                let result = factory(container)?;
+                Ok(result as Arc<dyn Any + Send + Sync>)
+            },
+        );
 
         let descriptor = ServiceDescriptor {
             factory: wrapped_factory,
@@ -219,7 +228,10 @@ impl DIContainer {
 
         services.insert(type_id, descriptor);
 
-        debug!("Registered transient service: {}", std::any::type_name::<T>());
+        debug!(
+            "Registered transient service: {}",
+            std::any::type_name::<T>()
+        );
         Ok(())
     }
 
@@ -238,10 +250,12 @@ impl DIContainer {
             });
         }
 
-        let wrapped_factory = Box::new(move |container: &DIContainer| -> DIResult<Arc<dyn Any + Send + Sync>> {
-            let result = factory(container)?;
-            Ok(result as Arc<dyn Any + Send + Sync>)
-        });
+        let wrapped_factory = Box::new(
+            move |container: &DIContainer| -> DIResult<Arc<dyn Any + Send + Sync>> {
+                let result = factory(container)?;
+                Ok(result as Arc<dyn Any + Send + Sync>)
+            },
+        );
 
         let descriptor = ServiceDescriptor {
             factory: wrapped_factory,
@@ -272,10 +286,12 @@ impl DIContainer {
             });
         }
 
-        let wrapped_factory = Box::new(move |container: &DIContainer| -> DIResult<Arc<dyn Any + Send + Sync>> {
-            let result = factory(container)?;
-            Ok(result as Arc<dyn Any + Send + Sync>)
-        });
+        let wrapped_factory = Box::new(
+            move |container: &DIContainer| -> DIResult<Arc<dyn Any + Send + Sync>> {
+                let result = factory(container)?;
+                Ok(result as Arc<dyn Any + Send + Sync>)
+            },
+        );
 
         let descriptor = ServiceDescriptor {
             factory: wrapped_factory,
@@ -288,7 +304,10 @@ impl DIContainer {
 
         services.insert(type_id, descriptor);
 
-        debug!("Registered service with health check: {}", std::any::type_name::<T>());
+        debug!(
+            "Registered service with health check: {}",
+            std::any::type_name::<T>()
+        );
         Ok(())
     }
 
@@ -308,11 +327,12 @@ impl DIContainer {
         let type_id = TypeId::of::<T>();
         let mut services = self.services.write().unwrap();
 
-        let descriptor = services.get_mut(&type_id).ok_or_else(|| {
-            DIError::ServiceNotRegistered {
-                service_type: std::any::type_name::<T>().to_string(),
-            }
-        })?;
+        let descriptor =
+            services
+                .get_mut(&type_id)
+                .ok_or_else(|| DIError::ServiceNotRegistered {
+                    service_type: std::any::type_name::<T>().to_string(),
+                })?;
 
         match descriptor.lifetime {
             ServiceLifetime::Singleton => {
@@ -325,17 +345,20 @@ impl DIContainer {
 
                 // Create new instance
                 let instance = (descriptor.factory)(self)?;
-                let downcasted = instance.downcast::<T>()
-                    .map_err(|_| DIError::InvalidServiceType {
-                        message: "Service type mismatch during downcast".to_string(),
-                    })?;
+                let downcasted =
+                    instance
+                        .downcast::<T>()
+                        .map_err(|_| DIError::InvalidServiceType {
+                            message: "Service type mismatch during downcast".to_string(),
+                        })?;
                 descriptor.instance = Some(downcasted.clone());
                 Ok(downcasted)
             }
             ServiceLifetime::Transient => {
                 // Always create new instance
                 let instance = (descriptor.factory)(self)?;
-                instance.downcast::<T>()
+                instance
+                    .downcast::<T>()
                     .map_err(|_| DIError::InvalidServiceType {
                         message: "Service type mismatch during downcast".to_string(),
                     })
@@ -350,10 +373,12 @@ impl DIContainer {
 
                     // Create new scoped instance
                     let instance = (descriptor.factory)(self)?;
-                    let downcasted = instance.downcast::<T>()
-                        .map_err(|_| DIError::InvalidServiceType {
-                            message: "Service type mismatch during downcast".to_string(),
-                        })?;
+                    let downcasted =
+                        instance
+                            .downcast::<T>()
+                            .map_err(|_| DIError::InvalidServiceType {
+                                message: "Service type mismatch during downcast".to_string(),
+                            })?;
                     scope.set_scoped(downcasted.clone());
                     Ok(downcasted)
                 } else {
@@ -518,16 +543,9 @@ macro_rules! resolve_service {
 
 // Re-export service registration functions
 pub use services::{
-    create_application_container,
-    create_cli_container,
-    create_tui_container,
-    create_development_container,
-    create_test_container,
-    create_configured_container,
-    register_infrastructure_services,
-    register_use_cases,
-    ContainerConfig,
-    Lifecycle,
+    create_application_container, create_cli_container, create_configured_container,
+    create_development_container, create_test_container, create_tui_container,
+    register_infrastructure_services, register_use_cases, ContainerConfig, Lifecycle,
     LifecycleManager,
 };
 
@@ -623,4 +641,3 @@ pub use services::register_local_models_services;
 
 #[cfg(feature = "cli")]
 pub use services::register_cli_services;
-

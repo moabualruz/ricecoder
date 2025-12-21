@@ -32,16 +32,15 @@ fn webp_header_strategy() -> impl Strategy<Value = Vec<u8>> {
 
 /// Strategy for generating random invalid file headers
 fn invalid_header_strategy() -> impl Strategy<Value = Vec<u8>> {
-    prop::collection::vec(any::<u8>(), 4..16)
-        .prop_filter("Filter out valid headers", |bytes| {
-            // Exclude valid headers
-            !bytes.starts_with(&[0x89, 0x50, 0x4E, 0x47]) // PNG
+    prop::collection::vec(any::<u8>(), 4..16).prop_filter("Filter out valid headers", |bytes| {
+        // Exclude valid headers
+        !bytes.starts_with(&[0x89, 0x50, 0x4E, 0x47]) // PNG
                 && !bytes.starts_with(&[0xFF, 0xD8, 0xFF]) // JPEG
                 && !bytes.starts_with(b"GIF") // GIF
                 && !(bytes.len() >= 12
                     && bytes.starts_with(b"RIFF")
                     && bytes[8..12] == *b"WEBP") // WebP
-        })
+    })
 }
 
 /// Property 1: Format Validation - Supported formats are accepted
@@ -59,7 +58,7 @@ fn prop_supported_formats_accepted() {
     )| {
         let result = ImageFormat::detect_from_bytes(&header);
         prop_assert!(result.is_ok(), "Supported format should be accepted");
-        
+
         let format = result.unwrap();
         prop_assert!(
             matches!(format, ImageFormat::Png | ImageFormat::Jpeg | ImageFormat::Gif | ImageFormat::WebP),
@@ -76,7 +75,7 @@ fn prop_unsupported_formats_rejected() {
     proptest!(|(header in invalid_header_strategy())| {
         let result = ImageFormat::detect_from_bytes(&header);
         prop_assert!(result.is_err(), "Unsupported format should be rejected");
-        
+
         let error = result.unwrap_err();
         let error_msg = error.to_string();
         prop_assert!(
@@ -94,20 +93,19 @@ fn test_file_size_validation_exceeds_limit() {
     // Create a temporary file with size > 10 MB
     let mut temp_file = NamedTempFile::new().expect("Failed to create temp file");
     let size_bytes = 11 * 1024 * 1024; // 11 MB
-    
+
     // Write PNG header followed by zeros to reach the desired size
     let mut content = vec![0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
     content.resize(size_bytes as usize, 0);
-    
-    std::io::Write::write_all(&mut temp_file, &content)
-        .expect("Failed to write to temp file");
-    
+
+    std::io::Write::write_all(&mut temp_file, &content).expect("Failed to write to temp file");
+
     let path = temp_file.path().to_path_buf();
-    
+
     // Validate with 10 MB limit
     let result = ImageFormat::validate_file(&path, 10);
     assert!(result.is_err(), "File exceeding 10 MB should be rejected");
-    
+
     let error = result.unwrap_err();
     let error_msg = error.to_string();
     assert!(
@@ -134,12 +132,12 @@ fn prop_small_files_accepted() {
         let mut temp_file = NamedTempFile::new().expect("Failed to create temp file");
         let mut content = header;
         content.resize(content.len() + extra_bytes, 0);
-        
+
         std::io::Write::write_all(&mut temp_file, &content)
             .expect("Failed to write to temp file");
-        
+
         let path = temp_file.path().to_path_buf();
-        
+
         // Validate with 10 MB limit
         let result = ImageFormat::validate_file(&path, 10);
         prop_assert!(result.is_ok(), "Small valid file should be accepted");
@@ -161,11 +159,11 @@ fn prop_format_detection_consistency() {
     )| {
         let result1 = ImageFormat::detect_from_bytes(&header);
         let result2 = ImageFormat::detect_from_bytes(&header);
-        
+
         // Both should succeed
         prop_assert!(result1.is_ok(), "First detection should succeed");
         prop_assert!(result2.is_ok(), "Second detection should succeed");
-        
+
         // Both should produce the same format
         let format1 = result1.unwrap();
         let format2 = result2.unwrap();
@@ -188,7 +186,7 @@ fn prop_format_string_representation() {
     )| {
         let format = ImageFormat::detect_from_bytes(&header).expect("Should detect format");
         let format_str = format.as_str();
-        
+
         prop_assert!(
             matches!(format_str, "png" | "jpg" | "gif" | "webp"),
             "Format string should be one of the supported formats"
@@ -215,11 +213,23 @@ fn prop_empty_files_rejected() {
 fn test_supported_formats_list() {
     let config = ricecoder_images::ImageConfig::default();
     let formats = config.supported_formats_string();
-    
-    assert!(formats.contains("png"), "PNG should be in supported formats");
-    assert!(formats.contains("jpg"), "JPG should be in supported formats");
-    assert!(formats.contains("gif"), "GIF should be in supported formats");
-    assert!(formats.contains("webp"), "WebP should be in supported formats");
+
+    assert!(
+        formats.contains("png"),
+        "PNG should be in supported formats"
+    );
+    assert!(
+        formats.contains("jpg"),
+        "JPG should be in supported formats"
+    );
+    assert!(
+        formats.contains("gif"),
+        "GIF should be in supported formats"
+    );
+    assert!(
+        formats.contains("webp"),
+        "WebP should be in supported formats"
+    );
 }
 
 /// Property 1: Format Validation - Format support check

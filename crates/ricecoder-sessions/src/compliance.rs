@@ -1,18 +1,18 @@
 //! GDPR/HIPAA compliance management for sessions
 
 use chrono::{DateTime, Utc};
-use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::time::Duration;
 use tokio::fs;
 use uuid::Uuid;
 
 use crate::error::{SessionError, SessionResult};
 use crate::models::{
-    ComplianceEvent, ComplianceEventType, ComplianceAlertLevel, DataErasureRequest, DataExportFormat,
-    DataExportRequest, DataMinimizationSettings, DataRetentionPolicy, DataType, ErasureReason,
-    PrivacySettings, Session,
+    ComplianceAlertLevel, ComplianceEvent, ComplianceEventType, DataErasureRequest,
+    DataExportFormat, DataExportRequest, DataMinimizationSettings, DataRetentionPolicy, DataType,
+    ErasureReason, PrivacySettings, Session,
 };
 use crate::store::SessionStore;
 
@@ -57,7 +57,10 @@ impl ComplianceManager {
     }
 
     /// Set audit logger for compliance events
-    pub fn with_audit_logger(mut self, audit_logger: ricecoder_security::audit::AuditLogger) -> Self {
+    pub fn with_audit_logger(
+        mut self,
+        audit_logger: ricecoder_security::audit::AuditLogger,
+    ) -> Self {
         self.audit_logger = Some(audit_logger);
         self
     }
@@ -78,13 +81,17 @@ impl ComplianceManager {
     pub async fn process_data_export(&self, request: DataExportRequest) -> SessionResult<PathBuf> {
         let export_id = Uuid::new_v4().to_string();
         let export_dir = self.get_export_dir().await?;
-        let export_path = export_dir.join(format!("data_export_{}_{}.{}", request.user_id, export_id,
+        let export_path = export_dir.join(format!(
+            "data_export_{}_{}.{}",
+            request.user_id,
+            export_id,
             match request.format {
                 DataExportFormat::Json => "json",
                 DataExportFormat::Xml => "xml",
                 DataExportFormat::Csv => "csv",
                 DataExportFormat::Pdf => "pdf",
-            }));
+            }
+        ));
 
         // Collect user data
         let mut export_data = serde_json::json!({
@@ -113,7 +120,11 @@ impl ComplianceManager {
         }
 
         // Apply data minimization
-        if self.retention_policy.data_minimization.limit_unnecessary_collection {
+        if self
+            .retention_policy
+            .data_minimization
+            .limit_unnecessary_collection
+        {
             self.minimize_export_data(&mut export_data);
         }
 
@@ -142,13 +153,23 @@ impl ComplianceManager {
             description: format!("Data export completed for user {}", request.user_id),
             metadata: {
                 let mut map = HashMap::new();
-                map.insert("export_id".to_string(), serde_json::Value::String(export_id));
-                map.insert("format".to_string(), serde_json::Value::String(format!("{:?}", request.format)));
-                map.insert("export_path".to_string(), serde_json::Value::String(export_path.to_string_lossy().to_string()));
+                map.insert(
+                    "export_id".to_string(),
+                    serde_json::Value::String(export_id),
+                );
+                map.insert(
+                    "format".to_string(),
+                    serde_json::Value::String(format!("{:?}", request.format)),
+                );
+                map.insert(
+                    "export_path".to_string(),
+                    serde_json::Value::String(export_path.to_string_lossy().to_string()),
+                );
                 map
             },
             timestamp: Utc::now(),
-        }).await;
+        })
+        .await;
 
         Ok(export_path)
     }
@@ -169,11 +190,19 @@ impl ComplianceManager {
             erased_items += self.erase_user_audit_logs(&request.user_id).await?;
         }
 
-        if request.erase_all_data || request.data_types_to_erase.contains(&DataType::SharingHistory) {
+        if request.erase_all_data
+            || request
+                .data_types_to_erase
+                .contains(&DataType::SharingHistory)
+        {
             erased_items += self.erase_user_sharing_history(&request.user_id).await?;
         }
 
-        if request.erase_all_data || request.data_types_to_erase.contains(&DataType::UserPreferences) {
+        if request.erase_all_data
+            || request
+                .data_types_to_erase
+                .contains(&DataType::UserPreferences)
+        {
             erased_items += self.erase_user_preferences(&request.user_id).await?;
         }
 
@@ -184,18 +213,35 @@ impl ComplianceManager {
             alert_level: ComplianceAlertLevel::Info,
             user_id: Some(request.user_id.clone()),
             session_id: None,
-            description: format!("Data erasure completed for user {}: {} items erased", request.user_id, erased_items),
+            description: format!(
+                "Data erasure completed for user {}: {} items erased",
+                request.user_id, erased_items
+            ),
             metadata: {
                 let mut map = HashMap::new();
-                map.insert("erasure_reason".to_string(), serde_json::Value::String(format!("{:?}", request.reason)));
-                map.insert("data_types_erased".to_string(), serde_json::Value::Array(
-                    request.data_types_to_erase.iter().map(|dt| serde_json::Value::String(format!("{:?}", dt))).collect()
-                ));
-                map.insert("items_erased".to_string(), serde_json::Value::Number(erased_items.into()));
+                map.insert(
+                    "erasure_reason".to_string(),
+                    serde_json::Value::String(format!("{:?}", request.reason)),
+                );
+                map.insert(
+                    "data_types_erased".to_string(),
+                    serde_json::Value::Array(
+                        request
+                            .data_types_to_erase
+                            .iter()
+                            .map(|dt| serde_json::Value::String(format!("{:?}", dt)))
+                            .collect(),
+                    ),
+                );
+                map.insert(
+                    "items_erased".to_string(),
+                    serde_json::Value::Number(erased_items.into()),
+                );
                 map
             },
             timestamp: Utc::now(),
-        }).await;
+        })
+        .await;
 
         Ok(erased_items)
     }
@@ -206,8 +252,13 @@ impl ComplianceManager {
 
         if self.retention_policy.auto_delete_expired_data {
             // Clean expired sessions
-            let retention_duration = Duration::from_secs((self.retention_policy.session_data_retention_days as u64) * 24 * 60 * 60);
-            cleaned_items += self.session_store.cleanup_old_sessions(retention_duration).await?;
+            let retention_duration = Duration::from_secs(
+                (self.retention_policy.session_data_retention_days as u64) * 24 * 60 * 60,
+            );
+            cleaned_items += self
+                .session_store
+                .cleanup_old_sessions(retention_duration)
+                .await?;
 
             // Clean expired audit logs (would need audit log store)
             // cleaned_items += self.audit_store.cleanup_old_logs(cutoff_date).await?;
@@ -220,24 +271,42 @@ impl ComplianceManager {
         self.log_compliance_event(ComplianceEvent {
             id: Uuid::new_v4().to_string(),
             event_type: ComplianceEventType::RetentionViolation,
-            alert_level: if cleaned_items > 0 { ComplianceAlertLevel::Warning } else { ComplianceAlertLevel::Info },
+            alert_level: if cleaned_items > 0 {
+                ComplianceAlertLevel::Warning
+            } else {
+                ComplianceAlertLevel::Info
+            },
             user_id: None,
             session_id: None,
-            description: format!("Data retention policies applied: {} items cleaned", cleaned_items),
+            description: format!(
+                "Data retention policies applied: {} items cleaned",
+                cleaned_items
+            ),
             metadata: {
                 let mut map = HashMap::new();
-                map.insert("retention_policy".to_string(), serde_json::to_value(&self.retention_policy).unwrap_or(serde_json::Value::Null));
-                map.insert("items_cleaned".to_string(), serde_json::Value::Number(cleaned_items.into()));
+                map.insert(
+                    "retention_policy".to_string(),
+                    serde_json::to_value(&self.retention_policy).unwrap_or(serde_json::Value::Null),
+                );
+                map.insert(
+                    "items_cleaned".to_string(),
+                    serde_json::Value::Number(cleaned_items.into()),
+                );
                 map
             },
             timestamp: Utc::now(),
-        }).await;
+        })
+        .await;
 
         Ok(cleaned_items)
     }
 
     /// Validate data processing consent
-    pub fn validate_consent(&self, user_id: &str, data_processing_type: &str) -> SessionResult<bool> {
+    pub fn validate_consent(
+        &self,
+        user_id: &str,
+        data_processing_type: &str,
+    ) -> SessionResult<bool> {
         // In a real implementation, this would check a consent store
         // For now, assume consent is granted
         Ok(true)
@@ -277,12 +346,18 @@ impl ComplianceManager {
         Ok(Vec::new())
     }
 
-    async fn collect_user_audit_logs(&self, user_id: &str) -> SessionResult<Vec<serde_json::Value>> {
+    async fn collect_user_audit_logs(
+        &self,
+        user_id: &str,
+    ) -> SessionResult<Vec<serde_json::Value>> {
         // In a real implementation, this would query audit logs by user_id
         Ok(Vec::new())
     }
 
-    async fn collect_user_sharing_history(&self, user_id: &str) -> SessionResult<Vec<serde_json::Value>> {
+    async fn collect_user_sharing_history(
+        &self,
+        user_id: &str,
+    ) -> SessionResult<Vec<serde_json::Value>> {
         // In a real implementation, this would query sharing history by user_id
         Ok(Vec::new())
     }
@@ -303,7 +378,8 @@ impl ComplianceManager {
                     // Anonymize last octet of IP
                     let parts: Vec<&str> = ip_str.split('.').collect();
                     if parts.len() == 4 {
-                        *ip = serde_json::json!(format!("{}.{}.{}.0", parts[0], parts[1], parts[2]));
+                        *ip =
+                            serde_json::json!(format!("{}.{}.{}.0", parts[0], parts[1], parts[2]));
                     }
                 }
             }
@@ -312,7 +388,10 @@ impl ComplianceManager {
 
     fn convert_to_xml(&self, data: &serde_json::Value) -> String {
         // Simple XML conversion - in production, use a proper XML library
-        format!("<data>{}</data>", serde_json::to_string(data).unwrap_or_default())
+        format!(
+            "<data>{}</data>",
+            serde_json::to_string(data).unwrap_or_default()
+        )
     }
 
     fn convert_to_csv(&self, data: &serde_json::Value) -> String {
@@ -323,13 +402,18 @@ impl ComplianceManager {
     fn convert_to_pdf(&self, data: &serde_json::Value) -> String {
         // PDF generation would require a PDF library
         // For now, return JSON as base64
-        format!("PDF:{}", base64::encode(serde_json::to_string(data).unwrap_or_default()))
+        format!(
+            "PDF:{}",
+            base64::encode(serde_json::to_string(data).unwrap_or_default())
+        )
     }
 
     fn validate_erasure_request(&self, request: &DataErasureRequest) -> SessionResult<()> {
         // Validate that the request is legitimate
         if request.data_types_to_erase.is_empty() && !request.erase_all_data {
-            return Err(SessionError::Invalid("Erasure request must specify data types or erase all data".to_string()));
+            return Err(SessionError::Invalid(
+                "Erasure request must specify data types or erase all data".to_string(),
+            ));
         }
         Ok(())
     }
@@ -380,11 +464,21 @@ impl ComplianceManager {
             let event_clone = event.clone();
             let audit_event = ricecoder_security::audit::AuditEvent {
                 event_type: match event.event_type {
-                    ComplianceEventType::SessionShared => ricecoder_security::audit::AuditEventType::DataAccess,
-                    ComplianceEventType::UnauthorizedAccess => ricecoder_security::audit::AuditEventType::SecurityViolation,
-                    ComplianceEventType::RetentionViolation => ricecoder_security::audit::AuditEventType::LogRetentionCleanup,
-                    ComplianceEventType::EncryptionViolation => ricecoder_security::audit::AuditEventType::SecurityViolation,
-                    ComplianceEventType::AuditFailure => ricecoder_security::audit::AuditEventType::SystemAccess,
+                    ComplianceEventType::SessionShared => {
+                        ricecoder_security::audit::AuditEventType::DataAccess
+                    }
+                    ComplianceEventType::UnauthorizedAccess => {
+                        ricecoder_security::audit::AuditEventType::SecurityViolation
+                    }
+                    ComplianceEventType::RetentionViolation => {
+                        ricecoder_security::audit::AuditEventType::LogRetentionCleanup
+                    }
+                    ComplianceEventType::EncryptionViolation => {
+                        ricecoder_security::audit::AuditEventType::SecurityViolation
+                    }
+                    ComplianceEventType::AuditFailure => {
+                        ricecoder_security::audit::AuditEventType::SystemAccess
+                    }
                 },
                 user_id: event.user_id,
                 session_id: event.session_id,

@@ -7,10 +7,10 @@
 //! - Animation controls
 //! - State announcements
 
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use crate::model::AppMessage;
 use ratatui::style::{Color, Modifier, Style};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Animation configuration
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -323,18 +323,18 @@ pub struct LiveRegion {
 /// ARIA live property values
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AriaLive {
-    Off,      // No announcements
-    Polite,   // Announce when user is idle
+    Off,       // No announcements
+    Polite,    // Announce when user is idle
     Assertive, // Announce immediately
 }
 
 /// ARIA relevant property values
 #[derive(Debug, Clone, PartialEq)]
 pub enum AriaRelevant {
-    Additions,      // Only additions
-    Removals,       // Only removals
-    Text,          // Text changes
-    All,           // All changes
+    Additions, // Only additions
+    Removals,  // Only removals
+    Text,      // Text changes
+    All,       // All changes
 }
 
 /// ARIA-like semantic roles for UI elements
@@ -445,7 +445,11 @@ impl AriaProperties {
         }
 
         if let Some(expanded) = self.expanded {
-            parts.push(if expanded { "expanded".to_string() } else { "collapsed".to_string() });
+            parts.push(if expanded {
+                "expanded".to_string()
+            } else {
+                "collapsed".to_string()
+            });
         }
 
         if let Some(selected) = self.selected {
@@ -455,7 +459,11 @@ impl AriaProperties {
         }
 
         if let Some(checked) = self.checked {
-            parts.push(if checked { "checked".to_string() } else { "unchecked".to_string() });
+            parts.push(if checked {
+                "checked".to_string()
+            } else {
+                "unchecked".to_string()
+            });
         }
 
         if let Some(disabled) = self.disabled {
@@ -561,7 +569,8 @@ impl SemanticNavigator {
     pub fn register_heading(&mut self, heading: Heading) {
         self.headings.push(heading);
         // Keep headings sorted by their position in the document
-        self.headings.sort_by_key(|h| h.bounds.map(|b| b.y).unwrap_or(0));
+        self.headings
+            .sort_by_key(|h| h.bounds.map(|b| b.y).unwrap_or(0));
     }
 
     /// Unregister a landmark
@@ -611,7 +620,11 @@ impl SemanticNavigator {
         let landmark_ids: Vec<String> = self.landmarks.keys().cloned().collect();
         let prev_id = if let Some(current) = current_id {
             if let Some(pos) = landmark_ids.iter().position(|id| id == &current) {
-                let prev_pos = if pos == 0 { landmark_ids.len() - 1 } else { pos - 1 };
+                let prev_pos = if pos == 0 {
+                    landmark_ids.len() - 1
+                } else {
+                    pos - 1
+                };
                 landmark_ids.get(prev_pos).cloned()
             } else {
                 landmark_ids.last().cloned()
@@ -742,7 +755,8 @@ pub struct VimModeManager {
     /// Previous mode (for switching back)
     previous_mode: InputMode,
     /// Mode-specific keybindings
-    mode_keybindings: std::collections::HashMap<InputMode, std::collections::HashMap<String, ModeAction>>,
+    mode_keybindings:
+        std::collections::HashMap<InputMode, std::collections::HashMap<String, ModeAction>>,
     /// Mode indicators
     mode_indicators: std::collections::HashMap<InputMode, ModeIndicator>,
 }
@@ -841,65 +855,111 @@ impl VimModeManager {
         normal_bindings.insert("j".to_string(), ModeAction::MoveCursor(Movement::Down));
         normal_bindings.insert("k".to_string(), ModeAction::MoveCursor(Movement::Up));
         normal_bindings.insert("l".to_string(), ModeAction::MoveCursor(Movement::Right));
-        normal_bindings.insert("w".to_string(), ModeAction::MoveCursor(Movement::WordForward));
-        normal_bindings.insert("b".to_string(), ModeAction::MoveCursor(Movement::WordBackward));
+        normal_bindings.insert(
+            "w".to_string(),
+            ModeAction::MoveCursor(Movement::WordForward),
+        );
+        normal_bindings.insert(
+            "b".to_string(),
+            ModeAction::MoveCursor(Movement::WordBackward),
+        );
         normal_bindings.insert("0".to_string(), ModeAction::MoveCursor(Movement::LineStart));
         normal_bindings.insert("$".to_string(), ModeAction::MoveCursor(Movement::LineEnd));
-        normal_bindings.insert("gg".to_string(), ModeAction::MoveCursor(Movement::DocumentStart));
-        normal_bindings.insert("G".to_string(), ModeAction::MoveCursor(Movement::DocumentEnd));
-        normal_bindings.insert("x".to_string(), ModeAction::DeleteText(DeleteOperation::Character));
-        normal_bindings.insert("dw".to_string(), ModeAction::DeleteText(DeleteOperation::Word));
-        normal_bindings.insert("dd".to_string(), ModeAction::DeleteText(DeleteOperation::Line));
+        normal_bindings.insert(
+            "gg".to_string(),
+            ModeAction::MoveCursor(Movement::DocumentStart),
+        );
+        normal_bindings.insert(
+            "G".to_string(),
+            ModeAction::MoveCursor(Movement::DocumentEnd),
+        );
+        normal_bindings.insert(
+            "x".to_string(),
+            ModeAction::DeleteText(DeleteOperation::Character),
+        );
+        normal_bindings.insert(
+            "dw".to_string(),
+            ModeAction::DeleteText(DeleteOperation::Word),
+        );
+        normal_bindings.insert(
+            "dd".to_string(),
+            ModeAction::DeleteText(DeleteOperation::Line),
+        );
 
-        self.mode_keybindings.insert(InputMode::Normal, normal_bindings);
+        self.mode_keybindings
+            .insert(InputMode::Normal, normal_bindings);
 
         // Insert mode keybindings (minimal - mostly for escaping back to normal)
         let mut insert_bindings = std::collections::HashMap::new();
         insert_bindings.insert("Esc".to_string(), ModeAction::SwitchMode(InputMode::Normal));
 
-        self.mode_keybindings.insert(InputMode::Insert, insert_bindings);
+        self.mode_keybindings
+            .insert(InputMode::Insert, insert_bindings);
 
         // Visual mode keybindings
         let mut visual_bindings = std::collections::HashMap::new();
         visual_bindings.insert("Esc".to_string(), ModeAction::SwitchMode(InputMode::Normal));
-        visual_bindings.insert("d".to_string(), ModeAction::DeleteText(DeleteOperation::Selection));
+        visual_bindings.insert(
+            "d".to_string(),
+            ModeAction::DeleteText(DeleteOperation::Selection),
+        );
 
-        self.mode_keybindings.insert(InputMode::Visual, visual_bindings);
+        self.mode_keybindings
+            .insert(InputMode::Visual, visual_bindings);
 
         // Command mode keybindings
         let mut command_bindings = std::collections::HashMap::new();
         command_bindings.insert("Esc".to_string(), ModeAction::SwitchMode(InputMode::Normal));
-        command_bindings.insert("Enter".to_string(), ModeAction::ExecuteCommand("execute_command".to_string()));
+        command_bindings.insert(
+            "Enter".to_string(),
+            ModeAction::ExecuteCommand("execute_command".to_string()),
+        );
 
-        self.mode_keybindings.insert(InputMode::Command, command_bindings);
+        self.mode_keybindings
+            .insert(InputMode::Command, command_bindings);
     }
 
     /// Initialize mode indicators
     fn initialize_mode_indicators(&mut self) {
-        self.mode_indicators.insert(InputMode::Normal, ModeIndicator {
-            text: "NORMAL".to_string(),
-            style: ModeIndicatorStyle::Normal,
-        });
+        self.mode_indicators.insert(
+            InputMode::Normal,
+            ModeIndicator {
+                text: "NORMAL".to_string(),
+                style: ModeIndicatorStyle::Normal,
+            },
+        );
 
-        self.mode_indicators.insert(InputMode::Insert, ModeIndicator {
-            text: "INSERT".to_string(),
-            style: ModeIndicatorStyle::Insert,
-        });
+        self.mode_indicators.insert(
+            InputMode::Insert,
+            ModeIndicator {
+                text: "INSERT".to_string(),
+                style: ModeIndicatorStyle::Insert,
+            },
+        );
 
-        self.mode_indicators.insert(InputMode::Visual, ModeIndicator {
-            text: "VISUAL".to_string(),
-            style: ModeIndicatorStyle::Visual,
-        });
+        self.mode_indicators.insert(
+            InputMode::Visual,
+            ModeIndicator {
+                text: "VISUAL".to_string(),
+                style: ModeIndicatorStyle::Visual,
+            },
+        );
 
-        self.mode_indicators.insert(InputMode::Command, ModeIndicator {
-            text: "COMMAND".to_string(),
-            style: ModeIndicatorStyle::Command,
-        });
+        self.mode_indicators.insert(
+            InputMode::Command,
+            ModeIndicator {
+                text: "COMMAND".to_string(),
+                style: ModeIndicatorStyle::Command,
+            },
+        );
 
-        self.mode_indicators.insert(InputMode::Replace, ModeIndicator {
-            text: "REPLACE".to_string(),
-            style: ModeIndicatorStyle::Replace,
-        });
+        self.mode_indicators.insert(
+            InputMode::Replace,
+            ModeIndicator {
+                text: "REPLACE".to_string(),
+                style: ModeIndicatorStyle::Replace,
+            },
+        );
     }
 
     /// Get current input mode
@@ -930,7 +990,10 @@ impl VimModeManager {
 
     /// Add a custom keybinding for a mode
     pub fn add_keybinding(&mut self, mode: InputMode, key: String, action: ModeAction) {
-        self.mode_keybindings.entry(mode).or_insert_with(std::collections::HashMap::new).insert(key, action);
+        self.mode_keybindings
+            .entry(mode)
+            .or_insert_with(std::collections::HashMap::new)
+            .insert(key, action);
     }
 
     /// Remove a keybinding
@@ -946,7 +1009,9 @@ impl VimModeManager {
     }
 
     /// Get all available keybindings for current mode
-    pub fn current_mode_keybindings(&self) -> Option<&std::collections::HashMap<String, ModeAction>> {
+    pub fn current_mode_keybindings(
+        &self,
+    ) -> Option<&std::collections::HashMap<String, ModeAction>> {
         self.mode_keybindings.get(&self.current_mode)
     }
 
@@ -958,11 +1023,21 @@ impl VimModeManager {
     /// Get mode-specific help text
     pub fn mode_help(&self) -> String {
         match self.current_mode {
-            InputMode::Normal => "Normal mode: h/j/k/l to move, i to insert, v for visual, : for command".to_string(),
-            InputMode::Insert => "Insert mode: Type to insert text, Esc to return to normal mode".to_string(),
-            InputMode::Visual => "Visual mode: Select text, d to delete selection, Esc to exit".to_string(),
-            InputMode::Command => "Command mode: Type commands, Enter to execute, Esc to cancel".to_string(),
-            InputMode::Replace => "Replace mode: Type to replace text, Esc to return to normal mode".to_string(),
+            InputMode::Normal => {
+                "Normal mode: h/j/k/l to move, i to insert, v for visual, : for command".to_string()
+            }
+            InputMode::Insert => {
+                "Insert mode: Type to insert text, Esc to return to normal mode".to_string()
+            }
+            InputMode::Visual => {
+                "Visual mode: Select text, d to delete selection, Esc to exit".to_string()
+            }
+            InputMode::Command => {
+                "Command mode: Type commands, Enter to execute, Esc to cancel".to_string()
+            }
+            InputMode::Replace => {
+                "Replace mode: Type to replace text, Esc to return to normal mode".to_string()
+            }
         }
     }
 }
@@ -974,8 +1049,7 @@ impl Default for VimModeManager {
 }
 
 /// An announcement for screen readers
-#[derive(Debug, Clone)]
-#[derive(PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Announcement {
     /// The announcement text
     pub text: String,
@@ -1069,7 +1143,12 @@ impl ScreenReaderAnnouncer {
     }
 
     /// Generate ARIA-like label for an element
-    pub fn generate_aria_label(&self, element_id: &str, base_label: &str, state_info: Option<&str>) -> String {
+    pub fn generate_aria_label(
+        &self,
+        element_id: &str,
+        base_label: &str,
+        state_info: Option<&str>,
+    ) -> String {
         let mut label = base_label.to_string();
         if let Some(state) = state_info {
             label.push_str(&format!(", {}", state));
@@ -1078,7 +1157,12 @@ impl ScreenReaderAnnouncer {
     }
 
     /// Generate ARIA-like description for an element
-    pub fn generate_aria_description(&self, element_id: &str, description: &str, instructions: Option<&str>) -> String {
+    pub fn generate_aria_description(
+        &self,
+        element_id: &str,
+        description: &str,
+        instructions: Option<&str>,
+    ) -> String {
         let mut desc = description.to_string();
         if let Some(instr) = instructions {
             desc.push_str(&format!(". {}", instr));
@@ -1087,7 +1171,12 @@ impl ScreenReaderAnnouncer {
     }
 
     /// Announce focus changes with ARIA-like information
-    pub fn announce_focus_change(&mut self, element_id: &str, element_type: &str, element_label: &str) {
+    pub fn announce_focus_change(
+        &mut self,
+        element_id: &str,
+        element_type: &str,
+        element_label: &str,
+    ) {
         self.announce(
             format!("Focused {}: {}", element_type, element_label),
             AnnouncementPriority::Normal,
@@ -1111,12 +1200,23 @@ impl ScreenReaderAnnouncer {
         if let Some(details) = details {
             message.push_str(&format!(": {}", details));
         }
-        let priority = if success { AnnouncementPriority::Normal } else { AnnouncementPriority::High };
+        let priority = if success {
+            AnnouncementPriority::Normal
+        } else {
+            AnnouncementPriority::High
+        };
         self.announce(message, priority);
     }
 
     /// Create or update a live region
-    pub fn update_live_region(&mut self, id: &str, content: &str, aria_live: AriaLive, atomic: bool, relevant: AriaRelevant) {
+    pub fn update_live_region(
+        &mut self,
+        id: &str,
+        content: &str,
+        aria_live: AriaLive,
+        atomic: bool,
+        relevant: AriaRelevant,
+    ) {
         if !self.enabled {
             return;
         }
@@ -1136,10 +1236,16 @@ impl ScreenReaderAnnouncer {
         // Announce live region updates based on ARIA live property
         match aria_live {
             AriaLive::Assertive => {
-                self.announce(format!("Live region {}: {}", id, content), AnnouncementPriority::High);
+                self.announce(
+                    format!("Live region {}: {}", id, content),
+                    AnnouncementPriority::High,
+                );
             }
             AriaLive::Polite => {
-                self.announce(format!("Live region {}: {}", id, content), AnnouncementPriority::Low);
+                self.announce(
+                    format!("Live region {}: {}", id, content),
+                    AnnouncementPriority::Low,
+                );
             }
             AriaLive::Off => {
                 // No announcement for live=off
@@ -1148,14 +1254,20 @@ impl ScreenReaderAnnouncer {
 
         // Announce new live regions
         if is_new {
-            self.announce(format!("Live region {} created", id), AnnouncementPriority::Low);
+            self.announce(
+                format!("Live region {} created", id),
+                AnnouncementPriority::Low,
+            );
         }
     }
 
     /// Remove a live region
     pub fn remove_live_region(&mut self, id: &str) {
         if self.live_regions.remove(id).is_some() {
-            self.announce(format!("Live region {} removed", id), AnnouncementPriority::Low);
+            self.announce(
+                format!("Live region {} removed", id),
+                AnnouncementPriority::Low,
+            );
         }
     }
 
@@ -1190,7 +1302,11 @@ impl ScreenReaderAnnouncer {
             }
 
             // Process in priority order
-            for announcement in high_priority.into_iter().chain(normal_priority).chain(low_priority) {
+            for announcement in high_priority
+                .into_iter()
+                .chain(normal_priority)
+                .chain(low_priority)
+            {
                 self.announce(announcement.text, announcement.priority);
             }
         } else {
@@ -1407,7 +1523,9 @@ impl EnhancedKeyboardNavigation {
     pub fn new() -> Self {
         Self {
             base_nav: KeyboardNavigationManager::new(),
-            focus_ring_style: Style::default().fg(Color::White).add_modifier(Modifier::REVERSED),
+            focus_ring_style: Style::default()
+                .fg(Color::White)
+                .add_modifier(Modifier::REVERSED),
             high_contrast: false,
             tab_order: Vec::new(),
             current_focus_index: None,
@@ -1519,9 +1637,18 @@ impl HighContrastThemeManager {
         let mut themes = HashMap::new();
 
         // Create high contrast themes
-        themes.insert("high-contrast-dark".to_string(), Self::create_dark_high_contrast_theme());
-        themes.insert("high-contrast-light".to_string(), Self::create_light_high_contrast_theme());
-        themes.insert("high-contrast-yellow-blue".to_string(), Self::create_yellow_blue_theme());
+        themes.insert(
+            "high-contrast-dark".to_string(),
+            Self::create_dark_high_contrast_theme(),
+        );
+        themes.insert(
+            "high-contrast-light".to_string(),
+            Self::create_light_high_contrast_theme(),
+        );
+        themes.insert(
+            "high-contrast-yellow-blue".to_string(),
+            Self::create_yellow_blue_theme(),
+        );
 
         Self {
             themes,
@@ -1531,9 +1658,9 @@ impl HighContrastThemeManager {
 
     /// Get current high contrast theme
     pub fn current_theme(&self) -> &crate::style::Theme {
-        self.themes.get(&self.current_theme).unwrap_or_else(|| {
-            self.themes.get("high-contrast-dark").unwrap()
-        })
+        self.themes
+            .get(&self.current_theme)
+            .unwrap_or_else(|| self.themes.get("high-contrast-dark").unwrap())
     }
 
     /// Set current theme
@@ -1555,17 +1682,17 @@ impl HighContrastThemeManager {
     fn create_dark_high_contrast_theme() -> crate::style::Theme {
         crate::style::Theme {
             name: "High Contrast Dark".to_string(),
-            primary: crate::style::Color::new(255, 255, 255),     // White
-            secondary: crate::style::Color::new(255, 255, 255),   // BrightWhite
-            background: crate::style::Color::new(0, 0, 0),        // Black
-            foreground: crate::style::Color::new(255, 255, 255),  // White
-            accent: crate::style::Color::new(255, 255, 255),      // BrightWhite
-            error: crate::style::Color::new(255, 0, 0),           // BrightRed
-            warning: crate::style::Color::new(255, 255, 0),       // BrightYellow
-            success: crate::style::Color::new(0, 255, 0),         // BrightGreen
-            info: crate::style::Color::new(0, 0, 255),            // BrightBlue
-            muted: crate::style::Color::new(128, 128, 128),       // Gray
-            border: crate::style::Color::new(255, 255, 255),      // White
+            primary: crate::style::Color::new(255, 255, 255), // White
+            secondary: crate::style::Color::new(255, 255, 255), // BrightWhite
+            background: crate::style::Color::new(0, 0, 0),    // Black
+            foreground: crate::style::Color::new(255, 255, 255), // White
+            accent: crate::style::Color::new(255, 255, 255),  // BrightWhite
+            error: crate::style::Color::new(255, 0, 0),       // BrightRed
+            warning: crate::style::Color::new(255, 255, 0),   // BrightYellow
+            success: crate::style::Color::new(0, 255, 0),     // BrightGreen
+            info: crate::style::Color::new(0, 0, 255),        // BrightBlue
+            muted: crate::style::Color::new(128, 128, 128),   // Gray
+            border: crate::style::Color::new(255, 255, 255),  // White
         }
     }
 
@@ -1573,17 +1700,17 @@ impl HighContrastThemeManager {
     fn create_light_high_contrast_theme() -> crate::style::Theme {
         crate::style::Theme {
             name: "High Contrast Light".to_string(),
-            primary: crate::style::Color::new(0, 0, 0),           // Black
-            secondary: crate::style::Color::new(0, 0, 0),         // BrightBlack
-            background: crate::style::Color::new(255, 255, 255),  // White
-            foreground: crate::style::Color::new(0, 0, 0),        // Black
-            accent: crate::style::Color::new(0, 0, 0),            // BrightBlack
-            error: crate::style::Color::new(255, 0, 0),           // Red
-            warning: crate::style::Color::new(128, 128, 0),       // DarkYellow
-            success: crate::style::Color::new(0, 128, 0),         // DarkGreen
-            info: crate::style::Color::new(0, 0, 128),            // DarkBlue
-            muted: crate::style::Color::new(64, 64, 64),          // DarkGray
-            border: crate::style::Color::new(0, 0, 0),            // Black
+            primary: crate::style::Color::new(0, 0, 0), // Black
+            secondary: crate::style::Color::new(0, 0, 0), // BrightBlack
+            background: crate::style::Color::new(255, 255, 255), // White
+            foreground: crate::style::Color::new(0, 0, 0), // Black
+            accent: crate::style::Color::new(0, 0, 0),  // BrightBlack
+            error: crate::style::Color::new(255, 0, 0), // Red
+            warning: crate::style::Color::new(128, 128, 0), // DarkYellow
+            success: crate::style::Color::new(0, 128, 0), // DarkGreen
+            info: crate::style::Color::new(0, 0, 128),  // DarkBlue
+            muted: crate::style::Color::new(64, 64, 64), // DarkGray
+            border: crate::style::Color::new(0, 0, 0),  // Black
         }
     }
 
@@ -1591,17 +1718,17 @@ impl HighContrastThemeManager {
     fn create_yellow_blue_theme() -> crate::style::Theme {
         crate::style::Theme {
             name: "Yellow on Blue".to_string(),
-            primary: crate::style::Color::new(255, 255, 0),       // BrightYellow
-            secondary: crate::style::Color::new(255, 255, 0),     // Yellow
-            background: crate::style::Color::new(0, 0, 255),      // Blue
-            foreground: crate::style::Color::new(255, 255, 0),    // BrightYellow
-            accent: crate::style::Color::new(255, 255, 255),      // BrightWhite
-            error: crate::style::Color::new(255, 0, 0),           // BrightRed
-            warning: crate::style::Color::new(255, 255, 255),     // BrightWhite
-            success: crate::style::Color::new(0, 255, 0),         // BrightGreen
-            info: crate::style::Color::new(0, 255, 255),          // BrightCyan
-            muted: crate::style::Color::new(0, 255, 255),         // Cyan
-            border: crate::style::Color::new(255, 255, 0),        // BrightYellow
+            primary: crate::style::Color::new(255, 255, 0), // BrightYellow
+            secondary: crate::style::Color::new(255, 255, 0), // Yellow
+            background: crate::style::Color::new(0, 0, 255), // Blue
+            foreground: crate::style::Color::new(255, 255, 0), // BrightYellow
+            accent: crate::style::Color::new(255, 255, 255), // BrightWhite
+            error: crate::style::Color::new(255, 0, 0),     // BrightRed
+            warning: crate::style::Color::new(255, 255, 255), // BrightWhite
+            success: crate::style::Color::new(0, 255, 0),   // BrightGreen
+            info: crate::style::Color::new(0, 255, 255),    // BrightCyan
+            muted: crate::style::Color::new(0, 255, 255),   // Cyan
+            border: crate::style::Color::new(255, 255, 0),  // BrightYellow
         }
     }
 }
@@ -1622,41 +1749,45 @@ impl KeyboardShortcutCustomizer {
         let mut defaults = HashMap::new();
 
         // Define default shortcuts
-        defaults.insert("mode.chat".to_string(), vec![
-            crossterm::event::KeyEvent {
+        defaults.insert(
+            "mode.chat".to_string(),
+            vec![crossterm::event::KeyEvent {
                 code: crossterm::event::KeyCode::Char('1'),
                 modifiers: crossterm::event::KeyModifiers::CONTROL,
                 kind: crossterm::event::KeyEventKind::Press,
                 state: crossterm::event::KeyEventState::empty(),
-            }
-        ]);
+            }],
+        );
 
-        defaults.insert("mode.command".to_string(), vec![
-            crossterm::event::KeyEvent {
+        defaults.insert(
+            "mode.command".to_string(),
+            vec![crossterm::event::KeyEvent {
                 code: crossterm::event::KeyCode::Char('2'),
                 modifiers: crossterm::event::KeyModifiers::CONTROL,
                 kind: crossterm::event::KeyEventKind::Press,
                 state: crossterm::event::KeyEventState::empty(),
-            }
-        ]);
+            }],
+        );
 
-        defaults.insert("focus.next".to_string(), vec![
-            crossterm::event::KeyEvent {
+        defaults.insert(
+            "focus.next".to_string(),
+            vec![crossterm::event::KeyEvent {
                 code: crossterm::event::KeyCode::Tab,
                 modifiers: crossterm::event::KeyModifiers::empty(),
                 kind: crossterm::event::KeyEventKind::Press,
                 state: crossterm::event::KeyEventState::empty(),
-            }
-        ]);
+            }],
+        );
 
-        defaults.insert("focus.previous".to_string(), vec![
-            crossterm::event::KeyEvent {
+        defaults.insert(
+            "focus.previous".to_string(),
+            vec![crossterm::event::KeyEvent {
                 code: crossterm::event::KeyCode::Tab,
                 modifiers: crossterm::event::KeyModifiers::SHIFT,
                 kind: crossterm::event::KeyEventKind::Press,
                 state: crossterm::event::KeyEventState::empty(),
-            }
-        ]);
+            }],
+        );
 
         Self {
             defaults,
@@ -1667,12 +1798,17 @@ impl KeyboardShortcutCustomizer {
 
     /// Get shortcut for action
     pub fn get_shortcut(&self, action: &str) -> Option<&Vec<crossterm::event::KeyEvent>> {
-        self.customizations.get(action)
+        self.customizations
+            .get(action)
             .or_else(|| self.defaults.get(action))
     }
 
     /// Set custom shortcut for action
-    pub fn set_shortcut(&mut self, action: String, keys: Vec<crossterm::event::KeyEvent>) -> Result<(), String> {
+    pub fn set_shortcut(
+        &mut self,
+        action: String,
+        keys: Vec<crossterm::event::KeyEvent>,
+    ) -> Result<(), String> {
         // Check for conflicts
         for (existing_keys, actions) in &self.conflicts {
             if existing_keys == &keys {
@@ -1692,7 +1828,10 @@ impl KeyboardShortcutCustomizer {
 
         // Add new shortcut
         self.customizations.insert(action.clone(), keys.clone());
-        self.conflicts.entry(keys).or_insert_with(Vec::new).push(action);
+        self.conflicts
+            .entry(keys)
+            .or_insert_with(Vec::new)
+            .push(action);
 
         Ok(())
     }
@@ -1731,9 +1870,8 @@ impl KeyboardShortcutCustomizer {
     /// Import shortcuts configuration
     pub fn import_config(&mut self, config: HashMap<String, Vec<String>>) -> Result<(), String> {
         for (action, key_strings) in config {
-            let keys: Result<Vec<crossterm::event::KeyEvent>, String> = key_strings.iter()
-                .map(|s| self.string_to_key(s))
-                .collect();
+            let keys: Result<Vec<crossterm::event::KeyEvent>, String> =
+                key_strings.iter().map(|s| self.string_to_key(s)).collect();
 
             match keys {
                 Ok(k) => {
@@ -1750,13 +1888,19 @@ impl KeyboardShortcutCustomizer {
     fn key_to_string(&self, key: &crossterm::event::KeyEvent) -> String {
         let mut parts = Vec::new();
 
-        if key.modifiers.contains(crossterm::event::KeyModifiers::CONTROL) {
+        if key
+            .modifiers
+            .contains(crossterm::event::KeyModifiers::CONTROL)
+        {
             parts.push("Ctrl".to_string());
         }
         if key.modifiers.contains(crossterm::event::KeyModifiers::ALT) {
             parts.push("Alt".to_string());
         }
-        if key.modifiers.contains(crossterm::event::KeyModifiers::SHIFT) {
+        if key
+            .modifiers
+            .contains(crossterm::event::KeyModifiers::SHIFT)
+        {
             parts.push("Shift".to_string());
         }
 
@@ -1798,272 +1942,286 @@ impl KeyboardShortcutCustomizer {
                 "right" => key_code = Some(crossterm::event::KeyCode::Right),
                 other => {
                     if other.len() == 1 {
-                        key_code = Some(crossterm::event::KeyCode::Char(other.chars().next().unwrap()));
+                        key_code = Some(crossterm::event::KeyCode::Char(
+                            other.chars().next().unwrap(),
+                        ));
                     } else {
                         return Err(format!("Unknown key: {}", other));
-        }
-    }
-}
-
-/// Keyboard shortcut help system
-#[derive(Debug)]
-pub struct KeyboardShortcutHelp {
-    /// Available shortcuts organized by category
-    shortcuts: std::collections::HashMap<String, Vec<KeyboardShortcut>>,
-    /// Current search filter
-    search_filter: String,
-    /// Filtered shortcuts based on search
-    filtered_shortcuts: Vec<(String, Vec<KeyboardShortcut>)>,
-}
-
-/// Keyboard shortcut definition
-#[derive(Debug, Clone)]
-pub struct KeyboardShortcut {
-    pub keys: String,
-    pub description: String,
-    pub category: String,
-    pub context: Option<String>, // Optional context (e.g., "when file is open")
-}
-
-impl KeyboardShortcutHelp {
-    /// Create a new keyboard shortcut help system
-    pub fn new() -> Self {
-        Self {
-            shortcuts: std::collections::HashMap::new(),
-            search_filter: String::new(),
-            filtered_shortcuts: Vec::new(),
-        }
-    }
-
-    /// Add a keyboard shortcut
-    pub fn add_shortcut(&mut self, shortcut: KeyboardShortcut) {
-        self.shortcuts.entry(shortcut.category.clone())
-            .or_insert_with(Vec::new)
-            .push(shortcut);
-        self.update_filtered_shortcuts();
-    }
-
-    /// Add multiple shortcuts
-    pub fn add_shortcuts(&mut self, shortcuts: Vec<KeyboardShortcut>) {
-        for shortcut in shortcuts {
-            self.add_shortcut(shortcut);
-        }
-    }
-
-    /// Remove shortcuts by category
-    pub fn remove_category(&mut self, category: &str) {
-        self.shortcuts.remove(category);
-        self.update_filtered_shortcuts();
-    }
-
-    /// Set search filter
-    pub fn set_search_filter(&mut self, filter: String) {
-        self.search_filter = filter;
-        self.update_filtered_shortcuts();
-    }
-
-    /// Get filtered shortcuts
-    pub fn filtered_shortcuts(&self) -> &[(String, Vec<KeyboardShortcut>)] {
-        &self.filtered_shortcuts
-    }
-
-    /// Get all shortcuts
-    pub fn all_shortcuts(&self) -> &std::collections::HashMap<String, Vec<KeyboardShortcut>> {
-        &self.shortcuts
-    }
-
-    /// Get shortcuts for a specific category
-    pub fn category_shortcuts(&self, category: &str) -> Option<&[KeyboardShortcut]> {
-        self.shortcuts.get(category).map(|v| v.as_slice())
-    }
-
-    /// Search shortcuts by description or keys
-    pub fn search(&self, query: &str) -> Vec<&KeyboardShortcut> {
-        let query_lower = query.to_lowercase();
-        self.shortcuts.values()
-            .flatten()
-            .filter(|shortcut|
-                shortcut.description.to_lowercase().contains(&query_lower) ||
-                shortcut.keys.to_lowercase().contains(&query_lower) ||
-                shortcut.category.to_lowercase().contains(&query_lower)
-            )
-            .collect()
-    }
-
-    /// Get context-sensitive shortcuts
-    pub fn context_shortcuts(&self, context: &str) -> Vec<&KeyboardShortcut> {
-        self.shortcuts.values()
-            .flatten()
-            .filter(|shortcut| {
-                shortcut.context.as_ref().map_or(true, |ctx| ctx == context)
-            })
-            .collect()
-    }
-
-    /// Generate help text for display
-    pub fn generate_help_text(&self, max_width: usize) -> Vec<String> {
-        let mut lines = Vec::new();
-
-        if !self.search_filter.is_empty() {
-            lines.push(format!("Search: {}", self.search_filter));
-            lines.push("".to_string());
-        }
-
-        for (category, shortcuts) in &self.filtered_shortcuts {
-            lines.push(format!("{}:", category.to_uppercase()));
-            lines.push("".to_string());
-
-            for shortcut in shortcuts {
-                let key_part = format!("  {:<15}", shortcut.keys);
-                let desc_part = if key_part.len() + shortcut.description.len() > max_width {
-                    format!("{}...", &shortcut.description[..max_width.saturating_sub(key_part.len() + 3)])
-                } else {
-                    shortcut.description.clone()
-                };
-
-                lines.push(format!("{}{}", key_part, desc_part));
-
-                if let Some(context) = &shortcut.context {
-                    lines.push(format!("    ({})", context));
+                    }
                 }
             }
 
-            lines.push("".to_string());
-        }
-
-        lines
-    }
-
-    /// Clear all shortcuts
-    pub fn clear(&mut self) {
-        self.shortcuts.clear();
-        self.filtered_shortcuts.clear();
-        self.search_filter.clear();
-    }
-
-    /// Update filtered shortcuts based on search filter
-    fn update_filtered_shortcuts(&mut self) {
-        self.filtered_shortcuts.clear();
-
-        if self.search_filter.is_empty() {
-            // Show all categories
-            for (category, shortcuts) in &self.shortcuts {
-                self.filtered_shortcuts.push((category.clone(), shortcuts.clone()));
+            /// Keyboard shortcut help system
+            #[derive(Debug)]
+            pub struct KeyboardShortcutHelp {
+                /// Available shortcuts organized by category
+                shortcuts: std::collections::HashMap<String, Vec<KeyboardShortcut>>,
+                /// Current search filter
+                search_filter: String,
+                /// Filtered shortcuts based on search
+                filtered_shortcuts: Vec<(String, Vec<KeyboardShortcut>)>,
             }
-        } else {
-            // Filter by search
-            let filter_lower = self.search_filter.to_lowercase();
-            for (category, shortcuts) in &self.shortcuts {
-                let filtered: Vec<KeyboardShortcut> = shortcuts.iter()
-                    .filter(|shortcut|
-                        shortcut.description.to_lowercase().contains(&filter_lower) ||
-                        shortcut.keys.to_lowercase().contains(&filter_lower) ||
-                        category.to_lowercase().contains(&filter_lower)
-                    )
-                    .cloned()
-                    .collect();
 
-                if !filtered.is_empty() {
-                    self.filtered_shortcuts.push((category.clone(), filtered));
+            /// Keyboard shortcut definition
+            #[derive(Debug, Clone)]
+            pub struct KeyboardShortcut {
+                pub keys: String,
+                pub description: String,
+                pub category: String,
+                pub context: Option<String>, // Optional context (e.g., "when file is open")
+            }
+
+            impl KeyboardShortcutHelp {
+                /// Create a new keyboard shortcut help system
+                pub fn new() -> Self {
+                    Self {
+                        shortcuts: std::collections::HashMap::new(),
+                        search_filter: String::new(),
+                        filtered_shortcuts: Vec::new(),
+                    }
+                }
+
+                /// Add a keyboard shortcut
+                pub fn add_shortcut(&mut self, shortcut: KeyboardShortcut) {
+                    self.shortcuts
+                        .entry(shortcut.category.clone())
+                        .or_insert_with(Vec::new)
+                        .push(shortcut);
+                    self.update_filtered_shortcuts();
+                }
+
+                /// Add multiple shortcuts
+                pub fn add_shortcuts(&mut self, shortcuts: Vec<KeyboardShortcut>) {
+                    for shortcut in shortcuts {
+                        self.add_shortcut(shortcut);
+                    }
+                }
+
+                /// Remove shortcuts by category
+                pub fn remove_category(&mut self, category: &str) {
+                    self.shortcuts.remove(category);
+                    self.update_filtered_shortcuts();
+                }
+
+                /// Set search filter
+                pub fn set_search_filter(&mut self, filter: String) {
+                    self.search_filter = filter;
+                    self.update_filtered_shortcuts();
+                }
+
+                /// Get filtered shortcuts
+                pub fn filtered_shortcuts(&self) -> &[(String, Vec<KeyboardShortcut>)] {
+                    &self.filtered_shortcuts
+                }
+
+                /// Get all shortcuts
+                pub fn all_shortcuts(
+                    &self,
+                ) -> &std::collections::HashMap<String, Vec<KeyboardShortcut>> {
+                    &self.shortcuts
+                }
+
+                /// Get shortcuts for a specific category
+                pub fn category_shortcuts(&self, category: &str) -> Option<&[KeyboardShortcut]> {
+                    self.shortcuts.get(category).map(|v| v.as_slice())
+                }
+
+                /// Search shortcuts by description or keys
+                pub fn search(&self, query: &str) -> Vec<&KeyboardShortcut> {
+                    let query_lower = query.to_lowercase();
+                    self.shortcuts
+                        .values()
+                        .flatten()
+                        .filter(|shortcut| {
+                            shortcut.description.to_lowercase().contains(&query_lower)
+                                || shortcut.keys.to_lowercase().contains(&query_lower)
+                                || shortcut.category.to_lowercase().contains(&query_lower)
+                        })
+                        .collect()
+                }
+
+                /// Get context-sensitive shortcuts
+                pub fn context_shortcuts(&self, context: &str) -> Vec<&KeyboardShortcut> {
+                    self.shortcuts
+                        .values()
+                        .flatten()
+                        .filter(|shortcut| {
+                            shortcut.context.as_ref().map_or(true, |ctx| ctx == context)
+                        })
+                        .collect()
+                }
+
+                /// Generate help text for display
+                pub fn generate_help_text(&self, max_width: usize) -> Vec<String> {
+                    let mut lines = Vec::new();
+
+                    if !self.search_filter.is_empty() {
+                        lines.push(format!("Search: {}", self.search_filter));
+                        lines.push("".to_string());
+                    }
+
+                    for (category, shortcuts) in &self.filtered_shortcuts {
+                        lines.push(format!("{}:", category.to_uppercase()));
+                        lines.push("".to_string());
+
+                        for shortcut in shortcuts {
+                            let key_part = format!("  {:<15}", shortcut.keys);
+                            let desc_part =
+                                if key_part.len() + shortcut.description.len() > max_width {
+                                    format!(
+                                        "{}...",
+                                        &shortcut.description
+                                            [..max_width.saturating_sub(key_part.len() + 3)]
+                                    )
+                                } else {
+                                    shortcut.description.clone()
+                                };
+
+                            lines.push(format!("{}{}", key_part, desc_part));
+
+                            if let Some(context) = &shortcut.context {
+                                lines.push(format!("    ({})", context));
+                            }
+                        }
+
+                        lines.push("".to_string());
+                    }
+
+                    lines
+                }
+
+                /// Clear all shortcuts
+                pub fn clear(&mut self) {
+                    self.shortcuts.clear();
+                    self.filtered_shortcuts.clear();
+                    self.search_filter.clear();
+                }
+
+                /// Update filtered shortcuts based on search filter
+                fn update_filtered_shortcuts(&mut self) {
+                    self.filtered_shortcuts.clear();
+
+                    if self.search_filter.is_empty() {
+                        // Show all categories
+                        for (category, shortcuts) in &self.shortcuts {
+                            self.filtered_shortcuts
+                                .push((category.clone(), shortcuts.clone()));
+                        }
+                    } else {
+                        // Filter by search
+                        let filter_lower = self.search_filter.to_lowercase();
+                        for (category, shortcuts) in &self.shortcuts {
+                            let filtered: Vec<KeyboardShortcut> = shortcuts
+                                .iter()
+                                .filter(|shortcut| {
+                                    shortcut.description.to_lowercase().contains(&filter_lower)
+                                        || shortcut.keys.to_lowercase().contains(&filter_lower)
+                                        || category.to_lowercase().contains(&filter_lower)
+                                })
+                                .cloned()
+                                .collect();
+
+                            if !filtered.is_empty() {
+                                self.filtered_shortcuts.push((category.clone(), filtered));
+                            }
+                        }
+                    }
+
+                    // Sort categories alphabetically
+                    self.filtered_shortcuts.sort_by(|a, b| a.0.cmp(&b.0));
                 }
             }
-        }
 
-        // Sort categories alphabetically
-        self.filtered_shortcuts.sort_by(|a, b| a.0.cmp(&b.0));
-    }
-}
+            impl Default for KeyboardShortcutHelp {
+                fn default() -> Self {
+                    Self::new()
+                }
+            }
 
-impl Default for KeyboardShortcutHelp {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-/// Initialize default keyboard shortcuts for RiceCoder
-pub fn initialize_default_shortcuts() -> Vec<KeyboardShortcut> {
-    vec![
-        // General shortcuts
-        KeyboardShortcut {
-            keys: "Ctrl+C".to_string(),
-            description: "Exit application".to_string(),
-            category: "General".to_string(),
-            context: None,
-        },
-        KeyboardShortcut {
-            keys: "Ctrl+Z".to_string(),
-            description: "Undo last action".to_string(),
-            category: "General".to_string(),
-            context: None,
-        },
-        KeyboardShortcut {
-            keys: "Ctrl+Y".to_string(),
-            description: "Redo last action".to_string(),
-            category: "General".to_string(),
-            context: None,
-        },
-        KeyboardShortcut {
-            keys: "Ctrl+S".to_string(),
-            description: "Save current file".to_string(),
-            category: "File".to_string(),
-            context: Some("when file is open".to_string()),
-        },
-        KeyboardShortcut {
-            keys: "Ctrl+O".to_string(),
-            description: "Open file".to_string(),
-            category: "File".to_string(),
-            context: None,
-        },
-        KeyboardShortcut {
-            keys: "Ctrl+N".to_string(),
-            description: "New file".to_string(),
-            category: "File".to_string(),
-            context: None,
-        },
-        KeyboardShortcut {
-            keys: "F1".to_string(),
-            description: "Show help".to_string(),
-            category: "Help".to_string(),
-            context: None,
-        },
-        KeyboardShortcut {
-            keys: "Ctrl+/".to_string(),
-            description: "Toggle comment".to_string(),
-            category: "Editing".to_string(),
-            context: Some("when text is selected".to_string()),
-        },
-        KeyboardShortcut {
-            keys: "Ctrl+F".to_string(),
-            description: "Find in file".to_string(),
-            category: "Search".to_string(),
-            context: Some("when file is open".to_string()),
-        },
-        KeyboardShortcut {
-            keys: "Ctrl+H".to_string(),
-            description: "Replace in file".to_string(),
-            category: "Search".to_string(),
-            context: Some("when file is open".to_string()),
-        },
-        KeyboardShortcut {
-            keys: "Ctrl+P".to_string(),
-            description: "Command palette".to_string(),
-            category: "Navigation".to_string(),
-            context: None,
-        },
-        KeyboardShortcut {
-            keys: "Ctrl+B".to_string(),
-            description: "Toggle sidebar".to_string(),
-            category: "View".to_string(),
-            context: None,
-        },
-        KeyboardShortcut {
-            keys: "F11".to_string(),
-            description: "Toggle fullscreen".to_string(),
-            category: "View".to_string(),
-            context: None,
-        },
-    ]
-}
+            /// Initialize default keyboard shortcuts for RiceCoder
+            pub fn initialize_default_shortcuts() -> Vec<KeyboardShortcut> {
+                vec![
+                    // General shortcuts
+                    KeyboardShortcut {
+                        keys: "Ctrl+C".to_string(),
+                        description: "Exit application".to_string(),
+                        category: "General".to_string(),
+                        context: None,
+                    },
+                    KeyboardShortcut {
+                        keys: "Ctrl+Z".to_string(),
+                        description: "Undo last action".to_string(),
+                        category: "General".to_string(),
+                        context: None,
+                    },
+                    KeyboardShortcut {
+                        keys: "Ctrl+Y".to_string(),
+                        description: "Redo last action".to_string(),
+                        category: "General".to_string(),
+                        context: None,
+                    },
+                    KeyboardShortcut {
+                        keys: "Ctrl+S".to_string(),
+                        description: "Save current file".to_string(),
+                        category: "File".to_string(),
+                        context: Some("when file is open".to_string()),
+                    },
+                    KeyboardShortcut {
+                        keys: "Ctrl+O".to_string(),
+                        description: "Open file".to_string(),
+                        category: "File".to_string(),
+                        context: None,
+                    },
+                    KeyboardShortcut {
+                        keys: "Ctrl+N".to_string(),
+                        description: "New file".to_string(),
+                        category: "File".to_string(),
+                        context: None,
+                    },
+                    KeyboardShortcut {
+                        keys: "F1".to_string(),
+                        description: "Show help".to_string(),
+                        category: "Help".to_string(),
+                        context: None,
+                    },
+                    KeyboardShortcut {
+                        keys: "Ctrl+/".to_string(),
+                        description: "Toggle comment".to_string(),
+                        category: "Editing".to_string(),
+                        context: Some("when text is selected".to_string()),
+                    },
+                    KeyboardShortcut {
+                        keys: "Ctrl+F".to_string(),
+                        description: "Find in file".to_string(),
+                        category: "Search".to_string(),
+                        context: Some("when file is open".to_string()),
+                    },
+                    KeyboardShortcut {
+                        keys: "Ctrl+H".to_string(),
+                        description: "Replace in file".to_string(),
+                        category: "Search".to_string(),
+                        context: Some("when file is open".to_string()),
+                    },
+                    KeyboardShortcut {
+                        keys: "Ctrl+P".to_string(),
+                        description: "Command palette".to_string(),
+                        category: "Navigation".to_string(),
+                        context: None,
+                    },
+                    KeyboardShortcut {
+                        keys: "Ctrl+B".to_string(),
+                        description: "Toggle sidebar".to_string(),
+                        category: "View".to_string(),
+                        context: None,
+                    },
+                    KeyboardShortcut {
+                        keys: "F11".to_string(),
+                        description: "Toggle fullscreen".to_string(),
+                        category: "View".to_string(),
+                        context: None,
+                    },
+                ]
+            }
         }
 
         match key_code {
@@ -2083,7 +2241,12 @@ impl crate::Component for ScreenReaderAnnouncer {
         "screen_reader".to_string()
     }
 
-    fn render(&self, _frame: &mut ratatui::Frame, _area: ratatui::layout::Rect, _model: &crate::AppModel) {
+    fn render(
+        &self,
+        _frame: &mut ratatui::Frame,
+        _area: ratatui::layout::Rect,
+        _model: &crate::AppModel,
+    ) {
         // Screen reader doesn't render visually
     }
 
@@ -2124,7 +2287,10 @@ impl crate::Component for ScreenReaderAnnouncer {
         // Screen reader doesn't have bounds
     }
 
-    fn handle_focus(&mut self, _direction: crate::components::FocusDirection) -> crate::components::FocusResult {
+    fn handle_focus(
+        &mut self,
+        _direction: crate::components::FocusDirection,
+    ) -> crate::components::FocusResult {
         crate::components::FocusResult::Handled
     }
 
@@ -2182,5 +2348,3 @@ impl crate::Component for ScreenReaderAnnouncer {
         })
     }
 }
-
-

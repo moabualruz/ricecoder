@@ -39,10 +39,7 @@ impl DecisionLogger {
         decision_index.insert(decision_id.clone(), index);
 
         let mut context_index = self.context_index.write().await;
-        context_index
-            .entry(context_key)
-            .or_default()
-            .push(index);
+        context_index.entry(context_key).or_default().push(index);
 
         Ok(decision_id)
     }
@@ -124,7 +121,9 @@ impl DecisionLogger {
         let mut agent_counts: HashMap<String, usize> = HashMap::new();
 
         for decision in decisions.iter() {
-            *type_counts.entry(decision.decision_type.clone()).or_insert(0) += 1;
+            *type_counts
+                .entry(decision.decision_type.clone())
+                .or_insert(0) += 1;
             *agent_counts
                 .entry(decision.context.agent_type.clone())
                 .or_insert(0) += 1;
@@ -194,7 +193,8 @@ mod tests {
     async fn test_log_decision() {
         let logger = DecisionLogger::new();
 
-        let decision = create_test_decision("code_gen", "agent1", "/project", "/project/src/main.rs");
+        let decision =
+            create_test_decision("code_gen", "agent1", "/project", "/project/src/main.rs");
         let decision_id = decision.id.clone();
 
         let result = logger.log_decision(decision).await;
@@ -208,8 +208,10 @@ mod tests {
     async fn test_get_history() {
         let logger = DecisionLogger::new();
 
-        let decision1 = create_test_decision("code_gen", "agent1", "/project", "/project/src/main.rs");
-        let decision2 = create_test_decision("refactor", "agent2", "/project", "/project/src/lib.rs");
+        let decision1 =
+            create_test_decision("code_gen", "agent1", "/project", "/project/src/main.rs");
+        let decision2 =
+            create_test_decision("refactor", "agent2", "/project", "/project/src/lib.rs");
 
         logger.log_decision(decision1).await.unwrap();
         logger.log_decision(decision2).await.unwrap();
@@ -222,9 +224,12 @@ mod tests {
     async fn test_get_history_by_type() {
         let logger = DecisionLogger::new();
 
-        let decision1 = create_test_decision("code_gen", "agent1", "/project", "/project/src/main.rs");
-        let decision2 = create_test_decision("refactor", "agent2", "/project", "/project/src/lib.rs");
-        let decision3 = create_test_decision("code_gen", "agent1", "/project", "/project/src/utils.rs");
+        let decision1 =
+            create_test_decision("code_gen", "agent1", "/project", "/project/src/main.rs");
+        let decision2 =
+            create_test_decision("refactor", "agent2", "/project", "/project/src/lib.rs");
+        let decision3 =
+            create_test_decision("code_gen", "agent1", "/project", "/project/src/utils.rs");
 
         logger.log_decision(decision1).await.unwrap();
         logger.log_decision(decision2).await.unwrap();
@@ -291,7 +296,8 @@ mod tests {
     async fn test_get_decision() {
         let logger = DecisionLogger::new();
 
-        let decision = create_test_decision("code_gen", "agent1", "/project", "/project/src/main.rs");
+        let decision =
+            create_test_decision("code_gen", "agent1", "/project", "/project/src/main.rs");
         let decision_id = decision.id.clone();
 
         logger.log_decision(decision.clone()).await.unwrap();
@@ -313,8 +319,10 @@ mod tests {
     async fn test_replay_decisions() {
         let logger = DecisionLogger::new();
 
-        let decision1 = create_test_decision("code_gen", "agent1", "/project", "/project/src/main.rs");
-        let decision2 = create_test_decision("refactor", "agent2", "/project", "/project/src/lib.rs");
+        let decision1 =
+            create_test_decision("code_gen", "agent1", "/project", "/project/src/main.rs");
+        let decision2 =
+            create_test_decision("refactor", "agent2", "/project", "/project/src/lib.rs");
 
         logger.log_decision(decision1).await.unwrap();
         logger.log_decision(decision2).await.unwrap();
@@ -363,12 +371,14 @@ mod tests {
 
         assert_eq!(logger.decision_count().await, 0);
 
-        let decision1 = create_test_decision("code_gen", "agent1", "/project", "/project/src/main.rs");
+        let decision1 =
+            create_test_decision("code_gen", "agent1", "/project", "/project/src/main.rs");
         logger.log_decision(decision1).await.unwrap();
 
         assert_eq!(logger.decision_count().await, 1);
 
-        let decision2 = create_test_decision("refactor", "agent2", "/project", "/project/src/lib.rs");
+        let decision2 =
+            create_test_decision("refactor", "agent2", "/project", "/project/src/lib.rs");
         logger.log_decision(decision2).await.unwrap();
 
         assert_eq!(logger.decision_count().await, 2);
@@ -378,7 +388,8 @@ mod tests {
     async fn test_clear() {
         let logger = DecisionLogger::new();
 
-        let decision = create_test_decision("code_gen", "agent1", "/project", "/project/src/main.rs");
+        let decision =
+            create_test_decision("code_gen", "agent1", "/project", "/project/src/main.rs");
         logger.log_decision(decision).await.unwrap();
 
         assert_eq!(logger.decision_count().await, 1);
@@ -392,9 +403,12 @@ mod tests {
     async fn test_get_statistics() {
         let logger = DecisionLogger::new();
 
-        let decision1 = create_test_decision("code_gen", "agent1", "/project", "/project/src/main.rs");
-        let decision2 = create_test_decision("refactor", "agent2", "/project", "/project/src/lib.rs");
-        let decision3 = create_test_decision("code_gen", "agent1", "/project", "/project/src/utils.rs");
+        let decision1 =
+            create_test_decision("code_gen", "agent1", "/project", "/project/src/main.rs");
+        let decision2 =
+            create_test_decision("refactor", "agent2", "/project", "/project/src/lib.rs");
+        let decision3 =
+            create_test_decision("code_gen", "agent1", "/project", "/project/src/utils.rs");
 
         logger.log_decision(decision1).await.unwrap();
         logger.log_decision(decision2).await.unwrap();

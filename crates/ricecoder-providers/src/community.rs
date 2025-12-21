@@ -10,10 +10,10 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
-use serde::{Deserialize, Serialize};
+use crate::curation::{QualityScore, ReliabilityStatus};
 use crate::error::ProviderError;
 use crate::models::{ModelInfo, Pricing};
-use crate::curation::{QualityScore, ReliabilityStatus};
+use serde::{Deserialize, Serialize};
 
 /// Community contribution status
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -238,38 +238,59 @@ impl CommunityProviderRegistry {
     }
 
     /// Submit a provider contribution
-    pub fn submit_contribution(&mut self, config: CommunityProviderConfig) -> Result<String, ProviderError> {
-        let contribution_id = format!("contrib_{}_{}", config.provider_id, config.metadata.created_at.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+    pub fn submit_contribution(
+        &mut self,
+        config: CommunityProviderConfig,
+    ) -> Result<String, ProviderError> {
+        let contribution_id = format!(
+            "contrib_{}_{}",
+            config.provider_id,
+            config
+                .metadata
+                .created_at
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs()
+        );
 
         let mut config = config;
         config.id = contribution_id.clone();
         config.status = ContributionStatus::Pending;
 
-        self.pending_contributions.insert(contribution_id.clone(), config);
+        self.pending_contributions
+            .insert(contribution_id.clone(), config);
         Ok(contribution_id)
     }
 
     /// Review a contribution
     pub fn review_contribution(&mut self, review: ContributionReview) -> Result<(), ProviderError> {
-        if !self.pending_contributions.contains_key(&review.contribution_id) &&
-           !self.approved_configs.contains_key(&review.contribution_id) {
-            return Err(ProviderError::NotFound(format!("Contribution {} not found", review.contribution_id)));
+        if !self
+            .pending_contributions
+            .contains_key(&review.contribution_id)
+            && !self.approved_configs.contains_key(&review.contribution_id)
+        {
+            return Err(ProviderError::NotFound(format!(
+                "Contribution {} not found",
+                review.contribution_id
+            )));
         }
 
-        self.reviews.entry(review.contribution_id.clone())
+        self.reviews
+            .entry(review.contribution_id.clone())
             .or_insert_with(Vec::new)
             .push(review.clone());
 
         // Auto-approve if from trusted contributor and meets criteria
-        if self.trusted_contributors.contains(&review.reviewer) &&
-           review.decision == ContributionStatus::Approved &&
-           review.quality_score.unwrap_or(0.0) >= 0.8 {
-
+        if self.trusted_contributors.contains(&review.reviewer)
+            && review.decision == ContributionStatus::Approved
+            && review.quality_score.unwrap_or(0.0) >= 0.8
+        {
             if let Some(config) = self.pending_contributions.remove(&review.contribution_id) {
                 let mut approved_config = config;
                 approved_config.status = ContributionStatus::Approved;
                 approved_config.metadata.updated_at = SystemTime::now();
-                self.approved_configs.insert(review.contribution_id, approved_config);
+                self.approved_configs
+                    .insert(review.contribution_id, approved_config);
             }
         }
 
@@ -278,7 +299,9 @@ impl CommunityProviderRegistry {
 
     /// Get approved community configuration for a provider
     pub fn get_approved_config(&self, provider_id: &str) -> Option<&CommunityProviderConfig> {
-        self.approved_configs.values().find(|config| config.provider_id == provider_id)
+        self.approved_configs
+            .values()
+            .find(|config| config.provider_id == provider_id)
     }
 
     /// Get all approved configurations
@@ -293,14 +316,17 @@ impl CommunityProviderRegistry {
 
     /// Get reviews for a contribution
     pub fn get_reviews(&self, contribution_id: &str) -> Vec<&ContributionReview> {
-        self.reviews.get(contribution_id)
+        self.reviews
+            .get(contribution_id)
             .map(|reviews| reviews.iter().collect())
             .unwrap_or_default()
     }
 
     /// Record provider usage analytics
     pub fn record_usage(&mut self, provider_id: &str, usage: ProviderUsage) {
-        let analytics = self.analytics.entry(provider_id.to_string())
+        let analytics = self
+            .analytics
+            .entry(provider_id.to_string())
             .or_insert_with(|| ProviderAnalytics {
                 provider_id: provider_id.to_string(),
                 total_requests: 0,
@@ -324,15 +350,22 @@ impl CommunityProviderRegistry {
             analytics.successful_requests += 1;
         } else {
             analytics.failed_requests += 1;
-            *analytics.error_breakdown.entry(usage.error_type.unwrap_or_else(|| "unknown".to_string())).or_insert(0) += 1;
+            *analytics
+                .error_breakdown
+                .entry(usage.error_type.unwrap_or_else(|| "unknown".to_string()))
+                .or_insert(0) += 1;
         }
 
         // Update average response time
-        let total_time = analytics.avg_response_time_ms * (analytics.total_requests - 1) as f64 + usage.response_time_ms as f64;
+        let total_time = analytics.avg_response_time_ms * (analytics.total_requests - 1) as f64
+            + usage.response_time_ms as f64;
         analytics.avg_response_time_ms = total_time / analytics.total_requests as f64;
 
         // Update model popularity
-        *analytics.popular_models.entry(usage.model.clone()).or_insert(0) += 1;
+        *analytics
+            .popular_models
+            .entry(usage.model.clone())
+            .or_insert(0) += 1;
 
         analytics.last_updated = SystemTime::now();
     }
@@ -349,14 +382,16 @@ impl CommunityProviderRegistry {
 
     /// Add a provider update
     pub fn add_update(&mut self, update: ProviderUpdate) {
-        self.updates.entry(update.provider_id.clone())
+        self.updates
+            .entry(update.provider_id.clone())
             .or_insert_with(Vec::new)
             .push(update);
     }
 
     /// Get updates for a provider
     pub fn get_updates(&self, provider_id: &str) -> Vec<&ProviderUpdate> {
-        self.updates.get(provider_id)
+        self.updates
+            .get(provider_id)
             .map(|updates| updates.iter().collect())
             .unwrap_or_default()
     }
@@ -372,7 +407,10 @@ impl CommunityProviderRegistry {
     }
 
     /// Get community quality metrics for a provider
-    pub fn get_community_quality_metrics(&self, provider_id: &str) -> Option<CommunityQualityMetrics> {
+    pub fn get_community_quality_metrics(
+        &self,
+        provider_id: &str,
+    ) -> Option<CommunityQualityMetrics> {
         // Aggregate quality metrics from approved configs and analytics
         let config = self.get_approved_config(provider_id)?;
         let analytics = self.get_analytics(provider_id)?;
@@ -388,7 +426,7 @@ impl CommunityProviderRegistry {
             };
 
             Some(CommunityQualityMetrics {
-                tester_count: 1, // Basic estimate
+                tester_count: 1,                       // Basic estimate
                 avg_quality_score: success_rate * 0.8, // Rough estimate
                 avg_reliability_score: success_rate,
                 avg_cost_efficiency: if analytics.total_cost > 0.0 {
@@ -406,7 +444,9 @@ impl CommunityProviderRegistry {
 
     /// Get popular providers based on usage
     pub fn get_popular_providers(&self, limit: usize) -> Vec<(String, u64)> {
-        let mut providers: Vec<(String, u64)> = self.analytics.iter()
+        let mut providers: Vec<(String, u64)> = self
+            .analytics
+            .iter()
             .map(|(id, analytics)| (id.clone(), analytics.total_requests))
             .collect();
 
@@ -416,9 +456,13 @@ impl CommunityProviderRegistry {
 
     /// Get providers by quality score
     pub fn get_providers_by_community_quality(&self, limit: usize) -> Vec<(String, f64)> {
-        let mut providers: Vec<(String, f64)> = self.approved_configs.values()
+        let mut providers: Vec<(String, f64)> = self
+            .approved_configs
+            .values()
             .filter_map(|config| {
-                config.quality_metrics.as_ref()
+                config
+                    .quality_metrics
+                    .as_ref()
                     .map(|metrics| (config.provider_id.clone(), metrics.avg_quality_score))
             })
             .collect();
@@ -515,20 +559,41 @@ mod tests {
         let mut registry = CommunityProviderRegistry::new();
 
         // Record usage for different providers
-        registry.record_usage("provider_a", ProviderUsage {
-            success: true, tokens_used: 100, cost: 0.01, response_time_ms: 500,
-            model: "model1".to_string(), error_type: None,
-        });
+        registry.record_usage(
+            "provider_a",
+            ProviderUsage {
+                success: true,
+                tokens_used: 100,
+                cost: 0.01,
+                response_time_ms: 500,
+                model: "model1".to_string(),
+                error_type: None,
+            },
+        );
 
-        registry.record_usage("provider_a", ProviderUsage {
-            success: true, tokens_used: 200, cost: 0.02, response_time_ms: 600,
-            model: "model1".to_string(), error_type: None,
-        });
+        registry.record_usage(
+            "provider_a",
+            ProviderUsage {
+                success: true,
+                tokens_used: 200,
+                cost: 0.02,
+                response_time_ms: 600,
+                model: "model1".to_string(),
+                error_type: None,
+            },
+        );
 
-        registry.record_usage("provider_b", ProviderUsage {
-            success: true, tokens_used: 50, cost: 0.005, response_time_ms: 300,
-            model: "model2".to_string(), error_type: None,
-        });
+        registry.record_usage(
+            "provider_b",
+            ProviderUsage {
+                success: true,
+                tokens_used: 50,
+                cost: 0.005,
+                response_time_ms: 300,
+                model: "model2".to_string(),
+                error_type: None,
+            },
+        );
 
         let popular = registry.get_popular_providers(2);
         assert_eq!(popular.len(), 2);

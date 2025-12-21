@@ -12,7 +12,10 @@ impl DefaultServerConfigs {
         LspServerRegistry {
             servers: HashMap::from([
                 ("rust".to_string(), vec![Self::rust_analyzer()]),
-                ("typescript".to_string(), vec![Self::typescript_language_server()]),
+                (
+                    "typescript".to_string(),
+                    vec![Self::typescript_language_server()],
+                ),
                 ("python".to_string(), vec![Self::pylsp()]),
             ]),
             global: GlobalLspSettings::default(),
@@ -23,10 +26,18 @@ impl DefaultServerConfigs {
     pub fn tier1_and_tier2_registry() -> LspServerRegistry {
         let mut registry = Self::tier1_registry();
 
-        registry.servers.insert("go".to_string(), vec![Self::gopls()]);
-        registry.servers.insert("java".to_string(), vec![Self::jdtls()]);
-        registry.servers.insert("kotlin".to_string(), vec![Self::kotlin_language_server()]);
-        registry.servers.insert("dart".to_string(), vec![Self::dart_language_server()]);
+        registry
+            .servers
+            .insert("go".to_string(), vec![Self::gopls()]);
+        registry
+            .servers
+            .insert("java".to_string(), vec![Self::jdtls()]);
+        registry
+            .servers
+            .insert("kotlin".to_string(), vec![Self::kotlin_language_server()]);
+        registry
+            .servers
+            .insert("dart".to_string(), vec![Self::dart_language_server()]);
 
         registry
     }
@@ -35,11 +46,21 @@ impl DefaultServerConfigs {
     pub fn all_tiers_registry() -> LspServerRegistry {
         let mut registry = Self::tier1_and_tier2_registry();
 
-        registry.servers.insert("c".to_string(), vec![Self::clangd()]);
-        registry.servers.insert("cpp".to_string(), vec![Self::clangd()]);
-        registry.servers.insert("csharp".to_string(), vec![Self::omnisharp()]);
-        registry.servers.insert("ruby".to_string(), vec![Self::solargraph()]);
-        registry.servers.insert("php".to_string(), vec![Self::intelephense()]);
+        registry
+            .servers
+            .insert("c".to_string(), vec![Self::clangd()]);
+        registry
+            .servers
+            .insert("cpp".to_string(), vec![Self::clangd()]);
+        registry
+            .servers
+            .insert("csharp".to_string(), vec![Self::omnisharp()]);
+        registry
+            .servers
+            .insert("ruby".to_string(), vec![Self::solargraph()]);
+        registry
+            .servers
+            .insert("php".to_string(), vec![Self::intelephense()]);
 
         registry
     }
@@ -67,7 +88,12 @@ impl DefaultServerConfigs {
     pub fn typescript_language_server() -> LspServerConfig {
         LspServerConfig {
             language: "typescript".to_string(),
-            extensions: vec![".ts".to_string(), ".tsx".to_string(), ".js".to_string(), ".jsx".to_string()],
+            extensions: vec![
+                ".ts".to_string(),
+                ".tsx".to_string(),
+                ".js".to_string(),
+                ".jsx".to_string(),
+            ],
             executable: "typescript-language-server".to_string(),
             args: vec!["--stdio".to_string()],
             env: HashMap::new(),

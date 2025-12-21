@@ -1,10 +1,10 @@
 //! Main parser implementation with caching and optimization
 
 use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::RwLock;
 use std::future::Future;
 use std::pin::Pin;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
 use crate::error::{ParserError, ParserResult, ParserWarning};
 use crate::languages::{Language, LanguageRegistry, LanguageSupport};
@@ -14,7 +14,10 @@ use ricecoder_cache::{Cache, CacheConfig};
 /// Parser trait for parsing source code into syntax trees
 pub trait CodeParser {
     /// Parse source code into a syntax tree
-    fn parse<'a>(&'a self, source: &'a str) -> Pin<Box<dyn Future<Output = Result<SyntaxTree, ParserError>> + Send + 'a>>;
+    fn parse<'a>(
+        &'a self,
+        source: &'a str,
+    ) -> Pin<Box<dyn Future<Output = Result<SyntaxTree, ParserError>> + Send + 'a>>;
 }
 
 /// Parser configuration
@@ -97,7 +100,10 @@ impl Parser {
     }
 
     /// Register a language support
-    pub async fn register_language(&self, support: Box<dyn LanguageSupport + 'static>) -> ParserResult<()> {
+    pub async fn register_language(
+        &self,
+        support: Box<dyn LanguageSupport + 'static>,
+    ) -> ParserResult<()> {
         let mut registry = self.language_registry.write().await;
         registry.register(support);
         Ok(())
@@ -127,7 +133,8 @@ impl Parser {
 
         // Get language support
         let registry = self.language_registry.read().await;
-        let support = registry.get(language)
+        let support = registry
+            .get(language)
             .ok_or_else(|| ParserError::UnsupportedLanguage {
                 language: language.to_string(),
             })?;
@@ -167,11 +174,12 @@ impl Parser {
         file_path: P,
     ) -> ParserResult<ParseResult> {
         let file_path = file_path.as_ref();
-        let source = tokio::fs::read_to_string(file_path).await
+        let source = tokio::fs::read_to_string(file_path)
+            .await
             .map_err(|e| ParserError::IoError(e))?;
 
-        let language = Language::from_path(file_path)
-            .ok_or_else(|| ParserError::UnsupportedLanguage {
+        let language =
+            Language::from_path(file_path).ok_or_else(|| ParserError::UnsupportedLanguage {
                 language: "unknown".to_string(),
             })?;
 
@@ -197,8 +205,7 @@ impl Parser {
         file_path: P,
     ) -> Option<Language> {
         let registry = self.language_registry.read().await;
-        Language::from_path(file_path.as_ref())
-            .filter(|lang| registry.is_supported(lang))
+        Language::from_path(file_path.as_ref()).filter(|lang| registry.is_supported(lang))
     }
 
     /// Get parser statistics
@@ -221,13 +228,20 @@ impl Parser {
     /// Clear parse cache
     pub async fn clear_cache(&self) -> ParserResult<()> {
         if let Some(cache) = &self.cache {
-            cache.clear().await
+            cache
+                .clear()
+                .await
                 .map_err(|e| ParserError::CacheError(e))?;
         }
         Ok(())
     }
 
-    fn create_cache_key(&self, source: &str, language: &Language, file_path: Option<&str>) -> String {
+    fn create_cache_key(
+        &self,
+        source: &str,
+        language: &Language,
+        file_path: Option<&str>,
+    ) -> String {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
 
@@ -242,14 +256,20 @@ impl Parser {
 }
 
 impl CodeParser for Parser {
-    fn parse<'a>(&'a self, source: &'a str) -> Pin<Box<dyn Future<Output = Result<SyntaxTree, ParserError>> + Send + 'a>> {
+    fn parse<'a>(
+        &'a self,
+        source: &'a str,
+    ) -> Pin<Box<dyn Future<Output = Result<SyntaxTree, ParserError>> + Send + 'a>> {
         Box::pin(async move {
             // Try to detect language from content (simple heuristic)
             let language = if source.contains("fn ") && source.contains("{") {
                 Language::Rust
             } else if source.contains("def ") && source.contains(":") {
                 Language::Python
-            } else if source.contains("function") || source.contains("const") || source.contains("let") {
+            } else if source.contains("function")
+                || source.contains("const")
+                || source.contains("let")
+            {
                 Language::JavaScript
             } else {
                 Language::Rust // default
@@ -261,11 +281,14 @@ impl CodeParser for Parser {
     }
 }
 
-
 impl std::fmt::Display for ParserStats {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "Parser Statistics:")?;
-        writeln!(f, "  Supported languages: {}", self.supported_languages.len())?;
+        writeln!(
+            f,
+            "  Supported languages: {}",
+            self.supported_languages.len()
+        )?;
         for lang in &self.supported_languages {
             writeln!(f, "    - {}", lang)?;
         }
@@ -329,7 +352,9 @@ pub mod tree_sitter_support {
                 .to_string();
 
             let node_type = ts_node.kind();
-            let our_node_type = self.config.node_mappings
+            let our_node_type = self
+                .config
+                .node_mappings
                 .get(node_type)
                 .cloned()
                 .unwrap_or_else(|| NodeType::Custom(node_type.to_string()));
@@ -359,12 +384,14 @@ pub mod tree_sitter_support {
 
         fn parse(&self, source: &str, config: &ParserConfig) -> ParserResult<SyntaxTree> {
             let mut parser = TSParser::new();
-            parser.set_language(self.ts_language)
+            parser
+                .set_language(self.ts_language)
                 .map_err(|e| ParserError::ParseError {
                     message: format!("Failed to set language: {}", e),
                 })?;
 
-            let tree = parser.parse(source, None)
+            let tree = parser
+                .parse(source, None)
                 .ok_or_else(|| ParserError::ParseError {
                     message: "Failed to parse source".to_string(),
                 })?;
@@ -392,17 +419,32 @@ pub fn create_supports() -> Vec<Box<dyn LanguageSupport + 'static>> {
     let mut supports = Vec::new();
 
     // Rust support
-    supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(Language::Rust, tree_sitter_rust::language())) as Box<dyn LanguageSupport + 'static>);
+    supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(
+        Language::Rust,
+        tree_sitter_rust::language(),
+    )) as Box<dyn LanguageSupport + 'static>);
 
     // Python support
-    supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(Language::Python, tree_sitter_python::language())) as Box<dyn LanguageSupport + 'static>);
+    supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(
+        Language::Python,
+        tree_sitter_python::language(),
+    )) as Box<dyn LanguageSupport + 'static>);
 
     // TypeScript/JavaScript support
-    supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(Language::TypeScript, tree_sitter_typescript::language_tsx())) as Box<dyn LanguageSupport + 'static>);
-    supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(Language::JavaScript, tree_sitter_typescript::language_tsx())) as Box<dyn LanguageSupport + 'static>);
+    supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(
+        Language::TypeScript,
+        tree_sitter_typescript::language_tsx(),
+    )) as Box<dyn LanguageSupport + 'static>);
+    supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(
+        Language::JavaScript,
+        tree_sitter_typescript::language_tsx(),
+    )) as Box<dyn LanguageSupport + 'static>);
 
     // Go support
-    supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(Language::Go, tree_sitter_go::language())) as Box<dyn LanguageSupport + 'static>);
+    supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(
+        Language::Go,
+        tree_sitter_go::language(),
+    )) as Box<dyn LanguageSupport + 'static>);
 
     supports
 }

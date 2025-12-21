@@ -1,6 +1,6 @@
 //! Analytics and metrics collection for beta testing
 
-use crate::feedback::{FeedbackType, FeedbackSeverity, UserFeedback};
+use crate::feedback::{FeedbackSeverity, FeedbackType, UserFeedback};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -51,10 +51,16 @@ impl FeedbackAnalytics {
     /// Record feedback for analytics
     pub async fn record_feedback(&mut self, feedback: &UserFeedback) -> Result<(), AnalyticsError> {
         // Update type counts
-        *self.feedback_by_type.entry(feedback.feedback_type.clone()).or_insert(0) += 1;
+        *self
+            .feedback_by_type
+            .entry(feedback.feedback_type.clone())
+            .or_insert(0) += 1;
 
         // Update severity counts
-        *self.feedback_by_severity.entry(feedback.severity.clone()).or_insert(0) += 1;
+        *self
+            .feedback_by_severity
+            .entry(feedback.severity.clone())
+            .or_insert(0) += 1;
 
         // Update trends (simplified - in real implementation would aggregate by time periods)
         let now = Utc::now();
@@ -85,8 +91,14 @@ impl FeedbackAnalytics {
             return 0.0;
         }
 
-        let positive_feedback = self.feedback_by_type.get(&FeedbackType::FeatureRequest)
-            .unwrap_or(&0) + self.feedback_by_type.get(&FeedbackType::GeneralFeedback).unwrap_or(&0);
+        let positive_feedback = self
+            .feedback_by_type
+            .get(&FeedbackType::FeatureRequest)
+            .unwrap_or(&0)
+            + self
+                .feedback_by_type
+                .get(&FeedbackType::GeneralFeedback)
+                .unwrap_or(&0);
 
         (positive_feedback as f64 / total_feedback) * 100.0
     }
@@ -171,7 +183,11 @@ impl EnterpriseValidationAnalytics {
             return 0.0;
         }
 
-        let successful = self.deployment_scenarios.iter().filter(|s| s.success).count();
+        let successful = self
+            .deployment_scenarios
+            .iter()
+            .filter(|s| s.success)
+            .count();
         (successful as f64 / self.deployment_scenarios.len() as f64) * 100.0
     }
 }

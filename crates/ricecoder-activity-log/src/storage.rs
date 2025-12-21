@@ -4,7 +4,7 @@ use crate::error::{ActivityLogError, ActivityLogResult};
 use crate::events::{ActivityEvent, EventFilter};
 use crate::logger::LogStorage;
 use async_trait::async_trait;
-use chrono::{DateTime, Utc, Duration};
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tokio::io::AsyncWriteExt;
@@ -56,7 +56,10 @@ pub struct FileStorage {
 
 impl FileStorage {
     /// Create a new file storage
-    pub fn new(base_path: std::path::PathBuf, retention_policy: RetentionPolicy) -> ActivityLogResult<Self> {
+    pub fn new(
+        base_path: std::path::PathBuf,
+        retention_policy: RetentionPolicy,
+    ) -> ActivityLogResult<Self> {
         std::fs::create_dir_all(&base_path)?;
 
         let stats = StorageStats {
@@ -88,7 +91,10 @@ impl FileStorage {
 
         if added {
             stats.total_events += 1;
-            *stats.events_by_category.entry(event.category.clone()).or_insert(0) += 1;
+            *stats
+                .events_by_category
+                .entry(event.category.clone())
+                .or_insert(0) += 1;
             *stats.events_by_level.entry(event.level).or_insert(0) += 1;
 
             // Update timestamps
@@ -232,7 +238,10 @@ impl LogStorage for DatabaseStorage {
         })
     }
 
-    async fn retrieve_events(&self, _filter: &EventFilter) -> ActivityLogResult<Vec<ActivityEvent>> {
+    async fn retrieve_events(
+        &self,
+        _filter: &EventFilter,
+    ) -> ActivityLogResult<Vec<ActivityEvent>> {
         // Placeholder - would implement database queries
         Err(ActivityLogError::StorageError {
             message: "Database storage not yet implemented".to_string(),
@@ -258,8 +267,8 @@ impl LogStorage for DatabaseStorage {
 impl Default for RetentionPolicy {
     fn default() -> Self {
         Self {
-            max_age_days: 90, // 90 days
-            max_entries: Some(100000), // 100k entries
+            max_age_days: 90,                        // 90 days
+            max_entries: Some(100000),               // 100k entries
             max_size_bytes: Some(100 * 1024 * 1024), // 100MB
             extended_retention_categories: vec![
                 crate::events::EventCategory::Security,

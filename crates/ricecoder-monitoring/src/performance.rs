@@ -1,7 +1,7 @@
 //! Performance monitoring and anomaly detection
 
 use crate::types::*;
-use chrono::{DateTime, Utc, TimeDelta};
+use chrono::{DateTime, TimeDelta, Utc};
 use dashmap::DashMap;
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
@@ -100,7 +100,8 @@ impl PerformanceMonitor {
     pub fn get_metrics(&self, name: &str, since: Option<DateTime<Utc>>) -> Vec<PerformanceMetric> {
         if let Some(metrics) = PERFORMANCE_METRICS.get(name) {
             if let Some(since) = since {
-                metrics.iter()
+                metrics
+                    .iter()
                     .filter(|m| m.timestamp >= since)
                     .cloned()
                     .collect()
@@ -113,7 +114,11 @@ impl PerformanceMonitor {
     }
 
     /// Get performance statistics
-    pub fn get_performance_stats(&self, name: &str, since: Option<DateTime<Utc>>) -> Option<PerformanceStats> {
+    pub fn get_performance_stats(
+        &self,
+        name: &str,
+        since: Option<DateTime<Utc>>,
+    ) -> Option<PerformanceStats> {
         let metrics = self.get_metrics(name, since);
 
         if metrics.is_empty() {
@@ -123,9 +128,7 @@ impl PerformanceMonitor {
         let values: Vec<f64> = metrics.iter().map(|m| m.value).collect();
         let mean = values.iter().sum::<f64>() / values.len() as f64;
 
-        let variance = values.iter()
-            .map(|v| (v - mean).powi(2))
-            .sum::<f64>() / values.len() as f64;
+        let variance = values.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / values.len() as f64;
         let std_dev = variance.sqrt();
 
         let sorted_values = {
@@ -223,9 +226,14 @@ impl PerformanceMonitor {
     }
 
     /// Detect anomalies in performance metrics
-    async fn detect_anomalies(thresholds: &PerformanceThresholds) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn detect_anomalies(
+        thresholds: &PerformanceThresholds,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // Check response time anomalies
-        if let Some(stats) = Self::get_performance_stats_static("http.response_time", Some(chrono::Utc::now() - chrono::TimeDelta::hours(1))) {
+        if let Some(stats) = Self::get_performance_stats_static(
+            "http.response_time",
+            Some(chrono::Utc::now() - chrono::TimeDelta::hours(1)),
+        ) {
             if stats.p95 > thresholds.max_response_time_ms as f64 {
                 let anomaly = Anomaly {
                     id: EventId::new_v4(),
@@ -237,7 +245,10 @@ impl PerformanceMonitor {
                     timestamp: chrono::Utc::now(),
                     labels: {
                         let mut labels = HashMap::new();
-                        labels.insert("threshold".to_string(), thresholds.max_response_time_ms.to_string());
+                        labels.insert(
+                            "threshold".to_string(),
+                            thresholds.max_response_time_ms.to_string(),
+                        );
                         labels
                     },
                 };
@@ -256,7 +267,10 @@ impl PerformanceMonitor {
         }
 
         // Check memory usage anomalies
-        if let Some(stats) = Self::get_performance_stats_static("system.memory.usage", Some(chrono::Utc::now() - chrono::TimeDelta::hours(1))) {
+        if let Some(stats) = Self::get_performance_stats_static(
+            "system.memory.usage",
+            Some(chrono::Utc::now() - chrono::TimeDelta::hours(1)),
+        ) {
             if stats.p95 > thresholds.max_memory_mb as f64 {
                 let anomaly = Anomaly {
                     id: EventId::new_v4(),
@@ -268,7 +282,10 @@ impl PerformanceMonitor {
                     timestamp: chrono::Utc::now(),
                     labels: {
                         let mut labels = HashMap::new();
-                        labels.insert("threshold".to_string(), thresholds.max_memory_mb.to_string());
+                        labels.insert(
+                            "threshold".to_string(),
+                            thresholds.max_memory_mb.to_string(),
+                        );
                         labels
                     },
                 };
@@ -290,10 +307,14 @@ impl PerformanceMonitor {
     }
 
     /// Get performance stats (static version for internal use)
-    fn get_performance_stats_static(name: &str, since: Option<DateTime<Utc>>) -> Option<PerformanceStats> {
+    fn get_performance_stats_static(
+        name: &str,
+        since: Option<DateTime<Utc>>,
+    ) -> Option<PerformanceStats> {
         let metrics = if let Some(metrics) = PERFORMANCE_METRICS.get(name) {
             if let Some(since) = since {
-                metrics.iter()
+                metrics
+                    .iter()
                     .filter(|m| m.timestamp >= since)
                     .cloned()
                     .collect()
@@ -311,9 +332,7 @@ impl PerformanceMonitor {
         let values: Vec<f64> = metrics.iter().map(|m| m.value).collect();
         let mean = values.iter().sum::<f64>() / values.len() as f64;
 
-        let variance = values.iter()
-            .map(|v| (v - mean).powi(2))
-            .sum::<f64>() / values.len() as f64;
+        let variance = values.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / values.len() as f64;
         let std_dev = variance.sqrt();
 
         let sorted_values = {
@@ -387,12 +406,15 @@ impl AnomalyDetector {
 
     /// Detect anomalies in a time series
     pub fn detect_anomalies(&self, metric_name: &str, current_value: f64) -> Vec<Anomaly> {
-        let baseline_start = chrono::Utc::now() - chrono::TimeDelta::from_std(self.baseline_window).unwrap_or(chrono::TimeDelta::hours(1));
+        let baseline_start = chrono::Utc::now()
+            - chrono::TimeDelta::from_std(self.baseline_window)
+                .unwrap_or(chrono::TimeDelta::hours(1));
 
         let baseline_metrics: Vec<f64> = PERFORMANCE_METRICS
             .get(metric_name)
             .map(|metrics| {
-                metrics.iter()
+                metrics
+                    .iter()
                     .filter(|m| m.timestamp >= baseline_start)
                     .map(|m| m.value)
                     .collect()
@@ -404,9 +426,11 @@ impl AnomalyDetector {
         }
 
         let mean = baseline_metrics.iter().sum::<f64>() / baseline_metrics.len() as f64;
-        let variance = baseline_metrics.iter()
+        let variance = baseline_metrics
+            .iter()
             .map(|v| (v - mean).powi(2))
-            .sum::<f64>() / baseline_metrics.len() as f64;
+            .sum::<f64>()
+            / baseline_metrics.len() as f64;
         let std_dev = variance.sqrt();
 
         let z_score = (current_value - mean) / std_dev;
@@ -492,24 +516,21 @@ impl PerformanceProfiler {
         let mut bottlenecks = Vec::new();
 
         for (name, events) in traces.iter() {
-            let slow_events: Vec<_> = events.iter()
+            let slow_events: Vec<_> = events
+                .iter()
                 .filter(|e| e.duration_ms > threshold_ms)
                 .cloned()
                 .collect();
 
             if !slow_events.is_empty() {
-                let avg_duration = slow_events.iter()
-                    .map(|e| e.duration_ms)
-                    .sum::<u64>() / slow_events.len() as u64;
+                let avg_duration = slow_events.iter().map(|e| e.duration_ms).sum::<u64>()
+                    / slow_events.len() as u64;
 
                 bottlenecks.push(Bottleneck {
                     function_name: name.clone(),
                     slow_call_count: slow_events.len(),
                     avg_duration_ms: avg_duration,
-                    max_duration_ms: slow_events.iter()
-                        .map(|e| e.duration_ms)
-                        .max()
-                        .unwrap_or(0),
+                    max_duration_ms: slow_events.iter().map(|e| e.duration_ms).max().unwrap_or(0),
                     threshold_ms,
                 });
             }
@@ -539,7 +560,8 @@ impl Drop for TraceHandle {
         };
 
         let mut traces = self.profiler.write();
-        traces.entry(self.name.clone())
+        traces
+            .entry(self.name.clone())
             .or_insert_with(Vec::new)
             .push(event);
     }

@@ -4,8 +4,8 @@ use crate::commands::Command;
 use crate::error::{CliError, CliResult};
 use async_trait::async_trait;
 use ricecoder_agents::use_cases::{
-    ProviderSwitchingUseCase, ProviderPerformanceUseCase, ProviderFailoverUseCase,
-    ProviderModelUseCase, ProviderHealthUseCase, ProviderCommunityUseCase,
+    ProviderCommunityUseCase, ProviderFailoverUseCase, ProviderHealthUseCase, ProviderModelUseCase,
+    ProviderPerformanceUseCase, ProviderSwitchingUseCase,
 };
 use std::sync::Arc;
 
@@ -23,13 +23,20 @@ pub enum ProvidersAction {
     /// Check provider health
     Health { provider_id: Option<String> },
     /// List available models for a provider
-    Models { provider_id: Option<String>, filter: Option<String> },
+    Models {
+        provider_id: Option<String>,
+        filter: Option<String>,
+    },
     /// Get failover provider for a failing provider
     Failover { provider_id: String },
     /// Show community provider analytics
     Community { provider_id: Option<String> },
     /// Configure provider settings
-    Configure { provider_id: String, setting: String, value: String },
+    Configure {
+        provider_id: String,
+        setting: String,
+        value: String,
+    },
 }
 
 /// Providers command handler
@@ -44,7 +51,9 @@ impl ProvidersCommand {
     }
 
     /// Get provider use cases from DI container
-    fn get_use_cases(&self) -> CliResult<(
+    fn get_use_cases(
+        &self,
+    ) -> CliResult<(
         Arc<ProviderSwitchingUseCase>,
         Arc<ProviderPerformanceUseCase>,
         Arc<ProviderFailoverUseCase>,
@@ -53,23 +62,32 @@ impl ProvidersCommand {
         Arc<ProviderCommunityUseCase>,
     )> {
         // Get services from DI container
-        let switching = crate::di::get_service::<ProviderSwitchingUseCase>()
-            .ok_or_else(|| CliError::Internal("ProviderSwitchingUseCase not available in DI container".to_string()))?;
+        let switching = crate::di::get_service::<ProviderSwitchingUseCase>().ok_or_else(|| {
+            CliError::Internal("ProviderSwitchingUseCase not available in DI container".to_string())
+        })?;
 
-        let performance = crate::di::get_service::<ProviderPerformanceUseCase>()
-            .ok_or_else(|| CliError::Internal("ProviderPerformanceUseCase not available in DI container".to_string()))?;
+        let performance =
+            crate::di::get_service::<ProviderPerformanceUseCase>().ok_or_else(|| {
+                CliError::Internal(
+                    "ProviderPerformanceUseCase not available in DI container".to_string(),
+                )
+            })?;
 
-        let failover = crate::di::get_service::<ProviderFailoverUseCase>()
-            .ok_or_else(|| CliError::Internal("ProviderFailoverUseCase not available in DI container".to_string()))?;
+        let failover = crate::di::get_service::<ProviderFailoverUseCase>().ok_or_else(|| {
+            CliError::Internal("ProviderFailoverUseCase not available in DI container".to_string())
+        })?;
 
-        let models = crate::di::get_service::<ProviderModelUseCase>()
-            .ok_or_else(|| CliError::Internal("ProviderModelUseCase not available in DI container".to_string()))?;
+        let models = crate::di::get_service::<ProviderModelUseCase>().ok_or_else(|| {
+            CliError::Internal("ProviderModelUseCase not available in DI container".to_string())
+        })?;
 
-        let health = crate::di::get_service::<ProviderHealthUseCase>()
-            .ok_or_else(|| CliError::Internal("ProviderHealthUseCase not available in DI container".to_string()))?;
+        let health = crate::di::get_service::<ProviderHealthUseCase>().ok_or_else(|| {
+            CliError::Internal("ProviderHealthUseCase not available in DI container".to_string())
+        })?;
 
-        let community = crate::di::get_service::<ProviderCommunityUseCase>()
-            .ok_or_else(|| CliError::Internal("ProviderCommunityUseCase not available in DI container".to_string()))?;
+        let community = crate::di::get_service::<ProviderCommunityUseCase>().ok_or_else(|| {
+            CliError::Internal("ProviderCommunityUseCase not available in DI container".to_string())
+        })?;
 
         Ok((switching, performance, failover, models, health, community))
     }
@@ -81,13 +99,28 @@ impl Command for ProvidersCommand {
         match &self.action {
             ProvidersAction::List => self.list_providers(),
             ProvidersAction::Switch { provider_id } => self.switch_provider(provider_id).await,
-            ProvidersAction::Status { provider_id } => self.show_provider_status(provider_id.as_deref()),
-            ProvidersAction::Performance { provider_id } => self.show_provider_performance(provider_id.as_deref()),
-            ProvidersAction::Health { provider_id } => self.check_provider_health(provider_id.as_deref()).await,
-            ProvidersAction::Models { provider_id, filter } => self.list_provider_models(provider_id.as_deref(), filter.as_deref()),
+            ProvidersAction::Status { provider_id } => {
+                self.show_provider_status(provider_id.as_deref())
+            }
+            ProvidersAction::Performance { provider_id } => {
+                self.show_provider_performance(provider_id.as_deref())
+            }
+            ProvidersAction::Health { provider_id } => {
+                self.check_provider_health(provider_id.as_deref()).await
+            }
+            ProvidersAction::Models {
+                provider_id,
+                filter,
+            } => self.list_provider_models(provider_id.as_deref(), filter.as_deref()),
             ProvidersAction::Failover { provider_id } => self.show_failover_provider(provider_id),
-            ProvidersAction::Community { provider_id } => self.show_community_analytics(provider_id.as_deref()),
-            ProvidersAction::Configure { provider_id, setting, value } => self.configure_provider(provider_id, setting, value),
+            ProvidersAction::Community { provider_id } => {
+                self.show_community_analytics(provider_id.as_deref())
+            }
+            ProvidersAction::Configure {
+                provider_id,
+                setting,
+                value,
+            } => self.configure_provider(provider_id, setting, value),
         }
     }
 }
@@ -137,7 +170,8 @@ impl ProvidersCommand {
     async fn switch_provider(&self, provider_id: &str) -> CliResult<()> {
         let (switching, _, _, _, _, _) = self.get_use_cases()?;
 
-        switching.switch_provider(provider_id)
+        switching
+            .switch_provider(provider_id)
             .await
             .map_err(|e| CliError::Internal(format!("Failed to switch provider: {}", e)))?;
 
@@ -188,14 +222,20 @@ impl ProvidersCommand {
                 println!("  Total requests: {}", metrics.total_requests);
                 println!("  Successful requests: {}", metrics.successful_requests);
                 println!("  Failed requests: {}", metrics.failed_requests);
-                println!("  Average response time: {:.2}ms", metrics.avg_response_time_ms);
+                println!(
+                    "  Average response time: {:.2}ms",
+                    metrics.avg_response_time_ms
+                );
                 println!("  Error rate: {:.2}%", metrics.error_rate * 100.0);
                 println!("  Total tokens: {}", metrics.total_tokens);
                 println!("  Total cost: ${:.4}", metrics.total_cost);
                 println!("  Requests/second: {:.2}", metrics.requests_per_second);
                 println!("  Tokens/second: {:.2}", metrics.tokens_per_second);
             } else {
-                println!("No performance data available for provider '{}'", provider_id);
+                println!(
+                    "No performance data available for provider '{}'",
+                    provider_id
+                );
             }
         } else {
             // Show all providers performance
@@ -204,8 +244,14 @@ impl ProvidersCommand {
             println!("  Total providers: {}", summary.total_providers);
             println!("  Total requests: {}", summary.total_requests);
             println!("  Total errors: {}", summary.total_errors);
-            println!("  Average response time: {:.2}ms", summary.avg_response_time_ms);
-            println!("  Overall error rate: {:.2}%", summary.overall_error_rate * 100.0);
+            println!(
+                "  Average response time: {:.2}ms",
+                summary.avg_response_time_ms
+            );
+            println!(
+                "  Overall error rate: {:.2}%",
+                summary.overall_error_rate * 100.0
+            );
             println!("  Performing providers: {}", summary.performing_providers);
 
             println!();
@@ -224,11 +270,16 @@ impl ProvidersCommand {
         let (_, _, _, _, health, _) = self.get_use_cases()?;
 
         if let Some(provider_id) = provider_id {
-            let is_healthy = health.check_provider_health(provider_id)
+            let is_healthy = health
+                .check_provider_health(provider_id)
                 .await
                 .map_err(|e| CliError::Internal(format!("Health check failed: {}", e)))?;
 
-            println!("Provider '{}' health: {}", provider_id, if is_healthy { "Healthy" } else { "Unhealthy" });
+            println!(
+                "Provider '{}' health: {}",
+                provider_id,
+                if is_healthy { "Healthy" } else { "Unhealthy" }
+            );
         } else {
             // Check all providers
             let results = health.check_all_provider_health().await;
@@ -248,15 +299,30 @@ impl ProvidersCommand {
     }
 
     /// List provider models
-    fn list_provider_models(&self, provider_id: Option<&str>, filter: Option<&str>) -> CliResult<()> {
+    fn list_provider_models(
+        &self,
+        provider_id: Option<&str>,
+        filter: Option<&str>,
+    ) -> CliResult<()> {
         let (_, _, _, models, _, _) = self.get_use_cases()?;
 
         let filter_criteria = filter.and_then(|f| match f.to_lowercase().as_str() {
             "free" => Some(ricecoder_providers::provider::manager::ModelFilterCriteria::FreeOnly),
-            "chat" => Some(ricecoder_providers::provider::manager::ModelFilterCriteria::Capability(ricecoder_providers::models::Capability::Chat)),
-            "completion" => Some(ricecoder_providers::provider::manager::ModelFilterCriteria::Capability(ricecoder_providers::models::Capability::Chat)),
+            "chat" => Some(
+                ricecoder_providers::provider::manager::ModelFilterCriteria::Capability(
+                    ricecoder_providers::models::Capability::Chat,
+                ),
+            ),
+            "completion" => Some(
+                ricecoder_providers::provider::manager::ModelFilterCriteria::Capability(
+                    ricecoder_providers::models::Capability::Chat,
+                ),
+            ),
             _ => {
-                println!("Unknown filter: {}. Available filters: free, chat, completion", f);
+                println!(
+                    "Unknown filter: {}. Available filters: free, chat, completion",
+                    f
+                );
                 None
             }
         });
@@ -275,7 +341,8 @@ impl ProvidersCommand {
 
         if let Some(provider_id) = provider_id {
             // Filter by provider
-            let provider_models: Vec<_> = available_models.into_iter()
+            let provider_models: Vec<_> = available_models
+                .into_iter()
                 .filter(|m| m.provider == provider_id)
                 .collect();
 
@@ -290,10 +357,14 @@ impl ProvidersCommand {
             }
         } else {
             // Show all models grouped by provider
-            let mut by_provider: std::collections::HashMap<String, Vec<_>> = std::collections::HashMap::new();
+            let mut by_provider: std::collections::HashMap<String, Vec<_>> =
+                std::collections::HashMap::new();
 
             for model in available_models {
-                by_provider.entry(model.provider.clone()).or_default().push(model);
+                by_provider
+                    .entry(model.provider.clone())
+                    .or_default()
+                    .push(model);
             }
 
             for (provider, models) in by_provider {
@@ -316,8 +387,10 @@ impl ProvidersCommand {
             print!(" (Free)");
         }
         if let Some(ref pricing) = model.pricing {
-            print!(" (${:.4}/1K input, ${:.4}/1K output)",
-                pricing.input_per_1k_tokens, pricing.output_per_1k_tokens);
+            print!(
+                " (${:.4}/1K input, ${:.4}/1K output)",
+                pricing.input_per_1k_tokens, pricing.output_per_1k_tokens
+            );
         }
         println!();
     }
@@ -345,9 +418,15 @@ impl ProvidersCommand {
                 println!("  Total requests: {}", analytics.total_requests);
                 println!("  Successful requests: {}", analytics.successful_requests);
                 println!("  Failed requests: {}", analytics.failed_requests);
-                println!("  Average response time: {:.2}ms", analytics.avg_response_time_ms);
+                println!(
+                    "  Average response time: {:.2}ms",
+                    analytics.avg_response_time_ms
+                );
             } else {
-                println!("No community analytics available for provider '{}'", provider_id);
+                println!(
+                    "No community analytics available for provider '{}'",
+                    provider_id
+                );
             }
         } else {
             // Show popular providers
@@ -378,33 +457,59 @@ impl ProvidersCommand {
     fn configure_provider(&self, provider_id: &str, setting: &str, value: &str) -> CliResult<()> {
         // Validate inputs
         if provider_id.trim().is_empty() {
-            return Err(CliError::Internal("Provider ID cannot be empty".to_string()));
+            return Err(CliError::Internal(
+                "Provider ID cannot be empty".to_string(),
+            ));
         }
         if setting.trim().is_empty() {
-            return Err(CliError::Internal("Setting name cannot be empty".to_string()));
+            return Err(CliError::Internal(
+                "Setting name cannot be empty".to_string(),
+            ));
         }
         if value.len() > 1000 {
-            return Err(CliError::Internal("Setting value too long (max 1000 characters)".to_string()));
+            return Err(CliError::Internal(
+                "Setting value too long (max 1000 characters)".to_string(),
+            ));
         }
 
         // Validate setting names for known providers
         match provider_id {
             "anthropic" => {
                 if !["api_key", "model", "max_tokens", "temperature"].contains(&setting) {
-                    return Err(CliError::Internal(format!("Unknown setting '{}' for Anthropic provider", setting)));
+                    return Err(CliError::Internal(format!(
+                        "Unknown setting '{}' for Anthropic provider",
+                        setting
+                    )));
                 }
             }
             "openai" => {
-                if !["api_key", "model", "max_tokens", "temperature", "organization"].contains(&setting) {
-                    return Err(CliError::Internal(format!("Unknown setting '{}' for OpenAI provider", setting)));
+                if ![
+                    "api_key",
+                    "model",
+                    "max_tokens",
+                    "temperature",
+                    "organization",
+                ]
+                .contains(&setting)
+                {
+                    return Err(CliError::Internal(format!(
+                        "Unknown setting '{}' for OpenAI provider",
+                        setting
+                    )));
                 }
             }
             _ => {
-                return Err(CliError::Internal(format!("Unknown provider '{}'", provider_id)));
+                return Err(CliError::Internal(format!(
+                    "Unknown provider '{}'",
+                    provider_id
+                )));
             }
         }
 
-        println!("Configuring provider '{}' setting '{}' to '{}'", provider_id, setting, value);
+        println!(
+            "Configuring provider '{}' setting '{}' to '{}'",
+            provider_id, setting, value
+        );
         println!("Note: Provider configuration is not yet implemented in this CLI version.");
         println!("Configuration should be done through the TUI or API.");
         Ok(())

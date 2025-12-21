@@ -6,7 +6,7 @@
 //! - Graceful degradation based on terminal capabilities
 //! - Feature detection and adaptation
 
-use crate::terminal_state::{TerminalCapabilities, ColorSupport, TerminalType};
+use crate::terminal_state::{ColorSupport, TerminalCapabilities, TerminalType};
 use std::collections::HashMap;
 
 /// Feature toggle levels for progressive enhancement
@@ -131,7 +131,9 @@ impl ProgressiveEnhancement {
             }
             TerminalType::Xterm | TerminalType::Alacritty | TerminalType::Foot => {
                 match capabilities.color_support {
-                    ColorSupport::TrueColor | ColorSupport::Ansi256 | ColorSupport::Ansi16 => FeatureLevel::Basic,
+                    ColorSupport::TrueColor | ColorSupport::Ansi256 | ColorSupport::Ansi16 => {
+                        FeatureLevel::Basic
+                    }
                     _ => FeatureLevel::Minimal,
                 }
             }
@@ -147,7 +149,10 @@ impl ProgressiveEnhancement {
     }
 
     /// Determine feature toggles based on capabilities and feature level
-    fn determine_feature_toggles(capabilities: &TerminalCapabilities, feature_level: FeatureLevel) -> FeatureToggles {
+    fn determine_feature_toggles(
+        capabilities: &TerminalCapabilities,
+        feature_level: FeatureLevel,
+    ) -> FeatureToggles {
         let mut toggles = FeatureToggles::default();
 
         // Adjust toggles based on feature level
@@ -190,9 +195,9 @@ impl ProgressiveEnhancement {
             }
             FeatureLevel::Full => {
                 toggles.mouse_support = capabilities.mouse_support;
-                toggles.graphics_support = capabilities.sixel_support ||
-                                         capabilities.kitty_graphics_support ||
-                                         capabilities.iterm2_inline_images_support;
+                toggles.graphics_support = capabilities.sixel_support
+                    || capabilities.kitty_graphics_support
+                    || capabilities.iterm2_inline_images_support;
                 toggles.animations = true;
                 toggles.unicode_support = capabilities.unicode_support;
                 toggles.keyboard_shortcuts = true;
@@ -215,23 +220,25 @@ impl ProgressiveEnhancement {
     }
 
     /// Determine the appropriate rendering strategy
-    fn determine_rendering_strategy(capabilities: &TerminalCapabilities, feature_level: FeatureLevel) -> RenderingStrategy {
+    fn determine_rendering_strategy(
+        capabilities: &TerminalCapabilities,
+        feature_level: FeatureLevel,
+    ) -> RenderingStrategy {
         match feature_level {
             FeatureLevel::Minimal => RenderingStrategy::TextOnly,
-            FeatureLevel::Basic => {
-                match capabilities.color_support {
-                    ColorSupport::None => RenderingStrategy::TextOnly,
-                    ColorSupport::Ansi16 => RenderingStrategy::AnsiBasic,
-                    ColorSupport::Ansi256 => RenderingStrategy::AnsiEnhanced,
-                    ColorSupport::TrueColor => RenderingStrategy::TrueColor,
-                }
-            }
+            FeatureLevel::Basic => match capabilities.color_support {
+                ColorSupport::None => RenderingStrategy::TextOnly,
+                ColorSupport::Ansi16 => RenderingStrategy::AnsiBasic,
+                ColorSupport::Ansi256 => RenderingStrategy::AnsiEnhanced,
+                ColorSupport::TrueColor => RenderingStrategy::TrueColor,
+            },
             FeatureLevel::Enhanced | FeatureLevel::Full => {
                 // Check for graphics protocols first
-                if capabilities.kitty_graphics_support ||
-                   capabilities.iterm2_inline_images_support ||
-                   capabilities.wezterm_multiplexer_support ||
-                   capabilities.sixel_support {
+                if capabilities.kitty_graphics_support
+                    || capabilities.iterm2_inline_images_support
+                    || capabilities.wezterm_multiplexer_support
+                    || capabilities.sixel_support
+                {
                     RenderingStrategy::GraphicsProtocol
                 } else {
                     match capabilities.color_support {
@@ -246,7 +253,9 @@ impl ProgressiveEnhancement {
     }
 
     /// Setup fallback strategies for different features
-    fn setup_fallback_strategies(fallback_strategies: &mut HashMap<String, Vec<RenderingStrategy>>) {
+    fn setup_fallback_strategies(
+        fallback_strategies: &mut HashMap<String, Vec<RenderingStrategy>>,
+    ) {
         // Image rendering fallbacks
         fallback_strategies.insert(
             "images".to_string(),
@@ -256,7 +265,7 @@ impl ProgressiveEnhancement {
                 RenderingStrategy::AnsiEnhanced,
                 RenderingStrategy::AnsiBasic,
                 RenderingStrategy::TextOnly,
-            ]
+            ],
         );
 
         // UI element rendering fallbacks
@@ -267,7 +276,7 @@ impl ProgressiveEnhancement {
                 RenderingStrategy::AnsiEnhanced,
                 RenderingStrategy::AnsiBasic,
                 RenderingStrategy::TextOnly,
-            ]
+            ],
         );
 
         // Text rendering fallbacks
@@ -278,7 +287,7 @@ impl ProgressiveEnhancement {
                 RenderingStrategy::AnsiEnhanced,
                 RenderingStrategy::AnsiBasic,
                 RenderingStrategy::TextOnly,
-            ]
+            ],
         );
     }
 
@@ -337,7 +346,11 @@ impl ProgressiveEnhancement {
     }
 
     /// Get the next fallback strategy when the current one fails
-    pub fn get_fallback_strategy(&self, feature: &str, current_strategy: RenderingStrategy) -> Option<RenderingStrategy> {
+    pub fn get_fallback_strategy(
+        &self,
+        feature: &str,
+        current_strategy: RenderingStrategy,
+    ) -> Option<RenderingStrategy> {
         if let Some(strategies) = self.fallback_strategies.get(feature) {
             let mut found_current = false;
             for strategy in strategies {
@@ -356,7 +369,8 @@ impl ProgressiveEnhancement {
     /// Get all supported strategies for a feature in order of preference
     pub fn get_supported_strategies(&self, feature: &str) -> Vec<RenderingStrategy> {
         if let Some(strategies) = self.fallback_strategies.get(feature) {
-            strategies.iter()
+            strategies
+                .iter()
                 .filter(|strategy| self.supports_rendering_strategy(**strategy))
                 .cloned()
                 .collect()
@@ -369,17 +383,25 @@ impl ProgressiveEnhancement {
     pub fn supports_rendering_strategy(&self, strategy: RenderingStrategy) -> bool {
         match strategy {
             RenderingStrategy::TextOnly => true, // Always supported
-            RenderingStrategy::AnsiBasic => matches!(self.capabilities.color_support, ColorSupport::Ansi16 | ColorSupport::Ansi256 | ColorSupport::TrueColor),
-            RenderingStrategy::AnsiEnhanced => matches!(self.capabilities.color_support, ColorSupport::Ansi256 | ColorSupport::TrueColor),
-            RenderingStrategy::TrueColor => self.capabilities.color_support == ColorSupport::TrueColor,
+            RenderingStrategy::AnsiBasic => matches!(
+                self.capabilities.color_support,
+                ColorSupport::Ansi16 | ColorSupport::Ansi256 | ColorSupport::TrueColor
+            ),
+            RenderingStrategy::AnsiEnhanced => matches!(
+                self.capabilities.color_support,
+                ColorSupport::Ansi256 | ColorSupport::TrueColor
+            ),
+            RenderingStrategy::TrueColor => {
+                self.capabilities.color_support == ColorSupport::TrueColor
+            }
             RenderingStrategy::GraphicsProtocol => {
-                self.capabilities.sixel_support ||
-                self.capabilities.kitty_graphics_support ||
-                self.capabilities.iterm2_inline_images_support ||
-                self.capabilities.wezterm_multiplexer_support ||
-                self.capabilities.unicode_placeholder_support ||
-                self.capabilities.block_graphics_support ||
-                self.capabilities.ansi_art_support
+                self.capabilities.sixel_support
+                    || self.capabilities.kitty_graphics_support
+                    || self.capabilities.iterm2_inline_images_support
+                    || self.capabilities.wezterm_multiplexer_support
+                    || self.capabilities.unicode_placeholder_support
+                    || self.capabilities.block_graphics_support
+                    || self.capabilities.ansi_art_support
             }
         }
     }
@@ -413,4 +435,3 @@ impl ProgressiveEnhancement {
         &self.capabilities
     }
 }
-

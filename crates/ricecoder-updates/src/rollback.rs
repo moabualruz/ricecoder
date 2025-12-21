@@ -2,11 +2,11 @@
 
 use crate::error::{Result, UpdateError};
 use crate::models::{ReleaseChannel, RollbackInfo, UpdateOperation, UpdateStatus};
-use chrono::{DateTime, Utc, Duration, TimeZone};
+use chrono::{DateTime, Duration, TimeZone, Utc};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use tokio::fs;
-use tracing::{info, warn, error};
+use tracing::{error, info, warn};
 use uuid::Uuid;
 
 /// Rollback manager for version management
@@ -33,7 +33,12 @@ impl RollbackManager {
         fs::create_dir_all(&self.backup_dir).await?;
 
         let timestamp = Utc::now().format("%Y%m%d_%H%M%S");
-        let backup_name = format!("backup_{}_v{}_{}", self.get_platform_key(), version, timestamp);
+        let backup_name = format!(
+            "backup_{}_v{}_{}",
+            self.get_platform_key(),
+            version,
+            timestamp
+        );
         let backup_path = self.backup_dir.join(backup_name);
 
         info!("Creating backup: {}", backup_path.display());
@@ -52,12 +57,19 @@ impl RollbackManager {
     }
 
     /// Rollback to a specific version
-    pub async fn rollback_to_version(&self, target_version: &semver::Version) -> Result<RollbackInfo> {
+    pub async fn rollback_to_version(
+        &self,
+        target_version: &semver::Version,
+    ) -> Result<RollbackInfo> {
         info!("Rolling back to version {}", target_version);
 
         // Find the most recent backup for the target version
-        let backup_path = self.find_backup_for_version(target_version).await?
-            .ok_or_else(|| UpdateError::rollback(format!("No backup found for version {}", target_version)))?;
+        let backup_path = self
+            .find_backup_for_version(target_version)
+            .await?
+            .ok_or_else(|| {
+                UpdateError::rollback(format!("No backup found for version {}", target_version))
+            })?;
 
         // Perform the rollback
         self.perform_rollback(&backup_path).await?;
@@ -119,7 +131,10 @@ impl RollbackManager {
     }
 
     /// Get rollback plan for a version
-    pub async fn get_rollback_plan(&self, target_version: &semver::Version) -> Result<RollbackPlan> {
+    pub async fn get_rollback_plan(
+        &self,
+        target_version: &semver::Version,
+    ) -> Result<RollbackPlan> {
         let current_version = self.get_current_version().await?;
         let backup = self.find_backup_for_version(target_version).await?;
 
@@ -128,13 +143,18 @@ impl RollbackManager {
                 RollbackStep::BackupCurrentState,
                 RollbackStep::StopServices,
                 RollbackStep::RestoreFromBackup { path: bp.clone() },
-                RollbackStep::UpdateVersionFile { version: target_version.clone() },
+                RollbackStep::UpdateVersionFile {
+                    version: target_version.clone(),
+                },
                 RollbackStep::StartServices,
                 RollbackStep::ValidateInstallation,
             ];
             (Some(bp), steps)
         } else {
-            return Err(UpdateError::rollback(format!("No backup available for version {}", target_version)));
+            return Err(UpdateError::rollback(format!(
+                "No backup available for version {}",
+                target_version
+            )));
         };
 
         Ok(RollbackPlan {
@@ -143,16 +163,28 @@ impl RollbackManager {
             backup_path,
             steps,
             estimated_duration: Duration::seconds(30),
-            risk_level: if target_version < &current_version { "low" } else { "medium" }.to_string(),
+            risk_level: if target_version < &current_version {
+                "low"
+            } else {
+                "medium"
+            }
+            .to_string(),
         })
     }
 
     /// Validate rollback feasibility
-    pub async fn validate_rollback(&self, target_version: &semver::Version) -> Result<ValidationResult> {
+    pub async fn validate_rollback(
+        &self,
+        target_version: &semver::Version,
+    ) -> Result<ValidationResult> {
         let mut issues = vec![];
 
         // Check if backup exists
-        if self.find_backup_for_version(target_version).await?.is_none() {
+        if self
+            .find_backup_for_version(target_version)
+            .await?
+            .is_none()
+        {
             issues.push("No backup found for target version".to_string());
         }
 
@@ -265,17 +297,23 @@ impl RollbackManager {
         let minute: u32 = timestamp_str[11..13].parse().ok()?;
         let second: u32 = timestamp_str[13..15].parse().ok()?;
 
-        Some(Utc.with_ymd_and_hms(year, month, day, hour, minute, second).single()?.into())
+        Some(
+            Utc.with_ymd_and_hms(year, month, day, hour, minute, second)
+                .single()?
+                .into(),
+        )
     }
 
     /// Copy installation to backup
     async fn copy_installation_to_backup(&self, backup_path: &Path) -> Result<()> {
-        self.copy_directory_recursive(&self.install_dir, backup_path).await
+        self.copy_directory_recursive(&self.install_dir, backup_path)
+            .await
     }
 
     /// Restore from backup
     async fn restore_from_backup(&self, backup_path: &Path) -> Result<()> {
-        self.copy_directory_recursive(backup_path, &self.install_dir).await
+        self.copy_directory_recursive(backup_path, &self.install_dir)
+            .await
     }
 
     /// Clear current installation
@@ -313,7 +351,11 @@ impl RollbackManager {
         for backup in backups.iter().rev().take(to_remove) {
             info!("Removing old backup: {}", backup.path.display());
             if let Err(e) = fs::remove_dir_all(&backup.path).await {
-                warn!("Failed to remove old backup {}: {}", backup.path.display(), e);
+                warn!(
+                    "Failed to remove old backup {}: {}",
+                    backup.path.display(),
+                    e
+                );
             }
         }
 
@@ -363,10 +405,13 @@ impl RollbackManager {
 
     /// Copy directory recursively
     async fn copy_directory_recursive(&self, from: &Path, to: &Path) -> Result<()> {
-        use std::pin::Pin;
         use std::future::Future;
+        use std::pin::Pin;
 
-        fn copy_recursive(from: PathBuf, to: PathBuf) -> Pin<Box<dyn Future<Output = Result<()>> + Send>> {
+        fn copy_recursive(
+            from: PathBuf,
+            to: PathBuf,
+        ) -> Pin<Box<dyn Future<Output = Result<()>> + Send>> {
             Box::pin(async move {
                 let from_path = from.as_path();
                 let to_path = to.as_path();
@@ -390,17 +435,26 @@ impl RollbackManager {
         copy_recursive(from.to_path_buf(), to.to_path_buf()).await
     }
 
-
     /// Service management (simplified)
-    async fn stop_services(&self) -> Result<()> { Ok(()) }
-    async fn start_services(&self) -> Result<()> { Ok(()) }
+    async fn stop_services(&self) -> Result<()> {
+        Ok(())
+    }
+    async fn start_services(&self) -> Result<()> {
+        Ok(())
+    }
     async fn create_emergency_backup(&self) -> Result<PathBuf> {
         // Simplified - would create a quick backup
         Ok(self.backup_dir.join("emergency_backup"))
     }
-    async fn validate_installation(&self) -> Result<()> { Ok(()) }
-    async fn check_disk_space(&self) -> Result<()> { Ok(()) }
-    async fn check_permissions(&self) -> Result<()> { Ok(()) }
+    async fn validate_installation(&self) -> Result<()> {
+        Ok(())
+    }
+    async fn check_disk_space(&self) -> Result<()> {
+        Ok(())
+    }
+    async fn check_permissions(&self) -> Result<()> {
+        Ok(())
+    }
 }
 
 /// Backup information
@@ -485,7 +539,11 @@ impl StagedReleaseManager {
     }
 
     /// Stage a release for gradual rollout
-    pub async fn stage_release(&self, release_info: &crate::models::ReleaseInfo, channel: &str) -> Result<()> {
+    pub async fn stage_release(
+        &self,
+        release_info: &crate::models::ReleaseInfo,
+        channel: &str,
+    ) -> Result<()> {
         let channel_dir = self.staging_dir.join(channel);
         fs::create_dir_all(&channel_dir).await?;
 
@@ -502,7 +560,10 @@ impl StagedReleaseManager {
         let metadata = serde_json::to_string_pretty(&staged_release)?;
         fs::write(&metadata_path, metadata).await?;
 
-        info!("Release {} staged for channel {}", release_info.version, channel);
+        info!(
+            "Release {} staged for channel {}",
+            release_info.version, channel
+        );
         Ok(())
     }
 

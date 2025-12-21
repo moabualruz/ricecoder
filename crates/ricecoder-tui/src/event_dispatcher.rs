@@ -63,9 +63,9 @@ pub struct EventBatch {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BatchType {
-    Atomic,      // All events must succeed together
-    BestEffort,  // Process as many as possible
-    Sequential,  // Process in order
+    Atomic,     // All events must succeed together
+    BestEffort, // Process as many as possible
+    Sequential, // Process in order
 }
 
 /// Debounced event state
@@ -198,7 +198,8 @@ impl EventDispatcher {
             stats.total_events += 1;
         }
 
-        self.event_tx.send(envelope)
+        self.event_tx
+            .send(envelope)
             .map_err(|e| format!("Failed to dispatch event: {}", e))?;
 
         Ok(id)
@@ -251,11 +252,14 @@ impl EventDispatcher {
             let _ = event_tx.send(envelope);
         });
 
-        debounced.insert(key, DebouncedEvent {
-            event: message,
-            last_trigger: Instant::now(),
-            timer_handle: Some(timer_handle),
-        });
+        debounced.insert(
+            key,
+            DebouncedEvent {
+                event: message,
+                last_trigger: Instant::now(),
+                timer_handle: Some(timer_handle),
+            },
+        );
 
         // Update stats
         {
@@ -275,16 +279,18 @@ impl EventDispatcher {
     ) -> Result<String, String> {
         let batch_id = format!("batch_{}", uuid::Uuid::new_v4());
 
-        let envelopes: Vec<EventEnvelope> = events.into_iter().enumerate().map(|(i, message)| {
-            EventEnvelope {
+        let envelopes: Vec<EventEnvelope> = events
+            .into_iter()
+            .enumerate()
+            .map(|(i, message)| EventEnvelope {
                 id: format!("{}_event_{}", batch_id, i),
                 message,
                 priority,
                 timestamp: Instant::now(),
                 source: EventSource::System,
                 cancellation_token: CancellationToken::new(),
-            }
-        }).collect();
+            })
+            .collect();
 
         let batch = EventBatch {
             id: batch_id.clone(),
@@ -306,7 +312,8 @@ impl EventDispatcher {
             stats.batched_events += batch.events.len() as u64;
         }
 
-        self.batch_tx.send(batch)
+        self.batch_tx
+            .send(batch)
             .map_err(|e| format!("Failed to dispatch batch: {}", e))?;
 
         Ok(batch_id)
@@ -418,7 +425,8 @@ impl EventDispatcher {
                 let active_tasks_clone = Arc::clone(&active_tasks);
 
                 tokio::spawn(async move {
-                    Self::process_event(envelope, reactive_clone, stats_clone, active_tasks_clone).await;
+                    Self::process_event(envelope, reactive_clone, stats_clone, active_tasks_clone)
+                        .await;
                 });
             }
         }
@@ -445,8 +453,6 @@ impl EventDispatcher {
         }
     }
 }
-
-
 
 /// Loading state manager
 #[derive(Debug, Clone)]
@@ -507,4 +513,3 @@ impl LoadingManager {
         !loadings.is_empty()
     }
 }
-

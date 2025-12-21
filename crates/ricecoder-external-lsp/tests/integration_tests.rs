@@ -5,9 +5,7 @@
 //! - ricecoder-completion (completion proxy)
 //! - ricecoder-storage (configuration loading)
 
-use ricecoder_external_lsp::{
-    LspServerConfig, LspServerRegistry,
-};
+use ricecoder_external_lsp::{LspServerConfig, LspServerRegistry};
 use std::collections::HashMap;
 
 /// Mock external LSP client for testing
@@ -31,7 +29,7 @@ impl MockExternalLspClient {
 fn test_lsp_server_registry_creation() {
     // Test that we can create a valid LSP server registry
     let mut servers = HashMap::new();
-    
+
     let rust_config = LspServerConfig {
         language: "rust".to_string(),
         extensions: vec![".rs".to_string()],
@@ -45,9 +43,9 @@ fn test_lsp_server_registry_creation() {
         idle_timeout_ms: 300000,
         output_mapping: None,
     };
-    
+
     servers.insert("rust".to_string(), vec![rust_config]);
-    
+
     let registry = LspServerRegistry {
         servers,
         global: ricecoder_external_lsp::GlobalLspSettings {
@@ -57,7 +55,7 @@ fn test_lsp_server_registry_creation() {
             health_check_interval_ms: 30000,
         },
     };
-    
+
     assert_eq!(registry.servers.len(), 1);
     assert!(registry.servers.contains_key("rust"));
     assert_eq!(registry.global.max_processes, 5);
@@ -66,11 +64,8 @@ fn test_lsp_server_registry_creation() {
 #[test]
 fn test_mock_lsp_client_availability() {
     // Test that mock LSP client correctly reports availability
-    let client = MockExternalLspClient::new(vec![
-        "rust".to_string(),
-        "typescript".to_string(),
-    ]);
-    
+    let client = MockExternalLspClient::new(vec!["rust".to_string(), "typescript".to_string()]);
+
     assert!(client.is_available("rust"));
     assert!(client.is_available("typescript"));
     assert!(!client.is_available("python"));
@@ -80,7 +75,7 @@ fn test_mock_lsp_client_availability() {
 fn test_graceful_degradation_when_lsp_unavailable() {
     // Test that system gracefully degrades when external LSP is unavailable
     let client = MockExternalLspClient::new(vec![]);
-    
+
     // No languages available
     assert!(!client.is_available("rust"));
     assert!(!client.is_available("typescript"));
@@ -92,9 +87,9 @@ fn test_configuration_hierarchy() {
     // Test that configuration hierarchy is respected
     // Built-in defaults should be overridden by user config
     // User config should be overridden by project config
-    
+
     let mut servers = HashMap::new();
-    
+
     // Built-in default
     let builtin_rust = LspServerConfig {
         language: "rust".to_string(),
@@ -109,9 +104,9 @@ fn test_configuration_hierarchy() {
         idle_timeout_ms: 300000,
         output_mapping: None,
     };
-    
+
     servers.insert("rust".to_string(), vec![builtin_rust]);
-    
+
     // User override (different timeout)
     let user_rust = LspServerConfig {
         language: "rust".to_string(),
@@ -126,15 +121,15 @@ fn test_configuration_hierarchy() {
         idle_timeout_ms: 300000,
         output_mapping: None,
     };
-    
+
     // User config should override built-in
     servers.insert("rust".to_string(), vec![user_rust.clone()]);
-    
+
     let registry = LspServerRegistry {
         servers,
         global: ricecoder_external_lsp::GlobalLspSettings::default(),
     };
-    
+
     let rust_config = registry.servers.get("rust").unwrap().first().unwrap();
     assert_eq!(rust_config.timeout_ms, 10000);
 }
@@ -143,7 +138,7 @@ fn test_configuration_hierarchy() {
 fn test_multiple_lsp_servers_for_language() {
     // Test that multiple LSP servers can be configured for a language
     let mut servers = HashMap::new();
-    
+
     let primary_rust = LspServerConfig {
         language: "rust".to_string(),
         extensions: vec![".rs".to_string()],
@@ -157,7 +152,7 @@ fn test_multiple_lsp_servers_for_language() {
         idle_timeout_ms: 300000,
         output_mapping: None,
     };
-    
+
     let secondary_rust = LspServerConfig {
         language: "rust".to_string(),
         extensions: vec![".rs".to_string()],
@@ -171,14 +166,14 @@ fn test_multiple_lsp_servers_for_language() {
         idle_timeout_ms: 300000,
         output_mapping: None,
     };
-    
+
     servers.insert("rust".to_string(), vec![primary_rust, secondary_rust]);
-    
+
     let registry = LspServerRegistry {
         servers,
         global: ricecoder_external_lsp::GlobalLspSettings::default(),
     };
-    
+
     let rust_servers = registry.servers.get("rust").unwrap();
     assert_eq!(rust_servers.len(), 2);
     assert_eq!(rust_servers[0].executable, "rust-analyzer");
@@ -201,7 +196,7 @@ fn test_lsp_server_config_validation() {
         idle_timeout_ms: 300000,
         output_mapping: None,
     };
-    
+
     // Verify all required fields are present
     assert!(!config.language.is_empty());
     assert!(!config.executable.is_empty());
@@ -216,7 +211,7 @@ fn test_fallback_enabled_by_default() {
         servers: HashMap::new(),
         global: ricecoder_external_lsp::GlobalLspSettings::default(),
     };
-    
+
     assert!(registry.global.enable_fallback);
 }
 
@@ -232,7 +227,7 @@ fn test_process_limits() {
             health_check_interval_ms: 30000,
         },
     };
-    
+
     assert_eq!(registry.global.max_processes, 5);
 }
 
@@ -248,7 +243,7 @@ fn test_health_check_interval() {
             health_check_interval_ms: 30000,
         },
     };
-    
+
     assert_eq!(registry.global.health_check_interval_ms, 30000);
 }
 
@@ -256,7 +251,7 @@ fn test_health_check_interval() {
 fn test_custom_lsp_server_configuration() {
     // Test that custom LSP servers can be configured
     let mut servers = HashMap::new();
-    
+
     let custom_lsp = LspServerConfig {
         language: "custom".to_string(),
         extensions: vec![".custom".to_string()],
@@ -270,14 +265,14 @@ fn test_custom_lsp_server_configuration() {
         idle_timeout_ms: 300000,
         output_mapping: None,
     };
-    
+
     servers.insert("custom".to_string(), vec![custom_lsp]);
-    
+
     let registry = LspServerRegistry {
         servers,
         global: ricecoder_external_lsp::GlobalLspSettings::default(),
     };
-    
+
     assert!(registry.servers.contains_key("custom"));
     let custom_config = registry.servers.get("custom").unwrap().first().unwrap();
     assert_eq!(custom_config.executable, "custom-lsp-server");
@@ -288,7 +283,7 @@ fn test_custom_lsp_server_configuration() {
 fn test_lsp_server_disabled() {
     // Test that disabled LSP servers are not used
     let mut servers = HashMap::new();
-    
+
     let disabled_rust = LspServerConfig {
         language: "rust".to_string(),
         extensions: vec![".rs".to_string()],
@@ -302,14 +297,14 @@ fn test_lsp_server_disabled() {
         idle_timeout_ms: 300000,
         output_mapping: None,
     };
-    
+
     servers.insert("rust".to_string(), vec![disabled_rust]);
-    
+
     let registry = LspServerRegistry {
         servers,
         global: ricecoder_external_lsp::GlobalLspSettings::default(),
     };
-    
+
     let rust_config = registry.servers.get("rust").unwrap().first().unwrap();
     assert!(!rust_config.enabled);
 }
@@ -330,7 +325,7 @@ fn test_idle_timeout_configuration() {
         idle_timeout_ms: 600000, // 10 minutes
         output_mapping: None,
     };
-    
+
     assert_eq!(config.idle_timeout_ms, 600000);
 }
 
@@ -339,7 +334,7 @@ fn test_environment_variables_configuration() {
     // Test that environment variables can be configured for LSP servers
     let mut env = HashMap::new();
     env.insert("RUST_LOG".to_string(), "debug".to_string());
-    
+
     let config = LspServerConfig {
         language: "rust".to_string(),
         extensions: vec![".rs".to_string()],
@@ -353,6 +348,6 @@ fn test_environment_variables_configuration() {
         idle_timeout_ms: 300000,
         output_mapping: None,
     };
-    
+
     assert_eq!(config.env.get("RUST_LOG").unwrap(), "debug");
 }

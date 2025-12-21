@@ -2,8 +2,8 @@
 
 use crate::error::{IndustryError, IndustryResult};
 use oauth2::{
-    basic::BasicClient, reqwest::async_http_client, AuthUrl, ClientId, ClientSecret,
-    CsrfToken, PkceCodeChallenge, RedirectUrl, Scope, TokenResponse, TokenUrl,
+    basic::BasicClient, reqwest::async_http_client, AuthUrl, ClientId, ClientSecret, CsrfToken,
+    PkceCodeChallenge, RedirectUrl, Scope, TokenResponse, TokenUrl,
 };
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -153,14 +153,10 @@ impl OAuthFlow {
         let token = OAuthToken {
             access_token: token_result.access_token().secret().clone(),
             token_type: "Bearer".to_string(),
-            refresh_token: token_result
-                .refresh_token()
-                .map(|t| t.secret().clone()),
+            refresh_token: token_result.refresh_token().map(|t| t.secret().clone()),
             expires_at: token_result
                 .expires_in()
-                .map(|d| {
-                    chrono::Utc::now().timestamp() + d.as_secs() as i64
-                }),
+                .map(|d| chrono::Utc::now().timestamp() + d.as_secs() as i64),
             scopes: token_result
                 .scopes()
                 .map(|scopes| scopes.iter().map(|s| s.to_string()).collect())
@@ -184,14 +180,10 @@ impl OAuthFlow {
         let token = OAuthToken {
             access_token: token_result.access_token().secret().clone(),
             token_type: "Bearer".to_string(),
-            refresh_token: token_result
-                .refresh_token()
-                .map(|t| t.secret().clone()),
+            refresh_token: token_result.refresh_token().map(|t| t.secret().clone()),
             expires_at: token_result
                 .expires_in()
-                .map(|d| {
-                    chrono::Utc::now().timestamp() + d.as_secs() as i64
-                }),
+                .map(|d| chrono::Utc::now().timestamp() + d.as_secs() as i64),
             scopes: token_result
                 .scopes()
                 .map(|scopes| scopes.iter().map(|s| s.to_string()).collect())
@@ -219,14 +211,23 @@ impl OAuthClient {
     }
 
     /// Get authorization URL for a provider
-    pub async fn get_authorization_url(&self, provider: &str) -> IndustryResult<(Url, String, String)> {
+    pub async fn get_authorization_url(
+        &self,
+        provider: &str,
+    ) -> IndustryResult<(Url, String, String)> {
         let flows = self.flows.read().await;
-        let flow = flows.get(provider).ok_or_else(|| IndustryError::OAuthError {
-            message: format!("No OAuth flow registered for provider: {}", provider),
-        })?;
+        let flow = flows
+            .get(provider)
+            .ok_or_else(|| IndustryError::OAuthError {
+                message: format!("No OAuth flow registered for provider: {}", provider),
+            })?;
 
         let (url, csrf_token, pkce_challenge) = flow.get_authorization_url();
-        Ok((url, csrf_token.secret().clone(), pkce_challenge.as_str().to_string()))
+        Ok((
+            url,
+            csrf_token.secret().clone(),
+            pkce_challenge.as_str().to_string(),
+        ))
     }
 
     /// Complete OAuth flow and store token
@@ -237,14 +238,19 @@ impl OAuthClient {
         pkce_verifier: String,
     ) -> IndustryResult<()> {
         let flows = self.flows.read().await;
-        let flow = flows.get(provider).ok_or_else(|| IndustryError::OAuthError {
-            message: format!("No OAuth flow registered for provider: {}", provider),
-        })?;
+        let flow = flows
+            .get(provider)
+            .ok_or_else(|| IndustryError::OAuthError {
+                message: format!("No OAuth flow registered for provider: {}", provider),
+            })?;
 
         let pkce_verifier = oauth2::PkceCodeVerifier::new(pkce_verifier);
         let token = flow.exchange_code(code, pkce_verifier).await?;
 
-        self.tokens.write().await.insert(provider.to_string(), token);
+        self.tokens
+            .write()
+            .await
+            .insert(provider.to_string(), token);
         Ok(())
     }
 
@@ -264,20 +270,26 @@ impl OAuthClient {
     /// Refresh token for a provider
     pub async fn refresh_token(&self, provider: &str) -> IndustryResult<()> {
         let mut tokens = self.tokens.write().await;
-        let current_token = tokens.get(provider).ok_or_else(|| IndustryError::OAuthError {
-            message: format!("No token found for provider: {}", provider),
-        })?;
+        let current_token = tokens
+            .get(provider)
+            .ok_or_else(|| IndustryError::OAuthError {
+                message: format!("No token found for provider: {}", provider),
+            })?;
 
-        let refresh_token = current_token.refresh_token.clone().ok_or_else(|| {
-            IndustryError::OAuthError {
-                message: format!("No refresh token available for provider: {}", provider),
-            }
-        })?;
+        let refresh_token =
+            current_token
+                .refresh_token
+                .clone()
+                .ok_or_else(|| IndustryError::OAuthError {
+                    message: format!("No refresh token available for provider: {}", provider),
+                })?;
 
         let flows = self.flows.read().await;
-        let flow = flows.get(provider).ok_or_else(|| IndustryError::OAuthError {
-            message: format!("No OAuth flow registered for provider: {}", provider),
-        })?;
+        let flow = flows
+            .get(provider)
+            .ok_or_else(|| IndustryError::OAuthError {
+                message: format!("No OAuth flow registered for provider: {}", provider),
+            })?;
 
         let new_token = flow.refresh_token(refresh_token).await?;
         tokens.insert(provider.to_string(), new_token);

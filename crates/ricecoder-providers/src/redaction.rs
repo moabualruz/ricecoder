@@ -127,5 +127,3 @@ impl<T: AsRef<str>> std::fmt::Display for Redacted<T> {
         write!(f, "{}", redact(self.0.as_ref()))
     }
 }
-
-

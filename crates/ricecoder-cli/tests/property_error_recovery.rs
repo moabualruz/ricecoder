@@ -411,7 +411,10 @@ fn test_safe_lock_optional_with_different_types() {
 
     // Test with String
     let string_data = Mutex::new("hello".to_string());
-    assert_eq!(*safe_lock_optional(&string_data, "string").unwrap(), "hello");
+    assert_eq!(
+        *safe_lock_optional(&string_data, "string").unwrap(),
+        "hello"
+    );
 
     // Test with Vec
     let vec_data = Mutex::new(vec![1, 2, 3]);

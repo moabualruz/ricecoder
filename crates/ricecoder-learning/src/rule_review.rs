@@ -452,11 +452,7 @@ mod tests {
         );
 
         let mut review = ReviewInfo::new(rule);
-        let comment = ReviewComment::new(
-            "reviewer".to_string(),
-            "Looks good".to_string(),
-            false,
-        );
+        let comment = ReviewComment::new("reviewer".to_string(), "Looks good".to_string(), false);
 
         review.add_comment(comment);
         assert_eq!(review.comment_count(), 1);
@@ -525,11 +521,8 @@ mod tests {
 
         let mut review = ReviewInfo::new(rule);
 
-        let comment1 = ReviewComment::new(
-            "reviewer1".to_string(),
-            "Critical issue".to_string(),
-            true,
-        );
+        let comment1 =
+            ReviewComment::new("reviewer1".to_string(), "Critical issue".to_string(), true);
         let comment2 = ReviewComment::new(
             "reviewer2".to_string(),
             "Minor suggestion".to_string(),

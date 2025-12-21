@@ -39,14 +39,13 @@ fn arb_completion_items() -> impl Strategy<Value = Vec<CompletionItem>> {
 
 /// Strategy for generating diagnostics
 fn arb_diagnostic() -> impl Strategy<Value = Diagnostic> {
-    (0u32..100, 0u32..100, "[a-z ]{5,50}")
-        .prop_map(|(line, char, message)| {
-            Diagnostic::new(
-                Range::new(Position::new(line, char), Position::new(line, char + 5)),
-                DiagnosticSeverity::Error,
-                message,
-            )
-        })
+    (0u32..100, 0u32..100, "[a-z ]{5,50}").prop_map(|(line, char, message)| {
+        Diagnostic::new(
+            Range::new(Position::new(line, char), Position::new(line, char + 5)),
+            DiagnosticSeverity::Error,
+            message,
+        )
+    })
 }
 
 /// Strategy for generating diagnostic vectors

@@ -151,10 +151,7 @@ async fn integration_test_workspace_scanning_and_analysis() {
     // Verify: Execution order respects dependencies
     let order = execution_order.lock().unwrap();
     let core_idx = order.iter().position(|x| x == "ricecoder-core").unwrap();
-    let storage_idx = order
-        .iter()
-        .position(|x| x == "ricecoder-storage")
-        .unwrap();
+    let storage_idx = order.iter().position(|x| x == "ricecoder-storage").unwrap();
     let lsp_idx = order.iter().position(|x| x == "ricecoder-lsp").unwrap();
     let cli_idx = order.iter().position(|x| x == "ricecoder-cli").unwrap();
     let tui_idx = order.iter().position(|x| x == "ricecoder-tui").unwrap();

@@ -10,7 +10,7 @@
 //! - Memory usage < 100MB for typical projects
 
 use proptest::prelude::*;
-use ricecoder_lsp::cache::{SemanticCache, hash_input};
+use ricecoder_lsp::cache::{hash_input, SemanticCache};
 use ricecoder_lsp::performance::PerformanceTracker;
 use ricecoder_lsp::types::SemanticInfo;
 use std::sync::Arc;
@@ -49,14 +49,14 @@ proptest! {
     ) {
         let tracker = Arc::new(PerformanceTracker::new());
         tracker.set_target("semantic_analysis".to_string(), 500.0);
-        
+
         let start = Instant::now();
         // Simulate semantic analysis
         let _hash = hash_input(&code);
         let duration = start.elapsed();
-        
+
         tracker.record("semantic_analysis".to_string(), duration);
-        
+
         let metrics = tracker.get_metrics("semantic_analysis").unwrap();
         prop_assert!(
             metrics.total_time_ms < 500.0,
@@ -76,14 +76,14 @@ proptest! {
     ) {
         let tracker = Arc::new(PerformanceTracker::new());
         tracker.set_target("semantic_analysis".to_string(), 2000.0);
-        
+
         let start = Instant::now();
         // Simulate semantic analysis
         let _hash = hash_input(&code);
         let duration = start.elapsed();
-        
+
         tracker.record("semantic_analysis".to_string(), duration);
-        
+
         let metrics = tracker.get_metrics("semantic_analysis").unwrap();
         prop_assert!(
             metrics.total_time_ms < 2000.0,
@@ -100,17 +100,17 @@ proptest! {
     ) {
         let cache = SemanticCache::new();
         let hash = hash_input(&code);
-        
+
         // Store in cache
         let mut info = SemanticInfo::new();
         info.imports.push("std".to_string());
         cache.put("file://test.rs".to_string(), hash, info);
-        
+
         // Measure retrieval time
         let start = Instant::now();
         let _cached = cache.get("file://test.rs", hash);
         let duration = start.elapsed();
-        
+
         let time_ms = duration.as_secs_f64() * 1000.0;
         prop_assert!(
             time_ms < 100.0,
@@ -126,12 +126,12 @@ proptest! {
         operations in prop::collection::vec(0..100u32, 10..100)
     ) {
         let cache = SemanticCache::new();
-        
+
         // Perform operations
         for (i, op) in operations.iter().enumerate() {
             let uri = format!("file://test{}.rs", op % 10);
             let hash = hash_input(&format!("code{}", op));
-            
+
             if i % 2 == 0 {
                 // Store
                 let mut info = SemanticInfo::new();
@@ -142,10 +142,10 @@ proptest! {
                 let _cached = cache.get(&uri, hash);
             }
         }
-        
+
         let metrics = cache.metrics();
         let total = metrics.hits + metrics.misses;
-        
+
         // Hit rate should be between 0 and 100%
         let hit_rate = metrics.hit_rate();
         prop_assert!(
@@ -163,17 +163,17 @@ proptest! {
     ) {
         let cache = SemanticCache::new();
         let hash = hash_input(&code);
-        
+
         // Store in cache
         let mut info = SemanticInfo::new();
         info.imports.push("std".to_string());
         cache.put("file://test.rs".to_string(), hash, info);
-        
+
         // Measure invalidation time
         let start = Instant::now();
         cache.invalidate("file://test.rs");
         let duration = start.elapsed();
-        
+
         let time_ms = duration.as_secs_f64() * 1000.0;
         prop_assert!(
             time_ms < 10.0,
@@ -189,21 +189,21 @@ proptest! {
         codes in prop::collection::vec("[a-z]{10,100}", 10..50)
     ) {
         let cache = SemanticCache::with_size(100 * 1024 * 1024); // 100MB limit
-        
+
         // Store multiple entries
         for (i, code) in codes.iter().enumerate() {
             let uri = format!("file://test{}.rs", i);
             let hash = hash_input(code);
-            
+
             let mut info = SemanticInfo::new();
             info.imports.push(format!("import{}", i));
             cache.put(uri, hash, info);
         }
-        
+
         // Cache should not exceed size limit
         // (This is enforced by the cache implementation)
         let metrics = cache.metrics();
-        
+
         // Should have some entries cached
         prop_assert!(
             metrics.hits + metrics.misses > 0,
@@ -220,13 +220,13 @@ mod unit_tests {
     fn test_performance_tracker_basic() {
         let tracker = PerformanceTracker::new();
         tracker.set_target("test_op".to_string(), 100.0);
-        
+
         let start = Instant::now();
         std::thread::sleep(std::time::Duration::from_millis(10));
         let duration = start.elapsed();
-        
+
         tracker.record("test_op".to_string(), duration);
-        
+
         let metrics = tracker.get_metrics("test_op").unwrap();
         assert_eq!(metrics.count, 1);
         assert!(metrics.total_time_ms >= 10.0);
@@ -237,16 +237,16 @@ mod unit_tests {
         let cache = SemanticCache::new();
         let code = "fn main() {}";
         let hash = hash_input(code);
-        
+
         let mut info = SemanticInfo::new();
         info.imports.push("std".to_string());
-        
+
         cache.put("file://test.rs".to_string(), hash, info);
-        
+
         let start = Instant::now();
         let _cached = cache.get("file://test.rs", hash);
         let duration = start.elapsed();
-        
+
         let time_ms = duration.as_secs_f64() * 1000.0;
         assert!(time_ms < 100.0, "Cache retrieval should be fast");
     }
@@ -254,18 +254,18 @@ mod unit_tests {
     #[test]
     fn test_cache_hit_rate() {
         let cache = SemanticCache::new();
-        
+
         // Store entry
         let hash = hash_input("code");
         let mut info = SemanticInfo::new();
         cache.put("file://test.rs".to_string(), hash, info);
-        
+
         // Hit
         let _cached = cache.get("file://test.rs", hash);
-        
+
         // Miss
         let _cached = cache.get("file://test.rs", hash + 1);
-        
+
         let metrics = cache.metrics();
         assert_eq!(metrics.hits, 1);
         assert_eq!(metrics.misses, 1);

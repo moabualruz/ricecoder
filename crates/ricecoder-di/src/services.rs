@@ -4,15 +4,15 @@
 //! needed by the RiceCoder application across all crates.
 
 use crate::{DIContainer, DIResult};
+use async_trait::async_trait;
 use ricecoder_agents::use_cases::{
-    ProviderCommunityUseCase, ProviderFailoverUseCase, ProviderHealthUseCase,
-    ProviderModelUseCase, ProviderPerformanceUseCase, ProviderSwitchingUseCase,
-    SessionLifecycleUseCase, SessionSharingUseCase, SessionStateManagementUseCase,
+    ProviderCommunityUseCase, ProviderFailoverUseCase, ProviderHealthUseCase, ProviderModelUseCase,
+    ProviderPerformanceUseCase, ProviderSwitchingUseCase, SessionLifecycleUseCase,
+    SessionSharingUseCase, SessionStateManagementUseCase,
 };
 use ricecoder_providers::provider::manager::ProviderManager;
 use ricecoder_sessions::{SessionManager, SessionStore, ShareService};
 use std::sync::Arc;
-use async_trait::async_trait;
 
 /// Trait for services that need lifecycle management
 #[async_trait]
@@ -71,80 +71,86 @@ impl Default for LifecycleManager {
 }
 
 // Optional dependencies - only register if available
-#[cfg(feature = "storage")]
-use ricecoder_storage::{StorageManager, FileStorage, MemoryStorage};
-#[cfg(feature = "research")]
-use ricecoder_research::{ResearchManager, CodebaseScanner, SemanticIndexer};
-#[cfg(feature = "workflows")]
-use ricecoder_workflows::{WorkflowEngine, WorkflowManager};
-#[cfg(feature = "execution")]
-use ricecoder_execution::{ExecutionEngine, CommandExecutor};
-#[cfg(feature = "mcp")]
-use ricecoder_mcp::{MCPClient, MCPServer};
-#[cfg(feature = "tools")]
-use ricecoder_tools::{ToolRegistry, ToolExecutor};
-#[cfg(feature = "config")]
-use ricecoder_config::{ConfigManager, ConfigLoader};
 #[cfg(feature = "activity-log")]
 use ricecoder_activity_log::{ActivityLogger, AuditLogger, SessionTracker};
-#[cfg(feature = "orchestration")]
-use ricecoder_orchestration::{WorkspaceOrchestrator, OperationManager};
-#[cfg(feature = "specs")]
-use ricecoder_specs::{SpecManager, SpecValidator, SpecCache};
-#[cfg(feature = "undo-redo")]
-use ricecoder_undo_redo::{UndoManager, RedoManager, HistoryManager};
-#[cfg(feature = "vcs")]
-use ricecoder_vcs::{VCSManager, GitIntegration, RepositoryManager};
-#[cfg(feature = "permissions")]
-use ricecoder_permissions::{PermissionManager, PermissionChecker, AuditLogger as PermissionAuditLogger};
-#[cfg(feature = "security")]
-use ricecoder_security::{AccessControl, EncryptionService, ValidationService};
 #[cfg(feature = "cache")]
 use ricecoder_cache::{CacheManager, CacheStorage, CacheStrategy};
-#[cfg(feature = "domain")]
-use ricecoder_domain::{DomainService, Repository, EntityManager};
-#[cfg(feature = "learning")]
-use ricecoder_learning::{LearningManager, PatternCapturer, RuleValidator};
-#[cfg(feature = "industry")]
-use ricecoder_industry::{AuthService, ComplianceManager, ConnectionManager};
-#[cfg(feature = "safety")]
-use ricecoder_safety::{SafetyMonitor, RiskAssessor, ConstraintValidator};
-#[cfg(feature = "files")]
-use ricecoder_files::{FileManager, FileWatcher, TransactionManager};
-#[cfg(feature = "themes")]
-use ricecoder_themes::{ThemeManager, ThemeLoader, ThemeRegistry};
-#[cfg(feature = "images")]
-use ricecoder_images::{ImageHandler, ImageAnalyzer, ImageCache};
-#[cfg(feature = "completion")]
-use ricecoder_completion::engine::GenericCompletionEngine;
-#[cfg(feature = "lsp")]
-use ricecoder_lsp::types::LspResult;
-#[cfg(feature = "modes")]
-use ricecoder_modes::ModeManager;
+#[cfg(feature = "cli")]
+use ricecoder_cli::{BrandingManager, CommandRouter};
 #[cfg(feature = "commands")]
 use ricecoder_commands::{CommandManager, CommandRegistry};
-#[cfg(feature = "hooks")]
-use ricecoder_hooks::registry::HookRegistry;
-#[cfg(feature = "keybinds")]
-use ricecoder_keybinds::KeybindManager;
-#[cfg(feature = "teams")]
-use ricecoder_teams::TeamManager;
-#[cfg(feature = "refactoring")]
-use ricecoder_refactoring::{ConfigManager, ProviderRegistry};
-#[cfg(feature = "parsers")]
-use ricecoder_parsers::Parser;
-#[cfg(feature = "generation")]
-use ricecoder_generation::{GenerationManager, CodeGenerator, SpecProcessor, TemplateEngine};
+#[cfg(feature = "completion")]
+use ricecoder_completion::engine::GenericCompletionEngine;
 #[cfg(feature = "config")]
 use ricecoder_config::ConfigManager as AppConfigManager;
-#[cfg(feature = "github")]
-use ricecoder_github::managers::{GitHubManager, IssueManager, PrManager, ReleaseManager, DiscussionManager, GistManager, BranchManager, ProjectManager, DocumentationGenerator, CodeReviewAgent, RepositoryAnalyzer, WebhookHandler};
+#[cfg(feature = "config")]
+use ricecoder_config::{ConfigLoader, ConfigManager};
+#[cfg(feature = "domain")]
+use ricecoder_domain::{DomainService, EntityManager, Repository};
 #[cfg(feature = "domain-agents")]
 use ricecoder_domain_agents::{DomainAgentRegistryManager, KnowledgeBaseManager};
+#[cfg(feature = "execution")]
+use ricecoder_execution::{CommandExecutor, ExecutionEngine};
+#[cfg(feature = "files")]
+use ricecoder_files::{FileManager, FileWatcher, TransactionManager};
+#[cfg(feature = "generation")]
+use ricecoder_generation::{CodeGenerator, GenerationManager, SpecProcessor, TemplateEngine};
+#[cfg(feature = "github")]
+use ricecoder_github::managers::{
+    BranchManager, CodeReviewAgent, DiscussionManager, DocumentationGenerator, GistManager,
+    GitHubManager, IssueManager, PrManager, ProjectManager, ReleaseManager, RepositoryAnalyzer,
+    WebhookHandler,
+};
+#[cfg(feature = "hooks")]
+use ricecoder_hooks::registry::HookRegistry;
+#[cfg(feature = "images")]
+use ricecoder_images::{ImageAnalyzer, ImageCache, ImageHandler};
+#[cfg(feature = "industry")]
+use ricecoder_industry::{AuthService, ComplianceManager, ConnectionManager};
+#[cfg(feature = "keybinds")]
+use ricecoder_keybinds::KeybindManager;
+#[cfg(feature = "learning")]
+use ricecoder_learning::{LearningManager, PatternCapturer, RuleValidator};
 #[cfg(feature = "local-models")]
 use ricecoder_local_models::LocalModelManager;
-#[cfg(feature = "cli")]
-use ricecoder_cli::{CommandRouter, BrandingManager};
+#[cfg(feature = "lsp")]
+use ricecoder_lsp::types::LspResult;
+#[cfg(feature = "mcp")]
+use ricecoder_mcp::{MCPClient, MCPServer};
+#[cfg(feature = "modes")]
+use ricecoder_modes::ModeManager;
+#[cfg(feature = "orchestration")]
+use ricecoder_orchestration::{OperationManager, WorkspaceOrchestrator};
+#[cfg(feature = "parsers")]
+use ricecoder_parsers::Parser;
+#[cfg(feature = "permissions")]
+use ricecoder_permissions::{
+    AuditLogger as PermissionAuditLogger, PermissionChecker, PermissionManager,
+};
+#[cfg(feature = "refactoring")]
+use ricecoder_refactoring::{ConfigManager, ProviderRegistry};
+#[cfg(feature = "research")]
+use ricecoder_research::{CodebaseScanner, ResearchManager, SemanticIndexer};
+#[cfg(feature = "safety")]
+use ricecoder_safety::{ConstraintValidator, RiskAssessor, SafetyMonitor};
+#[cfg(feature = "security")]
+use ricecoder_security::{AccessControl, EncryptionService, ValidationService};
+#[cfg(feature = "specs")]
+use ricecoder_specs::{SpecCache, SpecManager, SpecValidator};
+#[cfg(feature = "storage")]
+use ricecoder_storage::{FileStorage, MemoryStorage, StorageManager};
+#[cfg(feature = "teams")]
+use ricecoder_teams::TeamManager;
+#[cfg(feature = "themes")]
+use ricecoder_themes::{ThemeLoader, ThemeManager, ThemeRegistry};
+#[cfg(feature = "tools")]
+use ricecoder_tools::{ToolExecutor, ToolRegistry};
+#[cfg(feature = "undo-redo")]
+use ricecoder_undo_redo::{HistoryManager, RedoManager, UndoManager};
+#[cfg(feature = "vcs")]
+use ricecoder_vcs::{GitIntegration, RepositoryManager, VCSManager};
+#[cfg(feature = "workflows")]
+use ricecoder_workflows::{WorkflowEngine, WorkflowManager};
 
 /// Register all infrastructure services
 pub fn register_infrastructure_services(container: &DIContainer) -> DIResult<()> {
@@ -275,8 +281,6 @@ pub fn register_infrastructure_services(container: &DIContainer) -> DIResult<()>
     #[cfg(feature = "generation")]
     register_generation_services(container)?;
 
-
-
     #[cfg(feature = "github")]
     register_github_services(container)?;
 
@@ -295,7 +299,7 @@ pub fn register_infrastructure_services(container: &DIContainer) -> DIResult<()>
 /// Register storage services (optional feature)
 #[cfg(feature = "storage")]
 pub fn register_storage_services(container: &DIContainer) -> DIResult<()> {
-    use ricecoder_storage::{StorageManager, FileStorage, MemoryStorage};
+    use ricecoder_storage::{FileStorage, MemoryStorage, StorageManager};
 
     container.register(|_| {
         let storage_manager = Arc::new(StorageManager::new());
@@ -318,7 +322,7 @@ pub fn register_storage_services(container: &DIContainer) -> DIResult<()> {
 /// Register research services (optional feature)
 #[cfg(feature = "research")]
 pub fn register_research_services(container: &DIContainer) -> DIResult<()> {
-    use ricecoder_research::{ResearchManager, CodebaseScanner, SemanticIndexer};
+    use ricecoder_research::{CodebaseScanner, ResearchManager, SemanticIndexer};
 
     container.register(|_| {
         let research_manager = Arc::new(ResearchManager::new());
@@ -359,7 +363,7 @@ pub fn register_workflow_services(container: &DIContainer) -> DIResult<()> {
 /// Register execution services (optional feature)
 #[cfg(feature = "execution")]
 pub fn register_execution_services(container: &DIContainer) -> DIResult<()> {
-    use ricecoder_execution::{ExecutionEngine, CommandExecutor};
+    use ricecoder_execution::{CommandExecutor, ExecutionEngine};
 
     container.register(|_| {
         let execution_engine = Arc::new(ExecutionEngine::new());
@@ -395,7 +399,7 @@ pub fn register_mcp_services(container: &DIContainer) -> DIResult<()> {
 /// Register tool services (optional feature)
 #[cfg(feature = "tools")]
 pub fn register_tool_services(container: &DIContainer) -> DIResult<()> {
-    use ricecoder_tools::{ToolRegistry, ToolExecutor};
+    use ricecoder_tools::{ToolExecutor, ToolRegistry};
 
     container.register(|_| {
         let tool_registry = Arc::new(ToolRegistry::new());
@@ -413,7 +417,7 @@ pub fn register_tool_services(container: &DIContainer) -> DIResult<()> {
 /// Register config services (optional feature)
 #[cfg(feature = "config")]
 pub fn register_config_services(container: &DIContainer) -> DIResult<()> {
-    use ricecoder_config::{ConfigManager, ConfigLoader};
+    use ricecoder_config::{ConfigLoader, ConfigManager};
 
     container.register(|_| {
         let config_manager = Arc::new(ConfigManager::new());
@@ -454,7 +458,7 @@ pub fn register_activity_log_services(container: &DIContainer) -> DIResult<()> {
 /// Register orchestration services (optional feature)
 #[cfg(feature = "orchestration")]
 pub fn register_orchestration_services(container: &DIContainer) -> DIResult<()> {
-    use ricecoder_orchestration::{WorkspaceOrchestrator, OperationManager};
+    use ricecoder_orchestration::{OperationManager, WorkspaceOrchestrator};
 
     container.register(|_| {
         let workspace_orchestrator = Arc::new(WorkspaceOrchestrator::new());
@@ -472,7 +476,7 @@ pub fn register_orchestration_services(container: &DIContainer) -> DIResult<()> 
 /// Register specs services (optional feature)
 #[cfg(feature = "specs")]
 pub fn register_specs_services(container: &DIContainer) -> DIResult<()> {
-    use ricecoder_specs::{SpecManager, SpecValidator, SpecCache};
+    use ricecoder_specs::{SpecCache, SpecManager, SpecValidator};
 
     container.register(|_| {
         let spec_manager = Arc::new(SpecManager::new());
@@ -495,7 +499,7 @@ pub fn register_specs_services(container: &DIContainer) -> DIResult<()> {
 /// Register undo-redo services (optional feature)
 #[cfg(feature = "undo-redo")]
 pub fn register_undo_redo_services(container: &DIContainer) -> DIResult<()> {
-    use ricecoder_undo_redo::{UndoManager, RedoManager, HistoryManager};
+    use ricecoder_undo_redo::{HistoryManager, RedoManager, UndoManager};
 
     container.register(|_| {
         let undo_manager = Arc::new(UndoManager::new());
@@ -518,7 +522,7 @@ pub fn register_undo_redo_services(container: &DIContainer) -> DIResult<()> {
 /// Register VCS services (optional feature)
 #[cfg(feature = "vcs")]
 pub fn register_vcs_services(container: &DIContainer) -> DIResult<()> {
-    use ricecoder_vcs::{VCSManager, GitIntegration, RepositoryManager};
+    use ricecoder_vcs::{GitIntegration, RepositoryManager, VCSManager};
 
     container.register(|_| {
         let vcs_manager = Arc::new(VCSManager::new());
@@ -541,7 +545,9 @@ pub fn register_vcs_services(container: &DIContainer) -> DIResult<()> {
 /// Register permissions services (optional feature)
 #[cfg(feature = "permissions")]
 pub fn register_permissions_services(container: &DIContainer) -> DIResult<()> {
-    use ricecoder_permissions::{PermissionManager, PermissionChecker, AuditLogger as PermissionAuditLogger};
+    use ricecoder_permissions::{
+        AuditLogger as PermissionAuditLogger, PermissionChecker, PermissionManager,
+    };
 
     container.register(|_| {
         let permission_manager = Arc::new(PermissionManager::new());
@@ -610,7 +616,7 @@ pub fn register_cache_services(container: &DIContainer) -> DIResult<()> {
 /// Register domain services (optional feature)
 #[cfg(feature = "domain")]
 pub fn register_domain_services(container: &DIContainer) -> DIResult<()> {
-    use ricecoder_domain::{DomainService, Repository, EntityManager};
+    use ricecoder_domain::{DomainService, EntityManager, Repository};
 
     container.register(|_| {
         let domain_service = Arc::new(DomainService::new());
@@ -679,7 +685,7 @@ pub fn register_industry_services(container: &DIContainer) -> DIResult<()> {
 /// Register safety services (optional feature)
 #[cfg(feature = "safety")]
 pub fn register_safety_services(container: &DIContainer) -> DIResult<()> {
-    use ricecoder_safety::{SafetyMonitor, RiskAssessor, ConstraintValidator};
+    use ricecoder_safety::{ConstraintValidator, RiskAssessor, SafetyMonitor};
 
     container.register(|_| {
         let safety_monitor = Arc::new(SafetyMonitor::new());
@@ -725,7 +731,7 @@ pub fn register_files_services(container: &DIContainer) -> DIResult<()> {
 /// Register themes services (optional feature)
 #[cfg(feature = "themes")]
 pub fn register_themes_services(container: &DIContainer) -> DIResult<()> {
-    use ricecoder_themes::{ThemeManager, ThemeLoader, ThemeRegistry};
+    use ricecoder_themes::{ThemeLoader, ThemeManager, ThemeRegistry};
 
     container.register(|_| {
         let theme_manager = Arc::new(ThemeManager::new());
@@ -748,7 +754,7 @@ pub fn register_themes_services(container: &DIContainer) -> DIResult<()> {
 /// Register images services (optional feature)
 #[cfg(feature = "images")]
 pub fn register_images_services(container: &DIContainer) -> DIResult<()> {
-    use ricecoder_images::{ImageHandler, ImageAnalyzer, ImageCache};
+    use ricecoder_images::{ImageAnalyzer, ImageCache, ImageHandler};
 
     container.register(|_| {
         let image_handler = Arc::new(ImageHandler::new());
@@ -894,7 +900,7 @@ pub fn register_parsers_services(container: &DIContainer) -> DIResult<()> {
 /// Register generation services (optional feature)
 #[cfg(feature = "generation")]
 pub fn register_generation_services(container: &DIContainer) -> DIResult<()> {
-    use ricecoder_generation::{GenerationManager, CodeGenerator, SpecProcessor, TemplateEngine};
+    use ricecoder_generation::{CodeGenerator, GenerationManager, SpecProcessor, TemplateEngine};
 
     container.register(|_| {
         let generation_manager = Arc::new(GenerationManager::new(Default::default()));
@@ -922,7 +928,10 @@ pub fn register_generation_services(container: &DIContainer) -> DIResult<()> {
 /// Register monitoring services (optional feature)
 #[cfg(feature = "monitoring")]
 pub fn register_monitoring_services(container: &DIContainer) -> DIResult<()> {
-    use ricecoder_monitoring::{AnalyticsConfig, AlertingConfig, ComplianceConfig, ErrorTrackingConfig, MetricsConfig, MonitoringConfig, PerformanceConfig};
+    use ricecoder_monitoring::{
+        AlertingConfig, AnalyticsConfig, ComplianceConfig, ErrorTrackingConfig, MetricsConfig,
+        MonitoringConfig, PerformanceConfig,
+    };
 
     // Create default monitoring configuration
     let monitoring_config = MonitoringConfig {
@@ -979,7 +988,9 @@ pub fn register_monitoring_services(container: &DIContainer) -> DIResult<()> {
     })?;
 
     container.register(move |_| {
-        let performance_monitor = Arc::new(MonitoringPerformanceMonitor::new(monitoring_config.performance.clone()));
+        let performance_monitor = Arc::new(MonitoringPerformanceMonitor::new(
+            monitoring_config.performance.clone(),
+        ));
         Ok(performance_monitor)
     })?;
 
@@ -989,7 +1000,8 @@ pub fn register_monitoring_services(container: &DIContainer) -> DIResult<()> {
     })?;
 
     container.register(move |_| {
-        let compliance_engine = Arc::new(ComplianceEngine::new(monitoring_config.compliance.clone()));
+        let compliance_engine =
+            Arc::new(ComplianceEngine::new(monitoring_config.compliance.clone()));
         Ok(compliance_engine)
     })?;
 
@@ -1022,7 +1034,11 @@ pub fn register_app_config_services(container: &DIContainer) -> DIResult<()> {
 /// Register GitHub services (optional feature)
 #[cfg(feature = "github")]
 pub fn register_github_services(container: &DIContainer) -> DIResult<()> {
-    use ricecoder_github::managers::{GitHubManager, IssueManager, PrManager, ReleaseManager, DiscussionManager, GistManager, BranchManager, ProjectManager, DocumentationGenerator, CodeReviewAgent, RepositoryAnalyzer, WebhookHandler};
+    use ricecoder_github::managers::{
+        BranchManager, CodeReviewAgent, DiscussionManager, DocumentationGenerator, GistManager,
+        GitHubManager, IssueManager, PrManager, ProjectManager, ReleaseManager, RepositoryAnalyzer,
+        WebhookHandler,
+    };
 
     container.register(|_| {
         let github_manager = Arc::new(GitHubManager::new());
@@ -1121,7 +1137,7 @@ pub fn register_local_models_services(container: &DIContainer) -> DIResult<()> {
 /// Register CLI services (optional feature)
 #[cfg(feature = "cli")]
 pub fn register_cli_services(container: &DIContainer) -> DIResult<()> {
-    use ricecoder_cli::{CommandRouter, BrandingManager};
+    use ricecoder_cli::{BrandingManager, CommandRouter};
 
     container.register(|_| {
         let command_router = Arc::new(CommandRouter::new());
@@ -1142,10 +1158,7 @@ pub fn register_use_cases(container: &DIContainer) -> DIResult<()> {
     container.register(|container| {
         let session_manager = container.resolve::<SessionManager>()?;
         let session_store = container.resolve::<SessionStore>()?;
-        let use_case = Arc::new(SessionLifecycleUseCase::new(
-            session_manager,
-            session_store,
-        ));
+        let use_case = Arc::new(SessionLifecycleUseCase::new(session_manager, session_store));
         Ok(use_case)
     })?;
 
@@ -1618,8 +1631,6 @@ pub fn create_configured_container(config: &ContainerConfig) -> DIResult<DIConta
         }
     }
 
-
-
     if config.enable_github {
         #[cfg(feature = "github")]
         {
@@ -1661,119 +1672,197 @@ pub fn create_configured_container(config: &ContainerConfig) -> DIResult<DIConta
 
 /// Extension trait for DIContainerBuilder to add convenience methods
 pub trait DIContainerBuilderExt {
-    fn register_infrastructure_services(self) -> DIResult<Self> where Self: Sized;
-    fn register_use_cases(self) -> DIResult<Self> where Self: Sized;
+    fn register_infrastructure_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
+    fn register_use_cases(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "storage")]
-    fn register_storage_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_storage_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "research")]
-    fn register_research_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_research_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "workflows")]
-    fn register_workflow_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_workflow_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "execution")]
-    fn register_execution_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_execution_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "mcp")]
-    fn register_mcp_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_mcp_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "tools")]
-    fn register_tool_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_tool_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "config")]
-    fn register_config_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_config_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "activity-log")]
-    fn register_activity_log_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_activity_log_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "orchestration")]
-    fn register_orchestration_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_orchestration_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "specs")]
-    fn register_specs_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_specs_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "undo-redo")]
-    fn register_undo_redo_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_undo_redo_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "vcs")]
-    fn register_vcs_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_vcs_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "permissions")]
-    fn register_permissions_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_permissions_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "security")]
-    fn register_security_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_security_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "cache")]
-    fn register_cache_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_cache_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "domain")]
-    fn register_domain_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_domain_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "learning")]
-    fn register_learning_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_learning_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "industry")]
-    fn register_industry_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_industry_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "safety")]
-    fn register_safety_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_safety_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "files")]
-    fn register_files_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_files_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "themes")]
-    fn register_themes_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_themes_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "images")]
-    fn register_images_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_images_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "completion")]
-    fn register_completion_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_completion_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "lsp")]
-    fn register_lsp_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_lsp_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "modes")]
-    fn register_modes_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_modes_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "commands")]
-    fn register_commands_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_commands_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "hooks")]
-    fn register_hooks_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_hooks_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "keybinds")]
-    fn register_keybinds_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_keybinds_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "teams")]
-    fn register_teams_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_teams_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "refactoring")]
-    fn register_refactoring_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_refactoring_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "parsers")]
-    fn register_parsers_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_parsers_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "generation")]
-    fn register_generation_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_generation_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "github")]
-    fn register_github_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_github_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "domain-agents")]
-    fn register_domain_agents_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_domain_agents_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "local-models")]
-    fn register_local_models_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_local_models_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "cli")]
-    fn register_cli_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_cli_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 
     #[cfg(feature = "monitoring")]
-    fn register_monitoring_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_monitoring_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
 }
 
 impl DIContainerBuilderExt for crate::DIContainerBuilder {
@@ -2016,39 +2105,35 @@ impl DIContainerBuilderExt for crate::DIContainerBuilder {
     }
 }
 
+#[test]
+fn test_register_use_cases() {
+    let container = DIContainer::new();
+    register_infrastructure_services(&container).unwrap();
+    register_use_cases(&container).unwrap();
 
+    // Check that use cases are registered
+    assert!(container.is_registered::<SessionLifecycleUseCase>());
+    assert!(container.is_registered::<SessionSharingUseCase>());
+    assert!(container.is_registered::<SessionStateManagementUseCase>());
+    assert!(container.is_registered::<ProviderSwitchingUseCase>());
+    assert!(container.is_registered::<ProviderPerformanceUseCase>());
+    assert!(container.is_registered::<ProviderFailoverUseCase>());
+    assert!(container.is_registered::<ProviderModelUseCase>());
+    assert!(container.is_registered::<ProviderHealthUseCase>());
+    assert!(container.is_registered::<ProviderCommunityUseCase>());
+}
 
+#[test]
+fn test_create_application_container() {
+    let container = create_application_container().unwrap();
 
+    // Should have all services registered
+    assert!(container.service_count() > 0);
 
-    #[test]
-    fn test_register_use_cases() {
-        let container = DIContainer::new();
-        register_infrastructure_services(&container).unwrap();
-        register_use_cases(&container).unwrap();
+    // Should be able to resolve key services
+    let session_use_case = container.resolve::<SessionLifecycleUseCase>();
+    assert!(session_use_case.is_ok());
 
-        // Check that use cases are registered
-        assert!(container.is_registered::<SessionLifecycleUseCase>());
-        assert!(container.is_registered::<SessionSharingUseCase>());
-        assert!(container.is_registered::<SessionStateManagementUseCase>());
-        assert!(container.is_registered::<ProviderSwitchingUseCase>());
-        assert!(container.is_registered::<ProviderPerformanceUseCase>());
-        assert!(container.is_registered::<ProviderFailoverUseCase>());
-        assert!(container.is_registered::<ProviderModelUseCase>());
-        assert!(container.is_registered::<ProviderHealthUseCase>());
-        assert!(container.is_registered::<ProviderCommunityUseCase>());
-    }
-
-    #[test]
-    fn test_create_application_container() {
-        let container = create_application_container().unwrap();
-
-        // Should have all services registered
-        assert!(container.service_count() > 0);
-
-        // Should be able to resolve key services
-        let session_use_case = container.resolve::<SessionLifecycleUseCase>();
-        assert!(session_use_case.is_ok());
-
-        let provider_use_case = container.resolve::<ProviderSwitchingUseCase>();
-        assert!(provider_use_case.is_ok());
-    }
+    let provider_use_case = container.resolve::<ProviderSwitchingUseCase>();
+    assert!(provider_use_case.is_ok());
+}

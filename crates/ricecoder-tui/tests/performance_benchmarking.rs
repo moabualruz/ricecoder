@@ -20,7 +20,13 @@ fn bench_layout_calculation(c: &mut Criterion) {
                 let rect = Rect::new(0, 0, width, height);
                 let layout = Layout::new(width, height);
                 // Simulate layout calculation with constraints
-                let _areas = layout.split(rect, &[ricecoder_tui::Constraint::Percentage(70), ricecoder_tui::Constraint::Percentage(30)]);
+                let _areas = layout.split(
+                    rect,
+                    &[
+                        ricecoder_tui::Constraint::Percentage(70),
+                        ricecoder_tui::Constraint::Percentage(30),
+                    ],
+                );
                 black_box(layout);
             });
         });
@@ -190,7 +196,13 @@ impl PerformanceTestRunner {
         for _ in 0..1000 {
             let rect = Rect::new(0, 0, width, height);
             let layout = Layout::new(width, height);
-            let _areas = layout.split(rect, &[ricecoder_tui::Constraint::Percentage(70), ricecoder_tui::Constraint::Percentage(30)]);
+            let _areas = layout.split(
+                rect,
+                &[
+                    ricecoder_tui::Constraint::Percentage(70),
+                    ricecoder_tui::Constraint::Percentage(30),
+                ],
+            );
         }
 
         let duration = start.elapsed();
@@ -252,7 +264,8 @@ impl PerformanceTestRunner {
         let operations = update_count;
         let ops_per_second = operations as f64 / duration.as_secs_f64();
 
-        let passed = duration.as_micros() < self.thresholds.max_state_update_time_us as u128 * update_count as u128;
+        let passed = duration.as_micros()
+            < self.thresholds.max_state_update_time_us as u128 * update_count as u128;
 
         self.results.push(PerformanceResult {
             test_name: format!("state_updates_{}", update_count),
@@ -279,9 +292,18 @@ impl PerformanceTestRunner {
 
         report.push_str(&format!("## Summary\n"));
         report.push_str(&format!("Total Tests: {}\n", self.results.len()));
-        report.push_str(&format!("Passed: {}\n", self.results.iter().filter(|r| r.passed).count()));
-        report.push_str(&format!("Failed: {}\n", self.results.iter().filter(|r| !r.passed).count()));
-        report.push_str(&format!("Overall: {}\n\n", if self.all_passed() { "PASS" } else { "FAIL" }));
+        report.push_str(&format!(
+            "Passed: {}\n",
+            self.results.iter().filter(|r| r.passed).count()
+        ));
+        report.push_str(&format!(
+            "Failed: {}\n",
+            self.results.iter().filter(|r| !r.passed).count()
+        ));
+        report.push_str(&format!(
+            "Overall: {}\n\n",
+            if self.all_passed() { "PASS" } else { "FAIL" }
+        ));
 
         report.push_str("## Detailed Results\n\n");
         for result in &self.results {
@@ -289,7 +311,10 @@ impl PerformanceTestRunner {
             report.push_str(&format!("- Duration: {:?}\n", result.duration));
             report.push_str(&format!("- Operations: {}\n", result.operations));
             report.push_str(&format!("- Ops/sec: {:.2}\n", result.ops_per_second));
-            report.push_str(&format!("- Status: {}\n\n", if result.passed { "PASS" } else { "FAIL" }));
+            report.push_str(&format!(
+                "- Status: {}\n\n",
+                if result.passed { "PASS" } else { "FAIL" }
+            ));
         }
 
         report
@@ -329,7 +354,11 @@ mod performance_tests {
         assert_eq!(results.len(), 2);
 
         for result in results {
-            assert!(result.passed, "Layout performance test '{}' failed: {:?}", result.test_name, result.duration);
+            assert!(
+                result.passed,
+                "Layout performance test '{}' failed: {:?}",
+                result.test_name, result.duration
+            );
         }
     }
 
@@ -344,7 +373,11 @@ mod performance_tests {
         assert_eq!(results.len(), 2);
 
         for result in results {
-            assert!(result.passed, "Rendering performance test '{}' failed: {:?}", result.test_name, result.duration);
+            assert!(
+                result.passed,
+                "Rendering performance test '{}' failed: {:?}",
+                result.test_name, result.duration
+            );
         }
     }
 
@@ -359,7 +392,11 @@ mod performance_tests {
         assert_eq!(results.len(), 2);
 
         for result in results {
-            assert!(result.passed, "State update performance test '{}' failed: {:?}", result.test_name, result.duration);
+            assert!(
+                result.passed,
+                "State update performance test '{}' failed: {:?}",
+                result.test_name, result.duration
+            );
         }
     }
 

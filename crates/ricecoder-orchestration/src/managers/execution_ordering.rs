@@ -76,15 +76,9 @@ impl ExecutionOrderer {
         strategy: ParallelizationStrategy,
     ) -> Result<ExecutionPlan> {
         match strategy {
-            ParallelizationStrategy::Sequential => {
-                self.create_sequential_plan(projects)
-            }
-            ParallelizationStrategy::LevelBased => {
-                self.create_level_based_plan(projects)
-            }
-            ParallelizationStrategy::FullParallel => {
-                self.create_full_parallel_plan(projects)
-            }
+            ParallelizationStrategy::Sequential => self.create_sequential_plan(projects),
+            ParallelizationStrategy::LevelBased => self.create_level_based_plan(projects),
+            ParallelizationStrategy::FullParallel => self.create_full_parallel_plan(projects),
         }
     }
 
@@ -228,7 +222,9 @@ impl ExecutionOrderer {
             .iter()
             .enumerate()
             .filter(|(idx, name)| {
-                *idx > failed_idx && (dependents.contains(name) || self.is_transitive_dependent(name, failed_project))
+                *idx > failed_idx
+                    && (dependents.contains(name)
+                        || self.is_transitive_dependent(name, failed_project))
             })
             .map(|(_, name)| name.clone())
             .collect();
@@ -282,10 +278,7 @@ mod tests {
 
         let orderer = ExecutionOrderer::new(graph);
         let plan = orderer
-            .create_execution_plan(
-                &[project_a, project_b],
-                ParallelizationStrategy::Sequential,
-            )
+            .create_execution_plan(&[project_a, project_b], ParallelizationStrategy::Sequential)
             .unwrap();
 
         assert_eq!(plan.levels.len(), 1);
@@ -480,7 +473,9 @@ mod tests {
             "project-c".to_string(),
         ];
 
-        let rollback_order = orderer.plan_rollback("project-b", &execution_order).unwrap();
+        let rollback_order = orderer
+            .plan_rollback("project-b", &execution_order)
+            .unwrap();
 
         // Should rollback C first (it depends on B)
         assert_eq!(rollback_order.len(), 1);

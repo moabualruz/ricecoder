@@ -73,53 +73,53 @@ impl Command for LspCommand {
 
 /// Start the LSP server
 async fn start_lsp_server(config: LspConfig) -> CliResult<()> {
-        // Initialize logging with configured level
-        init_lsp_logging(&config)?;
+    // Initialize logging with configured level
+    init_lsp_logging(&config)?;
 
-        info!("Starting LSP server");
-        info!("Log level: {}", config.log_level);
-        if let Some(port) = config.port {
-            info!("TCP port: {}", port);
-        }
-        info!("Debug mode: {}", config.debug);
+    info!("Starting LSP server");
+    info!("Log level: {}", config.log_level);
+    if let Some(port) = config.port {
+        info!("TCP port: {}", port);
+    }
+    info!("Debug mode: {}", config.debug);
 
-        // Create shutdown signal handler
-        let shutdown = Arc::new(AtomicBool::new(false));
-        let shutdown_clone = shutdown.clone();
+    // Create shutdown signal handler
+    let shutdown = Arc::new(AtomicBool::new(false));
+    let shutdown_clone = shutdown.clone();
 
-        // Set up signal handlers for graceful shutdown
-        let _shutdown_handle = tokio::spawn(async move {
-            match tokio::signal::ctrl_c().await {
-                Ok(()) => {
-                    info!("Received shutdown signal (SIGINT)");
-                    shutdown_clone.store(true, Ordering::SeqCst);
-                }
-                Err(e) => {
-                    error!("Failed to listen for shutdown signal: {}", e);
-                }
-            }
-        });
-
-        // Import the LSP server
-        use ricecoder_lsp::LspServer;
-
-        // Create and run the LSP server
-        let mut server = LspServer::new();
-
-        info!("LSP server initialized");
-        info!("Listening on stdio transport");
-
-        // Run the server
-        match server.run().await {
+    // Set up signal handlers for graceful shutdown
+    let _shutdown_handle = tokio::spawn(async move {
+        match tokio::signal::ctrl_c().await {
             Ok(()) => {
-                info!("LSP server shut down gracefully");
-                Ok(())
+                info!("Received shutdown signal (SIGINT)");
+                shutdown_clone.store(true, Ordering::SeqCst);
             }
             Err(e) => {
-                error!("LSP server error: {}", e);
-                Err(CliError::Internal(format!("LSP server error: {}", e)))
+                error!("Failed to listen for shutdown signal: {}", e);
             }
         }
+    });
+
+    // Import the LSP server
+    use ricecoder_lsp::LspServer;
+
+    // Create and run the LSP server
+    let mut server = LspServer::new();
+
+    info!("LSP server initialized");
+    info!("Listening on stdio transport");
+
+    // Run the server
+    match server.run().await {
+        Ok(()) => {
+            info!("LSP server shut down gracefully");
+            Ok(())
+        }
+        Err(e) => {
+            error!("LSP server error: {}", e);
+            Err(CliError::Internal(format!("LSP server error: {}", e)))
+        }
+    }
 }
 
 /// Initialize logging for LSP server
@@ -148,5 +148,3 @@ fn init_lsp_logging(config: &LspConfig) -> CliResult<()> {
 
     Ok(())
 }
-
-

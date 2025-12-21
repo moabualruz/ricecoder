@@ -51,10 +51,7 @@ impl LspMonitor {
     }
 
     /// Register a callback for availability changes
-    pub async fn on_availability_changed(
-        &self,
-        callback: AvailabilityCallback,
-    ) -> IdeResult<()> {
+    pub async fn on_availability_changed(&self, callback: AvailabilityCallback) -> IdeResult<()> {
         debug!("Registering LSP availability change callback");
         let mut callbacks = self.availability_callbacks.write().await;
         callbacks.push(callback);
@@ -65,10 +62,9 @@ impl LspMonitor {
     pub async fn check_server_health(&self, language: &str) -> IdeResult<LspHealthStatus> {
         debug!("Checking health of LSP server for language: {}", language);
 
-        let server_config = self
-            .servers
-            .get(language)
-            .ok_or_else(|| IdeError::config_error(format!("No LSP server configured for {}", language)))?;
+        let server_config = self.servers.get(language).ok_or_else(|| {
+            IdeError::config_error(format!("No LSP server configured for {}", language))
+        })?;
 
         // Simulate health check by attempting to spawn the server process
         // In a real implementation, this would send a health check request to the LSP server
@@ -95,7 +91,10 @@ impl LspMonitor {
 
         // Update status and notify if changed
         let mut health_status = self.health_status.write().await;
-        let old_status = health_status.get(language).copied().unwrap_or(LspHealthStatus::Unknown);
+        let old_status = health_status
+            .get(language)
+            .copied()
+            .unwrap_or(LspHealthStatus::Unknown);
 
         if old_status != status {
             health_status.insert(language.to_string(), status);
@@ -103,7 +102,11 @@ impl LspMonitor {
             info!(
                 "LSP server availability changed for {}: {}",
                 language,
-                if is_available { "available" } else { "unavailable" }
+                if is_available {
+                    "available"
+                } else {
+                    "unavailable"
+                }
             );
 
             // Notify callbacks
@@ -165,7 +168,10 @@ impl LspMonitor {
                             };
 
                             let mut status = health_status.write().await;
-                            let old_status = status.get(language).copied().unwrap_or(LspHealthStatus::Unknown);
+                            let old_status = status
+                                .get(language)
+                                .copied()
+                                .unwrap_or(LspHealthStatus::Unknown);
 
                             if old_status != new_status {
                                 status.insert(language.clone(), new_status);
@@ -173,7 +179,11 @@ impl LspMonitor {
                                 info!(
                                     "LSP server availability changed for {}: {}",
                                     language,
-                                    if is_available { "available" } else { "unavailable" }
+                                    if is_available {
+                                        "available"
+                                    } else {
+                                        "unavailable"
+                                    }
                                 );
 
                                 let callbacks = availability_callbacks.read().await;
@@ -185,7 +195,10 @@ impl LspMonitor {
                         Err(e) => {
                             warn!("Failed to check LSP server health for {}: {}", language, e);
                             let mut status = health_status.write().await;
-                            let old_status = status.get(language).copied().unwrap_or(LspHealthStatus::Unknown);
+                            let old_status = status
+                                .get(language)
+                                .copied()
+                                .unwrap_or(LspHealthStatus::Unknown);
 
                             if old_status != LspHealthStatus::Unhealthy {
                                 status.insert(language.clone(), LspHealthStatus::Unhealthy);
@@ -255,7 +268,10 @@ mod tests {
     async fn test_check_all_servers() {
         let mut servers = HashMap::new();
         servers.insert("rust".to_string(), create_test_server_config("rust"));
-        servers.insert("typescript".to_string(), create_test_server_config("typescript"));
+        servers.insert(
+            "typescript".to_string(),
+            create_test_server_config("typescript"),
+        );
 
         let monitor = LspMonitor::new(servers);
         let results = monitor.check_all_servers().await.unwrap();

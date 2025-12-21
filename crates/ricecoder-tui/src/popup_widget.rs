@@ -33,11 +33,11 @@ impl PopupType {
     /// Get the color code for the popup type
     pub fn color_code(&self) -> &'static str {
         match self {
-            PopupType::Confirmation => "\x1b[36m",  // Cyan
-            PopupType::Information => "\x1b[32m",    // Green
-            PopupType::Warning => "\x1b[33m",        // Yellow
-            PopupType::Error => "\x1b[31m",          // Red
-            PopupType::Input => "\x1b[36m",          // Cyan
+            PopupType::Confirmation => "\x1b[36m", // Cyan
+            PopupType::Information => "\x1b[32m",  // Green
+            PopupType::Warning => "\x1b[33m",      // Yellow
+            PopupType::Error => "\x1b[31m",        // Red
+            PopupType::Input => "\x1b[36m",        // Cyan
         }
     }
 }
@@ -94,7 +94,11 @@ pub struct PopupWidget {
 
 impl PopupWidget {
     /// Create a new popup widget
-    pub fn new(popup_type: PopupType, title: impl Into<String>, message: impl Into<String>) -> Self {
+    pub fn new(
+        popup_type: PopupType,
+        title: impl Into<String>,
+        message: impl Into<String>,
+    ) -> Self {
         Self {
             popup_type,
             title: title.into(),
@@ -319,5 +323,3 @@ impl Default for PopupWidget {
         Self::information("Information", "")
     }
 }
-
-

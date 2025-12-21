@@ -15,7 +15,6 @@ impl KeyboardShortcuts {
             ("Navigation", "Home/End", "Jump to start/end"),
             ("Navigation", "Tab", "Move to next field"),
             ("Navigation", "Shift+Tab", "Move to previous field"),
-            
             // Editing
             ("Editing", "Ctrl+A", "Select all"),
             ("Editing", "Ctrl+C", "Copy"),
@@ -23,7 +22,6 @@ impl KeyboardShortcuts {
             ("Editing", "Ctrl+X", "Cut"),
             ("Editing", "Ctrl+Z", "Undo"),
             ("Editing", "Ctrl+Y", "Redo"),
-            
             // Chat Mode
             ("Chat", "Enter", "Send message"),
             ("Chat", "Shift+Enter", "New line in message"),
@@ -31,7 +29,6 @@ impl KeyboardShortcuts {
             ("Chat", "Ctrl+P", "Previous message"),
             ("Chat", "Ctrl+N", "Next message"),
             ("Chat", "Escape", "Cancel input"),
-            
             // General
             ("General", "Ctrl+H", "Show help"),
             ("General", "Ctrl+Q", "Quit"),
@@ -125,21 +122,33 @@ impl AccessibilityFeatures {
             "{}",
             style.key_value(
                 "Screen Reader",
-                if settings.screen_reader { "Enabled" } else { "Disabled" }
+                if settings.screen_reader {
+                    "Enabled"
+                } else {
+                    "Disabled"
+                }
             )
         );
         println!(
             "{}",
             style.key_value(
                 "High Contrast",
-                if settings.high_contrast { "Enabled" } else { "Disabled" }
+                if settings.high_contrast {
+                    "Enabled"
+                } else {
+                    "Disabled"
+                }
             )
         );
         println!(
             "{}",
             style.key_value(
                 "Reduced Motion",
-                if settings.reduced_motion { "Enabled" } else { "Disabled" }
+                if settings.reduced_motion {
+                    "Enabled"
+                } else {
+                    "Disabled"
+                }
             )
         );
         println!();
@@ -213,8 +222,14 @@ impl AccessibilityFeatures {
         println!("{}", style.header("Text Size"));
         println!();
         println!("Adjust terminal font size:");
-        println!("{}", style.list_item("Most terminals: Ctrl+Plus to increase"));
-        println!("{}", style.list_item("Most terminals: Ctrl+Minus to decrease"));
+        println!(
+            "{}",
+            style.list_item("Most terminals: Ctrl+Plus to increase")
+        );
+        println!(
+            "{}",
+            style.list_item("Most terminals: Ctrl+Minus to decrease")
+        );
         println!();
 
         println!("{}", style.header("Color Blindness"));
@@ -229,7 +244,10 @@ impl AccessibilityFeatures {
         println!("{}", style.header("Getting Help"));
         println!();
         println!("For accessibility issues:");
-        println!("{}", style.list_item("Report on GitHub: https://github.com/ricecoder/ricecoder/issues"));
+        println!(
+            "{}",
+            style.list_item("Report on GitHub: https://github.com/ricecoder/ricecoder/issues")
+        );
         println!("{}", style.list_item("Include your accessibility needs"));
         println!("{}", style.list_item("Describe the issue in detail"));
         println!();
@@ -259,5 +277,3 @@ impl AccessibilitySettings {
         AccessibilityFeatures::get_settings()
     }
 }
-
-

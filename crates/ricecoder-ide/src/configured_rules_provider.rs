@@ -93,14 +93,16 @@ impl ConfiguredRulesProvider {
 
     /// Load rules from YAML configuration
     pub async fn load_from_yaml(language: String, yaml_content: &str) -> IdeResult<Self> {
-        debug!("Loading configured rules from YAML for language: {}", language);
+        debug!(
+            "Loading configured rules from YAML for language: {}",
+            language
+        );
 
         let mut provider = ConfiguredRulesProvider::new(language);
 
         // Parse YAML
-        let config: serde_yaml::Value = serde_yaml::from_str(yaml_content).map_err(|e| {
-            IdeError::config_error(format!("Failed to parse YAML rules: {}", e))
-        })?;
+        let config: serde_yaml::Value = serde_yaml::from_str(yaml_content)
+            .map_err(|e| IdeError::config_error(format!("Failed to parse YAML rules: {}", e)))?;
 
         // Load completion rules
         if let Some(completions) = config.get("completions").and_then(|v| v.as_sequence()) {
@@ -143,19 +145,22 @@ impl ConfiguredRulesProvider {
 
     /// Load rules from JSON configuration
     pub async fn load_from_json(language: String, json_content: &str) -> IdeResult<Self> {
-        debug!("Loading configured rules from JSON for language: {}", language);
+        debug!(
+            "Loading configured rules from JSON for language: {}",
+            language
+        );
 
         let mut provider = ConfiguredRulesProvider::new(language);
 
         // Parse JSON
-        let config: serde_json::Value = serde_json::from_str(json_content).map_err(|e| {
-            IdeError::config_error(format!("Failed to parse JSON rules: {}", e))
-        })?;
+        let config: serde_json::Value = serde_json::from_str(json_content)
+            .map_err(|e| IdeError::config_error(format!("Failed to parse JSON rules: {}", e)))?;
 
         // Convert to YAML value for uniform processing
-        let yaml_config: serde_yaml::Value = serde_yaml::from_str(&serde_json::to_string(&config).unwrap()).map_err(|e| {
-            IdeError::config_error(format!("Failed to convert JSON to YAML: {}", e))
-        })?;
+        let yaml_config: serde_yaml::Value =
+            serde_yaml::from_str(&serde_json::to_string(&config).unwrap()).map_err(|e| {
+                IdeError::config_error(format!("Failed to convert JSON to YAML: {}", e))
+            })?;
 
         // Load completion rules
         if let Some(completions) = yaml_config.get("completions").and_then(|v| v.as_sequence()) {
@@ -216,7 +221,10 @@ impl ConfiguredRulesProvider {
                             .and_then(|k| k.as_str())
                             .and_then(Self::parse_completion_kind)
                             .unwrap_or(CompletionItemKind::Text);
-                        let detail = item.get("detail").and_then(|d| d.as_str()).map(|s| s.to_string());
+                        let detail = item
+                            .get("detail")
+                            .and_then(|d| d.as_str())
+                            .map(|s| s.to_string());
                         let documentation = item
                             .get("documentation")
                             .and_then(|d| d.as_str())
@@ -239,7 +247,10 @@ impl ConfiguredRulesProvider {
             })
             .unwrap_or_default();
 
-        Ok(CompletionRule { pattern, suggestions })
+        Ok(CompletionRule {
+            pattern,
+            suggestions,
+        })
     }
 
     /// Parse a diagnostics rule from YAML/JSON
@@ -289,7 +300,10 @@ impl ConfiguredRulesProvider {
             })
             .unwrap_or_default();
 
-        Ok(DiagnosticsRule { pattern, diagnostics })
+        Ok(DiagnosticsRule {
+            pattern,
+            diagnostics,
+        })
     }
 
     /// Parse a hover rule from YAML/JSON
@@ -328,15 +342,9 @@ impl ConfiguredRulesProvider {
             .ok_or_else(|| IdeError::config_error("Definition rule missing 'file' field"))?
             .to_string();
 
-        let line = value
-            .get("line")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0) as u32;
+        let line = value.get("line").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
 
-        let character = value
-            .get("character")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0) as u32;
+        let character = value.get("character").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
 
         let location = Location {
             file_path,
@@ -495,10 +503,7 @@ mod tests {
             ConfiguredRulesProvider::parse_severity("warning"),
             Some(DiagnosticSeverity::Warning)
         );
-        assert_eq!(
-            ConfiguredRulesProvider::parse_severity("unknown"),
-            None
-        );
+        assert_eq!(ConfiguredRulesProvider::parse_severity("unknown"), None);
     }
 
     #[test]

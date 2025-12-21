@@ -195,7 +195,12 @@ impl SessionContext {
     }
 
     /// Create a new session context with tenant isolation
-    pub fn with_tenant(provider: String, model: String, mode: SessionMode, tenant_id: String) -> Self {
+    pub fn with_tenant(
+        provider: String,
+        model: String,
+        mode: SessionMode,
+        tenant_id: String,
+    ) -> Self {
         Self {
             project_path: None,
             provider,
@@ -279,16 +284,23 @@ impl Message {
 
     /// Add tool invocation to the message
     pub fn add_tool_invocation(&mut self, tool_name: impl Into<String>, parameters: Value) {
-        self.parts.push(MessagePart::ToolInvocation(ToolInvocationPart {
-            tool_name: tool_name.into(),
-            parameters,
-            status: ToolStatus::Pending,
-            started_at: None,
-        }));
+        self.parts
+            .push(MessagePart::ToolInvocation(ToolInvocationPart {
+                tool_name: tool_name.into(),
+                parameters,
+                status: ToolStatus::Pending,
+                started_at: None,
+            }));
     }
 
     /// Add tool result to the message
-    pub fn add_tool_result(&mut self, tool_name: impl Into<String>, result: Value, status: ToolStatus, duration_ms: u64) {
+    pub fn add_tool_result(
+        &mut self,
+        tool_name: impl Into<String>,
+        result: Value,
+        status: ToolStatus,
+        duration_ms: u64,
+    ) {
         self.parts.push(MessagePart::ToolResult(ToolResultPart {
             tool_name: tool_name.into(),
             result,
@@ -332,16 +344,27 @@ impl Message {
                     result.push_str(&format!("❌ {}\n", error));
                 }
                 MessagePart::ToolInvocation(invocation) => {
-                    result.push_str(&format!("🔧 {}({})\n", invocation.tool_name, invocation.parameters));
+                    result.push_str(&format!(
+                        "🔧 {}({})\n",
+                        invocation.tool_name, invocation.parameters
+                    ));
                 }
                 MessagePart::ToolResult(result_part) => {
-                    result.push_str(&format!("✅ {}: {}\n", result_part.tool_name, result_part.result));
+                    result.push_str(&format!(
+                        "✅ {}: {}\n",
+                        result_part.tool_name, result_part.result
+                    ));
                 }
                 MessagePart::FileReference(file_ref) => {
                     result.push_str(&format!("📁 {}\n", file_ref.path.display()));
                 }
                 MessagePart::Image(image) => {
-                    result.push_str(&format!("🖼️ {} ({}x{})\n", image.mime_type, image.width.unwrap_or(0), image.height.unwrap_or(0)));
+                    result.push_str(&format!(
+                        "🖼️ {} ({}x{})\n",
+                        image.mime_type,
+                        image.width.unwrap_or(0),
+                        image.height.unwrap_or(0)
+                    ));
                 }
             }
         }

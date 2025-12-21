@@ -1,5 +1,5 @@
-use ricecoder_config::*;
 use ricecoder_config::types::EditorConfig;
+use ricecoder_config::*;
 
 #[test]
 fn test_app_config_default() {

@@ -16,8 +16,9 @@ mod provider_integration_tests {
 
         // Set up provider models
         let mut provider_models = HashMap::new();
-        provider_models.insert("openai".to_string(), vec![
-            ModelInfo {
+        provider_models.insert(
+            "openai".to_string(),
+            vec![ModelInfo {
                 id: "gpt-4".to_string(),
                 name: "GPT-4".to_string(),
                 provider: "openai".to_string(),
@@ -28,23 +29,28 @@ mod provider_integration_tests {
                     output_per_1k_tokens: 0.06,
                 }),
                 is_free: false,
-            }
-        ]);
+            }],
+        );
 
-        provider_models.insert("anthropic".to_string(), vec![
-            ModelInfo {
+        provider_models.insert(
+            "anthropic".to_string(),
+            vec![ModelInfo {
                 id: "claude-3".to_string(),
                 name: "Claude 3".to_string(),
                 provider: "anthropic".to_string(),
                 context_window: 100000,
-                capabilities: vec![Capability::Chat, Capability::FunctionCalling, Capability::Vision],
+                capabilities: vec![
+                    Capability::Chat,
+                    Capability::FunctionCalling,
+                    Capability::Vision,
+                ],
                 pricing: Some(Pricing {
                     input_per_1k_tokens: 0.015,
                     output_per_1k_tokens: 0.075,
                 }),
                 is_free: false,
-            }
-        ]);
+            }],
+        );
 
         // Update quality scores
         curator.update_quality_scores(&provider_models);
@@ -83,20 +89,18 @@ mod provider_integration_tests {
             name: "Test Provider".to_string(),
             description: "A test community provider".to_string(),
             base_url: Some("https://api.test-provider.com".to_string()),
-            models: vec![
-                ModelInfo {
-                    id: "test-model".to_string(),
-                    name: "Test Model".to_string(),
-                    provider: "test_provider".to_string(),
-                    context_window: 4096,
-                    capabilities: vec![Capability::Chat],
-                    pricing: Some(Pricing {
-                        input_per_1k_tokens: 0.01,
-                        output_per_1k_tokens: 0.02,
-                    }),
-                    is_free: false,
-                }
-            ],
+            models: vec![ModelInfo {
+                id: "test-model".to_string(),
+                name: "Test Model".to_string(),
+                provider: "test_provider".to_string(),
+                context_window: 4096,
+                capabilities: vec![Capability::Chat],
+                pricing: Some(Pricing {
+                    input_per_1k_tokens: 0.01,
+                    output_per_1k_tokens: 0.02,
+                }),
+                is_free: false,
+            }],
             default_config: ProviderSettings {
                 timeout: Some(Duration::from_secs(30)),
                 retry_count: Some(3),
@@ -246,20 +250,18 @@ mod provider_integration_tests {
             name: "Valid Provider".to_string(),
             description: "A valid provider".to_string(),
             base_url: Some("https://api.valid.com".to_string()),
-            models: vec![
-                ModelInfo {
-                    id: "model1".to_string(),
-                    name: "Model 1".to_string(),
-                    provider: "valid_provider".to_string(),
-                    context_window: 4096,
-                    capabilities: vec![Capability::Chat],
-                    pricing: Some(Pricing {
-                        input_per_1k_tokens: 0.01,
-                        output_per_1k_tokens: 0.02,
-                    }),
-                    is_free: false,
-                }
-            ],
+            models: vec![ModelInfo {
+                id: "model1".to_string(),
+                name: "Model 1".to_string(),
+                provider: "valid_provider".to_string(),
+                context_window: 4096,
+                capabilities: vec![Capability::Chat],
+                pricing: Some(Pricing {
+                    input_per_1k_tokens: 0.01,
+                    output_per_1k_tokens: 0.02,
+                }),
+                is_free: false,
+            }],
             default_config: ProviderSettings::default(),
             metadata: ContributionMetadata {
                 contributor: "trusted_contributor".to_string(),
@@ -279,17 +281,15 @@ mod provider_integration_tests {
 
         // Test invalid config (missing pricing)
         let invalid_config = CommunityProviderConfig {
-            models: vec![
-                ModelInfo {
-                    id: "model1".to_string(),
-                    name: "Model 1".to_string(),
-                    provider: "invalid_provider".to_string(),
-                    context_window: 4096,
-                    capabilities: vec![Capability::Chat],
-                    pricing: None, // Missing pricing
-                    is_free: false,
-                }
-            ],
+            models: vec![ModelInfo {
+                id: "model1".to_string(),
+                name: "Model 1".to_string(),
+                provider: "invalid_provider".to_string(),
+                context_window: 4096,
+                capabilities: vec![Capability::Chat],
+                pricing: None, // Missing pricing
+                is_free: false,
+            }],
             ..valid_config
         };
         invalid_config.provider_id = "invalid_provider".to_string();
@@ -300,8 +300,8 @@ mod provider_integration_tests {
     #[tokio::test]
     async fn test_provider_security_compliance_integration() {
         // Test provider security headers and audit logging integration
-        use tempfile::NamedTempFile;
         use std::io::Read;
+        use tempfile::NamedTempFile;
 
         // Test security headers
         let mut builder = SecurityHeadersBuilder::new();
@@ -315,12 +315,22 @@ mod provider_integration_tests {
 
         // Validate security headers
         let validation_result = SecurityHeadersValidator::validate(&headers);
-        assert!(validation_result.is_ok(), "Security headers validation failed: {:?}", validation_result);
+        assert!(
+            validation_result.is_ok(),
+            "Security headers validation failed: {:?}",
+            validation_result
+        );
 
         // Verify specific headers
         assert_eq!(headers.get("X-Frame-Options"), Some(&"DENY".to_string()));
-        assert_eq!(headers.get("X-Content-Type-Options"), Some(&"nosniff".to_string()));
-        assert_eq!(headers.get("Strict-Transport-Security"), Some(&"max-age=31536000; includeSubDomains".to_string()));
+        assert_eq!(
+            headers.get("X-Content-Type-Options"),
+            Some(&"nosniff".to_string())
+        );
+        assert_eq!(
+            headers.get("Strict-Transport-Security"),
+            Some(&"max-age=31536000; includeSubDomains".to_string())
+        );
 
         // Test audit logging
         let temp_file = NamedTempFile::new().unwrap();
@@ -328,14 +338,25 @@ mod provider_integration_tests {
         let logger = AuditLogger::new(log_path.clone());
 
         // Log various security events
-        logger.log_api_key_access("openai", "user_123", "success").unwrap();
-        logger.log_authentication_attempt("anthropic", "user_456", "success", "Valid credentials").unwrap();
-        logger.log_rate_limit_exceeded("openai", "user_789", "Exceeded 60 requests per minute").unwrap();
-        logger.log_security_error("providers", "system", "api_key", "Invalid key format").unwrap();
+        logger
+            .log_api_key_access("openai", "user_123", "success")
+            .unwrap();
+        logger
+            .log_authentication_attempt("anthropic", "user_456", "success", "Valid credentials")
+            .unwrap();
+        logger
+            .log_rate_limit_exceeded("openai", "user_789", "Exceeded 60 requests per minute")
+            .unwrap();
+        logger
+            .log_security_error("providers", "system", "api_key", "Invalid key format")
+            .unwrap();
 
         // Verify logs were written
         let mut file_content = String::new();
-        std::fs::File::open(&log_path).unwrap().read_to_string(&mut file_content).unwrap();
+        std::fs::File::open(&log_path)
+            .unwrap()
+            .read_to_string(&mut file_content)
+            .unwrap();
 
         let lines: Vec<&str> = file_content.lines().collect();
         assert_eq!(lines.len(), 4, "Expected 4 audit log entries");
@@ -370,7 +391,11 @@ mod provider_integration_tests {
         // Record high-volume usage
         for i in 0..100 {
             let success = i < 95; // 95% success rate
-            let response_time = if success { 800 + (i % 400) } else { 1500 + (i % 500) };
+            let response_time = if success {
+                800 + (i % 400)
+            } else {
+                1500 + (i % 500)
+            };
             let tokens = 100 + (i % 200);
             let cost = tokens as f64 * 0.00002;
 
@@ -380,13 +405,22 @@ mod provider_integration_tests {
                 cost,
                 response_time_ms: response_time as u64,
                 model: "enterprise-model".to_string(),
-                error_type: if success { None } else { Some("timeout".to_string()) },
+                error_type: if success {
+                    None
+                } else {
+                    Some("timeout".to_string())
+                },
             };
 
             registry_guard.record_usage("enterprise_provider", usage);
 
             if success {
-                performance_monitor.record_success("enterprise_provider", response_time as u64, tokens, cost);
+                performance_monitor.record_success(
+                    "enterprise_provider",
+                    response_time as u64,
+                    tokens,
+                    cost,
+                );
             } else {
                 performance_monitor.record_failure("enterprise_provider", response_time as u64);
             }
@@ -394,21 +428,32 @@ mod provider_integration_tests {
 
         // Test compliance monitoring
         let analytics = registry_guard.get_analytics("enterprise_provider").unwrap();
-        let metrics = performance_monitor.get_metrics("enterprise_provider").unwrap();
+        let metrics = performance_monitor
+            .get_metrics("enterprise_provider")
+            .unwrap();
 
         // Verify enterprise compliance metrics
         assert_eq!(analytics.total_requests, 100);
         assert_eq!(analytics.successful_requests, 95);
         assert_eq!(analytics.failed_requests, 5);
-        assert!(analytics.success_rate() >= 0.95, "Success rate below enterprise threshold");
+        assert!(
+            analytics.success_rate() >= 0.95,
+            "Success rate below enterprise threshold"
+        );
 
         // Verify performance compliance
-        assert!(metrics.is_performing_well(&performance_monitor.thresholds),
-                "Provider not meeting enterprise performance thresholds");
+        assert!(
+            metrics.is_performing_well(&performance_monitor.thresholds),
+            "Provider not meeting enterprise performance thresholds"
+        );
 
         // Test cost monitoring
         let avg_cost = analytics.total_cost / analytics.total_requests as f64;
-        assert!(avg_cost <= 0.005, "Average cost per request exceeds enterprise limit: {}", avg_cost);
+        assert!(
+            avg_cost <= 0.005,
+            "Average cost per request exceeds enterprise limit: {}",
+            avg_cost
+        );
     }
 
     #[tokio::test]
@@ -469,10 +514,15 @@ mod provider_integration_tests {
         assert_eq!(anthropic_updates[0].update_type, UpdateType::SecurityUpdate);
 
         // Test breaking changes filtering
-        let breaking_updates: Vec<_> = openai_updates.iter()
+        let breaking_updates: Vec<_> = openai_updates
+            .iter()
             .filter(|u| u.breaking_changes)
             .collect();
-        assert_eq!(breaking_updates.len(), 0, "No breaking changes expected in OpenAI updates");
+        assert_eq!(
+            breaking_updates.len(),
+            0,
+            "No breaking changes expected in OpenAI updates"
+        );
     }
 
     #[tokio::test]
@@ -497,40 +547,48 @@ mod provider_integration_tests {
         let mut provider_models = HashMap::new();
 
         // High-quality provider
-        provider_models.insert("premium_provider".to_string(), vec![
-            ModelInfo {
+        provider_models.insert(
+            "premium_provider".to_string(),
+            vec![ModelInfo {
                 id: "premium-model".to_string(),
                 name: "Premium Model".to_string(),
                 provider: "premium_provider".to_string(),
                 context_window: 128000,
-                capabilities: vec![Capability::Chat, Capability::FunctionCalling, Capability::Vision, Capability::Streaming],
-                    pricing: Some(Pricing {
-                        input_per_1k_tokens: 0.01,
-                        output_per_1k_tokens: 0.02,
-                    }),
+                capabilities: vec![
+                    Capability::Chat,
+                    Capability::FunctionCalling,
+                    Capability::Vision,
+                    Capability::Streaming,
+                ],
+                pricing: Some(Pricing {
+                    input_per_1k_tokens: 0.01,
+                    output_per_1k_tokens: 0.02,
+                }),
                 is_free: false,
-            }
-        ]);
+            }],
+        );
 
         // Budget provider
-        provider_models.insert("budget_provider".to_string(), vec![
-            ModelInfo {
+        provider_models.insert(
+            "budget_provider".to_string(),
+            vec![ModelInfo {
                 id: "budget-model".to_string(),
                 name: "Budget Model".to_string(),
                 provider: "budget_provider".to_string(),
                 context_window: 4096,
                 capabilities: vec![Capability::Chat],
-                    pricing: Some(Pricing {
-                        input_per_1k_tokens: 0.005,
-                        output_per_1k_tokens: 0.01,
-                    }),
+                pricing: Some(Pricing {
+                    input_per_1k_tokens: 0.005,
+                    output_per_1k_tokens: 0.01,
+                }),
                 is_free: false,
-            }
-        ]);
+            }],
+        );
 
         // Free provider
-        provider_models.insert("free_provider".to_string(), vec![
-            ModelInfo {
+        provider_models.insert(
+            "free_provider".to_string(),
+            vec![ModelInfo {
                 id: "free-model".to_string(),
                 name: "Free Model".to_string(),
                 provider: "free_provider".to_string(),
@@ -538,8 +596,8 @@ mod provider_integration_tests {
                 capabilities: vec![Capability::Chat],
                 pricing: None,
                 is_free: true,
-            }
-        ]);
+            }],
+        );
 
         curator.update_quality_scores(&provider_models);
 
@@ -573,7 +631,9 @@ mod provider_integration_tests {
             max_cost_per_request: Some(0.002),
             ..SelectionConstraints::default()
         };
-        let cost_effective = curator.select_best_provider(&providers, Some(&cost_constraint)).unwrap();
+        let cost_effective = curator
+            .select_best_provider(&providers, Some(&cost_constraint))
+            .unwrap();
         assert_eq!(cost_effective, "budget_provider"); // Should select budget due to cost limit
 
         // Test reliability tracking

@@ -4,9 +4,9 @@
 
 use proptest::prelude::*;
 use ricecoder_research::{
-    ArchitecturalIntent, ArchitecturalStyle, CaseStyle, DocFormat,
-    DocumentationStyle, FormattingStyle, ImportOrganization, IndentType, NamingConventions,
-    ProjectContext, ProjectStructure, ProjectType, StandardsProfile, SearchStatistics,
+    ArchitecturalIntent, ArchitecturalStyle, CaseStyle, DocFormat, DocumentationStyle,
+    FormattingStyle, ImportOrganization, IndentType, NamingConventions, ProjectContext,
+    ProjectStructure, ProjectType, SearchStatistics, StandardsProfile,
 };
 use ricecoder_storage::cache::CacheManager;
 use std::collections::HashMap;

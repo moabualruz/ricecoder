@@ -129,7 +129,8 @@ impl CacheMetrics {
     /// Record a cache hit with timing
     pub fn record_hit(&self, retrieval_time_ms: f64) {
         self.hits.fetch_add(1, Ordering::Relaxed);
-        self.total_retrieval_time_ms.fetch_add(retrieval_time_ms as u64, Ordering::Relaxed);
+        self.total_retrieval_time_ms
+            .fetch_add(retrieval_time_ms as u64, Ordering::Relaxed);
         self.total_operations.fetch_add(1, Ordering::Relaxed);
     }
 
@@ -141,7 +142,8 @@ impl CacheMetrics {
 
     /// Record a cache store operation with timing
     pub fn record_store(&self, store_time_ms: f64, size_bytes: u64) {
-        self.total_store_time_ms.fetch_add(store_time_ms as u64, Ordering::Relaxed);
+        self.total_store_time_ms
+            .fetch_add(store_time_ms as u64, Ordering::Relaxed);
         self.size_bytes.store(size_bytes, Ordering::Relaxed);
     }
 

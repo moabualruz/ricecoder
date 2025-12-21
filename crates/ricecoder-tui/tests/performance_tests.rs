@@ -138,13 +138,21 @@ mod tests {
         assert!(cache.get("key1").await.is_none());
 
         // Add item
-        cache.put("key1".to_string(), "value1".to_string(), 10).await;
+        cache
+            .put("key1".to_string(), "value1".to_string(), 10)
+            .await;
         assert_eq!(cache.get("key1").await, Some("value1".to_string()));
 
         // Test cache eviction
-        cache.put("key2".to_string(), "value2".to_string(), 10).await;
-        cache.put("key3".to_string(), "value3".to_string(), 10).await;
-        cache.put("key4".to_string(), "value4".to_string(), 10).await;
+        cache
+            .put("key2".to_string(), "value2".to_string(), 10)
+            .await;
+        cache
+            .put("key3".to_string(), "value3".to_string(), 10)
+            .await;
+        cache
+            .put("key4".to_string(), "value4".to_string(), 10)
+            .await;
 
         // Cache should still have key4 but may have evicted older items
         let stats = cache.stats().await;

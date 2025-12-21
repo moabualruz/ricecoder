@@ -5,8 +5,11 @@
 //! common memory-related vulnerabilities.
 
 use proptest::prelude::*;
+use ricecoder_tui::{
+    get_tui_lifecycle_manager, initialize_tui_lifecycle_manager, PerformanceProfiler,
+    TuiLifecycleManager,
+};
 use std::sync::{Arc, Mutex};
-use ricecoder_tui::{initialize_tui_lifecycle_manager, get_tui_lifecycle_manager, TuiLifecycleManager, PerformanceProfiler};
 
 /// Test that the global lifecycle manager is safely initialized and accessed
 proptest! {

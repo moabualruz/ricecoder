@@ -42,15 +42,28 @@ pub fn view(frame: &mut Frame, model: &AppModel) {
 fn render_header(frame: &mut Frame, area: Rect, model: &AppModel) {
     let banner_text = vec![
         Line::from(vec![
-            Span::styled("🍚 RiceCoder", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "🍚 RiceCoder",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw(" - AI-Powered Terminal Interface"),
         ]),
         Line::from(vec![
             Span::styled("Mode: ", Style::default().fg(Color::Cyan)),
-            Span::styled(model.mode.display_name(), Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                model.mode.display_name(),
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw(" | "),
             Span::styled("Theme: ", Style::default().fg(Color::Cyan)),
-            Span::styled(model.theme.name.clone(), Style::default().fg(Color::Magenta)),
+            Span::styled(
+                model.theme.name.clone(),
+                Style::default().fg(Color::Magenta),
+            ),
         ]),
     ];
 
@@ -89,16 +102,29 @@ fn render_sidebar(frame: &mut Frame, area: Rect, model: &AppModel) {
 /// Render the sidebar with provider information
 fn render_sidebar_with_providers(frame: &mut Frame, area: Rect, model: &AppModel) {
     let mut sidebar_content = vec![
-        Line::from(vec![
-            Span::styled("📁 Sessions", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-        ]),
+        Line::from(vec![Span::styled(
+            "📁 Sessions",
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        )]),
         Line::from(""),
-        Line::from(format!("Active: {}", model.sessions.active_session_id.as_deref().unwrap_or("None"))),
+        Line::from(format!(
+            "Active: {}",
+            model
+                .sessions
+                .active_session_id
+                .as_deref()
+                .unwrap_or("None")
+        )),
         Line::from(format!("Total: {}", model.sessions.session_count)),
         Line::from(""),
-        Line::from(vec![
-            Span::styled("🤖 Providers", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-        ]),
+        Line::from(vec![Span::styled(
+            "🤖 Providers",
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        )]),
         Line::from(""),
     ];
 
@@ -109,34 +135,57 @@ fn render_sidebar_with_providers(frame: &mut Frame, area: Rect, model: &AppModel
         sidebar_content.push(Line::from("Current: None"));
     }
 
-    sidebar_content.push(Line::from(format!("Available: {}", model.providers.available_providers.len())));
+    sidebar_content.push(Line::from(format!(
+        "Available: {}",
+        model.providers.available_providers.len()
+    )));
     sidebar_content.push(Line::from(""));
 
     // Add provider status summary
-    let connected = model.providers.available_providers.iter()
+    let connected = model
+        .providers
+        .available_providers
+        .iter()
         .filter(|p| matches!(p.state, crate::model::ProviderConnectionState::Connected))
         .count();
-    let errors = model.providers.available_providers.iter()
+    let errors = model
+        .providers
+        .available_providers
+        .iter()
         .filter(|p| matches!(p.state, crate::model::ProviderConnectionState::Error))
         .count();
 
-    sidebar_content.push(Line::from(vec![
-        Span::styled("📊 Stats", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-    ]));
+    sidebar_content.push(Line::from(vec![Span::styled(
+        "📊 Stats",
+        Style::default()
+            .fg(Color::Cyan)
+            .add_modifier(Modifier::BOLD),
+    )]));
     sidebar_content.push(Line::from(""));
-    sidebar_content.push(Line::from(format!("Tokens: {}", model.sessions.total_tokens.input_tokens + model.sessions.total_tokens.output_tokens)));
-    sidebar_content.push(Line::from(format!("Connected: {}/{}", connected, model.providers.available_providers.len())));
+    sidebar_content.push(Line::from(format!(
+        "Tokens: {}",
+        model.sessions.total_tokens.input_tokens + model.sessions.total_tokens.output_tokens
+    )));
+    sidebar_content.push(Line::from(format!(
+        "Connected: {}/{}",
+        connected,
+        model.providers.available_providers.len()
+    )));
     if errors > 0 {
-        sidebar_content.push(Line::from(vec![
-            Span::styled(format!("Errors: {}", errors), Style::default().fg(Color::Red)),
-        ]));
+        sidebar_content.push(Line::from(vec![Span::styled(
+            format!("Errors: {}", errors),
+            Style::default().fg(Color::Red),
+        )]));
     }
     sidebar_content.push(Line::from(format!("Mode: {:?}", model.mode)));
     sidebar_content.push(Line::from(""));
 
-    sidebar_content.push(Line::from(vec![
-        Span::styled("🛠️ Tools", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-    ]));
+    sidebar_content.push(Line::from(vec![Span::styled(
+        "🛠️ Tools",
+        Style::default()
+            .fg(Color::Cyan)
+            .add_modifier(Modifier::BOLD),
+    )]));
     sidebar_content.push(Line::from(""));
     sidebar_content.push(Line::from("• File Picker"));
     sidebar_content.push(Line::from("• Command Palette"));
@@ -257,9 +306,12 @@ fn render_mcp_mode(frame: &mut Frame, area: Rect, model: &AppModel) {
 
     // Header with MCP status
     let header = Paragraph::new(vec![
-        Line::from(vec![
-            Span::styled("Model Context Protocol", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-        ]),
+        Line::from(vec![Span::styled(
+            "Model Context Protocol",
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        )]),
         Line::from(format!("Servers: {}", model.mcp.servers.len())),
         Line::from(format!("Tools: {}", model.mcp.available_tools.len())),
     ])
@@ -289,7 +341,11 @@ fn render_mcp_mode(frame: &mut Frame, area: Rect, model: &AppModel) {
             "{} {} - {}",
             status_icon,
             server.name,
-            if server.enabled { "enabled" } else { "disabled" }
+            if server.enabled {
+                "enabled"
+            } else {
+                "disabled"
+            }
         )));
     }
     if server_lines.is_empty() {
@@ -307,9 +363,7 @@ fn render_mcp_mode(frame: &mut Frame, area: Rect, model: &AppModel) {
     for tool in &model.mcp.available_tools {
         tool_lines.push(Line::from(format!(
             "{} - {} ({})",
-            tool.tool_name,
-            tool.description,
-            tool.server_name
+            tool.tool_name, tool.description, tool.server_name
         )));
     }
     if tool_lines.is_empty() {
@@ -317,7 +371,11 @@ fn render_mcp_mode(frame: &mut Frame, area: Rect, model: &AppModel) {
     }
 
     let tools_list = Paragraph::new(tool_lines)
-        .block(Block::default().borders(Borders::ALL).title("Available Tools"))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Available Tools"),
+        )
         .wrap(Wrap { trim: true });
 
     frame.render_widget(tools_list, content_chunks[1]);
@@ -335,13 +393,27 @@ fn render_session_mode(frame: &mut Frame, area: Rect, model: &AppModel) {
 
     // Header with session status
     let header = Paragraph::new(vec![
-        Line::from(vec![
-            Span::styled("Session Management", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
-        ]),
-        Line::from(format!("Active: {}", model.sessions.active_session_id.as_deref().unwrap_or("None"))),
+        Line::from(vec![Span::styled(
+            "Session Management",
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(format!(
+            "Active: {}",
+            model
+                .sessions
+                .active_session_id
+                .as_deref()
+                .unwrap_or("None")
+        )),
         Line::from(format!("Total: {}", model.sessions.session_count)),
     ])
-    .block(Block::default().borders(Borders::ALL).title("Session Status"))
+    .block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title("Session Status"),
+    )
     .wrap(Wrap { trim: true });
 
     frame.render_widget(header, chunks[0]);
@@ -382,18 +454,27 @@ fn render_session_browser(frame: &mut Frame, area: Rect, model: &AppModel) {
             status_icon,
             session.name,
             session.provider,
-            if session.is_shared { "shared" } else { "private" }
+            if session.is_shared {
+                "shared"
+            } else {
+                "private"
+            }
         ));
 
         if is_selected {
-            session_lines.push(Line::from(Span::styled(line.spans[0].content.clone(), Style::default().bg(Color::Blue))));
+            session_lines.push(Line::from(Span::styled(
+                line.spans[0].content.clone(),
+                Style::default().bg(Color::Blue),
+            )));
         } else {
             session_lines.push(line);
         }
     }
 
     if session_lines.is_empty() {
-        session_lines.push(Line::from("No sessions found. Press 'n' to create a new session."));
+        session_lines.push(Line::from(
+            "No sessions found. Press 'n' to create a new session.",
+        ));
     }
 
     let session_list = Paragraph::new(session_lines)
@@ -403,23 +484,45 @@ fn render_session_browser(frame: &mut Frame, area: Rect, model: &AppModel) {
     frame.render_widget(session_list, chunks[0]);
 
     // Session details
-    let details_lines = if let Some(selected_session) = model.sessions.browser.sessions.get(model.sessions.browser.selected_index) {
+    let details_lines = if let Some(selected_session) = model
+        .sessions
+        .browser
+        .sessions
+        .get(model.sessions.browser.selected_index)
+    {
         vec![
             Line::from(format!("Name: {}", selected_session.name)),
             Line::from(format!("ID: {}", selected_session.id)),
             Line::from(format!("Provider: {}", selected_session.provider)),
             Line::from(format!("Status: {:?}", selected_session.status)),
             Line::from(format!("Tokens: {}", selected_session.token_count)),
-            Line::from(format!("Shared: {}", if selected_session.is_shared { "Yes" } else { "No" })),
-            Line::from(format!("Created: {}", format_timestamp(selected_session.created_at as i64))),
-            Line::from(format!("Last Activity: {}", format_timestamp(selected_session.last_activity as i64))),
+            Line::from(format!(
+                "Shared: {}",
+                if selected_session.is_shared {
+                    "Yes"
+                } else {
+                    "No"
+                }
+            )),
+            Line::from(format!(
+                "Created: {}",
+                format_timestamp(selected_session.created_at as i64)
+            )),
+            Line::from(format!(
+                "Last Activity: {}",
+                format_timestamp(selected_session.last_activity as i64)
+            )),
         ]
     } else {
         vec![Line::from("No session selected")]
     };
 
     let details = Paragraph::new(details_lines)
-        .block(Block::default().borders(Borders::ALL).title("Session Details"))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Session Details"),
+        )
         .wrap(Wrap { trim: true });
 
     frame.render_widget(details, chunks[1]);
@@ -436,7 +539,13 @@ fn render_session_editor(frame: &mut Frame, area: Rect, model: &AppModel) {
         Line::from(""),
         Line::from("Press Enter to save, Esc to cancel"),
     ])
-    .block(Block::default().borders(Borders::ALL).title(if editor.is_editing && editor.session_id.is_some() { "Edit Session" } else { "Create Session" }))
+    .block(Block::default().borders(Borders::ALL).title(
+        if editor.is_editing && editor.session_id.is_some() {
+            "Edit Session"
+        } else {
+            "Create Session"
+        },
+    ))
     .wrap(Wrap { trim: true });
 
     frame.render_widget(content, area);
@@ -448,7 +557,10 @@ fn render_session_sharing(frame: &mut Frame, area: Rect, model: &AppModel) {
 
     let mut content_lines = vec![
         Line::from(format!("Session: {}", sharing.session_id)),
-        Line::from(format!("Expires: {} seconds", sharing.expires_in.unwrap_or(0))),
+        Line::from(format!(
+            "Expires: {} seconds",
+            sharing.expires_in.unwrap_or(0)
+        )),
         Line::from(format!("Permissions: {:?}", sharing.permissions)),
     ];
 
@@ -459,7 +571,11 @@ fn render_session_sharing(frame: &mut Frame, area: Rect, model: &AppModel) {
     }
 
     let content = Paragraph::new(content_lines)
-        .block(Block::default().borders(Borders::ALL).title("Share Session"))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Share Session"),
+        )
         .wrap(Wrap { trim: true });
 
     frame.render_widget(content, area);
@@ -493,14 +609,37 @@ fn render_provider_mode(frame: &mut Frame, area: Rect, model: &AppModel) {
 
     let header = Paragraph::new(vec![
         Line::from(vec![
-            Span::styled("AI Provider Management", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "AI Provider Management",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw(" | "),
             Span::styled(view_mode_indicator, Style::default().fg(Color::Green)),
         ]),
-        Line::from(format!("Current: {}", model.providers.current_provider.as_deref().unwrap_or("None"))),
-        Line::from(format!("Filter: {}", if model.providers.filter_text.is_empty() { "None" } else { &model.providers.filter_text })),
+        Line::from(format!(
+            "Current: {}",
+            model
+                .providers
+                .current_provider
+                .as_deref()
+                .unwrap_or("None")
+        )),
+        Line::from(format!(
+            "Filter: {}",
+            if model.providers.filter_text.is_empty() {
+                "None"
+            } else {
+                &model.providers.filter_text
+            }
+        )),
     ])
-    .block(Block::default().borders(Borders::ALL).title("Provider Manager"))
+    .block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title("Provider Manager"),
+    )
     .wrap(Wrap { trim: true });
 
     frame.render_widget(header, chunks[0]);
@@ -509,29 +648,68 @@ fn render_provider_mode(frame: &mut Frame, area: Rect, model: &AppModel) {
     match model.providers.view_mode {
         crate::model::ProviderViewMode::List => render_provider_list(frame, chunks[1], model),
         crate::model::ProviderViewMode::Status => render_provider_status(frame, chunks[1], model),
-        crate::model::ProviderViewMode::Performance => render_provider_performance(frame, chunks[1], model),
-        crate::model::ProviderViewMode::Analytics => render_provider_analytics(frame, chunks[1], model),
+        crate::model::ProviderViewMode::Performance => {
+            render_provider_performance(frame, chunks[1], model)
+        }
+        crate::model::ProviderViewMode::Analytics => {
+            render_provider_analytics(frame, chunks[1], model)
+        }
     }
 
     // Footer with controls
     let footer = Paragraph::new(vec![
         Line::from("Controls:"),
         Line::from(vec![
-            Span::styled("l", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "l",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw(" - List | "),
-            Span::styled("s", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "s",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw(" - Status | "),
-            Span::styled("p", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "p",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw(" - Performance | "),
-            Span::styled("a", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "a",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw(" - Analytics"),
         ]),
         Line::from(vec![
-            Span::styled("↑↓", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "↑↓",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw(" - Navigate | "),
-            Span::styled("Enter", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "Enter",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw(" - Switch Provider | "),
-            Span::styled("/", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "/",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw(" - Command Mode"),
         ]),
     ])
@@ -556,17 +734,30 @@ fn render_provider_list(frame: &mut Frame, area: Rect, model: &AppModel) {
             crate::model::ProviderConnectionState::Disabled => "⚪",
         };
 
-        let mut line_spans = vec![
-            Span::raw(status_icon),
-            Span::raw(" "),
-        ];
+        let mut line_spans = vec![Span::raw(status_icon), Span::raw(" ")];
 
         if is_current {
-            line_spans.push(Span::styled(&provider.name, Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)));
-            line_spans.push(Span::styled(" (current)", Style::default().fg(Color::Green)));
+            line_spans.push(Span::styled(
+                &provider.name,
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            ));
+            line_spans.push(Span::styled(
+                " (current)",
+                Style::default().fg(Color::Green),
+            ));
         } else if is_selected {
-            line_spans.push(Span::styled(&provider.name, Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)));
-            line_spans.push(Span::styled(" (selected)", Style::default().fg(Color::Yellow)));
+            line_spans.push(Span::styled(
+                &provider.name,
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ));
+            line_spans.push(Span::styled(
+                " (selected)",
+                Style::default().fg(Color::Yellow),
+            ));
         } else {
             line_spans.push(Span::raw(&provider.name));
         }
@@ -588,7 +779,11 @@ fn render_provider_list(frame: &mut Frame, area: Rect, model: &AppModel) {
     }
 
     let list = Paragraph::new(content)
-        .block(Block::default().borders(Borders::ALL).title("Available Providers"))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Available Providers"),
+        )
         .wrap(Wrap { trim: true });
 
     frame.render_widget(list, area);
@@ -600,7 +795,12 @@ fn render_provider_status(frame: &mut Frame, area: Rect, model: &AppModel) {
 
     for provider in &model.providers.available_providers {
         content.push(Line::from(vec![
-            Span::styled(&provider.name, Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                &provider.name,
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw(" ("),
             Span::raw(&provider.id),
             Span::raw(")"),
@@ -610,7 +810,10 @@ fn render_provider_status(frame: &mut Frame, area: Rect, model: &AppModel) {
         content.push(Line::from(format!("  Models: {}", provider.models.len())));
 
         if let Some(last_checked) = provider.last_checked {
-            content.push(Line::from(format!("  Last checked: {}", last_checked.format("%Y-%m-%d %H:%M:%S"))));
+            content.push(Line::from(format!(
+                "  Last checked: {}",
+                last_checked.format("%Y-%m-%d %H:%M:%S")
+            )));
         }
 
         if let Some(error) = &provider.error_message {
@@ -628,7 +831,11 @@ fn render_provider_status(frame: &mut Frame, area: Rect, model: &AppModel) {
     }
 
     let status = Paragraph::new(content)
-        .block(Block::default().borders(Borders::ALL).title("Provider Status"))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Provider Status"),
+        )
         .wrap(Wrap { trim: true });
 
     frame.render_widget(status, area);
@@ -639,26 +846,48 @@ fn render_provider_performance(frame: &mut Frame, area: Rect, model: &AppModel) 
     let mut content = Vec::new();
 
     for (provider_id, metrics) in &model.providers.provider_metrics {
-        content.push(Line::from(vec![
-            Span::styled(provider_id, Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-        ]));
+        content.push(Line::from(vec![Span::styled(
+            provider_id,
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        )]));
 
-        content.push(Line::from(format!("  Requests: {} total ({} success, {} failed)",
-            metrics.total_requests, metrics.successful_requests, metrics.failed_requests)));
-        content.push(Line::from(format!("  Response time: {:.2}ms avg", metrics.avg_response_time_ms)));
-        content.push(Line::from(format!("  Error rate: {:.2}%", metrics.error_rate * 100.0)));
-        content.push(Line::from(format!("  Tokens: {} total (${:.4} cost)", metrics.total_tokens, metrics.total_cost)));
-        content.push(Line::from(format!("  Throughput: {:.2} req/s, {:.2} tok/s",
-            metrics.requests_per_second, metrics.tokens_per_second)));
+        content.push(Line::from(format!(
+            "  Requests: {} total ({} success, {} failed)",
+            metrics.total_requests, metrics.successful_requests, metrics.failed_requests
+        )));
+        content.push(Line::from(format!(
+            "  Response time: {:.2}ms avg",
+            metrics.avg_response_time_ms
+        )));
+        content.push(Line::from(format!(
+            "  Error rate: {:.2}%",
+            metrics.error_rate * 100.0
+        )));
+        content.push(Line::from(format!(
+            "  Tokens: {} total (${:.4} cost)",
+            metrics.total_tokens, metrics.total_cost
+        )));
+        content.push(Line::from(format!(
+            "  Throughput: {:.2} req/s, {:.2} tok/s",
+            metrics.requests_per_second, metrics.tokens_per_second
+        )));
         content.push(Line::from(""));
     }
 
     if content.is_empty() {
-        content.push(Line::from("No performance metrics available. Use providers to generate some activity."));
+        content.push(Line::from(
+            "No performance metrics available. Use providers to generate some activity.",
+        ));
     }
 
     let performance = Paragraph::new(content)
-        .block(Block::default().borders(Borders::ALL).title("Provider Performance"))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Provider Performance"),
+        )
         .wrap(Wrap { trim: true });
 
     frame.render_widget(performance, area);
@@ -670,41 +899,72 @@ fn render_provider_analytics(frame: &mut Frame, area: Rect, model: &AppModel) {
 
     // Summary statistics
     let total_providers = model.providers.available_providers.len();
-    let connected_providers = model.providers.available_providers.iter()
+    let connected_providers = model
+        .providers
+        .available_providers
+        .iter()
         .filter(|p| matches!(p.state, crate::model::ProviderConnectionState::Connected))
         .count();
-    let total_requests: u64 = model.providers.provider_metrics.values()
+    let total_requests: u64 = model
+        .providers
+        .provider_metrics
+        .values()
         .map(|m| m.total_requests)
         .sum();
-    let total_errors: u64 = model.providers.provider_metrics.values()
+    let total_errors: u64 = model
+        .providers
+        .provider_metrics
+        .values()
         .map(|m| m.failed_requests)
         .sum();
 
-    content.push(Line::from(vec![
-        Span::styled("Summary", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-    ]));
-    content.push(Line::from(format!("  Total providers: {}", total_providers)));
-    content.push(Line::from(format!("  Connected providers: {}", connected_providers)));
+    content.push(Line::from(vec![Span::styled(
+        "Summary",
+        Style::default()
+            .fg(Color::Cyan)
+            .add_modifier(Modifier::BOLD),
+    )]));
+    content.push(Line::from(format!(
+        "  Total providers: {}",
+        total_providers
+    )));
+    content.push(Line::from(format!(
+        "  Connected providers: {}",
+        connected_providers
+    )));
     content.push(Line::from(format!("  Total requests: {}", total_requests)));
     content.push(Line::from(format!("  Total errors: {}", total_errors)));
 
     if total_requests > 0 {
         let overall_error_rate = (total_errors as f64) / (total_requests as f64) * 100.0;
-        content.push(Line::from(format!("  Overall error rate: {:.2}%", overall_error_rate)));
+        content.push(Line::from(format!(
+            "  Overall error rate: {:.2}%",
+            overall_error_rate
+        )));
     }
 
     content.push(Line::from(""));
 
     // Best performing providers
-    content.push(Line::from(vec![
-        Span::styled("Best Performing (by response time)", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
-    ]));
+    content.push(Line::from(vec![Span::styled(
+        "Best Performing (by response time)",
+        Style::default()
+            .fg(Color::Green)
+            .add_modifier(Modifier::BOLD),
+    )]));
 
     let mut sorted_providers: Vec<_> = model.providers.provider_metrics.iter().collect();
-    sorted_providers.sort_by(|a, b| a.1.avg_response_time_ms.partial_cmp(&b.1.avg_response_time_ms).unwrap());
+    sorted_providers.sort_by(|a, b| {
+        a.1.avg_response_time_ms
+            .partial_cmp(&b.1.avg_response_time_ms)
+            .unwrap()
+    });
 
     for (provider_id, metrics) in sorted_providers.iter().take(3) {
-        content.push(Line::from(format!("  {}: {:.2}ms", provider_id, metrics.avg_response_time_ms)));
+        content.push(Line::from(format!(
+            "  {}: {:.2}ms",
+            provider_id, metrics.avg_response_time_ms
+        )));
     }
 
     if content.len() <= 2 {
@@ -712,7 +972,11 @@ fn render_provider_analytics(frame: &mut Frame, area: Rect, model: &AppModel) {
     }
 
     let analytics = Paragraph::new(content)
-        .block(Block::default().borders(Borders::ALL).title("Provider Analytics"))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Provider Analytics"),
+        )
         .wrap(Wrap { trim: true });
 
     frame.render_widget(analytics, area);
@@ -732,7 +996,11 @@ fn render_chat_messages(frame: &mut Frame, area: Rect, _model: &AppModel) {
     ];
 
     let messages_widget = Paragraph::new(messages)
-        .block(Block::default().borders(Borders::ALL).title("Chat Messages"))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Chat Messages"),
+        )
         .wrap(Wrap { trim: true });
 
     frame.render_widget(messages_widget, area);
@@ -755,7 +1023,9 @@ fn render_chat_input(frame: &mut Frame, area: Rect, model: &AppModel) {
 
 /// Render command history area
 fn render_command_history(frame: &mut Frame, area: Rect, model: &AppModel) {
-    let history_lines: Vec<Line> = model.commands.command_history
+    let history_lines: Vec<Line> = model
+        .commands
+        .command_history
         .iter()
         .rev() // Show most recent first
         .take(20) // Limit to last 20 commands
@@ -763,7 +1033,11 @@ fn render_command_history(frame: &mut Frame, area: Rect, model: &AppModel) {
         .collect();
 
     let history_widget = Paragraph::new(history_lines)
-        .block(Block::default().borders(Borders::ALL).title("Command History"))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Command History"),
+        )
         .wrap(Wrap { trim: true });
 
     frame.render_widget(history_widget, area);
@@ -778,7 +1052,11 @@ fn render_command_input(frame: &mut Frame, area: Rect, model: &AppModel) {
     };
 
     let input_widget = Paragraph::new(input_text)
-        .block(Block::default().borders(Borders::ALL).title("Command Input"))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Command Input"),
+        )
         .wrap(Wrap { trim: true });
 
     frame.render_widget(input_widget, area);
@@ -838,21 +1116,40 @@ fn render_file_picker_overlay(frame: &mut Frame, area: Rect, _model: &AppModel) 
 /// Render status bar
 fn render_status_bar(frame: &mut Frame, area: Rect, model: &AppModel) {
     let status_parts = vec![
-        Span::styled(model.mode.display_name(), Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
-        Span::raw(" | "),
         Span::styled(
-            format!("Session: {}", model.sessions.active_session_id.as_deref().unwrap_or("None")),
-            Style::default().fg(Color::Blue)
+            model.mode.display_name(),
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
         ),
         Span::raw(" | "),
         Span::styled(
-            format!("Tokens: {}", model.sessions.total_tokens.input_tokens + model.sessions.total_tokens.output_tokens),
-            Style::default().fg(Color::Yellow)
+            format!(
+                "Session: {}",
+                model
+                    .sessions
+                    .active_session_id
+                    .as_deref()
+                    .unwrap_or("None")
+            ),
+            Style::default().fg(Color::Blue),
         ),
         Span::raw(" | "),
         Span::styled(
-            format!("Size: {}x{}", model.terminal_caps.size.0, model.terminal_caps.size.1),
-            Style::default().fg(Color::Cyan)
+            format!(
+                "Tokens: {}",
+                model.sessions.total_tokens.input_tokens
+                    + model.sessions.total_tokens.output_tokens
+            ),
+            Style::default().fg(Color::Yellow),
+        ),
+        Span::raw(" | "),
+        Span::styled(
+            format!(
+                "Size: {}x{}",
+                model.terminal_caps.size.0, model.terminal_caps.size.1
+            ),
+            Style::default().fg(Color::Cyan),
         ),
     ];
 

@@ -22,23 +22,26 @@ impl GitRepository {
     pub fn open<P: AsRef<Path>>(path: P) -> Result<Self> {
         let path = path.as_ref();
         debug!("Opening Git repository at: {}", path.display());
-        
-        let repo = Git2Repository::open(path)
-            .map_err(|e| {
-                debug!("Failed to open repository: {}", e);
-                VcsError::RepositoryNotFound {
-                    path: path.display().to_string(),
-                }
-            })?;
 
-        let root_path = repo.workdir()
+        let repo = Git2Repository::open(path).map_err(|e| {
+            debug!("Failed to open repository: {}", e);
+            VcsError::RepositoryNotFound {
+                path: path.display().to_string(),
+            }
+        })?;
+
+        let root_path = repo
+            .workdir()
             .ok_or_else(|| VcsError::InvalidState {
                 message: "Repository has no working directory".to_string(),
             })?
             .to_path_buf();
 
-        debug!("Successfully opened Git repository at: {}", root_path.display());
-        
+        debug!(
+            "Successfully opened Git repository at: {}",
+            root_path.display()
+        );
+
         Ok(Self { repo, root_path })
     }
 
@@ -46,22 +49,22 @@ impl GitRepository {
     pub fn discover<P: AsRef<Path>>(path: P) -> Result<Self> {
         let path = path.as_ref();
         debug!("Discovering Git repository from: {}", path.display());
-        
-        let repo = Git2Repository::discover(path)
-            .map_err(|e| {
-                debug!("Failed to discover repository: {}", e);
-                VcsError::RepositoryNotFound {
-                    path: path.display().to_string(),
-                }
-            })?;
-        let root_path = repo.workdir()
+
+        let repo = Git2Repository::discover(path).map_err(|e| {
+            debug!("Failed to discover repository: {}", e);
+            VcsError::RepositoryNotFound {
+                path: path.display().to_string(),
+            }
+        })?;
+        let root_path = repo
+            .workdir()
             .ok_or_else(|| VcsError::InvalidState {
                 message: "Repository has no working directory".to_string(),
             })?
             .to_path_buf();
 
         debug!("Discovered Git repository at: {}", root_path.display());
-        
+
         Ok(Self { repo, root_path })
     }
 
@@ -83,8 +86,9 @@ impl GitRepository {
         let commit = head.peel_to_commit()?;
         let hash = commit.id().to_string();
         let short_hash = &hash[..7];
-        
-        let message = commit.message()
+
+        let message = commit
+            .message()
             .unwrap_or("No commit message")
             .lines()
             .next()
@@ -93,8 +97,9 @@ impl GitRepository {
 
         let author = commit.author();
         let author_name = author.name().unwrap_or("Unknown").to_string();
-        
-        let timestamp = Utc.timestamp_opt(commit.time().seconds(), 0)
+
+        let timestamp = Utc
+            .timestamp_opt(commit.time().seconds(), 0)
             .single()
             .unwrap_or_else(Utc::now);
 
@@ -111,7 +116,7 @@ impl GitRepository {
         let mut status_options = StatusOptions::new();
         status_options.include_untracked(true);
         status_options.include_ignored(false);
-        
+
         let statuses = self.repo.statuses(Some(&mut status_options))?;
         let mut files = Vec::new();
 
@@ -130,10 +135,10 @@ impl GitRepository {
 impl Repository for GitRepository {
     fn get_status(&self) -> Result<RepositoryStatus> {
         debug!("Getting repository status");
-        
+
         let current_branch = self.get_current_branch()?;
         let file_statuses = self.get_file_statuses()?;
-        
+
         let mut uncommitted = 0;
         let mut untracked = 0;
         let mut staged = 0;
@@ -143,53 +148,59 @@ impl Repository for GitRepository {
             if status.contains(Status::CONFLICTED) {
                 has_conflicts = true;
             }
-            
-            if status.contains(Status::INDEX_MODIFIED) 
-                || status.contains(Status::INDEX_NEW) 
-                || status.contains(Status::INDEX_DELETED) 
-                || status.contains(Status::INDEX_RENAMED) {
+
+            if status.contains(Status::INDEX_MODIFIED)
+                || status.contains(Status::INDEX_NEW)
+                || status.contains(Status::INDEX_DELETED)
+                || status.contains(Status::INDEX_RENAMED)
+            {
                 staged += 1;
             }
-            
-            if status.contains(Status::WT_MODIFIED) 
-                || status.contains(Status::WT_DELETED) 
-                || status.contains(Status::WT_RENAMED) {
+
+            if status.contains(Status::WT_MODIFIED)
+                || status.contains(Status::WT_DELETED)
+                || status.contains(Status::WT_RENAMED)
+            {
                 uncommitted += 1;
             }
-            
+
             if status.contains(Status::WT_NEW) {
                 untracked += 1;
             }
         }
 
-        let mut repo_status = RepositoryStatus::new(current_branch, self.root_path.display().to_string())
-            .with_counts(uncommitted, untracked, staged, has_conflicts);
+        let mut repo_status =
+            RepositoryStatus::new(current_branch, self.root_path.display().to_string())
+                .with_counts(uncommitted, untracked, staged, has_conflicts);
 
         if let Ok(Some(last_commit)) = self.get_last_commit() {
             repo_status = repo_status.with_last_commit(last_commit);
         }
 
-        debug!("Repository status: {} uncommitted, {} untracked, {} staged, conflicts: {}", 
-               uncommitted, untracked, staged, has_conflicts);
-        
+        debug!(
+            "Repository status: {} uncommitted, {} untracked, {} staged, conflicts: {}",
+            uncommitted, untracked, staged, has_conflicts
+        );
+
         Ok(repo_status)
     }
 
     fn get_current_branch(&self) -> Result<Branch> {
         debug!("Getting current branch");
-        
+
         let head = self.repo.head()?;
-        
+
         if !head.is_branch() {
             // Detached HEAD
             let commit = head.peel_to_commit()?;
             let hash = commit.id().to_string();
             let short_hash = &hash[..7];
-            
+
             return Ok(Branch::new(format!("HEAD detached at {}", short_hash)).current());
         }
 
-        let branch_name = head.shorthand()
+        let branch_name = head
+            .shorthand()
             .ok_or_else(|| VcsError::InvalidState {
                 message: "Could not get branch name".to_string(),
             })?
@@ -199,11 +210,8 @@ impl Repository for GitRepository {
 
         // Add commit information if available
         if let Ok(Some(commit_info)) = self.get_last_commit() {
-            branch = branch.with_commit(
-                commit_info.hash,
-                commit_info.message,
-                commit_info.timestamp,
-            );
+            branch =
+                branch.with_commit(commit_info.hash, commit_info.message, commit_info.timestamp);
         }
 
         debug!("Current branch: {}", branch.name);
@@ -212,7 +220,7 @@ impl Repository for GitRepository {
 
     fn get_branches(&self) -> Result<Vec<Branch>> {
         debug!("Getting all branches");
-        
+
         let mut branches = Vec::new();
         let current_branch_name = self.get_current_branch()?.name;
 
@@ -225,24 +233,26 @@ impl Repository for GitRepository {
                 if name == current_branch_name {
                     branch_obj = branch_obj.current();
                 }
-                
+
                 // Try to get commit info
                 if let Ok(commit) = branch.get().peel_to_commit() {
                     let hash = commit.id().to_string();
                     let short_hash = &hash[..7];
-                    let message = commit.message()
+                    let message = commit
+                        .message()
                         .unwrap_or("No commit message")
                         .lines()
                         .next()
                         .unwrap_or("No commit message")
                         .to_string();
-                    let timestamp = Utc.timestamp_opt(commit.time().seconds(), 0)
+                    let timestamp = Utc
+                        .timestamp_opt(commit.time().seconds(), 0)
                         .single()
                         .unwrap_or_else(Utc::now);
-                    
+
                     branch_obj = branch_obj.with_commit(short_hash, message, timestamp);
                 }
-                
+
                 branches.push(branch_obj);
             }
         }
@@ -253,15 +263,15 @@ impl Repository for GitRepository {
 
     fn get_modified_files(&self) -> Result<Vec<ModifiedFile>> {
         debug!("Getting modified files");
-        
+
         let file_statuses = self.get_file_statuses()?;
         let mut modified_files = Vec::new();
 
         for (path, status) in file_statuses {
             let file_status = FileStatus::from_git2_status(status);
-            let staged = status.contains(Status::INDEX_MODIFIED) 
-                || status.contains(Status::INDEX_NEW) 
-                || status.contains(Status::INDEX_DELETED) 
+            let staged = status.contains(Status::INDEX_MODIFIED)
+                || status.contains(Status::INDEX_NEW)
+                || status.contains(Status::INDEX_DELETED)
                 || status.contains(Status::INDEX_RENAMED);
 
             let mut modified_file = ModifiedFile::new(path, file_status);
@@ -292,11 +302,13 @@ impl Repository for GitRepository {
 
     fn get_file_diff(&self, file_path: &Path) -> Result<String> {
         debug!("Getting diff for file: {}", file_path.display());
-        
+
         // Get the diff between HEAD and working directory
         let head_tree = self.repo.head()?.peel_to_tree()?;
-        let diff = self.repo.diff_tree_to_workdir_with_index(Some(&head_tree), None)?;
-        
+        let diff = self
+            .repo
+            .diff_tree_to_workdir_with_index(Some(&head_tree), None)?;
+
         let mut diff_output = String::new();
         diff.print(git2::DiffFormat::Patch, |_delta, _hunk, line| {
             match line.origin() {
@@ -314,44 +326,46 @@ impl Repository for GitRepository {
 
     fn stage_file(&self, file_path: &Path) -> Result<()> {
         debug!("Staging file: {}", file_path.display());
-        
+
         let mut index = self.repo.index()?;
         index.add_path(file_path)?;
         index.write()?;
-        
+
         debug!("Successfully staged file: {}", file_path.display());
         Ok(())
     }
 
     fn unstage_file(&self, file_path: &Path) -> Result<()> {
         debug!("Unstaging file: {}", file_path.display());
-        
+
         let head = self.repo.head()?.peel_to_commit()?;
         let _head_tree = head.tree()?;
-        
-        self.repo.reset_default(Some(&head.into_object()), [file_path])?;
-        
+
+        self.repo
+            .reset_default(Some(&head.into_object()), [file_path])?;
+
         debug!("Successfully unstaged file: {}", file_path.display());
         Ok(())
     }
 
     fn stage_all(&self) -> Result<()> {
         debug!("Staging all changes");
-        
+
         let mut index = self.repo.index()?;
         index.add_all(["*"].iter(), git2::IndexAddOption::DEFAULT, None)?;
         index.write()?;
-        
+
         debug!("Successfully staged all changes");
         Ok(())
     }
 
     fn reset_all(&self) -> Result<()> {
         debug!("Resetting all changes");
-        
+
         let head = self.repo.head()?.peel_to_commit()?;
-        self.repo.reset(&head.into_object(), git2::ResetType::Hard, None)?;
-        
+        self.repo
+            .reset(&head.into_object(), git2::ResetType::Hard, None)?;
+
         debug!("Successfully reset all changes");
         Ok(())
     }

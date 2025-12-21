@@ -15,7 +15,11 @@ impl GenericRefactoringProvider {
     }
 
     /// Apply a simple text-based transformation
-    pub fn apply_text_transformation(code: &str, from_pattern: &str, to_pattern: &str) -> Result<String> {
+    pub fn apply_text_transformation(
+        code: &str,
+        from_pattern: &str,
+        to_pattern: &str,
+    ) -> Result<String> {
         match Regex::new(from_pattern) {
             Ok(re) => Ok(re.replace_all(code, to_pattern).to_string()),
             Err(_) => {

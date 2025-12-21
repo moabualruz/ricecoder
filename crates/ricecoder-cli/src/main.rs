@@ -1,10 +1,10 @@
 // RiceCoder CLI Entry Point
 
-use ricecoder_cli::{output, lifecycle};
 use ricecoder_cli::router::CommandRouter;
+use ricecoder_cli::{lifecycle, output};
 use ricecoder_storage::PathResolver;
-use std::path::Path;
 use std::fs;
+use std::path::Path;
 use tokio::signal;
 
 #[tokio::main]
@@ -67,8 +67,6 @@ async fn main() {
         output::print_error(&format!("Component shutdown failed: {}", e));
     }
 
-
-
     // Exit with appropriate code
     if let Err(e) = result {
         output::print_error(&e.user_message());
@@ -86,7 +84,7 @@ async fn main() {
 fn initialize_first_run() -> Result<(), Box<dyn std::error::Error>> {
     // Check if this is the first run
     let is_first_run = false;
-    
+
     if !is_first_run {
         return Ok(());
     }
@@ -105,8 +103,6 @@ fn initialize_first_run() -> Result<(), Box<dyn std::error::Error>> {
         let default_config = create_default_config();
         fs::write(&config_file, default_config)?;
     }
-
-
 
     Ok(())
 }
@@ -153,6 +149,6 @@ defaults:
 
 # Custom settings (optional)
 # custom: {}
-"#.to_string()
+"#
+    .to_string()
 }
-

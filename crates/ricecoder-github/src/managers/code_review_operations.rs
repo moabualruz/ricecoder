@@ -59,7 +59,8 @@ impl CodeReviewMetrics {
             / self.total_prs_reviewed;
 
         // Update average quality score
-        self.average_quality_score = (self.average_quality_score * (self.total_prs_reviewed - 1) as f32
+        self.average_quality_score = (self.average_quality_score
+            * (self.total_prs_reviewed - 1) as f32
             + quality_score as f32)
             / self.total_prs_reviewed as f32;
     }
@@ -213,7 +214,11 @@ impl CodeReviewOperations {
         report.push_str(&format!("**Quality Score:** {}/100\n\n", quality_score));
 
         // Status
-        let status = if approved { "✅ APPROVED" } else { "❌ NEEDS REVIEW" };
+        let status = if approved {
+            "✅ APPROVED"
+        } else {
+            "❌ NEEDS REVIEW"
+        };
         report.push_str(&format!("**Status:** {}\n\n", status));
 
         // Issues and suggestions
@@ -277,11 +282,7 @@ impl CodeReviewOperations {
         let mut result = ConditionalApprovalResult::new(pr_number);
 
         for (name, is_met) in conditions {
-            let condition = ApprovalCondition::new(
-                &name,
-                format!("Condition: {}", name),
-                is_met,
-            );
+            let condition = ApprovalCondition::new(&name, format!("Condition: {}", name), is_met);
             result = result.with_condition(condition);
         }
 
@@ -290,10 +291,7 @@ impl CodeReviewOperations {
         let reason = if all_met {
             "All approval conditions are met".to_string()
         } else {
-            format!(
-                "{} condition(s) not met",
-                result.unmet_conditions().len()
-            )
+            format!("{} condition(s) not met", result.unmet_conditions().len())
         };
 
         result = result.set_approved(all_met, reason);
@@ -400,8 +398,7 @@ mod tests {
     #[test]
     fn test_conditional_approval_result_all_conditions_met() {
         let condition = ApprovalCondition::new("Test", "Description", true);
-        let result = ConditionalApprovalResult::new(123)
-            .with_condition(condition);
+        let result = ConditionalApprovalResult::new(123).with_condition(condition);
         assert!(result.all_conditions_met());
     }
 
@@ -435,9 +432,7 @@ mod tests {
     #[test]
     fn test_generate_summary_report() {
         let ops = CodeReviewOperations::new();
-        let report = ops
-            .generate_summary_report(123, 85, 2, 3, true)
-            .unwrap();
+        let report = ops.generate_summary_report(123, 85, 2, 3, true).unwrap();
         assert!(report.contains("PR #123"));
         assert!(report.contains("85/100"));
         assert!(report.contains("APPROVED"));

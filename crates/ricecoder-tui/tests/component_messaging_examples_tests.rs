@@ -38,7 +38,10 @@ mod messaging_tests {
             assert_eq!(messages.len(), 1);
 
             match &messages[0] {
-                AppMessage::ComponentMessage { payload: messaging::ComponentMessagePayload::String(text), .. } => {
+                AppMessage::ComponentMessage {
+                    payload: messaging::ComponentMessagePayload::String(text),
+                    ..
+                } => {
                     assert_eq!(text, "Test message");
                 }
                 _ => panic!("Unexpected message type"),

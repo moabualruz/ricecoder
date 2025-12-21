@@ -1,11 +1,11 @@
 //! Feature usage analytics and prioritization pipeline
 
 use crate::types::*;
-use ricecoder_monitoring::analytics::{AnalyticsEngine, UsageStats, FeatureAdoptionMetrics};
-use tokio::sync::mpsc;
-use tokio::time;
+use ricecoder_monitoring::analytics::{AnalyticsEngine, FeatureAdoptionMetrics, UsageStats};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use tokio::sync::mpsc;
+use tokio::time;
 
 /// Analytics pipeline for feature usage analysis and prioritization
 pub struct AnalyticsPipeline {
@@ -41,7 +41,11 @@ impl AnalyticsPipeline {
 
         tracing::info!("Starting analytics pipeline");
 
-        self.analytics_engine.lock().unwrap().start().await
+        self.analytics_engine
+            .lock()
+            .unwrap()
+            .start()
+            .await
             .map_err(|e| ContinuousImprovementError::AnalyticsError(e.to_string()))?;
 
         let (shutdown_tx, mut shutdown_rx) = mpsc::channel(1);
@@ -84,7 +88,11 @@ impl AnalyticsPipeline {
             let _ = task.await;
         }
 
-        self.analytics_engine.lock().unwrap().stop().await
+        self.analytics_engine
+            .lock()
+            .unwrap()
+            .stop()
+            .await
             .map_err(|e| ContinuousImprovementError::AnalyticsError(e.to_string()))?;
 
         tracing::info!("Analytics pipeline stopped");
@@ -92,8 +100,16 @@ impl AnalyticsPipeline {
     }
 
     /// Track feature usage
-    pub fn track_feature_usage(&self, user_id: Option<String>, feature: &str, properties: HashMap<String, serde_json::Value>) {
-        self.analytics_engine.lock().unwrap().track_action(user_id, feature, properties);
+    pub fn track_feature_usage(
+        &self,
+        user_id: Option<String>,
+        feature: &str,
+        properties: HashMap<String, serde_json::Value>,
+    ) {
+        self.analytics_engine
+            .lock()
+            .unwrap()
+            .track_action(user_id, feature, properties);
     }
 
     /// Get analytics insights
@@ -101,7 +117,9 @@ impl AnalyticsPipeline {
         let usage_stats = self.analytics_engine.lock().unwrap().get_usage_stats(None);
 
         // Get feature usage (simplified mapping)
-        let feature_usage = usage_stats.events_by_type.iter()
+        let feature_usage = usage_stats
+            .events_by_type
+            .iter()
             .map(|(k, v)| (k.clone(), *v as f64))
             .collect();
 
@@ -114,7 +132,9 @@ impl AnalyticsPipeline {
         };
 
         // Get adoption rates (simplified - would analyze over time)
-        let adoption_rates = usage_stats.events_by_type.iter()
+        let adoption_rates = usage_stats
+            .events_by_type
+            .iter()
             .map(|(k, v)| (k.clone(), (*v as f64 / total_events) * 100.0))
             .collect();
 
@@ -134,7 +154,9 @@ impl AnalyticsPipeline {
     }
 
     /// Get feature priorities
-    pub async fn get_feature_priorities(&self) -> Result<Vec<FeaturePriority>, ContinuousImprovementError> {
+    pub async fn get_feature_priorities(
+        &self,
+    ) -> Result<Vec<FeaturePriority>, ContinuousImprovementError> {
         let usage_stats = self.analytics_engine.lock().unwrap().get_usage_stats(None);
 
         let mut priorities = Vec::new();
@@ -145,7 +167,10 @@ impl AnalyticsPipeline {
             let issue_score = 3.0; // Simplified - would integrate with issues
             let enterprise_score = 7.0; // Simplified - would analyze enterprise usage
 
-            let overall_score = (usage_score * 0.4) + (feedback_score * 0.3) + (issue_score * 0.2) + (enterprise_score * 0.1);
+            let overall_score = (usage_score * 0.4)
+                + (feedback_score * 0.3)
+                + (issue_score * 0.2)
+                + (enterprise_score * 0.1);
 
             let current_priority = if overall_score > 80.0 {
                 Priority::Critical
@@ -193,7 +218,10 @@ impl AnalyticsPipeline {
         tracing::info!(
             "Prioritization analysis complete - {} features analyzed, {} high priority",
             priorities.len(),
-            priorities.iter().filter(|p| matches!(p.current_priority, Priority::High | Priority::Critical)).count()
+            priorities
+                .iter()
+                .filter(|p| matches!(p.current_priority, Priority::High | Priority::Critical))
+                .count()
         );
 
         Ok(())
@@ -215,7 +243,10 @@ impl AnalyticsPipeline {
                 let issue_score = 3.0; // Would integrate with issue tracking
                 let enterprise_score = 7.0; // Would analyze enterprise usage patterns
 
-                let overall_score = (usage_score * 0.4) + (feedback_score * 0.3) + (issue_score * 0.2) + (enterprise_score * 0.1);
+                let overall_score = (usage_score * 0.4)
+                    + (feedback_score * 0.3)
+                    + (issue_score * 0.2)
+                    + (enterprise_score * 0.1);
 
                 let current_priority = if overall_score > 80.0 {
                     Priority::Critical

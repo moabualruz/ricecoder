@@ -4,24 +4,20 @@
 
 #[cfg(test)]
 mod tests {
-    use proptest::prelude::*;
     use crate::{Decision, DecisionContext, PatternCapturer};
+    use proptest::prelude::*;
     use std::path::PathBuf;
 
     /// Strategy for generating decision contexts
     fn decision_context_strategy() -> impl Strategy<Value = DecisionContext> {
-        (
-            "/project",
-            "/project/src/main.rs",
-            0u32..1000,
-            "test_agent",
-        )
-            .prop_map(|(project, file, line, agent)| DecisionContext {
+        ("/project", "/project/src/main.rs", 0u32..1000, "test_agent").prop_map(
+            |(project, file, line, agent)| DecisionContext {
                 project_path: PathBuf::from(project),
                 file_path: PathBuf::from(file),
                 line_number: line,
                 agent_type: agent.to_string(),
-            })
+            },
+        )
     }
 
     /// Strategy for generating JSON values
@@ -52,8 +48,7 @@ mod tests {
     /// For any set of repeated decisions, the Pattern Capturer SHALL extract identical
     /// patterns when processing the same decision history.
     #[test]
-    fn prop_pattern_extraction_consistency(
-    ) {
+    fn prop_pattern_extraction_consistency() {
         proptest!(|(decisions in prop::collection::vec(decision_strategy(), 2..20))| {
             let capturer = PatternCapturer::new();
 
@@ -162,7 +157,10 @@ mod tests {
     fn prop_pattern_extraction_empty_input() {
         let capturer = PatternCapturer::new();
         let patterns = capturer.extract_patterns(&[]).expect("Extraction failed");
-        assert!(patterns.is_empty(), "Empty input should produce empty patterns");
+        assert!(
+            patterns.is_empty(),
+            "Empty input should produce empty patterns"
+        );
     }
 
     /// Property: Pattern extraction should respect minimum occurrences

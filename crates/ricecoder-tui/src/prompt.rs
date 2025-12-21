@@ -343,5 +343,3 @@ impl Default for PromptWidget {
         Self::new()
     }
 }
-
-

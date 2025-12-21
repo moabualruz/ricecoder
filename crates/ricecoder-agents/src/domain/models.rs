@@ -481,7 +481,11 @@ mod tests {
             use_cases: vec!["SPAs".to_string(), "Complex UIs".to_string()],
             pros: vec!["Ecosystem".to_string(), "Community".to_string()],
             cons: vec!["Learning curve".to_string()],
-            alternatives: vec!["Vue".to_string(), "Angular".to_string(), "Svelte".to_string()],
+            alternatives: vec![
+                "Vue".to_string(),
+                "Angular".to_string(),
+                "Svelte".to_string(),
+            ],
         };
 
         assert_eq!(recommendation.use_cases.len(), 2);

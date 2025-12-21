@@ -92,7 +92,10 @@ fn arb_auth_bypass() -> impl Strategy<Value = (String, String)> {
         (Just("".to_string()), Just("password".to_string())),
         (Just("admin".to_string()), Just("".to_string())),
         (Just("user".to_string()), Just("user".to_string())), // Same as username
-        ("[a-zA-Z0-9_-]{0,20}".prop_map(|s| s), "[a-zA-Z0-9_-]{0,20}".prop_map(|s| s)),
+        (
+            "[a-zA-Z0-9_-]{0,20}".prop_map(|s| s),
+            "[a-zA-Z0-9_-]{0,20}".prop_map(|s| s)
+        ),
     ]
 }
 

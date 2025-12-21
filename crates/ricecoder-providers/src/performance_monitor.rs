@@ -91,9 +91,9 @@ impl ProviderMetrics {
 
     /// Check if provider is performing well
     pub fn is_performing_well(&self, thresholds: &PerformanceThresholds) -> bool {
-        self.avg_response_time_ms <= thresholds.max_avg_response_time_ms as f64 &&
-        self.error_rate <= thresholds.max_error_rate &&
-        self.success_rate() >= thresholds.min_success_rate
+        self.avg_response_time_ms <= thresholds.max_avg_response_time_ms as f64
+            && self.error_rate <= thresholds.max_error_rate
+            && self.success_rate() >= thresholds.min_success_rate
     }
 }
 
@@ -110,9 +110,9 @@ impl Default for PerformanceThresholds {
     fn default() -> Self {
         Self {
             max_avg_response_time_ms: 5000, // 5 seconds
-            max_error_rate: 0.1, // 10% error rate
-            min_success_rate: 0.9, // 90% success rate
-            max_cost_per_request: 0.01, // $0.01 per request
+            max_error_rate: 0.1,            // 10% error rate
+            min_success_rate: 0.9,          // 90% success rate
+            max_cost_per_request: 0.01,     // $0.01 per request
         }
     }
 }
@@ -155,8 +155,10 @@ impl ProviderPerformanceMonitor {
         provider_metrics.last_request_time = Some(SystemTime::now());
 
         // Update min/max response times
-        provider_metrics.min_response_time_ms = provider_metrics.min_response_time_ms.min(response_time_ms);
-        provider_metrics.max_response_time_ms = provider_metrics.max_response_time_ms.max(response_time_ms);
+        provider_metrics.min_response_time_ms =
+            provider_metrics.min_response_time_ms.min(response_time_ms);
+        provider_metrics.max_response_time_ms =
+            provider_metrics.max_response_time_ms.max(response_time_ms);
 
         // Recalculate averages
         provider_metrics.avg_response_time_ms =
@@ -241,7 +243,11 @@ impl ProviderPerformanceMonitor {
         let total_requests: u64 = all_metrics.iter().map(|m| m.total_requests).sum();
         let total_errors: u64 = all_metrics.iter().map(|m| m.failed_requests).sum();
         let avg_response_time = if !all_metrics.is_empty() {
-            all_metrics.iter().map(|m| m.avg_response_time_ms).sum::<f64>() / all_metrics.len() as f64
+            all_metrics
+                .iter()
+                .map(|m| m.avg_response_time_ms)
+                .sum::<f64>()
+                / all_metrics.len() as f64
         } else {
             0.0
         };
@@ -306,9 +312,21 @@ impl std::fmt::Display for PerformanceSummary {
         writeln!(f, "  Total providers: {}", self.total_providers)?;
         writeln!(f, "  Total requests: {}", self.total_requests)?;
         writeln!(f, "  Total errors: {}", self.total_errors)?;
-        writeln!(f, "  Average response time: {:.2}ms", self.avg_response_time_ms)?;
-        writeln!(f, "  Performing providers: {}/{}", self.performing_providers, self.total_providers)?;
-        writeln!(f, "  Overall error rate: {:.2}%", self.overall_error_rate * 100.0)?;
+        writeln!(
+            f,
+            "  Average response time: {:.2}ms",
+            self.avg_response_time_ms
+        )?;
+        writeln!(
+            f,
+            "  Performing providers: {}/{}",
+            self.performing_providers, self.total_providers
+        )?;
+        writeln!(
+            f,
+            "  Overall error rate: {:.2}%",
+            self.overall_error_rate * 100.0
+        )?;
         Ok(())
     }
 }

@@ -1,7 +1,5 @@
 //! Configuration error types
 
-
-
 /// Configuration result type
 pub type Result<T> = std::result::Result<T, ConfigError>;
 

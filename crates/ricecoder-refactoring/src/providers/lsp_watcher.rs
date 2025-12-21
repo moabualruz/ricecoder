@@ -3,8 +3,8 @@
 //! This module provides a watcher that monitors LSP server availability
 //! and configuration changes, updating the provider registry without restart.
 
-use crate::error::Result;
 use super::lsp::LspProviderRegistry;
+use crate::error::Result;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -47,7 +47,9 @@ impl LspWatcher {
     /// - Configuration file changes
     pub async fn start(&self) -> Result<()> {
         let mut running = self.running.lock().map_err(|_| {
-            crate::error::RefactoringError::Other("Failed to acquire lock on watcher state".to_string())
+            crate::error::RefactoringError::Other(
+                "Failed to acquire lock on watcher state".to_string(),
+            )
         })?;
 
         if *running {
@@ -66,7 +68,9 @@ impl LspWatcher {
     /// Stop watching for changes
     pub async fn stop(&self) -> Result<()> {
         let mut running = self.running.lock().map_err(|_| {
-            crate::error::RefactoringError::Other("Failed to acquire lock on watcher state".to_string())
+            crate::error::RefactoringError::Other(
+                "Failed to acquire lock on watcher state".to_string(),
+            )
         })?;
 
         *running = false;
@@ -76,7 +80,9 @@ impl LspWatcher {
     /// Check if the watcher is running
     pub fn is_running(&self) -> Result<bool> {
         let running = self.running.lock().map_err(|_| {
-            crate::error::RefactoringError::Other("Failed to acquire lock on watcher state".to_string())
+            crate::error::RefactoringError::Other(
+                "Failed to acquire lock on watcher state".to_string(),
+            )
         })?;
         Ok(*running)
     }

@@ -65,7 +65,11 @@ impl RuleApplicationResult {
     pub fn new(rule: Rule, matched: bool) -> Self {
         Self {
             confidence: rule.confidence,
-            action: if matched { Some(rule.action.clone()) } else { None },
+            action: if matched {
+                Some(rule.action.clone())
+            } else {
+                None
+            },
             rule,
             matched,
             details: HashMap::new(),
@@ -161,10 +165,7 @@ impl RuleApplicationEngine {
     }
 
     /// Apply multiple rules to a generation context
-    pub fn apply_rules(
-        rules: &[Rule],
-        context: &GenerationContext,
-    ) -> Vec<RuleApplicationResult> {
+    pub fn apply_rules(rules: &[Rule], context: &GenerationContext) -> Vec<RuleApplicationResult> {
         rules
             .iter()
             .map(|rule| Self::apply_rule(rule, context))
@@ -177,14 +178,11 @@ impl RuleApplicationEngine {
         context: &GenerationContext,
     ) -> Option<RuleApplicationResult> {
         let results = Self::apply_rules(rules, context);
-        results
-            .into_iter()
-            .filter(|r| r.matched)
-            .max_by(|a, b| {
-                a.confidence
-                    .partial_cmp(&b.confidence)
-                    .unwrap_or(std::cmp::Ordering::Equal)
-            })
+        results.into_iter().filter(|r| r.matched).max_by(|a, b| {
+            a.confidence
+                .partial_cmp(&b.confidence)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        })
     }
 
     /// Chain multiple rules together
@@ -201,10 +199,8 @@ impl RuleApplicationEngine {
             if result.matched {
                 // Update context with the action for the next rule
                 if let Some(action) = &result.action {
-                    current_context = current_context.with_metadata(
-                        "last_action".to_string(),
-                        json!(action),
-                    );
+                    current_context =
+                        current_context.with_metadata("last_action".to_string(), json!(action));
                 }
             }
 
@@ -215,10 +211,7 @@ impl RuleApplicationEngine {
     }
 
     /// Compose multiple rules into a single action
-    pub fn compose_rules(
-        rules: &[Rule],
-        context: &GenerationContext,
-    ) -> Result<Option<String>> {
+    pub fn compose_rules(rules: &[Rule], context: &GenerationContext) -> Result<Option<String>> {
         let results = Self::apply_rules(rules, context);
         let matched_actions: Vec<String> = results
             .iter()

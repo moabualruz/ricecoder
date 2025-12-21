@@ -7,8 +7,7 @@ use ricecoder_github::BranchManager;
 
 // Strategy for generating valid branch names
 fn valid_branch_name_strategy() -> impl Strategy<Value = String> {
-    r"(feature|bugfix|hotfix|release)/[a-z0-9\-]{1,30}"
-        .prop_map(|s| s.to_string())
+    r"(feature|bugfix|hotfix|release)/[a-z0-9\-]{1,30}".prop_map(|s| s.to_string())
 }
 
 // Strategy for generating base branch names
@@ -30,14 +29,12 @@ fn commit_sha_strategy() -> impl Strategy<Value = Option<String>> {
 
 // Strategy for generating repository owners
 fn owner_strategy() -> impl Strategy<Value = String> {
-    r"[a-z0-9\-]{3,20}"
-        .prop_map(|s| s.to_string())
+    r"[a-z0-9\-]{3,20}".prop_map(|s| s.to_string())
 }
 
 // Strategy for generating repository names
 fn repo_strategy() -> impl Strategy<Value = String> {
-    r"[a-z0-9\-_]{3,30}"
-        .prop_map(|s| s.to_string())
+    r"[a-z0-9\-_]{3,30}".prop_map(|s| s.to_string())
 }
 
 // **Feature: ricecoder-github, Property 62: Branch Lifecycle Management**

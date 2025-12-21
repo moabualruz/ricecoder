@@ -1,12 +1,12 @@
 //! Markdown rendering for the TUI
 
 use lazy_static::lazy_static;
-use syntect::easy::HighlightLines;
-use syntect::parsing::SyntaxSet;
-use syntect::highlighting::{ThemeSet, Style as SyntectStyle};
-use syntect::util::LinesWithEndings;
 use ratatui::prelude::*;
 use ratatui::style::Color;
+use syntect::easy::HighlightLines;
+use syntect::highlighting::{Style as SyntectStyle, ThemeSet};
+use syntect::parsing::SyntaxSet;
+use syntect::util::LinesWithEndings;
 
 lazy_static! {
     pub static ref SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();
@@ -276,26 +276,26 @@ impl MarkdownParser {
         let syntax = lang
             .and_then(|l| ps.find_syntax_by_token(l))
             .unwrap_or_else(|| ps.find_syntax_plain_text());
-        
+
         // Use base16-ocean.dark as a safe default that usually exists
         // In a real app, map app theme to syntect theme
-        let theme = &ts.themes["base16-ocean.dark"]; 
-        
+        let theme = &ts.themes["base16-ocean.dark"];
+
         let mut h = HighlightLines::new(syntax, theme);
         let mut lines = Vec::new();
-        
+
         for line in LinesWithEndings::from(code) {
             let ranges: Vec<(SyntectStyle, &str)> = h.highlight_line(line, ps).unwrap();
-            let spans: Vec<Span> = ranges.into_iter().map(|(style, text)| {
-                let fg = Color::Rgb(style.foreground.r, style.foreground.g, style.foreground.b);
-                Span::styled(text.to_string(), Style::default().fg(fg))
-            }).collect();
+            let spans: Vec<Span> = ranges
+                .into_iter()
+                .map(|(style, text)| {
+                    let fg = Color::Rgb(style.foreground.r, style.foreground.g, style.foreground.b);
+                    Span::styled(text.to_string(), Style::default().fg(fg))
+                })
+                .collect();
             lines.push(Line::from(spans));
         }
-        
+
         lines
     }
 }
-
-
-

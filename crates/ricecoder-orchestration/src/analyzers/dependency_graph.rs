@@ -93,7 +93,8 @@ impl DependencyGraph {
         }
 
         // Remove from dependencies
-        self.dependencies.remove(&(from.to_string(), to.to_string()));
+        self.dependencies
+            .remove(&(from.to_string(), to.to_string()));
 
         Ok(())
     }
@@ -324,7 +325,8 @@ impl DependencyGraph {
 
     /// Checks if a dependency exists in the graph
     pub fn has_dependency(&self, from: &str, to: &str) -> bool {
-        self.dependencies.contains_key(&(from.to_string(), to.to_string()))
+        self.dependencies
+            .contains_key(&(from.to_string(), to.to_string()))
     }
 
     /// Gets the adjacency list representation
@@ -355,7 +357,7 @@ impl Default for DependencyGraph {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{ProjectStatus, DependencyType};
+    use crate::models::{DependencyType, ProjectStatus};
     use std::path::PathBuf;
 
     fn create_test_project(name: &str) -> Project {

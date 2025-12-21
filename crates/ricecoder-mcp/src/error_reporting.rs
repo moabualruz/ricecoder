@@ -31,11 +31,8 @@ impl ErrorReporter {
 
     /// Reports an error with context
     pub async fn report_error(&self, error: &Error, context: Option<ErrorContext>) {
-        let mut log_entry = ErrorLogEntry::new(
-            error.error_type().to_string(),
-            error.to_string(),
-        )
-        .with_recoverable(error.is_recoverable());
+        let mut log_entry = ErrorLogEntry::new(error.error_type().to_string(), error.to_string())
+            .with_recoverable(error.is_recoverable());
 
         if let Some(ctx) = context {
             if let Some(tool_id) = ctx.tool_id {
@@ -83,12 +80,9 @@ impl ErrorReporter {
         context: Option<ErrorContext>,
         retry_count: u32,
     ) {
-        let mut log_entry = ErrorLogEntry::new(
-            error.error_type().to_string(),
-            error.to_string(),
-        )
-        .with_recoverable(error.is_recoverable())
-        .with_retry_count(retry_count);
+        let mut log_entry = ErrorLogEntry::new(error.error_type().to_string(), error.to_string())
+            .with_recoverable(error.is_recoverable())
+            .with_retry_count(retry_count);
 
         if let Some(ctx) = context {
             if let Some(tool_id) = ctx.tool_id {
@@ -439,8 +433,12 @@ mod tests {
             server_error_counts: std::collections::HashMap::new(),
         };
 
-        stats.error_type_counts.insert("ToolNotFound".to_string(), 2);
-        stats.error_type_counts.insert("ConnectionError".to_string(), 1);
+        stats
+            .error_type_counts
+            .insert("ToolNotFound".to_string(), 2);
+        stats
+            .error_type_counts
+            .insert("ConnectionError".to_string(), 1);
 
         let most_common = stats.most_common_error_type();
         assert_eq!(most_common, Some(("ToolNotFound".to_string(), 2)));

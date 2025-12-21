@@ -7,9 +7,11 @@
 //! - ricecoder-domain (session entities)
 
 use ricecoder_domain::entities::Session;
-use ricecoder_sessions::{SessionManager, SessionStore, SessionStatus};
-use ricecoder_storage::{session::SessionManager as StorageSessionManager, StorageManager, StorageMode};
 use ricecoder_security::encryption::KeyManager;
+use ricecoder_sessions::{SessionManager, SessionStatus, SessionStore};
+use ricecoder_storage::{
+    session::SessionManager as StorageSessionManager, StorageManager, StorageMode,
+};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tempfile::tempdir;
@@ -33,11 +35,17 @@ impl StorageManager for MockStorageManager {
         StorageMode::Merged
     }
 
-    fn global_resource_path(&self, _resource_type: ricecoder_storage::types::ResourceType) -> PathBuf {
+    fn global_resource_path(
+        &self,
+        _resource_type: ricecoder_storage::types::ResourceType,
+    ) -> PathBuf {
         self.global_path.join("resources")
     }
 
-    fn project_resource_path(&self, _resource_type: ricecoder_storage::types::ResourceType) -> Option<PathBuf> {
+    fn project_resource_path(
+        &self,
+        _resource_type: ricecoder_storage::types::ResourceType,
+    ) -> Option<PathBuf> {
         self.project_path.as_ref().map(|p| p.join("resources"))
     }
 
@@ -63,7 +71,9 @@ async fn test_session_persistence_with_encryption() -> Result<(), Box<dyn std::e
 
     // Create and configure a session
     let session_id = session_manager.create_session("openai", "gpt-4").await?;
-    session_manager.set_session_name(session_id.clone(), "encrypted-test-session").await?;
+    session_manager
+        .set_session_name(session_id.clone(), "encrypted-test-session")
+        .await?;
 
     // Add some messages to the session
     let message1 = ricecoder_sessions::Message {
@@ -77,14 +87,20 @@ async fn test_session_persistence_with_encryption() -> Result<(), Box<dyn std::e
         metadata: Default::default(),
     };
 
-    session_manager.add_message(session_id.clone(), message1).await?;
-    session_manager.add_message(session_id.clone(), message2).await?;
+    session_manager
+        .add_message(session_id.clone(), message1)
+        .await?;
+    session_manager
+        .add_message(session_id.clone(), message2)
+        .await?;
 
     // Persist the session
     session_manager.save_session(&session_id).await?;
 
     // Verify session was encrypted and stored
-    let session_file = storage_path.join("sessions").join(format!("{}.enc", session_id));
+    let session_file = storage_path
+        .join("sessions")
+        .join(format!("{}.enc", session_id));
     assert!(session_file.exists(), "Encrypted session file should exist");
 
     // Load the session back
@@ -117,20 +133,25 @@ async fn test_session_store_encryption_integration() -> Result<(), Box<dyn std::
     session.name = Some("sensitive-session".to_string());
     session.metadata.insert(
         "api_key".to_string(),
-        serde_json::Value::String("sk-1234567890abcdef".to_string())
+        serde_json::Value::String("sk-1234567890abcdef".to_string()),
     );
 
     // Store encrypted session
     session_store.save(&session).await?;
 
     // Verify file exists and is encrypted
-    let session_file = storage_path.join("sessions").join(format!("{}.enc", session.id));
+    let session_file = storage_path
+        .join("sessions")
+        .join(format!("{}.enc", session.id));
     assert!(session_file.exists());
 
     let encrypted_content = std::fs::read(&session_file)?;
     // Verify it's not plaintext (basic check)
     let content_str = String::from_utf8_lossy(&encrypted_content);
-    assert!(!content_str.contains("sk-1234567890abcdef"), "API key should be encrypted");
+    assert!(
+        !content_str.contains("sk-1234567890abcdef"),
+        "API key should be encrypted"
+    );
 
     // Load and verify decryption
     let loaded_session = session_store.load(&session.id).await?;
@@ -138,7 +159,10 @@ async fn test_session_store_encryption_integration() -> Result<(), Box<dyn std::
 
     let loaded = loaded_session.unwrap();
     assert_eq!(loaded.name, session.name);
-    assert_eq!(loaded.metadata.get("api_key"), session.metadata.get("api_key"));
+    assert_eq!(
+        loaded.metadata.get("api_key"),
+        session.metadata.get("api_key")
+    );
 
     Ok(())
 }
@@ -166,7 +190,9 @@ async fn test_session_manager_storage_integration() -> Result<(), Box<dyn std::e
     storage_session_manager.save_session(&session_data).await?;
 
     // Load and verify
-    let loaded = storage_session_manager.load_session("test-session-123").await?;
+    let loaded = storage_session_manager
+        .load_session("test-session-123")
+        .await?;
     assert!(loaded.is_some());
 
     let loaded_session = loaded.unwrap();
@@ -192,7 +218,7 @@ async fn test_session_domain_storage_bridge() -> Result<(), Box<dyn std::error::
     domain_session.set_name("domain-bridge-test".to_string());
     domain_session.metadata.insert(
         "environment".to_string(),
-        serde_json::Value::String("testing".to_string())
+        serde_json::Value::String("testing".to_string()),
     );
 
     // Initialize storage
@@ -210,9 +236,15 @@ async fn test_session_domain_storage_bridge() -> Result<(), Box<dyn std::error::
         provider: domain_session.provider_id.clone(),
         model: domain_session.model_id.clone(),
         status: match domain_session.status {
-            ricecoder_domain::entities::SessionStatus::Active => ricecoder_storage::session::SessionState::Active,
-            ricecoder_domain::entities::SessionStatus::Paused => ricecoder_storage::session::SessionState::Paused,
-            ricecoder_domain::entities::SessionStatus::Ended => ricecoder_storage::session::SessionState::Ended,
+            ricecoder_domain::entities::SessionStatus::Active => {
+                ricecoder_storage::session::SessionState::Active
+            }
+            ricecoder_domain::entities::SessionStatus::Paused => {
+                ricecoder_storage::session::SessionState::Paused
+            }
+            ricecoder_domain::entities::SessionStatus::Ended => {
+                ricecoder_storage::session::SessionState::Ended
+            }
         },
         created_at: domain_session.created_at,
         updated_at: domain_session.updated_at,
@@ -220,10 +252,14 @@ async fn test_session_domain_storage_bridge() -> Result<(), Box<dyn std::error::
     };
 
     // Save to storage
-    storage_session_manager.save_session(&storage_session).await?;
+    storage_session_manager
+        .save_session(&storage_session)
+        .await?;
 
     // Load back and convert to domain session
-    let loaded_storage = storage_session_manager.load_session(&domain_session.id.to_string()).await?;
+    let loaded_storage = storage_session_manager
+        .load_session(&domain_session.id.to_string())
+        .await?;
     assert!(loaded_storage.is_some());
 
     let loaded = loaded_storage.unwrap();
@@ -231,9 +267,15 @@ async fn test_session_domain_storage_bridge() -> Result<(), Box<dyn std::error::
     restored_domain.id = ricecoder_domain::value_objects::SessionId::from_string(loaded.id.clone());
     restored_domain.name = loaded.name.clone();
     restored_domain.status = match loaded.status {
-        ricecoder_storage::session::SessionState::Active => ricecoder_domain::entities::SessionStatus::Active,
-        ricecoder_storage::session::SessionState::Paused => ricecoder_domain::entities::SessionStatus::Paused,
-        ricecoder_storage::session::SessionState::Ended => ricecoder_domain::entities::SessionStatus::Ended,
+        ricecoder_storage::session::SessionState::Active => {
+            ricecoder_domain::entities::SessionStatus::Active
+        }
+        ricecoder_storage::session::SessionState::Paused => {
+            ricecoder_domain::entities::SessionStatus::Paused
+        }
+        ricecoder_storage::session::SessionState::Ended => {
+            ricecoder_domain::entities::SessionStatus::Ended
+        }
     };
     restored_domain.created_at = loaded.created_at;
     restored_domain.updated_at = loaded.updated_at;
@@ -266,8 +308,18 @@ async fn test_encrypted_session_backup_recovery() -> Result<(), Box<dyn std::err
 
     // Create multiple sessions with sensitive data
     let sessions = vec![
-        ("session1", "openai", "gpt-4", "Production API key: sk-prod-123"),
-        ("session2", "anthropic", "claude-3", "Dev API key: sk-dev-456"),
+        (
+            "session1",
+            "openai",
+            "gpt-4",
+            "Production API key: sk-prod-123",
+        ),
+        (
+            "session2",
+            "anthropic",
+            "claude-3",
+            "Dev API key: sk-dev-456",
+        ),
         ("session3", "google", "gemini", "Test API key: sk-test-789"),
     ];
 
@@ -277,7 +329,7 @@ async fn test_encrypted_session_backup_recovery() -> Result<(), Box<dyn std::err
         session.name = Some(format!("{}-session", id));
         session.metadata.insert(
             "api_key".to_string(),
-            serde_json::Value::String(sensitive_data.to_string())
+            serde_json::Value::String(sensitive_data.to_string()),
         );
         session_store.save(&session).await?;
     }
@@ -292,7 +344,10 @@ async fn test_encrypted_session_backup_recovery() -> Result<(), Box<dyn std::err
 
         let encrypted_content = std::fs::read(&backup_file)?;
         let content_str = String::from_utf8_lossy(&encrypted_content);
-        assert!(!content_str.contains(sensitive_data), "Sensitive data should be encrypted in backup");
+        assert!(
+            !content_str.contains(sensitive_data),
+            "Sensitive data should be encrypted in backup"
+        );
     }
 
     // Simulate disaster - delete original sessions
@@ -322,7 +377,8 @@ async fn test_encrypted_session_backup_recovery() -> Result<(), Box<dyn std::err
 }
 
 #[tokio::test]
-async fn test_session_garbage_collection_with_encryption() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_session_garbage_collection_with_encryption() -> Result<(), Box<dyn std::error::Error>>
+{
     let temp_dir = tempdir()?;
     let storage_path = temp_dir.path().to_path_buf();
 

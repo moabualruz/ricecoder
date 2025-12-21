@@ -4,7 +4,6 @@
 ///
 /// Property: For any user decision made during code generation, the Learning System
 /// SHALL capture it with complete metadata (timestamp, context, decision type, input, output).
-
 use proptest::prelude::*;
 use ricecoder_learning::{Decision, DecisionContext, DecisionLogger};
 use std::path::PathBuf;

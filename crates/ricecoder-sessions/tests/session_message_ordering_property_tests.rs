@@ -6,16 +6,20 @@
 //! For any session with messages, the messages should always be ordered by timestamp,
 //! and adding a new message should preserve this ordering.
 
+use chrono::{Duration, Utc};
 use proptest::prelude::*;
 use ricecoder_sessions::{Message, MessageRole, Session};
-use chrono::{Duration, Utc};
 
 // Strategy for generating messages with different timestamps
 fn arb_message() -> impl Strategy<Value = Message> {
     (
-        prop_oneof![Just(MessageRole::User), Just(MessageRole::Assistant), Just(MessageRole::System)],
+        prop_oneof![
+            Just(MessageRole::User),
+            Just(MessageRole::Assistant),
+            Just(MessageRole::System)
+        ],
         "[a-zA-Z0-9 .,!?]{1,100}".prop_map(|s| s), // content
-        0i64..86400i64, // seconds from now for timestamp
+        0i64..86400i64,                            // seconds from now for timestamp
     )
         .prop_map(|(role, content, seconds_offset)| {
             let mut message = Message::new(role, content);
@@ -29,14 +33,17 @@ fn arb_message() -> impl Strategy<Value = Message> {
 fn arb_session_with_messages() -> impl Strategy<Value = Session> {
     (
         "[a-zA-Z0-9_-]{1,20}".prop_map(|s| format!("session-{}", s)), // session name
-        prop::collection::vec(arb_message(), 1..20), // messages
+        prop::collection::vec(arb_message(), 1..20),                  // messages
     )
         .prop_map(|(name, messages)| {
-            let mut session = Session::new(name, ricecoder_sessions::SessionContext::new(
-                "test".to_string(),
-                "model".to_string(),
-                ricecoder_sessions::SessionMode::Chat,
-            ));
+            let mut session = Session::new(
+                name,
+                ricecoder_sessions::SessionContext::new(
+                    "test".to_string(),
+                    "model".to_string(),
+                    ricecoder_sessions::SessionMode::Chat,
+                ),
+            );
 
             // Add messages in random order, but they should be sorted by timestamp when retrieved
             for message in messages {
@@ -46,7 +53,9 @@ fn arb_session_with_messages() -> impl Strategy<Value = Session> {
             }
 
             // Sort by timestamp to simulate proper ordering
-            session.history.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
+            session
+                .history
+                .sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
 
             session
         })

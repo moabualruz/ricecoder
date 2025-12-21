@@ -3,7 +3,9 @@
 //! Tests for simple and complex dependency graphs, circular dependency detection,
 //! and transitive dependency resolution.
 
-use ricecoder_orchestration::{DependencyAnalyzer, DependencyType, Project, ProjectDependency, ProjectStatus};
+use ricecoder_orchestration::{
+    DependencyAnalyzer, DependencyType, Project, ProjectDependency, ProjectStatus,
+};
 use std::path::PathBuf;
 
 fn create_test_project(name: &str) -> Project {
@@ -515,8 +517,14 @@ fn test_multiple_dependency_types() {
     let deps = analyzer.get_direct_dependencies("project-a");
     assert_eq!(deps.len(), 2);
 
-    let direct_count = deps.iter().filter(|d| d.dependency_type == DependencyType::Direct).count();
-    let dev_count = deps.iter().filter(|d| d.dependency_type == DependencyType::Dev).count();
+    let direct_count = deps
+        .iter()
+        .filter(|d| d.dependency_type == DependencyType::Direct)
+        .count();
+    let dev_count = deps
+        .iter()
+        .filter(|d| d.dependency_type == DependencyType::Dev)
+        .count();
 
     assert_eq!(direct_count, 1);
     assert_eq!(dev_count, 1);

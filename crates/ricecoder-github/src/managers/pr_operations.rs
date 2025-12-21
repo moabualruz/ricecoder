@@ -1,7 +1,7 @@
 //! PR Operations - Handles PR updates, comments, and reviews
 
 use crate::errors::{GitHubError, Result};
-use crate::models::{PullRequest, PrStatus};
+use crate::models::{PrStatus, PullRequest};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tracing::{debug, info};
@@ -239,15 +239,16 @@ impl PrOperations {
         }
 
         if let Some(draft) = options.draft {
-            pr.status = if draft { PrStatus::Draft } else { PrStatus::Open };
+            pr.status = if draft {
+                PrStatus::Draft
+            } else {
+                PrStatus::Open
+            };
         }
 
         pr.updated_at = chrono::Utc::now();
 
-        info!(
-            pr_number = pr.number,
-            "PR updated successfully"
-        );
+        info!(pr_number = pr.number, "PR updated successfully");
 
         Ok(())
     }
@@ -266,12 +267,12 @@ impl PrOperations {
 
         // Append comment to PR body (in real implementation, this would be a separate API call)
         pr.body.push_str("\n\n---\n");
-        pr.body.push_str(&format!("**Comment from {}**:\n\n{}", comment.author, comment.body));
+        pr.body.push_str(&format!(
+            "**Comment from {}**:\n\n{}",
+            comment.author, comment.body
+        ));
 
-        info!(
-            pr_number = pr.number,
-            "Comment added to PR"
-        );
+        info!(pr_number = pr.number, "Comment added to PR");
 
         Ok(())
     }
@@ -311,10 +312,7 @@ impl PrOperations {
             review.reviewer, state_str, review.body
         ));
 
-        info!(
-            pr_number = pr.number,
-            "Review added to PR"
-        );
+        info!(pr_number = pr.number, "Review added to PR");
 
         Ok(())
     }
@@ -438,15 +436,13 @@ mod tests {
 
     #[test]
     fn test_progress_update_with_progress() {
-        let update = ProgressUpdate::new("Task 1", "In Progress")
-            .with_progress(50);
+        let update = ProgressUpdate::new("Task 1", "In Progress").with_progress(50);
         assert_eq!(update.progress_percent, 50);
     }
 
     #[test]
     fn test_progress_update_with_progress_capped() {
-        let update = ProgressUpdate::new("Task 1", "In Progress")
-            .with_progress(150);
+        let update = ProgressUpdate::new("Task 1", "In Progress").with_progress(150);
         assert_eq!(update.progress_percent, 100);
     }
 
@@ -558,8 +554,7 @@ mod tests {
             updated_at: chrono::Utc::now(),
         };
 
-        let update = ProgressUpdate::new("Task 1", "In Progress")
-            .with_progress(50);
+        let update = ProgressUpdate::new("Task 1", "In Progress").with_progress(50);
         PrOperations::add_progress_update(&mut pr, update).unwrap();
         assert!(pr.body.contains("Task 1"));
         assert!(pr.body.contains("50%"));

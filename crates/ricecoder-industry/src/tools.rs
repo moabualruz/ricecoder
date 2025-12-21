@@ -19,7 +19,10 @@ pub trait IndustryTool: Send + Sync {
     fn capabilities(&self) -> Vec<ToolCapability>;
 
     /// Execute tool with given parameters
-    async fn execute(&self, params: HashMap<String, serde_json::Value>) -> IndustryResult<serde_json::Value>;
+    async fn execute(
+        &self,
+        params: HashMap<String, serde_json::Value>,
+    ) -> IndustryResult<serde_json::Value>;
 
     /// Get tool configuration schema
     fn config_schema(&self) -> serde_json::Value;
@@ -137,14 +140,21 @@ impl ToolRegistry {
     }
 
     /// Register a tool
-    pub async fn register_tool(&self, tool: Box<dyn IndustryTool>, metadata: ToolMetadata) -> IndustryResult<()> {
+    pub async fn register_tool(
+        &self,
+        tool: Box<dyn IndustryTool>,
+        metadata: ToolMetadata,
+    ) -> IndustryResult<()> {
         let name = tool.name().to_string();
 
         // Validate metadata matches tool
         if metadata.name != name {
             return Err(IndustryError::ConfigError {
                 field: "metadata.name".to_string(),
-                message: format!("Metadata name '{}' does not match tool name '{}'", metadata.name, name),
+                message: format!(
+                    "Metadata name '{}' does not match tool name '{}'",
+                    metadata.name, name
+                ),
             });
         }
 
@@ -201,10 +211,12 @@ impl ToolRegistry {
         params: HashMap<String, serde_json::Value>,
     ) -> IndustryResult<ToolExecutionResult> {
         let tools = self.tools.read().await;
-        let tool = tools.get(tool_name).ok_or_else(|| IndustryError::ConfigError {
-            field: "tool_name".to_string(),
-            message: format!("Tool '{}' not found", tool_name),
-        })?;
+        let tool = tools
+            .get(tool_name)
+            .ok_or_else(|| IndustryError::ConfigError {
+                field: "tool_name".to_string(),
+                message: format!("Tool '{}' not found", tool_name),
+            })?;
 
         // Validate parameters
         tool.validate_params(&params)?;
@@ -240,10 +252,12 @@ impl ToolRegistry {
         config: &HashMap<String, serde_json::Value>,
     ) -> IndustryResult<Vec<ConfigValidationError>> {
         let metadata = self.metadata.read().await;
-        let tool_meta = metadata.get(tool_name).ok_or_else(|| IndustryError::ConfigError {
-            field: "tool_name".to_string(),
-            message: format!("Tool '{}' not found", tool_name),
-        })?;
+        let tool_meta = metadata
+            .get(tool_name)
+            .ok_or_else(|| IndustryError::ConfigError {
+                field: "tool_name".to_string(),
+                message: format!("Tool '{}' not found", tool_name),
+            })?;
 
         let mut errors = Vec::new();
 

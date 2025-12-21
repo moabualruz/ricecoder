@@ -20,10 +20,19 @@ impl ParserRegistry {
     /// Create a new parser registry with default parsers
     pub fn new() -> Self {
         let mut parsers = HashMap::new();
-        parsers.insert("json".to_string(), Arc::new(JsonKeybindParser) as Arc<dyn KeybindParser>);
-        parsers.insert("markdown".to_string(), Arc::new(MarkdownKeybindParser) as Arc<dyn KeybindParser>);
-        parsers.insert("md".to_string(), Arc::new(MarkdownKeybindParser) as Arc<dyn KeybindParser>);
-        
+        parsers.insert(
+            "json".to_string(),
+            Arc::new(JsonKeybindParser) as Arc<dyn KeybindParser>,
+        );
+        parsers.insert(
+            "markdown".to_string(),
+            Arc::new(MarkdownKeybindParser) as Arc<dyn KeybindParser>,
+        );
+        parsers.insert(
+            "md".to_string(),
+            Arc::new(MarkdownKeybindParser) as Arc<dyn KeybindParser>,
+        );
+
         ParserRegistry { parsers }
     }
 
@@ -40,9 +49,11 @@ impl ParserRegistry {
     /// Auto-detect format and parse content
     pub fn parse_auto(&self, content: &str) -> Result<Vec<Keybind>, ParseError> {
         // Try JSON first
-        if let Ok(keybinds) = self.get_parser("json")
+        if let Ok(keybinds) = self
+            .get_parser("json")
             .ok_or_else(|| ParseError::InvalidJson("No JSON parser available".to_string()))?
-            .parse(content) {
+            .parse(content)
+        {
             return Ok(keybinds);
         }
 
@@ -54,7 +65,8 @@ impl ParserRegistry {
 
     /// Parse content with explicit format
     pub fn parse(&self, content: &str, format: &str) -> Result<Vec<Keybind>, ParseError> {
-        let parser = self.get_parser(format)
+        let parser = self
+            .get_parser(format)
             .ok_or_else(|| ParseError::InvalidJson(format!("Unknown format: {}", format)))?;
         parser.parse(content)
     }
@@ -71,8 +83,8 @@ pub struct JsonKeybindParser;
 
 impl KeybindParser for JsonKeybindParser {
     fn parse(&self, content: &str) -> Result<Vec<Keybind>, ParseError> {
-        let value: serde_json::Value = serde_json::from_str(content)
-            .map_err(|e| ParseError::InvalidJson(e.to_string()))?;
+        let value: serde_json::Value =
+            serde_json::from_str(content).map_err(|e| ParseError::InvalidJson(e.to_string()))?;
 
         let keybinds_array = value
             .get("keybinds")
@@ -81,12 +93,11 @@ impl KeybindParser for JsonKeybindParser {
 
         let mut keybinds = Vec::new();
         for (idx, item) in keybinds_array.iter().enumerate() {
-            let keybind: Keybind = serde_json::from_value(item.clone()).map_err(|e| {
-                ParseError::LineError {
+            let keybind: Keybind =
+                serde_json::from_value(item.clone()).map_err(|e| ParseError::LineError {
                     line: idx + 1,
                     message: e.to_string(),
-                }
-            })?;
+                })?;
 
             // Validate required fields
             if keybind.action_id.is_empty() {
@@ -150,10 +161,12 @@ fn parse_markdown_entry(
     line_num: usize,
 ) -> Result<Keybind, ParseError> {
     // Remove leading "- `"
-    let content = line.strip_prefix("- `").ok_or_else(|| ParseError::LineError {
-        line: line_num,
-        message: "Invalid markdown format".to_string(),
-    })?;
+    let content = line
+        .strip_prefix("- `")
+        .ok_or_else(|| ParseError::LineError {
+            line: line_num,
+            message: "Invalid markdown format".to_string(),
+        })?;
 
     // Find the closing backtick
     let backtick_pos = content.find('`').ok_or_else(|| ParseError::LineError {
@@ -189,5 +202,3 @@ fn parse_markdown_entry(
         contexts: Vec::new(),
     })
 }
-
-

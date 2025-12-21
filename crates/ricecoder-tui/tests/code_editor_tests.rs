@@ -26,7 +26,11 @@ mod tests {
     #[test]
     fn test_code_editor_set_lines() {
         let mut editor = CodeEditor::new();
-        let lines = vec!["fn main() {".to_string(), "    println!(\"Hello\");".to_string(), "}".to_string()];
+        let lines = vec![
+            "fn main() {".to_string(),
+            "    println!(\"Hello\");".to_string(),
+            "}".to_string(),
+        ];
         editor.set_lines(lines.clone());
         assert_eq!(editor.lines(), lines.as_slice());
     }

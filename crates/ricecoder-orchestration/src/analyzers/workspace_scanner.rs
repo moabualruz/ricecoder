@@ -25,7 +25,10 @@ impl WorkspaceScanner {
     ///
     /// A new WorkspaceScanner instance
     pub fn new(workspace_root: PathBuf) -> Self {
-        debug!("Creating WorkspaceScanner for workspace: {:?}", workspace_root);
+        debug!(
+            "Creating WorkspaceScanner for workspace: {:?}",
+            workspace_root
+        );
         Self { workspace_root }
     }
 
@@ -208,7 +211,7 @@ impl WorkspaceScanner {
                         return version.to_string();
                     }
                 }
-                
+
                 // Fallback to line-by-line parsing
                 for line in content.lines() {
                     if line.contains("\"version\"") && line.contains(":") {
@@ -218,7 +221,10 @@ impl WorkspaceScanner {
                                 .trim_matches(',')
                                 .trim_matches('"')
                                 .to_string();
-                            if !version.is_empty() && !version.contains('{') && !version.contains('}') {
+                            if !version.is_empty()
+                                && !version.contains('{')
+                                && !version.contains('}')
+                            {
                                 debug!("Extracted Node.js version: {}", version);
                                 return version;
                             }
@@ -363,8 +369,11 @@ mod tests {
         // Create a Rust project
         let rust_project = projects_dir.join("rust-project");
         std::fs::create_dir(&rust_project).expect("failed to create rust project");
-        std::fs::write(rust_project.join("Cargo.toml"), "[package]\nname = \"test\"")
-            .expect("failed to write Cargo.toml");
+        std::fs::write(
+            rust_project.join("Cargo.toml"),
+            "[package]\nname = \"test\"",
+        )
+        .expect("failed to write Cargo.toml");
 
         let scanner = WorkspaceScanner::new(temp_dir.path().to_path_buf());
         let projects = scanner.scan_workspace().await.expect("scan failed");
@@ -394,11 +403,8 @@ mod tests {
     async fn test_extract_nodejs_version() {
         let temp_dir = TempDir::new().expect("failed to create temp dir");
         let package_json = temp_dir.path().join("package.json");
-        std::fs::write(
-            &package_json,
-            r#"{"name": "test", "version": "1.0.0"}"#,
-        )
-        .expect("failed to write package.json");
+        std::fs::write(&package_json, r#"{"name": "test", "version": "1.0.0"}"#)
+            .expect("failed to write package.json");
 
         let scanner = WorkspaceScanner::new(temp_dir.path().to_path_buf());
         let version = scanner.extract_nodejs_version(&package_json).await;
@@ -464,7 +470,10 @@ mod tests {
             std::fs::create_dir(&project_dir).expect("failed to create project dir");
             std::fs::write(
                 project_dir.join("Cargo.toml"),
-                format!("[package]\nname = \"project-{}\"\nversion = \"0.{}.0\"\n", i, i),
+                format!(
+                    "[package]\nname = \"project-{}\"\nversion = \"0.{}.0\"\n",
+                    i, i
+                ),
             )
             .expect("failed to write Cargo.toml");
         }
@@ -488,8 +497,11 @@ mod tests {
         // Create a Rust project
         let rust_project = projects_dir.join("rust-project");
         std::fs::create_dir(&rust_project).expect("failed to create rust project");
-        std::fs::write(rust_project.join("Cargo.toml"), "[package]\nname = \"test\"")
-            .expect("failed to write Cargo.toml");
+        std::fs::write(
+            rust_project.join("Cargo.toml"),
+            "[package]\nname = \"test\"",
+        )
+        .expect("failed to write Cargo.toml");
 
         // Create a Node.js project
         let node_project = projects_dir.join("node-project");

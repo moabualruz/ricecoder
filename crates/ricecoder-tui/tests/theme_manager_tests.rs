@@ -1,5 +1,5 @@
-use ricecoder_tui::{ThemeManager, Theme, TuiConfig};
-use ricecoder_storage::{ThemeStorage, ThemePreference};
+use ricecoder_storage::{ThemePreference, ThemeStorage};
+use ricecoder_tui::{Theme, ThemeManager, TuiConfig};
 use std::sync::Mutex;
 use tempfile::TempDir;
 
@@ -143,7 +143,7 @@ fn test_reset_colors() {
     // but actually the test in src used internal access. Here we must use public API.
     // Wait, ThemeManager exposes public methods. But it doesn't expose a way to MODIFY the current theme's fields directly
     // unless we switch to a modified theme.)
-    
+
     let mut theme = manager.current().unwrap();
     theme.primary = ricecoder_tui::style::Color::new(255, 0, 0);
     manager.switch_to(theme).unwrap();
@@ -299,7 +299,9 @@ fn test_delete_custom_theme_from_storage() {
         ).unwrap();
 
         let manager = ThemeManager::new();
-        manager.delete_custom_theme_from_storage("to_delete").unwrap();
+        manager
+            .delete_custom_theme_from_storage("to_delete")
+            .unwrap();
 
         // Verify it was deleted
         assert!(!ThemeStorage::custom_theme_exists("to_delete").unwrap());

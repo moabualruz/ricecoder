@@ -23,10 +23,7 @@ pub enum VirtualNode {
         children: Vec<VirtualNode>,
     },
     /// Paragraph widget
-    Paragraph {
-        text: String,
-        alignment: Alignment,
-    },
+    Paragraph { text: String, alignment: Alignment },
     /// List widget
     List {
         items: Vec<String>,
@@ -86,9 +83,7 @@ pub enum RenderOperation {
         component: VirtualNode,
     },
     /// Remove component
-    RemoveComponent {
-        component_id: String,
-    },
+    RemoveComponent { component_id: String },
 }
 
 /// Render batch for efficient updates
@@ -185,7 +180,10 @@ where
 
     /// Scroll to specific position
     pub fn scroll_to(&mut self, offset: usize) {
-        let max_offset = self.scroll.total_items.saturating_sub(self.scroll.visible_items);
+        let max_offset = self
+            .scroll
+            .total_items
+            .saturating_sub(self.scroll.visible_items);
         self.scroll.offset = offset.min(max_offset);
         self.evict_cache();
     }
@@ -291,7 +289,11 @@ impl VirtualRenderer {
     }
 
     /// Diff two virtual DOM trees and return minimal operations
-    fn diff_trees(&mut self, old_tree: &VirtualNode, new_tree: &VirtualNode) -> Vec<RenderOperation> {
+    fn diff_trees(
+        &mut self,
+        old_tree: &VirtualNode,
+        new_tree: &VirtualNode,
+    ) -> Vec<RenderOperation> {
         let mut operations = Vec::new();
 
         match (old_tree, new_tree) {
@@ -310,8 +312,18 @@ impl VirtualRenderer {
             }
 
             // Component with same ID but different props
-            (VirtualNode::Component { id: old_id, props: old_props, .. },
-             VirtualNode::Component { id: new_id, props: new_props, .. }) if old_id == new_id => {
+            (
+                VirtualNode::Component {
+                    id: old_id,
+                    props: old_props,
+                    ..
+                },
+                VirtualNode::Component {
+                    id: new_id,
+                    props: new_props,
+                    ..
+                },
+            ) if old_id == new_id => {
                 if old_props != new_props {
                     operations.push(RenderOperation::UpdateComponent {
                         component_id: old_id.clone(),
@@ -349,7 +361,8 @@ impl VirtualRenderer {
 
         // Return batches older than 16ms (for 60 FPS)
         let cutoff = Instant::now() - Duration::from_millis(16);
-        let (ready, pending): (Vec<_>, Vec<_>) = self.batch_queue
+        let (ready, pending): (Vec<_>, Vec<_>) = self
+            .batch_queue
             .drain(..)
             .partition(|batch| batch.timestamp <= cutoff);
 
@@ -541,4 +554,3 @@ pub mod memory_efficient {
         }
     }
 }
-

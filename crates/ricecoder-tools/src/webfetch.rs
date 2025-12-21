@@ -102,8 +102,11 @@ impl WebfetchTool {
         match parsed_url.scheme() {
             "http" | "https" => {}
             _ => {
-                return Err(ToolError::new("INVALID_SCHEME", "Only http and https schemes are supported")
-                    .with_suggestion("Use http:// or https:// URLs"))
+                return Err(ToolError::new(
+                    "INVALID_SCHEME",
+                    "Only http and https schemes are supported",
+                )
+                .with_suggestion("Use http:// or https:// URLs"))
             }
         }
 
@@ -111,8 +114,10 @@ impl WebfetchTool {
         if let Some(host) = parsed_url.host_str() {
             // Reject localhost
             if host == "localhost" || host == "127.0.0.1" || host == "::1" {
-                return Err(ToolError::new("SSRF_PREVENTION", "Localhost URLs are not allowed")
-                    .with_suggestion("Use a public URL instead"));
+                return Err(
+                    ToolError::new("SSRF_PREVENTION", "Localhost URLs are not allowed")
+                        .with_suggestion("Use a public URL instead"),
+                );
             }
 
             // Try to parse as IP address and check if private
@@ -123,9 +128,12 @@ impl WebfetchTool {
                 };
 
                 if is_private {
-                    return Err(ToolError::new("SSRF_PREVENTION", "Private IP addresses are not allowed")
-                        .with_details(format!("IP: {}", ip))
-                        .with_suggestion("Use a public URL instead"));
+                    return Err(ToolError::new(
+                        "SSRF_PREVENTION",
+                        "Private IP addresses are not allowed",
+                    )
+                    .with_details(format!("IP: {}", ip))
+                    .with_suggestion("Use a public URL instead"));
                 }
             }
         }
@@ -211,9 +219,12 @@ impl WebfetchTool {
             }
             Err(_) => {
                 let duration_ms = start.elapsed().as_millis() as u64;
-                let error = ToolError::new("TIMEOUT", "Webfetch operation exceeded 10 second timeout")
-                    .with_details(format!("URL: {}", input.url))
-                    .with_suggestion("Try again with a different URL or check your network connection");
+                let error =
+                    ToolError::new("TIMEOUT", "Webfetch operation exceeded 10 second timeout")
+                        .with_details(format!("URL: {}", input.url))
+                        .with_suggestion(
+                            "Try again with a different URL or check your network connection",
+                        );
                 ToolResult::err(error, duration_ms, "builtin")
             }
         }
@@ -236,7 +247,10 @@ impl WebfetchToolWithMcp {
     /// Create a new webfetch tool with MCP integration
     pub fn new(mcp_client: Option<ricecoder_mcp::MCPClient>) -> Result<Self, ToolError> {
         let builtin = WebfetchTool::new()?;
-        Ok(Self { builtin, mcp_client })
+        Ok(Self {
+            builtin,
+            mcp_client,
+        })
     }
 
     /// Check if MCP server is available for webfetch
@@ -271,6 +285,3 @@ impl WebfetchToolWithMcp {
         self.builtin.fetch(input).await
     }
 }
-
-
-

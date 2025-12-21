@@ -1,4 +1,4 @@
-use ricecoder_tui::style::{Color, Theme, TextStyle, ProgressIndicator, ColorSupport};
+use ricecoder_tui::style::{Color, ColorSupport, ProgressIndicator, TextStyle, Theme};
 
 #[test]
 fn test_color_creation() {

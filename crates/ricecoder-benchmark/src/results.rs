@@ -106,14 +106,18 @@ impl BenchmarkResults {
         }
 
         // Find maximum attempts
-        let max_attempts = self.exercise_results.iter()
+        let max_attempts = self
+            .exercise_results
+            .iter()
             .map(|r| r.attempts)
             .max()
             .unwrap_or(0);
 
         self.pass_rates = vec![];
         for attempt in 1..=max_attempts {
-            let passed_count = self.exercise_results.iter()
+            let passed_count = self
+                .exercise_results
+                .iter()
                 .filter(|r| r.passed && r.attempts <= attempt)
                 .count();
             let pass_rate = (passed_count as f64 / self.completed_exercises as f64) * 100.0;

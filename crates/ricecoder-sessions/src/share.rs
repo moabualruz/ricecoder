@@ -5,14 +5,14 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
-use uuid::Uuid;
 use url::Url;
+use uuid::Uuid;
 
 use ricecoder_domain::value_objects::ValidUrl;
 use ricecoder_security::access_control::{AccessControl, Permission, Principal, ResourceType};
-use ricecoder_security::audit::{AuditLogger, AuditEventType, AuditEvent};
+use ricecoder_security::audit::{AuditEvent, AuditEventType, AuditLogger};
 use ricecoder_security::compliance::DataType;
-use ricecoder_security::encryption::{KeyManager, EncryptedData};
+use ricecoder_security::encryption::{EncryptedData, KeyManager};
 
 use crate::{Session, SessionError, SessionResult};
 
@@ -102,8 +102,6 @@ impl ShareService {
         self.key_manager = Some(key_manager);
     }
 
-
-
     /// Generate a share link for a session with optional expiration
     pub fn generate_share_link(
         &self,
@@ -132,9 +130,12 @@ impl ShareService {
             };
 
             // Check if user has permission to share sessions
-            if !self.access_control.has_permission(&principal, &Permission::SessionShare) {
+            if !self
+                .access_control
+                .has_permission(&principal, &Permission::SessionShare)
+            {
                 return Err(SessionError::PermissionDenied(
-                    "User does not have permission to share sessions".to_string()
+                    "User does not have permission to share sessions".to_string(),
                 ));
             }
 
@@ -143,28 +144,35 @@ impl ShareService {
                 // Check if user can create shares with this data classification
                 match policy.data_classification {
                     DataClassification::Restricted => {
-                    if !self.access_control.has_permission(&principal, &Permission::Admin) {
-                        return Err(SessionError::PermissionDenied(
-                            "Only administrators can share restricted data".to_string()
-                        ));
-                    }
+                        if !self
+                            .access_control
+                            .has_permission(&principal, &Permission::Admin)
+                        {
+                            return Err(SessionError::PermissionDenied(
+                                "Only administrators can share restricted data".to_string(),
+                            ));
+                        }
                     }
                     DataClassification::Confidential => {
-                    if !self.access_control.has_any_permission(&principal, &[Permission::Admin, Permission::SessionShare]) {
-                        return Err(SessionError::PermissionDenied(
-                            "Insufficient permissions for sharing confidential data".to_string()
-                        ));
-                    }
+                        if !self.access_control.has_any_permission(
+                            &principal,
+                            &[Permission::Admin, Permission::SessionShare],
+                        ) {
+                            return Err(SessionError::PermissionDenied(
+                                "Insufficient permissions for sharing confidential data"
+                                    .to_string(),
+                            ));
+                        }
                     }
                     _ => {} // Public and Internal allow sharing with SessionShare permission
                 }
             }
-            } else {
-                // Anonymous sharing not allowed for enterprise features
-                return Err(SessionError::PermissionDenied(
-                    "User authentication required for session sharing".to_string()
-                ));
-            }
+        } else {
+            // Anonymous sharing not allowed for enterprise features
+            return Err(SessionError::PermissionDenied(
+                "User authentication required for session sharing".to_string(),
+            ));
+        }
 
         let share_id = Uuid::new_v4().to_string();
         let now = Utc::now();
@@ -189,14 +197,16 @@ impl ShareService {
         let effective_expires_at = if let Some(ref policy) = effective_policy {
             if let Some(max_days) = policy.max_expiration_days {
                 let max_expires = now + Duration::days(max_days);
-                expires_in.map(|duration| {
-                    let requested_expires = now + duration;
-                    if requested_expires > max_expires {
-                        max_expires
-                    } else {
-                        requested_expires
-                    }
-                }).or(Some(max_expires))
+                expires_in
+                    .map(|duration| {
+                        let requested_expires = now + duration;
+                        if requested_expires > max_expires {
+                            max_expires
+                        } else {
+                            requested_expires
+                        }
+                    })
+                    .or(Some(max_expires))
             } else {
                 expires_in.map(|duration| now + duration)
             }
@@ -216,11 +226,13 @@ impl ShareService {
                 "policy": policy,
                 "creator_user_id": creator_user_id
             });
-            let data_str = serde_json::to_string(&session_data)
-                .map_err(|e| SessionError::Invalid(format!("Failed to serialize session data: {}", e)))?;
+            let data_str = serde_json::to_string(&session_data).map_err(|e| {
+                SessionError::Invalid(format!("Failed to serialize session data: {}", e))
+            })?;
 
-            Some(key_manager.encrypt_api_key(&data_str)
-                .map_err(|e| SessionError::Invalid(format!("Failed to encrypt session data: {}", e)))?)
+            Some(key_manager.encrypt_api_key(&data_str).map_err(|e| {
+                SessionError::Invalid(format!("Failed to encrypt session data: {}", e))
+            })?)
         } else {
             None
         };
@@ -303,16 +315,21 @@ impl ShareService {
             .map_err(|e| SessionError::Invalid(format!("Invalid base URL: {}", e)))?;
 
         if url.host_str() != base_url.host_str() {
-            return Err(SessionError::Invalid("Share URL from unauthorized domain".to_string()));
+            return Err(SessionError::Invalid(
+                "Share URL from unauthorized domain".to_string(),
+            ));
         }
 
         // Extract share ID from path
-        let path_segments: Vec<&str> = url.path_segments()
+        let path_segments: Vec<&str> = url
+            .path_segments()
             .ok_or_else(|| SessionError::Invalid("Invalid share URL path".to_string()))?
             .collect();
 
         if path_segments.len() != 2 || path_segments[0] != "share" {
-            return Err(SessionError::Invalid("Invalid share URL format".to_string()));
+            return Err(SessionError::Invalid(
+                "Invalid share URL format".to_string(),
+            ));
         }
 
         let share_id = path_segments[1].to_string();
@@ -330,7 +347,8 @@ impl ShareService {
         let share = self.get_share(&share_id)?;
 
         // Record URL access for analytics
-        self.analytics.record_url_accessed(&share_id, &share.session_id, &share.permissions);
+        self.analytics
+            .record_url_accessed(&share_id, &share.session_id, &share.permissions);
 
         Ok(share)
     }
@@ -398,7 +416,8 @@ impl ShareService {
         }
 
         // Track analytics
-        self.analytics.record_share_accessed(&session.id, permissions);
+        self.analytics
+            .record_share_accessed(&session.id, permissions);
 
         shared_session
     }
@@ -451,7 +470,11 @@ impl ShareService {
     }
 
     /// Revoke a share by ID
-    pub fn revoke_share(&self, share_id: &str, revoker_user_id: Option<String>) -> SessionResult<()> {
+    pub fn revoke_share(
+        &self,
+        share_id: &str,
+        revoker_user_id: Option<String>,
+    ) -> SessionResult<()> {
         let mut shares = self
             .shares
             .lock()
@@ -608,17 +631,26 @@ impl ShareService {
     }
 
     /// Validate enterprise sharing policy
-    pub fn validate_enterprise_policy(&self, policy: &EnterpriseSharingPolicy) -> SessionResult<()> {
+    pub fn validate_enterprise_policy(
+        &self,
+        policy: &EnterpriseSharingPolicy,
+    ) -> SessionResult<()> {
         // Ensure policy doesn't allow excessively long expirations
         if let Some(max_days) = policy.max_expiration_days {
-            if max_days > 365 { // Max 1 year
-                return Err(SessionError::Invalid("Maximum expiration cannot exceed 365 days".to_string()));
+            if max_days > 365 {
+                // Max 1 year
+                return Err(SessionError::Invalid(
+                    "Maximum expiration cannot exceed 365 days".to_string(),
+                ));
             }
         }
 
         // Ensure data classification is appropriate
         match policy.data_classification {
-            DataClassification::Public | DataClassification::Internal | DataClassification::Confidential | DataClassification::Restricted => {
+            DataClassification::Public
+            | DataClassification::Internal
+            | DataClassification::Confidential
+            | DataClassification::Restricted => {
                 // Valid classifications
             }
         }
@@ -650,17 +682,23 @@ impl ShareService {
         };
 
         // Apply user role-based governance
-        if self.access_control.has_permission(&principal, &Permission::Admin) {
+        if self
+            .access_control
+            .has_permission(&principal, &Permission::Admin)
+        {
             // Admins can share with longer expirations and higher classifications
             policy.max_expiration_days = Some(365);
             policy.data_classification = DataClassification::Confidential;
-        } else if self.access_control.has_permission(&principal, &Permission::SessionShare) {
+        } else if self
+            .access_control
+            .has_permission(&principal, &Permission::SessionShare)
+        {
             // Regular users with sharing permission
             policy.max_expiration_days = Some(90);
             policy.data_classification = DataClassification::Internal;
         } else {
             return Err(SessionError::PermissionDenied(
-                "User does not have permission to share sessions".to_string()
+                "User does not have permission to share sessions".to_string(),
             ));
         }
 
@@ -677,16 +715,24 @@ impl ShareService {
             // Validate requested policy against user's permissions
             match requested.data_classification {
                 DataClassification::Restricted => {
-                    if !self.access_control.has_permission(&principal, &Permission::Admin) {
+                    if !self
+                        .access_control
+                        .has_permission(&principal, &Permission::Admin)
+                    {
                         return Err(SessionError::PermissionDenied(
-                            "Only administrators can set restricted data classification".to_string()
+                            "Only administrators can set restricted data classification"
+                                .to_string(),
                         ));
                     }
                 }
                 DataClassification::Confidential => {
-                    if !self.access_control.has_any_permission(&principal, &[Permission::Admin, Permission::SessionShare]) {
+                    if !self.access_control.has_any_permission(
+                        &principal,
+                        &[Permission::Admin, Permission::SessionShare],
+                    ) {
                         return Err(SessionError::PermissionDenied(
-                            "Insufficient permissions for confidential data classification".to_string()
+                            "Insufficient permissions for confidential data classification"
+                                .to_string(),
                         ));
                     }
                 }
@@ -858,10 +904,12 @@ impl ShareAnalytics {
     fn record_share_created(&self, share: &SessionShare) {
         self.total_shares_created.fetch_add(1, Ordering::Relaxed);
 
-        let perm_key = format!("ro={},hist={},ctx={}",
+        let perm_key = format!(
+            "ro={},hist={},ctx={}",
             share.permissions.read_only,
             share.permissions.include_history,
-            share.permissions.include_context);
+            share.permissions.include_context
+        );
 
         if let Ok(mut perms) = self.shares_by_permissions.lock() {
             *perms.entry(perm_key).or_insert(0) += 1;
@@ -872,7 +920,10 @@ impl ShareAnalytics {
             if let Some(ref mut enterprise_metrics) = *metrics {
                 if let Some(ref policy) = share.policy {
                     let classification_key = format!("{:?}", policy.data_classification);
-                    *enterprise_metrics.shares_by_classification.entry(classification_key).or_insert(0) += 1;
+                    *enterprise_metrics
+                        .shares_by_classification
+                        .entry(classification_key)
+                        .or_insert(0) += 1;
                 }
             }
         }
@@ -902,7 +953,12 @@ impl ShareAnalytics {
         });
     }
 
-    fn record_url_accessed(&self, share_id: &str, session_id: &str, permissions: &SharePermissions) {
+    fn record_url_accessed(
+        &self,
+        share_id: &str,
+        session_id: &str,
+        permissions: &SharePermissions,
+    ) {
         self.total_url_accesses.fetch_add(1, Ordering::Relaxed);
         self.record_share_accessed(session_id, permissions);
     }
@@ -938,26 +994,33 @@ impl ShareAnalytics {
         let total_accesses = self.total_share_accesses.load(Ordering::Relaxed);
         let total_url_accesses = self.total_url_accesses.load(Ordering::Relaxed);
 
-        let shares_by_permissions = self.shares_by_permissions.lock()
+        let shares_by_permissions = self
+            .shares_by_permissions
+            .lock()
             .map(|perms| perms.clone())
             .unwrap_or_default();
 
-        let session_counts = self.session_access_counts.lock()
+        let session_counts = self
+            .session_access_counts
+            .lock()
             .map(|counts| {
-                let mut vec: Vec<(String, u64)> = counts.iter()
-                    .map(|(k, v)| (k.clone(), *v))
-                    .collect();
+                let mut vec: Vec<(String, u64)> =
+                    counts.iter().map(|(k, v)| (k.clone(), *v)).collect();
                 vec.sort_by(|a, b| b.1.cmp(&a.1));
                 vec.truncate(10); // Top 10
                 vec
             })
             .unwrap_or_default();
 
-        let recent_activity = self.recent_activity.lock()
+        let recent_activity = self
+            .recent_activity
+            .lock()
             .map(|activities| activities.clone())
             .unwrap_or_default();
 
-        let enterprise_metrics = self.enterprise_metrics.lock()
+        let enterprise_metrics = self
+            .enterprise_metrics
+            .lock()
             .map(|metrics| metrics.clone())
             .unwrap_or_default();
 

@@ -2,8 +2,8 @@
 
 use super::Command;
 use crate::error::CliResult;
-use async_trait::async_trait;
 use crate::output::OutputStyle;
+use async_trait::async_trait;
 
 /// Display version information
 #[derive(Default)]

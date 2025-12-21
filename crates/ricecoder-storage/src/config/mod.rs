@@ -20,7 +20,7 @@ pub use hot_reload::{ConfigWatcher, HotReloadManager};
 pub use loader::ConfigLoader;
 pub use merge::ConfigMerger;
 pub use modes::StorageModeHandler;
-pub use validation::{ConfigValidator, ValidationError, ConfigBackupManager};
+pub use validation::{ConfigBackupManager, ConfigValidator, ValidationError};
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -156,5 +156,3 @@ impl Default for Config {
         }
     }
 }
-
-

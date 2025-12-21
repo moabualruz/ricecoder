@@ -24,7 +24,9 @@ pub trait WorkflowEngineMcpExt {
         timeout_seconds: Option<u64>,
         user_id: Option<&str>,
         session_id: Option<&str>,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = WorkflowResult<serde_json::Value>> + Send + '_>>;
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = WorkflowResult<serde_json::Value>> + Send + '_>,
+    >;
 }
 
 #[cfg(feature = "mcp")]
@@ -37,8 +39,17 @@ impl WorkflowEngineMcpExt for WorkflowEngine {
         timeout_seconds: Option<u64>,
         user_id: Option<&str>,
         session_id: Option<&str>,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = WorkflowResult<serde_json::Value>> + Send + '_>> {
-        Box::pin(self.execute_mcp_tool(tool_id, parameters, server_id, timeout_seconds, user_id, session_id))
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = WorkflowResult<serde_json::Value>> + Send + '_>,
+    > {
+        Box::pin(self.execute_mcp_tool(
+            tool_id,
+            parameters,
+            server_id,
+            timeout_seconds,
+            user_id,
+            session_id,
+        ))
     }
 }
 
@@ -81,7 +92,10 @@ impl WorkflowEngine {
 
     /// Create a new workflow engine with MCP integration
     #[cfg(feature = "mcp")]
-    pub fn with_mcp_integration(session_manager: SessionManager, mcp_tool_invoker: Arc<dyn ToolInvoker>) -> Self {
+    pub fn with_mcp_integration(
+        session_manager: SessionManager,
+        mcp_tool_invoker: Arc<dyn ToolInvoker>,
+    ) -> Self {
         WorkflowEngine {
             active_workflows: HashMap::new(),
             session_manager: Arc::new(RwLock::new(session_manager)),
@@ -106,9 +120,10 @@ impl WorkflowEngine {
         user_id: Option<&str>,
         session_id: Option<&str>,
     ) -> WorkflowResult<serde_json::Value> {
-        let invoker = self.mcp_tool_invoker.as_ref().ok_or_else(|| {
-            WorkflowError::Invalid("MCP tool invoker not configured".to_string())
-        })?;
+        let invoker = self
+            .mcp_tool_invoker
+            .as_ref()
+            .ok_or_else(|| WorkflowError::Invalid("MCP tool invoker not configured".to_string()))?;
 
         // Convert parameters to the expected format
         let params = parameters.into_iter().collect();
@@ -129,7 +144,10 @@ impl WorkflowEngine {
                     "Failed to execute MCP tool '{}' in workflow context: {} (user: {:?}, session: {:?})",
                     tool_id, e, user_id, session_id
                 );
-                Err(WorkflowError::Execution(format!("MCP tool execution failed: {}", e)))
+                Err(WorkflowError::Execution(format!(
+                    "MCP tool execution failed: {}",
+                    e
+                )))
             }
         }
     }
@@ -149,7 +167,8 @@ impl WorkflowEngine {
             ricecoder_sessions::SessionMode::Code,
         );
         let mut session_manager = self.session_manager.write().await;
-        session_manager.create_session(session_name, context)
+        session_manager
+            .create_session(session_name, context)
             .map_err(|e| WorkflowError::Invalid(format!("Failed to create session: {}", e)))?;
 
         self.active_workflows.insert(execution_id.clone(), state);
@@ -192,7 +211,10 @@ impl WorkflowEngine {
     }
 
     /// Load workflow state from session
-    async fn load_workflow_state(&self, execution_id: &str) -> WorkflowResult<Option<WorkflowState>> {
+    async fn load_workflow_state(
+        &self,
+        execution_id: &str,
+    ) -> WorkflowResult<Option<WorkflowState>> {
         let session_name = format!("workflow-{}", execution_id);
         let session_manager = self.session_manager.read().await;
 

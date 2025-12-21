@@ -2,9 +2,7 @@
 //!
 //! Tests specific examples and edge cases for issue parsing, tracking, and updates
 
-use ricecoder_github::{
-    IssueManager, IssueOperations, IssueStatus, Issue, IssueProgressUpdate,
-};
+use ricecoder_github::{Issue, IssueManager, IssueOperations, IssueProgressUpdate, IssueStatus};
 
 // ============================================================================
 // IssueManager Unit Tests
@@ -12,11 +10,7 @@ use ricecoder_github::{
 
 #[test]
 fn test_parse_issue_input_with_plain_number() {
-    let manager = IssueManager::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let manager = IssueManager::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     assert_eq!(manager.parse_issue_input("123").unwrap(), 123);
     assert_eq!(manager.parse_issue_input("999999").unwrap(), 999999);
@@ -25,11 +19,7 @@ fn test_parse_issue_input_with_plain_number() {
 
 #[test]
 fn test_parse_issue_input_with_github_url() {
-    let manager = IssueManager::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let manager = IssueManager::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let url = "https://github.com/owner/repo/issues/456";
     assert_eq!(manager.parse_issue_input(url).unwrap(), 456);
@@ -37,11 +27,7 @@ fn test_parse_issue_input_with_github_url() {
 
 #[test]
 fn test_parse_issue_input_with_hash_format() {
-    let manager = IssueManager::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let manager = IssueManager::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let input = "owner/repo#789";
     assert_eq!(manager.parse_issue_input(input).unwrap(), 789);
@@ -49,11 +35,7 @@ fn test_parse_issue_input_with_hash_format() {
 
 #[test]
 fn test_parse_issue_input_invalid_format() {
-    let manager = IssueManager::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let manager = IssueManager::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     assert!(manager.parse_issue_input("invalid").is_err());
     assert!(manager.parse_issue_input("abc123").is_err());
@@ -62,11 +44,7 @@ fn test_parse_issue_input_invalid_format() {
 
 #[test]
 fn test_extract_requirements_from_simple_body() {
-    let manager = IssueManager::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let manager = IssueManager::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let body = "Implement user authentication";
     let requirements = manager.extract_requirements(body).unwrap();
@@ -78,11 +56,7 @@ fn test_extract_requirements_from_simple_body() {
 
 #[test]
 fn test_extract_requirements_from_empty_body() {
-    let manager = IssueManager::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let manager = IssueManager::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let body = "";
     let requirements = manager.extract_requirements(body).unwrap();
@@ -92,11 +66,7 @@ fn test_extract_requirements_from_empty_body() {
 
 #[test]
 fn test_create_implementation_plan_single_requirement() {
-    let manager = IssueManager::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let manager = IssueManager::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let requirements = vec![ricecoder_github::ParsedRequirement {
         id: "REQ-1".to_string(),
@@ -105,7 +75,9 @@ fn test_create_implementation_plan_single_requirement() {
         priority: "HIGH".to_string(),
     }];
 
-    let plan = manager.create_implementation_plan(123, requirements).unwrap();
+    let plan = manager
+        .create_implementation_plan(123, requirements)
+        .unwrap();
 
     assert_eq!(plan.issue_number, 123);
     assert_eq!(plan.tasks.len(), 1);
@@ -115,11 +87,7 @@ fn test_create_implementation_plan_single_requirement() {
 
 #[test]
 fn test_create_implementation_plan_multiple_requirements() {
-    let manager = IssueManager::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let manager = IssueManager::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let requirements = vec![
         ricecoder_github::ParsedRequirement {
@@ -142,7 +110,9 @@ fn test_create_implementation_plan_multiple_requirements() {
         },
     ];
 
-    let plan = manager.create_implementation_plan(456, requirements).unwrap();
+    let plan = manager
+        .create_implementation_plan(456, requirements)
+        .unwrap();
 
     assert_eq!(plan.tasks.len(), 3);
     assert!(plan.estimated_effort > 0);
@@ -152,11 +122,7 @@ fn test_create_implementation_plan_multiple_requirements() {
 
 #[test]
 fn test_format_progress_update_with_percentage() {
-    let manager = IssueManager::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let manager = IssueManager::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let update = IssueProgressUpdate {
         issue_number: 123,
@@ -174,11 +140,7 @@ fn test_format_progress_update_with_percentage() {
 
 #[test]
 fn test_format_progress_update_zero_percent() {
-    let manager = IssueManager::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let manager = IssueManager::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let update = IssueProgressUpdate {
         issue_number: 123,
@@ -194,11 +156,7 @@ fn test_format_progress_update_zero_percent() {
 
 #[test]
 fn test_format_progress_update_complete() {
-    let manager = IssueManager::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let manager = IssueManager::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let update = IssueProgressUpdate {
         issue_number: 123,
@@ -214,11 +172,7 @@ fn test_format_progress_update_complete() {
 
 #[test]
 fn test_format_pr_closure_message() {
-    let manager = IssueManager::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let manager = IssueManager::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let message = manager.format_pr_closure_message(42, "Fix authentication bug");
 
@@ -229,11 +183,7 @@ fn test_format_pr_closure_message() {
 
 #[test]
 fn test_validate_issue_valid() {
-    let manager = IssueManager::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let manager = IssueManager::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let issue = Issue {
         id: 1,
@@ -252,11 +202,7 @@ fn test_validate_issue_valid() {
 
 #[test]
 fn test_validate_issue_empty_title() {
-    let manager = IssueManager::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let manager = IssueManager::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let issue = Issue {
         id: 1,
@@ -275,11 +221,7 @@ fn test_validate_issue_empty_title() {
 
 #[test]
 fn test_validate_issue_empty_body() {
-    let manager = IssueManager::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let manager = IssueManager::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let issue = Issue {
         id: 1,
@@ -302,11 +244,7 @@ fn test_validate_issue_empty_body() {
 
 #[test]
 fn test_create_comment() {
-    let ops = IssueOperations::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let ops = IssueOperations::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let comment = ops.create_comment("Test comment".to_string());
 
@@ -316,11 +254,7 @@ fn test_create_comment() {
 
 #[test]
 fn test_format_progress_comment() {
-    let ops = IssueOperations::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let ops = IssueOperations::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let comment = ops.format_progress_comment("Step 1", 5, 2, "Working on implementation");
 
@@ -332,11 +266,7 @@ fn test_format_progress_comment() {
 
 #[test]
 fn test_format_status_change_comment() {
-    let ops = IssueOperations::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let ops = IssueOperations::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let comment = ops.format_status_change_comment(IssueStatus::Open, IssueStatus::InProgress);
 
@@ -346,11 +276,7 @@ fn test_format_status_change_comment() {
 
 #[test]
 fn test_format_pr_link_comment() {
-    let ops = IssueOperations::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let ops = IssueOperations::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let pr_link = ricecoder_github::PrLink {
         pr_number: 42,
@@ -367,11 +293,7 @@ fn test_format_pr_link_comment() {
 
 #[test]
 fn test_create_pr_closure_link() {
-    let ops = IssueOperations::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let ops = IssueOperations::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let link = ops.create_pr_closure_link(42, "Implement feature".to_string());
 
@@ -382,11 +304,7 @@ fn test_create_pr_closure_link() {
 
 #[test]
 fn test_create_pr_relation_link() {
-    let ops = IssueOperations::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let ops = IssueOperations::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let link = ops.create_pr_relation_link(42, "Related work".to_string());
 
@@ -396,11 +314,7 @@ fn test_create_pr_relation_link() {
 
 #[test]
 fn test_format_closure_message() {
-    let ops = IssueOperations::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let ops = IssueOperations::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let message = ops.format_closure_message(123);
 
@@ -409,11 +323,7 @@ fn test_format_closure_message() {
 
 #[test]
 fn test_validate_comment_valid() {
-    let ops = IssueOperations::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let ops = IssueOperations::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let comment = ricecoder_github::IssueComment {
         body: "Valid comment".to_string(),
@@ -425,11 +335,7 @@ fn test_validate_comment_valid() {
 
 #[test]
 fn test_validate_comment_empty() {
-    let ops = IssueOperations::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let ops = IssueOperations::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let comment = ricecoder_github::IssueComment {
         body: "".to_string(),
@@ -441,11 +347,7 @@ fn test_validate_comment_empty() {
 
 #[test]
 fn test_extract_issue_number_from_closure() {
-    let ops = IssueOperations::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let ops = IssueOperations::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let message = "Closes #123";
     assert_eq!(ops.extract_issue_number_from_closure(message).unwrap(), 123);
@@ -453,11 +355,7 @@ fn test_extract_issue_number_from_closure() {
 
 #[test]
 fn test_extract_issue_number_case_insensitive() {
-    let ops = IssueOperations::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let ops = IssueOperations::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let message = "closes #456";
     assert_eq!(ops.extract_issue_number_from_closure(message).unwrap(), 456);
@@ -465,11 +363,7 @@ fn test_extract_issue_number_case_insensitive() {
 
 #[test]
 fn test_extract_issue_number_invalid() {
-    let ops = IssueOperations::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let ops = IssueOperations::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let message = "No issue here";
     assert!(ops.extract_issue_number_from_closure(message).is_err());

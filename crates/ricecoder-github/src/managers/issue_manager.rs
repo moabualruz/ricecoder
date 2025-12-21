@@ -91,10 +91,7 @@ impl IssueManager {
         }
 
         // Try parsing owner/repo#number format
-        if let Some(captures) = Regex::new(r"#(\d+)")
-            .ok()
-            .and_then(|re| re.captures(input))
-        {
+        if let Some(captures) = Regex::new(r"#(\d+)").ok().and_then(|re| re.captures(input)) {
             if let Ok(number) = captures.get(1).unwrap().as_str().parse::<u32>() {
                 return Ok(number);
             }
@@ -139,12 +136,7 @@ impl IssueManager {
             let req_content = &issue_body[req_start..req_end];
 
             // Extract description (first line after header)
-            let description = req_content
-                .lines()
-                .next()
-                .unwrap_or("")
-                .trim()
-                .to_string();
+            let description = req_content.lines().next().unwrap_or("").trim().to_string();
 
             // Extract acceptance criteria (lines starting with "- ")
             let acceptance_criteria: Vec<String> = criteria_pattern
@@ -240,11 +232,7 @@ impl IssueManager {
              Progress: {}\n\n\
              {}\n\n\
              _Updated at: {}_",
-            status_emoji,
-            status_str,
-            progress_bar,
-            update.message,
-            timestamp
+            status_emoji, status_str, progress_bar, update.message, timestamp
         )
     }
 
@@ -355,7 +343,9 @@ mod tests {
             },
         ];
 
-        let plan = manager.create_implementation_plan(123, requirements).unwrap();
+        let plan = manager
+            .create_implementation_plan(123, requirements)
+            .unwrap();
         assert_eq!(plan.issue_number, 123);
         assert_eq!(plan.tasks.len(), 2);
         assert!(plan.estimated_effort > 0);

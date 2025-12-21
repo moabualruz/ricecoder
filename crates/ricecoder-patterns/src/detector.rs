@@ -127,10 +127,12 @@ impl PatternDetector {
     #[cfg(feature = "parsing")]
     pub async fn detect_in_file(&self, file_path: &Path) -> PatternResult<Vec<DetectedPattern>> {
         // Parse the file
-        let content = std::fs::read_to_string(file_path)
-            .map_err(|e| PatternError::Io(e))?;
+        let content = std::fs::read_to_string(file_path).map_err(|e| PatternError::Io(e))?;
 
-        let tree = self.parser.parse(&content).await
+        let tree = self
+            .parser
+            .parse(&content)
+            .await
             .map_err(|e| PatternError::Parsing(e.to_string()))?;
 
         // Detect patterns in the syntax tree
@@ -138,7 +140,10 @@ impl PatternDetector {
 
         // Design patterns in this file
         if self.config.detect_design {
-            let design_patterns = self.coding_detector.detect_in_tree(&tree, file_path).await?;
+            let design_patterns = self
+                .coding_detector
+                .detect_in_tree(&tree, file_path)
+                .await?;
             patterns.extend(design_patterns);
         }
 

@@ -103,7 +103,11 @@ impl RefactoringProvider for RustRefactoringProvider {
         match refactoring.refactoring_type {
             RefactoringType::Rename => {
                 // Rust rename: use word boundaries to avoid partial matches
-                Self::apply_rust_rename(code, &refactoring.target.symbol, &refactoring.target.symbol)
+                Self::apply_rust_rename(
+                    code,
+                    &refactoring.target.symbol,
+                    &refactoring.target.symbol,
+                )
             }
             _ => Ok(code.to_string()),
         }
@@ -153,7 +157,8 @@ mod tests {
     #[test]
     fn test_rust_provider_analyze() -> Result<()> {
         let provider = RustRefactoringProvider::new();
-        let analysis = provider.analyze_refactoring("fn main() {}", "rust", RefactoringType::Rename)?;
+        let analysis =
+            provider.analyze_refactoring("fn main() {}", "rust", RefactoringType::Rename)?;
 
         assert!(analysis.applicable);
         assert_eq!(analysis.complexity, 4);
@@ -164,7 +169,8 @@ mod tests {
     #[test]
     fn test_rust_provider_validate_valid() -> Result<()> {
         let provider = RustRefactoringProvider::new();
-        let result = provider.validate_refactoring("fn main() {}", "fn main() { println!(); }", "rust")?;
+        let result =
+            provider.validate_refactoring("fn main() {}", "fn main() { println!(); }", "rust")?;
 
         assert!(result.passed);
 

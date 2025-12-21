@@ -46,9 +46,10 @@ impl ProcessManager {
     /// Spawn the LSP server process
     pub async fn spawn(&mut self) -> Result<()> {
         if self.state != ClientState::Stopped {
-            return Err(ExternalLspError::ProtocolError(
-                format!("Cannot spawn process in state: {:?}", self.state),
-            ));
+            return Err(ExternalLspError::ProtocolError(format!(
+                "Cannot spawn process in state: {:?}",
+                self.state
+            )));
         }
 
         self.state = ClientState::Starting;

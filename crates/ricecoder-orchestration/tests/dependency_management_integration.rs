@@ -7,8 +7,8 @@
 //! **Validates: Requirements 3.1, 3.2, 3.3**
 
 use ricecoder_orchestration::{
-    DependencyAnalyzer, DependencyGraph, DependencyType, ImpactAnalyzer,
-    ImpactLevel, Project, ProjectChange, ProjectDependency, ProjectStatus,
+    DependencyAnalyzer, DependencyGraph, DependencyType, ImpactAnalyzer, ImpactLevel, Project,
+    ProjectChange, ProjectDependency, ProjectStatus,
 };
 use std::path::PathBuf;
 
@@ -265,7 +265,10 @@ fn integration_test_impact_analysis_with_changes() {
     analyzer.add_project("ricecoder-cli".to_string());
 
     // Add dependencies to analyzer
-    analyzer.add_dependency("ricecoder-storage".to_string(), "ricecoder-core".to_string());
+    analyzer.add_dependency(
+        "ricecoder-storage".to_string(),
+        "ricecoder-core".to_string(),
+    );
     analyzer.add_dependency("ricecoder-lsp".to_string(), "ricecoder-core".to_string());
     analyzer.add_dependency("ricecoder-cli".to_string(), "ricecoder-core".to_string());
     analyzer.add_dependency("ricecoder-cli".to_string(), "ricecoder-storage".to_string());
@@ -283,9 +286,15 @@ fn integration_test_impact_analysis_with_changes() {
 
     // Verify: All dependent projects are affected
     assert_eq!(impact.affected_projects.len(), 3); // storage, lsp, cli
-    assert!(impact.affected_projects.contains(&"ricecoder-storage".to_string()));
-    assert!(impact.affected_projects.contains(&"ricecoder-lsp".to_string()));
-    assert!(impact.affected_projects.contains(&"ricecoder-cli".to_string()));
+    assert!(impact
+        .affected_projects
+        .contains(&"ricecoder-storage".to_string()));
+    assert!(impact
+        .affected_projects
+        .contains(&"ricecoder-lsp".to_string()));
+    assert!(impact
+        .affected_projects
+        .contains(&"ricecoder-cli".to_string()));
 
     // Verify: Impact level is appropriate (breaking changes are critical)
     assert_eq!(impact.impact_level, ImpactLevel::Critical);

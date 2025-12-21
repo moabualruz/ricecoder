@@ -3,18 +3,17 @@
 //! Targeted tests to improve code coverage for MCP transport implementations,
 //! focusing on uncovered branches, edge cases, and error conditions.
 
+use ricecoder_mcp::error::Error;
+use ricecoder_mcp::transport::{
+    HTTPAuthConfig, HTTPAuthType, HTTPConfig, HTTPTransport, MCPError, MCPErrorData, MCPMessage,
+    MCPNotification, MCPRequest, MCPResponse, MCPTransport, SSEConfig, SSETransport, StdioConfig,
+    TransportConfig, TransportFactory, TransportType,
+};
+use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::timeout;
-use ricecoder_mcp::transport::{
-    HTTPTransport, HTTPAuthConfig, HTTPAuthType, SSETransport, TransportFactory,
-    TransportConfig, TransportType, StdioConfig, HTTPConfig, SSEConfig,
-    MCPMessage, MCPRequest, MCPResponse, MCPNotification, MCPError, MCPErrorData,
-    MCPTransport,
-};
-use ricecoder_mcp::error::Error;
-use serde_json::json;
 
 /// **Coverage Test T.1: HTTP Transport OAuth2 Error Handling**
 /// **Validates: OAuth2 token validation failures and error paths**
@@ -128,7 +127,10 @@ fn test_transport_factory_error_conditions() {
 
     let result = TransportFactory::create(&config);
     assert!(matches!(result, Err(Error::ConfigError(_))));
-    assert!(result.unwrap_err().to_string().contains("Stdio config required"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("Stdio config required"));
 
     // Test HTTP transport with missing config
     let config = TransportConfig {
@@ -140,7 +142,10 @@ fn test_transport_factory_error_conditions() {
 
     let result = TransportFactory::create(&config);
     assert!(matches!(result, Err(Error::ConfigError(_))));
-    assert!(result.unwrap_err().to_string().contains("HTTP config required"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("HTTP config required"));
 
     // Test SSE transport with missing config
     let config = TransportConfig {
@@ -152,7 +157,10 @@ fn test_transport_factory_error_conditions() {
 
     let result = TransportFactory::create(&config);
     assert!(matches!(result, Err(Error::ConfigError(_))));
-    assert!(result.unwrap_err().to_string().contains("SSE config required"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("SSE config required"));
 }
 
 /// **Coverage Test T.5: HTTP Transport Unsupported Message Types**
@@ -173,12 +181,18 @@ async fn test_http_transport_unsupported_message_types() {
 
     let result = transport.send(&error_msg).await;
     assert!(matches!(result, Err(Error::ValidationError(_))));
-    assert!(result.unwrap_err().to_string().contains("only supports requests and notifications"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("only supports requests and notifications"));
 
     // Test receiving (not supported)
     let result = transport.receive().await;
     assert!(matches!(result, Err(Error::ValidationError(_))));
-    assert!(result.unwrap_err().to_string().contains("does not support receiving messages"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("does not support receiving messages"));
 }
 
 /// **Coverage Test T.6: SSE Transport Unsupported Operations**
@@ -196,7 +210,10 @@ async fn test_sse_transport_unsupported_operations() {
 
     let result = transport.send(&request).await;
     assert!(matches!(result, Err(Error::ValidationError(_))));
-    assert!(result.unwrap_err().to_string().contains("does not support sending messages"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("does not support sending messages"));
 }
 
 /// **Coverage Test T.7: Transport Connection State Transitions**
@@ -263,10 +280,10 @@ async fn test_protocol_validation_complex_scenarios() {
 
     // Test message with invalid method names
     let invalid_methods = vec![
-        "", // Empty
-        "a".repeat(1000), // Too long
+        "",                              // Empty
+        "a".repeat(1000),                // Too long
         "method.with.inva\x00lid.chars", // Null byte
-        "method.with.unicode.🚀.chars", // Unicode (should be valid)
+        "method.with.unicode.🚀.chars",  // Unicode (should be valid)
     ];
 
     for method in invalid_methods {
@@ -291,33 +308,59 @@ async fn test_error_recovery_strategy_selection() {
 
     // Test connection errors
     let conn_error = Error::ConnectionError("Network timeout".to_string());
-    assert_eq!(determine_recovery_strategy(&conn_error), RecoveryStrategy::Retry);
+    assert_eq!(
+        determine_recovery_strategy(&conn_error),
+        RecoveryStrategy::Retry
+    );
 
     let conn_error2 = Error::ConnectionError("Connection refused".to_string());
-    assert_eq!(determine_recovery_strategy(&conn_error2), RecoveryStrategy::Retry);
+    assert_eq!(
+        determine_recovery_strategy(&conn_error2),
+        RecoveryStrategy::Retry
+    );
 
     // Test authentication errors
     let auth_error = Error::AuthenticationError("Invalid token".to_string());
-    assert_eq!(determine_recovery_strategy(&auth_error), RecoveryStrategy::Fail);
+    assert_eq!(
+        determine_recovery_strategy(&auth_error),
+        RecoveryStrategy::Fail
+    );
 
     let auth_error2 = Error::AuthenticationError("Access denied".to_string());
-    assert_eq!(determine_recovery_strategy(&auth_error2), RecoveryStrategy::Fail);
+    assert_eq!(
+        determine_recovery_strategy(&auth_error2),
+        RecoveryStrategy::Fail
+    );
 
     // Test validation errors
     let validation_error = Error::ValidationError("Invalid input".to_string());
-    assert_eq!(determine_recovery_strategy(&validation_error), RecoveryStrategy::Fail);
+    assert_eq!(
+        determine_recovery_strategy(&validation_error),
+        RecoveryStrategy::Fail
+    );
 
     // Test serialization errors
-    let serial_error = Error::SerializationError(serde_json::from_str::<serde_json::Value>("invalid").unwrap_err());
-    assert_eq!(determine_recovery_strategy(&serial_error), RecoveryStrategy::Fail);
+    let serial_error = Error::SerializationError(
+        serde_json::from_str::<serde_json::Value>("invalid").unwrap_err(),
+    );
+    assert_eq!(
+        determine_recovery_strategy(&serial_error),
+        RecoveryStrategy::Fail
+    );
 
     // Test server errors
     let server_error = Error::ServerError("Internal server error".to_string());
-    assert_eq!(determine_recovery_strategy(&server_error), RecoveryStrategy::Retry);
+    assert_eq!(
+        determine_recovery_strategy(&server_error),
+        RecoveryStrategy::Retry
+    );
 
     // Test configuration errors
     let config_error = Error::ConfigError("Missing config".to_string());
-    assert_eq!(determine_recovery_strategy(&config_error), RecoveryStrategy::Fail);
+    assert_eq!(
+        determine_recovery_strategy(&config_error),
+        RecoveryStrategy::Fail
+    );
 }
 
 /// **Coverage Test T.10: Tool Execution Timeout Scenarios**
@@ -363,11 +406,7 @@ async fn test_tool_execution_timeout_scenarios() {
 
     let permission_manager = Arc::new(ricecoder_mcp::permissions::MCPPermissionManager::new());
     let transport = Arc::new(DelayedMockTransport::new(100)); // 100ms delay
-    let executor = MCPToolExecutor::new(
-        "test-server".to_string(),
-        transport,
-        permission_manager,
-    );
+    let executor = MCPToolExecutor::new("test-server".to_string(), transport, permission_manager);
 
     // Test with very short timeout
     let context = ToolExecutionContext {
@@ -462,26 +501,23 @@ async fn test_audit_logging_edge_cases() {
     let mcp_audit_logger = MCPAuditLogger::new(tracking_logger.clone());
 
     // Test logging various events
-    mcp_audit_logger.log_tool_execution(
-        "test-tool",
-        "test-user",
-        "test-session",
-        true,
-        Some("success".to_string()),
-    ).await;
+    mcp_audit_logger
+        .log_tool_execution(
+            "test-tool",
+            "test-user",
+            "test-session",
+            true,
+            Some("success".to_string()),
+        )
+        .await;
 
-    mcp_audit_logger.log_permission_check(
-        "test-tool",
-        "test-user",
-        true,
-        "test-reason",
-    ).await;
+    mcp_audit_logger
+        .log_permission_check("test-tool", "test-user", true, "test-reason")
+        .await;
 
-    mcp_audit_logger.log_protocol_violation(
-        "invalid-message",
-        "test-user",
-        "validation-failed",
-    ).await;
+    mcp_audit_logger
+        .log_protocol_violation("invalid-message", "test-user", "validation-failed")
+        .await;
 
     // Check that events were logged
     let events = tracking_logger.get_events();
@@ -504,72 +540,119 @@ async fn test_rbac_permission_inheritance() {
     rbac.create_role("user".to_string()).await.unwrap();
 
     // Assign permissions at different levels
-    rbac.assign_permission_to_role("super-admin", "*").await.unwrap();
-    rbac.assign_permission_to_role("admin", "admin:*").await.unwrap();
-    rbac.assign_permission_to_role("moderator", "mod:*").await.unwrap();
-    rbac.assign_permission_to_role("user", "user:*").await.unwrap();
+    rbac.assign_permission_to_role("super-admin", "*")
+        .await
+        .unwrap();
+    rbac.assign_permission_to_role("admin", "admin:*")
+        .await
+        .unwrap();
+    rbac.assign_permission_to_role("moderator", "mod:*")
+        .await
+        .unwrap();
+    rbac.assign_permission_to_role("user", "user:*")
+        .await
+        .unwrap();
 
     // Create inheritance relationships
-    rbac.add_role_inheritance("admin", "moderator").await.unwrap();
-    rbac.add_role_inheritance("moderator", "user").await.unwrap();
+    rbac.add_role_inheritance("admin", "moderator")
+        .await
+        .unwrap();
+    rbac.add_role_inheritance("moderator", "user")
+        .await
+        .unwrap();
 
     // Assign users to roles
-    rbac.assign_user_to_role("super-user", "super-admin").await.unwrap();
-    rbac.assign_user_to_role("admin-user", "admin").await.unwrap();
-    rbac.assign_user_to_role("mod-user", "moderator").await.unwrap();
-    rbac.assign_user_to_role("regular-user", "user").await.unwrap();
+    rbac.assign_user_to_role("super-user", "super-admin")
+        .await
+        .unwrap();
+    rbac.assign_user_to_role("admin-user", "admin")
+        .await
+        .unwrap();
+    rbac.assign_user_to_role("mod-user", "moderator")
+        .await
+        .unwrap();
+    rbac.assign_user_to_role("regular-user", "user")
+        .await
+        .unwrap();
 
     // Test permission inheritance
     assert!(rbac.check_user_permission("super-user", "*").await.unwrap());
-    assert!(rbac.check_user_permission("super-user", "admin:delete").await.unwrap());
+    assert!(rbac
+        .check_user_permission("super-user", "admin:delete")
+        .await
+        .unwrap());
 
-    assert!(rbac.check_user_permission("admin-user", "admin:delete").await.unwrap());
-    assert!(rbac.check_user_permission("admin-user", "mod:edit").await.unwrap()); // Inherited
-    assert!(rbac.check_user_permission("admin-user", "user:read").await.unwrap()); // Inherited
+    assert!(rbac
+        .check_user_permission("admin-user", "admin:delete")
+        .await
+        .unwrap());
+    assert!(rbac
+        .check_user_permission("admin-user", "mod:edit")
+        .await
+        .unwrap()); // Inherited
+    assert!(rbac
+        .check_user_permission("admin-user", "user:read")
+        .await
+        .unwrap()); // Inherited
 
-    assert!(!rbac.check_user_permission("admin-user", "super:secret").await.unwrap()); // Not inherited
+    assert!(!rbac
+        .check_user_permission("admin-user", "super:secret")
+        .await
+        .unwrap()); // Not inherited
 
-    assert!(rbac.check_user_permission("mod-user", "mod:edit").await.unwrap());
-    assert!(rbac.check_user_permission("mod-user", "user:read").await.unwrap()); // Inherited
-    assert!(!rbac.check_user_permission("mod-user", "admin:delete").await.unwrap()); // Not inherited
+    assert!(rbac
+        .check_user_permission("mod-user", "mod:edit")
+        .await
+        .unwrap());
+    assert!(rbac
+        .check_user_permission("mod-user", "user:read")
+        .await
+        .unwrap()); // Inherited
+    assert!(!rbac
+        .check_user_permission("mod-user", "admin:delete")
+        .await
+        .unwrap()); // Not inherited
 }
 
 /// **Coverage Test T.14: Compliance Monitoring Edge Cases**
 /// **Validates: Compliance monitoring under various scenarios**
 #[tokio::test]
 async fn test_compliance_monitoring_edge_cases() {
-    use ricecoder_mcp::compliance::{MCPComplianceMonitor, ComplianceReportType, ViolationSeverity};
+    use ricecoder_mcp::compliance::{
+        ComplianceReportType, MCPComplianceMonitor, ViolationSeverity,
+    };
 
     let monitor = MCPComplianceMonitor::new(None);
 
     // Test recording violations with edge case data
     let edge_case_messages = vec![
-        "", // Empty message
-        "x".repeat(10000), // Very long message
+        "",                                     // Empty message
+        "x".repeat(10000),                      // Very long message
         "Message with special chars: \n\t\r\0", // Special characters
-        "Unicode: 🚀 🔥 💯", // Unicode characters
+        "Unicode: 🚀 🔥 💯",                    // Unicode characters
     ];
 
     for message in edge_case_messages {
-        monitor.record_violation(
-            ComplianceReportType::Soc2Type2,
-            ViolationSeverity::Low,
-            &message,
-            "test-resource",
-            Some("test-user"),
-            Some(json!({"test": "data"})),
-        ).await.unwrap();
+        monitor
+            .record_violation(
+                ComplianceReportType::Soc2Type2,
+                ViolationSeverity::Low,
+                &message,
+                "test-resource",
+                Some("test-user"),
+                Some(json!({"test": "data"})),
+            )
+            .await
+            .unwrap();
     }
 
     // Test generating reports for different time ranges
     let now = std::time::SystemTime::now();
     let past = now - Duration::from_secs(3600); // 1 hour ago
 
-    let report = monitor.generate_report(
-        ComplianceReportType::Soc2Type2,
-        past,
-        now,
-    ).await;
+    let report = monitor
+        .generate_report(ComplianceReportType::Soc2Type2, past, now)
+        .await;
 
     assert!(report.is_ok());
     let report = report.unwrap();

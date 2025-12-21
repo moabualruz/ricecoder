@@ -111,7 +111,10 @@ impl ExternalLspCompletionProxy {
         // Try external LSP first
         if let Some(external_lsp) = &self.external_lsp {
             if external_lsp.is_available(language) {
-                debug!("Routing completion to external LSP for language: {}", language);
+                debug!(
+                    "Routing completion to external LSP for language: {}",
+                    language
+                );
                 match external_lsp
                     .forward_completion(language, uri, code, position)
                     .await

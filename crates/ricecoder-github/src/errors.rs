@@ -71,7 +71,9 @@ impl Clone for GitHubError {
             GitHubError::NotFound(s) => GitHubError::NotFound(s.clone()),
             GitHubError::ConfigError(s) => GitHubError::ConfigError(s.clone()),
             GitHubError::InvalidInput(s) => GitHubError::InvalidInput(s.clone()),
-            GitHubError::SerializationError(e) => GitHubError::Other(format!("Serialization error: {}", e)),
+            GitHubError::SerializationError(e) => {
+                GitHubError::Other(format!("Serialization error: {}", e))
+            }
             GitHubError::YamlError(e) => GitHubError::Other(format!("YAML error: {}", e)),
             GitHubError::IoError(e) => GitHubError::Other(format!("IO error: {}", e)),
             GitHubError::OctocrabError(s) => GitHubError::OctocrabError(s.clone()),

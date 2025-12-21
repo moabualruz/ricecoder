@@ -1,5 +1,5 @@
 use proptest::prelude::*;
-use ricecoder_mcp::{ToolMarshaler, ToolRegistry, ToolMetadata, ToolSource};
+use ricecoder_mcp::{ToolMarshaler, ToolMetadata, ToolRegistry, ToolSource};
 use serde_json::{json, Value};
 
 /// **Feature: ricecoder-mcp, Property 1: Tool registration consistency**
@@ -15,7 +15,7 @@ fn property_tool_registration_consistency() {
         category in "[a-z]{1,20}",
     )| {
         let mut registry = ToolRegistry::new();
-        
+
         // Create a tool with the generated properties
         let tool = ToolMetadata {
             id: tool_id.clone(),
@@ -27,25 +27,25 @@ fn property_tool_registration_consistency() {
             source: ToolSource::Custom,
             server_id: None,
         };
-        
+
         // Register the tool
         let result = registry.register_tool(tool.clone());
         prop_assert!(result.is_ok(), "Tool registration should succeed");
-        
+
         // Verify the tool is in the registry
         let retrieved = registry.get_tool(&tool_id);
         prop_assert!(retrieved.is_some(), "Tool should be retrievable after registration");
-        
+
         // Verify the metadata is correct
         let retrieved_tool = retrieved.unwrap();
         prop_assert_eq!(&retrieved_tool.id, &tool_id, "Tool ID should match");
         prop_assert_eq!(&retrieved_tool.name, &tool_name, "Tool name should match");
         prop_assert_eq!(&retrieved_tool.category, &category, "Tool category should match");
-        
+
         // Verify no duplicates - registering the same tool again should fail
         let duplicate_result = registry.register_tool(tool);
         prop_assert!(duplicate_result.is_err(), "Duplicate registration should fail");
-        
+
         // Verify tool count is exactly 1
         prop_assert_eq!(registry.tool_count(), 1, "Registry should contain exactly 1 tool");
     });
@@ -63,7 +63,7 @@ fn property_tool_marshaling_round_trip() {
         param_number in 0i64..1000000,
     )| {
         let marshaler = ToolMarshaler::new();
-        
+
         // Create input with various parameter types
         let mut input_obj = serde_json::Map::new();
         if let Some(val) = param_value {
@@ -71,19 +71,19 @@ fn property_tool_marshaling_round_trip() {
         }
         input_obj.insert("number_param".to_string(), json!(param_number));
         let input = Value::Object(input_obj);
-        
+
         // Marshal the input
         let marshaled = marshaler.marshal_input(&input);
         prop_assert!(marshaled.is_ok(), "Marshaling should succeed");
-        
+
         let marshaled_value = marshaled.unwrap();
-        
+
         // Unmarshal the output
         let unmarshaled = marshaler.unmarshal_output(&marshaled_value);
         prop_assert!(unmarshaled.is_ok(), "Unmarshaling should succeed");
-        
+
         let unmarshaled_value = unmarshaled.unwrap();
-        
+
         // Verify round-trip: original == unmarshaled
         prop_assert_eq!(input, unmarshaled_value, "Round-trip should preserve value");
     });
@@ -100,17 +100,17 @@ fn property_type_conversion_consistency() {
         number_str in "[0-9]{1,10}",
     )| {
         let marshaler = ToolMarshaler::new();
-        
+
         // Test string to number conversion
         let string_value = Value::String(number_str.clone());
         let converted = marshaler.convert_type(&string_value, "number");
         prop_assert!(converted.is_ok(), "String to number conversion should succeed");
-        
+
         // Test number to string conversion
         let number_value = converted.unwrap();
         let converted_back = marshaler.convert_type(&number_value, "string");
         prop_assert!(converted_back.is_ok(), "Number to string conversion should succeed");
-        
+
         // Verify the string representation is consistent
         let final_string = converted_back.unwrap();
         prop_assert!(final_string.is_string(), "Result should be a string");
@@ -128,13 +128,13 @@ fn property_invalid_input_rejection() {
         array_len in 0usize..10,
     )| {
         let marshaler = ToolMarshaler::new();
-        
+
         // Create an array input (invalid for tool parameters)
         let array_input: Vec<Value> = (0..array_len)
             .map(|i| Value::Number(i.into()))
             .collect();
         let input = Value::Array(array_input);
-        
+
         // Marshaling should fail for array input
         let result = marshaler.marshal_input(&input);
         prop_assert!(result.is_err(), "Array input should be rejected");
@@ -156,17 +156,17 @@ fn property_permission_enforcement() {
         agent_id in prop::option::of("[a-z0-9-]{1,30}"),
     )| {
         let mut manager = MCPPermissionManager::new();
-        
+
         // Add a deny rule for the tool
         let rule = PermissionRule {
             pattern: tool_id.clone(),
             level: PermissionLevelConfig::Deny,
             agent_id: None,
         };
-        
+
         let result = manager.add_global_rule(rule);
         prop_assert!(result.is_ok(), "Adding deny rule should succeed");
-        
+
         // Check permission - should be denied
         let permission = manager.check_permission(&tool_id, agent_id.as_deref());
         prop_assert!(permission.is_ok(), "Permission check should succeed");
@@ -193,21 +193,21 @@ fn property_permission_wildcard_matching() {
         suffix in "[a-z0-9]{1,10}",
     )| {
         let mut manager = MCPPermissionManager::new();
-        
+
         // Create a wildcard pattern
         let pattern = format!("{}-*", prefix);
         let tool_id = format!("{}-{}", prefix, suffix);
-        
+
         // Add a rule with wildcard pattern
         let rule = PermissionRule {
             pattern: pattern.clone(),
             level: PermissionLevelConfig::Allow,
             agent_id: None,
         };
-        
+
         let result = manager.add_global_rule(rule);
         prop_assert!(result.is_ok(), "Adding wildcard rule should succeed");
-        
+
         // Check permission for matching tool - should be allowed
         let permission = manager.check_permission(&tool_id, None);
         prop_assert!(permission.is_ok(), "Permission check should succeed");
@@ -216,7 +216,7 @@ fn property_permission_wildcard_matching() {
             PermissionLevel::Allow,
             "Tool matching wildcard pattern should be allowed"
         );
-        
+
         // Check permission for non-matching tool - should be denied (default)
         let non_matching_tool = format!("other-{}", suffix);
         let permission = manager.check_permission(&non_matching_tool, None);
@@ -244,7 +244,7 @@ fn property_per_agent_permission_override() {
         agent_id in "[a-z0-9-]{1,30}",
     )| {
         let mut manager = MCPPermissionManager::new();
-        
+
         // Add a global deny rule
         let global_rule = PermissionRule {
             pattern: tool_id.clone(),
@@ -252,7 +252,7 @@ fn property_per_agent_permission_override() {
             agent_id: None,
         };
         manager.add_global_rule(global_rule).unwrap();
-        
+
         // Add a per-agent allow rule
         let agent_rule = PermissionRule {
             pattern: tool_id.clone(),
@@ -260,7 +260,7 @@ fn property_per_agent_permission_override() {
             agent_id: Some(agent_id.clone()),
         };
         manager.add_agent_rule(agent_id.clone(), agent_rule).unwrap();
-        
+
         // Check permission for the agent - should use per-agent rule (Allow)
         let permission = manager.check_permission(&tool_id, Some(&agent_id));
         prop_assert!(permission.is_ok(), "Permission check should succeed");
@@ -269,7 +269,7 @@ fn property_per_agent_permission_override() {
             PermissionLevel::Allow,
             "Per-agent permission should override global permission"
         );
-        
+
         // Check permission for other agent - should use global rule (Deny)
         let other_agent = format!("other-{}", agent_id);
         let permission = manager.check_permission(&tool_id, Some(&other_agent));
@@ -297,12 +297,12 @@ fn property_error_isolation() {
     )| {
         // Create multiple servers
         let mut registry = ToolRegistry::new();
-        
+
         // Register tools from multiple servers
         for server_idx in 0..num_servers {
             let server_id = format!("server-{}", server_idx);
             let tool_id = format!("tool-{}", server_idx);
-            
+
             let tool = ToolMetadata {
                 id: tool_id,
                 name: format!("Tool {}", server_idx),
@@ -313,18 +313,18 @@ fn property_error_isolation() {
                 source: ToolSource::Mcp(server_id.clone()),
                 server_id: Some(server_id),
             };
-            
+
             let result = registry.register_tool(tool);
             prop_assert!(result.is_ok(), "Tool registration should succeed");
         }
-        
+
         // Verify all tools are registered
         prop_assert_eq!(registry.tool_count(), num_servers, "All tools should be registered");
-        
+
         // Simulate failure in one server - verify other tools are still accessible
         let failing_server = format!("server-{}", failing_server_idx % num_servers);
         let _failing_tools = registry.list_tools_by_server(&failing_server);
-        
+
         // Even if one server fails, other servers' tools should still be accessible
         for server_idx in 0..num_servers {
             if server_idx != (failing_server_idx % num_servers) {
@@ -333,11 +333,11 @@ fn property_error_isolation() {
                 prop_assert_eq!(tools.len(), 1, "Other servers should still have their tools");
             }
         }
-        
+
         // Verify that the registry itself is still functional
         let all_tools = registry.list_tools();
         prop_assert_eq!(all_tools.len(), num_servers, "Registry should still contain all tools");
-        
+
         // Verify we can still query tools by category
         let category_tools = registry.list_tools_by_category("test");
         prop_assert_eq!(category_tools.len(), num_servers, "Category query should still work");
@@ -356,7 +356,7 @@ fn property_tool_discovery_completeness() {
         server_id in "[a-z0-9-]{1,30}",
     )| {
         let mut registry = ToolRegistry::new();
-        
+
         // Register multiple tools from the same server
         for tool_idx in 0..num_tools {
             let tool_id = format!("tool-{}", tool_idx);
@@ -370,21 +370,21 @@ fn property_tool_discovery_completeness() {
                 source: ToolSource::Mcp(server_id.clone()),
                 server_id: Some(server_id.clone()),
             };
-            
+
             let result = registry.register_tool(tool);
             prop_assert!(result.is_ok(), "Tool registration should succeed");
         }
-        
+
         // Discover tools from the server
         let discovered_tools = registry.list_tools_by_server(&server_id);
-        
+
         // Verify all tools are discovered
         prop_assert_eq!(
             discovered_tools.len(),
             num_tools,
             "All registered tools should be discovered"
         );
-        
+
         // Verify each discovered tool has complete metadata
         for tool in discovered_tools {
             prop_assert!(!tool.id.is_empty(), "Tool ID should not be empty");
@@ -410,7 +410,7 @@ fn property_custom_tool_registration() {
         category in "[a-z]{1,20}",
     )| {
         let mut registry = ToolRegistry::new();
-        
+
         // Create a custom tool (simulating configuration-based registration)
         let custom_tool = ToolMetadata {
             id: tool_id.clone(),
@@ -422,22 +422,22 @@ fn property_custom_tool_registration() {
             source: ToolSource::Custom,
             server_id: None,
         };
-        
+
         // Register the custom tool
         let result = registry.register_tool(custom_tool.clone());
         prop_assert!(result.is_ok(), "Custom tool registration should succeed");
-        
+
         // Verify the tool is available for execution
         let retrieved = registry.get_tool(&tool_id);
         prop_assert!(retrieved.is_some(), "Custom tool should be available after registration");
-        
+
         // Verify the tool has correct metadata
         let retrieved_tool = retrieved.unwrap();
         prop_assert_eq!(&retrieved_tool.id, &tool_id, "Tool ID should match");
         prop_assert_eq!(&retrieved_tool.name, &tool_name, "Tool name should match");
         prop_assert_eq!(&retrieved_tool.category, &category, "Tool category should match");
         prop_assert!(matches!(retrieved_tool.source, ToolSource::Custom), "Tool source should be Custom");
-        
+
         // Verify the tool is discoverable by category
         let category_tools = registry.list_tools_by_category(&category);
         prop_assert!(

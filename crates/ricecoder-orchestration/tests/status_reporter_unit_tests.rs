@@ -4,8 +4,8 @@
 
 use ricecoder_orchestration::{
     AggregatedMetrics, ComplianceSummary, DependencyType, HealthStatus, Project, ProjectDependency,
-    ProjectHealthIndicator, ProjectStatus, StatusReport, StatusReporter, Workspace, WorkspaceConfig,
-    WorkspaceMetrics, WorkspaceRule, RuleType,
+    ProjectHealthIndicator, ProjectStatus, RuleType, StatusReport, StatusReporter, Workspace,
+    WorkspaceConfig, WorkspaceMetrics, WorkspaceRule,
 };
 use std::path::PathBuf;
 
@@ -130,7 +130,9 @@ fn test_status_reporter_metric_collection() {
     let workspace = create_complex_workspace();
     let reporter = StatusReporter::new(workspace);
 
-    let metrics = reporter.collect_metrics().expect("metrics collection failed");
+    let metrics = reporter
+        .collect_metrics()
+        .expect("metrics collection failed");
 
     // Verify metric counts
     assert_eq!(metrics.total_rules, 3);
@@ -145,7 +147,7 @@ fn test_status_reporter_metric_collection() {
     // Verify dependency metrics
     assert_eq!(metrics.avg_dependencies_per_project, 1.2); // 6 dependencies / 5 projects
     assert_eq!(metrics.max_dependencies, 2); // project-mobile has 2
-    // min_dependencies is 1 because only projects with dependencies are counted
+                                             // min_dependencies is 1 because only projects with dependencies are counted
     assert_eq!(metrics.min_dependencies, 1);
 }
 
@@ -154,7 +156,9 @@ fn test_status_report_generation() {
     let workspace = create_complex_workspace();
     let reporter = StatusReporter::new(workspace);
 
-    let report = reporter.generate_report().expect("report generation failed");
+    let report = reporter
+        .generate_report()
+        .expect("report generation failed");
 
     // Verify report structure
     assert_eq!(report.total_projects, 5);
@@ -297,7 +301,9 @@ fn test_aggregated_metrics_with_single_project() {
     }];
 
     let reporter = StatusReporter::new(workspace);
-    let metrics = reporter.collect_metrics().expect("metrics collection failed");
+    let metrics = reporter
+        .collect_metrics()
+        .expect("metrics collection failed");
 
     assert_eq!(metrics.healthy_percentage, 100.0);
     assert_eq!(metrics.warning_percentage, 0.0);
@@ -310,7 +316,9 @@ fn test_report_timestamp_format() {
     let workspace = create_complex_workspace();
     let reporter = StatusReporter::new(workspace);
 
-    let report = reporter.generate_report().expect("report generation failed");
+    let report = reporter
+        .generate_report()
+        .expect("report generation failed");
 
     // Verify timestamp is in ISO 8601 format
     assert!(!report.timestamp.is_empty());
@@ -323,7 +331,9 @@ fn test_empty_workspace_metrics() {
     let workspace = Workspace::default();
     let reporter = StatusReporter::new(workspace);
 
-    let metrics = reporter.collect_metrics().expect("metrics collection failed");
+    let metrics = reporter
+        .collect_metrics()
+        .expect("metrics collection failed");
 
     assert_eq!(metrics.total_rules, 0);
     assert_eq!(metrics.enabled_rules, 0);
@@ -338,7 +348,9 @@ fn test_empty_workspace_report() {
     let workspace = Workspace::default();
     let reporter = StatusReporter::new(workspace);
 
-    let report = reporter.generate_report().expect("report generation failed");
+    let report = reporter
+        .generate_report()
+        .expect("report generation failed");
 
     assert_eq!(report.total_projects, 0);
     assert_eq!(report.total_dependencies, 0);
@@ -382,9 +394,14 @@ fn test_project_status_distribution() {
     let workspace = create_complex_workspace();
     let reporter = StatusReporter::new(workspace);
 
-    let report = reporter.generate_report().expect("report generation failed");
+    let report = reporter
+        .generate_report()
+        .expect("report generation failed");
 
-    let total = report.healthy_projects + report.warning_projects + report.critical_projects + report.unknown_projects;
+    let total = report.healthy_projects
+        + report.warning_projects
+        + report.critical_projects
+        + report.unknown_projects;
     assert_eq!(total, report.total_projects);
 }
 
@@ -393,7 +410,9 @@ fn test_compliance_score_range() {
     let workspace = create_complex_workspace();
     let reporter = StatusReporter::new(workspace);
 
-    let report = reporter.generate_report().expect("report generation failed");
+    let report = reporter
+        .generate_report()
+        .expect("report generation failed");
 
     assert!(report.compliance_score >= 0.0);
     assert!(report.compliance_score <= 1.0);
@@ -404,9 +423,12 @@ fn test_metrics_percentage_sum() {
     let workspace = create_complex_workspace();
     let reporter = StatusReporter::new(workspace);
 
-    let metrics = reporter.collect_metrics().expect("metrics collection failed");
+    let metrics = reporter
+        .collect_metrics()
+        .expect("metrics collection failed");
 
-    let total_percentage = metrics.healthy_percentage + metrics.warning_percentage + metrics.critical_percentage;
+    let total_percentage =
+        metrics.healthy_percentage + metrics.warning_percentage + metrics.critical_percentage;
     // Allow for floating point precision
     assert!((total_percentage - 100.0).abs() < 0.01);
 }
@@ -416,7 +438,9 @@ fn test_rule_count_consistency() {
     let workspace = create_complex_workspace();
     let reporter = StatusReporter::new(workspace);
 
-    let metrics = reporter.collect_metrics().expect("metrics collection failed");
+    let metrics = reporter
+        .collect_metrics()
+        .expect("metrics collection failed");
 
     assert_eq!(
         metrics.total_rules,
@@ -463,15 +487,16 @@ fn test_report_serialization() {
     let workspace = create_complex_workspace();
     let reporter = StatusReporter::new(workspace);
 
-    let report = reporter.generate_report().expect("report generation failed");
+    let report = reporter
+        .generate_report()
+        .expect("report generation failed");
 
     // Verify report can be serialized to JSON
     let json = serde_json::to_string(&report).expect("serialization failed");
     assert!(!json.is_empty());
 
     // Verify it can be deserialized
-    let deserialized: StatusReport =
-        serde_json::from_str(&json).expect("deserialization failed");
+    let deserialized: StatusReport = serde_json::from_str(&json).expect("deserialization failed");
     assert_eq!(deserialized.total_projects, report.total_projects);
 }
 
@@ -480,7 +505,9 @@ fn test_metrics_serialization() {
     let workspace = create_complex_workspace();
     let reporter = StatusReporter::new(workspace);
 
-    let metrics = reporter.collect_metrics().expect("metrics collection failed");
+    let metrics = reporter
+        .collect_metrics()
+        .expect("metrics collection failed");
 
     // Verify metrics can be serialized to JSON
     let json = serde_json::to_string(&metrics).expect("serialization failed");
@@ -568,11 +595,15 @@ fn test_large_workspace_metrics() {
 
     let reporter = StatusReporter::new(workspace);
 
-    let report = reporter.generate_report().expect("report generation failed");
+    let report = reporter
+        .generate_report()
+        .expect("report generation failed");
     assert_eq!(report.total_projects, 100);
     assert_eq!(report.total_dependencies, 99);
 
-    let metrics = reporter.collect_metrics().expect("metrics collection failed");
+    let metrics = reporter
+        .collect_metrics()
+        .expect("metrics collection failed");
     assert_eq!(metrics.avg_dependencies_per_project, 0.99);
 
     let indicators = reporter

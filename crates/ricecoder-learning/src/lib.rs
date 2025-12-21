@@ -16,8 +16,8 @@ pub mod manager;
 pub mod models;
 pub mod pattern_capturer;
 pub mod pattern_extraction_property;
-pub mod pattern_validator;
 pub mod pattern_validation_integration;
+pub mod pattern_validator;
 pub mod rule_application;
 pub mod rule_exchange;
 pub mod rule_persistence_property;
@@ -25,8 +25,8 @@ pub mod rule_promoter;
 pub mod rule_promotion_safety_property;
 pub mod rule_review;
 pub mod rule_storage;
-pub mod rule_validator;
 pub mod rule_validation_property;
+pub mod rule_validator;
 pub mod scope_config;
 pub mod scope_isolation_property;
 pub mod scope_precedence_property;
@@ -49,9 +49,7 @@ pub use models::{
 };
 pub use pattern_capturer::{PatternAnalysis, PatternCapturer};
 pub use pattern_validator::{PatternValidator, ValidationResult, ValidationStatistics};
-pub use rule_application::{
-    GenerationContext, RuleApplicationEngine, RuleApplicationResult,
-};
+pub use rule_application::{GenerationContext, RuleApplicationEngine, RuleApplicationResult};
 pub use rule_exchange::{ExportMetadata, RuleExport, RuleExporter, RuleImporter};
 pub use rule_promoter::{
     PromotionHistoryEntry, PromotionMetadata, RulePromoter, RuleReview, VersionChanges,

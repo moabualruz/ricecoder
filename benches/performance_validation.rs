@@ -1,9 +1,9 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
-use std::time::Instant;
 use std::process::{Command, Stdio};
 use std::sync::Arc;
-use tokio::sync::Semaphore;
+use std::time::Instant;
 use tempfile;
+use tokio::sync::Semaphore;
 use walkdir;
 
 // ============================================================================
@@ -19,15 +19,25 @@ fn benchmark_response_times(c: &mut Criterion) {
     // Build the ricecoder binary first
     let build_result = Command::new("cargo")
         .args(&["build", "--release", "--bin", "ricecoder"])
-        .current_dir(env!("CARGO_MANIFEST_DIR").rsplitn(2, "/crates/").next().unwrap_or("."))
+        .current_dir(
+            env!("CARGO_MANIFEST_DIR")
+                .rsplitn(2, "/crates/")
+                .next()
+                .unwrap_or("."),
+        )
         .status();
 
     if !build_result.map(|s| s.success()).unwrap_or(false) {
         panic!("Failed to build ricecoder binary for benchmarking");
     }
 
-    let binary_path = format!("{}/target/release/ricecoder",
-        env!("CARGO_MANIFEST_DIR").rsplitn(2, "/crates/").next().unwrap_or("."));
+    let binary_path = format!(
+        "{}/target/release/ricecoder",
+        env!("CARGO_MANIFEST_DIR")
+            .rsplitn(2, "/crates/")
+            .next()
+            .unwrap_or(".")
+    );
 
     group.bench_function("config_command", |b| {
         b.iter(|| {
@@ -41,8 +51,11 @@ fn benchmark_response_times(c: &mut Criterion) {
             assert!(result.success());
             let elapsed = start.elapsed();
             // Assert baseline: < 500ms for responses
-            assert!(elapsed < std::time::Duration::from_millis(500),
-                "Response time exceeded 500ms baseline: {:?}", elapsed);
+            assert!(
+                elapsed < std::time::Duration::from_millis(500),
+                "Response time exceeded 500ms baseline: {:?}",
+                elapsed
+            );
             black_box(elapsed);
         });
     });
@@ -59,8 +72,11 @@ fn benchmark_response_times(c: &mut Criterion) {
             assert!(result.success());
             let elapsed = start.elapsed();
             // Assert baseline: < 500ms for responses
-            assert!(elapsed < std::time::Duration::from_millis(500),
-                "Response time exceeded 500ms baseline: {:?}", elapsed);
+            assert!(
+                elapsed < std::time::Duration::from_millis(500),
+                "Response time exceeded 500ms baseline: {:?}",
+                elapsed
+            );
             black_box(elapsed);
         });
     });
@@ -91,12 +107,21 @@ fn benchmark_enterprise_workload(c: &mut Criterion) {
             let elapsed = start.elapsed();
 
             // Assert baselines for enterprise workload
-            assert!(elapsed < std::time::Duration::from_secs(30),
-                "Enterprise project analysis exceeded 30s baseline: {:?}", elapsed);
-            assert!(analysis_result.total_files > 500,
-                "Enterprise project should have >500 files, got {}", analysis_result.total_files);
-            assert!(analysis_result.total_lines > 50000,
-                "Enterprise project should have >50K lines, got {}", analysis_result.total_lines);
+            assert!(
+                elapsed < std::time::Duration::from_secs(30),
+                "Enterprise project analysis exceeded 30s baseline: {:?}",
+                elapsed
+            );
+            assert!(
+                analysis_result.total_files > 500,
+                "Enterprise project should have >500 files, got {}",
+                analysis_result.total_files
+            );
+            assert!(
+                analysis_result.total_lines > 50000,
+                "Enterprise project should have >50K lines, got {}",
+                analysis_result.total_lines
+            );
 
             black_box((analysis_result, elapsed));
         });
@@ -117,16 +142,23 @@ fn benchmark_enterprise_workload(c: &mut Criterion) {
             }
 
             // Simulate processing all files
-            let processed: Vec<_> = resources.iter().map(|content| {
-                content.lines().count()
-            }).collect();
+            let processed: Vec<_> = resources
+                .iter()
+                .map(|content| content.lines().count())
+                .collect();
 
             let elapsed = start.elapsed();
             // Assert resource consumption baseline
-            assert!(elapsed < std::time::Duration::from_secs(10),
-                "Resource consumption tracking exceeded 10s baseline: {:?}", elapsed);
-            assert!(processed.len() == 100,
-                "Should process 100 files, got {}", processed.len());
+            assert!(
+                elapsed < std::time::Duration::from_secs(10),
+                "Resource consumption tracking exceeded 10s baseline: {:?}",
+                elapsed
+            );
+            assert!(
+                processed.len() == 100,
+                "Should process 100 files, got {}",
+                processed.len()
+            );
 
             black_box((processed, elapsed));
         });
@@ -135,13 +167,20 @@ fn benchmark_enterprise_workload(c: &mut Criterion) {
     group.finish();
 }
 
-fn create_enterprise_project(base_dir: &tempfile::TempDir, num_crates: usize, lines_per_file: usize) {
+fn create_enterprise_project(
+    base_dir: &tempfile::TempDir,
+    num_crates: usize,
+    lines_per_file: usize,
+) {
     for crate_num in 0..num_crates {
-        let crate_dir = base_dir.path().join(format!("enterprise_crate_{}", crate_num));
+        let crate_dir = base_dir
+            .path()
+            .join(format!("enterprise_crate_{}", crate_num));
         std::fs::create_dir_all(&crate_dir).expect("Failed to create enterprise crate dir");
 
         // Create Cargo.toml
-        let cargo_toml = format!(r#"
+        let cargo_toml = format!(
+            r#"
 [package]
 name = "enterprise-crate-{}"
 version = "1.0.0"
@@ -153,7 +192,9 @@ tokio = "1.0"
 axum = "0.6"
 sqlx = "0.7"
 redis = "0.23"
-"#, crate_num);
+"#,
+            crate_num
+        );
 
         std::fs::write(crate_dir.join("Cargo.toml"), cargo_toml)
             .expect("Failed to write enterprise Cargo.toml");
@@ -165,7 +206,10 @@ redis = "0.23"
         // Create multiple source files
         for file_num in 0..10 {
             let file_path = src_dir.join(format!("module_{}.rs", file_num));
-            let mut content = format!("// Enterprise module {} for crate {}\n\n", file_num, crate_num);
+            let mut content = format!(
+                "// Enterprise module {} for crate {}\n\n",
+                file_num, crate_num
+            );
 
             // Generate lines of code
             for line_num in 0..(lines_per_file / 10) {
@@ -177,8 +221,7 @@ redis = "0.23"
                 content.push_str("}\n\n");
             }
 
-            std::fs::write(&file_path, content)
-                .expect("Failed to write enterprise source file");
+            std::fs::write(&file_path, content).expect("Failed to write enterprise source file");
         }
     }
 }
@@ -233,15 +276,25 @@ fn benchmark_memory_usage(c: &mut Criterion) {
     // Build the ricecoder binary first
     let build_result = Command::new("cargo")
         .args(&["build", "--release", "--bin", "ricecoder"])
-        .current_dir(env!("CARGO_MANIFEST_DIR").rsplitn(2, "/crates/").next().unwrap_or("."))
+        .current_dir(
+            env!("CARGO_MANIFEST_DIR")
+                .rsplitn(2, "/crates/")
+                .next()
+                .unwrap_or("."),
+        )
         .status();
 
     if !build_result.map(|s| s.success()).unwrap_or(false) {
         panic!("Failed to build ricecoder binary for benchmarking");
     }
 
-    let binary_path = format!("{}/target/release/ricecoder",
-        env!("CARGO_MANIFEST_DIR").rsplitn(2, "/crates/").next().unwrap_or("."));
+    let binary_path = format!(
+        "{}/target/release/ricecoder",
+        env!("CARGO_MANIFEST_DIR")
+            .rsplitn(2, "/crates/")
+            .next()
+            .unwrap_or(".")
+    );
 
     group.bench_function("memory_baseline", |b| {
         b.iter(|| {
@@ -257,7 +310,11 @@ fn benchmark_memory_usage(c: &mut Criterion) {
             let memory_mb = 45.0 + (elapsed.as_nanos() % 1000000) as f64 / 1000000.0; // 45-46MB range
 
             // Assert baseline: < 300MB for basic operations
-            assert!(memory_mb < 300.0, "Memory usage exceeded 300MB baseline: {:.1}MB", memory_mb);
+            assert!(
+                memory_mb < 300.0,
+                "Memory usage exceeded 300MB baseline: {:.1}MB",
+                memory_mb
+            );
             black_box((elapsed, memory_mb));
         });
     });
@@ -288,12 +345,21 @@ fn benchmark_large_project(c: &mut Criterion) {
             let elapsed = start.elapsed();
 
             // Assert baselines for large project support
-            assert!(elapsed < std::time::Duration::from_secs(60),
-                "Large project analysis exceeded 60s baseline: {:?}", elapsed);
-            assert!(analysis_result.total_files > 500,
-                "Large project should have >500 files, got {}", analysis_result.total_files);
-            assert!(analysis_result.total_lines > 50000,
-                "Large project should have >50K lines, got {}", analysis_result.total_lines);
+            assert!(
+                elapsed < std::time::Duration::from_secs(60),
+                "Large project analysis exceeded 60s baseline: {:?}",
+                elapsed
+            );
+            assert!(
+                analysis_result.total_files > 500,
+                "Large project should have >500 files, got {}",
+                analysis_result.total_files
+            );
+            assert!(
+                analysis_result.total_lines > 50000,
+                "Large project should have >50K lines, got {}",
+                analysis_result.total_lines
+            );
 
             black_box((analysis_result, elapsed));
         });
@@ -345,8 +411,11 @@ fn benchmark_concurrent_sessions(c: &mut Criterion) {
             let elapsed = start.elapsed();
 
             // Assert baseline: concurrent operations complete within reasonable time
-            assert!(elapsed < std::time::Duration::from_secs(5),
-                "Concurrent sessions exceeded 5s baseline: {:?}", elapsed);
+            assert!(
+                elapsed < std::time::Duration::from_secs(5),
+                "Concurrent sessions exceeded 5s baseline: {:?}",
+                elapsed
+            );
 
             black_box(elapsed);
         });
@@ -368,15 +437,25 @@ fn benchmark_aider_polyglot(c: &mut Criterion) {
     // Build the ricecoder-benchmark binary first
     let build_result = Command::new("cargo")
         .args(&["build", "--release", "--bin", "ricecoder-benchmark"])
-        .current_dir(env!("CARGO_MANIFEST_DIR").rsplitn(2, "/crates/").next().unwrap_or("."))
+        .current_dir(
+            env!("CARGO_MANIFEST_DIR")
+                .rsplitn(2, "/crates/")
+                .next()
+                .unwrap_or("."),
+        )
         .status();
 
     if !build_result.map(|s| s.success()).unwrap_or(false) {
         panic!("Failed to build ricecoder-benchmark binary for benchmarking");
     }
 
-    let benchmark_binary = format!("{}/target/release/ricecoder-benchmark",
-        env!("CARGO_MANIFEST_DIR").rsplitn(2, "/crates/").next().unwrap_or("."));
+    let benchmark_binary = format!(
+        "{}/target/release/ricecoder-benchmark",
+        env!("CARGO_MANIFEST_DIR")
+            .rsplitn(2, "/crates/")
+            .next()
+            .unwrap_or(".")
+    );
 
     let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
     let exercises_dir = temp_dir.path().join("exercises");
@@ -393,11 +472,16 @@ fn benchmark_aider_polyglot(c: &mut Criterion) {
             let result = Command::new(&benchmark_binary)
                 .args(&[
                     "run",
-                    "--model", "test-model",
-                    "--exercises-dir", exercises_dir.to_str().unwrap(),
-                    "--results-dir", results_dir.to_str().unwrap(),
-                    "--num-exercises", "2", // Small subset for benchmarking
-                    "--max-attempts", "1",
+                    "--model",
+                    "test-model",
+                    "--exercises-dir",
+                    exercises_dir.to_str().unwrap(),
+                    "--results-dir",
+                    results_dir.to_str().unwrap(),
+                    "--num-exercises",
+                    "2", // Small subset for benchmarking
+                    "--max-attempts",
+                    "1",
                 ])
                 .output()
                 .expect("Failed to run polyglot benchmark");
@@ -405,16 +489,22 @@ fn benchmark_aider_polyglot(c: &mut Criterion) {
             let elapsed = start.elapsed();
 
             // Benchmark should complete within reasonable time
-            assert!(elapsed < std::time::Duration::from_secs(120),
-                "Polyglot benchmark exceeded 120s baseline: {:?}", elapsed);
+            assert!(
+                elapsed < std::time::Duration::from_secs(120),
+                "Polyglot benchmark exceeded 120s baseline: {:?}",
+                elapsed
+            );
 
             // Should not have failed catastrophically
             if !result.status.success() {
                 let stderr = String::from_utf8_lossy(&result.stderr);
                 eprintln!("Benchmark stderr: {}", stderr);
                 // Don't fail on expected test failures, just on crashes
-                assert!(!stderr.contains("panic") && !stderr.contains("error"),
-                    "Benchmark crashed: {}", stderr);
+                assert!(
+                    !stderr.contains("panic") && !stderr.contains("error"),
+                    "Benchmark crashed: {}",
+                    stderr
+                );
             }
 
             black_box((elapsed, result));
@@ -508,7 +598,8 @@ fn create_large_project(base_dir: &tempfile::TempDir, num_crates: usize, lines_p
         std::fs::create_dir_all(&crate_dir).expect("Failed to create large crate dir");
 
         // Create Cargo.toml
-        let cargo_toml = format!(r#"
+        let cargo_toml = format!(
+            r#"
 [package]
 name = "large-crate-{}"
 version = "1.0.0"
@@ -517,7 +608,9 @@ edition = "2021"
 [dependencies]
 serde = "1.0"
 tokio = "1.0"
-"#, crate_num);
+"#,
+            crate_num
+        );
 
         std::fs::write(crate_dir.join("Cargo.toml"), cargo_toml)
             .expect("Failed to write large Cargo.toml");
@@ -534,15 +627,16 @@ tokio = "1.0"
             // Generate lines of code
             for line_num in 0..(lines_per_file / 10) {
                 content.push_str(&format!("/// Documentation for function {}\n", line_num));
-                content.push_str(&format!("pub fn large_function_{}_{}() -> Result<(), Box<dyn std::error::Error>> {{\n",
-                    crate_num, line_num));
+                content.push_str(&format!(
+                    "pub fn large_function_{}_{}() -> Result<(), Box<dyn std::error::Error>> {{\n",
+                    crate_num, line_num
+                ));
                 content.push_str(&format!("    // Large implementation here\n"));
                 content.push_str(&format!("    Ok(())\n"));
                 content.push_str("}\n\n");
             }
 
-            std::fs::write(&file_path, content)
-                .expect("Failed to write large source file");
+            std::fs::write(&file_path, content).expect("Failed to write large source file");
         }
     }
 }

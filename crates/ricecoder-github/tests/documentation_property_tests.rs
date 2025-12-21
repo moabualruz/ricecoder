@@ -14,8 +14,7 @@ fn valid_project_name_strategy() -> impl Strategy<Value = String> {
 
 // Strategy for generating valid descriptions
 fn valid_description_strategy() -> impl Strategy<Value = String> {
-    r"[a-zA-Z0-9 \-_.,!?]{0,200}"
-        .prop_map(|s| s.trim().to_string())
+    r"[a-zA-Z0-9 \-_.,!?]{0,200}".prop_map(|s| s.trim().to_string())
 }
 
 // Strategy for generating README configurations
@@ -57,10 +56,7 @@ fn readme_config_strategy() -> impl Strategy<Value = ReadmeConfig> {
 
 // Strategy for generating Rust code with functions
 fn rust_code_strategy() -> impl Strategy<Value = String> {
-    prop::collection::vec(
-        r"(pub )?fn [a-z_][a-z0-9_]*\(\) \{\}",
-        0..10,
-    )
+    prop::collection::vec(r"(pub )?fn [a-z_][a-z0-9_]*\(\) \{\}", 0..10)
         .prop_map(|functions| functions.join("\n"))
 }
 
@@ -73,13 +69,13 @@ fn documented_rust_code_strategy() -> impl Strategy<Value = String> {
         ),
         0..5,
     )
-        .prop_map(|items| {
-            items
-                .iter()
-                .map(|(doc, func)| format!("{}\n{}", doc, func))
-                .collect::<Vec<_>>()
-                .join("\n")
-        })
+    .prop_map(|items| {
+        items
+            .iter()
+            .map(|(doc, func)| format!("{}\n{}", doc, func))
+            .collect::<Vec<_>>()
+            .join("\n")
+    })
 }
 
 // **Feature: ricecoder-github, Property 26: README Generation**

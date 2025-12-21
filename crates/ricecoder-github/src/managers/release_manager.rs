@@ -201,9 +201,7 @@ impl ReleaseManager {
 
         // Validate tag name format
         if !options.tag_name.starts_with('v') {
-            return Err(GitHubError::invalid_input(
-                "Tag name must start with 'v'",
-            ));
+            return Err(GitHubError::invalid_input("Tag name must start with 'v'"));
         }
 
         // Parse version to validate semantic versioning
@@ -237,10 +235,7 @@ impl ReleaseManager {
     }
 
     /// Generate release notes from commits and PRs
-    pub async fn generate_release_notes(
-        &self,
-        options: ReleaseNotesOptions,
-    ) -> Result<String> {
+    pub async fn generate_release_notes(&self, options: ReleaseNotesOptions) -> Result<String> {
         debug!("Generating release notes");
 
         let mut notes = String::new();
@@ -274,7 +269,9 @@ impl ReleaseManager {
 
         // Validate release
         if release.tag_name.is_empty() {
-            return Err(GitHubError::invalid_input("Release tag name cannot be empty"));
+            return Err(GitHubError::invalid_input(
+                "Release tag name cannot be empty",
+            ));
         }
 
         if release.name.is_empty() {
@@ -317,7 +314,11 @@ impl ReleaseManager {
         entries.sort_by(|a, b| b.date.cmp(&a.date));
 
         for entry in entries {
-            changelog.push_str(&format!("## [{}] - {}\n\n", entry.version, entry.date.format("%Y-%m-%d")));
+            changelog.push_str(&format!(
+                "## [{}] - {}\n\n",
+                entry.version,
+                entry.date.format("%Y-%m-%d")
+            ));
             changelog.push_str(&entry.notes);
             changelog.push_str("\n\n");
         }

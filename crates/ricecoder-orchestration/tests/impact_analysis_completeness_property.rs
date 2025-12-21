@@ -14,27 +14,22 @@ fn project_name_strategy() -> impl Strategy<Value = String> {
 
 /// Strategy for generating unique project names
 fn unique_project_names_strategy() -> impl Strategy<Value = Vec<String>> {
-    prop::collection::vec(
-        "[a-z][a-z0-9-]{0,10}".prop_map(|s| s.to_string()),
-        1..10,
+    prop::collection::vec("[a-z][a-z0-9-]{0,10}".prop_map(|s| s.to_string()), 1..10).prop_map(
+        |mut names| {
+            // Make names unique by adding index
+            for (i, name) in names.iter_mut().enumerate() {
+                *name = format!("{}-{}", name, i);
+            }
+            names.sort();
+            names.dedup();
+            names
+        },
     )
-    .prop_map(|mut names| {
-        // Make names unique by adding index
-        for (i, name) in names.iter_mut().enumerate() {
-            *name = format!("{}-{}", name, i);
-        }
-        names.sort();
-        names.dedup();
-        names
-    })
 }
 
 /// Strategy for generating dependency configurations
 fn dependency_config_strategy() -> impl Strategy<Value = Vec<(usize, usize)>> {
-    prop::collection::vec(
-        (0usize..10, 0usize..10),
-        0..20,
-    )
+    prop::collection::vec((0usize..10, 0usize..10), 0..20)
 }
 
 /// Strategy for generating change types

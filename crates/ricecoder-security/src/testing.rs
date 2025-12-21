@@ -90,10 +90,18 @@ pub trait SecurityValidator: Send + Sync {
     async fn validate_html_input(&self, input: &str) -> anyhow::Result<String>;
 
     /// Validate authentication
-    async fn validate_authentication(&self, username: &str, password: &str) -> anyhow::Result<AuthResult>;
+    async fn validate_authentication(
+        &self,
+        username: &str,
+        password: &str,
+    ) -> anyhow::Result<AuthResult>;
 
     /// Validate authorization
-    async fn validate_authorization(&self, user: &str, permission: &str) -> anyhow::Result<AuthzResult>;
+    async fn validate_authorization(
+        &self,
+        user: &str,
+        permission: &str,
+    ) -> anyhow::Result<AuthzResult>;
 
     /// Encrypt data
     async fn encrypt_data(&self, data: &str) -> anyhow::Result<EncryptionResult>;
@@ -114,10 +122,16 @@ pub trait SecurityValidator: Send + Sync {
     async fn sanitize_request(&self, request: &str) -> anyhow::Result<String>;
 
     /// Validate session integrity
-    async fn validate_session_integrity(&self, session_id: &str) -> anyhow::Result<SessionValidationResult>;
+    async fn validate_session_integrity(
+        &self,
+        session_id: &str,
+    ) -> anyhow::Result<SessionValidationResult>;
 
     /// Validate session data protection
-    async fn validate_session_data_protection(&self, session_id: &str) -> anyhow::Result<SessionValidationResult>;
+    async fn validate_session_data_protection(
+        &self,
+        session_id: &str,
+    ) -> anyhow::Result<SessionValidationResult>;
 
     /// Set session timeout
     async fn set_session_timeout(&self, session_id: &str, timeout: Duration) -> anyhow::Result<()>;
@@ -186,27 +200,40 @@ impl SecurityValidator for DefaultSecurityValidator {
 
         // Check for common injection patterns
         let injection_patterns = [
-            r"<script[^>]*>.*?</script>",  // XSS
-            r"javascript:",                // JavaScript URLs
-            r"on\w+\s*=",                  // Event handlers
-            r"';.*--",                     // SQL injection
-            r";.*rm\s",                    // Command injection
-            r"\.\./",                      // Path traversal
-            r"{{.*}}",                     // Template injection
+            r"<script[^>]*>.*?</script>", // XSS
+            r"javascript:",               // JavaScript URLs
+            r"on\w+\s*=",                 // Event handlers
+            r"';.*--",                    // SQL injection
+            r";.*rm\s",                   // Command injection
+            r"\.\./",                     // Path traversal
+            r"{{.*}}",                    // Template injection
         ];
 
         for pattern in &injection_patterns {
             if regex::Regex::new(pattern)?.is_match(input) {
-                violations.push(format!("Detected potentially malicious pattern: {}", pattern));
+                violations.push(format!(
+                    "Detected potentially malicious pattern: {}",
+                    pattern
+                ));
                 is_safe = false;
             }
         }
 
         // Check for suspicious keywords
         let suspicious_keywords = [
-            "eval", "exec", "system", "shell_exec", "passthru", "proc_open",
-            "DROP TABLE", "DELETE FROM", "UPDATE", "INSERT INTO",
-            "../../../", "/etc/passwd", "/etc/shadow",
+            "eval",
+            "exec",
+            "system",
+            "shell_exec",
+            "passthru",
+            "proc_open",
+            "DROP TABLE",
+            "DELETE FROM",
+            "UPDATE",
+            "INSERT INTO",
+            "../../../",
+            "/etc/passwd",
+            "/etc/shadow",
         ];
 
         for keyword in &suspicious_keywords {
@@ -229,14 +256,26 @@ impl SecurityValidator for DefaultSecurityValidator {
         })
     }
 
-    async fn validate_authentication(&self, username: &str, password: &str) -> anyhow::Result<AuthResult> {
+    async fn validate_authentication(
+        &self,
+        username: &str,
+        password: &str,
+    ) -> anyhow::Result<AuthResult> {
         // Simple validation - in real implementation, check against user database
         let success = !username.is_empty() && !password.is_empty() && password.len() >= 8;
 
         let result = AuthResult {
             success,
-            user_id: if success { Some(username.to_string()) } else { None },
-            token: if success { Some(Uuid::new_v4().to_string()) } else { None },
+            user_id: if success {
+                Some(username.to_string())
+            } else {
+                None
+            },
+            token: if success {
+                Some(Uuid::new_v4().to_string())
+            } else {
+                None
+            },
             expires_at: if success {
                 Some(chrono::Utc::now() + chrono::Duration::hours(24))
             } else {
@@ -247,10 +286,19 @@ impl SecurityValidator for DefaultSecurityValidator {
         Ok(result)
     }
 
-    async fn validate_authorization(&self, user: &str, permission: &str) -> anyhow::Result<AuthzResult> {
+    async fn validate_authorization(
+        &self,
+        user: &str,
+        permission: &str,
+    ) -> anyhow::Result<AuthzResult> {
         // Simple RBAC - in real implementation, check user roles and permissions
         let allowed_permissions = match user {
-            "admin" => vec!["read".to_string(), "write".to_string(), "delete".to_string(), "admin".to_string()],
+            "admin" => vec![
+                "read".to_string(),
+                "write".to_string(),
+                "delete".to_string(),
+                "admin".to_string(),
+            ],
             "user" => vec!["read".to_string(), "write".to_string()],
             _ => vec![],
         };
@@ -271,8 +319,8 @@ impl SecurityValidator for DefaultSecurityValidator {
     }
 
     async fn encrypt_data(&self, data: &str) -> anyhow::Result<EncryptionResult> {
-        use aes_gcm::{Aes256Gcm, Key, Nonce};
         use aes_gcm::aead::{Aead, KeyInit};
+        use aes_gcm::{Aes256Gcm, Key, Nonce};
 
         // Generate a random key for this encryption (in production, use key management)
         let key_bytes = rand::random::<[u8; 32]>();
@@ -280,7 +328,8 @@ impl SecurityValidator for DefaultSecurityValidator {
         let cipher = Aes256Gcm::new(key);
         let nonce = Nonce::from(rand::random::<[u8; 12]>()); // 96-bit nonce
 
-        let ciphertext = cipher.encrypt(&nonce, data.as_bytes())
+        let ciphertext = cipher
+            .encrypt(&nonce, data.as_bytes())
             .map_err(|e| anyhow::anyhow!("Encryption failed: {}", e))?;
 
         // Combine nonce and ciphertext
@@ -290,7 +339,10 @@ impl SecurityValidator for DefaultSecurityValidator {
         let key_id = format!("key-{}", Uuid::new_v4());
 
         // Store key for decryption (in production, use proper key management)
-        self.encryption_keys.write().await.insert(key_id.clone(), key_bytes.to_vec());
+        self.encryption_keys
+            .write()
+            .await
+            .insert(key_id.clone(), key_bytes.to_vec());
 
         Ok(EncryptionResult {
             success: true,
@@ -300,8 +352,8 @@ impl SecurityValidator for DefaultSecurityValidator {
     }
 
     async fn decrypt_data(&self, encrypted_data: &[u8]) -> anyhow::Result<String> {
-        use aes_gcm::{Aes256Gcm, Key, Nonce};
         use aes_gcm::aead::{Aead, KeyInit};
+        use aes_gcm::{Aes256Gcm, Key, Nonce};
 
         if encrypted_data.len() < 12 {
             return Err(anyhow::anyhow!("Invalid encrypted data"));
@@ -313,12 +365,15 @@ impl SecurityValidator for DefaultSecurityValidator {
         // In production, retrieve key by ID from secure storage
         // For this implementation, we'll assume the key is available
         let keys = self.encryption_keys.read().await;
-        let key_bytes = keys.values().next()
+        let key_bytes = keys
+            .values()
+            .next()
             .ok_or_else(|| anyhow::anyhow!("No encryption key available"))?;
         let key = Key::<Aes256Gcm>::from_slice(key_bytes);
         let cipher = Aes256Gcm::new(key);
 
-        let plaintext = cipher.decrypt(nonce, ciphertext)
+        let plaintext = cipher
+            .decrypt(nonce, ciphertext)
             .map_err(|e| anyhow::anyhow!("Decryption failed: {}", e))?;
 
         String::from_utf8(plaintext)
@@ -359,7 +414,8 @@ impl SecurityValidator for DefaultSecurityValidator {
         let mut rate_limits = self.rate_limits.write().await;
         let key = format!("{}:{}", user, action);
 
-        let (current_count, reset_time) = rate_limits.entry(key.clone())
+        let (current_count, reset_time) = rate_limits
+            .entry(key.clone())
             .or_insert((0, chrono::Utc::now() + chrono::Duration::minutes(1)));
 
         let now = chrono::Utc::now();
@@ -385,28 +441,36 @@ impl SecurityValidator for DefaultSecurityValidator {
 
         // Remove script tags
         sanitized = regex::Regex::new(r"<script[^>]*>.*?</script>")?
-            .replace_all(&sanitized, "").to_string();
+            .replace_all(&sanitized, "")
+            .to_string();
 
         // Remove javascript: URLs
         sanitized = regex::Regex::new(r"javascript:")?
-            .replace_all(&sanitized, "").to_string();
+            .replace_all(&sanitized, "")
+            .to_string();
 
         // Remove event handlers
         sanitized = regex::Regex::new(r"on\w+\s*=")?
-            .replace_all(&sanitized, "").to_string();
+            .replace_all(&sanitized, "")
+            .to_string();
 
         // Remove SQL injection patterns
         sanitized = regex::Regex::new(r"';.*--")?
-            .replace_all(&sanitized, "").to_string();
+            .replace_all(&sanitized, "")
+            .to_string();
 
         // Remove path traversal
         sanitized = regex::Regex::new(r"\.\./")?
-            .replace_all(&sanitized, "").to_string();
+            .replace_all(&sanitized, "")
+            .to_string();
 
         Ok(sanitized)
     }
 
-    async fn validate_session_integrity(&self, session_id: &str) -> anyhow::Result<SessionValidationResult> {
+    async fn validate_session_integrity(
+        &self,
+        session_id: &str,
+    ) -> anyhow::Result<SessionValidationResult> {
         let timeouts = self.session_timeouts.read().await;
         let now = chrono::Utc::now();
 
@@ -424,7 +488,10 @@ impl SecurityValidator for DefaultSecurityValidator {
         })
     }
 
-    async fn validate_session_data_protection(&self, _session_id: &str) -> anyhow::Result<SessionValidationResult> {
+    async fn validate_session_data_protection(
+        &self,
+        _session_id: &str,
+    ) -> anyhow::Result<SessionValidationResult> {
         // In a real implementation, check if session data is properly encrypted
         Ok(SessionValidationResult {
             is_valid: true,
@@ -436,7 +503,10 @@ impl SecurityValidator for DefaultSecurityValidator {
 
     async fn set_session_timeout(&self, session_id: &str, timeout: Duration) -> anyhow::Result<()> {
         let mut timeouts = self.session_timeouts.write().await;
-        timeouts.insert(session_id.to_string(), chrono::Utc::now() + chrono::Duration::from_std(timeout)?);
+        timeouts.insert(
+            session_id.to_string(),
+            chrono::Utc::now() + chrono::Duration::from_std(timeout)?,
+        );
         Ok(())
     }
 

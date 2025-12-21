@@ -1,7 +1,7 @@
 //! Metrics collection and management
 
 use crate::types::*;
-use chrono::{DateTime, Utc, TimeDelta};
+use chrono::{DateTime, TimeDelta, Utc};
 use dashmap::DashMap;
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
@@ -81,7 +81,10 @@ impl MetricsCollector {
     }
 
     /// Register a metric
-    pub fn register_metric(&self, metric: Metric) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub fn register_metric(
+        &self,
+        metric: Metric,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let definition = Arc::new(MetricDefinition {
             metric,
             created_at: chrono::Utc::now(),
@@ -109,7 +112,8 @@ impl MetricsCollector {
     pub fn get_metric_data(&self, name: &str, since: Option<DateTime<Utc>>) -> Vec<DataPoint> {
         if let Some(points) = METRICS_STORAGE.get(name) {
             if let Some(since) = since {
-                points.iter()
+                points
+                    .iter()
                     .filter(|p| p.timestamp >= since)
                     .cloned()
                     .collect()
@@ -210,7 +214,10 @@ struct MetricDefinition {
 /// Metrics exporter trait
 #[async_trait::async_trait]
 pub trait MetricsExporter: Send + Sync {
-    async fn export(&self, metrics: Vec<DataPoint>) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
+    async fn export(
+        &self,
+        metrics: Vec<DataPoint>,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
 }
 
 /// Prometheus exporter
@@ -232,7 +239,10 @@ impl PrometheusExporter {
 
 #[async_trait::async_trait]
 impl MetricsExporter for PrometheusExporter {
-    async fn export(&self, _metrics: Vec<DataPoint>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn export(
+        &self,
+        _metrics: Vec<DataPoint>,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // Prometheus metrics are served via HTTP endpoint
         // This would be implemented in a web server
         Ok(())
@@ -252,7 +262,10 @@ impl OpenTelemetryExporter {
 
 #[async_trait::async_trait]
 impl MetricsExporter for OpenTelemetryExporter {
-    async fn export(&self, _metrics: Vec<DataPoint>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn export(
+        &self,
+        _metrics: Vec<DataPoint>,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // Export metrics via OpenTelemetry protocol
         Ok(())
     }

@@ -238,5 +238,3 @@ impl AuditLogger {
         self.log(&entry)
     }
 }
-
-

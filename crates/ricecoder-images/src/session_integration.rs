@@ -6,8 +6,8 @@
 //! - Store image references in session context
 //! - Support image sharing in sessions
 
-use crate::models::{ImageAnalysisResult, ImageMetadata};
 use crate::error::{ImageError, ImageResult};
+use crate::models::{ImageAnalysisResult, ImageMetadata};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -67,9 +67,10 @@ impl MessageImages {
     /// Ok if the image was added, Err if an image with the same hash already exists
     pub fn add_image(&mut self, image_meta: MessageImageMetadata) -> ImageResult<()> {
         if self.images.contains_key(&image_meta.hash) {
-            return Err(ImageError::InvalidFile(
-                format!("Image with hash {} already exists in message", image_meta.hash),
-            ));
+            return Err(ImageError::InvalidFile(format!(
+                "Image with hash {} already exists in message",
+                image_meta.hash
+            )));
         }
 
         self.images.insert(image_meta.hash.clone(), image_meta);

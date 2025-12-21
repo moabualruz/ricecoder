@@ -1,9 +1,9 @@
 //! Performance profiling utilities for detailed analysis
 
-use crate::monitor::{PerformanceMonitor, PerformanceMetrics};
+use crate::monitor::{PerformanceMetrics, PerformanceMonitor};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
-use serde::{Deserialize, Serialize};
 
 /// Performance profiler for detailed code path analysis
 pub struct PerformanceProfiler {
@@ -29,7 +29,8 @@ impl PerformanceProfiler {
 
     /// Stop profiling session and return results
     pub fn stop_profiling(&mut self) -> ProfileResult {
-        let total_duration = self.profile_start
+        let total_duration = self
+            .profile_start
             .map(|start| start.elapsed())
             .unwrap_or(Duration::from_secs(0));
 
@@ -48,7 +49,8 @@ impl PerformanceProfiler {
 
     /// Start timing a specific code path
     pub fn start_timing(&mut self, path_name: &str) {
-        let monitor = self.monitors
+        let monitor = self
+            .monitors
             .entry(path_name.to_string())
             .or_insert_with(|| PerformanceMonitor::new(path_name.to_string()));
 
@@ -121,7 +123,10 @@ impl ProfileResult {
     }
 
     /// Get paths exceeding a time threshold
-    pub fn paths_exceeding_threshold(&self, threshold_ns: u64) -> Vec<(&String, &PerformanceMetrics)> {
+    pub fn paths_exceeding_threshold(
+        &self,
+        threshold_ns: u64,
+    ) -> Vec<(&String, &PerformanceMetrics)> {
         self.metrics
             .iter()
             .filter(|(_, metrics)| metrics.p95_time_ns > threshold_ns)
@@ -131,7 +136,10 @@ impl ProfileResult {
     /// Generate a performance report
     pub fn generate_report(&self) -> String {
         let mut report = format!("=== Performance Profile Report ===\n");
-        report.push_str(&format!("Total Duration: {:.2}s\n", self.total_duration.as_secs_f64()));
+        report.push_str(&format!(
+            "Total Duration: {:.2}s\n",
+            self.total_duration.as_secs_f64()
+        ));
         report.push_str(&format!("Total Calls: {}\n", self.call_count));
         report.push_str(&format!("Timestamp: {}\n\n", self.timestamp.to_rfc3339()));
 
@@ -150,8 +158,11 @@ impl ProfileResult {
         }
 
         if let Some((path, metrics)) = self.slowest_path() {
-            report.push_str(&format!("\nSlowest Path: {} ({:.2}ms P95)\n",
-                path, metrics.p95_time_ns as f64 / 1_000_000.0));
+            report.push_str(&format!(
+                "\nSlowest Path: {} ({:.2}ms P95)\n",
+                path,
+                metrics.p95_time_ns as f64 / 1_000_000.0
+            ));
         }
 
         report
@@ -169,7 +180,10 @@ impl<'a> ProfilerTimer<'a> {
     pub fn new(profiler: &'a mut PerformanceProfiler, path_name: impl Into<String>) -> Self {
         let path_name = path_name.into();
         profiler.start_timing(&path_name);
-        Self { profiler, path_name }
+        Self {
+            profiler,
+            path_name,
+        }
     }
 }
 

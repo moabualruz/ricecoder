@@ -10,10 +10,10 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use ricecoder_mcp::{
-    metadata::ToolMetadata,
-    transport::{MCPRequest, MCPResponse, MCPMessage},
-    registry::ToolRegistry,
     error::Result,
+    metadata::ToolMetadata,
+    registry::ToolRegistry,
+    transport::{MCPMessage, MCPRequest, MCPResponse},
 };
 
 // Import our testing infrastructure
@@ -412,7 +412,7 @@ async fn test_mock_server_concurrent_requests() {
                 input_schema: serde_json::json!({"type": "object"}),
                 permissions_required: vec![],
                 metadata: None,
-            }
+            },
         );
     }
 

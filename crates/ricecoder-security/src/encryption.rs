@@ -5,13 +5,13 @@ use aes_gcm::{
     Aes256Gcm,
 };
 use argon2::{Argon2, Params};
-use base64::{Engine as _, engine::general_purpose};
+use base64::{engine::general_purpose, Engine as _};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use tokio::fs;
 
-use crate::{SecurityError, Result};
+use crate::{Result, SecurityError};
 
 /// Encrypted data structure
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,11 +53,11 @@ impl KeyManager {
 
         let cipher = Aes256Gcm::new(&encryption_key.into());
         let nonce_gcm = aes_gcm::Nonce::from_slice(&nonce);
-        let ciphertext = cipher
-            .encrypt(nonce_gcm, api_key.as_bytes())
-            .map_err(|e| SecurityError::Encryption {
+        let ciphertext = cipher.encrypt(nonce_gcm, api_key.as_bytes()).map_err(|e| {
+            SecurityError::Encryption {
                 message: e.to_string(),
-            })?;
+            }
+        })?;
 
         Ok(EncryptedData {
             salt: general_purpose::STANDARD.encode(salt),
@@ -78,11 +78,12 @@ impl KeyManager {
         let encryption_key = Self::derive_key_from_bytes(&self.master_key, &salt)?;
 
         let cipher = Aes256Gcm::new(&encryption_key.into());
-        let plaintext = cipher
-            .decrypt(nonce, ciphertext.as_ref())
-            .map_err(|e| SecurityError::Decryption {
-                message: e.to_string(),
-            })?;
+        let plaintext =
+            cipher
+                .decrypt(nonce, ciphertext.as_ref())
+                .map_err(|e| SecurityError::Decryption {
+                    message: e.to_string(),
+                })?;
 
         String::from_utf8(plaintext).map_err(Into::into)
     }
@@ -121,11 +122,7 @@ impl KeyManager {
         let params = Params::new(65536, 3, 4, None).map_err(|e| SecurityError::KeyDerivation {
             message: e.to_string(),
         })?;
-        let argon2 = Argon2::new(
-            argon2::Algorithm::Argon2id,
-            argon2::Version::V0x13,
-            params,
-        );
+        let argon2 = Argon2::new(argon2::Algorithm::Argon2id, argon2::Version::V0x13, params);
 
         argon2
             .hash_password_into(key, salt, &mut derived_key)
@@ -164,14 +161,21 @@ impl CustomerKeyManager {
     }
 
     /// Encrypt data with customer key
-    pub fn encrypt_with_customer_key(&self, data: &str, customer_key: &[u8]) -> Result<EncryptedData> {
-        let encrypted_key = self.master_key_manager.encrypt_api_key(&general_purpose::STANDARD.encode(customer_key))?;
+    pub fn encrypt_with_customer_key(
+        &self,
+        data: &str,
+        customer_key: &[u8],
+    ) -> Result<EncryptedData> {
+        let encrypted_key = self
+            .master_key_manager
+            .encrypt_api_key(&general_purpose::STANDARD.encode(customer_key))?;
         let salt = Self::generate_salt();
 
         // Use customer key to derive encryption key
         let mut derived_key = [0u8; 32];
         let argon2 = Argon2::default();
-        argon2.hash_password_into(customer_key, &salt, &mut derived_key)
+        argon2
+            .hash_password_into(customer_key, &salt, &mut derived_key)
             .map_err(|e| SecurityError::KeyDerivation {
                 message: e.to_string(),
             })?;
@@ -180,10 +184,12 @@ impl CustomerKeyManager {
         let nonce = Self::generate_nonce();
         let nonce_gcm = aes_gcm::Nonce::from_slice(&nonce);
 
-        let ciphertext = cipher.encrypt(nonce_gcm, data.as_bytes())
-            .map_err(|e| SecurityError::Encryption {
-                message: e.to_string(),
-            })?;
+        let ciphertext =
+            cipher
+                .encrypt(nonce_gcm, data.as_bytes())
+                .map_err(|e| SecurityError::Encryption {
+                    message: e.to_string(),
+                })?;
 
         Ok(EncryptedData {
             salt: general_purpose::STANDARD.encode(salt),
@@ -193,14 +199,19 @@ impl CustomerKeyManager {
     }
 
     /// Decrypt data with customer key
-    pub fn decrypt_with_customer_key(&self, encrypted: &EncryptedData, customer_key: &[u8]) -> Result<String> {
+    pub fn decrypt_with_customer_key(
+        &self,
+        encrypted: &EncryptedData,
+        customer_key: &[u8],
+    ) -> Result<String> {
         let salt_bytes = general_purpose::STANDARD.decode(&encrypted.salt)?;
         let nonce_bytes = general_purpose::STANDARD.decode(&encrypted.nonce)?;
         let ciphertext = general_purpose::STANDARD.decode(&encrypted.ciphertext)?;
 
         let mut derived_key = [0u8; 32];
         let argon2 = Argon2::default();
-        argon2.hash_password_into(customer_key, &salt_bytes, &mut derived_key)
+        argon2
+            .hash_password_into(customer_key, &salt_bytes, &mut derived_key)
             .map_err(|e| SecurityError::KeyDerivation {
                 message: e.to_string(),
             })?;
@@ -208,10 +219,12 @@ impl CustomerKeyManager {
         let cipher = Aes256Gcm::new(&derived_key.into());
         let nonce = aes_gcm::Nonce::from_slice(&nonce_bytes);
 
-        let plaintext = cipher.decrypt(nonce, ciphertext.as_ref())
-            .map_err(|e| SecurityError::Decryption {
-                message: e.to_string(),
-            })?;
+        let plaintext =
+            cipher
+                .decrypt(nonce, ciphertext.as_ref())
+                .map_err(|e| SecurityError::Decryption {
+                    message: e.to_string(),
+                })?;
 
         String::from_utf8(plaintext).map_err(Into::into)
     }

@@ -1,7 +1,6 @@
 /// Unit tests for IntentTracker component
 ///
 /// Tests architectural pattern detection, evolution tracking, and drift detection
-
 use ricecoder_learning::{
     ArchitecturalDecision, ArchitecturalEvolution, DriftDetection, IntentTracker,
 };
@@ -479,10 +478,7 @@ fn test_architectural_decision_creation() {
 
 #[test]
 fn test_architectural_evolution_creation() {
-    let evolution = ArchitecturalEvolution::new(
-        "0.1.0".to_string(),
-        "0.2.0".to_string(),
-    );
+    let evolution = ArchitecturalEvolution::new("0.1.0".to_string(), "0.2.0".to_string());
 
     assert_eq!(evolution.from_version, "0.1.0");
     assert_eq!(evolution.to_version, "0.2.0");
@@ -616,5 +612,8 @@ fn test_drift_remediation_suggestions() {
         .expect("Failed to detect drift");
 
     assert!(!violation_drift.remediation.is_empty());
-    assert!(violation_drift.remediation.to_lowercase().contains("immediately"));
+    assert!(violation_drift
+        .remediation
+        .to_lowercase()
+        .contains("immediately"));
 }

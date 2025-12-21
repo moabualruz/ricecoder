@@ -112,7 +112,10 @@ async fn test_webfetch_timeout_enforcement() {
     assert!(result.error.is_some());
     if let Some(error) = result.error {
         // Accept either TIMEOUT or HTTP_ERROR as both indicate the request failed
-        assert!(error.code == "TIMEOUT" || error.code == "HTTP_ERROR",
-                "Expected TIMEOUT or HTTP_ERROR, got: {}", error.code);
+        assert!(
+            error.code == "TIMEOUT" || error.code == "HTTP_ERROR",
+            "Expected TIMEOUT or HTTP_ERROR, got: {}",
+            error.code
+        );
     }
 }

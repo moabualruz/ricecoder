@@ -6,24 +6,25 @@
 //! These tests verify that the MCP protocol implementation maintains correctness under
 //! various edge cases, enterprise security requirements, and protocol invariants.
 
+use chrono::{DateTime, Utc};
 use proptest::prelude::*;
 use ricecoder_mcp::{
     audit::MCPAuditLogger,
-    compliance::{MCPComplianceMonitor, ComplianceReport, ComplianceReportType, ViolationSeverity},
+    compliance::{ComplianceReport, ComplianceReportType, MCPComplianceMonitor, ViolationSeverity},
     config::{MCPConfig, MCPServerConfig},
     connection_pool::{ConnectionPool, PoolConfig, PoolStats},
     error::{Error, Result, ToolError},
-    health_check::{HealthChecker, HealthCheckConfig, HealthStatus},
+    health_check::{HealthCheckConfig, HealthChecker, HealthStatus},
     metadata::{ParameterMetadata, ToolMetadata, ToolSource},
     permissions::{MCPPermissionManager, PermissionLevelConfig, PermissionRule},
-    protocol_validation::{MCPProtocolValidator},
-    rbac::{MCRBACManager, MCPAuthorizationMiddleware},
+    protocol_validation::MCPProtocolValidator,
+    rbac::{MCPAuthorizationMiddleware, MCRBACManager},
     registry::ToolRegistry,
-    server_management::{ServerConfig, ServerManager, AuthConfig, AuthType},
+    server_management::{AuthConfig, AuthType, ServerConfig, ServerManager},
     tool_execution::{MCPToolExecutor, ToolExecutionContext, ToolExecutionResult},
     transport::{
-        MCPMessage, MCPRequest, MCPResponse, MCPNotification, MCPError, MCPErrorData,
-        MCPTransport, StdioTransport, TransportConfig,
+        MCPError, MCPErrorData, MCPMessage, MCPNotification, MCPRequest, MCPResponse, MCPTransport,
+        StdioTransport, TransportConfig,
     },
 };
 use std::collections::HashMap;
@@ -31,7 +32,6 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tokio::sync::{RwLock, Semaphore};
 use tokio::time::timeout;
-use chrono::{DateTime, Utc};
 
 // Import testing infrastructure enhancements
 #[path = "mcp_testing_infrastructure.rs"]
@@ -44,9 +44,9 @@ use mcp_testing_infrastructure::*;
 
 fn arb_mcp_request() -> impl Strategy<Value = MCPRequest> {
     (
-        "[a-zA-Z0-9_-]{1,64}".prop_map(|s| s), // id
+        "[a-zA-Z0-9_-]{1,64}".prop_map(|s| s),   // id
         "[a-zA-Z0-9_.-]{1,128}".prop_map(|s| s), // method
-        any::<serde_json::Value>(), // params
+        any::<serde_json::Value>(),              // params
     )
         .prop_map(|(id, method, params)| MCPRequest { id, method, params })
 }
@@ -54,7 +54,7 @@ fn arb_mcp_request() -> impl Strategy<Value = MCPRequest> {
 fn arb_mcp_response() -> impl Strategy<Value = MCPResponse> {
     (
         "[a-zA-Z0-9_-]{1,64}".prop_map(|s| s), // id
-        any::<serde_json::Value>(), // result
+        any::<serde_json::Value>(),            // result
     )
         .prop_map(|(id, result)| MCPResponse { id, result })
 }
@@ -62,18 +62,22 @@ fn arb_mcp_response() -> impl Strategy<Value = MCPResponse> {
 fn arb_mcp_notification() -> impl Strategy<Value = MCPNotification> {
     (
         "[a-zA-Z0-9_.-]{1,128}".prop_map(|s| s), // method
-        any::<serde_json::Value>(), // params
+        any::<serde_json::Value>(),              // params
     )
         .prop_map(|(method, params)| MCPNotification { method, params })
 }
 
 fn arb_mcp_error_data() -> impl Strategy<Value = MCPErrorData> {
     (
-        any::<i32>(), // code
-        ".{0,1024}".prop_map(|s| s), // message
+        any::<i32>(),                                     // code
+        ".{0,1024}".prop_map(|s| s),                      // message
         proptest::option::of(any::<serde_json::Value>()), // data
     )
-        .prop_map(|(code, message, data)| MCPErrorData { code, message, data })
+        .prop_map(|(code, message, data)| MCPErrorData {
+            code,
+            message,
+            data,
+        })
 }
 
 fn arb_mcp_error() -> impl Strategy<Value = MCPError> {
@@ -96,18 +100,20 @@ fn arb_mcp_message() -> impl Strategy<Value = MCPMessage> {
 fn arb_tool_metadata() -> impl Strategy<Value = ToolMetadata> {
     (
         "[a-zA-Z0-9_-]{1,64}".prop_map(|s| s), // name
-        ".{1,256}".prop_map(|s| s), // description
-        any::<serde_json::Value>(), // input_schema
+        ".{1,256}".prop_map(|s| s),            // description
+        any::<serde_json::Value>(),            // input_schema
         proptest::collection::vec("[a-zA-Z0-9_-]{1,64}".prop_map(|s| s), 0..5), // permissions_required
-        proptest::option::of(any::<serde_json::Value>()), // metadata
+        proptest::option::of(any::<serde_json::Value>()),                       // metadata
     )
-        .prop_map(|(name, description, input_schema, permissions_required, metadata)| ToolMetadata {
-            name,
-            description,
-            input_schema,
-            permissions_required,
-            metadata,
-        })
+        .prop_map(
+            |(name, description, input_schema, permissions_required, metadata)| ToolMetadata {
+                name,
+                description,
+                input_schema,
+                permissions_required,
+                metadata,
+            },
+        )
 }
 
 fn arb_permission_rule() -> impl Strategy<Value = PermissionRule> {

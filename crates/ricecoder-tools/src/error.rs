@@ -90,8 +90,7 @@ impl From<std::io::Error> for ToolError {
             _ => ("IO_ERROR", "IO error"),
         };
 
-        ToolError::new(code, message)
-            .with_details(err.to_string())
+        ToolError::new(code, message).with_details(err.to_string())
     }
 }
 
@@ -103,5 +102,3 @@ impl From<serde_json::Error> for ToolError {
             .with_suggestion("Check the JSON format and try again")
     }
 }
-
-

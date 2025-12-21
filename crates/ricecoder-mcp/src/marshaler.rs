@@ -109,12 +109,9 @@ impl ToolMarshaler {
             },
             "number" => match value {
                 Value::Number(n) => Ok(Value::Number(n.clone())),
-                Value::String(s) => s
-                    .parse::<f64>()
-                    .map(|n| json!(n))
-                    .map_err(|_| {
-                        Error::ValidationError(format!("Cannot convert '{}' to number", s))
-                    }),
+                Value::String(s) => s.parse::<f64>().map(|n| json!(n)).map_err(|_| {
+                    Error::ValidationError(format!("Cannot convert '{}' to number", s))
+                }),
                 _ => Err(Error::ValidationError(format!(
                     "Cannot convert {} to number",
                     value.get_type()

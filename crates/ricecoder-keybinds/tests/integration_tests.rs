@@ -2,8 +2,7 @@
 //! Tests end-to-end workflows combining multiple components
 
 use ricecoder_keybinds::{
-    Keybind, KeybindEngine, KeyCombo, FileSystemPersistence, KeybindPersistence,
-    ConflictDetector,
+    ConflictDetector, FileSystemPersistence, KeyCombo, Keybind, KeybindEngine, KeybindPersistence,
 };
 use std::str::FromStr;
 use tempfile::TempDir;
@@ -15,7 +14,12 @@ fn create_test_keybinds() -> Vec<Keybind> {
         Keybind::new("editor.undo", "Ctrl+Z", "editing", "Undo change"),
         Keybind::new("editor.redo", "Ctrl+Y", "editing", "Redo change"),
         Keybind::new("nav.next", "Tab", "navigation", "Move to next item"),
-        Keybind::new("nav.prev", "Shift+Tab", "navigation", "Move to previous item"),
+        Keybind::new(
+            "nav.prev",
+            "Shift+Tab",
+            "navigation",
+            "Move to previous item",
+        ),
         Keybind::new("search.find", "Ctrl+F", "search", "Find text"),
         Keybind::new("search.replace", "Ctrl+H", "search", "Replace text"),
     ]
@@ -82,8 +86,12 @@ fn test_profile_switching_with_persistence() {
     ];
 
     // Create profiles
-    assert!(engine.create_profile("profile1", profile1_keybinds.clone()).is_ok());
-    assert!(engine.create_profile("profile2", profile2_keybinds.clone()).is_ok());
+    assert!(engine
+        .create_profile("profile1", profile1_keybinds.clone())
+        .is_ok());
+    assert!(engine
+        .create_profile("profile2", profile2_keybinds.clone())
+        .is_ok());
 
     // Select profile1 and verify keybinds
     assert!(engine.select_profile("profile1").is_ok());
@@ -295,7 +303,8 @@ fn test_full_workflow_parse_validate_apply_persist() {
     }"#;
 
     // Full pipeline: parse → validate → apply → persist
-    let result = engine.validate_apply_and_persist_from_string(json, "json", "my_profile", &persistence);
+    let result =
+        engine.validate_apply_and_persist_from_string(json, "json", "my_profile", &persistence);
 
     // Should succeed
     assert!(result.is_ok());
@@ -350,7 +359,9 @@ fn test_multiple_profiles_isolation() {
         Keybind::new("editor.save", "Ctrl+S", "editing", "Save"),
         Keybind::new("editor.undo", "Ctrl+Z", "editing", "Undo"),
     ];
-    engine.create_profile("profile1", profile1_keybinds).unwrap();
+    engine
+        .create_profile("profile1", profile1_keybinds)
+        .unwrap();
 
     // Create profile 2
     let profile2_keybinds = vec![
@@ -358,13 +369,15 @@ fn test_multiple_profiles_isolation() {
         Keybind::new("editor.undo", "Cmd+Z", "editing", "Undo"),
         Keybind::new("nav.next", "Tab", "navigation", "Next"),
     ];
-    engine.create_profile("profile2", profile2_keybinds).unwrap();
+    engine
+        .create_profile("profile2", profile2_keybinds)
+        .unwrap();
 
     // Create profile 3
-    let profile3_keybinds = vec![
-        Keybind::new("search.find", "Ctrl+F", "search", "Find"),
-    ];
-    engine.create_profile("profile3", profile3_keybinds).unwrap();
+    let profile3_keybinds = vec![Keybind::new("search.find", "Ctrl+F", "search", "Find")];
+    engine
+        .create_profile("profile3", profile3_keybinds)
+        .unwrap();
 
     // Switch to each profile and verify isolation
     engine.select_profile("profile1").unwrap();

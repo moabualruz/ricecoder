@@ -558,15 +558,11 @@ mod tests {
         // Check first capability
         assert_eq!(capabilities[0].name, "API Design");
         assert_eq!(capabilities[0].technologies.len(), 3);
-        assert!(capabilities[0]
-            .technologies
-            .contains(&"REST".to_string()));
+        assert!(capabilities[0].technologies.contains(&"REST".to_string()));
         assert!(capabilities[0]
             .technologies
             .contains(&"GraphQL".to_string()));
-        assert!(capabilities[0]
-            .technologies
-            .contains(&"gRPC".to_string()));
+        assert!(capabilities[0].technologies.contains(&"gRPC".to_string()));
     }
 
     #[test]
@@ -634,7 +630,11 @@ mod tests {
                 .technology_recommendations
                 .iter()
                 .any(|r| r.technology == pattern);
-            assert!(found, "API pattern {} not found in recommendations", pattern);
+            assert!(
+                found,
+                "API pattern {} not found in recommendations",
+                pattern
+            );
         }
     }
 
@@ -679,7 +679,11 @@ mod tests {
                 .technology_recommendations
                 .iter()
                 .any(|r| r.technology == cache);
-            assert!(found, "Caching solution {} not found in recommendations", cache);
+            assert!(
+                found,
+                "Caching solution {} not found in recommendations",
+                cache
+            );
         }
     }
 
@@ -694,7 +698,11 @@ mod tests {
                 .technology_recommendations
                 .iter()
                 .any(|r| r.technology == tech);
-            assert!(found, "Security technology {} not found in recommendations", tech);
+            assert!(
+                found,
+                "Security technology {} not found in recommendations",
+                tech
+            );
         }
     }
 
@@ -709,7 +717,11 @@ mod tests {
                 .technology_recommendations
                 .iter()
                 .any(|r| r.technology == tool);
-            assert!(found, "Observability tool {} not found in recommendations", tool);
+            assert!(
+                found,
+                "Observability tool {} not found in recommendations",
+                tool
+            );
         }
     }
 

@@ -1,8 +1,8 @@
 //! Error types for session operations
 
+use base64;
 use std::io;
 use thiserror::Error;
-use base64;
 
 /// Result type for session operations
 pub type SessionResult<T> = Result<T, SessionError>;

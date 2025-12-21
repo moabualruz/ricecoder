@@ -1,5 +1,5 @@
-use ricecoder_tui::*;
 use crate::tea::AppModel;
+use ricecoder_tui::*;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -62,11 +62,8 @@ mod tests {
         let error_manager = ErrorManager::new();
         let real_time_updates = RealTimeUpdates::new(error_manager.clone());
 
-        let coordinator = ReactiveUICoordinator::new(
-            reactive_state,
-            real_time_updates,
-            error_manager,
-        );
+        let coordinator =
+            ReactiveUICoordinator::new(reactive_state, real_time_updates, error_manager);
 
         assert!(!coordinator.is_running().await);
     }

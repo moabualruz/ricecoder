@@ -3,9 +3,9 @@
 //! This module provides integration with the ricecoder-lsp crate to query
 //! available LSP servers and delegate refactoring operations to them.
 
+use super::lsp::LspProvider;
 use crate::error::Result;
 use crate::types::{Refactoring, ValidationResult};
-use super::lsp::LspProvider;
 use std::sync::Arc;
 
 /// LSP integration for querying available LSP servers
@@ -18,7 +18,8 @@ impl LspIntegration {
     /// Query ricecoder-lsp for available LSP servers
     ///
     /// Returns a map of language -> LSP server information
-    pub fn query_available_lsp_servers() -> Result<std::collections::HashMap<String, LspServerInfo>> {
+    pub fn query_available_lsp_servers() -> Result<std::collections::HashMap<String, LspServerInfo>>
+    {
         // In a real implementation, this would query ricecoder-lsp
         // For now, return an empty map (LSP servers can be registered manually)
         Ok(std::collections::HashMap::new())

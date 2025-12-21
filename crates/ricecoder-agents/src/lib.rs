@@ -42,8 +42,8 @@ pub mod models;
 pub mod orchestrator;
 pub mod registry;
 pub mod scheduler;
-pub mod tool_registry;
 pub mod tool_invokers;
+pub mod tool_registry;
 pub mod use_cases;
 
 #[cfg(test)]
@@ -59,23 +59,25 @@ pub use agents::{Agent, CodeReviewAgent, WebAgent};
 pub use coordinator::AgentCoordinator;
 pub use error::AgentError;
 pub use executor::{ExecutionConfig, ExecutionResult, ParallelExecutor};
+pub use mcp_integration::{
+    ExternalToolBackend, ExternalToolIntegrationService, ToolExecutionResult, ToolExecutor,
+};
 pub use metrics::{AgentStats, ExecutionMetrics, MetricsCollector};
 pub use models::{
     AgentConfig, AgentInput, AgentMetadata, AgentMetrics, AgentOutput, AgentTask, Finding,
     Severity, Suggestion, TaskScope, TaskTarget, TaskType,
 };
-pub use mcp_integration::{ExternalToolBackend, ExternalToolIntegrationService, ToolExecutionResult, ToolExecutor};
 pub use orchestrator::AgentOrchestrator;
-pub use use_cases::{
-    ExecuteExternalToolUseCase, ConfigureToolBackendUseCase, ToolManagementUseCase,
-    SessionLifecycleUseCase, SessionSharingUseCase, SessionStateManagementUseCase,
-    ProviderSwitchingUseCase, ProviderPerformanceUseCase, ProviderFailoverUseCase,
-    ProviderModelUseCase, ProviderHealthUseCase, ProviderCommunityUseCase,
-};
 pub use registry::AgentRegistry;
 pub use scheduler::{AgentScheduler, ExecutionPhase, ExecutionSchedule, TaskDAG};
-pub use tool_registry::{ToolInvoker, ToolMetadata, ToolRegistry};
 pub use tool_invokers::{
-    ExtensibleToolInvoker, PatchToolInvoker, TodoreadToolInvoker, TodowriteToolInvoker, ToolBackend,
-    WebfetchToolInvoker, WebsearchToolInvoker,
+    ExtensibleToolInvoker, PatchToolInvoker, TodoreadToolInvoker, TodowriteToolInvoker,
+    ToolBackend, WebfetchToolInvoker, WebsearchToolInvoker,
+};
+pub use tool_registry::{ToolInvoker, ToolMetadata, ToolRegistry};
+pub use use_cases::{
+    ConfigureToolBackendUseCase, ExecuteExternalToolUseCase, ProviderCommunityUseCase,
+    ProviderFailoverUseCase, ProviderHealthUseCase, ProviderModelUseCase,
+    ProviderPerformanceUseCase, ProviderSwitchingUseCase, SessionLifecycleUseCase,
+    SessionSharingUseCase, SessionStateManagementUseCase, ToolManagementUseCase,
 };

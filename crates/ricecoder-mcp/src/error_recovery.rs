@@ -140,7 +140,11 @@ impl RetryHandler {
     ///
     /// # Returns
     /// Result of the operation or error if all retries fail
-    pub async fn execute_with_retry<F, T>(&self, operation_name: &str, mut operation: F) -> Result<T>
+    pub async fn execute_with_retry<F, T>(
+        &self,
+        operation_name: &str,
+        mut operation: F,
+    ) -> Result<T>
     where
         F: FnMut() -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<T>>>>,
     {
@@ -187,7 +191,10 @@ impl RetryHandler {
                     let delay = self.config.calculate_delay(attempt);
                     warn!(
                         "Operation '{}' failed (attempt {}): {}. Retrying in {:?}",
-                        operation_name, attempt + 1, err, delay
+                        operation_name,
+                        attempt + 1,
+                        err,
+                        delay
                     );
 
                     tokio::time::sleep(delay).await;
@@ -252,7 +259,10 @@ impl RetryHandler {
                     let delay = self.config.calculate_delay(attempt);
                     warn!(
                         "Operation '{}' failed (attempt {}): {}. Retrying in {:?}",
-                        operation_name, attempt + 1, err, delay
+                        operation_name,
+                        attempt + 1,
+                        err,
+                        delay
                     );
 
                     tokio::time::sleep(delay).await;

@@ -18,7 +18,9 @@ impl EnterpriseValidator {
     }
 
     /// Validate enterprise deployment scenarios
-    pub async fn validate_deployment_scenarios(&mut self) -> Result<DeploymentValidationReport, ValidationError> {
+    pub async fn validate_deployment_scenarios(
+        &mut self,
+    ) -> Result<DeploymentValidationReport, ValidationError> {
         let mut scenarios = vec![];
 
         // Single tenant deployment
@@ -47,7 +49,9 @@ impl EnterpriseValidator {
     }
 
     /// Validate performance requirements
-    pub async fn validate_performance_requirements(&mut self) -> Result<PerformanceValidationReport, ValidationError> {
+    pub async fn validate_performance_requirements(
+        &mut self,
+    ) -> Result<PerformanceValidationReport, ValidationError> {
         let startup_time = self.measure_startup_time().await?;
         let response_times = self.measure_response_times().await?;
         let memory_usage = self.measure_memory_usage().await?;
@@ -73,7 +77,9 @@ impl EnterpriseValidator {
     }
 
     /// Validate enterprise integration challenges
-    pub async fn validate_enterprise_integration(&mut self) -> Result<IntegrationValidationReport, ValidationError> {
+    pub async fn validate_enterprise_integration(
+        &mut self,
+    ) -> Result<IntegrationValidationReport, ValidationError> {
         let mut integrations = vec![];
 
         // MCP integration
@@ -103,7 +109,9 @@ impl EnterpriseValidator {
 
     // Private validation methods (simplified implementations)
 
-    async fn validate_single_tenant_deployment(&mut self) -> Result<DeploymentScenarioResult, ValidationError> {
+    async fn validate_single_tenant_deployment(
+        &mut self,
+    ) -> Result<DeploymentScenarioResult, ValidationError> {
         // Simulate deployment validation
         let duration = Duration::from_secs(45);
         let success = true;
@@ -125,7 +133,9 @@ impl EnterpriseValidator {
         })
     }
 
-    async fn validate_multi_tenant_deployment(&mut self) -> Result<DeploymentScenarioResult, ValidationError> {
+    async fn validate_multi_tenant_deployment(
+        &mut self,
+    ) -> Result<DeploymentScenarioResult, ValidationError> {
         let duration = Duration::from_secs(60);
         let success = true;
         let issues = vec![];
@@ -146,7 +156,9 @@ impl EnterpriseValidator {
         })
     }
 
-    async fn validate_cloud_deployment(&mut self) -> Result<DeploymentScenarioResult, ValidationError> {
+    async fn validate_cloud_deployment(
+        &mut self,
+    ) -> Result<DeploymentScenarioResult, ValidationError> {
         let duration = Duration::from_secs(30);
         let success = true;
         let issues = vec![];
@@ -167,7 +179,9 @@ impl EnterpriseValidator {
         })
     }
 
-    async fn validate_on_premise_deployment(&mut self) -> Result<DeploymentScenarioResult, ValidationError> {
+    async fn validate_on_premise_deployment(
+        &mut self,
+    ) -> Result<DeploymentScenarioResult, ValidationError> {
         let duration = Duration::from_secs(90);
         let success = true;
         let issues = vec![];
@@ -225,7 +239,9 @@ impl EnterpriseValidator {
         })
     }
 
-    async fn validate_provider_integration(&mut self) -> Result<IntegrationResult, ValidationError> {
+    async fn validate_provider_integration(
+        &mut self,
+    ) -> Result<IntegrationResult, ValidationError> {
         let success = true;
         let performance_metrics = HashMap::from([
             ("provider_switch_time".to_string(), 100.0),
@@ -269,7 +285,9 @@ impl EnterpriseValidator {
         })
     }
 
-    async fn validate_security_integration(&mut self) -> Result<IntegrationResult, ValidationError> {
+    async fn validate_security_integration(
+        &mut self,
+    ) -> Result<IntegrationResult, ValidationError> {
         let success = true;
         let performance_metrics = HashMap::from([
             ("auth_time".to_string(), 25.0),

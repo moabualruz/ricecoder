@@ -5,12 +5,12 @@
 
 use ratatui::{
     layout::{Rect, Size},
-    widgets::{Block, Borders, Paragraph},
     prelude::StatefulWidget,
-    Frame, text::Line,
+    text::Line,
+    widgets::{Block, Borders, Paragraph},
+    Frame,
 };
 use tui_scrollview::{ScrollView, ScrollViewState};
-
 
 /// Information about scroll bar for rendering
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -43,17 +43,17 @@ impl ScrollState {
             visible_height,
         }
     }
-    
+
     /// Set the scroll position
     pub fn set_position(&mut self, pos: usize) {
         self.position = pos;
     }
-    
+
     /// Get the current scroll position
     pub fn position(&self) -> usize {
         self.position
     }
-    
+
     /// Handle terminal resize by adjusting the scroll position
     /// to maintain relative position while recalculating bounds
     pub fn handle_resize(&mut self, new_visible_height: usize) {
@@ -61,21 +61,21 @@ impl ScrollState {
         // This means if position/content_height = new_position/content_height
         // So new_position = position (assuming content_height stays the same)
         // But we need to ensure the new position is valid for the new visible height
-        
+
         // Calculate the ratio that should be preserved
         if self.content_height > 0 {
             let ratio = self.position as f64 / self.content_height as f64;
             let new_position = (ratio * self.content_height as f64) as usize;
             self.position = new_position;
         }
-        
+
         // Update visible height
         self.visible_height = new_visible_height;
-        
+
         // Ensure new position is within bounds for the new visible height
         self.position = self.position.min(self.max_position());
     }
-    
+
     /// Get the maximum scroll position
     fn max_position(&self) -> usize {
         self.content_height.saturating_sub(self.visible_height)
@@ -125,14 +125,6 @@ impl ScrollViewWidget {
         self.messages.len()
     }
 
-
-
-
-
-
-
-
-
     /// Scroll to the bottom of the content
     pub fn scroll_to_bottom(&mut self, visible_height: usize) {
         // Calculate the maximum scroll position
@@ -153,20 +145,6 @@ impl ScrollViewWidget {
         }
         // If disabling, we don't need to do anything as the scroll position remains
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     /// Select a message by index
     pub fn select(&mut self, index: usize) {
@@ -247,8 +225,6 @@ impl ScrollViewWidget {
         false
     }
 
-
-
     /// Render the widget
     pub fn render(&mut self, f: &mut Frame, area: Rect) {
         let block = if self.show_borders {
@@ -300,5 +276,3 @@ impl Default for ScrollViewWidget {
         Self::new("Messages")
     }
 }
-
-

@@ -46,9 +46,9 @@ impl RuleStorage {
         }
 
         let path = self.get_storage_path()?;
-        fs::create_dir_all(&path)
-            .await
-            .map_err(|e| LearningError::RuleStorageFailed(format!("Failed to create storage directory: {}", e)))?;
+        fs::create_dir_all(&path).await.map_err(|e| {
+            LearningError::RuleStorageFailed(format!("Failed to create storage directory: {}", e))
+        })?;
 
         Ok(())
     }
@@ -62,9 +62,10 @@ impl RuleStorage {
     /// Store a rule to persistent storage
     pub async fn store_rule(&self, rule: Rule) -> Result<String> {
         if rule.scope != self.scope {
-            return Err(LearningError::RuleStorageFailed(
-                format!("Rule scope {:?} does not match storage scope {:?}", rule.scope, self.scope),
-            ));
+            return Err(LearningError::RuleStorageFailed(format!(
+                "Rule scope {:?} does not match storage scope {:?}",
+                rule.scope, self.scope
+            )));
         }
 
         // For session scope, only store in memory
@@ -81,12 +82,12 @@ impl RuleStorage {
         let rule_id = rule.id.clone();
         let file_path = self.get_rule_file_path(&rule_id)?;
 
-        let json = serde_json::to_string_pretty(&rule)
-            .map_err(LearningError::SerializationError)?;
+        let json =
+            serde_json::to_string_pretty(&rule).map_err(LearningError::SerializationError)?;
 
-        fs::write(&file_path, json)
-            .await
-            .map_err(|e| LearningError::RuleStorageFailed(format!("Failed to write rule file: {}", e)))?;
+        fs::write(&file_path, json).await.map_err(|e| {
+            LearningError::RuleStorageFailed(format!("Failed to write rule file: {}", e))
+        })?;
 
         // Also update cache
         let mut cache = self.cache.write().await;
@@ -117,12 +118,11 @@ impl RuleStorage {
             return Err(LearningError::RuleNotFound(rule_id.to_string()));
         }
 
-        let json = fs::read_to_string(&file_path)
-            .await
-            .map_err(|e| LearningError::RuleStorageFailed(format!("Failed to read rule file: {}", e)))?;
+        let json = fs::read_to_string(&file_path).await.map_err(|e| {
+            LearningError::RuleStorageFailed(format!("Failed to read rule file: {}", e))
+        })?;
 
-        let rule: Rule = serde_json::from_str(&json)
-            .map_err(LearningError::SerializationError)?;
+        let rule: Rule = serde_json::from_str(&json).map_err(LearningError::SerializationError)?;
 
         // Update cache
         {
@@ -149,15 +149,13 @@ impl RuleStorage {
         }
 
         let mut rules = Vec::new();
-        let mut dir_entries = fs::read_dir(&storage_path)
-            .await
-            .map_err(|e| LearningError::RuleStorageFailed(format!("Failed to read storage directory: {}", e)))?;
+        let mut dir_entries = fs::read_dir(&storage_path).await.map_err(|e| {
+            LearningError::RuleStorageFailed(format!("Failed to read storage directory: {}", e))
+        })?;
 
-        while let Some(entry) = dir_entries
-            .next_entry()
-            .await
-            .map_err(|e| LearningError::RuleStorageFailed(format!("Failed to read directory entry: {}", e)))?
-        {
+        while let Some(entry) = dir_entries.next_entry().await.map_err(|e| {
+            LearningError::RuleStorageFailed(format!("Failed to read directory entry: {}", e))
+        })? {
             let path = entry.path();
 
             if path.extension().is_some_and(|ext| ext == "json") {
@@ -212,9 +210,9 @@ impl RuleStorage {
         let file_path = self.get_rule_file_path(rule_id)?;
 
         if file_path.exists() {
-            fs::remove_file(&file_path)
-                .await
-                .map_err(|e| LearningError::RuleStorageFailed(format!("Failed to delete rule file: {}", e)))?;
+            fs::remove_file(&file_path).await.map_err(|e| {
+                LearningError::RuleStorageFailed(format!("Failed to delete rule file: {}", e))
+            })?;
         }
 
         Ok(())
@@ -223,9 +221,10 @@ impl RuleStorage {
     /// Update a rule
     pub async fn update_rule(&self, rule: Rule) -> Result<String> {
         if rule.scope != self.scope {
-            return Err(LearningError::RuleStorageFailed(
-                format!("Rule scope {:?} does not match storage scope {:?}", rule.scope, self.scope),
-            ));
+            return Err(LearningError::RuleStorageFailed(format!(
+                "Rule scope {:?} does not match storage scope {:?}",
+                rule.scope, self.scope
+            )));
         }
 
         // Delete the old rule and store the new one
@@ -256,9 +255,9 @@ impl RuleStorage {
         let storage_path = self.get_storage_path()?;
 
         if storage_path.exists() {
-            fs::remove_dir_all(&storage_path)
-                .await
-                .map_err(|e| LearningError::RuleStorageFailed(format!("Failed to clear storage: {}", e)))?;
+            fs::remove_dir_all(&storage_path).await.map_err(|e| {
+                LearningError::RuleStorageFailed(format!("Failed to clear storage: {}", e))
+            })?;
         }
 
         Ok(())
@@ -290,7 +289,10 @@ impl RuleStorage {
     }
 
     /// Get rules by source
-    pub async fn get_rules_by_source(&self, source: crate::models::RuleSource) -> Result<Vec<Rule>> {
+    pub async fn get_rules_by_source(
+        &self,
+        source: crate::models::RuleSource,
+    ) -> Result<Vec<Rule>> {
         let rules = self.list_rules().await?;
         Ok(rules.into_iter().filter(|r| r.source == source).collect())
     }
@@ -320,12 +322,20 @@ impl RuleStorage {
     /// Get rules sorted by confidence (descending)
     pub async fn get_rules_by_confidence_sorted(&self) -> Result<Vec<Rule>> {
         let mut rules = self.list_rules().await?;
-        rules.sort_by(|a, b| b.confidence.partial_cmp(&a.confidence).unwrap_or(std::cmp::Ordering::Equal));
+        rules.sort_by(|a, b| {
+            b.confidence
+                .partial_cmp(&a.confidence)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         Ok(rules)
     }
 
     /// Get rules with metadata matching a key-value pair
-    pub async fn get_rules_by_metadata(&self, key: &str, value: &serde_json::Value) -> Result<Vec<Rule>> {
+    pub async fn get_rules_by_metadata(
+        &self,
+        key: &str,
+        value: &serde_json::Value,
+    ) -> Result<Vec<Rule>> {
         let rules = self.list_rules().await?;
         Ok(rules
             .into_iter()
@@ -334,7 +344,10 @@ impl RuleStorage {
     }
 
     /// Get rules created after a specific timestamp
-    pub async fn get_rules_after(&self, timestamp: chrono::DateTime<chrono::Utc>) -> Result<Vec<Rule>> {
+    pub async fn get_rules_after(
+        &self,
+        timestamp: chrono::DateTime<chrono::Utc>,
+    ) -> Result<Vec<Rule>> {
         let rules = self.list_rules().await?;
         Ok(rules
             .into_iter()
@@ -343,7 +356,10 @@ impl RuleStorage {
     }
 
     /// Get rules updated after a specific timestamp
-    pub async fn get_rules_updated_after(&self, timestamp: chrono::DateTime<chrono::Utc>) -> Result<Vec<Rule>> {
+    pub async fn get_rules_updated_after(
+        &self,
+        timestamp: chrono::DateTime<chrono::Utc>,
+    ) -> Result<Vec<Rule>> {
         let rules = self.list_rules().await?;
         Ok(rules
             .into_iter()
@@ -638,10 +654,16 @@ mod tests {
         storage.store_rule(rule2).await.unwrap();
         storage.store_rule(rule3).await.unwrap();
 
-        let learned_rules = storage.get_rules_by_source(RuleSource::Learned).await.unwrap();
+        let learned_rules = storage
+            .get_rules_by_source(RuleSource::Learned)
+            .await
+            .unwrap();
         assert_eq!(learned_rules.len(), 2);
 
-        let manual_rules = storage.get_rules_by_source(RuleSource::Manual).await.unwrap();
+        let manual_rules = storage
+            .get_rules_by_source(RuleSource::Manual)
+            .await
+            .unwrap();
         assert_eq!(manual_rules.len(), 1);
     }
 

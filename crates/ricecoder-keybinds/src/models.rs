@@ -116,10 +116,7 @@ impl FromStr for Key {
                 }
             }
             s if s.len() == 1 => Ok(Key::Char(s.chars().next().unwrap())),
-            _ => Err(ParseError::InvalidKeySyntax(format!(
-                "Unknown key: {}",
-                s
-            ))),
+            _ => Err(ParseError::InvalidKeySyntax(format!("Unknown key: {}", s))),
         }
     }
 }
@@ -218,7 +215,10 @@ impl FromStr for Context {
             "chat" => Ok(Context::Chat),
             "dialog" => Ok(Context::Dialog),
             "command_palette" | "commandpalette" => Ok(Context::CommandPalette),
-            _ => Err(ParseError::InvalidModifier(format!("Unknown context: {}", s))),
+            _ => Err(ParseError::InvalidModifier(format!(
+                "Unknown context: {}",
+                s
+            ))),
         }
     }
 }
@@ -346,11 +346,13 @@ impl Keybind {
 /// Keybind manager trait for managing keybindings
 pub trait KeybindManager {
     /// Bind an action to a key combination
-    fn bind(&mut self, action: String, key_combo: KeyCombo) -> Result<(), crate::error::RegistryError>;
+    fn bind(
+        &mut self,
+        action: String,
+        key_combo: KeyCombo,
+    ) -> Result<(), crate::error::RegistryError>;
     /// Get the key binding for an action
     fn get_binding(&self, action: &str) -> Option<&Keybind>;
     /// Resolve an action from a key combination
     fn resolve_action(&self, key_combo: &KeyCombo, context: &Context) -> Option<&str>;
 }
-
-

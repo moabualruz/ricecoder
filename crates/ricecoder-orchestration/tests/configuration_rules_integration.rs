@@ -6,8 +6,8 @@
 //! **Validates: Requirements 1.3, 1.4**
 
 use ricecoder_orchestration::{
-    DependencyGraph, DependencyType, Project,
-    ProjectDependency, ProjectStatus, RulesValidator, RuleType, ViolationSeverity, Workspace, WorkspaceConfig, WorkspaceRule,
+    DependencyGraph, DependencyType, Project, ProjectDependency, ProjectStatus, RuleType,
+    RulesValidator, ViolationSeverity, Workspace, WorkspaceConfig, WorkspaceRule,
 };
 use std::path::PathBuf;
 
@@ -106,7 +106,10 @@ fn integration_test_configuration_loading_and_application() {
     // Verify: Settings are loaded
     let settings = &workspace.config.settings;
     assert_eq!(
-        settings.get("max_dependencies_per_project").unwrap().as_i64(),
+        settings
+            .get("max_dependencies_per_project")
+            .unwrap()
+            .as_i64(),
         Some(5)
     );
 

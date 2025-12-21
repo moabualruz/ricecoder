@@ -15,15 +15,13 @@ fn test_tool_error_creation() {
 
 #[test]
 fn test_tool_error_with_details() {
-    let err = ToolError::new("TEST_ERROR", "Test message")
-        .with_details("Additional context");
+    let err = ToolError::new("TEST_ERROR", "Test message").with_details("Additional context");
     assert_eq!(err.details, Some("Additional context".to_string()));
 }
 
 #[test]
 fn test_tool_error_with_suggestion() {
-    let err = ToolError::new("TEST_ERROR", "Test message")
-        .with_suggestion("Try this instead");
+    let err = ToolError::new("TEST_ERROR", "Test message").with_suggestion("Try this instead");
     assert_eq!(err.suggestion, Some("Try this instead".to_string()));
 }
 

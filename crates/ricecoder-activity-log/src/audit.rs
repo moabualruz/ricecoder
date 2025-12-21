@@ -196,9 +196,9 @@ impl AuditLogger {
         let mut filtered: Vec<_> = trails
             .iter()
             .filter(|trail| {
-                actor.map_or(true, |a| trail.actor.contains(a)) &&
-                action.map_or(true, |a| trail.action.contains(a)) &&
-                resource.map_or(true, |r| trail.resource.contains(r))
+                actor.map_or(true, |a| trail.actor.contains(a))
+                    && action.map_or(true, |a| trail.action.contains(a))
+                    && resource.map_or(true, |r| trail.resource.contains(r))
             })
             .cloned()
             .collect();
@@ -215,7 +215,10 @@ impl AuditLogger {
     }
 
     /// Get compliance events
-    pub async fn get_compliance_events(&self, framework: Option<&ComplianceFlag>) -> Vec<ComplianceEvent> {
+    pub async fn get_compliance_events(
+        &self,
+        framework: Option<&ComplianceFlag>,
+    ) -> Vec<ComplianceEvent> {
         let events = self.compliance_events.read().await;
         let mut filtered: Vec<_> = if let Some(framework) = framework {
             events
@@ -250,7 +253,12 @@ impl AuditLogger {
 
         let total_violations = relevant_events
             .iter()
-            .filter(|event| matches!(event.severity, ComplianceSeverity::High | ComplianceSeverity::Critical))
+            .filter(|event| {
+                matches!(
+                    event.severity,
+                    ComplianceSeverity::High | ComplianceSeverity::Critical
+                )
+            })
             .count();
 
         let compliance_score = if relevant_trails.is_empty() {

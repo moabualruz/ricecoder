@@ -105,7 +105,7 @@ impl Color {
         let r = (self.r as u16 * 5 / 255) as u8;
         let g = (self.g as u16 * 5 / 255) as u8;
         let b = (self.b as u16 * 5 / 255) as u8;
-        
+
         // Map back to RGB for the struct
         Self {
             r: r * 51,
@@ -118,15 +118,15 @@ impl Color {
     pub fn to_ansi16(&self) -> Self {
         // Very basic mapping based on brightness and dominant channel
         let brightness = self.r as u16 + self.g as u16 + self.b as u16;
-        
+
         if brightness < 100 {
             return Self::new(0, 0, 0); // Black
         }
-        
+
         if brightness > 600 {
             return Self::new(255, 255, 255); // White
         }
-        
+
         if self.r > self.g && self.r > self.b {
             Self::new(255, 0, 0) // Red
         } else if self.g > self.r && self.g > self.b {
@@ -362,17 +362,17 @@ impl Theme {
     pub fn high_contrast() -> Self {
         Self {
             name: "high-contrast".to_string(),
-            primary: Color::new(255, 255, 255), // Pure white
-            secondary: Color::new(255, 255, 0), // Pure yellow
-            accent: Color::new(255, 0, 0),      // Pure red
-            background: Color::new(0, 0, 0),    // Pure black
+            primary: Color::new(255, 255, 255),    // Pure white
+            secondary: Color::new(255, 255, 0),    // Pure yellow
+            accent: Color::new(255, 0, 0),         // Pure red
+            background: Color::new(0, 0, 0),       // Pure black
             foreground: Color::new(255, 255, 255), // Pure white
-            error: Color::new(255, 0, 0),       // Pure red
-            warning: Color::new(255, 255, 0),   // Pure yellow
-            success: Color::new(0, 255, 0),     // Pure green
-            info: Color::new(255, 255, 255),    // Pure white
-            muted: Color::new(128, 128, 128),   // Gray
-            border: Color::new(255, 255, 255),  // Pure white
+            error: Color::new(255, 0, 0),          // Pure red
+            warning: Color::new(255, 255, 0),      // Pure yellow
+            success: Color::new(0, 255, 0),        // Pure green
+            info: Color::new(255, 255, 255),       // Pure white
+            muted: Color::new(128, 128, 128),      // Gray
+            border: Color::new(255, 255, 255),     // Pure white
         }
     }
 
@@ -918,5 +918,3 @@ pub enum ColorSupport {
     /// True color (24-bit RGB)
     TrueColor,
 }
-
-

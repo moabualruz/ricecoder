@@ -151,12 +151,12 @@ impl ModificationIndicator {
     /// Get the display color for this indicator (as ANSI color code)
     pub fn display_color(&self) -> &'static str {
         match self {
-            ModificationIndicator::Clean => "\x1b[0m",      // Reset
-            ModificationIndicator::Modified => "\x1b[33m",  // Yellow
-            ModificationIndicator::Added => "\x1b[32m",     // Green
-            ModificationIndicator::Deleted => "\x1b[31m",   // Red
-            ModificationIndicator::Untracked => "\x1b[36m", // Cyan
-            ModificationIndicator::Staged => "\x1b[32m",    // Green
+            ModificationIndicator::Clean => "\x1b[0m",       // Reset
+            ModificationIndicator::Modified => "\x1b[33m",   // Yellow
+            ModificationIndicator::Added => "\x1b[32m",      // Green
+            ModificationIndicator::Deleted => "\x1b[31m",    // Red
+            ModificationIndicator::Untracked => "\x1b[36m",  // Cyan
+            ModificationIndicator::Staged => "\x1b[32m",     // Green
             ModificationIndicator::Conflicted => "\x1b[35m", // Magenta
         }
     }

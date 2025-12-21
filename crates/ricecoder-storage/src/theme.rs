@@ -22,8 +22,12 @@ pub struct ThemeStorage;
 impl ThemeStorage {
     /// Get the theme storage directory
     fn storage_dir() -> StorageResult<PathBuf> {
-        let mut dir = dirs::home_dir()
-            .ok_or_else(|| StorageError::Io(std::io::Error::new(std::io::ErrorKind::NotFound, "Home directory not found")))?;
+        let mut dir = dirs::home_dir().ok_or_else(|| {
+            StorageError::Io(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "Home directory not found",
+            ))
+        })?;
         dir.push(".ricecoder");
         dir.push("themes");
         fs::create_dir_all(&dir).map_err(StorageError::Io)?;
@@ -55,16 +59,21 @@ impl ThemeStorage {
             });
         }
         let content = fs::read_to_string(&path).map_err(StorageError::Io)?;
-        serde_json::from_str(&content).map_err(|e| StorageError::parse_error(path, "json", format!("Failed to parse theme preference: {}", e)))
+        serde_json::from_str(&content).map_err(|e| {
+            StorageError::parse_error(
+                path,
+                "json",
+                format!("Failed to parse theme preference: {}", e),
+            )
+        })
     }
 
     /// Save theme preference to storage
     pub fn save_preference(preference: &ThemePreference) -> StorageResult<()> {
         let path = Self::preference_path()?;
-        let content = serde_json::to_string_pretty(preference)
-            .map_err(|e|
-                StorageError::parse_error(path.clone(), "json", format!("Serialization failed: {}", e))
-            )?;
+        let content = serde_json::to_string_pretty(preference).map_err(|e| {
+            StorageError::parse_error(path.clone(), "json", format!("Serialization failed: {}", e))
+        })?;
         fs::write(&path, content).map_err(StorageError::Io)?;
         Ok(())
     }
@@ -104,7 +113,10 @@ impl ThemeStorage {
         if path.exists() {
             fs::remove_file(&path).map_err(StorageError::Io)
         } else {
-            Err(StorageError::NotFound(format!("Custom theme '{}' not found", name)))
+            Err(StorageError::NotFound(format!(
+                "Custom theme '{}' not found",
+                name
+            )))
         }
     }
 

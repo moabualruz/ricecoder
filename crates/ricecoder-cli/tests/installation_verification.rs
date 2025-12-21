@@ -2,7 +2,7 @@
 // **Feature: ricecoder-installation, Tests for Requirements 5.1-5.4**
 // Tests verify that installation verification commands work correctly
 
-use ricecoder_cli::commands::{Command, VersionCommand, HelpCommand, InitCommand, ChatCommand};
+use ricecoder_cli::commands::{ChatCommand, Command, HelpCommand, InitCommand, VersionCommand};
 use std::fs;
 use std::path::Path;
 use tempfile::TempDir;
@@ -26,7 +26,10 @@ fn test_version_command_contains_version_number() {
     let cmd = VersionCommand::new();
     let result = cmd.execute();
 
-    assert!(result.is_ok(), "Version command should execute without error");
+    assert!(
+        result.is_ok(),
+        "Version command should execute without error"
+    );
 }
 
 #[test]
@@ -35,7 +38,10 @@ fn test_version_command_format_is_valid() {
     let cmd = VersionCommand::new();
     let result = cmd.execute();
 
-    assert!(result.is_ok(), "Version command should produce valid output");
+    assert!(
+        result.is_ok(),
+        "Version command should produce valid output"
+    );
 }
 
 #[test]
@@ -98,7 +104,10 @@ fn test_help_command_with_invalid_topic() {
     let result = cmd.execute();
 
     // Should still succeed but show error message
-    assert!(result.is_ok(), "Help with invalid topic should handle gracefully");
+    assert!(
+        result.is_ok(),
+        "Help with invalid topic should handle gracefully"
+    );
 }
 
 #[test]
@@ -141,10 +150,7 @@ fn test_init_command_creates_configuration() {
 
     // Verify configuration files were created
     let config_file = Path::new(temp_path).join(".agent/ricecoder.toml");
-    assert!(
-        config_file.exists(),
-        "Configuration file should be created"
-    );
+    assert!(config_file.exists(), "Configuration file should be created");
 }
 
 #[test]
@@ -241,7 +247,10 @@ fn test_chat_command_basic_execution() {
     let cmd = ChatCommand::new(None, None, None);
     // Note: We can't fully test chat without mocking the AI provider
     // This test just verifies the command can be created
-    assert!(cmd.message.is_none(), "Chat command should accept no message");
+    assert!(
+        cmd.message.is_none(),
+        "Chat command should accept no message"
+    );
 }
 
 #[test]

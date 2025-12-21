@@ -9,7 +9,9 @@ use std::sync::Arc;
 use tracing::{debug, error};
 
 use crate::error::ProviderError;
-use crate::models::{Capability, ChatRequest, ChatResponse, FinishReason, ModelInfo, Pricing, TokenUsage};
+use crate::models::{
+    Capability, ChatRequest, ChatResponse, FinishReason, ModelInfo, Pricing, TokenUsage,
+};
 use crate::provider::Provider;
 use crate::token_counter::TokenCounter;
 
@@ -51,7 +53,9 @@ impl ReplicateProvider {
             .as_ref()
             .and_then(|output| output.first())
             .and_then(|s| Some(s.as_str()))
-            .ok_or_else(|| ProviderError::ProviderError("No content in Replicate response".to_string()))?
+            .ok_or_else(|| {
+                ProviderError::ProviderError("No content in Replicate response".to_string())
+            })?
             .to_string();
 
         // Estimate token usage
@@ -126,7 +130,8 @@ impl Provider for ReplicateProvider {
 
         let replicate_request = ReplicateChatRequest {
             input: ReplicateInput {
-                prompt: request.messages
+                prompt: request
+                    .messages
                     .iter()
                     .map(|m| format!("{}: {}", m.role, m.content))
                     .collect::<Vec<_>>()
@@ -136,7 +141,10 @@ impl Provider for ReplicateProvider {
             },
         };
 
-        let url = format!("https://api.replicate.com/v1/models/{}/predictions", request.model);
+        let url = format!(
+            "https://api.replicate.com/v1/models/{}/predictions",
+            request.model
+        );
 
         let response = self
             .client
@@ -169,8 +177,13 @@ impl Provider for ReplicateProvider {
         Self::convert_response(replicate_response, request.model)
     }
 
-    async fn chat_stream(&self, _request: ChatRequest) -> Result<crate::provider::ChatStream, ProviderError> {
-        Err(ProviderError::ProviderError("Streaming not yet implemented for Replicate".to_string()))
+    async fn chat_stream(
+        &self,
+        _request: ChatRequest,
+    ) -> Result<crate::provider::ChatStream, ProviderError> {
+        Err(ProviderError::ProviderError(
+            "Streaming not yet implemented for Replicate".to_string(),
+        ))
     }
 
     fn count_tokens(&self, content: &str, _model: &str) -> Result<usize, ProviderError> {

@@ -30,7 +30,11 @@ impl RollbackHandler {
     pub fn restore_from_backup(backup: &BackupInfo) -> Result<()> {
         for (path, content) in &backup.files {
             std::fs::write(path, content).map_err(|e| {
-                RefactoringError::RollbackFailed(format!("Failed to restore {}: {}", path.display(), e))
+                RefactoringError::RollbackFailed(format!(
+                    "Failed to restore {}: {}",
+                    path.display(),
+                    e
+                ))
             })?;
         }
 
@@ -52,8 +56,8 @@ impl RollbackHandler {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::NamedTempFile;
     use std::io::Write;
+    use tempfile::NamedTempFile;
 
     #[test]
     fn test_create_backup() -> Result<()> {

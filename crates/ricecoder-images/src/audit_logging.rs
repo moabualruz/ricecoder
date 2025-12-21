@@ -4,7 +4,7 @@
 //! and cache operations. It integrates with ricecoder-providers' AuditLogger
 //! for consistent security event tracking.
 
-use ricecoder_providers::audit_log::{AuditLogger, AuditLogEntry, AuditEventType};
+use ricecoder_providers::audit_log::{AuditEventType, AuditLogEntry, AuditLogger};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tracing::{debug, info, warn};
@@ -214,10 +214,7 @@ impl ImageAuditLogger {
     /// # Arguments
     ///
     /// * `image_hash` - SHA256 hash of the image
-    pub fn log_cache_miss(
-        &self,
-        image_hash: &str,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn log_cache_miss(&self, image_hash: &str) -> Result<(), Box<dyn std::error::Error>> {
         let details = format!("Cache miss for image {}", image_hash);
 
         let entry = AuditLogEntry::new(
@@ -231,10 +228,7 @@ impl ImageAuditLogger {
 
         self.audit_logger.log(&entry)?;
 
-        debug!(
-            image_hash = image_hash,
-            "Cache miss logged"
-        );
+        debug!(image_hash = image_hash, "Cache miss logged");
 
         Ok(())
     }
@@ -552,7 +546,8 @@ mod tests {
     fn test_log_file_size_violation() {
         let (logger, log_path, _temp_dir) = create_test_logger();
 
-        let result = logger.log_file_size_violation("/path/to/file.png", 20 * 1024 * 1024, 10 * 1024 * 1024);
+        let result =
+            logger.log_file_size_violation("/path/to/file.png", 20 * 1024 * 1024, 10 * 1024 * 1024);
 
         assert!(result.is_ok());
 
@@ -577,12 +572,8 @@ mod tests {
     fn test_log_analysis_timeout() {
         let (logger, log_path, _temp_dir) = create_test_logger();
 
-        let result = logger.log_analysis_timeout(
-            "openai",
-            "gpt-4-vision",
-            10,
-            vec!["hash1".to_string()],
-        );
+        let result =
+            logger.log_analysis_timeout("openai", "gpt-4-vision", 10, vec!["hash1".to_string()]);
 
         assert!(result.is_ok());
 
@@ -595,9 +586,13 @@ mod tests {
     fn test_multiple_audit_entries() {
         let (logger, log_path, _temp_dir) = create_test_logger();
 
-        logger.log_analysis_request("openai", "gpt-4-vision", 1, 1024, vec!["hash1".to_string()]).unwrap();
+        logger
+            .log_analysis_request("openai", "gpt-4-vision", 1, 1024, vec!["hash1".to_string()])
+            .unwrap();
         logger.log_cache_hit("hash1", "openai", 3600).unwrap();
-        logger.log_analysis_success("openai", "gpt-4-vision", 1, 100, vec!["hash1".to_string()]).unwrap();
+        logger
+            .log_analysis_success("openai", "gpt-4-vision", 1, 100, vec!["hash1".to_string()])
+            .unwrap();
 
         let content = std::fs::read_to_string(&log_path).unwrap();
         let lines: Vec<&str> = content.lines().collect();

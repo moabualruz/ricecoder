@@ -134,7 +134,7 @@ impl ImageDisplay {
 
         // Calculate dimensions if we scale to max width
         let height_at_max_width = (max_width as f64 / aspect_ratio) as u32;
-        
+
         // If scaling to max width fits within height, use it
         if height_at_max_width <= max_height {
             (max_width, height_at_max_width.max(1))
@@ -296,7 +296,7 @@ impl ImageDisplay {
                 .lines()
                 .filter(|line| line.chars().all(|c| c == '─' || c.is_whitespace()))
                 .count();
-            
+
             if separator_lines == 0 {
                 return Err(ImageError::DisplayError(
                     "No separators found between images".to_string(),
@@ -518,7 +518,9 @@ mod tests {
             "def456".to_string(),
         );
 
-        let rendered = display.render_multiple_images(&[metadata1, metadata2]).unwrap();
+        let rendered = display
+            .render_multiple_images(&[metadata1, metadata2])
+            .unwrap();
 
         // Should contain both images
         assert!(rendered.contains("PNG"));
@@ -550,7 +552,9 @@ mod tests {
             "def456".to_string(),
         );
 
-        let rendered = display.render_multiple_images(&[metadata1.clone(), metadata2.clone()]).unwrap();
+        let rendered = display
+            .render_multiple_images(&[metadata1.clone(), metadata2.clone()])
+            .unwrap();
         let result = display.verify_multiple_images_organized(&rendered, &[metadata1, metadata2]);
         assert!(result.is_ok());
         assert!(result.unwrap());

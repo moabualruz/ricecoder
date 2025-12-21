@@ -14,31 +14,43 @@
 
 use std::sync::Arc;
 
-pub mod encryption;
-pub mod validation;
-pub mod audit;
 pub mod access_control;
+pub mod audit;
 pub mod compliance;
-pub mod reporting;
-pub mod oauth;
-pub mod monitoring;
-pub mod testing;
+pub mod encryption;
 pub mod error;
-pub mod vulnerability;
+pub mod monitoring;
+pub mod oauth;
 pub mod penetration_testing;
+pub mod reporting;
+pub mod testing;
+pub mod validation;
+pub mod vulnerability;
 
-pub use encryption::{KeyManager, CustomerKeyManager, EncryptedData};
-pub use validation::{validate_input, ValidatedInput, ValidationError, ValidationEngine};
-pub use audit::{AuditLogger, AuditEvent, AuditRecord, MemoryAuditStorage};
-pub use access_control::{Permission, ResourceType, AccessControl, PermissionCheck, AbacPolicy, AttributeBasedAccessControl};
-pub use compliance::{ComplianceManager, ComplianceValidator, DataErasure, DataPortability, PrivacyAnalytics, DataClassification, DefaultComplianceChecker, ComplianceResult};
-pub use vulnerability::{VulnerabilityScanner, DefaultVulnerabilityScanner, VulnerabilityScanResult, CodeSecurityScanResult, ConfigSecurityScanResult, LicenseScanResult};
-pub use penetration_testing::{PenetrationTester, DefaultPenetrationTester, PenetrationTestResult};
-pub use testing::{SecurityValidator, DefaultSecurityValidator, InputValidationResult, AuthResult, EncryptionResult};
-pub use reporting::{ComplianceReporter, ComplianceReport, ReportType};
-pub use oauth::{TokenManager, OAuthProvider, OidcProvider, OAuthToken, UserInfo};
-pub use monitoring::{SecurityMonitor, ThreatDetector, SecurityEvent, ThreatLevel};
+pub use access_control::{
+    AbacPolicy, AccessControl, AttributeBasedAccessControl, Permission, PermissionCheck,
+    ResourceType,
+};
+pub use audit::{AuditEvent, AuditLogger, AuditRecord, MemoryAuditStorage};
+pub use compliance::{
+    ComplianceManager, ComplianceResult, ComplianceValidator, DataClassification, DataErasure,
+    DataPortability, DefaultComplianceChecker, PrivacyAnalytics,
+};
+pub use encryption::{CustomerKeyManager, EncryptedData, KeyManager};
 pub use error::SecurityError;
+pub use monitoring::{SecurityEvent, SecurityMonitor, ThreatDetector, ThreatLevel};
+pub use oauth::{OAuthProvider, OAuthToken, OidcProvider, TokenManager, UserInfo};
+pub use penetration_testing::{DefaultPenetrationTester, PenetrationTestResult, PenetrationTester};
+pub use reporting::{ComplianceReport, ComplianceReporter, ReportType};
+pub use testing::{
+    AuthResult, DefaultSecurityValidator, EncryptionResult, InputValidationResult,
+    SecurityValidator,
+};
+pub use validation::{validate_input, ValidatedInput, ValidationEngine, ValidationError};
+pub use vulnerability::{
+    CodeSecurityScanResult, ConfigSecurityScanResult, DefaultVulnerabilityScanner,
+    LicenseScanResult, VulnerabilityScanResult, VulnerabilityScanner,
+};
 
 // Service wrappers for DI integration
 pub struct EncryptionService {
@@ -60,9 +72,11 @@ impl EncryptionService {
     /// Encrypt data using the service's key manager
     pub fn encrypt(&self, data: &str) -> crate::Result<String> {
         let encrypted = self.key_manager.encrypt_api_key(data)?;
-        Ok(serde_json::to_string(&encrypted).map_err(|e| crate::SecurityError::Serialization {
-            message: e.to_string(),
-        })?)
+        Ok(
+            serde_json::to_string(&encrypted).map_err(|e| crate::SecurityError::Serialization {
+                message: e.to_string(),
+            })?,
+        )
     }
 
     /// Decrypt data using the service's key manager
@@ -97,15 +111,18 @@ impl ValidationService {
 
     /// Validate SQL input
     pub async fn validate_sql(&self, input: &str) -> crate::Result<String> {
-        self.validator.validate_sql_input(input).await
-            .map_err(|e| crate::SecurityError::Validation {
+        self.validator.validate_sql_input(input).await.map_err(|e| {
+            crate::SecurityError::Validation {
                 message: e.to_string(),
-            })
+            }
+        })
     }
 
     /// Validate HTML input
     pub async fn validate_html(&self, input: &str) -> crate::Result<String> {
-        self.validator.validate_html_input(input).await
+        self.validator
+            .validate_html_input(input)
+            .await
             .map_err(|e| crate::SecurityError::Validation {
                 message: e.to_string(),
             })

@@ -59,8 +59,6 @@ pub struct ThemeConfig {
     pub overrides: std::collections::HashMap<String, serde_json::Value>,
 }
 
-
-
 impl Default for EditorConfig {
     fn default() -> Self {
         Self {
@@ -83,8 +81,6 @@ impl Default for UiConfig {
         }
     }
 }
-
-
 
 impl Default for ThemeConfig {
     fn default() -> Self {

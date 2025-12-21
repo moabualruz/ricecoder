@@ -217,7 +217,10 @@ impl DocumentationOperations {
     }
 
     /// Commit documentation updates to repository
-    pub fn commit_documentation(&mut self, commit: DocumentationCommit) -> Result<PublishingResult> {
+    pub fn commit_documentation(
+        &mut self,
+        commit: DocumentationCommit,
+    ) -> Result<PublishingResult> {
         debug!("Committing documentation: {}", commit.message);
 
         if commit.files.is_empty() {
@@ -270,10 +273,9 @@ impl DocumentationOperations {
     pub fn render_template(&self, name: &str, values: &HashMap<String, String>) -> Result<String> {
         debug!("Rendering template: {}", name);
 
-        let template = self
-            .templates
-            .get(name)
-            .ok_or_else(|| crate::errors::GitHubError::NotFound(format!("Template '{}' not found", name)))?;
+        let template = self.templates.get(name).ok_or_else(|| {
+            crate::errors::GitHubError::NotFound(format!("Template '{}' not found", name))
+        })?;
 
         template.render(values)
     }
@@ -297,7 +299,10 @@ impl DocumentationOperations {
             info!("Maintenance task status updated");
             Ok(())
         } else {
-            Err(crate::errors::GitHubError::NotFound(format!("Task '{}' not found", name)))
+            Err(crate::errors::GitHubError::NotFound(format!(
+                "Task '{}' not found",
+                name
+            )))
         }
     }
 
@@ -341,10 +346,8 @@ mod tests {
         values.insert("project".to_string(), "MyProject".to_string());
         values.insert("version".to_string(), "1.0.0".to_string());
 
-        let template = DocumentationTemplate::new(
-            "readme",
-            "# {{project}}\n\nVersion: {{version}}",
-        );
+        let template =
+            DocumentationTemplate::new("readme", "# {{project}}\n\nVersion: {{version}}");
 
         let rendered = template.render(&values).expect("Failed to render");
         assert!(rendered.contains("# MyProject"));
@@ -366,8 +369,7 @@ mod tests {
     #[test]
     fn test_documentation_operations_commit() {
         let mut ops = DocumentationOperations::new();
-        let commit = DocumentationCommit::new("Initial commit")
-            .with_file("README.md");
+        let commit = DocumentationCommit::new("Initial commit").with_file("README.md");
 
         let result = ops.commit_documentation(commit).expect("Failed to commit");
         assert!(result.success);

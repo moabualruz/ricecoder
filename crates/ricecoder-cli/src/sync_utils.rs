@@ -2,7 +2,6 @@
 ///
 /// This module provides utilities for safe mutex locking and error recovery,
 /// ensuring the application doesn't panic when mutex locks fail.
-
 use std::sync::{Mutex, MutexGuard};
 use tracing::{debug, warn};
 
@@ -174,5 +173,3 @@ impl<T> SafeLockable<T> for Mutex<T> {
         safe_lock_optional(self, context)
     }
 }
-
-

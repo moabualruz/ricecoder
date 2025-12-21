@@ -93,10 +93,7 @@ mod tests {
 
     #[test]
     fn test_merge_external_only() {
-        let external = vec![
-            create_completion("foo", 0.9),
-            create_completion("bar", 0.8),
-        ];
+        let external = vec![create_completion("foo", 0.9), create_completion("bar", 0.8)];
         let internal = vec![];
         let config = MergeConfig::default();
 
@@ -110,10 +107,7 @@ mod tests {
     #[test]
     fn test_merge_internal_only() {
         let external = None;
-        let internal = vec![
-            create_completion("baz", 0.7),
-            create_completion("qux", 0.6),
-        ];
+        let internal = vec![create_completion("baz", 0.7), create_completion("qux", 0.6)];
         let config = MergeConfig::default();
 
         let result = CompletionMerger::merge(external, internal, &config);
@@ -125,10 +119,7 @@ mod tests {
 
     #[test]
     fn test_merge_both_with_deduplication() {
-        let external = vec![
-            create_completion("foo", 0.9),
-            create_completion("bar", 0.8),
-        ];
+        let external = vec![create_completion("foo", 0.9), create_completion("bar", 0.8)];
         let internal = vec![
             create_completion("foo", 0.5), // Duplicate, should be skipped
             create_completion("baz", 0.7),

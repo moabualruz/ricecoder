@@ -75,12 +75,7 @@ pub struct ImageAnalysisResult {
 
 impl ImageAnalysisResult {
     /// Create a new image analysis result.
-    pub fn new(
-        image_hash: String,
-        analysis: String,
-        provider: String,
-        tokens_used: u32,
-    ) -> Self {
+    pub fn new(image_hash: String, analysis: String, provider: String, tokens_used: u32) -> Self {
         Self {
             image_hash,
             analysis,

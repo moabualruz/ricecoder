@@ -4,11 +4,11 @@
 //! for various AI models. It integrates with the session system to track token usage
 //! and provide warnings when approaching limits.
 
+use crate::error::{SessionError, SessionResult};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tiktoken_rs::{get_bpe_from_model, CoreBPE};
-use crate::error::{SessionError, SessionResult};
 
 /// Token estimation result
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -179,14 +179,22 @@ impl TokenEstimator {
     }
 
     /// Estimate tokens for text using specified model
-    pub fn estimate_tokens(&mut self, text: &str, model: Option<&str>) -> SessionResult<TokenEstimate> {
-        let model_name = model.map(|s| s.to_string()).unwrap_or_else(|| self.default_model.clone());
+    pub fn estimate_tokens(
+        &mut self,
+        text: &str,
+        model: Option<&str>,
+    ) -> SessionResult<TokenEstimate> {
+        let model_name = model
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| self.default_model.clone());
         let tokenizer = self.get_tokenizer(&model_name)?;
 
         let tokens = tokenizer.encode_with_special_tokens(text).len();
         let characters = text.chars().count();
 
-        let estimated_cost = self.pricing.get(&model_name)
+        let estimated_cost = self
+            .pricing
+            .get(&model_name)
             .map(|pricing| (tokens as f64 / 1000.0) * pricing.input_per_1k);
 
         Ok(TokenEstimate {
@@ -198,8 +206,13 @@ impl TokenEstimator {
     }
 
     /// Estimate tokens for a conversation (multiple messages)
-    pub fn estimate_conversation_tokens(&mut self, messages: &[crate::models::Message], model: Option<&str>) -> SessionResult<TokenEstimate> {
-        let combined_text = messages.iter()
+    pub fn estimate_conversation_tokens(
+        &mut self,
+        messages: &[crate::models::Message],
+        model: Option<&str>,
+    ) -> SessionResult<TokenEstimate> {
+        let combined_text = messages
+            .iter()
             .map(|msg| format!("{}: {}", msg.role, msg.content()))
             .collect::<Vec<_>>()
             .join("\n");
@@ -209,9 +222,7 @@ impl TokenEstimator {
 
     /// Create token usage tracker for a session
     pub fn create_usage_tracker(&self, model: &str) -> SessionResult<TokenUsageTracker> {
-        let pricing = self.pricing.get(model)
-            .cloned()
-            .unwrap_or_default();
+        let pricing = self.pricing.get(model).cloned().unwrap_or_default();
 
         Ok(TokenUsageTracker {
             model: model.to_string(),
@@ -228,12 +239,20 @@ impl TokenEstimator {
     fn get_tokenizer(&mut self, model: &str) -> SessionResult<&Arc<CoreBPE>> {
         if !self.tokenizers.contains_key(model) {
             let bpe = if model.starts_with("gpt-4") || model.starts_with("gpt-3.5") {
-                get_bpe_from_model(model)
-                    .map_err(|e| SessionError::TokenEstimation(format!("Failed to load tokenizer for {}: {}", model, e)))?
+                get_bpe_from_model(model).map_err(|e| {
+                    SessionError::TokenEstimation(format!(
+                        "Failed to load tokenizer for {}: {}",
+                        model, e
+                    ))
+                })?
             } else {
                 // Fallback to GPT-3.5 tokenizer for other models
-                get_bpe_from_model("gpt-3.5-turbo")
-                    .map_err(|e| SessionError::TokenEstimation(format!("Failed to load fallback tokenizer: {}", e)))?
+                get_bpe_from_model("gpt-3.5-turbo").map_err(|e| {
+                    SessionError::TokenEstimation(format!(
+                        "Failed to load fallback tokenizer: {}",
+                        e
+                    ))
+                })?
             };
 
             self.tokenizers.insert(model.to_string(), Arc::new(bpe));
@@ -385,4 +404,3 @@ impl Default for TokenEstimator {
         Self::new()
     }
 }
-

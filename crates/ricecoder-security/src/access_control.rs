@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::{SecurityError, Result};
+use crate::{Result, SecurityError};
 
 /// Permission types
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -73,10 +73,7 @@ impl Role {
                 Permission::ApiKeyAccess,
                 Permission::SessionCreate,
             ],
-            Role::Auditor => &[
-                Permission::Read,
-                Permission::AuditRead,
-            ],
+            Role::Auditor => &[Permission::Read, Permission::AuditRead],
         }
     }
 
@@ -194,7 +191,9 @@ impl AccessControl {
                         // For now, allow all - in production, check ownership
                         Ok(self.has_permission(&principal, permission))
                     }
-                    Permission::Share => Ok(self.has_permission(&principal, &Permission::SessionShare)),
+                    Permission::Share => {
+                        Ok(self.has_permission(&principal, &Permission::SessionShare))
+                    }
                     _ => Ok(self.has_permission(&principal, permission)),
                 }
             }
@@ -208,20 +207,16 @@ impl AccessControl {
                     _ => Ok(false),
                 }
             }
-            ResourceType::ApiKey => {
-                match permission {
-                    Permission::Read | Permission::Write => {
-                        Ok(self.has_permission(&principal, &Permission::ApiKeyAccess))
-                    }
-                    _ => Ok(false),
+            ResourceType::ApiKey => match permission {
+                Permission::Read | Permission::Write => {
+                    Ok(self.has_permission(&principal, &Permission::ApiKeyAccess))
                 }
-            }
-            ResourceType::AuditLog => {
-                match permission {
-                    Permission::Read => Ok(self.has_permission(&principal, &Permission::AuditRead)),
-                    _ => Ok(false),
-                }
-            }
+                _ => Ok(false),
+            },
+            ResourceType::AuditLog => match permission {
+                Permission::Read => Ok(self.has_permission(&principal, &Permission::AuditRead)),
+                _ => Ok(false),
+            },
             ResourceType::User => {
                 // Users can only access their own data
                 if resource_id == Some(user_id) {
@@ -230,9 +225,7 @@ impl AccessControl {
                     Ok(self.has_permission(&principal, &Permission::Admin))
                 }
             }
-            ResourceType::System => {
-                Ok(self.has_permission(&principal, &Permission::Admin))
-            }
+            ResourceType::System => Ok(self.has_permission(&principal, &Permission::Admin)),
         }
     }
 
@@ -287,7 +280,9 @@ impl AccessControl {
             return Err(SecurityError::AccessDenied {
                 message: format!(
                     "Principal '{}' does not have permission '{}' for resource '{}'",
-                    principal.id, self.permission_name(required_permission), resource
+                    principal.id,
+                    self.permission_name(required_permission),
+                    resource
                 ),
             });
         }
@@ -303,8 +298,6 @@ impl AccessControl {
     pub fn list_builtin_roles(&self) -> Vec<Role> {
         vec![Role::User, Role::Admin, Role::Service, Role::Auditor]
     }
-
-
 
     /// Get human-readable permission name
     fn permission_name(&self, permission: &Permission) -> &str {
@@ -396,7 +389,8 @@ impl AttributeBasedAccessControl {
                 }
 
                 if self.matches_conditions(subject_attrs, &rule.subject_attributes)
-                    && self.matches_conditions(resource_attrs, &rule.resource_attributes) {
+                    && self.matches_conditions(resource_attrs, &rule.resource_attributes)
+                {
                     final_effect = rule.effect.clone();
                     // First matching rule wins (in order)
                     break;
@@ -464,22 +458,26 @@ impl<'a> PermissionCheck<'a> {
 
     /// Check if principal has permission
     pub fn has(&self, permission: &Permission) -> bool {
-        self.access_control.has_permission(self.principal, permission)
+        self.access_control
+            .has_permission(self.principal, permission)
     }
 
     /// Check if principal has any of the permissions
     pub fn has_any(&self, permissions: &[Permission]) -> bool {
-        self.access_control.has_any_permission(self.principal, permissions)
+        self.access_control
+            .has_any_permission(self.principal, permissions)
     }
 
     /// Check if principal has all permissions
     pub fn has_all(&self, permissions: &[Permission]) -> bool {
-        self.access_control.has_all_permissions(self.principal, permissions)
+        self.access_control
+            .has_all_permissions(self.principal, permissions)
     }
 
     /// Validate resource access
     pub fn validate_resource(&self, resource: &str, permission: &Permission) -> Result<()> {
-        self.access_control.validate_resource_access(self.principal, resource, permission)
+        self.access_control
+            .validate_resource_access(self.principal, resource, permission)
     }
 }
 
@@ -565,17 +563,28 @@ mod tests {
         };
 
         // User should be able to access their own session
-        assert!(ac.validate_resource_access(&user, "session:user123", &Permission::Read).is_ok());
+        assert!(ac
+            .validate_resource_access(&user, "session:user123", &Permission::Read)
+            .is_ok());
 
         // User should not be able to access admin resources
-        assert!(ac.validate_resource_access(&user, "admin:config", &Permission::Admin).is_err());
+        assert!(ac
+            .validate_resource_access(&user, "admin:config", &Permission::Admin)
+            .is_err());
     }
 
     #[test]
     fn test_custom_role() {
         let mut ac = AccessControl::new();
 
-        ac.add_custom_role("developer".to_string(), vec![Permission::Read, Permission::Write, Permission::ApiKeyAccess]);
+        ac.add_custom_role(
+            "developer".to_string(),
+            vec![
+                Permission::Read,
+                Permission::Write,
+                Permission::ApiKeyAccess,
+            ],
+        );
 
         let developer = Principal {
             id: "dev123".to_string(),
@@ -598,12 +607,22 @@ mod tests {
             description: "Allow developers to access dev resources".to_string(),
             rules: vec![AbacRule {
                 subject_attributes: HashMap::from([
-                    ("department".to_string(), AttributeCondition::Equals("engineering".to_string())),
-                    ("clearance".to_string(), AttributeCondition::In(vec!["secret".to_string(), "top_secret".to_string()])),
+                    (
+                        "department".to_string(),
+                        AttributeCondition::Equals("engineering".to_string()),
+                    ),
+                    (
+                        "clearance".to_string(),
+                        AttributeCondition::In(vec![
+                            "secret".to_string(),
+                            "top_secret".to_string(),
+                        ]),
+                    ),
                 ]),
-                resource_attributes: HashMap::from([
-                    ("environment".to_string(), AttributeCondition::Equals("development".to_string())),
-                ]),
+                resource_attributes: HashMap::from([(
+                    "environment".to_string(),
+                    AttributeCondition::Equals("development".to_string()),
+                )]),
                 action: "read".to_string(),
                 effect: AbacEffect::Allow,
             }],
@@ -616,9 +635,8 @@ mod tests {
             ("department".to_string(), "engineering".to_string()),
             ("clearance".to_string(), "secret".to_string()),
         ]);
-        let resource_attrs = HashMap::from([
-            ("environment".to_string(), "development".to_string()),
-        ]);
+        let resource_attrs =
+            HashMap::from([("environment".to_string(), "development".to_string())]);
 
         let effect = abac.evaluate_access(&subject_attrs, &resource_attrs, "read");
         assert!(matches!(effect, AbacEffect::Allow));
@@ -641,9 +659,10 @@ mod tests {
             name: "regex_policy".to_string(),
             description: "Allow access based on regex pattern".to_string(),
             rules: vec![AbacRule {
-                subject_attributes: HashMap::from([
-                    ("email".to_string(), AttributeCondition::Regex(r".*@company\.com$".to_string())),
-                ]),
+                subject_attributes: HashMap::from([(
+                    "email".to_string(),
+                    AttributeCondition::Regex(r".*@company\.com$".to_string()),
+                )]),
                 resource_attributes: HashMap::new(),
                 action: "access".to_string(),
                 effect: AbacEffect::Allow,
@@ -652,16 +671,18 @@ mod tests {
 
         abac.add_policy(policy);
 
-        let valid_subject = HashMap::from([
-            ("email".to_string(), "user@company.com".to_string()),
-        ]);
-        let invalid_subject = HashMap::from([
-            ("email".to_string(), "user@gmail.com".to_string()),
-        ]);
+        let valid_subject = HashMap::from([("email".to_string(), "user@company.com".to_string())]);
+        let invalid_subject = HashMap::from([("email".to_string(), "user@gmail.com".to_string())]);
 
         let resource_attrs = HashMap::new();
 
-        assert!(matches!(abac.evaluate_access(&valid_subject, &resource_attrs, "access"), AbacEffect::Allow));
-        assert!(matches!(abac.evaluate_access(&invalid_subject, &resource_attrs, "access"), AbacEffect::Deny));
+        assert!(matches!(
+            abac.evaluate_access(&valid_subject, &resource_attrs, "access"),
+            AbacEffect::Allow
+        ));
+        assert!(matches!(
+            abac.evaluate_access(&invalid_subject, &resource_attrs, "access"),
+            AbacEffect::Deny
+        ));
     }
 }

@@ -4,7 +4,7 @@ use crate::conflict::ConflictDetector;
 use crate::error::EngineError;
 use crate::help::KeybindHelp;
 use crate::merge::KeybindMerger;
-use crate::models::{Context, Keybind, KeyCombo};
+use crate::models::{Context, KeyCombo, Keybind};
 use crate::parser::ParserRegistry;
 use crate::persistence::KeybindPersistence;
 use crate::profile::ProfileManager;
@@ -112,16 +112,22 @@ impl KeybindEngine {
     }
 
     /// Apply profile keybinds with merging against defaults
-    pub fn apply_profile_with_merge(&mut self, profile_keybinds: &[Keybind]) -> Result<(), EngineError> {
+    pub fn apply_profile_with_merge(
+        &mut self,
+        profile_keybinds: &[Keybind],
+    ) -> Result<(), EngineError> {
         // Merge profile keybinds with defaults
-        let merge_result = KeybindMerger::merge_with_contexts(&self.default_keybinds, profile_keybinds)
-            .map_err(|e| EngineError::DefaultsLoadError(format!("Failed to merge keybinds: {}", e)))?;
+        let merge_result =
+            KeybindMerger::merge_with_contexts(&self.default_keybinds, profile_keybinds).map_err(
+                |e| EngineError::DefaultsLoadError(format!("Failed to merge keybinds: {}", e)),
+            )?;
 
         // Log resolved conflicts
         for conflict in &merge_result.resolved_conflicts {
             tracing::info!(
                 "Resolved keybind conflict: {} in context {} - kept user binding",
-                conflict.key, conflict.context
+                conflict.key,
+                conflict.context
             );
         }
 
@@ -129,7 +135,9 @@ impl KeybindEngine {
         for conflict in &merge_result.unresolved_conflicts {
             tracing::warn!(
                 "Unresolved keybind conflict: {} in context {} - {}",
-                conflict.key, conflict.context, conflict.user.action_id
+                conflict.key,
+                conflict.context,
+                conflict.user.action_id
             );
         }
 
@@ -354,7 +362,11 @@ impl KeybindEngine {
     }
 
     /// Get paginated keybinds
-    pub fn get_keybinds_paginated(&self, page: usize, page_size: usize) -> crate::help::Page<&Keybind> {
+    pub fn get_keybinds_paginated(
+        &self,
+        page: usize,
+        page_size: usize,
+    ) -> crate::help::Page<&Keybind> {
         let keybinds = self.all_keybinds();
         KeybindHelp::paginate(&keybinds, page, page_size)
     }
@@ -403,12 +415,9 @@ pub fn initialize_engine_with_defaults(
 }
 
 /// Helper function to get the default storage location for keybind profiles
-/// 
+///
 /// Returns a FileSystemPersistence configured to use the default storage location:
 /// `projects/ricecoder/config/keybinds/`
 pub fn get_default_persistence() -> Result<crate::persistence::FileSystemPersistence, EngineError> {
-    crate::persistence::FileSystemPersistence::with_default_location()
-        .map_err(EngineError::from)
+    crate::persistence::FileSystemPersistence::with_default_location().map_err(EngineError::from)
 }
-
-

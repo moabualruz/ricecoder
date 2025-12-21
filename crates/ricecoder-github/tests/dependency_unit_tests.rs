@@ -19,7 +19,9 @@ fn test_dependency_manager_creation() {
 #[test]
 fn test_scan_dependencies_returns_results() {
     let manager = DependencyManager::new("owner".to_string(), "repo".to_string());
-    let result = manager.scan_dependencies().expect("Scanning should succeed");
+    let result = manager
+        .scan_dependencies()
+        .expect("Scanning should succeed");
     assert!(!result.dependencies.is_empty());
     assert!(result.outdated_count > 0);
 }
@@ -27,7 +29,9 @@ fn test_scan_dependencies_returns_results() {
 #[test]
 fn test_scan_dependencies_identifies_vulnerabilities() {
     let manager = DependencyManager::new("owner".to_string(), "repo".to_string());
-    let result = manager.scan_dependencies().expect("Scanning should succeed");
+    let result = manager
+        .scan_dependencies()
+        .expect("Scanning should succeed");
     assert!(result.vulnerable_count > 0);
     assert!(result.total_vulnerabilities > 0);
 }
@@ -35,19 +39,27 @@ fn test_scan_dependencies_identifies_vulnerabilities() {
 #[test]
 fn test_scan_dependencies_counts_match() {
     let manager = DependencyManager::new("owner".to_string(), "repo".to_string());
-    let result = manager.scan_dependencies().expect("Scanning should succeed");
+    let result = manager
+        .scan_dependencies()
+        .expect("Scanning should succeed");
 
     let actual_outdated = result.dependencies.iter().filter(|d| d.is_outdated).count();
     assert_eq!(result.outdated_count, actual_outdated);
 
-    let actual_vulnerable = result.dependencies.iter().filter(|d| !d.vulnerabilities.is_empty()).count();
+    let actual_vulnerable = result
+        .dependencies
+        .iter()
+        .filter(|d| !d.vulnerabilities.is_empty())
+        .count();
     assert_eq!(result.vulnerable_count, actual_vulnerable);
 }
 
 #[test]
 fn test_suggest_updates_returns_suggestions() {
     let manager = DependencyManager::new("owner".to_string(), "repo".to_string());
-    let scan_result = manager.scan_dependencies().expect("Scanning should succeed");
+    let scan_result = manager
+        .scan_dependencies()
+        .expect("Scanning should succeed");
     let suggestions = manager
         .suggest_updates(&scan_result)
         .expect("Suggesting updates should succeed");
@@ -57,7 +69,9 @@ fn test_suggest_updates_returns_suggestions() {
 #[test]
 fn test_suggest_updates_identifies_security_vulnerabilities() {
     let manager = DependencyManager::new("owner".to_string(), "repo".to_string());
-    let scan_result = manager.scan_dependencies().expect("Scanning should succeed");
+    let scan_result = manager
+        .scan_dependencies()
+        .expect("Scanning should succeed");
     let suggestions = manager
         .suggest_updates(&scan_result)
         .expect("Suggesting updates should succeed");
@@ -77,7 +91,9 @@ fn test_suggest_updates_identifies_security_vulnerabilities() {
 #[test]
 fn test_suggest_updates_sets_correct_risk_levels() {
     let manager = DependencyManager::new("owner".to_string(), "repo".to_string());
-    let scan_result = manager.scan_dependencies().expect("Scanning should succeed");
+    let scan_result = manager
+        .scan_dependencies()
+        .expect("Scanning should succeed");
     let suggestions = manager
         .suggest_updates(&scan_result)
         .expect("Suggesting updates should succeed");
@@ -92,7 +108,9 @@ fn test_suggest_updates_sets_correct_risk_levels() {
 #[test]
 fn test_create_update_pr_with_suggestions() {
     let manager = DependencyManager::new("owner".to_string(), "repo".to_string());
-    let scan_result = manager.scan_dependencies().expect("Scanning should succeed");
+    let scan_result = manager
+        .scan_dependencies()
+        .expect("Scanning should succeed");
     let suggestions = manager
         .suggest_updates(&scan_result)
         .expect("Suggesting updates should succeed");
@@ -110,7 +128,9 @@ fn test_create_update_pr_with_suggestions() {
 #[test]
 fn test_create_update_pr_includes_all_dependencies() {
     let manager = DependencyManager::new("owner".to_string(), "repo".to_string());
-    let scan_result = manager.scan_dependencies().expect("Scanning should succeed");
+    let scan_result = manager
+        .scan_dependencies()
+        .expect("Scanning should succeed");
     let suggestions = manager
         .suggest_updates(&scan_result)
         .expect("Suggesting updates should succeed");
@@ -132,7 +152,9 @@ fn test_create_update_pr_fails_with_no_suggestions() {
 #[test]
 fn test_create_update_pr_branch_name_format() {
     let manager = DependencyManager::new("owner".to_string(), "repo".to_string());
-    let scan_result = manager.scan_dependencies().expect("Scanning should succeed");
+    let scan_result = manager
+        .scan_dependencies()
+        .expect("Scanning should succeed");
     let suggestions = manager
         .suggest_updates(&scan_result)
         .expect("Suggesting updates should succeed");
@@ -147,7 +169,9 @@ fn test_create_update_pr_branch_name_format() {
 #[test]
 fn test_verify_update_returns_result() {
     let manager = DependencyManager::new("owner".to_string(), "repo".to_string());
-    let result = manager.verify_update(42).expect("Verification should succeed");
+    let result = manager
+        .verify_update(42)
+        .expect("Verification should succeed");
     assert!(result.build_passed);
     assert!(result.tests_passed);
 }
@@ -155,25 +179,34 @@ fn test_verify_update_returns_result() {
 #[test]
 fn test_verify_update_has_status_message() {
     let manager = DependencyManager::new("owner".to_string(), "repo".to_string());
-    let result = manager.verify_update(42).expect("Verification should succeed");
+    let result = manager
+        .verify_update(42)
+        .expect("Verification should succeed");
     assert!(!result.status_message.is_empty());
 }
 
 #[test]
 fn test_track_vulnerabilities_returns_report() {
     let manager = DependencyManager::new("owner".to_string(), "repo".to_string());
-    let scan_result = manager.scan_dependencies().expect("Scanning should succeed");
+    let scan_result = manager
+        .scan_dependencies()
+        .expect("Scanning should succeed");
     let report = manager
         .track_vulnerabilities(&scan_result)
         .expect("Tracking vulnerabilities should succeed");
 
-    assert_eq!(report.total_vulnerabilities, scan_result.total_vulnerabilities);
+    assert_eq!(
+        report.total_vulnerabilities,
+        scan_result.total_vulnerabilities
+    );
 }
 
 #[test]
 fn test_track_vulnerabilities_counts_by_severity() {
     let manager = DependencyManager::new("owner".to_string(), "repo".to_string());
-    let scan_result = manager.scan_dependencies().expect("Scanning should succeed");
+    let scan_result = manager
+        .scan_dependencies()
+        .expect("Scanning should succeed");
     let report = manager
         .track_vulnerabilities(&scan_result)
         .expect("Tracking vulnerabilities should succeed");
@@ -255,8 +288,14 @@ fn test_vulnerability_severity_display() {
 #[test]
 fn test_update_reason_display() {
     assert_eq!(UpdateReason::Outdated.to_string(), "Outdated");
-    assert_eq!(UpdateReason::SecurityVulnerability.to_string(), "Security Vulnerability");
-    assert_eq!(UpdateReason::OutdatedAndVulnerable.to_string(), "Outdated and Vulnerable");
+    assert_eq!(
+        UpdateReason::SecurityVulnerability.to_string(),
+        "Security Vulnerability"
+    );
+    assert_eq!(
+        UpdateReason::OutdatedAndVulnerable.to_string(),
+        "Outdated and Vulnerable"
+    );
 }
 
 // Tests for UpdateRiskLevel
@@ -293,9 +332,13 @@ fn test_apply_pinning_with_full_version() {
         pin_patch: true,
     };
 
-    let result = DependencyOperations::apply_pinning(&deps, &config).expect("Pinning should succeed");
+    let result =
+        DependencyOperations::apply_pinning(&deps, &config).expect("Pinning should succeed");
     assert_eq!(result.pinned_dependencies.len(), 1);
-    assert_eq!(result.pinning_config.get("tokio"), Some(&"1.35.0".to_string()));
+    assert_eq!(
+        result.pinning_config.get("tokio"),
+        Some(&"1.35.0".to_string())
+    );
 }
 
 #[test]
@@ -315,13 +358,15 @@ fn test_apply_pinning_with_major_only() {
         pin_patch: false,
     };
 
-    let result = DependencyOperations::apply_pinning(&deps, &config).expect("Pinning should succeed");
+    let result =
+        DependencyOperations::apply_pinning(&deps, &config).expect("Pinning should succeed");
     assert_eq!(result.pinning_config.get("tokio"), Some(&"1.*".to_string()));
 }
 
 #[test]
 fn test_verify_build_compatibility() {
-    let result = DependencyOperations::verify_build_compatibility(&[]).expect("Verification should succeed");
+    let result =
+        DependencyOperations::verify_build_compatibility(&[]).expect("Verification should succeed");
     assert!(result.success);
     assert!(result.errors.is_empty());
 }
@@ -342,7 +387,8 @@ fn test_generate_security_report_with_vulnerabilities() {
         dep_type: "runtime".to_string(),
     }];
 
-    let report = DependencyOperations::generate_security_report(&deps).expect("Report generation should succeed");
+    let report = DependencyOperations::generate_security_report(&deps)
+        .expect("Report generation should succeed");
     assert_eq!(report.total_vulnerabilities, 1);
     assert_eq!(report.critical_vulnerabilities.len(), 1);
     assert!(report.risk_score > 0.0);
@@ -350,13 +396,15 @@ fn test_generate_security_report_with_vulnerabilities() {
 
 #[test]
 fn test_is_update_safe_with_no_vulnerabilities() {
-    let result = DependencyOperations::is_update_safe("1.0.0", "1.1.0", 0).expect("Safety check should succeed");
+    let result = DependencyOperations::is_update_safe("1.0.0", "1.1.0", 0)
+        .expect("Safety check should succeed");
     assert!(result);
 }
 
 #[test]
 fn test_is_update_safe_with_vulnerabilities() {
-    let result = DependencyOperations::is_update_safe("1.0.0", "1.1.0", 1).expect("Safety check should succeed");
+    let result = DependencyOperations::is_update_safe("1.0.0", "1.1.0", 1)
+        .expect("Safety check should succeed");
     assert!(!result);
 }
 
@@ -371,7 +419,8 @@ fn test_generate_recommendations_for_outdated() {
         dep_type: "runtime".to_string(),
     }];
 
-    let recommendations = DependencyOperations::generate_recommendations(&deps).expect("Recommendations should succeed");
+    let recommendations = DependencyOperations::generate_recommendations(&deps)
+        .expect("Recommendations should succeed");
     assert_eq!(recommendations.len(), 1);
     assert_eq!(recommendations[0].dependency_name, "serde");
 }
@@ -392,7 +441,8 @@ fn test_generate_recommendations_for_vulnerable() {
         dep_type: "runtime".to_string(),
     }];
 
-    let recommendations = DependencyOperations::generate_recommendations(&deps).expect("Recommendations should succeed");
+    let recommendations = DependencyOperations::generate_recommendations(&deps)
+        .expect("Recommendations should succeed");
     assert_eq!(recommendations.len(), 1);
     assert_eq!(recommendations[0].priority, UpdatePriority::High);
 }
@@ -442,7 +492,8 @@ fn test_apply_pinning_preserves_all_dependencies() {
     ];
 
     let config = PinningConfig::default();
-    let result = DependencyOperations::apply_pinning(&deps, &config).expect("Pinning should succeed");
+    let result =
+        DependencyOperations::apply_pinning(&deps, &config).expect("Pinning should succeed");
 
     assert_eq!(result.pinned_dependencies.len(), 2);
     assert!(result.pinning_config.contains_key("dep1"));
@@ -480,7 +531,8 @@ fn test_generate_security_report_categorizes_by_severity() {
         },
     ];
 
-    let report = DependencyOperations::generate_security_report(&deps).expect("Report generation should succeed");
+    let report = DependencyOperations::generate_security_report(&deps)
+        .expect("Report generation should succeed");
     assert_eq!(report.critical_vulnerabilities.len(), 1);
     assert_eq!(report.high_vulnerabilities.len(), 1);
 }

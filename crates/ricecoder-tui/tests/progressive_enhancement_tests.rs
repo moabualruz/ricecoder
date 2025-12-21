@@ -1,5 +1,7 @@
+use crate::terminal_state::{
+    CapabilityOverrides, ColorSupport, TerminalCapabilities, TerminalType,
+};
 use ricecoder_tui::*;
-use crate::terminal_state::{TerminalCapabilities, TerminalType, ColorSupport, CapabilityOverrides};
 
 mod tests {
     use super::*;
@@ -85,8 +87,12 @@ mod tests {
 
         let image_fallbacks = pe.get_fallback_strategies("images");
         assert!(image_fallbacks.is_some());
-        assert!(image_fallbacks.unwrap().contains(&RenderingStrategy::GraphicsProtocol));
-        assert!(image_fallbacks.unwrap().contains(&RenderingStrategy::TextOnly));
+        assert!(image_fallbacks
+            .unwrap()
+            .contains(&RenderingStrategy::GraphicsProtocol));
+        assert!(image_fallbacks
+            .unwrap()
+            .contains(&RenderingStrategy::TextOnly));
     }
 
     #[test]
@@ -116,8 +122,14 @@ mod tests {
 
         // Test feature toggle access
         assert!(pe.is_feature_enabled("keyboard_shortcuts")); // Should always be enabled
-        assert_eq!(pe.is_feature_enabled("mouse_support"), pe.feature_toggles().mouse_support);
-        assert_eq!(pe.is_feature_enabled("graphics_support"), pe.feature_toggles().graphics_support);
+        assert_eq!(
+            pe.is_feature_enabled("mouse_support"),
+            pe.feature_toggles().mouse_support
+        );
+        assert_eq!(
+            pe.is_feature_enabled("graphics_support"),
+            pe.feature_toggles().graphics_support
+        );
     }
 
     #[test]

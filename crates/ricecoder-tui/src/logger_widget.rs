@@ -35,11 +35,11 @@ impl LogLevel {
     /// Get the color code for the level
     pub fn color_code(&self) -> &'static str {
         match self {
-            LogLevel::Trace => "\x1b[90m",    // Gray
-            LogLevel::Debug => "\x1b[36m",    // Cyan
-            LogLevel::Info => "\x1b[32m",     // Green
-            LogLevel::Warn => "\x1b[33m",     // Yellow
-            LogLevel::Error => "\x1b[31m",    // Red
+            LogLevel::Trace => "\x1b[90m", // Gray
+            LogLevel::Debug => "\x1b[36m", // Cyan
+            LogLevel::Info => "\x1b[32m",  // Green
+            LogLevel::Warn => "\x1b[33m",  // Yellow
+            LogLevel::Error => "\x1b[31m", // Red
         }
     }
 }
@@ -79,7 +79,10 @@ impl LogEntry {
         let module = self.module.as_deref().unwrap_or("app");
         format!(
             "[{}] {} {} - {}",
-            self.timestamp, self.level.as_str(), module, self.message
+            self.timestamp,
+            self.level.as_str(),
+            module,
+            self.message
         )
     }
 }
@@ -177,7 +180,11 @@ impl LoggerWidget {
 
                 // Filter by search term
                 if let Some(ref search) = self.search_filter {
-                    if !entry.message.to_lowercase().contains(&search.to_lowercase()) {
+                    if !entry
+                        .message
+                        .to_lowercase()
+                        .contains(&search.to_lowercase())
+                    {
                         return false;
                     }
                 }
@@ -314,5 +321,3 @@ impl Default for LoggerWidget {
         Self::new(1000)
     }
 }
-
-

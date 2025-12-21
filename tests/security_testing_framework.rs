@@ -21,16 +21,25 @@ async fn test_security_validator() {
     let safe_input = validator.validate_input("Hello world").await.unwrap();
     assert!(safe_input.is_safe);
 
-    let malicious_input = validator.validate_input("<script>alert('xss')</script>").await.unwrap();
+    let malicious_input = validator
+        .validate_input("<script>alert('xss')</script>")
+        .await
+        .unwrap();
     assert!(!malicious_input.is_safe);
     assert!(malicious_input.violations.len() > 0);
 
     // Test authentication
-    let auth_result = validator.validate_authentication("user", "password").await.unwrap();
+    let auth_result = validator
+        .validate_authentication("user", "password")
+        .await
+        .unwrap();
     assert!(auth_result.success);
 
     // Test authorization
-    let authz_result = validator.validate_authorization("admin", "read").await.unwrap();
+    let authz_result = validator
+        .validate_authorization("admin", "read")
+        .await
+        .unwrap();
     assert!(authz_result.allowed);
 
     // Test encryption
@@ -46,7 +55,10 @@ async fn test_security_validator() {
     assert!(api_result.is_valid);
 
     // Test rate limiting
-    let rate_result = validator.check_rate_limit("user1", "api_call").await.unwrap();
+    let rate_result = validator
+        .check_rate_limit("user1", "api_call")
+        .await
+        .unwrap();
     assert!(rate_result.allowed);
 }
 
@@ -58,7 +70,9 @@ async fn test_vulnerability_scanner() {
     let manifest_path = temp_dir.path().join("Cargo.toml");
 
     // Create a dummy Cargo.toml
-    std::fs::write(&manifest_path, r#"
+    std::fs::write(
+        &manifest_path,
+        r#"
 [package]
 name = "test-package"
 version = "0.1.0"
@@ -66,7 +80,9 @@ edition = "2021"
 
 [dependencies]
 serde = "1.0"
-    "#).unwrap();
+    "#,
+    )
+    .unwrap();
 
     // Test dependency scanning
     let result = scanner.scan_dependencies(&manifest_path).await.unwrap();
@@ -87,7 +103,10 @@ async fn test_penetration_testing() {
     let tester = DefaultPenetrationTester::new();
 
     // Test SQL injection
-    let sql_result = tester.test_sql_injection("http://example.com").await.unwrap();
+    let sql_result = tester
+        .test_sql_injection("http://example.com")
+        .await
+        .unwrap();
     assert!(sql_result.vulnerable_endpoints.is_empty()); // Should be safe for test URL
 
     // Test XSS
@@ -99,9 +118,14 @@ async fn test_penetration_testing() {
     assert!(csrf_result.vulnerable_endpoints.is_empty()); // Should be safe for test URL
 
     // Test full penetration test
-    let full_result = tester.run_full_penetration_test("http://example.com").await.unwrap();
+    let full_result = tester
+        .run_full_penetration_test("http://example.com")
+        .await
+        .unwrap();
     // Should not find vulnerabilities for test URL
-    assert!(full_result.iter().all(|r| r.vulnerabilities_found.is_empty()));
+    assert!(full_result
+        .iter()
+        .all(|r| r.vulnerabilities_found.is_empty()));
 }
 
 /// Test compliance checking
@@ -198,7 +222,9 @@ async fn test_security_scanning_integration() {
     let test_file = temp_dir.path().join("test.rs");
 
     // Create a test file with potential security issues
-    std::fs::write(&test_file, r#"
+    std::fs::write(
+        &test_file,
+        r#"
 fn main() {
     let password = "hardcoded_password"; // This should be flagged
     let query = format!("SELECT * FROM users WHERE id = {}", user_id); // SQL injection risk
@@ -206,7 +232,9 @@ fn main() {
         println!("Hello");
     }
 }
-    "#).unwrap();
+    "#,
+    )
+    .unwrap();
 
     let scanner = DefaultVulnerabilityScanner::new();
     let result = scanner.scan_code(temp_dir.path()).await.unwrap();

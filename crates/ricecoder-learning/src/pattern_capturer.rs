@@ -69,12 +69,9 @@ impl PatternCapturer {
         let mut input_groups: HashMap<String, Vec<&Decision>> = HashMap::new();
         for decision in decisions {
             // Use JSON string representation for deterministic grouping
-            let input_key = serde_json::to_string(&decision.input)
-                .unwrap_or_else(|_| "unknown".to_string());
-            input_groups
-                .entry(input_key)
-                .or_default()
-                .push(decision);
+            let input_key =
+                serde_json::to_string(&decision.input).unwrap_or_else(|_| "unknown".to_string());
+            input_groups.entry(input_key).or_default().push(decision);
         }
 
         // Create patterns from similar inputs
@@ -108,10 +105,7 @@ impl PatternCapturer {
             decision_type,
             serde_json::to_string(&decisions[0].input).unwrap_or_default()
         );
-        let pattern_id = format!(
-            "{:x}",
-            md5::compute(pattern_content.as_bytes())
-        );
+        let pattern_id = format!("{:x}", md5::compute(pattern_content.as_bytes()));
 
         let mut pattern = LearnedPattern {
             id: pattern_id,
@@ -180,7 +174,11 @@ impl PatternCapturer {
 
     /// Check if two outputs are similar
     #[allow(dead_code)]
-    fn outputs_are_similar(&self, output1: &serde_json::Value, output2: &serde_json::Value) -> bool {
+    fn outputs_are_similar(
+        &self,
+        output1: &serde_json::Value,
+        output2: &serde_json::Value,
+    ) -> bool {
         // For now, use exact equality
         // In a more sophisticated implementation, this could use fuzzy matching
         output1 == output2
@@ -436,7 +434,9 @@ mod tests {
             serde_json::json!({"output": "result"}),
         );
 
-        let confidence = capturer.calculate_confidence(&[&decision1, &decision2]).unwrap();
+        let confidence = capturer
+            .calculate_confidence(&[&decision1, &decision2])
+            .unwrap();
         assert!(confidence > 0.0);
         assert!(confidence <= 1.0);
     }
@@ -457,7 +457,9 @@ mod tests {
             serde_json::json!({"output": "result"}),
         );
 
-        let patterns = capturer.extract_patterns(&[decision1.clone(), decision2]).unwrap();
+        let patterns = capturer
+            .extract_patterns(&[decision1.clone(), decision2])
+            .unwrap();
         assert_eq!(patterns.len(), 1);
 
         let validation_score = capturer
@@ -471,10 +473,8 @@ mod tests {
     fn test_update_confidence() {
         let capturer = PatternCapturer::new();
 
-        let mut pattern = LearnedPattern::new(
-            "code_generation".to_string(),
-            "Test pattern".to_string(),
-        );
+        let mut pattern =
+            LearnedPattern::new("code_generation".to_string(), "Test pattern".to_string());
 
         let initial_confidence = pattern.confidence;
         capturer.update_confidence(&mut pattern, 0.9).unwrap();

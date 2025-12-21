@@ -1,11 +1,11 @@
 //! User feedback collection and analysis pipeline
 
 use crate::types::*;
-use ricecoder_beta::feedback::{FeedbackCollector, FeedbackType, FeedbackSeverity};
 use ricecoder_beta::analytics::FeedbackAnalytics;
+use ricecoder_beta::feedback::{FeedbackCollector, FeedbackSeverity, FeedbackType};
+use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc;
 use tokio::time;
-use std::sync::{Arc, Mutex};
 
 /// Feedback pipeline for collecting and analyzing user feedback
 pub struct FeedbackPipeline {
@@ -92,21 +92,31 @@ impl FeedbackPipeline {
         metadata: std::collections::HashMap<String, serde_json::Value>,
     ) -> Result<(), ContinuousImprovementError> {
         // In a real implementation, this would get user/session/project context
-        let feedback = self.collector.lock().unwrap().collect_feedback(
-            None, // user
-            None, // session
-            None, // project
-            feedback_type,
-            severity,
-            title,
-            description,
-            enterprise_category,
-            tags,
-            metadata,
-        ).await.map_err(|e| ContinuousImprovementError::FeedbackError(e.to_string()))?;
+        let feedback = self
+            .collector
+            .lock()
+            .unwrap()
+            .collect_feedback(
+                None, // user
+                None, // session
+                None, // project
+                feedback_type,
+                severity,
+                title,
+                description,
+                enterprise_category,
+                tags,
+                metadata,
+            )
+            .await
+            .map_err(|e| ContinuousImprovementError::FeedbackError(e.to_string()))?;
 
         // Record in analytics
-        self.analytics.lock().unwrap().record_feedback(&feedback).await
+        self.analytics
+            .lock()
+            .unwrap()
+            .record_feedback(&feedback)
+            .await
             .map_err(|e| ContinuousImprovementError::FeedbackError(e.to_string()))?;
 
         tracing::info!("Feedback collected: {}", feedback.title);
@@ -115,7 +125,11 @@ impl FeedbackPipeline {
 
     /// Get feedback insights
     pub async fn get_insights(&self) -> Result<FeedbackInsights, ContinuousImprovementError> {
-        let satisfaction_score = self.analytics.lock().unwrap().calculate_satisfaction_score();
+        let satisfaction_score = self
+            .analytics
+            .lock()
+            .unwrap()
+            .calculate_satisfaction_score();
 
         // Get top pain points (simplified - would analyze feedback content)
         let top_pain_points = vec![

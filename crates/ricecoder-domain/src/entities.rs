@@ -1,7 +1,7 @@
 //! Core domain entities with business logic and validation
 
-use crate::value_objects::*;
 use crate::errors::*;
+use crate::value_objects::*;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -21,7 +21,11 @@ pub struct Project {
 
 impl Project {
     /// Create a new project with validation
-    pub fn new(name: String, language: ProgrammingLanguage, root_path: String) -> DomainResult<Self> {
+    pub fn new(
+        name: String,
+        language: ProgrammingLanguage,
+        root_path: String,
+    ) -> DomainResult<Self> {
         Self::validate_name(&name)?;
         Self::validate_path(&root_path)?;
 
@@ -73,9 +77,13 @@ impl Project {
         }
 
         // Check for valid characters (alphanumeric, dash, underscore)
-        if !regex::Regex::new(r"^[a-zA-Z0-9_-]+$").unwrap().is_match(name) {
+        if !regex::Regex::new(r"^[a-zA-Z0-9_-]+$")
+            .unwrap()
+            .is_match(name)
+        {
             return Err(DomainError::InvalidProjectName {
-                reason: "Project name can only contain letters, numbers, dashes, and underscores".to_string(),
+                reason: "Project name can only contain letters, numbers, dashes, and underscores"
+                    .to_string(),
             });
         }
 
@@ -209,7 +217,10 @@ impl AnalysisResult {
 
     /// Check if analysis is complete
     pub fn is_complete(&self) -> bool {
-        matches!(self.status, AnalysisStatus::Completed | AnalysisStatus::Failed)
+        matches!(
+            self.status,
+            AnalysisStatus::Completed | AnalysisStatus::Failed
+        )
     }
 }
 

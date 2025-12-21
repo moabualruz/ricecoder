@@ -41,7 +41,10 @@ impl IdeProvider for MockProvider {
         Ok(None)
     }
 
-    async fn get_definition(&self, _params: &DefinitionParams) -> Result<Option<Location>, IdeError> {
+    async fn get_definition(
+        &self,
+        _params: &DefinitionParams,
+    ) -> Result<Option<Location>, IdeError> {
         Ok(None)
     }
 

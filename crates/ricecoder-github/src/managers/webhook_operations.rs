@@ -31,8 +31,8 @@ impl WebhookRetryConfig {
 
     /// Calculate the delay for a given retry attempt
     pub fn calculate_delay(&self, attempt: u32) -> u64 {
-        let delay = (self.initial_delay_ms as f64
-            * self.backoff_multiplier.powi(attempt as i32)) as u64;
+        let delay =
+            (self.initial_delay_ms as f64 * self.backoff_multiplier.powi(attempt as i32)) as u64;
         delay.min(self.max_delay_ms)
     }
 }
@@ -299,9 +299,7 @@ impl WebhookOperations {
             GitHubError::NetworkError(msg) => {
                 WebhookErrorDetails::new("NETWORK_ERROR", format!("Network error: {}", msg))
             }
-            GitHubError::Timeout => {
-                WebhookErrorDetails::new("TIMEOUT", "Operation timed out")
-            }
+            GitHubError::Timeout => WebhookErrorDetails::new("TIMEOUT", "Operation timed out"),
             _ => WebhookErrorDetails::new("UNKNOWN_ERROR", error.to_string()),
         };
 
@@ -322,7 +320,9 @@ impl WebhookOperations {
     /// Validate webhook payload
     pub fn validate_payload(payload: &Value) -> Result<()> {
         if !payload.is_object() {
-            return Err(GitHubError::invalid_input("Webhook payload must be a JSON object"));
+            return Err(GitHubError::invalid_input(
+                "Webhook payload must be a JSON object",
+            ));
         }
 
         // Check for required fields
@@ -343,7 +343,11 @@ impl WebhookOperations {
             if let Some(name) = repo.get("name").and_then(|n| n.as_str()) {
                 metadata.insert("repository".to_string(), name.to_string());
             }
-            if let Some(owner) = repo.get("owner").and_then(|o| o.get("login")).and_then(|l| l.as_str()) {
+            if let Some(owner) = repo
+                .get("owner")
+                .and_then(|o| o.get("login"))
+                .and_then(|l| l.as_str())
+            {
                 metadata.insert("owner".to_string(), owner.to_string());
             }
         }
@@ -352,7 +356,11 @@ impl WebhookOperations {
             metadata.insert("action".to_string(), action.to_string());
         }
 
-        if let Some(sender) = payload.get("sender").and_then(|s| s.get("login")).and_then(|l| l.as_str()) {
+        if let Some(sender) = payload
+            .get("sender")
+            .and_then(|s| s.get("login"))
+            .and_then(|l| l.as_str())
+        {
             metadata.insert("sender".to_string(), sender.to_string());
         }
 

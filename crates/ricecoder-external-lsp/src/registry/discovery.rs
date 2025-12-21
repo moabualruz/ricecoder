@@ -53,9 +53,19 @@ impl ServerDiscovery {
         // Windows paths
         #[cfg(target_os = "windows")]
         {
-            paths.push(PathBuf::from(format!("C:\\Program Files\\{}\\{}.exe", executable, executable)));
-            paths.push(PathBuf::from(format!("C:\\Program Files (x86)\\{}\\{}.exe", executable, executable)));
-            paths.push(PathBuf::from(format!("{}\\{}.exe", std::env::var("APPDATA").unwrap_or_default(), executable)));
+            paths.push(PathBuf::from(format!(
+                "C:\\Program Files\\{}\\{}.exe",
+                executable, executable
+            )));
+            paths.push(PathBuf::from(format!(
+                "C:\\Program Files (x86)\\{}\\{}.exe",
+                executable, executable
+            )));
+            paths.push(PathBuf::from(format!(
+                "{}\\{}.exe",
+                std::env::var("APPDATA").unwrap_or_default(),
+                executable
+            )));
         }
 
         // macOS paths
@@ -63,7 +73,11 @@ impl ServerDiscovery {
         {
             paths.push(PathBuf::from(format!("/usr/local/bin/{}", executable)));
             paths.push(PathBuf::from(format!("/opt/homebrew/bin/{}", executable)));
-            paths.push(PathBuf::from(format!("{}/.cargo/bin/{}", std::env::var("HOME").unwrap_or_default(), executable)));
+            paths.push(PathBuf::from(format!(
+                "{}/.cargo/bin/{}",
+                std::env::var("HOME").unwrap_or_default(),
+                executable
+            )));
         }
 
         // Linux paths
@@ -71,12 +85,20 @@ impl ServerDiscovery {
         {
             paths.push(PathBuf::from(format!("/usr/local/bin/{}", executable)));
             paths.push(PathBuf::from(format!("/usr/bin/{}", executable)));
-            paths.push(PathBuf::from(format!("{}/.cargo/bin/{}", std::env::var("HOME").unwrap_or_default(), executable)));
+            paths.push(PathBuf::from(format!(
+                "{}/.cargo/bin/{}",
+                std::env::var("HOME").unwrap_or_default(),
+                executable
+            )));
         }
 
         // Generic paths
         paths.push(PathBuf::from(format!("/opt/{}/{}", executable, executable)));
-        paths.push(PathBuf::from(format!("{}/.local/bin/{}", std::env::var("HOME").unwrap_or_default(), executable)));
+        paths.push(PathBuf::from(format!(
+            "{}/.local/bin/{}",
+            std::env::var("HOME").unwrap_or_default(),
+            executable
+        )));
 
         paths
     }
@@ -84,33 +106,25 @@ impl ServerDiscovery {
     /// Get installation instructions for an LSP server
     pub fn installation_instructions(language: &str, executable: &str) -> String {
         match language {
-            "rust" => {
-                "Install rust-analyzer:\n\
+            "rust" => "Install rust-analyzer:\n\
                  - Via rustup: rustup component add rust-analyzer\n\
                  - Via cargo: cargo install rust-analyzer\n\
                  - See: https://rust-analyzer.github.io/manual.html#installation"
-                    .to_string()
-            }
-            "typescript" => {
-                "Install typescript-language-server:\n\
+                .to_string(),
+            "typescript" => "Install typescript-language-server:\n\
                  - Via npm: npm install -g typescript-language-server typescript\n\
                  - Via yarn: yarn global add typescript-language-server typescript\n\
                  - See: https://github.com/typescript-language-server/typescript-language-server"
-                    .to_string()
-            }
-            "python" => {
-                "Install python-lsp-server:\n\
+                .to_string(),
+            "python" => "Install python-lsp-server:\n\
                  - Via pip: pip install python-lsp-server\n\
                  - Via conda: conda install -c conda-forge python-lsp-server\n\
                  - See: https://github.com/python-lsp/python-lsp-server"
-                    .to_string()
-            }
-            "go" => {
-                "Install gopls:\n\
+                .to_string(),
+            "go" => "Install gopls:\n\
                  - Via go: go install github.com/golang/tools/gopls@latest\n\
                  - See: https://github.com/golang/tools/tree/master/gopls"
-                    .to_string()
-            }
+                .to_string(),
             _ => {
                 format!(
                     "LSP server '{}' not found at: {}\n\
@@ -154,7 +168,8 @@ mod tests {
 
     #[test]
     fn test_installation_instructions_typescript() {
-        let instructions = ServerDiscovery::installation_instructions("typescript", "typescript-language-server");
+        let instructions =
+            ServerDiscovery::installation_instructions("typescript", "typescript-language-server");
         assert!(instructions.contains("typescript-language-server"));
         assert!(instructions.contains("npm"));
     }

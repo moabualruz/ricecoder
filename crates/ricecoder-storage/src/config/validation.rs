@@ -5,9 +5,9 @@
 
 use crate::config::Config;
 use crate::error::{StorageError, StorageResult};
+use jsonschema::Validator;
 use serde_json::Value;
 use std::collections::HashMap;
-use jsonschema::Validator;
 
 /// Configuration validation error
 #[derive(Debug, Clone)]
@@ -40,8 +40,8 @@ impl ConfigValidator {
 
     /// Add a JSON schema for validation
     pub fn add_schema(&mut self, name: String, schema: Value) -> StorageResult<()> {
-        let compiled_schema = jsonschema::validator_for(&schema)
-            .map_err(|e| StorageError::ConfigValidation {
+        let compiled_schema =
+            jsonschema::validator_for(&schema).map_err(|e| StorageError::ConfigValidation {
                 errors: vec![format!("Invalid schema '{}': {}", name, e)],
             })?;
         self.schemas.insert(name, compiled_schema);
@@ -71,8 +71,9 @@ impl ConfigValidator {
 
         // Validate providers configuration
         if let Some(schema) = self.schemas.get("providers") {
-            let providers_value = serde_json::to_value(&config.providers)
-                .map_err(|e| StorageError::Internal(format!("Failed to serialize providers: {}", e)))?;
+            let providers_value = serde_json::to_value(&config.providers).map_err(|e| {
+                StorageError::Internal(format!("Failed to serialize providers: {}", e))
+            })?;
             if let Err(validation_error) = schema.validate(&providers_value) {
                 errors.push(format!("providers validation failed: {}", validation_error));
             }
@@ -80,8 +81,9 @@ impl ConfigValidator {
 
         // Validate defaults configuration
         if let Some(schema) = self.schemas.get("defaults") {
-            let defaults_value = serde_json::to_value(&config.defaults)
-                .map_err(|e| StorageError::Internal(format!("Failed to serialize defaults: {}", e)))?;
+            let defaults_value = serde_json::to_value(&config.defaults).map_err(|e| {
+                StorageError::Internal(format!("Failed to serialize defaults: {}", e))
+            })?;
             if let Err(validation_error) = schema.validate(&defaults_value) {
                 errors.push(format!("defaults validation failed: {}", validation_error));
             }
@@ -89,8 +91,9 @@ impl ConfigValidator {
 
         // Validate steering rules
         if let Some(schema) = self.schemas.get("steering") {
-            let steering_value = serde_json::to_value(&config.steering)
-                .map_err(|e| StorageError::Internal(format!("Failed to serialize steering: {}", e)))?;
+            let steering_value = serde_json::to_value(&config.steering).map_err(|e| {
+                StorageError::Internal(format!("Failed to serialize steering: {}", e))
+            })?;
             if let Err(validation_error) = schema.validate(&steering_value) {
                 errors.push(format!("steering validation failed: {}", validation_error));
             }
@@ -250,7 +253,12 @@ impl ConfigMigrationManager {
     }
 
     /// Apply all applicable migrations to a configuration
-    pub fn migrate(&self, config: &mut Config, from_version: &str, to_version: &str) -> StorageResult<()> {
+    pub fn migrate(
+        &self,
+        config: &mut Config,
+        from_version: &str,
+        to_version: &str,
+    ) -> StorageResult<()> {
         for migration in &self.migrations {
             if migration.applies_to(from_version, to_version) {
                 migration.migrate(config)?;
@@ -347,7 +355,11 @@ impl ConfigBackupManager {
     }
 
     /// Create a backup of the current configuration
-    pub async fn create_backup(&self, config: &Config, name: &str) -> StorageResult<std::path::PathBuf> {
+    pub async fn create_backup(
+        &self,
+        config: &Config,
+        name: &str,
+    ) -> StorageResult<std::path::PathBuf> {
         use tokio::fs;
 
         // Ensure backup directory exists
@@ -390,7 +402,9 @@ impl ConfigBackupManager {
             let a_meta = std::fs::metadata(a).ok();
             let b_meta = std::fs::metadata(b).ok();
             match (a_meta, b_meta) {
-                (Some(a), Some(b)) => b.modified().unwrap_or(std::time::SystemTime::UNIX_EPOCH)
+                (Some(a), Some(b)) => b
+                    .modified()
+                    .unwrap_or(std::time::SystemTime::UNIX_EPOCH)
                     .cmp(&a.modified().unwrap_or(std::time::SystemTime::UNIX_EPOCH)),
                 _ => std::cmp::Ordering::Equal,
             }
@@ -404,13 +418,19 @@ impl ConfigBackupManager {
         use tokio::fs;
 
         if !backup_path.exists() {
-            return Err(StorageError::NotFound(format!("Backup file not found: {}", backup_path.display())));
+            return Err(StorageError::NotFound(format!(
+                "Backup file not found: {}",
+                backup_path.display()
+            )));
         }
 
         let content = fs::read_to_string(backup_path).await?;
         let config: Config = serde_yaml::from_str(&content)?;
 
-        tracing::info!("Configuration restored from backup: {}", backup_path.display());
+        tracing::info!(
+            "Configuration restored from backup: {}",
+            backup_path.display()
+        );
         Ok(config)
     }
 
@@ -429,7 +449,11 @@ impl ConfigBackupManager {
             }
         }
 
-        tracing::info!("Cleaned up {} old backups, kept {}", backups.len().saturating_sub(keep_count), keep_count);
+        tracing::info!(
+            "Cleaned up {} old backups, kept {}",
+            backups.len().saturating_sub(keep_count),
+            keep_count
+        );
         Ok(())
     }
 }

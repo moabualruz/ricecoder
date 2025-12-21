@@ -9,16 +9,16 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+use tempfile::TempDir;
 use tokio::sync::RwLock;
 use tokio::time::sleep;
-use tempfile::TempDir;
 
 // MCP imports
 use ricecoder_mcp::{
     config::{MCPConfig, MCPConfigLoader, MCPServerConfig},
     connection_pool::{ConnectionPool, PoolConfig},
     error::{Error, Result},
-    health_check::{HealthChecker, HealthCheckConfig, HealthStatus},
+    health_check::{HealthCheckConfig, HealthChecker, HealthStatus},
     lifecycle::{ServerLifecycle, ServerState},
     metadata::{ToolMetadata, ToolSource},
     permissions::{MCPPermissionManager, PermissionLevelConfig, PermissionRule},
@@ -32,8 +32,8 @@ use ricecoder_mcp::{
 };
 
 // External dependencies
-use ricecoder_permissions::PermissionLevel;
 use ricecoder_cache::{Cache, CacheConfig};
+use ricecoder_permissions::PermissionLevel;
 use serde_json::json;
 
 /// **Integration Test 1.1: Server Registration and Discovery**
@@ -64,14 +64,19 @@ async fn test_server_registration_and_discovery() {
     let server_manager = Arc::new(ServerManager::new());
 
     // Test server registration
-    server_manager.register_server(server_config.clone()).await.unwrap();
+    server_manager
+        .register_server(server_config.clone())
+        .await
+        .unwrap();
 
     // Test server discovery
     let discovered_servers = server_manager.discover_servers().await.unwrap();
     assert!(!discovered_servers.is_empty());
 
     // Verify server details
-    let discovered = discovered_servers.iter().find(|s| s.server_id == "test-server-1");
+    let discovered = discovered_servers
+        .iter()
+        .find(|s| s.server_id == "test-server-1");
     assert!(discovered.is_some(), "Test server should be discovered");
 
     // Test health monitoring
@@ -84,7 +89,10 @@ async fn test_server_registration_and_discovery() {
     // Check health of registered servers
     let health = health_checker.check_server_health(&server_config).await;
     // Since we're using echo commands, health check might fail, but the interface should work
-    assert!(matches!(health, HealthStatus::Healthy | HealthStatus::Unhealthy));
+    assert!(matches!(
+        health,
+        HealthStatus::Healthy | HealthStatus::Unhealthy
+    ));
 }
 
 /// **Integration Test 1.2: Server Lifecycle Management**
@@ -167,7 +175,9 @@ async fn test_tool_enablement_disablement_with_permissions() {
         level: PermissionLevelConfig::Allow,
         agent_id: Some("admin-agent".to_string()),
     };
-    permission_manager.add_agent_rule("admin-agent".to_string(), admin_rule).unwrap();
+    permission_manager
+        .add_agent_rule("admin-agent".to_string(), admin_rule)
+        .unwrap();
 
     // Allow user tools for user agent
     let user_rule = PermissionRule {
@@ -175,29 +185,43 @@ async fn test_tool_enablement_disablement_with_permissions() {
         level: PermissionLevelConfig::Allow,
         agent_id: Some("user-agent".to_string()),
     };
-    permission_manager.add_agent_rule("user-agent".to_string(), user_rule).unwrap();
+    permission_manager
+        .add_agent_rule("user-agent".to_string(), user_rule)
+        .unwrap();
 
     // Test tool enablement/disablement based on permissions
 
     // Admin agent should be able to use admin tools
-    let admin_permission = permission_manager.check_permission("admin-tool", Some("admin-agent")).unwrap();
+    let admin_permission = permission_manager
+        .check_permission("admin-tool", Some("admin-agent"))
+        .unwrap();
     assert_eq!(admin_permission, PermissionLevel::Allow);
 
     // Admin agent should not be able to use user tools (not explicitly allowed)
-    let admin_user_perm = permission_manager.check_permission("user-tool", Some("admin-agent")).unwrap();
+    let admin_user_perm = permission_manager
+        .check_permission("user-tool", Some("admin-agent"))
+        .unwrap();
     assert_eq!(admin_user_perm, PermissionLevel::Deny);
 
     // User agent should be able to use user tools
-    let user_permission = permission_manager.check_permission("user-tool", Some("user-agent")).unwrap();
+    let user_permission = permission_manager
+        .check_permission("user-tool", Some("user-agent"))
+        .unwrap();
     assert_eq!(user_permission, PermissionLevel::Allow);
 
     // User agent should not be able to use admin tools
-    let user_admin_perm = permission_manager.check_permission("admin-tool", Some("user-agent")).unwrap();
+    let user_admin_perm = permission_manager
+        .check_permission("admin-tool", Some("user-agent"))
+        .unwrap();
     assert_eq!(user_admin_perm, PermissionLevel::Deny);
 
     // Unauthenticated agent should be denied all
-    let unauth_admin_perm = permission_manager.check_permission("admin-tool", None).unwrap();
-    let unauth_user_perm = permission_manager.check_permission("user-tool", None).unwrap();
+    let unauth_admin_perm = permission_manager
+        .check_permission("admin-tool", None)
+        .unwrap();
+    let unauth_user_perm = permission_manager
+        .check_permission("user-tool", None)
+        .unwrap();
     assert_eq!(unauth_admin_perm, PermissionLevel::Deny);
     assert_eq!(unauth_user_perm, PermissionLevel::Deny);
 }
@@ -217,7 +241,9 @@ async fn test_dynamic_permission_updates() {
     permission_manager.add_global_rule(deny_rule).unwrap();
 
     // Test initial denial
-    let initial_perm = permission_manager.check_permission("test-tool", Some("test-agent")).unwrap();
+    let initial_perm = permission_manager
+        .check_permission("test-tool", Some("test-agent"))
+        .unwrap();
     assert_eq!(initial_perm, PermissionLevel::Deny);
 
     // Dynamically add permission
@@ -226,14 +252,20 @@ async fn test_dynamic_permission_updates() {
         level: PermissionLevelConfig::Allow,
         agent_id: Some("test-agent".to_string()),
     };
-    permission_manager.add_agent_rule("test-agent".to_string(), allow_rule).unwrap();
+    permission_manager
+        .add_agent_rule("test-agent".to_string(), allow_rule)
+        .unwrap();
 
     // Test updated permission
-    let updated_perm = permission_manager.check_permission("test-tool", Some("test-agent")).unwrap();
+    let updated_perm = permission_manager
+        .check_permission("test-tool", Some("test-agent"))
+        .unwrap();
     assert_eq!(updated_perm, PermissionLevel::Allow);
 
     // Test that other tools are still denied
-    let other_perm = permission_manager.check_permission("other-tool", Some("test-agent")).unwrap();
+    let other_perm = permission_manager
+        .check_permission("other-tool", Some("test-agent"))
+        .unwrap();
     assert_eq!(other_perm, PermissionLevel::Deny);
 }
 
@@ -241,26 +273,50 @@ async fn test_dynamic_permission_updates() {
 /// **Validates: Authentication/authorization/enterprise integration**
 #[tokio::test]
 async fn test_authentication_authorization_integration() {
-    use ricecoder_mcp::rbac::{MCRBACManager, MCPAuthorizationMiddleware};
     use ricecoder_mcp::audit::MCPAuditLogger;
+    use ricecoder_mcp::rbac::{MCPAuthorizationMiddleware, MCRBACManager};
 
     // Setup RBAC manager
     let rbac_manager = Arc::new(MCRBACManager::new());
 
     // Create roles
     rbac_manager.create_role("admin".to_string()).await.unwrap();
-    rbac_manager.create_role("developer".to_string()).await.unwrap();
-    rbac_manager.create_role("viewer".to_string()).await.unwrap();
+    rbac_manager
+        .create_role("developer".to_string())
+        .await
+        .unwrap();
+    rbac_manager
+        .create_role("viewer".to_string())
+        .await
+        .unwrap();
 
     // Assign permissions to roles
-    rbac_manager.assign_permission_to_role("admin", "tool:*").await.unwrap();
-    rbac_manager.assign_permission_to_role("developer", "tool:read,tool:write").await.unwrap();
-    rbac_manager.assign_permission_to_role("viewer", "tool:read").await.unwrap();
+    rbac_manager
+        .assign_permission_to_role("admin", "tool:*")
+        .await
+        .unwrap();
+    rbac_manager
+        .assign_permission_to_role("developer", "tool:read,tool:write")
+        .await
+        .unwrap();
+    rbac_manager
+        .assign_permission_to_role("viewer", "tool:read")
+        .await
+        .unwrap();
 
     // Assign users to roles
-    rbac_manager.assign_user_to_role("admin-user", "admin").await.unwrap();
-    rbac_manager.assign_user_to_role("dev-user", "developer").await.unwrap();
-    rbac_manager.assign_user_to_role("view-user", "viewer").await.unwrap();
+    rbac_manager
+        .assign_user_to_role("admin-user", "admin")
+        .await
+        .unwrap();
+    rbac_manager
+        .assign_user_to_role("dev-user", "developer")
+        .await
+        .unwrap();
+    rbac_manager
+        .assign_user_to_role("view-user", "viewer")
+        .await
+        .unwrap();
 
     // Setup audit logger
     struct MockAuditLogger;
@@ -274,25 +330,46 @@ async fn test_authentication_authorization_integration() {
     let auth_middleware = MCPAuthorizationMiddleware::new(rbac_manager, Some(audit_logger));
 
     // Test authorization checks
-    assert!(auth_middleware.check_user_permission("admin-user", "tool:delete").await.unwrap());
-    assert!(auth_middleware.check_user_permission("dev-user", "tool:write").await.unwrap());
-    assert!(auth_middleware.check_user_permission("view-user", "tool:read").await.unwrap());
+    assert!(auth_middleware
+        .check_user_permission("admin-user", "tool:delete")
+        .await
+        .unwrap());
+    assert!(auth_middleware
+        .check_user_permission("dev-user", "tool:write")
+        .await
+        .unwrap());
+    assert!(auth_middleware
+        .check_user_permission("view-user", "tool:read")
+        .await
+        .unwrap());
 
     // Test denied permissions
-    assert!(!auth_middleware.check_user_permission("dev-user", "tool:delete").await.unwrap());
-    assert!(!auth_middleware.check_user_permission("view-user", "tool:write").await.unwrap());
+    assert!(!auth_middleware
+        .check_user_permission("dev-user", "tool:delete")
+        .await
+        .unwrap());
+    assert!(!auth_middleware
+        .check_user_permission("view-user", "tool:write")
+        .await
+        .unwrap());
 
     // Test role inheritance and multiple roles
-    rbac_manager.assign_user_to_role("dev-user", "viewer").await.unwrap();
+    rbac_manager
+        .assign_user_to_role("dev-user", "viewer")
+        .await
+        .unwrap();
     // dev-user should still have write permissions from developer role
-    assert!(auth_middleware.check_user_permission("dev-user", "tool:write").await.unwrap());
+    assert!(auth_middleware
+        .check_user_permission("dev-user", "tool:write")
+        .await
+        .unwrap());
 }
 
 /// **Integration Test 3.2: Enterprise Compliance Monitoring**
 /// **Validates: Enterprise compliance and audit integration**
 #[tokio::test]
 async fn test_enterprise_compliance_monitoring() {
-    use ricecoder_mcp::compliance::{MCPComplianceMonitor, ComplianceReport};
+    use ricecoder_mcp::compliance::{ComplianceReport, MCPComplianceMonitor};
 
     // Setup compliance monitor
     let audit_logger = None; // Would use real audit logger in production
@@ -354,10 +431,13 @@ async fn test_performance_load_testing() {
                 let _tool = reg.get_tool(&tool_id);
 
                 // Test caching
-                let cache_result: Result<Option<serde_json::Value>> = cache_clone.get(&tool_id).await;
+                let cache_result: Result<Option<serde_json::Value>> =
+                    cache_clone.get(&tool_id).await;
                 if cache_result.unwrap().is_none() {
                     // Simulate cache population
-                    let _ = cache_clone.set(&tool_id, json!({"cached": true}), None).await;
+                    let _ = cache_clone
+                        .set(&tool_id, json!({"cached": true}), None)
+                        .await;
                 }
             }
         });
@@ -374,8 +454,16 @@ async fn test_performance_load_testing() {
     let operations_per_second = (num_concurrent_tasks * 10) as f64 / duration.as_secs_f64();
 
     // Performance assertions
-    assert!(duration < Duration::from_secs(10), "Load test took too long: {:?}", duration);
-    assert!(operations_per_second > 100.0, "Operations per second too low: {}", operations_per_second);
+    assert!(
+        duration < Duration::from_secs(10),
+        "Load test took too long: {:?}",
+        duration
+    );
+    assert!(
+        operations_per_second > 100.0,
+        "Operations per second too low: {}",
+        operations_per_second
+    );
 
     // Verify cache effectiveness
     let cache_stats = cache.stats();
@@ -440,7 +528,11 @@ async fn test_connection_pool_load_testing() {
     // Performance check
     let total_requests = num_clients * requests_per_client;
     let requests_per_second = total_requests as f64 / duration.as_secs_f64();
-    assert!(requests_per_second > 50.0, "Request throughput too low: {} req/sec", requests_per_second);
+    assert!(
+        requests_per_second > 50.0,
+        "Request throughput too low: {} req/sec",
+        requests_per_second
+    );
 }
 
 /// **Integration Test 4.3: Caching Validation Under Load**
@@ -502,17 +594,28 @@ async fn test_caching_validation_under_load() {
 
     // Validate cache behavior
     assert!(total_misses > 0, "Should have cache misses for new entries");
-    assert!(total_hits > total_misses, "Should have more hits than misses due to repeated access");
+    assert!(
+        total_hits > total_misses,
+        "Should have more hits than misses due to repeated access"
+    );
 
     // Performance validation
     let operations_per_second = num_operations as f64 / duration.as_secs_f64();
-    assert!(operations_per_second > 1000.0, "Cache operations per second too low: {}", operations_per_second);
+    assert!(
+        operations_per_second > 1000.0,
+        "Cache operations per second too low: {}",
+        operations_per_second
+    );
 
     // Cache stats validation
     let stats = cache.stats();
     assert_eq!(stats.hits, total_hits as u64);
     assert_eq!(stats.misses, total_misses as u64);
-    assert!(stats.hit_rate > 0.5, "Cache hit rate too low: {}", stats.hit_rate);
+    assert!(
+        stats.hit_rate > 0.5,
+        "Cache hit rate too low: {}",
+        stats.hit_rate
+    );
 }
 
 /// **Integration Test 4.4: Memory and Resource Leak Detection**
@@ -610,18 +713,24 @@ async fn test_end_to_end_mcp_workflow() {
         level: PermissionLevelConfig::Allow,
         agent_id: Some("test-agent".to_string()),
     };
-    permission_manager.add_agent_rule("test-agent".to_string(), allow_rule).unwrap();
+    permission_manager
+        .add_agent_rule("test-agent".to_string(), allow_rule)
+        .unwrap();
 
     // 3. Verify tool discovery
     let discovered_tool = registry.get_tool("e2e-test-tool").unwrap();
     assert_eq!(discovered_tool.id, tool.id);
 
     // 4. Check permissions
-    let permission = permission_manager.check_permission("e2e-test-tool", Some("test-agent")).unwrap();
+    let permission = permission_manager
+        .check_permission("e2e-test-tool", Some("test-agent"))
+        .unwrap();
     assert_eq!(permission, PermissionLevel::Allow);
 
     // 5. Test caching
-    let _ = cache.set("e2e-test-tool", json!({"cached": true}), None).await;
+    let _ = cache
+        .set("e2e-test-tool", json!({"cached": true}), None)
+        .await;
     let cached: Result<Option<serde_json::Value>> = cache.get("e2e-test-tool").await;
     assert!(cached.unwrap().is_some());
 
@@ -667,14 +776,16 @@ async fn test_failure_recovery_and_resilience() {
 
     // Test retry handler behavior
     let mut attempt_count = 0;
-    let result = retry_handler.retry(|| async {
-        attempt_count += 1;
-        if attempt_count < 3 {
-            Err(Error::ConnectionError("Temporary failure".to_string()))
-        } else {
-            Ok("Success".to_string())
-        }
-    }).await;
+    let result = retry_handler
+        .retry(|| async {
+            attempt_count += 1;
+            if attempt_count < 3 {
+                Err(Error::ConnectionError("Temporary failure".to_string()))
+            } else {
+                Ok("Success".to_string())
+            }
+        })
+        .await;
 
     assert!(result.is_ok());
     assert_eq!(attempt_count, 3);
@@ -733,7 +844,8 @@ async fn test_cross_component_integration() {
             let _tool = reg.get_tool("integration-test-tool");
 
             // Test permissions
-            let _perm = perm_clone.check_permission("integration-test-tool", Some("integration-agent"));
+            let _perm =
+                perm_clone.check_permission("integration-test-tool", Some("integration-agent"));
 
             // Test caching
             let cache_key = format!("cache-key-{}", i);

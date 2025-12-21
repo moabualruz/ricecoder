@@ -51,7 +51,7 @@ proptest! {
     ) {
         let content = String::from("x").repeat(size);
         let output = WebfetchOutput::new(content, size);
-        
+
         // The truncation flag should accurately reflect whether content was truncated
         // (i.e., returned_size < original_size)
         if output.original_size > output.returned_size {
@@ -59,7 +59,7 @@ proptest! {
         } else {
             prop_assert!(!output.truncated, "Should not be marked as truncated when returned_size == original_size");
         }
-        
+
         // Returned size should never exceed original size
         prop_assert!(output.returned_size <= output.original_size);
     }
@@ -85,7 +85,7 @@ proptest! {
     fn test_webfetch_output_truncation_property(size in 0usize..100000usize) {
         let content = String::from("x").repeat(size.min(100000));
         let output = WebfetchOutput::new(content, size);
-        
+
         // Truncation flag should match actual truncation
         if output.original_size > output.returned_size {
             prop_assert!(output.truncated);
@@ -105,7 +105,7 @@ proptest! {
         Just("file:///path/to/file"),
     ]) {
         let result = WebfetchTool::validate_url(url);
-        
+
         // Only http and https should be valid
         if url.starts_with("http://") || url.starts_with("https://") {
             prop_assert!(result.is_ok());
@@ -126,7 +126,7 @@ proptest! {
         Just("http://example.com"),
     ]) {
         let result = WebfetchTool::validate_url(url);
-        
+
         // Localhost and 127.0.0.1 should be rejected
         if url.contains("localhost") || url.contains("127.0.0.1") {
             prop_assert!(result.is_err());

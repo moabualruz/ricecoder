@@ -13,15 +13,10 @@ use std::path::PathBuf;
 /// Strategy for generating valid image metadata
 fn image_metadata_strategy() -> impl Strategy<Value = ImageMetadata> {
     (
-        0u32..10000,  // width
-        0u32..10000,  // height
+        0u32..10000,      // width
+        0u32..10000,      // height
         0u64..10_000_000, // size_bytes
-        prop_oneof![
-            Just("png"),
-            Just("jpeg"),
-            Just("gif"),
-            Just("webp"),
-        ],
+        prop_oneof![Just("png"), Just("jpeg"), Just("gif"), Just("webp"),],
     )
         .prop_map(|(width, height, size_bytes, format)| {
             ImageMetadata::new(

@@ -67,10 +67,7 @@ impl ConflictResolver {
     }
 
     /// Get rules by pattern, applying scope precedence
-    pub fn get_rules_by_pattern_with_precedence(
-        rules: &[Rule],
-        pattern: &str,
-    ) -> Vec<Rule> {
+    pub fn get_rules_by_pattern_with_precedence(rules: &[Rule], pattern: &str) -> Vec<Rule> {
         let matching_rules: Vec<Rule> = rules
             .iter()
             .filter(|r| r.pattern == pattern)
@@ -128,14 +125,8 @@ impl ConflictResolver {
     }
 
     /// Log conflict resolution decision
-    pub fn log_conflict_resolution(
-        selected_rule: &Rule,
-        conflicting_rules: &[Rule],
-    ) -> String {
-        let conflicting_ids: Vec<String> = conflicting_rules
-            .iter()
-            .map(|r| r.id.clone())
-            .collect();
+    pub fn log_conflict_resolution(selected_rule: &Rule, conflicting_rules: &[Rule]) -> String {
+        let conflicting_ids: Vec<String> = conflicting_rules.iter().map(|r| r.id.clone()).collect();
 
         format!(
             "Conflict resolution: Selected rule '{}' (scope: {}) over conflicting rules: {}",
@@ -186,12 +177,7 @@ mod tests {
     use super::*;
     use crate::models::RuleSource;
 
-    fn create_test_rule(
-        id: &str,
-        scope: RuleScope,
-        pattern: &str,
-        action: &str,
-    ) -> Rule {
+    fn create_test_rule(id: &str, scope: RuleScope, pattern: &str, action: &str) -> Rule {
         let mut rule = Rule::new(
             scope,
             pattern.to_string(),
@@ -255,9 +241,12 @@ mod tests {
     #[test]
     fn test_check_conflicts_with_conflict() {
         let rule = create_test_rule("rule1", RuleScope::Global, "pattern1", "action1");
-        let existing_rules = vec![
-            create_test_rule("rule2", RuleScope::Global, "pattern1", "action2"),
-        ];
+        let existing_rules = vec![create_test_rule(
+            "rule2",
+            RuleScope::Global,
+            "pattern1",
+            "action2",
+        )];
 
         let result = ConflictResolver::check_conflicts(&rule, &existing_rules);
         assert!(result.is_err());
@@ -331,9 +320,12 @@ mod tests {
     #[test]
     fn test_log_conflict_resolution() {
         let selected = create_test_rule("rule1", RuleScope::Project, "pattern1", "action1");
-        let conflicting = vec![
-            create_test_rule("rule2", RuleScope::Global, "pattern1", "action2"),
-        ];
+        let conflicting = vec![create_test_rule(
+            "rule2",
+            RuleScope::Global,
+            "pattern1",
+            "action2",
+        )];
 
         let log = ConflictResolver::log_conflict_resolution(&selected, &conflicting);
         assert!(log.contains("rule1"));
@@ -356,9 +348,12 @@ mod tests {
 
     #[test]
     fn test_get_highest_priority_rule_not_found() {
-        let rules = vec![
-            create_test_rule("rule1", RuleScope::Global, "pattern1", "action1"),
-        ];
+        let rules = vec![create_test_rule(
+            "rule1",
+            RuleScope::Global,
+            "pattern1",
+            "action1",
+        )];
 
         let highest = ConflictResolver::get_highest_priority_rule(&rules, "pattern2");
         assert!(highest.is_none());
@@ -366,29 +361,43 @@ mod tests {
 
     #[test]
     fn test_check_cross_scope_conflicts() {
-        let project_rules = vec![
-            create_test_rule("rule1", RuleScope::Project, "pattern1", "action1"),
-        ];
+        let project_rules = vec![create_test_rule(
+            "rule1",
+            RuleScope::Project,
+            "pattern1",
+            "action1",
+        )];
 
-        let global_rules = vec![
-            create_test_rule("rule2", RuleScope::Global, "pattern1", "action2"),
-        ];
+        let global_rules = vec![create_test_rule(
+            "rule2",
+            RuleScope::Global,
+            "pattern1",
+            "action2",
+        )];
 
-        let conflicts = ConflictResolver::check_cross_scope_conflicts(&project_rules, &global_rules);
+        let conflicts =
+            ConflictResolver::check_cross_scope_conflicts(&project_rules, &global_rules);
         assert_eq!(conflicts.len(), 1);
     }
 
     #[test]
     fn test_check_cross_scope_no_conflicts() {
-        let project_rules = vec![
-            create_test_rule("rule1", RuleScope::Project, "pattern1", "action1"),
-        ];
+        let project_rules = vec![create_test_rule(
+            "rule1",
+            RuleScope::Project,
+            "pattern1",
+            "action1",
+        )];
 
-        let global_rules = vec![
-            create_test_rule("rule2", RuleScope::Global, "pattern2", "action1"),
-        ];
+        let global_rules = vec![create_test_rule(
+            "rule2",
+            RuleScope::Global,
+            "pattern2",
+            "action1",
+        )];
 
-        let conflicts = ConflictResolver::check_cross_scope_conflicts(&project_rules, &global_rules);
+        let conflicts =
+            ConflictResolver::check_cross_scope_conflicts(&project_rules, &global_rules);
         assert_eq!(conflicts.len(), 0);
     }
 
@@ -401,11 +410,13 @@ mod tests {
             create_test_rule("rule4", RuleScope::Global, "pattern2", "action1"),
         ];
 
-        let pattern1_rules = ConflictResolver::get_rules_by_pattern_with_precedence(&rules, "pattern1");
+        let pattern1_rules =
+            ConflictResolver::get_rules_by_pattern_with_precedence(&rules, "pattern1");
         assert_eq!(pattern1_rules.len(), 1);
         assert_eq!(pattern1_rules[0].id, "rule2");
 
-        let pattern2_rules = ConflictResolver::get_rules_by_pattern_with_precedence(&rules, "pattern2");
+        let pattern2_rules =
+            ConflictResolver::get_rules_by_pattern_with_precedence(&rules, "pattern2");
         assert_eq!(pattern2_rules.len(), 1);
         assert_eq!(pattern2_rules[0].id, "rule4");
     }

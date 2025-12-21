@@ -185,7 +185,7 @@ impl Default for DomainRegistry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::models::{DomainKnowledge, DomainAgent};
+    use crate::domain::models::{DomainAgent, DomainKnowledge};
 
     fn create_test_agent(domain: &str) -> DomainAgent {
         DomainAgent {
@@ -236,9 +236,15 @@ mod tests {
     fn test_discover_domains() {
         let registry = DomainRegistry::new();
 
-        registry.register_agent("web", create_test_agent("web")).unwrap();
-        registry.register_agent("backend", create_test_agent("backend")).unwrap();
-        registry.register_agent("devops", create_test_agent("devops")).unwrap();
+        registry
+            .register_agent("web", create_test_agent("web"))
+            .unwrap();
+        registry
+            .register_agent("backend", create_test_agent("backend"))
+            .unwrap();
+        registry
+            .register_agent("devops", create_test_agent("devops"))
+            .unwrap();
 
         let domains = registry.discover_domains().unwrap();
         assert_eq!(domains.len(), 3);
@@ -262,7 +268,9 @@ mod tests {
     fn test_has_domain() {
         let registry = DomainRegistry::new();
 
-        registry.register_agent("web", create_test_agent("web")).unwrap();
+        registry
+            .register_agent("web", create_test_agent("web"))
+            .unwrap();
 
         assert!(registry.has_domain("web").unwrap());
         assert!(!registry.has_domain("backend").unwrap());
@@ -272,8 +280,12 @@ mod tests {
     fn test_get_all_agents() {
         let registry = DomainRegistry::new();
 
-        registry.register_agent("web", create_test_agent("web")).unwrap();
-        registry.register_agent("backend", create_test_agent("backend")).unwrap();
+        registry
+            .register_agent("web", create_test_agent("web"))
+            .unwrap();
+        registry
+            .register_agent("backend", create_test_agent("backend"))
+            .unwrap();
 
         let agents = registry.get_all_agents().unwrap();
         assert_eq!(agents.len(), 2);
@@ -283,8 +295,12 @@ mod tests {
     fn test_clear() {
         let registry = DomainRegistry::new();
 
-        registry.register_agent("web", create_test_agent("web")).unwrap();
-        registry.register_agent("backend", create_test_agent("backend")).unwrap();
+        registry
+            .register_agent("web", create_test_agent("web"))
+            .unwrap();
+        registry
+            .register_agent("backend", create_test_agent("backend"))
+            .unwrap();
 
         assert_eq!(registry.domain_count().unwrap(), 2);
 
@@ -298,10 +314,14 @@ mod tests {
 
         assert_eq!(registry.domain_count().unwrap(), 0);
 
-        registry.register_agent("web", create_test_agent("web")).unwrap();
+        registry
+            .register_agent("web", create_test_agent("web"))
+            .unwrap();
         assert_eq!(registry.domain_count().unwrap(), 1);
 
-        registry.register_agent("backend", create_test_agent("backend")).unwrap();
+        registry
+            .register_agent("backend", create_test_agent("backend"))
+            .unwrap();
         assert_eq!(registry.domain_count().unwrap(), 2);
     }
 
@@ -309,9 +329,15 @@ mod tests {
     fn test_register_multiple_agents() {
         let registry = DomainRegistry::new();
 
-        registry.register_agent("web", create_test_agent("web")).unwrap();
-        registry.register_agent("backend", create_test_agent("backend")).unwrap();
-        registry.register_agent("devops", create_test_agent("devops")).unwrap();
+        registry
+            .register_agent("web", create_test_agent("web"))
+            .unwrap();
+        registry
+            .register_agent("backend", create_test_agent("backend"))
+            .unwrap();
+        registry
+            .register_agent("devops", create_test_agent("devops"))
+            .unwrap();
 
         assert_eq!(registry.domain_count().unwrap(), 3);
     }

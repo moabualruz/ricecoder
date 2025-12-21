@@ -26,8 +26,9 @@ impl ConfigManager {
         debug!("Loading IDE configuration from YAML: {}", file_path);
 
         // Expand home directory if needed
-        let resolved_path = PathResolver::expand_home(&PathBuf::from(file_path))
-            .map_err(|e| IdeError::path_resolution_error(format!("Failed to resolve path: {}", e)))?;
+        let resolved_path = PathResolver::expand_home(&PathBuf::from(file_path)).map_err(|e| {
+            IdeError::path_resolution_error(format!("Failed to resolve path: {}", e))
+        })?;
 
         // Read the file
         let content = tokio::fs::read_to_string(&resolved_path)
@@ -60,8 +61,9 @@ impl ConfigManager {
         debug!("Loading IDE configuration from JSON: {}", file_path);
 
         // Expand home directory if needed
-        let resolved_path = PathResolver::expand_home(&PathBuf::from(file_path))
-            .map_err(|e| IdeError::path_resolution_error(format!("Failed to resolve path: {}", e)))?;
+        let resolved_path = PathResolver::expand_home(&PathBuf::from(file_path)).map_err(|e| {
+            IdeError::path_resolution_error(format!("Failed to resolve path: {}", e))
+        })?;
 
         // Read the file
         let content = tokio::fs::read_to_string(&resolved_path)
@@ -329,10 +331,7 @@ mod tests {
 
         let result = ConfigManager::validate_config(&config);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("empty command"));
+        assert!(result.unwrap_err().to_string().contains("empty command"));
     }
 
     #[test]
@@ -361,10 +360,7 @@ mod tests {
 
         let result = ConfigManager::validate_config(&config);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("port is 0"));
+        assert!(result.unwrap_err().to_string().contains("port is 0"));
     }
 
     #[test]

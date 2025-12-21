@@ -266,9 +266,14 @@ impl ImageAnalyzer {
         // Note: The image data is included in the message content as base64
         // Providers will need to handle this format or we can extend ChatRequest in the future
         let request = ChatRequest {
-            model: provider.models().first().ok_or_else(|| {
-                ImageError::AnalysisFailed("Provider has no available models".to_string())
-            })?.id.clone(),
+            model: provider
+                .models()
+                .first()
+                .ok_or_else(|| {
+                    ImageError::AnalysisFailed("Provider has no available models".to_string())
+                })?
+                .id
+                .clone(),
             messages: vec![Message {
                 role: "user".to_string(),
                 content: format!(
@@ -345,7 +350,8 @@ impl ImageAnalyzer {
         let base_tokens = match provider_name {
             "openai" => {
                 // OpenAI: ~85 tokens base + variable based on resolution
-                let resolution_factor = (metadata.width as usize * metadata.height as usize) / 10000;
+                let resolution_factor =
+                    (metadata.width as usize * metadata.height as usize) / 10000;
                 85 + resolution_factor
             }
             "anthropic" => {
@@ -380,9 +386,7 @@ impl ImageAnalyzer {
         // For now, just validate that the image data is valid
         // In a real implementation, we would use the `image` crate to resize/compress
         if image_data.is_empty() {
-            return Err(ImageError::InvalidFile(
-                "Image data is empty".to_string(),
-            ));
+            return Err(ImageError::InvalidFile("Image data is empty".to_string()));
         }
 
         debug!(
@@ -436,7 +440,10 @@ impl ImageAnalyzer {
             "Retrying image analysis"
         );
 
-        match self.analyze(&context.metadata, provider, &context.image_data).await {
+        match self
+            .analyze(&context.metadata, provider, &context.image_data)
+            .await
+        {
             Ok(result) => {
                 info!(
                     image_hash = %context.metadata.hash,
@@ -455,9 +462,7 @@ impl ImageAnalyzer {
 
 impl Default for ImageAnalyzer {
     fn default() -> Self {
-        Self::new().unwrap_or_else(|_| {
-            Self::with_config(ImageConfig::default())
-        })
+        Self::new().unwrap_or_else(|_| Self::with_config(ImageConfig::default()))
     }
 }
 
@@ -498,9 +503,8 @@ mod tests {
 
     #[test]
     fn test_analyzer_creation() {
-        let analyzer = ImageAnalyzer::new().unwrap_or_else(|_| {
-            ImageAnalyzer::with_config(ImageConfig::default())
-        });
+        let analyzer = ImageAnalyzer::new()
+            .unwrap_or_else(|_| ImageAnalyzer::with_config(ImageConfig::default()));
         assert_eq!(analyzer.config().analysis.timeout_seconds, 10);
     }
 
@@ -560,7 +564,9 @@ mod tests {
             "hash123".to_string(),
         );
 
-        let tokens = analyzer.count_image_tokens(&metadata, "gpt-4-vision").unwrap();
+        let tokens = analyzer
+            .count_image_tokens(&metadata, "gpt-4-vision")
+            .unwrap();
         assert!(tokens > 0);
         assert!(tokens >= 85); // At least base tokens
     }
@@ -577,7 +583,9 @@ mod tests {
             "hash123".to_string(),
         );
 
-        let tokens = analyzer.count_image_tokens(&metadata, "claude-3-vision").unwrap();
+        let tokens = analyzer
+            .count_image_tokens(&metadata, "claude-3-vision")
+            .unwrap();
         assert_eq!(tokens, 1600);
     }
 
@@ -593,7 +601,9 @@ mod tests {
             "hash123".to_string(),
         );
 
-        let tokens = analyzer.count_image_tokens(&metadata, "gemini-pro-vision").unwrap();
+        let tokens = analyzer
+            .count_image_tokens(&metadata, "gemini-pro-vision")
+            .unwrap();
         assert_eq!(tokens, 258);
     }
 

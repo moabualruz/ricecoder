@@ -1,7 +1,7 @@
 //! Unit tests for ricecoder-domain
 
-use ricecoder_domain::*;
 use proptest::prelude::*;
+use ricecoder_domain::*;
 
 #[cfg(test)]
 mod tests {
@@ -34,7 +34,10 @@ mod tests {
             );
 
             assert!(result.is_err());
-            assert!(matches!(result.unwrap_err(), DomainError::InvalidProjectName { .. }));
+            assert!(matches!(
+                result.unwrap_err(),
+                DomainError::InvalidProjectName { .. }
+            ));
         }
 
         #[test]
@@ -47,7 +50,10 @@ mod tests {
             );
 
             assert!(result.is_err());
-            assert!(matches!(result.unwrap_err(), DomainError::InvalidProjectName { .. }));
+            assert!(matches!(
+                result.unwrap_err(),
+                DomainError::InvalidProjectName { .. }
+            ));
         }
 
         #[test]
@@ -59,7 +65,10 @@ mod tests {
             );
 
             assert!(result.is_err());
-            assert!(matches!(result.unwrap_err(), DomainError::InvalidProjectName { .. }));
+            assert!(matches!(
+                result.unwrap_err(),
+                DomainError::InvalidProjectName { .. }
+            ));
         }
 
         #[test]
@@ -68,7 +77,8 @@ mod tests {
                 "old-name".to_string(),
                 ProgrammingLanguage::Rust,
                 "/path/to/project".to_string(),
-            ).unwrap();
+            )
+            .unwrap();
 
             let old_updated = project.updated_at;
             std::thread::sleep(std::time::Duration::from_millis(1)); // ensure time difference
@@ -85,7 +95,8 @@ mod tests {
                 "test-project".to_string(),
                 ProgrammingLanguage::Rust,
                 "/path/to/project".to_string(),
-            ).unwrap();
+            )
+            .unwrap();
 
             let old_updated = project.updated_at;
             std::thread::sleep(std::time::Duration::from_millis(1));
@@ -125,7 +136,8 @@ mod tests {
                 "src/main.rs".to_string(),
                 "fn main() {}".to_string(),
                 ProgrammingLanguage::Rust,
-            ).unwrap();
+            )
+            .unwrap();
 
             let old_modified = file.last_modified;
             std::thread::sleep(std::time::Duration::from_millis(1));
@@ -145,7 +157,8 @@ mod tests {
                 "src/main.rs".to_string(),
                 "content".to_string(),
                 ProgrammingLanguage::Rust,
-            ).unwrap();
+            )
+            .unwrap();
 
             assert_eq!(file.extension(), Some("rs"));
         }
@@ -158,14 +171,16 @@ mod tests {
                 "empty.txt".to_string(),
                 "".to_string(),
                 ProgrammingLanguage::Other,
-            ).unwrap();
+            )
+            .unwrap();
 
             let non_empty_file = CodeFile::new(
                 project_id,
                 "main.rs".to_string(),
                 "fn main() {}".to_string(),
                 ProgrammingLanguage::Rust,
-            ).unwrap();
+            )
+            .unwrap();
 
             assert!(empty_file.is_empty());
             assert!(!non_empty_file.is_empty());
@@ -280,7 +295,10 @@ mod tests {
             result.fail("Analysis failed due to timeout".to_string());
 
             assert_eq!(result.status, AnalysisStatus::Failed);
-            assert_eq!(result.results, serde_json::Value::String("Analysis failed due to timeout".to_string()));
+            assert_eq!(
+                result.results,
+                serde_json::Value::String("Analysis failed due to timeout".to_string())
+            );
             assert!(result.completed_at.is_some());
             assert!(result.is_complete());
         }
@@ -366,9 +384,18 @@ mod tests {
 
         #[test]
         fn test_language_from_extension() {
-            assert_eq!(ProgrammingLanguage::from_extension("rs"), Some(ProgrammingLanguage::Rust));
-            assert_eq!(ProgrammingLanguage::from_extension("py"), Some(ProgrammingLanguage::Python));
-            assert_eq!(ProgrammingLanguage::from_extension("ts"), Some(ProgrammingLanguage::TypeScript));
+            assert_eq!(
+                ProgrammingLanguage::from_extension("rs"),
+                Some(ProgrammingLanguage::Rust)
+            );
+            assert_eq!(
+                ProgrammingLanguage::from_extension("py"),
+                Some(ProgrammingLanguage::Python)
+            );
+            assert_eq!(
+                ProgrammingLanguage::from_extension("ts"),
+                Some(ProgrammingLanguage::TypeScript)
+            );
             assert_eq!(ProgrammingLanguage::from_extension("xyz"), None);
         }
 
@@ -392,14 +419,14 @@ mod tests {
             assert_eq!(url.as_url().host_str(), Some("api.openai.com"));
         }
 
-    #[test]
-    fn test_mime_type() {
-        let mime = MimeType::from_path("main.rs");
-        assert_eq!(mime.as_str(), "text/x-rust"); // rust files are detected as text/x-rust
+        #[test]
+        fn test_mime_type() {
+            let mime = MimeType::from_path("main.rs");
+            assert_eq!(mime.as_str(), "text/x-rust"); // rust files are detected as text/x-rust
 
-        let json_mime = MimeType::from_path("config.json");
-        assert_eq!(json_mime.as_str(), "application/json");
-    }
+            let json_mime = MimeType::from_path("config.json");
+            assert_eq!(json_mime.as_str(), "application/json");
+        }
     }
 
     mod business_rules_tests {
@@ -415,10 +442,8 @@ mod tests {
             assert!(result.is_valid);
 
             // Short name warning
-            let result = BusinessRulesValidator::validate_project_creation(
-                "x",
-                ProgrammingLanguage::Rust,
-            );
+            let result =
+                BusinessRulesValidator::validate_project_creation("x", ProgrammingLanguage::Rust);
             assert!(result.is_valid);
             assert!(!result.warnings.is_empty());
 
@@ -436,10 +461,8 @@ mod tests {
             let session = Session::new("openai".to_string(), "gpt-4".to_string());
 
             // Valid end operation
-            let result = BusinessRulesValidator::validate_session_operation(
-                &session,
-                SessionOperation::End,
-            );
+            let result =
+                BusinessRulesValidator::validate_session_operation(&session, SessionOperation::End);
             assert!(result.is_valid);
 
             // Invalid resume on active session
@@ -458,7 +481,8 @@ mod tests {
                 "small.rs".to_string(),
                 "fn main() {}".to_string(),
                 ProgrammingLanguage::Rust,
-            ).unwrap();
+            )
+            .unwrap();
 
             // Complexity analysis on small file
             let result = BusinessRulesValidator::validate_analysis_operation(

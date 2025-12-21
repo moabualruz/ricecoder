@@ -69,12 +69,17 @@ impl ModelFilter {
         self.criteria.iter().all(|criterion| {
             match criterion {
                 ModelFilterCriteria::Provider(ref provider) => model.provider == *provider,
-                ModelFilterCriteria::Capability(ref capability) => model.capabilities.contains(capability),
+                ModelFilterCriteria::Capability(ref capability) => {
+                    model.capabilities.contains(capability)
+                }
                 ModelFilterCriteria::FreeOnly => model.is_free,
-                ModelFilterCriteria::MinContextWindow(min_tokens) => model.context_window >= *min_tokens,
+                ModelFilterCriteria::MinContextWindow(min_tokens) => {
+                    model.context_window >= *min_tokens
+                }
                 ModelFilterCriteria::MaxCostPerToken(max_cost) => {
                     if let Some(ref pricing) = model.pricing {
-                        pricing.input_per_1k_tokens <= *max_cost || pricing.output_per_1k_tokens <= *max_cost
+                        pricing.input_per_1k_tokens <= *max_cost
+                            || pricing.output_per_1k_tokens <= *max_cost
                     } else {
                         true // No pricing info means we can't filter
                     }
@@ -209,24 +214,35 @@ impl ProviderManager {
     }
 
     /// Test provider connection
-    async fn test_provider_connection(&self, provider: &Arc<dyn Provider>) -> Result<(), ProviderError> {
+    async fn test_provider_connection(
+        &self,
+        provider: &Arc<dyn Provider>,
+    ) -> Result<(), ProviderError> {
         // Simple health check - try to get models
         let _models = provider.models();
         Ok(())
     }
 
     /// Update provider connection state
-    pub fn update_provider_state(&mut self, provider_id: &str, state: ConnectionState, error: Option<String>) {
-        let status = self.provider_states.entry(provider_id.to_string()).or_insert_with(|| {
-            ProviderStatus {
-                id: provider_id.to_string(),
-                name: provider_id.to_string(), // Will be updated with actual name
-                state: ConnectionState::Disabled,
-                last_checked: None,
-                models: Vec::new(),
-                error_message: None,
-            }
-        });
+    pub fn update_provider_state(
+        &mut self,
+        provider_id: &str,
+        state: ConnectionState,
+        error: Option<String>,
+    ) {
+        let status = self
+            .provider_states
+            .entry(provider_id.to_string())
+            .or_insert_with(|| {
+                ProviderStatus {
+                    id: provider_id.to_string(),
+                    name: provider_id.to_string(), // Will be updated with actual name
+                    state: ConnectionState::Disabled,
+                    last_checked: None,
+                    models: Vec::new(),
+                    error_message: None,
+                }
+            });
 
         status.state = state;
         status.last_checked = Some(std::time::SystemTime::now());
@@ -273,22 +289,35 @@ impl ProviderManager {
     }
 
     /// Filter models by criteria
-    pub fn filter_models(&self, models: &[ModelInfo], criteria: ModelFilterCriteria) -> Vec<ModelInfo> {
-        models.iter().filter(|model| {
-            match criteria {
-                ModelFilterCriteria::Provider(ref provider) => model.provider == *provider,
-                ModelFilterCriteria::Capability(ref capability) => model.capabilities.contains(capability),
-                ModelFilterCriteria::FreeOnly => model.is_free,
-                ModelFilterCriteria::MinContextWindow(min_tokens) => model.context_window >= min_tokens,
-                ModelFilterCriteria::MaxCostPerToken(max_cost) => {
-                    if let Some(ref pricing) = model.pricing {
-                        pricing.input_per_1k_tokens <= max_cost || pricing.output_per_1k_tokens <= max_cost
-                    } else {
-                        true // No pricing info means we can't filter
+    pub fn filter_models(
+        &self,
+        models: &[ModelInfo],
+        criteria: ModelFilterCriteria,
+    ) -> Vec<ModelInfo> {
+        models
+            .iter()
+            .filter(|model| {
+                match criteria {
+                    ModelFilterCriteria::Provider(ref provider) => model.provider == *provider,
+                    ModelFilterCriteria::Capability(ref capability) => {
+                        model.capabilities.contains(capability)
+                    }
+                    ModelFilterCriteria::FreeOnly => model.is_free,
+                    ModelFilterCriteria::MinContextWindow(min_tokens) => {
+                        model.context_window >= min_tokens
+                    }
+                    ModelFilterCriteria::MaxCostPerToken(max_cost) => {
+                        if let Some(ref pricing) = model.pricing {
+                            pricing.input_per_1k_tokens <= max_cost
+                                || pricing.output_per_1k_tokens <= max_cost
+                        } else {
+                            true // No pricing info means we can't filter
+                        }
                     }
                 }
-            }
-        }).cloned().collect()
+            })
+            .cloned()
+            .collect()
     }
 
     /// Get the default provider
@@ -324,7 +353,12 @@ impl ProviderManager {
                     let tokens_used = response.usage.total_tokens as u64;
                     let cost = self.calculate_cost(provider_id, &Some(response.usage.clone()));
 
-                    self.performance_monitor.record_success(provider_id, response_time_ms, tokens_used, cost);
+                    self.performance_monitor.record_success(
+                        provider_id,
+                        response_time_ms,
+                        tokens_used,
+                        cost,
+                    );
                     self.curator.record_success(provider_id);
 
                     // Record community analytics
@@ -360,7 +394,8 @@ impl ProviderManager {
 
         // Record failure
         let response_time_ms = start_time.elapsed().as_millis() as u64;
-        self.performance_monitor.record_failure(provider_id, response_time_ms);
+        self.performance_monitor
+            .record_failure(provider_id, response_time_ms);
         self.curator.record_failure(provider_id);
 
         // Record community analytics for failure
@@ -374,7 +409,9 @@ impl ProviderManager {
         };
         self.community_registry.record_usage(provider_id, usage);
 
-        Err(last_error.unwrap_or_else(|| ProviderError::ProviderError("All retry attempts failed".to_string())))
+        Err(last_error.unwrap_or_else(|| {
+            ProviderError::ProviderError("All retry attempts failed".to_string())
+        }))
     }
 
     /// Stream a chat response
@@ -448,8 +485,10 @@ impl ProviderManager {
                 // which specific model was used for accurate pricing
                 if let Some(model) = models.first() {
                     if let Some(ref pricing) = model.pricing {
-                        let input_cost = (usage.prompt_tokens as f64 / 1000.0) * pricing.input_per_1k_tokens;
-                        let output_cost = (usage.completion_tokens as f64 / 1000.0) * pricing.output_per_1k_tokens;
+                        let input_cost =
+                            (usage.prompt_tokens as f64 / 1000.0) * pricing.input_per_1k_tokens;
+                        let output_cost = (usage.completion_tokens as f64 / 1000.0)
+                            * pricing.output_per_1k_tokens;
                         return input_cost + output_cost;
                     }
                 }
@@ -474,21 +513,31 @@ impl ProviderManager {
     }
 
     /// Select the best provider based on quality scores and constraints
-    pub fn select_best_provider(&self, constraints: Option<&SelectionConstraints>) -> Option<String> {
+    pub fn select_best_provider(
+        &self,
+        constraints: Option<&SelectionConstraints>,
+    ) -> Option<String> {
         let available_providers: Vec<String> = self.provider_states.keys().cloned().collect();
-        self.curator.select_best_provider(&available_providers, constraints)
+        self.curator
+            .select_best_provider(&available_providers, constraints)
     }
 
     /// Select the best provider for a specific model requirement
-    pub fn select_best_provider_for_model(&self, required_capabilities: &[Capability], constraints: Option<&SelectionConstraints>) -> Option<String> {
+    pub fn select_best_provider_for_model(
+        &self,
+        required_capabilities: &[Capability],
+        constraints: Option<&SelectionConstraints>,
+    ) -> Option<String> {
         let mut suitable_providers = Vec::new();
 
         for (provider_id, status) in &self.provider_states {
             if status.state == ConnectionState::Connected {
                 // Check if provider has models with required capabilities
-                let has_suitable_model = status.models.iter().any(|model|
-                    required_capabilities.iter().all(|cap| model.capabilities.contains(cap))
-                );
+                let has_suitable_model = status.models.iter().any(|model| {
+                    required_capabilities
+                        .iter()
+                        .all(|cap| model.capabilities.contains(cap))
+                });
 
                 if has_suitable_model {
                     suitable_providers.push(provider_id.clone());
@@ -496,7 +545,8 @@ impl ProviderManager {
             }
         }
 
-        self.curator.select_best_provider(&suitable_providers, constraints)
+        self.curator
+            .select_best_provider(&suitable_providers, constraints)
     }
 
     /// Update quality scores for all providers
@@ -530,12 +580,13 @@ impl ProviderManager {
     pub fn get_failover_provider(&self, current_provider_id: &str) -> Option<String> {
         if self.should_avoid_provider(current_provider_id) {
             // Find alternative providers
-            let alternatives: Vec<String> = self.provider_states
+            let alternatives: Vec<String> = self
+                .provider_states
                 .iter()
                 .filter(|(id, status)| {
-                    *id != current_provider_id &&
-                    status.state == ConnectionState::Connected &&
-                    !self.should_avoid_provider(id)
+                    *id != current_provider_id
+                        && status.state == ConnectionState::Connected
+                        && !self.should_avoid_provider(id)
                 })
                 .map(|(id, _)| id.clone())
                 .collect();
@@ -565,15 +616,22 @@ impl ProviderManager {
                 // For now, we would need to create a provider instance from the config
                 // This is a simplified implementation - in practice, you'd need to
                 // instantiate the appropriate provider type based on the config
-                println!("Would load community config for provider: {}", config.provider_id);
+                println!(
+                    "Would load community config for provider: {}",
+                    config.provider_id
+                );
             }
         }
         Ok(())
     }
 
     /// Get community quality metrics for a provider
-    pub fn get_community_quality_metrics(&self, provider_id: &str) -> Option<crate::community::CommunityQualityMetrics> {
-        self.community_registry.get_community_quality_metrics(provider_id)
+    pub fn get_community_quality_metrics(
+        &self,
+        provider_id: &str,
+    ) -> Option<crate::community::CommunityQualityMetrics> {
+        self.community_registry
+            .get_community_quality_metrics(provider_id)
     }
 
     /// Get popular providers from community analytics
@@ -583,16 +641,23 @@ impl ProviderManager {
 
     /// Get providers ranked by community quality
     pub fn get_providers_by_community_quality(&self, limit: usize) -> Vec<(String, f64)> {
-        self.community_registry.get_providers_by_community_quality(limit)
+        self.community_registry
+            .get_providers_by_community_quality(limit)
     }
 
     /// Submit a provider configuration to the community
-    pub fn submit_community_config(&mut self, config: crate::community::CommunityProviderConfig) -> Result<String, ProviderError> {
+    pub fn submit_community_config(
+        &mut self,
+        config: crate::community::CommunityProviderConfig,
+    ) -> Result<String, ProviderError> {
         self.community_registry.submit_contribution(config)
     }
 
     /// Get provider analytics
-    pub fn get_provider_analytics(&self, provider_id: &str) -> Option<&crate::community::ProviderAnalytics> {
+    pub fn get_provider_analytics(
+        &self,
+        provider_id: &str,
+    ) -> Option<&crate::community::ProviderAnalytics> {
         self.community_registry.get_analytics(provider_id)
     }
 
@@ -625,22 +690,36 @@ impl ProviderManager {
     }
 
     /// Evaluate a specific provider
-    pub async fn evaluate_provider(&self, provider_id: &str, model: &str) -> Result<crate::evaluation::ProviderEvaluation, ProviderError> {
+    pub async fn evaluate_provider(
+        &self,
+        provider_id: &str,
+        model: &str,
+    ) -> Result<crate::evaluation::ProviderEvaluation, ProviderError> {
         if let Some(evaluator) = &self.evaluator {
             if let Ok(provider) = self.registry.get(provider_id) {
                 evaluator.evaluate_provider(&provider, model).await
             } else {
-                Err(ProviderError::NotFound(format!("Provider {} not found", provider_id)))
+                Err(ProviderError::NotFound(format!(
+                    "Provider {} not found",
+                    provider_id
+                )))
             }
         } else {
-            Err(ProviderError::ProviderError("Evaluation not enabled".to_string()))
+            Err(ProviderError::ProviderError(
+                "Evaluation not enabled".to_string(),
+            ))
         }
     }
 
     /// Get latest evaluation for a provider
-    pub async fn get_latest_evaluation(&self, provider_id: &str) -> Option<crate::evaluation::ProviderEvaluation> {
+    pub async fn get_latest_evaluation(
+        &self,
+        provider_id: &str,
+    ) -> Option<crate::evaluation::ProviderEvaluation> {
         if let Some(continuous_evaluator) = &self.continuous_evaluator {
-            continuous_evaluator.get_latest_evaluation(provider_id).await
+            continuous_evaluator
+                .get_latest_evaluation(provider_id)
+                .await
         } else {
             None
         }
@@ -659,7 +738,9 @@ impl ProviderManager {
         if let Some(sync) = &self.community_sync {
             sync.sync_now().await
         } else {
-            Err(ProviderError::ProviderError("Community sync not enabled".to_string()))
+            Err(ProviderError::ProviderError(
+                "Community sync not enabled".to_string(),
+            ))
         }
     }
 
@@ -672,5 +753,3 @@ impl ProviderManager {
         }
     }
 }
-
-

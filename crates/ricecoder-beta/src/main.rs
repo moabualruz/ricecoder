@@ -99,10 +99,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::Analytics { output } => {
             handle_analytics(output).await?;
         }
-        Commands::Run {
-            config,
-            output_dir,
-        } => {
+        Commands::Run { config, output_dir } => {
             handle_run_beta_program(config, output_dir).await?;
         }
     }
@@ -207,7 +204,11 @@ async fn handle_validation(
             let int_report = validator.validate_enterprise_integration().await?;
             serde_json::to_value(int_report)?
         }
-        _ => return Err("Invalid validation type. Use: deployment, performance, or integration".into()),
+        _ => {
+            return Err(
+                "Invalid validation type. Use: deployment, performance, or integration".into(),
+            )
+        }
     };
 
     let json = serde_json::to_string_pretty(&report)?;
@@ -279,8 +280,12 @@ async fn handle_run_beta_program(
     let mut enterprise_validator = EnterpriseValidator::new();
 
     let deployment_report = enterprise_validator.validate_deployment_scenarios().await?;
-    let performance_report = enterprise_validator.validate_performance_requirements().await?;
-    let integration_report = enterprise_validator.validate_enterprise_integration().await?;
+    let performance_report = enterprise_validator
+        .validate_performance_requirements()
+        .await?;
+    let integration_report = enterprise_validator
+        .validate_enterprise_integration()
+        .await?;
 
     // Generate analytics
     println!("📊 Generating beta analytics...");
@@ -317,13 +322,33 @@ async fn handle_run_beta_program(
     tokio::fs::write(&soc2_path, serde_json::to_string_pretty(&soc2_report)?).await?;
     tokio::fs::write(&gdpr_path, serde_json::to_string_pretty(&gdpr_report)?).await?;
     tokio::fs::write(&hipaa_path, serde_json::to_string_pretty(&hipaa_report)?).await?;
-    tokio::fs::write(&deployment_path, serde_json::to_string_pretty(&deployment_report)?).await?;
-    tokio::fs::write(&performance_path, serde_json::to_string_pretty(&performance_report)?).await?;
-    tokio::fs::write(&integration_path, serde_json::to_string_pretty(&integration_report)?).await?;
+    tokio::fs::write(
+        &deployment_path,
+        serde_json::to_string_pretty(&deployment_report)?,
+    )
+    .await?;
+    tokio::fs::write(
+        &performance_path,
+        serde_json::to_string_pretty(&performance_report)?,
+    )
+    .await?;
+    tokio::fs::write(
+        &integration_path,
+        serde_json::to_string_pretty(&integration_report)?,
+    )
+    .await?;
     tokio::fs::write(&analytics_path, serde_json::to_string_pretty(&analytics)?).await?;
 
     // Generate summary report
-    let summary = generate_beta_summary(&soc2_report, &gdpr_report, &hipaa_report, &deployment_report, &performance_report, &integration_report, &analytics);
+    let summary = generate_beta_summary(
+        &soc2_report,
+        &gdpr_report,
+        &hipaa_report,
+        &deployment_report,
+        &performance_report,
+        &integration_report,
+        &analytics,
+    );
     let summary_path = output_dir.join("beta-testing-summary.json");
     tokio::fs::write(&summary_path, serde_json::to_string_pretty(&summary)?).await?;
 

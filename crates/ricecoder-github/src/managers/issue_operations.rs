@@ -97,7 +97,11 @@ impl IssueOperations {
     }
 
     /// Format a status change comment
-    pub fn format_status_change_comment(&self, old_status: IssueStatus, new_status: IssueStatus) -> IssueComment {
+    pub fn format_status_change_comment(
+        &self,
+        old_status: IssueStatus,
+        new_status: IssueStatus,
+    ) -> IssueComment {
         let status_emoji = match new_status {
             IssueStatus::Open => "🔴",
             IssueStatus::InProgress => "🟡",
@@ -199,9 +203,7 @@ impl IssueOperations {
             .captures(message)
             .and_then(|cap| cap.get(1))
             .and_then(|m| m.as_str().parse::<u32>().ok())
-            .ok_or_else(|| {
-                GitHubError::invalid_input("No issue number found in closure message")
-            })
+            .ok_or_else(|| GitHubError::invalid_input("No issue number found in closure message"))
     }
 
     /// Post a comment to an issue using the GitHub API
@@ -227,11 +229,7 @@ impl IssueOperations {
     }
 
     /// Update an existing comment on an issue
-    pub async fn update_comment_on_issue(
-        &self,
-        comment_id: u64,
-        new_body: &str,
-    ) -> Result<()> {
+    pub async fn update_comment_on_issue(&self, comment_id: u64, new_body: &str) -> Result<()> {
         if new_body.is_empty() {
             return Err(GitHubError::invalid_input("Comment body cannot be empty"));
         }
@@ -283,7 +281,8 @@ impl IssueOperations {
         completed_steps: u32,
         details: &str,
     ) -> Result<u64> {
-        let comment = self.format_progress_comment(current_step, total_steps, completed_steps, details);
+        let comment =
+            self.format_progress_comment(current_step, total_steps, completed_steps, details);
         self.post_comment_to_issue(issue_number, &comment).await
     }
 

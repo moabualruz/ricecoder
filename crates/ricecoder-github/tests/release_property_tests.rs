@@ -1,11 +1,11 @@
 //! Property-based tests for Release Management
 //! **Feature: ricecoder-github, Property 41-45: Release Management**
 
+use chrono::Utc;
 use proptest::prelude::*;
 use ricecoder_github::{
-    ReleaseManager, ReleaseOptions, SemanticVersion, ReleaseOperations, ChangelogEntry,
+    ChangelogEntry, ReleaseManager, ReleaseOperations, ReleaseOptions, SemanticVersion,
 };
-use chrono::Utc;
 
 // Strategy for generating valid semantic versions
 fn semantic_version_strategy() -> impl Strategy<Value = (u32, u32, u32)> {
@@ -14,21 +14,18 @@ fn semantic_version_strategy() -> impl Strategy<Value = (u32, u32, u32)> {
 
 // Strategy for generating valid tag names
 fn tag_name_strategy() -> impl Strategy<Value = String> {
-    semantic_version_strategy().prop_map(|(major, minor, patch)| {
-        format!("v{}.{}.{}", major, minor, patch)
-    })
+    semantic_version_strategy()
+        .prop_map(|(major, minor, patch)| format!("v{}.{}.{}", major, minor, patch))
 }
 
 // Strategy for generating release names
 fn release_name_strategy() -> impl Strategy<Value = String> {
-    r"[a-zA-Z0-9 \-]+"
-        .prop_map(|s| format!("Release {}", s))
+    r"[a-zA-Z0-9 \-]+".prop_map(|s| format!("Release {}", s))
 }
 
 // Strategy for generating release notes
 fn release_notes_strategy() -> impl Strategy<Value = String> {
-    r"[a-zA-Z0-9 \-\.\,\n]+"
-        .prop_map(|s| format!("## Changes\n\n{}", s))
+    r"[a-zA-Z0-9 \-\.\,\n]+".prop_map(|s| format!("## Changes\n\n{}", s))
 }
 
 proptest! {

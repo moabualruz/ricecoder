@@ -118,10 +118,7 @@ impl LogStorage for MemoryStorage {
 
     async fn count_events(&self, filter: &EventFilter) -> ActivityLogResult<u64> {
         let events = self.events.read().await;
-        let count = events
-            .iter()
-            .filter(|event| filter.matches(event))
-            .count() as u64;
+        let count = events.iter().filter(|event| filter.matches(event)).count() as u64;
         Ok(count)
     }
 
@@ -205,13 +202,16 @@ impl ActivityLogger {
         resource: String,
         details: serde_json::Value,
     ) -> ActivityLogResult<()> {
-        let event = ActivityEvent::new(level, category, action, actor, resource)
-            .with_details(details);
+        let event =
+            ActivityEvent::new(level, category, action, actor, resource).with_details(details);
         self.log_activity(event).await
     }
 
     /// Query events matching a filter
-    pub async fn query_events(&self, filter: &EventFilter) -> ActivityLogResult<Vec<ActivityEvent>> {
+    pub async fn query_events(
+        &self,
+        filter: &EventFilter,
+    ) -> ActivityLogResult<Vec<ActivityEvent>> {
         self.storage.retrieve_events(filter).await
     }
 
@@ -232,18 +232,23 @@ impl ActivityLogger {
 
     /// Get logger statistics
     pub async fn get_stats(&self) -> ActivityLogResult<LoggerStats> {
-        let total_events = self.storage.count_events(&EventFilter::new().with_limit(usize::MAX)).await?;
-        let recent_events = self.storage.retrieve_events(
-            &EventFilter::new()
-                .with_limit(100)
-        ).await?;
+        let total_events = self
+            .storage
+            .count_events(&EventFilter::new().with_limit(usize::MAX))
+            .await?;
+        let recent_events = self
+            .storage
+            .retrieve_events(&EventFilter::new().with_limit(100))
+            .await?;
 
         let mut level_counts = HashMap::new();
         let mut category_counts = HashMap::new();
 
         for event in &recent_events {
             *level_counts.entry(event.level).or_insert(0u64) += 1;
-            *category_counts.entry(event.category.clone()).or_insert(0u64) += 1;
+            *category_counts
+                .entry(event.category.clone())
+                .or_insert(0u64) += 1;
         }
 
         Ok(LoggerStats {

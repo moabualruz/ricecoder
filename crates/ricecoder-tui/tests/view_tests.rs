@@ -1,7 +1,7 @@
-use ricecoder_tui::*;
-use ratatui::backend::TestBackend;
 use crate::widgets::ChatWidget;
+use ratatui::backend::TestBackend;
 use ricecoder_help::HelpDialog;
+use ricecoder_tui::*;
 
 mod tests {
     use super::*;
@@ -47,9 +47,11 @@ mod tests {
         let mut terminal = ratatui::Terminal::new(backend).unwrap();
 
         // This should not panic
-        terminal.draw(|frame| {
-            view(frame, &model);
-        }).unwrap();
+        terminal
+            .draw(|frame| {
+                view(frame, &model);
+            })
+            .unwrap();
     }
 
     #[test]
@@ -60,8 +62,8 @@ mod tests {
         // Should be centered horizontally and vertically
         assert_eq!(centered.x, 20); // (100 - 60) / 2 = 20
         assert_eq!(centered.y, 20); // (50 - 20) / 2 = 15, but wait...
-        // Actually, the calculation is more complex due to the layout splits
-        // Let's just verify it's within bounds
+                                    // Actually, the calculation is more complex due to the layout splits
+                                    // Let's just verify it's within bounds
         assert!(centered.x < rect.width);
         assert!(centered.y < rect.height);
         assert!(centered.width <= rect.width);

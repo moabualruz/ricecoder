@@ -3,9 +3,9 @@
 use crate::monitor::PerformanceMetrics;
 use crate::regression::RegressionAlert;
 use crate::validation::ValidationResult;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use chrono::{DateTime, Utc};
 
 /// Enterprise performance monitor with alerting capabilities
 pub struct EnterpriseMonitor {
@@ -27,7 +27,10 @@ impl EnterpriseMonitor {
     }
 
     /// Monitor performance and check for alerts
-    pub async fn monitor_performance(&mut self, metrics: &[PerformanceMetrics]) -> Vec<EnterpriseAlert> {
+    pub async fn monitor_performance(
+        &mut self,
+        metrics: &[PerformanceMetrics],
+    ) -> Vec<EnterpriseAlert> {
         let mut alerts = Vec::new();
         let now = Utc::now();
 
@@ -69,7 +72,10 @@ impl EnterpriseMonitor {
     }
 
     /// Monitor validation results
-    pub async fn monitor_validation(&mut self, results: &[ValidationResult]) -> Vec<EnterpriseAlert> {
+    pub async fn monitor_validation(
+        &mut self,
+        results: &[ValidationResult],
+    ) -> Vec<EnterpriseAlert> {
         let mut alerts = Vec::new();
         let now = Utc::now();
 
@@ -92,8 +98,15 @@ impl EnterpriseMonitor {
                     ],
                     metadata: HashMap::from([
                         ("test_name".to_string(), result.test_name.clone()),
-                        ("p95_time_ns".to_string(), result.metrics.p95_time_ns.to_string()),
-                        ("memory_mb".to_string(), (result.metrics.peak_memory_bytes as f64 / (1024.0 * 1024.0)).to_string()),
+                        (
+                            "p95_time_ns".to_string(),
+                            result.metrics.p95_time_ns.to_string(),
+                        ),
+                        (
+                            "memory_mb".to_string(),
+                            (result.metrics.peak_memory_bytes as f64 / (1024.0 * 1024.0))
+                                .to_string(),
+                        ),
                     ]),
                 };
                 alerts.push(alert);
@@ -107,7 +120,11 @@ impl EnterpriseMonitor {
     }
 
     /// Check for performance threshold alerts
-    async fn check_performance_alerts(&self, metrics: &[PerformanceMetrics], now: DateTime<Utc>) -> Vec<EnterpriseAlert> {
+    async fn check_performance_alerts(
+        &self,
+        metrics: &[PerformanceMetrics],
+        now: DateTime<Utc>,
+    ) -> Vec<EnterpriseAlert> {
         let mut alerts = Vec::new();
 
         for metric in metrics {
@@ -175,7 +192,10 @@ impl EnterpriseMonitor {
                     ],
                     metadata: HashMap::from([
                         ("threshold_bytes".to_string(), "314572800".to_string()),
-                        ("actual_bytes".to_string(), metric.peak_memory_bytes.to_string()),
+                        (
+                            "actual_bytes".to_string(),
+                            metric.peak_memory_bytes.to_string(),
+                        ),
                     ]),
                 });
             }
@@ -190,7 +210,8 @@ impl EnterpriseMonitor {
 
         // Analyze recent performance trends (last hour)
         let one_hour_ago = now - chrono::Duration::hours(1);
-        let recent_metrics: Vec<_> = self.performance_history
+        let recent_metrics: Vec<_> = self
+            .performance_history
             .iter()
             .filter(|record| record.timestamp > one_hour_ago)
             .collect();
@@ -202,7 +223,8 @@ impl EnterpriseMonitor {
         // Group by test name and check for degradation trends
         let mut trends: HashMap<String, Vec<&PerformanceRecord>> = HashMap::new();
         for record in &recent_metrics {
-            trends.entry(record.metric.test_name.clone())
+            trends
+                .entry(record.metric.test_name.clone())
                 .or_insert_with(Vec::new)
                 .push(record);
         }
@@ -215,7 +237,8 @@ impl EnterpriseMonitor {
             // Calculate trend (simple linear regression slope)
             let slope = self.calculate_trend_slope(&records);
 
-            if slope > 0.1 { // Significant upward trend (degradation)
+            if slope > 0.1 {
+                // Significant upward trend (degradation)
                 alerts.push(EnterpriseAlert {
                     alert_type: AlertType::PerformanceTrend,
                     severity: AlertSeverity::Medium,
@@ -248,7 +271,8 @@ impl EnterpriseMonitor {
 
         // Analyze recent performance for anomalies (last 24 hours)
         let one_day_ago = now - chrono::Duration::hours(24);
-        let recent_metrics: Vec<_> = self.performance_history
+        let recent_metrics: Vec<_> = self
+            .performance_history
             .iter()
             .filter(|record| record.timestamp > one_day_ago)
             .collect();
@@ -260,7 +284,8 @@ impl EnterpriseMonitor {
         // Group by test name
         let mut groups: HashMap<String, Vec<&PerformanceRecord>> = HashMap::new();
         for record in &recent_metrics {
-            groups.entry(record.metric.test_name.clone())
+            groups
+                .entry(record.metric.test_name.clone())
                 .or_insert_with(Vec::new)
                 .push(record);
         }
@@ -301,20 +326,23 @@ impl EnterpriseMonitor {
     }
 
     /// Detect performance anomalies using statistical methods
-    fn detect_performance_anomaly(&self, test_name: &str, records: &[&PerformanceRecord]) -> Option<EnterpriseAlert> {
+    fn detect_performance_anomaly(
+        &self,
+        test_name: &str,
+        records: &[&PerformanceRecord],
+    ) -> Option<EnterpriseAlert> {
         if records.len() < 10 {
             return None;
         }
 
         // Calculate mean and standard deviation
-        let values: Vec<f64> = records.iter()
+        let values: Vec<f64> = records
+            .iter()
             .map(|r| r.metric.p95_time_ns as f64 / 1_000_000_000.0)
             .collect();
 
         let mean = values.iter().sum::<f64>() / values.len() as f64;
-        let variance = values.iter()
-            .map(|v| (v - mean).powi(2))
-            .sum::<f64>() / values.len() as f64;
+        let variance = values.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / values.len() as f64;
         let std_dev = variance.sqrt();
 
         // Check if the most recent value is an outlier (3 sigma)
@@ -359,7 +387,10 @@ impl EnterpriseMonitor {
                     AlertDestination::Slack { webhook_url } => {
                         self.send_to_slack(alert, webhook_url).await;
                     }
-                    AlertDestination::Email { smtp_config, recipients } => {
+                    AlertDestination::Email {
+                        smtp_config,
+                        recipients,
+                    } => {
                         self.send_to_email(alert, smtp_config, recipients).await;
                     }
                     AlertDestination::Webhook { url, headers } => {
@@ -391,12 +422,25 @@ impl EnterpriseMonitor {
         println!("Would send Slack alert to {}: {}", webhook_url, alert.title);
     }
 
-    async fn send_to_email(&self, alert: &EnterpriseAlert, smtp_config: &SmtpConfig, recipients: &[String]) {
+    async fn send_to_email(
+        &self,
+        alert: &EnterpriseAlert,
+        smtp_config: &SmtpConfig,
+        recipients: &[String],
+    ) {
         // In a real implementation, this would send email via SMTP
-        println!("Would send email alert to {:?}: {}", recipients, alert.title);
+        println!(
+            "Would send email alert to {:?}: {}",
+            recipients, alert.title
+        );
     }
 
-    async fn send_to_webhook(&self, alert: &EnterpriseAlert, url: &str, headers: &HashMap<String, String>) {
+    async fn send_to_webhook(
+        &self,
+        alert: &EnterpriseAlert,
+        url: &str,
+        headers: &HashMap<String, String>,
+    ) {
         // In a real implementation, this would send HTTP request to webhook
         println!("Would send webhook alert to {}: {}", url, alert.title);
     }
@@ -417,10 +461,14 @@ impl EnterpriseMonitor {
         report.push_str(&format!("Generated: {}\n\n", Utc::now().to_rfc3339()));
 
         // Alert summary
-        let critical_alerts = self.alert_history.iter()
+        let critical_alerts = self
+            .alert_history
+            .iter()
             .filter(|r| matches!(r.alert.severity, AlertSeverity::Critical))
             .count();
-        let high_alerts = self.alert_history.iter()
+        let high_alerts = self
+            .alert_history
+            .iter()
             .filter(|r| matches!(r.alert.severity, AlertSeverity::High))
             .count();
 
@@ -444,11 +492,18 @@ impl EnterpriseMonitor {
         if let Some(latest) = self.performance_history.last() {
             report.push_str(&format!("\n=== Latest Performance Metrics ===\n"));
             report.push_str(&format!("Test: {}\n", latest.metric.test_name));
-            report.push_str(&format!("P95 Time: {:.2}ms\n",
-                latest.metric.p95_time_ns as f64 / 1_000_000.0));
-            report.push_str(&format!("Peak Memory: {:.1}MB\n",
-                latest.metric.peak_memory_bytes as f64 / (1024.0 * 1024.0)));
-            report.push_str(&format!("CPU Usage: {:.1}%\n", latest.metric.avg_cpu_percent));
+            report.push_str(&format!(
+                "P95 Time: {:.2}ms\n",
+                latest.metric.p95_time_ns as f64 / 1_000_000.0
+            ));
+            report.push_str(&format!(
+                "Peak Memory: {:.1}MB\n",
+                latest.metric.peak_memory_bytes as f64 / (1024.0 * 1024.0)
+            ));
+            report.push_str(&format!(
+                "CPU Usage: {:.1}%\n",
+                latest.metric.avg_cpu_percent
+            ));
         }
 
         report
@@ -474,9 +529,15 @@ pub enum AlertDestination {
     /// Send to Slack webhook
     Slack { webhook_url: String },
     /// Send via email
-    Email { smtp_config: SmtpConfig, recipients: Vec<String> },
+    Email {
+        smtp_config: SmtpConfig,
+        recipients: Vec<String>,
+    },
     /// Send to HTTP webhook
-    Webhook { url: String, headers: HashMap<String, String> },
+    Webhook {
+        url: String,
+        headers: HashMap<String, String>,
+    },
 }
 
 /// SMTP configuration for email alerts

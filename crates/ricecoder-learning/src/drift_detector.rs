@@ -57,12 +57,10 @@ impl DriftDetector {
     /// Register an established pattern
     pub fn register_pattern(&mut self, pattern: LearnedPattern) -> Result<()> {
         if pattern.occurrences < self.config.min_occurrences_for_pattern {
-            return Err(LearningError::PatternExtractionFailed(
-                format!(
-                    "Pattern must have at least {} occurrences",
-                    self.config.min_occurrences_for_pattern
-                ),
-            ));
+            return Err(LearningError::PatternExtractionFailed(format!(
+                "Pattern must have at least {} occurrences",
+                self.config.min_occurrences_for_pattern
+            )));
         }
 
         self.patterns.insert(pattern.id.clone(), pattern);
@@ -185,21 +183,13 @@ impl DriftDetector {
     /// Get drift statistics
     pub fn get_statistics(&self) -> DriftStatistics {
         let total_drifts = self.drifts.len();
-        let high_severity = self
-            .drifts
-            .iter()
-            .filter(|d| d.severity == "high")
-            .count();
+        let high_severity = self.drifts.iter().filter(|d| d.severity == "high").count();
         let medium_severity = self
             .drifts
             .iter()
             .filter(|d| d.severity == "medium")
             .count();
-        let low_severity = self
-            .drifts
-            .iter()
-            .filter(|d| d.severity == "low")
-            .count();
+        let low_severity = self.drifts.iter().filter(|d| d.severity == "low").count();
 
         let violations = self
             .drifts
@@ -294,11 +284,7 @@ mod tests {
     fn test_detect_inconsistency() {
         let mut detector = DriftDetector::new();
         let drift = detector
-            .detect_inconsistency(
-                "decision_1",
-                "async_pattern",
-                "sync_pattern",
-            )
+            .detect_inconsistency("decision_1", "async_pattern", "sync_pattern")
             .expect("Failed to detect inconsistency");
 
         assert_eq!(drift.drift_type, "inconsistency");
@@ -310,10 +296,7 @@ mod tests {
     fn test_detect_violation() {
         let mut detector = DriftDetector::new();
         let drift = detector
-            .detect_violation(
-                "decision_1",
-                "Direct layer bypass detected",
-            )
+            .detect_violation("decision_1", "Direct layer bypass detected")
             .expect("Failed to detect violation");
 
         assert_eq!(drift.drift_type, "violation");

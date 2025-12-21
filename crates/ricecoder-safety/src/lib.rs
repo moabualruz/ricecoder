@@ -42,13 +42,13 @@
 
 pub mod constraints;
 pub mod error;
+pub mod monitoring;
 pub mod risk;
 pub mod validation;
-pub mod monitoring;
 
 // Re-export commonly used types
-pub use constraints::{SecurityConstraint, ConstraintType, ConstraintResult};
+pub use constraints::{ConstraintResult, ConstraintType, SecurityConstraint};
 pub use error::{SafetyError, SafetyResult};
-pub use risk::{RiskScorer, RiskLevel, RiskScore, RiskFactors};
-pub use validation::{SafetyValidator, ValidationResult, ApprovalGate, ApprovalRequest};
-pub use monitoring::{SafetyMonitor, SafetyMetrics, AlertLevel};
+pub use monitoring::{AlertLevel, SafetyMetrics, SafetyMonitor};
+pub use risk::{RiskFactors, RiskLevel, RiskScore, RiskScorer};
+pub use validation::{ApprovalGate, ApprovalRequest, SafetyValidator, ValidationResult};

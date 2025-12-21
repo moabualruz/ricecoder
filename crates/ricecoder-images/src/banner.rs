@@ -104,7 +104,9 @@ impl BannerRenderer {
         }
 
         // Fall back to text banner
-        Ok(BannerOutput::Text(self.render_text_banner(&config.fallback_text, theme_colors)))
+        Ok(BannerOutput::Text(
+            self.render_text_banner(&config.fallback_text, theme_colors),
+        ))
     }
 
     /// Render SVG to appropriate format based on capabilities.
@@ -153,7 +155,13 @@ impl BannerRenderer {
         self.cache.cache_render(svg_data, pixel_data.clone());
 
         // Convert to appropriate output format
-        self.convert_pixels_to_output(&pixel_data, target_width, target_height, capabilities, theme_colors)
+        self.convert_pixels_to_output(
+            &pixel_data,
+            target_width,
+            target_height,
+            capabilities,
+            theme_colors,
+        )
     }
 
     /// Convert pixel data to appropriate output format.
@@ -175,17 +183,19 @@ impl BannerRenderer {
     }
 
     /// Convert pixel data to sixel format.
-    fn convert_to_sixel(&self, _pixel_data: &[u8], width: u32, height: u32) -> ImageResult<BannerOutput> {
+    fn convert_to_sixel(
+        &self,
+        _pixel_data: &[u8],
+        width: u32,
+        height: u32,
+    ) -> ImageResult<BannerOutput> {
         // For now, return a placeholder sixel sequence
         // In a full implementation, this would convert RGBA data to sixel format
         debug!("Converting to sixel format: {}x{}", width, height);
-        
+
         // Basic sixel header and footer
-        let sixel_data = format!(
-            "\x1bPq\"1;1;{};{}\x1b\\",
-            width, height
-        );
-        
+        let sixel_data = format!("\x1bPq\"1;1;{};{}\x1b\\", width, height);
+
         Ok(BannerOutput::Sixel(sixel_data))
     }
 
@@ -198,7 +208,7 @@ impl BannerRenderer {
         _theme_colors: Option<&ThemeColors>,
     ) -> ImageResult<BannerOutput> {
         debug!("Converting to Unicode art: {}x{}", width, height);
-        
+
         let mut output = String::new();
         let char_width = (width / 2).max(1); // Use half-block characters
         let char_height = (height / 2).max(1);
@@ -212,7 +222,7 @@ impl BannerRenderer {
 
                 if pixel_idx + 3 < pixel_data.len() {
                     let alpha = pixel_data[pixel_idx + 3];
-                    
+
                     // Choose character based on alpha/brightness
                     let char = if alpha > 200 {
                         '█' // Full block
@@ -225,7 +235,7 @@ impl BannerRenderer {
                     } else {
                         ' ' // Transparent
                     };
-                    
+
                     output.push(char);
                 } else {
                     output.push(' ');
@@ -238,9 +248,14 @@ impl BannerRenderer {
     }
 
     /// Convert pixel data to ASCII characters.
-    fn convert_to_ascii(&self, pixel_data: &[u8], width: u32, height: u32) -> ImageResult<BannerOutput> {
+    fn convert_to_ascii(
+        &self,
+        pixel_data: &[u8],
+        width: u32,
+        height: u32,
+    ) -> ImageResult<BannerOutput> {
         debug!("Converting to ASCII art: {}x{}", width, height);
-        
+
         let mut output = String::new();
         let char_width = (width / 8).max(1); // ASCII is lower resolution
         let char_height = (height / 16).max(1);
@@ -254,7 +269,7 @@ impl BannerRenderer {
 
                 if pixel_idx + 3 < pixel_data.len() {
                     let alpha = pixel_data[pixel_idx + 3];
-                    
+
                     // Choose ASCII character based on alpha/brightness
                     let char = if alpha > 200 {
                         '#'
@@ -267,7 +282,7 @@ impl BannerRenderer {
                     } else {
                         ' '
                     };
-                    
+
                     output.push(char);
                 } else {
                     output.push(' ');
@@ -300,8 +315,8 @@ impl BannerRenderer {
         // For cached data, we need to know the original dimensions
         // This is a simplified implementation
         let width = 80; // Default width
-        let height = 7;  // Default height
-        
+        let height = 7; // Default height
+
         self.convert_pixels_to_output(cached_data, width, height, capabilities, theme_colors)
     }
 }
@@ -315,9 +330,7 @@ impl Default for BannerRenderer {
 impl BannerCache {
     /// Create a new banner cache.
     pub fn new() -> Self {
-        Self {
-            svg_cache: None,
-        }
+        Self { svg_cache: None }
     }
 
     /// Get cached render if available.
@@ -362,9 +375,9 @@ impl Default for ThemeColors {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::Write;
     use std::path::PathBuf;
     use tempfile::NamedTempFile;
-    use std::io::Write;
 
     #[test]
     fn test_banner_config_default() {
@@ -443,7 +456,7 @@ mod tests {
     #[test]
     fn test_render_with_valid_svg() {
         let mut renderer = BannerRenderer::new();
-        
+
         // Create a temporary SVG file
         let mut temp_file = NamedTempFile::new().unwrap();
         let svg_content = r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -469,7 +482,7 @@ mod tests {
             BannerOutput::Unicode(text) => {
                 assert!(!text.is_empty());
                 assert!(text.contains('\n')); // Should have multiple lines
-            },
+            }
             _ => panic!("Expected Unicode output for valid SVG with Unicode support"),
         }
     }

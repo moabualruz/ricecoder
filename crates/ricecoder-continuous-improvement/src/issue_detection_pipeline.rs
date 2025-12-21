@@ -1,11 +1,13 @@
 //! Automated issue detection and escalation pipeline
 
 use crate::types::*;
-use ricecoder_monitoring::error_tracking::{ErrorTracker, AlertManager, IncidentManager};
-use ricecoder_monitoring::types::{ErrorEvent, Severity as MonitoringSeverity, EventId, Alert, AlertStatus};
+use ricecoder_monitoring::error_tracking::{AlertManager, ErrorTracker, IncidentManager};
+use ricecoder_monitoring::types::{
+    Alert, AlertStatus, ErrorEvent, EventId, Severity as MonitoringSeverity,
+};
+use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc;
 use tokio::time;
-use std::sync::{Arc, Mutex};
 
 /// Issue detection pipeline for automated issue detection and escalation
 pub struct IssueDetectionPipeline {
@@ -30,7 +32,7 @@ impl IssueDetectionPipeline {
 
         let alerting_config = ricecoder_monitoring::alerting::AlertingConfig {
             enabled: config.enabled,
-            rules: vec![], // Would be configured with actual rules
+            rules: vec![],    // Would be configured with actual rules
             channels: vec![], // Would be configured with notification channels
         };
 
@@ -52,10 +54,18 @@ impl IssueDetectionPipeline {
 
         tracing::info!("Starting issue detection pipeline");
 
-        self.error_tracker.lock().unwrap().start().await
+        self.error_tracker
+            .lock()
+            .unwrap()
+            .start()
+            .await
             .map_err(|e| ContinuousImprovementError::IssueDetectionError(e.to_string()))?;
 
-        self.alert_manager.lock().unwrap().start().await
+        self.alert_manager
+            .lock()
+            .unwrap()
+            .start()
+            .await
             .map_err(|e| ContinuousImprovementError::IssueDetectionError(e.to_string()))?;
 
         let (shutdown_tx, mut shutdown_rx) = mpsc::channel(1);
@@ -107,10 +117,18 @@ impl IssueDetectionPipeline {
             let _ = task.await;
         }
 
-        self.alert_manager.lock().unwrap().stop().await
+        self.alert_manager
+            .lock()
+            .unwrap()
+            .stop()
+            .await
             .map_err(|e| ContinuousImprovementError::IssueDetectionError(e.to_string()))?;
 
-        self.error_tracker.lock().unwrap().stop().await
+        self.error_tracker
+            .lock()
+            .unwrap()
+            .stop()
+            .await
             .map_err(|e| ContinuousImprovementError::IssueDetectionError(e.to_string()))?;
 
         tracing::info!("Issue detection pipeline stopped");
@@ -154,7 +172,9 @@ impl IssueDetectionPipeline {
         ];
 
         // Get error rates by type
-        let error_rates = error_stats.errors_by_type.iter()
+        let error_rates = error_stats
+            .errors_by_type
+            .iter()
             .map(|(k, v)| (k.clone(), *v as f64))
             .collect();
 
@@ -207,11 +227,20 @@ impl IssueDetectionPipeline {
         };
 
         if error_rate >= thresholds.error_rate_threshold {
-            tracing::warn!("Error rate threshold exceeded: {:.2}% >= {:.2}%", error_rate, thresholds.error_rate_threshold);
+            tracing::warn!(
+                "Error rate threshold exceeded: {:.2}% >= {:.2}%",
+                error_rate,
+                thresholds.error_rate_threshold
+            );
 
             if enterprise_escalation {
                 // Create incident for enterprise escalation
-                let alert = alert_manager.lock().unwrap().get_active_alerts().first().cloned()
+                let alert = alert_manager
+                    .lock()
+                    .unwrap()
+                    .get_active_alerts()
+                    .first()
+                    .cloned()
                     .unwrap_or_else(|| {
                         // Create a synthetic alert if none exist
                         Alert {
@@ -246,17 +275,25 @@ impl IssueDetectionPipeline {
         // Check for security incidents (simplified)
         let security_incidents = Self::detect_security_incidents();
         if security_incidents >= thresholds.security_incident_threshold {
-            tracing::error!("Security incident threshold exceeded: {} >= {}", security_incidents, thresholds.security_incident_threshold);
+            tracing::error!(
+                "Security incident threshold exceeded: {} >= {}",
+                security_incidents,
+                thresholds.security_incident_threshold
+            );
 
             alert_manager.lock().unwrap().create_alert(
                 "security_incident_threshold".to_string(),
-                format!("Security incident threshold exceeded: {}", security_incidents),
+                format!(
+                    "Security incident threshold exceeded: {}",
+                    security_incidents
+                ),
                 MonitoringSeverity::Critical,
                 std::collections::HashMap::new(),
             );
         }
 
-        tracing::info!("Issue detection complete - Errors: {}, Alerts: {}",
+        tracing::info!(
+            "Issue detection complete - Errors: {}, Alerts: {}",
             error_stats.total_errors,
             alert_manager.lock().unwrap().get_active_alerts().len()
         );

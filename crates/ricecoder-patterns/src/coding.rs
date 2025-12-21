@@ -3,7 +3,7 @@
 use crate::error::{PatternError, PatternResult};
 use crate::models::{DesignPattern, DetectedPattern, PatternCategory, PatternLocation};
 #[cfg(feature = "parsing")]
-use ricecoder_parsers::{ASTNode, NodeType, CodeParser, SyntaxTree};
+use ricecoder_parsers::{ASTNode, CodeParser, NodeType, SyntaxTree};
 use std::collections::HashMap;
 use std::path::Path;
 #[cfg(feature = "parsing")]
@@ -63,14 +63,21 @@ impl CodingPatternDetector {
 
     /// Detect design patterns in a codebase (without parsing)
     #[cfg(not(feature = "parsing"))]
-    pub async fn detect_design_patterns(&self, _root: &Path) -> PatternResult<Vec<DetectedPattern>> {
+    pub async fn detect_design_patterns(
+        &self,
+        _root: &Path,
+    ) -> PatternResult<Vec<DetectedPattern>> {
         // Return empty patterns when parsing is not available
         Ok(Vec::new())
     }
 
     /// Detect patterns in a syntax tree
     #[cfg(feature = "parsing")]
-    pub async fn detect_in_tree(&self, tree: &SyntaxTree, file_path: &Path) -> PatternResult<Vec<DetectedPattern>> {
+    pub async fn detect_in_tree(
+        &self,
+        tree: &SyntaxTree,
+        file_path: &Path,
+    ) -> PatternResult<Vec<DetectedPattern>> {
         let mut patterns = Vec::new();
 
         // Detect factory pattern
@@ -93,14 +100,21 @@ impl CodingPatternDetector {
 
     /// Detect factory pattern
     #[cfg(feature = "parsing")]
-    async fn detect_factory_pattern(&self, tree: &SyntaxTree, file_path: &Path) -> PatternResult<Option<DetectedPattern>> {
+    async fn detect_factory_pattern(
+        &self,
+        tree: &SyntaxTree,
+        file_path: &Path,
+    ) -> PatternResult<Option<DetectedPattern>> {
         // Look for functions that create objects based on parameters
         let mut factory_functions = Vec::new();
 
         self.walk_tree(&tree.root, &mut |node| {
             if let NodeType::Function = node.node_type {
-                if node.text.contains("create") || node.text.contains("build") ||
-                   node.text.contains("make") || node.text.contains("new") {
+                if node.text.contains("create")
+                    || node.text.contains("build")
+                    || node.text.contains("make")
+                    || node.text.contains("new")
+                {
                     // Check if it has conditional logic for different types
                     if self.has_conditional_logic(node) {
                         factory_functions.push(node.clone());
@@ -114,15 +128,21 @@ impl CodingPatternDetector {
                 name: "Factory Pattern".to_string(),
                 category: PatternCategory::Design,
                 confidence: 0.8,
-                locations: factory_functions.into_iter().map(|node| PatternLocation {
-                    file: file_path.to_string_lossy().to_string(),
-                    line: node.position.line,
-                    column: node.position.column,
-                    snippet: node.text.chars().take(50).collect(),
-                }).collect(),
+                locations: factory_functions
+                    .into_iter()
+                    .map(|node| PatternLocation {
+                        file: file_path.to_string_lossy().to_string(),
+                        line: node.position.line,
+                        column: node.position.column,
+                        snippet: node.text.chars().take(50).collect(),
+                    })
+                    .collect(),
                 metadata: HashMap::from([
                     ("pattern_type".to_string(), serde_json::json!("design")),
-                    ("functions_found".to_string(), serde_json::json!(factory_functions.len())),
+                    (
+                        "functions_found".to_string(),
+                        serde_json::json!(factory_functions.len()),
+                    ),
                 ]),
             }))
         } else {
@@ -132,14 +152,21 @@ impl CodingPatternDetector {
 
     /// Detect observer pattern
     #[cfg(feature = "parsing")]
-    async fn detect_observer_pattern(&self, tree: &SyntaxTree, file_path: &Path) -> PatternResult<Option<DetectedPattern>> {
+    async fn detect_observer_pattern(
+        &self,
+        tree: &SyntaxTree,
+        file_path: &Path,
+    ) -> PatternResult<Option<DetectedPattern>> {
         // Look for observer-related patterns
         let mut observer_indicators = Vec::new();
 
         self.walk_tree(&tree.root, &mut |node| {
             let text = node.text.to_lowercase();
-            if text.contains("subscribe") || text.contains("notify") ||
-               text.contains("observer") || text.contains("listener") {
+            if text.contains("subscribe")
+                || text.contains("notify")
+                || text.contains("observer")
+                || text.contains("listener")
+            {
                 observer_indicators.push(node.clone());
             }
         });
@@ -149,15 +176,21 @@ impl CodingPatternDetector {
                 name: "Observer Pattern".to_string(),
                 category: PatternCategory::Design,
                 confidence: 0.7,
-                locations: observer_indicators.into_iter().map(|node| PatternLocation {
-                    file: file_path.to_string_lossy().to_string(),
-                    line: node.position.line,
-                    column: node.position.column,
-                    snippet: node.text.chars().take(50).collect(),
-                }).collect(),
+                locations: observer_indicators
+                    .into_iter()
+                    .map(|node| PatternLocation {
+                        file: file_path.to_string_lossy().to_string(),
+                        line: node.position.line,
+                        column: node.position.column,
+                        snippet: node.text.chars().take(50).collect(),
+                    })
+                    .collect(),
                 metadata: HashMap::from([
                     ("pattern_type".to_string(), serde_json::json!("design")),
-                    ("indicators_found".to_string(), serde_json::json!(observer_indicators.len())),
+                    (
+                        "indicators_found".to_string(),
+                        serde_json::json!(observer_indicators.len()),
+                    ),
                 ]),
             }))
         } else {
@@ -167,14 +200,21 @@ impl CodingPatternDetector {
 
     /// Detect repository pattern
     #[cfg(feature = "parsing")]
-    async fn detect_repository_pattern(&self, tree: &SyntaxTree, file_path: &Path) -> PatternResult<Option<DetectedPattern>> {
+    async fn detect_repository_pattern(
+        &self,
+        tree: &SyntaxTree,
+        file_path: &Path,
+    ) -> PatternResult<Option<DetectedPattern>> {
         // Look for repository-related patterns
         let mut repository_indicators = Vec::new();
 
         self.walk_tree(&tree.root, &mut |node| {
             let text = node.text.to_lowercase();
-            if text.contains("repository") || text.contains("save") ||
-               text.contains("find") || text.contains("delete") {
+            if text.contains("repository")
+                || text.contains("save")
+                || text.contains("find")
+                || text.contains("delete")
+            {
                 repository_indicators.push(node.clone());
             }
         });
@@ -184,15 +224,21 @@ impl CodingPatternDetector {
                 name: "Repository Pattern".to_string(),
                 category: PatternCategory::Design,
                 confidence: 0.75,
-                locations: repository_indicators.into_iter().map(|node| PatternLocation {
-                    file: file_path.to_string_lossy().to_string(),
-                    line: node.position.line,
-                    column: node.position.column,
-                    snippet: node.text.chars().take(50).collect(),
-                }).collect(),
+                locations: repository_indicators
+                    .into_iter()
+                    .map(|node| PatternLocation {
+                        file: file_path.to_string_lossy().to_string(),
+                        line: node.position.line,
+                        column: node.position.column,
+                        snippet: node.text.chars().take(50).collect(),
+                    })
+                    .collect(),
                 metadata: HashMap::from([
                     ("pattern_type".to_string(), serde_json::json!("design")),
-                    ("indicators_found".to_string(), serde_json::json!(repository_indicators.len())),
+                    (
+                        "indicators_found".to_string(),
+                        serde_json::json!(repository_indicators.len()),
+                    ),
                 ]),
             }))
         } else {

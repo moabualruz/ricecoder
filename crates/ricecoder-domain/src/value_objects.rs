@@ -192,7 +192,11 @@ pub struct SemanticVersion {
 
 impl SemanticVersion {
     pub fn new(major: u32, minor: u32, patch: u32) -> Self {
-        Self { major, minor, patch }
+        Self {
+            major,
+            minor,
+            patch,
+        }
     }
 
     pub fn parse(s: &str) -> Option<Self> {
@@ -205,7 +209,11 @@ impl SemanticVersion {
         let minor = parts[1].parse().ok()?;
         let patch = parts[2].parse().ok()?;
 
-        Some(Self { major, minor, patch })
+        Some(Self {
+            major,
+            minor,
+            patch,
+        })
     }
 }
 

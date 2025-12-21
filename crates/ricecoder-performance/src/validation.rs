@@ -1,10 +1,10 @@
 //! Performance validation utilities
 
+use crate::baseline::PerformanceBaseline;
+use crate::monitor::{PerformanceMetrics, PerformanceMonitor};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use tokio::process::Command;
-use crate::monitor::{PerformanceMonitor, PerformanceMetrics};
-use crate::baseline::PerformanceBaseline;
 
 /// Validation result for a performance test
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -39,7 +39,9 @@ impl PerformanceValidator {
     }
 
     /// Validate CLI startup time (< 3 seconds)
-    pub async fn validate_startup_time(&self) -> Result<ValidationResult, Box<dyn std::error::Error>> {
+    pub async fn validate_startup_time(
+        &self,
+    ) -> Result<ValidationResult, Box<dyn std::error::Error>> {
         let mut monitor = PerformanceMonitor::new("cli_startup".to_string());
 
         // Run multiple iterations
@@ -59,7 +61,9 @@ impl PerformanceValidator {
         }
 
         let metrics = monitor.get_metrics();
-        let baseline_metrics = self.baseline.as_ref()
+        let baseline_metrics = self
+            .baseline
+            .as_ref()
             .and_then(|b| b.get_baseline("cli_startup"))
             .map(|b| PerformanceMetrics {
                 test_name: b.test_name.clone(),
@@ -69,7 +73,7 @@ impl PerformanceValidator {
                 p99_time_ns: b.p99_time_ns,
                 sample_size: b.sample_size,
                 peak_memory_bytes: 0, // Not stored in baseline
-                avg_cpu_percent: 0.0,  // Not stored in baseline
+                avg_cpu_percent: 0.0, // Not stored in baseline
                 timestamp: b.timestamp,
             });
 
@@ -87,7 +91,8 @@ impl PerformanceValidator {
         // Check against baseline
         if let Some(baseline) = &baseline_metrics {
             let degradation = ((metrics.p95_time_ns as f64 - baseline.p95_time_ns as f64)
-                / baseline.p95_time_ns as f64) * 100.0;
+                / baseline.p95_time_ns as f64)
+                * 100.0;
             if degradation > 10.0 {
                 messages.push(format!(
                     "Performance regression: {:.1}% slower than baseline",
@@ -107,7 +112,9 @@ impl PerformanceValidator {
     }
 
     /// Validate response time (< 500ms for typical operations)
-    pub async fn validate_response_time(&self) -> Result<ValidationResult, Box<dyn std::error::Error>> {
+    pub async fn validate_response_time(
+        &self,
+    ) -> Result<ValidationResult, Box<dyn std::error::Error>> {
         let mut monitor = PerformanceMonitor::new("response_time".to_string());
 
         // Test help command as a typical operation
@@ -149,7 +156,9 @@ impl PerformanceValidator {
     }
 
     /// Validate memory usage (< 300MB)
-    pub async fn validate_memory_usage(&self) -> Result<ValidationResult, Box<dyn std::error::Error>> {
+    pub async fn validate_memory_usage(
+        &self,
+    ) -> Result<ValidationResult, Box<dyn std::error::Error>> {
         // This is a simplified memory validation
         // In a real implementation, you'd use system monitoring tools
 
@@ -192,7 +201,9 @@ impl PerformanceValidator {
     }
 
     /// Run all validations
-    pub async fn run_all_validations(&self) -> Result<Vec<ValidationResult>, Box<dyn std::error::Error>> {
+    pub async fn run_all_validations(
+        &self,
+    ) -> Result<Vec<ValidationResult>, Box<dyn std::error::Error>> {
         let mut results = Vec::new();
 
         results.push(self.validate_startup_time().await?);

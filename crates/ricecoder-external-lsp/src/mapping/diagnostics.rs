@@ -61,7 +61,9 @@ impl DiagnosticsMapper {
             transform: rules.transform.clone(),
         };
 
-        let results = self.transformer.transform_diagnostics(&wrapped, &default_rules)?;
+        let results = self
+            .transformer
+            .transform_diagnostics(&wrapped, &default_rules)?;
 
         if results.is_empty() {
             return Err(crate::error::ExternalLspError::TransformationError(

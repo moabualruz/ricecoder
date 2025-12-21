@@ -36,7 +36,8 @@ mod tests {
         let path1 = temp_file1.path().to_path_buf();
         let path2 = temp_file2.path().to_path_buf();
 
-        let (added, errors) = integration.handle_drag_drop_event(vec![path1.clone(), path2.clone()]);
+        let (added, errors) =
+            integration.handle_drag_drop_event(vec![path1.clone(), path2.clone()]);
 
         assert_eq!(added.len(), 2);
         assert_eq!(errors.len(), 0);

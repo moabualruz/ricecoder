@@ -411,10 +411,7 @@ fn test_complex_dependency_chain() {
     }
 
     for i in 0..4 {
-        analyzer.add_dependency(
-            format!("project-{}", i),
-            format!("project-{}", i + 1),
-        );
+        analyzer.add_dependency(format!("project-{}", i), format!("project-{}", i + 1));
     }
 
     let change = ProjectChange {

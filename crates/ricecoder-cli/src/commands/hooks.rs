@@ -79,5 +79,3 @@ impl HooksCommand {
         Ok(())
     }
 }
-
-

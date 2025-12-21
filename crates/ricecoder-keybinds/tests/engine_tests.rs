@@ -1,5 +1,5 @@
+use ricecoder_keybinds::engine::{get_default_persistence, initialize_engine_with_defaults};
 use ricecoder_keybinds::*;
-use ricecoder_keybinds::engine::{initialize_engine_with_defaults, get_default_persistence};
 
 #[cfg(test)]
 mod tests {

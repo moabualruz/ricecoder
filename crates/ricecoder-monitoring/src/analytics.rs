@@ -1,7 +1,7 @@
 //! Usage analytics and business intelligence
 
 use crate::types::*;
-use chrono::{DateTime, Utc, TimeDelta, Timelike};
+use chrono::{DateTime, TimeDelta, Timelike, Utc};
 use dashmap::DashMap;
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
@@ -109,7 +109,12 @@ impl AnalyticsEngine {
     }
 
     /// Track a user action
-    pub fn track_action(&self, user_id: Option<String>, action: &str, properties: HashMap<String, serde_json::Value>) {
+    pub fn track_action(
+        &self,
+        user_id: Option<String>,
+        action: &str,
+        properties: HashMap<String, serde_json::Value>,
+    ) {
         let event = UsageEvent {
             id: EventId::new_v4(),
             event_type: action.to_string(),
@@ -135,7 +140,8 @@ impl AnalyticsEngine {
             .filter_map(|entry| {
                 let event = entry.value();
                 let matches_type = event_type.map_or(true, |t| event.event_type == t);
-                let matches_user = user_id.map_or(true, |u| event.user_id.as_ref() == Some(&u.to_string()));
+                let matches_user =
+                    user_id.map_or(true, |u| event.user_id.as_ref() == Some(&u.to_string()));
                 let matches_time = since.map_or(true, |t| event.timestamp >= t);
 
                 if matches_type && matches_user && matches_time {
@@ -160,7 +166,8 @@ impl AnalyticsEngine {
         let events = self.get_usage_events(None, None, since, None);
 
         let total_events = events.len();
-        let unique_users = events.iter()
+        let unique_users = events
+            .iter()
             .filter_map(|e| e.user_id.as_ref())
             .collect::<std::collections::HashSet<_>>()
             .len();
@@ -191,7 +198,12 @@ impl AnalyticsEngine {
     }
 
     /// Generate a business intelligence report
-    pub fn generate_bi_report(&self, title: String, description: String, query: String) -> Result<BIReport, Box<dyn std::error::Error + Send + Sync>> {
+    pub fn generate_bi_report(
+        &self,
+        title: String,
+        description: String,
+        query: String,
+    ) -> Result<BIReport, Box<dyn std::error::Error + Send + Sync>> {
         // This is a simplified implementation - in practice, you'd have a proper query engine
         let data = self.execute_bi_query(&query)?;
 
@@ -211,7 +223,10 @@ impl AnalyticsEngine {
 
     /// Get BI reports
     pub fn get_bi_reports(&self, limit: Option<usize>) -> Vec<BIReport> {
-        let mut reports: Vec<_> = BI_REPORTS.iter().map(|entry| entry.value().clone()).collect();
+        let mut reports: Vec<_> = BI_REPORTS
+            .iter()
+            .map(|entry| entry.value().clone())
+            .collect();
 
         reports.sort_by(|a, b| b.generated_at.cmp(&a.generated_at));
 
@@ -223,7 +238,9 @@ impl AnalyticsEngine {
     }
 
     /// Flush events to external analytics service
-    async fn flush_events(events: &[UsageEvent]) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn flush_events(
+        events: &[UsageEvent],
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // In a real implementation, this would send to analytics services like Mixpanel, Amplitude, etc.
         tracing::info!("Flushed {} analytics events", events.len());
         Ok(())
@@ -239,7 +256,11 @@ impl AnalyticsEngine {
     }
 
     /// Execute a BI query (simplified implementation)
-    fn execute_bi_query(&self, query: &str) -> Result<Vec<HashMap<String, serde_json::Value>>, Box<dyn std::error::Error + Send + Sync>> {
+    fn execute_bi_query(
+        &self,
+        query: &str,
+    ) -> Result<Vec<HashMap<String, serde_json::Value>>, Box<dyn std::error::Error + Send + Sync>>
+    {
         // This is a very simplified query execution - in practice, you'd have a proper SQL-like query engine
         match query.to_lowercase().as_str() {
             "select event_type, count(*) from events group by event_type" => {
@@ -328,9 +349,11 @@ impl UserBehaviorAnalyzer {
         let total_sessions = sessions.len();
 
         let avg_session_duration = if !sessions.is_empty() {
-            sessions.iter()
+            sessions
+                .iter()
                 .map(|s| s.duration)
-                .sum::<chrono::TimeDelta>() / sessions.len() as i32
+                .sum::<chrono::TimeDelta>()
+                / sessions.len() as i32
         } else {
             chrono::TimeDelta::zero()
         };
@@ -338,9 +361,7 @@ impl UserBehaviorAnalyzer {
         let most_used_features = self.calculate_most_used_features(&user_events);
         let activity_patterns = self.calculate_activity_patterns(&user_events);
         let engagement_score = self.calculate_engagement_score(&user_events, &sessions);
-        let last_active = user_events.iter()
-            .map(|e| e.timestamp)
-            .max();
+        let last_active = user_events.iter().map(|e| e.timestamp).max();
 
         UserBehaviorProfile {
             user_id: user_id.to_string(),
@@ -364,7 +385,9 @@ impl UserBehaviorAnalyzer {
         for event in sorted_events {
             match &mut current_session {
                 Some(session) => {
-                    if event.timestamp.signed_duration_since(session.end_time) > self.session_timeout {
+                    if event.timestamp.signed_duration_since(session.end_time)
+                        > self.session_timeout
+                    {
                         // Session timeout, start new session
                         sessions.push(session.clone());
                         current_session = Some(UserSession {
@@ -436,17 +459,21 @@ impl UserBehaviorAnalyzer {
             0.0
         };
 
-        let days_active = events.iter()
+        let days_active = events
+            .iter()
             .map(|e| e.timestamp.date())
             .collect::<std::collections::HashSet<_>>()
             .len() as f64;
 
         let weeks_since_first_event = {
-            let first_event = events.iter()
+            let first_event = events
+                .iter()
                 .map(|e| e.timestamp)
                 .min()
                 .unwrap_or(chrono::Utc::now());
-            let weeks = chrono::Utc::now().signed_duration_since(first_event).num_weeks() as f64;
+            let weeks = chrono::Utc::now()
+                .signed_duration_since(first_event)
+                .num_weeks() as f64;
             weeks.max(1.0)
         };
 
@@ -483,7 +510,11 @@ pub struct FeatureAdoptionAnalyzer;
 
 impl FeatureAdoptionAnalyzer {
     /// Analyze feature adoption rates
-    pub fn analyze_adoption(&self, feature_name: &str, since: Option<DateTime<Utc>>) -> FeatureAdoptionMetrics {
+    pub fn analyze_adoption(
+        &self,
+        feature_name: &str,
+        since: Option<DateTime<Utc>>,
+    ) -> FeatureAdoptionMetrics {
         let events = USAGE_EVENTS
             .iter()
             .filter_map(|entry| {
@@ -504,7 +535,8 @@ impl FeatureAdoptionAnalyzer {
             })
             .collect::<Vec<_>>();
 
-        let total_users = events.iter()
+        let total_users = events
+            .iter()
             .filter_map(|e| e.user_id.as_ref())
             .collect::<std::collections::HashSet<_>>()
             .len();
@@ -546,13 +578,17 @@ impl FeatureAdoptionAnalyzer {
         let first_half: Vec<_> = dates.iter().take(dates.len() / 2).collect();
         let second_half: Vec<_> = dates.iter().skip(dates.len() / 2).collect();
 
-        let first_avg = first_half.iter()
+        let first_avg = first_half
+            .iter()
             .map(|date| daily_usage.get(date).unwrap_or(&0))
-            .sum::<usize>() as f64 / first_half.len() as f64;
+            .sum::<usize>() as f64
+            / first_half.len() as f64;
 
-        let second_avg = second_half.iter()
+        let second_avg = second_half
+            .iter()
             .map(|date| daily_usage.get(date).unwrap_or(&0))
-            .sum::<usize>() as f64 / second_half.len() as f64;
+            .sum::<usize>() as f64
+            / second_half.len() as f64;
 
         if first_avg > 0.0 {
             ((second_avg - first_avg) / first_avg) * 100.0

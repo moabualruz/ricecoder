@@ -2,13 +2,13 @@
 //! **Feature: ricecoder-providers, Property 13: Provider Connection State Consistency**
 //! **Validates: Requirements 27.1**
 
+use futures::Stream;
 use proptest::prelude::*;
 use ricecoder_providers::models::{FinishReason, Message};
 use ricecoder_providers::{
-    ChatRequest, ChatResponse, ConnectionState, HealthCheckCache, ModelInfo, Provider, ProviderError,
-    ProviderManager, ProviderRegistry, ProviderStatus, TokenUsage,
+    ChatRequest, ChatResponse, ConnectionState, HealthCheckCache, ModelInfo, Provider,
+    ProviderError, ProviderManager, ProviderRegistry, ProviderStatus, TokenUsage,
 };
-use futures::Stream;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -22,7 +22,13 @@ struct StatefulMockProvider {
 
 #[async_trait::async_trait]
 impl Provider for StatefulMockProvider {
-    async fn chat_stream(&self, _request: ChatRequest) -> Result<Box<dyn Stream<Item = Result<ChatResponse, ProviderError>> + Send + Unpin>, ProviderError> {
+    async fn chat_stream(
+        &self,
+        _request: ChatRequest,
+    ) -> Result<
+        Box<dyn Stream<Item = Result<ChatResponse, ProviderError>> + Send + Unpin>,
+        ProviderError,
+    > {
         todo!()
     }
 

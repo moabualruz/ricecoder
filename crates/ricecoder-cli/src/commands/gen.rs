@@ -4,9 +4,9 @@
 use super::Command;
 use crate::error::{CliError, CliResult};
 use crate::output::OutputStyle;
+use async_trait::async_trait;
 use std::fs;
 use std::path::{Path, PathBuf};
-use async_trait::async_trait;
 
 /// Generate code from a specification
 pub struct GenCommand {

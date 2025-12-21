@@ -4,7 +4,7 @@
 
 use proptest::prelude::*;
 use ricecoder_github::{
-    models::{Issue, IssueStatus, ProjectCard, PullRequest, PrStatus},
+    models::{Issue, IssueStatus, PrStatus, ProjectCard, PullRequest},
     ColumnStatus, ProjectManager, ProjectOperations,
 };
 use std::collections::HashMap;

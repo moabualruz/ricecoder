@@ -30,14 +30,20 @@ fn test_session_creation_performance() {
     let iterations = 100;
 
     for i in 0..iterations {
-        let _session = manager.create_session(format!("Perf Test {}", i), context.clone()).unwrap();
+        let _session = manager
+            .create_session(format!("Perf Test {}", i), context.clone())
+            .unwrap();
     }
 
     let elapsed = start.elapsed();
     let avg_time = elapsed.as_micros() as f64 / iterations as f64;
 
     // Should be reasonably fast (< 1ms per session creation)
-    assert!(avg_time < 1000.0, "Session creation too slow: {}μs avg", avg_time);
+    assert!(
+        avg_time < 1000.0,
+        "Session creation too slow: {}μs avg",
+        avg_time
+    );
 
     println!("Session creation performance: {}μs avg", avg_time);
 }
@@ -49,9 +55,7 @@ fn test_session_store_persistence_performance() {
     let archive_dir = temp_dir.path().join("archive");
 
     let rt = Runtime::new().unwrap();
-    let store = rt.block_on(async {
-        SessionStore::with_dirs(sessions_dir, archive_dir).unwrap()
-    });
+    let store = rt.block_on(async { SessionStore::with_dirs(sessions_dir, archive_dir).unwrap() });
 
     let session = create_test_session("Perf Test");
 
@@ -67,7 +71,11 @@ fn test_session_store_persistence_performance() {
     let avg_save_time = elapsed.as_millis() as f64 / iterations as f64;
 
     // Should be reasonably fast (< 10ms per save)
-    assert!(avg_save_time < 10.0, "Session save too slow: {}ms avg", avg_save_time);
+    assert!(
+        avg_save_time < 10.0,
+        "Session save too slow: {}ms avg",
+        avg_save_time
+    );
 
     // Test load performance
     let start = Instant::now();
@@ -79,9 +87,16 @@ fn test_session_store_persistence_performance() {
     let avg_load_time = elapsed.as_millis() as f64 / iterations as f64;
 
     // Should be reasonably fast (< 5ms per load)
-    assert!(avg_load_time < 5.0, "Session load too slow: {}ms avg", avg_load_time);
+    assert!(
+        avg_load_time < 5.0,
+        "Session load too slow: {}ms avg",
+        avg_load_time
+    );
 
-    println!("Persistence performance - Save: {}ms avg, Load: {}ms avg", avg_save_time, avg_load_time);
+    println!(
+        "Persistence performance - Save: {}ms avg, Load: {}ms avg",
+        avg_save_time, avg_load_time
+    );
 }
 
 #[test]
@@ -98,8 +113,16 @@ fn test_memory_usage_regression() {
         // Add substantial history
         for j in 0..10 {
             let msg = Message::new(
-                if j % 2 == 0 { MessageRole::User } else { MessageRole::Assistant },
-                format!("Message {} with substantial content to test memory usage {}", j, "x".repeat(100))
+                if j % 2 == 0 {
+                    MessageRole::User
+                } else {
+                    MessageRole::Assistant
+                },
+                format!(
+                    "Message {} with substantial content to test memory usage {}",
+                    j,
+                    "x".repeat(100)
+                ),
             );
             session.history.push(msg);
         }
@@ -108,18 +131,24 @@ fn test_memory_usage_regression() {
         for j in 0..3 {
             let agent = BackgroundAgent::new(
                 format!("agent_type_{}", j),
-                Some(format!("Task {} with description", j))
+                Some(format!("Task {} with description", j)),
             );
             session.background_agents.push(agent);
         }
 
-        manager.create_session(session.name, session.context).unwrap();
+        manager
+            .create_session(session.name, session.context)
+            .unwrap();
     }
 
     let elapsed = start.elapsed();
 
     // Should complete within reasonable time
-    assert!(elapsed < StdDuration::from_secs(5), "Memory test took too long: {:?}", elapsed);
+    assert!(
+        elapsed < StdDuration::from_secs(5),
+        "Memory test took too long: {:?}",
+        elapsed
+    );
 
     // Verify all sessions exist
     assert_eq!(manager.session_count(), session_count);
@@ -147,10 +176,8 @@ fn test_concurrent_session_operations() {
             let mut local_fail = 0;
 
             for i in 0..operations_per_thread {
-                let result = manager_clone.create_session(
-                    format!("Concurrent {}", i),
-                    (**context_clone).clone()
-                );
+                let result = manager_clone
+                    .create_session(format!("Concurrent {}", i), (**context_clone).clone());
 
                 match result {
                     Ok(_) => local_success += 1,
@@ -176,14 +203,25 @@ fn test_concurrent_session_operations() {
     let elapsed = start.elapsed();
 
     // Should complete within reasonable time
-    assert!(elapsed < StdDuration::from_secs(10), "Concurrent operations took too long: {:?}", elapsed);
+    assert!(
+        elapsed < StdDuration::from_secs(10),
+        "Concurrent operations took too long: {:?}",
+        elapsed
+    );
 
     // Should have reasonable success rate
     let total_operations = total_success + total_fail;
     let success_rate = total_success as f64 / total_operations as f64;
-    assert!(success_rate > 0.8, "Success rate too low: {}%", success_rate * 100.0);
+    assert!(
+        success_rate > 0.8,
+        "Success rate too low: {}%",
+        success_rate * 100.0
+    );
 
-    println!("Concurrent operations - Success: {}, Fail: {}, Time: {:?}", total_success, total_fail, elapsed);
+    println!(
+        "Concurrent operations - Success: {}, Fail: {}, Time: {:?}",
+        total_success, total_fail, elapsed
+    );
 }
 
 #[test]
@@ -211,11 +249,9 @@ fn test_share_service_performance_under_load() {
             let mut local_shares = vec![];
 
             for i in 0..(iterations / 10) {
-                let share = service_clone.generate_share_link(
-                    &session_clone.id,
-                    permissions_clone.clone(),
-                    None
-                ).unwrap();
+                let share = service_clone
+                    .generate_share_link(&session_clone.id, permissions_clone.clone(), None)
+                    .unwrap();
                 local_shares.push(share);
             }
 
@@ -235,10 +271,17 @@ fn test_share_service_performance_under_load() {
     let elapsed = start.elapsed();
 
     // Should complete within reasonable time
-    assert!(elapsed < StdDuration::from_secs(5), "Share generation took too long: {:?}", elapsed);
+    assert!(
+        elapsed < StdDuration::from_secs(5),
+        "Share generation took too long: {:?}",
+        elapsed
+    );
     assert_eq!(total_shares, iterations);
 
-    println!("Share service performance: {} shares in {:?}", total_shares, elapsed);
+    println!(
+        "Share service performance: {} shares in {:?}",
+        total_shares, elapsed
+    );
 }
 
 #[test]
@@ -282,9 +325,8 @@ fn test_encryption_performance() {
     let archive_dir = temp_dir.path().join("archive");
 
     let rt = Runtime::new().unwrap();
-    let mut store = rt.block_on(async {
-        SessionStore::with_dirs(sessions_dir, archive_dir).unwrap()
-    });
+    let mut store =
+        rt.block_on(async { SessionStore::with_dirs(sessions_dir, archive_dir).unwrap() });
 
     // Enable encryption
     store.enable_encryption("test-password-12345").unwrap();
@@ -304,9 +346,16 @@ fn test_encryption_performance() {
     let avg_time = elapsed.as_millis() as f64 / iterations as f64;
 
     // Should be reasonably fast even with encryption (< 50ms per round-trip)
-    assert!(avg_time < 50.0, "Encryption performance too slow: {}ms avg", avg_time);
+    assert!(
+        avg_time < 50.0,
+        "Encryption performance too slow: {}ms avg",
+        avg_time
+    );
 
-    println!("Encryption performance: {}ms avg per save/load cycle", avg_time);
+    println!(
+        "Encryption performance: {}ms avg per save/load cycle",
+        avg_time
+    );
 }
 
 #[test]
@@ -316,12 +365,13 @@ fn test_enterprise_encryption_performance() {
     let archive_dir = temp_dir.path().join("archive");
 
     let rt = Runtime::new().unwrap();
-    let mut store = rt.block_on(async {
-        SessionStore::with_dirs(sessions_dir, archive_dir).unwrap()
-    });
+    let mut store =
+        rt.block_on(async { SessionStore::with_dirs(sessions_dir, archive_dir).unwrap() });
 
     // Enable enterprise encryption
-    store.enable_enterprise_encryption("enterprise-password-12345").unwrap();
+    store
+        .enable_enterprise_encryption("enterprise-password-12345")
+        .unwrap();
 
     let session = create_test_session("Enterprise Encryption Test");
 
@@ -338,9 +388,16 @@ fn test_enterprise_encryption_performance() {
     let avg_time = elapsed.as_millis() as f64 / iterations as f64;
 
     // Should be reasonably fast even with enterprise encryption (< 100ms per round-trip)
-    assert!(avg_time < 100.0, "Enterprise encryption performance too slow: {}ms avg", avg_time);
+    assert!(
+        avg_time < 100.0,
+        "Enterprise encryption performance too slow: {}ms avg",
+        avg_time
+    );
 
-    println!("Enterprise encryption performance: {}ms avg per save/load cycle", avg_time);
+    println!(
+        "Enterprise encryption performance: {}ms avg per save/load cycle",
+        avg_time
+    );
 }
 
 #[test]
@@ -360,11 +417,13 @@ fn test_resource_cleanup_performance() {
 
     let mut share_ids = vec![];
     for i in 0..share_count {
-        let share = service.generate_share_link(
-            &session.id,
-            permissions.clone(),
-            Some(Duration::seconds(i as i64)) // Different expiration times
-        ).unwrap();
+        let share = service
+            .generate_share_link(
+                &session.id,
+                permissions.clone(),
+                Some(Duration::seconds(i as i64)), // Different expiration times
+            )
+            .unwrap();
         share_ids.push(share.id);
     }
 
@@ -379,9 +438,16 @@ fn test_resource_cleanup_performance() {
     assert!(cleaned > 0);
 
     // Cleanup should be fast
-    assert!(cleanup_time < StdDuration::from_millis(100), "Cleanup too slow: {:?}", cleanup_time);
+    assert!(
+        cleanup_time < StdDuration::from_millis(100),
+        "Cleanup too slow: {:?}",
+        cleanup_time
+    );
 
-    println!("Resource cleanup - Created: {} shares in {:?}, Cleaned: {} in {:?}", share_count, creation_time, cleaned, cleanup_time);
+    println!(
+        "Resource cleanup - Created: {} shares in {:?}, Cleaned: {} in {:?}",
+        share_count, creation_time, cleaned, cleanup_time
+    );
 }
 
 #[test]
@@ -397,10 +463,9 @@ fn test_memory_leak_regression() {
 
         // Create many sessions
         for j in 0..50 {
-            let _session = manager.create_session(
-                format!("Leak Test {} {}", i, j),
-                context.clone()
-            ).unwrap();
+            let _session = manager
+                .create_session(format!("Leak Test {} {}", i, j), context.clone())
+                .unwrap();
         }
 
         managers.push(manager);
@@ -423,10 +488,16 @@ fn test_memory_leak_regression() {
     };
 
     // Allow up to 50% growth (should be much less in practice)
-    assert!(growth_percentage < 50.0, "Potential memory leak: {}% growth", growth_percentage);
+    assert!(
+        growth_percentage < 50.0,
+        "Potential memory leak: {}% growth",
+        growth_percentage
+    );
 
-    println!("Memory usage - Initial: {} KB, Final: {} KB, Growth: {}%",
-             initial_memory, final_memory, growth_percentage);
+    println!(
+        "Memory usage - Initial: {} KB, Final: {} KB, Growth: {}%",
+        initial_memory, final_memory, growth_percentage
+    );
 }
 
 #[cfg(target_os = "linux")]
@@ -465,7 +536,9 @@ fn test_security_timing_attacks_mitigation() {
         include_context: true,
     };
 
-    let valid_share = service.generate_share_link(&valid_session.id, permissions, None).unwrap();
+    let valid_share = service
+        .generate_share_link(&valid_session.id, permissions, None)
+        .unwrap();
 
     let start_valid = Instant::now();
     let _ = service.get_share(&valid_share.id);
@@ -482,10 +555,16 @@ fn test_security_timing_attacks_mitigation() {
         invalid_time.as_nanos() as f64 / valid_time.as_nanos() as f64
     };
 
-    assert!(ratio < 10.0, "Potential timing attack vulnerability: {}x time difference", ratio);
+    assert!(
+        ratio < 10.0,
+        "Potential timing attack vulnerability: {}x time difference",
+        ratio
+    );
 
-    println!("Timing attack test - Valid: {:?}, Invalid: {:?}, Ratio: {:.2}",
-             valid_time, invalid_time, ratio);
+    println!(
+        "Timing attack test - Valid: {:?}, Invalid: {:?}, Ratio: {:.2}",
+        valid_time, invalid_time, ratio
+    );
 }
 
 #[test]
@@ -495,8 +574,12 @@ fn test_large_session_handling() {
     // Add a large number of messages
     for i in 0..1000 {
         let msg = Message::new(
-            if i % 2 == 0 { MessageRole::User } else { MessageRole::Assistant },
-            format!("Message {} with content {}", i, "x".repeat(100))
+            if i % 2 == 0 {
+                MessageRole::User
+            } else {
+                MessageRole::Assistant
+            },
+            format!("Message {} with content {}", i, "x".repeat(100)),
         );
         session.history.push(msg);
     }
@@ -505,7 +588,7 @@ fn test_large_session_handling() {
     for i in 0..50 {
         let agent = BackgroundAgent::new(
             format!("agent_{}", i),
-            Some(format!("Task {} description", i))
+            Some(format!("Task {} description", i)),
         );
         session.background_agents.push(agent);
     }
@@ -523,6 +606,10 @@ fn test_large_session_handling() {
     let size_kb = serialized.len() / 1024;
     assert!(size_kb < 5000, "Session too large: {} KB", size_kb); // Allow up to 5MB
 
-    println!("Large session handling - Size: {} KB, Messages: {}, Agents: {}",
-             size_kb, deserialized.history.len(), deserialized.background_agents.len());
+    println!(
+        "Large session handling - Size: {} KB, Messages: {}, Agents: {}",
+        size_kb,
+        deserialized.history.len(),
+        deserialized.background_agents.len()
+    );
 }

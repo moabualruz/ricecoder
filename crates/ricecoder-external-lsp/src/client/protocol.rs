@@ -128,27 +128,39 @@ impl JsonRpcHandler {
     }
 
     /// Serialize a notification to JSON
-    pub fn serialize_notification(&self, notification: &JsonRpcNotification) -> crate::error::Result<String> {
+    pub fn serialize_notification(
+        &self,
+        notification: &JsonRpcNotification,
+    ) -> crate::error::Result<String> {
         serde_json::to_string(notification)
             .map_err(|e| crate::error::ExternalLspError::ProtocolError(e.to_string()))
     }
 
     /// Parse a JSON-RPC response
     pub fn parse_response(&self, json: &str) -> crate::error::Result<JsonRpcResponse> {
-        serde_json::from_str(json)
-            .map_err(|e| crate::error::ExternalLspError::ProtocolError(format!("Failed to parse response: {}", e)))
+        serde_json::from_str(json).map_err(|e| {
+            crate::error::ExternalLspError::ProtocolError(format!(
+                "Failed to parse response: {}",
+                e
+            ))
+        })
     }
 
     /// Parse a JSON-RPC notification
     pub fn parse_notification(&self, json: &str) -> crate::error::Result<JsonRpcNotification> {
-        serde_json::from_str(json)
-            .map_err(|e| crate::error::ExternalLspError::ProtocolError(format!("Failed to parse notification: {}", e)))
+        serde_json::from_str(json).map_err(|e| {
+            crate::error::ExternalLspError::ProtocolError(format!(
+                "Failed to parse notification: {}",
+                e
+            ))
+        })
     }
 
     /// Parse a JSON-RPC message (can be response or notification)
     pub fn parse_message(&self, json: &str) -> crate::error::Result<JsonRpcMessage> {
-        serde_json::from_str(json)
-            .map_err(|e| crate::error::ExternalLspError::ProtocolError(format!("Failed to parse message: {}", e)))
+        serde_json::from_str(json).map_err(|e| {
+            crate::error::ExternalLspError::ProtocolError(format!("Failed to parse message: {}", e))
+        })
     }
 
     /// Check if a response indicates an error
@@ -236,7 +248,8 @@ mod tests {
     #[test]
     fn test_parse_error_response() {
         let handler = JsonRpcHandler::new();
-        let json = r#"{"jsonrpc":"2.0","error":{"code":-32600,"message":"Invalid Request"},"id":1}"#;
+        let json =
+            r#"{"jsonrpc":"2.0","error":{"code":-32600,"message":"Invalid Request"},"id":1}"#;
         let response = handler.parse_response(json).unwrap();
 
         assert_eq!(response.jsonrpc, "2.0");

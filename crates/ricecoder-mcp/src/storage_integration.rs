@@ -92,24 +92,18 @@ impl Default for JsonToolRegistryStorage {
 
 impl ToolRegistryStorage for JsonToolRegistryStorage {
     fn save_registry(&self, registry: &ToolRegistry, path: &Path) -> Result<()> {
-        let tools: Vec<ToolMetadata> = registry
-            .list_tools()
-            .into_iter()
-            .cloned()
-            .collect();
+        let tools: Vec<ToolMetadata> = registry.list_tools().into_iter().cloned().collect();
 
         let json = serde_json::to_string_pretty(&tools)
             .map_err(|e| crate::error::Error::SerializationError(e))?;
 
-        std::fs::write(path, json)
-            .map_err(|e| crate::error::Error::IoError(e))?;
+        std::fs::write(path, json).map_err(|e| crate::error::Error::IoError(e))?;
 
         Ok(())
     }
 
     fn load_registry(&self, path: &Path) -> Result<ToolRegistry> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| crate::error::Error::IoError(e))?;
+        let content = std::fs::read_to_string(path).map_err(|e| crate::error::Error::IoError(e))?;
 
         let tools: Vec<ToolMetadata> = serde_json::from_str(&content)
             .map_err(|e| crate::error::Error::SerializationError(e))?;
@@ -126,15 +120,13 @@ impl ToolRegistryStorage for JsonToolRegistryStorage {
         let json = serde_json::to_string_pretty(tool)
             .map_err(|e| crate::error::Error::SerializationError(e))?;
 
-        std::fs::write(path, json)
-            .map_err(|e| crate::error::Error::IoError(e))?;
+        std::fs::write(path, json).map_err(|e| crate::error::Error::IoError(e))?;
 
         Ok(())
     }
 
     fn load_tool(&self, path: &Path) -> Result<ToolMetadata> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| crate::error::Error::IoError(e))?;
+        let content = std::fs::read_to_string(path).map_err(|e| crate::error::Error::IoError(e))?;
 
         let tool: ToolMetadata = serde_json::from_str(&content)
             .map_err(|e| crate::error::Error::SerializationError(e))?;
@@ -149,9 +141,7 @@ impl ToolRegistryStorage for JsonToolRegistryStorage {
 
         let mut tools = Vec::new();
 
-        for entry in std::fs::read_dir(path)
-            .map_err(|e| crate::error::Error::IoError(e))?
-        {
+        for entry in std::fs::read_dir(path).map_err(|e| crate::error::Error::IoError(e))? {
             let entry = entry.map_err(|e| crate::error::Error::IoError(e))?;
             let file_path = entry.path();
 
@@ -202,8 +192,7 @@ impl ToolRegistryPersistence {
     pub fn save_registry(&self, registry: &ToolRegistry) -> Result<()> {
         // Create parent directories if they don't exist
         if let Some(parent) = self.registry_path.parent() {
-            std::fs::create_dir_all(parent)
-                .map_err(|e| crate::error::Error::IoError(e))?;
+            std::fs::create_dir_all(parent).map_err(|e| crate::error::Error::IoError(e))?;
         }
 
         self.storage.save_registry(registry, &self.registry_path)?;
@@ -215,7 +204,10 @@ impl ToolRegistryPersistence {
     /// Loads a tool registry from persistent storage
     pub fn load_registry(&self) -> Result<ToolRegistry> {
         if !self.registry_path.exists() {
-            tracing::info!("Registry file not found at {:?}, creating new registry", self.registry_path);
+            tracing::info!(
+                "Registry file not found at {:?}, creating new registry",
+                self.registry_path
+            );
             return Ok(ToolRegistry::new());
         }
 
@@ -228,8 +220,7 @@ impl ToolRegistryPersistence {
     /// Saves a single tool to persistent storage
     pub fn save_tool(&self, tool: &ToolMetadata) -> Result<()> {
         // Create tools directory if it doesn't exist
-        std::fs::create_dir_all(&self.tools_dir)
-            .map_err(|e| crate::error::Error::IoError(e))?;
+        std::fs::create_dir_all(&self.tools_dir).map_err(|e| crate::error::Error::IoError(e))?;
 
         let tool_path = self.tools_dir.join(format!("{}.json", tool.id));
         self.storage.save_tool(tool, &tool_path)?;
@@ -250,35 +241,30 @@ impl ToolRegistryPersistence {
     }
 
     /// Exports a registry to a specific format
-    pub fn export_registry(&self, registry: &ToolRegistry, path: &Path, format: &str) -> Result<()> {
+    pub fn export_registry(
+        &self,
+        registry: &ToolRegistry,
+        path: &Path,
+        format: &str,
+    ) -> Result<()> {
         match format {
             "json" => {
-                let tools: Vec<ToolMetadata> = registry
-                    .list_tools()
-                    .into_iter()
-                    .cloned()
-                    .collect();
+                let tools: Vec<ToolMetadata> = registry.list_tools().into_iter().cloned().collect();
 
                 let json = serde_json::to_string_pretty(&tools)
                     .map_err(|e| crate::error::Error::SerializationError(e))?;
 
-                std::fs::write(path, json)
-                    .map_err(|e| crate::error::Error::IoError(e))?;
+                std::fs::write(path, json).map_err(|e| crate::error::Error::IoError(e))?;
 
                 Ok(())
             }
             "yaml" => {
-                let tools: Vec<ToolMetadata> = registry
-                    .list_tools()
-                    .into_iter()
-                    .cloned()
-                    .collect();
+                let tools: Vec<ToolMetadata> = registry.list_tools().into_iter().cloned().collect();
 
                 let yaml = serde_yaml::to_string(&tools)
                     .map_err(|e| crate::error::Error::ConfigError(e.to_string()))?;
 
-                std::fs::write(path, yaml)
-                    .map_err(|e| crate::error::Error::IoError(e))?;
+                std::fs::write(path, yaml).map_err(|e| crate::error::Error::IoError(e))?;
 
                 Ok(())
             }
@@ -293,8 +279,8 @@ impl ToolRegistryPersistence {
     pub fn import_registry(&self, path: &Path, format: &str) -> Result<ToolRegistry> {
         match format {
             "json" => {
-                let content = std::fs::read_to_string(path)
-                    .map_err(|e| crate::error::Error::IoError(e))?;
+                let content =
+                    std::fs::read_to_string(path).map_err(|e| crate::error::Error::IoError(e))?;
 
                 let tools: Vec<ToolMetadata> = serde_json::from_str(&content)
                     .map_err(|e| crate::error::Error::SerializationError(e))?;
@@ -307,8 +293,8 @@ impl ToolRegistryPersistence {
                 Ok(registry)
             }
             "yaml" => {
-                let content = std::fs::read_to_string(path)
-                    .map_err(|e| crate::error::Error::IoError(e))?;
+                let content =
+                    std::fs::read_to_string(path).map_err(|e| crate::error::Error::IoError(e))?;
 
                 let tools: Vec<ToolMetadata> = serde_yaml::from_str(&content)
                     .map_err(|e| crate::error::Error::ConfigError(e.to_string()))?;
@@ -483,7 +469,9 @@ mod tests {
         );
         registry.register_tool(tool).unwrap();
 
-        persistence.export_registry(&registry, &export_path, "json").unwrap();
+        persistence
+            .export_registry(&registry, &export_path, "json")
+            .unwrap();
         assert!(export_path.exists());
 
         let imported_registry = persistence.import_registry(&export_path, "json").unwrap();

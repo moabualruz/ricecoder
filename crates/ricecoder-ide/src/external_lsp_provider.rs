@@ -21,10 +21,7 @@ pub struct ExternalLspProvider {
 
 impl ExternalLspProvider {
     /// Create a new external LSP provider
-    pub fn new(
-        language: String,
-        registry: Arc<ricecoder_external_lsp::LspServerRegistry>,
-    ) -> Self {
+    pub fn new(language: String, registry: Arc<ricecoder_external_lsp::LspServerRegistry>) -> Self {
         ExternalLspProvider { language, registry }
     }
 
@@ -63,17 +60,17 @@ impl ExternalLspProvider {
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string());
 
-            let documentation = lsp_item
-                .get("documentation")
-                .and_then(|v| {
-                    if let Some(s) = v.as_str() {
-                        Some(s.to_string())
-                    } else if let Some(obj) = v.as_object() {
-                        obj.get("value").and_then(|v| v.as_str()).map(|s| s.to_string())
-                    } else {
-                        None
-                    }
-                });
+            let documentation = lsp_item.get("documentation").and_then(|v| {
+                if let Some(s) = v.as_str() {
+                    Some(s.to_string())
+                } else if let Some(obj) = v.as_object() {
+                    obj.get("value")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string())
+                } else {
+                    None
+                }
+            });
 
             let insert_text = lsp_item
                 .get("insertText")
@@ -215,21 +212,19 @@ impl ExternalLspProvider {
     /// Map LSP hover to IDE hover
     #[allow(dead_code)]
     fn map_lsp_hover(&self, lsp_hover: serde_json::Value) -> IdeResult<Option<Hover>> {
-        let contents = lsp_hover
-            .get("contents")
-            .and_then(|v| {
-                if let Some(s) = v.as_str() {
-                    Some(s.to_string())
-                } else if let Some(obj) = v.as_object() {
-                    obj.get("value").and_then(|v| v.as_str()).map(|s| s.to_string())
-                } else if let Some(arr) = v.as_array() {
-                    arr.first()
-                        .and_then(|v| v.as_str())
-                        .map(|s| s.to_string())
-                } else {
-                    None
-                }
-            });
+        let contents = lsp_hover.get("contents").and_then(|v| {
+            if let Some(s) = v.as_str() {
+                Some(s.to_string())
+            } else if let Some(obj) = v.as_object() {
+                obj.get("value")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+            } else if let Some(arr) = v.as_array() {
+                arr.first().and_then(|v| v.as_str()).map(|s| s.to_string())
+            } else {
+                None
+            }
+        });
 
         match contents {
             Some(contents) => {
@@ -362,10 +357,22 @@ mod tests {
         let registry = Arc::new(ricecoder_external_lsp::LspServerRegistry::default());
         let provider = ExternalLspProvider::new("rust".to_string(), registry);
 
-        assert_eq!(provider.map_lsp_completion_kind(1), CompletionItemKind::Text);
-        assert_eq!(provider.map_lsp_completion_kind(2), CompletionItemKind::Method);
-        assert_eq!(provider.map_lsp_completion_kind(3), CompletionItemKind::Function);
-        assert_eq!(provider.map_lsp_completion_kind(7), CompletionItemKind::Class);
+        assert_eq!(
+            provider.map_lsp_completion_kind(1),
+            CompletionItemKind::Text
+        );
+        assert_eq!(
+            provider.map_lsp_completion_kind(2),
+            CompletionItemKind::Method
+        );
+        assert_eq!(
+            provider.map_lsp_completion_kind(3),
+            CompletionItemKind::Function
+        );
+        assert_eq!(
+            provider.map_lsp_completion_kind(7),
+            CompletionItemKind::Class
+        );
     }
 
     #[test]
@@ -375,7 +382,10 @@ mod tests {
 
         assert_eq!(provider.map_lsp_severity(1), DiagnosticSeverity::Error);
         assert_eq!(provider.map_lsp_severity(2), DiagnosticSeverity::Warning);
-        assert_eq!(provider.map_lsp_severity(3), DiagnosticSeverity::Information);
+        assert_eq!(
+            provider.map_lsp_severity(3),
+            DiagnosticSeverity::Information
+        );
         assert_eq!(provider.map_lsp_severity(4), DiagnosticSeverity::Hint);
     }
 

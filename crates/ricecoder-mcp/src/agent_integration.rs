@@ -4,8 +4,8 @@
 //! framework, enabling agents to discover and invoke MCP tools within their workflows.
 
 use crate::error::Result;
-use crate::registry::ToolRegistry;
 use crate::metadata::ToolMetadata;
+use crate::registry::ToolRegistry;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -84,11 +84,7 @@ impl AgentToolCapabilities {
 
     /// Gets all available tools
     pub fn get_all_tools(&self) -> Vec<ToolMetadata> {
-        self.registry
-            .list_tools()
-            .into_iter()
-            .cloned()
-            .collect()
+        self.registry.list_tools().into_iter().cloned().collect()
     }
 
     /// Gets tools by category
@@ -135,7 +131,9 @@ impl AgentToolCapabilities {
 
     /// Gets tool documentation
     pub fn get_tool_documentation(&self, tool_id: &str) -> Option<String> {
-        self.registry.get_tool(tool_id).map(|tool| tool.get_documentation())
+        self.registry
+            .get_tool(tool_id)
+            .map(|tool| tool.get_documentation())
     }
 }
 
@@ -364,7 +362,10 @@ mod tests {
             .with_metadata("key1".to_string(), serde_json::json!("value1"));
 
         assert_eq!(context.metadata.len(), 1);
-        assert_eq!(context.metadata.get("key1"), Some(&serde_json::json!("value1")));
+        assert_eq!(
+            context.metadata.get("key1"),
+            Some(&serde_json::json!("value1"))
+        );
     }
 
     #[test]

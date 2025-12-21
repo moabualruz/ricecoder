@@ -3,7 +3,9 @@
 //! This module provides integration between LSP servers and the TUI diagnostics system,
 //! converting LSP diagnostic responses into TUI-compatible diagnostic items.
 
-use super::diagnostics_widget::{DiagnosticItem, DiagnosticSeverity, DiagnosticRelatedInformation, DiagnosticLocation};
+use super::diagnostics_widget::{
+    DiagnosticItem, DiagnosticLocation, DiagnosticRelatedInformation, DiagnosticSeverity,
+};
 use serde_json::Value;
 use std::collections::HashMap;
 
@@ -65,10 +67,7 @@ impl LspRange {
 }
 
 /// Convert LSP diagnostics response to TUI diagnostic items
-pub fn lsp_diagnostics_to_tui(
-    lsp_response: &Value,
-    file_path: &str,
-) -> Vec<DiagnosticItem> {
+pub fn lsp_diagnostics_to_tui(lsp_response: &Value, file_path: &str) -> Vec<DiagnosticItem> {
     let mut diagnostics = Vec::new();
 
     // LSP publishDiagnostics response structure:
@@ -102,8 +101,14 @@ fn lsp_diagnostic_to_tui(diagnostic: &Value, file_path: &str) -> Option<Diagnost
     let range = diagnostic.get("range").and_then(LspRange::from_value)?;
     let severity = diagnostic.get("severity").and_then(|s| s.as_u64());
     let message = diagnostic.get("message")?.as_str()?;
-    let code = diagnostic.get("code").and_then(|c| c.as_str()).map(|s| s.to_string());
-    let source = diagnostic.get("source").and_then(|s| s.as_str()).map(|s| s.to_string());
+    let code = diagnostic
+        .get("code")
+        .and_then(|c| c.as_str())
+        .map(|s| s.to_string());
+    let source = diagnostic
+        .get("source")
+        .and_then(|s| s.as_str())
+        .map(|s| s.to_string());
 
     let mut diagnostic_item = DiagnosticItem::new(
         lsp_severity_to_tui(severity),
@@ -123,7 +128,10 @@ fn lsp_diagnostic_to_tui(diagnostic: &Value, file_path: &str) -> Option<Diagnost
     }
 
     // Handle related information
-    if let Some(related_array) = diagnostic.get("relatedInformation").and_then(|r| r.as_array()) {
+    if let Some(related_array) = diagnostic
+        .get("relatedInformation")
+        .and_then(|r| r.as_array())
+    {
         for related in related_array {
             if let Some(related_info) = parse_related_information(related) {
                 diagnostic_item = diagnostic_item.with_related_info(related_info);
@@ -210,7 +218,10 @@ pub fn language_from_file_path(file_path: &str) -> Option<&'static str> {
         Some("python")
     } else if file_path.ends_with(".java") {
         Some("java")
-    } else if file_path.ends_with(".cpp") || file_path.ends_with(".cc") || file_path.ends_with(".cxx") {
+    } else if file_path.ends_with(".cpp")
+        || file_path.ends_with(".cc")
+        || file_path.ends_with(".cxx")
+    {
         Some("cpp")
     } else if file_path.ends_with(".c") {
         Some("c")
@@ -249,7 +260,8 @@ mod tests {
             "message": "cannot find value `x` in this scope"
         });
 
-        let diagnostics = lsp_diagnostics_to_tui(&json!({"diagnostics": [lsp_diagnostic]}), "main.rs");
+        let diagnostics =
+            lsp_diagnostics_to_tui(&json!({"diagnostics": [lsp_diagnostic]}), "main.rs");
 
         assert_eq!(diagnostics.len(), 1);
         let diagnostic = &diagnostics[0];

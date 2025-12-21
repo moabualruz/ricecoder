@@ -93,12 +93,13 @@ impl ScopeConfigurationLoader {
             ));
         }
 
-        let content = fs::read_to_string(&config_path)
-            .await
-            .map_err(|e| LearningError::ConfigurationError(format!("Failed to read project config: {}", e)))?;
+        let content = fs::read_to_string(&config_path).await.map_err(|e| {
+            LearningError::ConfigurationError(format!("Failed to read project config: {}", e))
+        })?;
 
-        let config: ScopeConfiguration = serde_yaml::from_str(&content)
-            .map_err(|e| LearningError::ConfigurationError(format!("Failed to parse project config: {}", e)))?;
+        let config: ScopeConfiguration = serde_yaml::from_str(&content).map_err(|e| {
+            LearningError::ConfigurationError(format!("Failed to parse project config: {}", e))
+        })?;
 
         config.validate()?;
         Ok(config)
@@ -114,12 +115,13 @@ impl ScopeConfigurationLoader {
             ));
         }
 
-        let content = fs::read_to_string(&config_path)
-            .await
-            .map_err(|e| LearningError::ConfigurationError(format!("Failed to read user config: {}", e)))?;
+        let content = fs::read_to_string(&config_path).await.map_err(|e| {
+            LearningError::ConfigurationError(format!("Failed to read user config: {}", e))
+        })?;
 
-        let config: ScopeConfiguration = serde_yaml::from_str(&content)
-            .map_err(|e| LearningError::ConfigurationError(format!("Failed to parse user config: {}", e)))?;
+        let config: ScopeConfiguration = serde_yaml::from_str(&content).map_err(|e| {
+            LearningError::ConfigurationError(format!("Failed to parse user config: {}", e))
+        })?;
 
         config.validate()?;
         Ok(config)
@@ -153,17 +155,21 @@ impl ScopeConfigurationLoader {
 
         // Ensure directory exists
         if let Some(parent) = config_path.parent() {
-            fs::create_dir_all(parent)
-                .await
-                .map_err(|e| LearningError::ConfigurationError(format!("Failed to create config directory: {}", e)))?;
+            fs::create_dir_all(parent).await.map_err(|e| {
+                LearningError::ConfigurationError(format!(
+                    "Failed to create config directory: {}",
+                    e
+                ))
+            })?;
         }
 
-        let yaml = serde_yaml::to_string(config)
-            .map_err(|e| LearningError::ConfigurationError(format!("Failed to serialize config: {}", e)))?;
+        let yaml = serde_yaml::to_string(config).map_err(|e| {
+            LearningError::ConfigurationError(format!("Failed to serialize config: {}", e))
+        })?;
 
-        fs::write(&config_path, yaml)
-            .await
-            .map_err(|e| LearningError::ConfigurationError(format!("Failed to write config file: {}", e)))?;
+        fs::write(&config_path, yaml).await.map_err(|e| {
+            LearningError::ConfigurationError(format!("Failed to write config file: {}", e))
+        })?;
 
         Ok(())
     }
@@ -176,17 +182,21 @@ impl ScopeConfigurationLoader {
 
         // Ensure directory exists
         if let Some(parent) = config_path.parent() {
-            fs::create_dir_all(parent)
-                .await
-                .map_err(|e| LearningError::ConfigurationError(format!("Failed to create config directory: {}", e)))?;
+            fs::create_dir_all(parent).await.map_err(|e| {
+                LearningError::ConfigurationError(format!(
+                    "Failed to create config directory: {}",
+                    e
+                ))
+            })?;
         }
 
-        let yaml = serde_yaml::to_string(config)
-            .map_err(|e| LearningError::ConfigurationError(format!("Failed to serialize config: {}", e)))?;
+        let yaml = serde_yaml::to_string(config).map_err(|e| {
+            LearningError::ConfigurationError(format!("Failed to serialize config: {}", e))
+        })?;
 
-        fs::write(&config_path, yaml)
-            .await
-            .map_err(|e| LearningError::ConfigurationError(format!("Failed to write config file: {}", e)))?;
+        fs::write(&config_path, yaml).await.map_err(|e| {
+            LearningError::ConfigurationError(format!("Failed to write config file: {}", e))
+        })?;
 
         Ok(())
     }
@@ -197,12 +207,18 @@ pub struct ScopeFilter;
 
 impl ScopeFilter {
     /// Filter rules by scope
-    pub fn filter_by_scope(rules: &[crate::models::Rule], scope: RuleScope) -> Vec<crate::models::Rule> {
+    pub fn filter_by_scope(
+        rules: &[crate::models::Rule],
+        scope: RuleScope,
+    ) -> Vec<crate::models::Rule> {
         rules.iter().filter(|r| r.scope == scope).cloned().collect()
     }
 
     /// Filter rules by multiple scopes
-    pub fn filter_by_scopes(rules: &[crate::models::Rule], scopes: &[RuleScope]) -> Vec<crate::models::Rule> {
+    pub fn filter_by_scopes(
+        rules: &[crate::models::Rule],
+        scopes: &[RuleScope],
+    ) -> Vec<crate::models::Rule> {
         rules
             .iter()
             .filter(|r| scopes.contains(&r.scope))
@@ -332,7 +348,8 @@ mod tests {
             ),
         ];
 
-        let filtered = ScopeFilter::filter_by_scopes(&rules, &[RuleScope::Project, RuleScope::Session]);
+        let filtered =
+            ScopeFilter::filter_by_scopes(&rules, &[RuleScope::Project, RuleScope::Session]);
         assert_eq!(filtered.len(), 2);
     }
 
@@ -399,7 +416,9 @@ mod tests {
 
         let filtered = ScopeFilter::get_rules_with_precedence(&rules, RuleScope::Project);
         assert_eq!(filtered.len(), 2);
-        assert!(filtered.iter().all(|r| r.scope == RuleScope::Project || r.scope == RuleScope::Session));
+        assert!(filtered
+            .iter()
+            .all(|r| r.scope == RuleScope::Project || r.scope == RuleScope::Session));
     }
 
     #[test]
@@ -564,9 +583,12 @@ mod tests {
             ),
         ];
 
-        let filtered = ScopeFilter::filter_by_scopes(&rules, &[RuleScope::Project, RuleScope::Session]);
+        let filtered =
+            ScopeFilter::filter_by_scopes(&rules, &[RuleScope::Project, RuleScope::Session]);
         assert_eq!(filtered.len(), 3);
-        assert!(filtered.iter().all(|r| r.scope == RuleScope::Project || r.scope == RuleScope::Session));
+        assert!(filtered
+            .iter()
+            .all(|r| r.scope == RuleScope::Project || r.scope == RuleScope::Session));
     }
 
     #[test]

@@ -105,7 +105,11 @@ impl ProviderEvaluator {
             total_weight += benchmark.weight;
         }
 
-        let overall_score = if total_weight > 0.0 { total_score / total_weight } else { 0.0 };
+        let overall_score = if total_weight > 0.0 {
+            total_score / total_weight
+        } else {
+            0.0
+        };
 
         // Calculate performance metrics
         let performance_metrics = self.calculate_performance_metrics(&benchmark_results);
@@ -215,7 +219,10 @@ impl ProviderEvaluator {
         let avg_response_time = response_times.iter().sum::<f64>() / response_times.len() as f64;
 
         let p95_index = (response_times.len() as f64 * 0.95) as usize;
-        let p95_response_time = response_times.get(p95_index).copied().unwrap_or(avg_response_time);
+        let p95_response_time = response_times
+            .get(p95_index)
+            .copied()
+            .unwrap_or(avg_response_time);
 
         let total_time_seconds = response_times.iter().sum::<f64>() / 1000.0;
         let total_requests = results.iter().map(|r| r.total_tests).sum::<usize>();
@@ -231,7 +238,11 @@ impl ProviderEvaluator {
     }
 
     /// Calculate reliability score for a provider
-    async fn calculate_reliability_score(&self, provider: &Arc<dyn Provider>, model: &str) -> Result<f64, ProviderError> {
+    async fn calculate_reliability_score(
+        &self,
+        provider: &Arc<dyn Provider>,
+        model: &str,
+    ) -> Result<f64, ProviderError> {
         // Simple reliability test: make several requests and measure success rate
         let mut successful_requests = 0;
         let total_requests = 5;
@@ -279,20 +290,26 @@ impl ProviderEvaluator {
             // If no specific patterns expected, just check if response is non-empty
             !response.trim().is_empty()
         } else {
-            expected_patterns.iter().any(|pattern| {
-                response.to_lowercase().contains(&pattern.to_lowercase())
-            })
+            expected_patterns
+                .iter()
+                .any(|pattern| response.to_lowercase().contains(&pattern.to_lowercase()))
         }
     }
 
     /// Calculate cost for token usage
-    fn calculate_cost(&self, provider: &Arc<dyn Provider>, usage: &crate::models::TokenUsage) -> f64 {
+    fn calculate_cost(
+        &self,
+        provider: &Arc<dyn Provider>,
+        usage: &crate::models::TokenUsage,
+    ) -> f64 {
         // Get model pricing info
         let models = provider.models();
         if let Some(model) = models.first() {
             if let Some(pricing) = &model.pricing {
-                let input_cost = (usage.prompt_tokens as f64 / 1000.0) * pricing.input_per_1k_tokens;
-                let output_cost = (usage.completion_tokens as f64 / 1000.0) * pricing.output_per_1k_tokens;
+                let input_cost =
+                    (usage.prompt_tokens as f64 / 1000.0) * pricing.input_per_1k_tokens;
+                let output_cost =
+                    (usage.completion_tokens as f64 / 1000.0) * pricing.output_per_1k_tokens;
                 return input_cost + output_cost;
             }
         }
@@ -321,23 +338,20 @@ impl ProviderEvaluator {
                 name: "code_generation".to_string(),
                 description: "Code generation capabilities".to_string(),
                 weight: 1.5,
-                test_cases: vec![
-                    TestCase {
-                        prompt: "Write a Python function to calculate fibonacci numbers".to_string(),
-                        expected_patterns: vec!["def".to_string(), "fibonacci".to_string()],
-                    },
-                ],
+                test_cases: vec![TestCase {
+                    prompt: "Write a Python function to calculate fibonacci numbers".to_string(),
+                    expected_patterns: vec!["def".to_string(), "fibonacci".to_string()],
+                }],
             },
             Benchmark {
                 name: "reasoning".to_string(),
                 description: "Logical reasoning capabilities".to_string(),
                 weight: 1.2,
-                test_cases: vec![
-                    TestCase {
-                        prompt: "If all cats are mammals and some mammals are pets, are all cats pets?".to_string(),
-                        expected_patterns: vec!["no".to_string(), "not necessarily".to_string()],
-                    },
-                ],
+                test_cases: vec![TestCase {
+                    prompt: "If all cats are mammals and some mammals are pets, are all cats pets?"
+                        .to_string(),
+                    expected_patterns: vec!["no".to_string(), "not necessarily".to_string()],
+                }],
             },
         ]
     }
@@ -394,10 +408,14 @@ impl ContinuousEvaluator {
                     // For now, just evaluate the first model of each provider
                     // In practice, you'd want to evaluate all models
                     if let Some(model) = Self::get_provider_models(provider_id).first() {
-                        match evaluator.evaluate_provider(&Self::get_provider(provider_id), model).await {
+                        match evaluator
+                            .evaluate_provider(&Self::get_provider(provider_id), model)
+                            .await
+                        {
                             Ok(evaluation) => {
                                 let mut evals = evaluations.write().await;
-                                evals.entry(provider_id.to_string())
+                                evals
+                                    .entry(provider_id.to_string())
                                     .or_insert_with(Vec::new)
                                     .push(evaluation);
                             }
@@ -416,17 +434,13 @@ impl ContinuousEvaluator {
     /// Get latest evaluation for a provider
     pub async fn get_latest_evaluation(&self, provider_id: &str) -> Option<ProviderEvaluation> {
         let evaluations = self.evaluations.read().await;
-        evaluations.get(provider_id)?
-            .last()
-            .cloned()
+        evaluations.get(provider_id)?.last().cloned()
     }
 
     /// Get evaluation history for a provider
     pub async fn get_evaluation_history(&self, provider_id: &str) -> Vec<ProviderEvaluation> {
         let evaluations = self.evaluations.read().await;
-        evaluations.get(provider_id)
-            .cloned()
-            .unwrap_or_default()
+        evaluations.get(provider_id).cloned().unwrap_or_default()
     }
 
     // Helper methods (would need to be implemented based on your provider registry)

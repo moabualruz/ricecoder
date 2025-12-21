@@ -14,7 +14,11 @@ impl ReportGenerator {
     }
 
     /// Generate a performance report
-    pub fn generate_performance_report(&self, start: DateTime<Utc>, end: DateTime<Utc>) -> PerformanceReport {
+    pub fn generate_performance_report(
+        &self,
+        start: DateTime<Utc>,
+        end: DateTime<Utc>,
+    ) -> PerformanceReport {
         // In a real implementation, this would aggregate data from metrics
         PerformanceReport {
             period_start: start,
@@ -51,7 +55,12 @@ impl ReportGenerator {
     }
 
     /// Generate a compliance report
-    pub fn generate_compliance_report(&self, standard: &str, start: DateTime<Utc>, end: DateTime<Utc>) -> ComplianceReport {
+    pub fn generate_compliance_report(
+        &self,
+        standard: &str,
+        start: DateTime<Utc>,
+        end: DateTime<Utc>,
+    ) -> ComplianceReport {
         // In a real implementation, this would use the compliance engine
         ComplianceReport {
             id: EventId::new_v4(),

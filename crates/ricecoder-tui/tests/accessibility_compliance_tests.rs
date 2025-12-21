@@ -18,15 +18,18 @@ fn arb_accessibility_config() -> impl Strategy<Value = AccessibilityConfig> {
         any::<bool>(), // keyboard_navigation
         any::<bool>(), // animations_enabled
         1u8..=5,       // focus_indicator_intensity
-    ).prop_map(|(screen_reader, high_contrast, keyboard_nav, animations, intensity)| {
-        AccessibilityConfig {
-            screen_reader_enabled: screen_reader,
-            high_contrast_mode: high_contrast,
-            keyboard_navigation_enabled: keyboard_nav,
-            animations_enabled: animations,
-            focus_indicator_intensity: intensity,
-        }
-    })
+    )
+        .prop_map(
+            |(screen_reader, high_contrast, keyboard_nav, animations, intensity)| {
+                AccessibilityConfig {
+                    screen_reader_enabled: screen_reader,
+                    high_contrast_mode: high_contrast,
+                    keyboard_navigation_enabled: keyboard_nav,
+                    animations_enabled: animations,
+                    focus_indicator_intensity: intensity,
+                }
+            },
+        )
 }
 
 /// Generate theme configurations for contrast testing
@@ -53,7 +56,7 @@ fn arb_accessible_text() -> impl Strategy<Value = String> {
 fn arb_focus_scenarios() -> impl Strategy<Value = Vec<String>> {
     prop::collection::vec(
         r"[a-zA-Z][a-zA-Z0-9_]{0,20}".prop_map(|s| s.to_string()),
-        1..10
+        1..10,
     )
 }
 
@@ -329,13 +332,20 @@ proptest! {
 // ============================================================================
 
 /// Calculate contrast ratio between two colors
-fn calculate_contrast_ratio(color1: ricecoder_tui::style::Color, color2: ricecoder_tui::style::Color) -> f64 {
+fn calculate_contrast_ratio(
+    color1: ricecoder_tui::style::Color,
+    color2: ricecoder_tui::style::Color,
+) -> f64 {
     // Simplified contrast calculation
     // In practice, this would use proper luminance calculations
     let lum1 = get_luminance(color1);
     let lum2 = get_luminance(color2);
 
-    let (lighter, darker) = if lum1 > lum2 { (lum1, lum2) } else { (lum2, lum1) };
+    let (lighter, darker) = if lum1 > lum2 {
+        (lum1, lum2)
+    } else {
+        (lum2, lum1)
+    };
 
     (lighter + 0.05) / (darker + 0.05)
 }
@@ -412,7 +422,9 @@ impl AccessibilityAuditor {
     }
 
     pub fn has_errors(&self) -> bool {
-        self.violations.iter().any(|v| v.severity == ViolationSeverity::Error)
+        self.violations
+            .iter()
+            .any(|v| v.severity == ViolationSeverity::Error)
     }
 }
 
@@ -434,9 +446,15 @@ mod tests {
         // Mock component that fails all checks
         struct FailingComponent;
         impl AccessibleComponent for FailingComponent {
-            fn has_keyboard_navigation(&self) -> bool { false }
-            fn has_screen_reader_support(&self) -> bool { false }
-            fn has_sufficient_contrast(&self) -> bool { false }
+            fn has_keyboard_navigation(&self) -> bool {
+                false
+            }
+            fn has_screen_reader_support(&self) -> bool {
+                false
+            }
+            fn has_sufficient_contrast(&self) -> bool {
+                false
+            }
         }
 
         auditor.audit_component("test_component", &FailingComponent);

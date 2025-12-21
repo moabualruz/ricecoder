@@ -118,10 +118,7 @@ impl ChangePropagationTracker {
         self.projects.insert(from.clone());
         self.projects.insert(to.clone());
 
-        self.dependents_map
-            .entry(to)
-            .or_default()
-            .push(from);
+        self.dependents_map.entry(to).or_default().push(from);
     }
 
     /// Tracks a change to a project
@@ -197,12 +194,7 @@ impl ChangePropagationTracker {
     pub fn get_breaking_changes(&self) -> Vec<Change> {
         self.changes_by_project
             .values()
-            .flat_map(|changes| {
-                changes
-                    .iter()
-                    .filter(|c| c.is_breaking)
-                    .cloned()
-            })
+            .flat_map(|changes| changes.iter().filter(|c| c.is_breaking).cloned())
             .collect()
     }
 
@@ -259,11 +251,7 @@ impl ChangePropagationTracker {
     }
 
     /// Filters changes by breaking status
-    pub fn filter_changes_by_breaking(
-        &self,
-        changes: &[Change],
-        is_breaking: bool,
-    ) -> Vec<Change> {
+    pub fn filter_changes_by_breaking(&self, changes: &[Change], is_breaking: bool) -> Vec<Change> {
         changes
             .iter()
             .filter(|c| c.is_breaking == is_breaking)
@@ -286,7 +274,8 @@ impl ChangePropagationTracker {
 
     /// Gets detailed information about a change
     pub fn get_change_details(&self, change_id: &str) -> Option<ChangeDetails> {
-        let change = self.changes_by_project
+        let change = self
+            .changes_by_project
             .values()
             .flat_map(|changes| changes.iter())
             .find(|c| c.id == change_id)?
@@ -353,7 +342,10 @@ mod tests {
         assert_eq!(ChangeType::from_str("dependency"), ChangeType::Dependency);
         assert_eq!(ChangeType::from_str("config"), ChangeType::Config);
         assert_eq!(ChangeType::from_str("internal"), ChangeType::Internal);
-        assert_eq!(ChangeType::from_str("documentation"), ChangeType::Documentation);
+        assert_eq!(
+            ChangeType::from_str("documentation"),
+            ChangeType::Documentation
+        );
         assert_eq!(ChangeType::from_str("test"), ChangeType::Test);
         assert_eq!(ChangeType::from_str("unknown"), ChangeType::Other);
     }

@@ -1,13 +1,13 @@
 //! Security monitoring and threat detection capabilities
 
-use chrono::{DateTime, Utc, Duration};
+use chrono::{DateTime, Duration, Utc};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-use crate::{audit::AuditLogger, SecurityError, Result};
+use crate::{audit::AuditLogger, Result, SecurityError};
 
 /// Security event types
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -79,8 +79,14 @@ pub struct ThreatRule {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum EventPattern {
     EventType(SecurityEventType),
-    Regex { field: String, pattern: String },
-    Composite { patterns: Vec<Box<EventPattern>>, operator: PatternOperator },
+    Regex {
+        field: String,
+        pattern: String,
+    },
+    Composite {
+        patterns: Vec<Box<EventPattern>>,
+        operator: PatternOperator,
+    },
 }
 
 /// Pattern operator for composite patterns
@@ -160,18 +166,20 @@ impl SecurityMonitor {
         }
 
         // Audit the security event
-        self.audit_logger.log_event(crate::audit::AuditEvent {
-            event_type: crate::audit::AuditEventType::SecurityViolation,
-            user_id: event.user_id.clone(),
-            session_id: event.session_id.clone(),
-            action: "security_event".to_string(),
-            resource: event.resource.clone(),
-            metadata: serde_json::json!({
-                "event_type": format!("{:?}", event.event_type),
-                "threat_level": format!("{:?}", event.threat_level),
-                "source_ip": event.source_ip
-            }),
-        }).await?;
+        self.audit_logger
+            .log_event(crate::audit::AuditEvent {
+                event_type: crate::audit::AuditEventType::SecurityViolation,
+                user_id: event.user_id.clone(),
+                session_id: event.session_id.clone(),
+                action: "security_event".to_string(),
+                resource: event.resource.clone(),
+                metadata: serde_json::json!({
+                    "event_type": format!("{:?}", event.event_type),
+                    "threat_level": format!("{:?}", event.threat_level),
+                    "source_ip": event.source_ip
+                }),
+            })
+            .await?;
 
         Ok(())
     }
@@ -186,7 +194,8 @@ impl SecurityMonitor {
     /// Get active alerts
     pub async fn get_active_alerts(&self) -> Result<Vec<SecurityAlert>> {
         let alerts = self.alerts.read().await;
-        let active: Vec<SecurityAlert> = alerts.iter()
+        let active: Vec<SecurityAlert> = alerts
+            .iter()
             .filter(|alert| alert.resolved_at.is_none())
             .cloned()
             .collect();
@@ -202,16 +211,18 @@ impl SecurityMonitor {
         }
 
         // Audit alert resolution
-        self.audit_logger.log_event(crate::audit::AuditEvent {
-            event_type: crate::audit::AuditEventType::SecurityViolation,
-            user_id: None,
-            session_id: None,
-            action: "alert_resolved".to_string(),
-            resource: format!("alert:{}", alert_id),
-            metadata: serde_json::json!({
-                "actions_taken": actions_taken
-            }),
-        }).await?;
+        self.audit_logger
+            .log_event(crate::audit::AuditEvent {
+                event_type: crate::audit::AuditEventType::SecurityViolation,
+                user_id: None,
+                session_id: None,
+                action: "alert_resolved".to_string(),
+                resource: format!("alert:{}", alert_id),
+                metadata: serde_json::json!({
+                    "actions_taken": actions_taken
+                }),
+            })
+            .await?;
 
         Ok(())
     }
@@ -229,12 +240,13 @@ impl SecurityMonitor {
         let now = Utc::now();
         let window_start = now - Duration::minutes(5);
 
-        let recent_events: Vec<&SecurityEvent> = events.iter()
+        let recent_events: Vec<&SecurityEvent> = events
+            .iter()
             .filter(|e| e.timestamp > window_start)
             .collect();
 
-        let event_counts: HashMap<SecurityEventType, usize> = recent_events.iter()
-            .fold(HashMap::new(), |mut acc, event| {
+        let event_counts: HashMap<SecurityEventType, usize> =
+            recent_events.iter().fold(HashMap::new(), |mut acc, event| {
                 *acc.entry(event.event_type.clone()).or_insert(0) += 1;
                 acc
             });
@@ -252,16 +264,26 @@ impl SecurityMonitor {
             if count > threshold {
                 let event_type_str = format!("{:?}", event_type);
                 let alert = SecurityAlert {
-                    id: format!("anomaly_{}_{}", event_type_str.to_lowercase(), now.timestamp()),
+                    id: format!(
+                        "anomaly_{}_{}",
+                        event_type_str.to_lowercase(),
+                        now.timestamp()
+                    ),
                     title: format!("Anomalous {} Activity", event_type_str),
-                    description: format!("Detected {} occurrences of {} in 5 minutes (threshold: {})",
-                                       count, event_type_str, threshold),
+                    description: format!(
+                        "Detected {} occurrences of {} in 5 minutes (threshold: {})",
+                        count, event_type_str, threshold
+                    ),
                     severity: ThreatLevel::High,
-                     events: recent_events.iter()
-                         .filter(|e| std::mem::discriminant(&e.event_type) == std::mem::discriminant(&event_type))
-                         .take(10)
-                         .map(|e| (*e).clone())
-                         .collect(),
+                    events: recent_events
+                        .iter()
+                        .filter(|e| {
+                            std::mem::discriminant(&e.event_type)
+                                == std::mem::discriminant(&event_type)
+                        })
+                        .take(10)
+                        .map(|e| (*e).clone())
+                        .collect(),
                     triggered_at: now,
                     resolved_at: None,
                     actions_taken: vec![],
@@ -282,23 +304,21 @@ impl SecurityMonitor {
         let last_24h = now - Duration::hours(24);
         let last_hour = now - Duration::hours(1);
 
-        let recent_events: Vec<&SecurityEvent> = events.iter()
-            .filter(|e| e.timestamp > last_24h)
-            .collect();
+        let recent_events: Vec<&SecurityEvent> =
+            events.iter().filter(|e| e.timestamp > last_24h).collect();
 
-        let hourly_events: Vec<&SecurityEvent> = events.iter()
-            .filter(|e| e.timestamp > last_hour)
-            .collect();
+        let hourly_events: Vec<&SecurityEvent> =
+            events.iter().filter(|e| e.timestamp > last_hour).collect();
 
-        let threat_distribution: HashMap<String, usize> = recent_events.iter()
-            .fold(HashMap::new(), |mut acc, event| {
+        let threat_distribution: HashMap<String, usize> =
+            recent_events.iter().fold(HashMap::new(), |mut acc, event| {
                 let level = format!("{:?}", event.threat_level);
                 *acc.entry(level).or_insert(0) += 1;
                 acc
             });
 
-        let event_type_distribution: HashMap<String, usize> = recent_events.iter()
-            .fold(HashMap::new(), |mut acc, event| {
+        let event_type_distribution: HashMap<String, usize> =
+            recent_events.iter().fold(HashMap::new(), |mut acc, event| {
                 let event_type = format!("{:?}", event.event_type);
                 *acc.entry(event_type).or_insert(0) += 1;
                 acc
@@ -348,16 +368,22 @@ impl ThreatDetector {
 
                 // Clean old counts
                 if let Some(counts) = self.event_counts.get_mut(&count_key) {
-                    counts.retain(|(timestamp, _)| now.signed_duration_since(*timestamp).num_seconds() < rule.window_seconds);
+                    counts.retain(|(timestamp, _)| {
+                        now.signed_duration_since(*timestamp).num_seconds() < rule.window_seconds
+                    });
                 }
 
                 // Add current event
-                self.event_counts.entry(count_key.clone())
+                self.event_counts
+                    .entry(count_key.clone())
                     .or_insert_with(Vec::new)
                     .push((now, 1));
 
                 // Check threshold
-                let total_count: u32 = self.event_counts[&count_key].iter().map(|(_, count)| count).sum();
+                let total_count: u32 = self.event_counts[&count_key]
+                    .iter()
+                    .map(|(_, count)| count)
+                    .sum();
 
                 if total_count >= rule.threshold {
                     triggered_rules.push(rule.clone());
@@ -370,12 +396,17 @@ impl ThreatDetector {
         }
 
         // Create alert from highest severity rule
-        let highest_severity_rule = triggered_rules.into_iter()
+        let highest_severity_rule = triggered_rules
+            .into_iter()
             .max_by_key(|r| r.severity.clone())
             .unwrap();
 
         let alert = SecurityAlert {
-            id: format!("threat_{}_{}", highest_severity_rule.id, Utc::now().timestamp()),
+            id: format!(
+                "threat_{}_{}",
+                highest_severity_rule.id,
+                Utc::now().timestamp()
+            ),
             title: format!("Threat Detected: {}", highest_severity_rule.name),
             description: highest_severity_rule.description.clone(),
             severity: highest_severity_rule.severity,
@@ -405,12 +436,10 @@ impl ThreatDetector {
 
                 Regex::new(pattern).map_or(false, |re| re.is_match(value))
             }
-            EventPattern::Composite { patterns, operator } => {
-                match operator {
-                    PatternOperator::And => patterns.iter().all(|p| self.matches_pattern(event, p)),
-                    PatternOperator::Or => patterns.iter().any(|p| self.matches_pattern(event, p)),
-                }
-            }
+            EventPattern::Composite { patterns, operator } => match operator {
+                PatternOperator::And => patterns.iter().all(|p| self.matches_pattern(event, p)),
+                PatternOperator::Or => patterns.iter().any(|p| self.matches_pattern(event, p)),
+            },
         }
     }
 }

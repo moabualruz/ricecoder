@@ -142,11 +142,7 @@ impl OutputStyle {
 
     /// Format error with documentation link
     pub fn error_with_docs(&self, error: &str, doc_url: &str) -> String {
-        format!(
-            "{}\n\n📖 Learn more: {}",
-            self.error(error),
-            doc_url
-        )
+        format!("{}\n\n📖 Learn more: {}", self.error(error), doc_url)
     }
 
     /// Format a section header
@@ -220,5 +216,3 @@ pub fn print_info(msg: &str) {
     let style = OutputStyle::default();
     println!("{}", style.info(msg));
 }
-
-

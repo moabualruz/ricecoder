@@ -56,10 +56,8 @@ fn e2e_pr_creation_and_merge_workflow() {
     assert!(pr.body.contains("Approved"));
 
     // Step 3: Merge PR
-    let merge_options = ricecoder_github::PrUpdateOptions::new()
-        .with_state(PrStatus::Merged);
-    ricecoder_github::PrOperations::update_pr(&mut pr, merge_options)
-        .expect("Should merge PR");
+    let merge_options = ricecoder_github::PrUpdateOptions::new().with_state(PrStatus::Merged);
+    ricecoder_github::PrOperations::update_pr(&mut pr, merge_options).expect("Should merge PR");
     assert_eq!(pr.status, PrStatus::Merged);
 
     // Verify complete workflow
@@ -105,20 +103,16 @@ fn e2e_pr_review_and_approval_workflow() {
         "Great implementation! Just a few suggestions for improvement.",
         "reviewer",
     );
-    ricecoder_github::PrOperations::add_comment(&mut pr, comment)
-        .expect("Should add comment");
+    ricecoder_github::PrOperations::add_comment(&mut pr, comment).expect("Should add comment");
 
     // Step 3: Add approval review
     let review = ricecoder_github::PrReview::approval("reviewer");
-    ricecoder_github::PrOperations::add_review(&mut pr, review)
-        .expect("Should add review");
+    ricecoder_github::PrOperations::add_review(&mut pr, review).expect("Should add review");
     assert!(pr.body.contains("Approved"));
 
     // Step 4: Merge PR
-    let merge_options = ricecoder_github::PrUpdateOptions::new()
-        .with_state(PrStatus::Merged);
-    ricecoder_github::PrOperations::update_pr(&mut pr, merge_options)
-        .expect("Should merge PR");
+    let merge_options = ricecoder_github::PrUpdateOptions::new().with_state(PrStatus::Merged);
+    ricecoder_github::PrOperations::update_pr(&mut pr, merge_options).expect("Should merge PR");
     assert_eq!(pr.status, PrStatus::Merged);
 
     // Verify complete workflow
@@ -162,15 +156,11 @@ fn e2e_multiple_pr_workflow() {
         .expect("Should add review to PR 2");
 
     // Step 4: Merge both PRs
-    let merge_options1 = ricecoder_github::PrUpdateOptions::new()
-        .with_state(PrStatus::Merged);
-    ricecoder_github::PrOperations::update_pr(&mut pr1, merge_options1)
-        .expect("Should merge PR 1");
+    let merge_options1 = ricecoder_github::PrUpdateOptions::new().with_state(PrStatus::Merged);
+    ricecoder_github::PrOperations::update_pr(&mut pr1, merge_options1).expect("Should merge PR 1");
 
-    let merge_options2 = ricecoder_github::PrUpdateOptions::new()
-        .with_state(PrStatus::Merged);
-    ricecoder_github::PrOperations::update_pr(&mut pr2, merge_options2)
-        .expect("Should merge PR 2");
+    let merge_options2 = ricecoder_github::PrUpdateOptions::new().with_state(PrStatus::Merged);
+    ricecoder_github::PrOperations::update_pr(&mut pr2, merge_options2).expect("Should merge PR 2");
 
     // Verify complete workflow
     assert_eq!(pr1.title, "Feature 1");
@@ -208,8 +198,7 @@ fn e2e_pr_with_progress_tracking() {
 
     // Step 3: Add comment
     let comment = ricecoder_github::PrComment::new("Looking good so far!", "reviewer");
-    ricecoder_github::PrOperations::add_comment(&mut pr, comment)
-        .expect("Should add comment");
+    ricecoder_github::PrOperations::add_comment(&mut pr, comment).expect("Should add comment");
 
     // Step 4: Add another progress update
     let progress2 = ricecoder_github::ProgressUpdate::new("Implementation", "Complete")
@@ -221,13 +210,10 @@ fn e2e_pr_with_progress_tracking() {
 
     // Step 5: Approve and merge
     let review = ricecoder_github::PrReview::approval("reviewer");
-    ricecoder_github::PrOperations::add_review(&mut pr, review)
-        .expect("Should add review");
+    ricecoder_github::PrOperations::add_review(&mut pr, review).expect("Should add review");
 
-    let merge_options = ricecoder_github::PrUpdateOptions::new()
-        .with_state(PrStatus::Merged);
-    ricecoder_github::PrOperations::update_pr(&mut pr, merge_options)
-        .expect("Should merge PR");
+    let merge_options = ricecoder_github::PrUpdateOptions::new().with_state(PrStatus::Merged);
+    ricecoder_github::PrOperations::update_pr(&mut pr, merge_options).expect("Should merge PR");
 
     // Verify complete workflow
     assert_eq!(pr.status, PrStatus::Merged);
@@ -262,13 +248,10 @@ fn e2e_pr_with_error_recovery() {
 
     // Step 3: Manage the PR
     let review = ricecoder_github::PrReview::approval("reviewer");
-    ricecoder_github::PrOperations::add_review(&mut pr, review)
-        .expect("Should add review");
+    ricecoder_github::PrOperations::add_review(&mut pr, review).expect("Should add review");
 
-    let merge_options = ricecoder_github::PrUpdateOptions::new()
-        .with_state(PrStatus::Merged);
-    ricecoder_github::PrOperations::update_pr(&mut pr, merge_options)
-        .expect("Should merge PR");
+    let merge_options = ricecoder_github::PrUpdateOptions::new().with_state(PrStatus::Merged);
+    ricecoder_github::PrOperations::update_pr(&mut pr, merge_options).expect("Should merge PR");
 
     // Verify complete workflow
     assert_eq!(pr.title, "Valid title");

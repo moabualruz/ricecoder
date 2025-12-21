@@ -6,10 +6,10 @@
 //! For any message with any combination of parts, serializing to JSON and deserializing
 //! should produce an equivalent message.
 
-use proptest::prelude::*;
-use ricecoder_sessions::{Message, MessageRole, MessagePart, CodePart, ToolStatus};
-use serde_json;
 use chrono::{Duration, Utc};
+use proptest::prelude::*;
+use ricecoder_sessions::{CodePart, Message, MessagePart, MessageRole, ToolStatus};
+use serde_json;
 
 // Strategy for generating simple message parts
 fn arb_simple_message_part() -> impl Strategy<Value = MessagePart> {
@@ -20,15 +20,22 @@ fn arb_simple_message_part() -> impl Strategy<Value = MessagePart> {
         "[a-zA-Z0-9 .,!?]{1,100}".prop_map(MessagePart::Reasoning),
         // Code part
         (
-            prop_oneof![Just("rust".to_string()), Just("python".to_string()), Just("javascript".to_string())],
+            prop_oneof![
+                Just("rust".to_string()),
+                Just("python".to_string()),
+                Just("javascript".to_string())
+            ],
             "[a-zA-Z0-9 .,!?]{1,200}".prop_map(|s| s),
             any::<bool>(),
-        ).prop_map(|(language, content, line_numbers)| MessagePart::Code(CodePart {
-            language,
-            content,
-            filename: None,
-            line_numbers,
-        })),
+        )
+            .prop_map(
+                |(language, content, line_numbers)| MessagePart::Code(CodePart {
+                    language,
+                    content,
+                    filename: None,
+                    line_numbers,
+                })
+            ),
         // Error part
         "[a-zA-Z0-9 .,!?]{1,100}".prop_map(MessagePart::Error),
     ]
@@ -37,9 +44,13 @@ fn arb_simple_message_part() -> impl Strategy<Value = MessagePart> {
 // Strategy for generating messages with parts
 fn arb_message_with_parts() -> impl Strategy<Value = Message> {
     (
-        prop_oneof![Just(MessageRole::User), Just(MessageRole::Assistant), Just(MessageRole::System)],
+        prop_oneof![
+            Just(MessageRole::User),
+            Just(MessageRole::Assistant),
+            Just(MessageRole::System)
+        ],
         prop::collection::vec(arb_simple_message_part(), 1..5), // parts
-        0i64..86400i64, // seconds from now for timestamp
+        0i64..86400i64,                                         // seconds from now for timestamp
     )
         .prop_map(|(role, parts, seconds_offset)| {
             let mut message = Message::new_empty(role);

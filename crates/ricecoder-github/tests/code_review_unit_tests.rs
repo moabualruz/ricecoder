@@ -1,12 +1,12 @@
 //! Unit tests for Code Review Agent and Operations
 
+use chrono::Utc;
 use ricecoder_github::{
     models::{FileChange, PrStatus},
     ApprovalCondition, CodeQualityIssue, CodeReviewAgent, CodeReviewMetrics, CodeReviewOperations,
-    CodeReviewStandards, CodeReviewSuggestion, ConditionalApprovalResult, IssueSeverity,
-    PrReview, ReviewState,
+    CodeReviewStandards, CodeReviewSuggestion, ConditionalApprovalResult, IssueSeverity, PrReview,
+    ReviewState,
 };
-use chrono::Utc;
 use std::collections::HashMap;
 
 fn create_test_pr() -> ricecoder_github::models::PullRequest {
@@ -47,26 +47,19 @@ fn test_code_quality_issue_creation() {
 
 #[test]
 fn test_code_quality_issue_with_line_number() {
-    let issue = CodeQualityIssue::new(
-        IssueSeverity::Critical,
-        "Test",
-        "Description",
-        "test.rs",
-    )
-    .with_line_number(42);
+    let issue = CodeQualityIssue::new(IssueSeverity::Critical, "Test", "Description", "test.rs")
+        .with_line_number(42);
     assert_eq!(issue.line_number, Some(42));
 }
 
 #[test]
 fn test_code_quality_issue_with_suggested_fix() {
-    let issue = CodeQualityIssue::new(
-        IssueSeverity::Warning,
-        "Test",
-        "Description",
-        "test.rs",
-    )
-    .with_suggested_fix("Use better variable name");
-    assert_eq!(issue.suggested_fix, Some("Use better variable name".to_string()));
+    let issue = CodeQualityIssue::new(IssueSeverity::Warning, "Test", "Description", "test.rs")
+        .with_suggested_fix("Use better variable name");
+    assert_eq!(
+        issue.suggested_fix,
+        Some("Use better variable name".to_string())
+    );
 }
 
 // Tests for CodeReviewSuggestion
@@ -104,12 +97,7 @@ fn test_code_review_result_creation() {
 
 #[test]
 fn test_code_review_result_with_issue() {
-    let issue = CodeQualityIssue::new(
-        IssueSeverity::Critical,
-        "Test",
-        "Description",
-        "test.rs",
-    );
+    let issue = CodeQualityIssue::new(IssueSeverity::Critical, "Test", "Description", "test.rs");
     let result = ricecoder_github::CodeReviewResult::new(123).with_issue(issue);
     assert_eq!(result.issues.len(), 1);
     assert_eq!(result.critical_issues_count(), 1);
@@ -124,12 +112,8 @@ fn test_code_review_result_quality_score_calculation() {
         "Description",
         "test.rs",
     );
-    let warning = CodeQualityIssue::new(
-        IssueSeverity::Warning,
-        "Warning",
-        "Description",
-        "test.rs",
-    );
+    let warning =
+        CodeQualityIssue::new(IssueSeverity::Warning, "Warning", "Description", "test.rs");
     let result = ricecoder_github::CodeReviewResult::new(123)
         .with_issue(critical)
         .with_issue(warning);
@@ -156,18 +140,9 @@ fn test_code_review_result_counts() {
         "Description",
         "test.rs",
     );
-    let warning = CodeQualityIssue::new(
-        IssueSeverity::Warning,
-        "Warning",
-        "Description",
-        "test.rs",
-    );
-    let info = CodeQualityIssue::new(
-        IssueSeverity::Info,
-        "Info",
-        "Description",
-        "test.rs",
-    );
+    let warning =
+        CodeQualityIssue::new(IssueSeverity::Warning, "Warning", "Description", "test.rs");
+    let info = CodeQualityIssue::new(IssueSeverity::Info, "Info", "Description", "test.rs");
     let result = ricecoder_github::CodeReviewResult::new(123)
         .with_issue(critical)
         .with_issue(warning)
@@ -198,8 +173,7 @@ fn test_code_review_standards_custom() {
 
 #[test]
 fn test_code_review_standards_with_rule() {
-    let standards = CodeReviewStandards::new(70)
-        .with_rule("naming", "use_snake_case");
+    let standards = CodeReviewStandards::new(70).with_rule("naming", "use_snake_case");
     assert!(standards.custom_rules.contains_key("naming"));
 }
 
@@ -243,7 +217,9 @@ fn test_analyze_code_empty_body() {
     let mut pr = create_test_pr();
     pr.body.clear();
     let issues = agent.analyze_code(&pr).unwrap();
-    assert!(issues.iter().any(|i| i.title.contains("Missing PR description")));
+    assert!(issues
+        .iter()
+        .any(|i| i.title.contains("Missing PR description")));
 }
 
 #[test]
@@ -366,9 +342,7 @@ fn test_post_suggestion_comment() {
 #[test]
 fn test_generate_summary_report() {
     let ops = CodeReviewOperations::new();
-    let report = ops
-        .generate_summary_report(123, 85, 2, 3, true)
-        .unwrap();
+    let report = ops.generate_summary_report(123, 85, 2, 3, true).unwrap();
     assert!(report.contains("PR #123"));
     assert!(report.contains("85/100"));
     assert!(report.contains("APPROVED"));
@@ -493,8 +467,7 @@ fn test_conditional_approval_result_with_conditions() {
 #[test]
 fn test_conditional_approval_result_all_conditions_met() {
     let condition = ApprovalCondition::new("Test", "Description", true);
-    let result = ConditionalApprovalResult::new(123)
-        .with_condition(condition);
+    let result = ConditionalApprovalResult::new(123).with_condition(condition);
     assert!(result.all_conditions_met());
 }
 

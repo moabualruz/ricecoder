@@ -7,11 +7,11 @@
 //! - Operation cancellation and coordination
 //! - Streaming message rendering with live updates
 
-use crate::error_handling::{ErrorManager, RiceError, ErrorCategory, ErrorSeverity};
+use crate::error_handling::{ErrorCategory, ErrorManager, ErrorSeverity, RiceError};
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::{RwLock, mpsc, broadcast};
-use tokio::time::{Instant, Duration};
+use tokio::sync::{broadcast, mpsc, RwLock};
+use tokio::time::{Duration, Instant};
 use tokio_util::sync::CancellationToken;
 
 /// Stream data types for different kinds of real-time updates
@@ -87,7 +87,12 @@ pub struct RealTimeStream {
 
 impl RealTimeStream {
     /// Create a new real-time stream
-    pub fn new(operation_id: String, stream_type: StreamType, name: String, description: String) -> Self {
+    pub fn new(
+        operation_id: String,
+        stream_type: StreamType,
+        name: String,
+        description: String,
+    ) -> Self {
         let (tx, mut rx) = mpsc::unbounded_channel();
         let (broadcast_tx, broadcast_rx) = broadcast::channel(100);
 
@@ -122,7 +127,10 @@ impl RealTimeStream {
     }
 
     /// Send data to the stream
-    pub async fn send(&self, data: StreamData) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn send(
+        &self,
+        data: StreamData,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         if *self.is_active.read().await {
             self.sender.send(data)?;
             Ok(())
@@ -206,8 +214,19 @@ impl RealTimeUpdates {
     }
 
     /// Create a new real-time stream
-    pub async fn create_stream(&self, operation_id: String, stream_type: StreamType, name: String, description: String) -> Arc<RealTimeStream> {
-        let stream = Arc::new(RealTimeStream::new(operation_id.clone(), stream_type, name, description));
+    pub async fn create_stream(
+        &self,
+        operation_id: String,
+        stream_type: StreamType,
+        name: String,
+        description: String,
+    ) -> Arc<RealTimeStream> {
+        let stream = Arc::new(RealTimeStream::new(
+            operation_id.clone(),
+            stream_type,
+            name,
+            description,
+        ));
 
         let mut streams = self.streams.write().await;
         streams.insert(operation_id, Arc::clone(&stream));
@@ -236,7 +255,8 @@ impl RealTimeUpdates {
     /// Get streams by type
     pub async fn streams_by_type(&self, stream_type: StreamType) -> Vec<Arc<RealTimeStream>> {
         let streams = self.streams.read().await;
-        streams.values()
+        streams
+            .values()
             .filter(|stream| stream.stream_type == stream_type)
             .cloned()
             .collect()
@@ -405,7 +425,7 @@ impl ProgressIndicator {
             OperationStatus::Completed => "Completed",
             OperationStatus::Failed => "Failed",
             OperationStatus::Cancelled => "Cancelled",
-        }.to_string()
+        }
+        .to_string()
     }
 }
-

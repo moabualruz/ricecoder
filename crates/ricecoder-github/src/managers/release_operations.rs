@@ -132,7 +132,8 @@ impl Changelog {
     /// Generate markdown
     pub fn to_markdown(&self) -> String {
         let mut markdown = String::from("# Changelog\n\n");
-        markdown.push_str("All notable changes to this project will be documented in this file.\n\n");
+        markdown
+            .push_str("All notable changes to this project will be documented in this file.\n\n");
 
         for entry in &self.entries {
             markdown.push_str(&format!(
@@ -203,7 +204,9 @@ impl ReleaseOperations {
 
         // Validate release
         if release.tag_name.is_empty() {
-            return Err(GitHubError::invalid_input("Release tag name cannot be empty"));
+            return Err(GitHubError::invalid_input(
+                "Release tag name cannot be empty",
+            ));
         }
 
         if release.name.is_empty() {
@@ -214,10 +217,7 @@ impl ReleaseOperations {
         let result = ReleasePublishingResult {
             release_id: release.id,
             tag_name: release.tag_name.clone(),
-            url: format!(
-                "https://github.com/releases/tag/{}",
-                release.tag_name
-            ),
+            url: format!("https://github.com/releases/tag/{}", release.tag_name),
             published_at: Utc::now(),
             success: true,
         };

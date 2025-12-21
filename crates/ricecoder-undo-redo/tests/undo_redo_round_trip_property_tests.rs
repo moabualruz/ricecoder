@@ -6,38 +6,55 @@
 //! For any sequence of changes, performing undo operations followed by redo operations
 //! should restore the system to its original state.
 
-use proptest::prelude::*;
-use ricecoder_undo_redo::{Change, ChangeType, HistoryManager, HistoryConfig};
 use chrono::Utc;
+use proptest::prelude::*;
+use ricecoder_undo_redo::{Change, ChangeType, HistoryConfig, HistoryManager};
 
 // Strategy for generating changes
 fn arb_change() -> impl Strategy<Value = Change> {
     prop_oneof![
         // Create change
         (
-            "[a-zA-Z0-9/_.-]{1,50}".prop_map(|s| s), // file_path
-            "[a-zA-Z0-9 .,!?]{1,50}".prop_map(|s| s), // description
+            "[a-zA-Z0-9/_.-]{1,50}".prop_map(|s| s),   // file_path
+            "[a-zA-Z0-9 .,!?]{1,50}".prop_map(|s| s),  // description
             "[a-zA-Z0-9 .,!?]{1,100}".prop_map(|s| s), // after
-        ).prop_map(|(file_path, description, after)| {
-            Change::new(file_path, "".to_string(), after, description, ChangeType::Create).unwrap()
-        }),
+        )
+            .prop_map(|(file_path, description, after)| {
+                Change::new(
+                    file_path,
+                    "".to_string(),
+                    after,
+                    description,
+                    ChangeType::Create,
+                )
+                .unwrap()
+            }),
         // Modify change
         (
-            "[a-zA-Z0-9/_.-]{1,50}".prop_map(|s| s), // file_path
+            "[a-zA-Z0-9/_.-]{1,50}".prop_map(|s| s),  // file_path
             "[a-zA-Z0-9 .,!?]{1,50}".prop_map(|s| s), // description
             "[a-zA-Z0-9 .,!?]{1,50}".prop_map(|s| s), // before
             "[a-zA-Z0-9 .,!?]{1,50}".prop_map(|s| s), // after
-        ).prop_map(|(file_path, description, before, after)| {
-            Change::new(file_path, before, after, description, ChangeType::Modify).unwrap()
-        }),
+        )
+            .prop_map(|(file_path, description, before, after)| {
+                Change::new(file_path, before, after, description, ChangeType::Modify).unwrap()
+            }),
         // Delete change
         (
-            "[a-zA-Z0-9/_.-]{1,50}".prop_map(|s| s), // file_path
-            "[a-zA-Z0-9 .,!?]{1,50}".prop_map(|s| s), // description
+            "[a-zA-Z0-9/_.-]{1,50}".prop_map(|s| s),   // file_path
+            "[a-zA-Z0-9 .,!?]{1,50}".prop_map(|s| s),  // description
             "[a-zA-Z0-9 .,!?]{1,100}".prop_map(|s| s), // before
-        ).prop_map(|(file_path, description, before)| {
-            Change::new(file_path, before, "".to_string(), description, ChangeType::Delete).unwrap()
-        }),
+        )
+            .prop_map(|(file_path, description, before)| {
+                Change::new(
+                    file_path,
+                    before,
+                    "".to_string(),
+                    description,
+                    ChangeType::Delete,
+                )
+                .unwrap()
+            }),
     ]
 }
 
@@ -49,15 +66,15 @@ fn arb_history_config() -> impl Strategy<Value = HistoryConfig> {
         any::<bool>(),     // session_scoped
         any::<bool>(),     // enable_persistence
     )
-        .prop_map(|(max_undo, max_redo, session_scoped, enable_persistence)| {
-            HistoryConfig {
+        .prop_map(
+            |(max_undo, max_redo, session_scoped, enable_persistence)| HistoryConfig {
                 max_undo_stack_size: max_undo,
                 max_redo_stack_size: max_redo,
                 session_scoped,
                 enable_persistence,
                 persistence_dir: None,
-            }
-        })
+            },
+        )
 }
 
 proptest! {

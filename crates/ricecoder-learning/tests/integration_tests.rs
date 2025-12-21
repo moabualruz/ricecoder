@@ -1,7 +1,5 @@
 /// Integration tests for complete learning system workflows
-use ricecoder_learning::{
-    Decision, DecisionContext, LearningManager, Rule, RuleScope, RuleSource,
-};
+use ricecoder_learning::{Decision, DecisionContext, LearningManager, Rule, RuleScope, RuleSource};
 use std::path::PathBuf;
 
 // ============================================================================
@@ -90,7 +88,11 @@ async fn test_workflow_decision_capture_to_pattern_extraction_to_rule_creation()
 
     // Verify complete workflow - at minimum, decisions were captured
     let final_decisions = manager.get_decisions().await;
-    assert_eq!(final_decisions.len(), 3, "Should have captured all 3 decisions");
+    assert_eq!(
+        final_decisions.len(),
+        3,
+        "Should have captured all 3 decisions"
+    );
 }
 
 #[tokio::test]
@@ -169,7 +171,10 @@ async fn test_workflow_pattern_validation_and_confidence_update() {
         assert!(validation_score >= 0.0 && validation_score <= 1.0);
 
         // Update confidence based on validation
-        manager.update_pattern_confidence(&pattern_id, validation_score).await.unwrap();
+        manager
+            .update_pattern_confidence(&pattern_id, validation_score)
+            .await
+            .unwrap();
 
         // Verify confidence was updated
         let updated_pattern = manager.get_pattern(&pattern_id).await.unwrap();
@@ -226,16 +231,22 @@ async fn test_workflow_rule_storage_retrieval_application() {
     );
 
     // Apply individual rules
-    let result1 = manager.apply_rule_to_context(&retrieved_rule1, &context).await;
+    let result1 = manager
+        .apply_rule_to_context(&retrieved_rule1, &context)
+        .await;
     assert!(result1.matched);
     assert_eq!(result1.action, Some("add_documentation".to_string()));
 
-    let result2 = manager.apply_rule_to_context(&retrieved_rule2, &context).await;
+    let result2 = manager
+        .apply_rule_to_context(&retrieved_rule2, &context)
+        .await;
     assert!(result2.matched);
     assert_eq!(result2.action, Some("add_error_handling".to_string()));
 
     // Apply multiple rules
-    let results = manager.apply_rules_to_context(&[retrieved_rule1, retrieved_rule2], &context).await;
+    let results = manager
+        .apply_rules_to_context(&[retrieved_rule1, retrieved_rule2], &context)
+        .await;
     assert_eq!(results.len(), 2);
     assert!(results[0].matched);
     assert!(results[1].matched);
@@ -341,11 +352,14 @@ async fn test_workflow_rule_promotion_complete() {
     manager.clear_pending_promotions().await;
 
     // Step 1: Create a rule in project scope with unique pattern
-    let unique_pattern = format!("function_promo_complete_{}", std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_nanos());
-    
+    let unique_pattern = format!(
+        "function_promo_complete_{}",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    );
+
     let rule = Rule::new(
         RuleScope::Project,
         unique_pattern,
@@ -366,7 +380,10 @@ async fn test_workflow_rule_promotion_complete() {
     assert_eq!(pending_count, 1);
 
     // Step 4: Approve promotion
-    let promoted_rule = manager.approve_promotion(&rule_id, Some("Useful pattern".to_string())).await.unwrap();
+    let promoted_rule = manager
+        .approve_promotion(&rule_id, Some("Useful pattern".to_string()))
+        .await
+        .unwrap();
     assert_eq!(promoted_rule.scope, RuleScope::Global);
 
     // Step 5: Verify promotion is no longer pending
@@ -385,11 +402,14 @@ async fn test_workflow_rule_promotion_with_conflict_detection() {
     manager.clear_pending_promotions().await;
 
     // Create a rule in project scope with unique pattern (use timestamp to ensure uniqueness)
-    let unique_pattern = format!("function_promo_conflict_unique_{}", std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_nanos());
-    
+    let unique_pattern = format!(
+        "function_promo_conflict_unique_{}",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    );
+
     let rule = Rule::new(
         RuleScope::Project,
         unique_pattern,
@@ -410,7 +430,9 @@ async fn test_workflow_rule_promotion_with_conflict_detection() {
     // Approve promotion
     let promoted_rule = manager.approve_promotion(&rule_id, None).await.unwrap();
     // Rule source should be updated to Promoted
-    assert!(promoted_rule.source == RuleSource::Promoted || promoted_rule.source == RuleSource::Learned);
+    assert!(
+        promoted_rule.source == RuleSource::Promoted || promoted_rule.source == RuleSource::Learned
+    );
 }
 
 #[tokio::test]
@@ -419,11 +441,14 @@ async fn test_workflow_rule_promotion_rejection() {
     manager.clear_pending_promotions().await;
 
     // Create a rule with unique pattern
-    let unique_pattern = format!("function_promo_reject_{}", std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_nanos());
-    
+    let unique_pattern = format!(
+        "function_promo_reject_{}",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    );
+
     let rule = Rule::new(
         RuleScope::Project,
         unique_pattern,
@@ -441,7 +466,10 @@ async fn test_workflow_rule_promotion_rejection() {
     assert_eq!(pending_count, 1);
 
     // Reject promotion
-    manager.reject_promotion(&rule_id, Some("Not ready yet".to_string())).await.unwrap();
+    manager
+        .reject_promotion(&rule_id, Some("Not ready yet".to_string()))
+        .await
+        .unwrap();
 
     // Verify promotion is no longer pending
     let pending_count = manager.pending_promotion_count().await;
@@ -458,11 +486,14 @@ async fn test_workflow_rule_promotion_version_tracking() {
     manager.clear_pending_promotions().await;
 
     // Create initial rule with unique pattern
-    let unique_pattern = format!("function_promo_version_{}", std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_nanos());
-    
+    let unique_pattern = format!(
+        "function_promo_version_{}",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    );
+
     let mut rule = Rule::new(
         RuleScope::Project,
         unique_pattern,
@@ -545,14 +576,20 @@ async fn test_workflow_scope_isolation() {
     manager.store_rule(session_rule).await.unwrap();
 
     // Get rules by scope
-    let session_rules = manager.get_rules_by_scope(RuleScope::Session).await.unwrap();
+    let session_rules = manager
+        .get_rules_by_scope(RuleScope::Session)
+        .await
+        .unwrap();
     assert_eq!(session_rules.len(), 1);
 
     // Verify other scopes don't have the rule
     let global_rules = manager.get_rules_by_scope(RuleScope::Global).await.unwrap();
     assert_eq!(global_rules.len(), 0);
 
-    let project_rules = manager.get_rules_by_scope(RuleScope::Project).await.unwrap();
+    let project_rules = manager
+        .get_rules_by_scope(RuleScope::Project)
+        .await
+        .unwrap();
     assert_eq!(project_rules.len(), 0);
 }
 
@@ -588,7 +625,9 @@ async fn test_workflow_multi_scope_rule_application() {
     );
 
     let all_rules = manager.get_rules().await.unwrap();
-    let best_match = manager.apply_rules_with_precedence(&all_rules, &context).await;
+    let best_match = manager
+        .apply_rules_with_precedence(&all_rules, &context)
+        .await;
 
     // Verify project rule is selected (higher confidence)
     assert!(best_match.is_some());

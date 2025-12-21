@@ -255,5 +255,3 @@ struct OllamaFileSettings {
     timeout_secs: Option<u64>,
     cache_ttl_secs: Option<u64>,
 }
-
-

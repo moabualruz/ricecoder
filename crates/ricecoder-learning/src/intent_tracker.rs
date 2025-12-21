@@ -228,9 +228,8 @@ impl IntentTracker {
                 }
 
                 // Calculate confidence based on occurrences
-                let avg_occurrences =
-                    decisions.iter().map(|d| d.occurrences).sum::<usize>() as f32
-                        / decisions.len() as f32;
+                let avg_occurrences = decisions.iter().map(|d| d.occurrences).sum::<usize>() as f32
+                    / decisions.len() as f32;
                 pattern.confidence = (avg_occurrences / 10.0).min(1.0);
                 pattern.occurrences = decisions.len();
 
@@ -280,20 +279,18 @@ impl IntentTracker {
             _ => "medium".to_string(),
         };
 
-        let mut drift = DriftDetection::new(
-            decision_id.to_string(),
-            drift_type,
-            severity,
-            description,
-        );
+        let mut drift =
+            DriftDetection::new(decision_id.to_string(), drift_type, severity, description);
 
         // Suggest remediation based on drift type
         drift.remediation = match drift.drift_type.as_str() {
-            "violation" => "Immediately address the violation to restore architectural integrity"
-                .to_string(),
+            "violation" => {
+                "Immediately address the violation to restore architectural integrity".to_string()
+            }
             "deviation" => "Review and align with established architectural patterns".to_string(),
-            "inconsistency" => "Standardize implementation to match architectural intent"
-                .to_string(),
+            "inconsistency" => {
+                "Standardize implementation to match architectural intent".to_string()
+            }
             _ => "Review and address the drift".to_string(),
         };
 
@@ -316,11 +313,7 @@ impl IntentTracker {
     }
 
     /// Update decision confidence based on observations
-    pub fn update_decision_confidence(
-        &mut self,
-        decision_id: &str,
-        confidence: f32,
-    ) -> Result<()> {
+    pub fn update_decision_confidence(&mut self, decision_id: &str, confidence: f32) -> Result<()> {
         if let Some(decision) = self.decisions.get_mut(decision_id) {
             decision.confidence = confidence.clamp(0.0, 1.0);
             decision.last_observed = Utc::now();

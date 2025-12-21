@@ -149,7 +149,10 @@ impl ConfigWatcher {
         // In a real implementation, this would convert CustomToolConfig to ToolMetadata
         // and register them with the tool registry
 
-        info!("Tool registry updated with {} custom tools", config.custom_tools.len());
+        info!(
+            "Tool registry updated with {} custom tools",
+            config.custom_tools.len()
+        );
         Ok(())
     }
 
@@ -181,7 +184,10 @@ impl ConfigWatcher {
 
     /// Validates new configuration before applying
     pub async fn validate_new_config<P: AsRef<Path>>(&self, config_path: P) -> Result<MCPConfig> {
-        debug!("Validating new configuration from: {:?}", config_path.as_ref());
+        debug!(
+            "Validating new configuration from: {:?}",
+            config_path.as_ref()
+        );
 
         let config = MCPConfigLoader::load_from_file(config_path)?;
         MCPConfigLoader::validate(&config)?;

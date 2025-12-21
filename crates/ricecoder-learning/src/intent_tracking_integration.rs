@@ -181,10 +181,7 @@ impl IntentTrackingIntegration {
     }
 
     /// Get drifts for a specific decision from the detector
-    pub async fn get_detector_drifts_for_decision(
-        &self,
-        decision_id: &str,
-    ) -> Vec<DriftDetection> {
+    pub async fn get_detector_drifts_for_decision(&self, decision_id: &str) -> Vec<DriftDetection> {
         let detector = self.drift_detector.read().await;
         detector.get_drifts_for_decision(decision_id)
     }
@@ -213,7 +210,8 @@ impl IntentTrackingIntegration {
             let patterns = tracker.identify_patterns()?;
             for pattern in patterns {
                 let mut detector = self.drift_detector.write().await;
-                if let Ok(Some(drift)) = detector.check_deviation(&decision, &pattern.pattern_type) {
+                if let Ok(Some(drift)) = detector.check_deviation(&decision, &pattern.pattern_type)
+                {
                     all_drifts.push(drift);
                 }
             }

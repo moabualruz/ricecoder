@@ -7,12 +7,12 @@
 //! - Provider API load testing
 //! - Memory pressure testing
 
-use crate::monitor::{PerformanceMonitor, PerformanceMetrics};
+use crate::monitor::{PerformanceMetrics, PerformanceMonitor};
 use crate::profiler::PerformanceProfiler;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tokio::sync::{Semaphore, RwLock};
+use tokio::sync::{RwLock, Semaphore};
 use tokio::task;
 use tracing::{debug, info, warn};
 
@@ -38,7 +38,7 @@ impl EnterpriseSimulator {
         Self {
             max_concurrent_users: 50,
             session_duration_range: (300, 3600), // 5 minutes to 1 hour
-            request_rate_per_user: 2.0, // 2 requests per second
+            request_rate_per_user: 2.0,          // 2 requests per second
             large_codebase_files: 10000,
             memory_pressure_multiplier: 1.5,
             mcp_tool_frequency: 0.3, // 30% of requests involve MCP tools
@@ -50,7 +50,7 @@ impl EnterpriseSimulator {
         Self {
             max_concurrent_users: 100,
             session_duration_range: (600, 7200), // 10 minutes to 2 hours
-            request_rate_per_user: 5.0, // 5 requests per second
+            request_rate_per_user: 5.0,          // 5 requests per second
             large_codebase_files: 50000,
             memory_pressure_multiplier: 2.0,
             mcp_tool_frequency: 0.5, // 50% of requests involve MCP tools
@@ -58,10 +58,15 @@ impl EnterpriseSimulator {
     }
 
     /// Run enterprise workload simulation
-    pub async fn run_simulation(&self, duration: Duration) -> Result<SimulationResult, Box<dyn std::error::Error>> {
+    pub async fn run_simulation(
+        &self,
+        duration: Duration,
+    ) -> Result<SimulationResult, Box<dyn std::error::Error>> {
         info!("Starting enterprise workload simulation for {:?}", duration);
-        info!("Configuration: {} concurrent users, {} files, {}x memory pressure",
-              self.max_concurrent_users, self.large_codebase_files, self.memory_pressure_multiplier);
+        info!(
+            "Configuration: {} concurrent users, {} files, {}x memory pressure",
+            self.max_concurrent_users, self.large_codebase_files, self.memory_pressure_multiplier
+        );
 
         let start_time = Instant::now();
         let mut profiler = PerformanceProfiler::new();
@@ -80,16 +85,20 @@ impl EnterpriseSimulator {
         let (shutdown_tx, mut shutdown_rx) = tokio::sync::mpsc::channel(1);
 
         // User session simulator
-        let session_simulator = self.spawn_session_simulator(simulation_state.clone(), shutdown_tx.clone());
+        let session_simulator =
+            self.spawn_session_simulator(simulation_state.clone(), shutdown_tx.clone());
 
         // MCP tool load generator
-        let mcp_load_generator = self.spawn_mcp_load_generator(simulation_state.clone(), shutdown_tx.clone());
+        let mcp_load_generator =
+            self.spawn_mcp_load_generator(simulation_state.clone(), shutdown_tx.clone());
 
         // Memory pressure simulator
-        let memory_pressure_simulator = self.spawn_memory_pressure_simulator(simulation_state.clone(), shutdown_tx.clone());
+        let memory_pressure_simulator =
+            self.spawn_memory_pressure_simulator(simulation_state.clone(), shutdown_tx.clone());
 
         // Large codebase analysis simulator
-        let codebase_analyzer = self.spawn_codebase_analyzer(simulation_state.clone(), shutdown_tx.clone());
+        let codebase_analyzer =
+            self.spawn_codebase_analyzer(simulation_state.clone(), shutdown_tx.clone());
 
         // Wait for duration or shutdown signal
         let simulation_task = async {
@@ -129,11 +138,16 @@ impl EnterpriseSimulator {
             },
         };
 
-        info!("Enterprise workload simulation completed in {:?}", result.duration);
-        info!("Results: {} requests, {} MCP calls, {} errors",
-              result.final_state.total_requests,
-              result.final_state.mcp_tool_calls,
-              result.final_state.errors);
+        info!(
+            "Enterprise workload simulation completed in {:?}",
+            result.duration
+        );
+        info!(
+            "Results: {} requests, {} MCP calls, {} errors",
+            result.final_state.total_requests,
+            result.final_state.mcp_tool_calls,
+            result.final_state.errors
+        );
 
         Ok(result)
     }
@@ -284,14 +298,18 @@ impl EnterpriseSimulator {
                     tokio::time::sleep(processing_time).await;
 
                     // Occasionally simulate errors
-                    if rand::random::<f64>() < 0.02 { // 2% error rate
+                    if rand::random::<f64>() < 0.02 {
+                        // 2% error rate
                         let mut state_lock = state.write().await;
                         state_lock.errors += 1;
                     }
                 }
 
                 let analysis_duration = analysis_start.elapsed();
-                debug!("Completed codebase analysis simulation in {:?}", analysis_duration);
+                debug!(
+                    "Completed codebase analysis simulation in {:?}",
+                    analysis_duration
+                );
 
                 // Wait before next analysis cycle
                 tokio::time::sleep(Duration::from_secs(30)).await;
@@ -306,7 +324,8 @@ async fn simulate_user_session(
     duration_range: (u64, u64),
     request_rate: f64,
 ) {
-    let session_duration = duration_range.0 + (rand::random::<u64>() % (duration_range.1 - duration_range.0 + 1));
+    let session_duration =
+        duration_range.0 + (rand::random::<u64>() % (duration_range.1 - duration_range.0 + 1));
     let session_end = Instant::now() + Duration::from_secs(session_duration);
 
     {
@@ -325,7 +344,8 @@ async fn simulate_user_session(
         state_lock.total_requests += 1;
 
         // Simulate occasional errors
-        if rand::random::<f64>() < 0.05 { // 5% error rate
+        if rand::random::<f64>() < 0.05 {
+            // 5% error rate
             state_lock.errors += 1;
         }
     }
@@ -371,19 +391,34 @@ impl SimulationResult {
     pub fn generate_report(&self) -> String {
         let mut report = format!("=== Enterprise Workload Simulation Report ===\n");
         report.push_str(&format!("Duration: {:.2}s\n", self.duration.as_secs_f64()));
-        report.push_str(&format!("Active Sessions: {}\n", self.final_state.active_sessions));
-        report.push_str(&format!("Total Requests: {}\n", self.final_state.total_requests));
-        report.push_str(&format!("MCP Tool Calls: {}\n", self.final_state.mcp_tool_calls));
+        report.push_str(&format!(
+            "Active Sessions: {}\n",
+            self.final_state.active_sessions
+        ));
+        report.push_str(&format!(
+            "Total Requests: {}\n",
+            self.final_state.total_requests
+        ));
+        report.push_str(&format!(
+            "MCP Tool Calls: {}\n",
+            self.final_state.mcp_tool_calls
+        ));
         report.push_str(&format!("Errors: {}\n", self.final_state.errors));
-        report.push_str(&format!("Peak Memory Pressure: {:.1}MB\n", self.final_state.memory_pressure));
+        report.push_str(&format!(
+            "Peak Memory Pressure: {:.1}MB\n",
+            self.final_state.memory_pressure
+        ));
 
         if self.final_state.total_requests > 0 {
-            let error_rate = (self.final_state.errors as f64 / self.final_state.total_requests as f64) * 100.0;
+            let error_rate =
+                (self.final_state.errors as f64 / self.final_state.total_requests as f64) * 100.0;
             report.push_str(&format!("Error Rate: {:.2}%\n", error_rate));
         }
 
         if self.final_state.mcp_tool_calls > 0 {
-            let mcp_percentage = (self.final_state.mcp_tool_calls as f64 / self.final_state.total_requests as f64) * 100.0;
+            let mcp_percentage = (self.final_state.mcp_tool_calls as f64
+                / self.final_state.total_requests as f64)
+                * 100.0;
             report.push_str(&format!("MCP Tool Usage: {:.1}%\n", mcp_percentage));
         }
 
@@ -411,7 +446,9 @@ impl SimulationResult {
         let error_rate_ok = error_rate < 5.0;
 
         // Check if slowest path is within enterprise targets
-        let response_time_ok = self.profile_result.slowest_path()
+        let response_time_ok = self
+            .profile_result
+            .slowest_path()
             .map(|(_, metrics)| metrics.p95_time_ns < 500_000_000) // < 500ms
             .unwrap_or(true);
 

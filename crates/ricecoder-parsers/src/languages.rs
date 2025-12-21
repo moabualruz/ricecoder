@@ -97,7 +97,9 @@ impl LanguageConfig {
         let (grammar_name, node_mappings) = match language {
             Language::Rust => ("rust", Self::rust_node_mappings()),
             Language::Python => ("python", Self::python_node_mappings()),
-            Language::TypeScript | Language::JavaScript => ("typescript", Self::typescript_node_mappings()),
+            Language::TypeScript | Language::JavaScript => {
+                ("typescript", Self::typescript_node_mappings())
+            }
             Language::Go => ("go", Self::go_node_mappings()),
         };
 
@@ -112,22 +114,61 @@ impl LanguageConfig {
     fn rust_node_mappings() -> HashMap<String, crate::types::NodeType> {
         let mut mappings = HashMap::new();
         mappings.insert("source_file".to_string(), crate::types::NodeType::Program);
-        mappings.insert("function_item".to_string(), crate::types::NodeType::Function);
+        mappings.insert(
+            "function_item".to_string(),
+            crate::types::NodeType::Function,
+        );
         mappings.insert("struct_item".to_string(), crate::types::NodeType::Class);
         mappings.insert("impl_item".to_string(), crate::types::NodeType::Class);
-        mappings.insert("let_declaration".to_string(), crate::types::NodeType::Variable);
+        mappings.insert(
+            "let_declaration".to_string(),
+            crate::types::NodeType::Variable,
+        );
         mappings.insert("const_item".to_string(), crate::types::NodeType::Constant);
-        mappings.insert("use_declaration".to_string(), crate::types::NodeType::Import);
-        mappings.insert("if_expression".to_string(), crate::types::NodeType::IfStatement);
-        mappings.insert("for_expression".to_string(), crate::types::NodeType::ForLoop);
-        mappings.insert("while_expression".to_string(), crate::types::NodeType::WhileLoop);
-        mappings.insert("call_expression".to_string(), crate::types::NodeType::CallExpression);
-        mappings.insert("assignment_expression".to_string(), crate::types::NodeType::Assignment);
-        mappings.insert("return_expression".to_string(), crate::types::NodeType::Return);
-        mappings.insert("string_literal".to_string(), crate::types::NodeType::StringLiteral);
-        mappings.insert("integer_literal".to_string(), crate::types::NodeType::NumberLiteral);
-        mappings.insert("boolean_literal".to_string(), crate::types::NodeType::BooleanLiteral);
-        mappings.insert("array_expression".to_string(), crate::types::NodeType::ArrayLiteral);
+        mappings.insert(
+            "use_declaration".to_string(),
+            crate::types::NodeType::Import,
+        );
+        mappings.insert(
+            "if_expression".to_string(),
+            crate::types::NodeType::IfStatement,
+        );
+        mappings.insert(
+            "for_expression".to_string(),
+            crate::types::NodeType::ForLoop,
+        );
+        mappings.insert(
+            "while_expression".to_string(),
+            crate::types::NodeType::WhileLoop,
+        );
+        mappings.insert(
+            "call_expression".to_string(),
+            crate::types::NodeType::CallExpression,
+        );
+        mappings.insert(
+            "assignment_expression".to_string(),
+            crate::types::NodeType::Assignment,
+        );
+        mappings.insert(
+            "return_expression".to_string(),
+            crate::types::NodeType::Return,
+        );
+        mappings.insert(
+            "string_literal".to_string(),
+            crate::types::NodeType::StringLiteral,
+        );
+        mappings.insert(
+            "integer_literal".to_string(),
+            crate::types::NodeType::NumberLiteral,
+        );
+        mappings.insert(
+            "boolean_literal".to_string(),
+            crate::types::NodeType::BooleanLiteral,
+        );
+        mappings.insert(
+            "array_expression".to_string(),
+            crate::types::NodeType::ArrayLiteral,
+        );
         mappings.insert("line_comment".to_string(), crate::types::NodeType::Comment);
         mappings.insert("block_comment".to_string(), crate::types::NodeType::Comment);
         mappings
@@ -136,24 +177,51 @@ impl LanguageConfig {
     fn python_node_mappings() -> HashMap<String, crate::types::NodeType> {
         let mut mappings = HashMap::new();
         mappings.insert("module".to_string(), crate::types::NodeType::Program);
-        mappings.insert("function_definition".to_string(), crate::types::NodeType::Function);
-        mappings.insert("class_definition".to_string(), crate::types::NodeType::Class);
+        mappings.insert(
+            "function_definition".to_string(),
+            crate::types::NodeType::Function,
+        );
+        mappings.insert(
+            "class_definition".to_string(),
+            crate::types::NodeType::Class,
+        );
         mappings.insert("assignment".to_string(), crate::types::NodeType::Variable);
-        mappings.insert("import_statement".to_string(), crate::types::NodeType::Import);
-        mappings.insert("import_from_statement".to_string(), crate::types::NodeType::Import);
-        mappings.insert("if_statement".to_string(), crate::types::NodeType::IfStatement);
+        mappings.insert(
+            "import_statement".to_string(),
+            crate::types::NodeType::Import,
+        );
+        mappings.insert(
+            "import_from_statement".to_string(),
+            crate::types::NodeType::Import,
+        );
+        mappings.insert(
+            "if_statement".to_string(),
+            crate::types::NodeType::IfStatement,
+        );
         mappings.insert("for_statement".to_string(), crate::types::NodeType::ForLoop);
-        mappings.insert("while_statement".to_string(), crate::types::NodeType::WhileLoop);
-        mappings.insert("try_statement".to_string(), crate::types::NodeType::TryCatch);
+        mappings.insert(
+            "while_statement".to_string(),
+            crate::types::NodeType::WhileLoop,
+        );
+        mappings.insert(
+            "try_statement".to_string(),
+            crate::types::NodeType::TryCatch,
+        );
         mappings.insert("call".to_string(), crate::types::NodeType::CallExpression);
-        mappings.insert("return_statement".to_string(), crate::types::NodeType::Return);
+        mappings.insert(
+            "return_statement".to_string(),
+            crate::types::NodeType::Return,
+        );
         mappings.insert("string".to_string(), crate::types::NodeType::StringLiteral);
         mappings.insert("integer".to_string(), crate::types::NodeType::NumberLiteral);
         mappings.insert("float".to_string(), crate::types::NodeType::NumberLiteral);
         mappings.insert("true".to_string(), crate::types::NodeType::BooleanLiteral);
         mappings.insert("false".to_string(), crate::types::NodeType::BooleanLiteral);
         mappings.insert("list".to_string(), crate::types::NodeType::ArrayLiteral);
-        mappings.insert("dictionary".to_string(), crate::types::NodeType::ObjectLiteral);
+        mappings.insert(
+            "dictionary".to_string(),
+            crate::types::NodeType::ObjectLiteral,
+        );
         mappings.insert("comment".to_string(), crate::types::NodeType::Comment);
         mappings
     }
@@ -161,21 +229,63 @@ impl LanguageConfig {
     fn typescript_node_mappings() -> HashMap<String, crate::types::NodeType> {
         let mut mappings = HashMap::new();
         mappings.insert("program".to_string(), crate::types::NodeType::Program);
-        mappings.insert("function_declaration".to_string(), crate::types::NodeType::Function);
-        mappings.insert("method_definition".to_string(), crate::types::NodeType::Method);
-        mappings.insert("class_declaration".to_string(), crate::types::NodeType::Class);
-        mappings.insert("interface_declaration".to_string(), crate::types::NodeType::Type);
-        mappings.insert("variable_declaration".to_string(), crate::types::NodeType::Variable);
-        mappings.insert("const_declaration".to_string(), crate::types::NodeType::Constant);
-        mappings.insert("import_statement".to_string(), crate::types::NodeType::Import);
-        mappings.insert("export_statement".to_string(), crate::types::NodeType::Export);
-        mappings.insert("if_statement".to_string(), crate::types::NodeType::IfStatement);
+        mappings.insert(
+            "function_declaration".to_string(),
+            crate::types::NodeType::Function,
+        );
+        mappings.insert(
+            "method_definition".to_string(),
+            crate::types::NodeType::Method,
+        );
+        mappings.insert(
+            "class_declaration".to_string(),
+            crate::types::NodeType::Class,
+        );
+        mappings.insert(
+            "interface_declaration".to_string(),
+            crate::types::NodeType::Type,
+        );
+        mappings.insert(
+            "variable_declaration".to_string(),
+            crate::types::NodeType::Variable,
+        );
+        mappings.insert(
+            "const_declaration".to_string(),
+            crate::types::NodeType::Constant,
+        );
+        mappings.insert(
+            "import_statement".to_string(),
+            crate::types::NodeType::Import,
+        );
+        mappings.insert(
+            "export_statement".to_string(),
+            crate::types::NodeType::Export,
+        );
+        mappings.insert(
+            "if_statement".to_string(),
+            crate::types::NodeType::IfStatement,
+        );
         mappings.insert("for_statement".to_string(), crate::types::NodeType::ForLoop);
-        mappings.insert("while_statement".to_string(), crate::types::NodeType::WhileLoop);
-        mappings.insert("try_statement".to_string(), crate::types::NodeType::TryCatch);
-        mappings.insert("call_expression".to_string(), crate::types::NodeType::CallExpression);
-        mappings.insert("assignment_expression".to_string(), crate::types::NodeType::Assignment);
-        mappings.insert("return_statement".to_string(), crate::types::NodeType::Return);
+        mappings.insert(
+            "while_statement".to_string(),
+            crate::types::NodeType::WhileLoop,
+        );
+        mappings.insert(
+            "try_statement".to_string(),
+            crate::types::NodeType::TryCatch,
+        );
+        mappings.insert(
+            "call_expression".to_string(),
+            crate::types::NodeType::CallExpression,
+        );
+        mappings.insert(
+            "assignment_expression".to_string(),
+            crate::types::NodeType::Assignment,
+        );
+        mappings.insert(
+            "return_statement".to_string(),
+            crate::types::NodeType::Return,
+        );
         mappings.insert("string".to_string(), crate::types::NodeType::StringLiteral);
         mappings.insert("number".to_string(), crate::types::NodeType::NumberLiteral);
         mappings.insert("true".to_string(), crate::types::NodeType::BooleanLiteral);
@@ -189,25 +299,67 @@ impl LanguageConfig {
     fn go_node_mappings() -> HashMap<String, crate::types::NodeType> {
         let mut mappings = HashMap::new();
         mappings.insert("source_file".to_string(), crate::types::NodeType::Program);
-        mappings.insert("function_declaration".to_string(), crate::types::NodeType::Function);
-        mappings.insert("method_declaration".to_string(), crate::types::NodeType::Method);
+        mappings.insert(
+            "function_declaration".to_string(),
+            crate::types::NodeType::Function,
+        );
+        mappings.insert(
+            "method_declaration".to_string(),
+            crate::types::NodeType::Method,
+        );
         mappings.insert("type_declaration".to_string(), crate::types::NodeType::Type);
         mappings.insert("struct_type".to_string(), crate::types::NodeType::Class);
-        mappings.insert("var_declaration".to_string(), crate::types::NodeType::Variable);
-        mappings.insert("const_declaration".to_string(), crate::types::NodeType::Constant);
-        mappings.insert("import_declaration".to_string(), crate::types::NodeType::Import);
-        mappings.insert("if_statement".to_string(), crate::types::NodeType::IfStatement);
+        mappings.insert(
+            "var_declaration".to_string(),
+            crate::types::NodeType::Variable,
+        );
+        mappings.insert(
+            "const_declaration".to_string(),
+            crate::types::NodeType::Constant,
+        );
+        mappings.insert(
+            "import_declaration".to_string(),
+            crate::types::NodeType::Import,
+        );
+        mappings.insert(
+            "if_statement".to_string(),
+            crate::types::NodeType::IfStatement,
+        );
         mappings.insert("for_statement".to_string(), crate::types::NodeType::ForLoop);
-        mappings.insert("call_expression".to_string(), crate::types::NodeType::CallExpression);
-        mappings.insert("assignment_statement".to_string(), crate::types::NodeType::Assignment);
-        mappings.insert("return_statement".to_string(), crate::types::NodeType::Return);
-        mappings.insert("interpreted_string_literal".to_string(), crate::types::NodeType::StringLiteral);
-        mappings.insert("int_literal".to_string(), crate::types::NodeType::NumberLiteral);
-        mappings.insert("float_literal".to_string(), crate::types::NodeType::NumberLiteral);
+        mappings.insert(
+            "call_expression".to_string(),
+            crate::types::NodeType::CallExpression,
+        );
+        mappings.insert(
+            "assignment_statement".to_string(),
+            crate::types::NodeType::Assignment,
+        );
+        mappings.insert(
+            "return_statement".to_string(),
+            crate::types::NodeType::Return,
+        );
+        mappings.insert(
+            "interpreted_string_literal".to_string(),
+            crate::types::NodeType::StringLiteral,
+        );
+        mappings.insert(
+            "int_literal".to_string(),
+            crate::types::NodeType::NumberLiteral,
+        );
+        mappings.insert(
+            "float_literal".to_string(),
+            crate::types::NodeType::NumberLiteral,
+        );
         mappings.insert("true".to_string(), crate::types::NodeType::BooleanLiteral);
         mappings.insert("false".to_string(), crate::types::NodeType::BooleanLiteral);
-        mappings.insert("slice_type".to_string(), crate::types::NodeType::ArrayLiteral);
-        mappings.insert("map_type".to_string(), crate::types::NodeType::ObjectLiteral);
+        mappings.insert(
+            "slice_type".to_string(),
+            crate::types::NodeType::ArrayLiteral,
+        );
+        mappings.insert(
+            "map_type".to_string(),
+            crate::types::NodeType::ObjectLiteral,
+        );
         mappings.insert("comment".to_string(), crate::types::NodeType::Comment);
         mappings
     }
@@ -220,7 +372,8 @@ pub trait LanguageSupport: Send + Sync {
 
     /// Check if this support can handle a file
     fn can_handle(&self, file_path: &std::path::Path) -> bool {
-        file_path.extension()
+        file_path
+            .extension()
             .and_then(|ext| ext.to_str())
             .map(|ext| self.language().extensions().contains(&ext))
             .unwrap_or(false)
@@ -230,7 +383,11 @@ pub trait LanguageSupport: Send + Sync {
     fn config(&self) -> &LanguageConfig;
 
     /// Parse source code into AST
-    fn parse(&self, source: &str, config: &crate::parser::ParserConfig) -> crate::Result<crate::types::SyntaxTree>;
+    fn parse(
+        &self,
+        source: &str,
+        config: &crate::parser::ParserConfig,
+    ) -> crate::Result<crate::types::SyntaxTree>;
 }
 
 /// Language registry for managing language supports
@@ -257,9 +414,11 @@ impl LanguageRegistry {
     }
 
     /// Detect language from file path and get support
-    pub fn detect_and_get(&self, file_path: &std::path::Path) -> Option<&(dyn LanguageSupport + 'static)> {
-        Language::from_path(file_path)
-            .and_then(|lang| self.get(&lang))
+    pub fn detect_and_get(
+        &self,
+        file_path: &std::path::Path,
+    ) -> Option<&(dyn LanguageSupport + 'static)> {
+        Language::from_path(file_path).and_then(|lang| self.get(&lang))
     }
 
     /// Get all supported languages

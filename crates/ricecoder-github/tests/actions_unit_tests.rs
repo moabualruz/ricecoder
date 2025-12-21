@@ -19,11 +19,8 @@ fn test_actions_integration_creation() {
 
 #[tokio::test]
 async fn test_trigger_workflow_with_valid_inputs() {
-    let actions = ActionsIntegration::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let actions =
+        ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let request = WorkflowTriggerRequest {
         workflow: "test.yml".to_string(),
@@ -43,11 +40,8 @@ async fn test_trigger_workflow_with_valid_inputs() {
 
 #[tokio::test]
 async fn test_trigger_workflow_with_empty_workflow_name() {
-    let actions = ActionsIntegration::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let actions =
+        ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let request = WorkflowTriggerRequest {
         workflow: String::new(),
@@ -61,11 +55,8 @@ async fn test_trigger_workflow_with_empty_workflow_name() {
 
 #[tokio::test]
 async fn test_trigger_workflow_with_empty_branch() {
-    let actions = ActionsIntegration::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let actions =
+        ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let request = WorkflowTriggerRequest {
         workflow: "test.yml".to_string(),
@@ -79,11 +70,8 @@ async fn test_trigger_workflow_with_empty_branch() {
 
 #[tokio::test]
 async fn test_trigger_workflow_with_inputs() {
-    let actions = ActionsIntegration::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let actions =
+        ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let mut inputs = HashMap::new();
     inputs.insert("key1".to_string(), "value1".to_string());
@@ -101,11 +89,8 @@ async fn test_trigger_workflow_with_inputs() {
 
 #[tokio::test]
 async fn test_track_workflow_status_with_valid_run_id() {
-    let actions = ActionsIntegration::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let actions =
+        ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let result = actions.track_workflow_status(12345).await;
     assert!(result.is_ok());
@@ -126,11 +111,8 @@ async fn test_track_workflow_status_with_valid_run_id() {
 
 #[tokio::test]
 async fn test_track_workflow_status_with_zero_run_id() {
-    let actions = ActionsIntegration::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let actions =
+        ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let result = actions.track_workflow_status(0).await;
     assert!(result.is_err());
@@ -138,11 +120,8 @@ async fn test_track_workflow_status_with_zero_run_id() {
 
 #[tokio::test]
 async fn test_diagnose_ci_failure_with_valid_run_id() {
-    let actions = ActionsIntegration::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let actions =
+        ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let result = actions.diagnose_ci_failure(12345).await;
     assert!(result.is_ok());
@@ -153,11 +132,8 @@ async fn test_diagnose_ci_failure_with_valid_run_id() {
 
 #[tokio::test]
 async fn test_diagnose_ci_failure_with_zero_run_id() {
-    let actions = ActionsIntegration::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let actions =
+        ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let result = actions.diagnose_ci_failure(0).await;
     assert!(result.is_err());
@@ -165,11 +141,8 @@ async fn test_diagnose_ci_failure_with_zero_run_id() {
 
 #[tokio::test]
 async fn test_retry_workflow_with_valid_run_id() {
-    let actions = ActionsIntegration::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let actions =
+        ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let result = actions.retry_workflow(12345).await;
     assert!(result.is_ok());
@@ -183,11 +156,8 @@ async fn test_retry_workflow_with_valid_run_id() {
 
 #[tokio::test]
 async fn test_retry_workflow_with_zero_run_id() {
-    let actions = ActionsIntegration::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let actions =
+        ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let result = actions.retry_workflow(0).await;
     assert!(result.is_err());
@@ -195,11 +165,8 @@ async fn test_retry_workflow_with_zero_run_id() {
 
 #[tokio::test]
 async fn test_summarize_ci_results_with_valid_run_id() {
-    let actions = ActionsIntegration::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let actions =
+        ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let result = actions.summarize_ci_results(12345).await;
     assert!(result.is_ok());
@@ -213,11 +180,8 @@ async fn test_summarize_ci_results_with_valid_run_id() {
 
 #[tokio::test]
 async fn test_summarize_ci_results_with_zero_run_id() {
-    let actions = ActionsIntegration::new(
-        "token".to_string(),
-        "owner".to_string(),
-        "repo".to_string(),
-    );
+    let actions =
+        ActionsIntegration::new("token".to_string(), "owner".to_string(), "repo".to_string());
 
     let result = actions.summarize_ci_results(0).await;
     assert!(result.is_err());
@@ -337,12 +301,8 @@ async fn test_load_workflow_config_with_empty_path() {
 
 #[tokio::test]
 async fn test_generate_detailed_report_with_valid_inputs() {
-    let result = ActionsOperations::generate_detailed_report(
-        12345,
-        WorkflowStatus::Completed,
-        vec![],
-    )
-    .await;
+    let result =
+        ActionsOperations::generate_detailed_report(12345, WorkflowStatus::Completed, vec![]).await;
     assert!(result.is_ok());
 
     let report = result.unwrap();
@@ -353,8 +313,8 @@ async fn test_generate_detailed_report_with_valid_inputs() {
 
 #[tokio::test]
 async fn test_generate_detailed_report_with_zero_run_id() {
-    let result = ActionsOperations::generate_detailed_report(0, WorkflowStatus::Completed, vec![])
-        .await;
+    let result =
+        ActionsOperations::generate_detailed_report(0, WorkflowStatus::Completed, vec![]).await;
     assert!(result.is_err());
 }
 

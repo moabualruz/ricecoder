@@ -1,11 +1,11 @@
 //! Input validation and sanitization utilities
 
-use base64::{Engine as _, engine::general_purpose};
+use base64::{engine::general_purpose, Engine as _};
 use regex::Regex;
 use serde_json;
 use std::sync::Arc;
 
-use crate::{SecurityError, Result, audit::AuditLogger};
+use crate::{audit::AuditLogger, Result, SecurityError};
 
 /// Validated input wrapper
 #[derive(Debug, Clone)]
@@ -30,8 +30,12 @@ impl std::fmt::Display for ValidationError {
             ValidationError::EmptyInput => write!(f, "Input cannot be empty"),
             ValidationError::TooLong(len) => write!(f, "Input too long: {} characters", len),
             ValidationError::InvalidCharacters(chars) => write!(f, "Invalid characters: {}", chars),
-            ValidationError::SuspiciousPattern(pattern) => write!(f, "Suspicious pattern detected: {}", pattern),
-            ValidationError::CodeInjectionAttempt => write!(f, "Potential code injection attempt detected"),
+            ValidationError::SuspiciousPattern(pattern) => {
+                write!(f, "Suspicious pattern detected: {}", pattern)
+            }
+            ValidationError::CodeInjectionAttempt => {
+                write!(f, "Potential code injection attempt detected")
+            }
         }
     }
 }
@@ -68,15 +72,15 @@ pub fn validate_input(input: &str) -> Result<ValidatedInput> {
 fn check_suspicious_patterns(input: &str) -> Result<()> {
     // Common injection patterns
     let injection_patterns = [
-        r"<script[^>]*>.*?</script>",  // Script tags
-        r"javascript:",                // JavaScript URLs
-        r"data:text/html",             // Data URLs
-        r"vbscript:",                  // VBScript
-        r"on\w+\s*=",                  // Event handlers
-        r"eval\s*\(",                  // Eval calls
-        r"document\.cookie",           // Cookie access
-        r"localStorage",               // Local storage access
-        r"sessionStorage",             // Session storage access
+        r"<script[^>]*>.*?</script>", // Script tags
+        r"javascript:",               // JavaScript URLs
+        r"data:text/html",            // Data URLs
+        r"vbscript:",                 // VBScript
+        r"on\w+\s*=",                 // Event handlers
+        r"eval\s*\(",                 // Eval calls
+        r"document\.cookie",          // Cookie access
+        r"localStorage",              // Local storage access
+        r"sessionStorage",            // Session storage access
     ];
 
     for pattern in &injection_patterns {
@@ -139,9 +143,9 @@ pub fn validate_api_key_format(api_key: &str) -> Result<()> {
     }
 
     // Check for valid characters (alphanumeric, hyphens, underscores, dots)
-    let valid_chars = api_key.chars().all(|c| {
-        c.is_alphanumeric() || c == '-' || c == '_' || c == '.'
-    });
+    let valid_chars = api_key
+        .chars()
+        .all(|c| c.is_alphanumeric() || c == '-' || c == '_' || c == '.');
 
     if !valid_chars {
         return Err(SecurityError::Validation {
@@ -224,10 +228,15 @@ impl ValidationEngine {
         for pattern in &sql_patterns {
             if Regex::new(pattern).unwrap().is_match(input) {
                 // Log security violation
-                self.audit_logger.log_security_violation("sql_injection_attempt", serde_json::json!({
-                    "input": input,
-                    "pattern": pattern
-                })).await?;
+                self.audit_logger
+                    .log_security_violation(
+                        "sql_injection_attempt",
+                        serde_json::json!({
+                            "input": input,
+                            "pattern": pattern
+                        }),
+                    )
+                    .await?;
                 return Err(SecurityError::Validation {
                     message: "Potential SQL injection detected".to_string(),
                 });
@@ -236,7 +245,11 @@ impl ValidationEngine {
 
         // Sanitize by removing dangerous keywords
         let mut sanitized = input.to_string();
-        sanitized = sanitized.replace("DROP", "").replace("DELETE", "").replace("UNION", "").replace("--", "");
+        sanitized = sanitized
+            .replace("DROP", "")
+            .replace("DELETE", "")
+            .replace("UNION", "")
+            .replace("--", "");
 
         Ok(sanitized)
     }
@@ -244,9 +257,14 @@ impl ValidationEngine {
     /// Validate HTML input
     pub async fn validate_html_input(&self, input: &str) -> Result<String> {
         if input.contains("<script") || input.contains("javascript:") {
-            self.audit_logger.log_security_violation("xss_attempt", serde_json::json!({
-                "input": input
-            })).await?;
+            self.audit_logger
+                .log_security_violation(
+                    "xss_attempt",
+                    serde_json::json!({
+                        "input": input
+                    }),
+                )
+                .await?;
             return Err(SecurityError::Validation {
                 message: "Potential XSS detected".to_string(),
             });
@@ -257,9 +275,14 @@ impl ValidationEngine {
     /// Validate JavaScript input
     pub async fn validate_javascript_input(&self, input: &str) -> Result<String> {
         if input.contains("eval(") || input.contains("Function(") {
-            self.audit_logger.log_security_violation("code_injection_attempt", serde_json::json!({
-                "input": input
-            })).await?;
+            self.audit_logger
+                .log_security_violation(
+                    "code_injection_attempt",
+                    serde_json::json!({
+                        "input": input
+                    }),
+                )
+                .await?;
             return Err(SecurityError::Validation {
                 message: "Potential code injection detected".to_string(),
             });
@@ -270,9 +293,14 @@ impl ValidationEngine {
     /// Validate file path
     pub async fn validate_file_path(&self, path: &str) -> Result<String> {
         if path.contains("..") || path.starts_with('/') || path.starts_with('\\') {
-            self.audit_logger.log_security_violation("path_traversal_attempt", serde_json::json!({
-                "path": path
-            })).await?;
+            self.audit_logger
+                .log_security_violation(
+                    "path_traversal_attempt",
+                    serde_json::json!({
+                        "path": path
+                    }),
+                )
+                .await?;
             return Err(SecurityError::Validation {
                 message: "Path traversal detected".to_string(),
             });
@@ -285,9 +313,14 @@ impl ValidationEngine {
         let dangerous_commands = ["rm", "del", "format", "shutdown"];
         for cmd in &dangerous_commands {
             if command.contains(cmd) {
-                self.audit_logger.log_security_violation("dangerous_command_attempt", serde_json::json!({
-                    "command": command
-                })).await?;
+                self.audit_logger
+                    .log_security_violation(
+                        "dangerous_command_attempt",
+                        serde_json::json!({
+                            "command": command
+                        }),
+                    )
+                    .await?;
                 return Err(SecurityError::Validation {
                     message: "Dangerous command detected".to_string(),
                 });
@@ -299,9 +332,14 @@ impl ValidationEngine {
     /// Validate input size
     pub async fn validate_input_size(&self, input: &str) -> Result<String> {
         if input.len() > 10000 {
-            self.audit_logger.log_security_violation("input_size_exceeded", serde_json::json!({
-                "size": input.len()
-            })).await?;
+            self.audit_logger
+                .log_security_violation(
+                    "input_size_exceeded",
+                    serde_json::json!({
+                        "size": input.len()
+                    }),
+                )
+                .await?;
             return Err(SecurityError::Validation {
                 message: "Input size exceeded".to_string(),
             });
@@ -337,7 +375,11 @@ impl ValidationEngine {
     /// Validate encoded input
     pub async fn validate_encoded_input(&self, input: &str) -> Result<String> {
         // Basic check for base64-like input
-        if input.contains("=") && input.chars().all(|c| c.is_alphanumeric() || c == '+' || c == '/' || c == '=') {
+        if input.contains("=")
+            && input
+                .chars()
+                .all(|c| c.is_alphanumeric() || c == '+' || c == '/' || c == '=')
+        {
             // Try to decode
             if general_purpose::STANDARD.decode(input).is_err() {
                 return Err(SecurityError::Validation {

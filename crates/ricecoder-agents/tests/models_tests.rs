@@ -6,9 +6,8 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use ricecoder_agents::models::{
-    AgentConfig, AgentMetadata, AgentMetrics, AgentOutput, CodeLocation, ConfigSchema,
-    Finding, GeneratedContent, ProjectContext, Severity, Suggestion, TaskScope, TaskTarget,
-    TaskType,
+    AgentConfig, AgentMetadata, AgentMetrics, AgentOutput, CodeLocation, ConfigSchema, Finding,
+    GeneratedContent, ProjectContext, Severity, Suggestion, TaskScope, TaskTarget, TaskType,
 };
 
 #[test]
@@ -30,8 +29,7 @@ fn test_agent_config_serialization() {
     };
 
     let json = serde_json::to_string(&config).expect("serialization failed");
-    let deserialized: AgentConfig =
-        serde_json::from_str(&json).expect("deserialization failed");
+    let deserialized: AgentConfig = serde_json::from_str(&json).expect("deserialization failed");
 
     assert_eq!(deserialized.enabled, config.enabled);
     assert_eq!(deserialized.settings, config.settings);
@@ -62,8 +60,7 @@ fn test_agent_output_serialization() {
     };
 
     let json = serde_json::to_string(&output).expect("serialization failed");
-    let deserialized: AgentOutput =
-        serde_json::from_str(&json).expect("deserialization failed");
+    let deserialized: AgentOutput = serde_json::from_str(&json).expect("deserialization failed");
 
     assert_eq!(deserialized.findings.len(), 1);
     assert_eq!(deserialized.findings[0].id, "finding-1");
@@ -141,8 +138,7 @@ fn test_agent_metadata_serialization() {
     };
 
     let json = serde_json::to_string(&metadata).expect("serialization failed");
-    let deserialized: AgentMetadata =
-        serde_json::from_str(&json).expect("deserialization failed");
+    let deserialized: AgentMetadata = serde_json::from_str(&json).expect("deserialization failed");
 
     assert_eq!(deserialized.agent_id, "test-agent");
     assert_eq!(deserialized.execution_time_ms, 1000);

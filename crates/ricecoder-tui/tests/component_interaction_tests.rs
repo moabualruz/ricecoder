@@ -3,9 +3,9 @@
 //! Validates Requirements 12.1, 12.2
 
 use proptest::prelude::*;
-use ricecoder_tui::widgets::{ChatWidget, InputWidget};
 use ricecoder_tui::event_dispatcher::EventDispatcher;
 use ricecoder_tui::reactive_ui_updates::LiveDataSynchronizer;
+use ricecoder_tui::widgets::{ChatWidget, InputWidget};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -272,15 +272,25 @@ impl ricecoder_tui::plugins::Plugin for TestPlugin {
         "1.0.0"
     }
 
-    async fn initialize(&mut self, _context: &ricecoder_tui::plugins::PluginContext) -> ricecoder_tui::error::TuiResult<()> {
+    async fn initialize(
+        &mut self,
+        _context: &ricecoder_tui::plugins::PluginContext,
+    ) -> ricecoder_tui::error::TuiResult<()> {
         Ok(())
     }
 
-    async fn handle_message(&mut self, _message: &ricecoder_tui::plugins::PluginMessage) -> Vec<ricecoder_tui::plugins::PluginMessage> {
+    async fn handle_message(
+        &mut self,
+        _message: &ricecoder_tui::plugins::PluginMessage,
+    ) -> Vec<ricecoder_tui::plugins::PluginMessage> {
         vec![]
     }
 
-    async fn render(&self, _area: ratatui::prelude::Rect, _model: &ricecoder_tui::tea::AppModel) -> ricecoder_tui::error::TuiResult<Vec<ratatui::prelude::Line>> {
+    async fn render(
+        &self,
+        _area: ratatui::prelude::Rect,
+        _model: &ricecoder_tui::tea::AppModel,
+    ) -> ricecoder_tui::error::TuiResult<Vec<ratatui::prelude::Line>> {
         Ok(vec![])
     }
 
@@ -383,7 +393,9 @@ impl ComponentTestHarness {
         for i in 0..self.components.len() {
             for j in 0..self.components.len() {
                 if i != j {
-                    self.components[i].interact_with(&*self.components[j]).await?;
+                    self.components[i]
+                        .interact_with(&*self.components[j])
+                        .await?;
                 }
             }
         }
@@ -479,9 +491,12 @@ mod tests {
 
         // Test multiple components handle theme changes
         let components = vec![
-            Box::new(ricecoder_tui::widgets::ChatWidget::new()) as Box<dyn ricecoder_tui::Component>,
-            Box::new(ricecoder_tui::widgets::CommandPaletteWidget::new()) as Box<dyn ricecoder_tui::Component>,
-            Box::new(ricecoder_tui::widgets::StatusBarWidget::new()) as Box<dyn ricecoder_tui::Component>,
+            Box::new(ricecoder_tui::widgets::ChatWidget::new())
+                as Box<dyn ricecoder_tui::Component>,
+            Box::new(ricecoder_tui::widgets::CommandPaletteWidget::new())
+                as Box<dyn ricecoder_tui::Component>,
+            Box::new(ricecoder_tui::widgets::StatusBarWidget::new())
+                as Box<dyn ricecoder_tui::Component>,
         ];
 
         for mut component in components {
@@ -506,8 +521,14 @@ mod tests {
         let (updated_nav, _) = keyboard_nav.update(focus_next);
 
         // Verify focus state is consistent
-        assert_eq!(updated_focus.focused_element, Some("command-palette".to_string()));
-        assert_eq!(updated_nav.focused_element, Some("command-palette".to_string()));
+        assert_eq!(
+            updated_focus.focused_element,
+            Some("command-palette".to_string())
+        );
+        assert_eq!(
+            updated_nav.focused_element,
+            Some("command-palette".to_string())
+        );
     }
 
     #[test]
@@ -524,8 +545,16 @@ mod tests {
 
         // Simulate event handling chain
         let components = vec![
-            ("global", Box::new(ricecoder_tui::widgets::ChatWidget::new()) as Box<dyn ricecoder_tui::Component>),
-            ("modal", Box::new(ricecoder_tui::widgets::CommandPaletteWidget::new()) as Box<dyn ricecoder_tui::Component>),
+            (
+                "global",
+                Box::new(ricecoder_tui::widgets::ChatWidget::new())
+                    as Box<dyn ricecoder_tui::Component>,
+            ),
+            (
+                "modal",
+                Box::new(ricecoder_tui::widgets::CommandPaletteWidget::new())
+                    as Box<dyn ricecoder_tui::Component>,
+            ),
         ];
 
         let mut handled = false;
@@ -538,7 +567,10 @@ mod tests {
         }
 
         // At least one component should handle the Tab key
-        assert!(handled, "Tab key should be handled by at least one component");
+        assert!(
+            handled,
+            "Tab key should be handled by at least one component"
+        );
     }
 
     #[test]
@@ -547,7 +579,10 @@ mod tests {
 
         // Register components
         component_registry.register("chat", Box::new(ricecoder_tui::widgets::ChatWidget::new()));
-        component_registry.register("palette", Box::new(ricecoder_tui::widgets::CommandPaletteWidget::new()));
+        component_registry.register(
+            "palette",
+            Box::new(ricecoder_tui::widgets::CommandPaletteWidget::new()),
+        );
 
         // Test component activation/deactivation
         component_registry.activate("chat");
@@ -587,7 +622,12 @@ mod tests {
         let (updated_component, commands) = component.update(invalid_message);
 
         // Component should handle errors gracefully without panicking
-        assert!(commands.is_empty() || commands.iter().any(|cmd| matches!(cmd, ricecoder_tui::Command::Exit)));
+        assert!(
+            commands.is_empty()
+                || commands
+                    .iter()
+                    .any(|cmd| matches!(cmd, ricecoder_tui::Command::Exit))
+        );
     }
 
     #[test]
@@ -619,7 +659,10 @@ mod tests {
         let elapsed = start_time.elapsed();
 
         // Should complete within reasonable time
-        assert!(elapsed < std::time::Duration::from_secs(2),
-               "Component interaction performance test took too long: {:?}", elapsed);
+        assert!(
+            elapsed < std::time::Duration::from_secs(2),
+            "Component interaction performance test took too long: {:?}",
+            elapsed
+        );
     }
 }

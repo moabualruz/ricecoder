@@ -324,5 +324,3 @@ impl Default for TreeWidget {
         Self::new("root", "Root")
     }
 }
-
-

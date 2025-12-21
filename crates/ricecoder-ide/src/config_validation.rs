@@ -129,7 +129,10 @@ impl ConfigValidator {
 
     /// Validate individual LSP server configuration
     fn validate_lsp_server_config(language: &str, config: &LspServerConfig) -> IdeResult<()> {
-        debug!("Validating LSP server configuration for language: {}", language);
+        debug!(
+            "Validating LSP server configuration for language: {}",
+            language
+        );
 
         // Validate language field
         if config.language.is_empty() {
@@ -381,16 +384,8 @@ impl ConfigValidator {
         debug!("Validating terminal editor configuration");
 
         // At least one editor should be configured
-        let any_enabled = config
-            .vim
-            .as_ref()
-            .map(|c| c.enabled)
-            .unwrap_or(false)
-            || config
-                .emacs
-                .as_ref()
-                .map(|c| c.enabled)
-                .unwrap_or(false);
+        let any_enabled = config.vim.as_ref().map(|c| c.enabled).unwrap_or(false)
+            || config.emacs.as_ref().map(|c| c.enabled).unwrap_or(false);
 
         if !any_enabled {
             return Ok(()); // Terminal config is optional
@@ -530,10 +525,7 @@ mod tests {
 
         let result = ConfigValidator::validate_complete(&config);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("empty command"));
+        assert!(result.unwrap_err().to_string().contains("empty command"));
     }
 
     #[test]
@@ -549,10 +541,7 @@ mod tests {
 
         let result = ConfigValidator::validate_complete(&config);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("invalid timeout"));
+        assert!(result.unwrap_err().to_string().contains("invalid timeout"));
     }
 
     #[test]
@@ -581,10 +570,7 @@ mod tests {
 
         let result = ConfigValidator::validate_complete(&config);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("port is 0"));
+        assert!(result.unwrap_err().to_string().contains("port is 0"));
     }
 
     #[test]
@@ -607,10 +593,7 @@ mod tests {
 
         let result = ConfigValidator::validate_complete(&config);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("Unknown feature"));
+        assert!(result.unwrap_err().to_string().contains("Unknown feature"));
     }
 
     #[test]
@@ -633,10 +616,7 @@ mod tests {
 
         let result = ConfigValidator::validate_complete(&config);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("Unknown language"));
+        assert!(result.unwrap_err().to_string().contains("Unknown language"));
     }
 
     #[test]

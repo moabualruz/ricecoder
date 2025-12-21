@@ -5,16 +5,16 @@
 //! - GDPR/HIPAA data handling (right to erasure, portability)
 //! - Privacy-preserving analytics with opt-in and log retention
 
-use base64::{Engine as _, engine::general_purpose};
-use chrono::{DateTime, Utc, Duration};
+use base64::{engine::general_purpose, Engine as _};
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-use crate::audit::{AuditLogger, AuditEvent, AuditEventType, MemoryAuditStorage};
-use crate::encryption::{KeyManager, EncryptedData};
+use crate::audit::{AuditEvent, AuditEventType, AuditLogger, MemoryAuditStorage};
+use crate::encryption::{EncryptedData, KeyManager};
 use crate::error::SecurityError;
 use crate::Result;
 
@@ -206,7 +206,8 @@ impl ComplianceManager {
         master_key_manager: &KeyManager,
     ) -> Result<String> {
         let key_id = format!("customer-key-{}", Uuid::new_v4());
-        let encrypted_key = master_key_manager.encrypt_api_key(&general_purpose::STANDARD.encode(key_material))?;
+        let encrypted_key =
+            master_key_manager.encrypt_api_key(&general_purpose::STANDARD.encode(key_material))?;
 
         let customer_key = CustomerKey {
             key_id: key_id.clone(),
@@ -220,17 +221,19 @@ impl ComplianceManager {
         keys.insert(key_id.clone(), customer_key);
 
         // Audit the key registration
-        self.audit_logger.log_event(AuditEvent {
-            event_type: AuditEventType::SecurityViolation, // Using existing type, could add new one
-            user_id: Some(user_id.to_string()),
-            session_id: None,
-            action: "register_customer_key".to_string(),
-            resource: format!("customer_key:{}", key_id),
-            metadata: serde_json::json!({
-                "key_version": "1.0",
-                "compliance": "SOC2"
-            }),
-        }).await?;
+        self.audit_logger
+            .log_event(AuditEvent {
+                event_type: AuditEventType::SecurityViolation, // Using existing type, could add new one
+                user_id: Some(user_id.to_string()),
+                session_id: None,
+                action: "register_customer_key".to_string(),
+                resource: format!("customer_key:{}", key_id),
+                metadata: serde_json::json!({
+                    "key_version": "1.0",
+                    "compliance": "SOC2"
+                }),
+            })
+            .await?;
 
         Ok(key_id)
     }
@@ -255,11 +258,7 @@ impl ComplianceManager {
     }
 
     /// Request data erasure (GDPR/HIPAA right to erasure)
-    pub async fn request_data_erasure(
-        &self,
-        user_id: &str,
-        reason: ErasureReason,
-    ) -> Result<Uuid> {
+    pub async fn request_data_erasure(&self, user_id: &str, reason: ErasureReason) -> Result<Uuid> {
         let request_id = Uuid::new_v4();
         let reason_clone = reason.clone();
         let request = DataErasureRequest {
@@ -276,18 +275,20 @@ impl ComplianceManager {
 
         // Audit the erasure request
         let reason_str = format!("{:?}", reason_clone);
-        self.audit_logger.log_event(AuditEvent {
-            event_type: AuditEventType::SecurityViolation, // Could add specific type
-            user_id: Some(user_id.to_string()),
-            session_id: None,
-            action: "request_data_erasure".to_string(),
-            resource: format!("user_data:{}", user_id),
-            metadata: serde_json::json!({
-                "request_id": request_id,
-                "reason": reason_str,
-                "compliance": "GDPR_HIPAA"
-            }),
-        }).await?;
+        self.audit_logger
+            .log_event(AuditEvent {
+                event_type: AuditEventType::SecurityViolation, // Could add specific type
+                user_id: Some(user_id.to_string()),
+                session_id: None,
+                action: "request_data_erasure".to_string(),
+                resource: format!("user_data:{}", user_id),
+                metadata: serde_json::json!({
+                    "request_id": request_id,
+                    "reason": reason_str,
+                    "compliance": "GDPR_HIPAA"
+                }),
+            })
+            .await?;
 
         Ok(request_id)
     }
@@ -315,17 +316,19 @@ impl ComplianceManager {
         };
 
         // Audit completion
-        self.audit_logger.log_event(AuditEvent {
-            event_type: AuditEventType::SecurityViolation,
-            user_id: Some(user_id),
-            session_id: None,
-            action: "complete_data_erasure".to_string(),
-            resource: format!("erasure_request:{}", req_id),
-            metadata: serde_json::json!({
-                "request_id": req_id,
-                "compliance": "GDPR_HIPAA"
-            }),
-        }).await?;
+        self.audit_logger
+            .log_event(AuditEvent {
+                event_type: AuditEventType::SecurityViolation,
+                user_id: Some(user_id),
+                session_id: None,
+                action: "complete_data_erasure".to_string(),
+                resource: format!("erasure_request:{}", req_id),
+                metadata: serde_json::json!({
+                    "request_id": req_id,
+                    "compliance": "GDPR_HIPAA"
+                }),
+            })
+            .await?;
 
         Ok(())
     }
@@ -357,19 +360,21 @@ impl ComplianceManager {
         // Audit the portability request
         let data_types_str = format!("{:?}", data_types_clone);
         let format_str = format!("{:?}", format_clone);
-        self.audit_logger.log_event(AuditEvent {
-            event_type: AuditEventType::SecurityViolation,
-            user_id: Some(user_id.to_string()),
-            session_id: None,
-            action: "request_data_portability".to_string(),
-            resource: format!("user_data:{}", user_id),
-            metadata: serde_json::json!({
-                "request_id": request_id,
-                "data_types": data_types_str,
-                "format": format_str,
-                "compliance": "GDPR"
-            }),
-        }).await?;
+        self.audit_logger
+            .log_event(AuditEvent {
+                event_type: AuditEventType::SecurityViolation,
+                user_id: Some(user_id.to_string()),
+                session_id: None,
+                action: "request_data_portability".to_string(),
+                resource: format!("user_data:{}", user_id),
+                metadata: serde_json::json!({
+                    "request_id": request_id,
+                    "data_types": data_types_str,
+                    "format": format_str,
+                    "compliance": "GDPR"
+                }),
+            })
+            .await?;
 
         Ok(request_id)
     }
@@ -384,7 +389,10 @@ impl ComplianceManager {
                 // Here would be the actual data export logic
                 // For now, simulate completion
                 request.status = PortabilityStatus::Ready;
-                request.download_url = Some(format!("https://api.ricecoder.com/portability/{}", request_id));
+                request.download_url = Some(format!(
+                    "https://api.ricecoder.com/portability/{}",
+                    request_id
+                ));
                 request.expires_at = Some(Utc::now() + Duration::days(30));
 
                 (request.user_id.clone(), *request_id)
@@ -394,17 +402,19 @@ impl ComplianceManager {
         };
 
         // Audit completion
-        self.audit_logger.log_event(AuditEvent {
-            event_type: AuditEventType::SecurityViolation,
-            user_id: Some(user_id),
-            session_id: None,
-            action: "complete_data_portability".to_string(),
-            resource: format!("portability_request:{}", req_id),
-            metadata: serde_json::json!({
-                "request_id": req_id,
-                "compliance": "GDPR"
-            }),
-        }).await?;
+        self.audit_logger
+            .log_event(AuditEvent {
+                event_type: AuditEventType::SecurityViolation,
+                user_id: Some(user_id),
+                session_id: None,
+                action: "complete_data_portability".to_string(),
+                resource: format!("portability_request:{}", req_id),
+                metadata: serde_json::json!({
+                    "request_id": req_id,
+                    "compliance": "GDPR"
+                }),
+            })
+            .await?;
 
         Ok(())
     }
@@ -434,18 +444,20 @@ impl ComplianceManager {
         // For compliance, ensure data is anonymized and retention is enforced
 
         // Audit analytics recording
-        self.audit_logger.log_event(AuditEvent {
-            event_type: AuditEventType::SecurityViolation,
-            user_id: None,
-            session_id: None,
-            action: "record_analytics".to_string(),
-            resource: "analytics".to_string(),
-            metadata: serde_json::json!({
-                "event_type": analytics.event_type,
-                "anonymized": config.anonymization_enabled,
-                "compliance": "privacy_analytics"
-            }),
-        }).await?;
+        self.audit_logger
+            .log_event(AuditEvent {
+                event_type: AuditEventType::SecurityViolation,
+                user_id: None,
+                session_id: None,
+                action: "record_analytics".to_string(),
+                resource: "analytics".to_string(),
+                metadata: serde_json::json!({
+                    "event_type": analytics.event_type,
+                    "anonymized": config.anonymization_enabled,
+                    "compliance": "privacy_analytics"
+                }),
+            })
+            .await?;
 
         Ok(())
     }
@@ -459,18 +471,20 @@ impl ComplianceManager {
         // that are older than the retention period
 
         // Audit cleanup
-        self.audit_logger.log_event(AuditEvent {
-            event_type: AuditEventType::SecurityViolation,
-            user_id: None,
-            session_id: None,
-            action: "cleanup_expired_data".to_string(),
-            resource: "system".to_string(),
-            metadata: serde_json::json!({
-                "retention_days": config.log_retention_days,
-                "cutoff_date": cutoff_date,
-                "compliance": "data_retention"
-            }),
-        }).await?;
+        self.audit_logger
+            .log_event(AuditEvent {
+                event_type: AuditEventType::SecurityViolation,
+                user_id: None,
+                session_id: None,
+                action: "cleanup_expired_data".to_string(),
+                resource: "system".to_string(),
+                metadata: serde_json::json!({
+                    "retention_days": config.log_retention_days,
+                    "cutoff_date": cutoff_date,
+                    "compliance": "data_retention"
+                }),
+            })
+            .await?;
 
         Ok(())
     }
@@ -531,10 +545,13 @@ impl ComplianceValidator {
     }
 
     /// Validate data classification compliance
-    pub async fn validate_data_classification(&self, classification: &DataClassification) -> Result<bool> {
+    pub async fn validate_data_classification(
+        &self,
+        classification: &DataClassification,
+    ) -> Result<bool> {
         // Check if the data classification is allowed based on current compliance settings
         match classification {
-            DataClassification::Public => Ok(true), // Always allowed
+            DataClassification::Public => Ok(true),   // Always allowed
             DataClassification::Internal => Ok(true), // Allowed with basic controls
             DataClassification::Confidential => {
                 // Check if customer-managed keys are enabled for confidential data
@@ -548,10 +565,16 @@ impl ComplianceValidator {
     }
 
     /// Validate data access compliance
-    pub async fn validate_data_access(&self, classification: &DataClassification, user_id: Option<&str>) -> Result<bool> {
+    pub async fn validate_data_access(
+        &self,
+        classification: &DataClassification,
+        user_id: Option<&str>,
+    ) -> Result<bool> {
         // Check user consent and data access permissions
         if let Some(user_id) = user_id {
-            if let Some(compliance_data) = self.compliance_manager.get_compliance_data(user_id).await? {
+            if let Some(compliance_data) =
+                self.compliance_manager.get_compliance_data(user_id).await?
+            {
                 // Check if user has given consent
                 if !compliance_data.consent_given {
                     return Ok(false);
@@ -568,7 +591,11 @@ impl ComplianceValidator {
     }
 
     /// Validate data modification compliance
-    pub async fn validate_data_modification(&self, classification: &DataClassification, user_id: Option<&str>) -> Result<bool> {
+    pub async fn validate_data_modification(
+        &self,
+        classification: &DataClassification,
+        user_id: Option<&str>,
+    ) -> Result<bool> {
         // Similar to access but with additional checks for modification
         let access_allowed = self.validate_data_access(classification, user_id).await?;
 
@@ -588,7 +615,11 @@ impl ComplianceValidator {
     }
 
     /// Validate data sharing compliance
-    pub async fn validate_data_sharing(&self, classification: &DataClassification, user_id: Option<&str>) -> Result<bool> {
+    pub async fn validate_data_sharing(
+        &self,
+        classification: &DataClassification,
+        user_id: Option<&str>,
+    ) -> Result<bool> {
         // Check if sharing is allowed for this classification
         match classification {
             DataClassification::Public => Ok(true),
@@ -602,16 +633,28 @@ impl ComplianceValidator {
     }
 
     /// Validate shared data access compliance
-    pub async fn validate_shared_data_access(&self, classification: &DataClassification, accessing_user_id: Option<&str>) -> Result<bool> {
+    pub async fn validate_shared_data_access(
+        &self,
+        classification: &DataClassification,
+        accessing_user_id: Option<&str>,
+    ) -> Result<bool> {
         // Similar to regular access but for shared data
-        self.validate_data_access(classification, accessing_user_id).await
+        self.validate_data_access(classification, accessing_user_id)
+            .await
     }
 
     /// Validate data erasure compliance
-    pub async fn validate_data_erasure(&self, classification: &DataClassification, user_id: Option<&str>) -> Result<bool> {
+    pub async fn validate_data_erasure(
+        &self,
+        classification: &DataClassification,
+        user_id: Option<&str>,
+    ) -> Result<bool> {
         // Check if erasure is allowed (always true for user requests, but may have restrictions)
         match classification {
-            DataClassification::Public | DataClassification::Internal | DataClassification::Confidential | DataClassification::Restricted => {
+            DataClassification::Public
+            | DataClassification::Internal
+            | DataClassification::Confidential
+            | DataClassification::Restricted => {
                 // Erasure is generally allowed, but may require special handling for restricted data
                 Ok(true)
             }
@@ -619,7 +662,10 @@ impl ComplianceValidator {
     }
 
     /// Validate enterprise sharing policy compliance
-    pub async fn validate_enterprise_policy(&self, data_classification: &DataClassification) -> Result<bool> {
+    pub async fn validate_enterprise_policy(
+        &self,
+        data_classification: &DataClassification,
+    ) -> Result<bool> {
         // Validate the enterprise sharing policy against compliance requirements
         // Check data classification compliance
         self.validate_data_classification(data_classification).await
@@ -640,8 +686,6 @@ impl ComplianceValidator {
             }
         }
     }
-
-
 }
 
 /// Data erasure operations
@@ -655,7 +699,8 @@ impl DataErasure {
 
     /// Check if data retention period has expired
     pub fn is_retention_expired(compliance_data: &ComplianceData) -> bool {
-        let retention_end = compliance_data.last_accessed + Duration::days(compliance_data.data_retention_period_days);
+        let retention_end = compliance_data.last_accessed
+            + Duration::days(compliance_data.data_retention_period_days);
         Utc::now() > retention_end
     }
 
@@ -738,10 +783,7 @@ impl PrivacyAnalytics {
     }
 
     /// Check if log retention period has expired
-    pub fn is_log_retention_expired(
-        log_timestamp: DateTime<Utc>,
-        retention_days: i64,
-    ) -> bool {
+    pub fn is_log_retention_expired(log_timestamp: DateTime<Utc>, retention_days: i64) -> bool {
         let retention_end = log_timestamp + Duration::days(retention_days);
         Utc::now() > retention_end
     }
@@ -784,10 +826,16 @@ mod tests {
             .await
             .unwrap();
 
-        compliance_manager.process_data_erasure(&request_id).await.unwrap();
+        compliance_manager
+            .process_data_erasure(&request_id)
+            .await
+            .unwrap();
 
         // Verify compliance data was removed
-        let data = compliance_manager.get_compliance_data("user123").await.unwrap();
+        let data = compliance_manager
+            .get_compliance_data("user123")
+            .await
+            .unwrap();
         assert!(data.is_none());
     }
 
@@ -798,15 +846,14 @@ mod tests {
         let compliance_manager = ComplianceManager::new(audit_logger);
 
         let request_id = compliance_manager
-            .request_data_portability(
-                "user123",
-                vec![DataType::PersonalInfo],
-                ExportFormat::Json,
-            )
+            .request_data_portability("user123", vec![DataType::PersonalInfo], ExportFormat::Json)
             .await
             .unwrap();
 
-        compliance_manager.process_data_portability(&request_id).await.unwrap();
+        compliance_manager
+            .process_data_portability(&request_id)
+            .await
+            .unwrap();
     }
 
     #[tokio::test]
@@ -823,7 +870,10 @@ mod tests {
             data_minimization: true,
         };
 
-        compliance_manager.configure_privacy_analytics(config.clone()).await.unwrap();
+        compliance_manager
+            .configure_privacy_analytics(config.clone())
+            .await
+            .unwrap();
         let retrieved_config = compliance_manager.get_privacy_config().await.unwrap();
 
         assert_eq!(retrieved_config.analytics_enabled, config.analytics_enabled);
@@ -862,10 +912,12 @@ mod tests {
             encryption_key_id: "key123".to_string(),
         };
 
-        let json_export = DataPortability::export_user_data(&compliance_data, &ExportFormat::Json).unwrap();
+        let json_export =
+            DataPortability::export_user_data(&compliance_data, &ExportFormat::Json).unwrap();
         assert!(json_export.contains("user123"));
 
-        let csv_export = DataPortability::export_user_data(&compliance_data, &ExportFormat::Csv).unwrap();
+        let csv_export =
+            DataPortability::export_user_data(&compliance_data, &ExportFormat::Csv).unwrap();
         assert!(csv_export.contains("user123"));
     }
 
@@ -879,8 +931,14 @@ mod tests {
             data_minimization: true,
         };
 
-        assert!(PrivacyAnalytics::can_collect_analytics(&config_opt_in, true));
-        assert!(!PrivacyAnalytics::can_collect_analytics(&config_opt_in, false));
+        assert!(PrivacyAnalytics::can_collect_analytics(
+            &config_opt_in,
+            true
+        ));
+        assert!(!PrivacyAnalytics::can_collect_analytics(
+            &config_opt_in,
+            false
+        ));
 
         let config_disabled = PrivacyAnalyticsConfig {
             analytics_enabled: false,
@@ -890,7 +948,10 @@ mod tests {
             data_minimization: true,
         };
 
-        assert!(!PrivacyAnalytics::can_collect_analytics(&config_disabled, true));
+        assert!(!PrivacyAnalytics::can_collect_analytics(
+            &config_disabled,
+            true
+        ));
     }
 
     #[tokio::test]
@@ -899,7 +960,10 @@ mod tests {
         let audit_logger = Arc::new(AuditLogger::new(storage));
         let compliance_manager = ComplianceManager::new(audit_logger);
 
-        let report = compliance_manager.generate_compliance_report().await.unwrap();
+        let report = compliance_manager
+            .generate_compliance_report()
+            .await
+            .unwrap();
 
         assert!(report.get("soc2_type_ii_controls").is_some());
         assert!(report.get("gdpr_hipaa_compliance").is_some());
@@ -935,7 +999,11 @@ impl DefaultComplianceChecker {
         let passed = self.compliance_manager.check_soc2_compliance();
         let score = if passed { 100.0 } else { 0.0 };
         let details = vec!["SOC 2 Type II controls check".to_string()];
-        Ok(ComplianceResult { score, passed, details })
+        Ok(ComplianceResult {
+            score,
+            passed,
+            details,
+        })
     }
 
     /// Check GDPR compliance
@@ -963,7 +1031,11 @@ impl DefaultComplianceChecker {
         }
 
         let passed = score >= 75.0;
-        Ok(ComplianceResult { score, passed, details })
+        Ok(ComplianceResult {
+            score,
+            passed,
+            details,
+        })
     }
 
     /// Check HIPAA compliance
@@ -987,7 +1059,11 @@ impl DefaultComplianceChecker {
         }
 
         let passed = score >= 80.0;
-        Ok(ComplianceResult { score, passed, details })
+        Ok(ComplianceResult {
+            score,
+            passed,
+            details,
+        })
     }
 
     /// Check OWASP compliance
@@ -1002,6 +1078,10 @@ impl DefaultComplianceChecker {
 
         // Could add more specific checks here
         let passed = score >= 70.0;
-        Ok(ComplianceResult { score, passed, details })
+        Ok(ComplianceResult {
+            score,
+            passed,
+            details,
+        })
     }
 }

@@ -10,11 +10,7 @@ use tempfile::TempDir;
 
 /// Strategy for generating project types
 fn project_type_strategy() -> impl Strategy<Value = &'static str> {
-    prop_oneof![
-        Just("rust"),
-        Just("nodejs"),
-        Just("python"),
-    ]
+    prop_oneof![Just("rust"), Just("nodejs"), Just("python"),]
 }
 
 /// Strategy for generating project names
@@ -51,7 +47,11 @@ fn version_strategy() -> impl Strategy<Value = String> {
 }
 
 /// Creates a manifest file for a given project type
-fn create_manifest(project_dir: &PathBuf, project_type: &str, version: &str) -> std::io::Result<()> {
+fn create_manifest(
+    project_dir: &PathBuf,
+    project_type: &str,
+    version: &str,
+) -> std::io::Result<()> {
     match project_type {
         "rust" => {
             std::fs::write(
@@ -133,7 +133,7 @@ proptest! {
         // Sort both lists by project name for comparison
         let mut discovered_sorted = discovered_projects.clone();
         discovered_sorted.sort_by(|a, b| a.name.cmp(&b.name));
-        
+
         let mut specs_sorted: Vec<_> = project_specs.iter().map(|(t, n, v)| (t.as_str(), n.as_str(), v.as_str())).collect();
         specs_sorted.sort_by(|a, b| a.1.cmp(b.1));
 

@@ -22,11 +22,7 @@ async fn test_create_branch_with_valid_inputs() {
 async fn test_create_branch_with_commit_sha() {
     let manager = BranchManager::new("test_token", "owner", "repo");
     let result = manager
-        .create_branch(
-            "feature/test",
-            "main",
-            Some("abc123def456".to_string()),
-        )
+        .create_branch("feature/test", "main", Some("abc123def456".to_string()))
         .await;
 
     assert!(result.is_ok());
@@ -46,9 +42,7 @@ async fn test_create_branch_with_empty_name() {
 #[tokio::test]
 async fn test_create_branch_with_empty_base() {
     let manager = BranchManager::new("test_token", "owner", "repo");
-    let result = manager
-        .create_branch("feature/test", "", None)
-        .await;
+    let result = manager.create_branch("feature/test", "", None).await;
 
     assert!(result.is_err());
 }
@@ -72,7 +66,9 @@ async fn test_create_branch_with_invalid_name_ending_slash() {
 #[tokio::test]
 async fn test_create_branch_with_invalid_name_double_slash() {
     let manager = BranchManager::new("test_token", "owner", "repo");
-    let result = manager.create_branch("feature//invalid", "main", None).await;
+    let result = manager
+        .create_branch("feature//invalid", "main", None)
+        .await;
 
     assert!(result.is_err());
 }
@@ -228,9 +224,7 @@ async fn test_unprotect_branch_with_empty_name() {
 #[tokio::test]
 async fn test_rename_branch_with_valid_names() {
     let manager = BranchManager::new("test_token", "owner", "repo");
-    let result = manager
-        .rename_branch("feature/old", "feature/new")
-        .await;
+    let result = manager.rename_branch("feature/old", "feature/new").await;
 
     assert!(result.is_ok());
     let lifecycle = result.unwrap();
@@ -327,9 +321,7 @@ async fn test_create_and_delete_branch_lifecycle() {
     let manager = BranchManager::new("test_token", "owner", "repo");
 
     // Create branch
-    let create_result = manager
-        .create_branch("feature/test", "main", None)
-        .await;
+    let create_result = manager.create_branch("feature/test", "main", None).await;
     assert!(create_result.is_ok());
 
     // Delete branch
@@ -359,11 +351,7 @@ async fn test_multiple_branch_operations() {
     // Create multiple branches
     for i in 0..3 {
         let result = manager
-            .create_branch(
-                format!("feature/test-{}", i),
-                "main",
-                None,
-            )
+            .create_branch(format!("feature/test-{}", i), "main", None)
             .await;
         assert!(result.is_ok());
     }

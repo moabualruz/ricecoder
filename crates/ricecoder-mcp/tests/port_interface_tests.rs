@@ -7,16 +7,18 @@
 //! - Use case contracts and invariants
 
 use async_trait::async_trait;
+use ricecoder_mcp::error::{Error, Result};
+use ricecoder_mcp::metadata::{ToolMetadata, ToolSource};
+use ricecoder_mcp::permissions::{MCPPermissionManager, PermissionLevelConfig, PermissionRule};
+use ricecoder_mcp::tool_execution::{
+    ToolExecutionContext, ToolExecutionResult, ToolExecutionStats, ToolExecutor,
+};
+use ricecoder_mcp::transport::{MCPMessage, MCPRequest, MCPResponse, MCPTransport};
+use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::RwLock;
-use ricecoder_mcp::tool_execution::{ToolExecutionContext, ToolExecutionResult, ToolExecutor, ToolExecutionStats};
-use ricecoder_mcp::transport::{MCPMessage, MCPRequest, MCPResponse, MCPTransport};
-use ricecoder_mcp::metadata::{ToolMetadata, ToolSource};
-use ricecoder_mcp::permissions::{MCPPermissionManager, PermissionLevelConfig, PermissionRule};
-use ricecoder_mcp::error::{Error, Result};
-use serde_json::json;
 
 /// **Port Test 2.1: ToolExecutor trait contract**
 /// **Validates: Interface contract compliance**
@@ -43,11 +45,18 @@ impl ToolExecutor for MockToolExecutor {
         }
     }
 
-    async fn validate_parameters(&self, tool_name: &str, parameters: &HashMap<String, serde_json::Value>) -> Result<()> {
+    async fn validate_parameters(
+        &self,
+        tool_name: &str,
+        parameters: &HashMap<String, serde_json::Value>,
+    ) -> Result<()> {
         if let Some(tool) = self.tools.get(tool_name) {
             for param in &tool.parameters {
                 if param.required && !parameters.contains_key(&param.name) {
-                    return Err(Error::ValidationError(format!("Missing required parameter: {}", param.name)));
+                    return Err(Error::ValidationError(format!(
+                        "Missing required parameter: {}",
+                        param.name
+                    )));
                 }
             }
             Ok(())
@@ -150,14 +159,23 @@ async fn test_tool_executor_validation_contract() {
         map.insert("required_param".to_string(), json!("value"));
         map
     };
-    assert!(executor.validate_parameters("test-tool", &valid_params).await.is_ok());
+    assert!(executor
+        .validate_parameters("test-tool", &valid_params)
+        .await
+        .is_ok());
 
     // Missing required parameter
     let invalid_params = HashMap::new();
-    assert!(executor.validate_parameters("test-tool", &invalid_params).await.is_err());
+    assert!(executor
+        .validate_parameters("test-tool", &invalid_params)
+        .await
+        .is_err());
 
     // Non-existent tool
-    assert!(executor.validate_parameters("non-existent", &valid_params).await.is_err());
+    assert!(executor
+        .validate_parameters("non-existent", &valid_params)
+        .await
+        .is_err());
 }
 
 /// **Port Test 2.4: ToolExecutor metadata contract**
@@ -302,7 +320,10 @@ fn test_permission_manager_interface_contract() {
 
     // Check permission
     let permission = manager.check_permission("test-tool", None).unwrap();
-    assert!(matches!(permission, ricecoder_permissions::PermissionLevel::Allow));
+    assert!(matches!(
+        permission,
+        ricecoder_permissions::PermissionLevel::Allow
+    ));
 }
 
 /// **Port Test 2.9: ToolExecutionContext invariants**
@@ -370,7 +391,10 @@ fn test_tool_execution_stats_invariants() {
     };
 
     assert!(!stats.tool_name.is_empty());
-    assert_eq!(stats.total_executions, stats.successful_executions + stats.failed_executions);
+    assert_eq!(
+        stats.total_executions,
+        stats.successful_executions + stats.failed_executions
+    );
     assert!(stats.average_execution_time_ms >= 0.0);
 }
 

@@ -3,9 +3,9 @@
 //! This module provides lifecycle management for application components,
 //! ensuring proper startup, initialization, and shutdown procedures.
 
+use ricecoder_di::DIContainer;
 use std::sync::{Arc, OnceLock, RwLock};
 use tracing::{debug, info, warn};
-use ricecoder_di::DIContainer;
 
 /// Component lifecycle states
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -88,7 +88,10 @@ impl LifecycleManager {
         let mut components = self.components.write().unwrap();
         components.push(info.clone());
 
-        info!("Registered component: {}", info.component.read().unwrap().name());
+        info!(
+            "Registered component: {}",
+            info.component.read().unwrap().name()
+        );
         Ok(())
     }
 
@@ -100,7 +103,10 @@ impl LifecycleManager {
         self.sort_by_dependencies()?;
 
         let components_guard = self.components.read().unwrap();
-        let components: Vec<_> = components_guard.iter().map(|info| info.component.clone()).collect();
+        let components: Vec<_> = components_guard
+            .iter()
+            .map(|info| info.component.clone())
+            .collect();
         drop(components_guard);
 
         for comp_arc in components.into_iter() {
@@ -167,7 +173,10 @@ impl LifecycleManager {
         info!("Stopping all components...");
 
         let components_guard = self.components.read().unwrap();
-        let components: Vec<_> = components_guard.iter().map(|info| info.component.clone()).collect();
+        let components: Vec<_> = components_guard
+            .iter()
+            .map(|info| info.component.clone())
+            .collect();
         drop(components_guard);
 
         // Stop in reverse order
@@ -185,7 +194,9 @@ impl LifecycleManager {
     }
 
     /// Perform health checks on all components
-    pub async fn health_check_all(&self) -> Vec<(String, Result<(), Box<dyn std::error::Error + Send + Sync>>)> {
+    pub async fn health_check_all(
+        &self,
+    ) -> Vec<(String, Result<(), Box<dyn std::error::Error + Send + Sync>>)> {
         let components_guard = self.components.read().unwrap();
         let infos: Vec<_> = components_guard.iter().cloned().collect();
         drop(components_guard);
@@ -209,7 +220,8 @@ impl LifecycleManager {
     /// Get component state
     pub fn get_component_state(&self, name: &str) -> Option<LifecycleState> {
         let components = self.components.read().unwrap();
-        components.iter()
+        components
+            .iter()
             .find(|info| info.component.read().unwrap().name() == name)
             .map(|info| info.state)
     }
@@ -217,7 +229,8 @@ impl LifecycleManager {
     /// Get all component states
     pub fn get_all_component_states(&self) -> Vec<(String, LifecycleState)> {
         let components = self.components.read().unwrap();
-        components.iter()
+        components
+            .iter()
             .map(|info| {
                 let name = info.component.read().unwrap().name().to_string();
                 (name, info.state)
@@ -228,8 +241,10 @@ impl LifecycleManager {
     /// Update component state
     fn update_component_state(&self, name: &str, state: LifecycleState) {
         let mut components = self.components.write().unwrap();
-        if let Some(info) = components.iter_mut()
-            .find(|info| info.component.read().unwrap().name() == name) {
+        if let Some(info) = components
+            .iter_mut()
+            .find(|info| info.component.read().unwrap().name() == name)
+        {
             info.state = state;
         }
     }

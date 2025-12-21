@@ -171,7 +171,10 @@ impl ToolInvoker for TodowriteToolInvoker {
             .get("todos")
             .ok_or_else(|| "Missing 'todos' field in input".to_string())?;
 
-        info!(todo_count = todos.as_array().map(|a| a.len()).unwrap_or(0), "Writing todos");
+        info!(
+            todo_count = todos.as_array().map(|a| a.len()).unwrap_or(0),
+            "Writing todos"
+        );
 
         // TODO: Implement actual todowrite invocation
         // For now, return a placeholder response
@@ -324,15 +327,9 @@ impl ToolInvoker for WebsearchToolInvoker {
             .and_then(|v| v.as_str())
             .ok_or_else(|| "Missing 'query' field in input".to_string())?;
 
-        let limit = input
-            .get("limit")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(10);
+        let limit = input.get("limit").and_then(|v| v.as_u64()).unwrap_or(10);
 
-        let offset = input
-            .get("offset")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0);
+        let offset = input.get("offset").and_then(|v| v.as_u64()).unwrap_or(0);
 
         info!(query = %query, limit = %limit, offset = %offset, "Searching web");
 
@@ -446,7 +443,9 @@ impl ToolInvoker for ExtensibleToolInvoker {
         debug!("Invoking extensible tool");
 
         let backend = self.backend.read().await;
-        let backend = backend.as_ref().ok_or_else(|| "No tool backend configured".to_string())?;
+        let backend = backend
+            .as_ref()
+            .ok_or_else(|| "No tool backend configured".to_string())?;
 
         backend.invoke_tool(input).await
     }
@@ -455,7 +454,8 @@ impl ToolInvoker for ExtensibleToolInvoker {
         ToolMetadata {
             id: "extensible".to_string(),
             name: "Extensible Tool Invoker".to_string(),
-            description: "Execute tools through configurable backends (MCP, APIs, etc.)".to_string(),
+            description: "Execute tools through configurable backends (MCP, APIs, etc.)"
+                .to_string(),
             input_schema: json!({
                 "type": "object",
                 "properties": {
@@ -504,5 +504,3 @@ pub trait ToolBackend {
     /// Get backend-specific metadata
     fn backend_metadata(&self) -> serde_json::Value;
 }
-
-

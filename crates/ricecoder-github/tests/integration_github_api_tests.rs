@@ -44,8 +44,7 @@ fn test_pr_with_issue_linking() {
     let pr_manager = PrManager::new();
 
     // Create PR with issue reference
-    let context = TaskContext::new("Fix parser", "Implemented parser fix")
-        .with_issue(123);
+    let context = TaskContext::new("Fix parser", "Implemented parser fix").with_issue(123);
     let options = ricecoder_github::PrOptions::new("feature/fix-parser");
     let mut pr = pr_manager.create_pr_from_context(context, options).unwrap();
 
@@ -53,8 +52,7 @@ fn test_pr_with_issue_linking() {
     assert!(pr.body.contains("Closes #123"));
 
     // Simulate PR merge
-    let update_options = ricecoder_github::PrUpdateOptions::new()
-        .with_state(PrStatus::Merged);
+    let update_options = ricecoder_github::PrUpdateOptions::new().with_state(PrStatus::Merged);
     ricecoder_github::PrOperations::update_pr(&mut pr, update_options).unwrap();
     assert_eq!(pr.status, PrStatus::Merged);
 }
@@ -202,11 +200,15 @@ fn test_multiple_pr_operations() {
     // Create multiple PRs
     let context1 = TaskContext::new("Feature 1", "First feature");
     let options1 = ricecoder_github::PrOptions::new("feature/1");
-    let pr1 = pr_manager.create_pr_from_context(context1, options1).unwrap();
+    let pr1 = pr_manager
+        .create_pr_from_context(context1, options1)
+        .unwrap();
 
     let context2 = TaskContext::new("Feature 2", "Second feature");
     let options2 = ricecoder_github::PrOptions::new("feature/2");
-    let pr2 = pr_manager.create_pr_from_context(context2, options2).unwrap();
+    let pr2 = pr_manager
+        .create_pr_from_context(context2, options2)
+        .unwrap();
 
     // Verify both PRs were created
     assert_eq!(pr1.title, "Feature 1");
@@ -251,8 +253,7 @@ fn test_pr_merge_workflow() {
     assert_eq!(pr.status, PrStatus::Open);
 
     // Merge PR
-    let merge_options = ricecoder_github::PrUpdateOptions::new()
-        .with_state(PrStatus::Merged);
+    let merge_options = ricecoder_github::PrUpdateOptions::new().with_state(PrStatus::Merged);
     ricecoder_github::PrOperations::update_pr(&mut pr, merge_options).unwrap();
 
     // Verify merged state

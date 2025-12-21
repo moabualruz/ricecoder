@@ -150,7 +150,9 @@ impl CacheStrategy for FileChangeStrategy {
     ) -> Result<bool> {
         // Check if file modification times are stored in metadata
         if let Some(file_mtimes_value) = metadata.get("file_mtimes") {
-            if let Ok(file_mtimes) = serde_json::from_value::<HashMap<String, SystemTime>>(file_mtimes_value.clone()) {
+            if let Ok(file_mtimes) =
+                serde_json::from_value::<HashMap<String, SystemTime>>(file_mtimes_value.clone())
+            {
                 // Compare current file times with cached times
                 for (path_str, cached_mtime) in file_mtimes {
                     let path = PathBuf::from(path_str);
@@ -317,7 +319,10 @@ impl CacheStrategy for CompositeStrategy {
     ) -> Result<bool> {
         // Invalidate if ANY strategy says to invalidate
         for strategy in &self.strategies {
-            if strategy.should_invalidate(key, created_at, metadata).await? {
+            if strategy
+                .should_invalidate(key, created_at, metadata)
+                .await?
+            {
                 return Ok(true);
             }
         }
@@ -356,11 +361,17 @@ mod tests {
         let metadata = HashMap::new();
 
         // Should invalidate old entry
-        assert!(strategy.should_invalidate("key", past_time, &metadata).await.unwrap());
+        assert!(strategy
+            .should_invalidate("key", past_time, &metadata)
+            .await
+            .unwrap());
 
         let recent_time = SystemTime::now() - std::time::Duration::from_millis(500);
         // Should not invalidate recent entry
-        assert!(!strategy.should_invalidate("key", recent_time, &metadata).await.unwrap());
+        assert!(!strategy
+            .should_invalidate("key", recent_time, &metadata)
+            .await
+            .unwrap());
     }
 
     #[tokio::test]
@@ -375,7 +386,10 @@ mod tests {
 
         // Initially no changes
         let metadata = HashMap::new();
-        assert!(!strategy.should_invalidate("key", SystemTime::now(), &metadata).await.unwrap());
+        assert!(!strategy
+            .should_invalidate("key", SystemTime::now(), &metadata)
+            .await
+            .unwrap());
 
         // Modify file
         std::fs::write(&file_path, "modified content").unwrap();
@@ -383,12 +397,21 @@ mod tests {
 
         // Create metadata with file mtimes
         let mut file_mtimes = HashMap::new();
-        file_mtimes.insert(file_path.to_string_lossy().to_string(), SystemTime::now() - std::time::Duration::from_secs(60));
+        file_mtimes.insert(
+            file_path.to_string_lossy().to_string(),
+            SystemTime::now() - std::time::Duration::from_secs(60),
+        );
         let mut metadata = HashMap::new();
-        metadata.insert("file_mtimes".to_string(), serde_json::to_value(file_mtimes).unwrap());
+        metadata.insert(
+            "file_mtimes".to_string(),
+            serde_json::to_value(file_mtimes).unwrap(),
+        );
 
         // Should detect file change
-        assert!(strategy.should_invalidate("key", SystemTime::now(), &metadata).await.unwrap());
+        assert!(strategy
+            .should_invalidate("key", SystemTime::now(), &metadata)
+            .await
+            .unwrap());
     }
 
     #[tokio::test]
@@ -403,7 +426,10 @@ mod tests {
 
         // Check access order (this is internal, but we can verify the strategy doesn't error)
         let metadata = HashMap::new();
-        assert!(!strategy.should_invalidate("key1", SystemTime::now(), &metadata).await.unwrap());
+        assert!(!strategy
+            .should_invalidate("key1", SystemTime::now(), &metadata)
+            .await
+            .unwrap());
     }
 
     #[tokio::test]
@@ -412,10 +438,16 @@ mod tests {
 
         let mut metadata = HashMap::new();
         metadata.insert("total_size_bytes".to_string(), serde_json::json!(500));
-        assert!(!strategy.should_invalidate("key", SystemTime::now(), &metadata).await.unwrap());
+        assert!(!strategy
+            .should_invalidate("key", SystemTime::now(), &metadata)
+            .await
+            .unwrap());
 
         metadata.insert("total_size_bytes".to_string(), serde_json::json!(1500));
-        assert!(strategy.should_invalidate("key", SystemTime::now(), &metadata).await.unwrap());
+        assert!(strategy
+            .should_invalidate("key", SystemTime::now(), &metadata)
+            .await
+            .unwrap());
     }
 
     #[tokio::test]
@@ -431,6 +463,9 @@ mod tests {
         let metadata = HashMap::new();
 
         // Should invalidate due to TTL
-        assert!(strategy.should_invalidate("key", past_time, &metadata).await.unwrap());
+        assert!(strategy
+            .should_invalidate("key", past_time, &metadata)
+            .await
+            .unwrap());
     }
 }

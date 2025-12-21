@@ -92,7 +92,8 @@ impl SecurityConstraint {
             "max_file_size".to_string(),
             "Maximum File Size".to_string(),
             ConstraintType::MaxFileSize(max_size),
-        ).with_description(format!("Files must not exceed {} bytes", max_size))
+        )
+        .with_description(format!("Files must not exceed {} bytes", max_size))
     }
 
     /// Create an allowed extensions constraint
@@ -101,7 +102,11 @@ impl SecurityConstraint {
             "allowed_extensions".to_string(),
             "Allowed File Extensions".to_string(),
             ConstraintType::AllowedExtensions(extensions.clone()),
-        ).with_description(format!("Only these extensions are allowed: {:?}", extensions))
+        )
+        .with_description(format!(
+            "Only these extensions are allowed: {:?}",
+            extensions
+        ))
     }
 
     /// Create a forbidden extensions constraint
@@ -110,7 +115,8 @@ impl SecurityConstraint {
             "forbidden_extensions".to_string(),
             "Forbidden File Extensions".to_string(),
             ConstraintType::ForbiddenExtensions(extensions.clone()),
-        ).with_description(format!("These extensions are forbidden: {:?}", extensions))
+        )
+        .with_description(format!("These extensions are forbidden: {:?}", extensions))
     }
 
     /// Create a maximum execution time constraint
@@ -119,7 +125,11 @@ impl SecurityConstraint {
             "max_execution_time".to_string(),
             "Maximum Execution Time".to_string(),
             ConstraintType::MaxExecutionTime(seconds),
-        ).with_description(format!("Operations must complete within {} seconds", seconds))
+        )
+        .with_description(format!(
+            "Operations must complete within {} seconds",
+            seconds
+        ))
     }
 
     /// Create a requires approval constraint
@@ -128,8 +138,9 @@ impl SecurityConstraint {
             "requires_approval".to_string(),
             "Requires Approval".to_string(),
             ConstraintType::RequiresApproval(reason.clone()),
-        ).with_description(format!("Manual approval required: {}", reason))
-         .with_severity(ConstraintSeverity::High)
+        )
+        .with_description(format!("Manual approval required: {}", reason))
+        .with_severity(ConstraintSeverity::High)
     }
 
     /// Validate an operation against this constraint
@@ -139,9 +150,7 @@ impl SecurityConstraint {
         }
 
         match &self.constraint_type {
-            ConstraintType::MaxFileSize(max_size) => {
-                self.validate_file_size(context, *max_size)
-            }
+            ConstraintType::MaxFileSize(max_size) => self.validate_file_size(context, *max_size),
             ConstraintType::AllowedExtensions(extensions) => {
                 self.validate_file_extension(context, extensions, true)
             }
@@ -166,13 +175,15 @@ impl SecurityConstraint {
             ConstraintType::SecurityContextRequired(required) => {
                 self.validate_security_context(context, required)
             }
-            ConstraintType::Custom(logic) => {
-                self.validate_custom_constraint(context, logic)
-            }
+            ConstraintType::Custom(logic) => self.validate_custom_constraint(context, logic),
         }
     }
 
-    fn validate_file_size(&self, context: &ValidationContext, max_size: u64) -> SafetyResult<ConstraintResult> {
+    fn validate_file_size(
+        &self,
+        context: &ValidationContext,
+        max_size: u64,
+    ) -> SafetyResult<ConstraintResult> {
         if let Some(file_size) = context.file_size {
             if file_size > max_size {
                 return Ok(ConstraintResult::Failed(format!(
@@ -184,7 +195,12 @@ impl SecurityConstraint {
         Ok(ConstraintResult::Passed)
     }
 
-    fn validate_file_extension(&self, context: &ValidationContext, extensions: &[String], is_allowed: bool) -> SafetyResult<ConstraintResult> {
+    fn validate_file_extension(
+        &self,
+        context: &ValidationContext,
+        extensions: &[String],
+        is_allowed: bool,
+    ) -> SafetyResult<ConstraintResult> {
         if let Some(file_path) = &context.file_path {
             if let Some(extension) = std::path::Path::new(file_path).extension() {
                 let ext_str = extension.to_string_lossy().to_lowercase();
@@ -206,7 +222,11 @@ impl SecurityConstraint {
         Ok(ConstraintResult::Passed)
     }
 
-    fn validate_execution_time(&self, context: &ValidationContext, max_seconds: u64) -> SafetyResult<ConstraintResult> {
+    fn validate_execution_time(
+        &self,
+        context: &ValidationContext,
+        max_seconds: u64,
+    ) -> SafetyResult<ConstraintResult> {
         if let Some(estimated_time) = context.estimated_execution_time_seconds {
             if estimated_time > max_seconds {
                 return Ok(ConstraintResult::Failed(format!(
@@ -218,14 +238,23 @@ impl SecurityConstraint {
         Ok(ConstraintResult::Passed)
     }
 
-    async fn validate_api_rate_limit(&self, context: &ValidationContext, limit: u32) -> SafetyResult<ConstraintResult> {
+    async fn validate_api_rate_limit(
+        &self,
+        context: &ValidationContext,
+        limit: u32,
+    ) -> SafetyResult<ConstraintResult> {
         // This would typically check against a rate limiter
         // For now, return passed
         let _ = (context, limit);
         Ok(ConstraintResult::Passed)
     }
 
-    fn validate_network_access(&self, context: &ValidationContext, domains: &[String], is_allowed: bool) -> SafetyResult<ConstraintResult> {
+    fn validate_network_access(
+        &self,
+        context: &ValidationContext,
+        domains: &[String],
+        is_allowed: bool,
+    ) -> SafetyResult<ConstraintResult> {
         if let Some(target_domain) = &context.network_target {
             let contains = domains.iter().any(|d| target_domain.contains(d));
 
@@ -239,7 +268,11 @@ impl SecurityConstraint {
         Ok(ConstraintResult::Passed)
     }
 
-    fn validate_memory_usage(&self, context: &ValidationContext, max_bytes: u64) -> SafetyResult<ConstraintResult> {
+    fn validate_memory_usage(
+        &self,
+        context: &ValidationContext,
+        max_bytes: u64,
+    ) -> SafetyResult<ConstraintResult> {
         if let Some(memory_usage) = context.estimated_memory_bytes {
             if memory_usage > max_bytes {
                 return Ok(ConstraintResult::Failed(format!(
@@ -251,7 +284,11 @@ impl SecurityConstraint {
         Ok(ConstraintResult::Passed)
     }
 
-    fn validate_security_context(&self, context: &ValidationContext, required: &str) -> SafetyResult<ConstraintResult> {
+    fn validate_security_context(
+        &self,
+        context: &ValidationContext,
+        required: &str,
+    ) -> SafetyResult<ConstraintResult> {
         if let Some(security_context) = &context.security_context {
             if !security_context.iter().any(|ctx| ctx == required) {
                 return Ok(ConstraintResult::Failed(format!(
@@ -267,7 +304,11 @@ impl SecurityConstraint {
         Ok(ConstraintResult::Passed)
     }
 
-    fn validate_custom_constraint(&self, context: &ValidationContext, logic: &str) -> SafetyResult<ConstraintResult> {
+    fn validate_custom_constraint(
+        &self,
+        context: &ValidationContext,
+        logic: &str,
+    ) -> SafetyResult<ConstraintResult> {
         // Placeholder for custom validation logic
         // In a real implementation, this would evaluate custom scripts or rules
         let _ = (context, logic);

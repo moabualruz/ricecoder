@@ -41,11 +41,7 @@ fn create_project(name: String, version: String) -> Project {
 }
 
 // Helper to create a test dependency
-fn create_dependency(
-    from: String,
-    to: String,
-    constraint: String,
-) -> ProjectDependency {
+fn create_dependency(from: String, to: String, constraint: String) -> ProjectDependency {
     ProjectDependency {
         from,
         to,

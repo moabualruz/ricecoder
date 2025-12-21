@@ -12,8 +12,8 @@ use ricecoder_tui::command_palette::{CommandPaletteWidget, PaletteCommand};
 // Strategy for generating palette commands
 fn arb_palette_command() -> impl Strategy<Value = PaletteCommand> {
     (
-        "[a-zA-Z0-9_-]{1,20}".prop_map(|s| s), // name
-        "[a-zA-Z0-9 ]{1,30}".prop_map(|s| s), // display_name
+        "[a-zA-Z0-9_-]{1,20}".prop_map(|s| s),    // name
+        "[a-zA-Z0-9 ]{1,30}".prop_map(|s| s),     // display_name
         "[a-zA-Z0-9 .,!?]{1,50}".prop_map(|s| s), // description
         prop_oneof![
             Just(None),
@@ -27,33 +27,34 @@ fn arb_palette_command() -> impl Strategy<Value = PaletteCommand> {
             Just("Help".to_string())
         ], // category
     )
-        .prop_map(|(name, display_name, description, shortcut, category)| PaletteCommand {
-            name,
-            display_name,
-            description,
-            shortcut,
-            category,
-        })
+        .prop_map(
+            |(name, display_name, description, shortcut, category)| PaletteCommand {
+                name,
+                display_name,
+                description,
+                shortcut,
+                category,
+            },
+        )
 }
 
 // Strategy for generating search queries
 fn arb_search_query() -> impl Strategy<Value = String> {
     prop_oneof![
-        Just("".to_string()), // Empty query
-        "[a-zA-Z]{1,10}".prop_map(|s| s), // Single word
+        Just("".to_string()),                          // Empty query
+        "[a-zA-Z]{1,10}".prop_map(|s| s),              // Single word
         "[a-zA-Z]{1,5} [a-zA-Z]{1,5}".prop_map(|s| s), // Multiple words
-        "[a-zA-Z0-9]{1,8}".prop_map(|s| s), // With numbers
+        "[a-zA-Z0-9]{1,8}".prop_map(|s| s),            // With numbers
     ]
 }
 
 // Strategy for generating command palettes with commands
 fn arb_command_palette() -> impl Strategy<Value = CommandPaletteWidget> {
-    prop::collection::vec(arb_palette_command(), 1..20)
-        .prop_map(|commands| {
-            let mut palette = CommandPaletteWidget::new();
-            palette.add_commands(commands);
-            palette
-        })
+    prop::collection::vec(arb_palette_command(), 1..20).prop_map(|commands| {
+        let mut palette = CommandPaletteWidget::new();
+        palette.add_commands(commands);
+        palette
+    })
 }
 
 proptest! {
@@ -128,4 +129,3 @@ proptest! {
             "Case variations should return same number of results");
     }
 }
-

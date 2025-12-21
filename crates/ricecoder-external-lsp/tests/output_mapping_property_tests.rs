@@ -4,8 +4,12 @@
 //! **Validates: Requirements ELSP-2.5**
 
 use proptest::prelude::*;
-use ricecoder_external_lsp::mapping::{CompletionMapper, DiagnosticsMapper, HoverMapper, JsonPathParser};
-use ricecoder_external_lsp::types::{CompletionMappingRules, DiagnosticsMappingRules, HoverMappingRules};
+use ricecoder_external_lsp::mapping::{
+    CompletionMapper, DiagnosticsMapper, HoverMapper, JsonPathParser,
+};
+use ricecoder_external_lsp::types::{
+    CompletionMappingRules, DiagnosticsMappingRules, HoverMappingRules,
+};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 
@@ -23,8 +27,8 @@ fn arb_json_path() -> impl Strategy<Value = String> {
 
 /// Strategy for generating valid field mappings
 fn arb_field_mappings() -> impl Strategy<Value = HashMap<String, String>> {
-    prop::collection::hash_map("label|detail|kind|message|severity", "\\$\\.\\w+", 1..5)
-        .prop_map(|map| {
+    prop::collection::hash_map("label|detail|kind|message|severity", "\\$\\.\\w+", 1..5).prop_map(
+        |map| {
             map.into_iter()
                 .map(|(k, _)| {
                     let v = match k.as_str() {
@@ -38,20 +42,13 @@ fn arb_field_mappings() -> impl Strategy<Value = HashMap<String, String>> {
                     (k, v.to_string())
                 })
                 .collect()
-        })
+        },
+    )
 }
 
 /// Strategy for generating valid JSON responses with completion items
 fn arb_completion_response() -> impl Strategy<Value = Value> {
-    prop::collection::vec(
-        (
-            "[a-z]+",
-            "[a-z]+",
-            0u32..20u32,
-        ),
-        1..10,
-    )
-    .prop_map(|items| {
+    prop::collection::vec(("[a-z]+", "[a-z]+", 0u32..20u32), 1..10).prop_map(|items| {
         let items_json: Vec<Value> = items
             .into_iter()
             .map(|(label, detail, kind)| {
@@ -73,14 +70,7 @@ fn arb_completion_response() -> impl Strategy<Value = Value> {
 
 /// Strategy for generating valid JSON responses with diagnostics
 fn arb_diagnostics_response() -> impl Strategy<Value = Value> {
-    prop::collection::vec(
-        (
-            "[a-z ]+",
-            1u32..3u32,
-        ),
-        0..10,
-    )
-    .prop_map(|items| {
+    prop::collection::vec(("[a-z ]+", 1u32..3u32), 0..10).prop_map(|items| {
         let items_json: Vec<Value> = items
             .into_iter()
             .map(|(message, severity)| {
@@ -103,11 +93,7 @@ fn arb_diagnostics_response() -> impl Strategy<Value = Value> {
 
 /// Strategy for generating valid JSON responses with hover info
 fn arb_hover_response() -> impl Strategy<Value = Value> {
-    (
-        "[a-z]+",
-        "[a-z ]+",
-    )
-    .prop_map(|(language, value)| {
+    ("[a-z]+", "[a-z ]+").prop_map(|(language, value)| {
         json!({
             "result": {
                 "contents": {
@@ -160,13 +146,13 @@ proptest! {
         response in arb_completion_response(),
     ) {
         let mapper = CompletionMapper::new();
-        
+
         // Use fixed field mappings that match the response structure
         let mut field_mappings = HashMap::new();
         field_mappings.insert("label".to_string(), "$.label".to_string());
         field_mappings.insert("detail".to_string(), "$.detail".to_string());
         field_mappings.insert("kind".to_string(), "$.kind".to_string());
-        
+
         let rules = CompletionMappingRules {
             items_path: "$.result.items".to_string(),
             field_mappings: field_mappings.clone(),
@@ -177,7 +163,7 @@ proptest! {
         prop_assert!(result.is_ok(), "Mapping should succeed");
 
         let items = result.unwrap();
-        
+
         // For each mapped item, verify all mapped fields are present
         for item in items {
             for field_name in field_mappings.keys() {
@@ -200,13 +186,13 @@ proptest! {
         response in arb_diagnostics_response(),
     ) {
         let mapper = DiagnosticsMapper::new();
-        
+
         // Use fixed field mappings that match the response structure
         let mut field_mappings = HashMap::new();
         field_mappings.insert("message".to_string(), "$.message".to_string());
         field_mappings.insert("severity".to_string(), "$.severity".to_string());
         field_mappings.insert("range".to_string(), "$.range".to_string());
-        
+
         let rules = DiagnosticsMappingRules {
             items_path: "$.result".to_string(),
             field_mappings: field_mappings.clone(),
@@ -217,7 +203,7 @@ proptest! {
         prop_assert!(result.is_ok(), "Mapping should succeed");
 
         let items = result.unwrap();
-        
+
         // For each mapped item, verify all mapped fields are present
         for item in items {
             for field_name in field_mappings.keys() {
@@ -240,12 +226,12 @@ proptest! {
         response in arb_hover_response(),
     ) {
         let mapper = HoverMapper::new();
-        
+
         // Use fixed field mappings that match the response structure
         let mut field_mappings = HashMap::new();
         field_mappings.insert("language".to_string(), "$.language".to_string());
         field_mappings.insert("value".to_string(), "$.value".to_string());
-        
+
         let rules = HoverMappingRules {
             content_path: "$.result.contents".to_string(),
             field_mappings: field_mappings.clone(),
@@ -256,10 +242,10 @@ proptest! {
         prop_assert!(result.is_ok(), "Mapping should succeed");
 
         let item = result.unwrap();
-        
+
         // Result should be an object
         prop_assert!(item.is_object(), "Result should be a JSON object");
-        
+
         // All mapped fields should be present
         for field_name in field_mappings.keys() {
             prop_assert!(
@@ -291,7 +277,7 @@ proptest! {
 
         // Both should succeed or both should fail
         prop_assert_eq!(result1.is_ok(), result2.is_ok(), "Mapping should be deterministic");
-        
+
         // If both succeeded, they should be equal
         if let (Ok(items1), Ok(items2)) = (result1, result2) {
             prop_assert_eq!(items1, items2, "Mapping results should be identical");
@@ -390,7 +376,7 @@ proptest! {
 
         let result = mapper.map(&response, &rules);
         prop_assert!(result.is_ok(), "Mapping should succeed even with missing optional fields");
-        
+
         let items = result.unwrap();
         prop_assert_eq!(items.len(), 1);
         prop_assert_eq!(items[0]["label"].as_str().unwrap(), label);

@@ -235,10 +235,7 @@ impl WebAgent {
                         "Vite integration".to_string(),
                         "Jest-compatible API".to_string(),
                     ],
-                    cons: vec![
-                        "Newer tool".to_string(),
-                        "Smaller ecosystem".to_string(),
-                    ],
+                    cons: vec!["Newer tool".to_string(), "Smaller ecosystem".to_string()],
                     alternatives: vec!["Jest".to_string(), "Mocha".to_string()],
                 },
                 TechRecommendation {
@@ -405,17 +402,10 @@ mod tests {
         assert_eq!(capabilities.len(), 6);
 
         // Check first capability
-        assert_eq!(
-            capabilities[0].name,
-            "Frontend Framework Selection"
-        );
+        assert_eq!(capabilities[0].name, "Frontend Framework Selection");
         assert_eq!(capabilities[0].technologies.len(), 3);
-        assert!(capabilities[0]
-            .technologies
-            .contains(&"React".to_string()));
-        assert!(capabilities[0]
-            .technologies
-            .contains(&"Vue".to_string()));
+        assert!(capabilities[0].technologies.contains(&"React".to_string()));
+        assert!(capabilities[0].technologies.contains(&"Vue".to_string()));
         assert!(capabilities[0]
             .technologies
             .contains(&"Angular".to_string()));
@@ -486,7 +476,11 @@ mod tests {
                 .technology_recommendations
                 .iter()
                 .any(|r| r.technology == framework);
-            assert!(found, "Framework {} not found in recommendations", framework);
+            assert!(
+                found,
+                "Framework {} not found in recommendations",
+                framework
+            );
         }
     }
 

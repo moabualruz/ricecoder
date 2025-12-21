@@ -10,6 +10,7 @@ pub mod agent_integration;
 pub mod analytics;
 pub mod audit;
 pub mod client;
+pub mod compliance;
 pub mod config;
 pub mod connection_pool;
 pub mod error;
@@ -23,10 +24,9 @@ pub mod marshaler;
 pub mod metadata;
 pub mod permissions;
 pub mod permissions_integration;
-pub mod rbac;
-pub mod compliance;
-pub mod registry;
 pub mod protocol_validation;
+pub mod rbac;
+pub mod registry;
 pub mod server_management;
 pub mod storage_integration;
 pub mod tool_execution;
@@ -36,19 +36,25 @@ pub mod transport;
 pub use agent_integration::{
     AgentToolCapabilities, ToolDiscovery, ToolInvoker, ToolWorkflowIntegration,
 };
-pub use analytics::{MCPAnalyticsAggregator, MCPEnterpriseDashboard, MCPUsageReport, EnterpriseDashboardReport, RealtimeDashboardSnapshot};
+pub use analytics::{
+    EnterpriseDashboardReport, MCPAnalyticsAggregator, MCPEnterpriseDashboard, MCPUsageReport,
+    RealtimeDashboardSnapshot,
+};
 pub use audit::MCPAuditLogger;
 pub use client::MCPClient;
+pub use compliance::{
+    ComplianceReport, MCPComplianceMonitor, MCPEnterpriseMonitor, MonitoringReport,
+};
 pub use config::{MCPConfig, MCPConfigLoader};
-pub use connection_pool::{ConnectionPool, PoolConfig, PooledConnection, PoolStats};
+pub use connection_pool::{ConnectionPool, PoolConfig, PoolStats, PooledConnection};
 pub use error::{Error, ErrorContext, ErrorLogEntry, Result, ToolError};
 pub use error_recovery::{
-    BackoffConfig, GracefulDegradationHandler, RecoveryStrategy, RetryHandler,
-    determine_recovery_strategy,
+    determine_recovery_strategy, BackoffConfig, GracefulDegradationHandler, RecoveryStrategy,
+    RetryHandler,
 };
 pub use error_reporting::{ErrorMessageFormatter, ErrorReporter, ErrorStatistics};
 pub use executor::CustomToolExecutor;
-pub use health_check::{HealthChecker, HealthCheckConfig, HealthStatus, ServerAvailability};
+pub use health_check::{HealthCheckConfig, HealthChecker, HealthStatus, ServerAvailability};
 pub use hot_reload::ConfigWatcher;
 pub use lifecycle::{ServerLifecycle, ServerLifecycleInfo};
 pub use marshaler::ToolMarshaler;
@@ -58,28 +64,25 @@ pub use permissions_integration::{
     PermissionAwareToolExecution, ToolPermissionChecker, ToolPermissionDecision,
     ToolPermissionEnforcer, ToolPermissionLevel, ToolPermissionPrompt, UserPermissionDecision,
 };
+pub use protocol_validation::{MCPComplianceChecker, MCPErrorHandler, MCPProtocolValidator};
 pub use rbac::{MCPAuthorizationMiddleware, MCRBACManager};
-pub use compliance::{MCPComplianceMonitor, MCPEnterpriseMonitor, ComplianceReport, MonitoringReport};
 pub use registry::ToolRegistry;
+pub use server_management::{
+    AuthConfig, AuthType, DiscoveryResult, FileSystemDiscoveryProvider, ServerConfig, ServerHealth,
+    ServerManager, ServerRegistration, ServerState,
+};
 pub use storage_integration::{
     JsonToolRegistryStorage, ToolRegistryCache, ToolRegistryPersistence, ToolRegistryStorage,
 };
-pub use protocol_validation::{
-    MCPComplianceChecker, MCPErrorHandler, MCPProtocolValidator,
-};
-pub use server_management::{
-    AuthConfig, AuthType, DiscoveryResult, FileSystemDiscoveryProvider, ServerConfig,
-    ServerHealth, ServerManager, ServerRegistration, ServerState,
-};
 pub use tool_execution::{
-    MCPToolExecutor, ToolExecutionContext, ToolExecutionResult, ToolExecutionStats,
-    ToolExecutor, ToolResultProcessor,
+    MCPToolExecutor, ToolExecutionContext, ToolExecutionResult, ToolExecutionStats, ToolExecutor,
+    ToolResultProcessor,
 };
 pub use tool_orchestration::{
     PipelineExecutionContext, PipelineExecutionResult, PipelineStats, PipelineStep,
     ToolOrchestrator, ToolPipeline,
 };
 pub use transport::{
-    HTTPTransport, MCPMessage, MCPRequest, MCPResponse, MCPNotification, MCPError, MCPErrorData,
+    HTTPTransport, MCPError, MCPErrorData, MCPMessage, MCPNotification, MCPRequest, MCPResponse,
     MCPTransport, SSETransport, StdioTransport, TransportConfig, TransportFactory, TransportType,
 };

@@ -4,8 +4,8 @@
 
 use proptest::prelude::*;
 use ricecoder_orchestration::{
-    ConfigManager, RulesValidator, ValidationRule, Workspace, WorkspaceConfig,
-    WorkspaceMetrics, WorkspaceRule, RuleType, Project, ProjectStatus,
+    ConfigManager, Project, ProjectStatus, RuleType, RulesValidator, ValidationRule, Workspace,
+    WorkspaceConfig, WorkspaceMetrics, WorkspaceRule,
 };
 use serde_json::{json, Value};
 use std::path::PathBuf;
@@ -37,7 +37,7 @@ fn property_2_configuration_consistency() {
 
         // Create a config manager and set the configuration
         let mut manager = ConfigManager::new(PathBuf::from("/workspace"));
-        
+
         // Set each setting individually
         manager.set_setting("max_parallel_operations".to_string(), Value::Number(max_parallel.into())).unwrap();
         manager.set_setting("transaction_timeout_ms".to_string(), Value::Number(timeout_ms.into())).unwrap();
