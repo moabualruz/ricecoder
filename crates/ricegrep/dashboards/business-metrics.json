@@ -1,0 +1,84 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "iteration": 1,
+  "links": [],
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"unit": "percent"}, "overrides": []},
+      "gridPos": {"h": 4, "w": 12, "x": 0, "y": 0},
+      "id": 9,
+      "targets": [
+        {
+          "expr": "(sum(rate(ricegrep_vector_embedding_requests_total[5m])) - sum(rate(ricegrep_vector_errors_total[5m]))) / sum(rate(ricegrep_vector_embedding_requests_total[5m])) * 100",
+          "legendFormat": "success rate",
+          "refId": "A"
+        }
+      ],
+      "title": "Overall query success",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"unit": "req/s"}, "overrides": []},
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 4},
+      "id": 10,
+      "targets": [
+        {"expr": "sum(rate(ricegrep_vector_embedding_requests_total[1m]))", "legendFormat": "embedding qps", "refId": "A"},
+        {"expr": "sum(rate(ricegrep_vector_qdrant_requests_total[1m]))", "legendFormat": "Qdrant qps", "refId": "B"}
+      ],
+      "title": "Query throughput",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"unit": "percent"}, "overrides": []},
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 4},
+      "id": 11,
+      "targets": [
+        {
+          "expr": "1 - sum(rate(ricegrep_vector_cache_misses_total[5m])) / (sum(rate(ricegrep_vector_cache_hits_total[5m])) + sum(rate(ricegrep_vector_cache_misses_total[5m])))",
+          "legendFormat": "cache hit rate",
+          "refId": "A"
+        }
+      ],
+      "title": "Cache health",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"unit": "none"}, "overrides": []},
+      "gridPos": {"h": 4, "w": 12, "x": 0, "y": 8},
+      "id": 12,
+      "targets": [
+        {
+          "expr": "sum(rate(ricegrep_vector_embedding_requests_total[5m]))",
+          "legendFormat": "embedding",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(ricegrep_vector_errors_total[5m]))",
+          "legendFormat": "errors",
+          "refId": "B"
+        }
+      ],
+      "title": "Query volume vs errors",
+      "type": "bar"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 36,
+  "style": "dark",
+  "tags": ["ops", "business"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Ricegrep Business Metrics",
+  "uid": "ricegrep-business-metrics",
+  "version": 1
+}

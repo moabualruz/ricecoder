@@ -1,0 +1,71 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "iteration": 1,
+  "links": [],
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"unit": "req/s"}, "overrides": []},
+      "gridPos": {"h": 6, "w": 12, "x": 0, "y": 0},
+      "id": 5,
+      "targets": [
+        {"expr": "sum(rate(ricegrep_vector_embedding_requests_total[1m]))", "legendFormat": "embedding qps", "refId": "A"},
+        {"expr": "sum(rate(ricegrep_vector_qdrant_requests_total[1m]))", "legendFormat": "Qdrant qps", "refId": "B"}
+      ],
+      "title": "Component throughput",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"unit": "percent"}, "overrides": []},
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 6},
+      "id": 6,
+      "targets": [
+        {
+          "expr": "sum(rate(ricegrep_vector_cache_hits_total[5m])) / (sum(rate(ricegrep_vector_cache_hits_total[5m])) + sum(rate(ricegrep_vector_cache_misses_total[5m])))",
+          "legendFormat": "cache hit rate",
+          "refId": "A"
+        }
+      ],
+      "title": "Cache hit rate",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"unit": "bytes"}, "overrides": []},
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 6},
+      "id": 7,
+      "targets": [
+        {"expr": "avg(ricegrep_vector_index_size_bytes)", "legendFormat": "index size", "refId": "A"}
+      ],
+      "title": "Index size",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+      "gridPos": {"h": 4, "w": 12, "x": 0, "y": 10},
+      "id": 8,
+      "targets": [
+        {"expr": "avg(ricegrep_vector_index_build_duration_seconds)", "legendFormat": "index build duration", "refId": "A"}
+      ],
+      "title": "Index build duration",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 36,
+  "style": "dark",
+  "tags": ["ops", "components"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Ricegrep Component Deep Dive",
+  "uid": "ricegrep-component-deep-dive",
+  "version": 1
+}

@@ -10,79 +10,51 @@ documentation.workspace = true
 keywords.workspace = true
 categories.workspace = true
 
-description = "AI-enhanced code search tool with full ripgrep compatibility, content display, answer generation, and deterministic fallback"
-
-[[bin]]
-name = "ricegrep"
-path = "src/main.rs"
-
 [dependencies]
+anyhow = { workspace = true }
+async-stream = { workspace = true }
+async-trait = { workspace = true }
+chrono = { workspace = true }
+futures = { workspace = true }
+glob = { workspace = true }
+lazy_static = { workspace = true }
+regex = { workspace = true }
+sha2 = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-serde_yaml = "0.9"
-bincode = "1.3"
+tracing = { workspace = true }
+thiserror = { workspace = true }
 tokio = { workspace = true }
-regex = { workspace = true }
+tree-sitter = { workspace = true }
+tree-sitter-rust = { workspace = true }
+tree-sitter-typescript = { workspace = true }
+tree-sitter-python = { workspace = true }
+tree-sitter-javascript = { workspace = true }
+tree-sitter-java = { workspace = true }
+tree-sitter-go = { workspace = true }
+tree-sitter-c = { workspace = true }
+tree-sitter-cpp = { workspace = true }
+unicode-normalization = { workspace = true }
+unicode-segmentation = { workspace = true }
 walkdir = { workspace = true }
-ignore = "0.4"
-rayon = "1.7"
-futures = { workspace = true }
-async-trait = { workspace = true }
-once_cell = "1.18"
-memmap2 = "0.7"
-bstr = "1.6"
-encoding_rs = "0.8"
-same-file = "1.0"
-globset = "0.4"
-termcolor = "1.2"
-syntect = { version = "5.0", default-features = false, features = ["default-syntaxes", "default-themes", "html", "regex-onig"] }
-atty = "0.2"
-strsim = "0.11"
-  figment = { version = "0.10", features = ["toml", "env"] }
-  toml = "0.8"
-  tempfile = "3.0"
-   typos = "0.6"
-   detect-lang = "0.1"
-   dirs = "5.0"
-# AI/ML dependencies for enhanced search capabilities
-# Using Candle for pure Rust ML inference without external dependencies
-candle-core = "0.9"
-candle-nn = "0.9"
-candle-transformers = "0.9"
-tokenizers = "0.20"
-hf-hub = "0.4"
-bm25 = "2.0"
-rust-stemmers = "1.2"
-   # Keep symspell as fallback for --no-ai mode
-   symspell = "0.4"
-    notify = { version = "6.1", default-features = false }
-    indicatif = { workspace = true }
-# Database dependencies
-scylla = "0.12"
-uuid = { version = "1.0", features = ["v4", "serde"] }
-chrono = { version = "0.4", features = ["serde"] }
-# Security dependencies
-rand = "0.8"
-# CLI dependencies
-clap = { version = "4.0", features = ["derive"] }
-# Error handling
-thiserror = "1.0"
-# Logging
-tracing = "0.1"
-# AI/ML dependencies - Pure heuristic-based processing (no external APIs)
-# Database dependencies - Using SQLite for simplicity and reliability
-rusqlite = { version = "0.31", features = ["bundled"] }
-serde_rusqlite = "0.35"
-rust-mcp-sdk = { version = "0.7", features = ["server", "stdio"] }
-# TODO: Add ML libraries with proper CPU/CUDA support
+tantivy = { workspace = true }
+tempfile = { workspace = true }
+dashmap = { workspace = true }
+lru = { workspace = true }
+ndarray = { workspace = true }
+once_cell = { workspace = true }
+onnxruntime = { workspace = true }
+parking_lot = { workspace = true }
+qdrant-client = { workspace = true }
+memmap2 = { workspace = true }
+tokenizers = { workspace = true }
+prometheus = { workspace = true }
+sysinfo = { workspace = true }
+# uuid = { workspace = true }
+uuid = { workspace = true }
+axum = { workspace = true }
+# GraphQL stack powered by async-graphql
+async-graphql = { workspace = true }
+async-graphql-axum = { workspace = true }
 
-[dev-dependencies]
-tempfile = "3.0"
-
-# RiceCoder integration
-ricecoder-sessions = { path = "../ricecoder-sessions" }
-ricecoder-refactoring = { path = "../ricecoder-refactoring" }
-
-# MCP integration - simple stdio-based implementation
-
-
+tokio-stream = { workspace = true }

@@ -1,431 +1,75 @@
 # RiceGrep
 
-AI-enhanced code search tool with full ripgrep compatibility, MCP server support, and plugin ecosystem for AI assistants.
+RiceGrep delivers the familiar ripgrep CLI ergonomics and performance while layering in AI-assisted search, structured indexing, and a first-class observability/operations surface that powers production-grade search services.
 
-## Features
+## Overview
 
-- **Ripgrep Compatible**: Drop-in replacement for ripgrep with identical CLI options
-- **AI-Enhanced Search**: Heuristic-based query understanding and result reranking (no external APIs)
-- **Content Display**: Full file content viewing with syntax highlighting support
-- **Answer Generation**: AI-powered answer synthesis from search results
-- **Deterministic Fallback**: Always works, even without AI dependencies
-- **Local File Storage**: Database disabled by default for privacy and simplicity
-- **Spelling Correction**: Automatic correction of typos in search queries
-- **Language Awareness**: Programming language detection and context-aware ranking
-- **Custom Ignore Files**: Support for .ricegrepignore files with .gitignore-style patterns
-- **Progress Indication**: Visual progress bars and spinners for long-running operations
-- **Dry Run Support**: Preview operations without making changes (--dry-run flag)
-- **File Size Management**: Configurable limits on file sizes for search and indexing
-- **Indexing**: Fast search acceleration for large codebases with progress feedback
-- **Watch Mode**: Continuous monitoring with automatic index updates (framework ready)
-- **Safe Replace**: Preview and execute find-replace operations safely
-- **Symbol Rename**: Language-aware symbol renaming with safety checks
-- **AI Assistant Integration**: Plugin system for Claude Code, OpenCode, Codex, Factory Droid
-- **MCP Server**: Model Context Protocol server for AI assistant tool integration
-- **Plugin Installation**: Automated installation for AI assistants (`ricegrep install claude-code`, etc.)
-- **Modern CLI**: Subcommand architecture with comprehensive help and completion
+- **Ripgrep-compatible core**: The legacy CLI mode mirrors ripgrep patterns, globbing, and exit codes so existing scripts and habits work without change.
+- **Modern subcommands**: The `ricegrep search`, `watch`, `install`, `mcp`, `index`, and `process` subcommands unlock structured search, background indexing, and MCP integration.
+- **AI-aware ranking**: Heuristic reranking, natural language understanding, and answer generation sit atop deterministic fallback logic so queries stay consistent even when AI helpers are unavailable.
 
-## Installation
+## Key Capabilities
 
-```bash
-cargo install --path crates/ricegrep
-```
+| Area | Highlights | Implementation Reference |
+|------|------------|--------------------------|
+| Search | Regex, literal, file filtering, context, watch, replace, dry-run, and quiet traps with steeped progress indicators | `projects/ricecoder/crates/ricegrep/src/search.rs`, `args.rs`, `replace.rs` |
+| Observability & Monitoring | `/metrics`, `/metrics/history`, `/alerts`, `/health`, and Grafana-ready dashboards built on `VectorTelemetry`, `VectorMetrics`, and `AlertManager` | `projects/ricecoder/crates/ricegrep/src/vector/observability.rs`, `vector/alerting.rs`, `api/http.rs` |
+| Administration | `/admin/command` executes reindex, optimize, clear-cache, and configuration overrides through `AdminToolset` | `projects/ricecoder/crates/ricegrep/src/admin.rs`, `api/http.rs` |
+| Benchmarking & Regressions | `/benchmarks/run`, `run_performance_benchmarks.*`, and the `BenchmarkCoordinator`/`BenchmarkHarness` suite persist results and fire regression alerts via `RegressionDetector` | `projects/ricecoder/crates/ricegrep/src/benchmarking.rs`, `projects/ricecoder/crates/ricegrep/src/performance.rs` |
 
-## Usage
+## Getting Started
 
-### Modern Subcommand Architecture
+1. Clone the RiceCoder workspace and build the `ricegrep` binary:
+   ```bash
+   git clone https://github.com/moabualruz/ricecoder.git
+   cd ricecoder
+   cargo build --bin ricegrep
+   ```
+2. Run core commands:
+   ```bash
+   target/release/ricegrep search "fn main" src/
+   target/release/ricegrep search --ai-enhanced "list index commands"
+   target/release/ricegrep watch --quiet src/
+   ```
+3. Optional: install CRC-coded assistant integrations (`ricegrep install claude-code`, etc.) to leverage MCP tooling.
 
-RiceGrep uses a modern subcommand architecture for better organization and discoverability:
+## Observability & Alerting (Milestone v1.2)
 
-```bash
-ricegrep search [OPTIONS] [PATTERN] [PATH]...    # Search for patterns
-ricegrep replace [OPTIONS] OLD_SYMBOL NEW_SYMBOL FILE  # Symbol rename operations
-ricegrep watch [OPTIONS] [PATH]...               # Watch mode for continuous monitoring
-ricegrep index [OPTIONS] [PATHS]...              # Manage search indexes
-ricegrep mcp [OPTIONS]                           # Start MCP server for AI assistants
-ricegrep install [OPTIONS] [PLUGIN]              # Install plugins for AI assistants
-ricegrep uninstall [OPTIONS] [PLUGIN]            # Uninstall plugins from AI assistants
-ricegrep --help                                  # Show help
-ricegrep --version                               # Show version
-```
+- `/metrics` refreshes `SystemResourceSampler`, records CPU/memory/disk/network usage, updates `VectorMetrics`, and serializes the Prometheus family set for scraping. History entries are persisted via `MetricsStorage` before the `/metrics/history` endpoint returns aggregated buckets that honor the 90-day retention policy.
+- `/alerts` polls `AlertManager::check_alerts`, which drives `AlertRule` evaluations built on `VectorTelemetrySnapshot` and `MetricKind`. `/alerts/{name}/ack` and `/alerts/{name}/resolve` surface acknowledgement metadata, actor notes, and triggers for `Notifier` and `RemediationHandler` chains.
+- Grafana dashboards (system overview, component deep dive, business metrics) live under `projects/ricecoder/crates/ricegrep/dashboards/` and visualize the `ricegrep_vector_*` metrics emitted by the new observability stack.
 
-### Basic Search
-```bash
-# Search for function definitions (subcommand syntax)
-ricegrep search 'fn main' src/
+## Administration & Reindexing
 
-# Traditional ripgrep-compatible syntax (still supported)
-ricegrep 'fn main' src/
+- `/admin/command` dispatches `AdminAction` requests through `AdminToolset`, allowing operators to reindex repositories, optimize BM25 handles, clear caches, and inject runtime config overrides. All actions emit `AdminCommandResponse` objects that include the summary (and `LexicalIngestStats` when available) for telemetry.
+- The administrative helpers wire `LexicalIngestPipeline` into `VectorTelemetry`, ensuring ingestion statistics appear in both the atomic telemetry snapshot and Prometheus exposures.
 
-# Case-insensitive search
-ricegrep search --ignore-case 'TODO' .
+## Benchmarking, Regression Detection, and Load Testing
 
-# Word-based search
-ricegrep search --word-regexp 'function' .
+- `BenchmarkHarness` computes recall (Recall@K, Precision@K, MRR, NDCG) for BM25, ANN, hybrid, and fallback modes. `BenchmarkCoordinator` persists each run, updates baseline records, and fires alerts through `RegressionDetector` when hybrid/fallback deltas slip past the defined thresholds.
+- `/benchmarks/run` accepts a suite run request or individual mode invocation. The `run_performance_benchmarks.*` scripts share the same entry points for CI gating.
+- Load testing uses `BenchmarkCoordinator::run_load_test`, writes `LoadTestRecord` artifacts, and exposes worker-level CPU/memory/latency telemetry for dashboards.
 
-# Custom ignore file (e.g., .ricegrepignore)
-ricegrep search --ignore-file .ricegrepignore 'debug' src/
+## Documentation & Contribution
 
-# Limit file size for performance
-ricegrep search --max-file-size 1048576 'pattern' large-dir/
+- Ricegrep inherits the RiceCoder [license](LICENSE.md) and [contributing guide](CONTRIBUTING.md). Please follow the policies described there when adding features, tests, or docs.
+- Detailed architecture, requirement, and design references live in `.kiro/specs/ricecode-ricegrep-ultrafast-hybrid-search/` and highlight how the v1.0–v1.2 milestones trace to the current code.
+- Further user and developer docs live in `projects/ricecoder.wiki/RiceGrep.md` and the new `RiceGrep-Operations.md` documentation (see the wiki folder for the latest content).
 
-# Suppress progress output
-ricegrep search --quiet 'pattern' .
-```
-
-### Symbol Rename Operations
-```bash
-# Preview symbol rename (language-aware)
-ricegrep replace old_function new_function src/main.rs
-
-# Execute symbol rename with confirmation
-ricegrep replace --force old_variable new_variable lib.rs
-
-# Dry-run to see what would be changed
-ricegrep replace --dry-run old_name new_name file.rs
-```
-
-### AI-Enhanced Features
-```bash
-# Content display - show full file contents
-ricegrep search --content 'println' src/
-
-# Answer generation - AI-powered answers from results
-ricegrep search --answer 'how does error handling work' .
-
-# Deterministic results - disable AI reranking
-ricegrep search --no-rerank 'function' .
-
-# Natural language queries (legacy mode)
-ricegrep --ai-enhanced 'find all functions that handle errors'
-```
-
-### Custom Ignore Files
-```bash
-# Use a custom ignore file (.ricegrepignore)
-ricegrep search --ignore-file .ricegrepignore 'password' .
-
-# .ricegrepignore supports .gitignore-style patterns
-echo -e "*.log\ntemp/*\n!important.log" > .ricegrepignore
-ricegrep search --ignore-file .ricegrepignore 'error' .
-```
-
-### Indexing for Performance
-```bash
-# Build search index (legacy mode for compatibility)
-ricegrep --index-build .
-
-# Check index status
-ricegrep --index-status
-
-# Watch mode for continuous updates
-ricegrep watch .
-ricegrep watch --timeout 300 src/  # Watch with 5-minute timeout
-```
-
-### Index Management
-
-Manage search indexes for improved performance:
+## Running Tests & Benchmarks
 
 ```bash
-# Build search index
-ricegrep index --build .
-
-# Update existing index
-ricegrep index --update src/
-
-# Check index status
-ricegrep index --status
-
-# Clear index
-ricegrep index --clear
-```
-
-## AI Assistant Integration
-
-RiceGrep integrates seamlessly with popular AI coding assistants, providing enhanced search and refactoring capabilities.
-
-### Supported Assistants
-
-- **Claude Code**: Plugin marketplace integration with skills system
-- **OpenCode**: Plugin system with tool definitions and MCP configuration
-- **Codex**: Skills-based integration with AGENTS.md and MCP server support
-- **Factory Droid**: Python hooks for background processing and lifecycle management
-
-### Installation
-
-Install RiceGrep integration for your preferred AI assistant:
-
-```bash
-# Claude Code integration (marketplace + plugin)
-ricegrep install claude-code
-
-# OpenCode integration (tool definition + MCP config)
-ricegrep install opencode
-
-# Codex integration (MCP + AGENTS.md)
-ricegrep install codex
-
-# Factory Droid integration (hooks + skills + settings)
-ricegrep install droid
-
-# Uninstall plugins
-ricegrep uninstall claude-code
-ricegrep uninstall opencode
-ricegrep uninstall codex
-ricegrep uninstall droid
-```
-
-**Note:** All major AI assistants are supported!
-
-#### What Plugin Installation Does
-
-- **Claude Code**: Adds RiceGrep to marketplace and installs plugin (`claude plugin marketplace add ricecoder/ricegrep`)
-- **OpenCode**: Creates tool definition files and configures MCP integration in `~/.config/opencode/`
-- **Codex**: Adds skills to AGENTS.md and registers MCP server (`codex mcp add ricegrep`)
-- **Factory Droid**: Creates Python hooks and updates settings in `~/.factory/`
-
-### MCP Server
-
-RiceGrep provides an MCP (Model Context Protocol) server for AI assistants that support the protocol:
-
-```bash
-# Start MCP server (stdio mode for most assistants)
-# Automatically starts background watch mode for index updates
-ricegrep mcp
-
-# Start MCP server with custom settings
-ricegrep mcp --host localhost --port 8080
-```
-
-**Note:** When started, the MCP server automatically begins background watch mode after 5 seconds. This ensures AI assistants always have access to the latest indexed data.
-
-The MCP server exposes one main tool:
-- `search`: Semantic search with AI-enhanced ranking and comprehensive results
-
-### Skill Definitions
-
-RiceGrep provides structured skill definitions that AI assistants can use to understand available capabilities:
-
-```bash
-# Export skills as JSON for assistant integration
-ricegrep export-skills --format json
-
-# Export skills as YAML
-ricegrep export-skills --format yaml
-```
-
-Available skills:
-- **ricegrep-search**: Semantic search with natural language queries
-- **ricegrep-replace**: Safe symbol renaming with language awareness
-
-### Safe Replace Operations
-```bash
-# Preview changes (dry-run)
-ricegrep search 'old_name' --replace 'new_name' --dry-run file.rs
-
-# Preview changes (legacy --preview flag)
-ricegrep search 'old_name' --replace 'new_name' --preview file.rs
-
-# Execute changes
-ricegrep search 'old_name' --replace 'new_name' --force file.rs
-```
-
-## Configuration
-
-RiceGrep supports cascading configuration:
-- Command-line options (highest priority)
-- Environment variables with `RICEGREP_` prefix
-- Local TOML configuration file (`.ricecoder/.ricegrep.toml`)
-- Global TOML configuration file (`~/Documents/.ricecoder/.ricegrep.toml`)
-
-### Environment Variables
-
-- `RICEGREP_DATABASE_ENABLED`: Enable database storage (default: false)
-- `RICEGREP_AI_ENABLED`: Enable AI features (default: true)
-- `RICEGREP_COLOR`: Color output mode (auto/always/never)
-
-### Example Configuration (.ricecoder/.ricegrep.toml)
-```toml
-# AI settings
-ai_enabled = true
-confidence_threshold = 0.7
-
-# Search settings
-max_results = 100
-follow_symlinks = true
-
-# Output settings
-color = "auto"
-line_numbers = true
-
-# Database settings (disabled by default for privacy)
-database_enabled = false
-```
-
-### Custom Ignore Files (.ricegrepignore)
-RiceGrep supports custom ignore files with .gitignore-style syntax:
-
-```gitignore
-# Ignore all log files
-*.log
-
-# Ignore temporary directories
-temp/
-tmp/
-
-# Ignore specific files
-secrets.txt
-config.local.*
-
-# Negation (don't ignore these patterns)
-!important.log
-!src/important/
-```
-
-Use with: `ricegrep search --ignore-file .ricegrepignore PATTERN`
-
-### Storage Locations
-
-RiceGrep organizes its data in the following structure:
-
-```
-project/
-├── .ricecoder/
-│   ├── .ricegrep/                    # Search indices and metadata
-│   │   ├── index_*.idx              # Search index files
-│   │   ├── plugins/                 # Plugin storage
-│   │   └── store/                   # Additional storage
-│   ├── .ricegrep.toml               # Local configuration
-│   └── ricegrep.db                  # Database (when enabled)
-
-# Global configuration (platform-aware):
-# Windows: %USERPROFILE%\Documents\.ricecoder\.ricegrep.toml
-# macOS: ~/Documents/.ricecoder/.ricegrep.toml
-# Linux: ~/Documents/.ricecoder/.ricegrep.toml
-```
-
-## AI Features
-
-### Content Display
-Show full file contents instead of just matching lines:
-```bash
-ricegrep search --content 'function' src/
-```
-
-### Answer Generation
-Generate AI-powered answers from search results:
-```bash
-ricegrep search --answer 'how does authentication work' .
-```
-
-### Deterministic Fallback
-Ensure consistent results without AI dependencies:
-```bash
-ricegrep search --no-rerank 'query' .
-```
-
-## Performance
-
-- **Startup**: <5s in release mode
-- **Search**: <3s for typical queries on large codebases
-- **Indexing**: Parallel processing with memory mapping for large files
-- **Memory**: Efficient memory usage with configurable limits
-- **AI Processing**: Optional enhancement with graceful fallback
-
-## Compatibility
-
-RiceGrep maintains full backward compatibility with ripgrep:
-
-### Legacy Mode (ripgrep-compatible)
-```bash
-ricegrep --ignore-case 'TODO' .           # Case-insensitive search
-ricegrep --word-regexp 'function' .       # Word-based matching
-ricegrep --count 'FIXME' src/             # Count matches
-ricegrep --line-number 'error' logs/      # Show line numbers
-```
-
-### Modern Subcommands
-```bash
-ricegrep search --ignore-case 'TODO' .    # Same functionality
-ricegrep search --word-regexp 'function' .
-ricegrep search --count 'FIXME' src/
-ricegrep search --line-number 'error' logs/
-```
-
-All standard ripgrep options are supported identically.
-
-## Examples
-
-### Basic Search
-```bash
-# Find all TODO comments (case-insensitive)
-ricegrep search --ignore-case 'todo' .
-
-# Count matches per file
-ricegrep search --count 'FIXME' src/
-
-# Show only filenames with matches
-ricegrep search --files-with-matches 'deprecated' .
-
-# Search with context
-ricegrep search --before-context 2 --after-context 2 'error' logs/
-```
-
-### Advanced Features
-```bash
-# Content display - see full files containing matches
-ricegrep search --content 'database' src/
-
-# AI answer generation
-ricegrep search --answer 'explain the authentication flow' .
-
-# Deterministic results (no AI variability)
-ricegrep search --no-rerank 'function' .
-
-# JSON output for tooling integration
-ricegrep search --json 'error' . | jq '.matches[0].line_content'
-```
-
-### Legacy Compatibility
-```bash
-# All traditional ripgrep commands still work
-ricegrep --ignore-case 'todo' .
-ricegrep --count 'FIXME' src/
-ricegrep --before-context 2 --after-context 2 'error' logs/
-```
-
-## Architecture
-
-RiceGrep is built with a modular architecture:
-
-- **Search Engine**: High-performance regex matching with optional indexing
-- **AI Integration**: Query understanding and result enhancement (optional)
-- **Output System**: Flexible formatting (text, JSON) with content display
-- **Configuration**: Cascading config with CLI, env vars, and TOML files
-- **CLI**: Modern subcommand architecture with backward compatibility
-
-## Error Handling
-
-RiceGrep implements comprehensive error handling with graceful degradation:
-
-- **AI Failures**: Automatic fallback to deterministic ranking
-- **Index Issues**: File-by-file search when indexing unavailable
-- **Configuration Errors**: Sensible defaults with clear error messages
-- **Memory Limits**: Efficient processing with configurable constraints
-
-## Contributing
-
-RiceGrep is part of the RiceCoder project. See the main project documentation for contribution guidelines.
-
-### Development
-```bash
-# Run tests
 cargo test -p ricegrep
-
-# Run integration tests
-cargo test --test integration_tests
-
-# Build documentation
-cargo doc -p ricegrep
+cargo test -p ricegrep vector::observability vector::alerting
+cargo bench --bin ricegrep_bench
+./run_performance_benchmarks.sh
 ```
+
+## Support & Feedback
+
+- Report issues via the RiceCoder issue tracker.
+- Join the community discussions (Discord/GitHub Discussions) for operations, monitoring, and benchmarking questions.
+
+---
+
+Ricegrep is part of the RiceCoder Ultrafast Hybrid Search stack. Follow the project-level roadmap and SSD docs to understand upcoming features and traceability mappings.
