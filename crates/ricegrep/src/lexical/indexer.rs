@@ -162,6 +162,14 @@ impl Bm25IndexHandle {
         writer.commit()?;
         Ok(())
     }
+
+    pub fn document_count(&self) -> u64 {
+        self.metadata.doc_count
+    }
+
+    pub fn token_count(&self) -> u64 {
+        self.metadata.total_tokens
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]

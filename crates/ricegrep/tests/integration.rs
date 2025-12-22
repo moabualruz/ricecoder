@@ -66,3 +66,43 @@ fn lexical_handle_reports_structured_error_for_missing_index() {
         other => panic!("expected I/O or Tantivy error, got {other:?}"),
     }
 }
+
+#[test]
+#[ignore = "Requires running RiceGrep gateway and MCP stdio server"]
+fn mcp_stdio_nl_search_smoke() {
+    let bin_path = env!("CARGO_BIN_EXE_ricegrep");
+    let mut cmd = std::process::Command::new(bin_path);
+    cmd.arg("mcp").arg("--no-watch");
+    if let Ok(endpoint) = std::env::var("RICEGREP_GATEWAY_ENDPOINT") {
+        cmd.arg("--endpoint").arg(endpoint);
+    }
+
+    cmd.stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::inherit());
+
+    let mut child = cmd.spawn().expect("start ricegrep mcp");
+    let mut stdin = child.stdin.take().expect("capture stdin");
+
+    let initialize = "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2024-11-05\",\"clientInfo\":{\"name\":\"mcp-smoke\",\"version\":\"0.1\"},\"capabilities\":{}}}";
+    let initialized = "{\"jsonrpc\":\"2.0\",\"method\":\"initialized\",\"params\":{}}";
+    let list_tools = "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\",\"params\":{}}";
+    let call_nl = "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/call\",\"params\":{\"name\":\"nl_search\",\"arguments\":{\"query\":\"how does auth work\",\"path\":\".\"}}}";
+    let payload = format!("{initialize}\n{initialized}\n{list_tools}\n{call_nl}\n");
+
+    use std::io::Write;
+    stdin
+        .write_all(payload.as_bytes())
+        .expect("send MCP requests");
+    drop(stdin);
+
+    let output = child.wait_with_output().expect("read MCP output");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("\"id\":2"), "tools/list response missing");
+    assert!(stdout.contains("nl_search"), "nl_search not present in MCP output");
+    assert!(stdout.contains("\"id\":3"), "nl_search response missing");
+    assert!(
+        !stdout.contains("failed to reach RiceGrep gateway"),
+        "gateway error in nl_search response"
+    );
+}

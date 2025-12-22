@@ -91,3 +91,4 @@ node_modules/
 
 #ricegrep indicies
 **/*.idx
+**/crates/ricegrep/e2e-report.json

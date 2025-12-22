@@ -10,6 +10,7 @@ use crate::chunking::{ChunkProducerBuilder, ChunkingConfig, RepositorySource};
 use crate::lexical::{
     Bm25IndexBuilder, Bm25IndexHandle, LexicalError, LexicalIngestPipeline, LexicalIngestStats,
 };
+use crate::metadata::{MetadataError, MetadataWriter};
 use crate::vector::observability::VectorTelemetry;
 
 /// Administrative actions exposed via the API surface.
@@ -35,7 +36,7 @@ impl std::fmt::Display for AdminAction {
 }
 
 /// Request body for admin commands.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AdminCommandRequest {
     pub action: AdminAction,
     pub repository_path: Option<PathBuf>,
@@ -58,6 +59,8 @@ pub enum AdminError {
     Io(#[from] std::io::Error),
     #[error("lexical failure: {0}")]
     Lexical(#[from] LexicalError),
+    #[error("metadata failure: {0}")]
+    Metadata(#[from] MetadataError),
     #[error("invalid parameters: {0}")]
     Validation(String),
 }
@@ -120,6 +123,37 @@ impl AdminToolset {
         let stats = pipeline
             .ingest_repository(RepositorySource::new(repository), &mut writer)
             .await?;
+        writer.commit()?;
+        Ok(stats)
+    }
+
+    pub async fn reindex_repository_with_metadata(
+        &self,
+        repository: &Path,
+        metadata_path: &Path,
+    ) -> Result<LexicalIngestStats, AdminError> {
+        self.prepare_index_directory()?;
+        let chunk_producer = ChunkProducerBuilder::default()
+            .config(self.chunking_config.clone())
+            .build();
+        let mut pipeline = LexicalIngestPipeline::new(chunk_producer)
+            .with_batch_size(self.batch_size)
+            .with_progress_interval(self.progress_interval);
+        if let Some(telemetry) = &self.telemetry {
+            pipeline = pipeline.with_telemetry(telemetry.clone());
+        }
+        let builder = Bm25IndexBuilder::create(&self.index_dir)?;
+        let mut writer = builder.writer(self.heap_bytes)?;
+        let mut metadata_writer = MetadataWriter::new();
+        let stats = pipeline
+            .ingest_repository_with_metadata(
+                RepositorySource::new(repository),
+                &mut writer,
+                &mut metadata_writer,
+            )
+            .await?;
+        writer.commit()?;
+        metadata_writer.finalize(metadata_path)?;
         Ok(stats)
     }
 

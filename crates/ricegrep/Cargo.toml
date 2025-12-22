@@ -15,13 +15,22 @@ anyhow = { workspace = true }
 async-stream = { workspace = true }
 async-trait = { workspace = true }
 chrono = { workspace = true }
+clap = { workspace = true }
+reqwest = { workspace = true }
+notify = { workspace = true }
+config = { workspace = true }
+dirs = { workspace = true }
 futures = { workspace = true }
 glob = { workspace = true }
+ignore = { workspace = true }
 lazy_static = { workspace = true }
 regex = { workspace = true }
+rmcp = { workspace = true, features = ["server", "macros", "transport-io"] }
+schemars = { workspace = true }
 sha2 = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+serde_yaml = { workspace = true }
 tracing = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
@@ -58,3 +67,6 @@ async-graphql = { workspace = true }
 async-graphql-axum = { workspace = true }
 
 tokio-stream = { workspace = true }
+
+[features]
+server = []

@@ -269,7 +269,9 @@ ricecoder-updates = { path = "crates/ricecoder-updates", version = "0.1" }
 ricecoder-vcs = { path = "crates/ricecoder-vcs", version = "0.1" }
 ricecoder-workflows = { path = "crates/ricecoder-workflows", version = "0.1" }
 rmcp = { version = "0.11.0" }
+schemars = "1.1"
 rusqlite = { version = "0.31" }
+
 rustls = { git = "https://github.com/rustls/rustls", tag = "v/0.23.31", default-features = false, features = ["ring"] }
 rustls-webpki = { git = "https://github.com/rustls/webpki", tag = "v/0.103.4", default-features = false, features = ["ring"] }
 rustyline = "14.0"

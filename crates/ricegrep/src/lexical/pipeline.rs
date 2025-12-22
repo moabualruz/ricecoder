@@ -16,6 +16,7 @@ use walkdir::WalkDir;
 use crate::{
     chunking::{Chunk, ChunkProducer, RepositorySource},
     lexical::{errors::LexicalResult, Bm25IndexWriter},
+    metadata::MetadataWriter,
     vector::observability::{VectorIndexStats, VectorTelemetry},
 };
 
@@ -83,6 +84,25 @@ impl LexicalIngestPipeline {
         source: RepositorySource,
         writer: &mut Bm25IndexWriter,
     ) -> LexicalResult<LexicalIngestStats> {
+        self.ingest_repository_inner(source, writer, None).await
+    }
+
+    pub async fn ingest_repository_with_metadata(
+        &self,
+        source: RepositorySource,
+        writer: &mut Bm25IndexWriter,
+        metadata_writer: &mut MetadataWriter,
+    ) -> LexicalResult<LexicalIngestStats> {
+        self.ingest_repository_inner(source, writer, Some(metadata_writer))
+            .await
+    }
+
+    async fn ingest_repository_inner(
+        &self,
+        source: RepositorySource,
+        writer: &mut Bm25IndexWriter,
+        mut metadata_writer: Option<&mut MetadataWriter>,
+    ) -> LexicalResult<LexicalIngestStats> {
         let mut stats = LexicalIngestStats::new();
         let start = Instant::now();
         let stream = self.chunk_producer.chunk_stream(source)?;
@@ -98,6 +118,9 @@ impl LexicalIngestPipeline {
                     let current_path = chunk.file_path.to_string_lossy().to_string();
                     if files_seen.insert(chunk.file_path.clone()) {
                         stats.files_indexed += 1;
+                    }
+                    if let Some(writer) = metadata_writer.as_deref_mut() {
+                        writer.add_chunk(&chunk);
                     }
                     batch.push(chunk);
                     if batch.len() >= self.batch_size {
