@@ -761,22 +761,26 @@ async fn call_tool(
 }
 
 pub async fn run_mcp(runtime: &RuntimeConfig, args: McpArgs) -> Result<()> {
-    let mcp = RicegrepMcp::new(runtime.clone(), args.server_endpoint.clone(), args.all_tools);
+    let watch_paths: Vec<String> = args
+        .paths
+        .iter()
+        .map(|path| path.to_string_lossy().to_string())
+        .collect();
+    super::ensure_local_index_ready(&watch_paths).await?;
 
+    let mcp = RicegrepMcp::new(runtime.clone(), args.server_endpoint.clone(), args.all_tools);
     let tool_router = &mcp.tool_router;
+
 
     if !args.no_watch {
         let runtime_clone = runtime.clone();
         let watch_args = crate::WatchArgs {
-            paths: args
-                .paths
-                .iter()
-                .map(|path| path.to_string_lossy().to_string())
-                .collect(),
+            paths: watch_paths.clone(),
             timeout: args.timeout,
             debounce_secs: args.debounce_secs,
             clear_screen: args.clear_screen,
         };
+
         tokio::spawn(async move {
             sleep(Duration::from_secs(MCP_AUTO_WATCH_DELAY_SECS)).await;
             let _ = crate::run_watch(&runtime_clone, watch_args).await;

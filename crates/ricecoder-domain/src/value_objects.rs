@@ -93,22 +93,23 @@ impl fmt::Display for FileId {
 }
 
 /// Programming language enumeration
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ProgrammingLanguage {
     Rust,
     Python,
-    TypeScript,
     JavaScript,
-    Go,
+    TypeScript,
     Java,
     CSharp,
+    Go,
     C,
     Cpp,
+    Php,
+    Ruby,
     Swift,
     Kotlin,
     Scala,
-    Ruby,
-    PHP,
+    Haskell,
     Other,
 }
 
@@ -128,8 +129,9 @@ impl ProgrammingLanguage {
             ProgrammingLanguage::Swift => &["swift"],
             ProgrammingLanguage::Kotlin => &["kt"],
             ProgrammingLanguage::Scala => &["scala"],
+            ProgrammingLanguage::Haskell => &["hs"],
             ProgrammingLanguage::Ruby => &["rb"],
-            ProgrammingLanguage::PHP => &["php"],
+            ProgrammingLanguage::Php => &["php"],
             ProgrammingLanguage::Other => &[],
         }
     }
@@ -151,7 +153,7 @@ impl ProgrammingLanguage {
             ProgrammingLanguage::Kotlin,
             ProgrammingLanguage::Scala,
             ProgrammingLanguage::Ruby,
-            ProgrammingLanguage::PHP,
+            ProgrammingLanguage::Php,
         ] {
             if lang.extensions().contains(&ext) {
                 return Some(lang);
@@ -176,8 +178,9 @@ impl fmt::Display for ProgrammingLanguage {
             ProgrammingLanguage::Swift => write!(f, "Swift"),
             ProgrammingLanguage::Kotlin => write!(f, "Kotlin"),
             ProgrammingLanguage::Scala => write!(f, "Scala"),
+            ProgrammingLanguage::Haskell => write!(f, "Haskell"),
             ProgrammingLanguage::Ruby => write!(f, "Ruby"),
-            ProgrammingLanguage::PHP => write!(f, "PHP"),
+            ProgrammingLanguage::Php => write!(f, "PHP"),
             ProgrammingLanguage::Other => write!(f, "Other"),
         }
     }
@@ -268,5 +271,92 @@ impl MimeType {
 impl fmt::Display for MimeType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+/// User roles for RBAC access control
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum UserRole {
+    Admin,
+    Developer,
+    Analyst,
+    Viewer,
+    Guest,
+}
+
+impl UserRole {
+    /// Get default permissions for this role
+    pub fn default_permissions(&self) -> Vec<Permission> {
+        match self {
+            UserRole::Admin => vec![
+                Permission::Read,
+                Permission::Write,
+                Permission::Delete,
+                Permission::Admin,
+                Permission::Audit,
+            ],
+            UserRole::Developer => vec![
+                Permission::Read,
+                Permission::Write,
+                Permission::Execute,
+            ],
+            UserRole::Analyst => vec![
+                Permission::Read,
+                Permission::Analyze,
+            ],
+            UserRole::Viewer => vec![Permission::Read],
+            UserRole::Guest => vec![Permission::Read],
+        }
+    }
+}
+
+impl fmt::Display for UserRole {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            UserRole::Admin => write!(f, "Admin"),
+            UserRole::Developer => write!(f, "Developer"),
+            UserRole::Analyst => write!(f, "Analyst"),
+            UserRole::Viewer => write!(f, "Viewer"),
+            UserRole::Guest => write!(f, "Guest"),
+        }
+    }
+}
+
+/// Permissions for access control
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Permission {
+    Read,
+    Write,
+    Delete,
+    Execute,
+    Analyze,
+    Admin,
+    Audit,
+}
+
+impl Permission {
+    /// Check if this permission implies another
+    pub fn implies(&self, other: &Permission) -> bool {
+        match (self, other) {
+            (Permission::Admin, _) => true,
+            (Permission::Write, Permission::Read) => true,
+            (Permission::Delete, Permission::Read) => true,
+            (Permission::Delete, Permission::Write) => true,
+            _ => self == other,
+        }
+    }
+}
+
+impl fmt::Display for Permission {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Permission::Read => write!(f, "read"),
+            Permission::Write => write!(f, "write"),
+            Permission::Delete => write!(f, "delete"),
+            Permission::Execute => write!(f, "execute"),
+            Permission::Analyze => write!(f, "analyze"),
+            Permission::Admin => write!(f, "admin"),
+            Permission::Audit => write!(f, "audit"),
+        }
     }
 }

@@ -758,8 +758,39 @@ fn resolve_repo_root(paths: &[String]) -> Result<PathBuf> {
             .map(|path| path.to_path_buf())
             .ok_or_else(|| anyhow::anyhow!("invalid path for search root"))?;
     }
+    if !root.exists() {
+        return Err(anyhow::anyhow!("search path does not exist: {}", root.display()));
+    }
     Ok(root)
 }
+
+pub(crate) async fn ensure_local_index_ready(paths: &[String]) -> Result<()> {
+    let root = resolve_repo_root(paths)?;
+    ensure_local_index_for_root(&root).await
+}
+
+async fn ensure_local_index_for_root(root: &Path) -> Result<()> {
+    let index_dir = local_index_dir(root);
+    let metadata_path = local_metadata_path(root);
+    let index_healthy = index_dir.exists()
+        && metadata_path.exists()
+        && Bm25IndexHandle::open(&index_dir).is_ok();
+    if index_healthy {
+        return Ok(());
+    }
+    println!(
+        "Local index missing or incomplete at {}. Rebuilding...",
+        index_dir.display()
+    );
+    let toolset = AdminToolset::new(index_dir.clone(), None);
+    toolset
+        .reindex_repository_with_metadata(root, &metadata_path)
+        .await
+        .context("failed to rebuild local index")?;
+    println!("Local index rebuilt at {}", index_dir.display());
+    Ok(())
+}
+
 
 fn local_state_dir(root: &Path) -> PathBuf {
     root.join(STATE_DIR_NAME).join(STORE_DIR_NAME)
@@ -820,7 +851,8 @@ fn scan_local_matches(root: &Path, query: &str, limit: usize) -> Result<Vec<Sear
     Ok(results)
 }
 
-async fn run_watch(_runtime: &RuntimeConfig, args: WatchArgs) -> Result<()> {
+async fn run_watch(runtime: &RuntimeConfig, args: WatchArgs) -> Result<()> {
+    ensure_local_index_ready(&args.paths).await?;
     let (tx, rx) = std::sync::mpsc::channel();
     let mut watcher = RecommendedWatcher::new(tx, notify::Config::default())?;
     for path in &args.paths {
