@@ -22,10 +22,15 @@ pub struct McpArgs {
     #[arg(long)]
     pub no_watch: bool,
 
+    /// Include every tool (read/edit) in tools/list output
+    #[arg(long = "all-tools")]
+    pub all_tools: bool,
+
     /// Server endpoint for MCP proxy mode
     #[arg(long = "server-endpoint", alias = "gateway")]
     pub server_endpoint: Option<String>,
 }
+
 use ricegrep::api::models::{SearchFilters, SearchRequest, SearchResponse, SearchResult};
 use ricegrep::chunking::{ChunkMetadata, LanguageDetector, LanguageKind};
 use glob::Pattern;
@@ -103,17 +108,25 @@ struct EditToolInput {
 struct RicegrepMcp {
     runtime: RuntimeConfig,
     server_endpoint: Option<String>,
+    show_all_tools: bool,
     pub tool_router: ToolRouter<RicegrepMcp>,
 }
 
+
 impl RicegrepMcp {
-    pub fn new(runtime: RuntimeConfig, server_endpoint: Option<String>) -> Self {
+    pub fn new(runtime: RuntimeConfig, server_endpoint: Option<String>, show_all_tools: bool) -> Self {
         Self {
             runtime,
             server_endpoint,
+            show_all_tools,
             tool_router: Self::tool_router(),
         }
     }
+
+    fn is_tool_allowed(&self, name: &str) -> bool {
+        self.show_all_tools || !matches!(name, "rice_read" | "rice_edit")
+    }
+
 
     async fn execute_search(
         &self,
@@ -160,7 +173,10 @@ impl RicegrepMcp {
 
 #[tool_router]
 impl RicegrepMcp {
-    #[tool(description = "Search file contents using local index or server mode.")]
+    #[tool(
+        name = "rice_grep",
+        description = "Search file contents using local index or server mode. Ideal for finding function definitions, error messages, configuration values, and recurring code patterns. Supports full regex syntax, directory scoping, file-type filters, and result limits, automatically falling back to local scans when server mode is unavailable."
+    )]
     async fn grep(
         &self,
         Parameters(input): Parameters<GrepToolInput>,
@@ -191,7 +207,10 @@ impl RicegrepMcp {
         Ok(tool_result_with_response(output.trim_end().to_string(), &response))
     }
 
-    #[tool(description = "Natural-language search with opt-in answer flags.")]
+    #[tool(
+        name = "rice_nl_search",
+        description = "Natural-language search with opt-in answer generation. Understands conversational questions about the codebase, supports directory or file-type scoping, respects result limits, and can summarize findings with AI-generated answers or disable reranking for deterministic ordering."
+    )]
     async fn nl_search(
         &self,
         Parameters(input): Parameters<NlSearchToolInput>,
@@ -230,7 +249,10 @@ impl RicegrepMcp {
         Ok(tool_result_with_response(output.trim_end().to_string(), &response))
     }
 
-    #[tool(description = "Find files by glob pattern with ignore awareness.")]
+    #[tool(
+        name = "rice_glob",
+        description = "Find files by glob pattern with ignore awareness. Performs fast wildcard searches across directories, honors .gitignore/.ignore rules, supports recursive matching, optional directory results, and case-insensitive queries for cross-platform consistency."
+    )]
     async fn glob(&self, Parameters(input): Parameters<GlobToolInput>) -> Result<CallToolResult, ErrorData> {
         let root = input.path.as_deref().unwrap_or(".");
         let matches = crate::collect_glob_matches(
@@ -243,7 +265,10 @@ impl RicegrepMcp {
         Ok(tool_text_result(matches.join("\n")))
     }
 
-    #[tool(description = "List directory contents with ignore awareness.")]
+    #[tool(
+        name = "rice_list",
+        description = "List directory contents with ignore awareness. Produces filtered directory listings that respect project ignore files, optional glob filters, and case-insensitive matching so you can inspect structure before drilling into files."
+    )]
     async fn list(&self, Parameters(input): Parameters<ListToolInput>) -> Result<CallToolResult, ErrorData> {
         let root = input.path.as_deref().unwrap_or(".");
         let entries = crate::list_directory_entries(
@@ -255,14 +280,20 @@ impl RicegrepMcp {
         Ok(tool_text_result(entries.join("\n")))
     }
 
-    #[tool(description = "Read file contents with optional line ranges.")]
+    #[tool(
+        name = "rice_read",
+        description = "Read file contents with optional line ranges. Streams numbered output with offset and limit controls so you can inspect entire files or focused snippets without overwhelming context."
+    )]
     async fn read(&self, Parameters(input): Parameters<ReadToolInput>) -> Result<CallToolResult, ErrorData> {
         let output = crate::read_file_numbered(&input.path, input.offset, input.limit)
             .map_err(|err| ErrorData::internal_error(err.to_string(), None))?;
         Ok(tool_text_result(output))
     }
 
-    #[tool(description = "Edit a file with preview and force safeguards.")]
+    #[tool(
+        name = "rice_edit",
+        description = "Edit a file with preview and force safeguards. Performs exact string replacements with verification so you can refactor or fix configurations safely without unintended edits."
+    )]
     async fn edit(&self, Parameters(input): Parameters<EditToolInput>) -> Result<CallToolResult, ErrorData> {
         let output = apply_edit(&input).map_err(|err| ErrorData::internal_error(err.to_string(), None))?;
         Ok(tool_text_result(output))
@@ -277,6 +308,112 @@ impl ServerHandler for RicegrepMcp {
             ..Default::default()
         }
     }
+}
+
+fn tool_title(name: &str) -> &'static str {
+    match name {
+        "rice_grep" => "File Content Search",
+        "rice_nl_search" => "Natural Language Search",
+        "rice_glob" => "File Glob Finder",
+        "rice_list" => "Directory Lister",
+        "rice_read" => "File Reader",
+        "rice_edit" => "File Editor",
+        _ => "Ricegrep Tool",
+    }
+}
+
+fn tool_annotations(name: &str) -> serde_json::Value {
+    let (safe, idempotent) = match name {
+        "rice_edit" => (false, false),
+        _ => (true, true),
+    };
+    serde_json::json!({
+        "audience": ["user", "assistant"],
+        "priority": 0.85,
+        "safe": safe,
+        "idempotent": idempotent
+    })
+}
+
+fn tool_output_schema(name: &str) -> serde_json::Value {
+    match name {
+        "rice_grep" | "rice_nl_search" => search_output_schema(),
+        _ => text_only_output_schema(),
+    }
+}
+
+fn text_only_output_schema() -> serde_json::Value {
+    serde_json::json!({
+        "type": "object",
+        "properties": {
+            "content": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "type": {"type": "string"},
+                        "text": {"type": "string"}
+                    },
+                    "required": ["type", "text"]
+                }
+            },
+            "is_error": {"type": ["boolean", "null"]},
+            "meta": {"type": ["object", "null"]},
+            "structured_content": {"type": ["null", "object"]}
+        },
+        "required": ["content"]
+    })
+}
+
+fn search_output_schema() -> serde_json::Value {
+    serde_json::json!({
+        "type": "object",
+        "properties": {
+            "content": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "type": {"type": "string"},
+                        "text": {"type": "string"}
+                    },
+                    "required": ["type", "text"]
+                }
+            },
+            "is_error": {"type": ["boolean", "null"]},
+            "meta": {"type": ["object", "null"]},
+            "structured_content": {
+                "type": ["object", "null"],
+                "properties": {
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "score": {"type": "number"},
+                                "content": {"type": "string"},
+                                "metadata": {
+                                    "type": "object",
+                                    "properties": {
+                                        "file_path": {"type": "string"},
+                                        "start_line": {"type": "number"},
+                                        "end_line": {"type": "number"}
+                                    },
+                                    "required": ["file_path", "start_line", "end_line"]
+                                }
+                            },
+                            "required": ["score", "content", "metadata"]
+                        }
+                    },
+                    "total_found": {"type": "number"},
+                    "query_time_ms": {"type": "number"},
+                    "request_id": {"type": "string"}
+                },
+                "required": ["results", "total_found", "query_time_ms", "request_id"]
+            }
+        },
+        "required": ["content"]
+    })
 }
 
 fn apply_edit(input: &EditToolInput) -> Result<String> {
@@ -528,7 +665,8 @@ async fn handle_mcp_request(mcp: &RicegrepMcp, tool_router: &ToolRouter<Ricegrep
                     "capabilities": {
                         "tools": {
                             "listChanged": true
-                        }
+}
+
                     },
                     "serverInfo": {
                         "name": "ricegrep",
@@ -538,13 +676,22 @@ async fn handle_mcp_request(mcp: &RicegrepMcp, tool_router: &ToolRouter<Ricegrep
             })
         }
         "tools/list" => {
-            let tools = tool_router.list_all().into_iter().map(|tool| {
-                serde_json::json!({
-                    "name": tool.name,
-                    "description": tool.description,
-                    "inputSchema": tool.input_schema
+            let tools = tool_router
+                .list_all()
+                .into_iter()
+                .filter(|tool| mcp.is_tool_allowed(tool.name.as_ref()))
+                .map(|tool| {
+                    let name = tool.name.as_ref();
+                    serde_json::json!({
+                        "name": name,
+                        "title": tool_title(name),
+                        "description": tool.description,
+                        "inputSchema": tool.input_schema,
+                        "outputSchema": tool_output_schema(name),
+                        "annotations": tool_annotations(name)
+                    })
                 })
-            }).collect::<Vec<_>>();
+                .collect::<Vec<_>>();
             serde_json::json!({
                 "jsonrpc": "2.0",
                 "id": id,
@@ -584,27 +731,27 @@ async fn call_tool(
     arguments: serde_json::Value,
 ) -> Result<serde_json::Value> {
     let result = match tool_name {
-        "grep" => {
+        "rice_grep" => {
             let input: GrepToolInput = serde_json::from_value(arguments)?;
             mcp.grep(Parameters(input)).await?
         }
-        "nl_search" => {
+        "rice_nl_search" => {
             let input: NlSearchToolInput = serde_json::from_value(arguments)?;
             mcp.nl_search(Parameters(input)).await?
         }
-        "glob" => {
+        "rice_glob" => {
             let input: GlobToolInput = serde_json::from_value(arguments)?;
             mcp.glob(Parameters(input)).await?
         }
-        "list" => {
+        "rice_list" => {
             let input: ListToolInput = serde_json::from_value(arguments)?;
             mcp.list(Parameters(input)).await?
         }
-        "read" => {
+        "rice_read" => {
             let input: ReadToolInput = serde_json::from_value(arguments)?;
             mcp.read(Parameters(input)).await?
         }
-        "edit" => {
+        "rice_edit" => {
             let input: EditToolInput = serde_json::from_value(arguments)?;
             mcp.edit(Parameters(input)).await?
         }
@@ -614,7 +761,8 @@ async fn call_tool(
 }
 
 pub async fn run_mcp(runtime: &RuntimeConfig, args: McpArgs) -> Result<()> {
-    let mcp = RicegrepMcp::new(runtime.clone(), args.server_endpoint.clone());
+    let mcp = RicegrepMcp::new(runtime.clone(), args.server_endpoint.clone(), args.all_tools);
+
     let tool_router = &mcp.tool_router;
 
     if !args.no_watch {
@@ -660,7 +808,7 @@ mod tests {
 
     #[test]
     fn mcp_tool_variant_inventory() {
-        let expected = ["grep", "glob", "list", "read", "edit", "nl_search"];
+        let expected = ["rice_grep", "rice_glob", "rice_list", "rice_read", "rice_edit", "rice_nl_search"];
         let router = RicegrepMcp::tool_router();
         let tool_names: Vec<String> = router
             .list_all()

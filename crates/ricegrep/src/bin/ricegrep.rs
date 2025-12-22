@@ -61,6 +61,10 @@ struct Cli {
     #[arg(long, short = 'q', global = true)]
     quiet: bool,
 
+    /// Configuration root directory
+    #[arg(long, global = true)]
+    config_root: Option<String>,
+
     /// Legacy pattern without subcommand
     #[arg(value_name = "PATTERN")]
     pattern: Option<String>,
@@ -370,6 +374,7 @@ struct CliConfig {
     quiet: bool,
     ai_enabled: Option<bool>,
     color: Option<String>,
+    config_root: std::path::PathBuf,
 }
 
 #[derive(Debug, Clone)]
@@ -378,6 +383,7 @@ struct RuntimeConfig {
     server_enabled: bool,
     json: bool,
     quiet: bool,
+    config_root: std::path::PathBuf,
 }
 
 
@@ -400,12 +406,14 @@ impl RuntimeConfig {
             Some(ValueSource::CommandLine) => cli.quiet,
             _ => config.quiet,
         };
+        let config_root = cli.config_root.as_ref().map(|s| std::path::PathBuf::from(s)).unwrap_or(config.config_root);
 
         Self {
             endpoint,
             server_enabled,
             json,
             quiet,
+            config_root,
         }
     }
 }
@@ -472,6 +480,7 @@ fn load_config() -> Result<CliConfig> {
         quiet: false,
         ai_enabled: None,
         color: None,
+        config_root: dirs::home_dir().unwrap_or_else(|| std::path::PathBuf::from("/tmp")).join(".ricegrep"),
     })
 }
 

@@ -89,6 +89,8 @@ node_modules/
 .agent/cache
 **/.agent/cache
 
-#ricegrep indicies
-**/*.idx
-**/crates/ricegrep/e2e-report.json
+# ricegrep index
+/.ricecoder/.ricegrep/index/
+
+# Local E2E reports
+**/e2e-report.json

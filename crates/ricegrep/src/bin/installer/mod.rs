@@ -43,11 +43,12 @@ pub fn edit_json_file(file_path: &Path, json_path: &str, value: Value) -> Result
     if let Some(parent) = file_path.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    let mut config: Value = if file_path.exists() {
-        serde_json::from_str(&std::fs::read_to_string(file_path)?)?
+    let content = if file_path.exists() {
+        std::fs::read_to_string(file_path)?
     } else {
-        Value::Object(serde_json::Map::new())
+        "{}".to_string()
     };
+    let mut config: Value = serde_json::from_str(&content)?;
     set_json_path(&mut config, json_path, value)?;
     std::fs::write(file_path, serde_json::to_string_pretty(&config)?)?;
     Ok(())
@@ -172,7 +173,7 @@ pub async fn run_install(args: InstallArgs) -> Result<()> {
             let value = serde_json::json!({
                 "command": ["ricegrep", "mcp"]
             });
-            edit_json_file(&config_file, "mcp.ricegrep", value)?;
+            edit_json_file(&config_file, "mcpServers.ricegrep", value)?;
             println!("Updated config at {}", config_file.display());
             println!("Installation complete for {}", args.assistant);
             return Ok(());
