@@ -5,8 +5,7 @@
 //! **Validates: Requirements 1.4, 1.5, 5.2, 5.3**
 
 use proptest::prelude::*;
-use ricecoder_tui::style::Color;
-use ricecoder_tui::theme::ThemeManager;
+use ricecoder_tui::{style::Color, theme::ThemeManager};
 
 /// Strategy for generating valid theme names
 fn theme_name_strategy() -> impl Strategy<Value = String> {

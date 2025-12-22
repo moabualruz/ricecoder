@@ -7,13 +7,13 @@
 //! - ricecoder-security (encryption and compliance)
 //! - ricecoder-storage (infrastructure persistence)
 
+use std::{path::PathBuf, sync::Arc};
+
 use ricecoder_domain::{entities::*, value_objects::*};
 use ricecoder_orchestration::{OrchestrationManager, Workspace, WorkspaceScanner};
 use ricecoder_permissions::{PermissionLevel, PermissionManager, ToolPermission};
 use ricecoder_security::{compliance::ComplianceManager, encryption::KeyManager};
 use ricecoder_storage::{StorageManager, StorageMode};
-use std::path::PathBuf;
-use std::sync::Arc;
 use tempfile::tempdir;
 
 /// Mock storage manager for testing

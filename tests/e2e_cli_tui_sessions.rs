@@ -3,17 +3,16 @@
 //! This test suite validates CLI and TUI command execution with comprehensive session management,
 //! including multi-session support, session persistence, concurrent sessions, and session recovery.
 
-use ricecoder_cli::commands::*;
-use ricecoder_cli::router::{Cli, Commands};
+use std::{collections::HashMap, path::PathBuf, sync::Arc, time::Duration};
+
+use ricecoder_cli::{
+    commands::*,
+    router::{Cli, Commands},
+};
 use ricecoder_sessions::{models::SessionContext, SessionManager};
 use ricecoder_tui::{TuiApp, TuiConfig};
-use std::collections::HashMap;
-use std::path::PathBuf;
-use std::sync::Arc;
-use std::time::Duration;
 use tempfile::TempDir;
-use tokio::test;
-use tokio::time::sleep;
+use tokio::{test, time::sleep};
 
 /// Complete CLI workflow: Initialize project, create multiple sessions,
 /// switch between sessions, execute commands in different sessions.

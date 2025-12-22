@@ -6,6 +6,8 @@
 //! - ricecoder-security (compliance validation)
 //! - ricecoder-permissions (access control)
 
+use std::{path::PathBuf, sync::Arc};
+
 use ricecoder_mcp::{client::MCPClientConfig, MCPClient, ToolRegistry};
 use ricecoder_permissions::{PermissionLevel, PermissionManager, ToolPermission};
 use ricecoder_providers::{
@@ -14,8 +16,6 @@ use ricecoder_providers::{
 };
 use ricecoder_security::{audit::AuditLogger, compliance::ComplianceManager};
 use ricecoder_storage::{StorageManager, StorageMode};
-use std::path::PathBuf;
-use std::sync::Arc;
 use tempfile::tempdir;
 use tokio::time::{timeout, Duration};
 

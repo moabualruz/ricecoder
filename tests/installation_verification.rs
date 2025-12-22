@@ -10,8 +10,7 @@
 
 #[cfg(test)]
 mod installation_verification {
-    use std::path::Path;
-    use std::process::Command;
+    use std::{path::Path, process::Command};
 
     /// Test that cargo is available and can be used to install packages
     #[test]

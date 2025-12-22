@@ -3,15 +3,17 @@
 //! This test suite validates API-level end-to-end scenarios including provider switching,
 //! compliance monitoring, rate limiting, error handling, and performance validation.
 
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, Instant},
+};
+
 use ricecoder_cli::commands::*;
 use ricecoder_providers::{ProviderManager, ProviderRegistry};
 use ricecoder_security::{AuditLogger, ComplianceManager};
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
 use tempfile::TempDir;
-use tokio::test;
-use tokio::time::timeout;
+use tokio::{test, time::timeout};
 
 /// Complete API workflow: Configure multiple providers, switch between them,
 /// execute requests with compliance monitoring, handle failures gracefully.

@@ -6,14 +6,14 @@
 //! - ricecoder-security (encryption)
 //! - ricecoder-domain (session entities)
 
+use std::{path::PathBuf, sync::Arc};
+
 use ricecoder_domain::entities::Session;
 use ricecoder_security::encryption::KeyManager;
 use ricecoder_sessions::{SessionManager, SessionStatus, SessionStore};
 use ricecoder_storage::{
     session::SessionManager as StorageSessionManager, StorageManager, StorageMode,
 };
-use std::path::PathBuf;
-use std::sync::Arc;
 use tempfile::tempdir;
 
 /// Mock storage manager for testing

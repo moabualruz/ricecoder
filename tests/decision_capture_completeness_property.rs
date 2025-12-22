@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 /// Property-based tests for decision capture completeness
 /// **Feature: ricecoder-learning, Property 1: Decision Capture Completeness**
 /// **Validates: Requirements 1.1**
@@ -6,7 +8,6 @@
 /// SHALL capture it with complete metadata (timestamp, context, decision type, input, output).
 use proptest::prelude::*;
 use ricecoder_learning::{Decision, DecisionContext, DecisionLogger};
-use std::path::PathBuf;
 
 /// Strategy for generating valid project paths
 fn project_path_strategy() -> impl Strategy<Value = PathBuf> {

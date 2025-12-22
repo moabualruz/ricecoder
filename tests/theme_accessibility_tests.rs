@@ -5,8 +5,7 @@
 //! - WCAG AAA: 7:1 contrast ratio for High Contrast theme
 //! **Validates: Requirements 1.4, 1.5**
 
-use ricecoder_tui::style::Color;
-use ricecoder_tui::theme::ThemeManager;
+use ricecoder_tui::{style::Color, theme::ThemeManager};
 
 /// Calculate the relative luminance of a color
 /// Based on WCAG 2.0 formula

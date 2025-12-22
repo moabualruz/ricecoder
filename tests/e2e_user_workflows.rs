@@ -4,14 +4,15 @@
 //! servers and tools with enterprise security features including access control, audit logging,
 //! compliance monitoring, and secure session management.
 
-use ricecoder_cli::commands::*;
-use ricecoder_cli::router::{Cli, Commands};
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
+
+use ricecoder_cli::{
+    commands::*,
+    router::{Cli, Commands},
+};
 use ricecoder_mcp::{MCPClient, ServerConfig as McpServerConfig};
 use ricecoder_security::{AccessControl, AuditLogger, ComplianceManager};
 use ricecoder_sessions::{models::SessionContext, SessionManager};
-use std::collections::HashMap;
-use std::path::PathBuf;
-use std::sync::Arc;
 use tempfile::TempDir;
 use tokio::test;
 

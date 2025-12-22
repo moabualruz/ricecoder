@@ -7,8 +7,9 @@
 //! - Compliance validation for enterprise standards
 //! - Security regression testing
 
-use ricecoder_security::*;
 use std::path::PathBuf;
+
+use ricecoder_security::*;
 use tempfile::TempDir;
 use tokio::test;
 
@@ -179,8 +180,9 @@ async fn test_security_regression_testing() {
 /// Test property-based security testing
 #[cfg(test)]
 mod property_tests {
-    use super::*;
     use proptest::prelude::*;
+
+    use super::*;
 
     proptest! {
         #[test]

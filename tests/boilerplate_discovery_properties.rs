@@ -6,13 +6,13 @@
 //! Feature: ricecoder-templates
 //! Design: .kiro/specs/ricecoder-templates/design.md
 
-use proptest::prelude::*;
 use std::fs;
-use tempfile::TempDir;
 
+use proptest::prelude::*;
 // Import from ricecoder-generation crate
 use ricecoder_generation::models::BoilerplateSource;
 use ricecoder_generation::templates::BoilerplateDiscovery;
+use tempfile::TempDir;
 
 /// Property 5: Boilerplate Discovery Precedence
 ///

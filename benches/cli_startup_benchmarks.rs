@@ -1,6 +1,9 @@
+use std::{
+    process::{Command, Stdio},
+    time::Instant,
+};
+
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
-use std::process::{Command, Stdio};
-use std::time::Instant;
 use tempfile;
 use walkdir;
 

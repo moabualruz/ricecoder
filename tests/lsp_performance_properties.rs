@@ -9,12 +9,14 @@
 //! - Cached requests < 100ms
 //! - Memory usage < 100MB for typical projects
 
+use std::{sync::Arc, time::Instant};
+
 use proptest::prelude::*;
-use ricecoder_lsp::cache::{hash_input, SemanticCache};
-use ricecoder_lsp::performance::PerformanceTracker;
-use ricecoder_lsp::types::SemanticInfo;
-use std::sync::Arc;
-use std::time::Instant;
+use ricecoder_lsp::{
+    cache::{hash_input, SemanticCache},
+    performance::PerformanceTracker,
+    types::SemanticInfo,
+};
 
 /// Strategy for generating code of various sizes
 fn code_size_strategy() -> impl Strategy<Value = (String, usize)> {

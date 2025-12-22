@@ -10,8 +10,9 @@
 //!
 //! **Validates: Requirements 1.2, 2.4, 3.3, 4.2, 5.1, 5.2, 5.3, 1.5, 3.4, 4.3, 6.6, 6.7, 6.3, 6.8, 7.3, 7.1, 7.2, 7.5, 7.6**
 
-use proptest::prelude::*;
 use std::fs;
+
+use proptest::prelude::*;
 use tempfile::TempDir;
 
 /// Strategy for generating installation method names

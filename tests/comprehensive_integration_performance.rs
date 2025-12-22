@@ -10,6 +10,12 @@
 //! - ricecoder-providers (AI providers)
 //! - ricecoder-mcp (external tools)
 
+use std::{
+    path::PathBuf,
+    sync::Arc,
+    time::{Duration, Instant},
+};
+
 use ricecoder_benchmark::{BenchmarkRunner, BenchmarkSuite};
 use ricecoder_domain::entities::*;
 use ricecoder_mcp::{MCPClient, ToolRegistry};
@@ -19,9 +25,6 @@ use ricecoder_providers::{providers::OpenAiProvider, ProviderManager};
 use ricecoder_security::encryption::KeyManager;
 use ricecoder_sessions::{SessionManager, SessionStore};
 use ricecoder_storage::{StorageManager, StorageMode};
-use std::path::PathBuf;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
 use tempfile::tempdir;
 use tokio::time::timeout;
 

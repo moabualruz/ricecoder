@@ -3,16 +3,18 @@
 //! This test suite validates system performance under load, security validation across
 //! all components, and regression detection to ensure system stability and security.
 
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, Instant},
+};
+
 use ricecoder_cli::commands::*;
 use ricecoder_performance::{BenchmarkRunner, PerformanceMonitor};
 use ricecoder_security::{SecurityValidator, VulnerabilityScanner};
 use ricecoder_sessions::SessionManager;
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
 use tempfile::TempDir;
-use tokio::test;
-use tokio::time::timeout;
+use tokio::{test, time::timeout};
 
 /// Complete performance and security validation workflow
 #[tokio::test]

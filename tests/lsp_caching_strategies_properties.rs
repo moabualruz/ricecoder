@@ -9,10 +9,13 @@
 //! - Cache invalidation works on document changes
 //! - Cache hit rates are monitored and reported
 
-use proptest::prelude::*;
-use ricecoder_lsp::cache::{hash_input, AstCache, SemanticCache, SymbolIndexCache};
-use ricecoder_lsp::types::SemanticInfo;
 use std::collections::HashMap;
+
+use proptest::prelude::*;
+use ricecoder_lsp::{
+    cache::{hash_input, AstCache, SemanticCache, SymbolIndexCache},
+    types::SemanticInfo,
+};
 
 /// Strategy for generating document URIs
 fn uri_strategy() -> impl Strategy<Value = String> {

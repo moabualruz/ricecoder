@@ -1,7 +1,10 @@
+use std::{
+    process::{Command, Stdio},
+    sync::Arc,
+    time::Instant,
+};
+
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
-use std::process::{Command, Stdio};
-use std::sync::Arc;
-use std::time::Instant;
 use tempfile;
 use tokio::sync::Semaphore;
 use walkdir;

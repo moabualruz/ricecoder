@@ -5,8 +5,7 @@
 //! **Validates: Requirements 3.2, 3.5**
 
 use proptest::prelude::*;
-use ricecoder_tui::style::Color;
-use ricecoder_tui::theme::ThemeManager;
+use ricecoder_tui::{style::Color, theme::ThemeManager};
 
 /// Strategy for generating valid RGB values (0-255)
 fn rgb_value_strategy() -> impl Strategy<Value = u8> {

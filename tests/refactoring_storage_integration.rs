@@ -1,10 +1,12 @@
 //! Integration tests for storage integration with refactoring engine
 
+use std::{path::PathBuf, sync::Arc};
+
 use ricecoder_refactoring::{ConfigManager, StorageConfigLoader};
-use ricecoder_storage::manager::StorageManager;
-use ricecoder_storage::types::{ResourceType, StorageMode};
-use std::path::PathBuf;
-use std::sync::Arc;
+use ricecoder_storage::{
+    manager::StorageManager,
+    types::{ResourceType, StorageMode},
+};
 
 /// Mock storage manager for testing
 struct MockStorageManager {
