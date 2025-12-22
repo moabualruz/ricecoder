@@ -1,9 +1,13 @@
 //! Workspace scanning and project discovery
 
-use crate::error::Result;
-use crate::models::{Project, ProjectStatus};
 use std::path::PathBuf;
+
 use tracing::{debug, info, warn};
+
+use crate::{
+    error::Result,
+    models::{Project, ProjectStatus},
+};
 
 /// Scans a workspace to discover all projects and their metadata
 ///
@@ -272,8 +276,9 @@ impl WorkspaceScanner {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
+
+    use super::*;
 
     #[tokio::test]
     async fn test_workspace_scanner_creation() {

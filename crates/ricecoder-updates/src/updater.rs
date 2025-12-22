@@ -1,21 +1,25 @@
 //! Self-updating binary functionality with rollback and security validation
 
-use crate::error::{Result, UpdateError};
-use crate::models::{
-    ReleaseInfo, RollbackInfo, SecurityValidationResult, UpdateOperation, UpdateStatus,
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    process::Command,
 };
-use crate::policy::UpdatePolicy;
+
 use chrono::{DateTime, Utc};
 use futures::future::join_all;
 use reqwest::Client;
 use sha2::{Digest, Sha256};
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::process::Command;
 use tempfile::NamedTempFile;
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};
 use uuid::Uuid;
+
+use crate::{
+    error::{Result, UpdateError},
+    models::{ReleaseInfo, RollbackInfo, SecurityValidationResult, UpdateOperation, UpdateStatus},
+    policy::UpdatePolicy,
+};
 
 /// Binary updater service
 #[derive(Clone)]
@@ -513,8 +517,7 @@ impl BinaryUpdater {
 
     /// Recursively copy directory
     async fn copy_directory_recursive(&self, from: &Path, to: &Path) -> Result<()> {
-        use std::future::Future;
-        use std::pin::Pin;
+        use std::{future::Future, pin::Pin};
 
         fn copy_recursive(
             from: PathBuf,
@@ -546,9 +549,11 @@ impl BinaryUpdater {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::str::FromStr;
+
     use tempfile::TempDir;
+
+    use super::*;
 
     #[tokio::test]
     async fn test_binary_updater_creation() {

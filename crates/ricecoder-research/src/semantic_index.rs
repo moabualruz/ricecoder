@@ -1,8 +1,8 @@
 //! Semantic index for fast symbol lookup and search
 
+use std::{collections::HashMap, path::PathBuf};
+
 use crate::models::{SearchResult, Symbol, SymbolKind, SymbolReference};
-use std::collections::HashMap;
-use std::path::PathBuf;
 
 /// Semantic index for code symbols
 #[derive(Debug, Clone)]

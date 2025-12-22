@@ -1,7 +1,9 @@
 //! Permission manager for storing and retrieving permissions
 
-use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
 
 use crate::error::Result;
 #[allow(unused_imports)]

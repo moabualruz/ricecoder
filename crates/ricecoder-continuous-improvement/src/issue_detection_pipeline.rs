@@ -1,13 +1,14 @@
 //! Automated issue detection and escalation pipeline
 
-use crate::types::*;
-use ricecoder_monitoring::error_tracking::{AlertManager, ErrorTracker, IncidentManager};
-use ricecoder_monitoring::types::{
-    Alert, AlertStatus, ErrorEvent, EventId, Severity as MonitoringSeverity,
-};
 use std::sync::{Arc, Mutex};
-use tokio::sync::mpsc;
-use tokio::time;
+
+use ricecoder_monitoring::{
+    error_tracking::{AlertManager, ErrorTracker, IncidentManager},
+    types::{Alert, AlertStatus, ErrorEvent, EventId, Severity as MonitoringSeverity},
+};
+use tokio::{sync::mpsc, time};
+
+use crate::types::*;
 
 /// Issue detection pipeline for automated issue detection and escalation
 pub struct IssueDetectionPipeline {

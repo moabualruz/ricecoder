@@ -4,12 +4,15 @@
 //! become available or unavailable. It supports periodic health checks and automatic
 //! provider switching based on availability changes.
 
-use crate::error::{IdeError, IdeResult};
-use crate::types::LspServerConfig;
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
+
 use tokio::sync::RwLock;
 use tracing::{debug, info, warn};
+
+use crate::{
+    error::{IdeError, IdeResult},
+    types::LspServerConfig,
+};
 
 /// Type alias for availability change callback
 type AvailabilityCallback = Arc<dyn Fn(&str, bool) + Send + Sync>;

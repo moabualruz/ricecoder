@@ -3,12 +3,12 @@
 //! Caches parsed specification files to improve performance.
 //! Uses file-based cache with TTL support.
 
-use crate::error::SpecError;
-use crate::models::Spec;
+use std::{path::Path, sync::Arc};
+
 use ricecoder_storage::{CacheInvalidationStrategy, CacheManager};
-use std::path::Path;
-use std::sync::Arc;
 use tracing::{debug, info};
+
+use crate::{error::SpecError, models::Spec};
 
 /// Specification cache
 ///
@@ -186,11 +186,13 @@ impl SpecCache {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
+    use chrono::Utc;
+    use tempfile::TempDir;
+
     use super::*;
     use crate::models::{SpecMetadata, SpecPhase, SpecStatus};
-    use chrono::Utc;
-    use std::path::PathBuf;
-    use tempfile::TempDir;
 
     fn create_test_spec() -> Spec {
         Spec {

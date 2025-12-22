@@ -1,9 +1,10 @@
 //! Unit tests for GitHub Actions Integration
 
+use std::collections::HashMap;
+
 use ricecoder_github::{
     ActionsIntegration, ActionsOperations, CiResultSummary, WorkflowStatus, WorkflowTriggerRequest,
 };
-use std::collections::HashMap;
 
 #[test]
 fn test_actions_integration_creation() {

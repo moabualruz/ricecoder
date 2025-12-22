@@ -4,16 +4,20 @@
 //! hot-reload, and fallback behavior for unconfigured languages.
 
 use ricecoder_lsp::{
-    code_actions::adapters::{
-        PythonCodeActionAdapter, RustCodeActionAdapter, TypeScriptCodeActionAdapter,
+    code_actions::{
+        adapters::{PythonCodeActionAdapter, RustCodeActionAdapter, TypeScriptCodeActionAdapter},
+        GenericCodeActionsEngine,
     },
-    code_actions::GenericCodeActionsEngine,
-    diagnostics::adapters::{
-        PythonDiagnosticsAdapter, RustDiagnosticsAdapter, TypeScriptDiagnosticsAdapter,
+    diagnostics::{
+        adapters::{
+            PythonDiagnosticsAdapter, RustDiagnosticsAdapter, TypeScriptDiagnosticsAdapter,
+        },
+        GenericDiagnosticsEngine,
     },
-    diagnostics::GenericDiagnosticsEngine,
-    semantic::adapters::{PythonAnalyzerAdapter, RustAnalyzerAdapter, TypeScriptAnalyzerAdapter},
-    semantic::GenericSemanticAnalyzer,
+    semantic::{
+        adapters::{PythonAnalyzerAdapter, RustAnalyzerAdapter, TypeScriptAnalyzerAdapter},
+        GenericSemanticAnalyzer,
+    },
     CodeActionTemplate, ConfigRegistry, ConfigurationManager, DiagnosticRule, LanguageConfig,
 };
 

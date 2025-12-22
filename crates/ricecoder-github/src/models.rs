@@ -1,8 +1,9 @@
 //! GitHub Data Models
 
+use std::collections::HashMap;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// Pull Request status
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

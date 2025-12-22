@@ -5,11 +5,13 @@
 //!
 //! Property: For any detected conflict, the system SHALL apply the selected strategy (skip, overwrite, merge) correctly and report the action taken.
 
+use std::{fs, path::PathBuf};
+
 use proptest::prelude::*;
-use ricecoder_generation::conflict_detector::{DiffLine, FileConflictInfo, FileDiff};
-use ricecoder_generation::{ConflictResolver, ConflictStrategy};
-use std::fs;
-use std::path::PathBuf;
+use ricecoder_generation::{
+    conflict_detector::{DiffLine, FileConflictInfo, FileDiff},
+    ConflictResolver, ConflictStrategy,
+};
 use tempfile::TempDir;
 
 /// Strategy for generating file paths

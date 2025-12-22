@@ -92,18 +92,6 @@ pub use banner::{BannerArea, BannerComponent, BannerComponentConfig};
 pub use clipboard::{ClipboardError, ClipboardManager, CopyFeedback, CopyOperation};
 pub use code_editor_widget::{CodeEditorWidget, CodeLine, Language, SyntaxTheme};
 pub use command_blocks::{Command, CommandBlock, CommandBlocksWidget, CommandStatus};
-pub use model::StateDiff;
-pub use model::{AppMessage, AppMode, AppModel};
-pub use ricecoder_storage::config::TuiConfig;
-// LSP integration moved to ricecoder-lsp crate
-// pub use ricecoder_lsp::tui_integration::{
-//     DiagnosticDetailWidget, DiagnosticItem, DiagnosticSeverity, DiagnosticsWidget, HoverWidget,
-// };
-pub use error::{KeybindError, StorageError, ToolError, TuiError, TuiResult};
-pub use lifecycle::{
-    get_tui_lifecycle_manager, initialize_tui_lifecycle_manager, register_tui_component,
-    TuiLifecycleComponent, TuiLifecycleManager, TuiLifecycleState,
-};
 // Provider and session errors moved to respective crates
 // pub use error_handling::{
 //     ErrorBoundary, ErrorCategory, ErrorLogger, ErrorManager, ErrorSeverity, RecoveryStrategy,
@@ -112,39 +100,6 @@ pub use lifecycle::{
 // LSP integration moved to ricecoder-lsp crate
 // pub use ricecoder_lsp::tui_integration::{language_from_file_path, lsp_diagnostics_to_tui, lsp_hover_to_text};
 pub use command_palette::{CommandPaletteWidget, PaletteCommand};
-pub use monitoring::{
-    AnalyticsReport, AnonymousStatistics, ComplianceStatus, MemorySafetyMonitor, MetricsCollector,
-    MonitoringReport, MonitoringSystem, PerformanceMonitor, PerformanceProfiler, PerformanceReport,
-    SafetyCheckResult, SafetyIncident, SafetyIncidentType, SafetySeverity, UsageAnalytics,
-    UserExperienceMetrics, UserExperienceReport,
-};
-pub use plugins::{
-    CommandPlugin,
-    CommandResult,
-    DiscoveredPlugin,
-    EnhancedPluginMetadata,
-    // Enhanced plugin architecture
-    EnhancedPluginRegistry,
-    MarketplaceTheme,
-    Plugin,
-    PluginCapability,
-    PluginCommand,
-    PluginContext,
-    PluginId,
-    PluginManager,
-    PluginManifest,
-    PluginMessage,
-    PluginMetadata,
-    PluginOperation,
-    PluginSandbox,
-    PluginTheme,
-    PluginVersion,
-    RateLimiter,
-    ThemeMarketplace,
-    ThemePlugin,
-    ThemePluginImpl,
-    UiComponentPlugin,
-};
 // executor exports moved to ricecoder-commands
 pub use components::{
     Component,
@@ -175,12 +130,17 @@ pub use components::{
     StateChangeEvent,
     TabWidget,
 };
+// TuiConfig is now exported from ricecoder-storage
+pub use diff::{DiffHunk, DiffLine, DiffLineType, DiffViewType, DiffWidget};
+// LSP integration moved to ricecoder-lsp crate
+// pub use ricecoder_lsp::tui_integration::{
+//     DiagnosticDetailWidget, DiagnosticItem, DiagnosticSeverity, DiagnosticsWidget, HoverWidget,
+// };
+pub use error::{KeybindError, StorageError, ToolError, TuiError, TuiResult};
 pub use event::{
     EventLoop, KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent as EventMouseEvent,
 };
 pub use file_picker::FilePickerWidget;
-// TuiConfig is now exported from ricecoder-storage
-pub use diff::{DiffHunk, DiffLine, DiffLineType, DiffViewType, DiffWidget};
 pub use image_integration::ImageIntegration;
 pub use image_widget::{ImageFormat, ImageWidget, RenderMode};
 pub use input::{ChatInputWidget, InputAnalyzer, Intent};
@@ -188,8 +148,19 @@ pub use integration::{
     LayoutCoordinator, LayoutInfo, StateSynchronizer, WidgetContainer, WidgetIntegration,
 };
 pub use layout::{Constraint, Layout, Rect};
+pub use lifecycle::{
+    get_tui_lifecycle_manager, initialize_tui_lifecycle_manager, register_tui_component,
+    TuiLifecycleComponent, TuiLifecycleManager, TuiLifecycleState,
+};
 pub use logger_widget::{LogEntry, LogLevel, LoggerWidget};
 pub use markdown::{MarkdownElement, MarkdownParser};
+pub use model::{AppMessage, AppMode, AppModel, StateDiff};
+pub use monitoring::{
+    AnalyticsReport, AnonymousStatistics, ComplianceStatus, MemorySafetyMonitor, MetricsCollector,
+    MonitoringReport, MonitoringSystem, PerformanceMonitor, PerformanceProfiler, PerformanceReport,
+    SafetyCheckResult, SafetyIncident, SafetyIncidentType, SafetySeverity, UsageAnalytics,
+    UserExperienceMetrics, UserExperienceReport,
+};
 pub use performance::{
     ActiveJob, CacheStats, ContentCache, CpuMonitor, CpuSample, CpuStats, DiffRenderOptimizer,
     FileOperationType, HistoryLimits, Job, JobId, JobOutput, JobPriority, JobQueue, JobQueueStats,
@@ -199,12 +170,50 @@ pub use performance::{
     RenderPerformanceMetrics, RenderPerformanceTracker, ThemeSwitchPerformance,
     VirtualScrollManager,
 };
+pub use plugins::{
+    CommandPlugin,
+    CommandResult,
+    DiscoveredPlugin,
+    EnhancedPluginMetadata,
+    // Enhanced plugin architecture
+    EnhancedPluginRegistry,
+    MarketplaceTheme,
+    Plugin,
+    PluginCapability,
+    PluginCommand,
+    PluginContext,
+    PluginId,
+    PluginManager,
+    PluginManifest,
+    PluginMessage,
+    PluginMetadata,
+    PluginOperation,
+    PluginSandbox,
+    PluginTheme,
+    PluginVersion,
+    RateLimiter,
+    ThemeMarketplace,
+    ThemePlugin,
+    ThemePluginImpl,
+    UiComponentPlugin,
+};
 pub use popup_widget::{PopupButton, PopupType, PopupWidget};
 pub use progressive_enhancement::{
     FeatureLevel, FeatureToggles, ProgressiveEnhancement, RenderingStrategy,
 };
+// theme::ThemeManager moved to ricecoder-themes
+// VCS integration moved to ricecoder-vcs crate
+// pub use ricecoder_vcs::tui_integration::{VcsIntegration, VcsStatus};
+// VCS integration moved to ricecoder-vcs crate
+// pub use status_bar::StatusBarVcsExt;
+// theme_loader, theme_registry, theme_reset moved to ricecoder-themes
+pub use project_bootstrap::{BootstrapResult, ProjectBootstrap, ProjectInfo};
 pub use prompt::{ContextIndicators, PromptConfig, PromptWidget};
 pub use prompt_context::PromptContext;
+// Provider management components
+pub use providers::{
+    ProviderFactory, ProviderManager, ProviderPerformanceWidget, ProviderStatusWidget,
+};
 pub use reactive_ui_updates::{
     ConflictInfo, ConflictResolution, ConflictType, FileChangeEvent, FileChangeType, LiveDataEvent,
     LiveDataSynchronizer, ReactiveRenderer, ReactiveUICoordinator, SessionChangeType,
@@ -214,6 +223,8 @@ pub use real_time_updates::{
     OperationInfo, OperationStatus, ProgressIndicator, RealTimeStats, RealTimeStream,
     RealTimeUpdates, StreamData, StreamType,
 };
+pub use render_pipeline::LazyLoader;
+pub use ricecoder_storage::config::TuiConfig;
 // ProviderIntegration is now exported from ricecoder-providers
 pub use scrollview_widget::ScrollViewWidget;
 // Session exports moved to ricecoder-sessions crate
@@ -222,14 +233,6 @@ pub use terminal_state::{
     ColorSupport as TerminalColorSupport, TerminalCapabilities, TerminalState, TerminalType,
 };
 pub use textarea_widget::TextAreaWidget;
-// theme::ThemeManager moved to ricecoder-themes
-// VCS integration moved to ricecoder-vcs crate
-// pub use ricecoder_vcs::tui_integration::{VcsIntegration, VcsStatus};
-// VCS integration moved to ricecoder-vcs crate
-// pub use status_bar::StatusBarVcsExt;
-// theme_loader, theme_registry, theme_reset moved to ricecoder-themes
-pub use project_bootstrap::{BootstrapResult, ProjectBootstrap, ProjectInfo};
-pub use render_pipeline::LazyLoader;
 pub use tokio_util::sync::CancellationToken;
 pub use tree_widget::{TreeNode, TreeWidget};
 pub use ui_components::{
@@ -237,7 +240,3 @@ pub use ui_components::{
     VirtualStyle,
 };
 pub use widgets::{ChatWidget, Message, MessageAuthor};
-// Provider management components
-pub use providers::{
-    ProviderFactory, ProviderManager, ProviderPerformanceWidget, ProviderStatusWidget,
-};

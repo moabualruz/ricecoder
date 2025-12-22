@@ -1,9 +1,12 @@
 //! Version coordination across dependent projects
 
-use crate::analyzers::{DependencyGraph, Version, VersionValidator};
-use crate::error::{OrchestrationError, Result};
-use crate::models::Project;
 use std::collections::{HashMap, HashSet};
+
+use crate::{
+    analyzers::{DependencyGraph, Version, VersionValidator},
+    error::{OrchestrationError, Result},
+    models::Project,
+};
 
 /// Coordinates version updates across dependent projects
 #[derive(Debug, Clone)]

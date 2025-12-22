@@ -6,6 +6,12 @@
 //! These tests verify that the provider ecosystem maintains performance characteristics,
 //! reliability under load, and correct behavior across different provider configurations.
 
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, Instant},
+};
+
 use proptest::prelude::*;
 use ricecoder_providers::{
     cache::ProviderCache,
@@ -16,11 +22,10 @@ use ricecoder_providers::{
     rate_limiter::{RateLimiter, TokenBucketLimiter},
     ChatRequest, ChatResponse, ModelInfo, Provider, ProviderError, TokenUsage,
 };
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
-use tokio::sync::{RwLock, Semaphore};
-use tokio::time::timeout;
+use tokio::{
+    sync::{RwLock, Semaphore},
+    time::timeout,
+};
 
 // ============================================================================
 // Mock Providers for Testing

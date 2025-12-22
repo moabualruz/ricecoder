@@ -9,8 +9,7 @@ pub mod formatter;
 pub use commands::{delete_hook, disable_hook, enable_hook, inspect_hook, list_hooks, HookCommand};
 pub use formatter::{format_hook_json, format_hook_table, format_hooks_json, format_hooks_table};
 
-use crate::error::Result;
-use crate::registry::HookRegistry;
+use crate::{error::Result, registry::HookRegistry};
 
 /// Hook management CLI interface
 pub struct HookCli<R: HookRegistry> {
@@ -59,8 +58,10 @@ impl<R: HookRegistry> HookCli<R> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::registry::InMemoryHookRegistry;
-    use crate::types::{Action, CommandAction, Hook};
+    use crate::{
+        registry::InMemoryHookRegistry,
+        types::{Action, CommandAction, Hook},
+    };
 
     fn create_test_hook(id: &str, name: &str) -> Hook {
         Hook {

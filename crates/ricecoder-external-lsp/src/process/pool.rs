@@ -1,12 +1,15 @@
 //! Client pool management
 
-use crate::error::Result;
-use crate::types::LspServerConfig;
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, Instant},
+};
+
 use tokio::sync::RwLock;
 use tracing::{debug, info};
+
+use crate::{error::Result, types::LspServerConfig};
 
 /// Information about a pooled client
 #[derive(Clone)]

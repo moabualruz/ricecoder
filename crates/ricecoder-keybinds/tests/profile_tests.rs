@@ -1,5 +1,6 @@
-use ricecoder_keybinds::*;
 use std::time::SystemTime;
+
+use ricecoder_keybinds::*;
 
 #[cfg(test)]
 mod tests {

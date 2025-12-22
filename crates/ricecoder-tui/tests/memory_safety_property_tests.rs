@@ -4,12 +4,13 @@
 //! ensuring that all operations maintain memory safety guarantees and prevent
 //! common memory-related vulnerabilities.
 
+use std::sync::{Arc, Mutex};
+
 use proptest::prelude::*;
 use ricecoder_tui::{
     get_tui_lifecycle_manager, initialize_tui_lifecycle_manager, PerformanceProfiler,
     TuiLifecycleManager,
 };
-use std::sync::{Arc, Mutex};
 
 /// Test that the global lifecycle manager is safely initialized and accessed
 proptest! {

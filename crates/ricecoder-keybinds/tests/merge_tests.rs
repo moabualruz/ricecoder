@@ -1,5 +1,6 @@
-use crate::models::Context;
 use ricecoder_keybinds::*;
+
+use crate::models::Context;
 
 #[cfg(test)]
 mod tests {

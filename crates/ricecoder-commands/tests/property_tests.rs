@@ -1,9 +1,10 @@
+use std::collections::HashMap;
+
 use proptest::prelude::*;
 use ricecoder_commands::{
     ArgumentType, CommandArgument, CommandDefinition, CommandExecutor, CommandRegistry,
     TemplateProcessor,
 };
-use std::collections::HashMap;
 
 // Property 1: Command execution consistency
 // For any valid command definition and arguments, executing the command should:

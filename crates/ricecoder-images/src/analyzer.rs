@@ -9,16 +9,21 @@
 //! - Audit logging of analysis requests
 //! - User-initiated retry without reloading images
 
-use crate::config::ImageConfig;
-use crate::error::{ImageError, ImageResult};
-use crate::models::{ImageAnalysisResult, ImageMetadata};
-use ricecoder_providers::models::{ChatRequest, Message};
-use ricecoder_providers::provider::Provider;
-use ricecoder_providers::token_counter::TokenCounter;
-use std::sync::Arc;
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
+
+use ricecoder_providers::{
+    models::{ChatRequest, Message},
+    provider::Provider,
+    token_counter::TokenCounter,
+};
 use tokio::time::sleep;
 use tracing::{debug, error, info, warn};
+
+use crate::{
+    config::ImageConfig,
+    error::{ImageError, ImageResult},
+    models::{ImageAnalysisResult, ImageMetadata},
+};
 
 /// Maximum number of automatic retries for analysis
 const MAX_RETRIES: u32 = 3;

@@ -1,11 +1,12 @@
 //! Authentication API handlers
 
+use axum::{extract::State, http::StatusCode, Json};
+
 use crate::{
     error::{ApiError, ApiResult},
     models::{AuthRequest, AuthResponse, UserInfo},
     state::AppState,
 };
-use axum::{extract::State, http::StatusCode, Json};
 
 /// Authenticate user
 #[utoipa::path(

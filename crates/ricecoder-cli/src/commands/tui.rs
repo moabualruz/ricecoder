@@ -1,11 +1,15 @@
 //! TUI command - Launch the terminal user interface
 
-use crate::commands::Command;
-use crate::error::{CliError, CliResult};
+use std::path::PathBuf;
+
 use async_trait::async_trait;
 use chrono;
 use ricecoder_providers::provider::manager::ProviderManager;
-use std::path::PathBuf;
+
+use crate::{
+    commands::Command,
+    error::{CliError, CliResult},
+};
 
 /// TUI command configuration
 #[derive(Debug, Clone)]

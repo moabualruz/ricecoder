@@ -3,10 +3,8 @@
 //! This module contains use case implementations that orchestrate
 //! complex operations using the application services.
 
-use crate::error::AgentError;
-use crate::mcp_integration::{
-    ExternalToolBackend, ExternalToolIntegrationService, ToolExecutionResult,
-};
+use std::sync::Arc;
+
 use ricecoder_providers::{
     community::ProviderAnalytics,
     curation::SelectionConstraints,
@@ -14,10 +12,10 @@ use ricecoder_providers::{
     performance_monitor::{PerformanceSummary, ProviderMetrics},
     provider::manager::{ModelFilter, ModelFilterCriteria, ProviderManager, ProviderStatus},
 };
-use ricecoder_security::access_control::{AccessControl, Permission, ResourceType};
-use ricecoder_security::audit::AuditLogger;
-use ricecoder_security::compliance::{
-    ComplianceValidator, DataClassification as SecurityDataClassification,
+use ricecoder_security::{
+    access_control::{AccessControl, Permission, ResourceType},
+    audit::AuditLogger,
+    compliance::{ComplianceValidator, DataClassification as SecurityDataClassification},
 };
 use ricecoder_sessions::{
     BackgroundAgentManager, DataClassification, EnterpriseSharingPolicy, Message, MessageRole,
@@ -25,8 +23,12 @@ use ricecoder_sessions::{
     SessionRouter, SessionStore, SharePermissions, ShareService, TokenUsageTracker,
 };
 use serde_json::json;
-use std::sync::Arc;
 use tracing::{debug, error, info, warn};
+
+use crate::{
+    error::AgentError,
+    mcp_integration::{ExternalToolBackend, ExternalToolIntegrationService, ToolExecutionResult},
+};
 
 /// Process and validate tool execution result
 pub(crate) fn process_tool_result(

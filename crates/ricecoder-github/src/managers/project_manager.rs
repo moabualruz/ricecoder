@@ -1,10 +1,14 @@
 //! Project Manager - Handles GitHub Projects management
 
-use crate::errors::{GitHubError, Result};
-use crate::models::{Issue, ProjectCard, PullRequest};
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 use tracing::{debug, info};
+
+use crate::{
+    errors::{GitHubError, Result},
+    models::{Issue, ProjectCard, PullRequest},
+};
 
 /// Project column status
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]

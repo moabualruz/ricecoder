@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
 /// Tests for symbol completion suggestions
 /// Tests that symbol completions include variables, functions, types with proper details
@@ -7,7 +9,6 @@ use ricecoder_completion::{
     PythonCompletionProvider, Range, RustCompletionProvider, Scope, ScopeKind, Symbol, SymbolKind,
     Type, TypeScriptCompletionProvider,
 };
-use std::sync::Arc;
 
 /// Mock context analyzer that provides test symbols
 struct SymbolTestContextAnalyzer;

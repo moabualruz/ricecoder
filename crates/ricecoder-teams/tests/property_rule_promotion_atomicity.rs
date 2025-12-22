@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use chrono::Utc;
 /// Property-based test for rule promotion atomicity
 ///
@@ -8,9 +10,10 @@ use chrono::Utc;
 /// complete successfully with all team members notified, or fail completely with no partial
 /// state changes.
 use proptest::prelude::*;
-use ricecoder_teams::models::{RuleScope, SharedRule};
-use ricecoder_teams::rules::{mocks::*, SharedRulesManager};
-use std::sync::Arc;
+use ricecoder_teams::{
+    models::{RuleScope, SharedRule},
+    rules::{mocks::*, SharedRulesManager},
+};
 
 /// Strategy for generating valid rule scopes for promotion
 fn rule_scope_strategy() -> impl Strategy<Value = (RuleScope, RuleScope)> {

@@ -2,9 +2,10 @@
 // **Feature: ricecoder-path-resolution, Property 3: Project Path Correctness**
 // **Validates: Requirements 1.4**
 
+use std::path::PathBuf;
+
 use proptest::prelude::*;
 use ricecoder_storage::PathResolver;
-use std::path::PathBuf;
 
 /// Property 3: Project Path Correctness
 /// For any project, the resolved project path SHALL be `.agent/` relative to the project root.

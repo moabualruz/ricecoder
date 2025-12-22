@@ -6,6 +6,12 @@
 //! These tests verify that the MCP protocol implementation maintains correctness under
 //! various edge cases, enterprise security requirements, and protocol invariants.
 
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
+
 use chrono::{DateTime, Utc};
 use proptest::prelude::*;
 use ricecoder_mcp::{
@@ -27,11 +33,10 @@ use ricecoder_mcp::{
         StdioTransport, TransportConfig,
     },
 };
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::{Duration, SystemTime};
-use tokio::sync::{RwLock, Semaphore};
-use tokio::time::timeout;
+use tokio::{
+    sync::{RwLock, Semaphore},
+    time::timeout,
+};
 
 // Import testing infrastructure enhancements
 #[path = "mcp_testing_infrastructure.rs"]

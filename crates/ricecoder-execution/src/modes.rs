@@ -5,11 +5,15 @@
 //! - StepByStep: Require approval for each step
 //! - DryRun: Preview changes without applying them
 
-use crate::error::{ExecutionError, ExecutionResult};
-use crate::models::{ExecutionMode, ExecutionPlan, ExecutionStep, StepAction};
-use serde::{Deserialize, Serialize};
 use std::path::Path;
+
+use serde::{Deserialize, Serialize};
 use tracing::{debug, info, warn};
+
+use crate::{
+    error::{ExecutionError, ExecutionResult},
+    models::{ExecutionMode, ExecutionPlan, ExecutionStep, StepAction},
+};
 
 /// Configuration for execution modes
 #[derive(Debug, Clone, Serialize, Deserialize)]

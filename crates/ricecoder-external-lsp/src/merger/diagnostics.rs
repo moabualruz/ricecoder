@@ -1,8 +1,10 @@
 //! Diagnostics merging
 
-use crate::types::MergeConfig;
-use ricecoder_lsp::types::Diagnostic;
 use std::collections::HashSet;
+
+use ricecoder_lsp::types::Diagnostic;
+
+use crate::types::MergeConfig;
 
 /// Merges diagnostics from external LSP and internal providers
 pub struct DiagnosticsMerger;
@@ -81,8 +83,9 @@ impl Default for DiagnosticsMerger {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use ricecoder_lsp::types::{DiagnosticSeverity, Position, Range};
+
+    use super::*;
 
     fn create_diagnostic(line: u32, message: &str) -> Diagnostic {
         Diagnostic::new(

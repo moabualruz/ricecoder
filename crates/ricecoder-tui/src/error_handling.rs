@@ -7,13 +7,17 @@
 //! - Retry logic for network failures
 //! - Error logging and debugging support
 
-use crate::model::{AppMessage, AppModel};
-use crate::tea::ReactiveState;
-use std::collections::HashMap;
-use std::fmt;
-use std::sync::Arc;
-use tokio::sync::RwLock;
-use tokio::time::{Duration, Instant};
+use std::{collections::HashMap, fmt, sync::Arc};
+
+use tokio::{
+    sync::RwLock,
+    time::{Duration, Instant},
+};
+
+use crate::{
+    model::{AppMessage, AppModel},
+    tea::ReactiveState,
+};
 
 /// Error severity levels
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]

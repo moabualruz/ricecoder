@@ -2,8 +2,9 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::{Mode, ModeContext, Operation, VibeMode};
     use proptest::prelude::*;
+
+    use crate::{Mode, ModeContext, Operation, VibeMode};
 
     // Property 5: Vibe Mode Spec Bypass
     // **Feature: ricecoder-modes, Property 5: Vibe Mode Spec Bypass**

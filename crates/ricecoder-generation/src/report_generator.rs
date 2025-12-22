@@ -8,11 +8,15 @@
 //!
 //! Implements Requirement 1.6: Generation report with statistics
 
-use crate::conflict_detector::FileConflictInfo;
-use crate::models::{GeneratedFile, ValidationResult};
-use crate::review_engine::ReviewResult;
-use serde::{Deserialize, Serialize};
 use std::time::Duration;
+
+use serde::{Deserialize, Serialize};
+
+use crate::{
+    conflict_detector::FileConflictInfo,
+    models::{GeneratedFile, ValidationResult},
+    review_engine::ReviewResult,
+};
 
 /// Statistics about code generation
 #[derive(Debug, Clone, Serialize, Deserialize)]

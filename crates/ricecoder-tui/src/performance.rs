@@ -4,12 +4,18 @@
 //! including lazy loading of message history, efficient diff rendering,
 //! memory management, and 60 FPS rendering targets.
 
-use crate::CancellationToken;
-use std::collections::{HashMap, VecDeque};
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex, Weak};
-use std::time::{Duration, Instant};
+use std::{
+    collections::{HashMap, VecDeque},
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc, Mutex, Weak,
+    },
+    time::{Duration, Instant},
+};
+
 use tokio::sync::RwLock;
+
+use crate::CancellationToken;
 
 /// Configuration for lazy loading
 #[derive(Debug, Clone)]
@@ -1731,8 +1737,10 @@ pub enum LeakSeverity {
 fn get_current_thread_id() -> u64 {
     // In a real implementation, this would use thread::current().id()
     // For now, return a simple counter or hash
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
+    use std::{
+        collections::hash_map::DefaultHasher,
+        hash::{Hash, Hasher},
+    };
 
     let mut hasher = DefaultHasher::new();
     std::thread::current().id().hash(&mut hasher);

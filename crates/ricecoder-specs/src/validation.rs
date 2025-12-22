@@ -1,8 +1,11 @@
 //! Validation engine for specs
 
-use crate::error::{Severity, SpecError, ValidationError};
-use crate::models::Spec;
 use regex::Regex;
+
+use crate::{
+    error::{Severity, SpecError, ValidationError},
+    models::Spec,
+};
 
 /// Validates spec structure and semantic correctness
 pub struct ValidationEngine;
@@ -387,9 +390,10 @@ impl ValidationEngine {
 
 #[cfg(test)]
 mod tests {
+    use chrono::Utc;
+
     use super::*;
     use crate::models::*;
-    use chrono::Utc;
 
     fn create_minimal_spec() -> Spec {
         Spec {

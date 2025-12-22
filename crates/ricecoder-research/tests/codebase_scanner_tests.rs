@@ -2,9 +2,9 @@
 //! Tests directory traversal, gitignore support, symbol extraction, and reference tracking
 //! **Validates: Requirements 1.7, 1.8, 1.9**
 
+use std::{fs, path::PathBuf};
+
 use ricecoder_research::models::Language;
-use std::fs;
-use std::path::PathBuf;
 use tempfile::TempDir;
 
 // ============================================================================

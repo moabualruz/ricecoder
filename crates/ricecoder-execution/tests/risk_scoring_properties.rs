@@ -3,11 +3,12 @@
 //! **Feature: ricecoder-execution, Property 1: Risk Score Consistency**
 //! **Validates: Requirements 1.1, 1.2**
 
+use std::time::Duration;
+
 use proptest::prelude::*;
 use ricecoder_execution::{
     ExecutionPlan, ExecutionRiskScorer, ExecutionStep, RiskLevel, StepAction, StepStatus,
 };
-use std::time::Duration;
 use uuid::Uuid;
 
 /// Strategy for generating valid file paths

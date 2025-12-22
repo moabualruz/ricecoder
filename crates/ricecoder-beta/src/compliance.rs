@@ -1,8 +1,10 @@
 //! Compliance validation for enterprise beta testing
 
-use crate::analytics::EnterpriseValidationAnalytics;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
+
+use crate::analytics::EnterpriseValidationAnalytics;
 
 /// Compliance validation service
 pub struct ComplianceValidator {

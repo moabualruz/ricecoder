@@ -7,8 +7,9 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::{Decision, DecisionContext, DecisionLogger};
     use std::path::PathBuf;
+
+    use crate::{Decision, DecisionContext, DecisionLogger};
 
     /// Property 1: Decision Capture Completeness
     /// For any decision, when captured, all metadata fields should be preserved

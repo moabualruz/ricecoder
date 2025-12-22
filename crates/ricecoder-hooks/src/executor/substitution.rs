@@ -43,11 +43,15 @@
 //! assert_eq!(result, "File size: 2048, hash: abc123");
 //! ```
 
-use crate::error::{HooksError, Result};
-use crate::types::EventContext;
+use std::sync::OnceLock;
+
 use regex::Regex;
 use serde_json::Value;
-use std::sync::OnceLock;
+
+use crate::{
+    error::{HooksError, Result},
+    types::EventContext,
+};
 
 /// Variable substitution engine
 ///
@@ -226,8 +230,9 @@ fn get_placeholder_regex() -> &'static Regex {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use serde_json::json;
+
+    use super::*;
 
     fn create_test_context() -> EventContext {
         EventContext {

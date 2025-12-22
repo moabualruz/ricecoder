@@ -4,11 +4,12 @@
 
 #[cfg(test)]
 mod tests {
+    use proptest::prelude::*;
+
     use crate::{
         models::{Rule, RuleScope, RuleSource},
         rule_promoter::RulePromoter,
     };
-    use proptest::prelude::*;
 
     /// Strategy for generating valid rules in project scope
     fn project_rule_strategy() -> impl Strategy<Value = Rule> {

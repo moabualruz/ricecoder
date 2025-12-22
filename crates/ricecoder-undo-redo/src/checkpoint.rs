@@ -1,10 +1,12 @@
 //! Checkpoint management for rollback operations
 
-use crate::error::UndoRedoError;
+use std::collections::HashMap;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use uuid::Uuid;
+
+use crate::error::UndoRedoError;
 
 /// Represents a saved state for rollback operations
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -35,7 +37,9 @@ impl Checkpoint {
 
         // Validate name is not empty
         if name.is_empty() {
-            return Err(UndoRedoError::validation_error("Checkpoint name cannot be empty"));
+            return Err(UndoRedoError::validation_error(
+                "Checkpoint name cannot be empty",
+            ));
         }
 
         // Validate file_states is not empty
@@ -58,7 +62,9 @@ impl Checkpoint {
     /// Validate the checkpoint for consistency
     pub fn validate(&self) -> Result<(), UndoRedoError> {
         if self.name.is_empty() {
-            return Err(UndoRedoError::validation_error("Checkpoint name cannot be empty"));
+            return Err(UndoRedoError::validation_error(
+                "Checkpoint name cannot be empty",
+            ));
         }
 
         if self.file_states.is_empty() {
@@ -338,8 +344,14 @@ mod tests {
 
         // Verify state was restored
         let current_state = manager.get_current_state();
-        assert_eq!(current_state.get("file1.txt"), Some(&"checkpoint content".to_string()));
-        assert_eq!(current_state.get("file2.txt"), Some(&"new file".to_string()));
+        assert_eq!(
+            current_state.get("file1.txt"),
+            Some(&"checkpoint content".to_string())
+        );
+        assert_eq!(
+            current_state.get("file2.txt"),
+            Some(&"new file".to_string())
+        );
     }
 
     #[test]
@@ -516,9 +528,18 @@ mod tests {
         // Verify all files were updated (all-or-nothing)
         let current_state = manager.get_current_state();
         assert_eq!(current_state.len(), 3);
-        assert_eq!(current_state.get("file1.txt"), Some(&"content1".to_string()));
-        assert_eq!(current_state.get("file2.txt"), Some(&"content2".to_string()));
-        assert_eq!(current_state.get("file3.txt"), Some(&"content3".to_string()));
+        assert_eq!(
+            current_state.get("file1.txt"),
+            Some(&"content1".to_string())
+        );
+        assert_eq!(
+            current_state.get("file2.txt"),
+            Some(&"content2".to_string())
+        );
+        assert_eq!(
+            current_state.get("file3.txt"),
+            Some(&"content3".to_string())
+        );
     }
 
     #[test]
@@ -528,16 +549,12 @@ mod tests {
         // Create first checkpoint
         let mut state1 = HashMap::new();
         state1.insert("file.txt".to_string(), "state1".to_string());
-        let id1 = manager
-            .create_checkpoint("CP1", "desc1", state1)
-            .unwrap();
+        let id1 = manager.create_checkpoint("CP1", "desc1", state1).unwrap();
 
         // Create second checkpoint
         let mut state2 = HashMap::new();
         state2.insert("file.txt".to_string(), "state2".to_string());
-        let id2 = manager
-            .create_checkpoint("CP2", "desc2", state2)
-            .unwrap();
+        let id2 = manager.create_checkpoint("CP2", "desc2", state2).unwrap();
 
         // Verify both checkpoints exist independently
         let cp1 = manager.get_checkpoint(&id1).unwrap();
@@ -593,25 +610,23 @@ mod tests {
 
 #[cfg(test)]
 mod property_tests {
-    use super::*;
     use proptest::prelude::*;
+
+    use super::*;
 
     /// Strategy for generating valid checkpoint names
     fn checkpoint_name_strategy() -> impl Strategy<Value = String> {
-        r"[a-zA-Z0-9\s\-_]{1,50}"
-            .prop_map(|s| s.to_string())
+        r"[a-zA-Z0-9\s\-_]{1,50}".prop_map(|s| s.to_string())
     }
 
     /// Strategy for generating valid file paths
     fn file_path_strategy() -> impl Strategy<Value = String> {
-        r"[a-zA-Z0-9_\-./]{1,50}\.rs"
-            .prop_map(|s| s.to_string())
+        r"[a-zA-Z0-9_\-./]{1,50}\.rs".prop_map(|s| s.to_string())
     }
 
     /// Strategy for generating valid content
     fn content_strategy() -> impl Strategy<Value = String> {
-        r"[a-zA-Z0-9\s]{1,100}"
-            .prop_map(|s| s.to_string())
+        r"[a-zA-Z0-9\s]{1,100}".prop_map(|s| s.to_string())
     }
 
     proptest! {

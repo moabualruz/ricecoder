@@ -3,12 +3,15 @@
 //! This module provides UI components for managing AI providers in the TUI,
 //! including provider selection, status displays, and performance monitoring.
 
-use crate::components::{Component, ComponentId, EventResult};
-use crate::event::Event;
-use crate::model::{AppMessage, ProviderInfo, ProviderMetrics, ProviderViewMode};
-use ratatui::layout::Rect;
-use ratatui::Frame;
 use std::sync::Arc;
+
+use ratatui::{layout::Rect, Frame};
+
+use crate::{
+    components::{Component, ComponentId, EventResult},
+    event::Event,
+    model::{AppMessage, ProviderInfo, ProviderMetrics, ProviderViewMode},
+};
 
 /// Provider manager component for handling provider operations
 pub struct ProviderManager {

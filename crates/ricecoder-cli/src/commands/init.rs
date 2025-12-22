@@ -1,10 +1,14 @@
 // Initialize a new ricecoder project with interactive setup wizard
 
-use super::Command;
-use crate::error::{CliError, CliResult};
-use crate::output::OutputStyle;
-use async_trait::async_trait;
 use std::io::{self, Write};
+
+use async_trait::async_trait;
+
+use super::Command;
+use crate::{
+    error::{CliError, CliResult},
+    output::OutputStyle,
+};
 
 /// Initialize a new ricecoder project
 pub struct InitCommand {

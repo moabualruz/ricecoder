@@ -1,21 +1,19 @@
 //! Research manager - central coordinator for analysis operations
 
-use crate::error::ResearchError;
-use crate::models::ProjectContext;
-use crate::project_analyzer::ProjectAnalyzer;
-use crate::reference_tracker::ReferenceTracker;
-use crate::relevance_scorer::RelevanceScorer;
-use crate::search_engine::SearchEngine;
-use crate::semantic_index::SemanticIndex;
-use crate::standards_detector::StandardsDetector;
+use std::{collections::HashMap, path::Path, sync::Arc};
+
 #[cfg(feature = "parsers")]
 use ricecoder_parsers::CodeParser;
 #[cfg(feature = "patterns")]
 use ricecoder_patterns::PatternDetector;
-use std::collections::HashMap;
-use std::path::Path;
-use std::sync::Arc;
 use tracing::{debug, info, warn};
+
+use crate::{
+    error::ResearchError, models::ProjectContext, project_analyzer::ProjectAnalyzer,
+    reference_tracker::ReferenceTracker, relevance_scorer::RelevanceScorer,
+    search_engine::SearchEngine, semantic_index::SemanticIndex,
+    standards_detector::StandardsDetector,
+};
 
 /// Central coordinator for core research operations
 ///

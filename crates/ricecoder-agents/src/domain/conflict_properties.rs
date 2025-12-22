@@ -5,8 +5,9 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::{ConflictDetector, ConflictType, Recommendation};
     use proptest::prelude::*;
+
+    use crate::domain::{ConflictDetector, ConflictType, Recommendation};
 
     // Strategy for generating recommendations
     fn recommendation_strategy() -> impl Strategy<Value = Recommendation> {

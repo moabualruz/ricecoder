@@ -3,9 +3,10 @@
 //! **Feature: ricecoder-storage, Property 8: Environment Variable Override**
 //! **Validates: Requirements 4.4**
 
+use std::collections::HashMap;
+
 use proptest::prelude::*;
 use ricecoder_storage::config::{Config, EnvOverrides};
-use std::collections::HashMap;
 
 /// Strategy for generating valid environment variable overrides
 fn env_override_strategy() -> impl Strategy<Value = HashMap<String, String>> {

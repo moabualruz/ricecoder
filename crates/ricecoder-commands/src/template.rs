@@ -1,6 +1,8 @@
-use crate::error::{CommandError, Result};
-use regex::Regex;
 use std::collections::HashMap;
+
+use regex::Regex;
+
+use crate::error::{CommandError, Result};
 
 /// Template processor for command substitution
 pub struct TemplateProcessor;

@@ -3,19 +3,22 @@
 //! This module implements the core LSP server that handles initialization,
 //! shutdown, and request routing.
 
-use crate::code_actions::{CodeActionsEngine, DefaultCodeActionsEngine};
-use crate::completion::CompletionHandler;
-use crate::config::CompletionConfig;
-use crate::diagnostics::{DefaultDiagnosticsEngine, DiagnosticsEngine};
-use crate::hover::HoverProvider;
-use crate::refactoring::RefactoringHandler;
-use crate::transport::{AsyncStdioTransport, JsonRpcError, JsonRpcResponse, LspMessage};
-use crate::types::{Language, LspError, LspResult, Position, ServerState};
+use std::{collections::HashMap, sync::Arc};
+
 use ricecoder_completion::CompletionEngine;
 use serde_json::{json, Value};
-use std::collections::HashMap;
-use std::sync::Arc;
 use tracing::{debug, error, info, warn};
+
+use crate::{
+    code_actions::{CodeActionsEngine, DefaultCodeActionsEngine},
+    completion::CompletionHandler,
+    config::CompletionConfig,
+    diagnostics::{DefaultDiagnosticsEngine, DiagnosticsEngine},
+    hover::HoverProvider,
+    refactoring::RefactoringHandler,
+    transport::{AsyncStdioTransport, JsonRpcError, JsonRpcResponse, LspMessage},
+    types::{Language, LspError, LspResult, Position, ServerState},
+};
 
 /// Server capabilities
 #[derive(Debug, Clone)]

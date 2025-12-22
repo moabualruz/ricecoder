@@ -1,11 +1,15 @@
 //! Enterprise provider integrations and management
 
-use crate::connections::AuthMethod;
-use crate::error::{IndustryError, IndustryResult};
+use std::collections::HashMap;
+
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use tokio::sync::RwLock;
+
+use crate::{
+    connections::AuthMethod,
+    error::{IndustryError, IndustryResult},
+};
 
 /// Enterprise provider configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]

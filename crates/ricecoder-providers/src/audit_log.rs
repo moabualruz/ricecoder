@@ -3,11 +3,9 @@
 //! This module provides audit logging functionality for tracking security-relevant events
 //! such as API key access, authentication attempts, and permission decisions.
 
+use std::{fs::OpenOptions, io::Write, path::PathBuf, sync::Mutex};
+
 use serde::{Deserialize, Serialize};
-use std::fs::OpenOptions;
-use std::io::Write;
-use std::path::PathBuf;
-use std::sync::Mutex;
 use tracing::info;
 
 /// Audit event types

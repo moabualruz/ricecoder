@@ -14,12 +14,11 @@
 //! monitor.start_monitoring(PathBuf::from("/path/to/watch")).await?;
 //! ```
 
-use super::file_operations::{DirectoryOperationEvent, FileOperationEvent};
-use std::collections::HashMap;
-use std::path::PathBuf;
-use std::sync::Arc;
-use std::time::SystemTime;
+use std::{collections::HashMap, path::PathBuf, sync::Arc, time::SystemTime};
+
 use tokio::sync::RwLock;
+
+use super::file_operations::{DirectoryOperationEvent, FileOperationEvent};
 
 /// File system monitor for detecting file operations
 ///

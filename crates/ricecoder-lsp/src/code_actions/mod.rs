@@ -23,12 +23,12 @@ pub mod adapters;
 pub mod applier;
 pub mod generic_engine;
 
+use std::{error::Error, fmt};
+
 pub use adapters::{PythonCodeActionAdapter, RustCodeActionAdapter, TypeScriptCodeActionAdapter};
 pub use generic_engine::GenericCodeActionsEngine;
 
 use crate::types::{CodeAction, CodeActionKind, Diagnostic, TextEdit, WorkspaceEdit};
-use std::error::Error;
-use std::fmt;
 
 /// Error type for code actions operations
 #[derive(Debug, Clone)]

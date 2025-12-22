@@ -1,7 +1,12 @@
-use crate::error::{ModeError, Result};
-use crate::models::{ComplexityLevel, ThinkMoreConfig, ThinkingDepth};
-use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::{
+    sync::{Arc, Mutex},
+    time::{Duration, Instant},
+};
+
+use crate::{
+    error::{ModeError, Result},
+    models::{ComplexityLevel, ThinkMoreConfig, ThinkingDepth},
+};
 
 /// Manages extended thinking capabilities for complex tasks
 #[derive(Debug, Clone)]

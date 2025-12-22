@@ -1,12 +1,15 @@
 //! Synchronization manager for cross-project updates
 
-use crate::error::{OrchestrationError, Result};
-use crate::models::{Operation, Transaction, TransactionState};
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
+
 use tokio::sync::RwLock;
 use tracing::{debug, info};
 use uuid::Uuid;
+
+use crate::{
+    error::{OrchestrationError, Result},
+    models::{Operation, Transaction, TransactionState},
+};
 
 #[derive(Debug, Clone)]
 pub struct SyncConflict {

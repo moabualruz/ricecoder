@@ -3,13 +3,15 @@
 //! This module implements a high-performance rendering system with virtual DOM diffing,
 //! targeted re-renders, and virtualization for optimal performance.
 
+use std::{collections::HashMap, sync::Arc};
+
+use ratatui::{prelude::*, widgets::Borders};
+use tokio::{
+    sync::RwLock,
+    time::{Duration, Instant},
+};
+
 use crate::model::{AppModel, StateChange};
-use ratatui::prelude::*;
-use ratatui::widgets::Borders;
-use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::RwLock;
-use tokio::time::{Duration, Instant};
 
 /// Virtual DOM node representing a UI component
 #[derive(Clone, Debug, PartialEq)]

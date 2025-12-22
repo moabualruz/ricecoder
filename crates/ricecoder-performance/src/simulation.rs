@@ -7,14 +7,22 @@
 //! - Provider API load testing
 //! - Memory pressure testing
 
-use crate::monitor::{PerformanceMetrics, PerformanceMonitor};
-use crate::profiler::PerformanceProfiler;
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
-use tokio::sync::{RwLock, Semaphore};
-use tokio::task;
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, Instant},
+};
+
+use tokio::{
+    sync::{RwLock, Semaphore},
+    task,
+};
 use tracing::{debug, info, warn};
+
+use crate::{
+    monitor::{PerformanceMetrics, PerformanceMonitor},
+    profiler::PerformanceProfiler,
+};
 
 /// Enterprise workload simulator
 pub struct EnterpriseSimulator {

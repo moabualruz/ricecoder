@@ -1,13 +1,16 @@
 //! Activity logger implementation
 
-use crate::error::{ActivityLogError, ActivityLogResult};
-use crate::events::{ActivityEvent, EventFilter, LogLevel};
+use std::{collections::HashMap, sync::Arc};
+
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{debug, error, info, warn};
+
+use crate::{
+    error::{ActivityLogError, ActivityLogResult},
+    events::{ActivityEvent, EventFilter, LogLevel},
+};
 
 /// Logger configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]

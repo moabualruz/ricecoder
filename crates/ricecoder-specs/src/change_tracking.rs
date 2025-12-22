@@ -1,9 +1,13 @@
 //! Change tracking for spec modifications
 
-use crate::models::{ChangeDetail, Spec, SpecChange};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
+
 use chrono::Utc;
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+
+use crate::models::{ChangeDetail, Spec, SpecChange};
 
 /// Tracks spec evolution and modifications
 pub struct ChangeTracker {

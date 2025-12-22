@@ -3,8 +3,9 @@
 //! **Feature: ricecoder-ide, Property 4: Configuration Validation**
 //! **Validates: Requirements 2.8**
 
-use ricecoder_ide::*;
 use std::collections::HashMap;
+
+use ricecoder_ide::*;
 
 #[test]
 fn test_valid_config_accepted() {

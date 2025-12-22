@@ -1,12 +1,13 @@
 //! Request logging middleware
 
-use crate::state::AppState;
 use axum::{
     extract::State,
     http::{Request, StatusCode},
     middleware::Next,
     response::Response,
 };
+
+use crate::state::AppState;
 
 /// Request logging middleware
 pub async fn logging_middleware(

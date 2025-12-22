@@ -5,12 +5,15 @@
 //! - DeleteFile: Delete created files
 //! - RunCommand: Execute undo commands
 
-use crate::error::{ExecutionError, ExecutionResult};
-use crate::models::RollbackAction;
+use std::{path::Path, process::Command};
+
 use ricecoder_storage::PathResolver;
-use std::path::Path;
-use std::process::Command;
 use tracing::{debug, info, warn};
+
+use crate::{
+    error::{ExecutionError, ExecutionResult},
+    models::RollbackAction,
+};
 
 /// Handles file restoration from backup
 pub struct RestoreFileHandler;
@@ -192,8 +195,9 @@ impl UndoCommandHandler {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use serde_json::json;
+
+    use super::*;
 
     #[test]
     fn test_restore_file_handler_missing_file_path() {

@@ -3,10 +3,13 @@
 //! **Feature: ricecoder-external-lsp, Property 1: Process Lifecycle Consistency**
 //! **Validates: Requirements ELSP-1.1, ELSP-1.4**
 
-use proptest::prelude::*;
-use ricecoder_external_lsp::process::ProcessManager;
-use ricecoder_external_lsp::types::{ClientState, LspServerConfig};
 use std::collections::HashMap;
+
+use proptest::prelude::*;
+use ricecoder_external_lsp::{
+    process::ProcessManager,
+    types::{ClientState, LspServerConfig},
+};
 
 /// Strategy for generating valid LSP server configurations
 fn arb_lsp_server_config() -> impl Strategy<Value = LspServerConfig> {

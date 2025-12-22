@@ -1,9 +1,11 @@
 //! Data models for image metadata, analysis results, and cache entries.
 
-use crate::formats::ImageFormat;
+use std::path::PathBuf;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+
+use crate::formats::ImageFormat;
 
 /// Metadata about an image file.
 #[derive(Debug, Clone, Serialize, Deserialize)]

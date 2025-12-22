@@ -7,9 +7,11 @@
 //! **Feature: ricecoder-installation, Property 1: Installation Completeness**
 //! **Validates: Requirements 1.1, 1.2**
 
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 /// Test helper: Check if a command exists in PATH
 fn command_exists(cmd: &str) -> bool {

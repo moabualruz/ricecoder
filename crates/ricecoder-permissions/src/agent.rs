@@ -3,11 +3,14 @@
 //! This module provides integration between the permissions system and agent execution.
 //! It handles permission checking, prompting, and audit logging for tool execution.
 
-use crate::audit::AuditLogger;
-use crate::error::Result;
-use crate::permission::{PermissionChecker, PermissionConfig, PermissionDecision};
-use crate::prompt::{PermissionPrompt, PromptResult};
 use std::sync::Arc;
+
+use crate::{
+    audit::AuditLogger,
+    error::Result,
+    permission::{PermissionChecker, PermissionConfig, PermissionDecision},
+    prompt::{PermissionPrompt, PromptResult},
+};
 
 /// Result of agent tool execution with permission decision
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

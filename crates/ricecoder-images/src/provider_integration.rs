@@ -7,9 +7,10 @@
 //! - Token counting for images
 //! - Audit logging of image analysis requests
 
-use crate::error::ImageResult;
 use ricecoder_providers::models::ChatRequest;
 use serde::{Deserialize, Serialize};
+
+use crate::error::ImageResult;
 
 /// Image data for inclusion in chat requests.
 ///
@@ -367,8 +368,9 @@ fn base64_encode(data: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use ricecoder_providers::models::Message;
+
+    use super::*;
 
     #[test]
     fn test_image_data_creation() {

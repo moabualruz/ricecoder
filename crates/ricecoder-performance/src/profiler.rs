@@ -1,9 +1,13 @@
 //! Performance profiling utilities for detailed analysis
 
-use crate::monitor::{PerformanceMetrics, PerformanceMonitor};
+use std::{
+    collections::HashMap,
+    time::{Duration, Instant},
+};
+
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::time::{Duration, Instant};
+
+use crate::monitor::{PerformanceMetrics, PerformanceMonitor};
 
 /// Performance profiler for detailed code path analysis
 pub struct PerformanceProfiler {

@@ -1,11 +1,15 @@
 //! Custom theme loading from YAML files
 
-use crate::types::{SyntaxTheme, Theme};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
+
 use anyhow::{anyhow, Result};
 use ratatui::style::{Color, Color as ColorSupport};
 use serde::{Deserialize, Serialize};
-use std::fs;
-use std::path::{Path, PathBuf};
+
+use crate::types::{SyntaxTheme, Theme};
 
 /// YAML theme format for custom themes
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -37,9 +41,9 @@ impl ThemeYaml {
             let hex = &hex[1..];
             if hex.len() == 6 {
                 if let Ok(rgb) = u32::from_str_radix(hex, 16) {
-                    let r = ((rgb >> 16) & 0xFF) as u8;
-                    let g = ((rgb >> 8) & 0xFF) as u8;
-                    let b = (rgb & 0xFF) as u8;
+                    let r = ((rgb >> 16) & 0xff) as u8;
+                    let g = ((rgb >> 8) & 0xff) as u8;
+                    let b = (rgb & 0xff) as u8;
                     return Ok(Color::Rgb(r, g, b));
                 }
             }

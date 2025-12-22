@@ -9,10 +9,13 @@
 //! - Import tracking is accurate and consistent
 //! - Symbol index lookup returns correct results
 
-use proptest::prelude::*;
-use ricecoder_lsp::semantic::{LanguageDetector, SemanticAnalyzerFactory};
-use ricecoder_lsp::types::Language;
 use std::path::Path;
+
+use proptest::prelude::*;
+use ricecoder_lsp::{
+    semantic::{LanguageDetector, SemanticAnalyzerFactory},
+    types::Language,
+};
 
 /// Strategy for generating valid Rust code snippets
 fn rust_code_strategy() -> impl Strategy<Value = String> {

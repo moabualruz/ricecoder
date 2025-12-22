@@ -1,7 +1,8 @@
 //! Data models for pattern detection
 
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 
 /// Detected pattern information
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

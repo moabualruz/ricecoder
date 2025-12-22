@@ -12,16 +12,21 @@
 //! - Audit logging integration
 //! - Enterprise security features
 
+use std::{
+    fmt::Debug,
+    io::{BufRead, BufReader, Write},
+    process::Stdio,
+    sync::Arc,
+};
+
 use async_trait::async_trait;
 use futures_util::{StreamExt, TryFutureExt};
 use serde::{Deserialize, Serialize};
-use std::fmt::Debug;
-use std::io::{BufRead, BufReader, Write};
-use std::process::Stdio;
-use std::sync::Arc;
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader as AsyncBufReader};
-use tokio::process::Command;
-use tokio::sync::mpsc;
+use tokio::{
+    io::{AsyncBufReadExt, AsyncWriteExt, BufReader as AsyncBufReader},
+    process::Command,
+    sync::mpsc,
+};
 use tracing::{debug, error, info, warn};
 
 use crate::error::{Error, Result};

@@ -1,7 +1,8 @@
 //! Core theme types and data structures
 
-use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+
+use serde::{Deserialize, Serialize};
 
 /// A complete theme definition
 #[derive(Debug, Clone, PartialEq)]

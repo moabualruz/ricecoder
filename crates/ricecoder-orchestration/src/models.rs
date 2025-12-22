@@ -1,7 +1,8 @@
 //! Core data models for workspace orchestration
 
-use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+
+use serde::{Deserialize, Serialize};
 
 /// Represents a workspace containing multiple projects
 #[derive(Debug, Clone, Serialize, Deserialize)]

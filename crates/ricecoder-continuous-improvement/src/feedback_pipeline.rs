@@ -1,11 +1,14 @@
 //! User feedback collection and analysis pipeline
 
-use crate::types::*;
-use ricecoder_beta::analytics::FeedbackAnalytics;
-use ricecoder_beta::feedback::{FeedbackCollector, FeedbackSeverity, FeedbackType};
 use std::sync::{Arc, Mutex};
-use tokio::sync::mpsc;
-use tokio::time;
+
+use ricecoder_beta::{
+    analytics::FeedbackAnalytics,
+    feedback::{FeedbackCollector, FeedbackSeverity, FeedbackType},
+};
+use tokio::{sync::mpsc, time};
+
+use crate::types::*;
 
 /// Feedback pipeline for collecting and analyzing user feedback
 pub struct FeedbackPipeline {

@@ -2,9 +2,11 @@
 //!
 //! Provides functionality to parse and apply unified diff patches with conflict detection.
 
-use crate::error::ToolError;
-use serde::{Deserialize, Serialize};
 use std::path::Path;
+
+use serde::{Deserialize, Serialize};
+
+use crate::error::ToolError;
 
 /// Input for patch operations
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -365,11 +367,13 @@ impl Default for PatchTool {
 
 /// Provider implementation for patch tool
 pub mod provider {
+    use std::sync::Arc;
+
+    use async_trait::async_trait;
+    use tracing::{debug, warn};
+
     use super::*;
     use crate::provider::Provider;
-    use async_trait::async_trait;
-    use std::sync::Arc;
-    use tracing::{debug, warn};
 
     /// Built-in patch provider
     pub struct BuiltinPatchProvider;
@@ -433,9 +437,11 @@ pub mod provider {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::io::Write;
+
     use tempfile::NamedTempFile;
+
+    use super::*;
 
     #[test]
     fn test_parse_range_single_line() {
@@ -560,8 +566,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_builtin_provider() {
-        use crate::patch::provider::BuiltinPatchProvider;
-        use crate::provider::Provider;
+        use crate::{patch::provider::BuiltinPatchProvider, provider::Provider};
 
         let mut file = NamedTempFile::new().unwrap();
         writeln!(file, "line 1").unwrap();

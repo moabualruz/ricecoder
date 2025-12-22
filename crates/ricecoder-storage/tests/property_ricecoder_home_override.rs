@@ -2,10 +2,10 @@
 //! **Feature: ricecoder-storage, Property 10: RICECODER_HOME Override**
 //! **Validates: Requirements 6.2**
 
+use std::{path::PathBuf, sync::Mutex};
+
 use proptest::prelude::*;
 use ricecoder_storage::PathResolver;
-use std::path::PathBuf;
-use std::sync::Mutex;
 
 // Mutex to serialize environment variable access in tests
 lazy_static::lazy_static! {

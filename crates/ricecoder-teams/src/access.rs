@@ -5,8 +5,10 @@ use std::sync::Arc;
 use ricecoder_permissions::{AuditLogger, PermissionManager};
 use tokio::sync::RwLock;
 
-use crate::error::Result;
-use crate::models::{AuditLogEntry, TeamRole};
+use crate::{
+    error::Result,
+    models::{AuditLogEntry, TeamRole},
+};
 
 /// Manages team member roles and permissions
 pub struct AccessControlManager {

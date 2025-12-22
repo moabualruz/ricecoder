@@ -2,9 +2,10 @@
 //!
 //! Advanced operations for managing discussions
 
-use crate::errors::GitHubError;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info};
+
+use crate::errors::GitHubError;
 
 /// Discussion categorization
 #[derive(Debug, Clone, Serialize, Deserialize)]

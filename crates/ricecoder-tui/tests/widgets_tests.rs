@@ -1,5 +1,7 @@
-use ricecoder_tui::widgets::{MessageAction, StreamingMessage};
-use ricecoder_tui::{ChatWidget, Message, MessageAuthor};
+use ricecoder_tui::{
+    widgets::{MessageAction, StreamingMessage},
+    ChatWidget, Message, MessageAuthor,
+};
 
 #[test]
 fn test_message_creation() {

@@ -1,10 +1,14 @@
 //! Step creation utilities for building execution steps
 
-use crate::error::{ExecutionError, ExecutionResult};
-use crate::models::{ExecutionStep, RollbackAction, RollbackType, StepAction};
+use std::path::Path;
+
 use ricecoder_storage::PathResolver;
 use serde_json::json;
-use std::path::Path;
+
+use crate::{
+    error::{ExecutionError, ExecutionResult},
+    models::{ExecutionStep, RollbackAction, RollbackType, StepAction},
+};
 
 /// Helper for creating execution steps with validation
 pub struct StepCreator;

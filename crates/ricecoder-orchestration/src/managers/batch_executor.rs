@@ -1,12 +1,15 @@
 //! Batch execution of operations across multiple projects
 
-use crate::analyzers::DependencyGraph;
+use std::{collections::HashMap, sync::Arc};
+
+use tokio::sync::Mutex;
+
 #[allow(unused_imports)]
 use crate::error::{OrchestrationError, Result};
-use crate::models::{Operation, Project, Transaction, TransactionState};
-use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::Mutex;
+use crate::{
+    analyzers::DependencyGraph,
+    models::{Operation, Project, Transaction, TransactionState},
+};
 
 /// Trait for operations that can be executed on projects
 pub trait ProjectOperation: Send + Sync {
@@ -230,10 +233,13 @@ impl BatchExecutor {
 
 #[cfg(test)]
 mod tests {
+    use std::{
+        path::PathBuf,
+        sync::atomic::{AtomicUsize, Ordering},
+    };
+
     use super::*;
     use crate::models::{DependencyType, ProjectStatus};
-    use std::path::PathBuf;
-    use std::sync::atomic::{AtomicUsize, Ordering};
 
     fn create_test_project(name: &str) -> Project {
         Project {

@@ -1,9 +1,13 @@
 //! Project analyzer for detecting project type and structure
 
-use crate::error::ResearchError;
-use crate::models::{Framework, Language, ProjectStructure, ProjectType};
 use std::path::{Path, PathBuf};
+
 use walkdir::WalkDir;
+
+use crate::{
+    error::ResearchError,
+    models::{Framework, Language, ProjectStructure, ProjectType},
+};
 
 /// Analyzes project structure and metadata to understand project type and organization
 #[derive(Debug)]
@@ -505,8 +509,9 @@ impl Default for ProjectAnalyzer {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_project_analyzer_creation() {

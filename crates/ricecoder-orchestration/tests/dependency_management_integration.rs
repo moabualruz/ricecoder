@@ -6,11 +6,12 @@
 //! **Feature: ricecoder-orchestration, Integration Tests: Dependency Management**
 //! **Validates: Requirements 3.1, 3.2, 3.3**
 
+use std::path::PathBuf;
+
 use ricecoder_orchestration::{
     DependencyAnalyzer, DependencyGraph, DependencyType, ImpactAnalyzer, ImpactLevel, Project,
     ProjectChange, ProjectDependency, ProjectStatus,
 };
-use std::path::PathBuf;
 
 /// Helper to create a test project
 fn create_test_project(name: &str, version: &str) -> Project {

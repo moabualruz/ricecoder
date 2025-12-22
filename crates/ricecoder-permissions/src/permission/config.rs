@@ -1,7 +1,8 @@
 //! Permission configuration storage
 
-use crate::permission::models::{PermissionLevel, ToolPermission};
 use serde::{Deserialize, Serialize};
+
+use crate::permission::models::{PermissionLevel, ToolPermission};
 
 /// Configuration for storing permissions
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -45,8 +45,7 @@
 //! };
 //! ```
 
-use crate::model::AppMode;
-use crate::style::Color;
+use crate::{model::AppMode, style::Color};
 
 /// Context indicators for the prompt
 #[derive(Debug, Clone)]

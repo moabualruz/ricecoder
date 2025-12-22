@@ -1,11 +1,15 @@
 //! Release Manager - Handles GitHub release creation and management
 
-use crate::errors::{GitHubError, Result};
-use crate::models::Release;
+use std::collections::HashMap;
+
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use tracing::{debug, info};
+
+use crate::{
+    errors::{GitHubError, Result},
+    models::Release,
+};
 
 /// Semantic version
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

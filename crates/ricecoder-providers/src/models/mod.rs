@@ -1,8 +1,8 @@
 //! Data models for providers
 
+use std::{collections::HashMap, time::Duration};
+
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::time::Duration;
 
 /// Information about an available model
 #[derive(Debug, Clone, Serialize, Deserialize)]

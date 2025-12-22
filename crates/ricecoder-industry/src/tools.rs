@@ -1,10 +1,12 @@
 //! Industry tool abstractions and registry
 
-use crate::error::{IndustryError, IndustryResult};
+use std::collections::HashMap;
+
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use tokio::sync::RwLock;
+
+use crate::error::{IndustryError, IndustryResult};
 
 /// Industry tool interface
 #[async_trait]

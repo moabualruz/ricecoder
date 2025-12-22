@@ -1,12 +1,13 @@
 //! Integration tests for provider orchestration with mock providers
 //! Tests provider registry, manager orchestration, and error handling
 
+use std::sync::Arc;
+
 use ricecoder_providers::{
     models::{FinishReason, Message},
     provider::{ChatStream, ProviderManager, ProviderRegistry},
     ChatRequest, ChatResponse, ModelInfo, Provider, ProviderError, TokenUsage,
 };
-use std::sync::Arc;
 
 /// Mock provider for testing
 struct TestProvider {

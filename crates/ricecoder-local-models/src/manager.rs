@@ -1,12 +1,16 @@
 //! Local model manager for handling model lifecycle operations
 
-use crate::error::LocalModelError;
-use crate::models::{LocalModel, ModelMetadata, PullProgress};
-use crate::Result;
+use std::sync::Arc;
+
 use reqwest::Client;
 use serde::Deserialize;
-use std::sync::Arc;
 use tracing::{debug, error, info, warn};
+
+use crate::{
+    error::LocalModelError,
+    models::{LocalModel, ModelMetadata, PullProgress},
+    Result,
+};
 
 /// Ollama API response for model pull
 #[derive(Debug, Deserialize)]

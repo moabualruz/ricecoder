@@ -1,10 +1,13 @@
 // Command routing and dispatch
 // Adapted from automation/src/cli/router.rs
 
-use crate::commands::*;
-use crate::error::{CliError, CliResult};
 use clap::{Parser, Subcommand};
 use ricecoder_mcp::compliance::ComplianceReportType;
+
+use crate::{
+    commands::*,
+    error::{CliError, CliResult},
+};
 
 /// RiceCoder - Terminal-first, spec-driven coding assistant
 #[derive(Parser, Debug)]

@@ -1,12 +1,18 @@
 // Generate code from specification
 // Adapted from automation/src/commands/generate.rs
 
-use super::Command;
-use crate::error::{CliError, CliResult};
-use crate::output::OutputStyle;
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
+
 use async_trait::async_trait;
-use std::fs;
-use std::path::{Path, PathBuf};
+
+use super::Command;
+use crate::{
+    error::{CliError, CliResult},
+    output::OutputStyle,
+};
 
 /// Generate code from a specification
 pub struct GenCommand {

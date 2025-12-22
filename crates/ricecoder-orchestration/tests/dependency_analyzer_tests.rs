@@ -3,10 +3,11 @@
 //! Tests for simple and complex dependency graphs, circular dependency detection,
 //! and transitive dependency resolution.
 
+use std::path::PathBuf;
+
 use ricecoder_orchestration::{
     DependencyAnalyzer, DependencyType, Project, ProjectDependency, ProjectStatus,
 };
-use std::path::PathBuf;
 
 fn create_test_project(name: &str) -> Project {
     Project {

@@ -3,9 +3,9 @@
 //! Parses template syntax, validates structure, extracts placeholders,
 //! and detects conditionals, loops, and includes.
 
-use crate::models::Placeholder;
-use crate::templates::error::TemplateError;
 use std::collections::HashSet;
+
+use crate::{models::Placeholder, templates::error::TemplateError};
 
 /// Represents a parsed template element
 #[derive(Debug, Clone, PartialEq, Eq)]

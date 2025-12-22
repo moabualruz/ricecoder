@@ -3,13 +3,14 @@
 //! Provides functionality to search the web using free APIs or local search engines via MCP.
 //! Implements query validation, injection prevention, and pagination support.
 
-use crate::error::ToolError;
-use crate::result::ToolResult;
+use std::time::Instant;
+
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::time::Instant;
 use tokio::time::timeout;
 use tracing;
+
+use crate::{error::ToolError, result::ToolResult};
 
 /// Maximum timeout for search operations (10 seconds)
 const SEARCH_TIMEOUT_SECS: u64 = 10;

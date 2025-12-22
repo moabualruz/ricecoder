@@ -1,13 +1,14 @@
 //! Domain agent registry and management
 
-use crate::domain_agents::{
-    BackendAgent, DevOpsAgent, DomainAgent, DomainAgentInput, FrontendAgent,
-};
-use crate::error::{DomainAgentError, Result};
-use crate::models::{DomainAgentMetadata, DomainAgentRegistry};
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
+
 use tracing::{debug, info};
+
+use crate::{
+    domain_agents::{BackendAgent, DevOpsAgent, DomainAgent, DomainAgentInput, FrontendAgent},
+    error::{DomainAgentError, Result},
+    models::{DomainAgentMetadata, DomainAgentRegistry},
+};
 
 /// Registry for domain-specific agents
 pub struct DomainAgentRegistryManager {

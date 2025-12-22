@@ -4,9 +4,10 @@
 //! **Feature: ricecoder-storage, Property 13: Merge Decision Logging**
 //! **Validates: Requirements 2.7, 3.3, 3.4**
 
+use std::collections::HashMap;
+
 use proptest::prelude::*;
 use ricecoder_storage::config::{Config, ConfigMerger, DefaultsConfig, ProvidersConfig};
-use std::collections::HashMap;
 
 /// Strategy for generating valid configurations
 fn config_strategy() -> impl Strategy<Value = Config> {

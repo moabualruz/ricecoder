@@ -1,8 +1,11 @@
 //! Agent coordinator for aggregating and prioritizing results
 
-use crate::error::Result;
-use crate::models::{AgentOutput, Finding, Suggestion};
 use std::collections::HashMap;
+
+use crate::{
+    error::Result,
+    models::{AgentOutput, Finding, Suggestion},
+};
 
 /// Represents a finding with its source agent information
 #[derive(Debug, Clone)]

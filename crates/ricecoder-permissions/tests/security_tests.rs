@@ -5,12 +5,13 @@
 //! - Audit logs don't contain sensitive data (no passwords/tokens)
 //! - Permission overrides require explicit action
 
+use std::sync::Arc;
+
 use ricecoder_permissions::{
     audit::{AuditAction, AuditResult},
     AgentExecutor, AuditLogger, InMemoryPermissionRepository, PermissionConfig, PermissionLevel,
     PermissionRepository, ToolPermission,
 };
-use std::sync::Arc;
 
 // ============================================================================
 // Security Test 1: Permissions Enforced for All Tool Executions

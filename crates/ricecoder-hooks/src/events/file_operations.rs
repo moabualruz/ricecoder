@@ -18,9 +18,9 @@
 //! };
 //! ```
 
+use std::{path::PathBuf, time::SystemTime};
+
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
-use std::time::SystemTime;
 
 /// File operation event types
 ///

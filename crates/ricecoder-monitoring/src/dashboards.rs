@@ -1,8 +1,10 @@
 //! Dashboard management and visualization
 
-use crate::types::*;
-use chrono::Utc;
 use std::collections::HashMap;
+
+use chrono::Utc;
+
+use crate::types::*;
 
 /// Dashboard manager
 pub struct DashboardManager {

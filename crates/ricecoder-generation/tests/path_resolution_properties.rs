@@ -3,10 +3,10 @@
 //! **Feature: ricecoder-path-resolution, Property 2: Environment Variable Override**
 //! **Validates: Requirements 1.1, 1.2, 1.3**
 
+use std::{path::PathBuf, sync::Mutex};
+
 use proptest::prelude::*;
 use ricecoder_storage::PathResolver;
-use std::path::PathBuf;
-use std::sync::Mutex;
 
 // Mutex to serialize environment variable tests to prevent race conditions
 lazy_static::lazy_static! {

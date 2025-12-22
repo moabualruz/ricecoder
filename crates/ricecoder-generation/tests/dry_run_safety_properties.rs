@@ -5,10 +5,12 @@
 //!
 //! Property: For any dry-run generation, no files SHALL be written or modified.
 
-use proptest::prelude::*;
-use ricecoder_generation::conflict_resolver::ConflictStrategy;
-use ricecoder_generation::{GeneratedFile, OutputWriter, OutputWriterConfig};
 use std::fs;
+
+use proptest::prelude::*;
+use ricecoder_generation::{
+    conflict_resolver::ConflictStrategy, GeneratedFile, OutputWriter, OutputWriterConfig,
+};
 use tempfile::TempDir;
 
 /// Strategy for generating file paths

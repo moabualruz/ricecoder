@@ -1,10 +1,13 @@
 //! History management and navigation
 
-use crate::change::Change;
-use crate::error::UndoRedoError;
+use std::{
+    collections::{HashMap, HashSet},
+    path::PathBuf,
+};
+
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
-use std::path::PathBuf;
+
+use crate::{change::Change, error::UndoRedoError};
 
 /// Represents a single entry in the change history
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -123,7 +126,11 @@ impl HistoryManager {
             // Remove oldest undo entry
             let removed = self.undo_stack.remove(0);
             // Mark as removed in all_changes if found
-            if let Some(entry) = self.all_changes.iter_mut().find(|e| e.change.id == removed.id) {
+            if let Some(entry) = self
+                .all_changes
+                .iter_mut()
+                .find(|e| e.change.id == removed.id)
+            {
                 entry.is_undone = true; // Mark as effectively undone
             }
         }
@@ -145,7 +152,10 @@ impl HistoryManager {
         if self.config.session_scoped {
             if let Some(session_id) = &session_id {
                 let session_entry = HistoryEntry::new(change.clone(), index);
-                self.session_changes.entry(session_id.clone()).or_insert_with(Vec::new).push(session_entry);
+                self.session_changes
+                    .entry(session_id.clone())
+                    .or_insert_with(Vec::new)
+                    .push(session_entry);
             }
         }
 
@@ -156,20 +166,24 @@ impl HistoryManager {
             session_id: session_id,
             timestamp: change.timestamp,
         };
-        self.file_changes.entry(file_change_info.file_path.clone()).or_insert_with(Vec::new).push(file_change_info);
+        self.file_changes
+            .entry(file_change_info.file_path.clone())
+            .or_insert_with(Vec::new)
+            .push(file_change_info);
 
         Ok(())
     }
 
     /// Perform an undo operation
     pub fn undo(&mut self) -> Result<Change, UndoRedoError> {
-        let change = self
-            .undo_stack
-            .pop()
-            .ok_or(UndoRedoError::NoMoreUndos)?;
+        let change = self.undo_stack.pop().ok_or(UndoRedoError::NoMoreUndos)?;
 
         // Mark as undone in history
-        if let Some(entry) = self.all_changes.iter_mut().rev().find(|e| e.change.id == change.id)
+        if let Some(entry) = self
+            .all_changes
+            .iter_mut()
+            .rev()
+            .find(|e| e.change.id == change.id)
         {
             entry.is_undone = true;
         }
@@ -182,13 +196,14 @@ impl HistoryManager {
 
     /// Perform a redo operation
     pub fn redo(&mut self) -> Result<Change, UndoRedoError> {
-        let change = self
-            .redo_stack
-            .pop()
-            .ok_or(UndoRedoError::NoMoreRedos)?;
+        let change = self.redo_stack.pop().ok_or(UndoRedoError::NoMoreRedos)?;
 
         // Mark as not undone in history
-        if let Some(entry) = self.all_changes.iter_mut().rev().find(|e| e.change.id == change.id)
+        if let Some(entry) = self
+            .all_changes
+            .iter_mut()
+            .rev()
+            .find(|e| e.change.id == change.id)
         {
             entry.is_undone = false;
         }
@@ -206,14 +221,16 @@ impl HistoryManager {
 
     /// Get changes for a specific session
     pub fn get_session_changes(&self, session_id: &str) -> Vec<&HistoryEntry> {
-        self.session_changes.get(session_id)
+        self.session_changes
+            .get(session_id)
             .map(|changes| changes.iter().collect())
             .unwrap_or_default()
     }
 
     /// Get changes for a specific file
     pub fn get_file_changes(&self, file_path: &PathBuf) -> Vec<&FileChangeInfo> {
-        self.file_changes.get(file_path)
+        self.file_changes
+            .get(file_path)
             .map(|changes| changes.iter().collect())
             .unwrap_or_default()
     }
@@ -253,7 +270,8 @@ impl HistoryManager {
             session_changes.clear();
         }
         // Also remove from main history (simplified - in practice would need more sophisticated filtering)
-        self.all_changes.retain(|entry| entry.session_id.as_ref() != Some(&session_id.to_string()));
+        self.all_changes
+            .retain(|entry| entry.session_id.as_ref() != Some(&session_id.to_string()));
     }
 
     /// Save history to persistent storage (if enabled)
@@ -282,7 +300,9 @@ impl HistoryManager {
 
             Ok(())
         } else {
-            Err(UndoRedoError::PersistenceError("Persistence directory not configured".to_string()))
+            Err(UndoRedoError::PersistenceError(
+                "Persistence directory not configured".to_string(),
+            ))
         }
     }
 
@@ -321,7 +341,9 @@ impl HistoryManager {
 
             Ok(())
         } else {
-            Err(UndoRedoError::PersistenceError("Persistence directory not configured".to_string()))
+            Err(UndoRedoError::PersistenceError(
+                "Persistence directory not configured".to_string(),
+            ))
         }
     }
 
@@ -388,14 +410,8 @@ mod tests {
     #[test]
     fn test_history_manager_record_change() {
         let mut manager = HistoryManager::new();
-        let change = Change::new(
-            "test.txt",
-            "before",
-            "after",
-            "Modify",
-            ChangeType::Modify,
-        )
-        .unwrap();
+        let change =
+            Change::new("test.txt", "before", "after", "Modify", ChangeType::Modify).unwrap();
         let result = manager.record_change(change);
         assert!(result.is_ok());
         assert_eq!(manager.total_changes(), 1);
@@ -405,14 +421,8 @@ mod tests {
     #[test]
     fn test_history_manager_undo() {
         let mut manager = HistoryManager::new();
-        let change = Change::new(
-            "test.txt",
-            "before",
-            "after",
-            "Modify",
-            ChangeType::Modify,
-        )
-        .unwrap();
+        let change =
+            Change::new("test.txt", "before", "after", "Modify", ChangeType::Modify).unwrap();
         manager.record_change(change.clone()).unwrap();
 
         let undone = manager.undo();
@@ -424,14 +434,8 @@ mod tests {
     #[test]
     fn test_history_manager_redo() {
         let mut manager = HistoryManager::new();
-        let change = Change::new(
-            "test.txt",
-            "before",
-            "after",
-            "Modify",
-            ChangeType::Modify,
-        )
-        .unwrap();
+        let change =
+            Change::new("test.txt", "before", "after", "Modify", ChangeType::Modify).unwrap();
         manager.record_change(change).unwrap();
         manager.undo().unwrap();
 
@@ -509,14 +513,8 @@ mod tests {
     #[test]
     fn test_history_manager_get_change_details() {
         let mut manager = HistoryManager::new();
-        let change = Change::new(
-            "test.txt",
-            "before",
-            "after",
-            "Modify",
-            ChangeType::Modify,
-        )
-        .unwrap();
+        let change =
+            Change::new("test.txt", "before", "after", "Modify", ChangeType::Modify).unwrap();
         let change_id = change.id.clone();
         manager.record_change(change).unwrap();
 
@@ -528,30 +526,12 @@ mod tests {
     #[test]
     fn test_history_manager_get_changes_by_file() {
         let mut manager = HistoryManager::new();
-        let change1 = Change::new(
-            "file1.txt",
-            "before",
-            "after",
-            "Modify",
-            ChangeType::Modify,
-        )
-        .unwrap();
-        let change2 = Change::new(
-            "file2.txt",
-            "before",
-            "after",
-            "Modify",
-            ChangeType::Modify,
-        )
-        .unwrap();
-        let change3 = Change::new(
-            "file1.txt",
-            "before",
-            "after",
-            "Modify",
-            ChangeType::Modify,
-        )
-        .unwrap();
+        let change1 =
+            Change::new("file1.txt", "before", "after", "Modify", ChangeType::Modify).unwrap();
+        let change2 =
+            Change::new("file2.txt", "before", "after", "Modify", ChangeType::Modify).unwrap();
+        let change3 =
+            Change::new("file1.txt", "before", "after", "Modify", ChangeType::Modify).unwrap();
 
         manager.record_change(change1).unwrap();
         manager.record_change(change2).unwrap();
@@ -564,20 +544,19 @@ mod tests {
 
 #[cfg(test)]
 mod property_tests {
+    use proptest::prelude::*;
+
     use super::*;
     use crate::change::ChangeType;
-    use proptest::prelude::*;
 
     /// Strategy for generating valid file paths
     fn file_path_strategy() -> impl Strategy<Value = String> {
-        r"[a-zA-Z0-9_\-./]{1,50}\.rs"
-            .prop_map(|s| s.to_string())
+        r"[a-zA-Z0-9_\-./]{1,50}\.rs".prop_map(|s| s.to_string())
     }
 
     /// Strategy for generating valid content (non-empty, non-whitespace-only)
     fn content_strategy() -> impl Strategy<Value = String> {
-        r"[a-zA-Z0-9]{1,100}"
-            .prop_map(|s| s.to_string())
+        r"[a-zA-Z0-9]{1,100}".prop_map(|s| s.to_string())
     }
 
     proptest! {

@@ -1,10 +1,14 @@
 //! PR Manager - Handles pull request creation and management
 
-use crate::errors::{GitHubError, Result};
-use crate::models::{FileChange, PrStatus, PullRequest};
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 use tracing::{debug, info};
+
+use crate::{
+    errors::{GitHubError, Result},
+    models::{FileChange, PrStatus, PullRequest},
+};
 
 /// PR template configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]

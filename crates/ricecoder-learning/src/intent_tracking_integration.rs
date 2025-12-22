@@ -1,16 +1,20 @@
+use std::sync::Arc;
+
+use tokio::sync::RwLock;
+
 /// Integration of IntentTracker with LearningManager
 ///
 /// Provides methods for tracking architectural intent and detecting drift
 /// as part of the learning system.
 use crate::drift_detector::{DriftDetectionConfig, DriftDetector};
-use crate::error::Result;
-use crate::intent_tracker::{
-    ArchitecturalDecision, ArchitecturalEvolution, ArchitecturalSummary, DriftDetection,
-    IntentTracker,
+use crate::{
+    error::Result,
+    intent_tracker::{
+        ArchitecturalDecision, ArchitecturalEvolution, ArchitecturalSummary, DriftDetection,
+        IntentTracker,
+    },
+    models::LearnedPattern,
 };
-use crate::models::LearnedPattern;
-use std::sync::Arc;
-use tokio::sync::RwLock;
 
 /// Intent tracking integration for the learning manager
 pub struct IntentTrackingIntegration {

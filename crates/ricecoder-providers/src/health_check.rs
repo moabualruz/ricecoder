@@ -1,13 +1,15 @@
 //! Health check system with caching and timeout support
 
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, Instant},
+};
+
 use tokio::sync::RwLock;
 use tracing::{debug, warn};
 
-use crate::error::ProviderError;
-use crate::provider::Provider;
+use crate::{error::ProviderError, provider::Provider};
 
 /// Health check result with timestamp
 #[derive(Clone, Debug)]

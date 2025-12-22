@@ -1,7 +1,8 @@
 //! Audit logger implementation
 
-use super::models::{AuditAction, AuditLogEntry, AuditResult};
 use std::sync::{Arc, RwLock};
+
+use super::models::{AuditAction, AuditLogEntry, AuditResult};
 
 /// Audit logger for recording permission checks and denials
 #[derive(Clone)]

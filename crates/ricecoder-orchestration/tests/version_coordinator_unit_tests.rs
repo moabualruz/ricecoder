@@ -1,10 +1,11 @@
 //! Unit tests for VersionCoordinator
 //! Tests version update propagation, constraint validation, and edge cases
 
+use std::path::PathBuf;
+
 use ricecoder_orchestration::{
     DependencyGraph, Project, ProjectStatus, Version, VersionCoordinator, VersionValidator,
 };
-use std::path::PathBuf;
 
 fn create_project(name: &str, version: &str) -> Project {
     Project {

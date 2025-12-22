@@ -1,12 +1,15 @@
+use std::{
+    collections::HashMap,
+    path::PathBuf,
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
+
+use ricecoder_storage::PathResolver;
+use tokio::{sync::RwLock, time::sleep};
+
 /// Synchronization and hot-reload support
 use crate::error::{Result, TeamError};
-use ricecoder_storage::PathResolver;
-use std::collections::HashMap;
-use std::path::PathBuf;
-use std::sync::Arc;
-use std::time::{Duration, SystemTime};
-use tokio::sync::RwLock;
-use tokio::time::sleep;
 
 /// Configuration change event
 #[derive(Debug, Clone)]

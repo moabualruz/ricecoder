@@ -1,12 +1,14 @@
-use crate::config::ConfigManager;
-use crate::error::{CommandError, Result};
-use crate::output_injection::{OutputInjectionConfig, OutputInjector};
-use crate::registry::CommandRegistry;
-use crate::types::{
-    ArgumentType, CommandArgument, CommandContext, CommandDefinition, CommandExecutionResult,
+use std::{collections::HashMap, path::Path};
+
+use crate::{
+    config::ConfigManager,
+    error::{CommandError, Result},
+    output_injection::{OutputInjectionConfig, OutputInjector},
+    registry::CommandRegistry,
+    types::{
+        ArgumentType, CommandArgument, CommandContext, CommandDefinition, CommandExecutionResult,
+    },
 };
-use std::collections::HashMap;
-use std::path::Path;
 
 /// High-level command manager for executing and managing commands
 pub struct CommandManager {
@@ -250,8 +252,10 @@ impl CommandManager {
         command: &CommandDefinition,
         context: &CommandContext,
     ) -> Result<CommandExecutionResult> {
-        use std::process::{Command, Stdio};
-        use std::time::Instant;
+        use std::{
+            process::{Command, Stdio},
+            time::Instant,
+        };
 
         let start_time = Instant::now();
 

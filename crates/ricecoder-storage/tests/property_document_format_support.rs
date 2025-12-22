@@ -4,8 +4,10 @@
 //! **Validates: Requirements 2.3, 2.4**
 
 use proptest::prelude::*;
-use ricecoder_storage::config::{Document, DocumentLoader};
-use ricecoder_storage::types::DocumentFormat;
+use ricecoder_storage::{
+    config::{Document, DocumentLoader},
+    types::DocumentFormat,
+};
 use tempfile::TempDir;
 
 /// Strategy for generating valid document content

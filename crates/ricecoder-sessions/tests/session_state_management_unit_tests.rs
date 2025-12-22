@@ -2,12 +2,12 @@
 //! **Feature: ricecoder-sessions, Unit Tests: State Management**
 //! **Validates: Requirements 1.5, 1.6, 1.7**
 
+use std::{collections::HashMap, sync::Arc};
+
 use ricecoder_sessions::{
     BackgroundAgent, BackgroundAgentManager, ContextManager, HistoryManager, Message, MessageRole,
     Session, SessionContext, SessionManager, SessionMode, SessionStatus, SessionStore,
 };
-use std::collections::HashMap;
-use std::sync::Arc;
 use tempfile::TempDir;
 use tokio::sync::Mutex;
 

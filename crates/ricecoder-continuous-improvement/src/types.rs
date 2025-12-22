@@ -1,9 +1,10 @@
 //! Common types for the continuous improvement pipeline
 
+use std::collections::HashMap;
+
 use chrono::{DateTime, TimeDelta, Utc};
 use ricecoder_monitoring::types::ComplianceStatus;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// Configuration for the continuous improvement pipeline
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -2,10 +2,13 @@
 // **Feature: ricecoder-cli, Property 13: Error Recovery Without Panic**
 // **Validates: Requirements 9.1, 9.2, 9.3**
 
+use std::{
+    sync::{Arc, Mutex},
+    thread,
+};
+
 use proptest::prelude::*;
 use ricecoder_cli::sync_utils::{safe_lock, safe_lock_optional, SafeLockable};
-use std::sync::{Arc, Mutex};
-use std::thread;
 
 // ============================================================================
 // Property 13: Error Recovery Without Panic

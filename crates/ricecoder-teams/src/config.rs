@@ -1,13 +1,13 @@
-/// Team configuration management
-use crate::error::{Result, TeamError};
-use crate::models::{MergedStandards, StandardsOverride, TeamStandards};
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
+
 use chrono::Utc;
 use ricecoder_storage::PathResolver;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::path::PathBuf;
-use std::sync::Arc;
 use tokio::sync::RwLock;
+
+/// Team configuration management
+use crate::error::{Result, TeamError};
+use crate::models::{MergedStandards, StandardsOverride, TeamStandards};
 
 /// Change history entry for tracking modifications
 #[derive(Debug, Clone, Serialize, Deserialize)]

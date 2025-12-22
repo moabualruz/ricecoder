@@ -1,14 +1,18 @@
 //! Automatic update checking with enterprise policy controls
 
-use crate::error::{Result, UpdateError};
-use crate::models::{ReleaseChannel, ReleaseInfo, UpdateCheckResult};
-use crate::policy::{PolicyResult, UpdatePolicy};
+use std::sync::Arc;
+
 use chrono::{DateTime, Duration, Utc};
 use reqwest::Client;
 use semver::Version;
-use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};
+
+use crate::{
+    error::{Result, UpdateError},
+    models::{ReleaseChannel, ReleaseInfo, UpdateCheckResult},
+    policy::{PolicyResult, UpdatePolicy},
+};
 
 /// Update checker service
 #[derive(Clone)]
@@ -278,9 +282,10 @@ impl BackgroundChecker {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use super::*;
     use crate::models::{ReleaseChannel, SecurityRequirements, UpdatePolicyConfig};
-    use std::str::FromStr;
 
     #[tokio::test]
     async fn test_update_checker_creation() {

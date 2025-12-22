@@ -1,14 +1,18 @@
 //! LSP client connection management
 
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, Instant},
+};
+
+use serde_json::Value;
+use tokio::sync::{broadcast, RwLock};
+
 use super::protocol::{
     JsonRpcHandler, JsonRpcNotification, JsonRpcRequest, JsonRpcResponse, RequestId,
 };
 use crate::error::{ExternalLspError, Result};
-use serde_json::Value;
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
-use tokio::sync::{broadcast, RwLock};
 
 /// A pending request awaiting a response
 pub struct PendingRequest {

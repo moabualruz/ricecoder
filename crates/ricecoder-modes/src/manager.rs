@@ -1,12 +1,14 @@
 //! Mode manager for lifecycle and transitions
 
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
+
 use tokio::sync::RwLock;
 
-use crate::error::{ModeError, Result};
-use crate::mode::Mode;
-use crate::models::ModeContext;
+use crate::{
+    error::{ModeError, Result},
+    mode::Mode,
+    models::ModeContext,
+};
 
 /// Central coordinator for mode lifecycle and transitions
 ///

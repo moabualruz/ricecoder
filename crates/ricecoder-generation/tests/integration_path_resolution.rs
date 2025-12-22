@@ -1,10 +1,10 @@
 // Integration tests for path resolution
 // **Feature: ricecoder-path-resolution, Tests for Requirements 4.3, 4.4**
 
+use std::{fs, path::PathBuf};
+
 use ricecoder_generation::prompt_builder::PromptBuilder;
 use ricecoder_storage::PathResolver;
-use std::fs;
-use std::path::PathBuf;
 use tempfile::TempDir;
 
 // ============================================================================

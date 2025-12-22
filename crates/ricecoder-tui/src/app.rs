@@ -1,32 +1,37 @@
 //! Application state and main TUI application
 
-use crate::accessibility::{
-    FocusManager, KeyboardNavigationManager, ScreenReaderAnnouncer, StateChangeEvent,
-};
-use crate::components::Component;
-use crate::error_handling::{ErrorCategory, ErrorManager, ErrorSeverity, RiceError};
-use crate::event::{Event, EventLoop};
-use crate::image_integration::ImageIntegration;
-use crate::integration::WidgetIntegration;
-use crate::model::{AppMode, PendingOperation};
-use crate::render::Renderer;
-use crate::style::Theme;
-use crate::tea::ReactiveState;
-use crate::terminal_state::TerminalCapabilities;
-use crate::theme::ThemeManager;
+use std::{collections::HashMap, sync::Arc};
+
 use anyhow::Result;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use ratatui::backend::CrosstermBackend;
-use ratatui::layout::{Constraint, Direction, Layout, Rect};
-use ratatui::prelude::*;
-use ratatui::style::{Color, Style};
-use ratatui::text::Line;
-use ratatui::widgets::{Block, Borders, Paragraph};
-use ratatui::Terminal;
+use ratatui::{
+    backend::CrosstermBackend,
+    layout::{Constraint, Direction, Layout, Rect},
+    prelude::*,
+    style::{Color, Style},
+    text::Line,
+    widgets::{Block, Borders, Paragraph},
+    Terminal,
+};
 use ricecoder_storage::TuiConfig;
-use std::collections::HashMap;
-use std::sync::Arc;
 use tokio::sync::RwLock;
+
+use crate::{
+    accessibility::{
+        FocusManager, KeyboardNavigationManager, ScreenReaderAnnouncer, StateChangeEvent,
+    },
+    components::Component,
+    error_handling::{ErrorCategory, ErrorManager, ErrorSeverity, RiceError},
+    event::{Event, EventLoop},
+    image_integration::ImageIntegration,
+    integration::WidgetIntegration,
+    model::{AppMode, PendingOperation},
+    render::Renderer,
+    style::Theme,
+    tea::ReactiveState,
+    terminal_state::TerminalCapabilities,
+    theme::ThemeManager,
+};
 
 /// Main application state - TEA Architecture Integration
 pub struct App {

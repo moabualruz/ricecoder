@@ -5,8 +5,10 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::coordinator::AgentCoordinator;
-    use crate::models::{AgentMetadata, AgentOutput, Finding, Severity};
+    use crate::{
+        coordinator::AgentCoordinator,
+        models::{AgentMetadata, AgentOutput, Finding, Severity},
+    };
 
     fn create_finding(id: &str, severity: Severity, category: &str, message: &str) -> Finding {
         Finding {

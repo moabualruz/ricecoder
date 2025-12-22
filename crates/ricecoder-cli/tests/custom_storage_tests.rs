@@ -2,8 +2,9 @@ use ricecoder_cli::*;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_storage_creation() {

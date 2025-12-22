@@ -3,13 +3,17 @@
 //! Wraps the WorkflowEngine's StepExecutor and provides high-level
 //! step execution with progress reporting and error handling.
 
-use crate::error::{ExecutionError, ExecutionResult};
-use crate::models::{
-    BatchExecutionConfig, BatchExecutionOutput, BatchExecutionResult, BatchExecutionSummary,
-    CommandOutput, ExecutionPlan, ExecutionStep, StepAction, StepResult,
-};
 use std::time::Instant;
+
 use tracing::{debug, error, info, warn};
+
+use crate::{
+    error::{ExecutionError, ExecutionResult},
+    models::{
+        BatchExecutionConfig, BatchExecutionOutput, BatchExecutionResult, BatchExecutionSummary,
+        CommandOutput, ExecutionPlan, ExecutionStep, StepAction, StepResult,
+    },
+};
 
 /// Executes steps from an execution plan
 ///
@@ -443,9 +447,10 @@ impl Default for StepExecutor {
 
 #[cfg(test)]
 mod tests {
+    use uuid::Uuid;
+
     use super::*;
     use crate::models::{RiskScore, StepStatus};
-    use uuid::Uuid;
 
     fn create_test_step(description: &str, action: StepAction) -> ExecutionStep {
         ExecutionStep {

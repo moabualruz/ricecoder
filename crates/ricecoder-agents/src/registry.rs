@@ -1,12 +1,15 @@
 //! Agent registry for discovering and managing agents
 
-use crate::agents::Agent;
-use crate::error::{AgentError, Result};
-use crate::models::TaskType;
+use std::{collections::HashMap, sync::Arc};
+
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::sync::Arc;
 use tracing::{debug, info};
+
+use crate::{
+    agents::Agent,
+    error::{AgentError, Result},
+    models::TaskType,
+};
 
 /// Metadata about a registered agent
 ///

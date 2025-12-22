@@ -1,11 +1,13 @@
 //! Enterprise compliance and audit logging
 
-use crate::error::IndustryResult;
+use std::collections::HashMap;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use tokio::sync::RwLock;
 use uuid::Uuid;
+
+use crate::error::IndustryResult;
 
 /// Audit log entry
 #[derive(Debug, Clone, Serialize, Deserialize)]

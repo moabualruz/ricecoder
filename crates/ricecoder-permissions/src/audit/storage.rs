@@ -1,8 +1,11 @@
 //! Audit log persistence to JSON files
 
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
+
 use super::models::AuditLogEntry;
-use std::fs;
-use std::path::{Path, PathBuf};
 
 /// Audit log storage for persisting logs to disk
 pub struct AuditStorage {
@@ -80,9 +83,10 @@ impl AuditStorage {
 
 #[cfg(test)]
 mod tests {
+    use tempfile::TempDir;
+
     use super::*;
     use crate::audit::models::{AuditAction, AuditResult};
-    use tempfile::TempDir;
 
     #[test]
     fn test_save_and_load_logs() {

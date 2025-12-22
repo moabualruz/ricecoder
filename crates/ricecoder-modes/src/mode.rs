@@ -1,10 +1,11 @@
 //! Mode trait definition
 
-use crate::error::Result;
-use crate::models::{
-    Capability, ModeConfig, ModeConstraints, ModeContext, ModeResponse, Operation,
-};
 use async_trait::async_trait;
+
+use crate::{
+    error::Result,
+    models::{Capability, ModeConfig, ModeConstraints, ModeContext, ModeResponse, Operation},
+};
 
 /// Trait that all modes must implement
 ///

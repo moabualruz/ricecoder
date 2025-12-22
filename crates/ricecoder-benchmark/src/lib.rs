@@ -7,8 +7,9 @@ pub mod runner;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::tempdir;
+
+    use super::*;
 
     #[test]
     fn test_exercise_loading() {

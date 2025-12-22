@@ -3,8 +3,9 @@
 //! This module provides configuration merging with the following precedence:
 //! environment > project > legacy > global > defaults
 
-use super::Config;
 use tracing::debug;
+
+use super::Config;
 
 /// Configuration merger
 pub struct ConfigMerger;

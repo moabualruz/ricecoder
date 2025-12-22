@@ -1,13 +1,15 @@
+use std::collections::HashMap;
+
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+
 /// Architectural intent tracking component
 ///
 /// Tracks architectural decisions and patterns over time, detecting evolution
 /// and drift from established architectural patterns.
 use crate::error::{LearningError, Result};
 use crate::models::{LearnedPattern, PatternExample};
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use uuid::Uuid;
 
 /// Represents an architectural decision
 #[derive(Debug, Clone, Serialize, Deserialize)]

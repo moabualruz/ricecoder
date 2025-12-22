@@ -1,14 +1,19 @@
 //! Code Mode implementation for code generation and execution
 
-use async_trait::async_trait;
-use std::path::{Path, PathBuf};
-use std::time::Instant;
+use std::{
+    path::{Path, PathBuf},
+    time::Instant,
+};
 
-use crate::error::Result;
-use crate::mode::Mode;
-use crate::models::{
-    Capability, ChangeSummary, ComplexityLevel, ModeAction, ModeConfig, ModeConstraints,
-    ModeContext, ModeResponse, Operation,
+use async_trait::async_trait;
+
+use crate::{
+    error::Result,
+    mode::Mode,
+    models::{
+        Capability, ChangeSummary, ComplexityLevel, ModeAction, ModeConfig, ModeConstraints,
+        ModeContext, ModeResponse, Operation,
+    },
 };
 
 /// Code Mode for focused code generation and modification

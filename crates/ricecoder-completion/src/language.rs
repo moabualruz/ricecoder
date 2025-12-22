@@ -1,10 +1,11 @@
+use std::path::Path;
+
 /// Language detection and identification utilities
 ///
 /// This module provides language detection capabilities for code completion,
 /// including file extension detection, content-based detection, and language
 /// identification for supported programming languages.
 use serde::{Deserialize, Serialize};
-use std::path::Path;
 
 /// Supported programming languages for code completion
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]

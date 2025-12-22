@@ -3,9 +3,11 @@
 //! This module provides adapter wrappers that allow existing language-specific code actions
 //! to be used as pluggable providers in the configuration-driven architecture.
 
-use crate::config::LanguageConfig;
-use crate::providers::{CodeActionProvider, ProviderResult};
-use crate::types::Diagnostic;
+use crate::{
+    config::LanguageConfig,
+    providers::{CodeActionProvider, ProviderResult},
+    types::Diagnostic,
+};
 
 /// Adapter for Rust code actions provider
 pub struct RustCodeActionAdapter {

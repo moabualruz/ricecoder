@@ -1,9 +1,11 @@
 //! Business intelligence and compliance reporting
 
-use crate::types::*;
+use std::collections::HashMap;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+
+use crate::types::*;
 
 /// Report generator
 pub struct ReportGenerator;

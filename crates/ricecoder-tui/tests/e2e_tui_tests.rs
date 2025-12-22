@@ -2,12 +2,15 @@
 //! Tests complete user workflows and component interactions
 //! Validates Requirements 12.1, 12.2
 
+use std::{
+    io::{self, Write},
+    sync::mpsc,
+    thread,
+    time::Duration,
+};
+
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ricecoder_tui::{App, AppMode};
-use std::io::{self, Write};
-use std::sync::mpsc;
-use std::thread;
-use std::time::Duration;
 
 // ============================================================================
 // E2E Test Infrastructure

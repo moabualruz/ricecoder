@@ -1,9 +1,11 @@
 //! Banner rendering with SVG support and fallback options.
 
-use crate::error::{ImageError, ImageResult};
 use std::path::Path;
+
 use tracing::{debug, warn};
 use usvg::TreeParsing;
+
+use crate::error::{ImageError, ImageResult};
 
 /// Banner renderer that supports multiple output formats.
 pub struct BannerRenderer {
@@ -374,10 +376,11 @@ impl Default for ThemeColors {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use std::io::Write;
-    use std::path::PathBuf;
+    use std::{io::Write, path::PathBuf};
+
     use tempfile::NamedTempFile;
+
+    use super::*;
 
     #[test]
     fn test_banner_config_default() {

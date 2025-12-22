@@ -2,8 +2,9 @@
 //! **Feature: ricecoder-sessions, Unit Tests: SessionStore**
 //! **Validates: Requirements 2.1, 2.2**
 
-use ricecoder_sessions::{Session, SessionContext, SessionMode, SessionStore};
 use std::fs;
+
+use ricecoder_sessions::{Session, SessionContext, SessionMode, SessionStore};
 use tempfile::TempDir;
 
 fn create_test_session(name: &str) -> Session {

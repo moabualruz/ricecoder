@@ -2,9 +2,9 @@
 // **Feature: ricecoder-init-non-interactive, Property 8: Non-Interactive Init Determinism**
 // **Validates: Requirements 6.1, 6.5**
 
+use std::{fs, path::PathBuf};
+
 use proptest::prelude::*;
-use std::fs;
-use std::path::PathBuf;
 use tempfile::TempDir;
 
 /// Helper function to run init command in non-interactive mode

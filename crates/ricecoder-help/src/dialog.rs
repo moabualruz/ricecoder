@@ -1,6 +1,5 @@
 //! Help dialog widget implementation
 
-use crate::{HelpContent, HelpSearch, Result};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Margin, Rect},
@@ -11,6 +10,8 @@ use ratatui::{
     },
     Frame,
 };
+
+use crate::{HelpContent, HelpSearch, Result};
 
 /// Help dialog state
 #[derive(Debug, Clone, PartialEq)]

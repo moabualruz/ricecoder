@@ -3,8 +3,9 @@
 /// **Validates: Requirements 4.5**
 #[cfg(test)]
 mod tests {
-    use crate::{ComplexityDetector, ComplexityLevel, ThinkMoreController};
     use proptest::prelude::*;
+
+    use crate::{ComplexityDetector, ComplexityLevel, ThinkMoreController};
 
     proptest! {
         /// Property: Complex tasks auto-enable Think More when auto-enable is enabled

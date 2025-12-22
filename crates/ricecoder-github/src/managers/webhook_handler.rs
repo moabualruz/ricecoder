@@ -1,12 +1,13 @@
 //! Webhook Handler - Processes GitHub webhooks and triggers workflows
 
-use crate::errors::{GitHubError, Result};
+use std::{collections::HashMap, sync::Arc};
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::HashMap;
-use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{debug, info};
+
+use crate::errors::{GitHubError, Result};
 
 /// Webhook event type
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -440,8 +441,9 @@ impl Clone for WebhookHandler {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use serde_json::json;
+
+    use super::*;
 
     #[test]
     fn test_event_filter_matches_event_type() {

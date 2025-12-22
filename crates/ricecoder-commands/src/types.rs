@@ -1,5 +1,6 @@
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 
 /// A custom command definition
 #[derive(Debug, Clone, Serialize, Deserialize)]

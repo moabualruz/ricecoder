@@ -1,10 +1,11 @@
 //! Property-based tests for audit trail completeness
 //! **Feature: ricecoder-files, Property 7: Audit Trail Completeness**
 
+use std::path::PathBuf;
+
 use chrono::Utc;
 use proptest::prelude::*;
 use ricecoder_files::{AuditEntry, AuditLogger, OperationType};
-use std::path::PathBuf;
 use tempfile::TempDir;
 use uuid::Uuid;
 

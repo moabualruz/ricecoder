@@ -5,21 +5,30 @@
 //! Integrates with ricecoder-storage for cross-platform path resolution and
 //! configuration hierarchy management.
 
-use super::loader::ConfigLoader;
-use super::types::{ConfigRegistry, ConfigResult, LanguageConfig};
-use crate::code_actions::adapters::{
-    PythonCodeActionAdapter, RustCodeActionAdapter, TypeScriptCodeActionAdapter,
+use std::{
+    path::PathBuf,
+    sync::{Arc, RwLock},
 };
-use crate::diagnostics::adapters::{
-    PythonDiagnosticsAdapter, RustDiagnosticsAdapter, TypeScriptDiagnosticsAdapter,
-};
-use crate::providers::{CodeActionRegistry, DiagnosticsRegistry, SemanticAnalyzerRegistry};
-use crate::semantic::adapters::{
-    FallbackAnalyzerAdapter, PythonAnalyzerAdapter, RustAnalyzerAdapter, TypeScriptAnalyzerAdapter,
-};
+
 use ricecoder_storage::PathResolver;
-use std::path::PathBuf;
-use std::sync::{Arc, RwLock};
+
+use super::{
+    loader::ConfigLoader,
+    types::{ConfigRegistry, ConfigResult, LanguageConfig},
+};
+use crate::{
+    code_actions::adapters::{
+        PythonCodeActionAdapter, RustCodeActionAdapter, TypeScriptCodeActionAdapter,
+    },
+    diagnostics::adapters::{
+        PythonDiagnosticsAdapter, RustDiagnosticsAdapter, TypeScriptDiagnosticsAdapter,
+    },
+    providers::{CodeActionRegistry, DiagnosticsRegistry, SemanticAnalyzerRegistry},
+    semantic::adapters::{
+        FallbackAnalyzerAdapter, PythonAnalyzerAdapter, RustAnalyzerAdapter,
+        TypeScriptAnalyzerAdapter,
+    },
+};
 
 /// Configuration manager for language configurations
 pub struct ConfigurationManager {

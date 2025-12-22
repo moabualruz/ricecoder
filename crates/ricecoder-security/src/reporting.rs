@@ -1,11 +1,14 @@
 //! Compliance reporting for SOC 2, GDPR, and HIPAA
 
-use chrono::{DateTime, Duration, Utc};
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::audit::{AuditLogger, AuditQuery};
-use crate::Result;
+use chrono::{DateTime, Duration, Utc};
+use serde::{Deserialize, Serialize};
+
+use crate::{
+    audit::{AuditLogger, AuditQuery},
+    Result,
+};
 
 /// Compliance report types
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -546,9 +549,10 @@ impl ComplianceReporter {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use super::*;
     use crate::audit::MemoryAuditStorage;
-    use std::sync::Arc;
 
     #[tokio::test]
     async fn test_soc2_report_generation() {

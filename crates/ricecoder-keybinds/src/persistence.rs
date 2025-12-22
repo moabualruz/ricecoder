@@ -50,11 +50,12 @@
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
-use crate::error::PersistenceError;
-use crate::profile::Profile;
+use crate::{error::PersistenceError, profile::Profile};
 
 /// Trait for persisting keybind profiles
 pub trait KeybindPersistence: Send + Sync {

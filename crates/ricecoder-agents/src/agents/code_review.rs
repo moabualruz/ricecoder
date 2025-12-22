@@ -1,13 +1,17 @@
 //! Code Review Agent for analyzing code quality, security, and best practices
 
-use crate::error::Result;
-use crate::models::{
-    AgentConfig, AgentInput, AgentMetrics, AgentOutput, ConfigSchema, Finding, Severity,
-    Suggestion, TaskType,
-};
-use crate::Agent;
-use async_trait::async_trait;
 use std::collections::HashMap;
+
+use async_trait::async_trait;
+
+use crate::{
+    error::Result,
+    models::{
+        AgentConfig, AgentInput, AgentMetrics, AgentOutput, ConfigSchema, Finding, Severity,
+        Suggestion, TaskType,
+    },
+    Agent,
+};
 
 /// Code Review Agent for analyzing code quality, security, and best practices
 ///
@@ -767,9 +771,10 @@ impl Agent for CodeReviewAgent {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
     use crate::models::{AgentTask, ProjectContext, TaskOptions, TaskScope, TaskTarget};
-    use std::path::PathBuf;
 
     #[test]
     fn test_code_review_agent_creation() {

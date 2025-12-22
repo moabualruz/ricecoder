@@ -6,11 +6,15 @@
 //! - Caching symbol indexes
 //! - Tracking cache hit rates and performance metrics
 
-use crate::types::SemanticInfo;
-use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+    time::{SystemTime, UNIX_EPOCH},
+};
+
 use tracing::debug;
+
+use crate::types::SemanticInfo;
 
 /// Cache entry with timestamp and content hash
 #[derive(Debug, Clone)]
@@ -359,8 +363,10 @@ impl Default for SymbolIndexCache {
 
 /// Compute hash of input string
 pub fn hash_input(input: &str) -> u64 {
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
+    use std::{
+        collections::hash_map::DefaultHasher,
+        hash::{Hash, Hasher},
+    };
 
     let mut hasher = DefaultHasher::new();
     input.hash(&mut hasher);

@@ -2,11 +2,10 @@
 //! **Feature: ricecoder-providers, Property 3: Configuration Precedence**
 //! **Validates: Requirements 3.4, 3.5**
 
+use std::{sync::Mutex, time::Duration};
+
 use proptest::prelude::*;
-use ricecoder_providers::config::ConfigurationManager;
-use ricecoder_providers::models::ProviderSettings;
-use std::sync::Mutex;
-use std::time::Duration;
+use ricecoder_providers::{config::ConfigurationManager, models::ProviderSettings};
 
 // Mutex to ensure environment variable tests don't interfere with each other
 lazy_static::lazy_static! {

@@ -6,6 +6,8 @@
 //! - Rapid typing handling
 //! - Memory usage under load
 
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use ricecoder_completion::{
     BasicCompletionRanker, CompletionContext, CompletionGenerator, CompletionItem,
@@ -15,7 +17,6 @@ use ricecoder_completion::{
 };
 use ricecoder_lsp::{config::CompletionConfig, server::LspServer, types::ServerState};
 use serde_json::json;
-use std::sync::Arc;
 
 /// Mock completion generator for testing
 struct MockCompletionGenerator;

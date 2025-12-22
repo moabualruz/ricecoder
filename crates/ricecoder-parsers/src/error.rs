@@ -1,6 +1,7 @@
 //! Parser error types and results
 
 use std::fmt;
+
 use thiserror::Error;
 
 /// Parser operation errors

@@ -1,6 +1,7 @@
+use std::sync::Mutex;
+
 use ricecoder_storage::{ThemePreference, ThemeStorage};
 use ricecoder_tui::{Theme, ThemeManager, TuiConfig};
-use std::sync::Mutex;
 use tempfile::TempDir;
 
 // Mutex to ensure test isolation when modifying environment variables

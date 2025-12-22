@@ -1,9 +1,10 @@
 //! Enterprise requirements validation for beta testing
 
-use crate::analytics::EnterpriseValidationAnalytics;
+use std::{collections::HashMap, time::Duration};
+
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::time::Duration;
+
+use crate::analytics::EnterpriseValidationAnalytics;
 
 /// Enterprise validation service
 pub struct EnterpriseValidator {

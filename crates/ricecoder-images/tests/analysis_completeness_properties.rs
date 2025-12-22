@@ -6,9 +6,10 @@
 //! Property: For any image, analysis SHALL either complete successfully and return results,
 //! or fail with a clear error message that allows retry without reloading the image.
 
+use std::path::PathBuf;
+
 use proptest::prelude::*;
 use ricecoder_images::{ImageAnalyzer, ImageMetadata};
-use std::path::PathBuf;
 
 /// Strategy for generating valid image metadata
 fn image_metadata_strategy() -> impl Strategy<Value = ImageMetadata> {

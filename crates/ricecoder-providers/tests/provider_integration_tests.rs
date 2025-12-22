@@ -1,7 +1,10 @@
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
+
 use ricecoder_providers::*;
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::{Duration, SystemTime};
 use tokio::sync::RwLock;
 
 #[cfg(test)]
@@ -301,6 +304,7 @@ mod provider_integration_tests {
     async fn test_provider_security_compliance_integration() {
         // Test provider security headers and audit logging integration
         use std::io::Read;
+
         use tempfile::NamedTempFile;
 
         // Test security headers

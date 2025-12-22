@@ -7,14 +7,15 @@
 //! - MCPToolExecutor adapter
 //! - Concrete implementations of ports
 
-use ricecoder_mcp::metadata::ToolSource;
-use ricecoder_mcp::permissions::MCPPermissionManager;
-use ricecoder_mcp::tool_execution::{MCPToolExecutor, ToolExecutionContext};
-use ricecoder_mcp::transport::{MCPMessage, MCPRequest, MCPResponse, MCPTransport, StdioTransport};
+use std::{collections::HashMap, sync::Arc, time::Duration};
+
+use ricecoder_mcp::{
+    metadata::ToolSource,
+    permissions::MCPPermissionManager,
+    tool_execution::{MCPToolExecutor, ToolExecutionContext},
+    transport::{MCPMessage, MCPRequest, MCPResponse, MCPTransport, StdioTransport},
+};
 use serde_json::json;
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::Duration;
 use tokio::sync::RwLock;
 
 /// **Adapter Test 3.1: StdioTransport initialization**

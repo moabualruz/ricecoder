@@ -7,12 +7,15 @@
 //! - Operation cancellation and coordination
 //! - Streaming message rendering with live updates
 
-use crate::error_handling::{ErrorCategory, ErrorManager, ErrorSeverity, RiceError};
-use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::{broadcast, mpsc, RwLock};
-use tokio::time::{Duration, Instant};
+use std::{collections::HashMap, sync::Arc};
+
+use tokio::{
+    sync::{broadcast, mpsc, RwLock},
+    time::{Duration, Instant},
+};
 use tokio_util::sync::CancellationToken;
+
+use crate::error_handling::{ErrorCategory, ErrorManager, ErrorSeverity, RiceError};
 
 /// Stream data types for different kinds of real-time updates
 #[derive(Debug, Clone)]

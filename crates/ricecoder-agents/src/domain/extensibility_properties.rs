@@ -9,11 +9,13 @@
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+
+    use tempfile::TempDir;
+
     use crate::domain::{
         config_loader::ConfigLoader, factory::AgentFactory, registry::DomainRegistry,
     };
-    use std::fs;
-    use tempfile::TempDir;
 
     // ========================================================================
     // Property 9: Auto-Discovery of New Domains

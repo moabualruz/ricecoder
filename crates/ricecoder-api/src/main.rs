@@ -3,9 +3,10 @@
 //! RESTful API server for RiceCoder providing session management,
 //! MCP tool execution, and enterprise features.
 
+use std::net::SocketAddr;
+
 use ricecoder_api::{ApiServer, AppState};
 use ricecoder_di::DIContainer;
-use std::net::SocketAddr;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 

@@ -8,11 +8,9 @@
 //! - `update.rs`: Contains the pure update function and Command enum
 //! - `tea.rs`: Contains ReactiveState manager and TEA orchestration
 
-use crate::model::*;
-use crate::style::Theme;
-use crate::terminal_state::TerminalCapabilities;
-use crate::update::Command;
 use ricecoder_storage::TuiConfig;
+
+use crate::{model::*, style::Theme, terminal_state::TerminalCapabilities, update::Command};
 
 // StateDiff and StateChange are now in model.rs
 

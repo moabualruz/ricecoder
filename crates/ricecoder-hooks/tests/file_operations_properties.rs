@@ -6,9 +6,10 @@
 //! These tests verify that file operation events are emitted with correct event types,
 //! accurate file paths, and complete metadata.
 
+use std::path::PathBuf;
+
 use proptest::prelude::*;
 use ricecoder_hooks::events::{DirectoryOperationEvent, FileOperationEvent, FileSystemMonitor};
-use std::path::PathBuf;
 
 // Strategy for generating valid file paths
 fn arb_file_path() -> impl Strategy<Value = PathBuf> {

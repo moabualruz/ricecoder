@@ -1,7 +1,5 @@
 use ricecoder_providers::*;
 
-use ricecoder_providers::*;
-
 #[test]
 fn test_anthropic_provider_creation() {
     let provider = AnthropicProvider::new("test-key".to_string());

@@ -3,19 +3,25 @@
 //! Tool chaining, execution pipelines, result caching, and performance monitoring
 //! for complex multi-tool workflows.
 
+use std::{
+    collections::{HashMap, HashSet, VecDeque},
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
+
 use async_trait::async_trait;
+use ricecoder_cache::{
+    storage::CacheEntry, Cache as ExternalCache, CacheConfig as ExternalCacheConfig,
+};
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet, VecDeque};
-use std::sync::Arc;
-use std::time::{Duration, SystemTime};
 use tokio::sync::RwLock;
 use tracing::{debug, error, info, warn};
 
-use crate::error::{Error, Result, ToolError};
-use crate::metadata::ToolMetadata;
-use crate::tool_execution::{ToolExecutionContext, ToolExecutionResult, ToolExecutor};
-use ricecoder_cache::storage::CacheEntry;
-use ricecoder_cache::{Cache as ExternalCache, CacheConfig as ExternalCacheConfig};
+use crate::{
+    error::{Error, Result, ToolError},
+    metadata::ToolMetadata,
+    tool_execution::{ToolExecutionContext, ToolExecutionResult, ToolExecutor},
+};
 
 /// Tool execution step in a pipeline
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -556,8 +562,9 @@ impl PipelineStats {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::collections::HashSet;
+
+    use super::*;
 
     // Mock tool executor for testing
     struct MockToolExecutor;

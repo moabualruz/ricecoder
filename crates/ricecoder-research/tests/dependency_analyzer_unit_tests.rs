@@ -2,8 +2,9 @@
 //!
 //! Tests for all supported languages: Rust, Node.js, Python, Go, Java, Kotlin, .NET, PHP, Ruby, Swift, Dart/Flutter
 
-use ricecoder_research::DependencyAnalyzer;
 use std::fs;
+
+use ricecoder_research::DependencyAnalyzer;
 use tempfile::TempDir;
 
 // ============================================================================

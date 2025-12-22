@@ -47,8 +47,10 @@ pub use models::{
 pub use performance_monitor::{
     PerformanceSummary, PerformanceThresholds, ProviderMetrics, ProviderPerformanceMonitor,
 };
-pub use provider::manager::{ConnectionState, ModelFilter, ModelFilterCriteria, ProviderStatus};
-pub use provider::{Provider, ProviderManager, ProviderRegistry};
+pub use provider::{
+    manager::{ConnectionState, ModelFilter, ModelFilterCriteria, ProviderStatus},
+    Provider, ProviderManager, ProviderRegistry,
+};
 pub use providers::{
     AnthropicProvider, AzureOpenAiProvider, CohereProvider, GcpVertexProvider, GoogleProvider,
     OllamaProvider, OpenAiProvider, ReplicateProvider, TogetherProvider, ZenProvider,

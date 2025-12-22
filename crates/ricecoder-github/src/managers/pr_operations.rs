@@ -1,10 +1,14 @@
 //! PR Operations - Handles PR updates, comments, and reviews
 
-use crate::errors::{GitHubError, Result};
-use crate::models::{PrStatus, PullRequest};
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 use tracing::{debug, info};
+
+use crate::{
+    errors::{GitHubError, Result},
+    models::{PrStatus, PullRequest},
+};
 
 /// PR comment
 #[derive(Debug, Clone, Serialize, Deserialize)]

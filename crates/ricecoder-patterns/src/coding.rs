@@ -1,13 +1,16 @@
 //! Design pattern and coding convention detection
 
-use crate::error::{PatternError, PatternResult};
-use crate::models::{DesignPattern, DetectedPattern, PatternCategory, PatternLocation};
+use std::{collections::HashMap, path::Path};
+
 #[cfg(feature = "parsing")]
 use ricecoder_parsers::{ASTNode, CodeParser, NodeType, SyntaxTree};
-use std::collections::HashMap;
-use std::path::Path;
 #[cfg(feature = "parsing")]
 use walkdir;
+
+use crate::{
+    error::{PatternError, PatternResult},
+    models::{DesignPattern, DetectedPattern, PatternCategory, PatternLocation},
+};
 
 /// Detector for design patterns and coding conventions
 #[derive(Debug)]
@@ -283,9 +286,11 @@ impl CodingPatternDetector {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use ricecoder_parsers::error::ParserError;
     use std::sync::Arc;
+
+    use ricecoder_parsers::error::ParserError;
+
+    use super::*;
 
     // Mock parser for testing
     struct MockParser;

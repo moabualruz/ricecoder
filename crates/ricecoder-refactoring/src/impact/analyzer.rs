@@ -1,11 +1,13 @@
 //! Impact analysis for refactoring operations
 
+use std::{collections::HashSet, path::PathBuf};
+
 #[allow(unused_imports)]
 use super::graph::{Dependency, DependencyGraph, DependencyType, Symbol, SymbolType};
-use crate::error::Result;
-use crate::types::{ImpactAnalysis, Refactoring, RefactoringTarget, RiskLevel};
-use std::collections::HashSet;
-use std::path::PathBuf;
+use crate::{
+    error::Result,
+    types::{ImpactAnalysis, Refactoring, RefactoringTarget, RiskLevel},
+};
 
 /// Analyzes the impact of refactoring operations
 pub struct ImpactAnalyzer {

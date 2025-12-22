@@ -1,8 +1,11 @@
 //! Spec inheritance and hierarchy resolution
 
-use crate::error::SpecError;
-use crate::models::{Spec, SpecInheritance};
 use std::collections::{HashMap, HashSet};
+
+use crate::{
+    error::SpecError,
+    models::{Spec, SpecInheritance},
+};
 
 /// Manages hierarchical spec resolution with explicit precedence
 pub struct SpecInheritanceResolver;
@@ -219,9 +222,10 @@ impl SpecInheritanceResolver {
 
 #[cfg(test)]
 mod tests {
+    use chrono::Utc;
+
     use super::*;
     use crate::models::{SpecMetadata, SpecPhase, SpecStatus};
-    use chrono::Utc;
 
     fn create_spec(id: &str, precedence_level: u32, parent_id: Option<&str>) -> Spec {
         Spec {

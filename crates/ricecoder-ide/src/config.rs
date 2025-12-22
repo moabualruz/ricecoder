@@ -1,10 +1,14 @@
 //! Configuration management for IDE integration
 
-use crate::error::{IdeError, IdeResult};
-use crate::types::IdeIntegrationConfig;
-use ricecoder_storage::PathResolver;
 use std::path::PathBuf;
+
+use ricecoder_storage::PathResolver;
 use tracing::{debug, info};
+
+use crate::{
+    error::{IdeError, IdeResult},
+    types::IdeIntegrationConfig,
+};
 
 /// Configuration manager for IDE integration
 pub struct ConfigManager;

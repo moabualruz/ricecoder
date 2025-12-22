@@ -3,9 +3,12 @@
 //! This module provides traits and implementations for integrating external LSP servers
 //! as the highest-priority provider in the refactoring engine.
 
-use crate::error::Result;
-use crate::types::{Refactoring, ValidationResult};
 use std::sync::Arc;
+
+use crate::{
+    error::Result,
+    types::{Refactoring, ValidationResult},
+};
 
 /// Trait for LSP-based refactoring providers
 ///

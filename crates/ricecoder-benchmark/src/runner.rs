@@ -1,16 +1,21 @@
 //! Benchmark runner that orchestrates the evaluation
 
-use crate::error::BenchmarkError;
-use crate::evaluator::{Evaluator, TestResult};
-use crate::exercise::Exercise;
-use crate::results::{BenchmarkResults, ExerciseResult};
+use std::{
+    collections::HashSet,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
+
 use ricecoder_providers::ProviderManager;
-use std::collections::HashSet;
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
-use tokio::sync::Semaphore;
-use tokio::task;
+use tokio::{sync::Semaphore, task};
 use walkdir::WalkDir;
+
+use crate::{
+    error::BenchmarkError,
+    evaluator::{Evaluator, TestResult},
+    exercise::Exercise,
+    results::{BenchmarkResults, ExerciseResult},
+};
 
 pub struct BenchmarkRunner {
     exercises_dir: PathBuf,

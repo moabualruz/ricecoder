@@ -1,6 +1,9 @@
+use std::{
+    collections::HashMap,
+    time::{Duration, Instant},
+};
+
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
@@ -319,8 +322,10 @@ impl SecurityValidator for DefaultSecurityValidator {
     }
 
     async fn encrypt_data(&self, data: &str) -> anyhow::Result<EncryptionResult> {
-        use aes_gcm::aead::{Aead, KeyInit};
-        use aes_gcm::{Aes256Gcm, Key, Nonce};
+        use aes_gcm::{
+            aead::{Aead, KeyInit},
+            Aes256Gcm, Key, Nonce,
+        };
 
         // Generate a random key for this encryption (in production, use key management)
         let key_bytes = rand::random::<[u8; 32]>();
@@ -352,8 +357,10 @@ impl SecurityValidator for DefaultSecurityValidator {
     }
 
     async fn decrypt_data(&self, encrypted_data: &[u8]) -> anyhow::Result<String> {
-        use aes_gcm::aead::{Aead, KeyInit};
-        use aes_gcm::{Aes256Gcm, Key, Nonce};
+        use aes_gcm::{
+            aead::{Aead, KeyInit},
+            Aes256Gcm, Key, Nonce,
+        };
 
         if encrypted_data.len() < 12 {
             return Err(anyhow::anyhow!("Invalid encrypted data"));

@@ -1,3 +1,7 @@
+use std::sync::Arc;
+
+use async_trait::async_trait;
+
 /// Core completion engine with language-agnostic architecture
 ///
 /// This module provides the main completion engine and related traits for generating,
@@ -68,8 +72,6 @@
 /// ```
 use crate::context::ContextAnalyzer;
 use crate::types::*;
-use async_trait::async_trait;
-use std::sync::Arc;
 
 /// Main completion engine trait
 ///

@@ -1,9 +1,10 @@
 // Unit tests for PathResolver usage in CLI
 // **Feature: ricecoder-path-resolution, Tests for Requirements 4.1, 4.2**
 
+use std::path::PathBuf;
+
 use ricecoder_cli::commands::{ChatCommand, Command};
 use ricecoder_storage::PathResolver;
-use std::path::PathBuf;
 
 // ============================================================================
 // ChatCommand Path Resolution Tests

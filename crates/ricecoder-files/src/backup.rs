@@ -1,11 +1,11 @@
 //! Backup management with retention and restoration
 
-use crate::error::FileError;
-use crate::models::BackupMetadata;
-use crate::verifier::ContentVerifier;
-use chrono::Utc;
 use std::path::{Path, PathBuf};
+
+use chrono::Utc;
 use tokio::fs;
+
+use crate::{error::FileError, models::BackupMetadata, verifier::ContentVerifier};
 
 /// Manages backup creation, retention, and restoration
 #[derive(Debug, Clone)]
@@ -195,8 +195,9 @@ impl Default for BackupManager {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
+
+    use super::*;
 
     #[tokio::test]
     async fn test_create_backup() {

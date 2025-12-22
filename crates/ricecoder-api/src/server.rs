@@ -1,14 +1,16 @@
 //! API server implementation
 
+use std::net::SocketAddr;
+
+use axum::Router;
+use tower::ServiceBuilder;
+use tower_http::trace::TraceLayer;
+
 use crate::{
     middleware::{auth, logging, rate_limit},
     routes,
     state::AppState,
 };
-use axum::Router;
-use std::net::SocketAddr;
-use tower::ServiceBuilder;
-use tower_http::trace::TraceLayer;
 
 /// API server
 pub struct ApiServer {

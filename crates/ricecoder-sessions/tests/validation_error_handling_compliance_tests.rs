@@ -2,13 +2,14 @@
 //! **Feature: ricecoder-sessions, Unit Tests: Validation/Error Handling/Compliance**
 //! **Validates: Requirements 4.1, 4.2, 4.3, 5.1, 5.2, 5.3**
 
+use std::sync::Arc;
+
 use chrono::Duration;
 use ricecoder_security::audit::{AuditEventType, AuditLogger, MemoryAuditStorage};
 use ricecoder_sessions::{
     BackgroundAgent, Message, MessageRole, Session, SessionContext, SessionError, SessionManager,
     SessionMode, SessionStatus, SharePermissions, ShareService,
 };
-use std::sync::Arc;
 
 fn create_test_context() -> SessionContext {
     SessionContext::new("openai".to_string(), "gpt-4".to_string(), SessionMode::Chat)

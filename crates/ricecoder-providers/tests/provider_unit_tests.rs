@@ -7,12 +7,20 @@ use ricecoder_providers::*;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ricecoder_providers::curation::{CurationConfig, ProviderCurator, QualityScore, ReliabilityStatus, SelectionConstraints};
+    use ricecoder_providers::curation::{
+        CurationConfig, ProviderCurator, QualityScore, ReliabilityStatus, SelectionConstraints,
+    };
     use ricecoder_providers::evaluation::{BenchmarkResult, ProviderEvaluation, ProviderEvaluator};
-    use ricecoder_providers::models::{Capability, ChatRequest, ChatResponse, FinishReason, Message, ModelInfo, TokenUsage};
-    use ricecoder_providers::performance_monitor::{PerformanceMetrics, PerformanceThresholds, ProviderMetrics, ProviderPerformanceMonitor};
+    use ricecoder_providers::models::{
+        Capability, ChatRequest, ChatResponse, FinishReason, Message, ModelInfo, TokenUsage,
+    };
+    use ricecoder_providers::performance_monitor::{
+        PerformanceMetrics, PerformanceThresholds, ProviderMetrics, ProviderPerformanceMonitor,
+    };
+    use ricecoder_providers::provider::manager::{
+        ConnectionState, ModelFilter, ModelFilterCriteria, ProviderManager, ProviderStatus,
+    };
     use ricecoder_providers::provider::{ChatStream, Provider};
-    use ricecoder_providers::provider::manager::{ConnectionState, ModelFilter, ModelFilterCriteria, ProviderManager, ProviderStatus};
 
     // Mock provider for testing
     struct TestProvider {
@@ -39,7 +47,9 @@ mod tests {
 
         async fn chat(&self, _request: ChatRequest) -> Result<ChatResponse, ProviderError> {
             if self.should_fail {
-                return Err(ProviderError::ProviderError("Simulated failure".to_string()));
+                return Err(ProviderError::ProviderError(
+                    "Simulated failure".to_string(),
+                ));
             }
 
             // Simulate response time
@@ -47,7 +57,11 @@ mod tests {
 
             Ok(ChatResponse {
                 content: format!("Response from {}", self.name),
-                model: self.models.first().map(|m| m.id.clone()).unwrap_or_default(),
+                model: self
+                    .models
+                    .first()
+                    .map(|m| m.id.clone())
+                    .unwrap_or_default(),
                 usage: TokenUsage {
                     prompt_tokens: 10,
                     completion_tokens: 20,
@@ -70,7 +84,12 @@ mod tests {
         }
     }
 
-    fn create_test_provider(id: &str, name: &str, should_fail: bool, response_time_ms: u64) -> Arc<dyn Provider> {
+    fn create_test_provider(
+        id: &str,
+        name: &str,
+        should_fail: bool,
+        response_time_ms: u64,
+    ) -> Arc<dyn Provider> {
         let models = vec![ModelInfo {
             id: format!("{}-model", id),
             name: format!("{} Model", name),
@@ -164,20 +183,22 @@ mod tests {
         let monitor = Arc::new(ProviderPerformanceMonitor::default());
         let curator = ProviderCurator::default(monitor);
 
-        let models = vec![
-            ModelInfo {
-                id: "gpt-4".to_string(),
-                name: "GPT-4".to_string(),
-                provider: "openai".to_string(),
-                context_window: 8192,
-                capabilities: vec![Capability::Chat, Capability::FunctionCalling, Capability::Vision],
-                pricing: Some(crate::models::Pricing {
-                    input_per_1k_tokens: 0.03,
-                    output_per_1k_tokens: 0.06,
-                }),
-                is_free: false,
-            }
-        ];
+        let models = vec![ModelInfo {
+            id: "gpt-4".to_string(),
+            name: "GPT-4".to_string(),
+            provider: "openai".to_string(),
+            context_window: 8192,
+            capabilities: vec![
+                Capability::Chat,
+                Capability::FunctionCalling,
+                Capability::Vision,
+            ],
+            pricing: Some(crate::models::Pricing {
+                input_per_1k_tokens: 0.03,
+                output_per_1k_tokens: 0.06,
+            }),
+            is_free: false,
+        }];
 
         let score = curator.calculate_quality_score("openai", &models);
 
@@ -201,32 +222,43 @@ mod tests {
         let mut provider_models = HashMap::new();
 
         // High-quality provider
-        provider_models.insert("premium_provider".to_string(), vec![ModelInfo {
-            id: "premium-model".to_string(),
-            name: "Premium Model".to_string(),
-            provider: "premium_provider".to_string(),
-            context_window: 32768,
-            capabilities: vec![Capability::Chat, Capability::FunctionCalling, Capability::Vision, Capability::Streaming],
-            pricing: Some(crate::models::Pricing {
-                input_per_1k_tokens: 0.01,
-                output_per_1k_tokens: 0.02,
-            }),
-            is_free: false,
-        }]);
+        provider_models.insert(
+            "premium_provider".to_string(),
+            vec![ModelInfo {
+                id: "premium-model".to_string(),
+                name: "Premium Model".to_string(),
+                provider: "premium_provider".to_string(),
+                context_window: 32768,
+                capabilities: vec![
+                    Capability::Chat,
+                    Capability::FunctionCalling,
+                    Capability::Vision,
+                    Capability::Streaming,
+                ],
+                pricing: Some(crate::models::Pricing {
+                    input_per_1k_tokens: 0.01,
+                    output_per_1k_tokens: 0.02,
+                }),
+                is_free: false,
+            }],
+        );
 
         // Basic provider
-        provider_models.insert("basic_provider".to_string(), vec![ModelInfo {
-            id: "basic-model".to_string(),
-            name: "Basic Model".to_string(),
-            provider: "basic_provider".to_string(),
-            context_window: 4096,
-            capabilities: vec![Capability::Chat],
-            pricing: Some(crate::models::Pricing {
-                input_per_1k_tokens: 0.05,
-                output_per_1k_tokens: 0.10,
-            }),
-            is_free: false,
-        }]);
+        provider_models.insert(
+            "basic_provider".to_string(),
+            vec![ModelInfo {
+                id: "basic-model".to_string(),
+                name: "Basic Model".to_string(),
+                provider: "basic_provider".to_string(),
+                context_window: 4096,
+                capabilities: vec![Capability::Chat],
+                pricing: Some(crate::models::Pricing {
+                    input_per_1k_tokens: 0.05,
+                    output_per_1k_tokens: 0.10,
+                }),
+                is_free: false,
+            }],
+        );
 
         curator.update_quality_scores(&provider_models);
 
@@ -251,26 +283,32 @@ mod tests {
         let mut provider_models = HashMap::new();
 
         // Vision-capable provider
-        provider_models.insert("vision_provider".to_string(), vec![ModelInfo {
-            id: "vision-model".to_string(),
-            name: "Vision Model".to_string(),
-            provider: "vision_provider".to_string(),
-            context_window: 4096,
-            capabilities: vec![Capability::Chat, Capability::Vision],
-            pricing: None,
-            is_free: false,
-        }]);
+        provider_models.insert(
+            "vision_provider".to_string(),
+            vec![ModelInfo {
+                id: "vision-model".to_string(),
+                name: "Vision Model".to_string(),
+                provider: "vision_provider".to_string(),
+                context_window: 4096,
+                capabilities: vec![Capability::Chat, Capability::Vision],
+                pricing: None,
+                is_free: false,
+            }],
+        );
 
         // Text-only provider
-        provider_models.insert("text_provider".to_string(), vec![ModelInfo {
-            id: "text-model".to_string(),
-            name: "Text Model".to_string(),
-            provider: "text_provider".to_string(),
-            context_window: 4096,
-            capabilities: vec![Capability::Chat],
-            pricing: None,
-            is_free: false,
-        }]);
+        provider_models.insert(
+            "text_provider".to_string(),
+            vec![ModelInfo {
+                id: "text-model".to_string(),
+                name: "Text Model".to_string(),
+                provider: "text_provider".to_string(),
+                context_window: 4096,
+                capabilities: vec![Capability::Chat],
+                pricing: None,
+                is_free: false,
+            }],
+        );
 
         curator.update_quality_scores(&provider_models);
 
@@ -363,7 +401,10 @@ mod tests {
         let provider = create_test_provider("test_provider", "Test Provider", false, 50);
 
         // Test evaluation
-        let evaluation = evaluator.evaluate_provider(&provider, "test-model").await.unwrap();
+        let evaluation = evaluator
+            .evaluate_provider(&provider, "test-model")
+            .await
+            .unwrap();
 
         assert_eq!(evaluation.provider_id, "test_provider");
         assert_eq!(evaluation.model, "test-model");
@@ -395,7 +436,10 @@ mod tests {
 
         // Run a specific benchmark
         let benchmark = &evaluator.benchmarks[0]; // First benchmark
-        let result = evaluator.run_benchmark(&provider, "test-model", benchmark).await.unwrap();
+        let result = evaluator
+            .run_benchmark(&provider, "test-model", benchmark)
+            .await
+            .unwrap();
 
         assert_eq!(result.benchmark_name, benchmark.name);
         assert!(result.score >= 0.0 && result.score <= 1.0);
@@ -413,9 +457,12 @@ mod tests {
         let evaluator = ProviderEvaluator::new(monitor);
 
         // Create a failing provider
-        let failing_provider = create_test_provider("failing_provider", "Failing Provider", true, 50);
+        let failing_provider =
+            create_test_provider("failing_provider", "Failing Provider", true, 50);
 
-        let evaluation = evaluator.evaluate_provider(&failing_provider, "test-model").await;
+        let evaluation = evaluator
+            .evaluate_provider(&failing_provider, "test-model")
+            .await;
 
         // Should fail due to provider failures
         assert!(evaluation.is_err());
@@ -485,12 +532,18 @@ mod tests {
 
         // Make several requests to fast provider
         for _ in 0..3 {
-            manager.chat_with_provider(&manager.get_provider("fast").unwrap(), request.clone()).await.unwrap();
+            manager
+                .chat_with_provider(&manager.get_provider("fast").unwrap(), request.clone())
+                .await
+                .unwrap();
         }
 
         // Make several requests to slow provider
         for _ in 0..3 {
-            manager.chat_with_provider(&manager.get_provider("slow").unwrap(), request.clone()).await.unwrap();
+            manager
+                .chat_with_provider(&manager.get_provider("slow").unwrap(), request.clone())
+                .await
+                .unwrap();
         }
 
         // Update quality scores
@@ -509,36 +562,45 @@ mod tests {
         let mut provider_models = HashMap::new();
 
         // Cheap provider
-        provider_models.insert("cheap_provider".to_string(), vec![ModelInfo {
-            id: "cheap-model".to_string(),
-            name: "Cheap Model".to_string(),
-            provider: "cheap_provider".to_string(),
-            context_window: 4096,
-            capabilities: vec![Capability::Chat],
-            pricing: Some(crate::models::Pricing {
-                input_per_1k_tokens: 0.001,
-                output_per_1k_tokens: 0.002,
-            }),
-            is_free: false,
-        }]);
+        provider_models.insert(
+            "cheap_provider".to_string(),
+            vec![ModelInfo {
+                id: "cheap-model".to_string(),
+                name: "Cheap Model".to_string(),
+                provider: "cheap_provider".to_string(),
+                context_window: 4096,
+                capabilities: vec![Capability::Chat],
+                pricing: Some(crate::models::Pricing {
+                    input_per_1k_tokens: 0.001,
+                    output_per_1k_tokens: 0.002,
+                }),
+                is_free: false,
+            }],
+        );
 
         // Expensive provider
-        provider_models.insert("expensive_provider".to_string(), vec![ModelInfo {
-            id: "expensive-model".to_string(),
-            name: "Expensive Model".to_string(),
-            provider: "expensive_provider".to_string(),
-            context_window: 4096,
-            capabilities: vec![Capability::Chat],
-            pricing: Some(crate::models::Pricing {
-                input_per_1k_tokens: 0.10,
-                output_per_1k_tokens: 0.20,
-            }),
-            is_free: false,
-        }]);
+        provider_models.insert(
+            "expensive_provider".to_string(),
+            vec![ModelInfo {
+                id: "expensive-model".to_string(),
+                name: "Expensive Model".to_string(),
+                provider: "expensive_provider".to_string(),
+                context_window: 4096,
+                capabilities: vec![Capability::Chat],
+                pricing: Some(crate::models::Pricing {
+                    input_per_1k_tokens: 0.10,
+                    output_per_1k_tokens: 0.20,
+                }),
+                is_free: false,
+            }],
+        );
 
         curator.update_quality_scores(&provider_models);
 
-        let providers = vec!["cheap_provider".to_string(), "expensive_provider".to_string()];
+        let providers = vec![
+            "cheap_provider".to_string(),
+            "expensive_provider".to_string(),
+        ];
 
         // Test cost-based selection with constraint
         let cost_constraint = SelectionConstraints {
@@ -677,7 +739,8 @@ mod tests {
             is_free: true, // Free model
         }];
 
-        let comprehensive_score = curator.calculate_quality_score("comprehensive_provider", &comprehensive_models);
+        let comprehensive_score =
+            curator.calculate_quality_score("comprehensive_provider", &comprehensive_models);
 
         // Should have high feature score due to all capabilities
         assert!(comprehensive_score.features > 0.8);
@@ -714,12 +777,24 @@ mod tests {
         };
 
         // Make requests to both providers
-        manager.chat_with_provider(&manager.get_provider("fast_perf").unwrap(), request.clone()).await.unwrap();
-        manager.chat_with_provider(&manager.get_provider("slow_perf").unwrap(), request.clone()).await.unwrap();
+        manager
+            .chat_with_provider(&manager.get_provider("fast_perf").unwrap(), request.clone())
+            .await
+            .unwrap();
+        manager
+            .chat_with_provider(&manager.get_provider("slow_perf").unwrap(), request.clone())
+            .await
+            .unwrap();
 
         // Check performance metrics
-        let fast_metrics = manager.performance_monitor().get_metrics("fast_perf").unwrap();
-        let slow_metrics = manager.performance_monitor().get_metrics("slow_perf").unwrap();
+        let fast_metrics = manager
+            .performance_monitor()
+            .get_metrics("fast_perf")
+            .unwrap();
+        let slow_metrics = manager
+            .performance_monitor()
+            .get_metrics("slow_perf")
+            .unwrap();
 
         // Fast provider should have better performance
         assert!(fast_metrics.avg_response_time_ms < slow_metrics.avg_response_time_ms);
@@ -771,32 +846,55 @@ mod tests {
         let models = vec![vision_model.clone(), text_model.clone(), free_model.clone()];
 
         // Test filtering by capability
-        let vision_filter = ModelFilter::new().with_criterion(ModelFilterCriteria::Capability(Capability::Vision));
-        let vision_models = models.iter().filter(|m| vision_filter.matches(m)).cloned().collect::<Vec<_>>();
+        let vision_filter =
+            ModelFilter::new().with_criterion(ModelFilterCriteria::Capability(Capability::Vision));
+        let vision_models = models
+            .iter()
+            .filter(|m| vision_filter.matches(m))
+            .cloned()
+            .collect::<Vec<_>>();
         assert_eq!(vision_models.len(), 1);
         assert_eq!(vision_models[0].provider, "vision_provider");
 
         // Test filtering by free models
         let free_filter = ModelFilter::new().with_criterion(ModelFilterCriteria::FreeOnly);
-        let free_models = models.iter().filter(|m| free_filter.matches(m)).cloned().collect::<Vec<_>>();
+        let free_models = models
+            .iter()
+            .filter(|m| free_filter.matches(m))
+            .cloned()
+            .collect::<Vec<_>>();
         assert_eq!(free_models.len(), 2); // text_model and free_model are both free
 
         // Test filtering by provider
-        let provider_filter = ModelFilter::new().with_criterion(ModelFilterCriteria::Provider("vision_provider".to_string()));
-        let provider_models = models.iter().filter(|m| provider_filter.matches(m)).cloned().collect::<Vec<_>>();
+        let provider_filter = ModelFilter::new()
+            .with_criterion(ModelFilterCriteria::Provider("vision_provider".to_string()));
+        let provider_models = models
+            .iter()
+            .filter(|m| provider_filter.matches(m))
+            .cloned()
+            .collect::<Vec<_>>();
         assert_eq!(provider_models.len(), 1);
         assert_eq!(provider_models[0].provider, "vision_provider");
 
         // Test filtering by minimum context window
-        let context_filter = ModelFilter::new().with_criterion(ModelFilterCriteria::MinContextWindow(8192));
-        let context_models = models.iter().filter(|m| context_filter.matches(m)).cloned().collect::<Vec<_>>();
+        let context_filter =
+            ModelFilter::new().with_criterion(ModelFilterCriteria::MinContextWindow(8192));
+        let context_models = models
+            .iter()
+            .filter(|m| context_filter.matches(m))
+            .cloned()
+            .collect::<Vec<_>>();
         assert_eq!(context_models.len(), 0); // None have 8192+ context
 
         // Test combined criteria
         let combined_filter = ModelFilter::new()
             .with_criterion(ModelFilterCriteria::Capability(Capability::Chat))
             .with_criterion(ModelFilterCriteria::FreeOnly);
-        let combined_models = models.iter().filter(|m| combined_filter.matches(m)).cloned().collect::<Vec<_>>();
+        let combined_models = models
+            .iter()
+            .filter(|m| combined_filter.matches(m))
+            .cloned()
+            .collect::<Vec<_>>();
         assert_eq!(combined_models.len(), 2); // Both free models have Chat capability
     }
 
@@ -804,7 +902,8 @@ mod tests {
     async fn test_comprehensive_provider_lifecycle() {
         let mut registry = ProviderRegistry::new();
 
-        let provider = create_test_provider("lifecycle_test", "Lifecycle Test Provider", false, 100);
+        let provider =
+            create_test_provider("lifecycle_test", "Lifecycle Test Provider", false, 100);
         registry.register(provider).unwrap();
 
         let mut manager = ProviderManager::new(registry, "lifecycle_test".to_string());
@@ -851,3 +950,4 @@ mod tests {
         let quality_score = curator.get_quality_score("lifecycle_test");
         assert!(quality_score.is_some());
     }
+}

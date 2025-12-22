@@ -8,13 +8,12 @@
 //! - Error recovery and fallback behavior
 //! - Context preservation across multiple mode switches
 
+use std::{path::PathBuf, sync::Arc, time::Duration};
+
 use ricecoder_modes::{
     AskMode, Capability, CodeMode, ModeContext, ModeError, ModeManager, ModeSwitcher, Operation,
     ThinkMoreConfig, ThinkingDepth, VibeMode,
 };
-use std::path::PathBuf;
-use std::sync::Arc;
-use std::time::Duration;
 
 /// Helper function to create a test mode context
 fn create_test_context(session_id: &str) -> ModeContext {

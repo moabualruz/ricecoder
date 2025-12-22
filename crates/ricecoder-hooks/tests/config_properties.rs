@@ -4,10 +4,13 @@
 //! **Feature: ricecoder-hooks, Property 5: Hook configuration persistence**
 //! **Validates: Requirements Hooks-3.1**
 
-use proptest::prelude::*;
-use ricecoder_hooks::config::{ConfigReloader, ConfigValidator, TemplateManager};
-use ricecoder_hooks::*;
 use std::collections::HashMap;
+
+use proptest::prelude::*;
+use ricecoder_hooks::{
+    config::{ConfigReloader, ConfigValidator, TemplateManager},
+    *,
+};
 
 // Strategy for generating valid hook IDs
 fn hook_id_strategy() -> impl Strategy<Value = String> {

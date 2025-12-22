@@ -1,11 +1,14 @@
 //! Factory for creating domain agents from configuration
 
-use crate::domain::error::{DomainError, DomainResult};
-use crate::domain::models::{
-    AntiPattern, BestPractice, DomainAgent, DomainCapability, DomainKnowledge, Pattern,
-    TechRecommendation,
-};
 use serde::{Deserialize, Serialize};
+
+use crate::domain::{
+    error::{DomainError, DomainResult},
+    models::{
+        AntiPattern, BestPractice, DomainAgent, DomainCapability, DomainKnowledge, Pattern,
+        TechRecommendation,
+    },
+};
 
 /// Configuration for a domain agent
 ///

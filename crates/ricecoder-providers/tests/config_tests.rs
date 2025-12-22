@@ -2,11 +2,13 @@ use ricecoder_providers::*;
 
 #[cfg(test)]
 mod tests {
+    use std::{collections::HashMap, path::PathBuf};
+
     use super::*;
-    use crate::config::ConfigurationManager;
-    use crate::models::{DefaultsConfig, ProviderConfig, ProviderSettings};
-    use std::collections::HashMap;
-    use std::path::PathBuf;
+    use crate::{
+        config::ConfigurationManager,
+        models::{DefaultsConfig, ProviderConfig, ProviderSettings},
+    };
 
     #[test]
     fn test_new_configuration_manager() {
@@ -344,10 +346,14 @@ mod tests {
 
     #[test]
     fn test_validate_with_registry_valid_model() {
-        use crate::models::ModelInfo;
-        use crate::provider::{Provider, ProviderRegistry};
-        use async_trait::async_trait;
         use std::sync::Arc;
+
+        use async_trait::async_trait;
+
+        use crate::{
+            models::ModelInfo,
+            provider::{Provider, ProviderRegistry},
+        };
 
         // Create a mock provider
         struct MockProvider;
@@ -424,10 +430,14 @@ mod tests {
 
     #[test]
     fn test_validate_with_registry_invalid_model() {
-        use crate::models::ModelInfo;
-        use crate::provider::{Provider, ProviderRegistry};
-        use async_trait::async_trait;
         use std::sync::Arc;
+
+        use async_trait::async_trait;
+
+        use crate::{
+            models::ModelInfo,
+            provider::{Provider, ProviderRegistry},
+        };
 
         // Create a mock provider
         struct MockProvider;

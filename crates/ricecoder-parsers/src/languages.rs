@@ -1,7 +1,8 @@
 //! Language support definitions and configurations
 
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 
 /// Supported programming languages
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]

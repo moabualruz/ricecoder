@@ -1,11 +1,12 @@
 //! Configuration management for MCP
 
-use crate::error::{Error, Result};
+use std::{collections::HashMap, path::Path};
+
 use ricecoder_storage::types::ConfigFormat;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::path::Path;
 use tracing::{debug, info};
+
+use crate::error::{Error, Result};
 
 /// MCP Configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -367,8 +368,9 @@ impl MCPConfigLoader {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_create_config() {

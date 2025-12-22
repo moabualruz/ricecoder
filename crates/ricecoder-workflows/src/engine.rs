@@ -1,16 +1,21 @@
 //! Workflow execution engine
 
-use crate::error::{WorkflowError, WorkflowResult};
-use crate::models::{Workflow, WorkflowState};
-use ricecoder_sessions::SessionManager;
-use std::collections::{HashMap, HashSet, VecDeque};
-use std::sync::Arc;
-use tokio::sync::RwLock;
-use uuid::Uuid;
+use std::{
+    collections::{HashMap, HashSet, VecDeque},
+    sync::Arc,
+};
 
 // Optional MCP integration
 #[cfg(feature = "mcp")]
 use ricecoder_mcp::agent_integration::ToolInvoker;
+use ricecoder_sessions::SessionManager;
+use tokio::sync::RwLock;
+use uuid::Uuid;
+
+use crate::{
+    error::{WorkflowError, WorkflowResult},
+    models::{Workflow, WorkflowState},
+};
 
 /// Extension trait for MCP integration
 #[cfg(feature = "mcp")]

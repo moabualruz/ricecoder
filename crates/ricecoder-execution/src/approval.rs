@@ -4,10 +4,14 @@
 //! management for execution plans. Handles approval requests, decisions,
 //! and enforcement of approval gates based on risk level.
 
-use crate::error::{ExecutionError, ExecutionResult};
-use crate::models::{ExecutionPlan, RiskLevel};
-use ricecoder_workflows::approval::{ApprovalGate, ApprovalRequest};
 use std::collections::HashMap;
+
+use ricecoder_workflows::approval::{ApprovalGate, ApprovalRequest};
+
+use crate::{
+    error::{ExecutionError, ExecutionResult},
+    models::{ExecutionPlan, RiskLevel},
+};
 
 /// Approval summary for a plan
 #[derive(Debug, Clone)]

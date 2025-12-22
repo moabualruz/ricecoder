@@ -3,12 +3,16 @@
 //! Provides file-based cache storage with TTL and manual invalidation strategies.
 //! Adapted from automation/src/infrastructure/cache/cache_manager.rs
 
-use crate::error::{IoOperation, StorageError, StorageResult};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    time::{SystemTime, UNIX_EPOCH},
+};
+
 use serde::{Deserialize, Serialize};
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
 use tracing::{debug, warn};
+
+use crate::error::{IoOperation, StorageError, StorageResult};
 
 /// Cache invalidation strategy
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -320,9 +324,11 @@ impl CacheManager {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::time::Duration;
+
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_cache_set_and_get() -> StorageResult<()> {

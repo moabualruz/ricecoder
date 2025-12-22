@@ -3,11 +3,12 @@
 //! Provides detailed scoring mechanisms for evaluating code quality metrics,
 //! spec compliance, and generating actionable feedback based on scores.
 
-use crate::error::GenerationError;
-use crate::models::GeneratedFile;
+use std::collections::HashMap;
+
 use ricecoder_specs::models::Spec;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+
+use crate::{error::GenerationError, models::GeneratedFile};
 
 /// Detailed score breakdown
 #[derive(Debug, Clone, Serialize, Deserialize)]

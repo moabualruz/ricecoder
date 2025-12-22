@@ -4,9 +4,9 @@
 //! **Feature: ricecoder-storage, Property 7: Global-Only Mode Isolation**
 //! **Validates: Requirements 3.1, 3.2**
 
-use ricecoder_storage::config::StorageModeHandler;
-use ricecoder_storage::types::StorageMode;
 use std::fs;
+
+use ricecoder_storage::{config::StorageModeHandler, types::StorageMode};
 use tempfile::TempDir;
 
 #[test]

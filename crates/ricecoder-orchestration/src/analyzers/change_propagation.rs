@@ -1,8 +1,8 @@
 //! Change propagation tracking across projects
 
-use crate::error::Result;
-use crate::models::ImpactLevel;
 use std::collections::{HashMap, HashSet};
+
+use crate::{error::Result, models::ImpactLevel};
 
 /// Type of change that can occur in a project
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

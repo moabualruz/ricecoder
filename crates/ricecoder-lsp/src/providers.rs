@@ -3,8 +3,10 @@
 //! This module defines traits for pluggable providers that enable
 //! language-agnostic architecture with configuration-driven behavior.
 
-use crate::config::LanguageConfig;
-use crate::types::{Diagnostic, Position, SemanticInfo, Symbol};
+use crate::{
+    config::LanguageConfig,
+    types::{Diagnostic, Position, SemanticInfo, Symbol},
+};
 
 /// Error type for provider operations
 #[derive(Debug, Clone, thiserror::Error)]

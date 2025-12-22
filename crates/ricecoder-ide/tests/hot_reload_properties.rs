@@ -7,10 +7,13 @@
 //! Tests that configuration reloads without restart and provider switching
 //! occurs automatically on availability changes.
 
+use std::sync::{
+    atomic::{AtomicUsize, Ordering},
+    Arc,
+};
+
 use proptest::prelude::*;
 use ricecoder_ide::*;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
 
 /// Generate random configuration paths
 fn arb_config_path() -> impl Strategy<Value = String> {

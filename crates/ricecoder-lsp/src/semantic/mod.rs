@@ -3,8 +3,9 @@
 //! This module provides semantic analysis capabilities for multiple programming languages.
 //! It includes language detection, symbol extraction, and semantic information gathering.
 
-use crate::types::{Language, Position, SemanticInfo, Symbol};
 use std::path::Path;
+
+use crate::types::{Language, Position, SemanticInfo, Symbol};
 
 pub mod adapters;
 pub mod fallback_analyzer;

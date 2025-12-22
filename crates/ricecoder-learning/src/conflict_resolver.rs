@@ -1,7 +1,8 @@
+use std::collections::HashMap;
+
 /// Conflict detection and resolution for rules
 use crate::error::{LearningError, Result};
 use crate::models::{Rule, RuleScope};
-use std::collections::HashMap;
 
 /// Detects and resolves conflicts between rules
 pub struct ConflictResolver;

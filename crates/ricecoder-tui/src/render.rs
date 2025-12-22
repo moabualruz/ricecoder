@@ -1,11 +1,14 @@
 //! Rendering logic for the TUI
 
-use crate::app::App;
-use crate::diff::{DiffLineType, DiffViewType, DiffWidget};
-use crate::markdown::{MarkdownElement, MarkdownParser};
-use crate::style::Theme;
-use crate::widgets::{Message, MessageAuthor, ToolStatus};
 use ratatui::prelude::*;
+
+use crate::{
+    app::App,
+    diff::{DiffLineType, DiffViewType, DiffWidget},
+    markdown::{MarkdownElement, MarkdownParser},
+    style::Theme,
+    widgets::{Message, MessageAuthor, ToolStatus},
+};
 
 /// Renderer for the TUI
 pub struct Renderer;

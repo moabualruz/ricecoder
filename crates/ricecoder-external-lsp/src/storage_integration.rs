@@ -24,12 +24,15 @@
 //! let registry = config_loader.load_registry()?;
 //! ```
 
-use crate::error::Result;
-use crate::types::{GlobalLspSettings, LspServerConfig, LspServerRegistry};
+use std::{collections::HashMap, path::PathBuf};
+
 use serde_json::Value;
-use std::collections::HashMap;
-use std::path::PathBuf;
 use tracing::{debug, info, warn};
+
+use crate::{
+    error::Result,
+    types::{GlobalLspSettings, LspServerConfig, LspServerRegistry},
+};
 
 /// Storage-based configuration loader for LSP servers
 ///

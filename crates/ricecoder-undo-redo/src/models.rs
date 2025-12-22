@@ -1,7 +1,6 @@
 //! Data models and validators
 
-use crate::change::Change;
-use crate::error::UndoRedoError;
+use crate::{change::Change, error::UndoRedoError};
 
 /// Validates changes for consistency and correctness
 pub struct ChangeValidator;
@@ -35,56 +34,30 @@ mod tests {
 
     #[test]
     fn test_change_validator_valid_modify() {
-        let change = Change::new(
-            "test.txt",
-            "before",
-            "after",
-            "Modify",
-            ChangeType::Modify,
-        )
-        .unwrap();
+        let change =
+            Change::new("test.txt", "before", "after", "Modify", ChangeType::Modify).unwrap();
         let result = ChangeValidator::validate_change(&change);
         assert!(result.is_ok());
     }
 
     #[test]
     fn test_change_validator_valid_create() {
-        let change = Change::new(
-            "test.txt",
-            "",
-            "content",
-            "Create",
-            ChangeType::Create,
-        )
-        .unwrap();
+        let change = Change::new("test.txt", "", "content", "Create", ChangeType::Create).unwrap();
         let result = ChangeValidator::validate_change(&change);
         assert!(result.is_ok());
     }
 
     #[test]
     fn test_change_validator_valid_delete() {
-        let change = Change::new(
-            "test.txt",
-            "content",
-            "",
-            "Delete",
-            ChangeType::Delete,
-        )
-        .unwrap();
+        let change = Change::new("test.txt", "content", "", "Delete", ChangeType::Delete).unwrap();
         let result = ChangeValidator::validate_change(&change);
         assert!(result.is_ok());
     }
 
     #[test]
     fn test_change_validator_graceful() {
-        let change = Change::new(
-            "test.txt",
-            "before",
-            "after",
-            "Modify",
-            ChangeType::Modify,
-        )
-        .unwrap();
+        let change =
+            Change::new("test.txt", "before", "after", "Modify", ChangeType::Modify).unwrap();
         let result = ChangeValidator::validate_change_graceful(&change);
         assert!(result.is_ok());
     }

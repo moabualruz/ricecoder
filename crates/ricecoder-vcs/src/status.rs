@@ -1,8 +1,9 @@
 //! Repository status and file modification tracking
 
-use crate::types::{Branch, ModifiedFile};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+
+use crate::types::{Branch, ModifiedFile};
 
 /// Overall repository status
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

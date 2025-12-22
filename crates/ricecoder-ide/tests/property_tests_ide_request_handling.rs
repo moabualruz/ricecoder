@@ -6,9 +6,10 @@
 //! This test suite verifies that IDE requests are processed correctly through the
 //! provider chain and responses are formatted correctly for IDE consumption.
 
+use std::sync::Arc;
+
 use proptest::prelude::*;
 use ricecoder_ide::*;
-use std::sync::Arc;
 
 // Strategy for generating valid languages
 fn valid_language_strategy() -> impl Strategy<Value = String> {

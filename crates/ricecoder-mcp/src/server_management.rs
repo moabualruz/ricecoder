@@ -3,18 +3,25 @@
 //! Server discovery, registration, health monitoring, and lifecycle management
 //! for MCP servers and their associated tools.
 
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
+
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
-use std::time::{Duration, SystemTime};
-use tokio::sync::{mpsc, RwLock};
-use tokio::time;
+use tokio::{
+    sync::{mpsc, RwLock},
+    time,
+};
 use tracing::{debug, error, info, warn};
 
-use crate::error::{Error, Result};
-use crate::metadata::ToolMetadata;
-use crate::transport::{MCPMessage, MCPRequest, MCPTransport, TransportConfig, TransportFactory};
+use crate::{
+    error::{Error, Result},
+    metadata::ToolMetadata,
+    transport::{MCPMessage, MCPRequest, MCPTransport, TransportConfig, TransportFactory},
+};
 
 /// Server connection state
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

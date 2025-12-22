@@ -1,9 +1,13 @@
 //! Status reporting for workspace metrics and health indicators
 
-use crate::models::{HealthStatus, ProjectStatus, Workspace, WorkspaceMetrics};
-use crate::OrchestrationError;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
+
+use crate::{
+    models::{HealthStatus, ProjectStatus, Workspace, WorkspaceMetrics},
+    OrchestrationError,
+};
 
 /// Collects and reports workspace metrics and health indicators
 #[derive(Debug, Clone)]

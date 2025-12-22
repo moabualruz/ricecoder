@@ -1,7 +1,8 @@
 //! Default LSP server configurations for Tier 1 servers
 
-use crate::types::{GlobalLspSettings, LspServerConfig, LspServerRegistry};
 use std::collections::HashMap;
+
+use crate::types::{GlobalLspSettings, LspServerConfig, LspServerRegistry};
 
 /// Provides default configurations for built-in LSP servers
 pub struct DefaultServerConfigs;

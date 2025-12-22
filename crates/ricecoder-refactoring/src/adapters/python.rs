@@ -1,9 +1,12 @@
 //! Python-specific refactoring provider
 
-use crate::error::Result;
-use crate::providers::{RefactoringAnalysis, RefactoringProvider};
-use crate::types::{Refactoring, RefactoringType, ValidationResult};
 use regex::Regex;
+
+use crate::{
+    error::Result,
+    providers::{RefactoringAnalysis, RefactoringProvider},
+    types::{Refactoring, RefactoringType, ValidationResult},
+};
 
 /// Python-specific refactoring provider
 pub struct PythonRefactoringProvider;

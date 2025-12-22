@@ -4,19 +4,21 @@
 //! allowing agents to execute tools through various backends including MCP servers,
 //! external APIs, and custom implementations.
 
-use crate::error::AgentError;
-use crate::tool_invokers::{ExtensibleToolInvoker, ToolBackend};
-use crate::tool_registry::ToolInvoker;
-use serde_json::json;
-use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::RwLock;
-use tracing::{debug, error, info, warn};
+use std::{collections::HashMap, sync::Arc};
 
 #[cfg(feature = "mcp")]
 use rmcp::client::Client;
 #[cfg(feature = "mcp")]
 use rmcp::transport::StdioTransport;
+use serde_json::json;
+use tokio::sync::RwLock;
+use tracing::{debug, error, info, warn};
+
+use crate::{
+    error::AgentError,
+    tool_invokers::{ExtensibleToolInvoker, ToolBackend},
+    tool_registry::ToolInvoker,
+};
 
 /// External Tool Backend
 ///

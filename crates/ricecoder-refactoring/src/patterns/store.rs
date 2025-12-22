@@ -1,10 +1,11 @@
 //! Pattern storage and retrieval
 
+use std::{collections::HashMap, sync::Arc};
+
+use tokio::sync::RwLock;
+
 use super::{PatternScope, RefactoringPattern};
 use crate::error::{RefactoringError, Result};
-use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::RwLock;
 
 /// Stores and manages refactoring patterns
 pub struct PatternStore {

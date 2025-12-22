@@ -1,5 +1,6 @@
-use ricecoder_tui::*;
 use std::path::PathBuf;
+
+use ricecoder_tui::*;
 
 #[cfg(test)]
 mod tests {

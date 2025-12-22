@@ -1,9 +1,11 @@
 //! Analytics and metrics collection for beta testing
 
-use crate::feedback::{FeedbackSeverity, FeedbackType, UserFeedback};
+use std::collections::HashMap;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+
+use crate::feedback::{FeedbackSeverity, FeedbackType, UserFeedback};
 
 /// Analytics data for beta testing
 #[derive(Debug, Clone, Serialize, Deserialize)]

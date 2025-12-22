@@ -1,5 +1,6 @@
-use ricecoder_commands::*;
 use std::collections::HashMap;
+
+use ricecoder_commands::*;
 
 #[cfg(test)]
 mod tests {

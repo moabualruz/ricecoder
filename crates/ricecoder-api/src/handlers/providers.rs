@@ -1,15 +1,16 @@
 //! Provider management API handlers
 
-use crate::{
-    error::{ApiError, ApiResult},
-    models::{ExecuteToolRequest, ExecuteToolResponse},
-    state::AppState,
-};
 use axum::{
     extract::{Path, Query, State},
     Json,
 };
 use serde::Deserialize;
+
+use crate::{
+    error::{ApiError, ApiResult},
+    models::{ExecuteToolRequest, ExecuteToolResponse},
+    state::AppState,
+};
 
 /// Query parameters for provider listing
 #[derive(Debug, Deserialize, utoipa::IntoParams, utoipa::ToSchema)]

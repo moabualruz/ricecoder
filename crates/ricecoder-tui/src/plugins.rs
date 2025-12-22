@@ -3,18 +3,18 @@
 //! This module implements a plugin architecture that allows third-party extensions
 //! to customize and extend the TUI functionality.
 
-use crate::error::TuiResult;
-use crate::model::{AppMessage, AppModel};
-use crate::Component;
+use std::{any::Any, collections::HashMap, fs, path::PathBuf, sync::Arc};
+
 use ratatui::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::any::Any;
-use std::collections::HashMap;
-use std::fs;
-use std::path::PathBuf;
-use std::sync::Arc;
 use tokio::sync::RwLock;
 use walkdir::WalkDir;
+
+use crate::{
+    error::TuiResult,
+    model::{AppMessage, AppModel},
+    Component,
+};
 
 /// Unique identifier for a plugin
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

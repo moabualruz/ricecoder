@@ -1,10 +1,13 @@
 //! JSON-RPC 2.0 protocol handling
 
+use std::sync::{
+    atomic::{AtomicU64, Ordering},
+    Arc,
+};
+
 use serde::{Deserialize, Serialize};
 #[allow(unused_imports)]
 use serde_json::{json, Value};
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Arc;
 
 /// JSON-RPC 2.0 request ID
 pub type RequestId = u64;

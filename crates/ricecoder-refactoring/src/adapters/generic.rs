@@ -1,9 +1,12 @@
 //! Generic text-based refactoring provider (fallback for unconfigured languages)
 
-use crate::error::Result;
-use crate::providers::{RefactoringAnalysis, RefactoringProvider};
-use crate::types::{Refactoring, RefactoringType, ValidationResult};
 use regex::Regex;
+
+use crate::{
+    error::Result,
+    providers::{RefactoringAnalysis, RefactoringProvider},
+    types::{Refactoring, RefactoringType, ValidationResult},
+};
 
 /// Generic text-based refactoring provider for any language
 pub struct GenericRefactoringProvider;
@@ -132,9 +135,10 @@ impl RefactoringProvider for GenericRefactoringProvider {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
     use crate::types::{RefactoringOptions, RefactoringTarget};
-    use std::path::PathBuf;
 
     #[test]
     fn test_generic_provider_analyze() -> Result<()> {

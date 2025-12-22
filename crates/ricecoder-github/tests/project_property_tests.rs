@@ -2,12 +2,13 @@
 //!
 //! These tests verify correctness properties that should hold across all valid inputs
 
+use std::collections::HashMap;
+
 use proptest::prelude::*;
 use ricecoder_github::{
     models::{Issue, IssueStatus, PrStatus, ProjectCard, PullRequest},
     ColumnStatus, ProjectManager, ProjectOperations,
 };
-use std::collections::HashMap;
 
 // Strategy for generating valid project IDs
 fn project_id_strategy() -> impl Strategy<Value = u64> {

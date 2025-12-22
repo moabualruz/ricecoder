@@ -6,13 +6,14 @@
 //! For any IDE-specific setting (VS Code settings, vim config, emacs config), the system
 //! SHALL support IDE-specific configuration and apply it correctly without affecting other IDEs.
 
+use std::collections::HashMap;
+
 use proptest::prelude::*;
 use ricecoder_ide::{
     BuiltinProvidersConfig, CompletionItem, CompletionItemKind, Diagnostic, DiagnosticSeverity,
     ExternalLspConfig, Hover, IdeConfigApplicator, IdeIntegrationConfig, IdeSpecificSettings,
     IdeType, Position, ProviderChainConfig, Range, TerminalConfig, VsCodeConfig,
 };
-use std::collections::HashMap;
 
 /// Strategy for generating IDE types
 fn ide_type_strategy() -> impl Strategy<Value = IdeType> {

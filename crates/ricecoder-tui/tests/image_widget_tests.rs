@@ -85,7 +85,7 @@ mod tests {
     fn test_image_widget_load_from_data() {
         let capabilities = TerminalCapabilities::detect();
         let mut widget = ImageWidget::new(&capabilities);
-        let data = vec![0x89, 0x50, 0x4E, 0x47]; // PNG header
+        let data = vec![0x89, 0x50, 0x4e, 0x47]; // PNG header
 
         let result = widget.load_from_data(data, ImageFormat::Png);
         assert!(result.is_ok());
@@ -98,7 +98,7 @@ mod tests {
         let capabilities = TerminalCapabilities::detect();
         let mut widget = ImageWidget::new(&capabilities);
         widget.set_dimensions(800, 600);
-        let _ = widget.load_from_data(vec![0x89, 0x50, 0x4E, 0x47], ImageFormat::Png);
+        let _ = widget.load_from_data(vec![0x89, 0x50, 0x4e, 0x47], ImageFormat::Png);
 
         widget.clear();
         assert!(!widget.is_loaded());
@@ -131,7 +131,7 @@ mod tests {
         assert_eq!(widget.get_display_text(), "[No image loaded]");
 
         widget.set_dimensions(800, 600);
-        let _ = widget.load_from_data(vec![0x89, 0x50, 0x4E, 0x47], ImageFormat::Png);
+        let _ = widget.load_from_data(vec![0x89, 0x50, 0x4e, 0x47], ImageFormat::Png);
         let text = widget.get_display_text();
         assert!(text.contains("PNG"));
         assert!(text.contains("800"));
@@ -143,7 +143,7 @@ mod tests {
         let capabilities = TerminalCapabilities::detect();
         let mut widget = ImageWidget::new(&capabilities);
         widget.set_dimensions(800, 600);
-        let _ = widget.load_from_data(vec![0x89, 0x50, 0x4E, 0x47], ImageFormat::Png);
+        let _ = widget.load_from_data(vec![0x89, 0x50, 0x4e, 0x47], ImageFormat::Png);
 
         widget.set_render_mode(RenderMode::UnicodeBlocks);
         assert!(widget.get_rendered_output().is_some());

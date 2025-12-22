@@ -2,9 +2,10 @@
 //! **Feature: ricecoder-research, Property 3: Context Relevance Ordering**
 //! **Validates: Requirements 1.10, 2.1**
 
+use std::path::PathBuf;
+
 use proptest::prelude::*;
 use ricecoder_research::{ContextBuilder, FileContext};
-use std::path::PathBuf;
 
 // ============================================================================
 // Generators for property testing

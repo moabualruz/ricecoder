@@ -1,10 +1,13 @@
 //! Audit logging for comprehensive audit trails
 
-use crate::error::FileError;
-use crate::models::AuditEntry;
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
+
 use tracing::{debug, error, info};
+
+use crate::{error::FileError, models::AuditEntry};
 
 /// Manages audit trails for all file operations
 ///
@@ -237,10 +240,11 @@ impl Default for AuditLogger {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::models::OperationType;
     use chrono::Utc;
     use tempfile::TempDir;
+
+    use super::*;
+    use crate::models::OperationType;
 
     #[test]
     fn test_audit_logger_creation() {

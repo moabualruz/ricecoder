@@ -3,11 +3,10 @@
 //! This module implements the IdeProvider trait for built-in language support
 //! (Rust, TypeScript, Python) using basic pattern matching and analysis.
 
-use crate::error::IdeResult;
-use crate::provider::IdeProvider;
-use crate::types::*;
 use async_trait::async_trait;
 use tracing::debug;
+
+use crate::{error::IdeResult, provider::IdeProvider, types::*};
 
 /// Built-in provider for Rust
 pub struct RustProvider;

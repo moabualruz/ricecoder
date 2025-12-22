@@ -1,13 +1,21 @@
 //! Performance monitoring and metrics collection
 
-use crate::error::{ActivityLogError, ActivityLogResult};
-use crate::events::{ActivityEvent, EventCategory, LogLevel};
+use std::{
+    collections::HashMap,
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc,
+    },
+    time::{Duration, Instant},
+};
+
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Arc;
-use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
+
+use crate::{
+    error::{ActivityLogError, ActivityLogResult},
+    events::{ActivityEvent, EventCategory, LogLevel},
+};
 
 /// Performance metrics for monitoring system health
 #[derive(Debug, Clone, Serialize, Deserialize)]

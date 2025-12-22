@@ -5,10 +5,12 @@
 //!
 //! Property: For any generation failure, the system SHALL support rollback to restore the previous state of all files.
 
-use proptest::prelude::*;
-use ricecoder_generation::conflict_resolver::ConflictStrategy;
-use ricecoder_generation::{GeneratedFile, OutputWriter, OutputWriterConfig};
 use std::fs;
+
+use proptest::prelude::*;
+use ricecoder_generation::{
+    conflict_resolver::ConflictStrategy, GeneratedFile, OutputWriter, OutputWriterConfig,
+};
 use tempfile::TempDir;
 
 /// Strategy for generating file paths

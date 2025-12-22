@@ -1,7 +1,9 @@
 //! Safety validation for refactoring operations
 
-use crate::error::Result;
-use crate::types::{Refactoring, ValidationResult};
+use crate::{
+    error::Result,
+    types::{Refactoring, ValidationResult},
+};
 
 /// Validates safety of refactoring operations
 pub struct SafetyChecker;
@@ -73,10 +75,12 @@ impl Default for SafetyChecker {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
+    use tempfile::NamedTempFile;
+
     use super::*;
     use crate::types::{RefactoringOptions, RefactoringTarget, RefactoringType};
-    use std::path::PathBuf;
-    use tempfile::NamedTempFile;
 
     #[test]
     fn test_check_refactoring_invalid_file() -> Result<()> {

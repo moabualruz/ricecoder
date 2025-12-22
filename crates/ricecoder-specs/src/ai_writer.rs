@@ -3,15 +3,18 @@
 //! Manages AI-assisted spec creation through sequential phases (requirements → design → tasks)
 //! with conversation history, gap identification, and integration with approval gates and validation.
 
-use crate::approval::ApprovalManager;
-use crate::error::SpecError;
-use crate::models::{
-    ConversationMessage, MessageRole, Spec, SpecMetadata, SpecPhase, SpecStatus,
-    SpecWritingSession, Steering,
-};
-use crate::steering::SteeringLoader;
-use crate::validation::ValidationEngine;
 use chrono::Utc;
+
+use crate::{
+    approval::ApprovalManager,
+    error::SpecError,
+    models::{
+        ConversationMessage, MessageRole, Spec, SpecMetadata, SpecPhase, SpecStatus,
+        SpecWritingSession, Steering,
+    },
+    steering::SteeringLoader,
+    validation::ValidationEngine,
+};
 
 /// Manages AI-assisted spec writing with phase guidance and approval gates
 #[derive(Debug, Clone)]

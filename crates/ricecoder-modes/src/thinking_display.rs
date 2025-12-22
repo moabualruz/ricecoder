@@ -1,5 +1,7 @@
-use crate::error::Result;
-use crate::models::{ModeAction, ModeResponse, ThinkingDepth};
+use crate::{
+    error::Result,
+    models::{ModeAction, ModeResponse, ThinkingDepth},
+};
 
 /// Formats and displays thinking content for user consumption
 #[derive(Debug, Clone)]

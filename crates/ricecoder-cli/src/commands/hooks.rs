@@ -1,7 +1,8 @@
 //! Hooks command handler
 
-use crate::error::{CliError, CliResult};
 use ricecoder_hooks::{HookCli, HookCommand, InMemoryHookRegistry};
+
+use crate::error::{CliError, CliResult};
 
 /// Hooks command action
 #[derive(Debug, Clone)]

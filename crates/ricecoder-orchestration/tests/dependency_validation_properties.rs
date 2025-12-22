@@ -2,11 +2,12 @@
 //! **Feature: ricecoder-orchestration, Property 5: Dependency Validation Correctness**
 //! **Validates: Requirements 3.2**
 
+use std::path::PathBuf;
+
 use proptest::prelude::*;
 use ricecoder_orchestration::{
     DependencyValidator, Project, ProjectDependency, Version, VersionConstraint, VersionValidator,
 };
-use std::path::PathBuf;
 
 // Strategy for generating valid semantic versions
 fn version_strategy() -> impl Strategy<Value = String> {

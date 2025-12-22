@@ -1,8 +1,9 @@
 //! Core data models for workflows
 
+use std::collections::HashMap;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// A workflow definition
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -7,8 +7,9 @@
 //! - Go: go vet, golangci-lint
 //! - Java: javac, checkstyle
 
-use crate::models::{ValidationError, ValidationWarning};
 use tracing::debug;
+
+use crate::models::{ValidationError, ValidationWarning};
 
 /// Trait for language-specific validators
 pub trait LanguageValidator: Send + Sync {

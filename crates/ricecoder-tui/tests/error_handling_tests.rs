@@ -1,5 +1,6 @@
-use ricecoder_tui::*;
 use std::collections::HashMap;
+
+use ricecoder_tui::*;
 
 mod tests {
     use super::*;

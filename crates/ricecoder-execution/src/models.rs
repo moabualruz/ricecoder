@@ -1,7 +1,8 @@
 //! Data models for execution plans and results
 
-use serde::{Deserialize, Serialize};
 use std::time::Duration;
+
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Execution plan containing all steps to be executed

@@ -1,9 +1,12 @@
-use crate::error::{CommandError, Result};
-use crate::registry::CommandRegistry;
-use crate::types::CommandDefinition;
+use std::{fs, path::Path};
+
 use serde::{Deserialize, Serialize};
-use std::fs;
-use std::path::Path;
+
+use crate::{
+    error::{CommandError, Result},
+    registry::CommandRegistry,
+    types::CommandDefinition,
+};
 
 /// Configuration file format for commands
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -118,9 +121,10 @@ impl ConfigManager {
 
 #[cfg(test)]
 mod tests {
+    use tempfile::NamedTempFile;
+
     use super::*;
     use crate::types::{ArgumentType, CommandArgument};
-    use tempfile::NamedTempFile;
 
     fn create_test_registry() -> CommandRegistry {
         let mut registry = CommandRegistry::new();

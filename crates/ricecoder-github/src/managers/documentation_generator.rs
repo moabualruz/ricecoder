@@ -1,9 +1,11 @@
 //! Documentation Generator - Generates and maintains project documentation
 
-use crate::errors::Result;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 use tracing::{debug, info};
+
+use crate::errors::Result;
 
 /// Documentation section
 #[derive(Debug, Clone, Serialize, Deserialize)]

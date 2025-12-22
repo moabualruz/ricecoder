@@ -1,12 +1,11 @@
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
+
+use ricecoder_storage::manager::PathResolver;
+use tokio::{fs, sync::RwLock};
+
 /// Rule storage and persistence
 use crate::error::{LearningError, Result};
 use crate::models::{Rule, RuleScope};
-use ricecoder_storage::manager::PathResolver;
-use std::collections::HashMap;
-use std::path::PathBuf;
-use std::sync::Arc;
-use tokio::fs;
-use tokio::sync::RwLock;
 
 /// Stores and retrieves rules from persistent storage
 pub struct RuleStorage {

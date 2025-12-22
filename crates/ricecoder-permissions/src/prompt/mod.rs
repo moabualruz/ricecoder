@@ -2,9 +2,9 @@
 
 pub mod decision;
 
-pub use decision::{PromptResult, UserDecision};
-
 use std::io::{self, Write};
+
+pub use decision::{PromptResult, UserDecision};
 
 /// Permission prompt for user interaction
 #[derive(Debug, Clone)]

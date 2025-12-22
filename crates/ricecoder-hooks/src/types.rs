@@ -28,8 +28,9 @@
 //! };
 //! ```
 
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 
 /// A hook that triggers on specific events
 ///

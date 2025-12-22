@@ -2,12 +2,12 @@ use ricecoder_providers::*;
 
 #[cfg(test)]
 mod tests {
+    use std::{fs, path::PathBuf, time::Duration};
+
+    use tempfile::TempDir;
+
     use super::*;
     use crate::providers::OllamaConfig;
-    use std::fs;
-    use std::path::PathBuf;
-    use std::time::Duration;
-    use tempfile::TempDir;
 
     #[test]
     fn test_default_config() {

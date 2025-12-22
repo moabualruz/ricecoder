@@ -3,13 +3,16 @@
 //! Caches AI provider responses to avoid redundant API calls.
 //! Uses file-based cache with TTL support.
 
-use crate::error::ProviderError;
-use crate::models::{ChatRequest, ChatResponse};
+use std::{path::Path, sync::Arc};
+
 use ricecoder_storage::{CacheInvalidationStrategy, CacheManager};
 use sha2::{Digest, Sha256};
-use std::path::Path;
-use std::sync::Arc;
 use tracing::{debug, info};
+
+use crate::{
+    error::ProviderError,
+    models::{ChatRequest, ChatResponse},
+};
 
 /// Provider response cache
 ///

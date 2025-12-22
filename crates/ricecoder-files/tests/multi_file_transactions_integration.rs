@@ -3,9 +3,11 @@
 //! Tests complex workflows involving multiple files in a single transaction,
 //! including rollback of partial transactions and audit trail verification.
 
-use ricecoder_files::backup::BackupManager;
-use ricecoder_files::models::{FileOperation, OperationType};
-use ricecoder_files::transaction::TransactionManager;
+use ricecoder_files::{
+    backup::BackupManager,
+    models::{FileOperation, OperationType},
+    transaction::TransactionManager,
+};
 use tempfile::TempDir;
 use tokio::fs;
 

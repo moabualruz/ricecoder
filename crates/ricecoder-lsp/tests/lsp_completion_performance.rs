@@ -5,6 +5,8 @@
 //! - Ghost text update time: < 50ms
 //! - Prefix filtering time: < 50ms
 
+use std::{sync::Arc, time::Instant};
+
 use async_trait::async_trait;
 use ricecoder_completion::{
     BasicCompletionRanker, CompletionContext, CompletionGenerator, CompletionItem,
@@ -14,8 +16,6 @@ use ricecoder_completion::{
 };
 use ricecoder_lsp::{config::CompletionConfig, server::LspServer, types::ServerState};
 use serde_json::json;
-use std::sync::Arc;
-use std::time::Instant;
 
 /// Mock completion generator for performance testing
 struct PerformanceTestGenerator;

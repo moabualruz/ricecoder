@@ -3,8 +3,10 @@
 //! This module provides a language-agnostic code actions engine that delegates
 //! to language-specific providers registered in the provider registry.
 
-use crate::providers::{CodeActionProvider, CodeActionRegistry, ProviderResult};
-use crate::types::Diagnostic;
+use crate::{
+    providers::{CodeActionProvider, CodeActionRegistry, ProviderResult},
+    types::Diagnostic,
+};
 
 /// Generic code actions engine that delegates to pluggable providers
 pub struct GenericCodeActionsEngine {

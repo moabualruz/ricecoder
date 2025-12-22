@@ -1,7 +1,8 @@
 // Progress indicators and spinners
 
-use indicatif::{ProgressBar, ProgressStyle};
 use std::time::Duration;
+
+use indicatif::{ProgressBar, ProgressStyle};
 
 /// Create a spinner for long-running operations
 pub fn create_spinner(message: &str) -> ProgressBar {

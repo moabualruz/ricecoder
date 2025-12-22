@@ -1,10 +1,14 @@
-/// Completion history tracking for frequency and recency scoring
-use crate::types::*;
+use std::{
+    collections::HashMap,
+    path::PathBuf,
+    sync::{Arc, RwLock},
+};
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::path::PathBuf;
-use std::sync::{Arc, RwLock};
+
+/// Completion history tracking for frequency and recency scoring
+use crate::types::*;
 
 /// Represents a single completion usage event
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,3 +1,11 @@
+use std::sync::Arc;
+
+use ricecoder_completion::{
+    CompletionEngine, CompletionItem, CompletionItemKind, Position as CompletionPosition,
+};
+use serde_json::{json, Value};
+use tracing::debug;
+
 /// Code completion support for LSP
 ///
 /// This module provides LSP handlers for code completion requests and item resolution.
@@ -30,12 +38,6 @@
 /// - Users get basic completions instead of semantic ones
 /// - No error is shown to the user (graceful degradation)
 use crate::types::{LspError, LspResult, Position};
-use ricecoder_completion::{
-    CompletionEngine, CompletionItem, CompletionItemKind, Position as CompletionPosition,
-};
-use serde_json::{json, Value};
-use std::sync::Arc;
-use tracing::debug;
 
 /// Completion handler for LSP
 pub struct CompletionHandler {

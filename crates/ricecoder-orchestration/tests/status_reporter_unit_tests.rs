@@ -2,12 +2,13 @@
 //!
 //! Tests metric collection, report generation, and aggregation logic
 
+use std::path::PathBuf;
+
 use ricecoder_orchestration::{
     AggregatedMetrics, ComplianceSummary, DependencyType, HealthStatus, Project, ProjectDependency,
     ProjectHealthIndicator, ProjectStatus, RuleType, StatusReport, StatusReporter, Workspace,
     WorkspaceConfig, WorkspaceMetrics, WorkspaceRule,
 };
-use std::path::PathBuf;
 
 /// Helper function to create a test workspace with multiple projects
 fn create_complex_workspace() -> Workspace {

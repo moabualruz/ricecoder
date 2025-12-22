@@ -1,11 +1,12 @@
+use std::{collections::HashMap, sync::Arc};
+
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use tokio::sync::RwLock;
+
 /// Analytics engine for tracking and analyzing rule metrics
 use crate::error::{LearningError, Result};
 use crate::models::{Rule, RuleScope};
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::RwLock;
 
 /// Metrics for a single rule
 #[derive(Debug, Clone, Serialize, Deserialize)]

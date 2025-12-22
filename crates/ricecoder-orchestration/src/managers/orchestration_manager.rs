@@ -1,11 +1,11 @@
 //! Central orchestration manager for workspace operations
 
-use crate::error::Result;
-use crate::models::Workspace;
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::{path::PathBuf, sync::Arc};
+
 use tokio::sync::RwLock;
 use tracing::{debug, info};
+
+use crate::{error::Result, models::Workspace};
 
 /// Central coordinator for all workspace orchestration operations
 ///
@@ -161,8 +161,9 @@ impl OrchestrationManager {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::path::PathBuf;
+
+    use super::*;
 
     #[tokio::test]
     async fn test_orchestration_manager_creation() {

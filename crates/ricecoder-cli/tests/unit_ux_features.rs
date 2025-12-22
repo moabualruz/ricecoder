@@ -1,8 +1,10 @@
 // Unit tests for user experience features
 // **Feature: ricecoder-cli, Tests for Requirements 5.1-5.6**
 
-use ricecoder_cli::commands::{Command, VersionCommand};
-use ricecoder_cli::logging::{init_logging, VerbosityLevel};
+use ricecoder_cli::{
+    commands::{Command, VersionCommand},
+    logging::{init_logging, VerbosityLevel},
+};
 
 // ============================================================================
 // Verbosity Flag Tests

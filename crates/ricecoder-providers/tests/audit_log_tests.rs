@@ -2,8 +2,9 @@ use ricecoder_providers::*;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_audit_log_entry_creation() {

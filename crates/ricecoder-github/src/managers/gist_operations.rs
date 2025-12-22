@@ -1,10 +1,14 @@
 //! Gist Operations - Additional operations for Gist management
 
-use crate::errors::{GitHubError, Result};
-use crate::models::Gist;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 use tracing::{debug, info};
+
+use crate::{
+    errors::{GitHubError, Result},
+    models::Gist,
+};
 
 /// Gist sharing configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -219,8 +219,7 @@ fn test_redaction_handles_repeated_patterns() {
 /// Test: Redaction filter is thread-safe
 #[test]
 fn test_redaction_filter_thread_safe() {
-    use std::sync::Arc;
-    use std::thread;
+    use std::{sync::Arc, thread};
 
     let filter = Arc::new(RedactionFilter::new());
     let mut handles = vec![];

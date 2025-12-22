@@ -6,13 +6,14 @@
 //! - Authentication/authorization/enterprise integration
 //! - Performance/load testing with caching validation
 
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
-use tempfile::TempDir;
-use tokio::sync::RwLock;
-use tokio::time::sleep;
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
+// External dependencies
+use ricecoder_cache::{Cache, CacheConfig};
 // MCP imports
 use ricecoder_mcp::{
     config::{MCPConfig, MCPConfigLoader, MCPServerConfig},
@@ -30,11 +31,10 @@ use ricecoder_mcp::{
     tool_execution::ToolExecutionContext,
     transport::TransportConfig,
 };
-
-// External dependencies
-use ricecoder_cache::{Cache, CacheConfig};
 use ricecoder_permissions::PermissionLevel;
 use serde_json::json;
+use tempfile::TempDir;
+use tokio::{sync::RwLock, time::sleep};
 
 /// **Integration Test 1.1: Server Registration and Discovery**
 /// **Validates: Server registration/discovery/health monitoring**
@@ -273,8 +273,10 @@ async fn test_dynamic_permission_updates() {
 /// **Validates: Authentication/authorization/enterprise integration**
 #[tokio::test]
 async fn test_authentication_authorization_integration() {
-    use ricecoder_mcp::audit::MCPAuditLogger;
-    use ricecoder_mcp::rbac::{MCPAuthorizationMiddleware, MCRBACManager};
+    use ricecoder_mcp::{
+        audit::MCPAuditLogger,
+        rbac::{MCPAuthorizationMiddleware, MCRBACManager},
+    };
 
     // Setup RBAC manager
     let rbac_manager = Arc::new(MCRBACManager::new());

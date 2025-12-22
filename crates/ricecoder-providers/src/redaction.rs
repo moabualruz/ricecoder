@@ -3,8 +3,9 @@
 //! This module provides utilities for redacting sensitive information (API keys, credentials)
 //! from logs, error messages, and debug output to prevent accidental credential leakage.
 
-use regex::Regex;
 use std::sync::OnceLock;
+
+use regex::Regex;
 
 /// Redaction filter for removing sensitive information from strings
 pub struct RedactionFilter {

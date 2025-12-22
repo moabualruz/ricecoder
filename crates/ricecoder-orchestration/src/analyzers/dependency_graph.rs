@@ -1,8 +1,11 @@
 //! Dependency graph construction and maintenance
 
-use crate::error::{OrchestrationError, Result};
-use crate::models::{Project, ProjectDependency};
 use std::collections::{HashMap, HashSet, VecDeque};
+
+use crate::{
+    error::{OrchestrationError, Result},
+    models::{Project, ProjectDependency},
+};
 
 /// Represents a directed graph of project dependencies
 #[derive(Debug, Clone)]
@@ -356,9 +359,10 @@ impl Default for DependencyGraph {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
     use crate::models::{DependencyType, ProjectStatus};
-    use std::path::PathBuf;
 
     fn create_test_project(name: &str) -> Project {
         Project {

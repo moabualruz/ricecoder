@@ -3,9 +3,11 @@
 /// **Validates: Requirements 4.4**
 #[cfg(test)]
 mod tests {
-    use crate::{ThinkMoreController, ThinkingDepth};
-    use proptest::prelude::*;
     use std::time::{Duration, Instant};
+
+    use proptest::prelude::*;
+
+    use crate::{ThinkMoreController, ThinkingDepth};
 
     proptest! {
         /// Property: Thinking with content takes more time than without

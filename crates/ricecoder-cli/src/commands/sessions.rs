@@ -1,18 +1,22 @@
 //! Sessions command - Manage ricecoder sessions
 
-use crate::commands::Command;
-use crate::error::{CliError, CliResult};
 use async_trait::async_trait;
+
+use crate::{
+    commands::Command,
+    error::{CliError, CliResult},
+};
 
 fn format_timestamp(ts: i64) -> String {
     use chrono::{DateTime, Utc};
     let dt = DateTime::<Utc>::from_timestamp(ts, 0).unwrap_or_else(|| DateTime::<Utc>::UNIX_EPOCH);
     dt.format("%Y-%m-%d %H:%M:%S").to_string()
 }
+use std::sync::Arc;
+
 use ricecoder_agents::use_cases::{SessionLifecycleUseCase, SessionSharingUseCase};
 use ricecoder_sessions::{SessionContext, SessionMode, SharePermissions};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 
 /// Sessions command action
 #[derive(Debug, Clone)]

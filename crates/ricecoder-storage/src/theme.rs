@@ -2,10 +2,11 @@
 //!
 //! This module provides storage operations for theme preferences and custom themes.
 
-use crate::error::{StorageError, StorageResult};
+use std::{fs, path::PathBuf};
+
 use serde::{Deserialize, Serialize};
-use std::fs;
-use std::path::PathBuf;
+
+use crate::error::{StorageError, StorageResult};
 
 /// Theme preference data structure
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

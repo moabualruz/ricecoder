@@ -1,12 +1,15 @@
 //! Ask Mode implementation for question answering without file modifications
 
-use async_trait::async_trait;
 use std::time::Instant;
 
-use crate::error::Result;
-use crate::mode::Mode;
-use crate::models::{
-    Capability, ModeAction, ModeConfig, ModeConstraints, ModeContext, ModeResponse, Operation,
+use async_trait::async_trait;
+
+use crate::{
+    error::Result,
+    mode::Mode,
+    models::{
+        Capability, ModeAction, ModeConfig, ModeConstraints, ModeContext, ModeResponse, Operation,
+    },
 };
 
 /// Ask Mode for question answering and explanations

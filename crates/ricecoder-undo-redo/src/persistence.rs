@@ -1,13 +1,15 @@
 //! Persistence layer for history storage
 
-use crate::change::Change;
-use crate::checkpoint::Checkpoint;
-use crate::error::UndoRedoError;
-use chrono::{DateTime, Utc, Duration};
+use std::{
+    collections::HashMap,
+    fs,
+    path::{Path, PathBuf},
+};
+
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::fs;
-use std::path::{Path, PathBuf};
+
+use crate::{change::Change, checkpoint::Checkpoint, error::UndoRedoError};
 
 /// Serializable history snapshot for persistence
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,10 +24,7 @@ pub struct HistorySnapshot {
 
 impl HistorySnapshot {
     /// Create a new history snapshot
-    pub fn new(
-        changes: Vec<Change>,
-        checkpoints: HashMap<String, Checkpoint>,
-    ) -> Self {
+    pub fn new(changes: Vec<Change>, checkpoints: HashMap<String, Checkpoint>) -> Self {
         HistorySnapshot {
             changes,
             checkpoints,
@@ -78,7 +77,10 @@ impl HistoryStore {
         if let Some(parent) = storage_path.parent() {
             if !parent.exists() {
                 fs::create_dir_all(parent).map_err(|e| {
-                    UndoRedoError::storage_error(format!("Failed to create storage directory: {}", e))
+                    UndoRedoError::storage_error(format!(
+                        "Failed to create storage directory: {}",
+                        e
+                    ))
                 })?;
             }
         }
@@ -146,7 +148,10 @@ impl HistoryStore {
             }
             Err(e) => {
                 // Log warning and return empty history on load failure
-                eprintln!("Warning: Failed to load history: {}. Starting with empty history.", e);
+                eprintln!(
+                    "Warning: Failed to load history: {}. Starting with empty history.",
+                    e
+                );
                 let empty_snapshot = HistorySnapshot::new(Vec::new(), HashMap::new());
                 self.history_data = Some(empty_snapshot.clone());
                 Ok(empty_snapshot)
@@ -177,7 +182,9 @@ impl HistoryStore {
         if let Some(snapshot) = &mut self.history_data {
             // Filter out old changes
             let original_count = snapshot.changes.len();
-            snapshot.changes.retain(|change| change.timestamp > cutoff_time);
+            snapshot
+                .changes
+                .retain(|change| change.timestamp > cutoff_time);
             let removed_count = original_count - snapshot.changes.len();
 
             if removed_count > 0 {
@@ -189,7 +196,9 @@ impl HistoryStore {
 
             // Filter out old checkpoints
             let original_checkpoint_count = snapshot.checkpoints.len();
-            snapshot.checkpoints.retain(|_, cp| cp.created_at > cutoff_time);
+            snapshot
+                .checkpoints
+                .retain(|_, cp| cp.created_at > cutoff_time);
             let removed_checkpoint_count = original_checkpoint_count - snapshot.checkpoints.len();
 
             if removed_checkpoint_count > 0 {
@@ -260,9 +269,7 @@ impl HistoryStore {
     /// Handle storage full gracefully by logging warning
     pub fn handle_storage_full(&self) -> Result<(), UndoRedoError> {
         if self.is_storage_full()? {
-            eprintln!(
-                "Warning: History storage is full (>1GB). Consider cleaning up old entries."
-            );
+            eprintln!("Warning: History storage is full (>1GB). Consider cleaning up old entries.");
         }
         Ok(())
     }
@@ -350,9 +357,7 @@ impl StorageManager {
             // If still over limit, remove more aggressively
             let stats_after = self.store.get_storage_stats()?;
             if stats_after.size_bytes > self.max_storage_bytes {
-                eprintln!(
-                    "Still over limit after cleanup. Removing entries older than 7 days."
-                );
+                eprintln!("Still over limit after cleanup. Removing entries older than 7 days.");
                 self.store.cleanup_old_entries(7)?;
             }
         }
@@ -393,10 +398,12 @@ impl StorageManager {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+
+    use tempfile::TempDir;
+
     use super::*;
     use crate::change::ChangeType;
-    use std::fs;
-    use tempfile::TempDir;
 
     #[test]
     fn test_history_store_create() {
@@ -479,14 +486,8 @@ mod tests {
         let store_path = temp_dir.path().join("history.json");
 
         let mut store = HistoryStore::new(&store_path).unwrap();
-        let change = Change::new(
-            "test.txt",
-            "before",
-            "after",
-            "Test",
-            ChangeType::Modify,
-        )
-        .unwrap();
+        let change =
+            Change::new("test.txt", "before", "after", "Test", ChangeType::Modify).unwrap();
         let snapshot = HistorySnapshot::new(vec![change], HashMap::new());
         store.save_history(snapshot).unwrap();
 
@@ -503,14 +504,8 @@ mod tests {
         let store_path = temp_dir.path().join("history.json");
 
         let mut store = HistoryStore::new(&store_path).unwrap();
-        let change = Change::new(
-            "test.txt",
-            "before",
-            "after",
-            "Test",
-            ChangeType::Modify,
-        )
-        .unwrap();
+        let change =
+            Change::new("test.txt", "before", "after", "Test", ChangeType::Modify).unwrap();
         let snapshot = HistorySnapshot::new(vec![change], HashMap::new());
         store.save_history(snapshot).unwrap();
 
@@ -520,14 +515,8 @@ mod tests {
 
     #[test]
     fn test_history_snapshot_validate() {
-        let change = Change::new(
-            "test.txt",
-            "before",
-            "after",
-            "Test",
-            ChangeType::Modify,
-        )
-        .unwrap();
+        let change =
+            Change::new("test.txt", "before", "after", "Test", ChangeType::Modify).unwrap();
         let snapshot = HistorySnapshot::new(vec![change], HashMap::new());
         assert!(snapshot.validate().is_ok());
     }
@@ -538,14 +527,8 @@ mod tests {
         let store_path = temp_dir.path().join("history.json");
 
         let mut store = HistoryStore::new(&store_path).unwrap();
-        let change = Change::new(
-            "test.txt",
-            "before",
-            "after",
-            "Test",
-            ChangeType::Modify,
-        )
-        .unwrap();
+        let change =
+            Change::new("test.txt", "before", "after", "Test", ChangeType::Modify).unwrap();
         let snapshot = HistorySnapshot::new(vec![change], HashMap::new());
 
         // Should succeed on first attempt
@@ -593,12 +576,8 @@ mod tests {
         for i in 0..2 {
             let mut file_states = HashMap::new();
             file_states.insert(format!("file{}.txt", i), format!("content{}", i));
-            let checkpoint = Checkpoint::new(
-                format!("Checkpoint {}", i),
-                "description",
-                file_states,
-            )
-            .unwrap();
+            let checkpoint =
+                Checkpoint::new(format!("Checkpoint {}", i), "description", file_states).unwrap();
             checkpoints.insert(checkpoint.id.clone(), checkpoint);
         }
 
@@ -648,14 +627,8 @@ mod tests {
         let mut manager = StorageManager::new(&store_path, 30, 1024 * 1024 * 1024).unwrap();
 
         // Create some changes
-        let change = Change::new(
-            "test.txt",
-            "before",
-            "after",
-            "Test",
-            ChangeType::Modify,
-        )
-        .unwrap();
+        let change =
+            Change::new("test.txt", "before", "after", "Test", ChangeType::Modify).unwrap();
         let snapshot = HistorySnapshot::new(vec![change], HashMap::new());
         manager.get_store_mut().save_history(snapshot).unwrap();
 
@@ -691,21 +664,20 @@ mod tests {
 
 #[cfg(test)]
 mod property_tests {
-    use super::*;
-    use crate::change::ChangeType;
     use proptest::prelude::*;
     use tempfile::TempDir;
 
+    use super::*;
+    use crate::change::ChangeType;
+
     /// Strategy for generating valid file paths
     fn file_path_strategy() -> impl Strategy<Value = String> {
-        r"[a-zA-Z0-9_\-./]{1,50}\.rs"
-            .prop_map(|s| s.to_string())
+        r"[a-zA-Z0-9_\-./]{1,50}\.rs".prop_map(|s| s.to_string())
     }
 
     /// Strategy for generating valid content
     fn content_strategy() -> impl Strategy<Value = String> {
-        r"[a-zA-Z0-9\s]{1,100}"
-            .prop_map(|s| s.to_string())
+        r"[a-zA-Z0-9\s]{1,100}".prop_map(|s| s.to_string())
     }
 
     proptest! {

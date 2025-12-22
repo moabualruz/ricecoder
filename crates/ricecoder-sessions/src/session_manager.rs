@@ -3,9 +3,11 @@
 //! This module provides session management operations including creation, deletion,
 //! renaming, and persistence of sessions.
 
-use crate::sessions::{Session, SessionStatus, SessionWidget};
-use anyhow::{anyhow, Result};
 use std::collections::HashMap;
+
+use anyhow::{anyhow, Result};
+
+use crate::sessions::{Session, SessionStatus, SessionWidget};
 
 /// Session manager for handling session lifecycle
 pub struct SessionManager {

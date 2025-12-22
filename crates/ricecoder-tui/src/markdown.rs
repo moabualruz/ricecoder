@@ -1,12 +1,13 @@
 //! Markdown rendering for the TUI
 
 use lazy_static::lazy_static;
-use ratatui::prelude::*;
-use ratatui::style::Color;
-use syntect::easy::HighlightLines;
-use syntect::highlighting::{Style as SyntectStyle, ThemeSet};
-use syntect::parsing::SyntaxSet;
-use syntect::util::LinesWithEndings;
+use ratatui::{prelude::*, style::Color};
+use syntect::{
+    easy::HighlightLines,
+    highlighting::{Style as SyntectStyle, ThemeSet},
+    parsing::SyntaxSet,
+    util::LinesWithEndings,
+};
 
 lazy_static! {
     pub static ref SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();

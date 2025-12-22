@@ -1,13 +1,12 @@
 //! Integration tests for template rendering with full workflows
 //! Tests template rendering with conditionals, loops, and boilerplate scaffolding
 
-use ricecoder_generation::templates::resolver::CaseTransform;
+use std::{collections::HashMap, fs};
+
 use ricecoder_generation::{
-    Boilerplate, BoilerplateFile, BoilerplateManager, ConflictResolution, PlaceholderResolver,
-    TemplateEngine, TemplateParser,
+    templates::resolver::CaseTransform, Boilerplate, BoilerplateFile, BoilerplateManager,
+    ConflictResolution, PlaceholderResolver, TemplateEngine, TemplateParser,
 };
-use std::collections::HashMap;
-use std::fs;
 use tempfile::TempDir;
 
 /// Test template rendering with simple placeholders

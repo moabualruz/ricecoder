@@ -8,8 +8,9 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::{Rule, RuleScope, RuleSource, RuleValidator};
     use proptest::prelude::*;
+
+    use crate::{Rule, RuleScope, RuleSource, RuleValidator};
 
     /// Strategy for generating valid rule patterns
     fn valid_pattern_strategy() -> impl Strategy<Value = String> {

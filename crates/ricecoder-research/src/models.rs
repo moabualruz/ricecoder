@@ -1,12 +1,12 @@
 //! Data models for the research system
 
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
+use chrono::{DateTime, Utc};
 // Re-export DetectedPattern when patterns feature is enabled
 #[cfg(feature = "patterns")]
 pub use ricecoder_patterns::DetectedPattern;
+use serde::{Deserialize, Serialize};
 
 // ============================================================================
 // Project Analysis Models

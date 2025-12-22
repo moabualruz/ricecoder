@@ -2,11 +2,11 @@
 //! **Feature: ricecoder-sessions, Property 10: Share Link Expiration**
 //! **Validates: Requirements 3.5**
 
+use std::{thread, time::Duration as StdDuration};
+
 use chrono::Duration;
 use proptest::prelude::*;
 use ricecoder_sessions::{SharePermissions, ShareService};
-use std::thread;
-use std::time::Duration as StdDuration;
 
 proptest! {
     /// Property 10: Share Link Expiration

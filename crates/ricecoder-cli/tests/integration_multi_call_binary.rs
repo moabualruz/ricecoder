@@ -1,9 +1,12 @@
 // Integration tests for multi-call binary pattern
 // **Feature: ricecoder-cli, Tests for Requirements 6.1-6.4**
 
-use ricecoder_cli::commands::{ChatCommand, Command, ConfigCommand, GenCommand, InitCommand};
-use ricecoder_cli::router::CommandRouter;
 use std::path::Path;
+
+use ricecoder_cli::{
+    commands::{ChatCommand, Command, ConfigCommand, GenCommand, InitCommand},
+    router::CommandRouter,
+};
 use tempfile::TempDir;
 
 // ============================================================================

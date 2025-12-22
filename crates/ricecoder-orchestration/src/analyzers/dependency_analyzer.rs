@@ -1,8 +1,11 @@
 //! Dependency analysis for cross-project relationships
 
-use crate::error::{OrchestrationError, Result};
-use crate::models::{DependencyType, Project, ProjectDependency};
 use std::collections::{HashMap, HashSet, VecDeque};
+
+use crate::{
+    error::{OrchestrationError, Result},
+    models::{DependencyType, Project, ProjectDependency},
+};
 
 /// Analyzes project dependencies and builds dependency graphs
 #[derive(Debug, Clone)]
@@ -320,8 +323,9 @@ impl Default for DependencyAnalyzer {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::path::PathBuf;
+
+    use super::*;
 
     fn create_test_project(name: &str) -> Project {
         Project {

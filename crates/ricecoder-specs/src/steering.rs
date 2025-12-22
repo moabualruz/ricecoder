@@ -1,9 +1,11 @@
 //! Steering file loading and management
 
-use crate::error::{Severity, SpecError, ValidationError};
-use crate::models::{Standard, Steering, SteeringRule, TemplateRef};
-use std::fs;
-use std::path::Path;
+use std::{fs, path::Path};
+
+use crate::{
+    error::{Severity, SpecError, ValidationError},
+    models::{Standard, Steering, SteeringRule, TemplateRef},
+};
 
 /// Loads and merges steering documents
 pub struct SteeringLoader;
@@ -292,9 +294,11 @@ impl SteeringLoader {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::fs;
+
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_steering_loader_empty_directory() {

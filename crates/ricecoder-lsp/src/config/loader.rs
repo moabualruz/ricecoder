@@ -1,7 +1,8 @@
 //! Configuration loader for loading language configurations from files
 
-use super::types::{ConfigError, ConfigRegistry, ConfigResult, LanguageConfig};
 use std::path::Path;
+
+use super::types::{ConfigError, ConfigRegistry, ConfigResult, LanguageConfig};
 
 /// Configuration loader
 pub struct ConfigLoader;

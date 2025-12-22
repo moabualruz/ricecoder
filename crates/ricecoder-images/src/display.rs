@@ -1,8 +1,10 @@
 //! Terminal display of images with ASCII fallback.
 
-use crate::config::DisplayConfig;
-use crate::error::{ImageError, ImageResult};
-use crate::models::ImageMetadata;
+use crate::{
+    config::DisplayConfig,
+    error::{ImageError, ImageResult},
+    models::ImageMetadata,
+};
 
 /// Displays images in the terminal with ASCII fallback support.
 ///
@@ -319,9 +321,10 @@ impl Default for ImageDisplay {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
     use crate::formats::ImageFormat;
-    use std::path::PathBuf;
 
     #[test]
     fn test_display_creation() {

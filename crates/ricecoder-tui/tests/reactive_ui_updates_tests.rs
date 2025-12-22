@@ -1,7 +1,9 @@
-use crate::tea::AppModel;
-use ricecoder_tui::*;
 use std::sync::Arc;
+
+use ricecoder_tui::*;
 use tokio::sync::RwLock;
+
+use crate::tea::AppModel;
 
 mod tests {
     use super::*;

@@ -3,12 +3,13 @@
 //! This module provides integration between the MCP tool system and the ricecoder-storage
 //! framework, enabling tool registry persistence and configuration management.
 
-use crate::error::Result;
-use crate::metadata::ToolMetadata;
-use crate::registry::ToolRegistry;
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
+
+use crate::{error::Result, metadata::ToolMetadata, registry::ToolRegistry};
 
 /// Tool registry storage interface
 ///
@@ -370,9 +371,10 @@ impl ToolRegistryCache {
 
 #[cfg(test)]
 mod tests {
+    use tempfile::TempDir;
+
     use super::*;
     use crate::metadata::ToolSource;
-    use tempfile::TempDir;
 
     #[test]
     fn test_json_tool_registry_storage_save_and_load() {

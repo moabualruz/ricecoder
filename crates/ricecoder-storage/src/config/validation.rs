@@ -3,11 +3,15 @@
 //! This module provides JSON Schema validation for configuration files,
 //! migration support, and validation error reporting.
 
-use crate::config::Config;
-use crate::error::{StorageError, StorageResult};
+use std::collections::HashMap;
+
 use jsonschema::Validator;
 use serde_json::Value;
-use std::collections::HashMap;
+
+use crate::{
+    config::Config,
+    error::{StorageError, StorageResult},
+};
 
 /// Configuration validation error
 #[derive(Debug, Clone)]

@@ -17,11 +17,6 @@ pub mod semantic_index;
 pub mod standards_detector;
 
 // Re-export from dependencies for convenience (when features are enabled)
-#[cfg(feature = "parsers")]
-pub use ricecoder_parsers as parsers;
-#[cfg(feature = "patterns")]
-pub use ricecoder_patterns as patterns;
-
 // Re-export core types
 pub use error::ResearchError;
 pub use manager::ResearchManager;
@@ -29,10 +24,13 @@ pub use models::*;
 pub use project_analyzer::ProjectAnalyzer;
 pub use reference_tracker::{ReferenceTracker, ReferenceTrackingResult};
 pub use relevance_scorer::{RelevanceScorer, ScoringWeights};
-pub use search_engine::{SearchEngine, SearchOptions, SearchStatistics};
-pub use semantic_index::SemanticIndex;
-pub use standards_detector::StandardsDetector;
-
+#[cfg(feature = "parsers")]
+pub use ricecoder_parsers as parsers;
+#[cfg(feature = "patterns")]
+pub use ricecoder_patterns as patterns;
 // Re-export pattern types for convenience
 #[cfg(feature = "patterns")]
 pub use ricecoder_patterns::DetectedPattern;
+pub use search_engine::{SearchEngine, SearchOptions, SearchStatistics};
+pub use semantic_index::SemanticIndex;
+pub use standards_detector::StandardsDetector;

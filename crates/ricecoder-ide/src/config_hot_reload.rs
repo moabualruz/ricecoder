@@ -3,16 +3,15 @@
 //! This module integrates configuration loading, hot-reload watching, and provider
 //! chain updates. It enables runtime configuration changes without restart.
 
-use crate::config::ConfigManager;
-use crate::error::IdeResult;
-use crate::hot_reload::HotReloadManager;
-use crate::lsp_monitor::LspMonitor;
-use crate::provider_chain::ProviderChainManager;
-use crate::types::IdeIntegrationConfig;
-use std::path::Path;
-use std::sync::Arc;
+use std::{path::Path, sync::Arc};
+
 use tokio::sync::RwLock;
 use tracing::{debug, info, warn};
+
+use crate::{
+    config::ConfigManager, error::IdeResult, hot_reload::HotReloadManager, lsp_monitor::LspMonitor,
+    provider_chain::ProviderChainManager, types::IdeIntegrationConfig,
+};
 
 /// Configuration hot-reload coordinator
 pub struct ConfigHotReloadCoordinator {

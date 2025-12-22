@@ -3,12 +3,16 @@
 //! Loads templates from `.tmpl` files in global and project-specific locations.
 //! Supports template inheritance and includes.
 
-use crate::models::{Template, TemplateMetadata};
-use crate::templates::error::TemplateError;
-use crate::templates::parser::TemplateParser;
-use std::collections::HashMap;
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::{
+    collections::HashMap,
+    fs,
+    path::{Path, PathBuf},
+};
+
+use crate::{
+    models::{Template, TemplateMetadata},
+    templates::{error::TemplateError, parser::TemplateParser},
+};
 
 /// Loads templates from files and directories
 pub struct TemplateLoader {
@@ -242,9 +246,11 @@ pub struct CacheStats {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::fs;
+
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_load_from_file() {

@@ -1,9 +1,12 @@
 //! Performance regression detection and alerting
 
-use crate::baseline::{BaselineData, PerformanceBaseline};
-use crate::monitor::PerformanceMetrics;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+
+use crate::{
+    baseline::{BaselineData, PerformanceBaseline},
+    monitor::PerformanceMetrics,
+};
 
 /// Regression alert types
 #[derive(Debug, Clone, Serialize, Deserialize)]

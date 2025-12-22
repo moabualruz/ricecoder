@@ -6,9 +6,11 @@
 //! - `$[0].range.start.line` - array indexing with specific index
 //! - `$.result` - simple field access
 
-use crate::error::{ExternalLspError, Result};
-use serde_json::Value;
 use std::str::FromStr;
+
+use serde_json::Value;
+
+use crate::error::{ExternalLspError, Result};
 
 /// A segment of a JSON path expression
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -215,8 +217,9 @@ impl FromStr for JsonPathParser {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use serde_json::json;
+
+    use super::*;
 
     #[test]
     fn test_parse_simple_field() {

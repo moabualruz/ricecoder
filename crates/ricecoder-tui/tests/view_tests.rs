@@ -1,7 +1,8 @@
-use crate::widgets::ChatWidget;
 use ratatui::backend::TestBackend;
 use ricecoder_help::HelpDialog;
 use ricecoder_tui::*;
+
+use crate::widgets::ChatWidget;
 
 mod tests {
     use super::*;

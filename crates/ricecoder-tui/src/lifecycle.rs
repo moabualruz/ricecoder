@@ -3,9 +3,12 @@
 //! This module provides lifecycle management for TUI application components,
 //! ensuring proper startup, initialization, and shutdown procedures.
 
+use std::{
+    fmt::Debug,
+    sync::{Arc, OnceLock, RwLock},
+};
+
 use ricecoder_di::DIContainer;
-use std::fmt::Debug;
-use std::sync::{Arc, OnceLock, RwLock};
 use tracing::{debug, info, warn};
 
 /// Component lifecycle states

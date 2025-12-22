@@ -3,14 +3,17 @@
 //! This module handles wiring all widgets together, managing state synchronization,
 //! and coordinating layout between different UI components.
 
-use crate::app::App;
-use crate::components::{DialogWidget, ListWidget, MenuWidget, SplitViewWidget, TabWidget};
-use crate::diff::DiffWidget;
-use crate::layout::Rect;
-use crate::model::AppMode;
-use crate::prompt::PromptWidget;
-use crate::widgets::ChatWidget;
 use anyhow::Result;
+
+use crate::{
+    app::App,
+    components::{DialogWidget, ListWidget, MenuWidget, SplitViewWidget, TabWidget},
+    diff::DiffWidget,
+    layout::Rect,
+    model::AppMode,
+    prompt::PromptWidget,
+    widgets::ChatWidget,
+};
 
 /// Widget container for managing all active widgets
 pub struct WidgetContainer {

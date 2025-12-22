@@ -1,6 +1,7 @@
 //! Storage error types for RiceCoder
 
 use std::path::PathBuf;
+
 use thiserror::Error;
 
 /// Result type for storage operations

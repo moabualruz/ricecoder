@@ -3,13 +3,14 @@
 //! **Feature: ricecoder-refactoring, Property 1: Refactoring Reversibility**
 //! **Validates: Requirements REF-2.1, REF-2.4**
 
+use std::path::PathBuf;
+
 use chrono::Utc;
 use proptest::prelude::*;
 use ricecoder_refactoring::{
     Refactoring, RefactoringOptions, RefactoringTarget, RefactoringType, RollbackHandler,
     SafetyChecker,
 };
-use std::path::PathBuf;
 
 /// Strategy for generating file paths
 fn file_path_strategy() -> impl Strategy<Value = PathBuf> {

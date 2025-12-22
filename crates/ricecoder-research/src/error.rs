@@ -1,6 +1,7 @@
 //! Error types for the research system
 
 use std::path::PathBuf;
+
 use thiserror::Error;
 
 /// Errors that can occur during research operations

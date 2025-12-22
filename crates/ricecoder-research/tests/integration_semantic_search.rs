@@ -2,8 +2,9 @@
 //! Tests codebase-wide search, symbol lookup, and pattern matching
 //! **Validates: Requirements 1.7, 1.8, 1.9**
 
-use ricecoder_research::{ReferenceKind, SemanticIndex, Symbol, SymbolKind, SymbolReference};
 use std::path::PathBuf;
+
+use ricecoder_research::{ReferenceKind, SemanticIndex, Symbol, SymbolKind, SymbolReference};
 
 // ============================================================================
 // Helper Functions

@@ -1,10 +1,11 @@
 //! Core domain entities with business logic and validation
 
-use crate::errors::*;
-use crate::value_objects::*;
+use std::collections::HashMap;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+
+use crate::{errors::*, value_objects::*};
 
 /// Core project entity representing a code project being analyzed
 #[derive(Debug, Clone, Serialize, Deserialize)]

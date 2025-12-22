@@ -5,9 +5,10 @@
 //!
 //! Property: For any generated file that would overwrite an existing file, the system SHALL detect the conflict and compute a diff before writing.
 
+use std::fs;
+
 use proptest::prelude::*;
 use ricecoder_generation::{ConflictDetector, GeneratedFile};
-use std::fs;
 use tempfile::TempDir;
 
 /// Strategy for generating file paths

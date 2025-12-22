@@ -1,10 +1,11 @@
 //! Performance baseline management and storage
 
-use crate::monitor::PerformanceMetrics;
+use std::{collections::HashMap, path::Path};
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::path::Path;
+
+use crate::monitor::PerformanceMetrics;
 
 /// Performance baseline data for a specific test
 #[derive(Debug, Clone, Serialize, Deserialize)]

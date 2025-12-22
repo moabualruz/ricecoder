@@ -1,10 +1,11 @@
 //! Integration tests for permissions system with agent execution and storage
 
+use std::sync::Arc;
+
 use ricecoder_permissions::{
     AgentExecutionResult, AgentExecutor, AuditLogger, InMemoryPermissionRepository,
     PermissionConfig, PermissionLevel, PermissionRepository, ToolPermission,
 };
-use std::sync::Arc;
 
 #[test]
 fn test_agent_execution_with_permission_checking() {

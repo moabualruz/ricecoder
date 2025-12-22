@@ -1,10 +1,11 @@
 //! Connection pool for managing MCP server connections
 
-use crate::error::{Error, Result};
-use std::collections::VecDeque;
-use std::sync::Arc;
+use std::{collections::VecDeque, sync::Arc};
+
 use tokio::sync::RwLock;
 use tracing::{debug, info, warn};
+
+use crate::error::{Error, Result};
 
 /// Represents a pooled connection to an MCP server
 #[derive(Debug, Clone)]

@@ -4,8 +4,7 @@
 //! Validates Requirements 2.1, 2.2, 2.4
 
 use proptest::prelude::*;
-use ricecoder_tui::style::Color;
-use ricecoder_tui::{Theme, ThemeManager};
+use ricecoder_tui::{style::Color, Theme, ThemeManager};
 
 // ============================================================================
 // Generators for Property Tests

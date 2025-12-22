@@ -1,9 +1,11 @@
 //! Architectural pattern detection
 
-use crate::error::{PatternError, PatternResult};
-use crate::models::{ArchitecturalPattern, DetectedPattern, PatternCategory, PatternLocation};
-use std::collections::HashMap;
-use std::path::Path;
+use std::{collections::HashMap, path::Path};
+
+use crate::{
+    error::{PatternError, PatternResult},
+    models::{ArchitecturalPattern, DetectedPattern, PatternCategory, PatternLocation},
+};
 
 /// Detector for architectural patterns in codebases
 #[derive(Debug)]
@@ -240,8 +242,9 @@ impl Default for ArchitecturalPatternDetector {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
+
+    use super::*;
 
     #[tokio::test]
     async fn test_detect_layered_architecture() {

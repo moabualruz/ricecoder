@@ -1,15 +1,17 @@
 //! Transaction management with rollback support
 
-use crate::backup::BackupManager;
-use crate::error::FileError;
-use crate::models::{FileOperation, FileTransaction, TransactionStatus};
-use crate::writer::SafeWriter;
+use std::{collections::HashMap, sync::Arc};
+
 use chrono::Utc;
-use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::fs;
-use tokio::sync::RwLock;
+use tokio::{fs, sync::RwLock};
 use uuid::Uuid;
+
+use crate::{
+    backup::BackupManager,
+    error::FileError,
+    models::{FileOperation, FileTransaction, TransactionStatus},
+    writer::SafeWriter,
+};
 
 /// Manages atomic multi-file operations with all-or-nothing semantics
 #[derive(Debug, Clone)]
@@ -295,8 +297,9 @@ impl Default for TransactionManager {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
+
+    use super::*;
 
     #[tokio::test]
     async fn test_begin_transaction() {

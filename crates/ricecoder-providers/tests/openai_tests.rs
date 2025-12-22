@@ -1,7 +1,5 @@
 use ricecoder_providers::*;
 
-use ricecoder_providers::*;
-
 #[test]
 fn test_openai_provider_creation() {
     let provider = OpenAiProvider::new("test-key".to_string());

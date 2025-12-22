@@ -5,8 +5,10 @@
 
 use proptest::prelude::*;
 use ricecoder_completion::types::{CompletionItem, CompletionItemKind};
-use ricecoder_external_lsp::merger::{CompletionMerger, DiagnosticsMerger, HoverMerger};
-use ricecoder_external_lsp::types::MergeConfig;
+use ricecoder_external_lsp::{
+    merger::{CompletionMerger, DiagnosticsMerger, HoverMerger},
+    types::MergeConfig,
+};
 use ricecoder_lsp::types::{Diagnostic, DiagnosticSeverity, Position, Range};
 
 /// Strategy for generating completion items

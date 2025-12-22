@@ -1,11 +1,10 @@
 //! Anomaly detection for performance metrics
 
-use crate::types::*;
-use std::collections::HashMap;
-use std::time::Duration;
+use std::{collections::HashMap, time::Duration};
 
 /// Anomaly detector (re-export from performance for convenience)
 pub use crate::performance::AnomalyDetector;
+use crate::types::*;
 
 /// Statistical anomaly detector
 pub struct StatisticalAnomalyDetector {

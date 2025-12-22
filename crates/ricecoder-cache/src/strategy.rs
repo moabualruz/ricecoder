@@ -1,9 +1,12 @@
 //! Cache invalidation strategies
 
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+    time::SystemTime,
+};
+
 use async_trait::async_trait;
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
-use std::time::SystemTime;
 
 use crate::{CacheError, Result};
 
@@ -350,8 +353,9 @@ impl CacheStrategy for CompositeStrategy {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::NamedTempFile;
+
+    use super::*;
 
     #[tokio::test]
     async fn test_ttl_strategy() {

@@ -1,6 +1,7 @@
 //! Error types for the specification system
 
 use std::io;
+
 use thiserror::Error;
 
 /// Errors that can occur in the specification system

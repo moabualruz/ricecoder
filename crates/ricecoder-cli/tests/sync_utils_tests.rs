@@ -2,9 +2,9 @@ use ricecoder_cli::*;
 
 #[cfg(test)]
 mod tests {
+    use std::{sync::Arc, thread};
+
     use super::*;
-    use std::sync::Arc;
-    use std::thread;
 
     #[test]
     fn test_safe_lock_success() {

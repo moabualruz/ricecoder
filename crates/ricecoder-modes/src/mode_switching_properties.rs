@@ -7,10 +7,10 @@
 mod tests {
     use std::sync::Arc;
 
-    use crate::error::Result;
-    use crate::mode::Mode;
-    use crate::models::{
-        Capability, ModeConfig, ModeConstraints, ModeContext, ModeResponse, Operation,
+    use crate::{
+        error::Result,
+        mode::Mode,
+        models::{Capability, ModeConfig, ModeConstraints, ModeContext, ModeResponse, Operation},
     };
 
     struct TestMode {

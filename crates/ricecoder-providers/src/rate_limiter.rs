@@ -3,9 +3,11 @@
 //! This module provides rate limiting functionality to prevent exceeding provider limits
 //! and to implement backoff strategies for rate limit errors.
 
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+    time::{Duration, Instant},
+};
 
 /// Token bucket rate limiter
 ///

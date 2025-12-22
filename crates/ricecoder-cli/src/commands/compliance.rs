@@ -1,18 +1,24 @@
 // Compliance reporting and automation
 // Provides SOC 2, GDPR, HIPAA compliance checking and reporting
 
-use super::Command;
-use crate::error::{CliError, CliResult};
-use crate::output::OutputStyle;
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use chrono::{DateTime, Duration, Utc};
-use ricecoder_mcp::audit::MCPAuditLogger;
-use ricecoder_mcp::compliance::{
-    ComplianceReportType, MCPComplianceMonitor, MCPEnterpriseMonitor, MCPMonitoringMetrics,
-    ViolationSeverity,
+use ricecoder_mcp::{
+    audit::MCPAuditLogger,
+    compliance::{
+        ComplianceReportType, MCPComplianceMonitor, MCPEnterpriseMonitor, MCPMonitoringMetrics,
+        ViolationSeverity,
+    },
 };
 use ricecoder_security::audit::{AuditLogger, MemoryAuditStorage};
-use std::sync::Arc;
+
+use super::Command;
+use crate::{
+    error::{CliError, CliResult},
+    output::OutputStyle,
+};
 
 /// Manage compliance reporting and automation
 pub struct ComplianceCommand {

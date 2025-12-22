@@ -1,9 +1,12 @@
 //! Generic repository trait and implementations
 
-use crate::error::Result;
-use crate::status::RepositoryStatus;
-use crate::types::{Branch, ModifiedFile};
 use std::path::Path;
+
+use crate::{
+    error::Result,
+    status::RepositoryStatus,
+    types::{Branch, ModifiedFile},
+};
 
 /// Generic repository trait for VCS operations
 pub trait Repository {

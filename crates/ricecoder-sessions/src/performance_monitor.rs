@@ -1,12 +1,20 @@
 //! Session performance monitoring and metrics
 
-use crate::error::{SessionError, SessionResult};
-use crate::models::Session;
+use std::{
+    collections::HashMap,
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc,
+    },
+    time::{Duration, SystemTime},
+};
+
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Arc;
-use std::time::{Duration, SystemTime};
+
+use crate::{
+    error::{SessionError, SessionResult},
+    models::Session,
+};
 
 /// Session performance metrics
 #[derive(Debug, Clone, Serialize, Deserialize)]

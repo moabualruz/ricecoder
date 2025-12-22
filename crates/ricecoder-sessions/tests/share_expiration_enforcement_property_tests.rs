@@ -2,11 +2,11 @@
 //! **Feature: ricecoder-sharing, Property 7: Expiration Enforcement**
 //! **Validates: Requirements 3.1, 3.2**
 
+use std::{thread, time::Duration as StdDuration};
+
 use chrono::Duration;
 use proptest::prelude::*;
 use ricecoder_sessions::{SharePermissions, ShareService};
-use std::thread;
-use std::time::Duration as StdDuration;
 
 proptest! {
     /// Property 7: Expiration Enforcement

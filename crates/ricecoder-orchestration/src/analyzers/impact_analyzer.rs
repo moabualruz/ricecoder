@@ -1,8 +1,11 @@
 //! Impact analysis for changes across projects
 
-use crate::error::Result;
-use crate::models::{ImpactDetail, ImpactLevel, ImpactReport};
 use std::collections::{HashMap, HashSet, VecDeque};
+
+use crate::{
+    error::Result,
+    models::{ImpactDetail, ImpactLevel, ImpactReport},
+};
 
 /// Represents a change to a project
 #[derive(Debug, Clone)]

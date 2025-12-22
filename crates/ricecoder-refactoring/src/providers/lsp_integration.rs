@@ -3,10 +3,13 @@
 //! This module provides integration with the ricecoder-lsp crate to query
 //! available LSP servers and delegate refactoring operations to them.
 
-use super::lsp::LspProvider;
-use crate::error::Result;
-use crate::types::{Refactoring, ValidationResult};
 use std::sync::Arc;
+
+use super::lsp::LspProvider;
+use crate::{
+    error::Result,
+    types::{Refactoring, ValidationResult},
+};
 
 /// LSP integration for querying available LSP servers
 ///

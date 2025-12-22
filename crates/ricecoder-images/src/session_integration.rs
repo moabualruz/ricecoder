@@ -6,10 +6,14 @@
 //! - Store image references in session context
 //! - Support image sharing in sessions
 
-use crate::error::{ImageError, ImageResult};
-use crate::models::{ImageAnalysisResult, ImageMetadata};
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
+
+use crate::{
+    error::{ImageError, ImageResult},
+    models::{ImageAnalysisResult, ImageMetadata},
+};
 
 /// Metadata about an image included in a message
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -215,8 +219,9 @@ impl SessionImageContext {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::path::PathBuf;
+
+    use super::*;
 
     fn create_test_image_metadata() -> ImageMetadata {
         ImageMetadata::new(

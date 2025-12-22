@@ -1,10 +1,14 @@
 //! IDE-specific configuration applicator
 //! Applies IDE-specific settings and behavior based on IDE type
 
-use crate::error::{IdeError, IdeResult};
-use crate::types::*;
 use std::collections::HashMap;
+
 use tracing::{debug, info};
+
+use crate::{
+    error::{IdeError, IdeResult},
+    types::*,
+};
 
 /// IDE type identifier
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

@@ -1,12 +1,15 @@
 //! Custom Tool Executor component
 
-use crate::config::CustomToolConfig;
-use crate::error::{Error, Result};
+use std::{collections::HashMap, sync::Arc};
+
 use serde_json::{json, Value};
-use std::collections::HashMap;
-use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{debug, info};
+
+use crate::{
+    config::CustomToolConfig,
+    error::{Error, Result},
+};
 
 /// Custom Tool Executor for executing custom tools defined in configuration
 #[derive(Debug, Clone)]

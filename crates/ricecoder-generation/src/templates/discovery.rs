@@ -2,15 +2,22 @@
 //!
 //! Scans template and boilerplate directories, parses metadata, and returns available resources.
 
-use crate::models::{
-    Boilerplate, BoilerplateDiscoveryResult, BoilerplateMetadata, BoilerplateSource, Template,
-    TemplateMetadata,
+use std::{
+    collections::HashMap,
+    fs,
+    path::{Path, PathBuf},
 };
-use crate::templates::error::{BoilerplateError, TemplateError};
-use crate::templates::loader::TemplateLoader;
-use std::collections::HashMap;
-use std::fs;
-use std::path::{Path, PathBuf};
+
+use crate::{
+    models::{
+        Boilerplate, BoilerplateDiscoveryResult, BoilerplateMetadata, BoilerplateSource, Template,
+        TemplateMetadata,
+    },
+    templates::{
+        error::{BoilerplateError, TemplateError},
+        loader::TemplateLoader,
+    },
+};
 
 /// Discovers available templates in project and global scopes
 pub struct TemplateDiscovery {
@@ -435,9 +442,11 @@ impl BoilerplateDiscovery {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::fs;
+
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_discover_templates() {

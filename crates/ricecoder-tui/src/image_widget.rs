@@ -3,9 +3,11 @@
 //! This module provides a widget for displaying images using ratatui-image,
 //! supporting multiple protocols: sixel, kitty, iTerm2, and unicode fallbacks.
 
-use crate::terminal_state::TerminalCapabilities;
-use ratatui_image::{picker::Picker, protocol::StatefulProtocol, StatefulImage};
 use std::path::PathBuf;
+
+use ratatui_image::{picker::Picker, protocol::StatefulProtocol, StatefulImage};
+
+use crate::terminal_state::TerminalCapabilities;
 
 /// Image format (kept for backward compatibility)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

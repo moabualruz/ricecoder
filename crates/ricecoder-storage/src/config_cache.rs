@@ -3,12 +3,15 @@
 //! Caches parsed configuration files to improve performance.
 //! Uses file-based cache with TTL support.
 
-use crate::cache::{CacheInvalidationStrategy, CacheManager};
-use crate::error::{StorageError, StorageResult};
+use std::{path::Path, sync::Arc};
+
 use serde_json::Value;
-use std::path::Path;
-use std::sync::Arc;
 use tracing::{debug, info};
+
+use crate::{
+    cache::{CacheInvalidationStrategy, CacheManager},
+    error::{StorageError, StorageResult},
+};
 
 /// Configuration cache
 ///
@@ -168,8 +171,9 @@ impl ConfigCache {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_cache_set_and_get() -> StorageResult<()> {

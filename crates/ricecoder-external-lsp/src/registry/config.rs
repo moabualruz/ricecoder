@@ -1,9 +1,13 @@
 //! Configuration loading from YAML files
 
-use crate::error::{ExternalLspError, Result};
-use crate::types::LspServerRegistry;
 use std::path::Path;
+
 use tracing::{debug, info};
+
+use crate::{
+    error::{ExternalLspError, Result},
+    types::LspServerRegistry,
+};
 
 /// Loads LSP server configurations from YAML files
 pub struct ConfigLoader;

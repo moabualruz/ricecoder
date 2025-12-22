@@ -3,9 +3,12 @@
 //! This module provides session management operations including creation, deletion,
 //! renaming, and persistence of sessions.
 
-use crate::error::{SessionError, SessionResult};
-use crate::models::{Session, SessionStatus};
 use std::collections::HashMap;
+
+use crate::{
+    error::{SessionError, SessionResult},
+    models::{Session, SessionStatus},
+};
 
 /// Session manager for handling session lifecycle
 pub struct TuiSessionManager {

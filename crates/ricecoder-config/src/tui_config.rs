@@ -56,11 +56,11 @@
 //!   disable_animations: false
 //! ```
 
+use std::{fs, path::PathBuf};
+
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json;
-use std::fs;
-use std::path::PathBuf;
 use toml;
 
 /// Focus indicator style
@@ -156,6 +156,7 @@ impl AccessibilityConfig {
     }
 }
 use std::sync::Arc;
+
 use tokio::sync::RwLock;
 
 /// TUI configuration

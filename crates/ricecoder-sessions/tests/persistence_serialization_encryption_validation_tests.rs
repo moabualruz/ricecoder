@@ -2,8 +2,9 @@
 //! **Feature: ricecoder-sessions, Unit Tests: Persistence/Serialization/Encryption Validation**
 //! **Validates: Requirements 2.1, 2.2, 2.3, 2.4**
 
-use ricecoder_sessions::{Session, SessionContext, SessionMode, SessionStore};
 use std::fs;
+
+use ricecoder_sessions::{Session, SessionContext, SessionMode, SessionStore};
 use tempfile::TempDir;
 use tokio::runtime::Runtime;
 

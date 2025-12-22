@@ -4,13 +4,15 @@
 //! handling streaming responses, parsing generated code, and extracting
 //! multiple files from single responses.
 
-use crate::error::GenerationError;
-use crate::models::GeneratedFile;
-use crate::prompt_builder::GeneratedPrompt;
-use ricecoder_providers::models::{ChatRequest, Message};
-use ricecoder_providers::provider::Provider;
 use std::time::Duration;
+
+use ricecoder_providers::{
+    models::{ChatRequest, Message},
+    provider::Provider,
+};
 use tokio::time::sleep;
+
+use crate::{error::GenerationError, models::GeneratedFile, prompt_builder::GeneratedPrompt};
 
 /// Configuration for code generation
 #[derive(Debug, Clone)]

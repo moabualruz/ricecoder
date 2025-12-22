@@ -2,14 +2,17 @@
 //! **Feature: ricecoder-sessions, Unit Tests: Performance/Memory/Security Regression**
 //! **Validates: Requirements 6.1, 6.2, 6.3, 7.1, 7.2, 7.3**
 
+use std::{
+    sync::Arc,
+    thread,
+    time::{Duration as StdDuration, Instant},
+};
+
 use chrono::Duration;
 use ricecoder_sessions::{
     BackgroundAgent, Message, MessageRole, Session, SessionContext, SessionManager, SessionMode,
     SessionStore, SharePermissions, ShareService,
 };
-use std::sync::Arc;
-use std::thread;
-use std::time::{Duration as StdDuration, Instant};
 use tempfile::TempDir;
 use tokio::runtime::Runtime;
 

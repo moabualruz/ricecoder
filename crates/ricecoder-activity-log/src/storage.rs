@@ -1,13 +1,17 @@
 //! Log storage and retention management
 
-use crate::error::{ActivityLogError, ActivityLogResult};
-use crate::events::{ActivityEvent, EventFilter};
-use crate::logger::LogStorage;
+use std::collections::HashMap;
+
 use async_trait::async_trait;
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use tokio::io::AsyncWriteExt;
+
+use crate::{
+    error::{ActivityLogError, ActivityLogResult},
+    events::{ActivityEvent, EventFilter},
+    logger::LogStorage,
+};
 
 /// Retention policy for log management
 #[derive(Debug, Clone, Serialize, Deserialize)]

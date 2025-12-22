@@ -1,5 +1,4 @@
-use crate::error::Result;
-use crate::types::CommandExecutionResult;
+use crate::{error::Result, types::CommandExecutionResult};
 
 /// Output injection configuration
 #[derive(Debug, Clone)]

@@ -2,9 +2,10 @@ use ricecoder_providers::*;
 
 #[cfg(test)]
 mod tests {
+    use tempfile::TempDir;
+
     use super::*;
     use crate::models::{FinishReason, Message, TokenUsage};
-    use tempfile::TempDir;
 
     fn create_test_request() -> ChatRequest {
         ChatRequest {

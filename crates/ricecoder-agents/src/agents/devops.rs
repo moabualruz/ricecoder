@@ -5,12 +5,15 @@
 //! containerization recommendations, observability infrastructure guidance,
 //! security scanning setup recommendations, and auto-scaling configuration guidance.
 
-use crate::agents::Agent;
-use crate::domain::{DomainAgent, DomainCapability, DomainKnowledge, TechRecommendation};
-use crate::error::Result;
-use crate::models::{AgentInput, AgentOutput, Finding, Severity, TaskType};
 use async_trait::async_trait;
 use uuid::Uuid;
+
+use crate::{
+    agents::Agent,
+    domain::{DomainAgent, DomainCapability, DomainKnowledge, TechRecommendation},
+    error::Result,
+    models::{AgentInput, AgentOutput, Finding, Severity, TaskType},
+};
 
 /// DevOps Agent
 ///
@@ -687,10 +690,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_devops_agent_execute() {
+        use std::path::PathBuf;
+
         use crate::models::{
             AgentConfig, AgentTask, ProjectContext, TaskOptions, TaskScope, TaskTarget,
         };
-        use std::path::PathBuf;
 
         let agent = DevOpsAgent::new();
         let input = AgentInput {

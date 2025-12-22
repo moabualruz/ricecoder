@@ -1,7 +1,9 @@
 //! Permission checking logic
 
-use crate::error::Result;
-use crate::permission::models::{PermissionLevel, ToolPermission};
+use crate::{
+    error::Result,
+    permission::models::{PermissionLevel, ToolPermission},
+};
 
 /// Decision result from permission checking
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

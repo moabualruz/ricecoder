@@ -3,9 +3,10 @@
 //! This module provides CLI argument definitions that can override configuration
 //! values with the highest priority.
 
+use std::path::PathBuf;
+
 use clap::Parser;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 
 /// CLI arguments that can override configuration values
 #[derive(Parser, Debug, Clone, Serialize, Deserialize, Default)]

@@ -1,6 +1,7 @@
-use crate::widgets::ChatWidget;
 use ricecoder_help::HelpDialog;
 use ricecoder_tui::*;
+
+use crate::widgets::ChatWidget;
 
 mod tests {
     use super::*;

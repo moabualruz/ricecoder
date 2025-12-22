@@ -6,14 +6,14 @@
 //!
 //! Uses proptest extensively for exhaustive coverage of input spaces.
 
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
+
 use chrono::{DateTime, Utc};
 use proptest::prelude::*;
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::{Duration, SystemTime};
-use tokio::sync::{RwLock, Semaphore};
-use tokio::time::timeout;
-
 // MCP imports
 use ricecoder_mcp::{
     audit::MCPAuditLogger,
@@ -34,9 +34,12 @@ use ricecoder_mcp::{
         StdioTransport, TransportConfig,
     },
 };
-
 // External dependencies
 use ricecoder_security::audit::{AuditLogger, MemoryAuditStorage};
+use tokio::{
+    sync::{RwLock, Semaphore},
+    time::timeout,
+};
 
 // Mock transport for testing
 struct MockTransport {

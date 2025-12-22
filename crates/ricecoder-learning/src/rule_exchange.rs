@@ -1,8 +1,10 @@
+use std::path::Path;
+
+use serde::{Deserialize, Serialize};
+
 /// Rule export and import functionality
 use crate::error::{LearningError, Result};
 use crate::models::Rule;
-use serde::{Deserialize, Serialize};
-use std::path::Path;
 
 /// Metadata for exported rules
 #[derive(Debug, Clone, Serialize, Deserialize)]

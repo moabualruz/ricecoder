@@ -2,13 +2,14 @@
 //!
 //! Tests verify correctness properties for configuration consistency and rules validation.
 
+use std::path::PathBuf;
+
 use proptest::prelude::*;
 use ricecoder_orchestration::{
     ConfigManager, Project, ProjectStatus, RuleType, RulesValidator, ValidationRule, Workspace,
     WorkspaceConfig, WorkspaceMetrics, WorkspaceRule,
 };
 use serde_json::{json, Value};
-use std::path::PathBuf;
 
 // ============================================================================
 // Property 2: Configuration Application Consistency

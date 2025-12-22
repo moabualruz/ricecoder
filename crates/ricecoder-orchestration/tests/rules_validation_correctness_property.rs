@@ -7,11 +7,12 @@
 //!
 //! **Validates: Requirements 1.4**
 
+use std::path::PathBuf;
+
 use proptest::prelude::*;
 use ricecoder_orchestration::{
     Project, ProjectStatus, RuleType, RulesValidator, Workspace, WorkspaceConfig, WorkspaceRule,
 };
-use std::path::PathBuf;
 
 /// Strategy for generating valid project names
 fn project_name_strategy() -> impl Strategy<Value = String> {

@@ -13,6 +13,8 @@ pub mod modes;
 pub mod validation;
 
 // Re-export commonly used types
+use std::collections::HashMap;
+
 pub use cli::CliArgs;
 pub use documents::{Document, DocumentLoader};
 pub use env::EnvOverrides;
@@ -20,10 +22,8 @@ pub use hot_reload::{ConfigWatcher, HotReloadManager};
 pub use loader::ConfigLoader;
 pub use merge::ConfigMerger;
 pub use modes::StorageModeHandler;
-pub use validation::{ConfigBackupManager, ConfigValidator, ValidationError};
-
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+pub use validation::{ConfigBackupManager, ConfigValidator, ValidationError};
 
 /// Main configuration structure
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

@@ -3,13 +3,14 @@
 //! **Feature: ricecoder-sessions, Integration Tests**
 //! **Validates: Requirements 1.1, 1.2, 2.1, 3.1, 4.1**
 
+use std::sync::Arc;
+
 use ricecoder_security::audit::{AuditEventType, AuditLogger, AuditQuery, MemoryAuditStorage};
 use ricecoder_sessions::{
     BackgroundAgent, BackgroundAgentManager, ContextManager, DataClassification,
     EnterpriseSharingPolicy, HistoryManager, Message, MessageRole, Session, SessionContext,
     SessionManager, SessionMode, SessionRouter, SessionStore, SharePermissions, ShareService,
 };
-use std::sync::Arc;
 use tempfile::TempDir;
 use tokio::sync::Mutex;
 

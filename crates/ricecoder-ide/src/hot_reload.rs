@@ -4,11 +4,15 @@
 //! as well as callbacks for provider availability changes. It enables runtime updates
 //! without requiring application restart.
 
-use crate::error::{IdeError, IdeResult};
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
+
 use tokio::sync::RwLock;
 use tracing::{debug, info, warn};
+
+use crate::error::{IdeError, IdeResult};
 
 /// Callback type for configuration changes
 pub type ConfigChangeCallback = Box<dyn Fn() + Send + Sync>;
@@ -167,8 +171,9 @@ impl HotReloadManager {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
+
+    use super::*;
 
     #[tokio::test]
     async fn test_hot_reload_manager_creation() {

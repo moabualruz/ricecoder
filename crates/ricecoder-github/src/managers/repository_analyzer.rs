@@ -2,10 +2,14 @@
 //!
 //! Analyzes GitHub repositories for context, including metadata, dependencies, and code patterns.
 
-use crate::errors::{GitHubError, Result};
-use crate::models::{Dependency, ProjectStructure, Repository};
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
+
+use crate::{
+    errors::{GitHubError, Result},
+    models::{Dependency, ProjectStructure, Repository},
+};
 
 /// Code pattern information
 #[derive(Debug, Clone, Serialize, Deserialize)]

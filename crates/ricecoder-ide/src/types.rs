@@ -1,7 +1,8 @@
 //! Core data types for IDE integration
 
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 
 /// IDE Integration Configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]

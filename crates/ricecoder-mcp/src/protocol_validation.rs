@@ -3,15 +3,15 @@
 //! Provides validation for MCP protocol messages, error handling,
 //! and protocol compliance checking.
 
+use std::{collections::HashMap, sync::Arc};
+
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::sync::Arc;
 use tracing::{debug, warn};
 
-use crate::error::{Error, Result};
-use crate::transport::{
-    MCPError, MCPErrorData, MCPMessage, MCPNotification, MCPRequest, MCPResponse,
+use crate::{
+    error::{Error, Result},
+    transport::{MCPError, MCPErrorData, MCPMessage, MCPNotification, MCPRequest, MCPResponse},
 };
 
 /// MCP protocol validator

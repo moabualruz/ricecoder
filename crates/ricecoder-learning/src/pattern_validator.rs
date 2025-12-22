@@ -217,9 +217,10 @@ pub struct ValidationStatistics {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
     use crate::models::{DecisionContext, PatternExample};
-    use std::path::PathBuf;
 
     fn create_test_decision(
         decision_type: &str,

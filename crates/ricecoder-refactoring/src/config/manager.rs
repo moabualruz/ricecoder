@@ -1,12 +1,11 @@
 //! Configuration manager for refactoring engine
 
-use crate::error::Result;
-use crate::providers::ProviderRegistry;
-use crate::types::RefactoringConfig;
+use std::{collections::HashMap, sync::Arc};
+
 use ricecoder_storage::manager::StorageManager;
-use std::collections::HashMap;
-use std::sync::Arc;
 use tokio::sync::RwLock;
+
+use crate::{error::Result, providers::ProviderRegistry, types::RefactoringConfig};
 
 /// Manages refactoring configurations and providers with storage integration
 pub struct ConfigManager {

@@ -1,11 +1,15 @@
 //! MCP command - Manage Model Context Protocol servers and tools
 
-use crate::commands::Command;
-use crate::error::{CliError, CliResult};
+use std::collections::HashMap;
+
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::collections::HashMap;
+
+use crate::{
+    commands::Command,
+    error::{CliError, CliResult},
+};
 
 /// MCP command action
 #[derive(Debug, Clone)]

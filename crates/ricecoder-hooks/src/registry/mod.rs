@@ -42,8 +42,7 @@ pub mod storage;
 
 pub use storage::InMemoryHookRegistry;
 
-use crate::error::Result;
-use crate::types::Hook;
+use crate::{error::Result, types::Hook};
 
 /// Trait for managing hooks
 ///

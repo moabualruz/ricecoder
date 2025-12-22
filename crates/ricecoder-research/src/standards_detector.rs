@@ -1,13 +1,16 @@
 //! Standards detector for extracting naming conventions and coding standards
 
-use crate::error::ResearchError;
-use crate::models::{
-    CaseStyle, DocFormat, DocumentationStyle, FormattingStyle, ImportGroup, ImportOrganization,
-    IndentType, NamingConventions, StandardsProfile,
-};
+use std::{collections::HashMap, path::Path};
+
 use regex::Regex;
-use std::collections::HashMap;
-use std::path::Path;
+
+use crate::{
+    error::ResearchError,
+    models::{
+        CaseStyle, DocFormat, DocumentationStyle, FormattingStyle, ImportGroup, ImportOrganization,
+        IndentType, NamingConventions, StandardsProfile,
+    },
+};
 
 /// Detects naming conventions and coding standards from a codebase
 #[derive(Debug)]
@@ -678,6 +681,7 @@ mod tests {
     #[test]
     fn test_standards_detector_full_analysis() {
         use std::io::Write;
+
         use tempfile::NamedTempFile;
 
         let detector = StandardsDetector::new();
@@ -700,6 +704,7 @@ mod tests {
     #[test]
     fn test_standards_detector_multiple_files() {
         use std::io::Write;
+
         use tempfile::NamedTempFile;
 
         let detector = StandardsDetector::new();

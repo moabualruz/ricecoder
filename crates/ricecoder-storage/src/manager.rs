@@ -1,8 +1,11 @@
 //! Storage manager trait and path resolution
 
-use crate::error::{StorageError, StorageResult};
-use crate::types::{ResourceType, StorageMode};
 use std::path::{Path, PathBuf};
+
+use crate::{
+    error::{StorageError, StorageResult},
+    types::{ResourceType, StorageMode},
+};
 
 /// Storage manager trait for managing storage operations
 pub trait StorageManager: Send + Sync {

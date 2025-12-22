@@ -2,8 +2,9 @@ use ricecoder_providers::*;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::sync::Arc;
+
+    use super::*;
 
     // Mock provider for testing
     struct MockProvider {

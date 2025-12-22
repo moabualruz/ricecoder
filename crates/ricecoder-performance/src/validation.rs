@@ -1,10 +1,14 @@
 //! Performance validation utilities
 
-use crate::baseline::PerformanceBaseline;
-use crate::monitor::{PerformanceMetrics, PerformanceMonitor};
-use serde::{Deserialize, Serialize};
 use std::path::Path;
+
+use serde::{Deserialize, Serialize};
 use tokio::process::Command;
+
+use crate::{
+    baseline::PerformanceBaseline,
+    monitor::{PerformanceMetrics, PerformanceMonitor},
+};
 
 /// Validation result for a performance test
 #[derive(Debug, Clone, Serialize, Deserialize)]

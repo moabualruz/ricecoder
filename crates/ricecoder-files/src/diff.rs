@@ -1,9 +1,13 @@
 //! Diff generation and application for file changes
 
-use crate::error::FileError;
-use crate::models::{DiffHunk, DiffLine, DiffStats, FileDiff};
-use similar::{ChangeTag, TextDiff};
 use std::path::PathBuf;
+
+use similar::{ChangeTag, TextDiff};
+
+use crate::{
+    error::FileError,
+    models::{DiffHunk, DiffLine, DiffStats, FileDiff},
+};
 
 /// Generates and applies diffs between file versions
 #[derive(Debug, Clone)]

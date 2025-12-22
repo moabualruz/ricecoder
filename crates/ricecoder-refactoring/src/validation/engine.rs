@@ -1,9 +1,8 @@
 //! Validation engine for refactoring operations
 
-use crate::error::Result;
-use crate::types::ValidationResult;
-use std::path::Path;
-use std::process::Command;
+use std::{path::Path, process::Command};
+
+use crate::{error::Result, types::ValidationResult};
 
 /// Validates refactoring results
 pub struct ValidationEngine;

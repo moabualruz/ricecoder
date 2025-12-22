@@ -2,11 +2,12 @@
 //! **Feature: ricecoder-orchestration, Property 7: Version Coordination Consistency**
 //! **Validates: Requirements 3.4**
 
+use std::path::PathBuf;
+
 use proptest::prelude::*;
 use ricecoder_orchestration::{
     DependencyGraph, Project, ProjectStatus, Version, VersionCoordinator, VersionValidator,
 };
-use std::path::PathBuf;
 
 // Strategy for generating valid semantic versions
 fn version_strategy() -> impl Strategy<Value = String> {

@@ -1,12 +1,10 @@
 //! Test execution and validation
 
-use crate::error::BenchmarkError;
-use crate::exercise::Exercise;
-use std::path::Path;
-use std::process::Stdio;
-use std::time::Duration;
-use tokio::process::Command;
-use tokio::time::timeout;
+use std::{path::Path, process::Stdio, time::Duration};
+
+use tokio::{process::Command, time::timeout};
+
+use crate::{error::BenchmarkError, exercise::Exercise};
 
 #[derive(Debug)]
 pub struct TestResult {

@@ -2,9 +2,10 @@
 //! **Feature: ricecoder-files, Property 8: Diff Round Trip**
 //! **Validates: Requirements 3.4, 3.5**
 
+use std::path::PathBuf;
+
 use proptest::prelude::*;
 use ricecoder_files::{DiffEngine, DiffHunk, DiffLine, DiffStats, FileDiff};
-use std::path::PathBuf;
 
 /// Strategy for generating simple text content
 fn text_strategy() -> impl Strategy<Value = String> {

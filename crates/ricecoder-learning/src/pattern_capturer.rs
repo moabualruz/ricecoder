@@ -1,7 +1,8 @@
+use std::collections::HashMap;
+
 /// Pattern extraction from decision history
 use crate::error::{LearningError, Result};
 use crate::models::{Decision, LearnedPattern, PatternExample};
-use std::collections::HashMap;
 
 /// Extracts implicit patterns from repeated user decisions
 pub struct PatternCapturer {
@@ -311,9 +312,10 @@ pub struct PatternAnalysis {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
     use crate::models::DecisionContext;
-    use std::path::PathBuf;
 
     fn create_test_decision(
         decision_type: &str,

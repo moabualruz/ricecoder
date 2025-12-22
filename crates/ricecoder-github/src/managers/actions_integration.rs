@@ -2,10 +2,12 @@
 //!
 //! Manages GitHub Actions workflows, including triggering, status tracking, and diagnostics.
 
-use crate::errors::{GitHubError, Result};
+use std::collections::HashMap;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+
+use crate::errors::{GitHubError, Result};
 
 /// Workflow status
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

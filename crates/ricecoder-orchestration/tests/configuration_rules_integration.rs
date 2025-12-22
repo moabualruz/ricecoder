@@ -5,11 +5,12 @@
 //! **Feature: ricecoder-orchestration, Integration Tests: Configuration and Rules**
 //! **Validates: Requirements 1.3, 1.4**
 
+use std::path::PathBuf;
+
 use ricecoder_orchestration::{
     DependencyGraph, DependencyType, Project, ProjectDependency, ProjectStatus, RuleType,
     RulesValidator, ViolationSeverity, Workspace, WorkspaceConfig, WorkspaceRule,
 };
-use std::path::PathBuf;
 
 /// Helper to create a test project
 fn create_test_project(name: &str) -> Project {

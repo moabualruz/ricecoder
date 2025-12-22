@@ -2,6 +2,8 @@
 //! **Feature: ricecoder-research, Property 8: Cache Invalidation Correctness**
 //! **Validates: Requirements 4.1, 4.2, 4.3**
 
+use std::{collections::HashMap, path::PathBuf, time::SystemTime};
+
 use proptest::prelude::*;
 use ricecoder_research::{
     ArchitecturalIntent, ArchitecturalStyle, CaseStyle, DocFormat, DocumentationStyle,
@@ -9,9 +11,6 @@ use ricecoder_research::{
     ProjectStructure, ProjectType, SearchStatistics, StandardsProfile,
 };
 use ricecoder_storage::cache::CacheManager;
-use std::collections::HashMap;
-use std::path::PathBuf;
-use std::time::SystemTime;
 
 /// Generate a valid ProjectContext for testing
 fn arb_project_context() -> impl Strategy<Value = ProjectContext> {

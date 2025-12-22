@@ -1,9 +1,14 @@
 //! Domain registry for discovering and managing domain agents
 
-use crate::domain::error::{DomainError, DomainResult};
-use crate::domain::models::{DomainAgent, DomainCapability};
-use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
+
+use crate::domain::{
+    error::{DomainError, DomainResult},
+    models::{DomainAgent, DomainCapability},
+};
 
 /// Registry for domain agents
 ///

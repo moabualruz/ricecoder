@@ -4,9 +4,9 @@
 //! and cache operations. It integrates with ricecoder-providers' AuditLogger
 //! for consistent security event tracking.
 
+use std::{path::PathBuf, sync::Arc};
+
 use ricecoder_providers::audit_log::{AuditEventType, AuditLogEntry, AuditLogger};
-use std::path::PathBuf;
-use std::sync::Arc;
 use tracing::{debug, info, warn};
 
 /// Image analysis audit logger.
@@ -423,8 +423,9 @@ impl ImageAuditLogger {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
+
+    use super::*;
 
     fn create_test_logger() -> (ImageAuditLogger, PathBuf, TempDir) {
         let temp_dir = TempDir::new().unwrap();

@@ -3,9 +3,11 @@
 //! This module provides a language-agnostic semantic analyzer that delegates
 //! to language-specific providers registered in the provider registry.
 
-use crate::providers::{ProviderResult, SemanticAnalyzerProvider, SemanticAnalyzerRegistry};
-use crate::semantic::{fallback_analyzer::FallbackAnalyzer, SemanticAnalyzer};
-use crate::types::{Position, SemanticInfo, Symbol};
+use crate::{
+    providers::{ProviderResult, SemanticAnalyzerProvider, SemanticAnalyzerRegistry},
+    semantic::{fallback_analyzer::FallbackAnalyzer, SemanticAnalyzer},
+    types::{Position, SemanticInfo, Symbol},
+};
 
 /// Generic semantic analyzer that delegates to pluggable providers
 pub struct GenericSemanticAnalyzer {

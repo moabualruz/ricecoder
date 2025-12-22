@@ -1,6 +1,6 @@
+use std::{thread, time::Duration};
+
 use ricecoder_tui::*;
-use std::thread;
-use std::time::Duration;
 
 mod tests {
     use super::*;

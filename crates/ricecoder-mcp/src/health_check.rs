@@ -1,11 +1,11 @@
 //! Health checking and reconnection logic for MCP servers
 
-use crate::error::{Error, Result};
-use std::sync::Arc;
-use std::time::Duration;
-use tokio::sync::RwLock;
-use tokio::time::sleep;
+use std::{sync::Arc, time::Duration};
+
+use tokio::{sync::RwLock, time::sleep};
 use tracing::{debug, error, info, warn};
+
+use crate::error::{Error, Result};
 
 /// Server health status
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -3,13 +3,15 @@
 //! This module provides functionality to load domain agent configurations from YAML/JSON files
 //! and validate them against the JSON Schema.
 
-use crate::domain::error::{DomainError, DomainResult};
-use crate::domain::factory::AgentConfig;
+use std::{fs, path::Path, sync::Arc};
+
 use jsonschema::JSONSchema;
 use serde_json::Value;
-use std::fs;
-use std::path::Path;
-use std::sync::Arc;
+
+use crate::domain::{
+    error::{DomainError, DomainResult},
+    factory::AgentConfig,
+};
 
 /// Configuration loader for domain agents
 ///

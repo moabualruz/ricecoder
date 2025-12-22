@@ -1,13 +1,13 @@
 // Custom commands module - CLI integration for ricecoder-commands
 // Integrates the ricecoder-commands crate with the CLI router and storage
 
-use super::custom_storage::CustomCommandsStorage;
-use super::Command;
-use crate::error::{CliError, CliResult};
+use std::{collections::HashMap, path::PathBuf};
+
 use async_trait::async_trait;
 use ricecoder_commands::{CommandManager, CommandRegistry, ConfigManager};
-use std::collections::HashMap;
-use std::path::PathBuf;
+
+use super::{custom_storage::CustomCommandsStorage, Command};
+use crate::error::{CliError, CliResult};
 
 /// Action for custom command handler
 #[derive(Debug, Clone)]

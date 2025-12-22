@@ -1,11 +1,17 @@
 //! Reference tracking across source files
 
-use crate::error::ResearchError;
-use crate::models::{Language, ReferenceKind, SymbolReference};
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
+
 #[cfg(feature = "parsers")]
 use tree_sitter::{Language as TSLanguage, Parser};
+
+use crate::{
+    error::ResearchError,
+    models::{Language, ReferenceKind, SymbolReference},
+};
 
 /// Tracks symbol references across files
 #[derive(Debug)]

@@ -1,8 +1,11 @@
 //! Spec-driven development workflow orchestration
 
-use crate::error::SpecError;
-use crate::models::{Spec, Task, TaskStatus};
 use std::collections::{HashMap, HashSet};
+
+use crate::{
+    error::SpecError,
+    models::{Spec, Task, TaskStatus},
+};
 
 /// Orchestrates spec-driven development workflows
 ///

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use chrono::Utc;
 /// Property-based test for rule version consistency
 ///
@@ -7,9 +9,10 @@ use chrono::Utc;
 /// Property: *For any* rule, the version history SHALL be immutable and complete,
 /// with each version entry containing the rule state, timestamp, and promotion metadata.
 use proptest::prelude::*;
-use ricecoder_teams::models::{RuleScope, SharedRule};
-use ricecoder_teams::rules::{mocks::*, SharedRulesManager};
-use std::sync::Arc;
+use ricecoder_teams::{
+    models::{RuleScope, SharedRule},
+    rules::{mocks::*, SharedRulesManager},
+};
 
 /// Strategy for generating valid SharedRule instances with different versions
 fn shared_rule_strategy() -> impl Strategy<Value = SharedRule> {

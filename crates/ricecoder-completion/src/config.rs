@@ -1,8 +1,12 @@
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
+
+use ricecoder_storage::manager::PathResolver;
+
 /// Configuration loading and management for completion engine
 use crate::types::*;
-use ricecoder_storage::manager::PathResolver;
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
 
 /// Completion configuration loader with storage integration
 pub struct ConfigLoader;

@@ -1,11 +1,11 @@
 //! Command-line interface for the benchmark
 
-use crate::error::BenchmarkError;
-use crate::runner::BenchmarkRunner;
+use std::{path::PathBuf, sync::Arc};
+
 use clap::{Parser, Subcommand};
 use ricecoder_providers::{ProviderManager, ProviderRegistry};
-use std::path::PathBuf;
-use std::sync::Arc;
+
+use crate::{error::BenchmarkError, runner::BenchmarkRunner};
 
 #[derive(Parser)]
 #[command(name = "ricecoder-benchmark")]
@@ -135,8 +135,9 @@ async fn run_benchmark(
 }
 
 fn list_exercises(languages: Option<String>, exercises_dir: PathBuf) -> Result<(), BenchmarkError> {
-    use crate::exercise::Exercise;
     use walkdir::WalkDir;
+
+    use crate::exercise::Exercise;
 
     let languages: Option<Vec<String>> =
         languages.map(|l| l.split(',').map(|s| s.trim().to_string()).collect());

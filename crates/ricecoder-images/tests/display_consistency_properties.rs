@@ -3,10 +3,10 @@
 //! **Feature: ricecoder-images, Property 5: Display Consistency**
 //! **Validates: Requirements 5.1, 5.2, 5.4, 5.5**
 
-use proptest::prelude::*;
-use ricecoder_images::config::DisplayConfig;
-use ricecoder_images::{ImageDisplay, ImageFormat, ImageMetadata};
 use std::path::PathBuf;
+
+use proptest::prelude::*;
+use ricecoder_images::{config::DisplayConfig, ImageDisplay, ImageFormat, ImageMetadata};
 
 /// Strategy for generating valid image metadata
 fn image_metadata_strategy() -> impl Strategy<Value = ImageMetadata> {

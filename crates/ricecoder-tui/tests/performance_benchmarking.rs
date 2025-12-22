@@ -2,9 +2,10 @@
 //! Measures actual performance metrics and compares against thresholds
 //! Validates Requirements 6.1, 6.2, 12.2
 
+use std::time::{Duration, Instant};
+
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use ricecoder_tui::{Layout, Rect, Theme};
-use std::time::{Duration, Instant};
 
 // ============================================================================
 // Benchmark 1: Layout Calculation Performance

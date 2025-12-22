@@ -1,8 +1,10 @@
 //! Health checking for LSP servers
 
-use crate::types::HealthStatus;
 use std::time::{Duration, Instant};
+
 use tracing::{debug, warn};
+
+use crate::types::HealthStatus;
 
 /// Performs health checks on LSP servers
 pub struct HealthChecker {

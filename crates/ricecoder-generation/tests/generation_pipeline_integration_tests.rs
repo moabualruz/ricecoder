@@ -2,11 +2,11 @@
 //! Tests full workflows including spec input, multi-file generation, conflict resolution, and rollback
 //! **Feature: ricecoder-generation, Integration Tests for Requirements 1.1, 1.2, 1.4, 1.5, 1.6, 3.1, 3.5**
 
+use std::{collections::HashMap, fs};
+
 use ricecoder_generation::{
     Boilerplate, BoilerplateFile, BoilerplateManager, ConflictResolution, TemplateEngine,
 };
-use std::collections::HashMap;
-use std::fs;
 use tempfile::TempDir;
 
 // ============================================================================

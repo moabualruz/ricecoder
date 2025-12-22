@@ -7,8 +7,10 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::factory::{AgentConfig, CapabilityConfig, TechRecommendationConfig};
-    use crate::domain::{AgentFactory, DomainRegistry};
+    use crate::domain::{
+        factory::{AgentConfig, CapabilityConfig, TechRecommendationConfig},
+        AgentFactory, DomainRegistry,
+    };
 
     /// Helper function to create a test agent configuration
     fn create_agent_config(

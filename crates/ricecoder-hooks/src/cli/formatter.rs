@@ -1,7 +1,9 @@
 //! Output formatting for hook commands
 
-use crate::error::{HooksError, Result};
-use crate::types::{Action, Hook};
+use crate::{
+    error::{HooksError, Result},
+    types::{Action, Hook},
+};
 
 /// Format a single hook as a table
 pub fn format_hook_table(hook: &Hook) -> String {

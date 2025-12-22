@@ -1,7 +1,5 @@
 use ricecoder_providers::*;
 
-use ricecoder_providers::*;
-
 #[test]
 fn test_zen_provider_creation() {
     let provider = ZenProvider::new(Some("test-key".to_string()));

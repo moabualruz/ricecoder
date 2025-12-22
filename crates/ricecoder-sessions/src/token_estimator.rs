@@ -4,11 +4,12 @@
 //! for various AI models. It integrates with the session system to track token usage
 //! and provide warnings when approaching limits.
 
-use crate::error::{SessionError, SessionResult};
+use std::{collections::HashMap, sync::Arc};
+
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::sync::Arc;
 use tiktoken_rs::{get_bpe_from_model, CoreBPE};
+
+use crate::error::{SessionError, SessionResult};
 
 /// Token estimation result
 #[derive(Debug, Clone, Serialize, Deserialize)]

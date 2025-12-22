@@ -1,11 +1,12 @@
 // Integration tests for command execution
 // **Feature: ricecoder-cli, Tests for Requirements 1.1-7.5**
 
-use ricecoder_cli::branding::BrandingManager;
-use ricecoder_cli::commands::{
-    ChatCommand, Command, ConfigCommand, GenCommand, InitCommand, VersionCommand,
-};
 use std::path::Path;
+
+use ricecoder_cli::{
+    branding::BrandingManager,
+    commands::{ChatCommand, Command, ConfigCommand, GenCommand, InitCommand, VersionCommand},
+};
 use tempfile::TempDir;
 
 // ============================================================================

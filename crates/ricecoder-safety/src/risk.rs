@@ -1,9 +1,11 @@
 //! Risk scoring and analysis functionality
 
-use crate::error::{SafetyError, SafetyResult};
+use std::collections::HashMap;
+
 use chrono::Timelike;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+
+use crate::error::{SafetyError, SafetyResult};
 
 /// Risk level classifications
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]

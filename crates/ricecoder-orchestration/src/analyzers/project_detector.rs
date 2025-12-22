@@ -1,9 +1,13 @@
 //! Project detection and metadata extraction
 
-use crate::error::{OrchestrationError, Result};
-use crate::models::{Project, ProjectStatus};
 use std::path::PathBuf;
+
 use tracing::{debug, warn};
+
+use crate::{
+    error::{OrchestrationError, Result},
+    models::{Project, ProjectStatus},
+};
 
 /// Detects project type and extracts metadata from project manifests
 pub struct ProjectDetector;
@@ -291,8 +295,9 @@ impl ProjectDetector {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_detect_rust_project() {

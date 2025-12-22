@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 /// Property-based tests for completion relevance
 ///
 /// **Feature: ricecoder-completion, Property 1: Completion relevance**
@@ -8,7 +10,6 @@
 /// - Run 100+ iterations with various code patterns
 use proptest::prelude::*;
 use ricecoder_completion::*;
-use std::sync::Arc;
 
 /// Strategy for generating valid Rust code snippets
 fn rust_code_strategy() -> impl Strategy<Value = String> {

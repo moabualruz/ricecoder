@@ -2,9 +2,9 @@
 //!
 //! Tests git status checking, auto-commit workflow, diff review, and commit message generation.
 
-use ricecoder_files::git::GitIntegration;
-use ricecoder_files::models::FileOperation;
 use std::path::PathBuf;
+
+use ricecoder_files::{git::GitIntegration, models::FileOperation};
 use tempfile::TempDir;
 use tokio::fs;
 

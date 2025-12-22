@@ -1,3 +1,6 @@
+use async_trait::async_trait;
+use tree_sitter::{Language, Parser};
+
 /// Context analysis for code completion
 ///
 /// This module provides context analysis for code completion. It analyzes code context
@@ -8,8 +11,6 @@
 /// - [`GenericContextAnalyzer`]: Basic text-based context analysis
 /// - [`TreeSitterContextAnalyzer`]: Tree-sitter based scope and symbol detection
 use crate::types::*;
-use async_trait::async_trait;
-use tree_sitter::{Language, Parser};
 
 /// Context analyzer trait for analyzing code context
 ///

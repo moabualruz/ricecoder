@@ -3,12 +3,11 @@
 //! This module provides integration between the MCP tool system and the ricecoder-agents
 //! framework, enabling agents to discover and invoke MCP tools within their workflows.
 
-use crate::error::Result;
-use crate::metadata::ToolMetadata;
-use crate::registry::ToolRegistry;
+use std::{collections::HashMap, sync::Arc};
+
 use serde_json::Value;
-use std::collections::HashMap;
-use std::sync::Arc;
+
+use crate::{error::Result, metadata::ToolMetadata, registry::ToolRegistry};
 
 /// Tool invocation capability for agents
 ///

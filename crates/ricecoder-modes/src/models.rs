@@ -1,7 +1,10 @@
+use std::{
+    collections::HashMap,
+    path::PathBuf,
+    time::{Duration, SystemTime},
+};
+
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::path::PathBuf;
-use std::time::{Duration, SystemTime};
 
 /// Represents a capability that a mode can have
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]

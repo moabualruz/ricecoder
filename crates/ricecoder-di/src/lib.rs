@@ -21,9 +21,12 @@
 pub mod services;
 pub mod usage;
 
-use std::any::{Any, TypeId};
-use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::{
+    any::{Any, TypeId},
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
+
 use tracing::{debug, info, warn};
 
 /// Errors that can occur during dependency injection operations
@@ -542,102 +545,71 @@ macro_rules! resolve_service {
 }
 
 // Re-export service registration functions
+#[cfg(feature = "full")]
+pub use services::create_full_application_container;
+#[cfg(feature = "activity-log")]
+pub use services::register_activity_log_services;
+#[cfg(feature = "config")]
+pub use services::register_app_config_services;
+#[cfg(feature = "cache")]
+pub use services::register_cache_services;
+#[cfg(feature = "cli")]
+pub use services::register_cli_services;
+#[cfg(feature = "config")]
+pub use services::register_config_services;
+#[cfg(feature = "domain-agents")]
+pub use services::register_domain_agents_services;
+#[cfg(feature = "domain")]
+pub use services::register_domain_services;
+#[cfg(feature = "execution")]
+pub use services::register_execution_services;
+#[cfg(feature = "files")]
+pub use services::register_files_services;
+#[cfg(feature = "generation")]
+pub use services::register_generation_services;
+#[cfg(feature = "github")]
+pub use services::register_github_services;
+#[cfg(feature = "images")]
+pub use services::register_images_services;
+#[cfg(feature = "industry")]
+pub use services::register_industry_services;
+#[cfg(feature = "learning")]
+pub use services::register_learning_services;
+#[cfg(feature = "local-models")]
+pub use services::register_local_models_services;
+#[cfg(feature = "mcp")]
+pub use services::register_mcp_services;
+#[cfg(feature = "orchestration")]
+pub use services::register_orchestration_services;
+#[cfg(feature = "parsers")]
+pub use services::register_parsers_services;
+#[cfg(feature = "permissions")]
+pub use services::register_permissions_services;
+#[cfg(feature = "refactoring")]
+pub use services::register_refactoring_services;
+#[cfg(feature = "research")]
+pub use services::register_research_services;
+#[cfg(feature = "safety")]
+pub use services::register_safety_services;
+#[cfg(feature = "security")]
+pub use services::register_security_services;
+#[cfg(feature = "specs")]
+pub use services::register_specs_services;
+#[cfg(feature = "storage")]
+pub use services::register_storage_services;
+#[cfg(feature = "themes")]
+pub use services::register_themes_services;
+#[cfg(feature = "tools")]
+pub use services::register_tool_services;
+#[cfg(feature = "undo-redo")]
+pub use services::register_undo_redo_services;
+#[cfg(feature = "vcs")]
+pub use services::register_vcs_services;
+#[cfg(feature = "workflows")]
+pub use services::register_workflow_services;
 pub use services::{
     create_application_container, create_cli_container, create_configured_container,
     create_development_container, create_test_container, create_tui_container,
     register_infrastructure_services, register_use_cases, ContainerConfig, Lifecycle,
     LifecycleManager,
 };
-
-#[cfg(feature = "full")]
-pub use services::create_full_application_container;
-
-#[cfg(feature = "storage")]
-pub use services::register_storage_services;
-
-#[cfg(feature = "research")]
-pub use services::register_research_services;
-
-#[cfg(feature = "workflows")]
-pub use services::register_workflow_services;
-
-#[cfg(feature = "execution")]
-pub use services::register_execution_services;
-
-#[cfg(feature = "mcp")]
-pub use services::register_mcp_services;
-
-#[cfg(feature = "tools")]
-pub use services::register_tool_services;
-
-#[cfg(feature = "config")]
-pub use services::register_config_services;
-
-#[cfg(feature = "activity-log")]
-pub use services::register_activity_log_services;
-
-#[cfg(feature = "orchestration")]
-pub use services::register_orchestration_services;
-
-#[cfg(feature = "specs")]
-pub use services::register_specs_services;
-
-#[cfg(feature = "undo-redo")]
-pub use services::register_undo_redo_services;
-
-#[cfg(feature = "vcs")]
-pub use services::register_vcs_services;
-
-#[cfg(feature = "permissions")]
-pub use services::register_permissions_services;
-
-#[cfg(feature = "security")]
-pub use services::register_security_services;
-
-#[cfg(feature = "cache")]
-pub use services::register_cache_services;
-
-#[cfg(feature = "domain")]
-pub use services::register_domain_services;
-
-#[cfg(feature = "learning")]
-pub use services::register_learning_services;
-
-#[cfg(feature = "industry")]
-pub use services::register_industry_services;
-
-#[cfg(feature = "safety")]
-pub use services::register_safety_services;
-
-#[cfg(feature = "files")]
-pub use services::register_files_services;
-
-#[cfg(feature = "themes")]
-pub use services::register_themes_services;
-
-#[cfg(feature = "images")]
-pub use services::register_images_services;
-
-#[cfg(feature = "refactoring")]
-pub use services::register_refactoring_services;
-
-#[cfg(feature = "parsers")]
-pub use services::register_parsers_services;
-
-#[cfg(feature = "generation")]
-pub use services::register_generation_services;
-
-#[cfg(feature = "config")]
-pub use services::register_app_config_services;
-
-#[cfg(feature = "github")]
-pub use services::register_github_services;
-
-#[cfg(feature = "domain-agents")]
-pub use services::register_domain_agents_services;
-
-#[cfg(feature = "local-models")]
-pub use services::register_local_models_services;
-
-#[cfg(feature = "cli")]
-pub use services::register_cli_services;

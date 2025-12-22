@@ -2,9 +2,9 @@
 //! **Feature: ricecoder-sessions, Unit Tests: HistoryManager**
 //! **Validates: Requirements 2.3**
 
+use std::{thread, time::Duration};
+
 use ricecoder_sessions::{HistoryManager, Message, MessageRole};
-use std::thread;
-use std::time::Duration;
 
 fn create_test_message(role: MessageRole, content: &str) -> Message {
     Message::new(role, content.to_string())

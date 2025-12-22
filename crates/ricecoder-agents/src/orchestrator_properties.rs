@@ -5,10 +5,13 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::models::{AgentMetadata, AgentOutput, Finding, Severity};
-    use crate::orchestrator::AgentOrchestrator;
-    use crate::registry::AgentRegistry;
     use std::sync::Arc;
+
+    use crate::{
+        models::{AgentMetadata, AgentOutput, Finding, Severity},
+        orchestrator::AgentOrchestrator,
+        registry::AgentRegistry,
+    };
 
     fn create_finding(id: &str, severity: Severity, category: &str, message: &str) -> Finding {
         Finding {

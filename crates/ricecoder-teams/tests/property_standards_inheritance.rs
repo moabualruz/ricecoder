@@ -3,9 +3,9 @@ use chrono::Utc;
 /// **Feature: ricecoder-teams, Property 1: Standards Inheritance Consistency**
 /// **Validates: Requirements 1.6, 1.7**
 use proptest::prelude::*;
-use ricecoder_teams::config::TeamConfigManager;
-use ricecoder_teams::models::{
-    CodeReviewRule, ComplianceRequirement, SteeringDoc, TeamStandards, Template,
+use ricecoder_teams::{
+    config::TeamConfigManager,
+    models::{CodeReviewRule, ComplianceRequirement, SteeringDoc, TeamStandards, Template},
 };
 
 /// Strategy for generating random CodeReviewRule

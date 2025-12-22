@@ -3,12 +3,15 @@
 //! Builds system prompts from specifications and design documents,
 //! includes project context and examples, and applies steering rules.
 
-use crate::error::GenerationError;
-use crate::spec_processor::GenerationPlan;
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
+
 use ricecoder_storage::PathResolver;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+
+use crate::{error::GenerationError, spec_processor::GenerationPlan};
 
 /// Builds prompts for AI code generation
 #[derive(Debug, Clone)]
@@ -361,8 +364,9 @@ impl Default for PromptBuilder {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use ricecoder_specs::models::{AcceptanceCriterion, Priority};
+
+    use super::*;
 
     fn create_test_plan() -> GenerationPlan {
         GenerationPlan {

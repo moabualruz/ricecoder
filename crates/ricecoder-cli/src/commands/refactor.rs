@@ -1,8 +1,9 @@
 // Refactor code
 
+use async_trait::async_trait;
+
 use super::Command;
 use crate::error::CliResult;
-use async_trait::async_trait;
 
 /// Refactor existing code
 pub struct RefactorCommand {

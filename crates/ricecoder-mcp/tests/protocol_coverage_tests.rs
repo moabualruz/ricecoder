@@ -3,15 +3,14 @@
 //! Targeted tests for complex protocol scenarios and edge cases
 //! to improve coverage in protocol validation components.
 
-use ricecoder_mcp::error::{Error, Result};
-use ricecoder_mcp::protocol_validation::{
-    MCPComplianceChecker, MCPErrorHandler, MCPProtocolValidator,
-};
-use ricecoder_mcp::transport::{
-    MCPError, MCPErrorData, MCPMessage, MCPNotification, MCPRequest, MCPResponse,
+use std::collections::HashMap;
+
+use ricecoder_mcp::{
+    error::{Error, Result},
+    protocol_validation::{MCPComplianceChecker, MCPErrorHandler, MCPProtocolValidator},
+    transport::{MCPError, MCPErrorData, MCPMessage, MCPNotification, MCPRequest, MCPResponse},
 };
 use serde_json::json;
-use std::collections::HashMap;
 
 /// **Protocol Test P.1: Complex JSON Schema Validation**
 /// **Validates: Deeply nested and complex JSON structures**
@@ -253,6 +252,7 @@ fn test_method_name_validation_complex_cases() {
 #[tokio::test]
 async fn test_concurrent_message_validation() {
     use std::sync::Arc;
+
     use tokio::sync::Semaphore;
 
     let validator = Arc::new(MCPProtocolValidator::new());

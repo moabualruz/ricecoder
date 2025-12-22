@@ -1,10 +1,14 @@
 //! Session manager for lifecycle management and session switching
 
-use crate::error::{SessionError, SessionResult};
-use crate::models::{MessagePart, Session, SessionContext};
-use crate::token_estimator::{TokenEstimator, TokenUsageTracker};
-use chrono::{Duration, Utc};
 use std::collections::{HashMap, HashSet};
+
+use chrono::{Duration, Utc};
+
+use crate::{
+    error::{SessionError, SessionResult},
+    models::{MessagePart, Session, SessionContext},
+    token_estimator::{TokenEstimator, TokenUsageTracker},
+};
 
 /// Manages session lifecycle and switching
 #[derive(Debug)]

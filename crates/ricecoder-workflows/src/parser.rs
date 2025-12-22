@@ -1,8 +1,11 @@
 //! Workflow definition parser
 
-use crate::error::{WorkflowError, WorkflowResult};
-use crate::models::Workflow;
 use std::collections::{HashMap, HashSet};
+
+use crate::{
+    error::{WorkflowError, WorkflowResult},
+    models::Workflow,
+};
 
 /// Parses and validates workflow definitions
 pub struct WorkflowParser;
@@ -408,8 +411,9 @@ config: {}
 
 #[cfg(test)]
 mod property_tests {
-    use super::*;
     use proptest::prelude::*;
+
+    use super::*;
 
     /// **Feature: ricecoder-workflows, Property 1: Workflow Parsing Round Trip**
     /// **Validates: Requirements 1.1**

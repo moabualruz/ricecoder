@@ -1,5 +1,7 @@
 //! OAuth 2.0 and OpenID Connect support for secure token management
 
+use std::collections::HashMap;
+
 use async_trait::async_trait;
 use oauth2::{
     basic::BasicClient, reqwest::async_http_client, AuthUrl,
@@ -16,7 +18,6 @@ use openidconnect::{
     SubjectIdentifier, TokenResponse as OidcTokenResponse,
 };
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use url::Url;
 use uuid;
 

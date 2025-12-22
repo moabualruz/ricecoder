@@ -1,7 +1,9 @@
 //! Input validation for execution plans, steps, and configurations
 
-use crate::error::{ExecutionError, ExecutionResult};
-use crate::models::{ExecutionPlan, ExecutionStep, StepAction};
+use crate::{
+    error::{ExecutionError, ExecutionResult},
+    models::{ExecutionPlan, ExecutionStep, StepAction},
+};
 
 /// Validator for execution plans and their components
 pub struct ExecutionValidator;

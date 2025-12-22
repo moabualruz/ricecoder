@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use ricecoder_mcp::{
     metadata::{ToolMetadata, ToolSource},
@@ -8,7 +10,6 @@ use ricecoder_mcp::{
     ToolMarshaler,
 };
 use serde_json::json;
-use std::sync::Arc;
 
 fn benchmark_marshal_input(c: &mut Criterion) {
     let marshaler = ToolMarshaler::new();

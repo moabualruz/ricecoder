@@ -1,9 +1,9 @@
 //! Audit logging system for security events
 
+use std::sync::{Arc, Mutex};
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use std::sync::Mutex;
 use uuid::Uuid;
 
 use crate::Result;
@@ -395,8 +395,9 @@ impl AuditLogger {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::sync::Arc;
+
+    use super::*;
 
     #[tokio::test]
     async fn test_audit_logging() {

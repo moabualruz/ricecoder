@@ -7,12 +7,17 @@
 //! - Requirement 3.5: Rollback support (restore on failure)
 //! - Requirement 4.2, 4.3, 4.4: Conflict resolution strategies
 
-use crate::conflict_detector::FileConflictInfo;
-use crate::conflict_resolver::{ConflictResolver, ConflictStrategy};
-use crate::error::GenerationError;
-use crate::models::GeneratedFile;
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
+
+use crate::{
+    conflict_detector::FileConflictInfo,
+    conflict_resolver::{ConflictResolver, ConflictStrategy},
+    error::GenerationError,
+    models::GeneratedFile,
+};
 
 /// Configuration for output writing
 #[derive(Debug, Clone)]
@@ -438,8 +443,9 @@ impl Default for OutputWriter {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_create_output_writer() {

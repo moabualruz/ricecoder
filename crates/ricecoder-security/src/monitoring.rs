@@ -1,10 +1,13 @@
 //! Security monitoring and threat detection capabilities
 
+use std::{
+    collections::{HashMap, VecDeque},
+    sync::Arc,
+};
+
 use chrono::{DateTime, Duration, Utc};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, VecDeque};
-use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use crate::{audit::AuditLogger, Result, SecurityError};

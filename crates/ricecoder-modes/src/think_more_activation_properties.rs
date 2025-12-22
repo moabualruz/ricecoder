@@ -3,8 +3,9 @@
 /// **Validates: Requirements 4.1, 4.2**
 #[cfg(test)]
 mod tests {
-    use crate::{ThinkMoreController, ThinkingDepth};
     use proptest::prelude::*;
+
+    use crate::{ThinkMoreController, ThinkingDepth};
 
     proptest! {
         /// Property: When Think More is enabled, thinking can be started and content is visible

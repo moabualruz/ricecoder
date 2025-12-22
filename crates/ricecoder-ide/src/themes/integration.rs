@@ -3,10 +3,11 @@
 //! This module provides integration between the IDE and the theme system,
 //! including theme initialization, configuration loading, and persistence.
 
-use super::IdeThemeManager;
-use crate::error::{IdeError, IdeResult};
 use ricecoder_storage::PathResolver;
 use tracing::{debug, info};
+
+use super::IdeThemeManager;
+use crate::error::{IdeError, IdeResult};
 
 /// IDE Theme Configuration
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]

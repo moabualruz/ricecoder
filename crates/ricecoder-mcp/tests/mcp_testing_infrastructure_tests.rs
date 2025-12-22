@@ -4,17 +4,16 @@
 //! including reusable fixtures, mock servers, automated test data generation, and
 //! enterprise security testing utilities.
 
-use proptest::prelude::*;
-use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::RwLock;
+use std::{collections::HashMap, sync::Arc};
 
+use proptest::prelude::*;
 use ricecoder_mcp::{
     error::Result,
     metadata::ToolMetadata,
     registry::ToolRegistry,
     transport::{MCPMessage, MCPRequest, MCPResponse},
 };
+use tokio::sync::RwLock;
 
 // Import our testing infrastructure
 #[path = "mcp_testing_infrastructure.rs"]

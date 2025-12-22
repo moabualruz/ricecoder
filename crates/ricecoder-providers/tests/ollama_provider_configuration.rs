@@ -3,9 +3,9 @@
 //! **Feature: ricecoder-local-models, Integration Tests: Provider Configuration**
 //! **Validates: Requirements 1.1, 1.2**
 
-use ricecoder_providers::providers::OllamaConfig;
-use ricecoder_providers::{OllamaProvider, Provider};
 use std::path::PathBuf;
+
+use ricecoder_providers::{providers::OllamaConfig, OllamaProvider, Provider};
 
 /// Note: Environment variable loading tests are covered in unit tests in ollama_config.rs
 /// These integration tests focus on provider registration and configuration validation

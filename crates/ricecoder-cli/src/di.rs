@@ -3,8 +3,9 @@
 //! This module provides DI container setup and service resolution
 //! for the RiceCoder CLI application.
 
-use ricecoder_di::{create_application_container, DIContainer, DIResult};
 use std::sync::{Arc, OnceLock};
+
+use ricecoder_di::{create_application_container, DIContainer, DIResult};
 
 /// Global DI container for the CLI application
 static DI_CONTAINER: OnceLock<Arc<DIContainer>> = OnceLock::new();

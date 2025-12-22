@@ -1,10 +1,12 @@
 //! Activity events and logging structures
 
-use crate::error::ActivityLogResult;
+use std::collections::HashMap;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use uuid::Uuid;
+
+use crate::error::ActivityLogResult;
 
 /// Log severity levels
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]

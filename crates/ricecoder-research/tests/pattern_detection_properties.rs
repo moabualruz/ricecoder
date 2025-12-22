@@ -2,11 +2,12 @@
 //! **Feature: ricecoder-research, Property 2: Pattern Detection Stability**
 //! **Validates: Requirements 1.3, 1.4**
 
+use std::path::PathBuf;
+
 use proptest::prelude::*;
 use ricecoder_research::{
     ArchitecturalPatternDetector, CodebaseScanner, CodingPatternDetector, PatternDetector,
 };
-use std::path::PathBuf;
 use tempfile::TempDir;
 
 // ============================================================================

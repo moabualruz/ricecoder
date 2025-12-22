@@ -1,10 +1,12 @@
 //! Dependency validation and compatibility checking
 
-use crate::error::{OrchestrationError, Result};
-use crate::models::{Project, ProjectDependency};
 use std::collections::HashMap;
 
 use super::version_validator::VersionValidator;
+use crate::{
+    error::{OrchestrationError, Result},
+    models::{Project, ProjectDependency},
+};
 
 /// Validates dependency compatibility and version constraints
 #[derive(Debug, Clone)]
@@ -260,9 +262,10 @@ pub struct ValidationReport {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
     use crate::models::{DependencyType, ProjectStatus};
-    use std::path::PathBuf;
 
     fn create_test_project(name: &str, version: &str) -> Project {
         Project {

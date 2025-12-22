@@ -2,10 +2,10 @@
 //! **Feature: ricecoder-keybinds, Property 5: Configuration round-trip (parse/serialize equivalence)**
 //! **Validates: Requirements 1.2, 1.3**
 
+use std::{collections::HashSet, str::FromStr};
+
 use proptest::prelude::*;
 use ricecoder_keybinds::{ConflictDetector, Key, KeyCombo, Keybind, KeybindRegistry, Modifier};
-use std::collections::HashSet;
-use std::str::FromStr;
 
 /// Strategy for generating valid modifiers
 fn modifier_strategy() -> impl Strategy<Value = Modifier> {

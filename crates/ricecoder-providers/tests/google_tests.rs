@@ -1,7 +1,5 @@
 use ricecoder_providers::*;
 
-use ricecoder_providers::*;
-
 #[test]
 fn test_google_provider_creation() {
     let provider = GoogleProvider::new("test-key".to_string());

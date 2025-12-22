@@ -7,12 +7,13 @@
 //! Generate random code in unknown languages and verify generic refactoring
 //! Run 100+ iterations with different language patterns
 
+use std::sync::Arc;
+
 use proptest::prelude::*;
 use ricecoder_refactoring::{
     adapters::GenericRefactoringProvider, providers::ProviderRegistry, ConfigManager,
     RefactoringEngine, RefactoringType,
 };
-use std::sync::Arc;
 
 // Strategy for generating unknown language names
 fn unknown_language_strategy() -> impl Strategy<Value = String> {
@@ -241,9 +242,11 @@ proptest! {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use ricecoder_refactoring::RefactoringEngine;
     use std::sync::Arc;
+
+    use ricecoder_refactoring::RefactoringEngine;
+
+    use super::*;
 
     #[test]
     fn test_unknown_language_cobol() {

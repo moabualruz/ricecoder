@@ -10,13 +10,16 @@
 //! **CRITICAL**: All file operations use FileOperations wrapper which ensures
 //! all paths are validated through ricecoder_storage::PathResolver.
 
-use crate::error::{ExecutionError, ExecutionResult};
-use crate::file_operations::FileOperations;
-use crate::models::CommandOutput;
-use std::process::Command;
-use std::time::Duration;
+use std::{process::Command, time::Duration};
+
 use tokio::time::timeout;
 use tracing::{debug, error, info, warn};
+
+use crate::{
+    error::{ExecutionError, ExecutionResult},
+    file_operations::FileOperations,
+    models::CommandOutput,
+};
 
 /// Handles file creation actions
 pub struct CreateFileHandler;
@@ -152,6 +155,7 @@ impl CommandHandler {
         args: &[String],
     ) -> ExecutionResult<CommandOutput> {
         use std::process::Stdio;
+
         use tokio::process::Command;
 
         let mut cmd = Command::new(command);
@@ -370,8 +374,9 @@ enum TestFramework {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_create_file_handler() {

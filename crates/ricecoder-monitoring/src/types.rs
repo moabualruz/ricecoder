@@ -1,8 +1,9 @@
 //! Core types for the monitoring system
 
+use std::collections::HashMap;
+
 use chrono::{DateTime, TimeDelta, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use uuid::Uuid;
 
 /// Unique identifier for monitoring events

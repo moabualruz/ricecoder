@@ -1,11 +1,13 @@
 //! Background agent management
 
-use crate::error::{SessionError, SessionResult};
-use crate::models::{AgentStatus, BackgroundAgent};
-use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::RwLock;
-use tokio::task::JoinHandle;
+use std::{collections::HashMap, sync::Arc};
+
+use tokio::{sync::RwLock, task::JoinHandle};
+
+use crate::{
+    error::{SessionError, SessionResult},
+    models::{AgentStatus, BackgroundAgent},
+};
 
 /// Event emitted when a background agent completes
 #[derive(Debug, Clone)]

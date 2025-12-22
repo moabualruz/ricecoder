@@ -4,17 +4,16 @@
 //! generation, and testing utilities specifically designed for MCP (Model Context Protocol)
 //! testing, with particular focus on enterprise security scenarios.
 
-use proptest::prelude::*;
-use serde_json::{json, Value};
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
+use proptest::prelude::*;
 // MCP imports
 use ricecoder_mcp::{
     error::{Error, Result},
     metadata::ToolMetadata,
     transport::{MCPMessage, MCPRequest, MCPResponse, MCPTransport},
 };
+use serde_json::{json, Value};
 
 // ============================================================================
 // Reusable MCP Test Fixtures

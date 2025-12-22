@@ -2,9 +2,10 @@
 //! **Feature: ricecoder-research, Property 6: Standards Detection Consistency**
 //! **Validates: Requirements 1.5**
 
+use std::io::Write;
+
 use proptest::prelude::*;
 use ricecoder_research::StandardsDetector;
-use std::io::Write;
 use tempfile::NamedTempFile;
 
 // ============================================================================

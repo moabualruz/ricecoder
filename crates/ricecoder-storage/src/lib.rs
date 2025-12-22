@@ -46,8 +46,8 @@ pub use cache::{CacheEntry, CacheInvalidationStrategy, CacheManager};
 pub use cache_implementations::{
     CacheStats, ConfigCache as ConfigCacheImpl, ProjectAnalysisCache, ProviderCache, SpecCache,
 };
-pub use config::hot_reload::{ConfigConflictResolver, HotReloadManager};
 pub use config::{
+    hot_reload::{ConfigConflictResolver, HotReloadManager},
     CliArgs, Config, ConfigLoader, ConfigMerger, DefaultsConfig, DocumentLoader, EnvOverrides,
     ProvidersConfig, StorageModeHandler, TuiAccessibilityConfig, TuiConfig,
 };

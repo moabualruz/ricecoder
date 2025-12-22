@@ -1,6 +1,7 @@
 //! Error types for the updates crate
 
 use std::fmt;
+
 use thiserror::Error;
 
 /// Result type alias for update operations

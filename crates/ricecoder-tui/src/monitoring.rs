@@ -3,12 +3,16 @@
 //! This module provides comprehensive monitoring capabilities including
 //! performance metrics, usage analytics, and system observability.
 
-use crate::error::TuiResult;
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, Instant},
+};
+
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
+
+use crate::error::TuiResult;
 
 /// Memory safety monitor for enterprise compliance
 #[derive(Debug)]
@@ -1170,8 +1174,10 @@ pub struct ProfilingStats {
 
 /// Generate a random session ID for anonymous statistics
 fn generate_session_id() -> String {
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
+    use std::{
+        collections::hash_map::DefaultHasher,
+        hash::{Hash, Hasher},
+    };
 
     let mut hasher = DefaultHasher::new();
     std::time::SystemTime::now().hash(&mut hasher);

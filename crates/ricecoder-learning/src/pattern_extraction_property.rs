@@ -4,9 +4,11 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::{Decision, DecisionContext, PatternCapturer};
-    use proptest::prelude::*;
     use std::path::PathBuf;
+
+    use proptest::prelude::*;
+
+    use crate::{Decision, DecisionContext, PatternCapturer};
 
     /// Strategy for generating decision contexts
     fn decision_context_strategy() -> impl Strategy<Value = DecisionContext> {

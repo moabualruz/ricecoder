@@ -1,9 +1,13 @@
 //! Conflict detection and resolution for file operations
 
-use crate::error::FileError;
-use crate::models::{ConflictInfo, ConflictResolution};
 use std::path::Path;
+
 use tokio::fs;
+
+use crate::{
+    error::FileError,
+    models::{ConflictInfo, ConflictResolution},
+};
 
 /// Detects and resolves file conflicts when target path already exists
 #[derive(Debug, Clone)]

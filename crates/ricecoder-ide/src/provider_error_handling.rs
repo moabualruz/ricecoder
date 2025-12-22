@@ -3,9 +3,11 @@
 //! This module provides comprehensive error handling for the provider chain,
 //! including graceful fallback, error recovery, and clear error messages.
 
-use crate::error::{IdeError, IdeResult};
 use std::fmt;
+
 use tracing::{debug, error, warn};
+
+use crate::error::{IdeError, IdeResult};
 
 /// Provider chain error context
 #[derive(Debug, Clone)]

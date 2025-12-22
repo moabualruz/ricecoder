@@ -1,13 +1,17 @@
 //! User feedback collection and management for beta testing
 
-use crate::analytics::FeedbackAnalytics;
+use std::collections::HashMap;
+
 use chrono::{DateTime, Utc};
-use ricecoder_domain::entities::{Project, Session, User};
-use ricecoder_domain::value_objects::{ProjectId, SessionId};
+use ricecoder_domain::{
+    entities::{Project, Session, User},
+    value_objects::{ProjectId, SessionId},
+};
 use ricecoder_security::audit::AuditEvent;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use uuid::Uuid;
+
+use crate::analytics::FeedbackAnalytics;
 
 /// Types of feedback that can be collected
 #[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]

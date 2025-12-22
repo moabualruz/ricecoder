@@ -1,10 +1,11 @@
 //! Health check endpoint
 
-use crate::{models::HealthResponse, state::AppState};
 use axum::{
     extract::{Query, State},
     Json,
 };
+
+use crate::{models::HealthResponse, state::AppState};
 
 /// Health check endpoint
 #[utoipa::path(

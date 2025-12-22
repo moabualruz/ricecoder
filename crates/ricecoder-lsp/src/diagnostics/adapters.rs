@@ -3,10 +3,12 @@
 //! This module provides adapter wrappers that allow existing language-specific diagnostics
 //! to be used as pluggable providers in the configuration-driven architecture.
 
-use crate::config::LanguageConfig;
-use crate::diagnostics::{python_rules, rust_rules, typescript_rules};
-use crate::providers::{DiagnosticsProvider, ProviderResult};
-use crate::types::Diagnostic;
+use crate::{
+    config::LanguageConfig,
+    diagnostics::{python_rules, rust_rules, typescript_rules},
+    providers::{DiagnosticsProvider, ProviderResult},
+    types::Diagnostic,
+};
 
 /// Adapter for Rust diagnostics provider
 pub struct RustDiagnosticsAdapter {

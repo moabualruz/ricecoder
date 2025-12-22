@@ -5,8 +5,9 @@
 //! - ricecoder-completion (completion proxy)
 //! - ricecoder-storage (configuration loading)
 
-use ricecoder_external_lsp::{LspServerConfig, LspServerRegistry};
 use std::collections::HashMap;
+
+use ricecoder_external_lsp::{LspServerConfig, LspServerRegistry};
 
 /// Mock external LSP client for testing
 struct MockExternalLspClient {

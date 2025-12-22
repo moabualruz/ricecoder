@@ -1,11 +1,17 @@
 //! Process lifecycle management
 
-use crate::error::{ExternalLspError, Result};
-use crate::types::{ClientState, LspServerConfig};
-use std::process::Stdio;
-use std::time::{Duration, Instant};
+use std::{
+    process::Stdio,
+    time::{Duration, Instant},
+};
+
 use tokio::process::{Child, Command};
 use tracing::{debug, error, info, warn};
+
+use crate::{
+    error::{ExternalLspError, Result},
+    types::{ClientState, LspServerConfig},
+};
 
 /// Manages LSP server process lifecycle
 pub struct ProcessManager {

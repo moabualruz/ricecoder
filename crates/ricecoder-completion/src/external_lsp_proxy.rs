@@ -22,10 +22,12 @@
 //! - If external LSP is unavailable → fall back to internal provider
 //! - If no external LSP configured → use internal provider
 
-use crate::types::{CompletionItem, CompletionResult, Position};
-use async_trait::async_trait;
 use std::sync::Arc;
+
+use async_trait::async_trait;
 use tracing::{debug, info, warn};
+
+use crate::types::{CompletionItem, CompletionResult, Position};
 
 /// Trait for external LSP completion client
 #[async_trait]

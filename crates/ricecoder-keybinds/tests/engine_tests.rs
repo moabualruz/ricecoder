@@ -1,10 +1,13 @@
-use ricecoder_keybinds::engine::{get_default_persistence, initialize_engine_with_defaults};
-use ricecoder_keybinds::*;
+use ricecoder_keybinds::{
+    engine::{get_default_persistence, initialize_engine_with_defaults},
+    *,
+};
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::str::FromStr;
+
+    use super::*;
 
     #[test]
     fn test_apply_keybinds() {

@@ -1,14 +1,20 @@
 //! Theme management for the TUI
 
-use crate::loader::ThemeLoader;
-use crate::registry::ThemeRegistry;
-use crate::reset::ThemeResetManager;
-use crate::types::{Theme, ThemeError, ThemeManager as ThemeManagerTrait};
+use std::{
+    path::Path,
+    sync::{Arc, Mutex},
+};
+
 use anyhow::Result;
 use ratatui::style::{Color, Color as ColorSupport};
 use ricecoder_storage::TuiConfig;
-use std::path::Path;
-use std::sync::{Arc, Mutex};
+
+use crate::{
+    loader::ThemeLoader,
+    registry::ThemeRegistry,
+    reset::ThemeResetManager,
+    types::{Theme, ThemeError, ThemeManager as ThemeManagerTrait},
+};
 
 /// Type alias for theme listeners
 type ThemeListeners = Arc<Mutex<Vec<Box<dyn Fn(&Theme) + Send>>>>;

@@ -4,6 +4,11 @@
 //! search, and select files from the filesystem with tree navigation and
 //! fuzzy search capabilities.
 
+use std::{
+    collections::HashSet,
+    path::{Path, PathBuf},
+};
+
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Margin, Rect},
     style::{Color, Modifier, Style},
@@ -11,10 +16,7 @@ use ratatui::{
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph},
     Frame,
 };
-
 use ratatui_explorer::FileExplorer;
-use std::collections::HashSet;
-use std::path::{Path, PathBuf};
 
 /// Result of file selection
 #[derive(Debug, Clone)]

@@ -1,7 +1,8 @@
 //! Tests for theming functionality
 
-use ricecoder_tui::{ColorSupport, Theme, ThemeLoader, ThemeManager};
 use std::path::Path;
+
+use ricecoder_tui::{ColorSupport, Theme, ThemeLoader, ThemeManager};
 use tempfile::TempDir;
 
 #[test]

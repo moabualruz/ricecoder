@@ -6,12 +6,15 @@
 //! 3. Built-in Language Providers (Rust, TypeScript, Python)
 //! 4. Generic Text-based Features (fallback for any language)
 
-use crate::error::IdeResult;
-use crate::provider::{IdeProvider, ProviderChange};
-use crate::types::*;
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
+
 use tracing::{debug, info, warn};
+
+use crate::{
+    error::IdeResult,
+    provider::{IdeProvider, ProviderChange},
+    types::*,
+};
 
 /// Type alias for provider availability change callback
 type ProviderAvailabilityCallback = Box<dyn Fn(ProviderChange) + Send + Sync>;
@@ -331,8 +334,9 @@ impl ProviderChainManager {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use async_trait::async_trait;
+
+    use super::*;
 
     /// Mock provider for testing
     struct MockProvider {

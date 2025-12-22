@@ -5,12 +5,13 @@
 //! It also detects terminal capabilities to adapt the UI accordingly.
 //! Requirements: 4.1, 4.2, 4.3, 4.4, 10.1, 10.2, 10.3
 
+use std::{collections::HashMap, env, io};
+
 use anyhow::Result;
 use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use std::{collections::HashMap, env, io};
 
 /// Terminal color support levels
 ///

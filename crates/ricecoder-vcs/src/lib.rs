@@ -42,8 +42,9 @@ pub use types::{Branch, ModifiedFile};
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::path::Path;
+
+    use super::*;
 
     #[test]
     fn test_modification_indicator_display() {

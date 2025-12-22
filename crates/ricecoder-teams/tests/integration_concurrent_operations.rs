@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 /// Integration tests for concurrent operations
 ///
 /// Tests concurrent rule promotions, permission changes, and configuration updates
@@ -7,7 +9,6 @@
 /// **Validates: Requirements 2.1, 2.2, 3.7**
 use chrono::Utc;
 use ricecoder_teams::{RuleScope, SharedRule, TeamManager, TeamMember, TeamRole, TeamStandards};
-use std::sync::Arc;
 use tokio::task::JoinHandle;
 use uuid::Uuid;
 

@@ -1,11 +1,17 @@
 //! LSP command - Start the Language Server Protocol server
 
-use crate::commands::Command;
-use crate::error::{CliError, CliResult};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
+
 use async_trait::async_trait;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
 use tracing::{error, info};
+
+use crate::{
+    commands::Command,
+    error::{CliError, CliResult},
+};
 
 /// LSP server configuration
 #[derive(Debug, Clone)]

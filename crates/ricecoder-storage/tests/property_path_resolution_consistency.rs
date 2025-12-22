@@ -2,10 +2,10 @@
 //! **Feature: ricecoder-storage, Property 1: Path Resolution Consistency**
 //! **Validates: Requirements 4.1, 4.4**
 
+use std::{path::PathBuf, sync::Mutex};
+
 use proptest::prelude::*;
 use ricecoder_storage::PathResolver;
-use std::path::PathBuf;
-use std::sync::Mutex;
 
 // Mutex to serialize environment variable access in tests
 lazy_static::lazy_static! {

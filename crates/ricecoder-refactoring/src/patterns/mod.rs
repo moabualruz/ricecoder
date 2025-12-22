@@ -5,13 +5,13 @@ pub mod matcher;
 pub mod store;
 pub mod validator;
 
+use std::collections::HashMap;
+
 pub use exporter::PatternExporter;
 pub use matcher::PatternMatcher;
+use serde::{Deserialize, Serialize};
 pub use store::PatternStore;
 pub use validator::PatternValidator;
-
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// A reusable refactoring pattern
 #[derive(Debug, Clone, Serialize, Deserialize)]

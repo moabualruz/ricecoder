@@ -4,12 +4,17 @@
 //! without restarting the application. Preserves hook state (enabled/disabled)
 //! during reload.
 
-use crate::error::{HooksError, Result};
-use crate::types::Hook;
-use std::collections::HashMap;
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::time::SystemTime;
+use std::{
+    collections::HashMap,
+    fs,
+    path::{Path, PathBuf},
+    time::SystemTime,
+};
+
+use crate::{
+    error::{HooksError, Result},
+    types::Hook,
+};
 
 /// Configuration reloader for detecting and applying configuration changes
 ///
@@ -117,11 +122,11 @@ impl Default for ConfigReloader {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use std::io::Write;
-    use std::thread;
-    use std::time::Duration;
+    use std::{io::Write, thread, time::Duration};
+
     use tempfile::NamedTempFile;
+
+    use super::*;
 
     #[test]
     fn test_new_reloader() {

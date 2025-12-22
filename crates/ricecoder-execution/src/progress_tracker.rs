@@ -7,11 +7,15 @@
 //! - Estimated time remaining
 //! - Progress callbacks for real-time UI updates
 
-use crate::models::ExecutionPlan;
+use std::{
+    sync::{Arc, Mutex},
+    time::{Duration, Instant},
+};
+
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
 use tracing::{debug, info};
+
+use crate::models::ExecutionPlan;
 
 /// Progress update event
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -244,10 +248,13 @@ impl Default for ProgressTracker {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc as StdArc,
+    };
+
     use super::*;
     use crate::models::{ExecutionPlan, ExecutionStep, RiskScore, StepAction, StepStatus};
-    use std::sync::atomic::{AtomicUsize, Ordering};
-    use std::sync::Arc as StdArc;
 
     fn create_test_plan(step_count: usize) -> ExecutionPlan {
         let steps = (0..step_count)

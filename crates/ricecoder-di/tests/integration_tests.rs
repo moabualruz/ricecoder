@@ -1,5 +1,7 @@
 //! Integration tests for the DI container
 
+use std::sync::Arc;
+
 use ricecoder_agents::use_cases::{
     ProviderCommunityUseCase, ProviderFailoverUseCase, ProviderHealthUseCase, ProviderModelUseCase,
     ProviderPerformanceUseCase, ProviderSwitchingUseCase, SessionLifecycleUseCase,
@@ -9,7 +11,6 @@ use ricecoder_di::{
     create_application_container, create_cli_container, create_development_container,
     create_test_container, create_tui_container, DIResult,
 };
-use std::sync::Arc;
 
 #[tokio::test]
 async fn test_session_use_cases_integration() -> DIResult<()> {
@@ -116,6 +117,7 @@ async fn test_session_provider_interaction() -> DIResult<()> {
 #[tokio::test]
 async fn test_concurrent_service_resolution() -> DIResult<()> {
     use std::sync::Arc;
+
     use tokio::task;
 
     let container = Arc::new(create_application_container()?);
@@ -152,8 +154,8 @@ async fn test_concurrent_service_resolution() -> DIResult<()> {
 
 #[tokio::test]
 async fn test_concurrent_singleton_behavior() -> DIResult<()> {
-    use std::collections::HashSet;
-    use std::sync::Arc;
+    use std::{collections::HashSet, sync::Arc};
+
     use tokio::task;
 
     let container = Arc::new(create_application_container()?);
@@ -185,6 +187,7 @@ async fn test_concurrent_singleton_behavior() -> DIResult<()> {
 #[tokio::test]
 async fn test_concurrent_registration_and_resolution() -> DIResult<()> {
     use std::sync::Arc;
+
     use tokio::task;
 
     let container = Arc::new(DIContainer::new());
@@ -239,6 +242,7 @@ async fn test_concurrent_registration_and_resolution() -> DIResult<()> {
 #[tokio::test]
 async fn test_concurrent_scoped_services() -> DIResult<()> {
     use std::sync::Arc;
+
     use tokio::task;
 
     let container = Arc::new(DIContainer::new());
@@ -284,6 +288,7 @@ async fn test_concurrent_scoped_services() -> DIResult<()> {
 #[tokio::test]
 async fn test_concurrent_health_checks() -> DIResult<()> {
     use std::sync::Arc;
+
     use tokio::task;
 
     let container = Arc::new(create_application_container()?);
@@ -464,8 +469,9 @@ async fn test_different_container_builders() -> DIResult<()> {
 
 #[tokio::test]
 async fn test_lifecycle_management() -> DIResult<()> {
-    use crate::services::{Lifecycle, LifecycleManager};
     use std::sync::Arc;
+
+    use crate::services::{Lifecycle, LifecycleManager};
 
     // Create a mock service that implements Lifecycle
     struct MockLifecycleService {

@@ -7,9 +7,10 @@
 //!
 //! **Validates: Requirements 1.3**
 
+use std::path::PathBuf;
+
 use proptest::prelude::*;
 use ricecoder_orchestration::ConfigManager;
-use std::path::PathBuf;
 
 proptest! {
     /// Property: Configuration manager creation is deterministic

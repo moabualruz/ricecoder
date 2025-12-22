@@ -6,6 +6,8 @@
 //! These tests implement automated penetration testing using property-based testing
 //! to discover security vulnerabilities, test attack vectors, and validate security controls.
 
+use std::{collections::HashMap, sync::Arc};
+
 use proptest::prelude::*;
 use ricecoder_security::{
     audit::{AuditLogger, MemoryAuditStorage},
@@ -14,8 +16,6 @@ use ricecoder_security::{
     oauth::TokenManager,
     validation::SecurityValidator,
 };
-use std::collections::HashMap;
-use std::sync::Arc;
 use tokio::sync::RwLock;
 
 // ============================================================================

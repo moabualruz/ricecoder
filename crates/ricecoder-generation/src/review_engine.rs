@@ -3,11 +3,12 @@
 //! Provides code review capabilities that check generated code against spec requirements,
 //! measure code quality metrics, and provide actionable feedback and suggestions.
 
-use crate::error::GenerationError;
-use crate::models::GeneratedFile;
+use std::collections::HashMap;
+
 use ricecoder_specs::models::Spec;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+
+use crate::{error::GenerationError, models::GeneratedFile};
 
 /// Result of code review
 #[derive(Debug, Clone, Serialize, Deserialize)]

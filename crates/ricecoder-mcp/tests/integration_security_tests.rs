@@ -6,18 +6,19 @@
 //! - Cross-cutting concerns (audit, compliance, RBAC)
 //! - High coverage achievement (85%+)
 
-use ricecoder_mcp::audit::MCPAuditLogger;
-use ricecoder_mcp::compliance::{ComplianceReport, MCPComplianceMonitor};
-use ricecoder_mcp::error::{Error, Result};
-use ricecoder_mcp::metadata::{ToolMetadata, ToolSource};
-use ricecoder_mcp::permissions::{MCPPermissionManager, PermissionLevelConfig, PermissionRule};
-use ricecoder_mcp::rbac::{MCPAuthorizationMiddleware, MCRBACManager};
-use ricecoder_mcp::tool_execution::{ToolExecutionContext, ToolExecutionResult};
-use ricecoder_mcp::transport::{MCPMessage, MCPRequest, MCPResponse, MCPTransport};
+use std::{collections::HashMap, sync::Arc, time::Duration};
+
+use ricecoder_mcp::{
+    audit::MCPAuditLogger,
+    compliance::{ComplianceReport, MCPComplianceMonitor},
+    error::{Error, Result},
+    metadata::{ToolMetadata, ToolSource},
+    permissions::{MCPPermissionManager, PermissionLevelConfig, PermissionRule},
+    rbac::{MCPAuthorizationMiddleware, MCRBACManager},
+    tool_execution::{ToolExecutionContext, ToolExecutionResult},
+    transport::{MCPMessage, MCPRequest, MCPResponse, MCPTransport},
+};
 use serde_json::json;
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::Duration;
 use tokio::sync::RwLock;
 
 /// **Integration Test 4.1: Complete tool execution pipeline with security**

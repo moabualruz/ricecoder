@@ -2,9 +2,7 @@
 
 #[cfg(test)]
 mod properties {
-    use crate::code_mode::CodeMode;
-    use crate::mode::Mode;
-    use crate::models::Capability;
+    use crate::{code_mode::CodeMode, mode::Mode, models::Capability};
 
     /// **Feature: ricecoder-modes, Property 1: Mode Capability Activation**
     /// **Validates: Requirements 1.1**

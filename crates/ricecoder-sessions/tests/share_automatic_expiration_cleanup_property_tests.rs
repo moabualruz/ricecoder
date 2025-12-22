@@ -2,11 +2,11 @@
 //! **Feature: ricecoder-sharing, Property 11: Automatic Expiration Cleanup**
 //! **Validates: Requirements 5.4**
 
+use std::{thread, time::Duration as StdDuration};
+
 use chrono::Duration;
 use proptest::prelude::*;
 use ricecoder_sessions::{SharePermissions, ShareService};
-use std::thread;
-use std::time::Duration as StdDuration;
 
 proptest! {
     /// Property 11: Automatic Expiration Cleanup

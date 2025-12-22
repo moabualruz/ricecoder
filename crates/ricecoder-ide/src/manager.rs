@@ -1,10 +1,14 @@
 //! IDE Integration Manager
 
-use crate::error::{IdeError, IdeResult};
-use crate::provider_chain::ProviderChainManager;
-use crate::types::*;
 use std::sync::Arc;
+
 use tracing::{debug, info};
+
+use crate::{
+    error::{IdeError, IdeResult},
+    provider_chain::ProviderChainManager,
+    types::*,
+};
 
 /// IDE Integration Manager
 pub struct IdeIntegrationManager {
@@ -211,8 +215,7 @@ impl IdeIntegrationManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::generic_provider::GenericProvider;
-    use crate::provider_chain::ProviderRegistry;
+    use crate::{generic_provider::GenericProvider, provider_chain::ProviderRegistry};
 
     fn create_test_config() -> IdeIntegrationConfig {
         IdeIntegrationConfig {

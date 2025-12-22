@@ -1,5 +1,7 @@
 //! Unit tests for Code Review Agent and Operations
 
+use std::collections::HashMap;
+
 use chrono::Utc;
 use ricecoder_github::{
     models::{FileChange, PrStatus},
@@ -7,7 +9,6 @@ use ricecoder_github::{
     CodeReviewStandards, CodeReviewSuggestion, ConditionalApprovalResult, IssueSeverity, PrReview,
     ReviewState,
 };
-use std::collections::HashMap;
 
 fn create_test_pr() -> ricecoder_github::models::PullRequest {
     ricecoder_github::models::PullRequest {

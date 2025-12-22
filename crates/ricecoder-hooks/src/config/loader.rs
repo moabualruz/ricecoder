@@ -4,12 +4,18 @@
 //! PathResolver for cross-platform compatibility. Supports configuration
 //! hierarchy: Runtime → Project → User → Built-in → Fallback.
 
-use crate::error::{HooksError, Result};
-use crate::types::Hook;
+use std::{
+    collections::HashMap,
+    fs,
+    path::{Path, PathBuf},
+};
+
 use ricecoder_storage::PathResolver;
-use std::collections::HashMap;
-use std::fs;
-use std::path::{Path, PathBuf};
+
+use crate::{
+    error::{HooksError, Result},
+    types::Hook,
+};
 
 /// Configuration loader for hooks
 ///

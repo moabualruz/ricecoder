@@ -1,9 +1,9 @@
 // Unit tests for core commands
 // **Feature: ricecoder-cli, Tests for Requirements 2.1-2.6**
 
+use std::{fs, path::Path};
+
 use ricecoder_cli::commands::{Command, ConfigCommand, GenCommand, InitCommand};
-use std::fs;
-use std::path::Path;
 use tempfile::TempDir;
 
 // ============================================================================

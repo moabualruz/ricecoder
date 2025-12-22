@@ -1,11 +1,14 @@
 //! Feature usage analytics and prioritization pipeline
 
-use crate::types::*;
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
+
 use ricecoder_monitoring::analytics::{AnalyticsEngine, FeatureAdoptionMetrics, UsageStats};
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-use tokio::sync::mpsc;
-use tokio::time;
+use tokio::{sync::mpsc, time};
+
+use crate::types::*;
 
 /// Analytics pipeline for feature usage analysis and prioritization
 pub struct AnalyticsPipeline {

@@ -3,10 +3,11 @@
 //! This module provides safe file reading capabilities with content filtering,
 //! size limits, and binary file detection for enhanced security.
 
-use crate::error::ToolError;
+use std::{fs, path::Path};
+
 use serde::{Deserialize, Serialize};
-use std::fs;
-use std::path::Path;
+
+use crate::error::ToolError;
 
 /// Input for file read operations
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -440,9 +441,11 @@ impl FileReadTool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::fs;
+
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_read_text_file() {

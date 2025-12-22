@@ -2,10 +2,15 @@
 //!
 //! Manages the project-local knowledge base stored in ./.agent/
 
-use crate::error::{IoOperation, StorageError, StorageResult};
-use crate::types::ResourceType;
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
+
+use crate::{
+    error::{IoOperation, StorageError, StorageResult},
+    types::ResourceType,
+};
 
 /// Project store for managing project-local knowledge base
 pub struct ProjectStore {
@@ -184,8 +189,9 @@ impl ProjectStore {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_project_store_initialization() {

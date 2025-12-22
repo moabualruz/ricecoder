@@ -3,21 +3,25 @@
 //! Provides abstractions for executing MCP tools and handling their results,
 //! including validation, error handling, and result processing.
 
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
+
 use async_trait::async_trait;
+// Import cache types
+use ricecoder_cache::{Cache, CacheBuilder, CacheConfig, CacheStorage, MemoryStorage};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::{Duration, SystemTime};
 use tokio::sync::RwLock;
 use tracing::{debug, error, info, warn};
 
-use crate::error::{Error, Result, ToolError};
-use crate::metadata::{ParameterMetadata, ToolMetadata};
-use crate::permissions::{MCPPermissionManager, PermissionLevelConfig};
-use crate::transport::{MCPMessage, MCPRequest, MCPResponse, MCPTransport};
-
-// Import cache types
-use ricecoder_cache::{Cache, CacheBuilder, CacheConfig, CacheStorage, MemoryStorage};
+use crate::{
+    error::{Error, Result, ToolError},
+    metadata::{ParameterMetadata, ToolMetadata},
+    permissions::{MCPPermissionManager, PermissionLevelConfig},
+    transport::{MCPMessage, MCPRequest, MCPResponse, MCPTransport},
+};
 
 /// Tool execution context
 #[derive(Debug, Clone)]
@@ -553,8 +557,10 @@ impl ToolExecutor for MCPToolExecutor {
 
     /// Generate a cache key for tool execution context
     fn generate_cache_key(&self, context: &ToolExecutionContext) -> String {
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
+        use std::{
+            collections::hash_map::DefaultHasher,
+            hash::{Hash, Hasher},
+        };
 
         let mut hasher = DefaultHasher::new();
         context.tool_name.hash(&mut hasher);

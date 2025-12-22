@@ -1,8 +1,8 @@
 //! Provider traits and interfaces for IDE features
 
-use crate::error::IdeResult;
-use crate::types::*;
 use async_trait::async_trait;
+
+use crate::{error::IdeResult, types::*};
 
 /// IDE provider trait for IDE features
 #[async_trait]

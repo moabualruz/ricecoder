@@ -12,10 +12,9 @@
 //! - Requirement 4.4: Merge strategy - attempt intelligent merge
 //! - Requirement 4.5: Prompt strategy - ask user for each conflict
 
-use crate::conflict_detector::FileConflictInfo;
-use crate::error::GenerationError;
-use std::fs;
-use std::path::Path;
+use std::{fs, path::Path};
+
+use crate::{conflict_detector::FileConflictInfo, error::GenerationError};
 
 /// Strategy for resolving file conflicts
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -304,9 +303,11 @@ impl Default for ConflictResolver {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::path::PathBuf;
+
     use tempfile::TempDir;
+
+    use super::*;
 
     fn create_test_conflict(old_content: &str, new_content: &str) -> FileConflictInfo {
         FileConflictInfo {

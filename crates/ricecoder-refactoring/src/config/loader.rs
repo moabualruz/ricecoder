@@ -1,8 +1,11 @@
 //! Configuration loader for refactoring rules
 
-use crate::error::{RefactoringError, Result};
-use crate::types::RefactoringConfig;
 use std::path::Path;
+
+use crate::{
+    error::{RefactoringError, Result},
+    types::RefactoringConfig,
+};
 
 /// Loads refactoring configuration from files
 pub struct ConfigLoader;

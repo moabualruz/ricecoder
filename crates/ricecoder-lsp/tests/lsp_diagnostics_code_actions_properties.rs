@@ -14,9 +14,11 @@
 //! - Code actions do not introduce new issues
 
 use proptest::prelude::*;
-use ricecoder_lsp::code_actions::{CodeActionsEngine, DefaultCodeActionsEngine};
-use ricecoder_lsp::diagnostics::{DefaultDiagnosticsEngine, DiagnosticsEngine};
-use ricecoder_lsp::types::{DiagnosticSeverity, Language};
+use ricecoder_lsp::{
+    code_actions::{CodeActionsEngine, DefaultCodeActionsEngine},
+    diagnostics::{DefaultDiagnosticsEngine, DiagnosticsEngine},
+    types::{DiagnosticSeverity, Language},
+};
 
 /// Strategy for generating Rust code with potential issues
 fn rust_code_strategy() -> impl Strategy<Value = String> {

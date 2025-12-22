@@ -3,8 +3,7 @@ use ricecoder_keybinds::*;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::Keybind;
-    use crate::profile::Profile;
+    use crate::{models::Keybind, profile::Profile};
 
     #[test]
     fn test_save_and_load_profile() {

@@ -1,7 +1,8 @@
 //! Error types for session operations
 
-use base64;
 use std::io;
+
+use base64;
 use thiserror::Error;
 
 /// Result type for session operations

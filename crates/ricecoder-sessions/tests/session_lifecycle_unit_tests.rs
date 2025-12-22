@@ -2,11 +2,12 @@
 //! **Feature: ricecoder-sessions, Unit Tests: Session Lifecycle**
 //! **Validates: Requirements 1.1, 1.2, 1.3, 1.4**
 
+use std::sync::Arc;
+
 use ricecoder_sessions::{
     BackgroundAgent, BackgroundAgentManager, ContextManager, HistoryManager, Message, MessageRole,
     Session, SessionContext, SessionManager, SessionMode, SessionStatus, SessionStore,
 };
-use std::sync::Arc;
 use tempfile::TempDir;
 use tokio::sync::Mutex;
 

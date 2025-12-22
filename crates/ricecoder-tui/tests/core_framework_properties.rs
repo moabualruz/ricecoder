@@ -4,8 +4,7 @@
 //! Validates Requirements 1.1, 1.2, 8.5, 9.1, 9.2, 9.3, 9.4, 10.3
 
 use proptest::prelude::*;
-use ricecoder_tui::prompt::ContextIndicators;
-use ricecoder_tui::{App, AppMode, Constraint, Layout, Rect, Theme};
+use ricecoder_tui::{prompt::ContextIndicators, App, AppMode, Constraint, Layout, Rect, Theme};
 
 // ============================================================================
 // Generators for Property Tests

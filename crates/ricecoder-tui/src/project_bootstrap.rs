@@ -3,7 +3,11 @@
 //! This module provides automatic project type detection, configuration loading,
 //! and integration initialization when RiceCoder starts in a project directory.
 
-use crate::error::TuiResult;
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
+
 // Project analysis moved to ricecoder-research crate
 // use ricecoder_research::{ProjectAnalyzer, ProjectType, Language};
 
@@ -12,10 +16,9 @@ pub use ricecoder_research::{
     models::{Language, ProjectType},
     ProjectAnalyzer,
 };
-
 use ricecoder_storage::ConfigLoader;
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+
+use crate::error::TuiResult;
 
 /// Project bootstrap configuration and state
 #[derive(Debug, Clone)]

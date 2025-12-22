@@ -1,13 +1,17 @@
 //! Git repository implementation
 
-use crate::error::{Result, VcsError};
-use crate::repository::Repository;
-use crate::status::{CommitInfo, RepositoryStatus};
-use crate::types::{Branch, FileStatus, ModifiedFile};
+use std::path::{Path, PathBuf};
+
 use chrono::{TimeZone, Utc};
 use git2::{BranchType, Repository as Git2Repository, Status, StatusOptions};
-use std::path::{Path, PathBuf};
 use tracing::{debug, trace};
+
+use crate::{
+    error::{Result, VcsError},
+    repository::Repository,
+    status::{CommitInfo, RepositoryStatus},
+    types::{Branch, FileStatus, ModifiedFile},
+};
 
 /// Git repository implementation
 pub struct GitRepository {

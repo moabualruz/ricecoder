@@ -6,11 +6,16 @@
 //! - Loops ({{#each}}...{{/each}})
 //! - Includes/partials ({{> partial}})
 
-use crate::models::{RenderResult, TemplateContext};
-use crate::templates::error::TemplateError;
-use crate::templates::parser::{TemplateElement, TemplateParser};
-use crate::templates::resolver::{CaseTransform, PlaceholderResolver};
 use std::collections::HashMap;
+
+use crate::{
+    models::{RenderResult, TemplateContext},
+    templates::{
+        error::TemplateError,
+        parser::{TemplateElement, TemplateParser},
+        resolver::{CaseTransform, PlaceholderResolver},
+    },
+};
 
 /// Template engine for rendering templates with variable substitution
 pub struct TemplateEngine {

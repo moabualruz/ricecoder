@@ -3,8 +3,9 @@
 //! This module provides lifecycle management for application components,
 //! ensuring proper startup, initialization, and shutdown procedures.
 
-use ricecoder_di::DIContainer;
 use std::sync::{Arc, OnceLock, RwLock};
+
+use ricecoder_di::DIContainer;
 use tracing::{debug, info, warn};
 
 /// Component lifecycle states

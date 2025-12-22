@@ -1,7 +1,9 @@
 //! Context management for sessions
 
-use crate::error::{SessionError, SessionResult};
-use crate::models::SessionContext;
+use crate::{
+    error::{SessionError, SessionResult},
+    models::SessionContext,
+};
 
 /// Manages session context with isolation between sessions
 ///

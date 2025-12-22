@@ -4,9 +4,10 @@
 //! **Feature: ricecoder-research, Property 5: Cross-File Relationship Tracking**
 //! **Validates: Requirements 1.9**
 
+use std::path::PathBuf;
+
 use proptest::prelude::*;
 use ricecoder_research::{ReferenceKind, SemanticIndex, Symbol, SymbolKind, SymbolReference};
-use std::path::PathBuf;
 
 // ============================================================================
 // Generators for property testing

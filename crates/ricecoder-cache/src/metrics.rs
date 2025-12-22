@@ -1,9 +1,14 @@
 //! Cache performance monitoring and metrics
 
+use std::{
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc,
+    },
+    time::{Duration, SystemTime},
+};
+
 use serde::{Deserialize, Serialize};
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Arc;
-use std::time::{Duration, SystemTime};
 
 /// Cache performance statistics
 #[derive(Debug, Clone, Serialize, Deserialize)]

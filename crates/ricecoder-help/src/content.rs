@@ -1,7 +1,8 @@
 //! Help content data structures and management
 
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 
 /// A single help item with title and content
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

@@ -1,9 +1,12 @@
 //! Session routing for message handling
 
-use crate::error::{SessionError, SessionResult};
-use crate::models::{Message, MessageRole, Session, SessionContext};
-use crate::token_estimator::{TokenEstimator, TokenUsageTracker};
 use std::collections::HashMap;
+
+use crate::{
+    error::{SessionError, SessionResult},
+    models::{Message, MessageRole, Session, SessionContext},
+    token_estimator::{TokenEstimator, TokenUsageTracker},
+};
 
 /// Routes messages to the appropriate session
 /// Manages active session state and ensures messages are routed to the correct session

@@ -1,10 +1,12 @@
 //! Change tracking and recording
 
-use crate::error::UndoRedoError;
+use std::fmt;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::fmt;
 use uuid::Uuid;
+
+use crate::error::UndoRedoError;
 
 /// Type of change made to a file
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -263,38 +265,21 @@ mod tests {
 
     #[test]
     fn test_change_create_with_before_state() {
-        let change = Change::new(
-            "test.txt",
-            "before",
-            "after",
-            "desc",
-            ChangeType::Create,
-        );
+        let change = Change::new("test.txt", "before", "after", "desc", ChangeType::Create);
         assert!(change.is_err());
     }
 
     #[test]
     fn test_change_delete_with_after_state() {
-        let change = Change::new(
-            "test.txt",
-            "before",
-            "after",
-            "desc",
-            ChangeType::Delete,
-        );
+        let change = Change::new("test.txt", "before", "after", "desc", ChangeType::Delete);
         assert!(change.is_err());
     }
 
     #[test]
     fn test_change_tracker_track_single() {
         let mut tracker = ChangeTracker::new();
-        let result = tracker.track_change(
-            "test.txt",
-            "before",
-            "after",
-            "Modify",
-            ChangeType::Modify,
-        );
+        let result =
+            tracker.track_change("test.txt", "before", "after", "Modify", ChangeType::Modify);
         assert!(result.is_ok());
         assert_eq!(tracker.pending_count(), 1);
     }
@@ -339,14 +324,8 @@ mod tests {
 
     #[test]
     fn test_change_serialization() {
-        let change = Change::new(
-            "test.txt",
-            "before",
-            "after",
-            "Modify",
-            ChangeType::Modify,
-        )
-        .unwrap();
+        let change =
+            Change::new("test.txt", "before", "after", "Modify", ChangeType::Modify).unwrap();
         let json = serde_json::to_string(&change).unwrap();
         let deserialized: Change = serde_json::from_str(&json).unwrap();
         assert_eq!(change.id, deserialized.id);
@@ -356,25 +335,23 @@ mod tests {
 
 #[cfg(test)]
 mod property_tests {
-    use super::*;
     use proptest::prelude::*;
+
+    use super::*;
 
     /// Strategy for generating valid file paths
     fn file_path_strategy() -> impl Strategy<Value = String> {
-        r"[a-zA-Z0-9_\-./]{1,50}\.rs"
-            .prop_map(|s| s.to_string())
+        r"[a-zA-Z0-9_\-./]{1,50}\.rs".prop_map(|s| s.to_string())
     }
 
     /// Strategy for generating valid content
     fn content_strategy() -> impl Strategy<Value = String> {
-        r"[a-zA-Z0-9\s\n\t]{0,200}"
-            .prop_map(|s| s.to_string())
+        r"[a-zA-Z0-9\s\n\t]{0,200}".prop_map(|s| s.to_string())
     }
 
     /// Strategy for generating valid descriptions
     fn description_strategy() -> impl Strategy<Value = String> {
-        r"[a-zA-Z0-9\s]{1,50}"
-            .prop_map(|s| s.to_string())
+        r"[a-zA-Z0-9\s]{1,50}".prop_map(|s| s.to_string())
     }
 
     proptest! {

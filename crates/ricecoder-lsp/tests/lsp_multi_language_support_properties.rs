@@ -8,11 +8,14 @@
 //! - Unsupported languages degrade gracefully
 //! - Language-specific rules are applied correctly
 
-use proptest::prelude::*;
-use ricecoder_lsp::diagnostics::{DefaultDiagnosticsEngine, DiagnosticsEngine};
-use ricecoder_lsp::semantic::{LanguageDetector, SemanticAnalyzerFactory};
-use ricecoder_lsp::types::Language;
 use std::path::Path;
+
+use proptest::prelude::*;
+use ricecoder_lsp::{
+    diagnostics::{DefaultDiagnosticsEngine, DiagnosticsEngine},
+    semantic::{LanguageDetector, SemanticAnalyzerFactory},
+    types::Language,
+};
 
 /// Strategy for generating Rust code snippets
 fn rust_code_strategy() -> impl Strategy<Value = String> {

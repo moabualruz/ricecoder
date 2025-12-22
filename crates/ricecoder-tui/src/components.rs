@@ -1,19 +1,21 @@
 //! Interactive UI components and Component Architecture for TEA
 
-use crate::model::{AppMessage, AppMode, AppModel};
-use ratatui::layout::Rect;
-use ratatui::Frame;
 use std::any::Any;
+
+use ratatui::{layout::Rect, Frame};
+
+use crate::model::{AppMessage, AppMode, AppModel};
 
 /// Unique identifier for components
 pub type ComponentId = String;
 
 /// Component messaging system for inter-component communication
 pub mod messaging {
-    use super::*;
-    use std::collections::HashMap;
-    use std::sync::Arc;
+    use std::{collections::HashMap, sync::Arc};
+
     use tokio::sync::RwLock;
+
+    use super::*;
 
     /// Message filter for component subscriptions
     pub enum MessageFilter {

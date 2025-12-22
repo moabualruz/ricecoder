@@ -3,9 +3,10 @@
 //! **Feature: ricecoder-ide, Property 2: Graceful Fallback on LSP Failure**
 //! **Validates: Requirements 2.6**
 
+use std::sync::Arc;
+
 use proptest::prelude::*;
 use ricecoder_ide::*;
-use std::sync::Arc;
 
 /// Mock provider that can fail
 struct FailingMockProvider {

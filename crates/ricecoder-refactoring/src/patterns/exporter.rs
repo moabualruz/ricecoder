@@ -1,9 +1,10 @@
 //! Pattern export and import functionality
 
-use super::RefactoringPattern;
-use crate::error::{RefactoringError, Result};
 use serde_json;
 use serde_yaml;
+
+use super::RefactoringPattern;
+use crate::error::{RefactoringError, Result};
 
 /// Exports and imports refactoring patterns
 pub struct PatternExporter;

@@ -1,13 +1,21 @@
 //! Safety monitoring and alerting
 
-use crate::error::{SafetyError, SafetyResult};
-use crate::risk::{RiskLevel, RiskScore};
-use crate::validation::ValidationResult;
+use std::{
+    collections::HashMap,
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc,
+    },
+};
+
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Arc;
 use tokio::sync::RwLock;
+
+use crate::{
+    error::{SafetyError, SafetyResult},
+    risk::{RiskLevel, RiskScore},
+    validation::ValidationResult,
+};
 
 /// Safety monitoring metrics
 #[derive(Debug, Clone, Serialize, Deserialize)]

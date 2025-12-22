@@ -1,10 +1,12 @@
+use std::path::PathBuf;
+
+use ricecoder_storage::manager::PathResolver;
+use serde::{Deserialize, Serialize};
+use tokio::fs;
+
 /// Scope configuration and isolation
 use crate::error::{LearningError, Result};
 use crate::models::RuleScope;
-use ricecoder_storage::manager::PathResolver;
-use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
-use tokio::fs;
 
 /// Scope configuration with learning control flags
 #[derive(Debug, Clone, Serialize, Deserialize)]

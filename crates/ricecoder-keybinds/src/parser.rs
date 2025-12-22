@@ -1,9 +1,8 @@
 //! Keybind configuration parsers for JSON and Markdown formats
 
-use crate::error::ParseError;
-use crate::models::Keybind;
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
+
+use crate::{error::ParseError, models::Keybind};
 
 /// Trait for parsing keybind configurations
 pub trait KeybindParser: Send + Sync {

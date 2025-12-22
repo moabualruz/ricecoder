@@ -1,13 +1,16 @@
 //! Agent orchestrator for managing agent lifecycle and workflows
 
-use crate::coordinator::AgentCoordinator;
-use crate::error::Result;
-use crate::models::{AgentOutput, AgentTask};
-use crate::registry::AgentRegistry;
-use crate::scheduler::AgentScheduler;
-use std::sync::Arc;
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
+
 use tracing::{debug, error, info, warn};
+
+use crate::{
+    coordinator::AgentCoordinator,
+    error::Result,
+    models::{AgentOutput, AgentTask},
+    registry::AgentRegistry,
+    scheduler::AgentScheduler,
+};
 
 /// Configuration for retry logic
 #[derive(Debug, Clone)]
@@ -404,10 +407,13 @@ impl AgentOrchestrator {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::agents::Agent;
-    use crate::models::{TaskOptions, TaskScope, TaskTarget, TaskType};
     use std::path::PathBuf;
+
+    use super::*;
+    use crate::{
+        agents::Agent,
+        models::{TaskOptions, TaskScope, TaskTarget, TaskType},
+    };
 
     struct TestAgent {
         id: String,

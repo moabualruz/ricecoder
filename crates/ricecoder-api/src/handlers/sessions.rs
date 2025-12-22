@@ -1,5 +1,14 @@
 //! Session management API handlers
 
+use std::collections::HashMap;
+
+use axum::{
+    extract::{Path, Query, State},
+    http::StatusCode,
+    Json,
+};
+use serde::Deserialize;
+
 use crate::{
     error::{ApiError, ApiResult},
     models::{
@@ -8,13 +17,6 @@ use crate::{
     },
     state::AppState,
 };
-use axum::{
-    extract::{Path, Query, State},
-    http::StatusCode,
-    Json,
-};
-use serde::Deserialize;
-use std::collections::HashMap;
 
 /// Query parameters for session listing
 #[derive(Debug, Deserialize, utoipa::IntoParams)]

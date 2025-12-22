@@ -1,13 +1,14 @@
 //! MCP tool execution API handlers
 
+use axum::{
+    extract::{Path, State},
+    Json,
+};
+
 use crate::{
     error::{ApiError, ApiResult},
     models::{ExecuteToolRequest, ExecuteToolResponse},
     state::AppState,
-};
-use axum::{
-    extract::{Path, State},
-    Json,
 };
 
 /// Execute MCP tool

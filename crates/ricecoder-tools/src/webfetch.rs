@@ -2,14 +2,13 @@
 //!
 //! Provides functionality to fetch and process web content from URLs with MCP integration.
 
-use crate::error::ToolError;
-use crate::result::ToolResult;
+use std::{net::IpAddr, str::FromStr, time::Instant};
+
 use serde::{Deserialize, Serialize};
-use std::net::IpAddr;
-use std::str::FromStr;
-use std::time::Instant;
 use tracing::{debug, warn};
 use url::Url;
+
+use crate::{error::ToolError, result::ToolResult};
 
 /// Maximum content size before truncation (50KB)
 const MAX_CONTENT_SIZE: usize = 50 * 1024;

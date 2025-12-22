@@ -1,13 +1,18 @@
 //! Unit tests for BatchExecutor
 //! Tests execution with various dependency graphs, error handling, and rollback
 
+use std::{
+    path::PathBuf,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
+};
+
 use ricecoder_orchestration::{
     BatchExecutionConfig, BatchExecutor, DependencyGraph, DependencyType, OrchestrationError,
     Project, ProjectDependency, ProjectOperation, ProjectStatus, Result,
 };
-use std::path::PathBuf;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
 
 fn create_test_project(name: &str) -> Project {
     Project {

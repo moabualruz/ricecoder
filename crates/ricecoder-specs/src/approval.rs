@@ -3,9 +3,12 @@
 //! Manages approval gates and enforces sequential phase progression through
 //! the spec writing workflow (requirements → design → tasks → execution).
 
-use crate::error::SpecError;
-use crate::models::{ApprovalGate, SpecPhase, SpecWritingSession};
 use chrono::Utc;
+
+use crate::{
+    error::SpecError,
+    models::{ApprovalGate, SpecPhase, SpecWritingSession},
+};
 
 /// Manages approval gates and phase transitions for spec writing sessions
 #[derive(Debug, Clone)]
@@ -240,8 +243,9 @@ impl Default for ApprovalManager {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use chrono::Utc;
+
+    use super::*;
 
     fn create_test_session() -> SpecWritingSession {
         let now = Utc::now();

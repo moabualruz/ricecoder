@@ -3,14 +3,18 @@
 //! This module provides file system watching capabilities with debouncing,
 //! event batching, and change detection for external file modifications.
 
-use crate::error::FileError;
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+    sync::{Arc, Mutex},
+    time::{Duration, Instant},
+};
+
 use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
 use tokio::sync::broadcast;
 use tracing::{debug, error, info, warn};
+
+use crate::error::FileError;
 
 /// File change event types
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -253,9 +257,11 @@ impl Drop for FileWatcher {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::fs;
+
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_file_watcher_creation() {

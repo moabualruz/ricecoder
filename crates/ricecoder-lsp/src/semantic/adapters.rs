@@ -4,8 +4,10 @@
 //! to be used as pluggable providers in the configuration-driven architecture.
 
 use super::{FallbackAnalyzer, PythonAnalyzer, RustAnalyzer, SemanticAnalyzer, TypeScriptAnalyzer};
-use crate::providers::{ProviderResult, SemanticAnalyzerProvider};
-use crate::types::{Position, SemanticInfo, Symbol};
+use crate::{
+    providers::{ProviderResult, SemanticAnalyzerProvider},
+    types::{Position, SemanticInfo, Symbol},
+};
 
 /// Adapter for Rust semantic analyzer
 pub struct RustAnalyzerAdapter {

@@ -2,8 +2,9 @@ use ricecoder_tui::*;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
+
+    use super::*;
 
     #[tokio::test]
     async fn test_rust_project_detection() {

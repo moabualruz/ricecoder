@@ -5,11 +5,14 @@
 //! - Property 3: Hook isolation
 //! - Property 4: Hook chaining
 
-use proptest::prelude::*;
-use ricecoder_hooks::dispatcher::{DefaultEventDispatcher, EventDispatcher};
-use ricecoder_hooks::executor::HookExecutor;
-use ricecoder_hooks::*;
 use std::sync::{Arc, Mutex};
+
+use proptest::prelude::*;
+use ricecoder_hooks::{
+    dispatcher::{DefaultEventDispatcher, EventDispatcher},
+    executor::HookExecutor,
+    *,
+};
 
 // ============================================================================
 // Generators for property-based testing

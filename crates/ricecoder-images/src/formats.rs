@@ -1,7 +1,8 @@
 //! Image format validation and detection.
 
-use crate::error::{ImageError, ImageResult};
 use std::path::Path;
+
+use crate::error::{ImageError, ImageResult};
 
 /// Supported image formats.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -32,12 +33,12 @@ impl ImageFormat {
         }
 
         // PNG: 89 50 4E 47
-        if bytes.starts_with(&[0x89, 0x50, 0x4E, 0x47]) {
+        if bytes.starts_with(&[0x89, 0x50, 0x4e, 0x47]) {
             return Ok(ImageFormat::Png);
         }
 
         // JPEG: FF D8 FF
-        if bytes.len() >= 3 && bytes.starts_with(&[0xFF, 0xD8, 0xFF]) {
+        if bytes.len() >= 3 && bytes.starts_with(&[0xff, 0xd8, 0xff]) {
             return Ok(ImageFormat::Jpeg);
         }
 
@@ -110,14 +111,14 @@ mod tests {
 
     #[test]
     fn test_detect_png_format() {
-        let png_bytes = vec![0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+        let png_bytes = vec![0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
         let format = ImageFormat::detect_from_bytes(&png_bytes).unwrap();
         assert_eq!(format, ImageFormat::Png);
     }
 
     #[test]
     fn test_detect_jpeg_format() {
-        let jpeg_bytes = vec![0xFF, 0xD8, 0xFF, 0xE0];
+        let jpeg_bytes = vec![0xff, 0xd8, 0xff, 0xe0];
         let format = ImageFormat::detect_from_bytes(&jpeg_bytes).unwrap();
         assert_eq!(format, ImageFormat::Jpeg);
     }

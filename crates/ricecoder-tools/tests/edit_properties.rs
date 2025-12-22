@@ -4,9 +4,10 @@
 //! of file editing strategies, ensuring they work correctly across various
 //! inputs and edge cases.
 
+use std::fs;
+
 use proptest::prelude::*;
 use ricecoder_tools::edit::{FileEditInput, FileEditTool};
-use std::fs;
 use tempfile::NamedTempFile;
 
 /// Property 4: File Edit Strategy Correctness

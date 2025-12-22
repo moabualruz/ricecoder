@@ -2,11 +2,12 @@
 //!
 //! Provides functionality to create, read, and update todos with persistent storage.
 
-use crate::error::ToolError;
+use std::{collections::HashMap, path::PathBuf};
+
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::path::PathBuf;
 use tracing::{debug, error, info};
+
+use crate::error::ToolError;
 
 /// Todo status enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -509,8 +510,9 @@ impl Default for TodoTools {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_todo_creation() {

@@ -3,8 +3,9 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::{Decision, DecisionContext, LearningManager, PatternValidator, RuleScope};
     use std::path::PathBuf;
+
+    use crate::{Decision, DecisionContext, LearningManager, PatternValidator, RuleScope};
 
     fn create_test_decision(
         decision_type: &str,

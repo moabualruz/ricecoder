@@ -3,13 +3,16 @@
 //! Handles loading, parsing, validating, and applying boilerplates to create new projects.
 //! Supports variable customization, file conflict resolution, and custom boilerplate creation.
 
-use crate::models::{Boilerplate, BoilerplateFile, BoilerplateSource, ConflictResolution};
-use crate::templates::discovery::BoilerplateDiscovery;
-use crate::templates::error::BoilerplateError;
-use crate::templates::resolver::{CaseTransform, PlaceholderResolver};
-use std::collections::HashMap;
-use std::fs;
-use std::path::Path;
+use std::{collections::HashMap, fs, path::Path};
+
+use crate::{
+    models::{Boilerplate, BoilerplateFile, BoilerplateSource, ConflictResolution},
+    templates::{
+        discovery::BoilerplateDiscovery,
+        error::BoilerplateError,
+        resolver::{CaseTransform, PlaceholderResolver},
+    },
+};
 
 /// Manages boilerplate operations: loading, validation, and application
 ///
@@ -512,8 +515,9 @@ pub struct FileConflict {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_create_boilerplate_manager() {

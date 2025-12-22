@@ -1,12 +1,13 @@
 //! Integration tests for multi-provider fallback
 //! Tests fallback from primary to secondary provider and error handling
 
+use std::sync::Arc;
+
 use ricecoder_providers::{
     models::{FinishReason, Message},
     provider::{ChatStream, ProviderManager, ProviderRegistry},
     ChatRequest, ChatResponse, ModelInfo, Provider, ProviderError, TokenUsage,
 };
-use std::sync::Arc;
 
 /// Mock provider that fails on first call, succeeds on second
 struct FailThenSucceedProvider {

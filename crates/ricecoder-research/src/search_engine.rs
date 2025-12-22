@@ -1,9 +1,13 @@
 //! Search engine for semantic and full-text search
 
-use crate::models::{SearchResult, SymbolKind};
-use crate::semantic_index::SemanticIndex;
-use regex::Regex;
 use std::collections::HashMap;
+
+use regex::Regex;
+
+use crate::{
+    models::{SearchResult, SymbolKind},
+    semantic_index::SemanticIndex,
+};
 
 /// Search engine for code search
 #[derive(Debug)]
@@ -204,9 +208,10 @@ pub struct SearchStatistics {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
     use crate::models::Symbol;
-    use std::path::PathBuf;
 
     fn create_test_symbol(id: &str, name: &str, kind: SymbolKind) -> Symbol {
         Symbol {

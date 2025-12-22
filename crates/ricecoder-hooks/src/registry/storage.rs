@@ -1,10 +1,16 @@
 //! In-memory hook storage implementation
 
-use crate::error::{HooksError, Result};
-use crate::types::Hook;
-use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
+
 use uuid::Uuid;
+
+use crate::{
+    error::{HooksError, Result},
+    types::Hook,
+};
 
 /// In-memory hook registry implementation
 #[derive(Debug, Clone)]
@@ -119,8 +125,10 @@ impl super::HookRegistry for InMemoryHookRegistry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::registry::HookRegistry;
-    use crate::types::{Action, CommandAction};
+    use crate::{
+        registry::HookRegistry,
+        types::{Action, CommandAction},
+    };
 
     fn create_test_hook(id: &str, event: &str, enabled: bool) -> Hook {
         Hook {

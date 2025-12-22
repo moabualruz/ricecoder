@@ -3,11 +3,13 @@
 //! This module provides integration between LSP servers and the TUI diagnostics system,
 //! converting LSP diagnostic responses into TUI-compatible diagnostic items.
 
+use std::collections::HashMap;
+
+use serde_json::Value;
+
 use super::diagnostics_widget::{
     DiagnosticItem, DiagnosticLocation, DiagnosticRelatedInformation, DiagnosticSeverity,
 };
-use serde_json::Value;
-use std::collections::HashMap;
 
 /// LSP diagnostic severity levels (match LSP specification)
 #[derive(Debug, Clone, Copy)]
@@ -244,8 +246,9 @@ pub fn language_from_file_path(file_path: &str) -> Option<&'static str> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use serde_json::json;
+
+    use super::*;
 
     #[test]
     fn test_lsp_diagnostic_conversion() {

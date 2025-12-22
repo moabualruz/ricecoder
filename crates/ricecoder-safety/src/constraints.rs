@@ -1,8 +1,10 @@
 //! Security constraints and policy enforcement
 
-use crate::error::{SafetyError, SafetyResult};
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
+
+use crate::error::{SafetyError, SafetyResult};
 
 /// Security constraint types
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

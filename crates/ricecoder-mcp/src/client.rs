@@ -1,11 +1,14 @@
 //! MCP Client implementation
 
-use crate::error::{Error, Result};
-use crate::metadata::ToolMetadata;
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
+
 use tokio::sync::RwLock;
 use tracing::{debug, info};
+
+use crate::{
+    error::{Error, Result},
+    metadata::ToolMetadata,
+};
 
 /// MCP Server connection information
 #[derive(Debug, Clone)]

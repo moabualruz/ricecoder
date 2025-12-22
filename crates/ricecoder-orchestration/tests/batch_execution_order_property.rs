@@ -2,14 +2,13 @@
 //! **Feature: ricecoder-orchestration, Property 3: Batch Execution Order**
 //! **Validates: Requirements 2.1**
 
+use std::{collections::HashSet, path::PathBuf, sync::Arc};
+
 use proptest::prelude::*;
 use ricecoder_orchestration::{
     BatchExecutor, DependencyGraph, DependencyType, ExecutionOrderer, ParallelizationStrategy,
     Project, ProjectDependency, ProjectStatus,
 };
-use std::collections::HashSet;
-use std::path::PathBuf;
-use std::sync::Arc;
 
 /// Strategy for generating random projects
 fn project_name_strategy() -> impl Strategy<Value = String> {

@@ -2,14 +2,13 @@
 //! **Feature: ricecoder-refactoring, Property 2: Impact Analysis Completeness**
 //! **Validates: Requirements REF-1.1, REF-1.2**
 
-use proptest::prelude::*;
-use ricecoder_refactoring::impact::{
-    Dependency, DependencyType, ImpactAnalyzer, Symbol, SymbolType,
-};
-use ricecoder_refactoring::types::{
-    Refactoring, RefactoringOptions, RefactoringTarget, RefactoringType,
-};
 use std::path::PathBuf;
+
+use proptest::prelude::*;
+use ricecoder_refactoring::{
+    impact::{Dependency, DependencyType, ImpactAnalyzer, Symbol, SymbolType},
+    types::{Refactoring, RefactoringOptions, RefactoringTarget, RefactoringType},
+};
 
 /// Strategy for generating symbol names
 fn symbol_name_strategy() -> impl Strategy<Value = String> {

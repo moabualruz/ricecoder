@@ -1,7 +1,8 @@
 //! Unit tests for CLI lifecycle management
 
-use ricecoder_cli::lifecycle::*;
 use std::sync::atomic::{AtomicBool, Ordering};
+
+use ricecoder_cli::lifecycle::*;
 
 struct TestComponent {
     name: &'static str,

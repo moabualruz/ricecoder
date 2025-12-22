@@ -4,9 +4,10 @@
 //! properly formatted for IDE consumption. It handles formatting for different IDE types
 //! and ensures responses are in the correct format for each IDE.
 
-use crate::types::*;
 use serde_json::{json, Value};
 use tracing::debug;
+
+use crate::types::*;
 
 /// Response formatter for IDE responses
 pub struct ResponseFormatter;

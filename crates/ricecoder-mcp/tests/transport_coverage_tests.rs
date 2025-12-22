@@ -3,16 +3,17 @@
 //! Targeted tests to improve code coverage for MCP transport implementations,
 //! focusing on uncovered branches, edge cases, and error conditions.
 
-use ricecoder_mcp::error::Error;
-use ricecoder_mcp::transport::{
-    HTTPAuthConfig, HTTPAuthType, HTTPConfig, HTTPTransport, MCPError, MCPErrorData, MCPMessage,
-    MCPNotification, MCPRequest, MCPResponse, MCPTransport, SSEConfig, SSETransport, StdioConfig,
-    TransportConfig, TransportFactory, TransportType,
+use std::{collections::HashMap, sync::Arc, time::Duration};
+
+use ricecoder_mcp::{
+    error::Error,
+    transport::{
+        HTTPAuthConfig, HTTPAuthType, HTTPConfig, HTTPTransport, MCPError, MCPErrorData,
+        MCPMessage, MCPNotification, MCPRequest, MCPResponse, MCPTransport, SSEConfig,
+        SSETransport, StdioConfig, TransportConfig, TransportFactory, TransportType,
+    },
 };
 use serde_json::json;
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::Duration;
 use tokio::time::timeout;
 
 /// **Coverage Test T.1: HTTP Transport OAuth2 Error Handling**
@@ -303,8 +304,7 @@ async fn test_protocol_validation_complex_scenarios() {
 /// **Validates: Error recovery strategy determination for various error types**
 #[tokio::test]
 async fn test_error_recovery_strategy_selection() {
-    use ricecoder_mcp::error_recovery::determine_recovery_strategy;
-    use ricecoder_mcp::error_recovery::RecoveryStrategy;
+    use ricecoder_mcp::error_recovery::{determine_recovery_strategy, RecoveryStrategy};
 
     // Test connection errors
     let conn_error = Error::ConnectionError("Network timeout".to_string());

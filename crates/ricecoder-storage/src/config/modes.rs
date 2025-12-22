@@ -5,9 +5,10 @@
 //! - ProjectOnly: Only use project storage
 //! - Merged: Use both global and project with project overriding global
 
+use std::path::Path;
+
 use super::Config;
 use crate::types::StorageMode;
-use std::path::Path;
 
 /// Storage mode handler
 pub struct StorageModeHandler;
@@ -127,9 +128,11 @@ impl StorageModeHandler {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::fs;
+
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_global_only_mode_loads_global() {

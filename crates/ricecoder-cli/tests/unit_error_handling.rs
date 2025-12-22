@@ -1,8 +1,9 @@
 // Unit tests for error handling
 // **Feature: ricecoder-cli, Tests for Requirements 1.2, 5.1**
 
-use ricecoder_cli::error::{CliError, CliResult};
 use std::io;
+
+use ricecoder_cli::error::{CliError, CliResult};
 
 // ============================================================================
 // CliError Creation Tests

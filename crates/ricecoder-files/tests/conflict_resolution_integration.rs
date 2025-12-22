@@ -2,8 +2,7 @@
 //!
 //! Tests the three conflict resolution strategies: skip, overwrite, and merge.
 
-use ricecoder_files::conflict::ConflictResolver;
-use ricecoder_files::models::ConflictResolution;
+use ricecoder_files::{conflict::ConflictResolver, models::ConflictResolution};
 use tempfile::TempDir;
 use tokio::fs;
 

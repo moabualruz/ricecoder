@@ -1,9 +1,8 @@
 //! Integration tests for TUI command and session management
 
-use ricecoder_cli::commands::Command;
-use ricecoder_cli::commands::{SessionsAction, SessionsCommand, TuiCommand};
-use std::fs;
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
+
+use ricecoder_cli::commands::{Command, SessionsAction, SessionsCommand, TuiCommand};
 
 /// Helper to get test sessions directory
 fn get_test_sessions_dir() -> PathBuf {

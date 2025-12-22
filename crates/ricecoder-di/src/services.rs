@@ -3,7 +3,8 @@
 //! This module provides functions to register all the services
 //! needed by the RiceCoder application across all crates.
 
-use crate::{DIContainer, DIResult};
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use ricecoder_agents::use_cases::{
     ProviderCommunityUseCase, ProviderFailoverUseCase, ProviderHealthUseCase, ProviderModelUseCase,
@@ -12,7 +13,8 @@ use ricecoder_agents::use_cases::{
 };
 use ricecoder_providers::provider::manager::ProviderManager;
 use ricecoder_sessions::{SessionManager, SessionStore, ShareService};
-use std::sync::Arc;
+
+use crate::{DIContainer, DIResult};
 
 /// Trait for services that need lifecycle management
 #[async_trait]

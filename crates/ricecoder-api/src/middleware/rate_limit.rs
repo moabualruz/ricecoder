@@ -1,14 +1,18 @@
 //! Rate limiting middleware
 
-use crate::state::AppState;
+use std::sync::{
+    atomic::{AtomicU64, Ordering},
+    Arc,
+};
+
 use axum::{
     extract::State,
     http::{Request, StatusCode},
     middleware::Next,
     response::{IntoResponse, Response},
 };
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Arc;
+
+use crate::state::AppState;
 
 /// Rate limiter state
 #[derive(Clone)]

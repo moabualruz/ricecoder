@@ -1,10 +1,9 @@
 // RiceCoder CLI Entry Point
 
-use ricecoder_cli::router::CommandRouter;
-use ricecoder_cli::{lifecycle, output};
+use std::{fs, path::Path};
+
+use ricecoder_cli::{lifecycle, output, router::CommandRouter};
 use ricecoder_storage::PathResolver;
-use std::fs;
-use std::path::Path;
 use tokio::signal;
 
 #[tokio::main]

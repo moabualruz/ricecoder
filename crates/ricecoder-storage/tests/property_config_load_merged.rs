@@ -5,10 +5,13 @@
 //! **Feature: ricecoder-storage, Property 4: Environment Variable Substitution**
 //! **Validates: Requirements 2.1, 2.3, 2.4**
 
-use proptest::prelude::*;
-use ricecoder_storage::config::{Config, ConfigLoader, DefaultsConfig, ProvidersConfig};
-use ricecoder_storage::types::ConfigFormat;
 use std::collections::HashMap;
+
+use proptest::prelude::*;
+use ricecoder_storage::{
+    config::{Config, ConfigLoader, DefaultsConfig, ProvidersConfig},
+    types::ConfigFormat,
+};
 use tempfile::TempDir;
 
 /// Strategy for generating valid configurations

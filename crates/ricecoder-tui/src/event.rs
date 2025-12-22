@@ -1,11 +1,11 @@
 //! Event handling for the TUI
 
-use crate::model::AppMessage;
+use std::{path::PathBuf, thread, time::Duration};
+
 use crossterm::event as crossterm_event;
-use std::path::PathBuf;
-use std::thread;
-use std::time::Duration;
 use tokio::sync::mpsc::UnboundedReceiver;
+
+use crate::model::AppMessage;
 
 /// Event types for the TUI
 #[derive(Debug, Clone)]

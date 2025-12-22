@@ -1,8 +1,11 @@
 //! Syntax tree traversal utilities and visitor patterns
 
-use crate::error::{ParserError, ParserResult};
-use crate::types::{ASTNode, NodeType, Position, Range};
 use std::collections::HashMap;
+
+use crate::{
+    error::{ParserError, ParserResult},
+    types::{ASTNode, NodeType, Position, Range},
+};
 
 /// Result of a visitor operation
 pub type VisitorResult = ParserResult<VisitAction>;

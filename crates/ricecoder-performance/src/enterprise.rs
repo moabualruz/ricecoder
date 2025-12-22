@@ -1,11 +1,13 @@
 //! Enterprise monitoring and alerting system
 
-use crate::monitor::PerformanceMetrics;
-use crate::regression::RegressionAlert;
-use crate::validation::ValidationResult;
+use std::collections::HashMap;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+
+use crate::{
+    monitor::PerformanceMetrics, regression::RegressionAlert, validation::ValidationResult,
+};
 
 /// Enterprise performance monitor with alerting capabilities
 pub struct EnterpriseMonitor {

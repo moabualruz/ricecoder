@@ -1,7 +1,8 @@
+use ricecoder_tui::*;
+
 use crate::terminal_state::{
     CapabilityOverrides, ColorSupport, TerminalCapabilities, TerminalType,
 };
-use ricecoder_tui::*;
 
 mod tests {
     use super::*;

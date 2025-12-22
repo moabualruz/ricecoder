@@ -1,9 +1,12 @@
 //! Domain knowledge base management
 
-use crate::error::{DomainAgentError, Result};
-use crate::models::{Domain, KnowledgeBase, KnowledgeEntry};
 use ricecoder_storage::PathResolver;
 use tracing::{debug, info};
+
+use crate::{
+    error::{DomainAgentError, Result},
+    models::{Domain, KnowledgeBase, KnowledgeEntry},
+};
 
 /// Knowledge base manager for domain-specific agents
 pub struct KnowledgeBaseManager {

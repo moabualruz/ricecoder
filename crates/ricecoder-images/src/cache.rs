@@ -1,11 +1,15 @@
 //! Image analysis caching with LRU eviction and TTL.
 
-use crate::error::{ImageError, ImageResult};
-use crate::models::ImageAnalysisResult;
+use std::path::PathBuf;
+
 use ricecoder_storage::cache::{CacheInvalidationStrategy, CacheManager};
 use sha2::{Digest, Sha256};
-use std::path::PathBuf;
 use tracing::{debug, warn};
+
+use crate::{
+    error::{ImageError, ImageResult},
+    models::ImageAnalysisResult,
+};
 
 /// Caches image analysis results with TTL and LRU eviction.
 ///

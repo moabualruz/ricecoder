@@ -1,12 +1,12 @@
 //! Unit tests for the refactoring engine
 
+use std::{path::PathBuf, sync::Arc};
+
 use ricecoder_refactoring::{
     ConfigManager, GenericRefactoringProvider, ProviderRegistry, PythonRefactoringProvider,
     Refactoring, RefactoringEngine, RefactoringOptions, RefactoringProvider, RefactoringTarget,
     RefactoringType, RustRefactoringProvider, TypeScriptRefactoringProvider,
 };
-use std::path::PathBuf;
-use std::sync::Arc;
 
 // Tests disabled - require ProviderRegistry implementation
 // #[test]

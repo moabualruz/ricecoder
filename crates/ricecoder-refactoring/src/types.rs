@@ -1,8 +1,8 @@
 //! Core data types for the refactoring engine
 
+use std::{collections::HashMap, path::PathBuf};
+
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::path::PathBuf;
 
 /// A refactoring operation
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -2,9 +2,12 @@
 //!
 //! Validates workspace rules and compliance across all projects.
 
-use crate::error::Result;
-use crate::models::{Project, ProjectDependency, RuleType, Workspace, WorkspaceRule};
 use std::collections::{HashMap, HashSet};
+
+use crate::{
+    error::Result,
+    models::{Project, ProjectDependency, RuleType, Workspace, WorkspaceRule},
+};
 
 /// Validates workspace rules and compliance
 #[derive(Debug, Clone)]

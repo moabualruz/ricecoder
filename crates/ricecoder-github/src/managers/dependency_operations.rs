@@ -2,10 +2,11 @@
 //!
 //! Additional operations for dependency management including verification and security tracking.
 
+use std::collections::HashMap;
+
 use super::dependency_manager::{
     Dependency, DependencyError, DependencyUpdateSuggestion, VulnerabilitySeverity,
 };
-use std::collections::HashMap;
 
 /// Result of dependency pinning operation
 #[derive(Debug, Clone)]

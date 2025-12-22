@@ -5,8 +5,10 @@
 //! **Validates: Requirements 2.1, 2.2**
 
 use proptest::prelude::*;
-use ricecoder_tui::layout::{DegradationLevel, LayoutConfig};
-use ricecoder_tui::Layout;
+use ricecoder_tui::{
+    layout::{DegradationLevel, LayoutConfig},
+    Layout,
+};
 
 // ============================================================================
 // Generators for Property Tests

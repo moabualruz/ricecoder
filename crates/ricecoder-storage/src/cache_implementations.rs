@@ -6,12 +6,18 @@
 //! - Provider response caching
 //! - Project analysis caching
 
-use crate::CacheManager;
+use std::{
+    path::Path,
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc,
+    },
+};
+
 use serde::Serialize;
-use std::path::Path;
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Arc;
 use tracing::{debug, info};
+
+use crate::CacheManager;
 
 /// Cache statistics tracker
 #[derive(Debug, Clone)]
@@ -356,8 +362,9 @@ impl ProjectAnalysisCache {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_cache_stats() {

@@ -1,8 +1,11 @@
 //! Dependency resolution for workflow steps
 
-use crate::error::{WorkflowError, WorkflowResult};
-use crate::models::Workflow;
 use std::collections::{HashMap, HashSet, VecDeque};
+
+use crate::{
+    error::{WorkflowError, WorkflowResult},
+    models::Workflow,
+};
 
 /// Resolves step dependencies and builds execution order
 ///

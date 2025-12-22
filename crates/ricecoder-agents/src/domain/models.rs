@@ -3,8 +3,9 @@
 //! This module contains all the data structures used for domain agent communication,
 //! configuration, and result reporting.
 
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 
 /// A domain-specific agent
 ///

@@ -4,12 +4,13 @@
 //! server connections, and security events.
 
 use std::sync::Arc;
+
 use tracing::info;
 
-use crate::error::Result;
-use crate::metadata::ToolMetadata;
-use crate::server_management::ServerRegistration;
-use crate::tool_execution::ToolExecutionResult;
+use crate::{
+    error::Result, metadata::ToolMetadata, server_management::ServerRegistration,
+    tool_execution::ToolExecutionResult,
+};
 
 /// MCP audit logger for recording security and operational events
 pub struct MCPAuditLogger {

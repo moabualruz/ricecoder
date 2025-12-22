@@ -3,8 +3,7 @@
 //! Provides UI components for displaying approval requests and handling
 //! user decisions (approve/reject). Designed to integrate with the TUI.
 
-use crate::approval::ApprovalSummary;
-use crate::models::RiskLevel;
+use crate::{approval::ApprovalSummary, models::RiskLevel};
 
 /// Approval UI state
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

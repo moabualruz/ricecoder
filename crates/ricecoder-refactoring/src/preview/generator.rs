@@ -1,8 +1,10 @@
 //! Preview generation for refactoring operations
 
-use crate::error::Result;
-use crate::impact::ImpactAnalyzer;
-use crate::types::{Refactoring, RefactoringPreview};
+use crate::{
+    error::Result,
+    impact::ImpactAnalyzer,
+    types::{Refactoring, RefactoringPreview},
+};
 
 /// Generates previews of refactoring operations
 pub struct PreviewGenerator;
@@ -209,9 +211,10 @@ impl PreviewGenerator {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
     use crate::types::{RefactoringOptions, RefactoringTarget, RefactoringType};
-    use std::path::PathBuf;
 
     #[test]
     fn test_generate_preview() -> Result<()> {

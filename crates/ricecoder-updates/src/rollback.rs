@@ -1,13 +1,19 @@
 //! Rollback capabilities, staged releases, and version management
 
-use crate::error::{Result, UpdateError};
-use crate::models::{ReleaseChannel, RollbackInfo, UpdateOperation, UpdateStatus};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
+
 use chrono::{DateTime, Duration, TimeZone, Utc};
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
 use tokio::fs;
 use tracing::{error, info, warn};
 use uuid::Uuid;
+
+use crate::{
+    error::{Result, UpdateError},
+    models::{ReleaseChannel, RollbackInfo, UpdateOperation, UpdateStatus},
+};
 
 /// Rollback manager for version management
 #[derive(Clone)]
@@ -405,8 +411,7 @@ impl RollbackManager {
 
     /// Copy directory recursively
     async fn copy_directory_recursive(&self, from: &Path, to: &Path) -> Result<()> {
-        use std::future::Future;
-        use std::pin::Pin;
+        use std::{future::Future, pin::Pin};
 
         fn copy_recursive(
             from: PathBuf,
@@ -636,9 +641,11 @@ pub enum StagedReleaseStatus {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::str::FromStr;
+
     use tempfile::TempDir;
+
+    use super::*;
 
     #[tokio::test]
     async fn test_rollback_manager_creation() {

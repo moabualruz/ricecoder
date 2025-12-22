@@ -2,12 +2,13 @@
 //!
 //! Advanced operations for GitHub Actions workflow management and reporting.
 
-use crate::errors::{GitHubError, Result};
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+
 use super::actions_integration::{CiResultSummary, WorkflowJob, WorkflowStatus};
+use crate::errors::{GitHubError, Result};
 
 /// Workflow configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -43,11 +43,12 @@
 //! - **SecurityValidator**: Rule validation logic, JSON field access
 //! - **ComplianceManager**: Check aggregation, summary calculations
 
+use std::collections::HashMap;
+
 use chrono::{DateTime, Utc};
 use proptest::prelude::*;
 use ricecoder_industry::compliance::*;
 use serde_json::{json, Value as JsonValue};
-use std::collections::HashMap;
 use uuid::Uuid;
 
 /// Generate arbitrary audit entries for testing

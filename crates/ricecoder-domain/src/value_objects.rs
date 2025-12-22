@@ -1,7 +1,8 @@
 //! Value objects representing immutable domain concepts
 
-use serde::{Deserialize, Serialize};
 use std::fmt;
+
+use serde::{Deserialize, Serialize};
 
 /// Project identifier - a UUID-based identifier
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]

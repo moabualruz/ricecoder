@@ -3,10 +3,14 @@
 //! Builds generation plans from spec requirements, determines task dependencies,
 //! orders steps for correct execution, and validates plan completeness.
 
-use crate::error::GenerationError;
-use crate::spec_processor::{ConstraintType, GenerationPlan, GenerationStep};
-use ricecoder_specs::models::{Priority, Requirement};
 use std::collections::{HashMap, HashSet};
+
+use ricecoder_specs::models::{Priority, Requirement};
+
+use crate::{
+    error::GenerationError,
+    spec_processor::{ConstraintType, GenerationPlan, GenerationStep},
+};
 
 /// Builds generation plans from specifications
 #[derive(Debug, Clone)]
@@ -257,8 +261,9 @@ impl Default for GenerationPlanBuilder {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use ricecoder_specs::models::AcceptanceCriterion;
+
+    use super::*;
 
     fn create_test_requirement(id: &str, priority: Priority) -> Requirement {
         Requirement {

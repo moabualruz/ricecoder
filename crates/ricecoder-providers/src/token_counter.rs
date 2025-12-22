@@ -3,9 +3,9 @@
 //! This module provides token counting functionality for various AI providers.
 //! For production use with OpenAI, consider using tiktoken-rs for accurate token counting.
 
+use std::{collections::HashMap, sync::Mutex};
+
 use crate::error::ProviderError;
-use std::collections::HashMap;
-use std::sync::Mutex;
 
 /// Trait for unified token counting across providers
 pub trait TokenCounterTrait: Send + Sync {

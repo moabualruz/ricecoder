@@ -2,19 +2,24 @@
 //!
 //! Supports OpenCode's curated set of AI models via the Zen API.
 
+use std::{
+    result::Result,
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
+
 use async_trait::async_trait;
 use futures::{stream, StreamExt};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use std::result::Result;
-use std::sync::Arc;
-use std::time::{Duration, SystemTime};
 use tracing::{debug, error, warn};
 
-use crate::error::ProviderError;
-use crate::models::{Capability, ChatRequest, ChatResponse, FinishReason, ModelInfo, TokenUsage};
-use crate::provider::Provider;
-use crate::token_counter::TokenCounter;
+use crate::{
+    error::ProviderError,
+    models::{Capability, ChatRequest, ChatResponse, FinishReason, ModelInfo, TokenUsage},
+    provider::Provider,
+    token_counter::TokenCounter,
+};
 
 /// Zen provider implementation
 pub struct ZenProvider {

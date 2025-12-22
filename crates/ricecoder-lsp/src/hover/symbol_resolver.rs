@@ -3,8 +3,9 @@
 //! This module provides symbol resolution at specific positions in code,
 //! handling nested scopes and symbol shadowing.
 
-use crate::types::{Position, Symbol};
 use std::collections::HashMap;
+
+use crate::types::{Position, Symbol};
 
 /// Symbol scope information
 #[derive(Debug, Clone)]

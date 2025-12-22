@@ -3,10 +3,15 @@
 //! Validates template syntax, checks placeholder references,
 //! and validates boilerplate structure.
 
-use crate::models::{Boilerplate, BoilerplateFile, Template};
-use crate::templates::error::{BoilerplateError, TemplateError};
-use crate::templates::parser::{ParsedTemplate, TemplateElement, TemplateParser};
 use std::collections::HashSet;
+
+use crate::{
+    models::{Boilerplate, BoilerplateFile, Template},
+    templates::{
+        error::{BoilerplateError, TemplateError},
+        parser::{ParsedTemplate, TemplateElement, TemplateParser},
+    },
+};
 
 /// Template validation engine
 pub struct ValidationEngine;

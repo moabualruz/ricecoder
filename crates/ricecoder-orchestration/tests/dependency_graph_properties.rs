@@ -3,11 +3,12 @@
 //! **Feature: ricecoder-orchestration, Property 2: Dependency Graph Consistency**
 //! **Validates: Requirements 1.2, 3.1**
 
+use std::path::PathBuf;
+
 use proptest::prelude::*;
 use ricecoder_orchestration::{
     DependencyGraph, DependencyType, Project, ProjectDependency, ProjectStatus,
 };
-use std::path::PathBuf;
 
 /// Strategy for generating project names
 fn project_name_strategy() -> impl Strategy<Value = String> {

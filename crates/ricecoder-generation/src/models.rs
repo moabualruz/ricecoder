@@ -1,8 +1,8 @@
 //! Core data models for code generation
 
+use std::{collections::HashMap, path::PathBuf};
+
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::path::PathBuf;
 
 /// Represents a code template with placeholders
 #[derive(Debug, Clone, Serialize, Deserialize)]

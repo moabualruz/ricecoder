@@ -1,9 +1,10 @@
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
 use ricecoder_beta::{
     analytics::BetaAnalytics, compliance::ComplianceValidator, feedback::FeedbackCollector,
     validation::EnterpriseValidator,
 };
-use std::path::PathBuf;
 use tokio;
 
 /// RiceCoder Beta Testing CLI

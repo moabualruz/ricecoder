@@ -38,7 +38,7 @@ fn arb_ears_compliant_criterion() -> impl Strategy<Value = AcceptanceCriterion> 
             .prop_map(|(id, when, then)| AcceptanceCriterion { id, when, then }),
         // Ubiquitous pattern: THE system SHALL ...
         ("AC-[0-9]{1,3}", "", "THE system SHALL [a-z ]+",)
-            .prop_map(|(id, when, then)| AcceptanceCriterion { id, when, then }),
+            .prop_map(|(id, when, then)| { AcceptanceCriterion { id, when, then } }),
         // State-driven pattern: WHILE ... THE system SHALL ...
         ("AC-[0-9]{1,3}", "WHILE [a-z ]+", "THE system SHALL [a-z ]+",)
             .prop_map(|(id, when, then)| AcceptanceCriterion { id, when, then }),

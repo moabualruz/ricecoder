@@ -7,13 +7,16 @@ pub mod lsp;
 pub mod lsp_integration;
 pub mod lsp_watcher;
 
+use std::sync::Arc;
+
 pub use lsp::{LspProvider, LspProviderRegistry};
 pub use lsp_integration::{LspIntegration, LspServerInfo};
 pub use lsp_watcher::{ConfigurationWatcher, LspWatcher};
 
-use crate::error::Result;
-use crate::types::{Refactoring, RefactoringType, ValidationResult};
-use std::sync::Arc;
+use crate::{
+    error::Result,
+    types::{Refactoring, RefactoringType, ValidationResult},
+};
 
 /// Trait for language-specific refactoring providers
 pub trait RefactoringProvider: Send + Sync {

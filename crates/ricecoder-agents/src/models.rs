@@ -3,9 +3,9 @@
 //! This module contains all the data structures used for agent communication,
 //! configuration, and result reporting.
 
+use std::{collections::HashMap, path::PathBuf};
+
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::path::PathBuf;
 
 /// Configuration for an agent
 ///

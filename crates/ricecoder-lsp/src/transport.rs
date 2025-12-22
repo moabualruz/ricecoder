@@ -4,12 +4,16 @@
 //! including message framing with Content-Length headers and JSON-RPC
 //! message parsing and serialization.
 
-use crate::types::{LspError, LspResult};
+use std::{
+    collections::HashMap,
+    io::{self, BufRead, BufReader, Write},
+};
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::HashMap;
-use std::io::{self, BufRead, BufReader, Write};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt};
+
+use crate::types::{LspError, LspResult};
 
 /// JSON-RPC request message
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -383,8 +387,9 @@ impl Default for AsyncStdioTransport {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use serde_json::json;
+
+    use super::*;
 
     #[test]
     fn test_jsonrpc_request_creation() {

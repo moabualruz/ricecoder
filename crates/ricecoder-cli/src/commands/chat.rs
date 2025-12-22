@@ -1,14 +1,16 @@
 // Interactive chat mode
 // Adapted from automation/src/cli/prompts.rs
 
-use super::Command;
-use crate::chat::ChatSession;
-use crate::error::{CliError, CliResult};
-use crate::output::OutputStyle;
 use async_trait::async_trait;
-use ricecoder_providers::models::ChatRequest;
-use ricecoder_providers::provider::ProviderRegistry;
+use ricecoder_providers::{models::ChatRequest, provider::ProviderRegistry};
 use ricecoder_storage::{ConfigLoader, PathResolver};
+
+use super::Command;
+use crate::{
+    chat::ChatSession,
+    error::{CliError, CliResult},
+    output::OutputStyle,
+};
 
 /// Interactive chat mode
 pub struct ChatCommand {

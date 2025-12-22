@@ -2,10 +2,11 @@
 //! Tests the complete analyze_project workflow including type detection, scanning, indexing, and analysis
 //! **Validates: Requirements 1.1, 1.2, 1.3, 1.4, 1.5, 1.7, 1.8, 1.9, 1.10, 2.1, 2.2, 2.3, 2.4, 2.5**
 
-use ricecoder_research::models::Language;
-use ricecoder_research::{ArchitecturalStyle, CaseStyle, ProjectType, ResearchManager};
-use std::fs;
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
+
+use ricecoder_research::{
+    models::Language, ArchitecturalStyle, CaseStyle, ProjectType, ResearchManager,
+};
 use tempfile::TempDir;
 
 // ============================================================================

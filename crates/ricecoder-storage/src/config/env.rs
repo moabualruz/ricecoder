@@ -3,8 +3,9 @@
 //! This module provides parsing and application of environment variables with
 //! the RICECODER_ prefix to override configuration values.
 
-use super::Config;
 use std::collections::HashMap;
+
+use super::Config;
 
 /// Environment variable overrides
 pub struct EnvOverrides;

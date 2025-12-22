@@ -1,8 +1,9 @@
 //! Common types for VCS operations
 
+use std::path::PathBuf;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 
 /// Represents a Git branch
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -3,9 +3,10 @@
 //! **Feature: ricecoder-orchestration, Property 4: Impact Analysis Completeness**
 //! **Validates: Requirements 3.3**
 
+use std::collections::HashSet;
+
 use proptest::prelude::*;
 use ricecoder_orchestration::{ImpactAnalyzer, ProjectChange};
-use std::collections::HashSet;
 
 /// Strategy for generating project names
 fn project_name_strategy() -> impl Strategy<Value = String> {

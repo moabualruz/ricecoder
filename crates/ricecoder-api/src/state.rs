@@ -1,10 +1,11 @@
 //! Application state for the API server
 
+use std::sync::Arc;
+
 use ricecoder_activity_log::ActivityLogger;
 use ricecoder_agents::use_cases::{SessionLifecycleUseCase, SessionSharingUseCase};
 use ricecoder_di::DIContainer;
 use ricecoder_mcp::agent_integration::ToolInvoker;
-use std::sync::Arc;
 
 /// Application state shared across all API handlers
 #[derive(Clone)]

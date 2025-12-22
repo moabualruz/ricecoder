@@ -1,9 +1,10 @@
+use std::path::PathBuf;
+
 /// Integration tests for AnalyticsEngine and rule export/import functionality
 use ricecoder_learning::{
     AnalyticsEngine, AnalyticsInsights, LearningManager, Rule, RuleExport, RuleExporter,
     RuleImporter, RuleMetrics, RuleScope, RuleSource,
 };
-use std::path::PathBuf;
 
 fn create_test_rule(id: &str) -> Rule {
     let mut rule = Rule::new(

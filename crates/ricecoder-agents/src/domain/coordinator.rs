@@ -1,9 +1,13 @@
 //! Multi-agent coordination for domain agents
 
-use crate::domain::error::{DomainError, DomainResult};
-use crate::domain::models::Recommendation;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
+
+use crate::domain::{
+    error::{DomainError, DomainResult},
+    models::Recommendation,
+};
 
 /// A request to be routed to domain agents
 ///

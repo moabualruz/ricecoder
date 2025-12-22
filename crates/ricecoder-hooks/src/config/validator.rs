@@ -3,8 +3,10 @@
 //! Validates hook configurations to ensure they are well-formed and contain
 //! all required fields with correct types.
 
-use crate::error::{HooksError, Result};
-use crate::types::{Action, AiPromptAction, ChainAction, CommandAction, Hook, ToolCallAction};
+use crate::{
+    error::{HooksError, Result},
+    types::{Action, AiPromptAction, ChainAction, CommandAction, Hook, ToolCallAction},
+};
 
 /// Configuration validator for hooks
 ///
@@ -200,9 +202,10 @@ impl ConfigValidator {
 
 #[cfg(test)]
 mod tests {
+    use serde_json::json;
+
     use super::*;
     use crate::types::{CommandAction, Condition};
-    use serde_json::json;
 
     fn create_test_hook() -> Hook {
         Hook {

@@ -1,14 +1,16 @@
 //! Main cache implementation with multi-level support
 
+use std::{collections::HashMap, sync::Arc};
+
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::sync::Arc;
 use tokio::sync::RwLock;
 
-use crate::error::{CacheError, Result};
-use crate::metrics::{CacheMetrics, OperationTimer};
-use crate::storage::{CacheEntry, CacheStorage};
-use crate::strategy::CacheStrategy;
+use crate::{
+    error::{CacheError, Result},
+    metrics::{CacheMetrics, OperationTimer},
+    storage::{CacheEntry, CacheStorage},
+    strategy::CacheStrategy,
+};
 
 /// Cache configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -490,10 +492,10 @@ impl Default for CacheBuilder {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::storage::MemoryStorage;
-    use crate::strategy::TtlStrategy;
     use std::time::Duration;
+
+    use super::*;
+    use crate::{storage::MemoryStorage, strategy::TtlStrategy};
 
     #[tokio::test]
     async fn test_cache_basic_operations() {

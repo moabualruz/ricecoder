@@ -2,11 +2,16 @@
 //!
 //! Manages the global knowledge base stored in ~/Documents/.ricecoder/
 
-use crate::error::{IoOperation, StorageError, StorageResult};
-use crate::manager::PathResolver;
-use crate::types::ResourceType;
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
+
+use crate::{
+    error::{IoOperation, StorageError, StorageResult},
+    manager::PathResolver,
+    types::ResourceType,
+};
 
 /// Global store for managing global knowledge base
 pub struct GlobalStore {
@@ -163,8 +168,9 @@ impl GlobalStore {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_global_store_initialization() {

@@ -3,10 +3,13 @@
 //! **Feature: ricecoder-storage, Property 3: Configuration Format Round-Trip**
 //! **Validates: Requirements 4.1, 4.2, 4.3**
 
-use proptest::prelude::*;
-use ricecoder_storage::config::{Config, ConfigLoader, DefaultsConfig, ProvidersConfig};
-use ricecoder_storage::types::ConfigFormat;
 use std::collections::HashMap;
+
+use proptest::prelude::*;
+use ricecoder_storage::{
+    config::{Config, ConfigLoader, DefaultsConfig, ProvidersConfig},
+    types::ConfigFormat,
+};
 
 /// Strategy for generating valid configurations
 fn config_strategy() -> impl Strategy<Value = Config> {

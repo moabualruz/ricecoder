@@ -1369,8 +1369,9 @@ async fn test_ollama_model_metadata_consistency_integration() {
 /// **Validates: Requirements 1.1, 1.2**
 #[tokio::test]
 async fn test_ollama_provider_registration_with_registry() {
-    use ricecoder_providers::ProviderRegistry;
     use std::sync::Arc;
+
+    use ricecoder_providers::ProviderRegistry;
 
     let mut registry = ProviderRegistry::new();
     let provider = Arc::new(OllamaProvider::new("http://localhost:11434".to_string()).unwrap());
@@ -1394,8 +1395,9 @@ async fn test_ollama_provider_registration_with_registry() {
 /// **Validates: Requirements 1.1, 1.2**
 #[tokio::test]
 async fn test_ollama_provider_discovery_by_id() {
-    use ricecoder_providers::ProviderRegistry;
     use std::sync::Arc;
+
+    use ricecoder_providers::ProviderRegistry;
 
     let mut registry = ProviderRegistry::new();
     let provider = Arc::new(OllamaProvider::new("http://localhost:11434".to_string()).unwrap());
@@ -1413,8 +1415,9 @@ async fn test_ollama_provider_discovery_by_id() {
 /// **Validates: Requirements 1.1, 1.2**
 #[tokio::test]
 async fn test_ollama_provider_discovery_by_name() {
-    use ricecoder_providers::ProviderRegistry;
     use std::sync::Arc;
+
+    use ricecoder_providers::ProviderRegistry;
 
     let mut registry = ProviderRegistry::new();
     let provider = Arc::new(OllamaProvider::new("http://localhost:11434".to_string()).unwrap());
@@ -1432,8 +1435,9 @@ async fn test_ollama_provider_discovery_by_name() {
 /// **Validates: Requirements 1.1, 1.2**
 #[tokio::test]
 async fn test_ollama_list_all_providers() {
-    use ricecoder_providers::ProviderRegistry;
     use std::sync::Arc;
+
+    use ricecoder_providers::ProviderRegistry;
 
     let mut registry = ProviderRegistry::new();
     let provider = Arc::new(OllamaProvider::new("http://localhost:11434".to_string()).unwrap());
@@ -1451,8 +1455,9 @@ async fn test_ollama_list_all_providers() {
 /// **Validates: Requirements 1.1, 1.2**
 #[tokio::test]
 async fn test_ollama_provider_unregister() {
-    use ricecoder_providers::ProviderRegistry;
     use std::sync::Arc;
+
+    use ricecoder_providers::ProviderRegistry;
 
     let mut registry = ProviderRegistry::new();
     let provider = Arc::new(OllamaProvider::new("http://localhost:11434".to_string()).unwrap());
@@ -1573,8 +1578,9 @@ async fn test_ollama_model_listing_accurate_metadata() {
 /// **Validates: Requirements 2.1, 2.3**
 #[tokio::test]
 async fn test_ollama_list_models_through_registry() {
-    use ricecoder_providers::ProviderRegistry;
     use std::sync::Arc;
+
+    use ricecoder_providers::ProviderRegistry;
 
     let mut server = mockito::Server::new_async().await;
     let base_url = server.url();
@@ -1830,8 +1836,9 @@ async fn test_ollama_health_check_detects_unavailable() {
 /// **Validates: Requirements 1.1, 1.2**
 #[tokio::test]
 async fn test_ollama_health_check_through_registry() {
-    use ricecoder_providers::ProviderRegistry;
     use std::sync::Arc;
+
+    use ricecoder_providers::ProviderRegistry;
 
     let mut server = mockito::Server::new_async().await;
     let base_url = server.url();

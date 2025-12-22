@@ -2,11 +2,12 @@
 //!
 //! **Feature: ricecoder-github, Property 11-15: Workflow Triggering, Status Tracking, CI Failure Diagnostics, Workflow Retry Logic, CI Result Summarization**
 
+use std::collections::HashMap;
+
 use proptest::prelude::*;
 use ricecoder_github::{
     ActionsIntegration, ActionsOperations, CiResultSummary, WorkflowStatus, WorkflowTriggerRequest,
 };
-use std::collections::HashMap;
 
 // Strategy for generating valid workflow names
 fn workflow_name_strategy() -> impl Strategy<Value = String> {

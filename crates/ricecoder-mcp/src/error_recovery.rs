@@ -1,8 +1,10 @@
 //! Error recovery and resilience mechanisms
 
-use crate::error::{Error, Result};
 use std::time::Duration;
+
 use tracing::{debug, error, info, warn};
+
+use crate::error::{Error, Result};
 
 /// Exponential backoff configuration for reconnection attempts
 #[derive(Debug, Clone)]
@@ -365,8 +367,9 @@ impl Default for GracefulDegradationHandler {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::sync::Arc;
+
+    use super::*;
 
     #[test]
     fn test_backoff_config_default() {

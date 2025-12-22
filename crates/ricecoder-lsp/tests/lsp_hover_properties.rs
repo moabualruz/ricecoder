@@ -4,8 +4,10 @@
 //! **Validates: Requirements LSP-4.1, LSP-4.2**
 
 use proptest::prelude::*;
-use ricecoder_lsp::types::{Definition, MarkupKind, Position, Range, Symbol, SymbolKind};
-use ricecoder_lsp::HoverProvider;
+use ricecoder_lsp::{
+    types::{Definition, MarkupKind, Position, Range, Symbol, SymbolKind},
+    HoverProvider,
+};
 
 /// Strategy for generating valid positions
 fn position_strategy() -> impl Strategy<Value = Position> {

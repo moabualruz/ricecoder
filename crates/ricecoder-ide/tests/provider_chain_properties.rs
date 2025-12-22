@@ -3,9 +3,10 @@
 //! **Feature: ricecoder-ide, Property 1: External LSP-First Provider Chain**
 //! **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5**
 
+use std::sync::Arc;
+
 use proptest::prelude::*;
 use ricecoder_ide::*;
-use std::sync::Arc;
 
 /// Mock provider for testing
 #[allow(dead_code)]

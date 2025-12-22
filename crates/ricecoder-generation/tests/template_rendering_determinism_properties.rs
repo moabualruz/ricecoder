@@ -2,9 +2,10 @@
 //! **Feature: ricecoder-templates, Property 1: Template Rendering Determinism**
 //! **Validates: Requirements 1.1, 1.2, 1.5**
 
+use std::collections::HashMap;
+
 use proptest::prelude::*;
 use ricecoder_generation::TemplateEngine;
-use std::collections::HashMap;
 
 /// Strategy for generating valid placeholder names
 fn placeholder_name_strategy() -> impl Strategy<Value = String> {

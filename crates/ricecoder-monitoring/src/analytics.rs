@@ -1,18 +1,16 @@
 //! Usage analytics and business intelligence
 
-use crate::types::*;
+use std::{collections::HashMap, sync::Arc, time::Duration as StdDuration};
+
 use chrono::{DateTime, TimeDelta, Timelike, Utc};
 use dashmap::DashMap;
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::Duration as StdDuration;
-use tokio::sync::mpsc;
-use tokio::time;
+use tokio::{sync::mpsc, time};
 
 pub use crate::types::AnalyticsConfig;
+use crate::types::*;
 
 /// Global usage events storage
 static USAGE_EVENTS: Lazy<DashMap<EventId, UsageEvent>> = Lazy::new(DashMap::new);

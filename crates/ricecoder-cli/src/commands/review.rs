@@ -1,8 +1,9 @@
 // Review code
 
+use async_trait::async_trait;
+
 use super::Command;
 use crate::error::CliResult;
-use async_trait::async_trait;
 
 /// Review code
 pub struct ReviewCommand {

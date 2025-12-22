@@ -4,12 +4,16 @@
 //! for RiceCoder sessions. Sessions track user interactions, state, and can be shared
 //! or persisted across application restarts.
 
-use crate::error::{StorageError, StorageResult};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+    sync::{Arc, RwLock},
+    time::{Duration, SystemTime},
+};
+
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, RwLock};
-use std::time::{Duration, SystemTime};
+
+use crate::error::{StorageError, StorageResult};
 
 /// Session identifier
 pub type SessionId = String;

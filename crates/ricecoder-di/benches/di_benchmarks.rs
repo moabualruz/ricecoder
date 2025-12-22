@@ -1,8 +1,9 @@
 //! Performance benchmarks for the DI container
 
+use std::sync::Arc;
+
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use ricecoder_di::{DIContainer, DIResult, ServiceLifetime};
-use std::sync::Arc;
 
 /// Simple test service for benchmarking
 #[derive(Debug, Clone)]

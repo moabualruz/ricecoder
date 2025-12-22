@@ -13,15 +13,14 @@ pub mod types;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::analytics::AnalyticsEngine;
-    use crate::compliance::ComplianceEngine;
-    use crate::dashboards::DashboardManager;
-    use crate::error_tracking::ErrorTracker;
-    use crate::metrics::MetricsCollector;
-    use crate::performance::PerformanceMonitor;
-    use crate::types::*;
     use std::collections::HashMap;
+
+    use super::*;
+    use crate::{
+        analytics::AnalyticsEngine, compliance::ComplianceEngine, dashboards::DashboardManager,
+        error_tracking::ErrorTracker, metrics::MetricsCollector, performance::PerformanceMonitor,
+        types::*,
+    };
 
     #[tokio::test]
     async fn test_metrics_collection() {

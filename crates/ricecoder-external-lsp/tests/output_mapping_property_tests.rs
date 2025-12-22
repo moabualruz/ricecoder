@@ -3,15 +3,14 @@
 //! **Feature: ricecoder-external-lsp, Property 5: Output Mapping Correctness**
 //! **Validates: Requirements ELSP-2.5**
 
+use std::collections::HashMap;
+
 use proptest::prelude::*;
-use ricecoder_external_lsp::mapping::{
-    CompletionMapper, DiagnosticsMapper, HoverMapper, JsonPathParser,
-};
-use ricecoder_external_lsp::types::{
-    CompletionMappingRules, DiagnosticsMappingRules, HoverMappingRules,
+use ricecoder_external_lsp::{
+    mapping::{CompletionMapper, DiagnosticsMapper, HoverMapper, JsonPathParser},
+    types::{CompletionMappingRules, DiagnosticsMappingRules, HoverMappingRules},
 };
 use serde_json::{json, Value};
-use std::collections::HashMap;
 
 /// Strategy for generating valid JSON path expressions
 fn arb_json_path() -> impl Strategy<Value = String> {

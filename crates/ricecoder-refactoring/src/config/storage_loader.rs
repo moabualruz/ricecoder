@@ -1,10 +1,10 @@
 //! Configuration loading from ricecoder-storage with hierarchy support
 
-use crate::error::Result;
-use crate::types::RefactoringConfig;
-use ricecoder_storage::manager::StorageManager;
-use ricecoder_storage::types::ResourceType;
 use std::sync::Arc;
+
+use ricecoder_storage::{manager::StorageManager, types::ResourceType};
+
+use crate::{error::Result, types::RefactoringConfig};
 
 /// Loads refactoring configurations from storage with hierarchy support
 pub struct StorageConfigLoader {
@@ -141,9 +141,11 @@ impl StorageConfigLoader {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use ricecoder_storage::types::StorageMode;
     use std::path::PathBuf;
+
+    use ricecoder_storage::types::StorageMode;
+
+    use super::*;
 
     /// Mock storage manager for testing
     struct MockStorageManager {

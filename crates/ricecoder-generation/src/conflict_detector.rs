@@ -5,11 +5,14 @@
 //! - Requirement 1.5: Detect conflicts when generated files would overwrite existing files
 //! - Requirement 4.1: Compute diffs between old and new content
 
-use crate::error::GenerationError;
-use crate::models::GeneratedFile;
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
+
 use serde::{Deserialize, Serialize};
-use std::fs;
-use std::path::{Path, PathBuf};
+
+use crate::{error::GenerationError, models::GeneratedFile};
 
 /// Information about a file conflict
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -256,8 +259,9 @@ impl Default for ConflictDetector {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_create_conflict_detector() {

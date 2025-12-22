@@ -1,11 +1,14 @@
 //! Integration tests for ricecoder-industry enterprise features
 
-use ricecoder_industry::compliance::SecurityRule;
-use ricecoder_industry::connections::ConnectionConfig;
-use ricecoder_industry::providers::EnterpriseProviderConfig;
-use ricecoder_industry::tools::{ConfigRequirement, ConfigValueType, ToolCapability, ToolMetadata};
-use ricecoder_industry::*;
 use std::collections::HashMap;
+
+use ricecoder_industry::{
+    compliance::SecurityRule,
+    connections::ConnectionConfig,
+    providers::EnterpriseProviderConfig,
+    tools::{ConfigRequirement, ConfigValueType, ToolCapability, ToolMetadata},
+    *,
+};
 use tokio::test;
 
 #[test]

@@ -3,9 +3,11 @@
 //! Processes specifications into generation plans by extracting requirements,
 //! acceptance criteria, and constraints, then mapping them to generation tasks.
 
-use crate::error::GenerationError;
-use ricecoder_specs::models::{AcceptanceCriterion, Priority, Requirement, Spec};
 use std::collections::BTreeMap;
+
+use ricecoder_specs::models::{AcceptanceCriterion, Priority, Requirement, Spec};
+
+use crate::error::GenerationError;
 
 /// Processes specifications into generation plans
 #[derive(Debug, Clone)]
@@ -236,9 +238,10 @@ impl Default for SpecProcessor {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use chrono::Utc;
     use ricecoder_specs::models::{SpecMetadata, SpecPhase, SpecStatus};
+
+    use super::*;
 
     fn create_test_spec() -> Spec {
         Spec {

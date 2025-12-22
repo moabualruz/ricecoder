@@ -1,9 +1,13 @@
 //! Exercise representation and loading
 
-use crate::error::BenchmarkError;
+use std::{
+    collections::HashSet,
+    path::{Path, PathBuf},
+};
+
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
-use std::path::{Path, PathBuf};
+
+use crate::error::BenchmarkError;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExerciseConfig {

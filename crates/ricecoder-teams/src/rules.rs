@@ -1,8 +1,10 @@
+use std::sync::Arc;
+
+use tracing::{debug, info};
+
 /// Shared rules management and promotion
 use crate::error::Result;
 use crate::models::{AdoptionMetrics, EffectivenessMetrics, RuleScope, SharedRule};
-use std::sync::Arc;
-use tracing::{debug, info};
 
 /// Manages rule promotion, validation, versioning, and approval workflows
 ///
@@ -315,9 +317,10 @@ pub mod mocks {
 
 #[cfg(test)]
 mod tests {
+    use chrono::Utc;
+
     use super::*;
     use crate::models::SharedRule;
-    use chrono::Utc;
 
     fn create_test_manager() -> SharedRulesManager {
         SharedRulesManager::new(

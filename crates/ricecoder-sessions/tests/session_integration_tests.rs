@@ -1,5 +1,6 @@
-use crate::models::SessionMode;
 use ricecoder_sessions::*;
+
+use crate::models::SessionMode;
 
 fn create_test_context() -> crate::models::SessionContext {
     crate::models::SessionContext::new("openai".to_string(), "gpt-4".to_string(), SessionMode::Chat)

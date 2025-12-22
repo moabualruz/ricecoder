@@ -1,7 +1,8 @@
 //! Placeholder resolution and case transformation
 
-use crate::templates::error::TemplateError;
 use std::collections::{HashMap, HashSet};
+
+use crate::templates::error::TemplateError;
 
 /// Represents a case transformation for placeholder values
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

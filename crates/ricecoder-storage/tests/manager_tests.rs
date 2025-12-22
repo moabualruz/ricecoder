@@ -1,5 +1,6 @@
-use ricecoder_storage::*;
 use std::path::PathBuf;
+
+use ricecoder_storage::*;
 
 #[cfg(test)]
 mod tests {

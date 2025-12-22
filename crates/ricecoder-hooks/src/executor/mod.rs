@@ -8,8 +8,10 @@ pub use condition::ConditionEvaluator;
 pub use runner::DefaultHookExecutor;
 pub use substitution::VariableSubstitutor;
 
-use crate::error::Result;
-use crate::types::{EventContext, Hook, HookResult};
+use crate::{
+    error::Result,
+    types::{EventContext, Hook, HookResult},
+};
 
 /// Trait for executing hooks
 ///

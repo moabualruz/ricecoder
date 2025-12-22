@@ -3,15 +3,20 @@
 //! This module provides compliance reporting capabilities for SOC 2, GDPR, HIPAA,
 //! and enterprise monitoring features for MCP operations.
 
+use std::{
+    collections::{HashMap, VecDeque},
+    sync::Arc,
+};
+
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, VecDeque};
-use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{info, warn};
 
-use crate::audit::MCPAuditLogger;
-use crate::error::{Error, Result};
+use crate::{
+    audit::MCPAuditLogger,
+    error::{Error, Result},
+};
 
 /// Compliance report types
 #[derive(Debug, Clone, Serialize, Deserialize)]

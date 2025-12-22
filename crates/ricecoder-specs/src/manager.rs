@@ -1,11 +1,16 @@
 //! Spec manager for discovering and managing specifications
 
-use crate::error::SpecError;
-use crate::models::Spec;
-use crate::parsers::{MarkdownParser, YamlParser};
-use std::collections::HashMap;
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::{
+    collections::HashMap,
+    fs,
+    path::{Path, PathBuf},
+};
+
+use crate::{
+    error::SpecError,
+    models::Spec,
+    parsers::{MarkdownParser, YamlParser},
+};
 
 /// Central coordinator for spec operations and lifecycle management
 pub struct SpecManager {
@@ -196,9 +201,11 @@ impl Default for SpecManager {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::fs;
+
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_spec_manager_creation() {

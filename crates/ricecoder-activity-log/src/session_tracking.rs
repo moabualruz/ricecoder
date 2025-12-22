@@ -1,12 +1,16 @@
 //! Session activity tracking and monitoring
 
-use crate::error::{ActivityLogError, ActivityLogResult};
-use crate::events::{ActivityEvent, EventCategory, LogLevel};
+use std::collections::HashMap;
+
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use tokio::sync::RwLock;
 use uuid::Uuid;
+
+use crate::{
+    error::{ActivityLogError, ActivityLogResult},
+    events::{ActivityEvent, EventCategory, LogLevel},
+};
 
 /// Session activity record
 #[derive(Debug, Clone, Serialize, Deserialize)]

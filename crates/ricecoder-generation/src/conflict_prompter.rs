@@ -4,10 +4,12 @@
 //! Implements requirement:
 //! - Requirement 4.5: Prompt user to choose strategy for each conflict
 
-use crate::conflict_detector::FileConflictInfo;
-use crate::conflict_resolver::ConflictStrategy;
-use crate::error::GenerationError;
 use std::io::{self, BufRead, Write};
+
+use crate::{
+    conflict_detector::FileConflictInfo, conflict_resolver::ConflictStrategy,
+    error::GenerationError,
+};
 
 /// Prompts user for conflict resolution decisions
 ///
@@ -280,8 +282,9 @@ impl Default for ConflictPrompter {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::path::PathBuf;
+
+    use super::*;
 
     fn create_test_conflict() -> FileConflictInfo {
         FileConflictInfo {

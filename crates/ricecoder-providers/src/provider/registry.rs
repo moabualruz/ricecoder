@@ -1,11 +1,9 @@
 //! Provider registry for dynamic provider registration and discovery
 
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use super::Provider;
-use crate::error::ProviderError;
-use crate::models::ModelInfo;
+use crate::{error::ProviderError, models::ModelInfo};
 
 /// Registry for managing available providers
 pub struct ProviderRegistry {

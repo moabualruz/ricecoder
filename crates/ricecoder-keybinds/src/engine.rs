@@ -1,15 +1,18 @@
 //! Keybind engine that combines registry and profile management
 
-use crate::conflict::ConflictDetector;
-use crate::error::EngineError;
-use crate::help::KeybindHelp;
-use crate::merge::KeybindMerger;
-use crate::models::{Context, KeyCombo, Keybind};
-use crate::parser::ParserRegistry;
-use crate::persistence::KeybindPersistence;
-use crate::profile::ProfileManager;
-use crate::registry::KeybindRegistry;
 use std::path::Path;
+
+use crate::{
+    conflict::ConflictDetector,
+    error::EngineError,
+    help::KeybindHelp,
+    merge::KeybindMerger,
+    models::{Context, KeyCombo, Keybind},
+    parser::ParserRegistry,
+    persistence::KeybindPersistence,
+    profile::ProfileManager,
+    registry::KeybindRegistry,
+};
 
 /// Main keybind engine combining registry and profile management
 pub struct KeybindEngine {

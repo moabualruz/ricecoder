@@ -2,9 +2,12 @@
 //!
 //! This module provides loading and saving of documents in YAML and Markdown formats.
 
-use crate::error::{StorageError, StorageResult};
-use crate::types::DocumentFormat;
 use std::path::Path;
+
+use crate::{
+    error::{StorageError, StorageResult},
+    types::DocumentFormat,
+};
 
 /// Document content
 #[derive(Debug, Clone, PartialEq, Eq)]

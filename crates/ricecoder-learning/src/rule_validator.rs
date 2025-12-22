@@ -1,11 +1,12 @@
+use regex::Regex;
+use serde_json::Value;
+
 /// Rule validation component
 ///
 /// Validates rules before storage to ensure they meet syntax, structure,
 /// and consistency requirements.
 use crate::error::{LearningError, Result};
 use crate::models::Rule;
-use regex::Regex;
-use serde_json::Value;
 
 /// Validates rules before storage
 #[derive(Debug, Clone)]

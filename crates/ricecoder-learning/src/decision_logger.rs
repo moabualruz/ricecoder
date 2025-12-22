@@ -1,9 +1,10 @@
+use std::{collections::HashMap, sync::Arc};
+
+use tokio::sync::RwLock;
+
 /// Decision logging component for capturing user decisions with full metadata
 use crate::error::{LearningError, Result};
 use crate::models::{Decision, DecisionContext};
-use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::RwLock;
 
 /// Captures and stores user decisions with full metadata
 pub struct DecisionLogger {
@@ -165,8 +166,9 @@ pub struct DecisionStatistics {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::path::PathBuf;
+
+    use super::*;
 
     fn create_test_decision(
         decision_type: &str,

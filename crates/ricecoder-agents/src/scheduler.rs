@@ -1,8 +1,11 @@
 //! Agent scheduler for managing execution order and parallelism
 
-use crate::error::{AgentError, Result};
-use crate::models::AgentTask;
 use std::collections::{HashMap, HashSet};
+
+use crate::{
+    error::{AgentError, Result},
+    models::AgentTask,
+};
 
 /// Execution schedule for agents
 #[derive(Debug, Clone)]
@@ -234,9 +237,10 @@ impl Default for AgentScheduler {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
     use crate::models::{TaskOptions, TaskScope, TaskTarget, TaskType};
-    use std::path::PathBuf;
 
     fn create_test_task(id: &str) -> AgentTask {
         AgentTask {

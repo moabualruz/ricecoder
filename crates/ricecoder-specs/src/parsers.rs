@@ -1,7 +1,9 @@
 //! Parsers for YAML and Markdown spec formats
 
-use crate::error::SpecError;
-use crate::models::{Spec, SpecMetadata, SpecPhase, SpecStatus, Task};
+use crate::{
+    error::SpecError,
+    models::{Spec, SpecMetadata, SpecPhase, SpecStatus, Task},
+};
 
 /// YAML parser for spec files
 pub struct YamlParser;
@@ -265,9 +267,10 @@ impl MarkdownParser {
 
 #[cfg(test)]
 mod tests {
+    use chrono::Utc;
+
     use super::*;
     use crate::models::*;
-    use chrono::Utc;
 
     #[test]
     fn test_yaml_parser_roundtrip() {
@@ -522,10 +525,11 @@ mod markdown_tests {
 
 #[cfg(test)]
 mod property_tests {
-    use super::*;
-    use crate::models::*;
     use chrono::Utc;
     use proptest::prelude::*;
+
+    use super::*;
+    use crate::models::*;
 
     // Helper function to generate arbitrary Spec values with valid IDs
     fn arb_spec() -> impl Strategy<Value = Spec> {

@@ -1,9 +1,14 @@
 //! Shared context manager for cross-domain coordination
 
-use crate::domain::error::{DomainError, DomainResult};
-use crate::domain::models::{Recommendation, SharedContext};
-use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
+
+use crate::domain::{
+    error::{DomainError, DomainResult},
+    models::{Recommendation, SharedContext},
+};
 
 /// Manages shared context across domain agents
 ///

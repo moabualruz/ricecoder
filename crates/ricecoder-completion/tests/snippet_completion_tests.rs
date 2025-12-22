@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
 /// Tests for snippet completion suggestions
 /// Tests that snippet completions include function templates, loop templates, and conditional templates
@@ -6,7 +8,6 @@ use ricecoder_completion::{
     GenericCompletionEngine, Position, ProviderRegistry, PythonCompletionProvider, Range,
     RustCompletionProvider, Scope, ScopeKind, Symbol, SymbolKind, TypeScriptCompletionProvider,
 };
-use std::sync::Arc;
 
 /// Mock context analyzer for snippet tests
 struct SnippetTestContextAnalyzer;

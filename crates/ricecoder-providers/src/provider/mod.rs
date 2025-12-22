@@ -3,8 +3,10 @@
 use async_trait::async_trait;
 use futures;
 
-use crate::error::ProviderError;
-use crate::models::{ChatRequest, ChatResponse, ModelInfo};
+use crate::{
+    error::ProviderError,
+    models::{ChatRequest, ChatResponse, ModelInfo},
+};
 
 pub mod manager;
 pub mod registry;

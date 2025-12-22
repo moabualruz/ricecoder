@@ -1,13 +1,15 @@
 //! Server lifecycle management for MCP servers
 
-use crate::config::MCPServerConfig;
-use crate::error::{Error, Result};
-use crate::health_check::HealthChecker;
-use std::sync::Arc;
-use std::time::Duration;
-use tokio::sync::RwLock;
-use tokio::time::timeout;
+use std::{sync::Arc, time::Duration};
+
+use tokio::{sync::RwLock, time::timeout};
 use tracing::{debug, error, info};
+
+use crate::{
+    config::MCPServerConfig,
+    error::{Error, Result},
+    health_check::HealthChecker,
+};
 
 /// Server lifecycle state
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -254,8 +256,9 @@ impl ServerLifecycle {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::collections::HashMap;
+
+    use super::*;
 
     fn create_test_config(id: &str) -> MCPServerConfig {
         MCPServerConfig {

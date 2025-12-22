@@ -1,20 +1,21 @@
 //! Provider manager for orchestrating provider operations
 
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::Duration;
+use std::{collections::HashMap, sync::Arc, time::Duration};
+
 use tokio::sync::RwLock;
 
 use super::{Provider, ProviderRegistry};
-use crate::community::{CommunityProviderRegistry, ProviderUsage};
-use crate::curation::{CurationConfig, ProviderCurator, SelectionConstraints};
-use crate::error::ProviderError;
-use crate::evaluation::{ContinuousEvaluator, ProviderEvaluator};
-use crate::health_check::HealthCheckCache;
-use crate::models::{Capability, ChatRequest, ChatResponse, ModelInfo, TokenUsage};
-use crate::performance_monitor::ProviderPerformanceMonitor;
-use crate::provider::ChatStream;
-use crate::sync::CommunityDatabaseSync;
+use crate::{
+    community::{CommunityProviderRegistry, ProviderUsage},
+    curation::{CurationConfig, ProviderCurator, SelectionConstraints},
+    error::ProviderError,
+    evaluation::{ContinuousEvaluator, ProviderEvaluator},
+    health_check::HealthCheckCache,
+    models::{Capability, ChatRequest, ChatResponse, ModelInfo, TokenUsage},
+    performance_monitor::ProviderPerformanceMonitor,
+    provider::ChatStream,
+    sync::CommunityDatabaseSync,
+};
 
 /// Provider connection state
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

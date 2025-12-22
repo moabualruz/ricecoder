@@ -2,8 +2,10 @@
 
 use std::collections::HashMap;
 
-use crate::error::RegistryError;
-use crate::models::{Context, KeyCombo, Keybind};
+use crate::{
+    error::RegistryError,
+    models::{Context, KeyCombo, Keybind},
+};
 
 /// Registry for storing and looking up keybinds
 pub struct KeybindRegistry {

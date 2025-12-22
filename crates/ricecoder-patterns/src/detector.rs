@@ -1,14 +1,18 @@
 //! Main pattern detector coordinating all pattern detection
 
-use crate::architectural::ArchitecturalPatternDetector;
-use crate::coding::CodingPatternDetector;
-use crate::error::{PatternError, PatternResult};
-use crate::models::{DetectedPattern, PatternDetectionConfig};
-#[cfg(feature = "parsing")]
-use ricecoder_parsers::{CodeParser, SyntaxTree};
 use std::path::Path;
 #[cfg(feature = "parsing")]
 use std::sync::Arc;
+
+#[cfg(feature = "parsing")]
+use ricecoder_parsers::{CodeParser, SyntaxTree};
+
+use crate::{
+    architectural::ArchitecturalPatternDetector,
+    coding::CodingPatternDetector,
+    error::{PatternError, PatternResult},
+    models::{DetectedPattern, PatternDetectionConfig},
+};
 
 /// Main pattern detector that coordinates all pattern detection activities
 #[derive(Debug)]
@@ -185,9 +189,11 @@ impl Default for PatternDetector {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use ricecoder_parsers::error::ParserError;
     use std::sync::Arc;
+
+    use ricecoder_parsers::error::ParserError;
+
+    use super::*;
 
     // Mock parser for testing
     struct MockParser;

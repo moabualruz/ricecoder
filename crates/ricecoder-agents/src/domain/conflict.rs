@@ -1,8 +1,8 @@
 //! Conflict detection and resolution for domain agent recommendations
 
-use crate::domain::error::DomainResult;
-use crate::domain::models::Recommendation;
 use serde::{Deserialize, Serialize};
+
+use crate::domain::{error::DomainResult, models::Recommendation};
 
 /// Type of conflict between recommendations
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

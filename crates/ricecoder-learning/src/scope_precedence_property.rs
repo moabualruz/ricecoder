@@ -4,8 +4,9 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::{ConflictResolver, Rule, RuleScope, RuleSource};
     use proptest::prelude::*;
+
+    use crate::{ConflictResolver, Rule, RuleScope, RuleSource};
 
     proptest! {
         /// Property: Project rules override global rules when both exist

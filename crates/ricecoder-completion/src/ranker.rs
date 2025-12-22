@@ -1,6 +1,7 @@
+use std::cmp::Ordering;
+
 /// Completion ranking and filtering implementation
 use crate::types::*;
-use std::cmp::Ordering;
 
 /// Basic completion ranker with prefix matching and fuzzy matching
 pub struct BasicCompletionRanker {

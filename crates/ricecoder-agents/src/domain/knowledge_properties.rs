@@ -5,11 +5,13 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::factory::{
-        AgentConfig, AntiPatternConfig, BestPracticeConfig, CapabilityConfig, PatternConfig,
-        TechRecommendationConfig,
+    use crate::domain::{
+        factory::{
+            AgentConfig, AntiPatternConfig, BestPracticeConfig, CapabilityConfig, PatternConfig,
+            TechRecommendationConfig,
+        },
+        AgentFactory, KnowledgeBase,
     };
-    use crate::domain::{AgentFactory, KnowledgeBase};
 
     /// Helper function to create a test agent configuration with knowledge
     fn create_agent_config_with_knowledge(

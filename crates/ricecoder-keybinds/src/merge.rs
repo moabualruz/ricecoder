@@ -3,9 +3,12 @@
 //! This module provides merging logic for keybinds that respects context hierarchies
 //! and allows user customizations to override defaults appropriately.
 
-use crate::error::EngineError;
-use crate::models::{Context, Keybind};
 use std::collections::HashMap;
+
+use crate::{
+    error::EngineError,
+    models::{Context, Keybind},
+};
 
 /// Result of merging keybinds
 #[derive(Debug, Clone)]

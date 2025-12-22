@@ -1,13 +1,17 @@
 //! Providers command - Manage AI providers
 
-use crate::commands::Command;
-use crate::error::{CliError, CliResult};
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use ricecoder_agents::use_cases::{
     ProviderCommunityUseCase, ProviderFailoverUseCase, ProviderHealthUseCase, ProviderModelUseCase,
     ProviderPerformanceUseCase, ProviderSwitchingUseCase,
 };
-use std::sync::Arc;
+
+use crate::{
+    commands::Command,
+    error::{CliError, CliResult},
+};
 
 /// Providers command action
 #[derive(Debug, Clone)]

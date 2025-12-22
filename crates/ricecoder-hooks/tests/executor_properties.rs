@@ -5,11 +5,14 @@
 //! - Property 7: Variable substitution accuracy
 //! - Property 8: Tool call parameter binding
 
-use proptest::prelude::*;
-use ricecoder_hooks::executor::{DefaultHookExecutor, HookExecutor, VariableSubstitutor};
-use ricecoder_hooks::types::*;
-use serde_json::json;
 use std::collections::HashMap;
+
+use proptest::prelude::*;
+use ricecoder_hooks::{
+    executor::{DefaultHookExecutor, HookExecutor, VariableSubstitutor},
+    types::*,
+};
+use serde_json::json;
 
 // Strategy for generating valid variable names
 fn var_name_strategy() -> impl Strategy<Value = String> {

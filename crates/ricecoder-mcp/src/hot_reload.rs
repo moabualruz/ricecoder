@@ -1,12 +1,18 @@
 //! Configuration hot-reload support for MCP
 
-use crate::config::{MCPConfig, MCPConfigLoader};
-use crate::error::Result;
-use crate::registry::ToolRegistry;
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
+
 use tokio::sync::RwLock;
 use tracing::{debug, info, warn};
+
+use crate::{
+    config::{MCPConfig, MCPConfigLoader},
+    error::Result,
+    registry::ToolRegistry,
+};
 
 /// Configuration watcher for hot-reload support
 #[derive(Debug, Clone)]
@@ -210,9 +216,10 @@ impl ConfigWatcher {
 
 #[cfg(test)]
 mod tests {
+    use tempfile::TempDir;
+
     use super::*;
     use crate::registry::ToolRegistry;
-    use tempfile::TempDir;
 
     #[tokio::test]
     async fn test_create_config_watcher() {

@@ -6,13 +6,18 @@
 //! **Feature: ricecoder-orchestration, Integration Tests: Workspace Operations**
 //! **Validates: Requirements 1.1, 1.2, 2.1**
 
+use std::{
+    path::PathBuf,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
+};
+
 use ricecoder_orchestration::{
     BatchExecutionConfig, BatchExecutor, DependencyGraph, DependencyType, OrchestrationError,
     Project, ProjectDependency, ProjectOperation, ProjectStatus, Result, WorkspaceScanner,
 };
-use std::path::PathBuf;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
 
 /// Helper to create a test project
 fn create_test_project(name: &str, project_type: &str) -> Project {

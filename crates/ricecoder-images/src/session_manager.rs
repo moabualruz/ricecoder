@@ -6,10 +6,13 @@
 //! - Support image sharing between sessions
 //! - Persist image metadata with sessions
 
-use crate::error::{ImageError, ImageResult};
-use crate::models::{ImageAnalysisResult, ImageMetadata};
-use crate::session_integration::{MessageImageMetadata, SessionImageContext};
 use std::collections::HashMap;
+
+use crate::{
+    error::{ImageError, ImageResult},
+    models::{ImageAnalysisResult, ImageMetadata},
+    session_integration::{MessageImageMetadata, SessionImageContext},
+};
 
 /// Manages images within a session
 #[derive(Debug, Clone)]
@@ -302,8 +305,9 @@ impl Default for MultiSessionImageManager {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::path::PathBuf;
+
+    use super::*;
 
     fn create_test_image_metadata() -> ImageMetadata {
         ImageMetadata::new(

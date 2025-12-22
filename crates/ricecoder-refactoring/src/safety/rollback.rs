@@ -1,11 +1,14 @@
 //! Rollback handling for refactoring operations
 
-use crate::error::{RefactoringError, Result};
-use crate::types::BackupInfo;
+use std::{collections::HashMap, path::PathBuf};
+
 use chrono::Utc;
-use std::collections::HashMap;
-use std::path::PathBuf;
 use uuid::Uuid;
+
+use crate::{
+    error::{RefactoringError, Result},
+    types::BackupInfo,
+};
 
 /// Handles rollback of refactoring operations
 pub struct RollbackHandler;
@@ -55,9 +58,11 @@ impl RollbackHandler {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::io::Write;
+
     use tempfile::NamedTempFile;
+
+    use super::*;
 
     #[test]
     fn test_create_backup() -> Result<()> {

@@ -2,10 +2,11 @@
 //!
 //! Manages GitHub Discussions for collaborative problem-solving
 
-use crate::errors::GitHubError;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info};
+
+use crate::errors::GitHubError;
 
 /// Discussion creation result
 #[derive(Debug, Clone, Serialize, Deserialize)]

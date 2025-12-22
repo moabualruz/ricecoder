@@ -1,6 +1,7 @@
 //! Banner component widget for ricecoder-tui.
 
-use crate::layout::Rect as LayoutRect;
+use std::path::PathBuf;
+
 use ratatui::{
     buffer::Buffer,
     style::{Color, Style},
@@ -11,8 +12,9 @@ use ricecoder_images::{
     BannerConfig, BannerOutput, BannerRenderer, ColorDepth, TerminalCapabilities,
     ThemeColors as ImageThemeColors,
 };
-use std::path::PathBuf;
 use tracing::{debug, warn};
+
+use crate::layout::Rect as LayoutRect;
 
 /// Banner component widget that integrates with the ricecoder-images banner renderer.
 pub struct BannerComponent {

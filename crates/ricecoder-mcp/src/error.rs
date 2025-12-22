@@ -1,6 +1,7 @@
 //! Error types for MCP integration
 
 use std::fmt;
+
 use thiserror::Error;
 
 /// Result type for MCP operations

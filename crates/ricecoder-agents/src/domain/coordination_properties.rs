@@ -5,8 +5,7 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::coordinator::DomainCoordinator;
-    use crate::domain::models::Recommendation;
+    use crate::domain::{coordinator::DomainCoordinator, models::Recommendation};
 
     fn create_recommendation(
         domain: &str,

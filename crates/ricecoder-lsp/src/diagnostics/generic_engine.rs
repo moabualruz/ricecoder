@@ -3,8 +3,10 @@
 //! This module provides a language-agnostic diagnostics engine that delegates
 //! to language-specific providers registered in the provider registry.
 
-use crate::providers::{DiagnosticsProvider, DiagnosticsRegistry, ProviderResult};
-use crate::types::{Diagnostic, Range};
+use crate::{
+    providers::{DiagnosticsProvider, DiagnosticsRegistry, ProviderResult},
+    types::{Diagnostic, Range},
+};
 
 /// Generic diagnostics engine that delegates to pluggable providers
 pub struct GenericDiagnosticsEngine {

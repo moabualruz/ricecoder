@@ -2,12 +2,13 @@
 //!
 //! These tests verify specific examples and edge cases
 
+use std::collections::HashMap;
+
 use ricecoder_github::{
     ApiDocumentation, ApiParameter, DocumentationCoverage, DocumentationGenerator,
     DocumentationOperations, DocumentationTemplate, MaintenanceStatus, MaintenanceTask,
     ReadmeConfig,
 };
-use std::collections::HashMap;
 
 #[test]
 fn test_readme_generation_with_all_sections() {

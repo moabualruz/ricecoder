@@ -1,9 +1,11 @@
 //! Webhook Operations - Advanced webhook operations and utilities
 
-use crate::errors::{GitHubError, Result};
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::HashMap;
+
+use crate::errors::{GitHubError, Result};
 
 /// Webhook retry configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]

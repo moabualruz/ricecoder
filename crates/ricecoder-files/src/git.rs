@@ -1,9 +1,13 @@
 //! Git integration for version control and auto-commit functionality
 
-use crate::error::FileError;
-use crate::models::{FileOperation, GitStatus, OperationType};
-use git2::{Repository, Status, StatusOptions};
 use std::path::{Path, PathBuf};
+
+use git2::{Repository, Status, StatusOptions};
+
+use crate::{
+    error::FileError,
+    models::{FileOperation, GitStatus, OperationType},
+};
 
 /// Integrates with git for version control and auto-commit functionality
 #[derive(Debug, Clone)]

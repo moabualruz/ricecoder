@@ -4,8 +4,10 @@
 //! the TUI session display widgets, ensuring session status is properly displayed
 //! and session switching is routed correctly.
 
-use crate::models::{Session, SessionStatus as CoreSessionStatus};
-use crate::SessionManager;
+use crate::{
+    models::{Session, SessionStatus as CoreSessionStatus},
+    SessionManager,
+};
 
 /// Integrates core session management with TUI display
 /// Note: This is a simplified version moved from ricecoder-tui.

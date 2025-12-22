@@ -7,10 +7,12 @@
 //! - Animation controls
 //! - State announcements
 
-use crate::model::AppMessage;
+use std::collections::HashMap;
+
 use ratatui::style::{Color, Modifier, Style};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+
+use crate::model::AppMessage;
 
 /// Animation configuration
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]

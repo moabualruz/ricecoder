@@ -1,9 +1,9 @@
 // Branding and visual identity
 // Loads and displays RiceCoder branding
 
-use crate::error::CliResult;
-use crate::output::OutputStyle;
 use std::path::Path;
+
+use crate::{error::CliResult, output::OutputStyle};
 
 /// Branding manager
 pub struct BrandingManager;

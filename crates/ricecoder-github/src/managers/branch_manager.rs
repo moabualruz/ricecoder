@@ -1,8 +1,9 @@
 //! Branch Manager - Handles Git branch creation and management
 
-use crate::errors::{GitHubError, Result};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info};
+
+use crate::errors::{GitHubError, Result};
 
 /// Branch protection settings
 #[derive(Debug, Clone, Serialize, Deserialize)]

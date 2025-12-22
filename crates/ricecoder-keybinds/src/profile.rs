@@ -1,10 +1,8 @@
 //! Profile management for keybind configurations
 
-use std::time::SystemTime;
+use std::{collections::HashMap, time::SystemTime};
 
-use crate::error::ProfileError;
-use crate::models::Keybind;
-use std::collections::HashMap;
+use crate::{error::ProfileError, models::Keybind};
 
 /// Represents a keybind profile
 #[derive(Debug, Clone)]
@@ -35,8 +33,9 @@ impl<'de> serde::Deserialize<'de> for Profile {
     where
         D: serde::Deserializer<'de>,
     {
-        use serde::de::{self, MapAccess, Visitor};
         use std::fmt;
+
+        use serde::de::{self, MapAccess, Visitor};
 
         #[derive(serde::Deserialize)]
         #[serde(field_identifier, rename_all = "lowercase")]

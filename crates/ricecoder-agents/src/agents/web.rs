@@ -4,12 +4,15 @@
 //! including frontend framework recommendations, styling guidance, build tool
 //! recommendations, testing strategies, performance optimization, and deployment guidance.
 
-use crate::agents::Agent;
-use crate::domain::{DomainAgent, DomainCapability, DomainKnowledge, TechRecommendation};
-use crate::error::Result;
-use crate::models::{AgentInput, AgentOutput, Finding, Severity, TaskType};
 use async_trait::async_trait;
 use uuid::Uuid;
+
+use crate::{
+    agents::Agent,
+    domain::{DomainAgent, DomainCapability, DomainKnowledge, TechRecommendation},
+    error::Result,
+    models::{AgentInput, AgentOutput, Finding, Severity, TaskType},
+};
 
 /// Web Development Agent
 ///
@@ -539,10 +542,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_web_agent_execute() {
+        use std::path::PathBuf;
+
         use crate::models::{
             AgentConfig, AgentTask, ProjectContext, TaskOptions, TaskScope, TaskTarget,
         };
-        use std::path::PathBuf;
 
         let agent = WebAgent::new();
         let input = AgentInput {

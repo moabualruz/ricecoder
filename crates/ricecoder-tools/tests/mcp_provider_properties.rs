@@ -3,10 +3,13 @@
 //! Tests the hybrid provider pattern with MCP → Built-in → Error priority chain.
 //! Validates that MCP servers are used when available and graceful fallback occurs.
 
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
+
 use async_trait::async_trait;
 use ricecoder_tools::provider::{Provider, ProviderRegistry};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
 
 /// Mock provider for testing
 struct MockProvider {

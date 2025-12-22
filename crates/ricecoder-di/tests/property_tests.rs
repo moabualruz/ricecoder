@@ -1,8 +1,9 @@
 //! Property-based tests for service resolution and DI container behavior
 
+use std::sync::Arc;
+
 use proptest::prelude::*;
 use ricecoder_di::*;
-use std::sync::Arc;
 
 /// Test service for property-based testing
 #[derive(Debug, Clone, PartialEq)]

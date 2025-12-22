@@ -3,9 +3,10 @@
 //! This module contains the pure update function that handles all state transitions
 //! in response to messages. All functions are pure and return new state instances.
 
-use crate::model::*;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ricecoder_themes::Theme;
+
+use crate::model::*;
 
 /// Commands that produce side effects
 #[derive(Clone)]

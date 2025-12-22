@@ -2,13 +2,13 @@
 //! **Feature: ricecoder-sharing, Properties 1-11**
 //! **Validates: Requirements 1.1, 1.3, 1.4, 1.5, 2.1, 2.2, 2.3, 2.4, 3.2, 3.4, 3.5, 4.1, 4.2, 4.3, 5.1, 5.3, 5.4, 5.5**
 
+use std::{thread, time::Duration as StdDuration};
+
 use chrono::Duration;
 use proptest::prelude::*;
 use ricecoder_sessions::{
     Message, MessageRole, Session, SessionContext, SessionMode, SharePermissions, ShareService,
 };
-use std::thread;
-use std::time::Duration as StdDuration;
 
 // ============================================================================
 // Generators for property-based testing

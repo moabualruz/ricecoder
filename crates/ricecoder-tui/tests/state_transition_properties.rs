@@ -2,9 +2,10 @@
 //! Tests that state transitions are pure, deterministic, and preserve invariants
 //! Validates Requirements 1.2, 3.1, 3.2, 12.1
 
+use std::collections::HashSet;
+
 use proptest::prelude::*;
 use ricecoder_tui::tea::{AppMessage, AppModel, StateChange, StateDiff};
-use std::collections::HashSet;
 
 // ============================================================================
 // Generators for State Transition Tests

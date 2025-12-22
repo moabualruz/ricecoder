@@ -1,15 +1,15 @@
 //! Main parser implementation with caching and optimization
 
-use std::collections::HashMap;
-use std::future::Future;
-use std::pin::Pin;
-use std::sync::Arc;
+use std::{collections::HashMap, future::Future, pin::Pin, sync::Arc};
+
+use ricecoder_cache::{Cache, CacheConfig};
 use tokio::sync::RwLock;
 
-use crate::error::{ParserError, ParserResult, ParserWarning};
-use crate::languages::{Language, LanguageRegistry, LanguageSupport};
-use crate::types::{ASTNode, NodeType, Position, Range, SyntaxTree};
-use ricecoder_cache::{Cache, CacheConfig};
+use crate::{
+    error::{ParserError, ParserResult, ParserWarning},
+    languages::{Language, LanguageRegistry, LanguageSupport},
+    types::{ASTNode, NodeType, Position, Range, SyntaxTree},
+};
 
 /// Parser trait for parsing source code into syntax trees
 pub trait CodeParser {
@@ -242,8 +242,10 @@ impl Parser {
         language: &Language,
         file_path: Option<&str>,
     ) -> String {
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
+        use std::{
+            collections::hash_map::DefaultHasher,
+            hash::{Hash, Hasher},
+        };
 
         let mut hasher = DefaultHasher::new();
         source.hash(&mut hasher);
@@ -310,8 +312,9 @@ impl Default for Parser {
 
 /// Tree-sitter based language support implementation
 pub mod tree_sitter_support {
-    use super::*;
     use tree_sitter::{Language as TSLanguage, Parser as TSParser, Tree};
+
+    use super::*;
 
     /// Tree-sitter based language support
     pub struct TreeSitterSupport {

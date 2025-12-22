@@ -3,12 +3,13 @@
 //! This module integrates the refactoring engine with the LSP server,
 //! providing refactoring capabilities through LSP code actions and commands.
 
+use std::sync::Arc;
+
 use ricecoder_refactoring::{
     ConfigManager, GenericRefactoringProvider, ImpactAnalyzer, ProviderRegistry, RefactoringEngine,
     RefactoringType,
 };
 use serde_json::Value;
-use std::sync::Arc;
 use tracing::{debug, info};
 
 /// Refactoring handler for LSP

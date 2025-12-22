@@ -4,9 +4,12 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::models::{Rule, RuleScope, RuleSource};
-    use crate::scope_config::ScopeFilter;
     use proptest::prelude::*;
+
+    use crate::{
+        models::{Rule, RuleScope, RuleSource},
+        scope_config::ScopeFilter,
+    };
 
     /// Strategy for generating random rule scopes
     fn arb_rule_scope() -> impl Strategy<Value = RuleScope> {

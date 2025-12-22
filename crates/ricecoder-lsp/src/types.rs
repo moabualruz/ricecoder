@@ -3,8 +3,9 @@
 //! This module defines all the fundamental types used throughout the LSP integration,
 //! including error types, message types, and domain models.
 
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 
 /// Result type for LSP operations
 pub type LspResult<T> = Result<T, LspError>;

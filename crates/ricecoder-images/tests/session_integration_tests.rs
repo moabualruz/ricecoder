@@ -7,10 +7,11 @@
 //!
 //! **Requirements: 1.4, 2.1**
 
+use std::path::PathBuf;
+
 use ricecoder_images::{
     ImageFormat, ImageMetadata, MessageImageMetadata, MessageImages, SessionImageManager,
 };
-use std::path::PathBuf;
 
 /// Test session image manager creation
 #[test]

@@ -2,9 +2,10 @@
 //! **Feature: ricecoder-research, Property 1: Project Type Detection Consistency**
 //! **Validates: Requirements 1.1, 1.2**
 
+use std::path::PathBuf;
+
 use proptest::prelude::*;
 use ricecoder_research::ProjectAnalyzer;
-use std::path::PathBuf;
 use tempfile::TempDir;
 
 // ============================================================================

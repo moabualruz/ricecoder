@@ -1,14 +1,16 @@
 //! Plan builder for converting generation results to execution plans
 
-use crate::error::{ExecutionError, ExecutionResult};
-use crate::models::{
-    ComplexityLevel, ExecutionPlan, ExecutionStep, RiskFactor, RiskLevel, RiskScore, StepAction,
-};
+use std::{collections::HashMap, path::Path, time::Duration};
+
 use ricecoder_storage::PathResolver;
-use std::collections::HashMap;
-use std::path::Path;
-use std::time::Duration;
 use uuid::Uuid;
+
+use crate::{
+    error::{ExecutionError, ExecutionResult},
+    models::{
+        ComplexityLevel, ExecutionPlan, ExecutionStep, RiskFactor, RiskLevel, RiskScore, StepAction,
+    },
+};
 
 /// Builder for creating execution plans from generation results
 ///

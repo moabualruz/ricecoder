@@ -1,15 +1,18 @@
 //! Metrics collection and management
 
-use crate::types::*;
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration as StdDuration, Instant},
+};
+
 use chrono::{DateTime, TimeDelta, Utc};
 use dashmap::DashMap;
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::{Duration as StdDuration, Instant};
-use tokio::sync::mpsc;
-use tokio::time;
+use tokio::{sync::mpsc, time};
+
+use crate::types::*;
 
 /// Global metrics registry
 static METRICS_REGISTRY: Lazy<DashMap<String, Arc<MetricDefinition>>> = Lazy::new(DashMap::new);

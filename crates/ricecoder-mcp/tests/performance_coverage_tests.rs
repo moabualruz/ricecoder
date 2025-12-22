@@ -3,15 +3,20 @@
 //! Tests to ensure performance targets are maintained while preserving coverage.
 //! Focuses on optimizing test execution time and resource usage.
 
-use ricecoder_mcp::connection_pool::{ConnectionPool, PoolConfig};
-use ricecoder_mcp::metadata::{ToolMetadata, ToolSource};
-use ricecoder_mcp::permissions::MCPPermissionManager;
-use ricecoder_mcp::registry::ToolRegistry;
-use ricecoder_mcp::tool_execution::{ToolExecutionContext, ToolExecutionResult};
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, Instant},
+};
+
+use ricecoder_mcp::{
+    connection_pool::{ConnectionPool, PoolConfig},
+    metadata::{ToolMetadata, ToolSource},
+    permissions::MCPPermissionManager,
+    registry::ToolRegistry,
+    tool_execution::{ToolExecutionContext, ToolExecutionResult},
+};
 use serde_json::json;
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 
 /// **Performance Test Perf.1: Tool Registry Lookup Performance**
@@ -299,8 +304,7 @@ async fn test_concurrent_operation_optimization() {
 /// **Validates: Caching improves performance under load**
 #[tokio::test]
 async fn test_cache_effectiveness_under_load() {
-    use ricecoder_cache::storage::MemoryStorage;
-    use ricecoder_cache::{Cache, CacheConfig};
+    use ricecoder_cache::{storage::MemoryStorage, Cache, CacheConfig};
 
     let cache_storage = Arc::new(MemoryStorage::new());
     let cache_config = CacheConfig {

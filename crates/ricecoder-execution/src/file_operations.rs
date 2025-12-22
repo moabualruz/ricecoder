@@ -7,11 +7,15 @@
 //! **CRITICAL**: All file operations MUST use PathResolver for path validation.
 //! No hardcoded paths are permitted.
 
-use crate::error::{ExecutionError, ExecutionResult};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
+
 use ricecoder_storage::PathResolver;
-use std::fs;
-use std::path::{Path, PathBuf};
 use tracing::{debug, info};
+
+use crate::error::{ExecutionError, ExecutionResult};
 
 /// File operations wrapper ensuring PathResolver validation
 pub struct FileOperations;
@@ -340,8 +344,9 @@ impl FileOperations {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_create_file() {

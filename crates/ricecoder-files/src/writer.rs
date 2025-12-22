@@ -1,12 +1,16 @@
 //! Safe file writing with atomic operations and conflict resolution
 
-use crate::conflict::ConflictResolver;
-use crate::error::FileError;
-use crate::models::{ConflictResolution, FileOperation, OperationType};
-use crate::verifier::ContentVerifier;
 use std::path::Path;
+
 use tokio::fs;
 use uuid::Uuid;
+
+use crate::{
+    conflict::ConflictResolver,
+    error::FileError,
+    models::{ConflictResolution, FileOperation, OperationType},
+    verifier::ContentVerifier,
+};
 
 /// Implements atomic file write pattern with content verification
 #[derive(Debug, Clone)]

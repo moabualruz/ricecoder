@@ -5,11 +5,12 @@
 //! **Feature: ricecoder-published-issues, Property 6: TUI Event Capture Completeness**
 //! **Validates: Requirements 1.2, 1.3, 1.4**
 
+use std::time::Duration;
+
 use proptest::prelude::*;
 use ricecoder_tui::event::{
     Event, EventLoop, KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent,
 };
-use std::time::Duration;
 use tokio::time::timeout;
 
 // ============================================================================

@@ -3,12 +3,18 @@
 //! Handles loading and applying workspace-level configuration with support for
 //! configuration hierarchy (workspace → project → user → defaults) and validation.
 
-use crate::error::{OrchestrationError, Result};
-use crate::models::{RuleType, WorkspaceConfig, WorkspaceRule};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
+
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+
+use crate::{
+    error::{OrchestrationError, Result},
+    models::{RuleType, WorkspaceConfig, WorkspaceRule},
+};
 
 /// Configuration manager for workspace orchestration
 ///

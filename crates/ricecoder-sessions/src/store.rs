@@ -1,15 +1,21 @@
 //! Session persistence to disk with encryption support
 
-use crate::error::{SessionError, SessionResult};
-use crate::models::Session;
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
+
 use base64::{engine::general_purpose, Engine};
 use chrono::{DateTime, Utc};
 use ricecoder_security::encryption::{CustomerKeyManager, EncryptedData, KeyManager};
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
-use std::time::{Duration, SystemTime};
 use tracing::{debug, error, info, warn};
+
+use crate::{
+    error::{SessionError, SessionResult},
+    models::Session,
+};
 
 /// Manages session persistence to disk with optional encryption
 #[derive(Debug, Clone)]

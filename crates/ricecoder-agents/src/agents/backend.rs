@@ -5,12 +5,15 @@
 //! design recommendations, scalability guidance, security pattern recommendations,
 //! and observability setup guidance.
 
-use crate::agents::Agent;
-use crate::domain::{DomainAgent, DomainCapability, DomainKnowledge, TechRecommendation};
-use crate::error::Result;
-use crate::models::{AgentInput, AgentOutput, Finding, Severity, TaskType};
 use async_trait::async_trait;
 use uuid::Uuid;
+
+use crate::{
+    agents::Agent,
+    domain::{DomainAgent, DomainCapability, DomainKnowledge, TechRecommendation},
+    error::Result,
+    models::{AgentInput, AgentOutput, Finding, Severity, TaskType},
+};
 
 /// Backend Development Agent
 ///
@@ -772,10 +775,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_backend_agent_execute() {
+        use std::path::PathBuf;
+
         use crate::models::{
             AgentConfig, AgentTask, ProjectContext, TaskOptions, TaskScope, TaskTarget,
         };
-        use std::path::PathBuf;
 
         let agent = BackendAgent::new();
         let input = AgentInput {

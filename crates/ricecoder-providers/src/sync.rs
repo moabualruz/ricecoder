@@ -3,16 +3,20 @@
 //! This module handles synchronization of provider configurations
 //! from community-maintained databases and repositories.
 
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::{Duration, SystemTime};
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
 
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use tracing::{debug, error, info, warn};
 
-use crate::community::{CommunityProviderConfig, CommunityProviderRegistry};
-use crate::error::ProviderError;
+use crate::{
+    community::{CommunityProviderConfig, CommunityProviderRegistry},
+    error::ProviderError,
+};
 
 /// Community database configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]

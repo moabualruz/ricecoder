@@ -1,9 +1,13 @@
 //! Configuration manager implementation
 
-use crate::error::{ConfigError, Result};
-use crate::types::{AppConfig, ConfigManager as ConfigManagerTrait};
-use config::{Config, Environment, File};
 use std::path::PathBuf;
+
+use config::{Config, Environment, File};
+
+use crate::{
+    error::{ConfigError, Result},
+    types::{AppConfig, ConfigManager as ConfigManagerTrait},
+};
 
 /// Configuration manager
 pub struct ConfigManager {

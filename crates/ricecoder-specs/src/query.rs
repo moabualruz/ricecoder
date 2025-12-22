@@ -1,7 +1,8 @@
 //! Query engine for spec discovery and filtering
 
-use crate::models::{Priority, Spec, SpecQuery, SpecType};
 use regex::Regex;
+
+use crate::models::{Priority, Spec, SpecQuery, SpecType};
 
 /// Enables efficient spec discovery and filtering
 pub struct SpecQueryEngine;
@@ -261,9 +262,10 @@ impl SpecQueryEngine {
 
 #[cfg(test)]
 mod tests {
+    use chrono::Utc;
+
     use super::*;
     use crate::models::{SpecMetadata, SpecPhase, SpecStatus};
-    use chrono::Utc;
 
     fn create_test_spec(id: &str, name: &str, status: SpecStatus, phase: SpecPhase) -> Spec {
         Spec {

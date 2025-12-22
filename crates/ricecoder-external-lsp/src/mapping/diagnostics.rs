@@ -3,11 +3,10 @@
 //! Maps LSP diagnostic responses to ricecoder Diagnostic models.
 //! Supports custom field mappings via configuration and transformation functions.
 
-use crate::error::Result;
-use crate::types::DiagnosticsMappingRules;
 use serde_json::Value;
 
 use super::transformer::OutputTransformer;
+use crate::{error::Result, types::DiagnosticsMappingRules};
 
 /// Maps LSP diagnostic responses to ricecoder models
 #[derive(Debug, Clone)]
@@ -83,8 +82,9 @@ impl Default for DiagnosticsMapper {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::collections::HashMap;
+
+    use super::*;
 
     #[test]
     fn test_map_diagnostics_response() {

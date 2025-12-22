@@ -16,12 +16,11 @@ pub mod resolver;
 // Re-export core types
 pub use approval::{ApprovalGate, ApprovalRequest};
 pub use engine::WorkflowEngine;
+// Re-export MCP integration types
+#[cfg(feature = "mcp")]
+pub use engine::WorkflowEngineMcpExt;
 pub use error::*;
 pub use models::*;
 pub use parameters::*;
 pub use parser::WorkflowParser;
 pub use resolver::DependencyResolver;
-
-// Re-export MCP integration types
-#[cfg(feature = "mcp")]
-pub use engine::WorkflowEngineMcpExt;

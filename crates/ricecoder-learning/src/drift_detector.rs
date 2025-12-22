@@ -1,12 +1,16 @@
+use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
+
 /// Drift detection component for identifying architectural deviations
 ///
 /// Detects deviations from established architectural patterns and warns
 /// about architectural drift.
 use crate::error::{LearningError, Result};
-use crate::intent_tracker::{ArchitecturalDecision, DriftDetection};
-use crate::models::LearnedPattern;
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use crate::{
+    intent_tracker::{ArchitecturalDecision, DriftDetection},
+    models::LearnedPattern,
+};
 
 /// Configuration for drift detection
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -247,8 +251,7 @@ pub struct DriftStatistics {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::intent_tracker::ArchitecturalDecision;
-    use crate::models::LearnedPattern;
+    use crate::{intent_tracker::ArchitecturalDecision, models::LearnedPattern};
 
     #[test]
     fn test_drift_detector_creation() {

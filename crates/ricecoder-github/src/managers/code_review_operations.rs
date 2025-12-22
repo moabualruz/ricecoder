@@ -1,9 +1,11 @@
 //! Code Review Operations - Additional code review functionality
 
-use crate::errors::Result;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 use tracing::{debug, info};
+
+use crate::errors::Result;
 
 /// Code review metrics
 #[derive(Debug, Clone, Serialize, Deserialize)]

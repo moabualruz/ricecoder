@@ -1,11 +1,12 @@
 //! GitHub Manager - Central coordinator for GitHub operations
 
-use crate::errors::{GitHubError, Result};
+use std::{sync::Arc, time::Duration};
+
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use std::time::Duration;
 use tokio::sync::RwLock;
 use tracing::{debug, error, info, warn};
+
+use crate::errors::{GitHubError, Result};
 
 /// GitHub configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]

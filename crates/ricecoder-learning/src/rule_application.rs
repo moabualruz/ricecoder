@@ -1,8 +1,10 @@
+use std::collections::HashMap;
+
+use serde_json::{json, Value};
+
 /// Rule application engine for guiding code generation
 use crate::error::{LearningError, Result};
 use crate::models::Rule;
-use serde_json::{json, Value};
-use std::collections::HashMap;
 
 /// Context for code generation that rules can match against
 #[derive(Debug, Clone)]

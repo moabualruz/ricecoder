@@ -8,9 +8,7 @@
 //! **Feature: ricecoder-installation, Property 2: Verification Accuracy**
 //! **Validates: Requirements 4.2, 5.1, 5.2, 5.3**
 
-use std::fs;
-use std::path::PathBuf;
-use std::process::Command;
+use std::{fs, path::PathBuf, process::Command};
 
 /// Test helper: Check if a command exists in PATH
 #[allow(dead_code)]

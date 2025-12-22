@@ -2,9 +2,9 @@
 // **Feature: ricecoder-installation, Tests for Requirements 5.1-5.4**
 // Tests verify that installation verification commands work correctly
 
+use std::{fs, path::Path};
+
 use ricecoder_cli::commands::{ChatCommand, Command, HelpCommand, InitCommand, VersionCommand};
-use std::fs;
-use std::path::Path;
 use tempfile::TempDir;
 
 // ============================================================================

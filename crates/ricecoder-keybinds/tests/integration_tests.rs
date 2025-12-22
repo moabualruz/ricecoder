@@ -1,10 +1,11 @@
 //! Integration tests for keybind customization
 //! Tests end-to-end workflows combining multiple components
 
+use std::str::FromStr;
+
 use ricecoder_keybinds::{
     ConflictDetector, FileSystemPersistence, KeyCombo, Keybind, KeybindEngine, KeybindPersistence,
 };
-use std::str::FromStr;
 use tempfile::TempDir;
 
 /// Helper to create test keybinds

@@ -1,8 +1,9 @@
 //! Data models for file management operations
 
+use std::path::PathBuf;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 use uuid::Uuid;
 
 /// Represents a single file operation

@@ -3,8 +3,7 @@
 //! These tests verify correctness properties that should hold across all inputs.
 
 use proptest::prelude::*;
-use ricecoder_providers::provider::Provider;
-use ricecoder_providers::providers::ZenProvider;
+use ricecoder_providers::{provider::Provider, providers::ZenProvider};
 
 // Property 1: Provider Trait Implementation
 // For any ZenProvider method call with same input, behavior SHALL be consistent

@@ -1,9 +1,10 @@
 //! LSP server discovery and verification
 
-use crate::error::{ExternalLspError, Result};
-use std::path::PathBuf;
-use std::process::Command;
+use std::{path::PathBuf, process::Command};
+
 use tracing::{debug, warn};
+
+use crate::error::{ExternalLspError, Result};
 
 /// Discovers and verifies LSP server executables
 pub struct ServerDiscovery;

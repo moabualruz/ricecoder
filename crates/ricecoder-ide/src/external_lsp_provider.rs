@@ -4,12 +4,16 @@
 //! querying ricecoder-external-lsp for semantic information and mapping
 //! responses to IDE types.
 
-use crate::error::{IdeError, IdeResult};
-use crate::provider::IdeProvider;
-use crate::types::*;
-use async_trait::async_trait;
 use std::sync::Arc;
+
+use async_trait::async_trait;
 use tracing::debug;
+
+use crate::{
+    error::{IdeError, IdeResult},
+    provider::IdeProvider,
+    types::*,
+};
 
 /// External LSP provider that queries ricecoder-external-lsp
 pub struct ExternalLspProvider {

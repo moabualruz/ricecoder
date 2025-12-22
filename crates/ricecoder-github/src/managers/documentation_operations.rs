@@ -1,9 +1,11 @@
 //! Documentation Operations - Publishing and maintenance operations
 
-use crate::errors::Result;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 use tracing::{debug, info};
+
+use crate::errors::Result;
 
 /// Documentation commit information
 #[derive(Debug, Clone, Serialize, Deserialize)]

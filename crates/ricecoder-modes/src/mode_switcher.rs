@@ -1,12 +1,14 @@
 //! Mode switcher for handling mode transitions with context preservation
 
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
+
 use tokio::sync::RwLock;
 
-use crate::error::{ModeError, Result};
-use crate::mode::Mode;
-use crate::models::ModeContext;
+use crate::{
+    error::{ModeError, Result},
+    mode::Mode,
+    models::ModeContext,
+};
 
 /// Handles mode transitions with context preservation
 ///

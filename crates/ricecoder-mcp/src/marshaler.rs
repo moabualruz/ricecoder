@@ -1,7 +1,8 @@
 //! Tool Marshaler component for converting between formats
 
-use crate::error::{Error, Result};
 use serde_json::{json, Value};
+
+use crate::error::{Error, Result};
 
 /// Marshals tool inputs and outputs between agent and MCP formats
 #[derive(Debug, Clone)]

@@ -1,5 +1,7 @@
 //! API key encryption and secure storage
 
+use std::path::Path;
+
 use aes_gcm::{
     aead::{Aead, KeyInit},
     Aes256Gcm,
@@ -8,7 +10,6 @@ use argon2::{Argon2, Params};
 use base64::{engine::general_purpose, Engine as _};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use std::path::Path;
 use tokio::fs;
 
 use crate::{Result, SecurityError};
@@ -255,8 +256,9 @@ impl CustomerKeyManager {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::NamedTempFile;
+
+    use super::*;
 
     #[test]
     fn test_encrypt_decrypt_api_key() {

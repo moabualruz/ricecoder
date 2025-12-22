@@ -1,12 +1,15 @@
 //! Provider performance monitoring and optimization
 
-use std::collections::HashMap;
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Arc;
-use std::time::{Duration, SystemTime};
+use std::{
+    collections::HashMap,
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc,
+    },
+    time::{Duration, SystemTime},
+};
 
-use crate::error::ProviderError;
-use crate::models::ModelInfo;
+use crate::{error::ProviderError, models::ModelInfo};
 
 /// Performance metrics for a provider
 #[derive(Debug, Clone)]

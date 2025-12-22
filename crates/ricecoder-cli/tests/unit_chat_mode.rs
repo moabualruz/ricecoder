@@ -1,8 +1,10 @@
 // Unit tests for chat mode
 // **Feature: ricecoder-cli, Tests for Requirements 4.1-4.6**
 
-use ricecoder_cli::chat::{ChatMessage, ChatSession};
-use ricecoder_cli::commands::{ChatCommand, Command};
+use ricecoder_cli::{
+    chat::{ChatMessage, ChatSession},
+    commands::{ChatCommand, Command},
+};
 
 // ============================================================================
 // ChatSession Tests

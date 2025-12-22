@@ -1,8 +1,10 @@
 //! Format conversion utilities for converting between YAML and Markdown spec formats
 
-use crate::error::SpecError;
-use crate::parsers::{MarkdownParser, YamlParser};
-use crate::validation::ValidationEngine;
+use crate::{
+    error::SpecError,
+    parsers::{MarkdownParser, YamlParser},
+    validation::ValidationEngine,
+};
 
 /// Converts specs between YAML and Markdown formats
 pub struct FormatConverter;
@@ -98,9 +100,10 @@ impl FormatConverter {
 
 #[cfg(test)]
 mod tests {
+    use chrono::Utc;
+
     use super::*;
     use crate::models::*;
-    use chrono::Utc;
 
     #[test]
     fn test_yaml_to_markdown_conversion() {
@@ -310,10 +313,11 @@ mod tests {
 
 #[cfg(test)]
 mod property_tests {
-    use super::*;
-    use crate::models::*;
     use chrono::Utc;
     use proptest::prelude::*;
+
+    use super::*;
+    use crate::models::*;
 
     fn arb_spec() -> impl Strategy<Value = Spec> {
         let valid_id = r"[a-z0-9][a-z0-9\-_]{0,20}";

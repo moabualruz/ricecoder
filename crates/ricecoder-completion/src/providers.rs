@@ -1,3 +1,5 @@
+use async_trait::async_trait;
+
 /// Pluggable completion providers for language-specific behavior
 ///
 /// # Architecture
@@ -45,7 +47,6 @@
 ///
 /// See `https://github.com/moabualruz/ricecoder/wiki/External-LSP-Configuration.md` for configuration instructions.
 use crate::types::*;
-use async_trait::async_trait;
 
 /// Helper function to convert symbol kind to completion item kind
 fn symbol_kind_to_completion_kind(kind: SymbolKind) -> CompletionItemKind {

@@ -5,11 +5,13 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::executor::{ExecutionConfig, ParallelExecutor};
-    use crate::models::AgentTask;
-    use crate::models::{TaskOptions, TaskScope, TaskTarget, TaskType};
-    use crate::scheduler::{ExecutionPhase, TaskDAG};
     use std::path::PathBuf;
+
+    use crate::{
+        executor::{ExecutionConfig, ParallelExecutor},
+        models::{AgentTask, TaskOptions, TaskScope, TaskTarget, TaskType},
+        scheduler::{ExecutionPhase, TaskDAG},
+    };
 
     fn create_test_task(id: &str) -> AgentTask {
         AgentTask {

@@ -7,12 +7,12 @@
 //!
 //! **Requirements: 1.1, 2.1, 5.1**
 
+use std::{io::Write, path::PathBuf};
+
 use ricecoder_images::{
     ImageAnalyzer, ImageCache, ImageConfig, ImageDisplay, ImageFormat, ImageHandler, ImageMetadata,
     MessageImageMetadata, MessageImages, SessionImageManager,
 };
-use std::io::Write;
-use std::path::PathBuf;
 use tempfile::NamedTempFile;
 
 /// Test complete workflow: drag-and-drop → validation

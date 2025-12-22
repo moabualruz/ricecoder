@@ -1,12 +1,15 @@
 //! Vibe Mode implementation for free-form exploration and rapid prototyping
 
-use async_trait::async_trait;
 use std::time::Instant;
 
-use crate::error::Result;
-use crate::mode::Mode;
-use crate::models::{
-    Capability, ModeAction, ModeConfig, ModeConstraints, ModeContext, ModeResponse, Operation,
+use async_trait::async_trait;
+
+use crate::{
+    error::Result,
+    mode::Mode,
+    models::{
+        Capability, ModeAction, ModeConfig, ModeConstraints, ModeContext, ModeResponse, Operation,
+    },
 };
 
 /// Vibe Mode for free-form exploration and rapid prototyping

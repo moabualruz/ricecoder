@@ -3,10 +3,11 @@
 //! Provides approval gates and request management for workflow execution.
 //! Handles human-in-the-loop approvals with timeout and status tracking.
 
-use crate::error::{WorkflowError, WorkflowResult};
+use std::{collections::HashMap, sync::RwLock};
+
 use chrono::{DateTime, Duration, Utc};
-use std::collections::HashMap;
-use std::sync::RwLock;
+
+use crate::error::{WorkflowError, WorkflowResult};
 
 /// Approval status
 #[derive(Debug, Clone, PartialEq)]

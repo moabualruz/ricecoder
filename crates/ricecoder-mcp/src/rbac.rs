@@ -3,11 +3,14 @@
 //! This module provides enterprise-grade RBAC controls for MCP server and tool access,
 //! integrating with the ricecoder-security RBAC system.
 
-use crate::error::{Error, Result};
-use crate::permissions::MCPPermissionManager;
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
+
 use tracing::{debug, info, warn};
+
+use crate::{
+    error::{Error, Result},
+    permissions::MCPPermissionManager,
+};
 
 /// MCP RBAC Manager for enterprise access control
 pub struct MCRBACManager {
@@ -322,8 +325,9 @@ impl MCPAuthorizationMiddleware {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use ricecoder_security::access_control::{AccessControl, Permission, Principal, Role};
+
+    use super::*;
 
     #[test]
     fn test_rbac_manager_creation() {

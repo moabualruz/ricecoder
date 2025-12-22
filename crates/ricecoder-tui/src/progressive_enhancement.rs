@@ -6,8 +6,9 @@
 //! - Graceful degradation based on terminal capabilities
 //! - Feature detection and adaptation
 
-use crate::terminal_state::{ColorSupport, TerminalCapabilities, TerminalType};
 use std::collections::HashMap;
+
+use crate::terminal_state::{ColorSupport, TerminalCapabilities, TerminalType};
 
 /// Feature toggle levels for progressive enhancement
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]

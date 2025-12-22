@@ -3,9 +3,12 @@
 //! This module provides performance tracking, metrics collection, and optimization
 //! utilities for the LSP server.
 
-use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
-use std::time::{Duration, Instant};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+    time::{Duration, Instant},
+};
+
 use tracing::{info, warn};
 
 /// Performance metrics for a specific operation
@@ -241,8 +244,9 @@ impl OptimizationRecommendation {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::thread;
+
+    use super::*;
 
     #[test]
     fn test_performance_tracker_record() {

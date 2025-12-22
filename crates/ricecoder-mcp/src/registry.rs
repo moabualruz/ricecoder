@@ -1,8 +1,8 @@
 //! Tool Registry for managing available tools
 
-use crate::error::Result;
-use crate::metadata::ToolMetadata;
 use std::collections::HashMap;
+
+use crate::{error::Result, metadata::ToolMetadata};
 
 /// Tool Registry for managing all available tools
 #[derive(Debug, Clone)]

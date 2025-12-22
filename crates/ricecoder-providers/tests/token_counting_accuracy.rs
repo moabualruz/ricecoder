@@ -182,8 +182,9 @@ proptest! {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use ricecoder_providers::TokenCounterTrait;
+
+    use super::*;
 
     #[test]
     fn test_token_counter_trait_implementation() {

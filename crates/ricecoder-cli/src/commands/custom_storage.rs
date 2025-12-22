@@ -1,11 +1,15 @@
 // Storage integration for custom commands
 // Handles loading and saving custom commands to ricecoder-storage
 
-use crate::error::{CliError, CliResult};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
+
 use ricecoder_commands::{CommandDefinition, CommandRegistry, ConfigManager};
 use ricecoder_storage::PathResolver;
-use std::fs;
-use std::path::{Path, PathBuf};
+
+use crate::error::{CliError, CliResult};
 
 /// Custom commands storage manager
 pub struct CustomCommandsStorage {

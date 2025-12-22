@@ -1,9 +1,10 @@
-use crate::error::Result;
+use std::{collections::HashMap, sync::Arc};
+
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::sync::Arc;
 use tokio::sync::RwLock;
+
+use crate::error::Result;
 
 /// Types of operations that can be tracked in MCP analytics
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]

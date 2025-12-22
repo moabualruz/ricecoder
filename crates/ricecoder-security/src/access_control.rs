@@ -1,7 +1,8 @@
 //! Access control and permission management
 
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 
 use crate::{Result, SecurityError};
 

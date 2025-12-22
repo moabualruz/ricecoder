@@ -1,15 +1,17 @@
 //! OAuth authentication and enterprise authentication flows
 
-use crate::error::{IndustryError, IndustryResult};
+use std::collections::HashMap;
+
 use oauth2::{
     basic::BasicClient, reqwest::async_http_client, AuthUrl, ClientId, ClientSecret, CsrfToken,
     PkceCodeChallenge, RedirectUrl, Scope, TokenResponse, TokenUrl,
 };
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use tokio::sync::RwLock;
 use url::Url;
+
+use crate::error::{IndustryError, IndustryResult};
 
 /// OAuth configuration for enterprise integrations
 #[derive(Debug, Clone, Serialize, Deserialize)]

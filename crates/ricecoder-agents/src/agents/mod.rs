@@ -5,14 +5,16 @@ pub mod code_review;
 pub mod devops;
 pub mod web;
 
-use crate::error::Result;
-use crate::models::{AgentInput, AgentMetrics, AgentOutput, ConfigSchema, TaskType};
 use async_trait::async_trait;
-
 pub use backend::BackendAgent;
 pub use code_review::CodeReviewAgent;
 pub use devops::DevOpsAgent;
 pub use web::WebAgent;
+
+use crate::{
+    error::Result,
+    models::{AgentInput, AgentMetrics, AgentOutput, ConfigSchema, TaskType},
+};
 
 /// Trait that all agents must implement
 ///
@@ -142,11 +144,12 @@ pub trait Agent: Send + Sync {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
     use crate::models::{
         AgentConfig, AgentTask, ProjectContext, TaskOptions, TaskScope, TaskTarget,
     };
-    use std::path::PathBuf;
 
     /// Mock agent for testing
     struct MockAgent {

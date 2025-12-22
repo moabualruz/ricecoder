@@ -53,14 +53,14 @@ pub mod python_rules;
 pub mod rust_rules;
 pub mod typescript_rules;
 
+use std::{error::Error, fmt};
+
 pub use adapters::{
     PythonDiagnosticsAdapter, RustDiagnosticsAdapter, TypeScriptDiagnosticsAdapter,
 };
 pub use generic_engine::GenericDiagnosticsEngine;
 
 use crate::types::{Diagnostic, Language, Range};
-use std::error::Error;
-use std::fmt;
 
 /// Error type for diagnostics operations
 #[derive(Debug, Clone)]

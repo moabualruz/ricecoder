@@ -22,10 +22,12 @@
 //! - If external LSP is unavailable → fall back to internal provider
 //! - If no external LSP configured → use internal provider
 
-use crate::types::{LspError, LspResult};
-use serde_json::Value;
 use std::sync::Arc;
+
+use serde_json::Value;
 use tracing::{debug, info, warn};
+
+use crate::types::{LspError, LspResult};
 
 /// LSP Proxy for routing requests to external LSP servers
 ///

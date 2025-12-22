@@ -1,10 +1,12 @@
 //! Tool connection abstractions and management
 
-use crate::error::{IndustryError, IndustryResult};
+use std::collections::HashMap;
+
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use tokio::sync::RwLock;
+
+use crate::error::{IndustryError, IndustryResult};
 
 /// Connection configuration for external tools
 #[derive(Debug, Clone, Serialize, Deserialize)]

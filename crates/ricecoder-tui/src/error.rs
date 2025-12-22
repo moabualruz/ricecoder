@@ -4,6 +4,7 @@
 //! covering all major error scenarios that can occur during TUI operations.
 
 use std::path::PathBuf;
+
 use thiserror::Error;
 
 /// Result type for TUI operations

@@ -1,5 +1,6 @@
-use ricecoder_tui::*;
 use std::time::Duration;
+
+use ricecoder_tui::*;
 
 mod tests {
     use super::*;

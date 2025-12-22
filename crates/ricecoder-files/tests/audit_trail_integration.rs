@@ -3,11 +3,12 @@
 //! Tests complete audit trail for complex multi-file operations,
 //! change history retrieval, and ordering by timestamp.
 
-use ricecoder_files::audit::AuditLogger;
-use ricecoder_files::models::{AuditEntry, OperationType};
-use std::path::PathBuf;
-use std::thread;
-use std::time::Duration;
+use std::{path::PathBuf, thread, time::Duration};
+
+use ricecoder_files::{
+    audit::AuditLogger,
+    models::{AuditEntry, OperationType},
+};
 use tempfile::TempDir;
 
 /// Test complete audit trail for multi-file operations

@@ -3,8 +3,10 @@
 //! Validates Requirements 4.2, 5.1, 12.3, 78.1, 78.2, 78.3
 
 use proptest::prelude::*;
-use ricecoder_tui::accessibility::{AccessibilityConfig, FocusManager, ScreenReaderAnnouncer};
-use ricecoder_tui::{AppMode, Theme};
+use ricecoder_tui::{
+    accessibility::{AccessibilityConfig, FocusManager, ScreenReaderAnnouncer},
+    AppMode, Theme,
+};
 
 // ============================================================================
 // Generators for Accessibility Tests

@@ -2,18 +2,19 @@
 //!
 //! Supports Command and Base models via the Cohere API.
 
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 use tracing::{debug, error};
 
-use crate::error::ProviderError;
-use crate::models::{
-    Capability, ChatRequest, ChatResponse, FinishReason, ModelInfo, Pricing, TokenUsage,
+use crate::{
+    error::ProviderError,
+    models::{Capability, ChatRequest, ChatResponse, FinishReason, ModelInfo, Pricing, TokenUsage},
+    provider::Provider,
+    token_counter::TokenCounter,
 };
-use crate::provider::Provider;
-use crate::token_counter::TokenCounter;
 
 /// Cohere provider implementation
 pub struct CohereProvider {

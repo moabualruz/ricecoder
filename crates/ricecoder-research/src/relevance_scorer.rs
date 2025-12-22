@@ -218,9 +218,10 @@ impl Default for RelevanceScorer {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
     use crate::models::SymbolKind;
-    use std::path::PathBuf;
 
     #[test]
     fn test_relevance_scorer_creation() {

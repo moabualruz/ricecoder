@@ -4,12 +4,15 @@
 //! enabling display of comprehensive VCS information including repository status, branch info,
 //! and modification indicators.
 
+use std::{
+    path::PathBuf,
+    sync::{Arc, Mutex},
+    time::Duration,
+};
+
+use tokio::{sync::watch, time};
+
 use crate::{GitRepository, Repository, RepositoryStatus, Result as VcsResult};
-use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
-use tokio::sync::watch;
-use tokio::time;
 
 /// VCS status information for display in status bar
 #[derive(Debug, Clone, PartialEq)]
@@ -242,8 +245,9 @@ impl Default for VcsIntegration {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::path::Path;
+
+    use super::*;
 
     #[test]
     fn test_vcs_status_creation() {

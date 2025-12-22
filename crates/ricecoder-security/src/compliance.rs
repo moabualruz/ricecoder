@@ -5,18 +5,20 @@
 //! - GDPR/HIPAA data handling (right to erasure, portability)
 //! - Privacy-preserving analytics with opt-in and log retention
 
+use std::{collections::HashMap, sync::Arc};
+
 use base64::{engine::general_purpose, Engine as _};
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-use crate::audit::{AuditEvent, AuditEventType, AuditLogger, MemoryAuditStorage};
-use crate::encryption::{EncryptedData, KeyManager};
-use crate::error::SecurityError;
-use crate::Result;
+use crate::{
+    audit::{AuditEvent, AuditEventType, AuditLogger, MemoryAuditStorage},
+    encryption::{EncryptedData, KeyManager},
+    error::SecurityError,
+    Result,
+};
 
 /// SOC 2 Type II compliance controls
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -791,9 +793,10 @@ impl PrivacyAnalytics {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use super::*;
     use crate::audit::MemoryAuditStorage;
-    use std::sync::Arc;
 
     #[tokio::test]
     async fn test_customer_key_registration() {

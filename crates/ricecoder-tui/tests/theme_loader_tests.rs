@@ -1,5 +1,6 @@
-use ricecoder_tui::{ColorSupport, Theme, ThemeLoader, ThemeYaml};
 use std::path::PathBuf;
+
+use ricecoder_tui::{ColorSupport, Theme, ThemeLoader, ThemeYaml};
 use tempfile::TempDir;
 
 #[test]

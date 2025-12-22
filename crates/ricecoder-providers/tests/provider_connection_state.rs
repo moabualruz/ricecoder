@@ -2,15 +2,15 @@
 //! **Feature: ricecoder-providers, Property 13: Provider Connection State Consistency**
 //! **Validates: Requirements 27.1**
 
+use std::{sync::Arc, time::Duration};
+
 use futures::Stream;
 use proptest::prelude::*;
-use ricecoder_providers::models::{FinishReason, Message};
 use ricecoder_providers::{
+    models::{FinishReason, Message},
     ChatRequest, ChatResponse, ConnectionState, HealthCheckCache, ModelInfo, Provider,
     ProviderError, ProviderManager, ProviderRegistry, ProviderStatus, TokenUsage,
 };
-use std::sync::Arc;
-use std::time::Duration;
 
 /// Mock provider that can change availability state
 struct StatefulMockProvider {

@@ -1,8 +1,10 @@
 //! Completion merging
 
-use crate::types::MergeConfig;
-use ricecoder_completion::types::CompletionItem;
 use std::collections::HashSet;
+
+use ricecoder_completion::types::CompletionItem;
+
+use crate::types::MergeConfig;
 
 /// Merges completions from external LSP and internal providers
 pub struct CompletionMerger;
@@ -79,8 +81,9 @@ impl Default for CompletionMerger {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use ricecoder_completion::types::CompletionItemKind;
+
+    use super::*;
 
     fn create_completion(label: &str, score: f32) -> CompletionItem {
         CompletionItem::new(

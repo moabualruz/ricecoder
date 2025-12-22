@@ -9,12 +9,12 @@ use tempfile::NamedTempFile;
 
 /// Strategy for generating valid PNG file headers
 fn png_header_strategy() -> impl Strategy<Value = Vec<u8>> {
-    Just(vec![0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])
+    Just(vec![0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 }
 
 /// Strategy for generating valid JPEG file headers
 fn jpeg_header_strategy() -> impl Strategy<Value = Vec<u8>> {
-    Just(vec![0xFF, 0xD8, 0xFF, 0xE0])
+    Just(vec![0xff, 0xd8, 0xff, 0xe0])
 }
 
 /// Strategy for generating valid GIF file headers
@@ -95,7 +95,7 @@ fn test_file_size_validation_exceeds_limit() {
     let size_bytes = 11 * 1024 * 1024; // 11 MB
 
     // Write PNG header followed by zeros to reach the desired size
-    let mut content = vec![0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+    let mut content = vec![0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
     content.resize(size_bytes as usize, 0);
 
     std::io::Write::write_all(&mut temp_file, &content).expect("Failed to write to temp file");

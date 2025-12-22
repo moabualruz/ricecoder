@@ -1,9 +1,11 @@
 //! Permission Manager integration for MCP tools
 
-use crate::error::{Error, Result};
-use ricecoder_permissions::{GlobMatcher, PermissionLevel};
 use std::collections::HashMap;
+
+use ricecoder_permissions::{GlobMatcher, PermissionLevel};
 use tracing::{debug, warn};
+
+use crate::error::{Error, Result};
 
 /// Permission rule for tool access control
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]

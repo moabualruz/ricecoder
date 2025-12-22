@@ -6,16 +6,18 @@
 //! These tests verify that session management correctly handles concurrent operations,
 //! race conditions, and sharing validation under various scenarios.
 
+use std::{collections::HashMap, sync::Arc};
+
 use chrono::Duration as ChronoDuration;
 use proptest::prelude::*;
 use ricecoder_sessions::{
     Message, MessageRole, Session, SessionContext, SessionManager, SessionMode, SessionStore,
     SharePermissions, ShareService,
 };
-use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::{RwLock, Semaphore};
-use tokio::time::{timeout, Duration};
+use tokio::{
+    sync::{RwLock, Semaphore},
+    time::{timeout, Duration},
+};
 
 // ============================================================================
 // Generators for property-based testing

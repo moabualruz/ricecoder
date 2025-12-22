@@ -2,8 +2,7 @@
 //!
 //! Tests for agent configuration, output, findings, suggestions, and related data structures.
 
-use std::collections::HashMap;
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 
 use ricecoder_agents::models::{
     AgentConfig, AgentMetadata, AgentMetrics, AgentOutput, CodeLocation, ConfigSchema, Finding,

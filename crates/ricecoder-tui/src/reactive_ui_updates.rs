@@ -6,18 +6,26 @@
 //! - Live data synchronization with file watching and session sync
 //! - Conflict resolution for concurrent edits
 
-use crate::error_handling::{ErrorCategory, ErrorManager, ErrorSeverity, RiceError};
-use crate::model::{AppModel, StateChange};
-use crate::real_time_updates::{RealTimeUpdates, StreamData, StreamType};
-use crate::tea::ReactiveState;
-use crate::StateDiff;
+use std::{
+    collections::{HashMap, HashSet},
+    path::{Path, PathBuf},
+    sync::Arc,
+};
+
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
-use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
-use tokio::sync::{broadcast, mpsc, RwLock};
-use tokio::time::{interval, Duration, Instant};
+use tokio::{
+    sync::{broadcast, mpsc, RwLock},
+    time::{interval, Duration, Instant},
+};
 use tokio_util::sync::CancellationToken;
+
+use crate::{
+    error_handling::{ErrorCategory, ErrorManager, ErrorSeverity, RiceError},
+    model::{AppModel, StateChange},
+    real_time_updates::{RealTimeUpdates, StreamData, StreamType},
+    tea::ReactiveState,
+    StateDiff,
+};
 
 /// Reactive update types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

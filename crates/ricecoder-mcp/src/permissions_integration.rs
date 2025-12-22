@@ -3,10 +3,11 @@
 //! This module provides integration between the MCP tool system and the ricecoder-permissions
 //! framework, enabling permission checking and enforcement for tool execution within agent workflows.
 
-use crate::error::Result;
+use std::{collections::HashMap, sync::Arc};
+
 use serde_json::Value;
-use std::collections::HashMap;
-use std::sync::Arc;
+
+use crate::error::Result;
 
 /// Permission level for tool execution
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

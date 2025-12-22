@@ -6,9 +6,9 @@
 //! 3. Global config file (~/.ricecoder/config.yaml)
 //! 4. Built-in defaults (lowest priority)
 
+use std::{path::PathBuf, time::Duration};
+
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
-use std::time::Duration;
 use tracing::{debug, warn};
 
 use crate::error::ProviderError;

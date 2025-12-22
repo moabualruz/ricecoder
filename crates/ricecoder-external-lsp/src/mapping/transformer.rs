@@ -3,12 +3,15 @@
 //! Transforms LSP server responses to ricecoder models using configuration-driven rules.
 //! Supports JSON path expressions for field extraction and custom transformation functions.
 
-use crate::error::{ExternalLspError, Result};
-use crate::types::{CompletionMappingRules, DiagnosticsMappingRules, HoverMappingRules};
-use serde_json::{json, Value};
 use std::collections::HashMap;
 
+use serde_json::{json, Value};
+
 use super::json_path::JsonPathParser;
+use crate::{
+    error::{ExternalLspError, Result},
+    types::{CompletionMappingRules, DiagnosticsMappingRules, HoverMappingRules},
+};
 
 /// Transforms LSP server output to ricecoder models
 #[derive(Debug, Clone)]

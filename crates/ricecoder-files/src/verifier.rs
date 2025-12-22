@@ -1,9 +1,11 @@
 //! Content verification and integrity checking
 
-use crate::error::FileError;
-use sha2::{Digest, Sha256};
 use std::path::Path;
+
+use sha2::{Digest, Sha256};
 use tokio::fs;
+
+use crate::error::FileError;
 
 /// Verifies file integrity through content comparison and hashing
 #[derive(Debug, Clone)]

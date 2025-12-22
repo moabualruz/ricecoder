@@ -3,19 +3,24 @@
 //! Supports local model execution via Ollama.
 //! Ollama allows running large language models locally without sending code to external services.
 
+use std::{
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
+
 use async_trait::async_trait;
 use futures::StreamExt;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use std::time::{Duration, SystemTime};
 use tokio::time::sleep;
 use tracing::{debug, error, info, warn};
 
 use super::ollama_config::OllamaConfig;
-use crate::error::ProviderError;
-use crate::models::{Capability, ChatRequest, ChatResponse, FinishReason, ModelInfo, TokenUsage};
-use crate::provider::Provider;
+use crate::{
+    error::ProviderError,
+    models::{Capability, ChatRequest, ChatResponse, FinishReason, ModelInfo, TokenUsage},
+    provider::Provider,
+};
 
 /// Configuration for retry logic
 const MAX_RETRIES: u32 = 3;

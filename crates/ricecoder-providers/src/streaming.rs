@@ -3,6 +3,7 @@
 /// This module provides utilities to simulate streaming responses by typing
 /// out non-stream responses character-by-character, creating a typing effect.
 use std::time::Duration;
+
 use tokio::time::sleep;
 
 /// Simulates a streaming response by yielding characters one at a time

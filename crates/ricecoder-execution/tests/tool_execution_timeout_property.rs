@@ -3,8 +3,9 @@
 //! **Property 11: Tool Execution Timeout**
 //! **Validates: Requirements 14.4, 66.1**
 
-use proptest::prelude::*;
 use std::time::Duration;
+
+use proptest::prelude::*;
 
 /// **Feature: ricecoder-tui-improvement, Property 11: Tool Execution Timeout**
 /// **Validates: Requirements 14.4, 66.1**

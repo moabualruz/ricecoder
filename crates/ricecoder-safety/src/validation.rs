@@ -1,13 +1,16 @@
 //! Safety validation and approval gates
 
-use crate::constraints::{ConstraintResult, SecurityConstraint, ValidationContext};
-use crate::error::{SafetyError, SafetyResult};
-use crate::risk::{RiskContext, RiskScore, RiskScorer};
+use std::{collections::HashMap, sync::Arc};
+
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::sync::Arc;
 use tokio::sync::RwLock;
+
+use crate::{
+    constraints::{ConstraintResult, SecurityConstraint, ValidationContext},
+    error::{SafetyError, SafetyResult},
+    risk::{RiskContext, RiskScore, RiskScorer},
+};
 
 /// Safety validator for operations and workflows
 pub struct SafetyValidator {

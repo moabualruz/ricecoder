@@ -1,11 +1,15 @@
 //! Specialized domain agents
 
-use crate::error::Result;
-use crate::models::{DomainAgentConfig, DomainAgentMetadata};
+use std::collections::HashMap;
+
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use tracing::debug;
+
+use crate::{
+    error::Result,
+    models::{DomainAgentConfig, DomainAgentMetadata},
+};
 
 /// Input for domain agent execution
 #[derive(Debug, Clone, Serialize, Deserialize)]

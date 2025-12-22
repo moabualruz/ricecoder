@@ -1,9 +1,14 @@
 //! Knowledge base for domain-specific expertise
 
-use crate::domain::error::{DomainError, DomainResult};
-use crate::domain::models::{AntiPattern, BestPractice, Pattern, TechRecommendation};
-use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
+
+use crate::domain::{
+    error::{DomainError, DomainResult},
+    models::{AntiPattern, BestPractice, Pattern, TechRecommendation},
+};
 
 /// Knowledge base for domain expertise
 ///

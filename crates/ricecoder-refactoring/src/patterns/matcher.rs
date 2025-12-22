@@ -1,9 +1,13 @@
 //! Pattern matching for refactoring rules
 
-use crate::error::Result;
-use crate::types::{RefactoringRule, RefactoringType};
-use regex::Regex;
 use std::collections::HashMap;
+
+use regex::Regex;
+
+use crate::{
+    error::Result,
+    types::{RefactoringRule, RefactoringType},
+};
 
 /// Matches refactoring patterns in code
 pub struct PatternMatcher;

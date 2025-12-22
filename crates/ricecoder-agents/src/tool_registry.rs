@@ -3,9 +3,9 @@
 //! This module provides a registry for discovering and managing tools that agents can invoke.
 //! Tools are registered with metadata about their capabilities and invocation interface.
 
+use std::{collections::HashMap, sync::Arc};
+
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::sync::Arc;
 use tracing::{debug, info};
 
 /// Metadata about a registered tool

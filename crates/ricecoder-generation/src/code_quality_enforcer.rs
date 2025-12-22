@@ -6,8 +6,7 @@
 //! - Error handling for fallible operations
 //! - Optional unit test generation
 
-use crate::error::GenerationError;
-use crate::models::GeneratedFile;
+use crate::{error::GenerationError, models::GeneratedFile};
 
 /// Configuration for code quality enforcement
 #[derive(Debug, Clone)]

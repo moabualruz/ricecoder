@@ -1,9 +1,11 @@
 //! Error reporting and logging infrastructure
 
-use crate::error::{Error, ErrorContext, ErrorLogEntry};
 use std::sync::Arc;
+
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};
+
+use crate::error::{Error, ErrorContext, ErrorLogEntry};
 
 /// Error reporter for structured error logging and reporting
 #[derive(Debug, Clone)]

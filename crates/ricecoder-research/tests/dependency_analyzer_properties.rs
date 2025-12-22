@@ -3,9 +3,10 @@
 //! **Feature: ricecoder-research, Property 7: Multi-Language Dependency Parsing**
 //! **Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 3.10, 3.11, 3.12**
 
+use std::fs;
+
 use proptest::prelude::*;
 use ricecoder_research::DependencyAnalyzer;
-use std::fs;
 use tempfile::TempDir;
 
 // ============================================================================

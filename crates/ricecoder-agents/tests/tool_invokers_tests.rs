@@ -1,7 +1,6 @@
 //! Unit tests for tool invokers
 
-use ricecoder_agents::tool_invokers::*;
-use ricecoder_agents::ToolInvoker;
+use ricecoder_agents::{tool_invokers::*, ToolInvoker};
 use serde_json::json;
 
 #[tokio::test]

@@ -1,8 +1,10 @@
 //! Configuration for image support.
 
-use crate::error::ImageResult;
-use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+
+use serde::{Deserialize, Serialize};
+
+use crate::error::ImageResult;
 
 /// Image support configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]

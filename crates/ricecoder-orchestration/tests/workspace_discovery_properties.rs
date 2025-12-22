@@ -3,9 +3,10 @@
 //! **Feature: ricecoder-orchestration, Property 1: Workspace Discovery Completeness**
 //! **Validates: Requirements 1.1**
 
+use std::path::PathBuf;
+
 use proptest::prelude::*;
 use ricecoder_orchestration::WorkspaceScanner;
-use std::path::PathBuf;
 use tempfile::TempDir;
 
 /// Strategy for generating project types

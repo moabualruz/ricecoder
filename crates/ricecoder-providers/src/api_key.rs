@@ -8,8 +8,7 @@
 
 use std::collections::HashMap;
 
-use crate::error::ProviderError;
-use crate::models::ApiKeyConfig;
+use crate::{error::ProviderError, models::ApiKeyConfig};
 
 /// Manages API keys for providers with support for secure storage and retrieval
 pub struct ApiKeyManager {

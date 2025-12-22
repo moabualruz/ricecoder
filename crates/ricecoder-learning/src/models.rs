@@ -1,7 +1,8 @@
+use std::path::PathBuf;
+
 /// Core data models for the learning system
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 use uuid::Uuid;
 
 /// Scope where rules are stored and applied

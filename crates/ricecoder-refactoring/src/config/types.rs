@@ -1,7 +1,8 @@
 //! Configuration types for refactoring engine
 
-use crate::types::{RefactoringRule, RefactoringTransformation};
 use serde::{Deserialize, Serialize};
+
+use crate::types::{RefactoringRule, RefactoringTransformation};
 
 /// Configuration for a language's refactoring rules
 #[derive(Debug, Clone, Serialize, Deserialize)]

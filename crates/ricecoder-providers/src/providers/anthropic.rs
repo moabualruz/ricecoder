@@ -2,16 +2,19 @@
 //!
 //! Supports Claude 3, 3.5, and 4 family models via the Anthropic API.
 
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 use tracing::{debug, error, warn};
 
-use crate::error::ProviderError;
-use crate::models::{Capability, ChatRequest, ChatResponse, FinishReason, ModelInfo, TokenUsage};
-use crate::provider::Provider;
-use crate::token_counter::TokenCounter;
+use crate::{
+    error::ProviderError,
+    models::{Capability, ChatRequest, ChatResponse, FinishReason, ModelInfo, TokenUsage},
+    provider::Provider,
+    token_counter::TokenCounter,
+};
 
 /// Anthropic provider implementation
 pub struct AnthropicProvider {

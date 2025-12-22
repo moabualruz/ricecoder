@@ -1,12 +1,16 @@
 // Configuration management
 // Adapted from automation/src/infrastructure/storage/config.rs
 
-use super::Command;
-use crate::error::{CliError, CliResult};
-use crate::output::OutputStyle;
+use std::path::PathBuf;
+
 use async_trait::async_trait;
 use ricecoder_storage::{Config, ConfigLoader, PathResolver};
-use std::path::PathBuf;
+
+use super::Command;
+use crate::{
+    error::{CliError, CliResult},
+    output::OutputStyle,
+};
 
 /// Manage configuration
 pub struct ConfigCommand {

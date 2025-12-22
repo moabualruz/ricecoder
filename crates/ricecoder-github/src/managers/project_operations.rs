@@ -1,11 +1,12 @@
 //! Project Operations - Handles project automation and reporting
 
-use crate::errors::Result;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 use tracing::{debug, info};
 
 use super::project_manager::{ColumnStatus, ProjectManager, ProjectStatusReport};
+use crate::errors::Result;
 
 /// Automation action
 #[derive(Debug, Clone, Serialize, Deserialize)]

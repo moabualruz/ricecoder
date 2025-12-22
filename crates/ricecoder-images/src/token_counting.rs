@@ -4,11 +4,15 @@
 //! by provider. It integrates with ricecoder-providers TokenCounter for
 //! consistent token usage tracking.
 
-use crate::error::{ImageError, ImageResult};
-use crate::models::ImageMetadata;
-use ricecoder_providers::token_counter::TokenCounter;
 use std::sync::Arc;
+
+use ricecoder_providers::token_counter::TokenCounter;
 use tracing::{debug, info};
+
+use crate::{
+    error::{ImageError, ImageResult},
+    models::ImageMetadata,
+};
 
 /// Image token counting for different providers.
 ///
@@ -251,9 +255,10 @@ impl Default for ImageTokenCounter {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
     use crate::formats::ImageFormat;
-    use std::path::PathBuf;
 
     fn create_test_metadata(width: u32, height: u32, size_bytes: u64) -> ImageMetadata {
         ImageMetadata::new(

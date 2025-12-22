@@ -3,11 +3,14 @@
 //! This module implements the IdeProvider trait for custom IDE rules loaded
 //! from YAML/JSON configuration files.
 
-use crate::error::{IdeError, IdeResult};
-use crate::provider::IdeProvider;
-use crate::types::*;
 use async_trait::async_trait;
 use tracing::debug;
+
+use crate::{
+    error::{IdeError, IdeResult},
+    provider::IdeProvider,
+    types::*,
+};
 
 /// Rule for IDE completion
 #[derive(Debug, Clone)]

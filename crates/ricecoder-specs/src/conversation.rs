@@ -1,11 +1,13 @@
 //! Conversation history storage and retrieval for spec writing sessions
 
-use crate::error::SpecError;
-use crate::models::{
-    ApprovalGate, ConversationMessage, MessageRole, SpecPhase, SpecWritingSession,
-};
-use chrono::Utc;
 use std::collections::HashMap;
+
+use chrono::Utc;
+
+use crate::{
+    error::SpecError,
+    models::{ApprovalGate, ConversationMessage, MessageRole, SpecPhase, SpecWritingSession},
+};
 
 /// Manages conversation history and session lifecycle
 #[derive(Debug, Clone)]

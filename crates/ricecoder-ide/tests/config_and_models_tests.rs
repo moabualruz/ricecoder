@@ -5,9 +5,9 @@
 //!
 //! **Requirements: 1.2, 1.6**
 
+use std::{collections::HashMap, io::Write};
+
 use ricecoder_ide::*;
-use std::collections::HashMap;
-use std::io::Write;
 use tempfile::NamedTempFile;
 
 // ============================================================================

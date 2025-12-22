@@ -1,10 +1,9 @@
 //! Domain services - business logic that doesn't belong to entities
 
-use crate::entities::*;
-use crate::errors::*;
-use crate::value_objects::*;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
+
+use crate::{entities::*, errors::*, value_objects::*};
 
 /// Service for managing projects
 #[async_trait]

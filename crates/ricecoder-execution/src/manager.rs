@@ -1,11 +1,15 @@
 //! Central execution manager for coordinating plan execution
 
-use crate::error::{ExecutionError, ExecutionResult};
-use crate::models::{ExecutionMode, ExecutionPlan, ExecutionState};
-use crate::progress_tracker::ProgressTracker;
-use chrono::Utc;
 use std::collections::HashMap;
+
+use chrono::Utc;
 use uuid::Uuid;
+
+use crate::{
+    error::{ExecutionError, ExecutionResult},
+    models::{ExecutionMode, ExecutionPlan, ExecutionState},
+    progress_tracker::ProgressTracker,
+};
 
 /// Central coordinator for execution plan execution
 ///

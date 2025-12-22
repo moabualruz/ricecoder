@@ -3,14 +3,16 @@
 //! This module provides intelligent provider selection, quality scoring,
 //! reliability monitoring, and automatic optimization based on performance data.
 
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::{Duration, SystemTime};
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
 
-use crate::error::ProviderError;
-use crate::models::{ModelInfo, TokenUsage};
-use crate::performance_monitor::{
-    PerformanceThresholds, ProviderMetrics, ProviderPerformanceMonitor,
+use crate::{
+    error::ProviderError,
+    models::{ModelInfo, TokenUsage},
+    performance_monitor::{PerformanceThresholds, ProviderMetrics, ProviderPerformanceMonitor},
 };
 
 /// Quality score for a provider (0.0 to 1.0)

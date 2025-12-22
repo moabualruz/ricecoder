@@ -536,8 +536,9 @@ async fn test_enterprise_sharing_policies() {
     // **Feature: ricecoder-sharing, Integration Test 6.7: Enterprise Policies**
     // **Validates: Policy enforcement and compliance logging**
 
-    use ricecoder_security::audit::MemoryAuditStorage;
     use std::sync::Arc;
+
+    use ricecoder_security::audit::MemoryAuditStorage;
 
     let audit_storage = Arc::new(MemoryAuditStorage::new());
     let audit_logger = Arc::new(ricecoder_security::audit::AuditLogger::new(audit_storage));

@@ -26,8 +26,7 @@ pub use compliance::ComplianceManager;
 pub use context::ContextManager;
 pub use error::{SessionError, SessionResult};
 pub use history::HistoryManager;
-pub use manager::SessionManager;
-pub use manager::SessionSummary;
+pub use manager::{SessionManager, SessionSummary};
 pub use models::{
     AgentStatus, BackgroundAgent, CodePart, ComplianceAlertLevel, ComplianceEvent,
     ComplianceEventType, DataErasureRequest, DataExportFormat, DataExportRequest,

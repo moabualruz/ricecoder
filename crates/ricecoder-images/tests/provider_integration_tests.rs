@@ -7,12 +7,13 @@
 //!
 //! **Requirements: 2.1, 2.2**
 
+use std::path::PathBuf;
+
 use ricecoder_images::{
     ChatRequestWithImages, ImageAnalyzer, ImageData, ImageFormat, ImageMetadata,
     ProviderImageFormat,
 };
 use ricecoder_providers::models::{ChatRequest, Message};
-use std::path::PathBuf;
 
 /// Helper function to create a test ChatRequest
 fn create_test_request() -> ChatRequest {
@@ -31,7 +32,7 @@ fn create_test_request() -> ChatRequest {
 /// Test image data creation
 #[test]
 fn test_image_data_creation() {
-    let image_data = ImageData::from_bytes("png", &[0x89, 0x50, 0x4E, 0x47], 800, 600);
+    let image_data = ImageData::from_bytes("png", &[0x89, 0x50, 0x4e, 0x47], 800, 600);
 
     assert_eq!(image_data.format, "png");
     assert_eq!(image_data.dimensions, (800, 600));
@@ -155,7 +156,7 @@ fn test_image_format_conversion() {
 /// Test image data serialization
 #[test]
 fn test_image_data_serialization() {
-    let image_data = ImageData::from_bytes("png", &[0x89, 0x50, 0x4E, 0x47], 800, 600);
+    let image_data = ImageData::from_bytes("png", &[0x89, 0x50, 0x4e, 0x47], 800, 600);
 
     // Should be serializable
     let json = serde_json::to_string(&image_data);
@@ -168,7 +169,7 @@ fn test_image_data_serialization() {
 /// Test image data deserialization
 #[test]
 fn test_image_data_deserialization() {
-    let image_data = ImageData::from_bytes("png", &[0x89, 0x50, 0x4E, 0x47], 800, 600);
+    let image_data = ImageData::from_bytes("png", &[0x89, 0x50, 0x4e, 0x47], 800, 600);
     let json = serde_json::to_string(&image_data).unwrap();
 
     let result: Result<ImageData, _> = serde_json::from_str(&json);

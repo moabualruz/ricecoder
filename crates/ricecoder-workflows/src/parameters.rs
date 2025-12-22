@@ -1,8 +1,10 @@
 //! Parameter parsing, validation, and substitution for workflows
 
-use crate::error::{WorkflowError, WorkflowResult};
-use serde_json::Value;
 use std::collections::HashMap;
+
+use serde_json::Value;
+
+use crate::error::{WorkflowError, WorkflowResult};
 
 /// Parameter definition with optional default value
 #[derive(Debug, Clone)]
@@ -304,8 +306,9 @@ impl ParameterSubstitutor {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use serde_json::json;
+
+    use super::*;
 
     #[test]
     fn test_validate_parameter_definitions_valid() {

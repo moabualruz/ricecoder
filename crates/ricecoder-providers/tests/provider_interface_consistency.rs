@@ -2,12 +2,13 @@
 //! **Feature: ricecoder-providers, Property 1: Provider Interface Consistency**
 //! **Validates: Requirements 1.1, 1.2**
 
+use std::sync::Arc;
+
 use proptest::prelude::*;
-use ricecoder_providers::models::{FinishReason, Message};
 use ricecoder_providers::{
+    models::{FinishReason, Message},
     ChatRequest, ChatResponse, ModelInfo, Provider, ProviderError, TokenUsage,
 };
-use std::sync::Arc;
 
 /// Mock provider for testing consistency
 struct ConsistentMockProvider {

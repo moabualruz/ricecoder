@@ -1,7 +1,8 @@
 //! Core data structures for external LSP integration
 
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 
 /// Configuration for an external LSP server
 #[derive(Debug, Clone, Serialize, Deserialize)]

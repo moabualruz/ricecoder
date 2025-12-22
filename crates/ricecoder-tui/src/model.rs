@@ -3,13 +3,16 @@
 //! This module defines the immutable application state following the Model-Update-View pattern.
 //! All state transitions are pure functions that return new state instances.
 
-use crate::accessibility::{FocusManager, KeyboardNavigationManager, ScreenReaderAnnouncer};
-use crate::components::Component;
-use crate::terminal_state::TerminalCapabilities;
-use crate::widgets::ChatWidget;
 use ricecoder_help::HelpDialog;
 use ricecoder_storage::TuiConfig;
 use ricecoder_themes::Theme;
+
+use crate::{
+    accessibility::{FocusManager, KeyboardNavigationManager, ScreenReaderAnnouncer},
+    components::Component,
+    terminal_state::TerminalCapabilities,
+    widgets::ChatWidget,
+};
 
 // Stub type for TUI isolation - TokenUsage moved to ricecoder-sessions
 #[derive(Debug, Clone, PartialEq, Default)]

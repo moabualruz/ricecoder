@@ -1,10 +1,10 @@
 //! Core data models for sessions, messages, and background agents
 
+use std::{collections::HashMap, path::PathBuf};
+
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::HashMap;
-use std::path::PathBuf;
 use uuid::Uuid;
 
 /// Different types of content that can be part of a message

@@ -1,15 +1,19 @@
 //! Continuous security monitoring and compliance validation pipeline
 
-use crate::types::*;
-use ricecoder_monitoring::compliance::{AuditLogger, ComplianceEngine};
-use ricecoder_monitoring::types::{ComplianceConfig, ComplianceStatus};
-use ricecoder_updates::checker::UpdateChecker;
-use ricecoder_updates::policy::UpdatePolicy;
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
+
+use ricecoder_monitoring::{
+    compliance::{AuditLogger, ComplianceEngine},
+    types::{ComplianceConfig, ComplianceStatus},
+};
+use ricecoder_updates::{checker::UpdateChecker, policy::UpdatePolicy};
 use semver::Version;
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-use tokio::sync::mpsc;
-use tokio::time;
+use tokio::{sync::mpsc, time};
+
+use crate::types::*;
 
 /// Security monitoring pipeline for continuous security monitoring and compliance
 pub struct SecurityMonitoringPipeline {

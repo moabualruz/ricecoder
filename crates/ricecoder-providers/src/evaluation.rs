@@ -3,17 +3,21 @@
 //! This module provides automated evaluation of LLM providers using
 //! standardized benchmarks and performance metrics.
 
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::{Duration, SystemTime};
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
 
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
-use crate::error::ProviderError;
-use crate::models::{ChatRequest, Message, ModelInfo};
-use crate::performance_monitor::ProviderPerformanceMonitor;
-use crate::provider::Provider;
+use crate::{
+    error::ProviderError,
+    models::{ChatRequest, Message, ModelInfo},
+    performance_monitor::ProviderPerformanceMonitor,
+    provider::Provider,
+};
 
 /// Evaluation result for a single benchmark
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,6 +1,7 @@
 //! Memory profiling utilities
 
 use std::time::{Duration, Instant};
+
 use sysinfo::{Pid, System};
 
 /// Memory profiler for tracking memory usage

@@ -1,6 +1,9 @@
-use crate::error::{CommandError, Result};
-use crate::types::CommandDefinition;
 use std::collections::HashMap;
+
+use crate::{
+    error::{CommandError, Result},
+    types::CommandDefinition,
+};
 
 /// Registry for managing custom commands
 #[derive(Debug, Clone)]

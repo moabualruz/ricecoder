@@ -2,9 +2,10 @@
 //!
 //! Provides structured result handling with metadata about operation execution.
 
-use crate::error::ToolError;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
+
+use crate::error::ToolError;
 
 /// Metadata about a tool operation result
 #[derive(Debug, Clone, Serialize, Deserialize)]

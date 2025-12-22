@@ -1,10 +1,11 @@
 //! Code Review Agent - Provides automated code review for pull requests
 
-use crate::errors::Result;
-use crate::models::PullRequest;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 use tracing::{debug, info};
+
+use crate::{errors::Result, models::PullRequest};
 
 /// Code quality issue severity
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

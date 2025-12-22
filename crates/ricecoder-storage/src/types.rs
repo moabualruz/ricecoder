@@ -1,7 +1,8 @@
 //! Core types for RiceCoder storage
 
-use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+
+use serde::{Deserialize, Serialize};
 
 /// Storage configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]

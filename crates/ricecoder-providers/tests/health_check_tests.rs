@@ -2,13 +2,15 @@ use ricecoder_providers::*;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::models::ChatRequest;
-    use crate::models::{ChatResponse, FinishReason, TokenUsage};
-    use crate::provider::Provider;
+    use std::{sync::Arc, time::Duration};
+
     use async_trait::async_trait;
-    use std::sync::Arc;
-    use std::time::Duration;
+
+    use super::*;
+    use crate::{
+        models::{ChatRequest, ChatResponse, FinishReason, TokenUsage},
+        provider::Provider,
+    };
 
     struct MockHealthyProvider;
 

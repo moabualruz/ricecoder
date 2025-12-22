@@ -7,11 +7,11 @@
 //! - Error types and validation
 
 use proptest::prelude::*;
-use ricecoder_mcp::error::{Error, ToolError};
-use ricecoder_mcp::metadata::{ParameterMetadata, ToolMetadata, ToolSource};
-use ricecoder_mcp::registry::ToolRegistry;
-use ricecoder_mcp::transport::{
-    MCPError, MCPErrorData, MCPMessage, MCPNotification, MCPRequest, MCPResponse,
+use ricecoder_mcp::{
+    error::{Error, ToolError},
+    metadata::{ParameterMetadata, ToolMetadata, ToolSource},
+    registry::ToolRegistry,
+    transport::{MCPError, MCPErrorData, MCPMessage, MCPNotification, MCPRequest, MCPResponse},
 };
 use serde_json::{json, Value};
 

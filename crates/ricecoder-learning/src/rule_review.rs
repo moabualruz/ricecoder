@@ -1,7 +1,8 @@
-/// Rule review interface for managing rule promotion reviews
-use crate::models::Rule;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+
+/// Rule review interface for managing rule promotion reviews
+use crate::models::Rule;
 
 /// Detailed comparison between two rule versions
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,9 +1,13 @@
 //! Hook execution engine implementation
 
-use crate::error::{HooksError, Result};
-use crate::types::{Action, CommandAction, EventContext, Hook, HookResult, HookStatus};
 use std::time::Instant;
+
 use tracing::{debug, error, info, warn};
+
+use crate::{
+    error::{HooksError, Result},
+    types::{Action, CommandAction, EventContext, Hook, HookResult, HookStatus},
+};
 
 /// Default implementation of HookExecutor
 ///
@@ -520,8 +524,10 @@ impl DefaultHookExecutor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::executor::HookExecutor;
-    use crate::types::{CommandAction, Condition};
+    use crate::{
+        executor::HookExecutor,
+        types::{CommandAction, Condition},
+    };
 
     fn create_test_hook(id: &str, enabled: bool) -> Hook {
         Hook {

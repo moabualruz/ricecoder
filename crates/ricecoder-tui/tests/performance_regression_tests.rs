@@ -2,9 +2,10 @@
 //! Tests that performance characteristics are maintained across changes
 //! Validates Requirements 6.1, 6.2, 12.2
 
+use std::time::{Duration, Instant};
+
 use proptest::prelude::*;
 use ricecoder_tui::{Layout, Rect, Theme};
-use std::time::{Duration, Instant};
 
 // ============================================================================
 // Generators for Performance Tests

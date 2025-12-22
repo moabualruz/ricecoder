@@ -1,9 +1,12 @@
 //! Execution ordering and parallelization strategies
 
-use crate::analyzers::DependencyGraph;
-use crate::error::{OrchestrationError, Result};
-use crate::models::Project;
 use std::collections::{HashMap, HashSet};
+
+use crate::{
+    analyzers::DependencyGraph,
+    error::{OrchestrationError, Result},
+    models::Project,
+};
 
 /// Represents a level in the execution hierarchy
 #[derive(Debug, Clone)]
@@ -244,9 +247,10 @@ impl ExecutionOrderer {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
     use crate::models::{DependencyType, ProjectStatus};
-    use std::path::PathBuf;
 
     fn create_test_project(name: &str) -> Project {
         Project {

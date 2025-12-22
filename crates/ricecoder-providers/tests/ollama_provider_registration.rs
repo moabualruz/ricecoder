@@ -3,8 +3,9 @@
 //! **Feature: ricecoder-local-models, Integration Tests: Provider Registration**
 //! **Validates: Requirements 1.1, 1.2**
 
-use ricecoder_providers::{OllamaProvider, Provider, ProviderRegistry};
 use std::sync::Arc;
+
+use ricecoder_providers::{OllamaProvider, Provider, ProviderRegistry};
 
 /// Test: OllamaProvider registration with ProviderRegistry
 /// For any OllamaProvider instance, registering with ProviderRegistry SHALL succeed

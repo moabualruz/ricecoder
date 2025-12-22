@@ -3,10 +3,10 @@
 //! Tests the correctness properties of the patch tool implementation.
 //! **Feature: ricecoder-tools-enhanced, Property 4, 5, 6: Patch safety, conflict detection, format validation**
 
+use std::{fs, io::Write};
+
 use proptest::prelude::*;
 use ricecoder_tools::patch::{PatchInput, PatchTool};
-use std::fs;
-use std::io::Write;
 use tempfile::NamedTempFile;
 
 /// Generate valid unified diff patches

@@ -1,8 +1,11 @@
 //! Performance metrics collection and tracking for agents
 
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-use std::time::Instant;
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+    time::Instant,
+};
+
 use tracing::{debug, info};
 
 /// Metrics for a single agent execution

@@ -4,9 +4,11 @@
 //! strategies for applying changes to files, from simple string replacement
 //! to advanced AST-based editing.
 
-use crate::error::ToolError;
-use serde::{Deserialize, Serialize};
 use std::path::Path;
+
+use serde::{Deserialize, Serialize};
+
+use crate::error::ToolError;
 
 /// Input for file edit operations
 #[derive(Debug, Clone, Serialize, Deserialize)]

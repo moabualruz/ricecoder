@@ -32,9 +32,11 @@
 //! assert_eq!(streaming.content, "Hello world");
 //! ```
 
-use crate::clipboard::{CopyFeedback, CopyOperation};
-use chrono::{DateTime, Local};
 use std::collections::HashMap;
+
+use chrono::{DateTime, Local};
+
+use crate::clipboard::{CopyFeedback, CopyOperation};
 
 /// Message in the chat
 #[derive(Debug, Clone)]
@@ -774,8 +776,10 @@ impl crate::Component for ChatWidget {
         // Use existing render logic
         // For now, just render a placeholder - in a real implementation,
         // this would call the existing render methods
-        use ratatui::text::Line;
-        use ratatui::widgets::{Block, Borders, Paragraph};
+        use ratatui::{
+            text::Line,
+            widgets::{Block, Borders, Paragraph},
+        };
 
         let content = vec![
             Line::from("Chat Widget - Component Architecture"),

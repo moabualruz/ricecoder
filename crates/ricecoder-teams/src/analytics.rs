@@ -1,7 +1,8 @@
+use chrono::Utc;
+
 /// Analytics and metrics tracking
 use crate::error::Result;
 use crate::models::{AdoptionMetrics, EffectivenessMetrics, TeamAnalyticsReport};
-use chrono::Utc;
 
 /// Tracks rule adoption and effectiveness metrics
 ///

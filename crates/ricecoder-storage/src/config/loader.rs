@@ -4,12 +4,14 @@
 //! It supports CLI arguments, environment variables, and schema validation with priority merging:
 //! CLI > Environment > Project > User > Global > Defaults
 
-use super::{CliArgs, Config, ConfigMerger, EnvOverrides};
-use crate::error::{StorageError, StorageResult};
-use crate::manager::PathResolver;
-use crate::types::ConfigFormat;
-
 use std::path::{Path, PathBuf};
+
+use super::{CliArgs, Config, ConfigMerger, EnvOverrides};
+use crate::{
+    error::{StorageError, StorageResult},
+    manager::PathResolver,
+    types::ConfigFormat,
+};
 
 /// Configuration loader for multiple formats and sources
 pub struct ConfigLoader {

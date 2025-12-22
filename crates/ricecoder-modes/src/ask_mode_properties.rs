@@ -5,9 +5,7 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::ask_mode::AskMode;
-    use crate::mode::Mode;
-    use crate::models::Operation;
+    use crate::{ask_mode::AskMode, mode::Mode, models::Operation};
 
     /// Property 2: Ask Mode File Protection
     ///

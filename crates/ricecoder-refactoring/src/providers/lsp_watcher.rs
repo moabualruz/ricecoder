@@ -3,10 +3,10 @@
 //! This module provides a watcher that monitors LSP server availability
 //! and configuration changes, updating the provider registry without restart.
 
+use std::{sync::Arc, time::Duration};
+
 use super::lsp::LspProviderRegistry;
 use crate::error::Result;
-use std::sync::Arc;
-use std::time::Duration;
 
 /// Watcher for LSP server availability and configuration changes
 ///

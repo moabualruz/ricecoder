@@ -1,10 +1,11 @@
 //! Configuration management for providers
 
-use std::collections::HashMap;
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 
-use crate::error::ProviderError;
-use crate::models::{DefaultsConfig, ProviderConfig, ProviderSettings};
+use crate::{
+    error::ProviderError,
+    models::{DefaultsConfig, ProviderConfig, ProviderSettings},
+};
 
 /// Configuration manager for loading and validating provider configuration
 pub struct ConfigurationManager {

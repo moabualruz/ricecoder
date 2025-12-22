@@ -2,9 +2,12 @@
 //!
 //! Handles issue tracking, updates, and PR linking
 
-use crate::errors::{GitHubError, Result};
-use crate::models::IssueStatus;
 use serde::{Deserialize, Serialize};
+
+use crate::{
+    errors::{GitHubError, Result},
+    models::IssueStatus,
+};
 
 /// Comment to post on an issue
 #[derive(Debug, Clone, Serialize, Deserialize)]

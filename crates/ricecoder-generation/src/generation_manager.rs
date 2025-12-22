@@ -12,22 +12,25 @@
 //!
 //! Implements Requirement 3.1: Generation pipeline with strict ordering
 
-use crate::code_generator::CodeGenerator;
-use crate::code_quality_enforcer::CodeQualityEnforcer;
-use crate::code_validator::CodeValidator;
-use crate::conflict_detector::ConflictDetector;
-use crate::conflict_resolver::{ConflictResolver, ConflictStrategy};
-use crate::error::GenerationError;
-use crate::output_writer::OutputWriter;
-use crate::prompt_builder::PromptBuilder;
-use crate::report_generator::{GenerationResult, GenerationStats, ReportGenerator};
-use crate::review_engine::ReviewEngine;
-use crate::spec_processor::SpecProcessor;
-use crate::templates::TemplateEngine;
+use std::{path::PathBuf, time::Instant};
+
 use ricecoder_providers::provider::Provider;
 use ricecoder_specs::models::Spec;
-use std::path::PathBuf;
-use std::time::Instant;
+
+use crate::{
+    code_generator::CodeGenerator,
+    code_quality_enforcer::CodeQualityEnforcer,
+    code_validator::CodeValidator,
+    conflict_detector::ConflictDetector,
+    conflict_resolver::{ConflictResolver, ConflictStrategy},
+    error::GenerationError,
+    output_writer::OutputWriter,
+    prompt_builder::PromptBuilder,
+    report_generator::{GenerationResult, GenerationStats, ReportGenerator},
+    review_engine::ReviewEngine,
+    spec_processor::SpecProcessor,
+    templates::TemplateEngine,
+};
 
 /// Configuration for the generation manager
 #[derive(Debug, Clone)]

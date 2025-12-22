@@ -1,11 +1,15 @@
 //! Release Operations - Handles release publishing and changelog maintenance
 
-use crate::errors::{GitHubError, Result};
-use crate::models::Release;
+use std::collections::HashMap;
+
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use tracing::{debug, info};
+
+use crate::{
+    errors::{GitHubError, Result},
+    models::Release,
+};
 
 /// Release template for customization
 #[derive(Debug, Clone, Serialize, Deserialize)]

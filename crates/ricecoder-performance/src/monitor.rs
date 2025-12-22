@@ -1,9 +1,12 @@
 //! Performance monitoring and metrics collection
 
+use std::{
+    collections::VecDeque,
+    time::{Duration, Instant},
+};
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::VecDeque;
-use std::time::{Duration, Instant};
 
 /// Performance metrics for a test run
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,11 +1,15 @@
 //! Event routing and dispatching implementation
 
-use crate::error::{HooksError, Result};
-use crate::executor::HookExecutor;
-use crate::registry::HookRegistry;
-use crate::types::Event;
 use std::sync::Arc;
+
 use tracing::{debug, error, info};
+
+use crate::{
+    error::{HooksError, Result},
+    executor::HookExecutor,
+    registry::HookRegistry,
+    types::Event,
+};
 
 /// Default implementation of EventDispatcher
 ///
@@ -106,12 +110,15 @@ impl super::EventDispatcher for DefaultEventDispatcher {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::dispatcher::EventDispatcher;
-    use crate::executor::HookExecutor;
-    use crate::registry::InMemoryHookRegistry;
-    use crate::types::{Action, CommandAction, EventContext, Hook, HookResult, HookStatus};
     use std::sync::Mutex;
+
+    use super::*;
+    use crate::{
+        dispatcher::EventDispatcher,
+        executor::HookExecutor,
+        registry::InMemoryHookRegistry,
+        types::{Action, CommandAction, EventContext, Hook, HookResult, HookStatus},
+    };
 
     struct MockExecutor {
         call_count: Arc<Mutex<usize>>,

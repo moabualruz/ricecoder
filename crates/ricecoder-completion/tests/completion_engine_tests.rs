@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
 /// Integration tests for the completion engine core
 use ricecoder_completion::{
@@ -5,7 +7,6 @@ use ricecoder_completion::{
     GenericCompletionEngine, Position, ProviderRegistry, Range, Scope, ScopeKind, Symbol,
     SymbolKind, Type,
 };
-use std::sync::Arc;
 
 /// Mock context analyzer for testing
 struct MockContextAnalyzer;

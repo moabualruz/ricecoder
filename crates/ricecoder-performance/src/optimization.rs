@@ -1,10 +1,14 @@
 //! Performance optimization pipeline
 
-use crate::baseline::PerformanceBaseline;
-use crate::monitor::PerformanceMetrics;
-use crate::profiler::{PerformanceProfiler, ProfileResult};
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
+
+use crate::{
+    baseline::PerformanceBaseline,
+    monitor::PerformanceMetrics,
+    profiler::{PerformanceProfiler, ProfileResult},
+};
 
 /// Optimization pipeline for automated performance improvements
 pub struct OptimizationPipeline {

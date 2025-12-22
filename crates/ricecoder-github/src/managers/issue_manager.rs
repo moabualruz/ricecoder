@@ -2,10 +2,13 @@
 //!
 //! Handles GitHub issue assignment, parsing, and tracking
 
-use crate::errors::{GitHubError, Result};
-use crate::models::{Issue, IssueProgressUpdate, IssueStatus};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+
+use crate::{
+    errors::{GitHubError, Result},
+    models::{Issue, IssueProgressUpdate, IssueStatus},
+};
 
 /// Parsed requirement from an issue
 #[derive(Debug, Clone, Serialize, Deserialize)]

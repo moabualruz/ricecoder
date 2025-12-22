@@ -1,9 +1,10 @@
 //! FileManager coordinator for file operations
 
-use crate::error::FileError;
-use crate::models::FileOperation;
 use std::path::Path;
+
 use uuid::Uuid;
+
+use crate::{error::FileError, models::FileOperation};
 
 /// Central coordinator for all file operations
 ///

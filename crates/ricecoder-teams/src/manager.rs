@@ -1,18 +1,20 @@
-/// Central team manager orchestrating all team operations
-use crate::access::AccessControlManager;
-use crate::analytics::AnalyticsDashboard;
-use crate::config::TeamConfigManager;
-use crate::error::{Result, TeamError};
-use crate::models::{Team, TeamMember, TeamStandards};
-use crate::rules::SharedRulesManager;
-use crate::sync::SyncService;
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
+
 use chrono::Utc;
 use ricecoder_storage::PathResolver;
-use std::collections::HashMap;
-use std::path::PathBuf;
-use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
+
+/// Central team manager orchestrating all team operations
+use crate::access::AccessControlManager;
+use crate::{
+    analytics::AnalyticsDashboard,
+    config::TeamConfigManager,
+    error::{Result, TeamError},
+    models::{Team, TeamMember, TeamStandards},
+    rules::SharedRulesManager,
+    sync::SyncService,
+};
 
 /// Central coordinator for all team operations
 pub struct TeamManager {

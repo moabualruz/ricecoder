@@ -3,12 +3,15 @@
 //! Provides rollback functionality to undo executed steps on failure.
 //! Tracks rollback actions for each step and executes them in reverse order.
 
-use crate::error::{ExecutionError, ExecutionResult};
-use crate::models::{ExecutionStep, RollbackAction, RollbackType};
+use std::{path::Path, process::Command};
+
 use ricecoder_storage::PathResolver;
-use std::path::Path;
-use std::process::Command;
 use tracing::{debug, error, info, warn};
+
+use crate::{
+    error::{ExecutionError, ExecutionResult},
+    models::{ExecutionStep, RollbackAction, RollbackType},
+};
 
 /// Handles rollback of executed steps
 ///
@@ -425,8 +428,9 @@ pub struct RollbackResult {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use serde_json::json;
+
+    use super::*;
 
     #[test]
     fn test_create_rollback_handler() {

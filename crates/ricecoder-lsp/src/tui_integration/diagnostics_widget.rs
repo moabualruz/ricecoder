@@ -3,6 +3,8 @@
 //! This module provides widgets for displaying LSP diagnostics (errors, warnings, hints)
 //! in the terminal user interface with proper formatting and navigation.
 
+use std::collections::HashMap;
+
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
@@ -10,7 +12,6 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, Paragraph, Widget, Wrap},
 };
-use std::collections::HashMap;
 
 /// Severity levels for diagnostics
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]

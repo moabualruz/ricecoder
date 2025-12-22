@@ -5,8 +5,9 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::{Recommendation, SharedContextManager};
     use proptest::prelude::*;
+
+    use crate::domain::{Recommendation, SharedContextManager};
 
     // Helper function to create test recommendations
     fn create_recommendation(domain: &str, category: &str, technology: &str) -> Recommendation {

@@ -3,14 +3,18 @@
 //! Implements the hybrid provider pattern with MCP → Built-in → Error priority chain.
 //! Supports hot-reload of MCP server availability without restart.
 
-use crate::error::ToolError;
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, Instant},
+};
+
 use async_trait::async_trait;
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 use tracing::{debug, trace, warn};
 use uuid::Uuid;
+
+use crate::error::ToolError;
 
 /// Trait for tool providers
 #[async_trait]

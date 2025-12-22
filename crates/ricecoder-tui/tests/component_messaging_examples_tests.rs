@@ -3,8 +3,9 @@ use ricecoder_tui::*;
 /// Test the component messaging system
 #[cfg(test)]
 mod messaging_tests {
-    use super::*;
     use tokio::runtime::Runtime;
+
+    use super::*;
 
     #[test]
     fn test_component_messaging() {

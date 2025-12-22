@@ -4,10 +4,14 @@
 //! git hooks, and build hooks. Templates can be instantiated with parameters
 //! to create concrete hooks.
 
-use crate::error::{HooksError, Result};
-use crate::types::{Action, CommandAction, Hook};
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
+
+use crate::{
+    error::{HooksError, Result},
+    types::{Action, CommandAction, Hook},
+};
 
 /// Hook template for creating hooks with parameters
 ///

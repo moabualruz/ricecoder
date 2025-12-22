@@ -7,6 +7,7 @@
 //! - Special content formatting for code, messages, and transcripts
 
 use std::io::{self, Write};
+
 use thiserror::Error;
 
 /// Clipboard error types

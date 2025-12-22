@@ -3,9 +3,11 @@
 /// **Validates: Requirements 4.3**
 #[cfg(test)]
 mod tests {
-    use crate::{TaskConfigManager, ThinkMoreConfig, ThinkMoreController, ThinkingDepth};
-    use proptest::prelude::*;
     use std::time::Duration;
+
+    use proptest::prelude::*;
+
+    use crate::{TaskConfigManager, ThinkMoreConfig, ThinkMoreController, ThinkingDepth};
 
     proptest! {
         /// Property: Per-task configuration overrides global configuration

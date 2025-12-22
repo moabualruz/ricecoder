@@ -1,11 +1,12 @@
 //! Roadmap planning and prioritization
 
-use crate::types::*;
+use std::collections::HashMap;
+
 use chrono::TimeDelta;
 use ricecoder_monitoring::types::ComplianceStatus;
-use std::collections::HashMap;
-use tokio::sync::mpsc;
-use tokio::time;
+use tokio::{sync::mpsc, time};
+
+use crate::types::*;
 
 /// Roadmap planner for generating and managing product roadmap
 pub struct RoadmapPlanner {

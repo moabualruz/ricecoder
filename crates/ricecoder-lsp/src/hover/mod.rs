@@ -30,10 +30,11 @@
 
 pub mod symbol_resolver;
 
+use std::collections::HashMap;
+
 pub use symbol_resolver::{SymbolResolver, SymbolScope};
 
 use crate::types::{HoverInfo, MarkupContent, Position, Symbol};
-use std::collections::HashMap;
 
 /// Hover information provider
 pub struct HoverProvider {

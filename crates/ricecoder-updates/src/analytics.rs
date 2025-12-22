@@ -1,15 +1,18 @@
 //! Distribution analytics, monitoring, and enterprise usage tracking
 
-use crate::error::{Result, UpdateError};
-use crate::models::{EnterpriseUsageReport, SecurityIncident, UsageAnalytics};
+use std::{collections::HashMap, sync::Arc};
+
 use chrono::{DateTime, Duration, Utc};
 use reqwest::Client;
 use serde_json::json;
-use std::collections::HashMap;
-use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};
 use uuid::Uuid;
+
+use crate::{
+    error::{Result, UpdateError},
+    models::{EnterpriseUsageReport, SecurityIncident, UsageAnalytics},
+};
 
 /// Analytics collector service
 #[derive(Clone)]
@@ -377,8 +380,9 @@ impl ComplianceReporter {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::str::FromStr;
+
+    use super::*;
 
     #[tokio::test]
     async fn test_analytics_collector_creation() {

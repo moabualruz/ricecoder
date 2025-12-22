@@ -1,7 +1,8 @@
 //! Configuration types for language-agnostic, configuration-driven architecture
 
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 /// Configuration error type

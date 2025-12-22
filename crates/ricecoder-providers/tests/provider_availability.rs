@@ -2,13 +2,13 @@
 //! **Feature: ricecoder-providers, Property 6: Provider Availability**
 //! **Validates: Requirements 1.1**
 
-use ricecoder_providers::models::{FinishReason, Message};
+use std::{sync::Arc, time::Duration};
+
 use ricecoder_providers::{
+    models::{FinishReason, Message},
     ChatRequest, ChatResponse, HealthCheckCache, ModelInfo, Provider, ProviderError,
     ProviderManager, ProviderRegistry, TokenUsage,
 };
-use std::sync::Arc;
-use std::time::Duration;
 
 /// Mock provider that simulates availability
 struct AvailableMockProvider {

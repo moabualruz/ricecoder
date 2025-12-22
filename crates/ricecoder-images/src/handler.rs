@@ -1,11 +1,15 @@
 //! Image drag-and-drop event handling.
 
-use crate::config::ImageConfig;
-use crate::error::{ImageError, ImageResult};
-use crate::formats::ImageFormat;
-use crate::models::ImageMetadata;
-use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
+
+use sha2::{Digest, Sha256};
+
+use crate::{
+    config::ImageConfig,
+    error::{ImageError, ImageResult},
+    formats::ImageFormat,
+    models::ImageMetadata,
+};
 
 /// Handles image drag-and-drop events and file operations.
 pub struct ImageHandler {
@@ -292,9 +296,11 @@ impl ImageHandler {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::io::Write;
+
     use tempfile::NamedTempFile;
+
+    use super::*;
 
     #[test]
     fn test_handler_creation() {
@@ -341,7 +347,7 @@ mod tests {
 
         // Create a temporary PNG file with valid magic bytes
         let mut temp_file = NamedTempFile::new().unwrap();
-        let png_header = vec![0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+        let png_header = vec![0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
         temp_file.write_all(&png_header).unwrap();
         temp_file.flush().unwrap();
 
@@ -628,7 +634,7 @@ mod tests {
 
         // Create a temporary PNG file with valid header
         let mut temp_file = NamedTempFile::new().unwrap();
-        let png_header = vec![0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+        let png_header = vec![0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
         temp_file.write_all(&png_header).unwrap();
         temp_file.flush().unwrap();
 

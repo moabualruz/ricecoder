@@ -1,5 +1,6 @@
-use ricecoder_tui::*;
 use std::sync::Arc;
+
+use ricecoder_tui::*;
 use tokio::sync::RwLock;
 
 mod tests {

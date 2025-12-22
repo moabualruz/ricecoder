@@ -3,11 +3,13 @@
 //! Provides in-memory caching of parsed templates with file change detection
 //! and cache statistics.
 
-use crate::templates::error::TemplateError;
-use crate::templates::parser::ParsedTemplate;
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
-use std::time::UNIX_EPOCH;
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+    time::UNIX_EPOCH,
+};
+
+use crate::templates::{error::TemplateError, parser::ParsedTemplate};
 
 /// Statistics about the template cache
 #[derive(Debug, Clone)]

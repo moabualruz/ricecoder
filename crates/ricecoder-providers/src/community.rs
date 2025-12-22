@@ -6,14 +6,19 @@
 //! - Provider update synchronization
 //! - Usage analytics and sharing
 
-use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
-use std::time::{Duration, SystemTime};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
 
-use crate::curation::{QualityScore, ReliabilityStatus};
-use crate::error::ProviderError;
-use crate::models::{ModelInfo, Pricing};
 use serde::{Deserialize, Serialize};
+
+use crate::{
+    curation::{QualityScore, ReliabilityStatus},
+    error::ProviderError,
+    models::{ModelInfo, Pricing},
+};
 
 /// Community contribution status
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -491,8 +496,9 @@ pub struct ProviderUsage {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::time::Duration;
+
+    use super::*;
 
     #[test]
     fn test_contribution_submission() {

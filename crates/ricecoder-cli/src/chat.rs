@@ -1,10 +1,14 @@
 // Interactive chat mode
 
-use crate::error::{CliError, CliResult};
-use crate::output::OutputStyle;
+use std::sync::Arc;
+
 use ricecoder_providers::provider::Provider;
 use rustyline::DefaultEditor;
-use std::sync::Arc;
+
+use crate::{
+    error::{CliError, CliResult},
+    output::OutputStyle,
+};
 
 /// Chat session manager
 pub struct ChatSession {
@@ -107,8 +111,7 @@ impl ChatSession {
 
     /// Simulate streaming by typing characters one at a time
     fn simulate_streaming(text: &str) -> CliResult<()> {
-        use std::thread;
-        use std::time::Duration;
+        use std::{thread, time::Duration};
 
         for ch in text.chars() {
             print!("{}", ch);

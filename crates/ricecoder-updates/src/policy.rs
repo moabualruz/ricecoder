@@ -1,9 +1,13 @@
 //! Enterprise policy management for updates
 
-use crate::error::{Result, UpdateError};
-use crate::models::{ReleaseChannel, SecurityRequirements, UpdatePolicyConfig};
-use ricecoder_security::access_control::{Permission, Role};
 use std::collections::HashSet;
+
+use ricecoder_security::access_control::{Permission, Role};
+
+use crate::{
+    error::{Result, UpdateError},
+    models::{ReleaseChannel, SecurityRequirements, UpdatePolicyConfig},
+};
 
 /// Update policy manager with enterprise controls
 #[derive(Debug, Clone)]
@@ -204,8 +208,9 @@ impl UpdatePolicy {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use ricecoder_security::access_control::Role;
+
+    use super::*;
 
     #[test]
     fn test_default_policy() {

@@ -1,6 +1,7 @@
+use std::path::PathBuf;
+
 /// Integration tests for complete learning system workflows
 use ricecoder_learning::{Decision, DecisionContext, LearningManager, Rule, RuleScope, RuleSource};
-use std::path::PathBuf;
 
 // ============================================================================
 // Test 13.1: Decision Capture → Pattern Extraction → Rule Creation

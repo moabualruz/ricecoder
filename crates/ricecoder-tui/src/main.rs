@@ -1,8 +1,16 @@
 //! RiceCoder TUI - Terminal User Interface entry point
 
+use std::{
+    fmt,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    time::{Duration, Instant},
+};
+
 use anyhow::Result;
 use ricecoder_storage::TuiConfig;
-use ricecoder_tui::view::view;
 use ricecoder_tui::{
     accessibility::*, app::App, banner::*, clipboard::*, code_editor_widget::*, command_blocks::*,
     command_palette::*, components::*, di::*, diff::*, error::*, event::*, event_dispatcher::*,
@@ -11,15 +19,13 @@ use ricecoder_tui::{
     plugins::*, popup_widget::*, progressive_enhancement::*, project_bootstrap::*, prompt::*,
     prompt_context::*, providers::*, reactive_ui_updates::*, real_time_updates::*,
     render_pipeline::*, scrollview_widget::*, status_bar::*, style::*, terminal_state::*,
-    textarea_widget::*, tree_widget::*, ui_components::*, update::*, widgets::*, CancellationToken,
+    textarea_widget::*, tree_widget::*, ui_components::*, update::*, view::view, widgets::*,
+    CancellationToken,
 };
-use std::fmt;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
-use std::time::{Duration, Instant};
-use tokio::sync::mpsc;
-use tokio::sync::Semaphore;
-use tokio::task::JoinHandle;
+use tokio::{
+    sync::{mpsc, Semaphore},
+    task::JoinHandle,
+};
 
 /// Resource that needs cleanup during shutdown
 #[async_trait::async_trait]
@@ -790,14 +796,14 @@ async fn run_tea_event_loop(
     cancel_token: &CancellationToken,
     capabilities: &ricecoder_tui::TerminalCapabilities,
 ) -> Result<()> {
+    use std::io;
+
     use crossterm::{
         event::{DisableMouseCapture, EnableMouseCapture},
         execute,
         terminal::{EnterAlternateScreen, LeaveAlternateScreen},
     };
-    use ratatui::backend::CrosstermBackend;
-    use ratatui::Terminal;
-    use std::io;
+    use ratatui::{backend::CrosstermBackend, Terminal};
 
     // Set up terminal
     let mut stdout = io::stdout();

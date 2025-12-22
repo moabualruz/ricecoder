@@ -7,12 +7,15 @@
 //! - Reporting all errors with file paths and line numbers
 //! - Preventing writing if validation fails
 
-use crate::error::GenerationError;
-use crate::language_validators::get_validator;
-use crate::models::{
-    GeneratedFile, ValidationConfig, ValidationError, ValidationResult, ValidationWarning,
-};
 use tracing::{debug, warn};
+
+use crate::{
+    error::GenerationError,
+    language_validators::get_validator,
+    models::{
+        GeneratedFile, ValidationConfig, ValidationError, ValidationResult, ValidationWarning,
+    },
+};
 
 /// Validates generated code before writing
 #[derive(Debug, Clone)]

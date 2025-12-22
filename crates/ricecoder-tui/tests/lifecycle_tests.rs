@@ -1,7 +1,8 @@
 //! Unit tests for TUI lifecycle management
 
-use ricecoder_tui::lifecycle::*;
 use std::sync::atomic::{AtomicBool, Ordering};
+
+use ricecoder_tui::lifecycle::*;
 
 struct TestTuiComponent {
     name: &'static str,

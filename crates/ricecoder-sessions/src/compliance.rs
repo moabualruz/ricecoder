@@ -1,20 +1,21 @@
 //! GDPR/HIPAA compliance management for sessions
 
+use std::{collections::HashMap, path::PathBuf, time::Duration};
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::path::PathBuf;
-use std::time::Duration;
 use tokio::fs;
 use uuid::Uuid;
 
-use crate::error::{SessionError, SessionResult};
-use crate::models::{
-    ComplianceAlertLevel, ComplianceEvent, ComplianceEventType, DataErasureRequest,
-    DataExportFormat, DataExportRequest, DataMinimizationSettings, DataRetentionPolicy, DataType,
-    ErasureReason, PrivacySettings, Session,
+use crate::{
+    error::{SessionError, SessionResult},
+    models::{
+        ComplianceAlertLevel, ComplianceEvent, ComplianceEventType, DataErasureRequest,
+        DataExportFormat, DataExportRequest, DataMinimizationSettings, DataRetentionPolicy,
+        DataType, ErasureReason, PrivacySettings, Session,
+    },
+    store::SessionStore,
 };
-use crate::store::SessionStore;
 
 /// GDPR/HIPAA compliance manager
 #[derive(Debug)]

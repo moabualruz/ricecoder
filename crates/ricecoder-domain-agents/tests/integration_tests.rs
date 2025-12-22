@@ -1,9 +1,10 @@
 //! Integration tests for domain-specific agents
 
+use std::collections::HashMap;
+
 use ricecoder_domain_agents::{
     DomainAgentInput, DomainAgentRegistryManager, KnowledgeBase, KnowledgeEntry,
 };
-use std::collections::HashMap;
 
 #[tokio::test]
 async fn test_registry_with_all_agents() {

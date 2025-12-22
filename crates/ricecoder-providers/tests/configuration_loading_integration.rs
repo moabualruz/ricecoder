@@ -1,11 +1,12 @@
 //! Integration tests for configuration loading from multiple sources
 //! Tests loading from all configuration sources and precedence
 
-use ricecoder_providers::config::ConfigurationManager;
-use ricecoder_providers::models::{DefaultsConfig, ProviderConfig, ProviderSettings};
-use std::collections::HashMap;
-use std::path::PathBuf;
-use std::time::Duration;
+use std::{collections::HashMap, path::PathBuf, time::Duration};
+
+use ricecoder_providers::{
+    config::ConfigurationManager,
+    models::{DefaultsConfig, ProviderConfig, ProviderSettings},
+};
 
 /// Test: Loading configuration with proper precedence
 #[test]

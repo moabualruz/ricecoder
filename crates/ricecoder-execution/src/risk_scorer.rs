@@ -6,8 +6,9 @@
 //! - File deletions
 //! - Overall scope (number of steps)
 
-use crate::models::{ExecutionPlan, ExecutionStep, RiskFactor, RiskLevel, RiskScore, StepAction};
 use std::collections::HashSet;
+
+use crate::models::{ExecutionPlan, ExecutionStep, RiskFactor, RiskLevel, RiskScore, StepAction};
 
 /// Risk scorer for execution plans
 #[derive(Debug, Clone)]
@@ -197,9 +198,10 @@ impl Default for ExecutionRiskScorer {
 
 #[cfg(test)]
 mod tests {
+    use uuid::Uuid;
+
     use super::*;
     use crate::models::{ComplexityLevel, ExecutionStep, StepStatus};
-    use uuid::Uuid;
 
     fn create_test_plan(steps: Vec<ExecutionStep>) -> ExecutionPlan {
         ExecutionPlan {

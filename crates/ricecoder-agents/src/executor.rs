@@ -1,11 +1,11 @@
 //! Parallel execution engine for agents
 
-use crate::error::Result;
-use crate::models::AgentTask;
-use crate::scheduler::ExecutionPhase;
 use std::time::Duration;
+
 use tokio::time::timeout;
 use tracing::{debug, info, warn};
+
+use crate::{error::Result, models::AgentTask, scheduler::ExecutionPhase};
 
 /// Configuration for the parallel execution engine
 #[derive(Debug, Clone)]
@@ -224,9 +224,10 @@ impl Default for ParallelExecutor {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
     use crate::models::{TaskOptions, TaskScope, TaskTarget, TaskType};
-    use std::path::PathBuf;
 
     fn create_test_task(id: &str) -> AgentTask {
         AgentTask {

@@ -1,19 +1,21 @@
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
+
+use tokio::sync::RwLock;
+
 /// Core learning manager that orchestrates all learning operations
 use crate::analytics_engine::AnalyticsEngine;
-use crate::conflict_resolver::ConflictResolver;
-use crate::decision_logger::DecisionLogger;
-use crate::error::{LearningError, Result};
-use crate::models::{Decision, DecisionContext, LearnedPattern, LearningConfig, Rule, RuleScope};
-use crate::pattern_capturer::PatternCapturer;
-use crate::pattern_validator::PatternValidator;
-use crate::rule_promoter::RulePromoter;
-use crate::rule_storage::RuleStorage;
-use crate::rule_validator::RuleValidator;
-use crate::scope_config::{ScopeConfiguration, ScopeConfigurationLoader, ScopeFilter};
-use std::collections::HashMap;
-use std::path::PathBuf;
-use std::sync::Arc;
-use tokio::sync::RwLock;
+use crate::{
+    conflict_resolver::ConflictResolver,
+    decision_logger::DecisionLogger,
+    error::{LearningError, Result},
+    models::{Decision, DecisionContext, LearnedPattern, LearningConfig, Rule, RuleScope},
+    pattern_capturer::PatternCapturer,
+    pattern_validator::PatternValidator,
+    rule_promoter::RulePromoter,
+    rule_storage::RuleStorage,
+    rule_validator::RuleValidator,
+    scope_config::{ScopeConfiguration, ScopeConfigurationLoader, ScopeFilter},
+};
 
 /// Central coordinator for all learning operations
 pub struct LearningManager {

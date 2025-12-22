@@ -6,12 +6,17 @@
 //! - Resource-aware task spawning
 //! - Async processing pipelines
 
+use std::{
+    collections::{HashMap, VecDeque},
+    sync::Arc,
+    time::{Duration, Instant},
+};
+
 use futures::FutureExt;
-use std::collections::{HashMap, VecDeque};
-use std::sync::Arc;
-use std::time::{Duration, Instant};
-use tokio::sync::{mpsc, RwLock, Semaphore};
-use tokio::task::{self, JoinHandle};
+use tokio::{
+    sync::{mpsc, RwLock, Semaphore},
+    task::{self, JoinHandle},
+};
 use tracing::{debug, info, warn};
 
 /// Task priority levels

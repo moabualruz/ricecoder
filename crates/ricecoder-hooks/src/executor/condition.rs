@@ -1,8 +1,11 @@
 //! Condition evaluation for hook execution
 
-use crate::error::{HooksError, Result};
-use crate::types::{Condition, EventContext};
 use tracing::{debug, warn};
+
+use crate::{
+    error::{HooksError, Result},
+    types::{Condition, EventContext},
+};
 
 /// Evaluates conditions against event context
 ///
@@ -57,8 +60,9 @@ impl ConditionEvaluator {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use serde_json::json;
+
+    use super::*;
 
     fn create_test_context() -> EventContext {
         EventContext {

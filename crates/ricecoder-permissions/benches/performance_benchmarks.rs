@@ -1,9 +1,10 @@
+use std::sync::Arc;
+
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use ricecoder_permissions::{
     permission::PermissionChecker, AuditAction, AuditLogger, AuditResult, GlobMatcher,
     PermissionConfig, PermissionLevel, PermissionManager, ToolPermission,
 };
-use std::sync::Arc;
 
 // ============================================================================
 // Benchmark 1: Permission Check Performance

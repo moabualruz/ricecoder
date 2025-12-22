@@ -3,11 +3,14 @@
 //! Provides test framework detection, test execution, and result parsing.
 //! Supports Rust (cargo test), TypeScript (npm test), and Python (pytest).
 
-use crate::error::{ExecutionError, ExecutionResult};
-use crate::models::{TestFailure, TestFramework, TestResults};
-use std::path::Path;
-use std::process::Command;
+use std::{path::Path, process::Command};
+
 use tracing::{debug, error, info};
+
+use crate::{
+    error::{ExecutionError, ExecutionResult},
+    models::{TestFailure, TestFramework, TestResults},
+};
 
 /// Test runner for executing tests with framework detection
 pub struct TestRunner {
@@ -303,8 +306,9 @@ impl TestRunner {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_detect_rust_framework() {

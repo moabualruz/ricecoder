@@ -1,7 +1,8 @@
 //! Styling and theming for the TUI
 
-use serde::{Deserialize, Serialize};
 use std::env;
+
+use serde::{Deserialize, Serialize};
 
 /// Color definition
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Hash)]

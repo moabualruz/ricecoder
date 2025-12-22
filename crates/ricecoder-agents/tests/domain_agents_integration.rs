@@ -1,11 +1,12 @@
 //! Integration tests for domain agents multi-agent coordination
 
+use std::collections::HashMap;
+
 use ricecoder_agents::domain::{
     AgentConfig, AgentFactory, BestPractice, CapabilityConfig, DomainAgent, DomainCapability,
     DomainCoordinator, DomainKnowledge, DomainRegistry, DomainRequest, KnowledgeBase,
     Recommendation, SharedContextManager, TechRecommendation,
 };
-use std::collections::HashMap;
 
 /// Helper function to create a test agent
 fn create_test_agent(domain: &str) -> DomainAgent {

@@ -1,9 +1,13 @@
+use std::collections::HashMap;
+
+use chrono::Utc;
+
 /// Rule promotion workflow for promoting rules from project to global scope
 use crate::conflict_resolver::ConflictResolver;
-use crate::error::{LearningError, Result};
-use crate::models::{Rule, RuleScope, RuleSource};
-use chrono::Utc;
-use std::collections::HashMap;
+use crate::{
+    error::{LearningError, Result},
+    models::{Rule, RuleScope, RuleSource},
+};
 
 /// Metadata about a rule promotion
 #[derive(Debug, Clone)]

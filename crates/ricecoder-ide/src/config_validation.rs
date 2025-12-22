@@ -3,9 +3,12 @@
 //! This module provides comprehensive configuration validation with clear error messages
 //! and remediation steps for IDE integration configuration.
 
-use crate::error::{IdeError, IdeResult};
-use crate::types::*;
 use tracing::debug;
+
+use crate::{
+    error::{IdeError, IdeResult},
+    types::*,
+};
 
 /// Configuration validator for IDE integration
 pub struct ConfigValidator;
@@ -440,8 +443,9 @@ impl ConfigValidator {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::collections::HashMap;
+
+    use super::*;
 
     fn create_valid_config() -> IdeIntegrationConfig {
         IdeIntegrationConfig {

@@ -1,16 +1,15 @@
 //! Alerting systems and incident response
 
-use crate::types::*;
-use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 
-pub use crate::types::AlertingConfig;
+use chrono::{DateTime, Utc};
 
 /// Alert manager (re-export from error_tracking for convenience)
 pub use crate::error_tracking::AlertManager;
-
 /// Incident manager (re-export from error_tracking for convenience)
 pub use crate::error_tracking::IncidentManager;
+pub use crate::types::AlertingConfig;
+use crate::types::*;
 
 /// Alert rule engine
 pub struct AlertRuleEngine;

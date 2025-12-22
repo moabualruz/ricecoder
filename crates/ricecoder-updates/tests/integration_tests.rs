@@ -2,8 +2,9 @@
 
 #[cfg(test)]
 mod integration_tests {
-    use ricecoder_updates::*;
     use std::str::FromStr;
+
+    use ricecoder_updates::*;
     use tempfile::TempDir;
 
     #[tokio::test]

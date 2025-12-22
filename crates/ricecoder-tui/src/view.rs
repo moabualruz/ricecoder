@@ -4,7 +4,6 @@
 //! the current application state. The view function is pure and only depends
 //! on the model state.
 
-use crate::model::*;
 use ratatui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout, Rect},
@@ -13,6 +12,8 @@ use ratatui::{
     widgets::{Block, Borders, Clear, Paragraph, Wrap},
     Frame,
 };
+
+use crate::model::*;
 
 /// Main view function - pure function that renders UI based on model state
 pub fn view(frame: &mut Frame, model: &AppModel) {

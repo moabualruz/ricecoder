@@ -1,7 +1,8 @@
 //! Audit log querying and filtering
 
-use super::models::{AuditAction, AuditLogEntry, AuditResult};
 use chrono::{DateTime, Utc};
+
+use super::models::{AuditAction, AuditLogEntry, AuditResult};
 
 /// Filter criteria for audit log queries
 #[derive(Debug, Clone)]

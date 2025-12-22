@@ -3,10 +3,9 @@
 //! These interfaces define the contracts for data access.
 //! Implementations will be provided by infrastructure crates.
 
-use crate::entities::*;
-use crate::errors::*;
-use crate::value_objects::*;
 use async_trait::async_trait;
+
+use crate::{entities::*, errors::*, value_objects::*};
 
 /// Repository for project entities
 #[async_trait]

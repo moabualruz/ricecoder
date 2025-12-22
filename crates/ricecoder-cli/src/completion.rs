@@ -1,10 +1,12 @@
 // Shell completion generation
 // Adapted from automation/src/cli/completion.rs
 
-use crate::router::Cli;
+use std::io;
+
 use clap::CommandFactory;
 use clap_complete::{generate, Shell};
-use std::io;
+
+use crate::router::Cli;
 
 /// Generate shell completions
 pub fn generate_completions(shell: &str) -> Result<(), String> {

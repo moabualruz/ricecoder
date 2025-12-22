@@ -3,10 +3,10 @@
 //! **Feature: ricecoder-images, Property 2: Cache Consistency**
 //! **Validates: Requirements 3.1, 3.2, 3.4, 3.5**
 
+use std::{thread, time::Duration};
+
 use proptest::prelude::*;
 use ricecoder_images::{ImageAnalysisResult, ImageCache};
-use std::thread;
-use std::time::Duration;
 use tempfile::tempdir;
 
 /// Strategy for generating image hashes (SHA256 hex strings)

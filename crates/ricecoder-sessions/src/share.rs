@@ -1,18 +1,24 @@
 //! Session sharing functionality
 
+use std::{
+    collections::HashMap,
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc,
+    },
+};
+
 use chrono::{DateTime, Duration, Utc};
+use ricecoder_domain::value_objects::ValidUrl;
+use ricecoder_security::{
+    access_control::{AccessControl, Permission, Principal, ResourceType},
+    audit::{AuditEvent, AuditEventType, AuditLogger},
+    compliance::DataType,
+    encryption::{EncryptedData, KeyManager},
+};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Arc;
 use url::Url;
 use uuid::Uuid;
-
-use ricecoder_domain::value_objects::ValidUrl;
-use ricecoder_security::access_control::{AccessControl, Permission, Principal, ResourceType};
-use ricecoder_security::audit::{AuditEvent, AuditEventType, AuditLogger};
-use ricecoder_security::compliance::DataType;
-use ricecoder_security::encryption::{EncryptedData, KeyManager};
 
 use crate::{Session, SessionError, SessionResult};
 

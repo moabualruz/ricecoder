@@ -2,14 +2,18 @@
 //!
 //! This module provides forwarding and merging of semantic features from external LSP servers.
 
-use crate::client::LspConnection;
-use crate::error::Result;
-use crate::mapping::{CompletionMapper, DiagnosticsMapper, HoverMapper};
-use crate::types::{CompletionMappingRules, HoverMappingRules, MergeConfig};
+use std::time::Duration;
+
 use ricecoder_completion::types::{CompletionContext, CompletionItem};
 use ricecoder_lsp::types::{Diagnostic, Position, Range};
 use serde_json::{json, Value};
-use std::time::Duration;
+
+use crate::{
+    client::LspConnection,
+    error::Result,
+    mapping::{CompletionMapper, DiagnosticsMapper, HoverMapper},
+    types::{CompletionMappingRules, HoverMappingRules, MergeConfig},
+};
 
 /// Semantic feature forwarder and merger
 pub struct SemanticFeatures {

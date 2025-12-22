@@ -5,13 +5,14 @@
 //! - Audit logs are persistent (survive restarts)
 //! - Permission denials are enforced (no bypasses)
 
+use std::sync::Arc;
+
 use ricecoder_permissions::{
     audit::{AuditAction, AuditResult},
     permission::PermissionChecker,
     AuditLogger, InMemoryPermissionRepository, PermissionLevel, PermissionManager,
     PermissionRepository, ToolPermission,
 };
-use std::sync::Arc;
 
 // ============================================================================
 // Reliability Test 1: Permission Checks Never Fail Silently

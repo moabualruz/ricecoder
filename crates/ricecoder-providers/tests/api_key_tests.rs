@@ -1,6 +1,4 @@
-use ricecoder_providers::*;
-
-use ricecoder_providers::models::ApiKeyConfig;
+use ricecoder_providers::{models::ApiKeyConfig, *};
 
 #[test]
 fn test_new_api_key_manager() {

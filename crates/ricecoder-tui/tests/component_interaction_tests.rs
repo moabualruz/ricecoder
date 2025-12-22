@@ -2,11 +2,14 @@
 //! Tests how TUI components interact with each other and external systems
 //! Validates Requirements 12.1, 12.2
 
-use proptest::prelude::*;
-use ricecoder_tui::event_dispatcher::EventDispatcher;
-use ricecoder_tui::reactive_ui_updates::LiveDataSynchronizer;
-use ricecoder_tui::widgets::{ChatWidget, InputWidget};
 use std::sync::Arc;
+
+use proptest::prelude::*;
+use ricecoder_tui::{
+    event_dispatcher::EventDispatcher,
+    reactive_ui_updates::LiveDataSynchronizer,
+    widgets::{ChatWidget, InputWidget},
+};
 use tokio::sync::RwLock;
 
 // ============================================================================

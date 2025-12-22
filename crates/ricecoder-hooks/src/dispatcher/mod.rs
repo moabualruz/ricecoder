@@ -4,8 +4,7 @@ pub mod event;
 
 pub use event::DefaultEventDispatcher;
 
-use crate::error::Result;
-use crate::types::Event;
+use crate::{error::Result, types::Event};
 
 /// Trait for dispatching events to hooks
 ///

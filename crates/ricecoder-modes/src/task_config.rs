@@ -1,7 +1,12 @@
-use crate::error::{ModeError, Result};
-use crate::models::ThinkMoreConfig;
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
+
+use crate::{
+    error::{ModeError, Result},
+    models::ThinkMoreConfig,
+};
 
 /// Manages per-task Think More configuration with context storage
 #[derive(Debug, Clone)]
@@ -212,9 +217,10 @@ impl Default for TaskConfigManager {
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
+
     use super::*;
     use crate::models::ThinkingDepth;
-    use std::time::Duration;
 
     fn create_test_config() -> ThinkMoreConfig {
         ThinkMoreConfig {

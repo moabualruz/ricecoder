@@ -2,10 +2,13 @@
 //! **Feature: ricecoder-templates, Property 4: Boilerplate Idempotence**
 //! **Validates: Requirements 3.1, 3.2, 3.3**
 
-use proptest::prelude::*;
-use ricecoder_generation::models::{Boilerplate, BoilerplateFile};
-use ricecoder_generation::BoilerplateManager;
 use std::collections::HashMap;
+
+use proptest::prelude::*;
+use ricecoder_generation::{
+    models::{Boilerplate, BoilerplateFile},
+    BoilerplateManager,
+};
 
 /// Strategy for generating valid boilerplate IDs
 fn boilerplate_id_strategy() -> impl Strategy<Value = String> {

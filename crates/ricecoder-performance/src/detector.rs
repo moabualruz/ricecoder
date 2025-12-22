@@ -1,8 +1,10 @@
 //! Regression detection utilities
 
-use crate::baseline::PerformanceBaseline;
-use crate::monitor::PerformanceMetrics;
-use crate::regression::{RegressionAlert, RegressionConfig, RegressionDetector};
+use crate::{
+    baseline::PerformanceBaseline,
+    monitor::PerformanceMetrics,
+    regression::{RegressionAlert, RegressionConfig, RegressionDetector},
+};
 
 /// Simple regression detector wrapper
 pub struct PerformanceRegressionDetector {
