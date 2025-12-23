@@ -1,7 +1,7 @@
-use std::path::{Path, PathBuf};
-use serde_json::Value;
 use anyhow::Result;
 use clap::Args;
+use serde_json::Value;
+use std::path::{Path, PathBuf};
 
 #[derive(Args, Debug)]
 pub struct InstallArgs {
@@ -73,7 +73,8 @@ pub fn set_json_path(config: &mut Value, json_path: &str, value: Value) -> Resul
             *current = Value::Object(serde_json::Map::new());
         }
         let obj = current.as_object_mut().unwrap();
-        obj.entry(part).or_insert(Value::Object(serde_json::Map::new()));
+        obj.entry(part)
+            .or_insert(Value::Object(serde_json::Map::new()));
         current = obj.get_mut(part).unwrap();
     }
     if let Some(last) = parts.last() {
@@ -117,7 +118,10 @@ fn resolve_config_root(root: &Option<PathBuf>) -> Result<PathBuf> {
 
 pub async fn run_install(args: InstallArgs) -> Result<()> {
     if args.dry_run {
-        println!("Dry run: would install {} with version pinning", args.assistant);
+        println!(
+            "Dry run: would install {} with version pinning",
+            args.assistant
+        );
         return Ok(());
     }
     if !args.force {

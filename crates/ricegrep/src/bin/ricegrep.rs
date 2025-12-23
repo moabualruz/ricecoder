@@ -10,19 +10,23 @@ use std::time::{Duration, Instant};
 use dirs;
 
 use anyhow::{Context, Result};
-use std::io::Write;
-use clap::{ArgMatches, CommandFactory, FromArgMatches, Parser, Subcommand};
 use clap::parser::ValueSource;
+use clap::{ArgMatches, CommandFactory, FromArgMatches, Parser, Subcommand};
 use ignore::WalkBuilder;
 use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher};
 use ricegrep::admin::{AdminAction, AdminCommandRequest, AdminToolset};
+use ricegrep::api::models::{
+    HealthStatus, RankingConfig, SearchFilters, SearchRequest, SearchResponse, SearchResult,
+};
+use ricegrep::chunking::{ChunkMetadata, LanguageDetector, LanguageKind};
+use ricegrep::lexical::{
+    Bm25IndexHandle, LexicalHit, LexicalSearcher, SearchFilters as LexicalFilters,
+};
+use ricegrep::metadata::{ChunkMetadataView, MetadataStore};
+use std::io::Write;
 use tempfile::tempdir;
 use uuid::Uuid;
 use walkdir::WalkDir;
-use ricegrep::api::models::{HealthStatus, RankingConfig, SearchFilters, SearchRequest, SearchResponse, SearchResult};
-use ricegrep::chunking::{ChunkMetadata, LanguageDetector, LanguageKind};
-use ricegrep::lexical::{Bm25IndexHandle, LexicalHit, LexicalSearcher, SearchFilters as LexicalFilters};
-use ricegrep::metadata::{ChunkMetadataView, MetadataStore};
 
 const DEFAULT_ENDPOINT: &str = "http://localhost:3000";
 const DEFAULT_WATCH_DEBOUNCE_SECONDS: u64 = 2;
@@ -38,7 +42,6 @@ mod mcp;
 
 use installer::{InstallArgs, UninstallArgs};
 use mcp::McpArgs;
-
 
 #[derive(Parser, Debug)]
 #[command(name = "ricegrep")]
@@ -313,7 +316,6 @@ struct SearchFlags {
     preview: bool,
 }
 
-
 #[derive(Parser, Debug)]
 struct ExportSkillsArgs {
     /// Output format (json or yaml)
@@ -358,7 +360,6 @@ struct E2eArgs {
     config_root: Option<PathBuf>,
 }
 
-
 #[derive(Debug, serde::Serialize)]
 struct SkillDefinition {
     name: String,
@@ -386,8 +387,6 @@ struct RuntimeConfig {
     config_root: std::path::PathBuf,
 }
 
-
-
 impl RuntimeConfig {
     fn resolve(matches: &ArgMatches, cli: &Cli, config: CliConfig) -> Self {
         let endpoint = match matches.value_source("endpoint") {
@@ -406,7 +405,11 @@ impl RuntimeConfig {
             Some(ValueSource::CommandLine) => cli.quiet,
             _ => config.quiet,
         };
-        let config_root = cli.config_root.as_ref().map(|s| std::path::PathBuf::from(s)).unwrap_or(config.config_root);
+        let config_root = cli
+            .config_root
+            .as_ref()
+            .map(|s| std::path::PathBuf::from(s))
+            .unwrap_or(config.config_root);
 
         Self {
             endpoint,
@@ -417,7 +420,6 @@ impl RuntimeConfig {
         }
     }
 }
-
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -467,7 +469,7 @@ async fn run() -> Result<()> {
                 Cli::command().print_help()?;
                 Ok(())
             }
-        }
+        },
     }
 }
 
@@ -480,7 +482,9 @@ fn load_config() -> Result<CliConfig> {
         quiet: false,
         ai_enabled: None,
         color: None,
-        config_root: dirs::home_dir().unwrap_or_else(|| std::path::PathBuf::from("/tmp")).join(".ricegrep"),
+        config_root: dirs::home_dir()
+            .unwrap_or_else(|| std::path::PathBuf::from("/tmp"))
+            .join(".ricegrep"),
     })
 }
 
@@ -489,9 +493,11 @@ fn print_json(value: &serde_json::Value) -> Result<()> {
     Ok(())
 }
 
-
 #[cfg(feature = "server")]
-async fn server_search_request(runtime: &RuntimeConfig, request: SearchRequest) -> Result<SearchResponse> {
+async fn server_search_request(
+    runtime: &RuntimeConfig,
+    request: SearchRequest,
+) -> Result<SearchResponse> {
     let url = format!("{}/search", runtime.endpoint.trim_end_matches('/'));
     let response = reqwest::Client::new()
         .post(&url)
@@ -500,7 +506,10 @@ async fn server_search_request(runtime: &RuntimeConfig, request: SearchRequest) 
         .await
         .context("failed to send server search request")?;
     if !response.status().is_success() {
-        return Err(anyhow::anyhow!("server search request failed: {}", response.status()));
+        return Err(anyhow::anyhow!(
+            "server search request failed: {}",
+            response.status()
+        ));
     }
     let search_response: SearchResponse = response
         .json()
@@ -510,13 +519,21 @@ async fn server_search_request(runtime: &RuntimeConfig, request: SearchRequest) 
 }
 
 #[cfg(not(feature = "server"))]
-async fn server_search_request(_runtime: &RuntimeConfig, _request: SearchRequest) -> Result<SearchResponse> {
+async fn server_search_request(
+    _runtime: &RuntimeConfig,
+    _request: SearchRequest,
+) -> Result<SearchResponse> {
     Err(anyhow::anyhow!(
         "Server mode is disabled. Rebuild with --features server to enable it."
     ))
 }
 
-fn collect_glob_matches(root: &str, pattern: &str, include_dirs: bool, ignore_case: bool) -> Result<Vec<String>> {
+fn collect_glob_matches(
+    root: &str,
+    pattern: &str,
+    include_dirs: bool,
+    ignore_case: bool,
+) -> Result<Vec<String>> {
     let mut matches = Vec::new();
     let walker = WalkBuilder::new(root).build();
     for entry in walker {
@@ -535,7 +552,11 @@ fn collect_glob_matches(root: &str, pattern: &str, include_dirs: bool, ignore_ca
     Ok(matches)
 }
 
-fn list_directory_entries(root: &str, pattern: Option<&str>, ignore_case: bool) -> Result<Vec<String>> {
+fn list_directory_entries(
+    root: &str,
+    pattern: Option<&str>,
+    ignore_case: bool,
+) -> Result<Vec<String>> {
     let mut entries = Vec::new();
     for entry in std::fs::read_dir(root)? {
         let entry = entry?;
@@ -551,24 +572,57 @@ fn list_directory_entries(root: &str, pattern: Option<&str>, ignore_case: bool) 
             true
         };
         if matches {
-            entries.push(format!("{} {}", if path.is_dir() { "d" } else { "f" }, path.display()));
+            entries.push(format!(
+                "{} {}",
+                if path.is_dir() { "d" } else { "f" },
+                path.display()
+            ));
         }
     }
     Ok(entries)
 }
 
-fn read_file_numbered(path: &str, offset: Option<usize>, limit: Option<usize>) -> Result<String> {
-    let content = std::fs::read_to_string(path)?;
+fn format_file_content(path: &str, content: &str, offset: usize, limit: usize) -> String {
     let lines: Vec<&str> = content.lines().collect();
-    let start = offset.unwrap_or(0);
-    let end = limit.map(|l| start + l).unwrap_or(lines.len()).min(lines.len());
+    let total_lines = lines.len();
+
+    let start = offset;
+    let end = (start + limit).min(total_lines);
+
     let mut output = String::new();
-    for (i, line) in lines.iter().enumerate().skip(start).take(end - start) {
-        output.push_str(&format!("{:6}\t{}\n", i + 1, line));
+    output.push_str("<file>\n");
+
+    for (idx, line) in lines.iter().enumerate().skip(start).take(end - start) {
+        let line_num = idx + 1;
+        // Truncate lines longer than 2000 characters
+        let formatted_line = if line.len() > 2000 {
+            format!("{}...(line truncated)", &line[..2000])
+        } else {
+            line.to_string()
+        };
+        output.push_str(&format!("{:05}| {}\n", line_num, formatted_line));
     }
-    Ok(output)
+
+    if end < total_lines {
+        output.push_str(&format!(
+            "(File has more lines - total {} lines)\n",
+            total_lines
+        ));
+    } else {
+        output.push_str(&format!("(End of file - total {} lines)\n", total_lines));
+    }
+
+    output.push_str("</file>");
+    output
 }
 
+fn read_file_numbered(path: &str, offset: Option<usize>, limit: Option<usize>) -> Result<String> {
+    let content = std::fs::read_to_string(path)?;
+    let offset_val = offset.unwrap_or(0);
+    let limit_val = limit.unwrap_or(2000); // Default limit of 2000 lines
+
+    Ok(format_file_content(path, &content, offset_val, limit_val))
+}
 
 fn unimplemented_command(name: &str) -> Result<()> {
     eprintln!("Command '{name}' is not yet implemented in the minimal CLI.");
@@ -663,8 +717,7 @@ fn run_local_search(args: &SearchArgs) -> Result<SearchResponse> {
             index_dir.display()
         ));
     }
-    let handle = Bm25IndexHandle::open(&index_dir)
-        .context("failed to open local index")?;
+    let handle = Bm25IndexHandle::open(&index_dir).context("failed to open local index")?;
     let searcher = LexicalSearcher::new(handle);
     let mut filters = LexicalFilters::default();
     filters.language = args.language.clone();
@@ -759,7 +812,10 @@ fn resolve_repo_root(paths: &[String]) -> Result<PathBuf> {
             .ok_or_else(|| anyhow::anyhow!("invalid path for search root"))?;
     }
     if !root.exists() {
-        return Err(anyhow::anyhow!("search path does not exist: {}", root.display()));
+        return Err(anyhow::anyhow!(
+            "search path does not exist: {}",
+            root.display()
+        ));
     }
     Ok(root)
 }
@@ -772,9 +828,8 @@ pub(crate) async fn ensure_local_index_ready(paths: &[String]) -> Result<()> {
 async fn ensure_local_index_for_root(root: &Path) -> Result<()> {
     let index_dir = local_index_dir(root);
     let metadata_path = local_metadata_path(root);
-    let index_healthy = index_dir.exists()
-        && metadata_path.exists()
-        && Bm25IndexHandle::open(&index_dir).is_ok();
+    let index_healthy =
+        index_dir.exists() && metadata_path.exists() && Bm25IndexHandle::open(&index_dir).is_ok();
     if index_healthy {
         return Ok(());
     }
@@ -790,7 +845,6 @@ async fn ensure_local_index_for_root(root: &Path) -> Result<()> {
     println!("Local index rebuilt at {}", index_dir.display());
     Ok(())
 }
-
 
 fn local_state_dir(root: &Path) -> PathBuf {
     root.join(STATE_DIR_NAME).join(STORE_DIR_NAME)
@@ -872,7 +926,11 @@ async fn run_watch(runtime: &RuntimeConfig, args: WatchArgs) -> Result<()> {
             .unwrap_or(Duration::from_millis(500));
         match rx.recv_timeout(recv_timeout) {
             Ok(Ok(event)) => {
-                if let Event { kind: notify::EventKind::Modify(_), .. } = event {
+                if let Event {
+                    kind: notify::EventKind::Modify(_),
+                    ..
+                } = event
+                {
                     if args.clear_screen {
                         print!("\x1B[2J\x1B[1;1H");
                     }
@@ -960,8 +1018,7 @@ async fn run_index(runtime: &RuntimeConfig, args: IndexArgs) -> Result<()> {
                 }
                 return Ok(());
             }
-            let handle = Bm25IndexHandle::open(&index_dir)
-                .context("failed to open local index")?;
+            let handle = Bm25IndexHandle::open(&index_dir).context("failed to open local index")?;
             let metadata = MetadataStore::load(&metadata_path).ok();
             let status = serde_json::json!({
                 "indexed": true,
@@ -976,7 +1033,14 @@ async fn run_index(runtime: &RuntimeConfig, args: IndexArgs) -> Result<()> {
                 println!("Index status: ready");
                 println!("Documents: {}", handle.document_count());
                 println!("Tokens: {}", handle.token_count());
-                println!("Metadata store: {}", if metadata.is_some() { "ready" } else { "missing" });
+                println!(
+                    "Metadata store: {}",
+                    if metadata.is_some() {
+                        "ready"
+                    } else {
+                        "missing"
+                    }
+                );
             }
             Ok(())
         }
@@ -1063,11 +1127,7 @@ async fn run_e2e(args: E2eArgs) -> Result<()> {
         &exe,
         &workspace_root,
         "index build",
-        &[
-            "index",
-            "build",
-            fixture_root.to_string_lossy().as_ref(),
-        ],
+        &["index", "build", fixture_root.to_string_lossy().as_ref()],
         "exit=0",
         |output| output.status.success(),
     )?);
@@ -1133,11 +1193,7 @@ async fn run_e2e(args: E2eArgs) -> Result<()> {
         &exe,
         &workspace_root,
         "index update",
-        &[
-            "index",
-            "update",
-            fixture_root.to_string_lossy().as_ref(),
-        ],
+        &["index", "update", fixture_root.to_string_lossy().as_ref()],
         "exit=0",
         |output| output.status.success(),
     )?);
@@ -1286,7 +1342,9 @@ fn run_cli_step_with_stdin(
             .write_all(stdin_payload.as_bytes())
             .context("failed to write stdin payload")?;
     }
-    let output = child.wait_with_output().context("failed to read CLI output")?;
+    let output = child
+        .wait_with_output()
+        .context("failed to read CLI output")?;
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     let stderr = String::from_utf8_lossy(&output.stderr).to_string();
     let cli_output = CliOutput {
@@ -1334,7 +1392,6 @@ fn copy_dir_recursive(source: &Path, target: &Path) -> Result<()> {
     Ok(())
 }
 
-
 fn run_export_skills(args: ExportSkillsArgs) -> Result<()> {
     let skills = vec![
         SkillDefinition {
@@ -1375,4 +1432,3 @@ fn run_export_skills(args: ExportSkillsArgs) -> Result<()> {
     }
     Ok(())
 }
-

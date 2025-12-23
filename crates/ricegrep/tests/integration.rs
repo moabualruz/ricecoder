@@ -99,7 +99,10 @@ fn mcp_stdio_nl_search_smoke() {
     let output = child.wait_with_output().expect("read MCP output");
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("\"id\":2"), "tools/list response missing");
-    assert!(stdout.contains("nl_search"), "nl_search not present in MCP output");
+    assert!(
+        stdout.contains("nl_search"),
+        "nl_search not present in MCP output"
+    );
     assert!(stdout.contains("\"id\":3"), "nl_search response missing");
     assert!(
         !stdout.contains("failed to reach RiceGrep gateway"),

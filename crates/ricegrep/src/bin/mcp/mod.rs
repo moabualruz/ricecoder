@@ -31,25 +31,26 @@ pub struct McpArgs {
     pub server_endpoint: Option<String>,
 }
 
-use ricegrep::api::models::{SearchFilters, SearchRequest, SearchResponse, SearchResult};
-use ricegrep::chunking::{ChunkMetadata, LanguageDetector, LanguageKind};
+use anyhow::{Context, Result};
 use glob::Pattern;
 use ignore::WalkBuilder;
+use notify::Watcher;
 use regex::Regex;
+use ricegrep::admin::AdminToolset;
+use ricegrep::api::models::{SearchFilters, SearchRequest, SearchResponse, SearchResult};
+use ricegrep::chunking::{ChunkMetadata, LanguageDetector, LanguageKind};
 use rmcp::{
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
     model::{CallToolResult, Content, ServerCapabilities, ServerInfo},
     schemars::JsonSchema,
     tool, tool_handler, tool_router, ErrorData, ServerHandler, ServiceExt,
 };
+use std::path::Path;
+use std::time::Instant;
 use tokio::io;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt};
 use tokio::time::{sleep, Duration};
-use std::path::Path;
-use std::time::Instant;
 use uuid::Uuid;
-use anyhow::{Context, Result};
-use notify::Watcher;
 
 const MCP_AUTO_WATCH_DELAY_SECS: u64 = 5;
 
@@ -109,6 +110,14 @@ struct EditToolInput {
     timeout_secs: Option<u64>,
 }
 
+#[derive(Debug, serde::Deserialize, JsonSchema)]
+struct WriteToolInput {
+    file_path: String,
+    content: String,
+    #[serde(default)]
+    timeout_secs: Option<u64>,
+}
+
 /// Manages watch lifecycle tied to MCP server
 struct WatchManager {
     handle: Option<tokio::task::JoinHandle<()>>,
@@ -123,21 +132,25 @@ impl WatchManager {
             shutdown_tx,
         }
     }
-    
-    /// Start watch operation
-    fn start(&mut self, runtime: std::sync::Arc<crate::RuntimeConfig>, watch_args: crate::WatchArgs) {
+
+    /// Start watch operation with index directory
+    fn start_with_index(&mut self, watch_args: crate::WatchArgs, index_dir: std::path::PathBuf) {
         let mut shutdown_rx = self.shutdown_tx.subscribe();
-        let runtime_clone = runtime.clone();
-        
+
         let handle = tokio::spawn(async move {
             // Wait for delay before starting watch
             tokio::select! {
                 _ = tokio::time::sleep(Duration::from_secs(MCP_AUTO_WATCH_DELAY_SECS)) => {
+                    // Create toolset for index management wrapped in Arc for thread safety
+                    let toolset = std::sync::Arc::new(AdminToolset::new(index_dir, None));
+                    let root_path = watch_args.paths.get(0).map(|p| std::path::PathBuf::from(p)).unwrap_or_else(|| std::path::PathBuf::from("."));
+                    
                     // Start watch with shutdown signal
                     let _ = run_watch_with_shutdown(
-                        &runtime_clone,
                         watch_args,
-                        shutdown_rx.resubscribe()
+                        shutdown_rx.resubscribe(),
+                        toolset,
+                        root_path,
                     ).await;
                 }
                 _ = shutdown_rx.recv() => {
@@ -147,25 +160,22 @@ impl WatchManager {
                 }
             }
         });
-        
+
         self.handle = Some(handle);
     }
-    
+
     /// Gracefully shutdown watch
     async fn shutdown(&mut self) -> Result<()> {
         // Send shutdown signal
         let _ = self.shutdown_tx.send(());
-        
+
         // Wait for watch to exit (with timeout)
         if let Some(handle) = self.handle.take() {
-            tokio::time::timeout(
-                Duration::from_secs(5),
-                handle
-            )
-            .await
-            .context("Watch shutdown timed out after 5s")??;
+            tokio::time::timeout(Duration::from_secs(5), handle)
+                .await
+                .context("Watch shutdown timed out after 5s")??;
         }
-        
+
         Ok(())
     }
 }
@@ -182,24 +192,25 @@ impl ChangeTracker {
             changed_files: std::collections::HashMap::new(),
         }
     }
-    
+
     /// Record a file change
     fn record_change(&mut self, path: std::path::PathBuf) {
-        self.changed_files.insert(path, std::time::SystemTime::now());
+        self.changed_files
+            .insert(path, std::time::SystemTime::now());
     }
-    
+
     /// Get and clear all tracked changes
     fn take_changes(&mut self) -> Vec<std::path::PathBuf> {
         let paths: Vec<_> = self.changed_files.keys().cloned().collect();
         self.changed_files.clear();
         paths
     }
-    
+
     /// Check if there are pending changes
     fn has_changes(&self) -> bool {
         !self.changed_files.is_empty()
     }
-    
+
     /// Get count of tracked changes
     fn change_count(&self) -> usize {
         self.changed_files.len()
@@ -208,32 +219,33 @@ impl ChangeTracker {
 
 /// Run watch with shutdown signal support
 async fn run_watch_with_shutdown(
-    runtime: &RuntimeConfig,
     args: crate::WatchArgs,
     mut shutdown_rx: tokio::sync::broadcast::Receiver<()>,
+    toolset: std::sync::Arc<AdminToolset>,
+    root_path: std::path::PathBuf,
 ) -> Result<()> {
     let (tx, rx) = std::sync::mpsc::channel();
-    let mut watcher = notify::recommended_watcher(tx)
-        .context("Failed to create file watcher")?;
-    
+    let mut watcher = notify::recommended_watcher(tx).context("Failed to create file watcher")?;
+
     for path in &args.paths {
-        watcher.watch(path.as_ref(), notify::RecursiveMode::Recursive)
+        watcher
+            .watch(path.as_ref(), notify::RecursiveMode::Recursive)
             .context("Failed to watch path")?;
     }
-    
+
     tracing::info!("Watch started for {:?}", args.paths);
-    
+
     let mut change_tracker = ChangeTracker::new();
     let recv_timeout = Duration::from_millis(100);
     let batch_interval = Duration::from_secs(1);
     let mut last_batch = std::time::Instant::now();
-    
+
     loop {
         // Check for shutdown signal
         match shutdown_rx.try_recv() {
             Ok(_) | Err(tokio::sync::broadcast::error::TryRecvError::Closed) => {
                 // Flush pending changes before shutdown
-                process_tracked_changes(&mut change_tracker);
+                process_tracked_changes(&mut change_tracker, &toolset, &root_path).await;
                 tracing::info!("Watch received shutdown signal");
                 break;
             }
@@ -245,19 +257,32 @@ async fn run_watch_with_shutdown(
                 tracing::warn!("Watch shutdown signal lagged, continuing");
             }
         }
-        
-        // Check for file events
-        match rx.recv_timeout(recv_timeout) {
-            Ok(Ok(event)) => {
-                handle_watch_event(&mut change_tracker, &event, &args);
-            }
-            Ok(Err(e)) => {
-                tracing::error!("Watch error: {}", e);
-            }
+
+         // Check for file events
+         match rx.recv_timeout(recv_timeout) {
+             Ok(Ok(event)) => {
+                 handle_watch_event(&mut change_tracker, &event, &args);
+             }
+             Ok(Err(e)) => {
+                 // Include file paths if available in the error event
+                 let path_context = if !e.paths.is_empty() {
+                     format!(
+                         " for files: {}",
+                         e.paths
+                             .iter()
+                             .map(|p| p.display().to_string())
+                             .collect::<Vec<_>>()
+                             .join(", ")
+                     )
+                 } else {
+                     String::new()
+                 };
+                 tracing::error!("Watch error processing event: {}{}", e, path_context);
+             }
             Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
                 // Batch process changes at interval
                 if last_batch.elapsed() >= batch_interval && change_tracker.has_changes() {
-                    process_tracked_changes(&mut change_tracker);
+                    process_tracked_changes(&mut change_tracker, &toolset, &root_path).await;
                     last_batch = std::time::Instant::now();
                 }
             }
@@ -267,18 +292,14 @@ async fn run_watch_with_shutdown(
             }
         }
     }
-    
+
     Ok(())
 }
 
 /// Handle individual watch events and track changes
-fn handle_watch_event(
-    tracker: &mut ChangeTracker,
-    event: &notify::Event,
-    args: &crate::WatchArgs,
-) {
+fn handle_watch_event(tracker: &mut ChangeTracker, event: &notify::Event, args: &crate::WatchArgs) {
     use notify::EventKind;
-    
+
     match event.kind {
         EventKind::Create(_) => {
             for path in &event.paths {
@@ -306,45 +327,155 @@ fn handle_watch_event(
             // Ignore other event kinds (access, metadata changes, etc.)
         }
     }
-    
+
     // Clear screen on first change if requested
     if args.clear_screen && tracker.change_count() == 1 {
         print!("\x1B[2J\x1B[1;1H");
     }
 }
 
-/// Process accumulated changes and log summary
-fn process_tracked_changes(tracker: &mut ChangeTracker) {
+/// Process accumulated changes and update index
+async fn process_tracked_changes(
+    tracker: &mut ChangeTracker,
+    toolset: &std::sync::Arc<AdminToolset>,
+    root_path: &std::path::Path,
+) {
     if !tracker.has_changes() {
         return;
     }
-    
+
     let changes = tracker.take_changes();
     let count = changes.len();
-    
+
     tracing::info!("Tracked {} file change(s)", count);
     for path in changes.iter().take(5) {
         tracing::debug!("  - {}", path.display());
     }
-    
+
     if count > 5 {
         tracing::debug!("  ... and {} more", count - 5);
     }
+
+    // Update index for changed files
+    match update_index_for_changes(toolset, root_path, &changes).await {
+        Ok(updated) => {
+            if updated > 0 {
+                tracing::info!("Updated index for {} file(s)", updated);
+            }
+        }
+        Err(e) => {
+            // Include file paths context in error message
+            let file_context = if changes.len() <= 3 {
+                format!(
+                    " (files: {})",
+                    changes
+                        .iter()
+                        .map(|p| p.display().to_string())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )
+            } else {
+                format!(" ({} files changed)", changes.len())
+            };
+            tracing::error!("Failed to update index for changes{}: {}", file_context, e);
+            // Continue watching even if update fails
+        }
+    }
 }
 
-#[derive(Debug, Clone)]
+/// Update index for changed files
+async fn update_index_for_changes(
+    toolset: &std::sync::Arc<AdminToolset>,
+    root_path: &std::path::Path,
+    changed_files: &[std::path::PathBuf],
+) -> Result<usize> {
+    let count = changed_files.len();
+    
+    if count == 0 {
+        return Ok(0);
+    }
+
+     // For performance: if too many files changed, do full re-index
+     if count > 100 {
+         tracing::info!(
+             "Many files changed ({}), performing full re-index",
+             count
+         );
+         let metadata_path = root_path.join(".ricegrep/metadata.bin");
+         
+         // Ensure metadata directory exists
+         if let Some(parent) = metadata_path.parent() {
+             let _ = tokio::fs::create_dir_all(parent).await;
+         }
+         
+         match toolset.reindex_repository_with_metadata(root_path, &metadata_path).await {
+             Ok(_) => {
+                 tracing::info!("Full index re-index completed successfully");
+                 Ok(count)
+             }
+             Err(e) => {
+                 tracing::warn!(
+                     "Full re-index failed for repository at {}: {}",
+                     root_path.display(),
+                     e
+                 );
+                 Err(anyhow::anyhow!(
+                     "Full re-index failed for repository at {}: {}",
+                     root_path.display(),
+                     e
+                 ))
+             }
+         }
+     } else {
+         // For small changes: attempt incremental re-index
+         // Note: For now, we fall back to full re-index as AdminToolset doesn't expose incremental API
+         tracing::info!("Re-indexing {} changed file(s)", count);
+         let metadata_path = root_path.join(".ricegrep/metadata.bin");
+         
+         // Ensure metadata directory exists
+         if let Some(parent) = metadata_path.parent() {
+             let _ = tokio::fs::create_dir_all(parent).await;
+         }
+         
+         match toolset.reindex_repository_with_metadata(root_path, &metadata_path).await {
+             Ok(_) => {
+                 tracing::info!("Index update completed successfully");
+                 Ok(count)
+             }
+             Err(e) => {
+                 tracing::warn!(
+                     "Index update failed for repository at {} ({} file changes): {}",
+                     root_path.display(),
+                     count,
+                     e
+                 );
+                 Err(anyhow::anyhow!(
+                     "Index update failed for repository at {} ({} file changes): {}",
+                     root_path.display(),
+                     count,
+                     e
+                 ))
+             }
+         }
+     }
+}
+
+#[derive(Debug)]
 struct RicegrepMcp {
-    runtime: RuntimeConfig,
+    runtime_config: RuntimeConfig,
     server_endpoint: Option<String>,
     show_all_tools: bool,
     pub tool_router: ToolRouter<RicegrepMcp>,
 }
 
-
 impl RicegrepMcp {
-    pub fn new(runtime: RuntimeConfig, server_endpoint: Option<String>, show_all_tools: bool) -> Self {
+    pub fn new(
+        runtime_config: RuntimeConfig,
+        server_endpoint: Option<String>,
+        show_all_tools: bool,
+    ) -> Self {
         Self {
-            runtime,
+            runtime_config,
             server_endpoint,
             show_all_tools,
             tool_router: Self::tool_router(),
@@ -352,9 +483,8 @@ impl RicegrepMcp {
     }
 
     fn is_tool_allowed(&self, name: &str) -> bool {
-        self.show_all_tools || !matches!(name, "rice_read" | "rice_edit")
+        self.show_all_tools || !matches!(name, "rice_read" | "rice_edit" | "rice_write")
     }
-
 
     async fn execute_search(
         &self,
@@ -377,8 +507,8 @@ impl RicegrepMcp {
             match server_search_request(endpoint, &request).await {
                 Ok(response) => return Ok((response, None)),
                 Err(err) => {
-                    let response = local_search_response(&request, root, filter)
-                        .map_err(|fallback_err| {
+                    let response =
+                        local_search_response(&request, root, filter).map_err(|fallback_err| {
                             ErrorData::internal_error(
                                 format!(
                                     "server error: {err}; local fallback failed: {fallback_err}"
@@ -386,8 +516,7 @@ impl RicegrepMcp {
                                 None,
                             )
                         })?;
-                    let warning =
-                        format!("Server unavailable; using local scan. error={}", err);
+                    let warning = format!("Server unavailable; using local scan. error={}", err);
                     return Ok((response, Some(warning)));
                 }
             }
@@ -423,16 +552,17 @@ impl RicegrepMcp {
             timeout_ms: None,
         };
 
-        let (response, warning) = self
-            .execute_search(request, input.path.as_deref())
-            .await?;
+        let (response, warning) = self.execute_search(request, input.path.as_deref()).await?;
         let mut output = String::new();
         if let Some(note) = warning {
             output.push_str(&note);
             output.push('\n');
         }
         output.push_str(&format_search_lines(&response));
-        Ok(tool_result_with_response(output.trim_end().to_string(), &response))
+        Ok(tool_result_with_response(
+            output.trim_end().to_string(),
+            &response,
+        ))
     }
 
     #[tool(
@@ -457,9 +587,7 @@ impl RicegrepMcp {
             timeout_ms: None,
         };
 
-        let (response, warning) = self
-            .execute_search(request, input.path.as_deref())
-            .await?;
+        let (response, warning) = self.execute_search(request, input.path.as_deref()).await?;
         let mut output = String::new();
         if let Some(note) = warning {
             output.push_str(&note);
@@ -474,14 +602,20 @@ impl RicegrepMcp {
             );
         }
         output.push_str(&format_search_lines(&response));
-        Ok(tool_result_with_response(output.trim_end().to_string(), &response))
+        Ok(tool_result_with_response(
+            output.trim_end().to_string(),
+            &response,
+        ))
     }
 
     #[tool(
         name = "rice_glob",
         description = "Find files by glob pattern with ignore awareness. Performs fast wildcard searches across directories, honors .gitignore/.ignore rules, supports recursive matching, optional directory results, and case-insensitive queries for cross-platform consistency."
     )]
-    async fn glob(&self, Parameters(input): Parameters<GlobToolInput>) -> Result<CallToolResult, ErrorData> {
+    async fn glob(
+        &self,
+        Parameters(input): Parameters<GlobToolInput>,
+    ) -> Result<CallToolResult, ErrorData> {
         let root = input.path.as_deref().unwrap_or(".");
         let matches = crate::collect_glob_matches(
             root,
@@ -497,7 +631,10 @@ impl RicegrepMcp {
         name = "rice_list",
         description = "List directory contents with ignore awareness. Produces filtered directory listings that respect project ignore files, optional glob filters, and case-insensitive matching so you can inspect structure before drilling into files."
     )]
-    async fn list(&self, Parameters(input): Parameters<ListToolInput>) -> Result<CallToolResult, ErrorData> {
+    async fn list(
+        &self,
+        Parameters(input): Parameters<ListToolInput>,
+    ) -> Result<CallToolResult, ErrorData> {
         let root = input.path.as_deref().unwrap_or(".");
         let entries = crate::list_directory_entries(
             root,
@@ -508,13 +645,98 @@ impl RicegrepMcp {
         Ok(tool_text_result(entries.join("\n")))
     }
 
+    fn is_binary_file(path: &std::path::Path, content: &[u8]) -> bool {
+        // Check extension first
+        if let Some(ext) = path.extension() {
+            let ext_str = ext.to_string_lossy().to_lowercase();
+            const BINARY_EXTENSIONS: &[&str] = &[
+                "exe", "dll", "so", "dylib", "bin", "o", "a", "zip", "tar", "gz", "bz2", "xz",
+                "7z", "jpg", "jpeg", "png", "gif", "bmp", "ico", "mp3", "mp4", "avi", "mov", "pdf",
+                "doc", "docx",
+            ];
+            if BINARY_EXTENSIONS.contains(&ext_str.as_ref()) {
+                return true;
+            }
+        }
+
+        // Check content heuristic (null bytes in first 8KB)
+        let check_len = content.len().min(8192);
+        content[..check_len].contains(&0)
+    }
+
+    fn format_file_content_for_mcp(
+        path: &str,
+        content: &str,
+        offset: usize,
+        limit: usize,
+    ) -> String {
+        let lines: Vec<&str> = content.lines().collect();
+        let total_lines = lines.len();
+
+        let start = offset;
+        let end = (start + limit).min(total_lines);
+
+        let mut output = String::new();
+        output.push_str("<file>\n");
+
+        for (idx, line) in lines.iter().enumerate().skip(start).take(end - start) {
+            let line_num = idx + 1;
+            // Truncate lines longer than 2000 characters
+            let formatted_line = if line.len() > 2000 {
+                format!("{}...(line truncated)", &line[..2000])
+            } else {
+                line.to_string()
+            };
+            output.push_str(&format!("{:05}| {}\n", line_num, formatted_line));
+        }
+
+        if end < total_lines {
+            output.push_str(&format!(
+                "(File has more lines - total {} lines)\n",
+                total_lines
+            ));
+        } else {
+            output.push_str(&format!("(End of file - total {} lines)\n", total_lines));
+        }
+
+        output.push_str("</file>");
+        output
+    }
+
     #[tool(
         name = "rice_read",
         description = "Read file contents with optional line ranges. Streams numbered output with offset and limit controls so you can inspect entire files or focused snippets without overwhelming context."
     )]
-    async fn read(&self, Parameters(input): Parameters<ReadToolInput>) -> Result<CallToolResult, ErrorData> {
-        let output = crate::read_file_numbered(&input.path, input.offset, input.limit)
-            .map_err(|err| ErrorData::internal_error(err.to_string(), None))?;
+    async fn read(
+        &self,
+        Parameters(input): Parameters<ReadToolInput>,
+    ) -> Result<CallToolResult, ErrorData> {
+        // Read file as bytes first for binary detection
+        let path = std::path::Path::new(&input.path);
+        let content_bytes = tokio::fs::read(path).await.map_err(|err| {
+            ErrorData::internal_error(format!("Failed to read file: {}", err), None)
+        })?;
+
+        // Check if binary
+        if Self::is_binary_file(path, &content_bytes) {
+            return Err(ErrorData::internal_error(
+                format!(
+                    "Cannot read binary file: {}. Use a binary-safe tool.",
+                    input.path
+                ),
+                None,
+            ));
+        }
+
+        // Convert to string
+        let content = String::from_utf8(content_bytes).map_err(|_| {
+            ErrorData::internal_error("File contains invalid UTF-8".to_string(), None)
+        })?;
+
+        let offset = input.offset.unwrap_or(0);
+        let limit = input.limit.unwrap_or(2000); // Default limit of 2000 lines
+
+        let output = Self::format_file_content_for_mcp(&input.path, &content, offset, limit);
         Ok(tool_text_result(output))
     }
 
@@ -522,8 +744,25 @@ impl RicegrepMcp {
         name = "rice_edit",
         description = "Edit a file with preview and force safeguards. Performs exact string replacements with verification so you can refactor or fix configurations safely without unintended edits. Supports replace_all parameter to replace all occurrences instead of just the first."
     )]
-    async fn edit(&self, Parameters(input): Parameters<EditToolInput>) -> Result<CallToolResult, ErrorData> {
+    async fn edit(
+        &self,
+        Parameters(input): Parameters<EditToolInput>,
+    ) -> Result<CallToolResult, ErrorData> {
         let output = apply_edit(&input)
+            .await
+            .map_err(|err| ErrorData::internal_error(err.to_string(), None))?;
+        Ok(tool_text_result(output))
+    }
+
+    #[tool(
+        name = "rice_write",
+        description = "Write content to a file, creating it if it doesn't exist or overwriting if it does."
+    )]
+    async fn write(
+        &self,
+        Parameters(input): Parameters<WriteToolInput>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let output = apply_write(&input)
             .await
             .map_err(|err| ErrorData::internal_error(err.to_string(), None))?;
         Ok(tool_text_result(output))
@@ -553,15 +792,16 @@ fn tool_title(name: &str) -> &'static str {
 }
 
 fn tool_annotations(name: &str) -> serde_json::Value {
-    let (safe, idempotent) = match name {
-        "rice_edit" => (false, false),
-        _ => (true, true),
+    let (safe, idempotent, destructive) = match name {
+        "rice_edit" | "rice_write" => (false, false, true),
+        _ => (true, true, false),
     };
     serde_json::json!({
         "audience": ["user", "assistant"],
         "priority": 0.85,
         "safe": safe,
-        "idempotent": idempotent
+        "idempotent": idempotent,
+        "destructive": destructive
     })
 }
 
@@ -648,28 +888,59 @@ fn search_output_schema() -> serde_json::Value {
 
 async fn apply_edit(input: &EditToolInput) -> Result<String> {
     // Set timeout wrapper
-    let timeout_duration = Duration::from_secs(
-        input.timeout_secs.unwrap_or(30)
-    );
-    
+    let timeout_duration = Duration::from_secs(input.timeout_secs.unwrap_or(30));
+
     tokio::time::timeout(timeout_duration, apply_edit_inner(input))
         .await
-        .context(format!("Edit operation timed out after {}s", timeout_duration.as_secs()))?
+        .context(format!(
+            "Edit operation timed out after {}s",
+            timeout_duration.as_secs()
+        ))?
 }
 
 async fn apply_edit_inner(input: &EditToolInput) -> Result<String> {
-    // Read file asynchronously
-    let content = tokio::fs::read_to_string(&input.file_path)
-        .await
-        .context(format!("Failed to read file: {}", input.file_path))?;
-    
+    // Read file asynchronously with enhanced error handling
+    let content = match tokio::fs::read_to_string(&input.file_path).await {
+        Ok(content) => content,
+        Err(e) => {
+            let message = match e.kind() {
+                std::io::ErrorKind::NotFound => {
+                    format!(
+                        "File not found: {}. Check the path and try again.",
+                        input.file_path
+                    )
+                }
+                std::io::ErrorKind::PermissionDenied => {
+                    format!(
+                        "Permission denied: {}. Check file permissions.",
+                        input.file_path
+                    )
+                }
+                std::io::ErrorKind::InvalidData => {
+                    format!(
+                        "File contains invalid UTF-8: {}. Check file encoding.",
+                        input.file_path
+                    )
+                }
+                _ => {
+                    // Could be file locked or other I/O error
+                    format!(
+                        "File is locked or inaccessible: {}. Close other applications and retry. (Error: {})",
+                        input.file_path, e
+                    )
+                }
+            };
+            return Err(anyhow::anyhow!(message));
+        }
+    };
+
     // Handle replace_all parameter
     let new_content = if input.replace_all.unwrap_or(false) {
         content.replace(&input.old_string, &input.new_string)
     } else {
         content.replacen(&input.old_string, &input.new_string, 1)
     };
-    
+
     // Check if replacement happened
     if new_content == content {
         return Err(anyhow::anyhow!(
@@ -678,27 +949,192 @@ async fn apply_edit_inner(input: &EditToolInput) -> Result<String> {
             input.file_path
         ));
     }
-    
-    // Write atomically via temp file
+
+    // Write atomically via temp file with enhanced error handling
     let temp_path = format!("{}.tmp", input.file_path);
-    tokio::fs::write(&temp_path, &new_content)
-        .await
-        .context("Failed to write temporary file")?;
-    
-    tokio::fs::rename(&temp_path, &input.file_path)
-        .await
-        .context("Failed to rename temporary file to original location")?;
-    
+    match tokio::fs::write(&temp_path, &new_content).await {
+        Ok(_) => {}
+        Err(e) => {
+            let message = match e.kind() {
+                std::io::ErrorKind::NotFound => {
+                    format!(
+                        "Cannot write to path: {} - parent directory does not exist.",
+                        temp_path
+                    )
+                }
+                std::io::ErrorKind::PermissionDenied => {
+                    format!(
+                        "Permission denied writing to: {}. Check directory permissions.",
+                        temp_path
+                    )
+                }
+                std::io::ErrorKind::InvalidInput => {
+                    format!("Invalid file path: {}", temp_path)
+                }
+                _ => {
+                    // Could be disk full or file locked
+                    format!(
+                        "Cannot write file: {} - disk may be full or file locked. (Error: {})",
+                        temp_path, e
+                    )
+                }
+            };
+            return Err(anyhow::anyhow!(message));
+        }
+    }
+
+    // Rename with enhanced error handling
+    match tokio::fs::rename(&temp_path, &input.file_path).await {
+        Ok(_) => {}
+        Err(e) => {
+            // Try to clean up temp file on failure
+            let _ = tokio::fs::remove_file(&temp_path).await;
+            let message = match e.kind() {
+                std::io::ErrorKind::PermissionDenied => {
+                    format!(
+                        "Permission denied replacing original file: {}. Check file permissions.",
+                        input.file_path
+                    )
+                }
+                std::io::ErrorKind::NotFound => {
+                    format!(
+                        "Original file was deleted or moved: {}. Temporary file preserved at {}",
+                        input.file_path, temp_path
+                    )
+                }
+                _ => {
+                    format!(
+                        "Failed to complete edit - original file at {} may not be replaced. Temporary file at {} (Error: {})",
+                        input.file_path, temp_path, e
+                    )
+                }
+            };
+            return Err(anyhow::anyhow!(message));
+        }
+    }
+
     let occurrences = content.matches(&input.old_string).count();
     let replaced = if input.replace_all.unwrap_or(false) {
         occurrences
     } else {
         1
     };
-    
+
     Ok(format!(
         "Edited {}: replaced {} occurrence(s) of '{}' with '{}'",
         input.file_path, replaced, input.old_string, input.new_string
+    ))
+}
+
+async fn apply_write(input: &WriteToolInput) -> Result<String> {
+    // Set timeout wrapper
+    let timeout_duration = Duration::from_secs(input.timeout_secs.unwrap_or(30));
+
+    tokio::time::timeout(timeout_duration, apply_write_inner(input))
+        .await
+        .context(format!(
+            "Write operation timed out after {}s",
+            timeout_duration.as_secs()
+        ))?
+}
+
+async fn apply_write_inner(input: &WriteToolInput) -> Result<String> {
+    // Create parent directory if needed with enhanced error handling
+    if let Some(parent) = std::path::Path::new(&input.file_path).parent() {
+        if !parent.as_os_str().is_empty() {
+            match tokio::fs::create_dir_all(parent).await {
+                Ok(_) => {}
+                Err(e) => {
+                    let message = match e.kind() {
+                        std::io::ErrorKind::PermissionDenied => {
+                            format!(
+                                "Permission denied creating directory: {}. Check directory permissions.",
+                                parent.display()
+                            )
+                        }
+                        std::io::ErrorKind::InvalidInput => {
+                            format!(
+                                "Invalid directory path: {}. Check path is valid.",
+                                parent.display()
+                            )
+                        }
+                        _ => {
+                            format!(
+                                "Failed to create directory: {}. (Error: {})",
+                                parent.display(),
+                                e
+                            )
+                        }
+                    };
+                    return Err(anyhow::anyhow!(message));
+                }
+            }
+        }
+    }
+
+    // Write atomically via temp file with enhanced error handling
+    let temp_path = format!("{}.tmp", input.file_path);
+    match tokio::fs::write(&temp_path, &input.content).await {
+        Ok(_) => {}
+        Err(e) => {
+            let message = match e.kind() {
+                std::io::ErrorKind::PermissionDenied => {
+                    format!(
+                        "Permission denied writing to: {}. Check directory permissions.",
+                        temp_path
+                    )
+                }
+                std::io::ErrorKind::InvalidInput => {
+                    format!("Invalid file path: {}", temp_path)
+                }
+                _ => {
+                    // Could be disk full or other I/O error
+                    format!(
+                        "Cannot write file: {} - disk may be full, read-only filesystem, or other I/O error. (Error: {})",
+                        temp_path, e
+                    )
+                }
+            };
+            return Err(anyhow::anyhow!(message));
+        }
+    }
+
+    // Rename with enhanced error handling
+    match tokio::fs::rename(&temp_path, &input.file_path).await {
+        Ok(_) => {}
+        Err(e) => {
+            // Try to clean up temp file on failure
+            let _ = tokio::fs::remove_file(&temp_path).await;
+            let message = match e.kind() {
+                std::io::ErrorKind::PermissionDenied => {
+                    format!(
+                        "Permission denied replacing file: {}. Check file permissions.",
+                        input.file_path
+                    )
+                }
+                std::io::ErrorKind::NotFound => {
+                    format!(
+                        "Parent directory was deleted or file path is invalid: {}. Temporary file preserved at {}",
+                        input.file_path, temp_path
+                    )
+                }
+                _ => {
+                    format!(
+                        "Failed to complete write - original file at {} may not be replaced. Temporary file at {} (Error: {})",
+                        input.file_path, temp_path, e
+                    )
+                }
+            };
+            return Err(anyhow::anyhow!(message));
+        }
+    }
+
+    let line_count = input.content.lines().count();
+    let byte_count = input.content.len();
+
+    Ok(format!(
+        "Wrote {} ({} bytes, {} lines)",
+        input.file_path, byte_count, line_count
     ))
 }
 
@@ -890,10 +1326,7 @@ fn local_search_response(
 }
 
 #[cfg(feature = "server")]
-async fn server_search_request(
-    endpoint: &str,
-    request: &SearchRequest,
-) -> Result<SearchResponse> {
+async fn server_search_request(endpoint: &str, request: &SearchRequest) -> Result<SearchResponse> {
     let url = format!("{}/search", endpoint.trim_end_matches('/'));
     let response = reqwest::Client::new()
         .post(&url)
@@ -924,29 +1357,33 @@ async fn server_search_request(
     ))
 }
 
-async fn handle_mcp_request(mcp: &RicegrepMcp, tool_router: &ToolRouter<RicegrepMcp>, request: &serde_json::Value) -> Result<serde_json::Value> {
+async fn handle_mcp_request(
+    mcp: &RicegrepMcp,
+    tool_router: &ToolRouter<RicegrepMcp>,
+    request: &serde_json::Value,
+) -> Result<serde_json::Value> {
     let id = request["id"].clone();
     let method = request["method"].as_str().unwrap_or("");
 
     let response = match method {
         "initialize" => {
             serde_json::json!({
-                "jsonrpc": "2.0",
-                "id": id,
-                "result": {
-                    "protocolVersion": "2024-11-05",
-                    "capabilities": {
-                        "tools": {
-                            "listChanged": true
-}
+                            "jsonrpc": "2.0",
+                            "id": id,
+                            "result": {
+                                "protocolVersion": "2024-11-05",
+                                "capabilities": {
+                                    "tools": {
+                                        "listChanged": true
+            }
 
-                    },
-                    "serverInfo": {
-                        "name": "ricegrep",
-                        "version": env!("CARGO_PKG_VERSION")
-                    }
-                }
-            })
+                                },
+                                "serverInfo": {
+                                    "name": "ricegrep",
+                                    "version": env!("CARGO_PKG_VERSION")
+                                }
+                            }
+                        })
         }
         "tools/list" => {
             let tools = tool_router
@@ -973,16 +1410,16 @@ async fn handle_mcp_request(mcp: &RicegrepMcp, tool_router: &ToolRouter<Ricegrep
                 }
             })
         }
-            "tools/call" => {
-                let tool_name = request["params"]["name"].as_str().unwrap_or("");
-                let arguments = request["params"]["arguments"].clone();
-                let result = call_tool(mcp, tool_name, arguments).await?;
-                serde_json::json!({
-                    "jsonrpc": "2.0",
-                    "id": id,
-                    "result": result
-                })
-            }
+        "tools/call" => {
+            let tool_name = request["params"]["name"].as_str().unwrap_or("");
+            let arguments = request["params"]["arguments"].clone();
+            let result = call_tool(mcp, tool_name, arguments).await?;
+            serde_json::json!({
+                "jsonrpc": "2.0",
+                "id": id,
+                "result": result
+            })
+        }
         _ => {
             serde_json::json!({
                 "jsonrpc": "2.0",
@@ -1028,12 +1465,16 @@ async fn call_tool(
             let input: EditToolInput = serde_json::from_value(arguments)?;
             mcp.edit(Parameters(input)).await?
         }
+        "rice_write" => {
+            let input: WriteToolInput = serde_json::from_value(arguments)?;
+            mcp.write(Parameters(input)).await?
+        }
         _ => return Ok(serde_json::json!([])),
     };
     Ok(serde_json::to_value(&result)?)
 }
 
-pub async fn run_mcp(runtime: &RuntimeConfig, args: McpArgs) -> Result<()> {
+pub async fn run_mcp(runtime_config: &RuntimeConfig, args: McpArgs) -> Result<()> {
     let watch_paths: Vec<String> = args
         .paths
         .iter()
@@ -1041,13 +1482,24 @@ pub async fn run_mcp(runtime: &RuntimeConfig, args: McpArgs) -> Result<()> {
         .collect();
     super::ensure_local_index_ready(&watch_paths).await?;
 
-    let mcp = RicegrepMcp::new(runtime.clone(), args.server_endpoint.clone(), args.all_tools);
+    // Determine the index path based on the first watch path
+    let index_path = if let Some(first_path) = watch_paths.first() {
+        let root = std::path::Path::new(first_path);
+        super::local_index_dir(root)
+    } else {
+        std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."))
+    };
+
+    let mcp = RicegrepMcp::new(
+        runtime_config.clone(),
+        args.server_endpoint.clone(),
+        args.all_tools,
+    );
     let tool_router = &mcp.tool_router;
 
     let mut watch_manager = WatchManager::new();
-    
+
     if !args.no_watch {
-        let runtime_clone = std::sync::Arc::new(runtime.clone());
         let watch_args = crate::WatchArgs {
             paths: watch_paths.clone(),
             timeout: args.timeout,
@@ -1055,7 +1507,7 @@ pub async fn run_mcp(runtime: &RuntimeConfig, args: McpArgs) -> Result<()> {
             clear_screen: args.clear_screen,
         };
 
-        watch_manager.start(runtime_clone, watch_args);
+        watch_manager.start_with_index(watch_args, index_path);
     }
 
     let mut stdin = io::BufReader::new(io::stdin());
@@ -1089,7 +1541,14 @@ mod tests {
 
     #[test]
     fn mcp_tool_variant_inventory() {
-        let expected = ["rice_grep", "rice_glob", "rice_list", "rice_read", "rice_edit", "rice_nl_search"];
+        let expected = [
+            "rice_grep",
+            "rice_glob",
+            "rice_list",
+            "rice_read",
+            "rice_edit",
+            "rice_nl_search",
+        ];
         let router = RicegrepMcp::tool_router();
         let tool_names: Vec<String> = router
             .list_all()
@@ -1097,7 +1556,10 @@ mod tests {
             .map(|tool| tool.name.to_string())
             .collect();
         for tool in expected {
-            assert!(tool_names.iter().any(|name| name == tool), "missing tool: {tool}");
+            assert!(
+                tool_names.iter().any(|name| name == tool),
+                "missing tool: {tool}"
+            );
         }
     }
 
@@ -1125,10 +1587,12 @@ mod tests {
     async fn test_edit_small_file() {
         let temp_file = tempfile::NamedTempFile::new().unwrap();
         let file_path = temp_file.path().to_string_lossy().to_string();
-        
+
         // Write initial content
-        tokio::fs::write(&file_path, "Hello World\nHello there").await.unwrap();
-        
+        tokio::fs::write(&file_path, "Hello World\nHello there")
+            .await
+            .unwrap();
+
         // Perform edit
         let input = EditToolInput {
             file_path: file_path.clone(),
@@ -1137,10 +1601,10 @@ mod tests {
             replace_all: Some(false),
             timeout_secs: Some(30),
         };
-        
+
         let result = apply_edit(&input).await;
         assert!(result.is_ok());
-        
+
         // Verify only first occurrence replaced
         let content = tokio::fs::read_to_string(&file_path).await.unwrap();
         assert_eq!(content, "Hi World\nHello there");
@@ -1150,10 +1614,12 @@ mod tests {
     async fn test_edit_replace_all() {
         let temp_file = tempfile::NamedTempFile::new().unwrap();
         let file_path = temp_file.path().to_string_lossy().to_string();
-        
+
         // Write initial content with multiple occurrences
-        tokio::fs::write(&file_path, "foo bar\nfoo baz\nfoo qux").await.unwrap();
-        
+        tokio::fs::write(&file_path, "foo bar\nfoo baz\nfoo qux")
+            .await
+            .unwrap();
+
         // Perform edit with replace_all
         let input = EditToolInput {
             file_path: file_path.clone(),
@@ -1162,12 +1628,12 @@ mod tests {
             replace_all: Some(true),
             timeout_secs: Some(30),
         };
-        
+
         let result = apply_edit(&input).await;
         assert!(result.is_ok());
         let result_msg = result.unwrap();
         assert!(result_msg.contains("replaced 3 occurrence(s)"));
-        
+
         // Verify all occurrences replaced
         let content = tokio::fs::read_to_string(&file_path).await.unwrap();
         assert_eq!(content, "bar bar\nbar baz\nbar qux");
@@ -1182,20 +1648,23 @@ mod tests {
             replace_all: None,
             timeout_secs: Some(30),
         };
-        
+
         let result = apply_edit(&input).await;
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Failed to read file"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("File not found"));
     }
 
     #[tokio::test]
     async fn test_edit_pattern_not_found() {
         let temp_file = tempfile::NamedTempFile::new().unwrap();
         let file_path = temp_file.path().to_string_lossy().to_string();
-        
+
         // Write initial content
         tokio::fs::write(&file_path, "Hello World").await.unwrap();
-        
+
         // Try to replace non-existent pattern
         let input = EditToolInput {
             file_path: file_path.clone(),
@@ -1204,20 +1673,23 @@ mod tests {
             replace_all: None,
             timeout_secs: Some(30),
         };
-        
+
         let result = apply_edit(&input).await;
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Pattern not found"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Pattern not found"));
     }
 
     #[tokio::test]
     async fn test_edit_timeout() {
         let temp_file = tempfile::NamedTempFile::new().unwrap();
         let file_path = temp_file.path().to_string_lossy().to_string();
-        
+
         // Write initial content
         tokio::fs::write(&file_path, "Hello World").await.unwrap();
-        
+
         // Create input with very short timeout (note: this test may be flaky on slow systems)
         let input = EditToolInput {
             file_path: file_path.clone(),
@@ -1226,7 +1698,7 @@ mod tests {
             replace_all: None,
             timeout_secs: Some(1),
         };
-        
+
         // This should succeed normally even with 1s timeout on fast systems
         let result = apply_edit(&input).await;
         // Just verify it completes without panicking
@@ -1237,10 +1709,10 @@ mod tests {
     async fn test_edit_result_message_format() {
         let temp_file = tempfile::NamedTempFile::new().unwrap();
         let file_path = temp_file.path().to_string_lossy().to_string();
-        
+
         // Write initial content
         tokio::fs::write(&file_path, "test content").await.unwrap();
-        
+
         let input = EditToolInput {
             file_path: file_path.clone(),
             old_string: "test".to_string(),
@@ -1248,7 +1720,7 @@ mod tests {
             replace_all: None,
             timeout_secs: Some(30),
         };
-        
+
         let result = apply_edit(&input).await.unwrap();
         assert!(result.contains("Edited"));
         assert!(result.contains("replaced 1 occurrence(s)"));
@@ -1267,9 +1739,9 @@ mod tests {
     fn test_change_tracker_record_single() {
         let mut tracker = ChangeTracker::new();
         let path = std::path::PathBuf::from("test.txt");
-        
+
         tracker.record_change(path.clone());
-        
+
         assert!(tracker.has_changes());
         assert_eq!(tracker.change_count(), 1);
     }
@@ -1278,12 +1750,12 @@ mod tests {
     fn test_change_tracker_deduplication() {
         let mut tracker = ChangeTracker::new();
         let path = std::path::PathBuf::from("test.txt");
-        
+
         // Record same file multiple times
         tracker.record_change(path.clone());
         tracker.record_change(path.clone());
         tracker.record_change(path.clone());
-        
+
         // Should only have 1 entry (latest timestamp)
         assert_eq!(tracker.change_count(), 1);
     }
@@ -1294,11 +1766,11 @@ mod tests {
         let path1 = std::path::PathBuf::from("file1.txt");
         let path2 = std::path::PathBuf::from("file2.txt");
         let path3 = std::path::PathBuf::from("file3.txt");
-        
+
         tracker.record_change(path1.clone());
         tracker.record_change(path2.clone());
         tracker.record_change(path3.clone());
-        
+
         assert_eq!(tracker.change_count(), 3);
         assert!(tracker.has_changes());
     }
@@ -1308,15 +1780,15 @@ mod tests {
         let mut tracker = ChangeTracker::new();
         let path1 = std::path::PathBuf::from("file1.txt");
         let path2 = std::path::PathBuf::from("file2.txt");
-        
+
         tracker.record_change(path1.clone());
         tracker.record_change(path2.clone());
-        
+
         let changes = tracker.take_changes();
-        
+
         // Should have returned 2 changes
         assert_eq!(changes.len(), 2);
-        
+
         // Should be empty after taking
         assert!(!tracker.has_changes());
         assert_eq!(tracker.change_count(), 0);
@@ -1326,11 +1798,11 @@ mod tests {
     fn test_change_tracker_timestamps() {
         let mut tracker = ChangeTracker::new();
         let path = std::path::PathBuf::from("test.txt");
-        
+
         let before = std::time::SystemTime::now();
         tracker.record_change(path.clone());
         let after = std::time::SystemTime::now();
-        
+
         // Verify timestamp is recorded and is within bounds
         assert!(tracker.changed_files[&path] >= before);
         assert!(tracker.changed_files[&path] <= after);
@@ -1340,12 +1812,12 @@ mod tests {
     fn test_change_tracker_rapid_changes() {
         let mut tracker = ChangeTracker::new();
         let path = std::path::PathBuf::from("rapid_changes.txt");
-        
+
         // Rapid updates to same file
         for _ in 0..100 {
             tracker.record_change(path.clone());
         }
-        
+
         // Should only have 1 entry with latest timestamp
         assert_eq!(tracker.change_count(), 1);
         let changes = tracker.take_changes();
@@ -1356,11 +1828,11 @@ mod tests {
     async fn test_edit_atomic_write() {
         let temp_file = tempfile::NamedTempFile::new().unwrap();
         let file_path = temp_file.path().to_string_lossy().to_string();
-        
+
         // Write initial content
         let original = "This is the original content\nLine 2\nLine 3";
         tokio::fs::write(&file_path, original).await.unwrap();
-        
+
         let input = EditToolInput {
             file_path: file_path.clone(),
             old_string: "original".to_string(),
@@ -1368,16 +1840,106 @@ mod tests {
             replace_all: None,
             timeout_secs: Some(30),
         };
-        
+
         let result = apply_edit(&input).await;
         assert!(result.is_ok());
-        
+
         // Verify final content
         let content = tokio::fs::read_to_string(&file_path).await.unwrap();
         assert_eq!(content, "This is the modified content\nLine 2\nLine 3");
-        
+
         // Verify temp file was cleaned up
         let temp_path = format!("{}.tmp", file_path);
         assert!(!std::path::Path::new(&temp_path).exists());
+    }
+
+    #[tokio::test]
+    async fn test_write_new_file() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let file_path = temp_file.path().to_string_lossy().to_string();
+        // Remove the temp file so we can write to it
+        std::fs::remove_file(temp_file.path()).unwrap();
+
+        let input = WriteToolInput {
+            file_path: file_path.clone(),
+            content: "Hello, World!\nThis is a test file.".to_string(),
+            timeout_secs: Some(30),
+        };
+
+        let result = apply_write(&input).await;
+        assert!(result.is_ok());
+
+        // Verify content was written
+        let content = tokio::fs::read_to_string(&file_path).await.unwrap();
+        assert_eq!(content, "Hello, World!\nThis is a test file.");
+
+        // Verify result message
+        let result_msg = result.unwrap();
+        assert!(result_msg.contains("Wrote"));
+        assert!(result_msg.contains("bytes"));
+        assert!(result_msg.contains("lines"));
+    }
+
+    #[tokio::test]
+    async fn test_write_overwrite_file() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let file_path = temp_file.path().to_string_lossy().to_string();
+
+        // Write initial content
+        tokio::fs::write(&file_path, "Initial content")
+            .await
+            .unwrap();
+
+        let input = WriteToolInput {
+            file_path: file_path.clone(),
+            content: "Overwritten content".to_string(),
+            timeout_secs: Some(30),
+        };
+
+        let result = apply_write(&input).await;
+        assert!(result.is_ok());
+
+        // Verify content was overwritten
+        let content = tokio::fs::read_to_string(&file_path).await.unwrap();
+        assert_eq!(content, "Overwritten content");
+    }
+
+    #[tokio::test]
+    async fn test_write_create_parent_dirs() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let nested_path = temp_dir.path().join("subdir").join("nested.txt");
+        let file_path = nested_path.to_string_lossy().to_string();
+
+        let input = WriteToolInput {
+            file_path: file_path.clone(),
+            content: "Content in nested file".to_string(),
+            timeout_secs: Some(30),
+        };
+
+        let result = apply_write(&input).await;
+        assert!(result.is_ok());
+
+        // Verify content was written and parent dir was created
+        let content = tokio::fs::read_to_string(&file_path).await.unwrap();
+        assert_eq!(content, "Content in nested file");
+
+        // Verify parent directory was created
+        assert!(nested_path.parent().unwrap().is_dir());
+    }
+
+    #[tokio::test]
+    async fn test_write_timeout() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let file_path = temp_file.path().to_string_lossy().to_string();
+
+        let input = WriteToolInput {
+            file_path: file_path.clone(),
+            content: "Test content".to_string(),
+            timeout_secs: Some(30), // Use a reasonable timeout
+        };
+
+        // This should succeed normally
+        let result = apply_write(&input).await;
+        assert!(result.is_ok());
     }
 }
