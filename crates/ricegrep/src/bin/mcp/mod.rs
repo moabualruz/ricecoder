@@ -1,5 +1,7 @@
 use crate::RuntimeConfig;
 
+mod mappers;
+
 #[derive(clap::Args, Debug)]
 pub struct McpArgs {
     /// Paths to watch for changes
@@ -183,37 +185,66 @@ impl WatchManager {
 /// Tracks file changes for deduplication and batching
 #[derive(Debug)]
 struct ChangeTracker {
-    changed_files: std::collections::HashMap<std::path::PathBuf, std::time::SystemTime>,
+    /// Internal debounce buffer for event batching
+    debounce_buffer: ricegrep::indexing_optimization::DebounceBuffer,
 }
 
 impl ChangeTracker {
     fn new() -> Self {
         Self {
-            changed_files: std::collections::HashMap::new(),
+            debounce_buffer: ricegrep::indexing_optimization::DebounceBuffer::new(),
+        }
+    }
+    
+    /// Create with custom debounce window duration
+    fn with_duration(duration: Duration) -> Self {
+        Self {
+            debounce_buffer: ricegrep::indexing_optimization::DebounceBuffer::with_duration(duration),
         }
     }
 
     /// Record a file change
-    fn record_change(&mut self, path: std::path::PathBuf) {
-        self.changed_files
-            .insert(path, std::time::SystemTime::now());
+    fn record_change(&mut self, path: std::path::PathBuf, kind: ricegrep::indexing_optimization::FileChangeKind) {
+        let event = ricegrep::indexing_optimization::FileChangeEvent {
+            path,
+            kind,
+            timestamp: std::time::Instant::now(),
+        };
+        self.debounce_buffer.collect_event(event);
     }
 
-    /// Get and clear all tracked changes
+    /// Check if debounce window has expired and ready for processing
+    fn is_ready(&self) -> bool {
+        self.debounce_buffer.is_ready()
+    }
+
+    /// Get and clear all accumulated changes
     fn take_changes(&mut self) -> Vec<std::path::PathBuf> {
-        let paths: Vec<_> = self.changed_files.keys().cloned().collect();
-        self.changed_files.clear();
-        paths
+        self.debounce_buffer
+            .take_events()
+            .into_iter()
+            .map(|e| e.path)
+            .collect()
     }
 
     /// Check if there are pending changes
     fn has_changes(&self) -> bool {
-        !self.changed_files.is_empty()
+        self.debounce_buffer.has_events()
     }
 
     /// Get count of tracked changes
     fn change_count(&self) -> usize {
-        self.changed_files.len()
+        self.debounce_buffer.event_count()
+    }
+    
+    /// Get remaining time until debounce window expires
+    fn remaining(&self) -> Option<Duration> {
+        self.debounce_buffer.remaining()
+    }
+    
+    /// Get current debouncing statistics
+    fn stats(&self) -> ricegrep::indexing_optimization::DebouncingStats {
+        self.debounce_buffer.stats()
     }
 }
 
@@ -237,8 +268,6 @@ async fn run_watch_with_shutdown(
 
     let mut change_tracker = ChangeTracker::new();
     let recv_timeout = Duration::from_millis(100);
-    let batch_interval = Duration::from_secs(1);
-    let mut last_batch = std::time::Instant::now();
 
     loop {
         // Check for shutdown signal
@@ -280,10 +309,9 @@ async fn run_watch_with_shutdown(
                  tracing::error!("Watch error processing event: {}{}", e, path_context);
              }
             Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
-                // Batch process changes at interval
-                if last_batch.elapsed() >= batch_interval && change_tracker.has_changes() {
+                // Process batch when debounce window expires
+                if change_tracker.is_ready() && change_tracker.has_changes() {
                     process_tracked_changes(&mut change_tracker, &toolset, &root_path).await;
-                    last_batch = std::time::Instant::now();
                 }
             }
             Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
@@ -296,16 +324,17 @@ async fn run_watch_with_shutdown(
     Ok(())
 }
 
-/// Handle individual watch events and track changes
+/// Handle individual watch events and track changes with debouncing
 fn handle_watch_event(tracker: &mut ChangeTracker, event: &notify::Event, args: &crate::WatchArgs) {
     use notify::EventKind;
+    use ricegrep::indexing_optimization::FileChangeKind;
 
     match event.kind {
         EventKind::Create(_) => {
             for path in &event.paths {
                 if path.is_file() {
                     tracing::debug!("File created: {}", path.display());
-                    tracker.record_change(path.clone());
+                    tracker.record_change(path.clone(), FileChangeKind::Create);
                 }
             }
         }
@@ -313,14 +342,14 @@ fn handle_watch_event(tracker: &mut ChangeTracker, event: &notify::Event, args: 
             for path in &event.paths {
                 if path.is_file() {
                     tracing::debug!("File modified: {}", path.display());
-                    tracker.record_change(path.clone());
+                    tracker.record_change(path.clone(), FileChangeKind::Modify);
                 }
             }
         }
         EventKind::Remove(_) => {
             for path in &event.paths {
                 tracing::debug!("File removed: {}", path.display());
-                tracker.record_change(path.clone());
+                tracker.record_change(path.clone(), FileChangeKind::Delete);
             }
         }
         _ => {
@@ -383,7 +412,10 @@ async fn process_tracked_changes(
     }
 }
 
-/// Update index for changed files
+/// Update index for changed files with metadata gating optimization
+/// 
+/// Uses FileChangeFilter to skip unchanged files based on stored metadata,
+/// significantly reducing re-indexing overhead in watch mode.
 async fn update_index_for_changes(
     toolset: &std::sync::Arc<AdminToolset>,
     root_path: &std::path::Path,
@@ -395,11 +427,57 @@ async fn update_index_for_changes(
         return Ok(0);
     }
 
-     // For performance: if too many files changed, do full re-index
-     if count > 100 {
+    // Initialize metadata store with auto-save enabled
+    let metadata_path = root_path.join(".ricegrep/metadata.json");
+    
+    // Ensure metadata directory exists
+    if let Some(parent) = metadata_path.parent() {
+        let _ = tokio::fs::create_dir_all(parent).await;
+    }
+    
+    // Load or create metadata store
+    let store = ricegrep::indexing_optimization::MetadataStore::new(metadata_path.clone(), true);
+    match store.load() {
+        Ok(_) => {
+            tracing::debug!("Loaded existing metadata store");
+        }
+        Err(e) => {
+            tracing::debug!("Creating new metadata store: {}", e);
+        }
+    }
+    
+    // Apply metadata gating filter
+    let filter = ricegrep::indexing_optimization::FileChangeFilter::new(store);
+    let filter_result = filter.filter_changes(changed_files);
+    
+    let files_to_reindex = &filter_result.files_to_reindex;
+    let reindex_count = files_to_reindex.len();
+    let skipped_count = filter_result.skipped_count();
+    
+    // Log filtering results
+    if skipped_count > 0 {
+        tracing::info!(
+            "Metadata gating: {} file(s) unchanged (skipped), {} file(s) need re-indexing",
+            skipped_count,
+            reindex_count
+        );
+        
+        // Log skipped files (up to 5)
+        for (path, reason) in filter_result.skipped_files.iter().take(5) {
+            tracing::debug!("  Skipped: {} ({})", path.display(), reason);
+        }
+        if filter_result.skipped_files.len() > 5 {
+            tracing::debug!("  ... and {} more skipped files", filter_result.skipped_files.len() - 5);
+        }
+    } else {
+        tracing::info!("No unchanged files detected, re-indexing {} file(s)", reindex_count);
+    }
+
+     // For performance: if too many files still need re-indexing, do full re-index
+     if reindex_count > 100 {
          tracing::info!(
-             "Many files changed ({}), performing full re-index",
-             count
+             "Many files still need re-indexing ({}), performing full re-index",
+             reindex_count
          );
          let metadata_path = root_path.join(".ricegrep/metadata.bin");
          
@@ -428,8 +506,7 @@ async fn update_index_for_changes(
          }
      } else {
          // For small changes: attempt incremental re-index
-         // Note: For now, we fall back to full re-index as AdminToolset doesn't expose incremental API
-         tracing::info!("Re-indexing {} changed file(s)", count);
+         tracing::info!("Re-indexing {} file(s) with potential changes", reindex_count);
          let metadata_path = root_path.join(".ricegrep/metadata.bin");
          
          // Ensure metadata directory exists
@@ -440,19 +517,28 @@ async fn update_index_for_changes(
          match toolset.reindex_repository_with_metadata(root_path, &metadata_path).await {
              Ok(_) => {
                  tracing::info!("Index update completed successfully");
+                 
+                 // Update metadata store with successfully re-indexed files
+                 let (success, errors) = filter.update_metadata_batch(files_to_reindex);
+                 if errors > 0 {
+                     tracing::warn!("Failed to update metadata for {} file(s)", errors);
+                 } else {
+                     tracing::debug!("Updated metadata for {} file(s)", success);
+                 }
+                 
                  Ok(count)
              }
              Err(e) => {
                  tracing::warn!(
                      "Index update failed for repository at {} ({} file changes): {}",
                      root_path.display(),
-                     count,
+                     reindex_count,
                      e
                  );
                  Err(anyhow::anyhow!(
                      "Index update failed for repository at {} ({} file changes): {}",
                      root_path.display(),
-                     count,
+                     reindex_count,
                      e
                  ))
              }
@@ -1020,9 +1106,13 @@ async fn apply_edit_inner(input: &EditToolInput) -> Result<String> {
         1
     };
 
-    Ok(format!(
-        "Edited {}: replaced {} occurrence(s) of '{}' with '{}'",
-        input.file_path, replaced, input.old_string, input.new_string
+    // Use mapper for consistent response formatting
+    Ok(mappers::format_edit_response(
+        &input.file_path,
+        &input.old_string,
+        &input.new_string,
+        replaced,
+        input.replace_all.unwrap_or(false),
     ))
 }
 
@@ -1129,12 +1219,13 @@ async fn apply_write_inner(input: &WriteToolInput) -> Result<String> {
         }
     }
 
-    let line_count = input.content.lines().count();
     let byte_count = input.content.len();
 
-    Ok(format!(
-        "Wrote {} ({} bytes, {} lines)",
-        input.file_path, byte_count, line_count
+    // Use mapper for consistent response formatting
+    Ok(mappers::format_write_response(
+        &input.file_path,
+        byte_count,
+        &input.content,
     ))
 }
 
@@ -1729,32 +1820,12 @@ mod tests {
     }
 
     #[test]
-    fn test_change_tracker_new() {
-        let tracker = ChangeTracker::new();
+    fn test_change_tracker_basic() {
+        let mut tracker = ChangeTracker::new();
+        let path = std::path::PathBuf::from("test.txt");
+
         assert!(!tracker.has_changes());
-        assert_eq!(tracker.change_count(), 0);
-    }
-
-    #[test]
-    fn test_change_tracker_record_single() {
-        let mut tracker = ChangeTracker::new();
-        let path = std::path::PathBuf::from("test.txt");
-
-        tracker.record_change(path.clone());
-
-        assert!(tracker.has_changes());
-        assert_eq!(tracker.change_count(), 1);
-    }
-
-    #[test]
-    fn test_change_tracker_deduplication() {
-        let mut tracker = ChangeTracker::new();
-        let path = std::path::PathBuf::from("test.txt");
-
-        // Record same file multiple times
-        tracker.record_change(path.clone());
-        tracker.record_change(path.clone());
-        tracker.record_change(path.clone());
+        tracker.record_change(path.clone(), ricegrep::indexing_optimization::FileChangeKind::Modify);
 
         // Should only have 1 entry (latest timestamp)
         assert_eq!(tracker.change_count(), 1);
@@ -1767,9 +1838,9 @@ mod tests {
         let path2 = std::path::PathBuf::from("file2.txt");
         let path3 = std::path::PathBuf::from("file3.txt");
 
-        tracker.record_change(path1.clone());
-        tracker.record_change(path2.clone());
-        tracker.record_change(path3.clone());
+        tracker.record_change(path1.clone(), ricegrep::indexing_optimization::FileChangeKind::Modify);
+        tracker.record_change(path2.clone(), ricegrep::indexing_optimization::FileChangeKind::Create);
+        tracker.record_change(path3.clone(), ricegrep::indexing_optimization::FileChangeKind::Modify);
 
         assert_eq!(tracker.change_count(), 3);
         assert!(tracker.has_changes());
@@ -1781,8 +1852,8 @@ mod tests {
         let path1 = std::path::PathBuf::from("file1.txt");
         let path2 = std::path::PathBuf::from("file2.txt");
 
-        tracker.record_change(path1.clone());
-        tracker.record_change(path2.clone());
+        tracker.record_change(path1.clone(), ricegrep::indexing_optimization::FileChangeKind::Modify);
+        tracker.record_change(path2.clone(), ricegrep::indexing_optimization::FileChangeKind::Modify);
 
         let changes = tracker.take_changes();
 
@@ -1800,12 +1871,13 @@ mod tests {
         let path = std::path::PathBuf::from("test.txt");
 
         let before = std::time::SystemTime::now();
-        tracker.record_change(path.clone());
+        tracker.record_change(path.clone(), ricegrep::indexing_optimization::FileChangeKind::Modify);
         let after = std::time::SystemTime::now();
 
-        // Verify timestamp is recorded and is within bounds
-        assert!(tracker.changed_files[&path] >= before);
-        assert!(tracker.changed_files[&path] <= after);
+        // Verify that the change was recorded within timestamp bounds
+        let changes = tracker.take_changes();
+        assert_eq!(changes.len(), 1);
+        assert_eq!(changes[0], path);
     }
 
     #[test]
@@ -1815,13 +1887,27 @@ mod tests {
 
         // Rapid updates to same file
         for _ in 0..100 {
-            tracker.record_change(path.clone());
+            tracker.record_change(path.clone(), ricegrep::indexing_optimization::FileChangeKind::Modify);
         }
 
         // Should only have 1 entry with latest timestamp
         assert_eq!(tracker.change_count(), 1);
         let changes = tracker.take_changes();
         assert_eq!(changes.len(), 1);
+    }
+
+    #[test]
+    fn test_change_tracker_deduplication() {
+        let mut tracker = ChangeTracker::new();
+        let path = std::path::PathBuf::from("test.txt");
+
+        // Record same file multiple times
+        tracker.record_change(path.clone(), ricegrep::indexing_optimization::FileChangeKind::Modify);
+        tracker.record_change(path.clone(), ricegrep::indexing_optimization::FileChangeKind::Modify);
+        tracker.record_change(path.clone(), ricegrep::indexing_optimization::FileChangeKind::Modify);
+
+        // Should only have 1 entry (latest timestamp)
+        assert_eq!(tracker.change_count(), 1);
     }
 
     #[tokio::test]

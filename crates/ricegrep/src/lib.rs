@@ -2,8 +2,12 @@
 
 pub mod admin;
 pub mod api;
+pub mod application;
 pub mod benchmarking;
 pub mod chunking;
+pub mod domain;
+pub mod indexing_optimization;
+pub mod infrastructure;
 pub mod lexical;
 pub mod metadata;
 pub mod nlq;
