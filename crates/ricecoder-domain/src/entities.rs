@@ -479,132 +479,6 @@ impl Session {
             .any(|r| r.consent_details.get(purpose).copied().unwrap_or(false))
     }
 
-/// GDPR compliance report
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GdprComplianceReport {
-    pub id: String,
-    pub generated_at: DateTime<Utc>,
-    pub period_start: DateTime<Utc>,
-    pub period_end: DateTime<Utc>,
-    pub compliance_status: GdprComplianceStatus,
-    pub data_processing_inventory: Vec<DataProcessingActivity>,
-    pub consent_compliance: ConsentComplianceSummary,
-    pub breach_incidents: Vec<BreachIncident>,
-    pub recommendations: Vec<String>,
-}
-
-impl GdprComplianceReport {
-    /// Create a new GDPR compliance report
-    pub fn new(period_start: DateTime<Utc>, period_end: DateTime<Utc>) -> Self {
-        Self {
-            id: uuid::Uuid::new_v4().to_string(),
-            generated_at: Utc::now(),
-            period_start,
-            period_end,
-            compliance_status: GdprComplianceStatus::Compliant,
-            data_processing_inventory: Vec::new(),
-            consent_compliance: ConsentComplianceSummary::default(),
-            breach_incidents: Vec::new(),
-            recommendations: Vec::new(),
-        }
-    }
-
-    /// Add data processing activity
-    pub fn add_data_processing(&mut self, activity: DataProcessingActivity) {
-        self.data_processing_inventory.push(activity);
-    }
-
-    /// Add breach incident
-    pub fn add_breach(&mut self, breach: BreachIncident) {
-        self.breach_incidents.push(breach);
-        if breach.severity == BreachSeverity::High || breach.severity == BreachSeverity::Critical {
-            self.compliance_status = GdprComplianceStatus::NonCompliant;
-        }
-    }
-}
-
-/// GDPR compliance status
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum GdprComplianceStatus {
-    Compliant,
-    NonCompliant,
-    UnderReview,
-}
-
-/// Data processing activity for GDPR inventory
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DataProcessingActivity {
-    pub id: String,
-    pub purpose: String,
-    pub data_categories: Vec<String>,
-    pub legal_basis: String,
-    pub data_subjects: Vec<String>,
-    pub retention_period: u32,
-    pub processors: Vec<String>,
-    pub security_measures: Vec<String>,
-}
-
-/// Consent compliance summary
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ConsentComplianceSummary {
-    pub total_consents: usize,
-    pub valid_consents: usize,
-    pub withdrawn_consents: usize,
-    pub consent_by_purpose: HashMap<String, usize>,
-}
-
-impl Default for ConsentComplianceSummary {
-    fn default() -> Self {
-        Self {
-            total_consents: 0,
-            valid_consents: 0,
-            withdrawn_consents: 0,
-            consent_by_purpose: HashMap::new(),
-        }
-    }
-}
-
-/// Breach incident for GDPR reporting
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BreachIncident {
-    pub id: String,
-    pub reported_at: DateTime<Utc>,
-    pub discovered_at: DateTime<Utc>,
-    pub description: String,
-    pub affected_data_subjects: usize,
-    pub data_categories_affected: Vec<String>,
-    pub severity: BreachSeverity,
-    pub containment_measures: Vec<String>,
-    pub notification_sent: bool,
-}
-
-impl BreachIncident {
-    /// Create a new breach incident
-    pub fn new(description: String, affected_data_subjects: usize, data_categories_affected: Vec<String>, severity: BreachSeverity) -> Self {
-        let now = Utc::now();
-        Self {
-            id: uuid::Uuid::new_v4().to_string(),
-            reported_at: now,
-            discovered_at: now,
-            description,
-            affected_data_subjects,
-            data_categories_affected,
-            severity,
-            containment_measures: Vec::new(),
-            notification_sent: false,
-        }
-    }
-}
-
-/// Breach severity
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum BreachSeverity {
-    Low,
-    Medium,
-    High,
-    Critical,
-}
-
     /// Check if session has timed out
     pub fn is_timed_out(&self) -> bool {
         let timeout_duration = chrono::Duration::minutes(self.timeout_minutes as i64);
@@ -972,7 +846,7 @@ impl PerformanceBenchmark {
 }
 
 /// Benchmark check result
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum BenchmarkResult {
     Pass,
     Warning,
@@ -1014,8 +888,9 @@ impl ComplianceReport {
 
     /// Add a finding
     pub fn add_finding(&mut self, finding: ComplianceFinding) {
+        let is_critical = finding.severity == FindingSeverity::High || finding.severity == FindingSeverity::Critical;
         self.findings.push(finding);
-        if finding.severity == FindingSeverity::High || finding.severity == FindingSeverity::Critical {
+        if is_critical {
             self.compliance_status = ComplianceStatus::NonCompliant;
         }
     }
@@ -1135,6 +1010,14 @@ pub enum ConsentType {
     Analytics,
     Marketing,
     ThirdParty,
+}
+
+/// Retention rule for data
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RetentionRule {
+    pub max_age_days: u32,
+    pub auto_delete: bool,
+    pub justification: String,
 }
 
 /// Data minimization policy
@@ -1512,4 +1395,130 @@ impl ModelInfo {
         self.cost_per_1m_output = Some(output_cost);
         self
     }
+}
+
+/// GDPR compliance report
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GdprComplianceReport {
+    pub id: String,
+    pub generated_at: DateTime<Utc>,
+    pub period_start: DateTime<Utc>,
+    pub period_end: DateTime<Utc>,
+    pub compliance_status: GdprComplianceStatus,
+    pub data_processing_inventory: Vec<DataProcessingActivity>,
+    pub consent_compliance: ConsentComplianceSummary,
+    pub breach_incidents: Vec<BreachIncident>,
+    pub recommendations: Vec<String>,
+}
+
+impl GdprComplianceReport {
+    /// Create a new GDPR compliance report
+    pub fn new(period_start: DateTime<Utc>, period_end: DateTime<Utc>) -> Self {
+        Self {
+            id: uuid::Uuid::new_v4().to_string(),
+            generated_at: Utc::now(),
+            period_start,
+            period_end,
+            compliance_status: GdprComplianceStatus::Compliant,
+            data_processing_inventory: Vec::new(),
+            consent_compliance: ConsentComplianceSummary::default(),
+            breach_incidents: Vec::new(),
+            recommendations: Vec::new(),
+        }
+    }
+
+    /// Add data processing activity
+    pub fn add_data_processing(&mut self, activity: DataProcessingActivity) {
+        self.data_processing_inventory.push(activity);
+    }
+
+    /// Add breach incident
+    pub fn add_breach(&mut self, breach: BreachIncident) {
+        self.breach_incidents.push(breach);
+        if breach.severity == BreachSeverity::High || breach.severity == BreachSeverity::Critical {
+            self.compliance_status = GdprComplianceStatus::NonCompliant;
+        }
+    }
+}
+
+/// GDPR compliance status
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum GdprComplianceStatus {
+    Compliant,
+    NonCompliant,
+    UnderReview,
+}
+
+/// Data processing activity for GDPR inventory
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DataProcessingActivity {
+    pub id: String,
+    pub purpose: String,
+    pub data_categories: Vec<String>,
+    pub legal_basis: String,
+    pub data_subjects: Vec<String>,
+    pub retention_period: u32,
+    pub processors: Vec<String>,
+    pub security_measures: Vec<String>,
+}
+
+/// Consent compliance summary
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConsentComplianceSummary {
+    pub total_consents: usize,
+    pub valid_consents: usize,
+    pub withdrawn_consents: usize,
+    pub consent_by_purpose: HashMap<String, usize>,
+}
+
+impl Default for ConsentComplianceSummary {
+    fn default() -> Self {
+        Self {
+            total_consents: 0,
+            valid_consents: 0,
+            withdrawn_consents: 0,
+            consent_by_purpose: HashMap::new(),
+        }
+    }
+}
+
+/// Breach incident for GDPR reporting
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BreachIncident {
+    pub id: String,
+    pub reported_at: DateTime<Utc>,
+    pub discovered_at: DateTime<Utc>,
+    pub description: String,
+    pub affected_data_subjects: usize,
+    pub data_categories_affected: Vec<String>,
+    pub severity: BreachSeverity,
+    pub containment_measures: Vec<String>,
+    pub notification_sent: bool,
+}
+
+impl BreachIncident {
+    /// Create a new breach incident
+    pub fn new(description: String, affected_data_subjects: usize, data_categories_affected: Vec<String>, severity: BreachSeverity) -> Self {
+        let now = Utc::now();
+        Self {
+            id: uuid::Uuid::new_v4().to_string(),
+            reported_at: now,
+            discovered_at: now,
+            description,
+            affected_data_subjects,
+            data_categories_affected,
+            severity,
+            containment_measures: Vec::new(),
+            notification_sent: false,
+        }
+    }
+}
+
+/// Breach severity
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BreachSeverity {
+    Low,
+    Medium,
+    High,
+    Critical,
 }
