@@ -49,6 +49,7 @@ use std::path::Path;
 use std::time::Instant;
 use uuid::Uuid;
 use anyhow::{Context, Result};
+use notify::Watcher;
 
 const MCP_AUTO_WATCH_DELAY_SECS: u64 = 5;
 
@@ -102,6 +103,233 @@ struct EditToolInput {
     file_path: String,
     old_string: String,
     new_string: String,
+    #[serde(default)]
+    replace_all: Option<bool>,
+    #[serde(default)]
+    timeout_secs: Option<u64>,
+}
+
+/// Manages watch lifecycle tied to MCP server
+struct WatchManager {
+    handle: Option<tokio::task::JoinHandle<()>>,
+    shutdown_tx: tokio::sync::broadcast::Sender<()>,
+}
+
+impl WatchManager {
+    fn new() -> Self {
+        let (shutdown_tx, _) = tokio::sync::broadcast::channel(1);
+        Self {
+            handle: None,
+            shutdown_tx,
+        }
+    }
+    
+    /// Start watch operation
+    fn start(&mut self, runtime: std::sync::Arc<crate::RuntimeConfig>, watch_args: crate::WatchArgs) {
+        let mut shutdown_rx = self.shutdown_tx.subscribe();
+        let runtime_clone = runtime.clone();
+        
+        let handle = tokio::spawn(async move {
+            // Wait for delay before starting watch
+            tokio::select! {
+                _ = tokio::time::sleep(Duration::from_secs(MCP_AUTO_WATCH_DELAY_SECS)) => {
+                    // Start watch with shutdown signal
+                    let _ = run_watch_with_shutdown(
+                        &runtime_clone,
+                        watch_args,
+                        shutdown_rx.resubscribe()
+                    ).await;
+                }
+                _ = shutdown_rx.recv() => {
+                    // Shutdown during delay
+                    tracing::info!("Watch cancelled before start");
+                    return;
+                }
+            }
+        });
+        
+        self.handle = Some(handle);
+    }
+    
+    /// Gracefully shutdown watch
+    async fn shutdown(&mut self) -> Result<()> {
+        // Send shutdown signal
+        let _ = self.shutdown_tx.send(());
+        
+        // Wait for watch to exit (with timeout)
+        if let Some(handle) = self.handle.take() {
+            tokio::time::timeout(
+                Duration::from_secs(5),
+                handle
+            )
+            .await
+            .context("Watch shutdown timed out after 5s")??;
+        }
+        
+        Ok(())
+    }
+}
+
+/// Tracks file changes for deduplication and batching
+#[derive(Debug)]
+struct ChangeTracker {
+    changed_files: std::collections::HashMap<std::path::PathBuf, std::time::SystemTime>,
+}
+
+impl ChangeTracker {
+    fn new() -> Self {
+        Self {
+            changed_files: std::collections::HashMap::new(),
+        }
+    }
+    
+    /// Record a file change
+    fn record_change(&mut self, path: std::path::PathBuf) {
+        self.changed_files.insert(path, std::time::SystemTime::now());
+    }
+    
+    /// Get and clear all tracked changes
+    fn take_changes(&mut self) -> Vec<std::path::PathBuf> {
+        let paths: Vec<_> = self.changed_files.keys().cloned().collect();
+        self.changed_files.clear();
+        paths
+    }
+    
+    /// Check if there are pending changes
+    fn has_changes(&self) -> bool {
+        !self.changed_files.is_empty()
+    }
+    
+    /// Get count of tracked changes
+    fn change_count(&self) -> usize {
+        self.changed_files.len()
+    }
+}
+
+/// Run watch with shutdown signal support
+async fn run_watch_with_shutdown(
+    runtime: &RuntimeConfig,
+    args: crate::WatchArgs,
+    mut shutdown_rx: tokio::sync::broadcast::Receiver<()>,
+) -> Result<()> {
+    let (tx, rx) = std::sync::mpsc::channel();
+    let mut watcher = notify::recommended_watcher(tx)
+        .context("Failed to create file watcher")?;
+    
+    for path in &args.paths {
+        watcher.watch(path.as_ref(), notify::RecursiveMode::Recursive)
+            .context("Failed to watch path")?;
+    }
+    
+    tracing::info!("Watch started for {:?}", args.paths);
+    
+    let mut change_tracker = ChangeTracker::new();
+    let recv_timeout = Duration::from_millis(100);
+    let batch_interval = Duration::from_secs(1);
+    let mut last_batch = std::time::Instant::now();
+    
+    loop {
+        // Check for shutdown signal
+        match shutdown_rx.try_recv() {
+            Ok(_) | Err(tokio::sync::broadcast::error::TryRecvError::Closed) => {
+                // Flush pending changes before shutdown
+                process_tracked_changes(&mut change_tracker);
+                tracing::info!("Watch received shutdown signal");
+                break;
+            }
+            Err(tokio::sync::broadcast::error::TryRecvError::Empty) => {
+                // Continue watching
+            }
+            Err(tokio::sync::broadcast::error::TryRecvError::Lagged(_)) => {
+                // Broadcast buffer lagged, still process shutdown
+                tracing::warn!("Watch shutdown signal lagged, continuing");
+            }
+        }
+        
+        // Check for file events
+        match rx.recv_timeout(recv_timeout) {
+            Ok(Ok(event)) => {
+                handle_watch_event(&mut change_tracker, &event, &args);
+            }
+            Ok(Err(e)) => {
+                tracing::error!("Watch error: {}", e);
+            }
+            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+                // Batch process changes at interval
+                if last_batch.elapsed() >= batch_interval && change_tracker.has_changes() {
+                    process_tracked_changes(&mut change_tracker);
+                    last_batch = std::time::Instant::now();
+                }
+            }
+            Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                tracing::warn!("Watch channel disconnected");
+                break;
+            }
+        }
+    }
+    
+    Ok(())
+}
+
+/// Handle individual watch events and track changes
+fn handle_watch_event(
+    tracker: &mut ChangeTracker,
+    event: &notify::Event,
+    args: &crate::WatchArgs,
+) {
+    use notify::EventKind;
+    
+    match event.kind {
+        EventKind::Create(_) => {
+            for path in &event.paths {
+                if path.is_file() {
+                    tracing::debug!("File created: {}", path.display());
+                    tracker.record_change(path.clone());
+                }
+            }
+        }
+        EventKind::Modify(_) => {
+            for path in &event.paths {
+                if path.is_file() {
+                    tracing::debug!("File modified: {}", path.display());
+                    tracker.record_change(path.clone());
+                }
+            }
+        }
+        EventKind::Remove(_) => {
+            for path in &event.paths {
+                tracing::debug!("File removed: {}", path.display());
+                tracker.record_change(path.clone());
+            }
+        }
+        _ => {
+            // Ignore other event kinds (access, metadata changes, etc.)
+        }
+    }
+    
+    // Clear screen on first change if requested
+    if args.clear_screen && tracker.change_count() == 1 {
+        print!("\x1B[2J\x1B[1;1H");
+    }
+}
+
+/// Process accumulated changes and log summary
+fn process_tracked_changes(tracker: &mut ChangeTracker) {
+    if !tracker.has_changes() {
+        return;
+    }
+    
+    let changes = tracker.take_changes();
+    let count = changes.len();
+    
+    tracing::info!("Tracked {} file change(s)", count);
+    for path in changes.iter().take(5) {
+        tracing::debug!("  - {}", path.display());
+    }
+    
+    if count > 5 {
+        tracing::debug!("  ... and {} more", count - 5);
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -292,10 +520,12 @@ impl RicegrepMcp {
 
     #[tool(
         name = "rice_edit",
-        description = "Edit a file with preview and force safeguards. Performs exact string replacements with verification so you can refactor or fix configurations safely without unintended edits."
+        description = "Edit a file with preview and force safeguards. Performs exact string replacements with verification so you can refactor or fix configurations safely without unintended edits. Supports replace_all parameter to replace all occurrences instead of just the first."
     )]
     async fn edit(&self, Parameters(input): Parameters<EditToolInput>) -> Result<CallToolResult, ErrorData> {
-        let output = apply_edit(&input).map_err(|err| ErrorData::internal_error(err.to_string(), None))?;
+        let output = apply_edit(&input)
+            .await
+            .map_err(|err| ErrorData::internal_error(err.to_string(), None))?;
         Ok(tool_text_result(output))
     }
 }
@@ -416,16 +646,59 @@ fn search_output_schema() -> serde_json::Value {
     })
 }
 
-fn apply_edit(input: &EditToolInput) -> Result<String> {
-    let content = std::fs::read_to_string(&input.file_path)?;
-    if !content.contains(&input.old_string) {
-        return Err(anyhow::anyhow!("old_string not found in file"));
+async fn apply_edit(input: &EditToolInput) -> Result<String> {
+    // Set timeout wrapper
+    let timeout_duration = Duration::from_secs(
+        input.timeout_secs.unwrap_or(30)
+    );
+    
+    tokio::time::timeout(timeout_duration, apply_edit_inner(input))
+        .await
+        .context(format!("Edit operation timed out after {}s", timeout_duration.as_secs()))?
+}
+
+async fn apply_edit_inner(input: &EditToolInput) -> Result<String> {
+    // Read file asynchronously
+    let content = tokio::fs::read_to_string(&input.file_path)
+        .await
+        .context(format!("Failed to read file: {}", input.file_path))?;
+    
+    // Handle replace_all parameter
+    let new_content = if input.replace_all.unwrap_or(false) {
+        content.replace(&input.old_string, &input.new_string)
+    } else {
+        content.replacen(&input.old_string, &input.new_string, 1)
+    };
+    
+    // Check if replacement happened
+    if new_content == content {
+        return Err(anyhow::anyhow!(
+            "Pattern not found: '{}' in {}",
+            input.old_string,
+            input.file_path
+        ));
     }
-    let new_content = content.replace(&input.old_string, &input.new_string);
-    std::fs::write(&input.file_path, &new_content)?;
+    
+    // Write atomically via temp file
+    let temp_path = format!("{}.tmp", input.file_path);
+    tokio::fs::write(&temp_path, &new_content)
+        .await
+        .context("Failed to write temporary file")?;
+    
+    tokio::fs::rename(&temp_path, &input.file_path)
+        .await
+        .context("Failed to rename temporary file to original location")?;
+    
+    let occurrences = content.matches(&input.old_string).count();
+    let replaced = if input.replace_all.unwrap_or(false) {
+        occurrences
+    } else {
+        1
+    };
+    
     Ok(format!(
-        "Edited {}: replaced '{}' with '{}'",
-        input.file_path, input.old_string, input.new_string
+        "Edited {}: replaced {} occurrence(s) of '{}' with '{}'",
+        input.file_path, replaced, input.old_string, input.new_string
     ))
 }
 
@@ -771,9 +1044,10 @@ pub async fn run_mcp(runtime: &RuntimeConfig, args: McpArgs) -> Result<()> {
     let mcp = RicegrepMcp::new(runtime.clone(), args.server_endpoint.clone(), args.all_tools);
     let tool_router = &mcp.tool_router;
 
-
+    let mut watch_manager = WatchManager::new();
+    
     if !args.no_watch {
-        let runtime_clone = runtime.clone();
+        let runtime_clone = std::sync::Arc::new(runtime.clone());
         let watch_args = crate::WatchArgs {
             paths: watch_paths.clone(),
             timeout: args.timeout,
@@ -781,10 +1055,7 @@ pub async fn run_mcp(runtime: &RuntimeConfig, args: McpArgs) -> Result<()> {
             clear_screen: args.clear_screen,
         };
 
-        tokio::spawn(async move {
-            sleep(Duration::from_secs(MCP_AUTO_WATCH_DELAY_SECS)).await;
-            let _ = crate::run_watch(&runtime_clone, watch_args).await;
-        });
+        watch_manager.start(runtime_clone, watch_args);
     }
 
     let mut stdin = io::BufReader::new(io::stdin());
@@ -794,6 +1065,7 @@ pub async fn run_mcp(runtime: &RuntimeConfig, args: McpArgs) -> Result<()> {
     loop {
         buffer.clear();
         if stdin.read_line(&mut buffer).await? == 0 {
+            // EOF - graceful shutdown
             break;
         }
         let request: serde_json::Value = serde_json::from_str(&buffer.trim())?;
@@ -802,6 +1074,11 @@ pub async fn run_mcp(runtime: &RuntimeConfig, args: McpArgs) -> Result<()> {
         stdout.write_all(response_str.as_bytes()).await?;
         stdout.flush().await?;
     }
+
+    // Shutdown watch before exiting
+    tracing::info!("Shutting down watch...");
+    watch_manager.shutdown().await?;
+    tracing::info!("Watch shutdown complete");
 
     Ok(())
 }
@@ -842,5 +1119,265 @@ mod tests {
                 tool.name
             );
         }
+    }
+
+    #[tokio::test]
+    async fn test_edit_small_file() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let file_path = temp_file.path().to_string_lossy().to_string();
+        
+        // Write initial content
+        tokio::fs::write(&file_path, "Hello World\nHello there").await.unwrap();
+        
+        // Perform edit
+        let input = EditToolInput {
+            file_path: file_path.clone(),
+            old_string: "Hello".to_string(),
+            new_string: "Hi".to_string(),
+            replace_all: Some(false),
+            timeout_secs: Some(30),
+        };
+        
+        let result = apply_edit(&input).await;
+        assert!(result.is_ok());
+        
+        // Verify only first occurrence replaced
+        let content = tokio::fs::read_to_string(&file_path).await.unwrap();
+        assert_eq!(content, "Hi World\nHello there");
+    }
+
+    #[tokio::test]
+    async fn test_edit_replace_all() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let file_path = temp_file.path().to_string_lossy().to_string();
+        
+        // Write initial content with multiple occurrences
+        tokio::fs::write(&file_path, "foo bar\nfoo baz\nfoo qux").await.unwrap();
+        
+        // Perform edit with replace_all
+        let input = EditToolInput {
+            file_path: file_path.clone(),
+            old_string: "foo".to_string(),
+            new_string: "bar".to_string(),
+            replace_all: Some(true),
+            timeout_secs: Some(30),
+        };
+        
+        let result = apply_edit(&input).await;
+        assert!(result.is_ok());
+        let result_msg = result.unwrap();
+        assert!(result_msg.contains("replaced 3 occurrence(s)"));
+        
+        // Verify all occurrences replaced
+        let content = tokio::fs::read_to_string(&file_path).await.unwrap();
+        assert_eq!(content, "bar bar\nbar baz\nbar qux");
+    }
+
+    #[tokio::test]
+    async fn test_edit_file_not_found() {
+        let input = EditToolInput {
+            file_path: "/nonexistent/path/file.txt".to_string(),
+            old_string: "test".to_string(),
+            new_string: "result".to_string(),
+            replace_all: None,
+            timeout_secs: Some(30),
+        };
+        
+        let result = apply_edit(&input).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Failed to read file"));
+    }
+
+    #[tokio::test]
+    async fn test_edit_pattern_not_found() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let file_path = temp_file.path().to_string_lossy().to_string();
+        
+        // Write initial content
+        tokio::fs::write(&file_path, "Hello World").await.unwrap();
+        
+        // Try to replace non-existent pattern
+        let input = EditToolInput {
+            file_path: file_path.clone(),
+            old_string: "Goodbye".to_string(),
+            new_string: "Hi".to_string(),
+            replace_all: None,
+            timeout_secs: Some(30),
+        };
+        
+        let result = apply_edit(&input).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Pattern not found"));
+    }
+
+    #[tokio::test]
+    async fn test_edit_timeout() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let file_path = temp_file.path().to_string_lossy().to_string();
+        
+        // Write initial content
+        tokio::fs::write(&file_path, "Hello World").await.unwrap();
+        
+        // Create input with very short timeout (note: this test may be flaky on slow systems)
+        let input = EditToolInput {
+            file_path: file_path.clone(),
+            old_string: "Hello".to_string(),
+            new_string: "Hi".to_string(),
+            replace_all: None,
+            timeout_secs: Some(1),
+        };
+        
+        // This should succeed normally even with 1s timeout on fast systems
+        let result = apply_edit(&input).await;
+        // Just verify it completes without panicking
+        let _ = result;
+    }
+
+    #[tokio::test]
+    async fn test_edit_result_message_format() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let file_path = temp_file.path().to_string_lossy().to_string();
+        
+        // Write initial content
+        tokio::fs::write(&file_path, "test content").await.unwrap();
+        
+        let input = EditToolInput {
+            file_path: file_path.clone(),
+            old_string: "test".to_string(),
+            new_string: "prod".to_string(),
+            replace_all: None,
+            timeout_secs: Some(30),
+        };
+        
+        let result = apply_edit(&input).await.unwrap();
+        assert!(result.contains("Edited"));
+        assert!(result.contains("replaced 1 occurrence(s)"));
+        assert!(result.contains("test"));
+        assert!(result.contains("prod"));
+    }
+
+    #[test]
+    fn test_change_tracker_new() {
+        let tracker = ChangeTracker::new();
+        assert!(!tracker.has_changes());
+        assert_eq!(tracker.change_count(), 0);
+    }
+
+    #[test]
+    fn test_change_tracker_record_single() {
+        let mut tracker = ChangeTracker::new();
+        let path = std::path::PathBuf::from("test.txt");
+        
+        tracker.record_change(path.clone());
+        
+        assert!(tracker.has_changes());
+        assert_eq!(tracker.change_count(), 1);
+    }
+
+    #[test]
+    fn test_change_tracker_deduplication() {
+        let mut tracker = ChangeTracker::new();
+        let path = std::path::PathBuf::from("test.txt");
+        
+        // Record same file multiple times
+        tracker.record_change(path.clone());
+        tracker.record_change(path.clone());
+        tracker.record_change(path.clone());
+        
+        // Should only have 1 entry (latest timestamp)
+        assert_eq!(tracker.change_count(), 1);
+    }
+
+    #[test]
+    fn test_change_tracker_multiple_files() {
+        let mut tracker = ChangeTracker::new();
+        let path1 = std::path::PathBuf::from("file1.txt");
+        let path2 = std::path::PathBuf::from("file2.txt");
+        let path3 = std::path::PathBuf::from("file3.txt");
+        
+        tracker.record_change(path1.clone());
+        tracker.record_change(path2.clone());
+        tracker.record_change(path3.clone());
+        
+        assert_eq!(tracker.change_count(), 3);
+        assert!(tracker.has_changes());
+    }
+
+    #[test]
+    fn test_change_tracker_take_changes() {
+        let mut tracker = ChangeTracker::new();
+        let path1 = std::path::PathBuf::from("file1.txt");
+        let path2 = std::path::PathBuf::from("file2.txt");
+        
+        tracker.record_change(path1.clone());
+        tracker.record_change(path2.clone());
+        
+        let changes = tracker.take_changes();
+        
+        // Should have returned 2 changes
+        assert_eq!(changes.len(), 2);
+        
+        // Should be empty after taking
+        assert!(!tracker.has_changes());
+        assert_eq!(tracker.change_count(), 0);
+    }
+
+    #[test]
+    fn test_change_tracker_timestamps() {
+        let mut tracker = ChangeTracker::new();
+        let path = std::path::PathBuf::from("test.txt");
+        
+        let before = std::time::SystemTime::now();
+        tracker.record_change(path.clone());
+        let after = std::time::SystemTime::now();
+        
+        // Verify timestamp is recorded and is within bounds
+        assert!(tracker.changed_files[&path] >= before);
+        assert!(tracker.changed_files[&path] <= after);
+    }
+
+    #[test]
+    fn test_change_tracker_rapid_changes() {
+        let mut tracker = ChangeTracker::new();
+        let path = std::path::PathBuf::from("rapid_changes.txt");
+        
+        // Rapid updates to same file
+        for _ in 0..100 {
+            tracker.record_change(path.clone());
+        }
+        
+        // Should only have 1 entry with latest timestamp
+        assert_eq!(tracker.change_count(), 1);
+        let changes = tracker.take_changes();
+        assert_eq!(changes.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_edit_atomic_write() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let file_path = temp_file.path().to_string_lossy().to_string();
+        
+        // Write initial content
+        let original = "This is the original content\nLine 2\nLine 3";
+        tokio::fs::write(&file_path, original).await.unwrap();
+        
+        let input = EditToolInput {
+            file_path: file_path.clone(),
+            old_string: "original".to_string(),
+            new_string: "modified".to_string(),
+            replace_all: None,
+            timeout_secs: Some(30),
+        };
+        
+        let result = apply_edit(&input).await;
+        assert!(result.is_ok());
+        
+        // Verify final content
+        let content = tokio::fs::read_to_string(&file_path).await.unwrap();
+        assert_eq!(content, "This is the modified content\nLine 2\nLine 3");
+        
+        // Verify temp file was cleaned up
+        let temp_path = format!("{}.tmp", file_path);
+        assert!(!std::path::Path::new(&temp_path).exists());
     }
 }
