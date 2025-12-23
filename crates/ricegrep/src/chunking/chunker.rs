@@ -94,6 +94,7 @@ impl ChunkProducer {
         source: RepositorySource,
     ) -> ChunkingResult<impl Stream<Item = ChunkingResult<Chunk>> + '_> {
         let entries = self.scanner.scan(&source)?;
+        
         let config = self.config.clone();
         let detector = self.detector.clone();
         let parser_pool = self.parser_pool.clone();
@@ -101,15 +102,20 @@ impl ChunkProducer {
         Ok(try_stream! {
             let mut chunk_id: u64 = 0;
             let repository_id = source.repository_id;
+            
             for entry in entries {
                 if entry.size > config.max_file_size_bytes {
                     warn!(path = ?entry.path, size = entry.size, "Skipping oversized file");
                     continue;
                 }
 
-                let content = fs::read_to_string(&entry.path).await
-                    .with_context(|| format!("reading {}", entry.path.display()))
-                    .map_err(ChunkingError::from)?;
+                let content = match fs::read_to_string(&entry.path).await {
+                    Ok(c) => c,
+                    Err(e) => {
+                        eprintln!("⚠ Skipping unreadable file ({}): {}", e, entry.path.display());
+                        continue;  // Skip this file, continue with next
+                    }
+                };
 
                 let language = match detector.detect(&entry.path, &content) {
                     Some(lang) => lang,

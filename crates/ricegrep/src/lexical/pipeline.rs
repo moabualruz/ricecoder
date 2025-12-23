@@ -155,6 +155,7 @@ impl LexicalIngestPipeline {
                 warn!(error = %err, "failed to capture lexical index metrics");
             }
         }
+        
         info!(
             chunks = stats.chunks_indexed,
             files = stats.files_indexed,

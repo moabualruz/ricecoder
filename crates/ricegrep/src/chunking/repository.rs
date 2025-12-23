@@ -70,6 +70,7 @@ impl RepositoryScanner {
 
         for entry in walker {
             let entry = entry?;
+            
             if !entry.file_type().is_file() {
                 continue;
             }
