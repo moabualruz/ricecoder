@@ -9,7 +9,7 @@ mod tests {
         let style = OutputStyle { use_colors: false };
         assert_eq!(style.success("test"), "✓ test");
         assert_eq!(style.error("test"), "✗ test");
-        assert_eq!(style.warning("test"), "⚠ test");
+        assert_eq!(style.warning("test"), "⚠	test");
         assert_eq!(style.info("test"), "ℹ test");
     }
 

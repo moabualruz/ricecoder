@@ -40,7 +40,7 @@ impl OutputStyle {
         if self.use_colors {
             format!("{} {}", "⚠".yellow(), msg)
         } else {
-            format!("⚠ {}", msg)
+            format!("⚠	{}", msg)
         }
     }
 

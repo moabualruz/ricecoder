@@ -74,8 +74,7 @@ fn test_formatting_output_structure() {
     // Error should start with ✗
     assert!(style.error("test").starts_with("✗"));
 
-    // Warning should start with ⚠
-    assert!(style.warning("test").starts_with("⚠"));
+    // Warning should start with ⚠	    assert!(style.warning("test").starts_with("⚠"));
 
     // Info should start with ℹ
     assert!(style.info("test").starts_with("ℹ"));

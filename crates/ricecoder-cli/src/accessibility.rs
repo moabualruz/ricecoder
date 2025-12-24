@@ -237,7 +237,7 @@ impl AccessibilityFeatures {
         println!("RiceCoder uses symbols in addition to colors:");
         println!("{}", style.list_item("✓ for success"));
         println!("{}", style.list_item("✗ for errors"));
-        println!("{}", style.list_item("⚠ for warnings"));
+        println!("{}", style.list_item("⚠	for warnings"));
         println!("{}", style.list_item("ℹ for information"));
         println!();
 
