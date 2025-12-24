@@ -7297,9 +7297,11 @@ dependencies = [
  "async-graphql-axum",
  "async-stream",
  "async-trait",
+ "atty",
  "axum 0.8.8",
  "chrono",
  "clap",
+ "colored 2.2.0",
  "config",
  "dashmap",
  "dirs",
@@ -7318,6 +7320,7 @@ dependencies = [
  "qdrant-client",
  "regex",
  "reqwest 0.11.27",
+ "ricegrep-core",
  "rmcp",
  "schemars 1.1.0",
  "serde",
@@ -7345,6 +7348,14 @@ dependencies = [
  "unicode-segmentation",
  "uuid",
  "walkdir",
+]
+
+[[package]]
+name = "ricegrep-core"
+version = "0.1.0"
+dependencies = [
+ "proptest",
+ "regex",
 ]
 
 [[package]]

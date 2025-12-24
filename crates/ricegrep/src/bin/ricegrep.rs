@@ -174,6 +174,10 @@ struct IndexPathArgs {
     /// Paths to index
     #[arg(value_name = "PATH", num_args = 0..)]
     paths: Vec<String>,
+
+    /// Don't respect .gitignore, .ignore, and other ignore files
+    #[arg(long)]
+    no_ignore: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -951,7 +955,8 @@ async fn run_index(runtime: &RuntimeConfig, args: IndexArgs) -> Result<()> {
             let root = resolve_repo_root(&paths.paths)?;
             let index_dir = local_index_dir(&root);
             let metadata_path = local_metadata_path(&root);
-            let toolset = AdminToolset::new(index_dir.clone(), None);
+            let toolset = AdminToolset::new(index_dir.clone(), None)
+                .with_no_ignore(paths.no_ignore);
             let stats = toolset
                 .reindex_repository_with_metadata(&root, &metadata_path)
                 .await
@@ -973,7 +978,8 @@ async fn run_index(runtime: &RuntimeConfig, args: IndexArgs) -> Result<()> {
             let root = resolve_repo_root(&paths.paths)?;
             let index_dir = local_index_dir(&root);
             let metadata_path = local_metadata_path(&root);
-            let toolset = AdminToolset::new(index_dir.clone(), None);
+            let toolset = AdminToolset::new(index_dir.clone(), None)
+                .with_no_ignore(paths.no_ignore);
             let stats = toolset
                 .reindex_repository_with_metadata(&root, &metadata_path)
                 .await

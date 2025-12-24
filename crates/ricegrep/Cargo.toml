@@ -11,7 +11,12 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
+# Core domain and application layer
+ricegrep-core = { path = "../ricegrep-core" }
+
 anyhow = { workspace = true }
+atty = { workspace = true }
+colored = { workspace = true }
 async-stream = { workspace = true }
 async-trait = { workspace = true }
 chrono = { workspace = true }

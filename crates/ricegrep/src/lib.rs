@@ -6,6 +6,7 @@ pub mod application;
 pub mod benchmarking;
 pub mod chunking;
 pub mod domain;
+pub mod formatting;
 pub mod indexing_optimization;
 pub mod infrastructure;
 pub mod lexical;

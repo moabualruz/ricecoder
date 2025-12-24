@@ -1,23 +1,32 @@
 //! Domain Layer - Pure Business Logic
 //!
-//! This module contains the core domain types and business rules for RiceGrep.
-//! It follows Domain-Driven Design patterns with:
-//! - Value Objects: Immutable, validated types
-//! - Aggregate Roots: Entities with business invariants
-//! - Domain Events: Published when aggregates change
+//! This module re-exports the core domain types from `ricegrep-core`.
+//! RiceGrep uses `ricegrep-core` as the single source of truth for
+//! domain logic, following DDD and Clean Architecture principles.
 //!
-//! Design Principles:
-//! - No external dependencies except std lib
-//! - Pure functions, no side effects
-//! - Testable without mocks
-//! - Immutable types (mutations return new instances)
+//! # Architecture
+//! ```text
+//! ricegrep (MCP, CLI, Infrastructure)
+//!     └── depends on ──> ricegrep-core (Domain, Application)
+//! ```
+//!
+//! # Re-exported Types
+//! - Value Objects: `FilePath`, `EditPattern`, `SearchQuery`
+//! - Aggregates: `FileEdit`, `SearchResult`, `SearchMatch`
+//! - Events: `DomainEvent`
+//! - Errors: `DomainError`, `DomainResult`
 
-pub mod value_objects;
-pub mod aggregates;
-pub mod events;
-pub mod errors;
+// Re-export everything from ricegrep-core's domain module
+pub use ricegrep_core::domain::*;
 
-pub use value_objects::*;
-pub use aggregates::*;
-pub use events::*;
-pub use errors::*;
+// Also re-export at module level for backwards compatibility
+pub use ricegrep_core::{
+    // Value Objects
+    FilePath, EditPattern, SearchQuery,
+    // Aggregates  
+    FileEdit, SearchResult, SearchMatch,
+    // Events
+    DomainEvent,
+    // Errors
+    DomainError, DomainResult,
+};

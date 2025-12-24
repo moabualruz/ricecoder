@@ -64,6 +64,12 @@ impl ChunkProducerBuilder {
         self
     }
 
+    /// If true, ignore .gitignore, .ignore, and other ignore files.
+    pub fn no_ignore(mut self, no_ignore: bool) -> Self {
+        self.scanner = RepositoryScanner::with_no_ignore(no_ignore);
+        self
+    }
+
     pub fn build(self) -> ChunkProducer {
         ChunkProducer {
             config: self.config.clone(),
@@ -112,7 +118,7 @@ impl ChunkProducer {
                 let content = match fs::read_to_string(&entry.path).await {
                     Ok(c) => c,
                     Err(e) => {
-                        eprintln!("⚠ Skipping unreadable file ({}): {}", e, entry.path.display());
+                        // eprintln!("⚠	 Skipping unreadable file ({}): {}", e, entry.path.display());
                         continue;  // Skip this file, continue with next
                     }
                 };

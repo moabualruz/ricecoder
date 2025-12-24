@@ -74,6 +74,8 @@ pub struct AdminToolset {
     batch_size: usize,
     progress_interval: usize,
     config_overrides: Mutex<HashMap<String, String>>,
+    /// If true, ignore .gitignore, .ignore, and other ignore files during scanning.
+    no_ignore: bool,
 }
 
 impl AdminToolset {
@@ -86,6 +88,7 @@ impl AdminToolset {
             batch_size: 256,
             progress_interval: 1_000,
             config_overrides: Mutex::new(HashMap::new()),
+            no_ignore: false,
         }
     }
 
@@ -104,6 +107,12 @@ impl AdminToolset {
         self
     }
 
+    /// If true, ignore .gitignore, .ignore, and other ignore files during scanning.
+    pub fn with_no_ignore(mut self, no_ignore: bool) -> Self {
+        self.no_ignore = no_ignore;
+        self
+    }
+
     pub async fn reindex_repository(
         &self,
         repository: &Path,
@@ -111,6 +120,7 @@ impl AdminToolset {
         self.prepare_index_directory()?;
         let chunk_producer = ChunkProducerBuilder::default()
             .config(self.chunking_config.clone())
+            .no_ignore(self.no_ignore)
             .build();
         let mut pipeline = LexicalIngestPipeline::new(chunk_producer)
             .with_batch_size(self.batch_size)
@@ -135,6 +145,7 @@ impl AdminToolset {
         self.prepare_index_directory()?;
         let chunk_producer = ChunkProducerBuilder::default()
             .config(self.chunking_config.clone())
+            .no_ignore(self.no_ignore)
             .build();
         let mut pipeline = LexicalIngestPipeline::new(chunk_producer)
             .with_batch_size(self.batch_size)

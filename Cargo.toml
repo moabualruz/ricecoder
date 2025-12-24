@@ -49,6 +49,7 @@ tempfile = { workspace = true }
 
 [workspace]
 members = [
+    "crates/ricegrep-core",
     "crates/ricecoder-storage",
     "crates/ricecoder-cli",
     "crates/ricecoder-providers",

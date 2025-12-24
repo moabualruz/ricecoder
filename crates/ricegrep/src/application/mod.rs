@@ -1,41 +1,39 @@
 //! Application Layer - Orchestration and Ports
 //!
-//! This module contains the application layer for RiceGrep, following
-//! hexagonal architecture (ports and adapters) pattern.
+//! This module re-exports the application layer from `ricegrep-core`.
+//! RiceGrep uses `ricegrep-core` as the single source of truth for
+//! application logic, following hexagonal architecture (ports and adapters).
 //!
 //! # Architecture
 //! ```text
-//! ┌─────────────────────────────┐
-//! │   MCP Protocol Layer        │ ← Thin adapters, request/response mapping
-//! ├─────────────────────────────┤
-//! │   Application Layer         │ ← Use cases, repository traits, orchestration (THIS LAYER)
-//! ├─────────────────────────────┤
-//! │   Domain Layer              │ ← Pure business logic, value objects, aggregates
-//! ├─────────────────────────────┤
-//! │   Infrastructure Layer      │ ← File I/O, indexing, actual implementations
-//! └─────────────────────────────┘
+//! ricegrep (MCP, CLI, Infrastructure)
+//!     └── depends on ──> ricegrep-core (Domain, Application)
 //! ```
 //!
-//! # Design Principles (REQ-ARCH-002)
-//! - Repository traits define ports (interfaces) for infrastructure
-//! - No async initially (can add later for performance)
-//! - <500 lines total for application layer
-//! - Infrastructure implements these traits
-//! - Domain types flow through without modification
-//!
-//! # Modules
-//! - `errors` - Application error types
-//! - `ports` - Repository traits (interfaces)
-//! - `use_cases` - Business operation orchestrators
-//! - `services` - Dependency injection container
+//! # Re-exported Types
+//! - Errors: `AppError`, `AppResult`, `IoOperation`
+//! - Repository Traits: `FileRepository`, `IndexRepository`, `EventPublisher`, `FileIndexEntry`
+//! - Use Cases: `EditFileUseCase`, `SearchFilesUseCase`, `WriteFileUseCase` + Request/Response types
+//! - Services: `AppServices`, `AppServicesBuilder`
 
-pub mod errors;
-pub mod ports;
-pub mod use_cases;
-pub mod services;
+// Re-export everything from ricegrep-core's application module
+pub use ricegrep_core::application::*;
 
-// Re-export for ergonomic imports
-pub use errors::*;
-pub use ports::*;
-pub use use_cases::*;
-pub use services::*;
+// Also re-export at module level for backwards compatibility
+pub use ricegrep_core::{
+    // Errors
+    AppError, AppResult, IoOperation,
+    // Repository Traits (Ports)
+    FileRepository, IndexRepository, EventPublisher, FileIndexEntry,
+    // Use Cases
+    EditFileUseCase, EditFileRequest, EditFileResponse,
+    SearchFilesUseCase, SearchFilesRequest, SearchFilesResponse,
+    WriteFileUseCase, WriteFileRequest, WriteFileResponse,
+    // Services
+    AppServices, AppServicesBuilder,
+};
+
+// Re-export use_cases module for explicit imports like `use crate::application::use_cases::*`
+pub mod use_cases {
+    pub use ricegrep_core::application::use_cases::*;
+}

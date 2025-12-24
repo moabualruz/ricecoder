@@ -19,8 +19,8 @@ pub enum ChunkingError {
     #[error("Glob pattern error: {0}")]
     Glob(#[from] glob::PatternError),
 
-    #[error("Walkdir error: {0}")]
-    Walkdir(#[from] walkdir::Error),
+    #[error("Ignore walk error: {0}")]
+    Ignore(#[from] ignore::Error),
 
     #[error("Async runtime error: {0}")]
     Runtime(#[from] anyhow::Error),

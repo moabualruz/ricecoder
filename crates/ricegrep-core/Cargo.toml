@@ -1,0 +1,18 @@
+[package]
+name = "ricegrep-core"
+version = "0.1.0"
+edition = "2021"
+description = "Core domain and application layer for RiceGrep - pure business logic without infrastructure dependencies"
+license = "MIT"
+repository = "https://github.com/moabualruz/ricecoder"
+keywords = ["search", "code", "domain-driven-design"]
+categories = ["development-tools"]
+
+# This crate is intentionally minimal - only dependencies needed for core logic
+[dependencies]
+# Application layer needs regex for pattern matching
+regex = "1.10"
+
+[dev-dependencies]
+# For property-based testing
+proptest = "1.4"

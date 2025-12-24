@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use glob::Pattern;
-use walkdir::{DirEntry, WalkDir};
+use ignore::WalkBuilder;
 
 use crate::chunking::{ChunkingError, ChunkingResult};
 
@@ -32,6 +32,9 @@ pub struct RepositoryScannerConfig {
     pub include_patterns: Vec<Pattern>,
     pub exclude_patterns: Vec<Pattern>,
     pub follow_symlinks: bool,
+    /// If true, ignore .gitignore, .ignore, and other ignore files.
+    /// Default is false (respects ignore files).
+    pub no_ignore: bool,
 }
 
 impl Default for RepositoryScannerConfig {
@@ -40,6 +43,7 @@ impl Default for RepositoryScannerConfig {
             include_patterns: Vec::new(),
             exclude_patterns: Vec::new(),
             follow_symlinks: false,
+            no_ignore: false,
         }
     }
 }
@@ -64,14 +68,35 @@ impl Default for RepositoryScanner {
 }
 
 impl RepositoryScanner {
+    /// Create a new scanner with the given configuration.
+    pub fn new(config: RepositoryScannerConfig) -> Self {
+        Self { config }
+    }
+
+    /// Create a scanner that ignores .gitignore, .ignore, and other ignore files.
+    pub fn with_no_ignore(no_ignore: bool) -> Self {
+        Self {
+            config: RepositoryScannerConfig {
+                no_ignore,
+                ..Default::default()
+            },
+        }
+    }
+
     pub fn scan(&self, source: &RepositorySource) -> ChunkingResult<Vec<FileEntry>> {
-        let walker = WalkDir::new(&source.root).follow_links(self.config.follow_symlinks);
+        let walker = WalkBuilder::new(&source.root)
+            .follow_links(self.config.follow_symlinks)
+            .git_ignore(!self.config.no_ignore)
+            .git_global(!self.config.no_ignore)
+            .git_exclude(!self.config.no_ignore)
+            .ignore(!self.config.no_ignore)
+            .build();
         let mut files = Vec::new();
 
         for entry in walker {
             let entry = entry?;
-            
-            if !entry.file_type().is_file() {
+
+            if !entry.file_type().map(|ft| ft.is_file()).unwrap_or(false) {
                 continue;
             }
 

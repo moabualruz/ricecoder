@@ -18,13 +18,12 @@ use crate::application::{
 ///
 /// # Example
 /// ```ignore
-/// use ricegrep::infrastructure::{FsFileRepository, MetadataIndexRepository, TracingEventPublisher};
-/// use ricegrep::application::AppServicesBuilder;
+/// use ricegrep_core::application::AppServicesBuilder;
 ///
 /// let services = AppServicesBuilder::new()
-///     .with_file_repo(FsFileRepository::new())
-///     .with_index_repo(MetadataIndexRepository::new())
-///     .with_event_publisher(TracingEventPublisher::new())
+///     .with_file_repo(my_file_repo)
+///     .with_index_repo(my_index_repo)
+///     .with_event_publisher(my_event_publisher)
 ///     .build();
 ///
 /// let edit_result = services.edit_file().execute(request);
