@@ -118,7 +118,7 @@ impl ChunkProducer {
                 let content = match fs::read_to_string(&entry.path).await {
                     Ok(c) => c,
                     Err(e) => {
-                        // eprintln!("⚠	 Skipping unreadable file ({}): {}", e, entry.path.display());
+                        eprintln!("⚠	Skipping unreadable file ({}): {}", e, entry.path.display());
                         continue;  // Skip this file, continue with next
                     }
                 };
