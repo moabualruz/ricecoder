@@ -1,0 +1,29 @@
+[package]
+name = "ricecoder-application"
+version = "0.1.0"
+edition = "2021"
+description = "Application layer services for RiceCoder - orchestrates domain aggregates and use cases"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+# Domain layer - the ONLY internal dependency for application layer
+ricecoder-domain = { path = "../ricecoder-domain", version = "0.1" }
+
+# Async support
+async-trait = { workspace = true }
+tokio = { workspace = true, features = ["sync"] }
+
+# Serialization for DTOs
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+
+# Utilities
+uuid = { workspace = true, features = ["v4", "serde"] }
+chrono = { workspace = true, features = ["serde"] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+proptest = { workspace = true }

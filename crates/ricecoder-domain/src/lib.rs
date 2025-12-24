@@ -20,6 +20,8 @@ pub mod events;
 pub mod project;
 pub mod repositories;
 pub mod services;
+pub mod session;
+pub mod specification;
 pub mod value_objects;
 
 pub use entities::*;
@@ -28,4 +30,6 @@ pub use events::*;
 pub use project::*;
 pub use repositories::*;
 pub use services::*;
+pub use session::*;
+pub use specification::*;
 pub use value_objects::*;

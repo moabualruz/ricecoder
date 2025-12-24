@@ -6046,6 +6046,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "ricecoder-application"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "proptest",
+ "ricecoder-domain",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "ricecoder-benchmark"
 version = "0.1.72"
 dependencies = [

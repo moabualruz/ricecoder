@@ -1,124 +1,19 @@
-//! Domain services - business logic that doesn't belong to entities
+//! Domain services - stateless business logic that doesn't belong to entities
+//!
+//! Domain services are stateless and implement complex domain logic that spans multiple aggregates.
+//! They operate on aggregates and value objects, returning domain results.
+//!
+//! REQ-ARCH-001.3: Domain services are stateless and coordinate aggregate operations
 
-use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
-use crate::{entities::*, errors::*, value_objects::*};
-
-/// Service for managing projects
-#[async_trait]
-pub trait ProjectService {
-    /// Create a new project
-    async fn create_project(
-        &self,
-        name: String,
-        language: ProgrammingLanguage,
-        root_path: String,
-    ) -> DomainResult<Project>;
-
-    /// Get project by ID
-    async fn get_project(&self, id: &ProjectId) -> DomainResult<Option<Project>>;
-
-    /// Update project
-    async fn update_project(&self, project: Project) -> DomainResult<Project>;
-
-    /// Delete project
-    async fn delete_project(&self, id: &ProjectId) -> DomainResult<()>;
-
-    /// List all projects
-    async fn list_projects(&self) -> DomainResult<Vec<Project>>;
-}
-
-/// Service for managing sessions
-#[async_trait]
-pub trait SessionService {
-    /// Create a new session
-    async fn create_session(&self, provider_id: String, model_id: String) -> DomainResult<Session>;
-
-    /// Get session by ID
-    async fn get_session(&self, id: &SessionId) -> DomainResult<Option<Session>>;
-
-    /// Update session
-    async fn update_session(&self, session: Session) -> DomainResult<Session>;
-
-    /// End session
-    async fn end_session(&self, id: &SessionId) -> DomainResult<()>;
-
-    /// List active sessions
-    async fn list_active_sessions(&self) -> DomainResult<Vec<Session>>;
-
-    /// Generate shareable session link
-    async fn generate_share_link(&self, session_id: &SessionId) -> DomainResult<String>;
-
-    /// Load session from shareable link
-    async fn load_from_share_link(&self, link: &str) -> DomainResult<Session>;
-}
-
-/// Service for managing providers
-#[async_trait]
-pub trait ProviderService {
-    /// Register a new provider
-    async fn register_provider(&self, provider: Provider) -> DomainResult<()>;
-
-    /// Get provider by ID
-    async fn get_provider(&self, id: &str) -> DomainResult<Option<Provider>>;
-
-    /// Update provider
-    async fn update_provider(&self, provider: Provider) -> DomainResult<()>;
-
-    /// List all providers
-    async fn list_providers(&self) -> DomainResult<Vec<Provider>>;
-
-    /// Get available models for a provider
-    async fn get_provider_models(&self, provider_id: &str) -> DomainResult<Vec<ModelInfo>>;
-
-    /// Validate provider configuration
-    async fn validate_provider_config(&self, provider: &Provider)
-        -> DomainResult<ValidationResult>;
-}
-
-/// Service for code analysis
-#[async_trait]
-pub trait AnalysisService {
-    /// Analyze a single file
-    async fn analyze_file(&self, file: &CodeFile) -> DomainResult<AnalysisResult>;
-
-    /// Analyze an entire project
-    async fn analyze_project(&self, project: &Project) -> DomainResult<Vec<AnalysisResult>>;
-
-    /// Get analysis history for a project
-    async fn get_analysis_history(
-        &self,
-        project_id: &ProjectId,
-    ) -> DomainResult<Vec<AnalysisResult>>;
-
-    /// Get analysis result by ID
-    async fn get_analysis_result(&self, id: &str) -> DomainResult<Option<AnalysisResult>>;
-}
-
-/// Service for file operations
-#[async_trait]
-pub trait FileService {
-    /// Load file from path
-    async fn load_file(
-        &self,
-        project_id: &ProjectId,
-        relative_path: &str,
-    ) -> DomainResult<CodeFile>;
-
-    /// Save file content
-    async fn save_file(&self, file: &CodeFile) -> DomainResult<()>;
-
-    /// List files in project
-    async fn list_project_files(&self, project_id: &ProjectId) -> DomainResult<Vec<CodeFile>>;
-
-    /// Search files by pattern
-    async fn search_files(
-        &self,
-        project_id: &ProjectId,
-        pattern: &str,
-    ) -> DomainResult<Vec<CodeFile>>;
-}
+use crate::{
+    project::Project,
+    session::Session,
+    specification::Specification,
+    errors::*,
+    value_objects::*,
+};
 
 /// Validation result for domain operations
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -129,6 +24,7 @@ pub struct ValidationResult {
 }
 
 impl ValidationResult {
+    /// Create valid result
     pub fn valid() -> Self {
         Self {
             is_valid: true,
@@ -137,6 +33,7 @@ impl ValidationResult {
         }
     }
 
+    /// Create invalid result with errors
     pub fn invalid(errors: Vec<String>) -> Self {
         Self {
             is_valid: false,
@@ -145,117 +42,115 @@ impl ValidationResult {
         }
     }
 
+    /// Add warnings to result
     pub fn with_warnings(mut self, warnings: Vec<String>) -> Self {
         self.warnings = warnings;
         self
     }
 
+    /// Add error to result
     pub fn add_error(&mut self, error: String) {
         self.is_valid = false;
         self.errors.push(error);
     }
 
+    /// Add warning to result
     pub fn add_warning(&mut self, warning: String) {
         self.warnings.push(warning);
     }
 }
 
-/// Business rules validation service
-pub struct BusinessRulesValidator;
+/// Domain validation service - stateless validation logic for aggregates
+///
+/// REQ-ARCH-001.3: Domain services are stateless and coordinate aggregate operations
+pub struct ValidationService;
 
-impl BusinessRulesValidator {
-    /// Validate project creation rules
-    pub fn validate_project_creation(
-        name: &str,
-        language: ProgrammingLanguage,
-    ) -> ValidationResult {
+impl ValidationService {
+    /// Validate project invariants
+    ///
+    /// - Project name must be 1-100 characters
+    /// - Project name must contain only alphanumeric, hyphens, underscores, spaces
+    /// - Project path cannot contain ".."
+    /// - Project must be in valid state
+    pub fn validate_project(project: &Project) -> ValidationResult {
         let mut result = ValidationResult::valid();
 
-        // Rule: Project names should be meaningful
-        if name.len() < 3 {
-            result.add_warning(
-                "Project name is very short, consider a more descriptive name".to_string(),
-            );
+        // Name length validation
+        if project.name().is_empty() {
+            result.add_error("Project name cannot be empty".to_string());
+        } else if project.name().len() > 100 {
+            result.add_error("Project name cannot exceed 100 characters".to_string());
         }
 
-        // Rule: Certain languages have specific requirements
-        match language {
-            ProgrammingLanguage::Rust => {
-                // Rust projects should have proper naming
-                if !name.chars().any(|c| c.is_lowercase()) {
-                    result.add_warning("Rust project names are typically lowercase".to_string());
-                }
-            }
-            ProgrammingLanguage::Python => {
-                // Python projects should follow PEP 8
-                if name.contains('_') {
-                    result.add_warning(
-                        "Python project names typically use hyphens instead of underscores"
-                            .to_string(),
-                    );
-                }
-            }
-            _ => {}
-        }
-
-        result
-    }
-
-    /// Validate session operations
-    pub fn validate_session_operation(
-        session: &Session,
-        operation: SessionOperation,
-    ) -> ValidationResult {
-        let mut result = ValidationResult::valid();
-
-        match operation {
-            SessionOperation::End if !session.is_active() => {
-                result.add_error("Cannot end a session that is not active".to_string());
-            }
-            SessionOperation::Resume if session.status != SessionStatus::Paused => {
-                result.add_error("Can only resume paused sessions".to_string());
-            }
-            SessionOperation::Pause if !session.is_active() => {
-                result.add_error("Can only pause active sessions".to_string());
-            }
-            _ => {}
-        }
-
-        result
-    }
-
-    /// Validate analysis operations
-    pub fn validate_analysis_operation(
-        file: &CodeFile,
-        analysis_type: AnalysisType,
-    ) -> ValidationResult {
-        let mut result = ValidationResult::valid();
-
-        // Rule: Don't analyze empty files
-        if file.is_empty() {
-            result.add_warning(
-                "Analyzing empty files may not provide meaningful results".to_string(),
-            );
-        }
-
-        // Rule: Certain analyses require minimum file size
-        match analysis_type {
-            AnalysisType::Complexity if file.size_bytes < 100 => {
-                result.add_warning(
-                    "Complexity analysis may not be meaningful for very small files".to_string(),
-                );
-            }
-            AnalysisType::Dependencies
-                if !matches!(
-                    file.language,
-                    ProgrammingLanguage::Rust | ProgrammingLanguage::Go
-                ) =>
-            {
-                result.add_warning(format!(
-                    "Dependency analysis is most useful for languages like {}, not {}",
-                    ProgrammingLanguage::Rust,
-                    file.language
+        // Name format validation
+        for ch in project.name().chars() {
+            if !ch.is_alphanumeric() && ch != '-' && ch != '_' && ch != ' ' {
+                result.add_error(format!(
+                    "Project name contains invalid character '{}'. Only alphanumeric, hyphens, underscores, and spaces allowed",
+                    ch
                 ));
+                break;
+            }
+        }
+
+        // Path security validation
+        if project.root_path().contains("..") {
+            result.add_error("Project path cannot contain '..' for security reasons".to_string());
+        }
+
+        // Status validation
+        if matches!(project.status(), crate::project::ProjectStatus::Deleted) {
+            result.add_warning("Project has been deleted and may not be usable".to_string());
+        }
+
+        result
+    }
+
+    /// Validate session invariants
+    ///
+    /// - Session must be in valid state
+    /// - Session must not have exceeded message limits
+    pub fn validate_session(session: &Session) -> ValidationResult {
+        let mut result = ValidationResult::valid();
+
+        // Session state validation
+        if session.is_archived() {
+            result.add_warning("Session has been archived and is read-only".to_string());
+        }
+
+        // Message capacity check
+        let capacity_percent = (session.message_count() as f32 / session.max_messages() as f32) * 100.0;
+        if capacity_percent > 90.0 {
+            result.add_warning(format!(
+                "Session message capacity is {}% full",
+                capacity_percent as u32
+            ));
+        }
+
+        result
+    }
+
+    /// Validate specification invariants
+    ///
+    /// - Specification name must not be empty
+    /// - Specification name cannot exceed 255 characters
+    /// - Specification must be in valid status
+    pub fn validate_specification(specification: &Specification) -> ValidationResult {
+        let mut result = ValidationResult::valid();
+
+        if specification.name().is_empty() {
+            result.add_error("Specification name cannot be empty".to_string());
+        } else if specification.name().len() > 255 {
+            result.add_error("Specification name cannot exceed 255 characters".to_string());
+        }
+
+        // Status validation
+        match specification.status() {
+            crate::specification::SpecStatus::Archived => {
+                result.add_warning("Specification has been archived and is read-only".to_string());
+            }
+            crate::specification::SpecStatus::Draft => {
+                // Draft is expected early in lifecycle
             }
             _ => {}
         }
@@ -264,11 +159,79 @@ impl BusinessRulesValidator {
     }
 }
 
-/// Session operation types for validation
-#[derive(Debug, Clone, Copy)]
-pub enum SessionOperation {
-    End,
-    Pause,
-    Resume,
-    Update,
+/// Domain analysis service - stateless analysis logic
+///
+/// REQ-ARCH-001.3: Provides analysis operations without external dependencies
+pub struct AnalysisService;
+
+impl AnalysisService {
+    /// Analyze specification progress
+    ///
+    /// Evaluates:
+    /// - Requirements defined
+    /// - Task planning
+    /// - Task completion status
+    /// - Overall progress percentage
+    pub fn analyze_specification_progress(
+        specification: &Specification,
+    ) -> DomainResult<SpecificationProgress> {
+        let has_requirements = specification.requirements().len() > 0;
+        let has_tasks = specification.tasks().len() > 0;
+        let completion_percentage = specification.completion_percentage();
+
+        let status = match (has_requirements, has_tasks, completion_percentage) {
+            (true, true, percent) if (percent - 100.0).abs() < f32::EPSILON => ProgressStatus::Complete,
+            (true, true, percent) if percent > 50.0 => ProgressStatus::InProgress,
+            (true, true, _) => ProgressStatus::Planned,
+            (true, false, _) => ProgressStatus::RequirementsDefined,
+            _ => ProgressStatus::Draft,
+        };
+
+        Ok(SpecificationProgress {
+            status,
+            completion_percentage,
+            requirement_count: specification.requirements().len() as u32,
+            task_count: specification.tasks().len() as u32,
+            completed_tasks: specification.completed_task_count() as u32,
+        })
+    }
+
+    /// Analyze project health
+    ///
+    /// Evaluates:
+    /// - Active/archived status
+    /// - Consistency (domain layer ensures this)
+    pub fn analyze_project_health(project: &Project) -> ProjectHealth {
+        ProjectHealth {
+            is_active: project.is_active(),
+            is_consistent: true, // Domain layer enforces consistency through aggregates
+        }
+    }
+}
+
+/// Specification progress metrics
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SpecificationProgress {
+    pub status: ProgressStatus,
+    pub completion_percentage: f32,
+    pub requirement_count: u32,
+    pub task_count: u32,
+    pub completed_tasks: u32,
+}
+
+/// Progress status enumeration
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+pub enum ProgressStatus {
+    Draft,
+    RequirementsDefined,
+    Planned,
+    InProgress,
+    Complete,
+}
+
+/// Project health metrics
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectHealth {
+    pub is_active: bool,
+    pub is_consistent: bool,
 }

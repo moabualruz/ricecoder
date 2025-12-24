@@ -61,6 +61,11 @@ impl SessionId {
     pub fn to_string(&self) -> String {
         self.0.to_string()
     }
+
+    /// Get inner UUID
+    pub fn as_uuid(&self) -> uuid::Uuid {
+        self.0
+    }
 }
 
 impl fmt::Display for SessionId {
@@ -70,6 +75,120 @@ impl fmt::Display for SessionId {
 }
 
 impl Default for SessionId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Specification identifier
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct SpecificationId(uuid::Uuid);
+
+impl SpecificationId {
+    /// Generate a new random specification ID
+    pub fn new() -> Self {
+        Self(uuid::Uuid::new_v4())
+    }
+
+    /// Create from string representation
+    pub fn from_string(s: &str) -> Result<Self, uuid::Error> {
+        Ok(Self(uuid::Uuid::parse_str(s)?))
+    }
+
+    /// Convert to string
+    pub fn to_string(&self) -> String {
+        self.0.to_string()
+    }
+
+    /// Get inner UUID
+    pub fn as_uuid(&self) -> uuid::Uuid {
+        self.0
+    }
+}
+
+impl fmt::Display for SpecificationId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl Default for SpecificationId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Requirement identifier within a specification
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct RequirementId(uuid::Uuid);
+
+impl RequirementId {
+    /// Generate a new random requirement ID
+    pub fn new() -> Self {
+        Self(uuid::Uuid::new_v4())
+    }
+
+    /// Create from string representation
+    pub fn from_string(s: &str) -> Result<Self, uuid::Error> {
+        Ok(Self(uuid::Uuid::parse_str(s)?))
+    }
+
+    /// Convert to string
+    pub fn to_string(&self) -> String {
+        self.0.to_string()
+    }
+
+    /// Get inner UUID
+    pub fn as_uuid(&self) -> uuid::Uuid {
+        self.0
+    }
+}
+
+impl fmt::Display for RequirementId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl Default for RequirementId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Task identifier within a specification
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct TaskId(uuid::Uuid);
+
+impl TaskId {
+    /// Generate a new random task ID
+    pub fn new() -> Self {
+        Self(uuid::Uuid::new_v4())
+    }
+
+    /// Create from string representation
+    pub fn from_string(s: &str) -> Result<Self, uuid::Error> {
+        Ok(Self(uuid::Uuid::parse_str(s)?))
+    }
+
+    /// Convert to string
+    pub fn to_string(&self) -> String {
+        self.0.to_string()
+    }
+
+    /// Get inner UUID
+    pub fn as_uuid(&self) -> uuid::Uuid {
+        self.0
+    }
+}
+
+impl fmt::Display for TaskId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl Default for TaskId {
     fn default() -> Self {
         Self::new()
     }
