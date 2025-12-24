@@ -31,6 +31,22 @@ pub enum DomainError {
 
     #[error("Concurrency conflict: {resource}")]
     ConcurrencyConflict { resource: String },
+
+    // Event-related errors (REQ-DOMAIN-000.8)
+    #[error("Event dispatch failed: {reason}")]
+    EventDispatchFailed { reason: String },
+
+    #[error("Event serialization failed: {reason}")]
+    EventSerializationFailed { reason: String },
+
+    #[error("Event deserialization failed: {reason}")]
+    EventDeserializationFailed { reason: String },
+
+    #[error("Invalid event: {event_type} - {reason}")]
+    InvalidEvent { event_type: String, reason: String },
+
+    #[error("Event handler error: {handler} - {reason}")]
+    EventHandlerError { handler: String, reason: String },
 }
 
 /// Result type alias for domain operations

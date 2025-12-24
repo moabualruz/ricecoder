@@ -1434,8 +1434,9 @@ impl GdprComplianceReport {
 
     /// Add breach incident
     pub fn add_breach(&mut self, breach: BreachIncident) {
+        let severity = breach.severity;
         self.breach_incidents.push(breach);
-        if breach.severity == BreachSeverity::High || breach.severity == BreachSeverity::Critical {
+        if severity == BreachSeverity::High || severity == BreachSeverity::Critical {
             self.compliance_status = GdprComplianceStatus::NonCompliant;
         }
     }
