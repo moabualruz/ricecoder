@@ -53,6 +53,13 @@ impl Default for VcsStatus {
 impl VcsStatus {
     /// Create VCS status from repository status
     pub fn from_repository_status(status: &RepositoryStatus) -> Self {
+        // Only include ahead/behind if there's a difference
+        let ahead_behind = if status.ahead > 0 || status.behind > 0 {
+            Some((status.ahead, status.behind))
+        } else {
+            None
+        };
+
         Self {
             branch: Some(status.current_branch.name.clone()),
             status_summary: Some(status.summary()),
@@ -61,13 +68,26 @@ impl VcsStatus {
             modified_count: status.uncommitted_changes,
             untracked_count: status.untracked_files,
             has_conflicts: status.has_conflicts,
-            ahead_behind: None, // TODO: Add ahead/behind tracking to RepositoryStatus
+            ahead_behind,
         }
     }
 
     /// Check if we're in a git repository
     pub fn is_in_repo(&self) -> bool {
         self.branch.is_some()
+    }
+
+    /// Get formatted ahead/behind string for display
+    /// Returns format like "↑1 ↓2" or "↑3" or "↓1" or None
+    pub fn ahead_behind_display(&self) -> Option<String> {
+        self.ahead_behind.and_then(|(ahead, behind)| {
+            match (ahead > 0, behind > 0) {
+                (true, true) => Some(format!("↑{} ↓{}", ahead, behind)),
+                (true, false) => Some(format!("↑{}", ahead)),
+                (false, true) => Some(format!("↓{}", behind)),
+                (false, false) => None,
+            }
+        })
     }
 }
 
@@ -231,6 +251,11 @@ impl VcsIntegration {
         *self.monitoring_active.lock().unwrap()
     }
 
+    /// Get ahead/behind display string
+    pub fn get_ahead_behind_display(&self) -> Option<String> {
+        self.get_status().ahead_behind_display()
+    }
+
     /// Force a status refresh (useful for manual updates)
     pub async fn force_refresh(&self) -> VcsResult<()> {
         self.refresh_status().await
@@ -245,8 +270,6 @@ impl Default for VcsIntegration {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-
     use super::*;
 
     #[test]
@@ -315,5 +338,44 @@ mod tests {
         let result = integration.update_directory(new_dir.clone()).await;
         assert!(result.is_ok());
         assert_eq!(integration.current_dir, new_dir);
+    }
+
+    #[test]
+    fn test_ahead_behind_display() {
+        let mut status = VcsStatus::default();
+        
+        // No ahead/behind
+        assert!(status.ahead_behind_display().is_none());
+        
+        // Only ahead
+        status.ahead_behind = Some((3, 0));
+        assert_eq!(status.ahead_behind_display(), Some("↑3".to_string()));
+        
+        // Only behind
+        status.ahead_behind = Some((0, 2));
+        assert_eq!(status.ahead_behind_display(), Some("↓2".to_string()));
+        
+        // Both ahead and behind
+        status.ahead_behind = Some((1, 4));
+        assert_eq!(status.ahead_behind_display(), Some("↑1 ↓4".to_string()));
+        
+        // Zero both (edge case)
+        status.ahead_behind = Some((0, 0));
+        assert!(status.ahead_behind_display().is_none());
+    }
+
+    #[test]
+    fn test_vcs_integration_ahead_behind() {
+        let mut status = VcsStatus::default();
+        status.branch = Some("feature".to_string());
+        status.ahead_behind = Some((2, 1));
+
+        let integration = VcsIntegration::new();
+        *integration.status.lock().unwrap() = status;
+
+        assert_eq!(
+            integration.get_ahead_behind_display(),
+            Some("↑2 ↓1".to_string())
+        );
     }
 }

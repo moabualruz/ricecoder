@@ -236,7 +236,7 @@ impl LspServer {
         Ok(json!({
             "capabilities": self.capabilities.to_json(),
             "serverInfo": {
-                "name": "ricecoder-lsp",
+                "name": "lsp-server",
                 "version": "0.1.0"
             }
         }))

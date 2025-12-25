@@ -2,6 +2,10 @@
 
 **Purpose**: Comprehensive GitHub API integration providing repository operations, PR management, issue tracking, and automation for RiceCoder
 
+## DDD Layer
+
+**Infrastructure** - External service integration for GitHub API operations
+
 ## Overview
 
 `ricecoder-github` provides extensive GitHub API integration enabling seamless repository operations, pull request management, issue tracking, project coordination, and automation workflows. It serves as the primary interface for GitHub operations within RiceCoder, supporting everything from basic repository analysis to complex automation workflows.
@@ -186,7 +190,7 @@ match manager.get_repository(owner, repo).await {
 Run comprehensive GitHub integration tests:
 
 ```bash
-# Run all tests
+# Run all tests (600+ tests)
 cargo test -p ricecoder-github
 
 # Run property tests for API behavior
@@ -198,6 +202,12 @@ cargo test -p ricecoder-github webhook
 # Test PR operations (requires token)
 cargo test -p ricecoder-github pr -- --ignored
 ```
+
+**Test Organization**:
+- **Unit Tests**: Located in `tests/` directory (31 test files)
+- **Property Tests**: Located in `tests/*_property_tests.rs` files
+- **Integration Tests**: Located in `tests/integration_*.rs` files
+- **Inline Module Tests**: `GitHubManager` has inline tests for core config validation (documented exception for cohesion)
 
 Key test areas:
 - API authentication and error handling

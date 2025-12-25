@@ -217,7 +217,7 @@ impl Diagnostic {
             severity,
             message,
             code: None,
-            source: "ricecoder-lsp".to_string(),
+            source: "lsp-analyzer".to_string(),
             related_information: None,
         }
     }

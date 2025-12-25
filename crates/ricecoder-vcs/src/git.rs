@@ -77,6 +77,60 @@ impl GitRepository {
         Git2Repository::discover(path).is_ok()
     }
 
+    /// Get ahead/behind counts relative to upstream
+    fn get_ahead_behind(&self) -> Result<(usize, usize)> {
+        let head = match self.repo.head() {
+            Ok(head) => head,
+            Err(_) => {
+                debug!("No HEAD found, cannot calculate ahead/behind");
+                return Ok((0, 0));
+            }
+        };
+
+        if !head.is_branch() {
+            debug!("Detached HEAD, no upstream tracking");
+            return Ok((0, 0));
+        }
+
+        let branch_name = match head.shorthand() {
+            Some(name) => name,
+            None => return Ok((0, 0)),
+        };
+
+        // Try to find the upstream branch
+        let local_branch = match self.repo.find_branch(branch_name, BranchType::Local) {
+            Ok(branch) => branch,
+            Err(_) => return Ok((0, 0)),
+        };
+
+        let upstream = match local_branch.upstream() {
+            Ok(upstream) => upstream,
+            Err(_) => {
+                trace!("No upstream branch configured for {}", branch_name);
+                return Ok((0, 0));
+            }
+        };
+
+        let local_oid = head.target().ok_or_else(|| VcsError::InvalidState {
+            message: "Could not get local branch OID".to_string(),
+        })?;
+
+        let upstream_oid = upstream
+            .get()
+            .target()
+            .ok_or_else(|| VcsError::InvalidState {
+                message: "Could not get upstream branch OID".to_string(),
+            })?;
+
+        let (ahead, behind) = self.repo.graph_ahead_behind(local_oid, upstream_oid)?;
+
+        debug!(
+            "Branch {} is {} ahead, {} behind upstream",
+            branch_name, ahead, behind
+        );
+        Ok((ahead, behind))
+    }
+
     /// Get the last commit information
     fn get_last_commit(&self) -> Result<Option<CommitInfo>> {
         let head = match self.repo.head() {
@@ -181,9 +235,14 @@ impl Repository for GitRepository {
             repo_status = repo_status.with_last_commit(last_commit);
         }
 
+        // Add ahead/behind tracking
+        if let Ok((ahead, behind)) = self.get_ahead_behind() {
+            repo_status = repo_status.with_ahead_behind(ahead, behind);
+        }
+
         debug!(
-            "Repository status: {} uncommitted, {} untracked, {} staged, conflicts: {}",
-            uncommitted, untracked, staged, has_conflicts
+            "Repository status: {} uncommitted, {} untracked, {} staged, conflicts: {}, ahead: {}, behind: {}",
+            uncommitted, untracked, staged, has_conflicts, repo_status.ahead, repo_status.behind
         );
 
         Ok(repo_status)

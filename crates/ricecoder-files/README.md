@@ -2,6 +2,10 @@
 
 **Purpose**: Safe file operations with atomic writes, backups, rollback support, and comprehensive audit logging for RiceCoder
 
+## DDD Layer
+
+**Infrastructure** - Implements file system abstractions for the RiceCoder ecosystem.
+
 ## Overview
 
 `ricecoder-files` provides a comprehensive file management system designed for safe, reliable file operations in development environments. It features atomic writes, automatic backups, conflict resolution, transaction support, and complete audit logging to ensure data integrity and recoverability.
@@ -14,31 +18,92 @@
 - **Conflict Resolution**: Intelligent detection and resolution of file conflicts
 - **Audit Logging**: Complete audit trail of all file operations
 - **Git Integration**: Seamless integration with Git for version control
-- **File Watching**: Real-time monitoring of file system changes
-- **Content Verification**: Integrity checking and corruption detection
+- **File Watching**: Real-time monitoring of file system changes (using `notify` crate)
+- **Content Verification**: Integrity checking via SHA-256 hashing
 - **Rollback Support**: Ability to undo operations and restore previous states
 
 ## Architecture
 
-### Responsibilities
-- Safe file read/write operations with atomicity guarantees
-- Backup creation and management with configurable retention
-- Transaction coordination for multi-file operations
-- Conflict detection and resolution algorithms
-- Audit logging and compliance tracking
-- Git integration for version control operations
-- File system monitoring and change detection
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        FileManager                               │
+│           (Central coordinator for all file operations)          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                   │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
+│  │   SafeWriter    │  │ TransactionMgr  │  │  BackupManager  │  │
+│  │  (Atomic ops)   │  │  (ACID multi-   │  │  (Retention &   │  │
+│  │                 │  │   file ops)     │  │   restoration)  │  │
+│  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘  │
+│           │                    │                    │           │
+│  ┌────────┴────────┐  ┌────────┴────────┐  ┌────────┴────────┐  │
+│  │ConflictResolver │  │    DiffEngine   │  │ContentVerifier  │  │
+│  │(Skip/Overwrite/ │  │  (unified diff  │  │  (SHA-256 hash  │  │
+│  │     Merge)      │  │   generation)   │  │   integrity)    │  │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘  │
+│                                                                   │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
+│  │   AuditLogger   │  │ GitIntegration  │  │   FileWatcher   │  │
+│  │  (JSON audit    │  │  (git2 bindings │  │  (notify crate  │  │
+│  │     trail)      │  │   for VCS)      │  │   debouncing)   │  │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘  │
+│                                                                   │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │ implements
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   ricecoder-domain Ports                         │
+│    FileReader  │  FileWriter  │  FileManager (trait)            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Core Components
+
+| Component | Responsibility | Key Types |
+|-----------|----------------|-----------|
+| `FileManager` | Central coordinator, orchestrates all operations | `FileManager` |
+| `SafeWriter` | Atomic writes with temp file + rename pattern | `SafeWriter` |
+| `TransactionManager` | Multi-file ACID transactions | `TransactionManager`, `FileTransaction` |
+| `BackupManager` | Timestamped backups with retention policy | `BackupManager`, `BackupMetadata` |
+| `ConflictResolver` | Detect and resolve file conflicts | `ConflictResolver`, `ConflictResolution` |
+| `ContentVerifier` | SHA-256 hash verification | `ContentVerifier` |
+| `DiffEngine` | Unified diff generation (via `similar` crate) | `DiffEngine`, `FileDiff`, `DiffHunk` |
+| `AuditLogger` | Persistent JSON audit trail | `AuditLogger`, `AuditEntry` |
+| `GitIntegration` | Git status, staging, commits (via `git2`) | `GitIntegration`, `GitStatus` |
+| `FileWatcher` | File system monitoring (via `notify`) | `FileWatcher`, `FileChangeBatch` |
+| `FileSystemRepository` | Domain port implementation | `FileSystemRepository` |
+
+### SOLID Compliance
+
+| Principle | Implementation |
+|-----------|----------------|
+| **SRP** | Each component has single responsibility (e.g., `BackupManager` only handles backups) |
+| **OCP** | Extensible via `ConflictResolution` enum strategies |
+| **LSP** | `FileSystemRepository` implements domain traits substitutably |
+| **ISP** | Domain traits split: `FileReader`, `FileWriter`, `FileManager` |
+| **DIP** | Depends on `ricecoder-domain` abstractions, not concretions |
 
 ### Dependencies
-- **File System**: Standard library file operations
-- **Async Runtime**: `tokio` for concurrent file operations
-- **Serialization**: `serde` for backup metadata
-- **Git**: `git2` for version control integration
-- **Storage**: `ricecoder-storage` for audit log persistence
+
+#### Internal (RiceCoder Crates)
+- `ricecoder-domain`: Port interfaces (`FileReader`, `FileWriter`, `FileManager` traits)
+
+#### External Libraries
+- `tokio`: Async runtime for concurrent file operations
+- `git2`: libgit2 bindings for Git integration
+- `similar`: Fast text diffing (Myers algorithm)
+- `notify`: Cross-platform file system notifications
+- `sha2`: SHA-256 hashing for content verification
+- `serde`/`serde_json`: Serialization for audit logs and metadata
+- `chrono`: Timestamp handling
+- `uuid`: Transaction and backup IDs
+- `thiserror`: Error type derivation
+- `tracing`: Structured logging
+- `async-trait`: Async trait support
 
 ### Integration Points
 - **All Crates**: Provides file operations for the entire RiceCoder ecosystem
-- **Storage**: Persists audit logs and backup metadata
+- **Domain Layer**: Implements `FileRepository` port via `FileSystemRepository`
 - **Sessions**: Manages session file operations with rollback
 - **Commands**: Safe file operations for command execution
 - **TUI**: File picker and file management interfaces
@@ -233,6 +298,30 @@ When working with `ricecoder-files`:
 3. **Auditability**: All file changes must be logged for compliance
 4. **Performance**: Optimize for common file sizes and operations
 5. **Testing**: Test both success and failure scenarios thoroughly
+
+## Test Coverage
+
+The crate has comprehensive test coverage with 12 dedicated test files:
+
+| Test File | Coverage Area |
+|-----------|---------------|
+| `atomic_write_properties.rs` | Property tests for atomic write correctness |
+| `audit_trail_integration.rs` | Audit logging integration tests |
+| `audit_trail_properties.rs` | Property tests for audit trail consistency |
+| `backup_integrity_properties.rs` | Property tests for backup hash integrity |
+| `backup_restoration_properties.rs` | Property tests for backup restoration |
+| `conflict_detection_properties.rs` | Property tests for conflict detection |
+| `conflict_resolution_integration.rs` | Integration tests for conflict resolution |
+| `content_verification_properties.rs` | Property tests for SHA-256 verification |
+| `diff_round_trip_properties.rs` | Property tests for diff reversibility |
+| `git_operations_integration.rs` | Git integration tests |
+| `multi_file_transactions_integration.rs` | Transaction integration tests |
+| `transaction_rollback_properties.rs` | Property tests for rollback correctness |
+
+Run tests:
+```bash
+cargo test -p ricecoder-files
+```
 
 ## License
 

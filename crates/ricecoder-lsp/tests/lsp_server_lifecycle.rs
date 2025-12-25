@@ -331,7 +331,7 @@ async fn test_server_capabilities_response() {
     let server_info = response.get("serverInfo").unwrap();
     assert_eq!(
         server_info.get("name").and_then(|v| v.as_str()),
-        Some("ricecoder-lsp")
+        Some("lsp-server")
     );
     assert_eq!(
         server_info.get("version").and_then(|v| v.as_str()),

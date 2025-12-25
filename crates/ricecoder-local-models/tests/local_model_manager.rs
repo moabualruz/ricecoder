@@ -1,6 +1,11 @@
 //! Integration tests for LocalModelManager
 
+use std::time::Duration;
 use ricecoder_local_models::{LocalModelError, LocalModelManager};
+
+// ============================================================================
+// Manager Creation Tests
+// ============================================================================
 
 #[test]
 fn test_local_model_manager_creation() {
@@ -25,6 +30,33 @@ fn test_local_model_manager_creation_empty_url() {
 fn test_local_model_manager_default_endpoint() {
     let manager = LocalModelManager::with_default_endpoint();
     assert!(manager.is_ok());
+    assert_eq!(manager.unwrap().base_url(), "http://localhost:11434");
+}
+
+#[test]
+fn test_local_model_manager_with_custom_timeout() {
+    let manager = LocalModelManager::with_timeout(
+        "http://localhost:11434".to_string(),
+        Duration::from_secs(60),
+    );
+    assert!(manager.is_ok());
+    let mgr = manager.unwrap();
+    assert_eq!(mgr.timeout(), Duration::from_secs(60));
+}
+
+#[test]
+fn test_local_model_manager_with_timeout_empty_url() {
+    let manager = LocalModelManager::with_timeout(
+        "".to_string(),
+        Duration::from_secs(60),
+    );
+    assert!(manager.is_err());
+    match manager {
+        Err(LocalModelError::ConfigError(msg)) => {
+            assert!(msg.contains("base URL is required"));
+        }
+        _ => panic!("Expected ConfigError"),
+    }
 }
 
 #[tokio::test]
@@ -119,4 +151,41 @@ fn test_manager_with_custom_url() {
 fn test_manager_with_https_url() {
     let manager = LocalModelManager::new("https://secure-ollama:11434".to_string()).unwrap();
     assert_eq!(manager.base_url(), "https://secure-ollama:11434");
+}
+
+// ============================================================================
+// Health Check Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_health_check_unreachable_server() {
+    // Use a port that's unlikely to have anything running
+    let manager = LocalModelManager::new("http://localhost:59999".to_string()).unwrap();
+    
+    // Health check should return false for unreachable server (not error)
+    let result = manager.health_check().await;
+    assert!(result.is_ok());
+    assert!(!result.unwrap());
+}
+
+#[tokio::test]
+async fn test_health_check_with_retry_unreachable_server() {
+    // Use a port that's unlikely to have anything running
+    let manager = LocalModelManager::new("http://localhost:59998".to_string()).unwrap();
+    
+    // Health check with retry should eventually return false
+    let result = manager.health_check_with_retry().await;
+    assert!(result.is_ok());
+    assert!(!result.unwrap());
+}
+
+// ============================================================================
+// Client Access Tests
+// ============================================================================
+
+#[test]
+fn test_client_accessor() {
+    let manager = LocalModelManager::new("http://localhost:11434".to_string()).unwrap();
+    // Should be able to access the client
+    let _client = manager.client();
 }

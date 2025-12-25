@@ -1,6 +1,13 @@
 //! Local model manager for handling model lifecycle operations
+//!
+//! This module provides the core functionality for managing local AI models
+//! through the Ollama API. It implements best practices including:
+//! - Connection pooling with TCP keep-alive
+//! - Health checks with configurable timeouts
+//! - Exponential backoff for transient errors
 
 use std::sync::Arc;
+use std::time::Duration;
 
 use reqwest::Client;
 use serde::Deserialize;
@@ -11,6 +18,18 @@ use crate::{
     models::{LocalModel, ModelMetadata, PullProgress},
     Result,
 };
+
+/// Default timeout for Ollama API requests (30 seconds)
+const DEFAULT_TIMEOUT_SECS: u64 = 30;
+
+/// Default pool idle timeout (90 seconds)
+const DEFAULT_POOL_IDLE_TIMEOUT_SECS: u64 = 90;
+
+/// Default TCP keep-alive interval (60 seconds)
+const DEFAULT_TCP_KEEPALIVE_SECS: u64 = 60;
+
+/// Health check timeout (5 seconds)
+const HEALTH_CHECK_TIMEOUT_SECS: u64 = 5;
 
 /// Ollama API response for model pull
 #[derive(Debug, Deserialize)]
@@ -30,23 +49,48 @@ struct OllamaDeleteResponse {
 }
 
 /// Local model manager for Ollama
+///
+/// Provides a high-level interface for managing local AI models through the Ollama API.
+/// Implements connection pooling, health checks, and model lifecycle management.
 pub struct LocalModelManager {
     client: Arc<Client>,
     base_url: String,
+    timeout: Duration,
 }
 
 impl LocalModelManager {
-    /// Create a new local model manager
+    /// Create a new local model manager with default timeout
     pub fn new(base_url: String) -> Result<Self> {
+        Self::with_timeout(base_url, Duration::from_secs(DEFAULT_TIMEOUT_SECS))
+    }
+
+    /// Create a new local model manager with custom timeout
+    ///
+    /// # Arguments
+    /// * `base_url` - The Ollama server URL (e.g., "http://localhost:11434")
+    /// * `timeout` - Request timeout duration
+    ///
+    /// # Errors
+    /// Returns `ConfigError` if base_url is empty
+    pub fn with_timeout(base_url: String, timeout: Duration) -> Result<Self> {
         if base_url.is_empty() {
             return Err(LocalModelError::ConfigError(
                 "Ollama base URL is required".to_string(),
             ));
         }
 
+        // Build client with connection pooling and keep-alive
+        let client = Client::builder()
+            .timeout(timeout)
+            .pool_idle_timeout(Duration::from_secs(DEFAULT_POOL_IDLE_TIMEOUT_SECS))
+            .tcp_keepalive(Duration::from_secs(DEFAULT_TCP_KEEPALIVE_SECS))
+            .build()
+            .map_err(|e| LocalModelError::ConfigError(format!("Failed to build HTTP client: {}", e)))?;
+
         Ok(Self {
-            client: Arc::new(Client::new()),
+            client: Arc::new(client),
             base_url,
+            timeout,
         })
     }
 
@@ -58,6 +102,11 @@ impl LocalModelManager {
     /// Create a new local model manager with default localhost endpoint
     pub fn with_default_endpoint() -> Result<Self> {
         Self::new("http://localhost:11434".to_string())
+    }
+
+    /// Get the configured timeout
+    pub fn timeout(&self) -> Duration {
+        self.timeout
     }
 
     /// Pull a model from Ollama registry
@@ -301,6 +350,79 @@ impl LocalModelManager {
             Err(e) => Err(e),
         }
     }
+
+    /// Check if the Ollama server is reachable and responding
+    ///
+    /// Performs a lightweight health check by calling the root endpoint.
+    /// Uses a shorter timeout (5 seconds) than normal operations.
+    /// Returns true if the server responds successfully.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let manager = LocalModelManager::with_default_endpoint()?;
+    /// if manager.health_check().await? {
+    ///     println!("Ollama is running");
+    /// }
+    /// ```
+    pub async fn health_check(&self) -> Result<bool> {
+        debug!("Performing health check on Ollama server at {}", self.base_url);
+
+        // Use root endpoint for simple health check
+        let url = format!("{}/", self.base_url);
+
+        // Use shorter timeout for health checks
+        match self.client
+            .get(&url)
+            .timeout(Duration::from_secs(HEALTH_CHECK_TIMEOUT_SECS))
+            .send()
+            .await
+        {
+            Ok(response) => {
+                let healthy = response.status().is_success();
+                if healthy {
+                    debug!("Ollama server health check passed");
+                } else {
+                    warn!("Ollama server health check failed: HTTP {}", response.status());
+                }
+                Ok(healthy)
+            }
+            Err(e) => {
+                warn!("Ollama server health check failed: {}", e);
+                // Network errors indicate server is not reachable
+                Ok(false)
+            }
+        }
+    }
+
+    /// Check server health with retry and exponential backoff
+    ///
+    /// Attempts up to 3 retries with exponential backoff (100ms, 200ms, 400ms).
+    /// Returns true if any attempt succeeds.
+    pub async fn health_check_with_retry(&self) -> Result<bool> {
+        const MAX_RETRIES: u32 = 3;
+        const INITIAL_BACKOFF_MS: u64 = 100;
+
+        for attempt in 0..MAX_RETRIES {
+            match self.health_check().await {
+                Ok(true) => return Ok(true),
+                Ok(false) | Err(_) if attempt < MAX_RETRIES - 1 => {
+                    let backoff_ms = INITIAL_BACKOFF_MS * 2_u64.pow(attempt);
+                    debug!("Health check attempt {} failed, retrying in {}ms", attempt + 1, backoff_ms);
+                    tokio::time::sleep(Duration::from_millis(backoff_ms)).await;
+                }
+                Ok(false) => return Ok(false),
+                Err(e) => return Err(e),
+            }
+        }
+        Ok(false)
+    }
+
+    /// Get the HTTP client for advanced usage
+    ///
+    /// Useful for implementing custom Ollama API calls.
+    pub fn client(&self) -> &Arc<Client> {
+        &self.client
+    }
 }
 
 /// Ollama API response for model info
@@ -338,61 +460,4 @@ struct OllamaModelTag {
     size: u64,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_local_model_manager_creation() {
-        let manager = LocalModelManager::new("http://localhost:11434".to_string());
-        assert!(manager.is_ok());
-    }
-
-    #[test]
-    fn test_local_model_manager_empty_url() {
-        let manager = LocalModelManager::new("".to_string());
-        assert!(manager.is_err());
-    }
-
-    #[test]
-    fn test_local_model_manager_default_endpoint() {
-        let manager = LocalModelManager::with_default_endpoint();
-        assert!(manager.is_ok());
-    }
-
-    #[test]
-    fn test_pull_model_empty_name() {
-        let manager = LocalModelManager::new("http://localhost:11434".to_string()).unwrap();
-        let result = tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(manager.pull_model(""));
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_remove_model_empty_name() {
-        let manager = LocalModelManager::new("http://localhost:11434".to_string()).unwrap();
-        let result = tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(manager.remove_model(""));
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_update_model_empty_name() {
-        let manager = LocalModelManager::new("http://localhost:11434".to_string()).unwrap();
-        let result = tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(manager.update_model(""));
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_get_model_info_empty_name() {
-        let manager = LocalModelManager::new("http://localhost:11434".to_string()).unwrap();
-        let result = tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(manager.get_model_info(""));
-        assert!(result.is_err());
-    }
-}
+// Tests moved to tests/local_model_manager.rs per project test organization policy

@@ -1,49 +1,100 @@
 # ricecoder-local-models
 
-**Purpose**: Local model management providing Ollama integration and offline AI capabilities for RiceCoder
+## Purpose
 
-## Features
+Local model management crate providing Ollama integration and offline AI capabilities for RiceCoder. Handles model pulling, removal, updates, and version management through the Ollama API.
 
-- **Ollama Integration**: Seamless integration with Ollama for running local AI models
-- **Model Management**: Download, update, and manage multiple local models
-- **Offline Capability**: Full functionality without internet connectivity for local models
-- **Performance Optimization**: Efficient model loading and memory management
-- **Fallback Support**: Automatic fallback to remote models when local models unavailable
+## DDD Layer
 
-## Installation
+**Infrastructure** - Implements external service integration (Ollama API).
 
-Add to your `Cargo.toml`:
+## Responsibilities
 
-```toml
-[dependencies]
-ricecoder-local-models = "0.1"
-```
+- Connect to and communicate with Ollama server
+- Pull models from Ollama registry
+- Remove models from local storage
+- Update models to latest versions
+- Query model information and metadata
+- List all available local models
+- Check model availability
+- Health check for Ollama server connectivity
+
+## Dependencies
+
+### Internal (RiceCoder Crates)
+
+- `ricecoder-providers`: Provider trait definitions and abstractions
+- `ricecoder-storage`: Configuration and storage utilities
+
+### External Libraries
+
+- `reqwest`: HTTP client for Ollama API communication
+- `serde` / `serde_json`: Serialization for API requests/responses
+- `thiserror`: Error type definitions
+- `tracing`: Structured logging
+- `chrono`: DateTime handling for model metadata
+- `tokio`: Async runtime
+
+## Key Types
+
+- `LocalModelManager`: Main entry point for all Ollama operations
+- `LocalModel`: Model information including name, size, digest, and metadata
+- `ModelMetadata`: Format, family, parameter size, and quantization level
+- `PullProgress`: Progress tracking for model download operations
+- `LocalModelError`: Comprehensive error types for all operations
 
 ## Usage
 
-### Basic Usage
-
 ```rust
-use ricecoder_local_models::{OllamaManager, LocalModel};
+use ricecoder_local_models::{LocalModelManager, LocalModel};
 
-// Initialize Ollama manager
-let manager = OllamaManager::new("http://localhost:11434").await?;
+// Initialize manager with default localhost endpoint
+let manager = LocalModelManager::with_default_endpoint()?;
+
+// Or with custom endpoint
+let manager = LocalModelManager::new("http://localhost:11434".to_string())?;
+
+// Check if Ollama server is reachable
+if manager.health_check().await? {
+    println!("Ollama server is running");
+}
 
 // List available models
 let models = manager.list_models().await?;
 for model in models {
-    println!("Available model: {}", model.name);
+    println!("Model: {} ({})", model.name, model.metadata.parameter_size);
 }
 
-// Run inference with a local model
-let model = LocalModel::new("llama2");
-let response = manager.generate(&model, "Explain Rust ownership").await?;
-println!("Response: {}", response.text);
+// Pull a model
+let progress = manager.pull_model("mistral:latest").await?;
+for update in progress {
+    println!("{}% - {}", update.percentage(), update.status);
+}
+
+// Check if model exists
+if manager.model_exists("mistral:latest").await? {
+    println!("Model is available");
+}
+
+// Get model info
+let model = manager.get_model_info("mistral:latest").await?;
+println!("Family: {}, Size: {}", model.metadata.family, model.metadata.parameter_size);
+
+// Remove a model
+manager.remove_model("mistral:latest").await?;
 ```
 
-## Documentation
+## Error Handling
 
-For more information, see the [documentation](https://docs.rs/ricecoder-local-models).
+All operations return `Result<T, LocalModelError>`. Error variants include:
+
+- `ModelNotFound`: Model does not exist locally
+- `PullFailed`: Model download failed
+- `RemovalFailed`: Model deletion failed
+- `InvalidModelName`: Empty or malformed model name
+- `NetworkError`: Connection issues with Ollama server
+- `ConfigError`: Invalid configuration (e.g., empty base URL)
+- `Timeout`: Operation timed out
 
 ## License
 

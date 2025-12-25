@@ -1,14 +1,26 @@
 # ricecoder-lsp
 
-**Purpose**: Language Server Protocol integration providing semantic code analysis, diagnostics, and code intelligence for RiceCoder
+**Purpose**: Language Server Protocol integration providing semantic code analysis, diagnostics, and code intelligence.
+
+## DDD Layer
+
+**Infrastructure** - Implements external protocol integration (LSP) with semantic analysis capabilities.
 
 ## Overview
 
-`ricecoder-lsp` implements a Language Server Protocol server that enables semantic understanding of code across multiple programming languages. It provides comprehensive code intelligence features including diagnostics, code actions, hover information, and symbol analysis.
+This crate implements a Language Server Protocol server that enables semantic understanding of code across multiple programming languages. It provides comprehensive code intelligence features including diagnostics, code actions, hover information, and symbol analysis.
 
-## Overview
+## Responsibilities
 
-The `ricecoder-lsp` crate implements a Language Server Protocol server that enables semantic understanding of code. It provides:
+- Implement LSP protocol handler (initialize, shutdown, document sync)
+- Provide semantic analysis for Rust, TypeScript, and Python
+- Generate diagnostics, code actions, and hover information
+- Cache ASTs and symbol indexes for performance
+- Proxy to external LSP servers when available
+
+## Features
+
+The crate provides:
 
 - **Semantic Analysis**: Parse and analyze code structure for Rust, TypeScript, and Python
 - **Diagnostics**: Generate errors, warnings, and hints for code issues
@@ -70,17 +82,39 @@ The `ricecoder-lsp` crate implements a Language Server Protocol server that enab
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Dependencies
-- **Core LSP**: `lsp-types` for protocol definitions
-- **Parsing**: `tree-sitter` for AST analysis
-- **Async**: `tokio` for async operations
-- **Infrastructure**: `ricecoder-storage` for caching and configuration
+## Dependencies
 
-### Integration Points
-- **TUI**: Provides code intelligence for the terminal interface
-- **Completion**: Supplies semantic completion data
-- **Refactoring**: Enables language-aware refactoring operations
-- **External LSP**: Can proxy to external language servers
+### Internal (RiceCoder Crates)
+
+- `ricecoder-storage`: Caching and configuration persistence
+- `ricecoder-completion`: Code completion engine integration
+- `ricecoder-refactoring`: Safe refactoring operations
+
+### External Libraries
+
+- `tree-sitter`: AST parsing for multiple languages
+- `tree-sitter-rust`, `tree-sitter-typescript`, `tree-sitter-python`: Language grammars
+- `serde`, `serde_json`: JSON-RPC serialization
+- `tokio`: Async runtime for I/O operations
+- `tracing`: Structured logging
+- `ratatui`: TUI widget integration
+
+## Key Types
+
+- `LspServer`: Main LSP server handling initialization, shutdown, and request routing
+- `SemanticAnalyzer`: Trait for language-specific semantic analysis
+- `DiagnosticsEngine`: Trait for generating code diagnostics
+- `CodeActionsEngine`: Trait for suggesting code fixes
+- `HoverProvider`: Hover information provider
+- `LspProxy`: External LSP server proxy for fallback support
+- `Position`, `Range`, `Diagnostic`: Core LSP data types
+
+## Integration Points
+
+- **TUI**: Provides code intelligence for the terminal interface via `tui_integration` module
+- **Completion**: Supplies semantic completion data via `CompletionHandler`
+- **Refactoring**: Enables language-aware refactoring via `RefactoringHandler`
+- **External LSP**: Proxies to rust-analyzer, tsserver, pylsp when available
 
 ## Installation
 
@@ -397,18 +431,28 @@ match analyzer.analyze(code) {
 
 ## Testing
 
-The crate includes comprehensive tests:
+The crate includes comprehensive tests (97+ tests):
 
 - **Unit Tests**: Test individual components (analyzers, engines, providers)
-- **Integration Tests**: Test end-to-end LSP workflows
+- **Integration Tests**: Test end-to-end LSP workflows in `tests/`
 - **Property Tests**: Verify correctness properties across all inputs
+
+### Test Organization
+
+| Location | Purpose |
+|----------|---------|
+| `tests/lsp_*_properties.rs` | Property-based tests for correctness |
+| `tests/lsp_*_integration.rs` | End-to-end integration tests |
+| `src/**/mod.rs` (inline) | Unit tests for internal APIs |
+
+**Note**: Inline `#[cfg(test)]` modules are intentionally kept for unit tests that require access to private internals. Integration and property tests reside in `tests/`.
 
 Run tests with:
 
 ```bash
-cargo test --lib
-cargo test --test '*'
-cargo test --test '*properties*'
+cargo test -p ricecoder-lsp           # All tests
+cargo test --lib                       # Unit tests only
+cargo test --test '*properties*'       # Property tests only
 ```
 
 ## Troubleshooting

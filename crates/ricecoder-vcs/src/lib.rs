@@ -72,14 +72,18 @@ mod tests {
     #[test]
     fn test_repository_status_summary() {
         let branch = Branch::new("main").current();
-        let status = RepositoryStatus::new(branch, "/test/repo");
+        let status = RepositoryStatus::new(branch.clone(), "/test/repo");
         assert_eq!(status.summary(), "Clean");
+        assert!(status.is_clean);
 
-        let status = status.with_counts(2, 1, 1, false);
+        let status = RepositoryStatus::new(branch.clone(), "/test/repo").with_counts(2, 1, 1, false);
         assert_eq!(status.summary(), "1S 2M 1U");
+        assert!(!status.is_clean);
 
-        let status = status.with_counts(0, 0, 0, true);
+        // Test that conflicts alone make the repository not clean
+        let status = RepositoryStatus::new(branch, "/test/repo").with_counts(0, 0, 0, true);
         assert_eq!(status.summary(), "C");
+        assert!(!status.is_clean); // Should NOT be clean when there are conflicts
     }
 
     #[test]
@@ -141,5 +145,20 @@ mod tests {
         let staged_file = file.staged();
         let staged_indicator = ModificationIndicator::from_modified_file(&staged_file);
         assert_eq!(staged_indicator, ModificationIndicator::Staged);
+    }
+
+    #[test]
+    fn test_repository_status_ahead_behind() {
+        let branch = Branch::new("feature").current();
+        let status = RepositoryStatus::new(branch, "/test/repo");
+        
+        // Default values
+        assert_eq!(status.ahead, 0);
+        assert_eq!(status.behind, 0);
+        
+        // With ahead/behind set
+        let status = status.with_ahead_behind(3, 1);
+        assert_eq!(status.ahead, 3);
+        assert_eq!(status.behind, 1);
     }
 }

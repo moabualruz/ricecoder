@@ -157,12 +157,15 @@ where
         // 4. Validate generated code
         // 5. Return result
 
-        // For now, return a placeholder result
+        // Placeholder: Real implementation requires AI provider integration
+        // which belongs in Infrastructure Layer. This stub validates the
+        // orchestration pattern and ensures project existence checks work.
+        // See: ricecoder-providers crate for actual AI integration.
         Ok(CodeGenerationResult {
-            content: format!("// Generated code for: {}\n// TODO: Implement", request.prompt),
+            content: format!("// Generated code for: {}\n// Awaiting AI provider integration", request.prompt),
             file_path: request.file_path,
             language: "rust".to_string(),
-            confidence: 0.0,
+            confidence: 0.0, // Zero confidence = placeholder
         })
     }
 

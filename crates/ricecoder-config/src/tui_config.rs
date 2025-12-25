@@ -491,11 +491,19 @@ impl RuntimeConfigChanges {
 }
 
 /// Configuration manager with hot-reload support
+///
+/// # Hot-Reload Status
+///
+/// File watching for automatic hot-reload is not yet implemented.
+/// Use `reload()` for manual configuration refresh.
+///
+/// # Future Enhancement
+///
+/// When file watching is implemented, it will use the `notify` crate
+/// to watch config files and automatically trigger `reload()`.
 pub struct ConfigManager {
     /// Current configuration
     config: Arc<RwLock<TuiConfig>>,
-    /// Configuration file watcher
-    // watcher: Option<crate::reactive_ui_updates::FileWatcher>, // TODO: implement file watching
     /// Callback for configuration changes
     change_callback: Option<Box<dyn Fn(TuiConfig) + Send + Sync>>,
 }
@@ -509,14 +517,17 @@ impl ConfigManager {
         }
     }
 
-    /// Load configuration (watching not implemented yet)
+    /// Load configuration from hierarchy and prepare for watching
+    ///
+    /// Loads configuration from all sources (defaults, user, project, env).
+    /// File watching is not yet implemented - use `reload()` for manual refresh.
     pub async fn load_and_watch(&mut self) -> Result<()> {
         // Load initial configuration
         let config = TuiConfig::load_with_hierarchy()?;
         *self.config.write().await = config.clone();
 
-        // TODO: Start watching configuration files
-        // self.start_watching().await?;
+        // Note: File watching not yet implemented
+        // When implemented, will call self.start_watching().await?;
 
         Ok(())
     }
@@ -555,16 +566,29 @@ impl ConfigManager {
         Ok(())
     }
 
-    /// Start watching configuration files for changes (TODO: implement)
+    /// Start watching configuration files for changes
+    ///
+    /// # Status: Not Implemented
+    ///
+    /// This is a placeholder for future file watching functionality.
+    /// When implemented, will use the `notify` crate to watch:
+    /// - `~/.config/ricecoder/config.toml` (user config)
+    /// - `./.ricecoder/config.toml` (project config)
     #[allow(dead_code)]
     async fn start_watching(&mut self) -> Result<()> {
-        // File watching not implemented yet
+        // Placeholder - file watching not yet implemented
+        tracing::debug!("File watching not yet implemented");
         Ok(())
     }
 
-    /// Stop watching configuration files (TODO: implement)
+    /// Stop watching configuration files
+    ///
+    /// # Status: Not Implemented
+    ///
+    /// Placeholder for stopping file watcher when implemented.
     pub async fn stop_watching(&mut self) -> Result<()> {
-        // File watching not implemented yet
+        // Placeholder - file watching not yet implemented
+        tracing::debug!("File watching not yet implemented");
         Ok(())
     }
 
@@ -929,5 +953,125 @@ impl TuiConfig {
         } else {
             Ok(Self::default())
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_tui_config_default() {
+        let config = TuiConfig::default();
+        assert_eq!(config.theme, "dark");
+        assert!(config.animations);
+        assert!(config.mouse);
+        assert!(!config.vim_mode);
+    }
+
+    #[test]
+    fn test_tui_config_validation_valid() {
+        let config = TuiConfig::default();
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_tui_config_validation_invalid_font_multiplier() {
+        let mut config = TuiConfig::default();
+        config.accessibility.font_size_multiplier = 3.0; // Invalid: > 2.0
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_accessibility_config_default() {
+        let config = AccessibilityConfig::default();
+        assert!(!config.screen_reader_enabled);
+        assert!(!config.high_contrast_enabled);
+        assert!(!config.animations_disabled);
+        assert!(config.announcements_enabled);
+        assert_eq!(config.font_size_multiplier, 1.0);
+    }
+
+    #[test]
+    fn test_config_preset_developer() {
+        let preset = ConfigPreset::Developer;
+        assert_eq!(format!("{}", preset), "Developer");
+    }
+
+    #[test]
+    fn test_config_preset_accessibility() {
+        let preset = ConfigPreset::Accessibility;
+        assert_eq!(format!("{}", preset), "Accessibility");
+    }
+
+    #[test]
+    fn test_runtime_config_changes() {
+        let changes = RuntimeConfigChanges::new()
+            .with_theme("dracula")
+            .with_vim_mode(true)
+            .with_high_contrast(false);
+
+        assert_eq!(changes.theme_name, Some("dracula".to_string()));
+        assert_eq!(changes.vim_mode, Some(true));
+        assert_eq!(changes.high_contrast_enabled, Some(false));
+    }
+
+    #[tokio::test]
+    async fn test_config_manager_new() {
+        let manager = ConfigManager::new();
+        let config = manager.get_config().await;
+        assert_eq!(config.theme, "dark"); // Default theme
+    }
+
+    #[tokio::test]
+    async fn test_config_manager_apply_runtime_changes() {
+        let mut manager = ConfigManager::new();
+
+        let changes = RuntimeConfigChanges::new()
+            .with_theme("dracula")
+            .with_vim_mode(true);
+
+        manager.apply_runtime_changes(changes).await.unwrap();
+
+        let config = manager.get_config().await;
+        assert_eq!(config.theme, "dracula");
+        assert!(config.vim_mode);
+    }
+
+    #[tokio::test]
+    async fn test_config_manager_apply_preset() {
+        let mut manager = ConfigManager::new();
+
+        manager.apply_preset(ConfigPreset::Developer).await.unwrap();
+
+        let config = manager.get_config().await;
+        assert_eq!(config.theme, "dracula");
+        assert!(config.vim_mode);
+    }
+
+    #[tokio::test]
+    async fn test_config_manager_current_preset_developer() {
+        let mut manager = ConfigManager::new();
+        manager.apply_preset(ConfigPreset::Developer).await.unwrap();
+
+        let preset = manager.current_preset().await;
+        assert_eq!(preset, Some(ConfigPreset::Developer));
+    }
+
+    #[tokio::test]
+    async fn test_config_manager_stop_watching() {
+        let mut manager = ConfigManager::new();
+        // Should succeed (no-op since watching not implemented)
+        assert!(manager.stop_watching().await.is_ok());
+    }
+
+    #[test]
+    fn test_available_presets() {
+        let presets = ConfigManager::available_presets();
+        assert_eq!(presets.len(), 4);
+        assert!(presets.iter().any(|(p, _)| *p == ConfigPreset::Developer));
+        assert!(presets.iter().any(|(p, _)| *p == ConfigPreset::Accessibility));
+        assert!(presets.iter().any(|(p, _)| *p == ConfigPreset::Minimal));
+        assert!(presets.iter().any(|(p, _)| *p == ConfigPreset::Presentation));
     }
 }

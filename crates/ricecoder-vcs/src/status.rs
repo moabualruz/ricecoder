@@ -24,6 +24,10 @@ pub struct RepositoryStatus {
     pub last_commit: Option<CommitInfo>,
     /// Repository root path
     pub repository_root: String,
+    /// Commits ahead of upstream
+    pub ahead: usize,
+    /// Commits behind upstream
+    pub behind: usize,
 }
 
 impl RepositoryStatus {
@@ -38,6 +42,8 @@ impl RepositoryStatus {
             has_conflicts: false,
             last_commit: None,
             repository_root: repository_root.into(),
+            ahead: 0,
+            behind: 0,
         }
     }
 
@@ -52,7 +58,8 @@ impl RepositoryStatus {
         self.uncommitted_changes = uncommitted;
         self.untracked_files = untracked;
         self.staged_files = staged;
-        self.is_clean = uncommitted == 0 && untracked == 0 && staged == 0;
+        // Repository is not clean if it has changes OR conflicts
+        self.is_clean = uncommitted == 0 && untracked == 0 && staged == 0 && !has_conflicts;
         self.has_conflicts = has_conflicts;
         self
     }
@@ -60,6 +67,13 @@ impl RepositoryStatus {
     /// Set last commit information
     pub fn with_last_commit(mut self, commit: CommitInfo) -> Self {
         self.last_commit = Some(commit);
+        self
+    }
+
+    /// Set ahead/behind counts relative to upstream
+    pub fn with_ahead_behind(mut self, ahead: usize, behind: usize) -> Self {
+        self.ahead = ahead;
+        self.behind = behind;
         self
     }
 

@@ -270,13 +270,164 @@ impl FileManager for FileSystemRepository {
 // FileRepository is automatically implemented via blanket impl in ricecoder-domain
 // for any T: FileReader + FileWriter + FileManager
 
-// Tests disabled pending trait import refactoring
-// TODO: Re-enable tests after FileReader/FileWriter/FileManager traits are properly imported
+// Tests for FileSystemRepository
+// Note: Full integration tests are in tests/ directory. Unit tests here focus on isolated behavior.
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn placeholder() {
-        // Placeholder test to ensure module compiles
-        assert!(true);
+    use super::*;
+    use tempfile::TempDir;
+    use tokio::fs;
+
+    #[tokio::test]
+    async fn test_file_system_repository_read_write() {
+        let temp_dir = TempDir::new().unwrap();
+        let repo = FileSystemRepository::new();
+
+        let file_path = temp_dir.path().join("test.txt");
+        let content = "Hello, World!";
+
+        // Write file
+        let result = repo.write_string(&file_path, content, false).await;
+        assert!(result.is_ok());
+        let write_result = result.unwrap();
+        assert_eq!(write_result.bytes_written, content.len() as u64);
+        assert!(!write_result.backup_created);
+
+        // Read file
+        let read_content = repo.read_string(&file_path).await.unwrap();
+        assert_eq!(read_content, content);
+    }
+
+    #[tokio::test]
+    async fn test_file_system_repository_exists() {
+        let temp_dir = TempDir::new().unwrap();
+        let repo = FileSystemRepository::new();
+
+        let file_path = temp_dir.path().join("test.txt");
+
+        // File should not exist initially
+        assert!(!repo.exists(&file_path).await.unwrap());
+
+        // Create file
+        fs::write(&file_path, "content").await.unwrap();
+
+        // File should now exist
+        assert!(repo.exists(&file_path).await.unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_file_system_repository_metadata() {
+        let temp_dir = TempDir::new().unwrap();
+        let repo = FileSystemRepository::new();
+
+        let file_path = temp_dir.path().join("test.txt");
+        let content = "Hello, World!";
+        fs::write(&file_path, content).await.unwrap();
+
+        let metadata = repo.metadata(&file_path).await.unwrap();
+        assert_eq!(metadata.size, content.len() as u64);
+        assert!(!metadata.is_directory);
+        assert!(!metadata.is_readonly);
+    }
+
+    #[tokio::test]
+    async fn test_file_system_repository_list_directory() {
+        let temp_dir = TempDir::new().unwrap();
+        let repo = FileSystemRepository::new();
+
+        // Create test files
+        fs::write(temp_dir.path().join("file1.txt"), "content1")
+            .await
+            .unwrap();
+        fs::write(temp_dir.path().join("file2.txt"), "content2")
+            .await
+            .unwrap();
+
+        let entries = repo.list_directory(&temp_dir.path().to_path_buf()).await.unwrap();
+        assert_eq!(entries.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn test_file_system_repository_delete() {
+        let temp_dir = TempDir::new().unwrap();
+        let repo = FileSystemRepository::new();
+
+        let file_path = temp_dir.path().join("test.txt");
+        fs::write(&file_path, "content").await.unwrap();
+
+        // File should exist
+        assert!(repo.exists(&file_path).await.unwrap());
+
+        // Delete file
+        repo.delete(&file_path).await.unwrap();
+
+        // File should not exist
+        assert!(!repo.exists(&file_path).await.unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_file_system_repository_with_backup() {
+        let temp_dir = TempDir::new().unwrap();
+        let backup_dir = temp_dir.path().join("backups");
+        let repo = FileSystemRepository::with_backup_dir(backup_dir);
+
+        let file_path = temp_dir.path().join("test.txt");
+        let original_content = "Original content";
+        fs::write(&file_path, original_content).await.unwrap();
+
+        // Write with backup
+        let result = repo.write_string(&file_path, "New content", true).await;
+        assert!(result.is_ok());
+        let write_result = result.unwrap();
+        assert!(write_result.backup_created);
+        assert!(write_result.backup_path.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_file_system_repository_create_directory() {
+        let temp_dir = TempDir::new().unwrap();
+        let repo = FileSystemRepository::new();
+
+        let dir_path = temp_dir.path().join("subdir").join("nested");
+        repo.create_directory(&dir_path).await.unwrap();
+
+        assert!(dir_path.exists());
+        assert!(dir_path.is_dir());
+    }
+
+    #[tokio::test]
+    async fn test_file_system_repository_copy() {
+        let temp_dir = TempDir::new().unwrap();
+        let repo = FileSystemRepository::new();
+
+        let source = temp_dir.path().join("source.txt");
+        let dest = temp_dir.path().join("dest.txt");
+        let content = "Copy me!";
+        fs::write(&source, content).await.unwrap();
+
+        let bytes_copied = repo.copy(&source, &dest).await.unwrap();
+        assert_eq!(bytes_copied, content.len() as u64);
+
+        let dest_content = fs::read_to_string(&dest).await.unwrap();
+        assert_eq!(dest_content, content);
+    }
+
+    #[tokio::test]
+    async fn test_file_system_repository_rename() {
+        let temp_dir = TempDir::new().unwrap();
+        let repo = FileSystemRepository::new();
+
+        let source = temp_dir.path().join("source.txt");
+        let dest = temp_dir.path().join("dest.txt");
+        let content = "Rename me!";
+        fs::write(&source, content).await.unwrap();
+
+        repo.rename(&source, &dest).await.unwrap();
+
+        assert!(!source.exists());
+        assert!(dest.exists());
+
+        let dest_content = fs::read_to_string(&dest).await.unwrap();
+        assert_eq!(dest_content, content);
     }
 }

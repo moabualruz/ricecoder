@@ -2,6 +2,10 @@
 
 **Purpose**: Unified AI provider integration providing consistent access to Anthropic, OpenAI, Google, Ollama, and other AI services for RiceCoder
 
+## DDD Layer
+
+**Infrastructure** - This crate implements external AI provider integrations, following the Dependency Inversion Principle by implementing domain-defined port traits (`AiProviderChat`, `AiProviderInfo`) from `ricecoder-domain`.
+
 ## Overview
 
 `ricecoder-providers` provides comprehensive AI provider integration that was extracted from the TUI during the architectural refactoring. This crate handles all AI provider communication, authentication, and management independently of the user interface.
@@ -145,28 +149,36 @@ match result {
 
 ## Testing
 
-Run comprehensive provider tests:
+Per R2 (Test Suite Reconstruction), tests are organized in the `tests/` directory:
 
 ```bash
-# Run all tests
+# Run all tests (unit + integration)
 cargo test -p ricecoder-providers
 
-# Run property tests for provider behavior
-cargo test -p ricecoder-providers property
+# Run integration tests only
+cargo test -p ricecoder-providers --test integration_test
 
-# Test streaming functionality
-cargo test -p ricecoder-providers streaming
-
-# Test rate limiting
-cargo test -p ricecoder-providers rate_limit
+# Run specific test modules
+cargo test -p ricecoder-providers circuit_breaker
+cargo test -p ricecoder-providers domain_adapter
+cargo test -p ricecoder-providers curation
 ```
 
-Key test areas:
-- Provider API compatibility
-- Streaming response handling
-- Caching correctness
-- Rate limiting enforcement
-- Fallback behavior
+### Test Organization
+
+| Location | Type | Coverage |
+|----------|------|----------|
+| `src/**/tests` | Unit tests | Module-level functionality |
+| `tests/integration_test.rs` | Integration tests | Cross-module interactions |
+
+### Key Test Areas
+
+- **Circuit Breaker**: State transitions, failure thresholds, recovery
+- **Domain Adapter**: Type conversion, error mapping, retry logic
+- **Provider Registry**: Registration, lookup, lifecycle
+- **Performance Monitor**: Metrics calculation, threshold evaluation
+- **Community**: Contribution workflow, analytics
+- **Curation**: Quality scoring, provider selection
 
 ## Performance
 
@@ -184,6 +196,27 @@ When working with `ricecoder-providers`:
 2. **Use interfaces**: Don't depend on UI components
 3. **Test thoroughly**: Provider failures affect user experience
 4. **Document providers**: Keep provider documentation up-to-date
+
+## Gap Analysis (vs Industry Patterns)
+
+Comparison with industry best practices from major Rust projects:
+
+| Pattern | Industry Standard | ricecoder-providers Status |
+|---------|-------------------|---------------------------|
+| **Provider Trait** | `async_trait` + `Send + Sync` | ✅ Implemented |
+| **Dynamic Dispatch** | `Arc<dyn Provider>` | ✅ Implemented |
+| **Circuit Breaker** | Three-state (Closed/Open/HalfOpen) | ✅ Implemented |
+| **Rate Limiting** | Token bucket with `governor` | ✅ Custom implementation |
+| **Health Checks** | Async with configurable intervals | ✅ Implemented with cache |
+| **Retry Logic** | Exponential backoff with jitter | ✅ Implemented |
+| **Tower Integration** | Service/Layer middleware | ⚠️ Not yet (potential enhancement) |
+| **Provider Registry** | Factory pattern with lazy init | ✅ Implemented |
+
+### Potential Enhancements (Beta)
+
+1. **Tower Layer Integration**: Add `tower::Service` implementation for middleware composability
+2. **Governor Rate Limiter**: Consider replacing custom implementation with `governor` crate
+3. **Observability**: Add OpenTelemetry tracing spans for provider calls
 
 ## License
 

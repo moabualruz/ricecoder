@@ -2,6 +2,35 @@
 
 **Purpose**: Model Context Protocol support for extending RiceCoder with custom tools and service integrations
 
+## DDD Layer
+
+**Infrastructure** - Implements external protocol integration (MCP) for tool discovery and execution.
+
+## Architecture Quality
+
+### SOLID Compliance
+
+| Principle | Status | Notes |
+|-----------|--------|-------|
+| **SRP** | ⚠️ Partial | 6 modules >500 lines (see below) |
+| **OCP** | ✅ Pass | Trait-based extensibility (MCPTransport, ToolExecutor) |
+| **LSP** | ✅ Pass | All trait implementations are substitutable |
+| **ISP** | ✅ Pass | Traits have 1-6 methods (within guidelines) |
+| **DIP** | ✅ Pass | Constructor injection throughout |
+
+### Large Module Documentation (SRP Deferred)
+
+| Module | Lines | Rationale for Current Size |
+|--------|-------|---------------------------|
+| `server_management.rs` | 889 | Server lifecycle + health + discovery cohesive |
+| `tool_execution.rs` | 824 | Execution + validation + caching cohesive |
+| `tool_orchestration.rs` | 797 | Pipeline + scheduling + caching cohesive |
+| `transport.rs` | 673 | 3 transport types (stdio, HTTP, SSE) in one module |
+| `protocol_validation.rs` | 655 | Validation + error handling + compliance |
+| `config.rs` | 571 | Configuration loading + validation + merging |
+
+**Beta Refactoring Candidate**: Consider splitting transport.rs into separate modules per transport type.
+
 ## Overview
 
 `ricecoder-mcp` implements the Model Context Protocol (MCP) version 2025-06-18 to enable seamless integration of external tools and services into RiceCoder. It provides a standardized interface for tool discovery, execution, and management, with enterprise-grade features including connection pooling, error recovery, permission system integration, audit logging, and security compliance.
@@ -309,6 +338,9 @@ match client.execute_tool(context).await {
 
 ## Testing
 
+**Test Count**: 171 tests (all passing)
+**Test Location**: Inline `#[cfg(test)]` modules (exception to tests/ directory rule - documented)
+
 Run comprehensive MCP tests:
 
 ```bash
@@ -324,6 +356,32 @@ cargo test -p ricecoder-mcp tools
 # Test connection pooling
 cargo test -p ricecoder-mcp pool
 ```
+
+### Test Coverage by Module
+
+| Module | Tests | Coverage |
+|--------|-------|----------|
+| agent_integration | 8 | Tool invocation, workflow |
+| client | 7 | Connection, discovery |
+| config | 8 | Loading, validation, merge |
+| connection_pool | 9 | Acquire, release, health |
+| error | 7 | Error types, recovery |
+| error_recovery | 11 | Retry, backoff, degradation |
+| error_reporting | 10 | Formatting, statistics |
+| executor | 15 | Registration, execution, validation |
+| health_check | 9 | Health, availability |
+| lifecycle | 9 | Start, stop, restart |
+| hot_reload | 7 | Config watching, reload |
+| marshaler | 7 | Type conversion |
+| metadata | 7 | Tool metadata |
+| permissions | 10 | Permission rules |
+| permissions_integration | 12 | Permission enforcement |
+| protocol_validation | 7 | Protocol compliance |
+| rbac | 4 | Role-based access |
+| registry | 4 | Tool registry |
+| server_management | 3 | Server registration |
+| storage_integration | 5 | Persistence, caching |
+| tool_orchestration | 4 | Pipeline execution |
 
 Key test areas:
 - MCP protocol compliance
@@ -349,6 +407,42 @@ When working with `ricecoder-mcp`:
 3. **Resource Management**: Efficient connection pooling and cleanup
 4. **Error Handling**: Comprehensive error recovery and user feedback
 5. **Testing**: Test with real MCP servers and various failure scenarios
+
+## MCP Protocol Compliance
+
+### Protocol Version Support
+
+| Version | Status | Notes |
+|---------|--------|-------|
+| 2025-06-18 | ✅ Implemented | Enterprise error codes, OAuth 2.0 |
+| 2025-11-25 | 🔄 Partial | Latest spec, elicitation support pending |
+
+### Compliance Checklist
+
+| Requirement | Status | Implementation |
+|-------------|--------|----------------|
+| JSON-RPC 2.0 | ✅ | `transport.rs` MCPMessage types |
+| Initialize handshake | ✅ | `client.rs` connect() |
+| Capability negotiation | ✅ | `protocol_validation.rs` |
+| tools/list | ✅ | `registry.rs`, `client.rs` |
+| tools/call | ✅ | `tool_execution.rs` |
+| stdio transport | ✅ | `transport.rs` StdioTransport |
+| HTTP transport | ✅ | `transport.rs` HTTPTransport |
+| SSE transport | ✅ | `transport.rs` SSETransport |
+| Error codes | ✅ | `error.rs` standard JSON-RPC codes |
+| isError flag | ✅ | `tool_execution.rs` ToolExecutionResult |
+
+### Gap Analysis vs MCP Spec 2025-11-25
+
+| Feature | Spec Requirement | RiceCoder Status |
+|---------|------------------|------------------|
+| Elicitation modes | Server can request user input | ❌ Not implemented |
+| Streamable HTTP | Single endpoint POST/GET | ⚠️ HTTP+SSE separate |
+| structuredContent | Validated against outputSchema | ❌ Not implemented |
+| Resource subscriptions | Subscribe to resource changes | ⚠️ Framework only |
+| Prompt templates | Dynamic prompt generation | ❌ Not implemented |
+
+**Priority for Beta**: Implement elicitation modes and structuredContent validation.
 
 ## License
 
