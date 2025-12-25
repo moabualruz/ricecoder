@@ -1,70 +1,27 @@
 //! MCP Read Tool Helpers
 //!
-//! File reading utilities for the MCP read tool, including binary detection
-//! and content formatting.
+//! File reading utilities for the MCP read tool.
+//! Delegates to ricecoder-tools for formatting and file type utilities.
 
 use std::path::Path;
 
-/// Binary file extensions that should not be read as text
-const BINARY_EXTENSIONS: &[&str] = &[
-    "exe", "dll", "so", "dylib", "bin", "o", "a", "zip", "tar", "gz", "bz2", "xz",
-    "7z", "jpg", "jpeg", "png", "gif", "bmp", "ico", "mp3", "mp4", "avi", "mov", "pdf",
-    "doc", "docx",
-];
-
-/// Check if a file is binary based on extension and content heuristics
+/// Check if a file is binary based on extension and content heuristics.
+///
+/// Delegates to `ricecoder_tools::filetype::is_binary_file`.
 pub fn is_binary_file(path: &Path, content: &[u8]) -> bool {
-    // Check extension first
-    if let Some(ext) = path.extension() {
-        let ext_str = ext.to_string_lossy().to_lowercase();
-        if BINARY_EXTENSIONS.contains(&ext_str.as_ref()) {
-            return true;
-        }
-    }
-
-    // Check content heuristic (null bytes in first 8KB)
-    let check_len = content.len().min(8192);
-    content[..check_len].contains(&0)
+    ricecoder_tools::filetype::is_binary_file(path, content)
 }
 
-/// Format file content for MCP output with line numbers and pagination
+/// Format file content for MCP output with line numbers and pagination.
+///
+/// Delegates to `ricecoder_tools::format::format_file_content_for_mcp`.
 pub fn format_file_content_for_mcp(
-    _path: &str,
+    path: &str,
     content: &str,
     offset: usize,
     limit: usize,
 ) -> String {
-    let lines: Vec<&str> = content.lines().collect();
-    let total_lines = lines.len();
-
-    let start = offset;
-    let end = (start + limit).min(total_lines);
-
-    let mut output = String::new();
-    output.push_str("<file>\n");
-
-    for (idx, line) in lines.iter().enumerate().skip(start).take(end - start) {
-        let line_num = idx + 1;
-        // Truncate lines longer than 2000 characters
-        let formatted_line = if line.len() > 2000 {
-            format!("{}...(line truncated)", &line[..2000])
-        } else {
-            line.to_string()
-        };
-        output.push_str(&format!("{:05}| {}\n", line_num, formatted_line));
-    }
-
-    if end < total_lines {
-        output.push_str(&format!(
-            "(File has more lines - total {} lines)\n",
-            total_lines
-        ));
-    } else {
-        output.push_str(&format!("(End of file - total {} lines)\n", total_lines));
-    }
-
-    output.push_str("</file>");
-    output
+    ricecoder_tools::format::format_file_content_for_mcp(path, content, offset, limit)
 }
 
 #[cfg(test)]

@@ -93,7 +93,7 @@ impl DeleteFileHandler {
 pub struct CommandHandler;
 
 impl CommandHandler {
-    /// Maximum output size before truncation (30000 chars, matching OpenCode)
+    /// Maximum output size before truncation (30000 chars)
     const MAX_OUTPUT_SIZE: usize = 30000;
 
     /// Execute a shell command with advanced features

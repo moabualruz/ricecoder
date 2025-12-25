@@ -148,7 +148,7 @@ impl FileReader for FileSystemRepository {
 }
 
 impl FileSystemRepository {
-    /// List directory contents with ignore pattern support (OpenCode compatible)
+    /// List directory contents with ignore pattern support
     ///
     /// # Arguments
     /// * `path` - Directory path to list

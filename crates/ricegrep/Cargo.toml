@@ -13,6 +13,8 @@ categories.workspace = true
 [dependencies]
 # Core domain and application layer
 ricegrep-core = { path = "../ricegrep-core" }
+# Shared MCP filesystem utilities (read/edit/write)
+ricecoder-tools = { path = "../ricecoder-tools" }
 
 anyhow = { workspace = true }
 atty = { workspace = true }

@@ -8,7 +8,7 @@ use ricecoder_tools::search::{SearchInput, SearchOutput, SearchResult, SearchToo
 fn test_search_input_creation() {
     let input = SearchInput::new("rust programming");
     assert_eq!(input.query, "rust programming");
-    assert_eq!(input.get_limit(), 8); // DEFAULT_LIMIT (OpenCode compatible)
+    assert_eq!(input.get_limit(), 8); // DEFAULT_LIMIT
     assert_eq!(input.get_offset(), 0);
 }
 

@@ -146,7 +146,7 @@ impl BenchmarkRunner {
             let instructions = exercise.get_full_instructions();
             let response = Self::get_llm_response(provider_manager, model, &instructions).await?;
 
-            // Apply the response (simplified - in real aider this would parse and apply diffs)
+            // Apply the response (simplified - production would parse and apply diffs)
             Self::apply_llm_response(&response, &exercise_dir, &exercise)?;
 
             // Run tests

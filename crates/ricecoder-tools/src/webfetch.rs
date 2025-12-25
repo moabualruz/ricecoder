@@ -1,11 +1,24 @@
 //! Webfetch tool for fetching web content
 //!
 //! Provides functionality to fetch and process web content from URLs with MCP integration.
+//! Features:
+//! - URL fetching with SSRF protection
+//! - HTML to markdown conversion
+//! - LRU cache with 15-minute TTL
+//! - Configurable output format (text/markdown/html)
+//! - 120 second timeout
 
-use std::{net::IpAddr, str::FromStr, time::Instant};
+use std::{
+    collections::HashMap,
+    net::IpAddr,
+    str::FromStr,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
 use serde::{Deserialize, Serialize};
-use tracing::{debug, warn};
+use tokio::sync::RwLock;
+use tracing::{debug, info, warn};
 use url::Url;
 
 use crate::{error::ToolError, result::ToolResult};
@@ -13,14 +26,41 @@ use crate::{error::ToolError, result::ToolResult};
 /// Maximum content size before truncation (50KB)
 const MAX_CONTENT_SIZE: usize = 50 * 1024;
 
-/// HTTP request timeout in seconds
-const REQUEST_TIMEOUT_SECS: u64 = 10;
+/// HTTP request timeout in seconds (max 120s)
+const REQUEST_TIMEOUT_SECS: u64 = 120;
+
+/// Default timeout if not specified
+const DEFAULT_TIMEOUT_SECS: u64 = 30;
+
+/// Cache TTL in seconds (15 minutes)
+const CACHE_TTL_SECS: u64 = 15 * 60;
+
+/// Maximum cache entries
+const MAX_CACHE_ENTRIES: usize = 100;
+
+/// Output format for fetched content
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum OutputFormat {
+    /// Plain text (strip HTML tags)
+    #[default]
+    Text,
+    /// Convert HTML to markdown
+    Markdown,
+    /// Return raw HTML
+    Html,
+}
 
 /// Input for webfetch operation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WebfetchInput {
     /// URL to fetch
     pub url: String,
+    /// Output format (text, markdown, html) - default: text
+    #[serde(default)]
+    pub format: OutputFormat,
+    /// Optional timeout in seconds (max 120s)
+    pub timeout: Option<u64>,
     /// Optional maximum content size in bytes
     pub max_size: Option<usize>,
 }
@@ -30,8 +70,22 @@ impl WebfetchInput {
     pub fn new(url: impl Into<String>) -> Self {
         Self {
             url: url.into(),
+            format: OutputFormat::default(),
+            timeout: None,
             max_size: None,
         }
+    }
+
+    /// Set output format
+    pub fn with_format(mut self, format: OutputFormat) -> Self {
+        self.format = format;
+        self
+    }
+
+    /// Set timeout in seconds (capped at 120s)
+    pub fn with_timeout(mut self, timeout: u64) -> Self {
+        self.timeout = Some(timeout.min(REQUEST_TIMEOUT_SECS));
+        self
     }
 
     /// Set maximum content size
@@ -52,6 +106,12 @@ pub struct WebfetchOutput {
     pub original_size: usize,
     /// Actual returned content size in bytes
     pub returned_size: usize,
+    /// Whether result was served from cache
+    #[serde(default)]
+    pub from_cache: bool,
+    /// Output format used
+    #[serde(default)]
+    pub format: OutputFormat,
 }
 
 impl WebfetchOutput {
@@ -65,13 +125,258 @@ impl WebfetchOutput {
             truncated,
             original_size,
             returned_size,
+            from_cache: false,
+            format: OutputFormat::default(),
         }
     }
+
+    /// Mark as served from cache
+    pub fn from_cache(mut self) -> Self {
+        self.from_cache = true;
+        self
+    }
+
+    /// Set output format
+    pub fn with_format(mut self, format: OutputFormat) -> Self {
+        self.format = format;
+        self
+    }
+}
+
+/// Cache entry with TTL
+#[derive(Debug, Clone)]
+struct CacheEntry {
+    /// Cached content (raw HTML)
+    content: String,
+    /// Original size
+    original_size: usize,
+    /// When this entry was cached
+    cached_at: Instant,
+}
+
+impl CacheEntry {
+    fn new(content: String, original_size: usize) -> Self {
+        Self {
+            content,
+            original_size,
+            cached_at: Instant::now(),
+        }
+    }
+
+    fn is_expired(&self) -> bool {
+        self.cached_at.elapsed() > Duration::from_secs(CACHE_TTL_SECS)
+    }
+}
+
+/// LRU Cache for webfetch results
+/// Uses a simple HashMap with TTL-based eviction
+#[derive(Debug)]
+pub struct WebfetchCache {
+    entries: RwLock<HashMap<String, CacheEntry>>,
+    max_entries: usize,
+}
+
+impl WebfetchCache {
+    /// Create a new cache with default settings
+    pub fn new() -> Self {
+        Self {
+            entries: RwLock::new(HashMap::new()),
+            max_entries: MAX_CACHE_ENTRIES,
+        }
+    }
+
+    /// Get cached content if available and not expired
+    pub async fn get(&self, url: &str) -> Option<(String, usize)> {
+        let entries = self.entries.read().await;
+        if let Some(entry) = entries.get(url) {
+            if !entry.is_expired() {
+                debug!("Cache hit for URL: {}", url);
+                return Some((entry.content.clone(), entry.original_size));
+            }
+        }
+        None
+    }
+
+    /// Store content in cache
+    pub async fn set(&self, url: String, content: String, original_size: usize) {
+        let mut entries = self.entries.write().await;
+        
+        // Evict expired entries and enforce max size
+        entries.retain(|_, v| !v.is_expired());
+        
+        // If still at capacity, remove oldest entry
+        if entries.len() >= self.max_entries {
+            if let Some(oldest_key) = entries
+                .iter()
+                .min_by_key(|(_, v)| v.cached_at)
+                .map(|(k, _)| k.clone())
+            {
+                entries.remove(&oldest_key);
+            }
+        }
+        
+        entries.insert(url, CacheEntry::new(content, original_size));
+    }
+
+    /// Clear all cache entries
+    pub async fn clear(&self) {
+        let mut entries = self.entries.write().await;
+        entries.clear();
+    }
+}
+
+impl Default for WebfetchCache {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Convert HTML to plain text (strip tags)
+fn html_to_text(html: &str) -> String {
+    // Simple HTML tag stripping - removes all <...> tags
+    let mut result = String::with_capacity(html.len());
+    let mut in_tag = false;
+    let mut in_script = false;
+    let mut in_style = false;
+    
+    let html_lower = html.to_lowercase();
+    let chars: Vec<char> = html.chars().collect();
+    let lower_chars: Vec<char> = html_lower.chars().collect();
+    
+    let mut i = 0;
+    while i < chars.len() {
+        let c = chars[i];
+        
+        // Check for script/style start
+        if i + 7 < chars.len() {
+            let slice: String = lower_chars[i..i+7].iter().collect();
+            if slice == "<script" {
+                in_script = true;
+            } else if slice == "</scrip" {
+                in_script = false;
+                // Skip to end of tag
+                while i < chars.len() && chars[i] != '>' {
+                    i += 1;
+                }
+                i += 1;
+                continue;
+            }
+        }
+        if i + 6 < chars.len() {
+            let slice: String = lower_chars[i..i+6].iter().collect();
+            if slice == "<style" {
+                in_style = true;
+            } else if slice == "</styl" {
+                in_style = false;
+                while i < chars.len() && chars[i] != '>' {
+                    i += 1;
+                }
+                i += 1;
+                continue;
+            }
+        }
+        
+        if in_script || in_style {
+            i += 1;
+            continue;
+        }
+        
+        if c == '<' {
+            in_tag = true;
+        } else if c == '>' {
+            in_tag = false;
+        } else if !in_tag {
+            result.push(c);
+        }
+        i += 1;
+    }
+    
+    // Decode common HTML entities
+    result
+        .replace("&nbsp;", " ")
+        .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&#39;", "'")
+        .replace("&apos;", "'")
+        // Collapse multiple whitespace
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// Convert HTML to markdown (simplified conversion)
+fn html_to_markdown(html: &str) -> String {
+    let mut result = html.to_string();
+    
+    // Remove script and style tags with content
+    let script_re = regex::Regex::new(r"(?is)<script[^>]*>.*?</script>").unwrap();
+    let style_re = regex::Regex::new(r"(?is)<style[^>]*>.*?</style>").unwrap();
+    result = script_re.replace_all(&result, "").to_string();
+    result = style_re.replace_all(&result, "").to_string();
+    
+    // Convert common HTML elements to markdown
+    // Headers
+    let h1_re = regex::Regex::new(r"(?is)<h1[^>]*>(.*?)</h1>").unwrap();
+    let h2_re = regex::Regex::new(r"(?is)<h2[^>]*>(.*?)</h2>").unwrap();
+    let h3_re = regex::Regex::new(r"(?is)<h3[^>]*>(.*?)</h3>").unwrap();
+    let h4_re = regex::Regex::new(r"(?is)<h4[^>]*>(.*?)</h4>").unwrap();
+    result = h1_re.replace_all(&result, "\n# $1\n").to_string();
+    result = h2_re.replace_all(&result, "\n## $1\n").to_string();
+    result = h3_re.replace_all(&result, "\n### $1\n").to_string();
+    result = h4_re.replace_all(&result, "\n#### $1\n").to_string();
+    
+    // Paragraphs and line breaks
+    let p_re = regex::Regex::new(r"(?is)<p[^>]*>(.*?)</p>").unwrap();
+    let br_re = regex::Regex::new(r"(?i)<br\s*/?>").unwrap();
+    result = p_re.replace_all(&result, "\n$1\n").to_string();
+    result = br_re.replace_all(&result, "\n").to_string();
+    
+    // Links
+    let a_re = regex::Regex::new(r#"(?is)<a[^>]*href=["']([^"']+)["'][^>]*>(.*?)</a>"#).unwrap();
+    result = a_re.replace_all(&result, "[$2]($1)").to_string();
+    
+    // Bold and italic
+    let strong_re = regex::Regex::new(r"(?is)<(strong|b)[^>]*>(.*?)</\1>").unwrap();
+    let em_re = regex::Regex::new(r"(?is)<(em|i)[^>]*>(.*?)</\1>").unwrap();
+    result = strong_re.replace_all(&result, "**$2**").to_string();
+    result = em_re.replace_all(&result, "*$2*").to_string();
+    
+    // Code
+    let code_re = regex::Regex::new(r"(?is)<code[^>]*>(.*?)</code>").unwrap();
+    let pre_re = regex::Regex::new(r"(?is)<pre[^>]*>(.*?)</pre>").unwrap();
+    result = code_re.replace_all(&result, "`$1`").to_string();
+    result = pre_re.replace_all(&result, "\n```\n$1\n```\n").to_string();
+    
+    // Lists
+    let li_re = regex::Regex::new(r"(?is)<li[^>]*>(.*?)</li>").unwrap();
+    result = li_re.replace_all(&result, "- $1\n").to_string();
+    
+    // Remove remaining tags
+    let tag_re = regex::Regex::new(r"<[^>]+>").unwrap();
+    result = tag_re.replace_all(&result, "").to_string();
+    
+    // Decode HTML entities
+    result = result
+        .replace("&nbsp;", " ")
+        .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&#39;", "'")
+        .replace("&apos;", "'");
+    
+    // Clean up whitespace
+    let multi_newline = regex::Regex::new(r"\n{3,}").unwrap();
+    result = multi_newline.replace_all(&result, "\n\n").to_string();
+    result.trim().to_string()
 }
 
 /// Webfetch tool for fetching web content
 pub struct WebfetchTool {
     client: reqwest::Client,
+    cache: Arc<WebfetchCache>,
 }
 
 impl WebfetchTool {
@@ -79,13 +384,36 @@ impl WebfetchTool {
     pub fn new() -> Result<Self, ToolError> {
         let client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(REQUEST_TIMEOUT_SECS))
+            .user_agent("RiceCoder/1.0 (WebFetch Tool)")
             .build()
             .map_err(|e| {
                 ToolError::new("CLIENT_ERROR", "Failed to create HTTP client")
                     .with_details(e.to_string())
             })?;
 
-        Ok(Self { client })
+        Ok(Self { 
+            client,
+            cache: Arc::new(WebfetchCache::new()),
+        })
+    }
+
+    /// Create with shared cache
+    pub fn with_cache(cache: Arc<WebfetchCache>) -> Result<Self, ToolError> {
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(REQUEST_TIMEOUT_SECS))
+            .user_agent("RiceCoder/1.0 (WebFetch Tool)")
+            .build()
+            .map_err(|e| {
+                ToolError::new("CLIENT_ERROR", "Failed to create HTTP client")
+                    .with_details(e.to_string())
+            })?;
+
+        Ok(Self { client, cache })
+    }
+
+    /// Get the cache (for sharing between instances)
+    pub fn cache(&self) -> Arc<WebfetchCache> {
+        Arc::clone(&self.cache)
     }
 
     /// Validate URL format and security
@@ -140,7 +468,7 @@ impl WebfetchTool {
         Ok(parsed_url)
     }
 
-    /// Fetch content from a URL with timeout enforcement
+    /// Fetch content from a URL with caching and format conversion
     pub async fn fetch(&self, input: WebfetchInput) -> ToolResult<WebfetchOutput> {
         let start = Instant::now();
 
@@ -155,11 +483,40 @@ impl WebfetchTool {
             }
         }
 
+        // Check cache first (cache stores raw HTML)
+        if let Some((cached_content, original_size)) = self.cache.get(&input.url).await {
+            info!("Serving from cache: {}", input.url);
+            let content = Self::apply_format(&cached_content, input.format);
+            let max_size = input.max_size.unwrap_or(MAX_CONTENT_SIZE);
+            let (content, truncated) = Self::truncate_content(content, max_size);
+            
+            let output = WebfetchOutput {
+                content,
+                truncated,
+                original_size,
+                returned_size: 0, // Will be set below
+                from_cache: true,
+                format: input.format,
+            };
+            let output = WebfetchOutput {
+                returned_size: output.content.len(),
+                ..output
+            };
+            
+            let duration_ms = start.elapsed().as_millis() as u64;
+            return ToolResult::ok(output, duration_ms, "builtin");
+        }
+
+        // Determine timeout (user-specified or default, capped at max)
+        let timeout_secs = input.timeout
+            .unwrap_or(DEFAULT_TIMEOUT_SECS)
+            .min(REQUEST_TIMEOUT_SECS);
+        let timeout_duration = Duration::from_secs(timeout_secs);
+        
         // Determine max size
         let max_size = input.max_size.unwrap_or(MAX_CONTENT_SIZE);
 
-        // Enforce timeout using tokio::time::timeout
-        let timeout_duration = std::time::Duration::from_secs(REQUEST_TIMEOUT_SECS);
+        let url_for_cache = input.url.clone();
         let fetch_future = async {
             // Fetch content
             match self.client.get(&input.url).send().await {
@@ -179,20 +536,9 @@ impl WebfetchTool {
                     match response.bytes().await {
                         Ok(bytes) => {
                             let original_size = bytes.len();
-
-                            // Truncate if necessary
-                            let content = if original_size > max_size {
-                                warn!(
-                                    "Content truncated from {} to {} bytes",
-                                    original_size, max_size
-                                );
-                                String::from_utf8_lossy(&bytes[..max_size]).to_string()
-                            } else {
-                                String::from_utf8_lossy(&bytes).to_string()
-                            };
-
-                            let output = WebfetchOutput::new(content, original_size);
-                            Ok(output)
+                            let raw_content = String::from_utf8_lossy(&bytes).to_string();
+                            
+                            Ok((raw_content, original_size))
                         }
                         Err(e) => {
                             let error = ToolError::from(e);
@@ -208,7 +554,23 @@ impl WebfetchTool {
         };
 
         match tokio::time::timeout(timeout_duration, fetch_future).await {
-            Ok(Ok(output)) => {
+            Ok(Ok((raw_content, original_size))) => {
+                // Store raw content in cache
+                self.cache.set(url_for_cache, raw_content.clone(), original_size).await;
+                
+                // Apply format conversion
+                let content = Self::apply_format(&raw_content, input.format);
+                let (content, truncated) = Self::truncate_content(content, max_size);
+                
+                let output = WebfetchOutput {
+                    returned_size: content.len(),
+                    content,
+                    truncated,
+                    original_size,
+                    from_cache: false,
+                    format: input.format,
+                };
+                
                 let duration_ms = start.elapsed().as_millis() as u64;
                 ToolResult::ok(output, duration_ms, "builtin")
             }
@@ -218,14 +580,37 @@ impl WebfetchTool {
             }
             Err(_) => {
                 let duration_ms = start.elapsed().as_millis() as u64;
-                let error =
-                    ToolError::new("TIMEOUT", "Webfetch operation exceeded 10 second timeout")
-                        .with_details(format!("URL: {}", input.url))
-                        .with_suggestion(
-                            "Try again with a different URL or check your network connection",
-                        );
+                let error = ToolError::new(
+                    "TIMEOUT",
+                    format!("Webfetch operation exceeded {} second timeout", timeout_secs),
+                )
+                .with_details(format!("URL: {}", input.url))
+                .with_suggestion(
+                    "Try again with a longer timeout or check your network connection",
+                );
                 ToolResult::err(error, duration_ms, "builtin")
             }
+        }
+    }
+
+    /// Apply format conversion to content
+    fn apply_format(content: &str, format: OutputFormat) -> String {
+        match format {
+            OutputFormat::Html => content.to_string(),
+            OutputFormat::Text => html_to_text(content),
+            OutputFormat::Markdown => html_to_markdown(content),
+        }
+    }
+
+    /// Truncate content if necessary, returns (content, was_truncated)
+    fn truncate_content(content: String, max_size: usize) -> (String, bool) {
+        if content.len() > max_size {
+            warn!("Content truncated from {} to {} bytes", content.len(), max_size);
+            // Truncate at char boundary
+            let truncated: String = content.chars().take(max_size).collect();
+            (truncated, true)
+        } else {
+            (content, false)
         }
     }
 }

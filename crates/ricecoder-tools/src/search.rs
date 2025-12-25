@@ -2,7 +2,6 @@
 //!
 //! Provides functionality to search the web using Exa AI, free APIs, or local search engines via MCP.
 //! Implements query validation, injection prevention, and pagination support.
-//! Compatible with OpenCode's websearch.ts interface.
 
 use std::time::Instant;
 
@@ -13,7 +12,7 @@ use tracing::{debug, info, warn};
 
 use crate::{error::ToolError, result::ToolResult};
 
-/// Maximum timeout for search operations (25 seconds, matching OpenCode)
+/// Maximum timeout for search operations (25 seconds)
 const SEARCH_TIMEOUT_SECS: u64 = 25;
 
 /// Default limit for search results
@@ -68,7 +67,7 @@ impl Default for SearchProvider {
     }
 }
 
-/// Input for web search operations (OpenCode compatible)
+/// Input for web search operations
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SearchInput {
     /// Search query string

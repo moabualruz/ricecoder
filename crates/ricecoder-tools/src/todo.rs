@@ -10,16 +10,26 @@ use tracing::{debug, error, info};
 use crate::error::ToolError;
 
 /// Todo status enumeration
+///
+/// Status values:
+/// - `pending` - Task not yet started
+/// - `in_progress` - Currently working on
+/// - `completed` - Task finished successfully
+/// - `cancelled` - Task no longer needed
+/// - `blocked` - Task is blocked
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum TodoStatus {
-    /// Todo is pending
+    /// Todo is pending (not yet started)
     Pending,
-    /// Todo is in progress
+    /// Todo is in progress (currently working on)
+    #[serde(alias = "in-progress")]
     InProgress,
-    /// Todo is completed
+    /// Todo is completed (finished successfully)
     Completed,
-    /// Todo is blocked
+    /// Todo is cancelled (no longer needed)
+    Cancelled,
+    /// Todo is blocked (waiting on something)
     Blocked,
 }
 
@@ -29,6 +39,7 @@ impl std::fmt::Display for TodoStatus {
             TodoStatus::Pending => write!(f, "pending"),
             TodoStatus::InProgress => write!(f, "in_progress"),
             TodoStatus::Completed => write!(f, "completed"),
+            TodoStatus::Cancelled => write!(f, "cancelled"),
             TodoStatus::Blocked => write!(f, "blocked"),
         }
     }
@@ -40,12 +51,15 @@ impl std::str::FromStr for TodoStatus {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "pending" => Ok(TodoStatus::Pending),
-            "in_progress" => Ok(TodoStatus::InProgress),
+            "in_progress" | "in-progress" => Ok(TodoStatus::InProgress),
             "completed" => Ok(TodoStatus::Completed),
+            "cancelled" | "canceled" => Ok(TodoStatus::Cancelled),
             "blocked" => Ok(TodoStatus::Blocked),
             _ => Err(
                 ToolError::new("INVALID_STATUS", format!("Invalid todo status: {}", s))
-                    .with_suggestion("Use one of: pending, in_progress, completed, blocked"),
+                    .with_suggestion(
+                        "Use one of: pending, in_progress, completed, cancelled, blocked",
+                    ),
             ),
         }
     }
@@ -94,13 +108,22 @@ impl std::str::FromStr for TodoPriority {
 }
 
 /// A single todo item
+///
+/// Fields:
+/// - `id` - Unique identifier
+/// - `content` - Brief description (alias for `title`)
+/// - `status` - Current status
+/// - `priority` - Priority level
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Todo {
     /// Unique identifier for the todo
     pub id: String,
-    /// Todo title (required, non-empty)
-    pub title: String,
+    /// Todo content/title (required, non-empty)
+    /// Both `content` and `title` are supported via serde alias
+    #[serde(alias = "title")]
+    pub content: String,
     /// Todo description (optional)
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     /// Current status of the todo
     pub status: TodoStatus,
@@ -110,25 +133,31 @@ pub struct Todo {
 
 impl Todo {
     /// Create a new todo with validation
+    ///
+    /// # Arguments
+    /// * `id` - Unique identifier
+    /// * `content` - Brief description of the task
+    /// * `status` - Current status
+    /// * `priority` - Priority level
     pub fn new(
         id: impl Into<String>,
-        title: impl Into<String>,
+        content: impl Into<String>,
         status: TodoStatus,
         priority: TodoPriority,
     ) -> Result<Self, ToolError> {
-        let title = title.into();
+        let content = content.into();
 
-        // Validate title is non-empty
-        if title.trim().is_empty() {
+        // Validate content is non-empty
+        if content.trim().is_empty() {
             return Err(
-                ToolError::new("INVALID_TITLE", "Todo title cannot be empty")
-                    .with_suggestion("Provide a non-empty title for the todo"),
+                ToolError::new("INVALID_CONTENT", "Todo content cannot be empty")
+                    .with_suggestion("Provide a non-empty content for the todo"),
             );
         }
 
         Ok(Self {
             id: id.into(),
-            title,
+            content,
             description: None,
             status,
             priority,
@@ -139,6 +168,17 @@ impl Todo {
     pub fn with_description(mut self, description: impl Into<String>) -> Self {
         self.description = Some(description.into());
         self
+    }
+
+    /// Get the content
+    pub fn content(&self) -> &str {
+        &self.content
+    }
+
+    /// Backward-compatible alias for content
+    #[deprecated(since = "0.2.0", note = "Use `content` field directly")]
+    pub fn title(&self) -> &str {
+        &self.content
     }
 }
 
@@ -520,17 +560,17 @@ mod tests {
         assert!(todo.is_ok());
         let todo = todo.unwrap();
         assert_eq!(todo.id, "1");
-        assert_eq!(todo.title, "Test todo");
+        assert_eq!(todo.content, "Test todo");
         assert_eq!(todo.status, TodoStatus::Pending);
         assert_eq!(todo.priority, TodoPriority::High);
     }
 
     #[test]
-    fn test_todo_empty_title_validation() {
+    fn test_todo_empty_content_validation() {
         let result = Todo::new("1", "   ", TodoStatus::Pending, TodoPriority::High);
         assert!(result.is_err());
         if let Err(err) = result {
-            assert_eq!(err.code, "INVALID_TITLE");
+            assert_eq!(err.code, "INVALID_CONTENT");
         }
     }
 
@@ -552,9 +592,24 @@ mod tests {
             "in_progress".parse::<TodoStatus>().unwrap(),
             TodoStatus::InProgress
         );
+        // Also accept hyphenated form
+        assert_eq!(
+            "in-progress".parse::<TodoStatus>().unwrap(),
+            TodoStatus::InProgress
+        );
         assert_eq!(
             "completed".parse::<TodoStatus>().unwrap(),
             TodoStatus::Completed
+        );
+        // Cancelled status
+        assert_eq!(
+            "cancelled".parse::<TodoStatus>().unwrap(),
+            TodoStatus::Cancelled
+        );
+        // US spelling variant
+        assert_eq!(
+            "canceled".parse::<TodoStatus>().unwrap(),
+            TodoStatus::Cancelled
         );
         assert_eq!(
             "blocked".parse::<TodoStatus>().unwrap(),
@@ -682,7 +737,7 @@ mod tests {
             .unwrap();
 
         assert_eq!(read_result.todos.len(), 1);
-        assert_eq!(read_result.todos[0].title, "First (updated)");
+        assert_eq!(read_result.todos[0].content, "First (updated)");
         assert_eq!(read_result.todos[0].status, TodoStatus::Completed);
     }
 
@@ -717,7 +772,7 @@ mod tests {
             .unwrap();
 
         assert_eq!(read_result.todos.len(), 1);
-        assert_eq!(read_result.todos[0].title, "Completed");
+        assert_eq!(read_result.todos[0].content, "Completed");
     }
 
     #[test]
@@ -745,7 +800,7 @@ mod tests {
             .unwrap();
 
         assert_eq!(read_result.todos.len(), 1);
-        assert_eq!(read_result.todos[0].title, "High");
+        assert_eq!(read_result.todos[0].content, "High");
     }
 
     #[tokio::test]
@@ -788,5 +843,88 @@ mod tests {
         assert!(result.is_ok());
         let output = result.unwrap();
         assert_eq!(output.todos.len(), 1);
+    }
+
+    #[test]
+    fn test_todo_cancelled_status() {
+        let temp_dir = TempDir::new().unwrap();
+        let storage_path = temp_dir.path().join("todos.json");
+        let tools = TodoTools::with_storage_path(&storage_path);
+
+        // Create todos with different statuses including cancelled
+        let todo1 = Todo::new("1", "Active task", TodoStatus::Pending, TodoPriority::High).unwrap();
+        let todo2 =
+            Todo::new("2", "Cancelled task", TodoStatus::Cancelled, TodoPriority::Low).unwrap();
+
+        tools
+            .write_todos(TodowriteInput {
+                todos: vec![todo1, todo2],
+            })
+            .unwrap();
+
+        // Filter by cancelled status
+        let read_result = tools
+            .read_todos(TodoreadInput {
+                status_filter: Some(TodoStatus::Cancelled),
+                priority_filter: None,
+            })
+            .unwrap();
+
+        assert_eq!(read_result.todos.len(), 1);
+        assert_eq!(read_result.todos[0].content, "Cancelled task");
+        assert_eq!(read_result.todos[0].status, TodoStatus::Cancelled);
+    }
+
+    #[test]
+    fn test_json_serialization() {
+        // Test serialization format
+        let todo = Todo::new(
+            "test-1",
+            "Implement feature",
+            TodoStatus::InProgress,
+            TodoPriority::High,
+        )
+        .unwrap();
+
+        let json = serde_json::to_string(&todo).unwrap();
+        assert!(json.contains(r#""content":"Implement feature""#));
+        assert!(json.contains(r#""status":"inprogress""#));
+        assert!(json.contains(r#""priority":"high""#));
+
+        // Test deserialization (using "content" field)
+        let todo_json = r#"{
+            "id": "test-2",
+            "content": "Review PR",
+            "status": "pending",
+            "priority": "medium"
+        }"#;
+
+        let todo: Todo = serde_json::from_str(todo_json).unwrap();
+        assert_eq!(todo.id, "test-2");
+        assert_eq!(todo.content, "Review PR");
+        assert_eq!(todo.status, TodoStatus::Pending);
+        assert_eq!(todo.priority, TodoPriority::Medium);
+    }
+
+    #[test]
+    fn test_legacy_title_field_compatibility() {
+        // Test deserialization from legacy format (using "title" field)
+        let legacy_json = r#"{
+            "id": "legacy-1",
+            "title": "Legacy task",
+            "status": "completed",
+            "priority": "low"
+        }"#;
+
+        let todo: Todo = serde_json::from_str(legacy_json).unwrap();
+        assert_eq!(todo.id, "legacy-1");
+        assert_eq!(todo.content, "Legacy task");
+        assert_eq!(todo.status, TodoStatus::Completed);
+        assert_eq!(todo.priority, TodoPriority::Low);
+    }
+
+    #[test]
+    fn test_cancelled_status_display() {
+        assert_eq!(TodoStatus::Cancelled.to_string(), "cancelled");
     }
 }

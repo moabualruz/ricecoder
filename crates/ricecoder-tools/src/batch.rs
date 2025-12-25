@@ -1,8 +1,7 @@
 //! Batch Tool for Parallel Tool Execution
 //!
-//! Provides functionality to execute multiple tool invocations in parallel,
-//! matching OpenCode's batch tool behavior. All tools execute concurrently
-//! and results are collected even if some fail.
+//! Provides functionality to execute multiple tool invocations in parallel.
+//! All tools execute concurrently and results are collected even if some fail.
 //!
 //! ## Architecture Note
 //! This module was moved from ricecoder-mcp to ricecoder-tools as part of

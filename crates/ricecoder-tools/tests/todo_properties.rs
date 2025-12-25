@@ -14,8 +14,8 @@ fn todo_id_strategy() -> impl Strategy<Value = String> {
     "[a-z0-9_-]{1,20}"
 }
 
-/// Strategy for generating valid todo titles (non-empty, not all whitespace)
-fn todo_title_strategy() -> impl Strategy<Value = String> {
+/// Strategy for generating valid todo content (non-empty, not all whitespace)
+fn todo_content_strategy() -> impl Strategy<Value = String> {
     "[a-zA-Z0-9][a-zA-Z0-9 ]{0,99}"
 }
 
@@ -25,6 +25,7 @@ fn todo_status_strategy() -> impl Strategy<Value = TodoStatus> {
         Just(TodoStatus::Pending),
         Just(TodoStatus::InProgress),
         Just(TodoStatus::Completed),
+        Just(TodoStatus::Cancelled),
         Just(TodoStatus::Blocked),
     ]
 }
@@ -43,13 +44,13 @@ fn todo_priority_strategy() -> impl Strategy<Value = TodoPriority> {
 fn todo_strategy() -> impl Strategy<Value = Todo> {
     (
         todo_id_strategy(),
-        todo_title_strategy(),
+        todo_content_strategy(),
         todo_status_strategy(),
         todo_priority_strategy(),
     )
-        .prop_flat_map(|(id, title, status, priority)| {
+        .prop_flat_map(|(id, content, status, priority)| {
             Just(
-                Todo::new(id, title, status, priority)
+                Todo::new(id, content, status, priority)
                     .expect("Generated valid todo")
                     .with_description(format!("Description for {}", status)),
             )
@@ -62,7 +63,7 @@ fn todos_strategy() -> impl Strategy<Value = Vec<Todo>> {
         .prop_flat_map(|count| {
             prop::collection::vec(
                 (
-                    todo_title_strategy(),
+                    todo_content_strategy(),
                     todo_status_strategy(),
                     todo_priority_strategy(),
                 ),
@@ -73,8 +74,8 @@ fn todos_strategy() -> impl Strategy<Value = Vec<Todo>> {
             items
                 .into_iter()
                 .enumerate()
-                .map(|(idx, (title, status, priority))| {
-                    Todo::new(format!("todo-{}", idx), title, status, priority)
+                .map(|(idx, (content, status, priority))| {
+                    Todo::new(format!("todo-{}", idx), content, status, priority)
                         .expect("Generated valid todo")
                         .with_description(format!("Description for {}", status))
                 })
@@ -130,7 +131,7 @@ proptest! {
                 .expect("Todo not found in read results");
 
             prop_assert_eq!(&read_todo.id, &written_todo.id);
-            prop_assert_eq!(&read_todo.title, &written_todo.title);
+            prop_assert_eq!(&read_todo.content, &written_todo.content);
             prop_assert_eq!(&read_todo.description, &written_todo.description);
             prop_assert_eq!(read_todo.status, written_todo.status);
             prop_assert_eq!(read_todo.priority, written_todo.priority);
@@ -160,7 +161,7 @@ proptest! {
             .map(|(idx, todo)| {
                 let mut renamed = Todo::new(
                     format!("batch2-{}", idx),
-                    todo.title.clone(),
+                    todo.content.clone(),
                     todo.status,
                     todo.priority,
                 )
@@ -211,7 +212,7 @@ proptest! {
                 .expect("Todo from batch 1 not found");
 
             prop_assert_eq!(&read_todo.id, &written_todo.id);
-            prop_assert_eq!(&read_todo.title, &written_todo.title);
+            prop_assert_eq!(&read_todo.content, &written_todo.content);
             prop_assert_eq!(read_todo.status, written_todo.status);
             prop_assert_eq!(read_todo.priority, written_todo.priority);
         }
@@ -225,7 +226,7 @@ proptest! {
                 .expect("Todo from batch 2 not found");
 
             prop_assert_eq!(&read_todo.id, &written_todo.id);
-            prop_assert_eq!(&read_todo.title, &written_todo.title);
+            prop_assert_eq!(&read_todo.content, &written_todo.content);
             prop_assert_eq!(read_todo.status, written_todo.status);
             prop_assert_eq!(read_todo.priority, written_todo.priority);
         }
@@ -258,7 +259,7 @@ proptest! {
         // Create updated todo with same ID but different status/priority
         let updated_todo = Todo::new(
             original_todo.id.clone(),
-            original_todo.title.clone(),
+            original_todo.content.clone(),
             new_status,
             new_priority,
         )
@@ -290,7 +291,7 @@ proptest! {
         // Verify the todo has the updated data
         let read_todo = &read_result.todos[0];
         prop_assert_eq!(&read_todo.id, &updated_todo.id);
-        prop_assert_eq!(&read_todo.title, &updated_todo.title);
+        prop_assert_eq!(&read_todo.content, &updated_todo.content);
         prop_assert_eq!(read_todo.status, new_status);
         prop_assert_eq!(read_todo.priority, new_priority);
         prop_assert_eq!(&read_todo.description, &updated_todo.description);
@@ -310,6 +311,7 @@ proptest! {
             Just(Some(TodoStatus::Pending)),
             Just(Some(TodoStatus::InProgress)),
             Just(Some(TodoStatus::Completed)),
+            Just(Some(TodoStatus::Cancelled)),
             Just(Some(TodoStatus::Blocked)),
         ],
         filter_priority in prop_oneof![
@@ -354,7 +356,7 @@ proptest! {
                 .expect("Read todo not found in written todos");
 
             prop_assert_eq!(&read_todo.id, &written_todo.id);
-            prop_assert_eq!(&read_todo.title, &written_todo.title);
+            prop_assert_eq!(&read_todo.content, &written_todo.content);
             prop_assert_eq!(&read_todo.description, &written_todo.description);
             prop_assert_eq!(read_todo.status, written_todo.status);
             prop_assert_eq!(read_todo.priority, written_todo.priority);

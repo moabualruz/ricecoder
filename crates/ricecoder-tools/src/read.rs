@@ -18,10 +18,10 @@ pub struct FileReadInput {
     pub start_line: Option<usize>,
     /// Optional end line (1-indexed, inclusive) - legacy parameter
     pub end_line: Option<usize>,
-    /// Optional line offset (0-based) - OpenCode compatible
+    /// Optional line offset (0-based)
     /// Takes precedence over start_line if both specified
     pub offset: Option<usize>,
-    /// Optional number of lines to read (default: 2000) - OpenCode compatible
+    /// Optional number of lines to read (default: 2000)
     /// Takes precedence over end_line if both specified
     pub limit: Option<usize>,
     /// Maximum file size in bytes (default: 1MB)
@@ -126,10 +126,10 @@ impl FileReadTool {
     /// Default maximum file size (1MB)
     const DEFAULT_MAX_SIZE: usize = 1024 * 1024;
 
-    /// Default line limit (2000 lines, matching OpenCode)
+    /// Default line limit (2000 lines)
     const DEFAULT_LINE_LIMIT: usize = 2000;
 
-    /// Default max line length before truncation (2000 chars, matching OpenCode)
+    /// Default max line length before truncation (2000 chars)
     const DEFAULT_MAX_LINE_LENGTH: usize = 2000;
 
     /// Read a single file with safety checks
@@ -227,9 +227,9 @@ impl FileReadTool {
             )
         })?;
 
-        // Determine line range using offset/limit (OpenCode style) or start_line/end_line (legacy)
+        // Determine line range using offset/limit or start_line/end_line (legacy)
         let (start_idx, line_count) = if input.offset.is_some() || input.limit.is_some() {
-            // OpenCode-compatible: offset is 0-based, limit is count
+            // offset is 0-based, limit is count
             let offset = input.offset.unwrap_or(0);
             let limit = input.limit.unwrap_or(Self::DEFAULT_LINE_LIMIT);
             (offset, Some(limit))
@@ -467,7 +467,7 @@ impl FileReadTool {
         Ok((filtered_content, filtered_lines.len(), Some(total_lines)))
     }
 
-    /// Filter content with OpenCode-compatible options
+    /// Filter content with pagination options
     ///
     /// # Arguments
     /// * `content` - File content to filter

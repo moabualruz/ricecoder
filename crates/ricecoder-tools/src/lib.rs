@@ -56,6 +56,8 @@ pub mod batch;
 pub mod di;
 pub mod edit;
 pub mod error;
+pub mod filetype;
+pub mod format;
 pub mod patch;
 pub mod provider;
 pub mod read;

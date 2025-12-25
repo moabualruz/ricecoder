@@ -91,7 +91,7 @@ proptest! {
     fn test_search_input_validation_property(query in "[a-zA-Z0-9 ]{1,100}") {
         let input = SearchInput::new(query.clone());
         prop_assert_eq!(input.query.clone(), query);
-        prop_assert_eq!(input.get_limit(), 8);  // Default limit (OpenCode compatible)
+        prop_assert_eq!(input.get_limit(), 8);  // Default limit
         prop_assert_eq!(input.get_offset(), 0);  // Default offset
     }
 }
