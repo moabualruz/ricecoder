@@ -31,7 +31,7 @@ which = { workspace = true }
 
 # Unix process group management
 [target.'cfg(unix)'.dependencies]
-nix = { version = "0.29", features = ["signal", "process"] }
+nix = { workspace = true, features = ["signal", "process"] }
 
 # DI registration (via ricecoder-common to avoid circular deps)
 ricecoder-common = { workspace = true }

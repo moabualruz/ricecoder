@@ -29,6 +29,7 @@ ricecoder-storage = { workspace = true }
 ricecoder-domain = { workspace = true }
 ricecoder-common = { workspace = true }
 inventory = { workspace = true }
+nucleo = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

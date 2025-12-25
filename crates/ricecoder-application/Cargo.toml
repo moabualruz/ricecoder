@@ -7,7 +7,7 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 # Domain layer - the ONLY internal dependency for application layer
-ricecoder-domain = { path = "../ricecoder-domain", version = "0.1" }
+ricecoder-domain = { workspace = true }
 
 # Async support
 async-trait = { workspace = true }

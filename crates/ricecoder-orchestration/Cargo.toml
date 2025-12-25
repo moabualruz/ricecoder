@@ -25,6 +25,7 @@ uuid = { workspace = true, features = ["v4", "serde"] }
 chrono = { workspace = true, features = ["serde"] }
 dirs = { workspace = true }
 ricecoder-storage = { workspace = true }
+toml = { workspace = true }
 
 # DI registration (via ricecoder-common to avoid circular deps)
 ricecoder-common = { workspace = true }

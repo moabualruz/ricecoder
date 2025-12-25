@@ -57,6 +57,7 @@ tui-tree-widget = { workspace = true }
 ratatui-image = { workspace = true }
 ratatui-explorer = { workspace = true }
 tui-scrollview = { workspace = true }
+edtui = { workspace = true }
 
 syntect = { workspace = true }
 lazy_static = { workspace = true }
@@ -67,6 +68,7 @@ toml = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
 notify = { workspace = true }
 walkdir = { workspace = true }
+nucleo = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

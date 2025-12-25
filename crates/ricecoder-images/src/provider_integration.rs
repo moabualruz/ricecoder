@@ -7,6 +7,7 @@
 //! - Token counting for images
 //! - Audit logging of image analysis requests
 
+use base64::{engine::general_purpose, Engine as _};
 use ricecoder_providers::models::ChatRequest;
 use serde::{Deserialize, Serialize};
 
@@ -32,7 +33,7 @@ pub struct ImageData {
 impl ImageData {
     /// Create image data from raw bytes.
     pub fn from_bytes(format: &str, data: &[u8], width: u32, height: u32) -> Self {
-        let base64_data = base64_encode(data);
+        let base64_data = general_purpose::STANDARD.encode(data);
         Self {
             format: format.to_string(),
             data: base64_data,
@@ -335,36 +336,7 @@ impl ImageAuditLogEntry {
     }
 }
 
-/// Encode binary data as base64 string.
-fn base64_encode(data: &[u8]) -> String {
-    const BASE64_CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    let mut result = String::new();
 
-    for chunk in data.chunks(3) {
-        let b1 = chunk[0];
-        let b2 = chunk.get(1).copied().unwrap_or(0);
-        let b3 = chunk.get(2).copied().unwrap_or(0);
-
-        let n = ((b1 as u32) << 16) | ((b2 as u32) << 8) | (b3 as u32);
-
-        result.push(BASE64_CHARS[((n >> 18) & 63) as usize] as char);
-        result.push(BASE64_CHARS[((n >> 12) & 63) as usize] as char);
-
-        if chunk.len() > 1 {
-            result.push(BASE64_CHARS[((n >> 6) & 63) as usize] as char);
-        } else {
-            result.push('=');
-        }
-
-        if chunk.len() > 2 {
-            result.push(BASE64_CHARS[(n & 63) as usize] as char);
-        } else {
-            result.push('=');
-        }
-    }
-
-    result
-}
 
 #[cfg(test)]
 mod tests {
@@ -539,18 +511,5 @@ mod tests {
         assert_eq!(entry.status, "timeout");
         assert!(entry.tokens_used.is_none());
         assert!(entry.error.is_some());
-    }
-
-    #[test]
-    fn test_base64_encode() {
-        let data = b"Hello";
-        let encoded = base64_encode(data);
-        assert!(!encoded.is_empty());
-
-        let empty = base64_encode(&[]);
-        assert_eq!(empty, "");
-
-        let single = base64_encode(&[65]); // 'A'
-        assert!(!single.is_empty());
     }
 }

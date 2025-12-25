@@ -529,33 +529,42 @@ impl Default for FilePickerWidget {
     }
 }
 
-/// Simple fuzzy matching function
+/// Simple fuzzy matching function using nucleo (Helix editor's fuzzy matcher)
 pub fn fuzzy_match(query: &str, text: &str) -> Option<Vec<(usize, usize)>> {
+    use nucleo::pattern::{AtomKind, CaseMatching, Normalization, Pattern};
+    use nucleo::{Config, Matcher, Utf32Str};
+
     if query.is_empty() {
         return Some(Vec::new());
     }
 
-    let query_chars: Vec<char> = query.chars().collect();
-    let text_chars: Vec<char> = text.chars().collect();
-    let mut matches = Vec::new();
-    let mut query_idx = 0;
-    let mut text_idx = 0;
+    let mut matcher = Matcher::new(Config::DEFAULT);
+    let pattern = Pattern::new(
+        query,
+        CaseMatching::Smart,
+        Normalization::Smart,
+        AtomKind::Fuzzy,
+    );
 
-    while query_idx < query_chars.len() && text_idx < text_chars.len() {
-        if query_chars[query_idx].eq_ignore_ascii_case(&text_chars[text_idx]) {
-            let start = text.char_indices().nth(text_idx)?.0;
-            let end = if text_idx + 1 < text_chars.len() {
-                text.char_indices().nth(text_idx + 1)?.0
-            } else {
-                text.len()
-            };
+    let mut buf = Vec::new();
+    let haystack = Utf32Str::new(text, &mut buf);
+    let mut indices = Vec::new();
+
+    if pattern.indices(haystack, &mut matcher, &mut indices).is_some() {
+        // Convert indices to (start, end) pairs
+        let mut matches = Vec::new();
+        let mut i = 0;
+        while i < indices.len() {
+            let start = indices[i] as usize;
+            let mut end = start + 1;
+            // Group consecutive indices
+            while i + 1 < indices.len() && indices[i + 1] == indices[i] + 1 {
+                i += 1;
+                end = indices[i] as usize + 1;
+            }
             matches.push((start, end));
-            query_idx += 1;
+            i += 1;
         }
-        text_idx += 1;
-    }
-
-    if query_idx == query_chars.len() {
         Some(matches)
     } else {
         None

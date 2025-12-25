@@ -1,9 +1,10 @@
-//! Tree widget for file and project navigation
+//! Tree widget wrapper for tui-tree-widget
 //!
-//! This module provides a tree-based navigation widget for displaying file hierarchies,
-//! project structures, and other hierarchical data with expand/collapse support.
+//! This module provides a wrapper around the `tui-tree-widget` crate to maintain
+//! API compatibility while leveraging the external library's implementation.
 
 use std::collections::HashMap;
+use tui_tree_widget::{Tree, TreeItem as TuiTreeItem, TreeState as TuiTreeState};
 
 /// Tree node representing a file or directory
 #[derive(Debug, Clone)]
@@ -73,15 +74,18 @@ impl TreeNode {
 }
 
 /// Tree widget for hierarchical navigation
+/// 
+/// This is a wrapper around `tui-tree-widget::Tree` that maintains compatibility
+/// with the existing RiceCoder TUI API.
 pub struct TreeWidget {
     /// All nodes in the tree (stored in a map for quick access)
     nodes: HashMap<String, TreeNode>,
     /// Root node ID
     root_id: String,
+    /// Tree state for rendering
+    state: TuiTreeState<String>,
     /// Currently selected node ID
     selected: Option<String>,
-    /// Flat list of visible nodes (for rendering)
-    visible_nodes: Vec<String>,
     /// Title for the widget
     title: String,
     /// Whether to show borders
@@ -97,29 +101,30 @@ impl TreeWidget {
         let root = TreeNode::new(root_id.clone(), root_name, true);
         nodes.insert(root_id.clone(), root);
 
-        let mut widget = Self {
+        Self {
             nodes,
-            root_id: root_id.clone(),
+            root_id,
+            state: TuiTreeState::default(),
             selected: None,
-            visible_nodes: vec![root_id],
             title: "Navigation".to_string(),
             show_borders: true,
-        };
-
-        widget.rebuild_visible_nodes();
-        widget
+        }
     }
 
     /// Add a node to the tree
-    pub fn add_node(&mut self, parent_id: &str, node: TreeNode) {
+    pub fn add_node(&mut self, parent_id: &str, mut node: TreeNode) {
         let node_id = node.id.clone();
+        
+        // Set depth based on parent
+        if let Some(parent) = self.nodes.get(parent_id) {
+            node.depth = parent.depth + 1;
+        }
+        
         self.nodes.insert(node_id.clone(), node);
 
         if let Some(parent) = self.nodes.get_mut(parent_id) {
             parent.add_child(node_id);
         }
-
-        self.rebuild_visible_nodes();
     }
 
     /// Remove a node from the tree
@@ -130,13 +135,11 @@ impl TreeWidget {
                 parent.remove_child(node_id);
             }
 
-            // Remove children
+            // Remove children recursively
             for child_id in node.children {
                 self.remove_node(&child_id);
             }
         }
-
-        self.rebuild_visible_nodes();
     }
 
     /// Get a node by ID
@@ -152,12 +155,14 @@ impl TreeWidget {
     /// Select a node
     pub fn select(&mut self, id: String) {
         if self.nodes.contains_key(&id) {
+            self.state.select(vec![id.clone()]);
             self.selected = Some(id);
         }
     }
 
     /// Deselect the current node
     pub fn deselect(&mut self) {
+        self.state.select(Vec::new());
         self.selected = None;
     }
 
@@ -175,24 +180,30 @@ impl TreeWidget {
     pub fn toggle_node(&mut self, id: &str) {
         if let Some(node) = self.nodes.get_mut(id) {
             node.toggle_expanded();
+            
+            // Update tui-tree-widget state
+            if node.expanded {
+                self.state.open(vec![id.to_string()]);
+            } else {
+                self.state.close(&[id.to_string()]);
+            }
         }
-        self.rebuild_visible_nodes();
     }
 
     /// Expand a node
     pub fn expand_node(&mut self, id: &str) {
         if let Some(node) = self.nodes.get_mut(id) {
             node.expand();
+            self.state.open(vec![id.to_string()]);
         }
-        self.rebuild_visible_nodes();
     }
 
     /// Collapse a node
     pub fn collapse_node(&mut self, id: &str) {
         if let Some(node) = self.nodes.get_mut(id) {
             node.collapse();
+            self.state.close(&[id.to_string()]);
         }
-        self.rebuild_visible_nodes();
     }
 
     /// Expand all nodes
@@ -202,7 +213,6 @@ impl TreeWidget {
                 node.expanded = true;
             }
         }
-        self.rebuild_visible_nodes();
     }
 
     /// Collapse all nodes
@@ -210,41 +220,35 @@ impl TreeWidget {
         for node in self.nodes.values_mut() {
             node.expanded = false;
         }
-        self.rebuild_visible_nodes();
+        self.state.close_all();
     }
 
     /// Select the next visible node
     pub fn select_next(&mut self) {
-        if let Some(selected) = &self.selected {
-            if let Some(pos) = self.visible_nodes.iter().position(|id| id == selected) {
-                if pos < self.visible_nodes.len() - 1 {
-                    self.selected = Some(self.visible_nodes[pos + 1].clone());
-                }
-            }
-        } else if !self.visible_nodes.is_empty() {
-            self.selected = Some(self.visible_nodes[0].clone());
-        }
+        let items = self.build_tree_items();
+        self.state.key_down(&items);
     }
 
     /// Select the previous visible node
     pub fn select_prev(&mut self) {
-        if let Some(selected) = &self.selected {
-            if let Some(pos) = self.visible_nodes.iter().position(|id| id == selected) {
-                if pos > 0 {
-                    self.selected = Some(self.visible_nodes[pos - 1].clone());
-                }
-            }
-        }
+        let items = self.build_tree_items();
+        self.state.key_up(&items);
     }
 
-    /// Get visible nodes
-    pub fn visible_nodes(&self) -> &[String] {
-        &self.visible_nodes
+    /// Get visible nodes (IDs of currently visible items)
+    pub fn visible_nodes(&self) -> Vec<String> {
+        // Build tree and get flattened view
+        let tree_items = self.build_tree_items();
+        let flattened = self.state.flatten(&tree_items);
+        flattened
+            .into_iter()
+            .filter_map(|f| f.identifier.first().map(|s| s.clone()))
+            .collect()
     }
 
     /// Get visible node count
     pub fn visible_count(&self) -> usize {
-        self.visible_nodes.len()
+        self.visible_nodes().len()
     }
 
     /// Set the title
@@ -260,32 +264,11 @@ impl TreeWidget {
     /// Clear the tree
     pub fn clear(&mut self) {
         self.nodes.clear();
-        self.visible_nodes.clear();
+        self.state = TuiTreeState::default();
         self.selected = None;
 
         let root = TreeNode::new(self.root_id.clone(), "Root", true);
         self.nodes.insert(self.root_id.clone(), root);
-        self.visible_nodes.push(self.root_id.clone());
-    }
-
-    /// Rebuild the visible nodes list based on expansion state
-    fn rebuild_visible_nodes(&mut self) {
-        self.visible_nodes.clear();
-        self.collect_visible_nodes(&self.root_id.clone(), 0);
-    }
-
-    /// Recursively collect visible nodes
-    fn collect_visible_nodes(&mut self, node_id: &str, depth: usize) {
-        self.visible_nodes.push(node_id.to_string());
-
-        if let Some(node) = self.nodes.get(node_id) {
-            if node.expanded {
-                let children = node.children.clone();
-                for child_id in children {
-                    self.collect_visible_nodes(&child_id, depth + 1);
-                }
-            }
-        }
     }
 
     /// Get the display text for a node (with indentation and icon)
@@ -316,6 +299,37 @@ impl TreeWidget {
     /// Get the root node ID
     pub fn root_id(&self) -> &str {
         &self.root_id
+    }
+
+    /// Build tui-tree-widget TreeItems from our nodes
+    fn build_tree_items(&self) -> Vec<TuiTreeItem<'static, String>> {
+        self.build_tree_items_recursive(&self.root_id)
+    }
+
+    /// Recursively build tree items
+    fn build_tree_items_recursive(&self, node_id: &str) -> Vec<TuiTreeItem<'static, String>> {
+        if let Some(node) = self.nodes.get(node_id) {
+            let mut children = Vec::new();
+            
+            for child_id in &node.children {
+                let mut child_items = self.build_tree_items_recursive(child_id);
+                children.append(&mut child_items);
+            }
+
+            let text = self.get_display_text(node_id);
+            let item = if children.is_empty() {
+                TuiTreeItem::new_leaf(node_id.to_string(), text)
+            } else {
+                match TuiTreeItem::new(node_id.to_string(), text, children) {
+                    Ok(item) => item,
+                    Err(_) => return Vec::new(),
+                }
+            };
+
+            vec![item]
+        } else {
+            Vec::new()
+        }
     }
 }
 

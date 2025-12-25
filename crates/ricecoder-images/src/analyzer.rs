@@ -11,6 +11,7 @@
 
 use std::{sync::Arc, time::Duration};
 
+use base64::{engine::general_purpose, Engine as _};
 use ricecoder_providers::{
     models::{ChatRequest, Message},
     provider::Provider,
@@ -265,7 +266,7 @@ impl ImageAnalyzer {
         );
 
         // Encode image data as base64 for provider transmission
-        let image_base64 = base64_encode(image_data);
+        let image_base64 = general_purpose::STANDARD.encode(image_data);
 
         // Create chat request with image data
         // Note: The image data is included in the message content as base64
@@ -471,36 +472,7 @@ impl Default for ImageAnalyzer {
     }
 }
 
-/// Encode binary data as base64 string.
-fn base64_encode(data: &[u8]) -> String {
-    const BASE64_CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    let mut result = String::new();
 
-    for chunk in data.chunks(3) {
-        let b1 = chunk[0];
-        let b2 = chunk.get(1).copied().unwrap_or(0);
-        let b3 = chunk.get(2).copied().unwrap_or(0);
-
-        let n = ((b1 as u32) << 16) | ((b2 as u32) << 8) | (b3 as u32);
-
-        result.push(BASE64_CHARS[((n >> 18) & 63) as usize] as char);
-        result.push(BASE64_CHARS[((n >> 12) & 63) as usize] as char);
-
-        if chunk.len() > 1 {
-            result.push(BASE64_CHARS[((n >> 6) & 63) as usize] as char);
-        } else {
-            result.push('=');
-        }
-
-        if chunk.len() > 2 {
-            result.push(BASE64_CHARS[(n & 63) as usize] as char);
-        } else {
-            result.push('=');
-        }
-    }
-
-    result
-}
 
 #[cfg(test)]
 mod tests {
@@ -538,23 +510,6 @@ mod tests {
         let data = vec![1, 2, 3, 4, 5];
         let result = analyzer.optimize_image(&data).await;
         assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_base64_encode() {
-        // Test basic encoding
-        let data = b"Hello";
-        let encoded = base64_encode(data);
-        assert!(!encoded.is_empty());
-        assert!(encoded.len() > 0);
-
-        // Test empty data
-        let empty = base64_encode(&[]);
-        assert_eq!(empty, "");
-
-        // Test single byte
-        let single = base64_encode(&[65]); // 'A'
-        assert!(!single.is_empty());
     }
 
     #[test]

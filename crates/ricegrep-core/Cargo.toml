@@ -11,8 +11,8 @@ categories = ["development-tools"]
 # This crate is intentionally minimal - only dependencies needed for core logic
 [dependencies]
 # Application layer needs regex for pattern matching
-regex = "1.10"
+regex = { workspace = true }
 
 [dev-dependencies]
 # For property-based testing
-proptest = "1.4"
+proptest = { workspace = true }

@@ -8,27 +8,27 @@ license = "MIT"
 
 [dependencies]
 # PTY backend (cross-platform, used by WezTerm)
-portable-pty = "0.8"
+portable-pty = { workspace = true }
 
 # Async runtime
-tokio = { version = "1", features = ["process", "sync", "io-util", "macros", "rt"] }
+tokio = { workspace = true, features = ["process", "sync", "io-util", "macros", "rt"] }
 
 # Error handling
-thiserror = "2"
-anyhow = "1"
+thiserror = { workspace = true }
+anyhow = { workspace = true }
 
 # Serialization
-serde = { version = "1", features = ["derive"] }
+serde = { workspace = true, features = ["derive"] }
 
 # Logging
-tracing = "0.1"
+tracing = { workspace = true }
 
 # UUID generation
-uuid = { version = "1", features = ["v4", "serde"] }
+uuid = { workspace = true, features = ["v4", "serde"] }
 
 [dev-dependencies]
-tokio = { version = "1", features = ["full", "test-util"] }
-tokio-test = "0.4"
+tokio = { workspace = true, features = ["full", "test-util"] }
+tokio-test = { workspace = true }
 
 [lints.rust]
 unsafe_code = "deny"

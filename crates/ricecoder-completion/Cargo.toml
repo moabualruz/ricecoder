@@ -30,6 +30,7 @@ tree-sitter-python = { workspace = true }
 regex = { workspace = true }
 chrono = { workspace = true }
 ricecoder-storage = { workspace = true }
+nucleo = { workspace = true }
 
 # DI registration (via ricecoder-common to avoid circular deps)
 ricecoder-common = { workspace = true }

@@ -39,39 +39,59 @@ impl DependencyAnalyzer {
             .push(dependency);
     }
 
-    /// Parses dependencies from a Cargo.toml-like structure
-    /// This is a simplified parser that extracts workspace members and dependencies
+    /// Parses dependencies from a Cargo.toml file
+    /// Extracts dependencies, dev-dependencies, and build-dependencies
     pub fn parse_cargo_toml(&mut self, content: &str, project_name: &str) -> Result<()> {
-        // Simple parser for Cargo.toml format
-        // In a real implementation, this would use a proper TOML parser
-        for line in content.lines() {
-            let trimmed = line.trim();
+        let parsed: toml::Value = toml::from_str(content).map_err(|e| {
+            OrchestrationError::ConfigurationError(format!("Failed to parse Cargo.toml: {}", e))
+        })?;
 
-            // Look for dependency declarations
-            if trimmed.starts_with('[') && trimmed.ends_with(']') {
-                // Section header - we could track sections here
-                continue;
+        // Extract package version if available
+        let _package_version = parsed
+            .get("package")
+            .and_then(|p| p.get("version"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("0.1.0");
+
+        // Parse dependencies section
+        if let Some(deps) = parsed.get("dependencies").and_then(|d| d.as_table()) {
+            for (dep_name, dep_value) in deps {
+                let version = extract_version_constraint(dep_value);
+                let dependency = ProjectDependency {
+                    from: project_name.to_string(),
+                    to: dep_name.clone(),
+                    dependency_type: DependencyType::Direct,
+                    version_constraint: version,
+                };
+                self.add_dependency(dependency);
             }
+        }
 
-            // Parse simple dependency format: "dep-name = "version""
-            if let Some(eq_pos) = trimmed.find('=') {
-                let dep_name = trimmed[..eq_pos].trim();
-                let _version = trimmed[eq_pos + 1..].trim();
+        // Parse dev-dependencies section
+        if let Some(dev_deps) = parsed.get("dev-dependencies").and_then(|d| d.as_table()) {
+            for (dep_name, dep_value) in dev_deps {
+                let version = extract_version_constraint(dep_value);
+                let dependency = ProjectDependency {
+                    from: project_name.to_string(),
+                    to: dep_name.clone(),
+                    dependency_type: DependencyType::Direct,
+                    version_constraint: version,
+                };
+                self.add_dependency(dependency);
+            }
+        }
 
-                // Only add if it looks like a project dependency (no special chars)
-                if !dep_name.is_empty()
-                    && dep_name
-                        .chars()
-                        .all(|c| c.is_alphanumeric() || c == '-' || c == '_')
-                {
-                    let dependency = ProjectDependency {
-                        from: project_name.to_string(),
-                        to: dep_name.to_string(),
-                        dependency_type: DependencyType::Direct,
-                        version_constraint: "^0.1.0".to_string(),
-                    };
-                    self.add_dependency(dependency);
-                }
+        // Parse build-dependencies section
+        if let Some(build_deps) = parsed.get("build-dependencies").and_then(|d| d.as_table()) {
+            for (dep_name, dep_value) in build_deps {
+                let version = extract_version_constraint(dep_value);
+                let dependency = ProjectDependency {
+                    from: project_name.to_string(),
+                    to: dep_name.clone(),
+                    dependency_type: DependencyType::Direct,
+                    version_constraint: version,
+                };
+                self.add_dependency(dependency);
             }
         }
 
@@ -318,6 +338,22 @@ impl DependencyAnalyzer {
 impl Default for DependencyAnalyzer {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Extracts version constraint from a TOML dependency value
+fn extract_version_constraint(value: &toml::Value) -> String {
+    match value {
+        // Simple version string: "1.0.0"
+        toml::Value::String(version) => version.clone(),
+        // Detailed dependency: { version = "1.0.0", features = [...] }
+        toml::Value::Table(table) => table
+            .get("version")
+            .and_then(|v| v.as_str())
+            .unwrap_or("*")
+            .to_string(),
+        // Workspace dependency: { workspace = true }
+        _ => "*".to_string(),
     }
 }
 

@@ -28,7 +28,7 @@ tiktoken-rs = { workspace = true }
 url = { workspace = true }
 base64 = { workspace = true }
 tempfile = { workspace = true }
-httpdate = "1.0"
+httpdate = { workspace = true }
 ricecoder-security = { workspace = true }
 ricecoder-domain = { workspace = true }
 

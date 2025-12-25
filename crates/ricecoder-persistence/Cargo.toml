@@ -7,7 +7,7 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-ricecoder-domain = { path = "../ricecoder-domain", version = "0.1" }
+ricecoder-domain = { workspace = true }
 async-trait = { workspace = true }
 tokio = { workspace = true }
 parking_lot = { workspace = true }
