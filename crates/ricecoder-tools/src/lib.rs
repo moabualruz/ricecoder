@@ -53,33 +53,50 @@
 //! ```
 
 pub mod batch;
+pub mod context;
 pub mod di;
 pub mod edit;
 pub mod error;
 pub mod filetype;
 pub mod format;
+pub mod locale;
+pub mod lsp;
 pub mod patch;
 pub mod provider;
 pub mod read;
+pub mod registry;
 pub mod result;
 pub mod search;
 pub mod todo;
+pub mod tool;
 pub mod webfetch;
+pub mod write;
 
 // Re-export commonly used types
+pub use batch::{BatchInput, BatchOutput, BatchTool, InvocationResult, ToolInvocation};
+pub use context::{MetadataUpdate, ToolContext};
 pub use edit::{
     BatchFileEditInput, BatchFileEditOutput, FileEditInput, FileEditOutput, FileEditTool,
 };
 pub use error::ToolError;
+pub use locale::Locale;
+pub use lsp::{
+    ExternalLspClient, LspError, LspMetadata, LspOperation, LspPosition, LspTool, LspToolInput,
+    LspToolOutput,
+};
 pub use provider::{Provider, ProviderRegistry};
 pub use read::{
     BatchFileReadInput, BatchFileReadOutput, ContentFilter, FileReadInput, FileReadOutput,
     FileReadResult, FileReadTool,
 };
-pub use result::{ResultMetadata, ToolErrorInfo, ToolResult};
+pub use registry::{AgentPermissions, PluginTool, ToolMetadata, ToolRegistry};
+pub use result::{FileAttachment, ResultMetadata, ToolErrorInfo, ToolResult};
 pub use search::{SearchInput, SearchOutput, SearchResult, SearchTool};
-pub use batch::{BatchInput, BatchOutput, BatchTool, InvocationResult, ToolInvocation};
 pub use todo::{
     Todo, TodoPriority, TodoStatus, TodoTools, TodoreadInput, TodoreadOutput, TodowriteInput,
     TodowriteOutput,
 };
+pub use tool::{
+    ParameterSchema, Tool, ToolDefinition, ToolExecutionResult, ToolParameters, ToolWrapper,
+};
+pub use write::{WriteError, WriteInput, WriteMetadata, WriteOutput, WriteTool};

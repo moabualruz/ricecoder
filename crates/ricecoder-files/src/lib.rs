@@ -13,8 +13,11 @@ pub mod diff;
 pub mod error;
 pub mod file_repository;
 pub mod git;
+pub mod gitignore;
 pub mod manager;
 pub mod models;
+pub mod ripgrep;
+pub mod session_tracking;
 pub mod transaction;
 pub mod verifier;
 pub mod watcher;
@@ -28,11 +31,14 @@ pub use conflict::ConflictResolver;
 pub use diff::DiffEngine;
 pub use error::FileError;
 pub use git::GitIntegration;
+pub use gitignore::GitignoreFilter;
 pub use manager::FileManager;
 pub use models::{
     AuditEntry, BackupMetadata, ConflictInfo, ConflictResolution, DiffHunk, DiffLine, DiffStats,
-    FileDiff, FileOperation, FileTransaction, GitStatus, OperationType, TransactionStatus,
+    FileDiff, FileOperation, GitStatus, OperationType, TransactionStatus,
 };
+pub use ripgrep::{Ripgrep, RipgrepError, SearchMatch};
+pub use session_tracking::{FileReadRecord, SessionFileTracker};
 pub use transaction::TransactionManager;
 pub use verifier::ContentVerifier;
 pub use watcher::{FileChangeBatch, FileChangeEvent, FileWatcher, WatcherConfig};

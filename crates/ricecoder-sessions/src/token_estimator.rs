@@ -67,20 +67,47 @@ impl TokenEstimator {
 /// Pricing information for a model
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelPricing {
-    /// Cost per 1K input tokens (USD)
-    pub input_per_1k: f64,
-    /// Cost per 1K output tokens (USD)
-    pub output_per_1k: f64,
+    /// Cost per 1M input tokens (USD) - matches OpenCode pricing model
+    pub input_per_1m: f64,
+    /// Cost per 1M output tokens (USD)
+    pub output_per_1m: f64,
+    /// Cost per 1M cache read tokens (USD)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cache_read_per_1m: Option<f64>,
+    /// Cost per 1M cache write tokens (USD)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cache_write_per_1m: Option<f64>,
     /// Maximum context window (tokens)
     pub max_tokens: usize,
+    /// Maximum output tokens
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_output_tokens: Option<usize>,
+    /// Experimental pricing for contexts over 200K tokens
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub experimental_over_200k: Option<Over200KPricing>,
+}
+
+/// Pricing for contexts over 200K tokens
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Over200KPricing {
+    pub input_per_1m: f64,
+    pub output_per_1m: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cache_read_per_1m: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cache_write_per_1m: Option<f64>,
 }
 
 impl Default for ModelPricing {
     fn default() -> Self {
         Self {
-            input_per_1k: 0.0015, // GPT-3.5 default
-            output_per_1k: 0.002,
+            input_per_1m: 1500.0, // GPT-3.5 default (1.5K per 1M tokens)
+            output_per_1m: 2000.0,
+            cache_read_per_1m: None,
+            cache_write_per_1m: None,
             max_tokens: 4096,
+            max_output_tokens: Some(4096),
+            experimental_over_200k: None,
         }
     }
 }
@@ -99,24 +126,32 @@ impl TokenEstimator {
         estimator
     }
 
-    /// Initialize default pricing for common models
+    /// Initialize default pricing for common models (per 1M tokens - OpenCode compatible)
     fn initialize_pricing(&mut self) {
         // GPT-4 pricing
         self.pricing.insert(
             "gpt-4".to_string(),
             ModelPricing {
-                input_per_1k: 0.03,
-                output_per_1k: 0.06,
+                input_per_1m: 30_000.0,
+                output_per_1m: 60_000.0,
+                cache_read_per_1m: None,
+                cache_write_per_1m: None,
                 max_tokens: 8192,
+                max_output_tokens: Some(8192),
+                experimental_over_200k: None,
             },
         );
 
         self.pricing.insert(
             "gpt-4-32k".to_string(),
             ModelPricing {
-                input_per_1k: 0.06,
-                output_per_1k: 0.12,
+                input_per_1m: 60_000.0,
+                output_per_1m: 120_000.0,
+                cache_read_per_1m: None,
+                cache_write_per_1m: None,
                 max_tokens: 32768,
+                max_output_tokens: Some(32768),
+                experimental_over_200k: None,
             },
         );
 
@@ -124,46 +159,66 @@ impl TokenEstimator {
         self.pricing.insert(
             "gpt-3.5-turbo".to_string(),
             ModelPricing {
-                input_per_1k: 0.0015,
-                output_per_1k: 0.002,
+                input_per_1m: 1500.0,
+                output_per_1m: 2000.0,
+                cache_read_per_1m: None,
+                cache_write_per_1m: None,
                 max_tokens: 4096,
+                max_output_tokens: Some(4096),
+                experimental_over_200k: None,
             },
         );
 
         self.pricing.insert(
             "gpt-3.5-turbo-16k".to_string(),
             ModelPricing {
-                input_per_1k: 0.003,
-                output_per_1k: 0.004,
+                input_per_1m: 3000.0,
+                output_per_1m: 4000.0,
+                cache_read_per_1m: None,
+                cache_write_per_1m: None,
                 max_tokens: 16384,
+                max_output_tokens: Some(16384),
+                experimental_over_200k: None,
             },
         );
 
-        // Claude pricing (approximate)
+        // Claude pricing (with cache support)
         self.pricing.insert(
             "claude-3-opus".to_string(),
             ModelPricing {
-                input_per_1k: 0.015,
-                output_per_1k: 0.075,
-                max_tokens: 200000,
+                input_per_1m: 15_000.0,
+                output_per_1m: 75_000.0,
+                cache_read_per_1m: Some(1_500.0),
+                cache_write_per_1m: Some(18_750.0),
+                max_tokens: 200_000,
+                max_output_tokens: Some(4_096),
+                experimental_over_200k: None,
             },
         );
 
         self.pricing.insert(
             "claude-3-sonnet".to_string(),
             ModelPricing {
-                input_per_1k: 0.003,
-                output_per_1k: 0.015,
-                max_tokens: 200000,
+                input_per_1m: 3_000.0,
+                output_per_1m: 15_000.0,
+                cache_read_per_1m: Some(300.0),
+                cache_write_per_1m: Some(3_750.0),
+                max_tokens: 200_000,
+                max_output_tokens: Some(4_096),
+                experimental_over_200k: None,
             },
         );
 
         self.pricing.insert(
             "claude-3-haiku".to_string(),
             ModelPricing {
-                input_per_1k: 0.00025,
-                output_per_1k: 0.00125,
-                max_tokens: 200000,
+                input_per_1m: 250.0,
+                output_per_1m: 1_250.0,
+                cache_read_per_1m: Some(25.0),
+                cache_write_per_1m: Some(312.5),
+                max_tokens: 200_000,
+                max_output_tokens: Some(4_096),
+                experimental_over_200k: None,
             },
         );
     }
@@ -196,7 +251,7 @@ impl TokenEstimator {
         let estimated_cost = self
             .pricing
             .get(&model_name)
-            .map(|pricing| (tokens as f64 / 1000.0) * pricing.input_per_1k);
+            .map(|pricing| (tokens as f64 / 1_000_000.0) * pricing.input_per_1m);
 
         Ok(TokenEstimate {
             tokens,
@@ -347,14 +402,41 @@ impl TokenUsageTracker {
     pub fn record_prompt(&mut self, tokens: usize) {
         self.prompt_tokens += tokens;
         self.total_tokens += tokens;
-        self.estimated_cost += (tokens as f64 / 1000.0) * self.pricing.input_per_1k;
+        self.estimated_cost += (tokens as f64 / 1_000_000.0) * self.pricing.input_per_1m;
     }
 
     /// Record completion tokens
     pub fn record_completion(&mut self, tokens: usize) {
         self.completion_tokens += tokens;
         self.total_tokens += tokens;
-        self.estimated_cost += (tokens as f64 / 1000.0) * self.pricing.output_per_1k;
+        self.estimated_cost += (tokens as f64 / 1_000_000.0) * self.pricing.output_per_1m;
+    }
+
+    /// Record cache read tokens (OpenCode parity)
+    pub fn record_cache_read(&mut self, tokens: usize) {
+        self.prompt_tokens += tokens;
+        self.total_tokens += tokens;
+        if let Some(cache_read_cost) = self.pricing.cache_read_per_1m {
+            self.estimated_cost += (tokens as f64 / 1_000_000.0) * cache_read_cost;
+        }
+    }
+
+    /// Record cache write tokens (OpenCode parity)
+    pub fn record_cache_write(&mut self, tokens: usize) {
+        // Cache writes count as input tokens but cost more
+        self.prompt_tokens += tokens;
+        self.total_tokens += tokens;
+        if let Some(cache_write_cost) = self.pricing.cache_write_per_1m {
+            self.estimated_cost += (tokens as f64 / 1_000_000.0) * cache_write_cost;
+        }
+    }
+
+    /// Record reasoning tokens (OpenCode parity - charged at output rate)
+    pub fn record_reasoning(&mut self, tokens: usize) {
+        self.completion_tokens += tokens;
+        self.total_tokens += tokens;
+        // Reasoning tokens charged at output rate per OpenCode
+        self.estimated_cost += (tokens as f64 / 1_000_000.0) * self.pricing.output_per_1m;
     }
 
     /// Get current usage as TokenUsage
@@ -404,4 +486,45 @@ impl Default for TokenEstimator {
     fn default() -> Self {
         Self::new()
     }
+}
+
+/// Global output token maximum (OpenCode parity)
+pub const OUTPUT_TOKEN_MAX: usize = 32_000;
+
+/// Prune minimum threshold (OpenCode parity)
+pub const PRUNE_MINIMUM: usize = 20_000;
+
+/// Prune protection threshold (OpenCode parity)
+pub const PRUNE_PROTECT: usize = 40_000;
+
+/// Check if token usage indicates overflow (OpenCode isOverflow parity)
+pub fn is_overflow(
+    input_tokens: usize,
+    cache_read_tokens: usize,
+    output_tokens: usize,
+    context_limit: usize,
+    model_output_limit: Option<usize>,
+) -> bool {
+    if context_limit == 0 {
+        return false;
+    }
+    
+    // Count excludes reasoning and cache write per OpenCode
+    let count = input_tokens + cache_read_tokens + output_tokens;
+    
+    // Calculate reserved output budget
+    let output_budget = model_output_limit
+        .map(|limit| limit.min(OUTPUT_TOKEN_MAX))
+        .unwrap_or(OUTPUT_TOKEN_MAX);
+    
+    let usable = context_limit.saturating_sub(output_budget);
+    
+    count > usable
+}
+
+/// Calculate output token budget (OpenCode ProviderTransform.maxOutputTokens parity)
+pub fn max_output_tokens(model_limit: Option<usize>) -> usize {
+    model_limit
+        .map(|limit| limit.min(OUTPUT_TOKEN_MAX))
+        .unwrap_or(OUTPUT_TOKEN_MAX)
 }

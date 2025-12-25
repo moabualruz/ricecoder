@@ -1,18 +1,126 @@
 //! Keybind engine that combines registry and profile management
 
-use std::path::Path;
+use std::{path::Path, time::{Duration, Instant}};
 
 use crate::{
     conflict::ConflictDetector,
     error::EngineError,
     help::KeybindHelp,
     merge::KeybindMerger,
-    models::{Context, KeyCombo, Keybind},
+    models::{Context, Key, KeyCombo, Keybind, Modifier},
     parser::ParserRegistry,
     persistence::KeybindPersistence,
     profile::ProfileManager,
     registry::KeybindRegistry,
 };
+
+/// Leader key state for OpenCode compatibility (G02)
+#[derive(Debug, Clone)]
+pub struct LeaderState {
+    /// Whether leader key is currently active
+    pub active: bool,
+    /// Time when leader was pressed
+    pub pressed_at: Option<Instant>,
+    /// Leader timeout (default 2 seconds)
+    pub timeout: Duration,
+}
+
+impl Default for LeaderState {
+    fn default() -> Self {
+        Self {
+            active: false,
+            pressed_at: None,
+            timeout: Duration::from_secs(2),
+        }
+    }
+}
+
+impl LeaderState {
+    /// Activate leader state
+    pub fn activate(&mut self) {
+        self.active = true;
+        self.pressed_at = Some(Instant::now());
+    }
+    
+    /// Deactivate leader state
+    pub fn deactivate(&mut self) {
+        self.active = false;
+        self.pressed_at = None;
+    }
+    
+    /// Check if leader state has timed out
+    pub fn is_timed_out(&self) -> bool {
+        if let Some(pressed_at) = self.pressed_at {
+            pressed_at.elapsed() > self.timeout
+        } else {
+            false
+        }
+    }
+    
+    /// Check if leader is active and not timed out
+    pub fn is_valid(&self) -> bool {
+        self.active && !self.is_timed_out()
+    }
+}
+
+/// Pending key state for multi-key chords (Helix G08)
+#[derive(Debug, Clone)]
+pub struct PendingKeyState {
+    /// Keys pressed so far in the sequence
+    pub keys: Vec<KeyCombo>,
+    /// Time when first key was pressed
+    pub started_at: Option<Instant>,
+    /// Timeout for chord sequences (default 1 second)
+    pub timeout: Duration,
+}
+
+impl Default for PendingKeyState {
+    fn default() -> Self {
+        Self {
+            keys: Vec::new(),
+            started_at: None,
+            timeout: Duration::from_secs(1),
+        }
+    }
+}
+
+impl PendingKeyState {
+    /// Add a key to the pending sequence
+    pub fn push(&mut self, key: KeyCombo) {
+        if self.keys.is_empty() {
+            self.started_at = Some(Instant::now());
+        }
+        self.keys.push(key);
+    }
+    
+    /// Clear pending state
+    pub fn clear(&mut self) {
+        self.keys.clear();
+        self.started_at = None;
+    }
+    
+    /// Check if pending state has timed out
+    pub fn is_timed_out(&self) -> bool {
+        if let Some(started_at) = self.started_at {
+            started_at.elapsed() > self.timeout
+        } else {
+            false
+        }
+    }
+    
+    /// Check if sequence is active
+    pub fn is_active(&self) -> bool {
+        !self.keys.is_empty() && !self.is_timed_out()
+    }
+    
+    /// Get the pending key sequence as a string (e.g., "gg")
+    pub fn as_string(&self) -> String {
+        self.keys.iter()
+            .map(|k| k.to_string())
+            .collect::<Vec<_>>()
+            .join("")
+    }
+}
 
 /// Main keybind engine combining registry and profile management
 pub struct KeybindEngine {
@@ -21,6 +129,10 @@ pub struct KeybindEngine {
     default_keybinds: Vec<Keybind>,
     current_context: Context,
     context_stack: Vec<Context>,
+    /// Leader key state (OpenCode G02)
+    leader_state: LeaderState,
+    /// Pending key state for multi-key chords (Helix G08)
+    pending_keys: PendingKeyState,
 }
 
 impl KeybindEngine {
@@ -32,6 +144,8 @@ impl KeybindEngine {
             default_keybinds: Vec::new(),
             current_context: Context::Global,
             context_stack: Vec::new(),
+            leader_state: LeaderState::default(),
+            pending_keys: PendingKeyState::default(),
         }
     }
 
@@ -377,6 +491,208 @@ impl KeybindEngine {
     /// Get a profile by name
     pub fn get_profile(&self, name: &str) -> Option<&crate::profile::Profile> {
         self.profile_manager.get_profile(name)
+    }
+    
+    // ========================================================================
+    // Leader Key Support (OpenCode G02)
+    // ========================================================================
+    
+    /// Set leader timeout
+    pub fn set_leader_timeout(&mut self, timeout: Duration) {
+        self.leader_state.timeout = timeout;
+    }
+    
+    /// Get leader state
+    pub fn leader_state(&self) -> &LeaderState {
+        &self.leader_state
+    }
+    
+    /// Check if leader key is currently active
+    pub fn is_leader_active(&self) -> bool {
+        self.leader_state.is_valid()
+    }
+    
+    /// Activate leader key
+    pub fn activate_leader(&mut self) {
+        self.leader_state.activate();
+    }
+    
+    /// Deactivate leader key
+    pub fn deactivate_leader(&mut self) {
+        self.leader_state.deactivate();
+    }
+    
+    /// Process leader timeout (call periodically)
+    pub fn process_leader_timeout(&mut self) {
+        if self.leader_state.is_timed_out() {
+            self.deactivate_leader();
+        }
+    }
+    
+    // ========================================================================
+    // Multi-Key Chord Support (Helix G08)
+    // ========================================================================
+    
+    /// Set chord timeout
+    pub fn set_chord_timeout(&mut self, timeout: Duration) {
+        self.pending_keys.timeout = timeout;
+    }
+    
+    /// Get pending key state
+    pub fn pending_keys(&self) -> &PendingKeyState {
+        &self.pending_keys
+    }
+    
+    /// Check if a chord sequence is pending
+    pub fn is_chord_pending(&self) -> bool {
+        self.pending_keys.is_active()
+    }
+    
+    /// Add a key to pending chord sequence
+    pub fn push_pending_key(&mut self, key: KeyCombo) {
+        self.pending_keys.push(key);
+    }
+    
+    /// Clear pending chord sequence
+    pub fn clear_pending_keys(&mut self) {
+        self.pending_keys.clear();
+    }
+    
+    /// Process chord timeout (call periodically)
+    pub fn process_chord_timeout(&mut self) {
+        if self.pending_keys.is_timed_out() {
+            self.clear_pending_keys();
+        }
+    }
+    
+    /// Handle Escape key to cancel pending state (Helix G15)
+    pub fn handle_escape(&mut self) {
+        self.clear_pending_keys();
+        self.deactivate_leader();
+    }
+    
+    /// Try to match pending chord sequence to an action
+    pub fn match_pending_chord(&self) -> Option<&str> {
+        if !self.is_chord_pending() {
+            return None;
+        }
+        
+        // Build chord string (e.g., "gg", "dd")
+        let chord_str = self.pending_keys.as_string();
+        
+        // Try to find a keybind that matches this chord sequence
+        // For now, we treat it as a single key combo
+        // TODO: Implement proper trie-based chord matching for Helix G08
+        let chord_combo = KeyCombo {
+            modifiers: Vec::new(),
+            key: Key::Char(chord_str.chars().next().unwrap_or(' ')),
+            leader: false,
+        };
+        
+        self.get_action_with_active_contexts(&chord_combo)
+    }
+    
+    /// Process a key event with leader and chord support
+    /// Returns (action_id, consumed_key) tuple
+    /// - action_id: matched action if found (owned String to avoid borrow issues)
+    /// - consumed_key: whether the key was consumed by leader/chord logic
+    pub fn process_key_with_state(&mut self, key: KeyCombo) -> (Option<String>, bool) {
+        // Process timeouts first
+        self.process_leader_timeout();
+        self.process_chord_timeout();
+        
+        // Handle Escape (G15)
+        if matches!(key.key, Key::Escape) {
+            self.handle_escape();
+            return (Some("cancel_pending".to_string()), true);
+        }
+        
+        // Handle leader key activation
+        if key.leader {
+            if self.is_leader_active() {
+                // Leader already active, deactivate
+                self.deactivate_leader();
+                return (None, true);
+            } else {
+                // Activate leader
+                self.activate_leader();
+                return (None, true);
+            }
+        }
+        
+        // Try direct match first (clone to avoid borrow issues)
+        let action_opt = self.get_action_with_active_contexts(&key).map(|s| s.to_string());
+        if let Some(action) = action_opt {
+            // Clear pending state on match
+            self.clear_pending_keys();
+            return (Some(action), true);
+        }
+        
+        // If no match, check if this could be part of a chord
+        self.push_pending_key(key.clone());
+        
+        // Try to match pending chord (clone to avoid borrow issues)
+        let chord_action_opt = self.match_pending_chord().map(|s| s.to_string());
+        if let Some(action) = chord_action_opt {
+            self.clear_pending_keys();
+            return (Some(action), true);
+        }
+        
+        // Key is pending (not consumed)
+        (None, false)
+    }
+    
+    // ========================================================================
+    // Runtime Config Loading (G01)
+    // ========================================================================
+    
+    /// Load keybinds from runtime config file
+    pub fn load_from_config_file(&mut self, path: impl AsRef<Path>) -> Result<(), EngineError> {
+        let content = std::fs::read_to_string(path.as_ref())
+            .map_err(|e| EngineError::DefaultsLoadError(format!("Failed to read config: {}", e)))?;
+        
+        // Determine format from extension
+        let ext = path.as_ref()
+            .extension()
+            .and_then(|s| s.to_str())
+            .unwrap_or("json");
+        
+        let parser = ParserRegistry::new();
+        let keybinds = parser.parse(&content, ext)
+            .map_err(|e| EngineError::DefaultsLoadError(format!("Failed to parse config: {}", e)))?;
+        
+        // Apply keybinds with merge if defaults exist
+        if !self.default_keybinds.is_empty() {
+            self.apply_profile_with_merge(&keybinds)?;
+        } else {
+            self.apply_keybinds(keybinds)?;
+        }
+        
+        Ok(())
+    }
+    
+    /// Load keybinds from config directory (G01)
+    /// Looks for:
+    /// - config/keybinds/default.json
+    /// - config/keybinds/custom.json (merged with defaults)
+    pub fn load_from_config_dir(&mut self, config_dir: impl AsRef<Path>) -> Result<(), EngineError> {
+        let config_dir = config_dir.as_ref();
+        let keybinds_dir = config_dir.join("keybinds");
+        
+        // Load defaults first
+        let default_path = keybinds_dir.join("default.json");
+        if default_path.exists() {
+            self.load_defaults_from_file(&default_path)?;
+            self.apply_defaults()?;
+        }
+        
+        // Load and merge custom keybinds
+        let custom_path = keybinds_dir.join("custom.json");
+        if custom_path.exists() {
+            self.load_from_config_file(&custom_path)?;
+        }
+        
+        Ok(())
     }
 }
 

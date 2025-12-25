@@ -5,6 +5,7 @@
 //!
 //! File System Repository
 
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
 use async_trait::async_trait;
@@ -198,6 +199,251 @@ impl FileSystemRepository {
 
         Ok(entries)
     }
+
+    /// List directory with OpenCode-compatible tree rendering
+    ///
+    /// Matches OpenCode ls.ts L8-L109:
+    /// - Built-in ignore patterns (node_modules, .git, etc.)
+    /// - Recursive enumeration
+    /// - 100 file limit with truncated flag
+    /// - Tree structure output (dirs first, sorted)
+    /// - Title relative to worktree
+    ///
+    /// # Arguments
+    /// * `path` - Directory to list (absolute or relative)
+    /// * `ignore` - Additional ignore patterns (beyond built-in)
+    /// * `worktree` - Worktree root for relative title
+    ///
+    /// # Returns
+    /// `ListResult` with tree output, count, truncated flag, and title
+    pub async fn list_directory_tree(
+        &self,
+        path: &PathBuf,
+        ignore: &[String],
+        worktree: Option<&PathBuf>,
+    ) -> DomainResult<ListResult> {
+        // Built-in ignore patterns from OpenCode ls.ts L8-L33
+        const IGNORE_PATTERNS: &[&str] = &[
+            "node_modules/",
+            "__pycache__/",
+            ".git/",
+            "dist/",
+            "build/",
+            "target/",
+            "vendor/",
+            "bin/",
+            "obj/",
+            ".idea/",
+            ".vscode/",
+            ".zig-cache/",
+            "zig-out",
+            ".coverage",
+            "coverage/",
+            "tmp/",
+            "temp/",
+            ".cache/",
+            "cache/",
+            "logs/",
+            ".venv/",
+            "venv/",
+            "env/",
+        ];
+
+        const LIMIT: usize = 100;
+
+        // Resolve search path (make absolute)
+        let search_path = if path.is_absolute() {
+            path.clone()
+        } else {
+            std::env::current_dir()
+                .map_err(|e| Self::io_to_domain_error(e, "Failed to get current directory"))?
+                .join(path)
+        };
+
+        // Build combined ignore patterns
+        let mut ignore_globs: Vec<String> = IGNORE_PATTERNS
+            .iter()
+            .map(|p| format!("!{}*", p))
+            .collect();
+        ignore_globs.extend(ignore.iter().map(|p| format!("!{}", p)));
+
+        // Recursively enumerate files (OpenCode uses Ripgrep.files)
+        // For simplicity, use WalkDir or similar
+        let files = self
+            .walk_directory_recursive(&search_path, &ignore_globs, LIMIT)
+            .await?;
+
+        let truncated = files.len() >= LIMIT;
+
+        // Build directory structure (OpenCode ls.ts L53-L70)
+        let tree_output = self.build_tree_structure(&files, &search_path)?;
+
+        // Compute title relative to worktree (OpenCode ls.ts L102)
+        let title = if let Some(worktree_path) = worktree {
+            search_path
+                .strip_prefix(worktree_path)
+                .unwrap_or(&search_path)
+                .display()
+                .to_string()
+        } else {
+            search_path.display().to_string()
+        };
+
+        Ok(ListResult {
+            title,
+            count: files.len(),
+            truncated,
+            output: tree_output,
+        })
+    }
+
+    /// Recursively walk directory and collect files (respecting ignore patterns and limit)
+    async fn walk_directory_recursive(
+        &self,
+        root: &PathBuf,
+        ignore_globs: &[String],
+        limit: usize,
+    ) -> DomainResult<Vec<PathBuf>> {
+        use ignore::WalkBuilder;
+
+        let mut files = Vec::new();
+        let walker = WalkBuilder::new(root)
+            .hidden(false)
+            .git_ignore(true)
+            .build();
+
+        for entry in walker {
+            if files.len() >= limit {
+                break;
+            }
+
+            let entry = entry.map_err(|e| DomainError::IoError {
+                reason: format!("Walk error: {}", e),
+            })?;
+
+            if entry.path().is_file() {
+                // Check if file matches ignore patterns
+                let relative_path = entry
+                    .path()
+                    .strip_prefix(root)
+                    .unwrap_or(entry.path())
+                    .to_path_buf();
+
+                // Skip if matches ignore globs (simplified check)
+                let path_str = relative_path.display().to_string();
+                let should_ignore = ignore_globs.iter().any(|glob| {
+                    // Simple prefix check for now
+                    glob.trim_start_matches('!').split('*').next().map_or(false, |prefix| path_str.starts_with(prefix))
+                });
+
+                if !should_ignore {
+                    files.push(relative_path);
+                }
+            }
+        }
+
+        Ok(files)
+    }
+
+    /// Build tree structure from file list (OpenCode ls.ts L72-L97)
+    fn build_tree_structure(
+        &self,
+        files: &[PathBuf],
+        root: &PathBuf,
+    ) -> DomainResult<String> {
+        use std::collections::BTreeMap;
+        use std::collections::BTreeSet;
+
+        // Build dirs set and filesByDir map
+        let mut dirs = BTreeSet::new();
+        let mut files_by_dir: BTreeMap<PathBuf, Vec<String>> = BTreeMap::new();
+        let default_parent = PathBuf::from(".");
+
+        for file in files {
+            let parent = file.parent().unwrap_or(&default_parent);
+            
+            // Add all parent directories
+            let components: Vec<_> = file.components().collect();
+            for i in 0..components.len() {
+                let dir_path: PathBuf = components.iter().take(i).collect();
+                dirs.insert(dir_path.clone());
+            }
+
+            // Add file to its directory
+            files_by_dir
+                .entry(parent.to_path_buf())
+                .or_insert_with(Vec::new)
+                .push(file.file_name().unwrap().to_string_lossy().to_string());
+        }
+
+        // Render tree
+        let mut output = String::new();
+        output.push_str(&format!("{}/\n", root.display()));
+        output.push_str(&self.render_dir(
+            &PathBuf::from("."),
+            0,
+            &dirs,
+            &files_by_dir,
+        ));
+
+        Ok(output)
+    }
+
+    /// Recursively render directory tree (OpenCode ls.ts L72-L97)
+    fn render_dir(
+        &self,
+        dir_path: &PathBuf,
+        depth: usize,
+        dirs: &std::collections::BTreeSet<PathBuf>,
+        files_by_dir: &std::collections::BTreeMap<PathBuf, Vec<String>>,
+    ) -> String {
+        let indent = "  ".repeat(depth);
+        let mut output = String::new();
+
+        // Render directory name (skip for root)
+        if depth > 0 {
+            let dir_name = dir_path.file_name().map_or("", |n| n.to_str().unwrap_or(""));
+            output.push_str(&format!("{}{}/\n", indent, dir_name));
+        }
+
+        let child_indent = "  ".repeat(depth + 1);
+
+        // Render subdirectories first (sorted)
+        let children: Vec<_> = dirs
+            .iter()
+            .filter(|d| {
+                d.parent().map_or(false, |p| p == dir_path) && *d != dir_path
+            })
+            .collect();
+
+        for child in children {
+            output.push_str(&self.render_dir(child, depth + 1, dirs, files_by_dir));
+        }
+
+        // Render files (sorted)
+        if let Some(file_names) = files_by_dir.get(dir_path) {
+            let mut sorted_files = file_names.clone();
+            sorted_files.sort();
+            for file in sorted_files {
+                output.push_str(&format!("{}{}\n", child_indent, file));
+            }
+        }
+
+        output
+    }
+}
+
+/// OpenCode-compatible list result (ls.ts L101-L108)
+#[derive(Debug, Clone)]
+pub struct ListResult {
+    /// Title (path relative to worktree)
+    pub title: String,
+    /// Number of files found
+    pub count: usize,
+    /// Whether results were truncated at limit
+    pub truncated: bool,
+    /// Tree-structured output
+    pub output: String,
 }
 
 /// ISP-compliant: FileWriter implementation (write operations)

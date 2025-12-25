@@ -23,6 +23,7 @@ use uuid::Uuid;
 use crate::{Session, SessionError, SessionResult};
 
 /// Service for managing session sharing
+#[derive(Debug)]
 pub struct ShareService {
     /// In-memory store of active shares
     shares: std::sync::Arc<std::sync::Mutex<HashMap<String, SessionShare>>>,

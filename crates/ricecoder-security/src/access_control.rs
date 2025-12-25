@@ -108,6 +108,7 @@ pub struct Principal {
 }
 
 /// Access control system
+#[derive(Debug)]
 pub struct AccessControl {
     custom_roles: HashMap<String, Vec<Permission>>,
 }

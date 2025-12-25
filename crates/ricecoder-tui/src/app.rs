@@ -385,8 +385,47 @@ impl App {
             1, // Item height
         ));
 
-        // TODO: Register focusable elements for keyboard navigation
-        // self.register_focusable_elements();
+        // Drop the read guard before registering elements (needs mutable access)
+        drop(reactive_state);
+
+        // Register focusable elements for keyboard navigation
+        self.register_focusable_elements();
+    }
+    
+    /// Register focusable elements for keyboard navigation (A11Y-003)
+    fn register_focusable_elements(&mut self) {
+        use crate::accessibility::{TextAlternative, ElementType};
+        
+        // Reset keyboard nav (create new instance)
+        self.keyboard_nav = crate::EnhancedKeyboardNavigation::new();
+        
+        // Register input area
+        self.keyboard_nav.register_element(
+            "input_area".to_string(),
+            TextAlternative {
+                id: "input_area".to_string(),
+                short_description: "Message input".to_string(),
+                long_description: Some("Type your message here".to_string()),
+                element_type: ElementType::Input,
+            }
+        );
+        
+        // Register chat list
+        self.keyboard_nav.register_element(
+            "chat_list".to_string(),
+            TextAlternative {
+                id: "chat_list".to_string(),
+                short_description: "Chat messages".to_string(),
+                long_description: Some("Conversation history".to_string()),
+                element_type: ElementType::List,
+            }
+        );
+        
+        // Announce registration complete via screen reader
+        self.screen_reader.announce(
+            "Keyboard navigation elements registered".to_string(),
+            crate::accessibility::screen_reader::AnnouncementPriority::Low
+        );
     }
 
     /// Scroll chat messages

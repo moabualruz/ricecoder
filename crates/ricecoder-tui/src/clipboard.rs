@@ -49,6 +49,35 @@ pub enum ClipboardError {
 /// Maximum clipboard content size (100 MB)
 const MAX_CLIPBOARD_SIZE: usize = 100 * 1024 * 1024;
 
+/// System clipboard wrapper using arboard with OSC 52 fallback
+pub struct Clipboard;
+
+impl Clipboard {
+    /// Set clipboard content, trying arboard first then OSC 52
+    pub fn set(content: &str) -> Result<(), ClipboardError> {
+        // Try arboard first
+        match arboard::Clipboard::new() {
+            Ok(mut clipboard) => {
+                clipboard
+                    .set_text(content)
+                    .map_err(|e| ClipboardError::CopyError(e.to_string()))
+            }
+            Err(_) => {
+                // Fall back to OSC 52
+                Osc52Clipboard::copy_text(content)
+            }
+        }
+    }
+
+    /// Get clipboard content
+    pub fn get() -> Result<String, ClipboardError> {
+        arboard::Clipboard::new()
+            .map_err(|e| ClipboardError::AccessError(e.to_string()))?
+            .get_text()
+            .map_err(|e| ClipboardError::ReadError(e.to_string()))
+    }
+}
+
 /// OSC 52 clipboard operations for terminal environments
 pub struct Osc52Clipboard;
 

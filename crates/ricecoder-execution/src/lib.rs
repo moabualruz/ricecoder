@@ -7,7 +7,7 @@
 
 pub mod approval;
 pub mod approval_ui;
-pub mod di;
+// pub mod di; // TODO: Fix DI dependencies
 pub mod error;
 pub mod file_operations;
 pub mod manager;
@@ -18,6 +18,7 @@ pub mod progress_tracker;
 pub mod risk_scorer;
 pub mod rollback_actions;
 pub mod rollback_handler;
+pub mod shell;
 pub mod step_action_handler;
 pub mod step_creator;
 pub mod step_executor;
@@ -45,8 +46,10 @@ pub use risk_scorer::ExecutionRiskScorer;
 pub use rollback_actions::{RestoreFileHandler, UndoCommandHandler};
 pub use rollback_handler::{RollbackHandler, RollbackResult};
 pub use step_action_handler::{
-    CommandHandler, CreateFileHandler, DeleteFileHandler, ModifyFileHandler, TestHandler,
+    CommandHandler, CreateFileHandler, DeleteFileHandler, ModifyFileHandler,
+    ShellCommandHandler, TestHandler,
 };
+pub use shell::{Environment, ProcessTree, ShellDetector};
 pub use step_creator::StepCreator;
 pub use step_executor::StepExecutor;
 pub use validation::ExecutionValidator;

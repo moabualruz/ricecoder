@@ -12,6 +12,14 @@ use tracing::{debug, info, warn};
 
 use crate::{error::ToolError, result::ToolResult};
 
+// GAP-3: Permission check integration (placeholder for now)
+// TODO: Integrate with ricecoder-permissions crate when available
+// use ricecoder_permissions::PermissionManager;
+
+// GAP-4: Cancellation token support (placeholder for now)
+// TODO: Add CancellationToken parameter to search() when available
+// use tokio_util::sync::CancellationToken;
+
 /// Maximum timeout for search operations (25 seconds)
 const SEARCH_TIMEOUT_SECS: u64 = 25;
 
@@ -316,6 +324,19 @@ impl SearchTool {
             return ToolResult::err(err, start.elapsed().as_millis() as u64, "builtin");
         }
 
+        // GAP-3 FIX: Permission check (TODO: integrate when permission system available)
+        // if permission_manager.requires_ask("webfetch").await? {
+        //     permission_manager.request_permission(PermissionRequest {
+        //         permission_type: "websearch".to_string(),
+        //         session_id: ctx.session_id.clone(),
+        //         title: format!("Search web for: {}", input.query),
+        //         metadata: serde_json::json!({
+        //             "query": input.query,
+        //             "num_results": input.get_limit(),
+        //         }),
+        //     }).await?;
+        // }
+
         // Try MCP first if available
         if self.mcp_available {
             match self.try_mcp_search(&input).await {
@@ -330,6 +351,15 @@ impl SearchTool {
         }
 
         // Fall back to built-in implementation
+        // GAP-4 FIX: Combined abort signal (TODO: add when CancellationToken available)
+        // use tokio::select;
+        // let timeout_fut = timeout(Duration::from_secs(SEARCH_TIMEOUT_SECS), self.execute_search(&input));
+        // let cancel_fut = ctx.cancellation_token.cancelled();
+        // 
+        // match select! {
+        //     result = timeout_fut => result?,
+        //     _ = cancel_fut => Err(ToolError::new("CANCELLED", "Search cancelled")),
+        // }
         match timeout(
             std::time::Duration::from_secs(SEARCH_TIMEOUT_SECS),
             self.execute_search(&input),
@@ -339,7 +369,7 @@ impl SearchTool {
             Ok(Ok(output)) => ToolResult::ok(output, start.elapsed().as_millis() as u64, "builtin"),
             Ok(Err(err)) => ToolResult::err(err, start.elapsed().as_millis() as u64, "builtin"),
             Err(_) => {
-                let err = ToolError::new("TIMEOUT", "Search operation exceeded 10 seconds")
+                let err = ToolError::new("TIMEOUT", "Search operation exceeded 25 seconds")
                     .with_suggestion("Try a simpler query or try again later");
                 ToolResult::err(err, start.elapsed().as_millis() as u64, "builtin")
             }
@@ -404,15 +434,17 @@ impl SearchTool {
             }
         });
 
+        // GAP-1 FIX: Use MCP endpoint matching OpenCode
         let response = self.http_client
-            .post("https://api.exa.ai/search")
+            .post("https://mcp.exa.ai/mcp")
             .header("x-api-key", api_key)
             .header("Content-Type", "application/json")
+            .header("Accept", "application/json, text/event-stream")
             .json(&request_body)
             .send()
             .await
             .map_err(|e| {
-                ToolError::new("NETWORK_ERROR", "Failed to connect to Exa AI")
+                ToolError::new("NETWORK_ERROR", "Failed to connect to Exa AI MCP")
                     .with_details(e.to_string())
                     .with_suggestion("Check network connection and API key")
             })?;
@@ -420,15 +452,38 @@ impl SearchTool {
         if !response.status().is_success() {
             let status = response.status();
             let error_text = response.text().await.unwrap_or_default();
-            return Err(ToolError::new("API_ERROR", format!("Exa AI returned {}", status))
+            return Err(ToolError::new("API_ERROR", format!("Exa AI MCP returned {}", status))
                 .with_details(error_text)
                 .with_suggestion("Check API key and rate limits"));
         }
 
-        let exa_response: ExaSearchResponse = response.json().await.map_err(|e| {
-            ToolError::new("PARSE_ERROR", "Failed to parse Exa AI response")
+        // GAP-2 FIX: Parse SSE response matching OpenCode
+        let response_text = response.text().await.map_err(|e| {
+            ToolError::new("PARSE_ERROR", "Failed to read MCP response")
                 .with_details(e.to_string())
         })?;
+
+        // Parse SSE-formatted response (lines starting with "data: ")
+        let mut exa_response: Option<ExaSearchResponse> = None;
+        for line in response_text.lines() {
+            if line.starts_with("data: ") {
+                let json_str = &line[6..]; // Skip "data: " prefix
+                if let Ok(parsed) = serde_json::from_str::<ExaSearchResponse>(json_str) {
+                    exa_response = Some(parsed);
+                    break;
+                }
+            }
+        }
+
+        // If no SSE data found, try parsing as direct JSON (fallback)
+        let exa_response = match exa_response {
+            Some(response) => response,
+            None => serde_json::from_str::<ExaSearchResponse>(&response_text).map_err(|e| {
+                ToolError::new("PARSE_ERROR", "Failed to parse Exa AI MCP response")
+                    .with_details(format!("Error: {}. Response: {}", e, response_text))
+                    .with_suggestion("Check MCP server format")
+            })?,
+        };
 
         let results: Vec<SearchResult> = exa_response
             .results

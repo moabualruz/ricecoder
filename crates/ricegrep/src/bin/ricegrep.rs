@@ -537,23 +537,64 @@ fn collect_glob_matches(
     pattern: &str,
     include_dirs: bool,
     ignore_case: bool,
-) -> Result<Vec<String>> {
-    let mut matches = Vec::new();
+) -> Result<(Vec<String>, bool)> {
+    use glob::Pattern;
+    use std::time::SystemTime;
+    
+    // Gap #1 FIX: Use real glob pattern matching, not substring matching
+    let glob_pattern = if ignore_case {
+        Pattern::new(&pattern.to_lowercase())?
+    } else {
+        Pattern::new(pattern)?
+    };
+    
+    // Gap #2 FIX: Hard limit at 100 files (matches OpenCode behavior)
+    const LIMIT: usize = 100;
+    let mut file_results = Vec::new();
+    let mut truncated = false;
+    
     let walker = WalkBuilder::new(root).build();
     for entry in walker {
         let entry = entry?;
         let path = entry.path();
-        let name = path.file_name().unwrap_or_default().to_string_lossy();
+        
+        // Get the full path string for glob matching
+        let path_str = path.to_string_lossy();
+        
+        // Match against the full path using glob semantics
         let matches_pattern = if ignore_case {
-            name.to_lowercase().contains(&pattern.to_lowercase())
+            glob_pattern.matches(&path_str.to_lowercase())
         } else {
-            name.contains(pattern)
+            glob_pattern.matches(&path_str)
         };
+        
         if matches_pattern && (include_dirs || path.is_file()) {
-            matches.push(path.display().to_string());
+            // Gap #3 FIX: Get mtime for sorting
+            let mtime = path
+                .metadata()
+                .and_then(|m| m.modified())
+                .unwrap_or(SystemTime::UNIX_EPOCH);
+            
+            let full_path = std::path::Path::new(root)
+                .join(path)
+                .canonicalize()
+                .unwrap_or_else(|_| path.to_path_buf());
+            
+            file_results.push((full_path.display().to_string(), mtime));
+            
+            // Gap #2 FIX: Stop at limit and mark as truncated
+            if file_results.len() >= LIMIT {
+                truncated = true;
+                break;
+            }
         }
     }
-    Ok(matches)
+    
+    // Gap #3 FIX: Sort by mtime descending (newest first)
+    file_results.sort_by(|a, b| b.1.cmp(&a.1));
+    
+    // Extract paths only, return with truncation flag
+    Ok((file_results.into_iter().map(|(path, _)| path).collect(), truncated))
 }
 
 fn list_directory_entries(
@@ -1076,7 +1117,7 @@ fn run_replace(_runtime: &RuntimeConfig, args: ReplaceArgs) -> Result<()> {
 
 fn run_files(args: FilesArgs) -> Result<()> {
     let root = args.paths.first().map(|s| s.as_str()).unwrap_or(".");
-    let matches = collect_glob_matches(root, &args.pattern, args.include_dirs, args.ignore_case)?;
+    let (matches, _truncated) = collect_glob_matches(root, &args.pattern, args.include_dirs, args.ignore_case)?;
     for m in matches {
         println!("{}", m);
     }

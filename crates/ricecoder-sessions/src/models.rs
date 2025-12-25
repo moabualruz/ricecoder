@@ -8,27 +8,611 @@ use serde_json::Value;
 use uuid::Uuid;
 
 /// Different types of content that can be part of a message
+/// Matches OpenCode V2 message-v2.ts Part types with extensions
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "kebab-case")]
 pub enum MessagePart {
-    /// Plain text content
-    Text(String),
-    /// Reasoning or thinking content (can be collapsed)
-    Reasoning(String),
-    /// Tool invocation with parameters
+    /// Plain text content (OpenCode V2 TextPart)
+    Text {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "sessionID")]
+        session_id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "messageID")]
+        message_id: Option<String>,
+        text: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        synthetic: Option<bool>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        ignored: Option<bool>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        time: Option<TimeRange>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        metadata: Option<HashMap<String, Value>>,
+    },
+    /// Reasoning or thinking content (OpenCode V2 ReasoningPart)
+    Reasoning {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "sessionID")]
+        session_id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "messageID")]
+        message_id: Option<String>,
+        text: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        metadata: Option<HashMap<String, Value>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        time: Option<TimeRange>,
+    },
+    /// Tool execution with full lifecycle state (OpenCode V2 ToolPart)
+    Tool {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "sessionID")]
+        session_id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "messageID")]
+        message_id: Option<String>,
+        #[serde(rename = "callID")]
+        call_id: String,
+        tool: String,
+        state: ToolState,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        metadata: Option<HashMap<String, Value>>,
+    },
+    /// Step start marker (OpenCode V2 StepStartPart)
+    StepStart {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "sessionID")]
+        session_id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "messageID")]
+        message_id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        snapshot: Option<String>,
+    },
+    /// Step completion marker (OpenCode V2 StepFinishPart)
+    StepFinish {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "sessionID")]
+        session_id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "messageID")]
+        message_id: Option<String>,
+        reason: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        snapshot: Option<String>,
+        cost: f64,
+        tokens: TokenBreakdown,
+    },
+    /// Snapshot reference (OpenCode V2 SnapshotPart)
+    Snapshot {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "sessionID")]
+        session_id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "messageID")]
+        message_id: Option<String>,
+        snapshot: String,
+    },
+    /// Patch/diff reference (OpenCode V2 PatchPart)
+    Patch {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "sessionID")]
+        session_id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "messageID")]
+        message_id: Option<String>,
+        hash: String,
+        files: Vec<String>,
+    },
+    /// Retry attempt record (OpenCode V2 RetryPart)
+    Retry {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "sessionID")]
+        session_id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "messageID")]
+        message_id: Option<String>,
+        attempt: u32,
+        error: ApiError,
+        time: TimeStamp,
+    },
+    /// Agent metadata (OpenCode V2 AgentPart)
+    Agent {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "sessionID")]
+        session_id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "messageID")]
+        message_id: Option<String>,
+        name: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        source: Option<SourceExcerpt>,
+    },
+    /// Subtask invocation (OpenCode V2 SubtaskPart)
+    Subtask {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "sessionID")]
+        session_id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "messageID")]
+        message_id: Option<String>,
+        prompt: String,
+        description: String,
+        agent: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        command: Option<String>,
+    },
+    /// Compaction boundary marker (OpenCode V2 CompactionPart)
+    Compaction {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "sessionID")]
+        session_id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "messageID")]
+        message_id: Option<String>,
+        auto: bool,
+    },
+    /// File reference or attachment (OpenCode V2 FilePart)
+    File {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "sessionID")]
+        session_id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "messageID")]
+        message_id: Option<String>,
+        mime: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        filename: Option<String>,
+        url: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        source: Option<FilePartSource>,
+    },
+    /// Legacy tool invocation (preserved for backward compatibility)
+    #[serde(rename = "tool-invocation")]
     ToolInvocation(ToolInvocationPart),
-    /// Result from a tool execution
+    /// Legacy tool result (preserved for backward compatibility)
+    #[serde(rename = "tool-result")]
     ToolResult(ToolResultPart),
-    /// Reference to a file
+    /// Legacy file reference (preserved for backward compatibility)
+    #[serde(rename = "file-reference")]
     FileReference(FileReferencePart),
-    /// Image content
+    /// Image content (RiceCoder extension)
     Image(ImagePart),
-    /// Code block with syntax highlighting
+    /// Code block with syntax highlighting (RiceCoder extension)
     Code(CodePart),
-    /// Error message
+    /// Error message (RiceCoder extension)
     Error(String),
+    /// URL citation (OpenCode legacy SourceUrlPart)
+    #[serde(rename = "source-url")]
+    SourceUrl {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "sessionID")]
+        session_id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "messageID")]
+        message_id: Option<String>,
+        #[serde(rename = "sourceID")]
+        source_id: String,
+        url: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        title: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "providerMetadata")]
+        provider_metadata: Option<HashMap<String, Value>>,
+    },
 }
 
-/// Tool invocation part
+/// Time range for parts
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TimeRange {
+    pub start: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub end: Option<i64>,
+}
+
+/// Timestamp marker
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TimeStamp {
+    pub created: i64,
+}
+
+/// Token breakdown (OpenCode V2)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TokenBreakdown {
+    pub input: usize,
+    pub output: usize,
+    pub reasoning: usize,
+    pub cache: CacheTokens,
+}
+
+/// Cache token breakdown
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CacheTokens {
+    pub read: usize,
+    pub write: usize,
+}
+
+/// Source excerpt with span
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SourceExcerpt {
+    pub value: String,
+    pub start: usize,
+    pub end: usize,
+}
+
+/// API Error (OpenCode V2 structured error)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "name", rename_all = "PascalCase")]
+pub enum ApiError {
+    #[serde(rename = "ProviderAuthError")]
+    ProviderAuthError {
+        #[serde(rename = "providerID")]
+        provider_id: String,
+        message: String,
+    },
+    #[serde(rename = "MessageOutputLengthError")]
+    MessageOutputLengthError,
+    #[serde(rename = "MessageAbortedError")]
+    MessageAbortedError {
+        message: String,
+    },
+    #[serde(rename = "APIError")]
+    ApiError {
+        message: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "statusCode")]
+        status_code: Option<u16>,
+        #[serde(rename = "isRetryable")]
+        is_retryable: bool,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "responseHeaders")]
+        response_headers: Option<HashMap<String, String>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "responseBody")]
+        response_body: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        metadata: Option<HashMap<String, String>>,
+    },
+    #[serde(rename = "Unknown")]
+    Unknown {
+        message: String,
+    },
+}
+
+/// Tool state (OpenCode V2 ToolState discriminated union)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "status", rename_all = "lowercase")]
+pub enum ToolState {
+    Pending {
+        input: HashMap<String, Value>,
+        raw: String,
+    },
+    Running {
+        input: HashMap<String, Value>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        title: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        metadata: Option<HashMap<String, Value>>,
+        time: TimeRange,
+    },
+    Completed {
+        input: HashMap<String, Value>,
+        output: String,
+        title: String,
+        metadata: HashMap<String, Value>,
+        time: CompletedTime,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        attachments: Option<Vec<FilePart>>,
+    },
+    Error {
+        input: HashMap<String, Value>,
+        error: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        metadata: Option<HashMap<String, Value>>,
+        time: TimeRange,
+    },
+}
+
+/// Completed time with optional compaction timestamp
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CompletedTime {
+    pub start: i64,
+    pub end: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub compacted: Option<i64>,
+}
+
+/// Legacy message format (OpenCode message.ts)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LegacyMessage {
+    pub id: String,
+    pub role: String,
+    pub parts: Vec<LegacyMessagePart>,
+    pub metadata: LegacyMessageMetadata,
+}
+
+/// Legacy message part types
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "kebab-case")]
+pub enum LegacyMessagePart {
+    Text { text: String },
+    Reasoning {
+        text: String,
+        #[serde(rename = "providerMetadata")]
+        provider_metadata: Option<HashMap<String, Value>>,
+    },
+    #[serde(rename = "tool-invocation")]
+    ToolInvocation { 
+        #[serde(rename = "toolInvocation")]
+        tool_invocation: LegacyToolInvocation 
+    },
+    #[serde(rename = "source-url")]
+    SourceUrl {
+        #[serde(rename = "sourceId")]
+        source_id: String,
+        url: String,
+        title: Option<String>,
+        #[serde(rename = "providerMetadata")]
+        provider_metadata: Option<HashMap<String, Value>>,
+    },
+    File {
+        #[serde(rename = "mediaType")]
+        media_type: String,
+        filename: Option<String>,
+        url: String,
+    },
+    #[serde(rename = "step-start")]
+    StepStart,
+}
+
+/// Legacy tool invocation
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LegacyToolInvocation {
+    pub state: String,
+    #[serde(rename = "toolCallId")]
+    pub tool_call_id: String,
+    #[serde(rename = "toolName")]
+    pub tool_name: String,
+    pub args: HashMap<String, Value>,
+    pub result: Option<String>,
+}
+
+/// Legacy message metadata
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LegacyMessageMetadata {
+    pub time: LegacyTimeMetadata,
+    #[serde(rename = "sessionID")]
+    pub session_id: String,
+    pub tool: Option<HashMap<String, Value>>,
+    pub assistant: Option<LegacyAssistantMetadata>,
+}
+
+/// Legacy time metadata
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LegacyTimeMetadata {
+    pub created: i64,
+    pub completed: Option<i64>,
+}
+
+/// Legacy assistant metadata
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LegacyAssistantMetadata {
+    pub system: Vec<String>,
+    #[serde(rename = "modelID")]
+    pub model_id: String,
+    #[serde(rename = "providerID")]
+    pub provider_id: String,
+    pub path: LegacyPathMetadata,
+    pub cost: f64,
+    pub tokens: LegacyTokenMetadata,
+}
+
+/// Legacy path metadata
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LegacyPathMetadata {
+    pub cwd: String,
+    pub root: String,
+}
+
+/// Legacy token metadata
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LegacyTokenMetadata {
+    pub input: usize,
+    pub output: usize,
+    pub reasoning: usize,
+    pub cache: CacheTokens,
+}
+
+/// Convert legacy message to V2 format
+impl TryFrom<LegacyMessage> for Message {
+    type Error = String;
+
+    fn try_from(legacy: LegacyMessage) -> Result<Self, Self::Error> {
+        let role = match legacy.role.as_str() {
+            "user" => MessageRole::User,
+            "assistant" => MessageRole::Assistant,
+            "system" => MessageRole::System,
+            _ => return Err(format!("Invalid role: {}", legacy.role)),
+        };
+
+        let parts: Vec<MessagePart> = legacy.parts.into_iter().map(|part| {
+            match part {
+                LegacyMessagePart::Text { text } => MessagePart::Text {
+                    id: None,
+                    session_id: Some(legacy.metadata.session_id.clone()),
+                    message_id: Some(legacy.id.clone()),
+                    text,
+                    synthetic: None,
+                    ignored: None,
+                    time: None,
+                    metadata: None,
+                },
+                LegacyMessagePart::Reasoning { text, provider_metadata } => MessagePart::Reasoning {
+                    id: None,
+                    session_id: Some(legacy.metadata.session_id.clone()),
+                    message_id: Some(legacy.id.clone()),
+                    text,
+                    metadata: provider_metadata,
+                    time: Some(TimeRange {
+                        start: legacy.metadata.time.created,
+                        end: legacy.metadata.time.completed,
+                    }),
+                },
+                LegacyMessagePart::ToolInvocation { tool_invocation } => {
+                    let state = match tool_invocation.state.as_str() {
+                        "call" => ToolState::Pending {
+                            input: tool_invocation.args.clone(),
+                            raw: serde_json::to_string(&tool_invocation.args).unwrap_or_default(),
+                        },
+                        "result" => ToolState::Completed {
+                            input: tool_invocation.args.clone(),
+                            output: tool_invocation.result.unwrap_or_default(),
+                            title: tool_invocation.tool_name.clone(),
+                            metadata: HashMap::new(),
+                            time: CompletedTime {
+                                start: legacy.metadata.time.created,
+                                end: legacy.metadata.time.completed.unwrap_or(legacy.metadata.time.created),
+                                compacted: None,
+                            },
+                            attachments: None,
+                        },
+                        _ => ToolState::Pending {
+                            input: tool_invocation.args.clone(),
+                            raw: serde_json::to_string(&tool_invocation.args).unwrap_or_default(),
+                        },
+                    };
+                    MessagePart::Tool {
+                        id: None,
+                        session_id: Some(legacy.metadata.session_id.clone()),
+                        message_id: Some(legacy.id.clone()),
+                        call_id: tool_invocation.tool_call_id,
+                        tool: tool_invocation.tool_name,
+                        state,
+                        metadata: None,
+                    }
+                },
+                LegacyMessagePart::SourceUrl { source_id, url, title, provider_metadata } => {
+                    MessagePart::SourceUrl {
+                        id: None,
+                        session_id: Some(legacy.metadata.session_id.clone()),
+                        message_id: Some(legacy.id.clone()),
+                        source_id,
+                        url,
+                        title,
+                        provider_metadata,
+                    }
+                },
+                LegacyMessagePart::File { media_type, filename, url } => {
+                    MessagePart::File {
+                        id: None,
+                        session_id: Some(legacy.metadata.session_id.clone()),
+                        message_id: Some(legacy.id.clone()),
+                        mime: media_type,
+                        filename,
+                        url,
+                        source: None,
+                    }
+                },
+                LegacyMessagePart::StepStart => MessagePart::StepStart {
+                    id: None,
+                    session_id: Some(legacy.metadata.session_id.clone()),
+                    message_id: Some(legacy.id.clone()),
+                    snapshot: None,
+                },
+            }
+        }).collect();
+
+        let timestamp = chrono::DateTime::from_timestamp(legacy.metadata.time.created / 1000, 0)
+            .unwrap_or_else(|| chrono::Utc::now());
+
+        Ok(Message {
+            id: legacy.id,
+            role,
+            parts,
+            timestamp,
+            metadata: MessageMetadata::default(),
+        })
+    }
+}
+
+/// File part for Tool attachments (OpenCode V2)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FilePart {
+    pub mime: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub filename: Option<String>,
+    pub url: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source: Option<FilePartSource>,
+}
+
+/// File part source provenance (OpenCode V2)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "lowercase")]
+pub enum FilePartSource {
+    File {
+        path: String,
+        text: TextExcerpt,
+    },
+    Symbol {
+        path: String,
+        range: LspRange,
+        name: String,
+        kind: i32,
+        text: TextExcerpt,
+    },
+}
+
+/// Text excerpt with span
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TextExcerpt {
+    pub value: String,
+    pub start: usize,
+    pub end: usize,
+}
+
+/// LSP Range (OpenCode V2)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LspRange {
+    pub start: LspPosition,
+    pub end: LspPosition,
+}
+
+/// LSP Position
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LspPosition {
+    pub line: usize,
+    pub character: usize,
+}
+
+/// Tool invocation part (legacy)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolInvocationPart {
     /// Name of the tool being invoked
@@ -245,7 +829,16 @@ impl Message {
         Self {
             id: Uuid::new_v4().to_string(),
             role,
-            parts: vec![MessagePart::Text(content)],
+            parts: vec![MessagePart::Text {
+                id: Some(Uuid::new_v4().to_string()),
+                session_id: None,
+                message_id: None,
+                text: content,
+                synthetic: None,
+                ignored: None,
+                time: None,
+                metadata: None,
+            }],
             timestamp: Utc::now(),
             metadata: MessageMetadata::default(),
         }
@@ -264,12 +857,28 @@ impl Message {
 
     /// Add text content to the message
     pub fn add_text(&mut self, text: impl Into<String>) {
-        self.parts.push(MessagePart::Text(text.into()));
+        self.parts.push(MessagePart::Text {
+            id: Some(Uuid::new_v4().to_string()),
+            session_id: None,
+            message_id: Some(self.id.clone()),
+            text: text.into(),
+            synthetic: None,
+            ignored: None,
+            time: None,
+            metadata: None,
+        });
     }
 
     /// Add reasoning content to the message
     pub fn add_reasoning(&mut self, reasoning: impl Into<String>) {
-        self.parts.push(MessagePart::Reasoning(reasoning.into()));
+        self.parts.push(MessagePart::Reasoning {
+            id: Some(Uuid::new_v4().to_string()),
+            session_id: None,
+            message_id: Some(self.id.clone()),
+            text: reasoning.into(),
+            metadata: None,
+            time: None,
+        });
     }
 
     /// Add code content to the message
@@ -318,8 +927,9 @@ impl Message {
     /// Get the primary text content (first text part, for backwards compatibility)
     pub fn content(&self) -> String {
         for part in &self.parts {
-            if let MessagePart::Text(text) = part {
-                return text.clone();
+            match part {
+                MessagePart::Text { text, .. } => return text.clone(),
+                _ => {}
             }
         }
         String::new()
@@ -330,15 +940,15 @@ impl Message {
         let mut result = String::new();
         for part in &self.parts {
             match part {
-                MessagePart::Text(text) => {
+                MessagePart::Text { text, .. } => {
                     result.push_str(text);
                     result.push('\n');
                 }
+                MessagePart::Reasoning { text, .. } => {
+                    result.push_str(&format!("💭 {}\n", text));
+                }
                 MessagePart::Code(code) => {
                     result.push_str(&format!("```{}\n{}\n```\n", code.language, code.content));
-                }
-                MessagePart::Reasoning(reasoning) => {
-                    result.push_str(&format!("💭 {}\n", reasoning));
                 }
                 MessagePart::Error(error) => {
                     result.push_str(&format!("❌ {}\n", error));
@@ -364,6 +974,47 @@ impl Message {
                         image.mime_type,
                         image.width.unwrap_or(0),
                         image.height.unwrap_or(0)
+                    ));
+                }
+                MessagePart::Tool { call_id, tool, .. } => {
+                    result.push_str(&format!("🔧 Tool {}: {}\n", call_id, tool));
+                }
+                MessagePart::StepStart { .. } => {
+                    result.push_str("🚀 Step start\n");
+                }
+                MessagePart::StepFinish { reason, cost, .. } => {
+                    result.push_str(&format!("✅ Step finish: {} (cost: {:.4})\n", reason, cost));
+                }
+                MessagePart::Snapshot { snapshot, .. } => {
+                    result.push_str(&format!("📸 Snapshot: {}\n", snapshot));
+                }
+                MessagePart::Patch { hash, files, .. } => {
+                    result.push_str(&format!("🔀 Patch {}: {} file(s)\n", hash, files.len()));
+                }
+                MessagePart::Retry { attempt, .. } => {
+                    result.push_str(&format!("🔄 Retry attempt {}\n", attempt));
+                }
+                MessagePart::Agent { name, .. } => {
+                    result.push_str(&format!("🤖 Agent: {}\n", name));
+                }
+                MessagePart::Subtask { description, agent, .. } => {
+                    result.push_str(&format!("📋 Subtask ({}) - {}\n", agent, description));
+                }
+                MessagePart::Compaction { auto, .. } => {
+                    result.push_str(&format!("📦 Compaction (auto: {})\n", auto));
+                }
+                MessagePart::File { filename, mime, .. } => {
+                    result.push_str(&format!(
+                        "📄 File: {} ({})\n",
+                        filename.as_deref().unwrap_or("unknown"),
+                        mime
+                    ));
+                }
+                MessagePart::SourceUrl { url, title, .. } => {
+                    result.push_str(&format!(
+                        "🔗 Source: {} - {}\n",
+                        title.as_deref().unwrap_or("untitled"),
+                        url
                     ));
                 }
             }

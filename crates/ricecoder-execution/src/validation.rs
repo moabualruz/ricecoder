@@ -92,6 +92,9 @@ impl ExecutionValidator {
                 Self::validate_command(command)?;
                 Self::validate_command_args(args)?;
             }
+            StepAction::RunShellCommand { command, .. } => {
+                Self::validate_command(command)?;
+            }
             StepAction::RunTests { pattern } => {
                 if let Some(p) = pattern {
                     Self::validate_test_pattern(p)?;

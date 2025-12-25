@@ -25,17 +25,20 @@ use ricecoder_mcp::{
 };
 
 /// Maximum number of concurrent tool executions (prevents resource exhaustion)
+/// OpenCode compatible: Max 10 calls, rest marked as errors
 const MAX_CONCURRENT_INVOCATIONS: usize = 10;
 
 /// Default timeout for batch operations (2 minutes)
 const DEFAULT_BATCH_TIMEOUT_SECS: u64 = 120;
 
 /// Single tool invocation within a batch
+/// OpenCode compatible: {tool: string, parameters: object}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolInvocation {
     /// Name of the tool to execute
     pub tool: String,
-    /// Input parameters for the tool
+    /// Input parameters for the tool (OpenCode: "parameters", RiceCoder: supports both "parameters" and "input")
+    #[serde(alias = "parameters")]
     pub input: serde_json::Value,
     /// Optional timeout override for this specific invocation
     #[serde(default)]
@@ -60,6 +63,7 @@ fn default_continue_on_failure() -> bool {
 }
 
 /// Result for a single tool invocation within a batch
+/// OpenCode compatible: includes success, tool, result, error fields
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InvocationResult {
     /// Index of this invocation in the original array
@@ -68,17 +72,25 @@ pub struct InvocationResult {
     pub tool: String,
     /// Whether the invocation succeeded
     pub success: bool,
-    /// Result data (if successful)
+    /// Result data (if successful) - OpenCode: ToolExecutionResult
     pub result: Option<serde_json::Value>,
     /// Error message (if failed)
     pub error: Option<String>,
     /// Execution time in milliseconds
     pub execution_time_ms: u64,
+    /// Optional attachments from tool execution (OpenCode compatible)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub attachments: Option<Vec<serde_json::Value>>,
 }
 
 /// Output from batch tool execution
+/// OpenCode compatible: includes title, output message, attachments, metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BatchOutput {
+    /// Human-readable title (OpenCode compatible)
+    pub title: String,
+    /// Output message describing execution results (OpenCode compatible)
+    pub output: String,
     /// Whether all invocations succeeded
     pub all_succeeded: bool,
     /// Total number of invocations
@@ -91,7 +103,16 @@ pub struct BatchOutput {
     pub results: Vec<InvocationResult>,
     /// Total execution time in milliseconds
     pub total_execution_time_ms: u64,
+    /// Aggregated attachments from successful invocations (OpenCode compatible)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub attachments: Option<Vec<serde_json::Value>>,
+    /// Metadata with execution details (OpenCode compatible)
+    pub metadata: serde_json::Value,
 }
+
+/// Disallowed tools that cannot be batched (OpenCode compatible)
+/// Prevents recursive batch calls
+const DISALLOWED_TOOLS: &[&str] = &["batch"];
 
 /// Batch tool executor for parallel tool execution
 pub struct BatchTool {
@@ -128,14 +149,33 @@ impl BatchTool {
         // Validate input
         if input.invocations.is_empty() {
             return Ok(BatchOutput {
+                title: "Batch execution (0/0 successful)".to_string(),
+                output: "No invocations to execute".to_string(),
                 all_succeeded: true,
                 total_count: 0,
                 success_count: 0,
                 failure_count: 0,
                 results: Vec::new(),
                 total_execution_time_ms: 0,
+                attachments: None,
+                metadata: serde_json::json!({
+                    "totalCalls": 0,
+                    "successful": 0,
+                    "failed": 0,
+                    "tools": [],
+                    "details": []
+                }),
             });
         }
+
+        // OpenCode compatible: Slice at 10, mark rest as errors
+        let (valid_calls, discarded_calls) = if input.invocations.len() > MAX_CONCURRENT_INVOCATIONS {
+            let valid = &input.invocations[..MAX_CONCURRENT_INVOCATIONS];
+            let discarded = &input.invocations[MAX_CONCURRENT_INVOCATIONS..];
+            (valid, discarded)
+        } else {
+            (&input.invocations[..], &[][..])
+        };
 
         let max_concurrent = input
             .max_concurrent
@@ -143,15 +183,18 @@ impl BatchTool {
             .min(MAX_CONCURRENT_INVOCATIONS);
 
         info!(
-            "Executing batch with {} invocations (max concurrent: {})",
+            "Executing batch with {} invocations ({} valid, {} discarded, max concurrent: {})",
             input.invocations.len(),
+            valid_calls.len(),
+            discarded_calls.len(),
             max_concurrent
         );
 
         // Execute in chunks to respect concurrency limit
         let mut all_results: Vec<InvocationResult> = Vec::with_capacity(input.invocations.len());
 
-        for chunk in input.invocations.chunks(max_concurrent) {
+        // Execute valid calls
+        for chunk in valid_calls.chunks(max_concurrent) {
             let chunk_results = self
                 .execute_chunk(chunk, &user_id, &session_id, input.continue_on_failure)
                 .await;
@@ -171,16 +214,70 @@ impl BatchTool {
             }
         }
 
+        // OpenCode compatible: Add discarded calls as errors
+        let now_ms = start_time.elapsed().as_millis() as u64;
+        for (i, call) in discarded_calls.iter().enumerate() {
+            all_results.push(InvocationResult {
+                index: valid_calls.len() + i,
+                tool: call.tool.clone(),
+                success: false,
+                result: None,
+                error: Some("Maximum of 10 tools allowed in batch".to_string()),
+                execution_time_ms: 0,
+                attachments: None,
+            });
+        }
+
         let success_count = all_results.iter().filter(|r| r.success).count();
         let failure_count = all_results.len() - success_count;
+        let total_execution_time_ms = start_time.elapsed().as_millis() as u64;
+
+        // OpenCode compatible: Aggregate attachments from successful invocations
+        let attachments: Vec<serde_json::Value> = all_results
+            .iter()
+            .filter(|r| r.success)
+            .filter_map(|r| r.attachments.as_ref())
+            .flat_map(|a| a.iter().cloned())
+            .collect();
+
+        // OpenCode compatible: Output message format
+        let output_message = if failure_count > 0 {
+            format!(
+                "Executed {}/{} tools successfully. {} failed.",
+                success_count, all_results.len(), failure_count
+            )
+        } else {
+            format!(
+                "All {} tools executed successfully.\n\nKeep using the batch tool for optimal performance in your next response!",
+                success_count
+            )
+        };
+
+        // OpenCode compatible: Metadata structure
+        let metadata = serde_json::json!({
+            "totalCalls": all_results.len(),
+            "successful": success_count,
+            "failed": failure_count,
+            "tools": input.invocations.iter().map(|c| &c.tool).collect::<Vec<_>>(),
+            "details": all_results.iter().map(|r| {
+                serde_json::json!({
+                    "tool": r.tool,
+                    "success": r.success
+                })
+            }).collect::<Vec<_>>()
+        });
 
         let output = BatchOutput {
+            title: format!("Batch execution ({}/{} successful)", success_count, all_results.len()),
+            output: output_message,
             all_succeeded: failure_count == 0,
             total_count: all_results.len(),
             success_count,
             failure_count,
             results: all_results,
-            total_execution_time_ms: start_time.elapsed().as_millis() as u64,
+            total_execution_time_ms,
+            attachments: if attachments.is_empty() { None } else { Some(attachments) },
+            metadata,
         };
 
         if output.all_succeeded {
@@ -223,6 +320,25 @@ impl BatchTool {
                 async move {
                     let start = Instant::now();
 
+                    // OpenCode compatible: Check disallowed tools
+                    if DISALLOWED_TOOLS.contains(&tool_name.as_str()) {
+                        let error_msg = format!(
+                            "Tool '{}' is not allowed in batch. Disallowed tools: {}",
+                            tool_name,
+                            DISALLOWED_TOOLS.join(", ")
+                        );
+                        error!("{}", error_msg);
+                        return InvocationResult {
+                            index: idx,
+                            tool: tool_name,
+                            success: false,
+                            result: None,
+                            error: Some(error_msg),
+                            execution_time_ms: start.elapsed().as_millis() as u64,
+                            attachments: None,
+                        };
+                    }
+
                     // Convert input Value to HashMap
                     let parameters: HashMap<String, serde_json::Value> = match input.as_object() {
                         Some(obj) => obj.clone().into_iter().collect(),
@@ -249,13 +365,23 @@ impl BatchTool {
                     let execution_time_ms = start.elapsed().as_millis() as u64;
 
                     match result {
-                        Ok(Ok(exec_result)) => InvocationResult {
-                            index: idx,
-                            tool: tool_name,
-                            success: exec_result.success,
-                            result: exec_result.result,
-                            error: exec_result.error.map(|e| e.error),
-                            execution_time_ms,
+                        Ok(Ok(exec_result)) => {
+                            // Extract attachments if available from result
+                            // OpenCode compatible: Tools may include attachments in their result
+                            let attachments = exec_result.result.as_ref()
+                                .and_then(|v| v.get("attachments"))
+                                .and_then(|v| v.as_array())
+                                .map(|arr| arr.clone());
+
+                            InvocationResult {
+                                index: idx,
+                                tool: tool_name,
+                                success: exec_result.success,
+                                result: exec_result.result,
+                                error: exec_result.error.map(|e| e.error),
+                                execution_time_ms,
+                                attachments,
+                            }
                         },
                         Ok(Err(e)) => {
                             error!("Tool {} failed: {}", tool_name, e);
@@ -266,6 +392,7 @@ impl BatchTool {
                                 result: None,
                                 error: Some(e.to_string()),
                                 execution_time_ms,
+                                attachments: None,
                             }
                         }
                         Err(_) => {
@@ -277,6 +404,7 @@ impl BatchTool {
                                 result: None,
                                 error: Some(format!("Execution timed out after {:?}", timeout)),
                                 execution_time_ms,
+                                attachments: None,
                             }
                         }
                     }

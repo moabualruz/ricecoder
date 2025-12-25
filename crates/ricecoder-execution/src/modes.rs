@@ -288,6 +288,12 @@ impl DryRunModeExecutor {
                 path: command.clone(),
                 description: format!("Run command with {} args", args.len()),
             },
+            StepAction::RunShellCommand { command, .. } => PreviewChange {
+                step_id: step.id.clone(),
+                change_type: ChangeType::Command,
+                path: command.clone(),
+                description: "Run shell command".to_string(),
+            },
             StepAction::RunTests { pattern } => PreviewChange {
                 step_id: step.id.clone(),
                 change_type: ChangeType::Test,

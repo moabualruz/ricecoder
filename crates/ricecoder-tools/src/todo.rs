@@ -5,6 +5,7 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use tracing::{debug, error, info};
 
 use crate::error::ToolError;
@@ -23,7 +24,7 @@ pub enum TodoStatus {
     /// Todo is pending (not yet started)
     Pending,
     /// Todo is in progress (currently working on)
-    #[serde(alias = "in-progress")]
+    #[serde(rename = "in_progress", alias = "in-progress")]
     InProgress,
     /// Todo is completed (finished successfully)
     Completed,
@@ -189,13 +190,28 @@ pub struct TodowriteInput {
     pub todos: Vec<Todo>,
 }
 
-/// Output from todowrite operation
+/// Output from todowrite operation (OpenCode compatible)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TodowriteOutput {
-    /// Number of todos created
-    pub created: usize,
-    /// Number of todos updated
-    pub updated: usize,
+    /// Title (OpenCode: count of incomplete todos)
+    pub title: String,
+    /// Output (OpenCode: JSON string of todos)
+    pub output: String,
+    /// Metadata (OpenCode: includes todos array)
+    pub metadata: TodowriteMetadata,
+}
+
+/// Metadata for todowrite output
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TodowriteMetadata {
+    /// Todos array (OpenCode compatible)
+    pub todos: Vec<Todo>,
+    /// Number of todos created (RiceCoder extra - KEEP)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub created: Option<usize>,
+    /// Number of todos updated (RiceCoder extra - KEEP)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub updated: Option<usize>,
 }
 
 /// Input for todoread operation
@@ -207,16 +223,46 @@ pub struct TodoreadInput {
     pub priority_filter: Option<TodoPriority>,
 }
 
-/// Output from todoread operation
+/// Output from todoread operation (OpenCode compatible)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TodoreadOutput {
-    /// List of todos matching the filters
+    /// Title (OpenCode: count of incomplete todos)
+    pub title: String,
+    /// Output (OpenCode: JSON string of todos)
+    pub output: String,
+    /// Metadata (OpenCode: includes todos array)
+    pub metadata: TodoreadMetadata,
+}
+
+/// Metadata for todoread output
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TodoreadMetadata {
+    /// Todos array (OpenCode compatible)
     pub todos: Vec<Todo>,
+}
+
+/// Storage mode for todos
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StorageMode {
+    /// Global storage (single todos.json file)
+    Global,
+    /// Session-scoped storage (per-session files)
+    SessionScoped,
+}
+
+/// Write mode for todos
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WriteMode {
+    /// Replace entire list (OpenCode compatible)
+    Replace,
+    /// Merge by ID (RiceCoder default)
+    Merge,
 }
 
 /// Todo storage manager
 pub struct TodoStorage {
     storage_path: PathBuf,
+    storage_mode: StorageMode,
 }
 
 impl TodoStorage {
@@ -224,7 +270,14 @@ impl TodoStorage {
     pub fn new(storage_path: impl Into<PathBuf>) -> Self {
         Self {
             storage_path: storage_path.into(),
+            storage_mode: StorageMode::Global,
         }
+    }
+
+    /// Set storage mode (global or session-scoped)
+    pub fn with_storage_mode(mut self, mode: StorageMode) -> Self {
+        self.storage_mode = mode;
+        self
     }
 
     /// Get the default storage path (~/.ricecoder/todos.json)
@@ -239,21 +292,51 @@ impl TodoStorage {
         }
     }
 
-    /// Load todos from storage
-    pub fn load_todos(&self) -> Result<HashMap<String, Todo>, ToolError> {
-        debug!("Loading todos from: {:?}", self.storage_path);
+    /// Get session-scoped storage path
+    pub fn session_path(session_id: &str) -> Result<PathBuf, ToolError> {
+        if let Some(home_dir) = dirs::home_dir() {
+            Ok(home_dir
+                .join(".ricecoder")
+                .join("sessions")
+                .join(session_id)
+                .join("todos.json"))
+        } else {
+            Err(
+                ToolError::new("HOME_DIR_NOT_FOUND", "Could not determine home directory")
+                    .with_suggestion("Set the HOME environment variable"),
+            )
+        }
+    }
+
+    /// Get effective storage path based on mode and session
+    fn effective_path(&self, session_id: Option<&str>) -> Result<PathBuf, ToolError> {
+        match (self.storage_mode, session_id) {
+            (StorageMode::SessionScoped, Some(sid)) => Self::session_path(sid),
+            (StorageMode::SessionScoped, None) => Err(ToolError::new(
+                "MISSING_SESSION_ID",
+                "Session ID required for session-scoped storage",
+            )
+            .with_suggestion("Provide a session_id or use global storage mode")),
+            (StorageMode::Global, _) => Ok(self.storage_path.clone()),
+        }
+    }
+
+    /// Load todos from storage (with session support)
+    pub fn load_todos(&self, session_id: Option<&str>) -> Result<HashMap<String, Todo>, ToolError> {
+        let path = self.effective_path(session_id)?;
+        debug!("Loading todos from: {:?}", path);
 
         // If file doesn't exist, return empty map
-        if !self.storage_path.exists() {
+        if !path.exists() {
             debug!("Todo storage file does not exist, returning empty todos");
             return Ok(HashMap::new());
         }
 
         // Read file
-        let content = std::fs::read_to_string(&self.storage_path).map_err(|e| {
+        let content = std::fs::read_to_string(&path).map_err(|e| {
             error!("Failed to read todo storage file: {}", e);
             ToolError::from(e)
-                .with_details(format!("Failed to read: {:?}", self.storage_path))
+                .with_details(format!("Failed to read: {:?}", path))
                 .with_suggestion("Check file permissions and ensure the file is readable")
         })?;
 
@@ -275,12 +358,44 @@ impl TodoStorage {
         Ok(map)
     }
 
-    /// Save todos to storage (atomic write)
-    pub fn save_todos(&self, todos: &HashMap<String, Todo>) -> Result<(), ToolError> {
-        debug!("Saving {} todos to: {:?}", todos.len(), self.storage_path);
+    /// Load todos as Vec (preserves order)
+    pub fn load_todos_ordered(&self, session_id: Option<&str>) -> Result<Vec<Todo>, ToolError> {
+        let path = self.effective_path(session_id)?;
+        debug!("Loading todos from: {:?}", path);
+
+        // If file doesn't exist, return empty vec
+        if !path.exists() {
+            debug!("Todo storage file does not exist, returning empty todos");
+            return Ok(Vec::new());
+        }
+
+        // Read file
+        let content = std::fs::read_to_string(&path).map_err(|e| {
+            error!("Failed to read todo storage file: {}", e);
+            ToolError::from(e)
+                .with_details(format!("Failed to read: {:?}", path))
+                .with_suggestion("Check file permissions and ensure the file is readable")
+        })?;
+
+        // Parse JSON
+        let todos: Vec<Todo> = serde_json::from_str(&content).map_err(|e| {
+            error!("Failed to parse todo storage file: {}", e);
+            ToolError::from(e)
+                .with_details("Todo storage file contains invalid JSON")
+                .with_suggestion("Check the file format or restore from backup")
+        })?;
+
+        info!("Loaded {} todos from storage", todos.len());
+        Ok(todos)
+    }
+
+    /// Save todos to storage from HashMap (atomic write)
+    pub fn save_todos(&self, todos: &HashMap<String, Todo>, session_id: Option<&str>) -> Result<(), ToolError> {
+        let path = self.effective_path(session_id)?;
+        debug!("Saving {} todos to: {:?}", todos.len(), path);
 
         // Create parent directory if it doesn't exist
-        if let Some(parent) = self.storage_path.parent() {
+        if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent).map_err(|e| {
                 error!("Failed to create storage directory: {}", e);
                 ToolError::from(e)
@@ -289,7 +404,7 @@ impl TodoStorage {
             })?;
         }
 
-        // Convert HashMap to Vec for serialization
+        // Convert HashMap to Vec for serialization (sorted by ID for stable output)
         let mut todos_vec: Vec<Todo> = todos.values().cloned().collect();
         todos_vec.sort_by(|a, b| a.id.cmp(&b.id));
 
@@ -302,7 +417,7 @@ impl TodoStorage {
         })?;
 
         // Write to temporary file first (atomic write)
-        let temp_path = self.storage_path.with_extension("json.tmp");
+        let temp_path = path.with_extension("json.tmp");
         std::fs::write(&temp_path, &json).map_err(|e| {
             error!("Failed to write temporary todo file: {}", e);
             ToolError::from(e)
@@ -311,14 +426,63 @@ impl TodoStorage {
         })?;
 
         // Rename temporary file to actual file (atomic on most filesystems)
-        std::fs::rename(&temp_path, &self.storage_path).map_err(|e| {
+        std::fs::rename(&temp_path, &path).map_err(|e| {
             error!("Failed to finalize todo storage: {}", e);
             // Clean up temp file on error
             let _ = std::fs::remove_file(&temp_path);
             ToolError::from(e)
                 .with_details(format!(
                     "Failed to rename: {:?} to {:?}",
-                    temp_path, self.storage_path
+                    temp_path, path
+                ))
+                .with_suggestion("Check file permissions and disk space")
+        })?;
+
+        info!("Saved {} todos to storage", todos.len());
+        Ok(())
+    }
+
+    /// Save todos to storage from Vec (preserves order, atomic write)
+    pub fn save_todos_ordered(&self, todos: &[Todo], session_id: Option<&str>) -> Result<(), ToolError> {
+        let path = self.effective_path(session_id)?;
+        debug!("Saving {} todos to: {:?}", todos.len(), path);
+
+        // Create parent directory if it doesn't exist
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).map_err(|e| {
+                error!("Failed to create storage directory: {}", e);
+                ToolError::from(e)
+                    .with_details(format!("Failed to create: {:?}", parent))
+                    .with_suggestion("Check directory permissions")
+            })?;
+        }
+
+        // Serialize to JSON (preserves input order)
+        let json = serde_json::to_string_pretty(&todos).map_err(|e| {
+            error!("Failed to serialize todos: {}", e);
+            ToolError::from(e)
+                .with_details("Failed to serialize todos to JSON")
+                .with_suggestion("Check for circular references or invalid data")
+        })?;
+
+        // Write to temporary file first (atomic write)
+        let temp_path = path.with_extension("json.tmp");
+        std::fs::write(&temp_path, &json).map_err(|e| {
+            error!("Failed to write temporary todo file: {}", e);
+            ToolError::from(e)
+                .with_details(format!("Failed to write: {:?}", temp_path))
+                .with_suggestion("Check disk space and file permissions")
+        })?;
+
+        // Rename temporary file to actual file (atomic on most filesystems)
+        std::fs::rename(&temp_path, &path).map_err(|e| {
+            error!("Failed to finalize todo storage: {}", e);
+            // Clean up temp file on error
+            let _ = std::fs::remove_file(&temp_path);
+            ToolError::from(e)
+                .with_details(format!(
+                    "Failed to rename: {:?} to {:?}",
+                    temp_path, path
                 ))
                 .with_suggestion("Check file permissions and disk space")
         })?;
@@ -332,6 +496,15 @@ impl TodoStorage {
 pub struct TodoTools {
     storage: TodoStorage,
     mcp_provider: Option<std::sync::Arc<dyn crate::Provider>>,
+    storage_mode: StorageMode,
+    write_mode: WriteMode,
+    event_bus: Option<std::sync::Arc<dyn TodoEventPublisher>>,
+}
+
+/// Event publisher trait for todo changes
+pub trait TodoEventPublisher: Send + Sync {
+    /// Publish a todo updated event
+    fn publish_todo_updated(&self, session_id: Option<&str>, todos: &[Todo]);
 }
 
 impl TodoTools {
@@ -341,6 +514,9 @@ impl TodoTools {
         Ok(Self {
             storage: TodoStorage::new(storage_path),
             mcp_provider: None,
+            storage_mode: StorageMode::Global,
+            write_mode: WriteMode::Merge,
+            event_bus: None,
         })
     }
 
@@ -349,7 +525,23 @@ impl TodoTools {
         Self {
             storage: TodoStorage::new(storage_path),
             mcp_provider: None,
+            storage_mode: StorageMode::Global,
+            write_mode: WriteMode::Merge,
+            event_bus: None,
         }
+    }
+
+    /// Set storage mode (global or session-scoped)
+    pub fn with_storage_mode(mut self, mode: StorageMode) -> Self {
+        self.storage_mode = mode;
+        self.storage = self.storage.with_storage_mode(mode);
+        self
+    }
+
+    /// Set write mode (replace or merge)
+    pub fn with_write_mode(mut self, mode: WriteMode) -> Self {
+        self.write_mode = mode;
+        self
     }
 
     /// Set the MCP provider for todo operations
@@ -358,17 +550,87 @@ impl TodoTools {
         self
     }
 
+    /// Set the event bus for publishing todo updates
+    pub fn with_event_bus(mut self, event_bus: std::sync::Arc<dyn TodoEventPublisher>) -> Self {
+        self.event_bus = Some(event_bus);
+        self
+    }
+
+    /// Validate todo input (G-05: Tool-layer schema validation)
+    fn validate_todo_input(input: &TodowriteInput) -> Result<(), ToolError> {
+        for (idx, todo) in input.todos.iter().enumerate() {
+            // Validate required fields
+            if todo.id.trim().is_empty() {
+                return Err(ToolError::new(
+                    "INVALID_TODO",
+                    format!("Todo at index {} has empty id", idx),
+                )
+                .with_suggestion("Provide a non-empty id for each todo"));
+            }
+
+            if todo.content.trim().is_empty() {
+                return Err(ToolError::new(
+                    "INVALID_TODO",
+                    format!("Todo at index {} has empty content", idx),
+                )
+                .with_suggestion("Provide non-empty content for each todo"));
+            }
+
+            // Validate status enum value
+            let status_str = format!("{}", todo.status);
+            if !["pending", "in_progress", "completed", "cancelled", "blocked"]
+                .contains(&status_str.as_str())
+            {
+                return Err(ToolError::new(
+                    "INVALID_STATUS",
+                    format!("Todo at index {} has invalid status: {}", idx, status_str),
+                )
+                .with_suggestion(
+                    "Use one of: pending, in_progress, completed, cancelled, blocked",
+                ));
+            }
+
+            // Validate priority enum value
+            let priority_str = format!("{}", todo.priority);
+            if !["low", "medium", "high", "critical"].contains(&priority_str.as_str()) {
+                return Err(ToolError::new(
+                    "INVALID_PRIORITY",
+                    format!(
+                        "Todo at index {} has invalid priority: {}",
+                        idx, priority_str
+                    ),
+                )
+                .with_suggestion("Use one of: low, medium, high, critical"));
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Count incomplete todos (status != completed)
+    fn count_incomplete(todos: &[Todo]) -> usize {
+        todos.iter().filter(|t| t.status != TodoStatus::Completed).count()
+    }
+
+    /// Format output for OpenCode compatibility
+    fn format_output(todos: &[Todo]) -> String {
+        serde_json::to_string_pretty(todos).unwrap_or_else(|_| "[]".to_string())
+    }
+
     /// Write todos with timeout enforcement (500ms)
     ///
     /// Attempts to use MCP provider if available, falls back to built-in implementation.
     pub async fn write_todos_with_timeout(
         &self,
         input: TodowriteInput,
+        session_id: Option<&str>,
     ) -> Result<TodowriteOutput, ToolError> {
         let timeout_duration = std::time::Duration::from_millis(500);
 
-        match tokio::time::timeout(timeout_duration, async { self.write_todos_internal(input) })
-            .await
+        match tokio::time::timeout(timeout_duration, async {
+            self.write_todos_internal(input, session_id)
+        })
+        .await
         {
             Ok(result) => result,
             Err(_) => Err(
@@ -382,13 +644,16 @@ impl TodoTools {
     /// Write todos (create or update)
     ///
     /// Attempts to use MCP provider if available, falls back to built-in implementation.
-    pub fn write_todos(&self, input: TodowriteInput) -> Result<TodowriteOutput, ToolError> {
-        self.write_todos_internal(input)
+    pub fn write_todos(&self, input: TodowriteInput, session_id: Option<&str>) -> Result<TodowriteOutput, ToolError> {
+        self.write_todos_internal(input, session_id)
     }
 
-    /// Internal write todos implementation
-    fn write_todos_internal(&self, input: TodowriteInput) -> Result<TodowriteOutput, ToolError> {
-        debug!("Writing {} todos", input.todos.len());
+    /// Internal write todos implementation (with session and mode support)
+    fn write_todos_internal(&self, input: TodowriteInput, session_id: Option<&str>) -> Result<TodowriteOutput, ToolError> {
+        debug!("Writing {} todos (mode: {:?})", input.todos.len(), self.write_mode);
+
+        // G-05: Validate input before processing
+        Self::validate_todo_input(&input)?;
 
         // Try MCP provider first
         if let Some(_provider) = &self.mcp_provider {
@@ -417,28 +682,64 @@ impl TodoTools {
         // Fall back to built-in implementation
         debug!("Using built-in todowrite implementation");
 
-        // Load existing todos
-        let mut todos = self.storage.load_todos()?;
-
-        let mut created = 0;
-        let mut updated = 0;
-
-        // Process each todo
-        for todo in input.todos {
-            let id = todo.id.clone();
-            if todos.contains_key(&id) {
-                updated += 1;
-            } else {
-                created += 1;
+        let (created, updated, final_todos) = match self.write_mode {
+            WriteMode::Replace => {
+                // OpenCode compatible: replace entire list
+                debug!("Replace mode: replacing entire todo list");
+                self.storage.save_todos_ordered(&input.todos, session_id)?;
+                (input.todos.len(), 0, input.todos)
             }
-            todos.insert(id, todo);
+            WriteMode::Merge => {
+                // RiceCoder default: merge by ID
+                debug!("Merge mode: merging todos by ID");
+                let mut todos = self.storage.load_todos(session_id)?;
+
+                let mut created = 0;
+                let mut updated = 0;
+
+                // Process each todo
+                for todo in &input.todos {
+                    let id = todo.id.clone();
+                    if todos.contains_key(&id) {
+                        updated += 1;
+                    } else {
+                        created += 1;
+                    }
+                    todos.insert(id, todo.clone());
+                }
+
+                // Save todos
+                self.storage.save_todos(&todos, session_id)?;
+
+                // Convert to Vec for output (sorted by ID for stable ordering)
+                let mut final_todos: Vec<Todo> = todos.values().cloned().collect();
+                final_todos.sort_by(|a, b| a.id.cmp(&b.id));
+
+                (created, updated, final_todos)
+            }
+        };
+
+        // Format OpenCode-compatible output
+        let incomplete_count = Self::count_incomplete(&final_todos);
+        let title = format!("{} todos", incomplete_count);
+        let output = Self::format_output(&final_todos);
+
+        // G-07: Publish event to event bus if available
+        if let Some(event_bus) = &self.event_bus {
+            event_bus.publish_todo_updated(session_id, &final_todos);
+            debug!("Published TodoUpdated event to event bus");
         }
 
-        // Save todos
-        self.storage.save_todos(&todos)?;
-
         info!("Wrote todos: {} created, {} updated", created, updated);
-        Ok(TodowriteOutput { created, updated })
+        Ok(TodowriteOutput {
+            title,
+            output,
+            metadata: TodowriteMetadata {
+                todos: final_todos,
+                created: Some(created),
+                updated: Some(updated),
+            },
+        })
     }
 
     /// Read todos with timeout enforcement (500ms)
@@ -447,11 +748,14 @@ impl TodoTools {
     pub async fn read_todos_with_timeout(
         &self,
         input: TodoreadInput,
+        session_id: Option<&str>,
     ) -> Result<TodoreadOutput, ToolError> {
         let timeout_duration = std::time::Duration::from_millis(500);
 
-        match tokio::time::timeout(timeout_duration, async { self.read_todos_internal(input) })
-            .await
+        match tokio::time::timeout(timeout_duration, async {
+            self.read_todos_internal(input, session_id)
+        })
+        .await
         {
             Ok(result) => result,
             Err(_) => Err(
@@ -465,12 +769,12 @@ impl TodoTools {
     /// Read todos with optional filtering
     ///
     /// Attempts to use MCP provider if available, falls back to built-in implementation.
-    pub fn read_todos(&self, input: TodoreadInput) -> Result<TodoreadOutput, ToolError> {
-        self.read_todos_internal(input)
+    pub fn read_todos(&self, input: TodoreadInput, session_id: Option<&str>) -> Result<TodoreadOutput, ToolError> {
+        self.read_todos_internal(input, session_id)
     }
 
-    /// Internal read todos implementation
-    fn read_todos_internal(&self, input: TodoreadInput) -> Result<TodoreadOutput, ToolError> {
+    /// Internal read todos implementation (with session support)
+    fn read_todos_internal(&self, input: TodoreadInput, session_id: Option<&str>) -> Result<TodoreadOutput, ToolError> {
         debug!(
             "Reading todos with filters: status={:?}, priority={:?}",
             input.status_filter, input.priority_filter
@@ -503,39 +807,59 @@ impl TodoTools {
         // Fall back to built-in implementation
         debug!("Using built-in todoread implementation");
 
-        // Load todos
-        let todos = self.storage.load_todos()?;
+        // Load todos (preserves order if replace mode was used)
+        let todos = if self.write_mode == WriteMode::Replace {
+            self.storage.load_todos_ordered(session_id)?
+        } else {
+            // Merge mode: convert HashMap to Vec and sort
+            let todos_map = self.storage.load_todos(session_id)?;
+            let mut todos: Vec<Todo> = todos_map.values().cloned().collect();
+            todos.sort_by(|a, b| match b.priority.cmp(&a.priority) {
+                std::cmp::Ordering::Equal => a.id.cmp(&b.id),
+                other => other,
+            });
+            todos
+        };
 
-        // Filter todos
-        let mut filtered: Vec<Todo> = todos
-            .into_values()
-            .filter(|todo| {
-                // Apply status filter
-                if let Some(status) = input.status_filter {
-                    if todo.status != status {
-                        return false;
+        // Filter todos (RiceCoder extra - KEEP)
+        let filtered: Vec<Todo> = if input.status_filter.is_some() || input.priority_filter.is_some() {
+            todos
+                .into_iter()
+                .filter(|todo| {
+                    // Apply status filter
+                    if let Some(status) = input.status_filter {
+                        if todo.status != status {
+                            return false;
+                        }
                     }
-                }
 
-                // Apply priority filter
-                if let Some(priority) = input.priority_filter {
-                    if todo.priority != priority {
-                        return false;
+                    // Apply priority filter
+                    if let Some(priority) = input.priority_filter {
+                        if todo.priority != priority {
+                            return false;
+                        }
                     }
-                }
 
-                true
-            })
-            .collect();
+                    true
+                })
+                .collect()
+        } else {
+            todos
+        };
 
-        // Sort by priority (descending) then by id
-        filtered.sort_by(|a, b| match b.priority.cmp(&a.priority) {
-            std::cmp::Ordering::Equal => a.id.cmp(&b.id),
-            other => other,
-        });
+        // Format OpenCode-compatible output
+        let incomplete_count = Self::count_incomplete(&filtered);
+        let title = format!("{} todos", incomplete_count);
+        let output = Self::format_output(&filtered);
 
         info!("Read {} todos (filtered from total)", filtered.len());
-        Ok(TodoreadOutput { todos: filtered })
+        Ok(TodoreadOutput {
+            title,
+            output,
+            metadata: TodoreadMetadata {
+                todos: filtered,
+            },
+        })
     }
 }
 
@@ -545,6 +869,86 @@ impl Default for TodoTools {
             // Fallback to in-memory storage if default path fails
             Self::with_storage_path("/tmp/ricecoder-todos.json")
         })
+    }
+}
+
+/// Tool invoker wiring helpers (G-10)
+impl TodoTools {
+    /// Create tool metadata for todowrite
+    pub fn todowrite_metadata() -> serde_json::Value {
+        serde_json::json!({
+            "name": "todowrite",
+            "description": "Write todos to persistent storage with session support",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "todos": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {"type": "string"},
+                                "content": {"type": "string"},
+                                "status": {
+                                    "type": "string",
+                                    "enum": ["pending", "in_progress", "completed", "cancelled", "blocked"]
+                                },
+                                "priority": {
+                                    "type": "string",
+                                    "enum": ["low", "medium", "high", "critical"]
+                                },
+                                "description": {"type": "string"}
+                            },
+                            "required": ["id", "content", "status", "priority"]
+                        }
+                    }
+                },
+                "required": ["todos"]
+            }
+        })
+    }
+
+    /// Create tool metadata for todoread
+    pub fn todoread_metadata() -> serde_json::Value {
+        serde_json::json!({
+            "name": "todoread",
+            "description": "Read todos from persistent storage with optional filtering",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "status_filter": {
+                        "type": "string",
+                        "enum": ["pending", "in_progress", "completed", "cancelled", "blocked"]
+                    },
+                    "priority_filter": {
+                        "type": "string",
+                        "enum": ["low", "medium", "high", "critical"]
+                    }
+                }
+            }
+        })
+    }
+
+    /// Invoke todowrite from JSON parameters
+    pub fn invoke_todowrite(&self, params: Value, session_id: Option<&str>) -> Result<Value, ToolError> {
+        let input: TodowriteInput = serde_json::from_value(params)
+            .map_err(|e| ToolError::new("INVALID_INPUT", format!("Failed to parse todowrite input: {}", e)))?;
+        
+        let output = self.write_todos(input, session_id)?;
+        
+        serde_json::to_value(output)
+            .map_err(|e| ToolError::new("SERIALIZATION_ERROR", format!("Failed to serialize output: {}", e)))
+    }
+
+    /// Invoke todoread from JSON parameters
+    pub fn invoke_todoread(&self, params: Value, session_id: Option<&str>) -> Result<Value, ToolError> {
+        let input: TodoreadInput = serde_json::from_value(params)
+            .map_err(|e| ToolError::new("INVALID_INPUT", format!("Failed to parse todoread input: {}", e)))?;
+        
+        let output = self.read_todos(input, session_id)?;
+        
+        serde_json::to_value(output)
+            .map_err(|e| ToolError::new("SERIALIZATION_ERROR", format!("Failed to serialize output: {}", e)))
     }
 }
 
@@ -639,7 +1043,7 @@ mod tests {
         let storage_path = temp_dir.path().join("todos.json");
         let storage = TodoStorage::new(&storage_path);
 
-        let todos = storage.load_todos().unwrap();
+        let todos = storage.load_todos(None).unwrap();
         assert!(todos.is_empty());
     }
 
@@ -660,10 +1064,10 @@ mod tests {
         todos.insert(todo1.id.clone(), todo1);
         todos.insert(todo2.id.clone(), todo2);
 
-        storage.save_todos(&todos).unwrap();
+        storage.save_todos(&todos, None).unwrap();
 
         // Load and verify
-        let loaded = storage.load_todos().unwrap();
+        let loaded = storage.load_todos(None).unwrap();
         assert_eq!(loaded.len(), 2);
         assert!(loaded.contains_key("1"));
         assert!(loaded.contains_key("2"));
@@ -682,21 +1086,21 @@ mod tests {
         let write_result = tools
             .write_todos(TodowriteInput {
                 todos: vec![todo1, todo2],
-            })
+            }, None)
             .unwrap();
 
-        assert_eq!(write_result.created, 2);
-        assert_eq!(write_result.updated, 0);
+        assert_eq!(write_result.metadata.created.unwrap(), 2);
+        assert_eq!(write_result.metadata.updated.unwrap(), 0);
 
         // Read todos
         let read_result = tools
             .read_todos(TodoreadInput {
                 status_filter: None,
                 priority_filter: None,
-            })
+            }, None)
             .unwrap();
 
-        assert_eq!(read_result.todos.len(), 2);
+        assert_eq!(read_result.metadata.todos.len(), 2);
     }
 
     #[test]

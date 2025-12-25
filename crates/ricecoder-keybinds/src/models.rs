@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::ParseError;
 
-/// Represents a keyboard modifier (Ctrl, Shift, Alt, Meta)
+/// Represents a keyboard modifier (Ctrl, Shift, Alt, Meta, Super)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Modifier {
@@ -14,6 +14,8 @@ pub enum Modifier {
     Shift,
     Alt,
     Meta,
+    /// Super/Win/Cmd modifier (OpenCode compatibility)
+    Super,
 }
 
 impl fmt::Display for Modifier {
@@ -23,6 +25,7 @@ impl fmt::Display for Modifier {
             Modifier::Shift => write!(f, "Shift"),
             Modifier::Alt => write!(f, "Alt"),
             Modifier::Meta => write!(f, "Meta"),
+            Modifier::Super => write!(f, "Super"),
         }
     }
 }
@@ -34,8 +37,9 @@ impl FromStr for Modifier {
         match s.to_lowercase().as_str() {
             "ctrl" | "control" => Ok(Modifier::Ctrl),
             "shift" => Ok(Modifier::Shift),
-            "alt" => Ok(Modifier::Alt),
+            "alt" | "option" => Ok(Modifier::Alt), // OpenCode: alt/option are same
             "meta" | "cmd" | "command" => Ok(Modifier::Meta),
+            "super" | "win" => Ok(Modifier::Super), // OpenCode: super modifier
             _ => Err(ParseError::InvalidModifier(s.to_string())),
         }
     }
@@ -126,14 +130,40 @@ impl FromStr for Key {
 pub struct KeyCombo {
     pub modifiers: Vec<Modifier>,
     pub key: Key,
+    /// Whether this combo uses the leader key (OpenCode compatibility)
+    #[serde(default)]
+    pub leader: bool,
 }
 
 impl fmt::Display for KeyCombo {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for modifier in &self.modifiers {
+        if self.leader {
+            write!(f, "<leader>")?;
+            if !self.modifiers.is_empty() || !matches!(self.key, Key::Char(' ')) {
+                write!(f, " ")?;
+            }
+        }
+        
+        // Canonical modifier order: Ctrl, Alt, Super, Shift (OpenCode compatible)
+        let mut sorted_mods = self.modifiers.clone();
+        sorted_mods.sort_by_key(|m| match m {
+            Modifier::Ctrl => 0,
+            Modifier::Alt => 1,
+            Modifier::Super => 2,
+            Modifier::Shift => 3,
+            Modifier::Meta => 4,
+        });
+        
+        for modifier in &sorted_mods {
             write!(f, "{}+", modifier)?;
         }
-        write!(f, "{}", self.key)
+        
+        // Normalize key names (OpenCode: delete → del)
+        match &self.key {
+            Key::Delete => write!(f, "del"),
+            Key::Escape => write!(f, "esc"),
+            _ => write!(f, "{}", self.key),
+        }
     }
 }
 
@@ -141,7 +171,34 @@ impl FromStr for KeyCombo {
     type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts: Vec<&str> = s.split('+').collect();
+        let trimmed = s.trim();
+        if trimmed.is_empty() {
+            return Err(ParseError::InvalidKeySyntax(
+                "Empty key combination".to_string(),
+            ));
+        }
+        
+        // Check for leader prefix (OpenCode: <leader>)
+        let normalized = trimmed.replace("leader+", "");
+        let (leader, rest) = if trimmed.starts_with("<leader>") {
+            let after_leader = trimmed.strip_prefix("<leader>").unwrap().trim();
+            (true, after_leader)
+        } else if trimmed.contains("leader+") {
+            (true, normalized.as_str())
+        } else {
+            (false, trimmed)
+        };
+        
+        // If rest is empty after leader, it's just the leader key
+        if rest.is_empty() {
+            return Ok(KeyCombo {
+                modifiers: Vec::new(),
+                key: Key::Char(' '), // Leader key defaults to space
+                leader: true,
+            });
+        }
+
+        let parts: Vec<&str> = rest.split('+').collect();
         if parts.is_empty() {
             return Err(ParseError::InvalidKeySyntax(
                 "Empty key combination".to_string(),
@@ -155,7 +212,7 @@ impl FromStr for KeyCombo {
 
         let key = Key::from_str(parts[parts.len() - 1])?;
 
-        Ok(KeyCombo { modifiers, key })
+        Ok(KeyCombo { modifiers, key, leader })
     }
 }
 
@@ -227,7 +284,11 @@ impl FromStr for Context {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Keybind {
     pub action_id: String,
+    /// Primary key binding
     pub key: String,
+    /// Alternative key bindings (OpenCode: comma-separated support)
+    #[serde(default)]
+    pub alternatives: Vec<String>,
     pub category: String,
     pub description: String,
     #[serde(default)]
@@ -242,6 +303,35 @@ impl Keybind {
     pub fn parse_key(&self) -> Result<KeyCombo, ParseError> {
         KeyCombo::from_str(&self.key)
     }
+    
+    /// Parse all key bindings (primary + alternatives) into KeyCombo vec
+    /// OpenCode: supports comma-separated alternatives (e.g. "ctrl+k,ctrl+p")
+    pub fn parse_all_keys(&self) -> Result<Vec<KeyCombo>, ParseError> {
+        let mut combos = vec![];
+        
+        // First try comma-separated format in primary key
+        if self.key.contains(',') {
+            for part in self.key.split(',') {
+                combos.push(KeyCombo::from_str(part.trim())?);
+            }
+        } else {
+            // Single primary key
+            combos.push(KeyCombo::from_str(&self.key)?);
+        }
+        
+        // Then add alternatives
+        for alt in &self.alternatives {
+            if alt.contains(',') {
+                for part in alt.split(',') {
+                    combos.push(KeyCombo::from_str(part.trim())?);
+                }
+            } else {
+                combos.push(KeyCombo::from_str(alt)?);
+            }
+        }
+        
+        Ok(combos)
+    }
 
     /// Create a new keybind
     pub fn new(
@@ -253,6 +343,7 @@ impl Keybind {
         Keybind {
             action_id: action_id.into(),
             key: key.into(),
+            alternatives: Vec::new(),
             category: category.into(),
             description: description.into(),
             is_default: false,
@@ -271,6 +362,7 @@ impl Keybind {
         Keybind {
             action_id: action_id.into(),
             key: key.into(),
+            alternatives: Vec::new(),
             category: category.into(),
             description: description.into(),
             is_default: false,
@@ -288,6 +380,7 @@ impl Keybind {
         Keybind {
             action_id: action_id.into(),
             key: key.into(),
+            alternatives: Vec::new(),
             category: category.into(),
             description: description.into(),
             is_default: true,
@@ -306,6 +399,7 @@ impl Keybind {
         Keybind {
             action_id: action_id.into(),
             key: key.into(),
+            alternatives: Vec::new(),
             category: category.into(),
             description: description.into(),
             is_default: true,

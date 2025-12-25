@@ -155,6 +155,21 @@ impl StepExecutor {
                 let success = cmd_output.exit_code.map(|code| code == 0).unwrap_or(false);
                 (success, Some(cmd_output))
             }
+            StepAction::RunShellCommand {
+                command,
+                timeout_ms,
+                workdir,
+                description,
+            } => {
+                let cmd_output = self.handle_run_shell_command(
+                    command,
+                    *timeout_ms,
+                    workdir.as_deref(),
+                    description,
+                )?;
+                let success = cmd_output.exit_code.map(|code| code == 0).unwrap_or(false);
+                (success, Some(cmd_output))
+            }
             StepAction::RunTests { pattern } => {
                 self.handle_run_tests(pattern)?;
                 (true, None)
@@ -281,6 +296,28 @@ impl StepExecutor {
         crate::step_action_handler::CommandHandler::handle(command, args)
     }
 
+    /// Handle shell command execution (OpenCode-compatible)
+    fn handle_run_shell_command(
+        &self,
+        command: &str,
+        timeout_ms: Option<u64>,
+        workdir: Option<&str>,
+        description: &str,
+    ) -> ExecutionResult<CommandOutput> {
+        // Run async in blocking context
+        tokio::task::block_in_place(|| {
+            tokio::runtime::Handle::current().block_on(async {
+                crate::step_action_handler::ShellCommandHandler::handle(
+                    command,
+                    timeout_ms,
+                    workdir,
+                    description,
+                )
+                .await
+            })
+        })
+    }
+
     /// Execute a batch of steps with progress tracking and error handling
     pub async fn execute_batch(
         &self,
@@ -402,6 +439,22 @@ impl StepExecutor {
             }
             StepAction::RunCommand { command, args } => {
                 let cmd_output = self.handle_run_command_async(command, args).await?;
+                let success = cmd_output.exit_code.map(|code| code == 0).unwrap_or(false);
+                (success, Some(cmd_output))
+            }
+            StepAction::RunShellCommand {
+                command,
+                timeout_ms,
+                workdir,
+                description,
+            } => {
+                let cmd_output = crate::step_action_handler::ShellCommandHandler::handle(
+                    command,
+                    *timeout_ms,
+                    workdir.as_deref(),
+                    description,
+                )
+                .await?;
                 let success = cmd_output.exit_code.map(|code| code == 0).unwrap_or(false);
                 (success, Some(cmd_output))
             }

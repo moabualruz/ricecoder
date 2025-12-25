@@ -7,6 +7,17 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::ToolError;
 
+/// File attachment for tool results (OpenCode-compatible)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FileAttachment {
+    /// File name
+    pub name: String,
+    /// MIME type
+    pub mime_type: String,
+    /// Base64-encoded file content
+    pub data: String,
+}
+
 /// Metadata about a tool operation result
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResultMetadata {
@@ -32,6 +43,7 @@ impl ResultMetadata {
 /// Structured result for tool operations
 ///
 /// Contains success status, optional data, optional error, and metadata about execution.
+/// Extends base result with OpenCode-compatible fields (title, attachments).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolResult<T> {
     /// Whether the operation succeeded
@@ -42,6 +54,10 @@ pub struct ToolResult<T> {
     pub error: Option<ToolErrorInfo>,
     /// Metadata about the operation
     pub metadata: ResultMetadata,
+    /// OpenCode-compatible: Human-readable title for the result
+    pub title: Option<String>,
+    /// OpenCode-compatible: File attachments (base64 encoded)
+    pub attachments: Vec<FileAttachment>,
 }
 
 /// Serializable error information
@@ -76,6 +92,8 @@ impl<T> ToolResult<T> {
             data: Some(data),
             error: None,
             metadata: ResultMetadata::new(duration_ms, provider),
+            title: None,
+            attachments: Vec::new(),
         }
     }
 
@@ -86,6 +104,26 @@ impl<T> ToolResult<T> {
             data: None,
             error: Some(ToolErrorInfo::from(&error)),
             metadata: ResultMetadata::new(duration_ms, provider),
+            title: None,
+            attachments: Vec::new(),
         }
+    }
+
+    /// Set the title for the result (OpenCode-compatible)
+    pub fn with_title(mut self, title: impl Into<String>) -> Self {
+        self.title = Some(title.into());
+        self
+    }
+
+    /// Add a file attachment to the result (OpenCode-compatible)
+    pub fn with_attachment(mut self, attachment: FileAttachment) -> Self {
+        self.attachments.push(attachment);
+        self
+    }
+
+    /// Add multiple file attachments to the result (OpenCode-compatible)
+    pub fn with_attachments(mut self, attachments: Vec<FileAttachment>) -> Self {
+        self.attachments.extend(attachments);
+        self
     }
 }

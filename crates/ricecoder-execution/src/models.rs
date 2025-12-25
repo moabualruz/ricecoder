@@ -84,12 +84,23 @@ pub enum StepAction {
         /// Path to the file (resolved via PathResolver)
         path: String,
     },
-    /// Run a shell command
+    /// Run a shell command (legacy mode: command + args)
     RunCommand {
         /// Command to execute
         command: String,
         /// Command arguments
         args: Vec<String>,
+    },
+    /// Run a shell command (OpenCode-compatible shell mode)
+    RunShellCommand {
+        /// Full shell command string (supports pipes, redirects, &&, ;)
+        command: String,
+        /// Optional timeout in milliseconds (default: 120000ms)
+        timeout_ms: Option<u64>,
+        /// Optional working directory (default: workspace root)
+        workdir: Option<String>,
+        /// Required human-readable description (used as title)
+        description: String,
     },
     /// Run tests
     RunTests {

@@ -14,12 +14,14 @@ use super::RicegrepMcp;
 /// Helper function to get tool title for display
 fn tool_title(name: &str) -> &'static str {
     match name {
+        "grep" => "File Content Search",
         "rice_grep" => "File Content Search",
         "rice_nl_search" => "Natural Language Search",
         "rice_glob" => "File Glob Finder",
         "rice_list" => "Directory Lister",
         "rice_read" => "File Reader",
         "rice_edit" => "File Editor",
+        "rice_write" => "File Writer",
         _ => "Ricegrep Tool",
     }
 }
@@ -42,7 +44,7 @@ fn tool_annotations(name: &str) -> serde_json::Value {
 /// Helper function to get tool output schema
 fn tool_output_schema(name: &str) -> serde_json::Value {
     match name {
-        "rice_grep" | "rice_nl_search" => search_output_schema(),
+        "grep" | "rice_grep" | "rice_nl_search" => search_output_schema(),
         _ => text_only_output_schema(),
     }
 }

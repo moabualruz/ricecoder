@@ -48,7 +48,7 @@ fn key_combo_strategy() -> impl Strategy<Value = KeyCombo> {
         prop::collection::vec(modifier_strategy(), 0..3),
         key_strategy(),
     )
-        .prop_map(|(modifiers, key)| KeyCombo { modifiers, key })
+        .prop_map(|(modifiers, key)| KeyCombo { modifiers, key, leader: false })
 }
 
 /// Strategy for generating valid keybinds
@@ -495,8 +495,9 @@ mod unit_tests {
     #[test]
     fn test_key_combo_display() {
         let combo = KeyCombo {
-            modifiers: vec![Modifier::Ctrl, Modifier::Shift],
-            key: Key::Char('z'),
+            modifiers: vec![Modifier::Ctrl, Modifier::Alt],
+            key: Key::Char('k'),
+            leader: false,
         };
 
         let display = combo.to_string();

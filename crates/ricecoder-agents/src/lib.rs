@@ -44,6 +44,7 @@ pub mod registry;
 pub mod scheduler;
 pub mod tool_invokers;
 pub mod tool_registry;
+pub mod tools;
 pub mod use_cases;
 
 #[cfg(test)]
@@ -75,6 +76,10 @@ pub use tool_invokers::{
     ToolBackend, WebfetchToolInvoker, WebsearchToolInvoker,
 };
 pub use tool_registry::{ToolInvoker, ToolMetadata, ToolRegistry};
+pub use tools::{
+    ModelConfig, SessionManager, SubagentType, TaskExecutionContext, TaskParams, TaskProgress,
+    TaskResult, TaskTool,
+};
 pub use use_cases::{
     ConfigureToolBackendUseCase, ExecuteExternalToolUseCase, ProviderCommunityUseCase,
     ProviderFailoverUseCase, ProviderHealthUseCase, ProviderModelUseCase,

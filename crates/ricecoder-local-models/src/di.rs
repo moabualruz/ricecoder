@@ -21,7 +21,7 @@ fn create_local_models_services() -> Vec<ServiceEntry> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ricecoder_common::di::list_discovered_factories();
+    use ricecoder_common::di::list_discovered_factories;
 
     #[test]
     fn test_local_models_factory_registered() {

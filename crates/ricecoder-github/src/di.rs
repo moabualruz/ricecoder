@@ -1,5 +1,13 @@
 //! Dependency injection support for ricecoder-github
+//!
+//! Note: GitHub managers require runtime configuration (token, owner, repo)
+//! so they are instantiated on-demand rather than via static DI registration.
+//! This module is kept for future factory-based initialization patterns.
 
+// TODO: Implement factory-based DI when ServiceFactory supports async config loading
+// All GitHub managers require: token, owner, repo - which are runtime values
+
+/*
 use std::sync::Arc;
 use ricecoder_common::di::{ServiceEntry, ServiceFactory};
 use crate::managers::{
@@ -19,23 +27,15 @@ inventory::submit! {
 }
 
 fn create_github_services() -> Vec<ServiceEntry> {
-    vec![
-        ServiceEntry::new::<BranchManager>(Arc::new(BranchManager::new())),
-        ServiceEntry::new::<IssueManager>(Arc::new(IssueManager::new())),
-        ServiceEntry::new::<PrManager>(Arc::new(PrManager::new())),
-        ServiceEntry::new::<GistManager>(Arc::new(GistManager::new())),
-        ServiceEntry::new::<DiscussionManager>(Arc::new(DiscussionManager::new())),
-        ServiceEntry::new::<ReleaseManager>(Arc::new(ReleaseManager::new())),
-        ServiceEntry::new::<RepositoryAnalyzer>(Arc::new(RepositoryAnalyzer::new())),
-        ServiceEntry::new::<ProjectManager>(Arc::new(ProjectManager::new())),
-        ServiceEntry::new::<WebhookHandler>(Arc::new(WebhookHandler::new())),
-    ]
+    // Requires runtime config - cannot be statically initialized
+    vec![]
 }
+*/
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ricecoder_common::di::list_discovered_factories();
+    use ricecoder_common::di::list_discovered_factories;
 
     #[test]
     fn test_github_factory_registered() {

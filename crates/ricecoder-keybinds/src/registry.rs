@@ -36,42 +36,45 @@ impl KeybindRegistry {
             ));
         }
 
-        // Parse the key combination
-        let key_combo = keybind
-            .parse_key()
+        // Parse all key combinations (primary + alternatives)
+        let key_combos = keybind
+            .parse_all_keys()
             .map_err(|e| RegistryError::InvalidActionIdFormat(format!("Invalid key: {}", e)))?;
-
-        let key_str = key_combo.to_string();
 
         // Register the keybind by action
         let action_id = keybind.action_id.clone();
         self.by_action.insert(action_id.clone(), keybind.clone());
 
-        // Register by key and context
-        if keybind.contexts.is_empty() {
-            // Global keybind
-            if let Some(existing_action) = self.by_key_global.get(&key_str) {
-                if existing_action != &keybind.action_id {
-                    return Err(RegistryError::DuplicateActionId(format!(
-                        "Global key {} already bound to {}",
-                        key_str, existing_action
-                    )));
-                }
-            }
-            self.by_key_global.insert(key_str, action_id);
-        } else {
-            // Context-specific keybinds
-            for &context in &keybind.contexts {
-                let key = (context, key_str.clone());
-                if let Some(existing_action) = self.by_key_context.get(&key) {
+        // Register each key combination
+        for key_combo in key_combos {
+            let key_str = key_combo.to_string();
+
+            // Register by key and context
+            if keybind.contexts.is_empty() {
+                // Global keybind
+                if let Some(existing_action) = self.by_key_global.get(&key_str) {
                     if existing_action != &keybind.action_id {
                         return Err(RegistryError::DuplicateActionId(format!(
-                            "Key {} in context {} already bound to {}",
-                            key_str, context, existing_action
+                            "Global key {} already bound to {}",
+                            key_str, existing_action
                         )));
                     }
                 }
-                self.by_key_context.insert(key, action_id.clone());
+                self.by_key_global.insert(key_str, action_id.clone());
+            } else {
+                // Context-specific keybinds
+                for &context in &keybind.contexts {
+                    let key = (context, key_str.clone());
+                    if let Some(existing_action) = self.by_key_context.get(&key) {
+                        if existing_action != &keybind.action_id {
+                            return Err(RegistryError::DuplicateActionId(format!(
+                                "Key {} in context {} already bound to {}",
+                                key_str, context, existing_action
+                            )));
+                        }
+                    }
+                    self.by_key_context.insert(key, action_id.clone());
+                }
             }
         }
 
@@ -143,17 +146,20 @@ impl KeybindRegistry {
     /// Unregister a keybind by action ID
     pub fn unregister(&mut self, action_id: &str) -> Result<(), RegistryError> {
         if let Some(keybind) = self.by_action.remove(action_id) {
-            // Remove from key mappings
-            let key_combo = keybind
-                .parse_key()
+            // Remove all key combinations from mappings
+            let key_combos = keybind
+                .parse_all_keys()
                 .map_err(|e| RegistryError::InvalidActionIdFormat(format!("Invalid key: {}", e)))?;
-            let key_str = key_combo.to_string();
 
-            if keybind.contexts.is_empty() {
-                self.by_key_global.remove(&key_str);
-            } else {
-                for context in &keybind.contexts {
-                    self.by_key_context.remove(&(*context, key_str.clone()));
+            for key_combo in key_combos {
+                let key_str = key_combo.to_string();
+
+                if keybind.contexts.is_empty() {
+                    self.by_key_global.remove(&key_str);
+                } else {
+                    for context in &keybind.contexts {
+                        self.by_key_context.remove(&(*context, key_str.clone()));
+                    }
                 }
             }
         }

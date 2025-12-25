@@ -1,0 +1,41 @@
+[package]
+name = "ricecoder-pty"
+version = "0.1.0"
+edition = "2021"
+authors = ["RiceCoder Team"]
+description = "PTY (pseudo-terminal) support for RiceCoder - interactive shell sessions and terminal management"
+license = "MIT"
+
+[dependencies]
+# PTY backend (cross-platform, used by WezTerm)
+portable-pty = "0.8"
+
+# Async runtime
+tokio = { version = "1", features = ["process", "sync", "io-util", "macros", "rt"] }
+
+# Error handling
+thiserror = "2"
+anyhow = "1"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+
+# Logging
+tracing = "0.1"
+
+# UUID generation
+uuid = { version = "1", features = ["v4", "serde"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full", "test-util"] }
+tokio-test = "0.4"
+
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "warn"
+missing_debug_implementations = "warn"
+
+[lints.clippy]
+all = "deny"
+pedantic = "warn"
+nursery = "warn"

@@ -156,7 +156,9 @@ impl ChatCommand {
         let mut registry = ProviderRegistry::new();
 
         // Get API key from environment or use empty string for free models
-        let api_key = std::env::var("OPENCODE_API_KEY").ok();
+        let api_key = std::env::var("ZEN_API_KEY")
+            .or_else(|_| std::env::var("RICECODER_API_KEY"))
+            .ok();
 
         // Create and register Zen provider
         let zen_provider = ricecoder_providers::ZenProvider::new(api_key)
@@ -231,7 +233,9 @@ impl ChatCommand {
         &self,
     ) -> CliResult<std::sync::Arc<dyn ricecoder_providers::provider::Provider>> {
         // Get API key from environment or use empty string for free models
-        let api_key = std::env::var("OPENCODE_API_KEY").ok();
+        let api_key = std::env::var("ZEN_API_KEY")
+            .or_else(|_| std::env::var("RICECODER_API_KEY"))
+            .ok();
 
         // Create and return the appropriate provider based on configuration
         match self.get_provider()?.as_str() {

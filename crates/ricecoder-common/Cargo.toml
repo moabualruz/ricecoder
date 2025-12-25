@@ -14,6 +14,8 @@ tokio = { workspace = true, features = ["sync"] }
 parking_lot = { workspace = true }
 inventory = { workspace = true }
 tracing = { workspace = true }
+chrono = { workspace = true }
+tempfile = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

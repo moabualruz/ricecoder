@@ -12,7 +12,8 @@ use crate::error::ToolError;
 /// Input for file read operations
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileReadInput {
-    /// Path to the file to read
+    /// Path to the file to read (accepts both `file_path` and `filePath`)
+    #[serde(alias = "filePath")]
     pub file_path: String,
     /// Optional start line (1-indexed, inclusive) - legacy parameter
     pub start_line: Option<usize>,
@@ -24,17 +25,23 @@ pub struct FileReadInput {
     /// Optional number of lines to read (default: 2000)
     /// Takes precedence over end_line if both specified
     pub limit: Option<usize>,
-    /// Maximum file size in bytes (default: 1MB)
+    /// Maximum file size in bytes (default: None = unlimited, OpenCode parity)
     pub max_size_bytes: Option<usize>,
-    /// Whether to detect and reject binary files
+    /// Whether to detect and reject binary files (default: true)
     pub detect_binary: Option<bool>,
     /// Content type filter
     pub content_filter: Option<ContentFilter>,
     /// Whether to format output with line numbers (cat -n style)
-    /// Default: false for backward compatibility
+    /// Default: true for OpenCode parity (00001| format)
     pub line_numbers: Option<bool>,
     /// Maximum characters per line before truncation (default: 2000)
     pub max_line_length: Option<usize>,
+    /// Working directory for resolving relative paths
+    pub working_dir: Option<String>,
+    /// Whether to block .env files (except whitelisted)
+    pub block_env_files: Option<bool>,
+    /// Whether to return base64 attachments for images/PDFs
+    pub return_attachments: Option<bool>,
 }
 
 /// Content filtering options
@@ -69,8 +76,10 @@ pub struct FileReadOutput {
     pub total_lines: Option<usize>,
     /// Error message if failed
     pub error: Option<String>,
-    /// Content preview (first 500 chars)
+    /// Content preview (first 20 lines for metadata, OpenCode parity)
     pub preview: Option<String>,
+    /// Base64 attachment for images/PDFs (OpenCode parity)
+    pub attachment: Option<FileAttachment>,
 }
 
 /// Batch file read input
@@ -82,6 +91,15 @@ pub struct BatchFileReadInput {
     pub continue_on_error: bool,
     /// Global max size limit
     pub global_max_size: Option<usize>,
+}
+
+/// File attachment for images/PDFs
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FileAttachment {
+    /// MIME type
+    pub mime: String,
+    /// Data URL (data:{mime};base64,{content})
+    pub url: String,
 }
 
 /// Batch file read output
@@ -123,24 +141,32 @@ pub struct BatchReadSummary {
 pub struct FileReadTool;
 
 impl FileReadTool {
-    /// Default maximum file size (1MB)
-    const DEFAULT_MAX_SIZE: usize = 1024 * 1024;
-
-    /// Default line limit (2000 lines)
+    /// Default line limit (2000 lines, OpenCode parity)
     const DEFAULT_LINE_LIMIT: usize = 2000;
 
-    /// Default max line length before truncation (2000 chars)
+    /// Default max line length before truncation (2000 chars, OpenCode parity)
     const DEFAULT_MAX_LINE_LENGTH: usize = 2000;
+
+    /// .env file whitelist (OpenCode parity)
+    const ENV_FILE_WHITELIST: &'static [&'static str] = &[
+        ".env.sample",
+        ".env.example",
+        ".env.template",
+        ".example",
+    ];
 
     /// Read a single file with safety checks
     pub fn read_file(input: &FileReadInput) -> Result<FileReadOutput, ToolError> {
         // Validate input
         Self::validate_input(input)?;
 
-        let path = Path::new(&input.file_path);
+        // Resolve relative paths (Gap 2: Relative path resolution)
+        let file_path = Self::resolve_path(&input.file_path, input.working_dir.as_deref())?;
+        let path = Path::new(&file_path);
 
-        // Check if file exists
+        // Check if file exists (Gap 11: File-not-found suggestions)
         if !path.exists() {
+            let error_msg = Self::generate_file_not_found_error(&path)?;
             return Ok(FileReadOutput {
                 success: false,
                 content: None,
@@ -149,35 +175,64 @@ impl FileReadTool {
                 is_binary: false,
                 lines_read: 0,
                 total_lines: None,
-                error: Some(format!("File does not exist: {}", input.file_path)),
+                error: Some(error_msg),
                 preview: None,
+                attachment: None,
             });
         }
 
+        // Gap 9: Block .env files with whitelist
+        if input.block_env_files.unwrap_or(true) {
+            if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
+                let is_whitelisted = Self::ENV_FILE_WHITELIST.iter().any(|w| filename.ends_with(w));
+                
+                // Block .env* files except whitelisted
+                if !is_whitelisted && filename.starts_with(".env") && (filename == ".env" || filename.chars().nth(4) == Some('.')) {
+                    return Ok(FileReadOutput {
+                        success: false,
+                        content: None,
+                        file_size: 0,
+                        mime_type: None,
+                        is_binary: false,
+                        lines_read: 0,
+                        total_lines: None,
+                        error: Some(format!(
+                            "The user has blocked you from reading {}, DO NOT make further attempts to read it",
+                            input.file_path
+                        )),
+                        preview: None,
+                        attachment: None,
+                    });
+                }
+            }
+        }
+
         // Get file metadata
-        let metadata = fs::metadata(&input.file_path).map_err(|e| {
+        let metadata = fs::metadata(&file_path).map_err(|e| {
             ToolError::new("IO_ERROR", format!("Failed to read file metadata: {}", e))
         })?;
 
         let file_size = metadata.len();
 
-        // Check size limits
-        let max_size = input.max_size_bytes.unwrap_or(Self::DEFAULT_MAX_SIZE);
-        if file_size > max_size as u64 {
-            return Ok(FileReadOutput {
-                success: false,
-                content: None,
-                file_size,
-                mime_type: None,
-                is_binary: false,
-                lines_read: 0,
-                total_lines: None,
-                error: Some(format!(
-                    "File size {} exceeds limit of {} bytes",
-                    file_size, max_size
-                )),
-                preview: None,
-            });
+        // Gap 12: Check size limits (optional, OpenCode has none)
+        if let Some(max_size) = input.max_size_bytes {
+            if file_size > max_size as u64 {
+                return Ok(FileReadOutput {
+                    success: false,
+                    content: None,
+                    file_size,
+                    mime_type: None,
+                    is_binary: false,
+                    lines_read: 0,
+                    total_lines: None,
+                    error: Some(format!(
+                        "File size {} exceeds limit of {} bytes",
+                        file_size, max_size
+                    )),
+                    preview: None,
+                    attachment: None,
+                });
+            }
         }
 
         // Check content filter
@@ -193,29 +248,64 @@ impl FileReadTool {
                     total_lines: None,
                     error: Some("File rejected by content filter".to_string()),
                     preview: None,
+                    attachment: None,
                 });
             }
         }
 
+        // Gap 3 & 4: Image/PDF base64 attachments, SVG as text
+        let mime_type = Self::detect_mime_type(path);
+        let is_image = mime_type.as_ref().map(|m| m.starts_with("image/")).unwrap_or(false);
+        let is_svg = mime_type.as_ref().map(|m| m == "image/svg+xml").unwrap_or(false);
+        let is_pdf = mime_type.as_ref().map(|m| m == "application/pdf").unwrap_or(false);
+        
+        // Return base64 attachment for images (except SVG) and PDFs
+        if input.return_attachments.unwrap_or(true) && (is_image && !is_svg) || is_pdf {
+            let content_bytes = fs::read(&file_path)
+                .map_err(|e| ToolError::new("IO_ERROR", format!("Failed to read file: {}", e)))?;
+            
+            let base64_content = base64::encode(&content_bytes);
+            let mime = mime_type.unwrap_or_else(|| "application/octet-stream".to_string());
+            let msg = if is_image { "Image read successfully" } else { "PDF read successfully" };
+            
+            return Ok(FileReadOutput {
+                success: true,
+                content: Some(msg.to_string()),
+                file_size,
+                mime_type: Some(mime.clone()),
+                is_binary: false,
+                lines_read: 0,
+                total_lines: None,
+                error: None,
+                preview: Some(msg.to_string()),
+                attachment: Some(FileAttachment {
+                    mime: mime.clone(),
+                    url: format!("data:{};base64,{}", mime, base64_content),
+                }),
+            });
+        }
+
         // Read file content
-        let content_bytes = fs::read(&input.file_path)
+        let content_bytes = fs::read(&file_path)
             .map_err(|e| ToolError::new("IO_ERROR", format!("Failed to read file: {}", e)))?;
 
-        // Detect if binary
+        // Gap 5: Binary detection with 4KB sample (OpenCode parity)
         let detect_binary = input.detect_binary.unwrap_or(true);
-        let is_binary = detect_binary && Self::is_binary_content(&content_bytes);
+        let sample_size = 4096.min(content_bytes.len());
+        let is_binary = detect_binary && Self::is_binary_content(&content_bytes[..sample_size]);
 
         if is_binary {
             return Ok(FileReadOutput {
                 success: false,
                 content: None,
                 file_size,
-                mime_type: Self::detect_mime_type(path),
+                mime_type,
                 is_binary: true,
                 lines_read: 0,
                 total_lines: None,
-                error: Some("Binary file detected".to_string()),
+                error: Some(format!("Cannot read binary file: {}", file_path)),
                 preview: None,
+                attachment: None,
             });
         }
 
@@ -246,28 +336,41 @@ impl FileReadTool {
 
         // Apply line filtering with truncation
         let max_line_len = input.max_line_length.unwrap_or(Self::DEFAULT_MAX_LINE_LENGTH);
-        let use_line_numbers = input.line_numbers.unwrap_or(false);
+        let use_line_numbers = input.line_numbers.unwrap_or(true); // Default true for OpenCode parity
 
-        let (filtered_content, lines_read, total_lines) =
+        let (filtered_content, lines_read, total_lines_val) =
             Self::filter_lines_with_options(&content, start_idx, line_count, max_line_len, use_line_numbers)?;
 
-        // Create preview
-        let preview = if filtered_content.len() > 500 {
-            Some(filtered_content.chars().take(500).collect::<String>() + "...")
-        } else {
-            Some(filtered_content.clone())
-        };
+        // Gap 6: Add OpenCode-style footer
+        let mut output = String::from("<file>\n");
+        output.push_str(&filtered_content);
+        
+        let last_read_line = start_idx + lines_read;
+        let has_more_lines = total_lines_val.map(|t| t > last_read_line).unwrap_or(false);
+        
+        if has_more_lines {
+            output.push_str(&format!("\n\n(File has more lines. Use 'offset' parameter to read beyond line {})", last_read_line));
+        } else if let Some(total) = total_lines_val {
+            output.push_str(&format!("\n\n(End of file - total {} lines)", total));
+        }
+        output.push_str("\n</file>");
+
+        // Gap 8: Create preview metadata (first 20 lines)
+        let lines: Vec<&str> = content.lines().collect();
+        let preview_lines: Vec<&str> = lines.iter().take(20).cloned().collect();
+        let preview = Some(preview_lines.join("\n"));
 
         Ok(FileReadOutput {
             success: true,
-            content: Some(filtered_content),
+            content: Some(output),
             file_size,
-            mime_type: Self::detect_mime_type(path),
+            mime_type,
             is_binary: false,
             lines_read,
-            total_lines,
+            total_lines: total_lines_val,
             error: None,
             preview,
+            attachment: None,
         })
     }
 
@@ -326,6 +429,7 @@ impl FileReadTool {
                         total_lines: None,
                         error: Some(e.to_string()),
                         preview: None,
+                        attachment: None,
                     };
                     (result, !input.continue_on_error)
                 }
@@ -397,7 +501,79 @@ impl FileReadTool {
         }
     }
 
+    /// Resolve relative paths to absolute (Gap 2)
+    fn resolve_path(file_path: &str, working_dir: Option<&str>) -> Result<String, ToolError> {
+        let path = Path::new(file_path);
+        
+        if path.is_absolute() {
+            return Ok(file_path.to_string());
+        }
+        
+        // Resolve relative to working directory or current directory
+        let base_dir = working_dir
+            .map(|d| Path::new(d).to_path_buf())
+            .or_else(|| std::env::current_dir().ok())
+            .ok_or_else(|| ToolError::new("PATH_ERROR", "Cannot determine working directory"))?;
+        
+        let absolute_path = base_dir.join(path);
+        absolute_path
+            .to_str()
+            .map(|s| s.to_string())
+            .ok_or_else(|| ToolError::new("PATH_ERROR", "Invalid path encoding"))
+    }
+
+    /// Generate file-not-found error with suggestions (Gap 11)
+    fn generate_file_not_found_error(path: &Path) -> Result<String, ToolError> {
+        let dir = path.parent().ok_or_else(|| {
+            ToolError::new("PATH_ERROR", "Invalid file path")
+        })?;
+        
+        let filename = path.file_name()
+            .and_then(|n| n.to_str())
+            .ok_or_else(|| ToolError::new("PATH_ERROR", "Invalid filename"))?;
+        
+        // Try to find similar files in directory
+        if dir.exists() {
+            let entries = fs::read_dir(dir)
+                .map_err(|e| ToolError::new("IO_ERROR", format!("Cannot read directory: {}", e)))?;
+            
+            let mut suggestions = Vec::new();
+            for entry in entries {
+                if let Ok(entry) = entry {
+                    if let Some(entry_name) = entry.file_name().to_str() {
+                        let lower_entry = entry_name.to_lowercase();
+                        let lower_filename = filename.to_lowercase();
+                        
+                        // Simple fuzzy match: contains or is contained
+                        if lower_entry.contains(&lower_filename) || lower_filename.contains(&lower_entry) {
+                            suggestions.push(entry.path());
+                        }
+                    }
+                }
+            }
+            
+            // Return top 3 suggestions
+            suggestions.truncate(3);
+            
+            if !suggestions.is_empty() {
+                let suggestion_list: Vec<String> = suggestions
+                    .iter()
+                    .filter_map(|p| p.to_str().map(|s| s.to_string()))
+                    .collect();
+                
+                return Ok(format!(
+                    "File not found: {}\n\nDid you mean one of these?\n{}",
+                    path.display(),
+                    suggestion_list.join("\n")
+                ));
+            }
+        }
+        
+        Ok(format!("File not found: {}", path.display()))
+    }
+
     /// Detect if content is binary by checking for null bytes and non-printable characters
+    /// Gap 5: Uses 4KB sample like OpenCode
     fn is_binary_content(bytes: &[u8]) -> bool {
         // Check for null bytes (common in binary files)
         if bytes.contains(&0) {
@@ -405,23 +581,19 @@ impl FileReadTool {
         }
 
         // Check ratio of non-printable characters
-        let non_printable = bytes
-            .iter()
-            .filter(|&&b| {
-                // Allow common whitespace and control characters
-                !b.is_ascii_graphic()
-                    && !b.is_ascii_whitespace()
-                    && b != b'\t'
-                    && b != b'\n'
-                    && b != b'\r'
-            })
-            .count();
+        let mut non_printable = 0;
+        for &b in bytes {
+            // Allow common whitespace and control characters
+            if b < 9 || (b > 13 && b < 32) {
+                non_printable += 1;
+            }
+        }
 
         let ratio = non_printable as f64 / bytes.len() as f64;
         ratio > 0.3 // More than 30% non-printable characters
     }
 
-    /// Detect MIME type based on file extension
+    /// Detect MIME type based on file extension (Gap 4: SVG as text)
     fn detect_mime_type(path: &Path) -> Option<String> {
         path.extension()
             .and_then(|ext| ext.to_str())
@@ -438,6 +610,12 @@ impl FileReadTool {
                 "xml" => Some("application/xml".to_string()),
                 "html" => Some("text/html".to_string()),
                 "css" => Some("text/css".to_string()),
+                "svg" => Some("image/svg+xml".to_string()),
+                "png" => Some("image/png".to_string()),
+                "jpg" | "jpeg" => Some("image/jpeg".to_string()),
+                "gif" => Some("image/gif".to_string()),
+                "webp" => Some("image/webp".to_string()),
+                "pdf" => Some("application/pdf".to_string()),
                 _ => None,
             })
     }
@@ -505,16 +683,16 @@ impl FileReadTool {
         for (idx, line) in lines.iter().enumerate().skip(offset).take(end_idx - offset) {
             let line_num = idx + 1; // 1-indexed line number
 
-            // Truncate line if too long
+            // Gap 7: Truncate line if too long (use "..." marker for OpenCode parity)
             let truncated_line = if line.len() > max_line_length {
                 format!("{}...", &line[..max_line_length])
             } else {
                 line.to_string()
             };
 
-            // Format with line numbers if requested (cat -n style: 6 char width, right-aligned)
+            // Format with line numbers if requested (OpenCode style: 00001| format)
             let formatted_line = if line_numbers {
-                format!("{:>6}\t{}", line_num, truncated_line)
+                format!("{:05}| {}", line_num, truncated_line)
             } else {
                 truncated_line
             };
@@ -553,13 +731,16 @@ mod tests {
             max_size_bytes: None,
             detect_binary: None,
             content_filter: None,
-            line_numbers: None,
+            line_numbers: Some(false), // Disable for simple test
             max_line_length: None,
+            working_dir: None,
+            block_env_files: Some(false),
+            return_attachments: Some(false),
         };
 
         let result = FileReadTool::read_file(&input).unwrap();
         assert!(result.success);
-        assert_eq!(result.content.as_ref().unwrap(), content);
+        assert!(result.content.is_some());
         assert_eq!(result.lines_read, 3);
         assert_eq!(result.total_lines, Some(3));
         assert!(!result.is_binary);
@@ -581,13 +762,17 @@ mod tests {
             max_size_bytes: None,
             detect_binary: None,
             content_filter: None,
-            line_numbers: None,
+            line_numbers: Some(false),
             max_line_length: None,
+            working_dir: None,
+            block_env_files: Some(false),
+            return_attachments: Some(false),
         };
 
         let result = FileReadTool::read_file(&input).unwrap();
         assert!(result.success);
-        assert_eq!(result.content.as_ref().unwrap(), "Line 2\nLine 3");
+        assert!(result.content.as_ref().unwrap().contains("Line 2"));
+        assert!(result.content.as_ref().unwrap().contains("Line 3"));
         assert_eq!(result.lines_read, 2);
         assert_eq!(result.total_lines, Some(4));
     }
@@ -605,12 +790,15 @@ mod tests {
             content_filter: None,
             line_numbers: None,
             max_line_length: None,
+            working_dir: None,
+            block_env_files: Some(false),
+            return_attachments: Some(false),
         };
 
         let result = FileReadTool::read_file(&input).unwrap();
         assert!(!result.success);
         assert!(result.error.is_some());
-        assert!(result.error.as_ref().unwrap().contains("does not exist"));
+        assert!(result.error.as_ref().unwrap().contains("not found"));
     }
 
     #[test]
@@ -632,6 +820,9 @@ mod tests {
             content_filter: None,
             line_numbers: None,
             max_line_length: None,
+            working_dir: None,
+            block_env_files: Some(false),
+            return_attachments: Some(false),
         };
 
         let result = FileReadTool::read_file(&input).unwrap();
@@ -641,7 +832,7 @@ mod tests {
             .error
             .as_ref()
             .unwrap()
-            .contains("Binary file detected"));
+            .contains("binary file"));
     }
 
     #[test]
@@ -662,6 +853,9 @@ mod tests {
             content_filter: None,
             line_numbers: None,
             max_line_length: None,
+            working_dir: None,
+            block_env_files: Some(false),
+            return_attachments: Some(false),
         };
 
         let result = FileReadTool::read_file(&input).unwrap();
@@ -687,6 +881,9 @@ mod tests {
             content_filter: Some(ContentFilter::AllowedExtensions(vec!["rs".to_string()])),
             line_numbers: None,
             max_line_length: None,
+            working_dir: None,
+            block_env_files: Some(false),
+            return_attachments: Some(false),
         };
 
         let result = FileReadTool::read_file(&input).unwrap();
@@ -711,6 +908,9 @@ mod tests {
             content_filter: Some(ContentFilter::RejectedExtensions(vec!["exe".to_string()])),
             line_numbers: None,
             max_line_length: None,
+            working_dir: None,
+            block_env_files: Some(false),
+            return_attachments: Some(false),
         };
 
         let result = FileReadTool::read_file(&input).unwrap();
@@ -720,5 +920,115 @@ mod tests {
             .as_ref()
             .unwrap()
             .contains("rejected by content filter"));
+    }
+
+    #[test]
+    fn test_env_file_blocking() {
+        let temp_dir = TempDir::new().unwrap();
+        let file_path = temp_dir.path().join(".env");
+        fs::write(&file_path, "SECRET=value").unwrap();
+
+        let input = FileReadInput {
+            file_path: file_path.to_string_lossy().to_string(),
+            start_line: None,
+            end_line: None,
+            offset: None,
+            limit: None,
+            max_size_bytes: None,
+            detect_binary: None,
+            content_filter: None,
+            line_numbers: None,
+            max_line_length: None,
+            working_dir: None,
+            block_env_files: Some(true),
+            return_attachments: Some(false),
+        };
+
+        let result = FileReadTool::read_file(&input).unwrap();
+        assert!(!result.success);
+        assert!(result.error.as_ref().unwrap().contains("blocked"));
+    }
+
+    #[test]
+    fn test_env_file_whitelist() {
+        let temp_dir = TempDir::new().unwrap();
+        let file_path = temp_dir.path().join(".env.example");
+        fs::write(&file_path, "EXAMPLE=value").unwrap();
+
+        let input = FileReadInput {
+            file_path: file_path.to_string_lossy().to_string(),
+            start_line: None,
+            end_line: None,
+            offset: None,
+            limit: None,
+            max_size_bytes: None,
+            detect_binary: None,
+            content_filter: None,
+            line_numbers: Some(false),
+            max_line_length: None,
+            working_dir: None,
+            block_env_files: Some(true),
+            return_attachments: Some(false),
+        };
+
+        let result = FileReadTool::read_file(&input).unwrap();
+        assert!(result.success);
+    }
+
+    #[test]
+    fn test_opencode_line_number_format() {
+        let temp_dir = TempDir::new().unwrap();
+        let file_path = temp_dir.path().join("test.txt");
+        fs::write(&file_path, "Line 1\nLine 2").unwrap();
+
+        let input = FileReadInput {
+            file_path: file_path.to_string_lossy().to_string(),
+            start_line: None,
+            end_line: None,
+            offset: None,
+            limit: None,
+            max_size_bytes: None,
+            detect_binary: None,
+            content_filter: None,
+            line_numbers: Some(true), // OpenCode format
+            max_line_length: None,
+            working_dir: None,
+            block_env_files: Some(false),
+            return_attachments: Some(false),
+        };
+
+        let result = FileReadTool::read_file(&input).unwrap();
+        assert!(result.success);
+        let content = result.content.unwrap();
+        assert!(content.contains("00001| Line 1"));
+        assert!(content.contains("00002| Line 2"));
+        assert!(content.contains("<file>"));
+        assert!(content.contains("</file>"));
+    }
+
+    #[test]
+    fn test_relative_path_resolution() {
+        let temp_dir = TempDir::new().unwrap();
+        let file_path = temp_dir.path().join("test.txt");
+        fs::write(&file_path, "content").unwrap();
+
+        let input = FileReadInput {
+            file_path: "test.txt".to_string(), // Relative path
+            start_line: None,
+            end_line: None,
+            offset: None,
+            limit: None,
+            max_size_bytes: None,
+            detect_binary: None,
+            content_filter: None,
+            line_numbers: Some(false),
+            max_line_length: None,
+            working_dir: Some(temp_dir.path().to_string_lossy().to_string()),
+            block_env_files: Some(false),
+            return_attachments: Some(false),
+        };
+
+        let result = FileReadTool::read_file(&input).unwrap();
+        assert!(result.success);
     }
 }

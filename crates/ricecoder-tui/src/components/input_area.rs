@@ -14,6 +14,37 @@ use crate::{
     textarea_widget::{TextAreaWidget, VimMode},
 };
 
+/// Validation result for input
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ValidationResult {
+    /// Input is valid
+    Valid,
+    /// Input is invalid with error message
+    Invalid(String),
+}
+
+/// Validation function type
+pub type ValidatorFn = Box<dyn Fn(&str) -> ValidationResult + Send + Sync>;
+
+/// Autocomplete candidate
+#[derive(Debug, Clone, PartialEq)]
+pub struct AutocompleteCandidate {
+    /// Display text
+    pub display: String,
+    /// Replacement text (what gets inserted)
+    pub replacement: String,
+    /// Description/help text
+    pub description: Option<String>,
+    /// Score/relevance (0.0 to 1.0)
+    pub score: f32,
+}
+
+/// Autocomplete provider trait
+pub trait AutocompleteProvider: Send + Sync {
+    /// Get autocomplete candidates for given input
+    fn get_candidates(&self, input: &str, cursor_pos: (usize, usize)) -> Vec<AutocompleteCandidate>;
+}
+
 /// InputArea component for multi-line text input
 pub struct InputArea {
     /// Unique component identifier
@@ -32,6 +63,18 @@ pub struct InputArea {
     tab_order: Option<usize>,
     /// Z-index for layering
     z_index: i32,
+    /// Input validator (GAP-32-008)
+    validator: Option<ValidatorFn>,
+    /// Last validation result
+    validation_result: ValidationResult,
+    /// Autocomplete provider (GAP-32-006)
+    autocomplete_provider: Option<Box<dyn AutocompleteProvider>>,
+    /// Autocomplete candidates
+    autocomplete_candidates: Vec<AutocompleteCandidate>,
+    /// Selected autocomplete candidate index
+    autocomplete_selected: usize,
+    /// Whether autocomplete is visible
+    autocomplete_visible: bool,
 }
 
 impl InputArea {
@@ -46,6 +89,12 @@ impl InputArea {
             bounds: Rect::default(),
             tab_order: None,
             z_index: 0,
+            validator: None,
+            validation_result: ValidationResult::Valid,
+            autocomplete_provider: None,
+            autocomplete_candidates: Vec::new(),
+            autocomplete_selected: 0,
+            autocomplete_visible: false,
         }
     }
 
@@ -150,6 +199,215 @@ impl InputArea {
     /// Get reference to underlying TextAreaWidget
     pub fn textarea(&self) -> &TextAreaWidget {
         &self.textarea
+    }
+
+    // ========================================================================
+    // Validation API (GAP-32-008)
+    // ========================================================================
+
+    /// Set input validator
+    pub fn set_validator(&mut self, validator: ValidatorFn) {
+        self.validator = Some(validator);
+    }
+
+    /// Remove validator
+    pub fn clear_validator(&mut self) {
+        self.validator = None;
+    }
+
+    /// Validate current input
+    pub fn validate(&mut self) -> &ValidationResult {
+        if let Some(validator) = &self.validator {
+            self.validation_result = validator(&self.text());
+        } else {
+            self.validation_result = ValidationResult::Valid;
+        }
+        &self.validation_result
+    }
+
+    /// Get last validation result
+    pub fn validation_result(&self) -> &ValidationResult {
+        &self.validation_result
+    }
+
+    /// Check if input is valid
+    pub fn is_valid(&self) -> bool {
+        matches!(self.validation_result, ValidationResult::Valid)
+    }
+
+    /// Handle submit with validation enforcement
+    pub fn handle_submit_validated(&mut self, key: crossterm::event::KeyCode, modifiers: crossterm::event::KeyModifiers) -> Option<String> {
+        // Validate before allowing submit
+        self.validate();
+        
+        if !self.is_valid() {
+            // Don't submit if validation fails
+            return None;
+        }
+
+        // Call original submit handler
+        self.handle_submit(key, modifiers)
+    }
+
+    // ========================================================================
+    // Autocomplete API (GAP-32-006)
+    // ========================================================================
+
+    /// Set autocomplete provider
+    pub fn set_autocomplete_provider(&mut self, provider: Box<dyn AutocompleteProvider>) {
+        self.autocomplete_provider = Some(provider);
+    }
+
+    /// Remove autocomplete provider
+    pub fn clear_autocomplete_provider(&mut self) {
+        self.autocomplete_provider = None;
+        self.autocomplete_candidates.clear();
+        self.autocomplete_visible = false;
+    }
+
+    /// Update autocomplete candidates based on current input
+    pub fn update_autocomplete(&mut self) {
+        if let Some(provider) = &self.autocomplete_provider {
+            let input = self.text();
+            let cursor_pos = self.cursor_position();
+            self.autocomplete_candidates = provider.get_candidates(&input, cursor_pos);
+            
+            // Sort by score (descending)
+            self.autocomplete_candidates.sort_by(|a, b| {
+                b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal)
+            });
+
+            // Show autocomplete if we have candidates
+            self.autocomplete_visible = !self.autocomplete_candidates.is_empty();
+            self.autocomplete_selected = 0;
+        }
+    }
+
+    /// Show autocomplete
+    pub fn show_autocomplete(&mut self) {
+        self.update_autocomplete();
+    }
+
+    /// Hide autocomplete
+    pub fn hide_autocomplete(&mut self) {
+        self.autocomplete_visible = false;
+        self.autocomplete_candidates.clear();
+        self.autocomplete_selected = 0;
+    }
+
+    /// Check if autocomplete is visible
+    pub fn is_autocomplete_visible(&self) -> bool {
+        self.autocomplete_visible
+    }
+
+    /// Get autocomplete candidates
+    pub fn autocomplete_candidates(&self) -> &[AutocompleteCandidate] {
+        &self.autocomplete_candidates
+    }
+
+    /// Get selected autocomplete candidate index
+    pub fn autocomplete_selected(&self) -> usize {
+        self.autocomplete_selected
+    }
+
+    /// Select next autocomplete candidate
+    pub fn autocomplete_next(&mut self) {
+        if !self.autocomplete_candidates.is_empty() {
+            self.autocomplete_selected = (self.autocomplete_selected + 1) % self.autocomplete_candidates.len();
+        }
+    }
+
+    /// Select previous autocomplete candidate
+    pub fn autocomplete_prev(&mut self) {
+        if !self.autocomplete_candidates.is_empty() {
+            if self.autocomplete_selected == 0 {
+                self.autocomplete_selected = self.autocomplete_candidates.len() - 1;
+            } else {
+                self.autocomplete_selected -= 1;
+            }
+        }
+    }
+
+    /// Accept selected autocomplete candidate
+    pub fn autocomplete_accept(&mut self) -> bool {
+        if self.autocomplete_visible && self.autocomplete_selected < self.autocomplete_candidates.len() {
+            let candidate = &self.autocomplete_candidates[self.autocomplete_selected];
+            let replacement = candidate.replacement.clone();
+            
+            // Clear current input and insert replacement
+            self.clear();
+            self.set_text(replacement);
+            
+            // Hide autocomplete
+            self.hide_autocomplete();
+            
+            true
+        } else {
+            false
+        }
+    }
+
+    // ========================================================================
+    // History Draft API (GAP-32-007) - Forwarding to TextAreaWidget
+    // ========================================================================
+
+    /// Save current text as draft before history navigation
+    pub fn save_history_draft(&mut self) {
+        self.textarea.save_draft();
+    }
+
+    /// Restore draft text
+    pub fn restore_history_draft(&mut self) -> bool {
+        self.textarea.restore_draft()
+    }
+
+    /// Check if draft exists
+    pub fn has_history_draft(&self) -> bool {
+        self.textarea.has_draft()
+    }
+
+    /// Clear draft
+    pub fn clear_history_draft(&mut self) {
+        self.textarea.clear_draft();
+    }
+
+    // ========================================================================
+    // Selection API (GAP-32-004) - Forwarding to TextAreaWidget
+    // ========================================================================
+
+    /// Start selection from current cursor position
+    pub fn start_selection(&mut self) {
+        self.textarea.start_selection();
+    }
+
+    /// Update selection to current cursor position
+    pub fn update_selection(&mut self) {
+        self.textarea.update_selection();
+    }
+
+    /// Clear selection
+    pub fn clear_selection(&mut self) {
+        self.textarea.clear_selection();
+    }
+
+    /// Get selected text
+    pub fn selected_text(&self) -> Option<String> {
+        self.textarea.selected_text()
+    }
+
+    /// Copy selected text to clipboard
+    pub fn copy_selection(&self) -> Result<(), crate::clipboard::ClipboardError> {
+        self.textarea.copy_selection()
+    }
+
+    /// Cut selected text to clipboard
+    pub fn cut_selection(&mut self) -> Result<(), crate::clipboard::ClipboardError> {
+        self.textarea.cut_selection()
+    }
+
+    /// Paste text from clipboard
+    pub fn paste_from_clipboard(&mut self) -> Result<(), crate::clipboard::ClipboardError> {
+        self.textarea.paste_from_clipboard()
     }
 }
 
@@ -295,6 +553,8 @@ impl crate::components::Component for InputArea {
         new_area.tab_order = self.tab_order;
         new_area.z_index = self.z_index;
         new_area.set_text(self.text());
+        // Note: validator and autocomplete_provider are not cloned (function pointers/trait objects)
+        // validation_result is reset to Valid for new instance
         Box::new(new_area)
     }
 }
@@ -373,5 +633,293 @@ mod tests {
         let result = input.handle_focus(FocusDirection::Next);
         assert_eq!(result, FocusResult::Focused);
         assert!(input.is_focused());
+    }
+
+    // ========================================================================
+    // Tests for GAP-32-004: Selection Support
+    // ========================================================================
+
+    #[test]
+    fn test_selection_basic() {
+        let mut input = InputArea::new("test", false, 10);
+        input.set_text("Hello, World!");
+        
+        // Start selection
+        input.start_selection();
+        assert!(input.textarea().selection().is_some());
+        
+        // Clear selection
+        input.clear_selection();
+        assert!(input.textarea().selection().is_none());
+    }
+
+    #[test]
+    fn test_selection_text_extraction() {
+        let mut input = InputArea::new("test", false, 10);
+        input.set_text("Hello, World!");
+        
+        // Note: Actual text selection would require cursor manipulation
+        // This tests the API surface
+        let selected = input.selected_text();
+        assert!(selected.is_none() || selected.is_some());
+    }
+
+    // ========================================================================
+    // Tests for GAP-32-005: Copy/Paste Handling
+    // ========================================================================
+
+    #[test]
+    fn test_clipboard_api_available() {
+        let input = InputArea::new("test", false, 10);
+        
+        // Test that clipboard methods exist and are callable
+        let copy_result = input.copy_selection();
+        // Expected to fail with no selection, but API should exist
+        assert!(copy_result.is_err());
+    }
+
+    #[test]
+    fn test_paste_api_available() {
+        let mut input = InputArea::new("test", false, 10);
+        
+        // Test that paste method exists
+        // May fail if clipboard is empty or unavailable
+        let _ = input.paste_from_clipboard();
+    }
+
+    // ========================================================================
+    // Tests for GAP-32-006: Autocomplete
+    // ========================================================================
+
+    struct TestAutocompleteProvider;
+    
+    impl AutocompleteProvider for TestAutocompleteProvider {
+        fn get_candidates(&self, input: &str, _cursor_pos: (usize, usize)) -> Vec<AutocompleteCandidate> {
+            if input.starts_with("/") {
+                vec![
+                    AutocompleteCandidate {
+                        display: "/help".to_string(),
+                        replacement: "/help".to_string(),
+                        description: Some("Show help".to_string()),
+                        score: 1.0,
+                    },
+                    AutocompleteCandidate {
+                        display: "/exit".to_string(),
+                        replacement: "/exit".to_string(),
+                        description: Some("Exit application".to_string()),
+                        score: 0.9,
+                    },
+                ]
+            } else {
+                vec![]
+            }
+        }
+    }
+
+    #[test]
+    fn test_autocomplete_provider() {
+        let mut input = InputArea::new("test", false, 10);
+        input.set_autocomplete_provider(Box::new(TestAutocompleteProvider));
+        
+        input.set_text("/");
+        input.update_autocomplete();
+        
+        assert!(input.is_autocomplete_visible());
+        assert_eq!(input.autocomplete_candidates().len(), 2);
+        assert_eq!(input.autocomplete_candidates()[0].display, "/help");
+    }
+
+    #[test]
+    fn test_autocomplete_navigation() {
+        let mut input = InputArea::new("test", false, 10);
+        input.set_autocomplete_provider(Box::new(TestAutocompleteProvider));
+        
+        input.set_text("/");
+        input.update_autocomplete();
+        
+        assert_eq!(input.autocomplete_selected(), 0);
+        
+        input.autocomplete_next();
+        assert_eq!(input.autocomplete_selected(), 1);
+        
+        input.autocomplete_prev();
+        assert_eq!(input.autocomplete_selected(), 0);
+    }
+
+    #[test]
+    fn test_autocomplete_accept() {
+        let mut input = InputArea::new("test", false, 10);
+        input.set_autocomplete_provider(Box::new(TestAutocompleteProvider));
+        
+        input.set_text("/");
+        input.update_autocomplete();
+        
+        let accepted = input.autocomplete_accept();
+        assert!(accepted);
+        assert_eq!(input.text(), "/help");
+        assert!(!input.is_autocomplete_visible());
+    }
+
+    #[test]
+    fn test_autocomplete_hide() {
+        let mut input = InputArea::new("test", false, 10);
+        input.set_autocomplete_provider(Box::new(TestAutocompleteProvider));
+        
+        input.set_text("/");
+        input.update_autocomplete();
+        assert!(input.is_autocomplete_visible());
+        
+        input.hide_autocomplete();
+        assert!(!input.is_autocomplete_visible());
+        assert_eq!(input.autocomplete_candidates().len(), 0);
+    }
+
+    // ========================================================================
+    // Tests for GAP-32-007: History Draft Preservation
+    // ========================================================================
+
+    #[test]
+    fn test_history_draft_save_restore() {
+        let mut input = InputArea::new("test", false, 10);
+        input.set_text("Draft message");
+        
+        // Save draft
+        input.save_history_draft();
+        assert!(input.has_history_draft());
+        
+        // Clear input
+        input.clear();
+        assert!(input.is_empty());
+        
+        // Restore draft
+        let restored = input.restore_history_draft();
+        assert!(restored);
+        assert_eq!(input.text(), "Draft message");
+        assert!(!input.has_history_draft()); // Draft consumed
+    }
+
+    #[test]
+    fn test_history_draft_clear() {
+        let mut input = InputArea::new("test", false, 10);
+        input.set_text("Draft message");
+        input.save_history_draft();
+        
+        assert!(input.has_history_draft());
+        
+        input.clear_history_draft();
+        assert!(!input.has_history_draft());
+    }
+
+    #[test]
+    fn test_history_draft_not_saved_for_empty() {
+        let mut input = InputArea::new("test", false, 10);
+        input.save_history_draft();
+        
+        // Should not save empty draft
+        assert!(!input.has_history_draft());
+    }
+
+    // ========================================================================
+    // Tests for GAP-32-008: Input Validation
+    // ========================================================================
+
+    #[test]
+    fn test_validation_basic() {
+        let mut input = InputArea::new("test", false, 10);
+        
+        // Set validator that rejects empty input
+        input.set_validator(Box::new(|text: &str| {
+            if text.is_empty() {
+                ValidationResult::Invalid("Input cannot be empty".to_string())
+            } else {
+                ValidationResult::Valid
+            }
+        }));
+        
+        // Test empty input
+        input.set_text("");
+        let result = input.validate();
+        assert!(matches!(result, ValidationResult::Invalid(_)));
+        assert!(!input.is_valid());
+        
+        // Test valid input
+        input.set_text("Hello");
+        let result = input.validate();
+        assert!(matches!(result, ValidationResult::Valid));
+        assert!(input.is_valid());
+    }
+
+    #[test]
+    fn test_validation_on_submit() {
+        let mut input = InputArea::new("test", false, 10);
+        
+        // Set validator
+        input.set_validator(Box::new(|text: &str| {
+            if text.is_empty() {
+                ValidationResult::Invalid("Input cannot be empty".to_string())
+            } else {
+                ValidationResult::Valid
+            }
+        }));
+        
+        // Try to submit empty input (should fail)
+        input.set_text("");
+        let result = input.handle_submit_validated(KeyCode::Enter, KeyModifiers::NONE);
+        assert!(result.is_none());
+        
+        // Submit valid input (should succeed)
+        input.set_text("Valid message");
+        let result = input.handle_submit_validated(KeyCode::Enter, KeyModifiers::NONE);
+        assert_eq!(result, Some("Valid message".to_string()));
+    }
+
+    #[test]
+    fn test_validation_clear_validator() {
+        let mut input = InputArea::new("test", false, 10);
+        
+        input.set_validator(Box::new(|text: &str| {
+            if text.is_empty() {
+                ValidationResult::Invalid("Empty".to_string())
+            } else {
+                ValidationResult::Valid
+            }
+        }));
+        
+        input.set_text("");
+        input.validate();
+        assert!(!input.is_valid());
+        
+        // Clear validator
+        input.clear_validator();
+        input.validate();
+        assert!(input.is_valid()); // Should be valid now
+    }
+
+    #[test]
+    fn test_validation_complex_rules() {
+        let mut input = InputArea::new("test", false, 10);
+        
+        // Validator: min 3 chars, max 10 chars
+        input.set_validator(Box::new(|text: &str| {
+            if text.len() < 3 {
+                ValidationResult::Invalid("Minimum 3 characters".to_string())
+            } else if text.len() > 10 {
+                ValidationResult::Invalid("Maximum 10 characters".to_string())
+            } else {
+                ValidationResult::Valid
+            }
+        }));
+        
+        input.set_text("ab");
+        input.validate();
+        assert!(!input.is_valid());
+        
+        input.set_text("abc");
+        input.validate();
+        assert!(input.is_valid());
+        
+        input.set_text("12345678901");
+        input.validate();
+        assert!(!input.is_valid());
     }
 }

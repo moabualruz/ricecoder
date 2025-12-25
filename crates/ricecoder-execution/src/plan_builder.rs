@@ -320,6 +320,7 @@ impl PlanBuilder {
                 StepAction::ModifyFile { .. } => 50,
                 StepAction::DeleteFile { .. } => 10,
                 StepAction::RunCommand { .. } => 500,
+                StepAction::RunShellCommand { .. } => 1000,
                 StepAction::RunTests { .. } => 5000,
             };
             total_ms += step_ms;

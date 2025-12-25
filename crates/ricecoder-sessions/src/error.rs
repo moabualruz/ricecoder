@@ -62,6 +62,26 @@ pub enum SessionError {
     /// Token estimation error
     #[error("Token estimation error: {0}")]
     TokenEstimation(String),
+
+    /// Session is busy (cannot perform operation)
+    #[error("Session is busy: {0}")]
+    SessionBusy(String),
+
+    /// Lock acquisition failed
+    #[error("Lock acquisition failed: {0}")]
+    LockError(String),
+
+    /// File corruption detected
+    #[error("File corruption detected: {0}")]
+    CorruptedFile(String),
+
+    /// Snapshot operation failed
+    #[error("Snapshot operation failed: {0}")]
+    SnapshotFailed(String),
+
+    /// Snapshots are disabled
+    #[error("Snapshots are disabled")]
+    SnapshotDisabled,
 }
 
 impl From<ricecoder_security::SecurityError> for SessionError {

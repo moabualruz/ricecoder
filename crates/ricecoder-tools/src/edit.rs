@@ -23,6 +23,9 @@ pub struct FileEditInput {
     pub start_line: Option<usize>,
     /// Optional end line for context (1-indexed)
     pub end_line: Option<usize>,
+    /// Replace all occurrences (default: false)
+    #[serde(default)]
+    pub replace_all: bool,
 }
 
 /// Output from file edit operations
@@ -66,6 +69,9 @@ pub struct BatchFileEditOutput {
     pub failed_edits: usize,
     /// Backup files created (if any)
     pub backups_created: Vec<String>,
+    /// OpenCode-compatible title (relative path from project root)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
 }
 
 /// Result of a single edit in a batch operation
@@ -130,12 +136,21 @@ impl FileEditTool {
                         if !input.continue_on_error {
                             // Rollback all successful edits
                             Self::rollback_batch(&results)?;
+                            
+                            // Generate title for failed batch
+                            let title = if !input.edits.is_empty() {
+                                Self::compute_relative_path(&input.edits[0].file_path)
+                            } else {
+                                None
+                            };
+                            
                             return Ok(BatchFileEditOutput {
                                 success: false,
                                 results,
                                 successful_edits,
                                 failed_edits,
                                 backups_created: backups.into_iter().map(|(_, b)| b).collect(),
+                                title,
                             });
                         }
                     }
@@ -176,12 +191,20 @@ impl FileEditTool {
             backups_created.push(backup_path);
         }
 
+        // Generate OpenCode-compatible title (relative path from project root)
+        let title = if !input.edits.is_empty() {
+            Self::compute_relative_path(&input.edits[0].file_path)
+        } else {
+            None
+        };
+
         Ok(BatchFileEditOutput {
             success: failed_edits == 0,
             results,
             successful_edits,
             failed_edits,
             backups_created,
+            title,
         })
     }
 
@@ -223,9 +246,73 @@ impl FileEditTool {
         Ok(())
     }
 
+    /// Compute relative path from project root (OpenCode compatibility)
+    fn compute_relative_path(file_path: &str) -> Option<String> {
+        let path = Path::new(file_path);
+        
+        // Try to find project root by walking up the directory tree
+        let mut current = path.parent()?;
+        while let Some(parent) = current.parent() {
+            // Check for common project root markers
+            if parent.join(".git").exists()
+                || parent.join("Cargo.toml").exists()
+                || parent.join("package.json").exists()
+                || parent.join("pyproject.toml").exists()
+            {
+                // Found project root, compute relative path
+                return path.strip_prefix(parent).ok()?.to_str().map(|s| s.to_string());
+            }
+            current = parent;
+        }
+        
+        // Fallback: use filename if no project root found
+        path.file_name()?.to_str().map(|s| s.to_string())
+    }
+
     /// Apply edit using the best available strategy
     pub fn edit_file(input: &FileEditInput) -> Result<FileEditOutput, ToolError> {
+        // GAP-3: Enforce old_string != new_string
+        if input.old_string == input.new_string {
+            return Err(ToolError::new(
+                "IDENTICAL_STRINGS",
+                "oldString and newString must be different".to_string(),
+            ));
+        }
+
         let file_path = Path::new(&input.file_path);
+        
+        // GAP-10: File type/existence checks with specific error messages
+        if !file_path.exists() {
+            return Err(ToolError::new(
+                "FILE_NOT_FOUND",
+                format!("File {} not found", input.file_path),
+            ));
+        }
+        
+        if file_path.is_dir() {
+            return Err(ToolError::new(
+                "PATH_IS_DIRECTORY",
+                format!("Path is a directory, not a file: {}", input.file_path),
+            ));
+        }
+
+        // GAP-4: Handle empty oldString = overwrite file
+        if input.old_string.is_empty() {
+            std::fs::write(file_path, &input.new_string).map_err(|e| {
+                ToolError::new("FILE_WRITE_ERROR", format!("Failed to write file: {}", e))
+            })?;
+            
+            let diff = generate_diff("", &input.new_string);
+            return Ok(FileEditOutput {
+                success: true,
+                strategy_used: Some("FullOverwrite".to_string()),
+                strategies_attempted: vec!["FullOverwrite".to_string()],
+                diff: Some(diff),
+                error: None,
+                closest_match: None,
+            });
+        }
+
         let content = std::fs::read_to_string(file_path).map_err(|e| {
             ToolError::new("FILE_READ_ERROR", format!("Failed to read file: {}", e))
         })?;
@@ -233,17 +320,17 @@ impl FileEditTool {
         let mut strategies_attempted = Vec::new();
         let mut closest_match: Option<ClosestMatchInfo> = None;
 
-        // Try strategies in order of preference
+        // GAP-5: Port OpenCode replacement engine - 9 strategies in OpenCode order
         let strategies: Vec<Box<dyn EditStrategy>> = vec![
             Box::new(SimpleStrategy),
             Box::new(LineTrimmedStrategy),
             Box::new(BlockAnchorStrategy),
-            Box::new(IndentNormalizedStrategy),
             Box::new(WhitespaceNormalizedStrategy),
-            Box::new(LevenshteinStrategy),
-            Box::new(LineByLineStrategy),
-            Box::new(RegexStrategy),
-            Box::new(AstBasedStrategy),
+            Box::new(IndentNormalizedStrategy),
+            Box::new(EscapeNormalizedStrategy),
+            Box::new(TrimmedBoundaryStrategy),
+            Box::new(ContextAwareStrategy),
+            Box::new(MultiOccurrenceStrategy { replace_all: input.replace_all }),
         ];
 
         for strategy in strategies {
@@ -251,9 +338,13 @@ impl FileEditTool {
             strategies_attempted.push(strategy_name.clone());
 
             match strategy.apply(&content, input) {
-                Ok(diff) => {
-                    // Apply the change to the file
-                    Self::apply_diff(file_path, &diff)?;
+                Ok(new_content) => {
+                    // GAP-1: CRITICAL FIX - Actually write the file instead of calling stub
+                    std::fs::write(file_path, &new_content).map_err(|e| {
+                        ToolError::new("FILE_WRITE_ERROR", format!("Failed to write file: {}", e))
+                    })?;
+
+                    let diff = generate_diff(&content, &new_content);
 
                     return Ok(FileEditOutput {
                         success: true,
@@ -279,35 +370,29 @@ impl FileEditTool {
                     }
                     continue;
                 }
+                Err(EditError::MultipleMatches) => {
+                    // GAP-2: Handle multiple matches error with OpenCode message
+                    return Ok(FileEditOutput {
+                        success: false,
+                        strategy_used: None,
+                        strategies_attempted,
+                        diff: None,
+                        error: Some("Found multiple matches for oldString. Provide more surrounding lines in oldString to identify the correct match.".to_string()),
+                        closest_match,
+                    });
+                }
             }
         }
 
-        // All strategies failed
+        // All strategies failed - use OpenCode error message
         Ok(FileEditOutput {
             success: false,
             strategy_used: None,
             strategies_attempted,
             diff: None,
-            error: Some("All edit strategies failed to find a match".to_string()),
+            error: Some("oldString not found in content".to_string()),
             closest_match,
         })
-    }
-
-    /// Apply a unified diff to a file
-    fn apply_diff(file_path: &Path, diff: &str) -> Result<(), ToolError> {
-        // Parse the diff and apply changes
-        // This is a simplified implementation - in practice you'd use a proper diff library
-        // For now, return an error indicating this needs implementation
-        return Err(ToolError::new(
-            "DIFF_NOT_IMPLEMENTED",
-            "Unified diff application not yet implemented",
-        ));
-
-        // Write back the content (unchanged for now)
-        // std::fs::write(file_path, content)
-        //     .map_err(|e| ToolError::new("FILE_WRITE_ERROR", format!("Failed to write file: {}", e)))?;
-
-        // Ok(())
     }
 }
 
@@ -317,11 +402,160 @@ trait EditStrategy {
     fn apply(&self, content: &str, input: &FileEditInput) -> Result<String, EditError>;
 }
 
+/// GAP-5: EscapeNormalizedStrategy (from OpenCode)
+struct EscapeNormalizedStrategy;
+
+impl EditStrategy for EscapeNormalizedStrategy {
+    fn name(&self) -> String {
+        "EscapeNormalized".to_string()
+    }
+
+    fn apply(&self, content: &str, input: &FileEditInput) -> Result<String, EditError> {
+        let unescape = |s: &str| -> String {
+            s.replace("\\n", "\n")
+             .replace("\\t", "\t")
+             .replace("\\r", "\r")
+             .replace("\\'", "'")
+             .replace("\\\"", "\"")
+             .replace("\\`", "`")
+             .replace("\\\\", "\\")
+             .replace("\\$", "$")
+        };
+
+        let unescaped_old = unescape(&input.old_string);
+        
+        if content.contains(&unescaped_old) {
+            let new_content = content.replace(&unescaped_old, &input.new_string);
+            Ok(new_content)
+        } else {
+            Err(EditError::NoMatch)
+        }
+    }
+}
+
+/// GAP-5: TrimmedBoundaryStrategy (from OpenCode)
+struct TrimmedBoundaryStrategy;
+
+impl EditStrategy for TrimmedBoundaryStrategy {
+    fn name(&self) -> String {
+        "TrimmedBoundary".to_string()
+    }
+
+    fn apply(&self, content: &str, input: &FileEditInput) -> Result<String, EditError> {
+        let trimmed_old = input.old_string.trim();
+        
+        if trimmed_old == input.old_string {
+            // Already trimmed, no point trying
+            return Err(EditError::NoMatch);
+        }
+
+        if content.contains(trimmed_old) {
+            let new_content = content.replace(trimmed_old, &input.new_string);
+            Ok(new_content)
+        } else {
+            Err(EditError::NoMatch)
+        }
+    }
+}
+
+/// GAP-5: ContextAwareStrategy (from OpenCode)
+struct ContextAwareStrategy;
+
+impl EditStrategy for ContextAwareStrategy {
+    fn name(&self) -> String {
+        "ContextAware".to_string()
+    }
+
+    fn apply(&self, content: &str, input: &FileEditInput) -> Result<String, EditError> {
+        let old_lines: Vec<&str> = input.old_string.lines().collect();
+        if old_lines.len() < 3 {
+            return Err(EditError::NoMatch);
+        }
+
+        let first_line = old_lines[0].trim();
+        let last_line = old_lines[old_lines.len() - 1].trim();
+        let content_lines: Vec<&str> = content.lines().collect();
+
+        for i in 0..content_lines.len() {
+            if content_lines[i].trim() == first_line {
+                for j in (i + 2)..content_lines.len() {
+                    if content_lines[j].trim() == last_line {
+                        let block_lines = &content_lines[i..=j];
+                        
+                        if block_lines.len() == old_lines.len() {
+                            let mut matching_lines = 0;
+                            let mut total_non_empty = 0;
+
+                            for k in 1..(block_lines.len() - 1) {
+                                let block_line = block_lines[k].trim();
+                                let old_line = old_lines[k].trim();
+
+                                if !block_line.is_empty() || !old_line.is_empty() {
+                                    total_non_empty += 1;
+                                    if block_line == old_line {
+                                        matching_lines += 1;
+                                    }
+                                }
+                            }
+
+                            if total_non_empty == 0 || (matching_lines as f64 / total_non_empty as f64) >= 0.5 {
+                                let mut new_lines = content_lines.clone();
+                                let new_block_lines: Vec<&str> = input.new_string.lines().collect();
+                                
+                                for k in 0..=j-i {
+                                    if k < new_block_lines.len() {
+                                        new_lines[i + k] = new_block_lines[k];
+                                    }
+                                }
+                                
+                                let new_content = new_lines.join("\n");
+                                return Ok(new_content);
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        Err(EditError::NoMatch)
+    }
+}
+
+/// GAP-5: MultiOccurrenceStrategy (from OpenCode) with replaceAll support
+struct MultiOccurrenceStrategy {
+    replace_all: bool,
+}
+
+impl EditStrategy for MultiOccurrenceStrategy {
+    fn name(&self) -> String {
+        "MultiOccurrence".to_string()
+    }
+
+    fn apply(&self, content: &str, input: &FileEditInput) -> Result<String, EditError> {
+        let match_count = content.matches(&input.old_string).count();
+
+        if match_count == 0 {
+            return Err(EditError::NoMatch);
+        }
+
+        if match_count == 1 || self.replace_all {
+            // Single match or replaceAll=true: do the replacement
+            let new_content = content.replace(&input.old_string, &input.new_string);
+            Ok(new_content)
+        } else {
+            // Multiple matches without replaceAll=true: error
+            Err(EditError::MultipleMatches)
+        }
+    }
+}
+
 /// Errors that can occur during editing
 #[derive(Debug, Clone)]
 enum EditError {
     NoMatch,
     ClosestMatch(ClosestMatchInfo),
+    MultipleMatches,
 }
 
 /// Simple exact string match and replace
@@ -335,8 +569,7 @@ impl EditStrategy for SimpleStrategy {
     fn apply(&self, content: &str, input: &FileEditInput) -> Result<String, EditError> {
         if content.contains(&input.old_string) {
             let new_content = content.replace(&input.old_string, &input.new_string);
-            let diff = generate_diff(content, &new_content);
-            Ok(diff)
+            Ok(new_content)
         } else {
             Err(EditError::NoMatch)
         }
@@ -357,8 +590,7 @@ impl EditStrategy for LineTrimmedStrategy {
 
         if content.contains(old_trimmed) {
             let new_content = content.replace(old_trimmed, new_trimmed);
-            let diff = generate_diff(content, &new_content);
-            Ok(diff)
+            Ok(new_content)
         } else {
             Err(EditError::NoMatch)
         }
@@ -397,8 +629,7 @@ impl EditStrategy for BlockAnchorStrategy {
                         let after = &content[end_idx..];
                         let new_content = format!("{}{}{}", before, input.new_string, after);
 
-                        let diff = generate_diff(content, &new_content);
-                        return Ok(diff);
+                        return Ok(new_content);
                     }
                 }
             }
@@ -422,8 +653,7 @@ impl EditStrategy for IndentNormalizedStrategy {
 
         if content.contains(&old_normalized) {
             let new_content = content.replace(&old_normalized, &new_normalized);
-            let diff = generate_diff(content, &new_content);
-            Ok(diff)
+            Ok(new_content)
         } else {
             Err(EditError::NoMatch)
         }
@@ -444,8 +674,7 @@ impl EditStrategy for WhitespaceNormalizedStrategy {
 
         if content.contains(&old_normalized) {
             let new_content = content.replace(&old_normalized, &new_normalized);
-            let diff = generate_diff(content, &new_content);
-            Ok(diff)
+            Ok(new_content)
         } else {
             Err(EditError::NoMatch)
         }
@@ -486,9 +715,8 @@ impl EditStrategy for LevenshteinStrategy {
             new_lines[line_num] = &input.new_string;
 
             let new_content = new_lines.join("\n");
-            let diff = generate_diff(content, &new_content);
 
-            Ok(diff)
+            Ok(new_content)
         } else {
             // Return closest match info
             let mut closest: Option<(usize, f64, String)> = None;
@@ -559,8 +787,7 @@ impl EditStrategy for LineByLineStrategy {
                     }
 
                     let new_content = new_content_lines.join("\n");
-                    let diff = generate_diff(content, &new_content);
-                    return Ok(diff);
+                    return Ok(new_content);
                 }
             }
         }
@@ -584,9 +811,8 @@ impl EditStrategy for RegexStrategy {
         match regex::Regex::new(&escaped) {
             Ok(re) => {
                 if re.is_match(content) {
-                    let new_content = re.replace_all(content, &input.new_string);
-                    let diff = generate_diff(content, &new_content);
-                    Ok(diff)
+                    let new_content = re.replace_all(content, &input.new_string).to_string();
+                    Ok(new_content)
                 } else {
                     Err(EditError::NoMatch)
                 }
@@ -709,6 +935,7 @@ mod tests {
             new_string: "Hi world".to_string(),
             start_line: None,
             end_line: None,
+            replace_all: false,
         };
 
         let result = SimpleStrategy.apply(content, &input);
@@ -724,6 +951,7 @@ mod tests {
             new_string: "Hi world".to_string(),
             start_line: None,
             end_line: None,
+            replace_all: false,
         };
 
         let result = LineTrimmedStrategy.apply(content, &input);

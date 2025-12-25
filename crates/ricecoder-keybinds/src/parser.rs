@@ -111,6 +111,11 @@ impl KeybindParser for JsonKeybindParser {
                     message: "Missing key".to_string(),
                 });
             }
+            
+            // OpenCode: "none" disables the keybind - skip it
+            if keybind.key.trim().to_lowercase() == "none" {
+                continue;
+            }
 
             keybinds.push(keybind);
         }
@@ -195,6 +200,7 @@ fn parse_markdown_entry(
     Ok(Keybind {
         action_id,
         key,
+        alternatives: Vec::new(),
         category: category.to_string(),
         description,
         is_default: false,

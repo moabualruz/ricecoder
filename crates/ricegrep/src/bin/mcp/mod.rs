@@ -133,6 +133,17 @@ impl RicegrepMcp {
 #[tool_router]
 impl RicegrepMcp {
     #[tool(
+        name = "grep",
+        description = "Fast file content search with regex support. Searches for patterns in file contents with optional path and glob filtering. Results sorted by modification time (newest first), limited to 100 matches by default. Supports full regex syntax and cross-platform file patterns."
+    )]
+    async fn grep_opencode(
+        &self,
+        Parameters(input): Parameters<GrepToolInput>,
+    ) -> Result<CallToolResult, ErrorData> {
+        self.grep_impl(input).await
+    }
+
+    #[tool(
         name = "rice_grep",
         description = "Search file contents using local index or server mode. Ideal for finding function definitions, error messages, configuration values, and recurring code patterns. Supports full regex syntax, directory scoping, file-type filters, and result limits, automatically falling back to local scans when server mode is unavailable."
     )]
@@ -140,27 +151,55 @@ impl RicegrepMcp {
         &self,
         Parameters(input): Parameters<GrepToolInput>,
     ) -> Result<CallToolResult, ErrorData> {
-        let file_path_pattern = input.include.clone().or(input.path.clone());
-        let filters = file_path_pattern.map(|pattern| SearchFilters {
+        self.grep_impl(input).await
+    }
+}
+
+impl RicegrepMcp {
+    /// Shared grep implementation for both `grep` and `rice_grep` tools
+    async fn grep_impl(
+        &self,
+        input: GrepToolInput,
+    ) -> Result<CallToolResult, ErrorData> {
+        // GAP-2 FIX: Separate path (search root) from include (glob filter)
+        // OpenCode: path = search root, include = file glob filter
+        let search_root = input.path.as_deref();
+        let file_glob_filter = input.include.as_deref();
+        
+        let filters = file_glob_filter.map(|pattern| SearchFilters {
             repository_id: None,
             language: None,
-            file_path_pattern: Some(pattern),
+            file_path_pattern: Some(pattern.to_string()),
         });
+        
+        // GAP-4 FIX: Default to 100 match limit (OpenCode behavior)
+        let limit = input.max_results.or(Some(100));
+        
         let request = SearchRequest {
-            query: input.pattern,
-            limit: input.max_results,
+            query: input.pattern.clone(),
+            limit,
             filters,
             ranking: None,
             timeout_ms: None,
         };
 
-        let (response, warning) = self.execute_search(request, input.path.as_deref()).await?;
+        let (mut response, warning) = self.execute_search(request, search_root).await?;
+        
+        // GAP-3 FIX: Sort by mtime descending (newest first)
+        response::sort_results_by_mtime(&mut response).await;
+        
+        // GAP-4 FIX: Check if results were truncated (limit reached)
+        let truncated = limit.map_or(false, |max| response.total_found > max);
+        
         let mut output = String::new();
         if let Some(note) = warning {
             output.push_str(&note);
             output.push('\n');
         }
-        output.push_str(&response::format_search_lines(&response));
+        
+        // GAP-5, GAP-6, GAP-7 FIX: Use OpenCode-compatible output format
+        output.push_str(&response::format_search_lines_opencode_style(&response, truncated));
+        
         Ok(response::tool_result_with_response(
             output.trim_end().to_string(),
             &response,
@@ -219,7 +258,8 @@ impl RicegrepMcp {
         Parameters(input): Parameters<GlobToolInput>,
     ) -> Result<CallToolResult, ErrorData> {
         let root = input.path.as_deref().unwrap_or(".");
-        let matches = crate::collect_glob_matches(
+        
+        let (matches, _truncated) = crate::collect_glob_matches(
             root,
             &input.pattern,
             input.include_dirs.unwrap_or(false),
@@ -393,12 +433,14 @@ mod tests {
     #[test]
     fn mcp_tool_variant_inventory() {
         let expected = [
+            "grep",          // GAP-1: OpenCode-compatible alias
             "rice_grep",
             "rice_glob",
             "rice_list",
             "rice_read",
             "rice_edit",
             "rice_nl_search",
+            "rice_write",
         ];
         let router = RicegrepMcp::tool_router();
         let tool_names: Vec<String> = router

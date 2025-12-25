@@ -16,10 +16,12 @@ pub mod collection;
 pub mod di;
 pub mod error;
 pub mod json_store;
+pub mod logging;
 pub mod validation;
 
 // Re-export commonly used items at crate root
 pub use cache::CacheOperations;
 pub use collection::CollectionAccess;
 // impl_error_from! is exported at crate root via #[macro_export]
+pub use logging::{LogLevel, LogOptions, Logger, create as create_logger, format_error, init as init_logging};
 pub use validation::{Validatable, ValidationError, Validator};

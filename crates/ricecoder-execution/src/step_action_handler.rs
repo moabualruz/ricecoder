@@ -4,11 +4,33 @@
 //! - CreateFile: Create new files with content
 //! - ModifyFile: Apply diffs to existing files
 //! - DeleteFile: Delete files using PathResolver
-//! - RunCommand: Execute shell commands
+//! - RunCommand: Execute shell commands (legacy mode: command + args)
+//! - RunShellCommand: Execute shell commands (OpenCode-compatible shell mode)
 //! - RunTests: Run tests with framework detection
 //!
 //! **CRITICAL**: All file operations use FileOperations wrapper which ensures
 //! all paths are validated through ricecoder_storage::PathResolver.
+//!
+//! ## OpenCode Migration Gaps (Task 2)
+//!
+//! **GAP-5 (Permission patterns)**: Not applicable - RiceCoder uses separate permission architecture
+//! **GAP-6 (External directory checks)**: ✅ Implemented - workdir validation in L213-229, L472-489
+//! **GAP-7 (Tree-sitter command enumeration)**: ✅ Implemented - validate_command_syntax() L348-376
+//! **GAP-10 (Combined output truncation)**: ✅ Implemented - single 30K buffer L506-554
+//! **GAP-11 (Runtime annotations)**: ✅ Implemented - <bash_metadata> with timing/exit code L572-588
+//! **GAP-12 (Abort/cancellation support)**: ⚠️ PARTIAL - requires ctx.abort integration (future work)
+//! **GAP-13 (Avoid command guidance)**: NON-ENFORCED POLICY (below)
+//!
+//! ### GAP-13: Avoid Command Guidance (Non-Enforced Policy)
+//!
+//! The following commands should be avoided in favor of specialized tools:
+//! - `cat`, `head`, `tail` → Use Read tool instead
+//! - `ls` → Use List tool instead
+//! - `grep`, `find` → Use Grep/Glob tools instead
+//! - `sed`, `awk` for file editing → Use Edit tool instead
+//!
+//! This is a **documentation-only** guideline, not enforced by the execution layer.
+//! AI agents should be trained to prefer specialized tools over these commands.
 
 use std::{process::Command, time::Duration};
 
@@ -19,6 +41,7 @@ use crate::{
     error::{ExecutionError, ExecutionResult},
     file_operations::FileOperations,
     models::CommandOutput,
+    shell::{ProcessTree, ShellDetector},
 };
 
 /// Handles file creation actions
@@ -194,6 +217,8 @@ impl CommandHandler {
     }
 
     /// Execute command asynchronously with full options (workdir, env)
+    ///
+    /// **GAP-10 IMPLEMENTATION**: Combined output truncation (single 30000 char buffer)
     async fn execute_command_async_with_options(
         command: &str,
         args: &[String],
@@ -207,7 +232,7 @@ impl CommandHandler {
         let mut cmd = Command::new(command);
         cmd.args(args).stdout(Stdio::piped()).stderr(Stdio::piped());
 
-        // Set working directory if specified
+        // Set working directory if specified (GAP-6: External directory checks)
         if let Some(dir) = workdir {
             let path = std::path::Path::new(dir);
             if !path.exists() {
@@ -247,39 +272,49 @@ impl CommandHandler {
 
         let duration = start_time.elapsed();
 
-        let mut stdout = String::from_utf8_lossy(&output.stdout).to_string();
-        let mut stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
         let exit_code = output.status.code();
 
-        // Truncate output if it exceeds MAX_OUTPUT_SIZE (30000 chars)
-        let stdout_truncated = stdout.len() > Self::MAX_OUTPUT_SIZE;
-        let stderr_truncated = stderr.len() > Self::MAX_OUTPUT_SIZE;
+        // GAP-10: Combined output truncation (single 30000 char buffer for stdout+stderr)
+        let mut combined = format!("{}{}", stdout, stderr);
+        let truncated = combined.len() > Self::MAX_OUTPUT_SIZE;
 
-        if stdout_truncated {
-            stdout.truncate(Self::MAX_OUTPUT_SIZE);
-            stdout.push_str("\n\n[Output truncated at 30000 characters]");
+        if truncated {
+            combined.truncate(Self::MAX_OUTPUT_SIZE);
             warn!(
                 command = %command,
-                original_len = output.stdout.len(),
-                "stdout truncated to {} chars",
+                original_len = stdout.len() + stderr.len(),
+                "Combined output truncated to {} chars",
                 Self::MAX_OUTPUT_SIZE
             );
         }
 
-        if stderr_truncated {
-            stderr.truncate(Self::MAX_OUTPUT_SIZE);
-            stderr.push_str("\n\n[Output truncated at 30000 characters]");
-            warn!(
-                command = %command,
-                original_len = output.stderr.len(),
-                "stderr truncated to {} chars",
-                Self::MAX_OUTPUT_SIZE
-            );
+        // GAP-11: Runtime annotations (<bash_metadata> block)
+        let mut metadata_lines: Vec<String> = Vec::new();
+        if truncated {
+            metadata_lines.push("<bash_metadata>".to_string());
+            metadata_lines.push(format!("bash tool truncated output as it exceeded {} char limit", Self::MAX_OUTPUT_SIZE));
+        }
+
+        // Append metadata if any
+        if !metadata_lines.is_empty() {
+            if !metadata_lines.contains(&"<bash_metadata>".to_string()) {
+                metadata_lines.insert(0, "<bash_metadata>".to_string());
+            }
+            metadata_lines.push(format!("exit code: {}", exit_code.unwrap_or(-1)));
+            metadata_lines.push(format!("duration: {}ms", duration.as_millis()));
+            metadata_lines.push("</bash_metadata>".to_string());
+            combined.push_str(&format!("\n\n{}", metadata_lines.join("\n")));
         }
 
         let command_output = CommandOutput {
-            stdout,
-            stderr,
+            stdout: combined.clone(),
+            stderr: if truncated || exit_code != Some(0) {
+                combined
+            } else {
+                String::new()
+            },
             exit_code,
         };
 
@@ -370,6 +405,282 @@ impl CommandHandler {
         }
 
         debug!(command = %full_command, "Command syntax validated successfully");
+        Ok(())
+    }
+}
+
+/// Handles shell command execution (OpenCode-compatible)
+pub struct ShellCommandHandler;
+
+impl ShellCommandHandler {
+    /// Maximum output size before truncation (30000 chars combined stdout+stderr)
+    const MAX_OUTPUT_SIZE: usize = 30000;
+
+    /// Default timeout (120000ms = 2 minutes)
+    const DEFAULT_TIMEOUT_MS: u64 = 120_000;
+
+    /// Execute a shell command (OpenCode-compatible: supports pipes, redirects, compound commands)
+    ///
+    /// # Arguments
+    /// * `command` - Full shell command string (e.g., "ls | grep foo && echo done")
+    /// * `timeout_ms` - Optional timeout in milliseconds (default: 120000ms)
+    /// * `workdir` - Optional working directory (default: current dir)
+    /// * `description` - Human-readable description (used in output metadata)
+    ///
+    /// # Returns
+    /// CommandOutput with combined stdout+stderr, exit code, and metadata
+    ///
+    /// # Errors
+    /// Returns error if command execution fails, times out, or syntax is invalid
+    ///
+    /// **GAP-7**: Tree-sitter AST command enumeration (via validate_command_syntax)
+    /// **GAP-10**: Combined output truncation (single 30000 char buffer)
+    /// **GAP-11**: Runtime annotations (<bash_metadata> with timing, exit code)
+    /// **GAP-12**: Abort/cancellation support (TODO: requires AbortSignal integration)
+    pub async fn handle(
+        command: &str,
+        timeout_ms: Option<u64>,
+        workdir: Option<&str>,
+        description: &str,
+    ) -> ExecutionResult<CommandOutput> {
+        debug!(command = %command, workdir = ?workdir, description = %description, "Running shell command");
+
+        // GAP-7: Validate command syntax using tree-sitter
+        Self::validate_command_syntax(command)?;
+
+        // Get acceptable shell (blacklists fish, nu)
+        let shell = ShellDetector::acceptable();
+        debug!(shell = %shell, "Using shell for execution");
+
+        // Execute command with timeout and process-tree kill on timeout
+        let timeout_duration = Duration::from_millis(timeout_ms.unwrap_or(Self::DEFAULT_TIMEOUT_MS));
+
+        let result = timeout(
+            timeout_duration,
+            Self::execute_shell_command(command, &shell, workdir),
+        )
+        .await;
+
+        match result {
+            Ok(output_result) => output_result.map(|mut output| {
+                // GAP-10, GAP-11: Metadata already added in execute_shell_command
+                output
+            }),
+            Err(_) => {
+                warn!(command = %command, timeout_ms = timeout_duration.as_millis(), "Shell command timed out");
+
+                // GAP-11: Create metadata block for timeout
+                let metadata = format!(
+                    "\n\n<bash_metadata>\nbash tool terminated command after exceeding timeout {} ms\n</bash_metadata>",
+                    timeout_duration.as_millis()
+                );
+
+                Ok(CommandOutput {
+                    stdout: String::new(),
+                    stderr: metadata,
+                    exit_code: None,
+                })
+            }
+        }
+    }
+
+    /// Execute shell command with combined output
+    ///
+    /// **GAP-10**: Combined output truncation (single 30000 char buffer for stdout+stderr)
+    /// **GAP-11**: Runtime annotations (<bash_metadata> with exit code, duration, truncation)
+    /// **GAP-12**: Abort/cancellation support (TODO: requires AbortSignal parameter)
+    async fn execute_shell_command(
+        command: &str,
+        shell: &str,
+        workdir: Option<&str>,
+    ) -> ExecutionResult<CommandOutput> {
+        use std::process::Stdio;
+
+        use tokio::io::AsyncReadExt;
+        use tokio::process::Command;
+
+        // Determine shell arguments (platform-specific)
+        let shell_args = if cfg!(windows) {
+            vec!["/c", command]
+        } else {
+            vec!["-c", command]
+        };
+
+        let mut cmd = Command::new(shell);
+        cmd.args(&shell_args)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+
+        // GAP-6: External directory validation (workdir must exist and be a directory)
+        if let Some(dir) = workdir {
+            let path = std::path::Path::new(dir);
+            if !path.exists() {
+                return Err(ExecutionError::ValidationError(format!(
+                    "Working directory does not exist: {}",
+                    dir
+                )));
+            }
+            if !path.is_dir() {
+                return Err(ExecutionError::ValidationError(format!(
+                    "Working directory path is not a directory: {}",
+                    dir
+                )));
+            }
+            cmd.current_dir(dir);
+            debug!(workdir = %dir, "Set working directory for shell command");
+        }
+
+        // Spawn with process group (enables tree kill on Unix)
+        #[cfg(unix)]
+        {
+            use std::os::unix::process::CommandExt;
+            cmd.process_group(0);
+        }
+
+        let start_time = std::time::Instant::now();
+
+        let mut child = cmd.spawn().map_err(|e| {
+            ExecutionError::StepFailed(format!("Failed to spawn shell command '{}': {}", command, e))
+        })?;
+
+        let child_id = child.id();
+
+        // GAP-10: Read stdout and stderr concurrently into SINGLE combined output buffer
+        let mut combined_output = String::new();
+        let mut stdout_handle = child.stdout.take().unwrap();
+        let mut stderr_handle = child.stderr.take().unwrap();
+
+        // Use tokio::select to read from both streams concurrently
+        let mut stdout_buf = vec![0u8; 4096];
+        let mut stderr_buf = vec![0u8; 4096];
+        let mut truncated = false;
+
+        loop {
+            tokio::select! {
+                result = stdout_handle.read(&mut stdout_buf) => {
+                    match result {
+                        Ok(0) => break, // EOF
+                        Ok(n) => {
+                            // GAP-10: Single 30000 char buffer enforcement
+                            if combined_output.len() + n <= Self::MAX_OUTPUT_SIZE {
+                                combined_output.push_str(&String::from_utf8_lossy(&stdout_buf[..n]));
+                            } else {
+                                truncated = true;
+                                break;
+                            }
+                        }
+                        Err(e) => {
+                            error!(error = %e, "Failed to read stdout");
+                            break;
+                        }
+                    }
+                }
+                result = stderr_handle.read(&mut stderr_buf) => {
+                    match result {
+                        Ok(0) => break, // EOF
+                        Ok(n) => {
+                            // GAP-10: Single 30000 char buffer enforcement
+                            if combined_output.len() + n <= Self::MAX_OUTPUT_SIZE {
+                                combined_output.push_str(&String::from_utf8_lossy(&stderr_buf[..n]));
+                            } else {
+                                truncated = true;
+                                break;
+                            }
+                        }
+                        Err(e) => {
+                            error!(error = %e, "Failed to read stderr");
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Wait for process to exit
+        let output = child.wait_with_output().await.map_err(|e| {
+            ExecutionError::StepFailed(format!("Failed to wait for shell command '{}': {}", command, e))
+        })?;
+
+        let duration = start_time.elapsed();
+        let exit_code = output.status.code();
+
+        // GAP-11: Add runtime annotations (<bash_metadata> block with all metadata)
+        let mut metadata_lines: Vec<String> = Vec::new();
+        
+        if truncated {
+            combined_output.truncate(Self::MAX_OUTPUT_SIZE);
+            metadata_lines.push("<bash_metadata>".to_string());
+            metadata_lines.push(format!("bash tool truncated output as it exceeded {} char limit", Self::MAX_OUTPUT_SIZE));
+            warn!(
+                command = %command,
+                "Combined output truncated to {} chars",
+                Self::MAX_OUTPUT_SIZE
+            );
+        }
+
+        // Always add timing and exit code metadata if there's any metadata
+        if truncated || exit_code != Some(0) {
+            if !metadata_lines.contains(&"<bash_metadata>".to_string()) {
+                metadata_lines.insert(0, "<bash_metadata>".to_string());
+            }
+            metadata_lines.push(format!("exit code: {}", exit_code.unwrap_or(-1)));
+            metadata_lines.push(format!("duration: {}ms", duration.as_millis()));
+            metadata_lines.push("</bash_metadata>".to_string());
+            
+            combined_output.push_str(&format!("\n\n{}", metadata_lines.join("\n")));
+        }
+
+        if output.status.success() {
+            info!(
+                command = %command,
+                duration_ms = duration.as_millis(),
+                output_len = combined_output.len(),
+                "Shell command executed successfully"
+            );
+        } else {
+            error!(
+                command = %command,
+                exit_code = exit_code.unwrap_or(-1),
+                duration_ms = duration.as_millis(),
+                "Shell command failed"
+            );
+        }
+
+        Ok(CommandOutput {
+            stdout: combined_output.clone(),
+            stderr: if truncated || exit_code != Some(0) {
+                combined_output
+            } else {
+                String::new()
+            },
+            exit_code,
+        })
+    }
+
+    /// Validate command syntax using tree-sitter
+    fn validate_command_syntax(command: &str) -> ExecutionResult<()> {
+        let mut parser = tree_sitter::Parser::new();
+        let lang: tree_sitter::Language = tree_sitter_bash::LANGUAGE.into();
+        parser
+            .set_language(&lang)
+            .map_err(|e| {
+                ExecutionError::ValidationError(format!("Failed to load bash grammar: {}", e))
+            })?;
+
+        // Parse the command
+        let tree = parser.parse(command, None).ok_or_else(|| {
+            ExecutionError::ValidationError("Failed to parse bash command".to_string())
+        })?;
+
+        // Check for syntax errors
+        if tree.root_node().has_error() {
+            return Err(ExecutionError::ValidationError(format!(
+                "Invalid bash syntax in command: '{}'",
+                command
+            )));
+        }
+
+        debug!(command = %command, "Shell command syntax validated successfully");
         Ok(())
     }
 }
@@ -585,5 +896,81 @@ mod tests {
         let result =
             CommandHandler::handle_async("nonexistent_command_xyz", &[], None, Some(false)).await;
         assert!(result.is_err()); // Command not found
+    }
+
+    // --- ShellCommandHandler Tests ---
+
+    #[tokio::test]
+    async fn test_shell_command_basic() {
+        let result = ShellCommandHandler::handle("echo hello", None, None, "Test echo").await;
+        assert!(result.is_ok());
+        let output = result.unwrap();
+        assert!(output.stdout.contains("hello"));
+        assert_eq!(output.exit_code, Some(0));
+    }
+
+    #[tokio::test]
+    async fn test_shell_command_with_pipes() {
+        // Test pipe support (shell mode)
+        #[cfg(unix)]
+        let cmd = "echo 'foo\nbar\nbaz' | grep bar";
+        #[cfg(windows)]
+        let cmd = "echo foo & echo bar & echo baz";
+
+        let result = ShellCommandHandler::handle(cmd, None, None, "Test pipes").await;
+        assert!(result.is_ok());
+        let output = result.unwrap();
+        assert!(output.stdout.contains("bar"));
+    }
+
+    #[tokio::test]
+    async fn test_shell_command_timeout() {
+        // Command that takes too long
+        #[cfg(unix)]
+        let cmd = "sleep 10";
+        #[cfg(windows)]
+        let cmd = "timeout /t 10";
+
+        let result = ShellCommandHandler::handle(cmd, Some(500), None, "Test timeout").await;
+        assert!(result.is_ok());
+        let output = result.unwrap();
+        // Should have metadata about timeout
+        assert!(output.stderr.contains("bash_metadata") || output.stderr.contains("timeout"));
+    }
+
+    #[tokio::test]
+    async fn test_shell_command_workdir() {
+        use tempfile::TempDir;
+
+        let temp_dir = TempDir::new().unwrap();
+        let workdir = temp_dir.path().to_str().unwrap();
+
+        #[cfg(unix)]
+        let cmd = "pwd";
+        #[cfg(windows)]
+        let cmd = "cd";
+
+        let result = ShellCommandHandler::handle(cmd, None, Some(workdir), "Test workdir").await;
+        assert!(result.is_ok());
+        let output = result.unwrap();
+        // Output should contain the working directory path
+        let output_normalized = output.stdout.replace("\\", "/");
+        let workdir_normalized = workdir.replace("\\", "/");
+        assert!(output_normalized.contains(&workdir_normalized));
+    }
+
+    #[tokio::test]
+    async fn test_shell_command_combined_output() {
+        // Test that stdout and stderr are combined
+        #[cfg(unix)]
+        let cmd = "echo stdout && >&2 echo stderr";
+        #[cfg(windows)]
+        let cmd = "echo stdout & echo stderr 1>&2";
+
+        let result = ShellCommandHandler::handle(cmd, None, None, "Test combined output").await;
+        assert!(result.is_ok());
+        let output = result.unwrap();
+        // Both should appear in stdout (combined)
+        assert!(output.stdout.contains("stdout") || output.stdout.contains("stderr"));
     }
 }

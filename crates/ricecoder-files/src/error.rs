@@ -60,4 +60,20 @@ pub enum FileError {
     /// IO error
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
+
+    /// Lock error
+    #[error("Lock error: {0}")]
+    LockError(String),
+
+    /// Write precondition failed (file must be read before write)
+    #[error("Write precondition failed: {0}")]
+    WritePreconditionFailed(String),
+
+    /// External modification detected
+    #[error("File {path:?} was modified externally after read at {read_at:?}, modified at {modified_at:?}")]
+    ExternalModification {
+        path: PathBuf,
+        read_at: std::time::SystemTime,
+        modified_at: std::time::SystemTime,
+    },
 }

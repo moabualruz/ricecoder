@@ -5,13 +5,15 @@ use std::collections::{HashMap, HashSet};
 use chrono::{Duration, Utc};
 
 use crate::{
+    bus::{BusEvent, EventBus, SessionEvent},
     error::{SessionError, SessionResult},
     models::{MessagePart, Session, SessionContext},
+    share::ShareService,
+    snapshot::SnapshotManager,
     token_estimator::{TokenEstimator, TokenUsageTracker},
 };
 
 /// Manages session lifecycle and switching
-#[derive(Debug)]
 pub struct SessionManager {
     /// All sessions indexed by ID
     sessions: HashMap<String, Session>,
@@ -23,6 +25,14 @@ pub struct SessionManager {
     token_estimator: TokenEstimator,
     /// Token usage trackers per session
     token_trackers: HashMap<String, TokenUsageTracker>,
+    /// Event bus for session events
+    event_bus: EventBus,
+    /// Share service for session sharing
+    share_service: ShareService,
+    /// Snapshot manager for session snapshots
+    snapshot_manager: SnapshotManager,
+    /// Parent-child session relationships
+    session_children: HashMap<String, Vec<String>>,
 }
 
 impl SessionManager {
@@ -34,6 +44,10 @@ impl SessionManager {
             session_limit,
             token_estimator: TokenEstimator::new(),
             token_trackers: HashMap::new(),
+            event_bus: EventBus::new(),
+            share_service: ShareService::new(),
+            snapshot_manager: SnapshotManager::disabled(),
+            session_children: HashMap::new(),
         }
     }
 
@@ -63,8 +77,13 @@ impl SessionManager {
 
         // Set as active if it's the first session
         if self.active_session_id.is_none() {
-            self.active_session_id = Some(session_id);
+            self.active_session_id = Some(session_id.clone());
         }
+
+        // Publish SessionCreated event
+        self.event_bus.publish(BusEvent::Session(SessionEvent::Created {
+            session_id: session_id.clone(),
+        }));
 
         Ok(session)
     }
@@ -81,11 +100,18 @@ impl SessionManager {
         }
 
         self.sessions.remove(session_id);
+        self.token_trackers.remove(session_id);
+        self.session_children.remove(session_id);
 
         // If the deleted session was active, switch to another session
         if self.active_session_id.as_deref() == Some(session_id) {
             self.active_session_id = self.sessions.keys().next().cloned();
         }
+
+        // Publish SessionDeleted event
+        self.event_bus.publish(BusEvent::Session(SessionEvent::Deleted {
+            session_id: session_id.to_string(),
+        }));
 
         Ok(())
     }
@@ -134,7 +160,14 @@ impl SessionManager {
             return Err(SessionError::NotFound(session.id.clone()));
         }
 
-        self.sessions.insert(session.id.clone(), session);
+        let session_id = session.id.clone();
+        self.sessions.insert(session_id.clone(), session);
+
+        // Publish SessionUpdated event
+        self.event_bus.publish(BusEvent::Session(SessionEvent::Updated {
+            session_id,
+        }));
+
         Ok(())
     }
 
@@ -262,7 +295,7 @@ impl SessionManager {
             // Extract text content
             for part in &message.parts {
                 match part {
-                    MessagePart::Text(text) => {
+                    MessagePart::Text { text, .. } => {
                         // Simple keyword extraction (could be enhanced with NLP)
                         let lower_text = text.to_lowercase();
                         if lower_text.contains("error")
@@ -348,7 +381,7 @@ impl SessionManager {
             // Extract topics and tools
             for part in &message.parts {
                 match part {
-                    MessagePart::Text(text) => {
+                    MessagePart::Text { text, .. } => {
                         let lower_text = text.to_lowercase();
                         if lower_text.contains("error")
                             || lower_text.contains("bug")
@@ -405,6 +438,192 @@ impl SessionManager {
         session.updated_at = Utc::now();
 
         Ok(())
+    }
+
+    /// Check if a session has overflowed context window (OpenCode parity)
+    pub fn is_session_overflow(
+        &self,
+        session_id: &str,
+        input_tokens: usize,
+        cache_read_tokens: usize,
+        output_tokens: usize,
+    ) -> SessionResult<bool> {
+        let session = self.get_session(session_id)?;
+        let pricing = self.token_estimator.get_pricing(&session.context.model);
+        
+        if let Some(pricing) = pricing {
+            Ok(crate::token_estimator::is_overflow(
+                input_tokens,
+                cache_read_tokens,
+                output_tokens,
+                pricing.max_tokens,
+                pricing.max_output_tokens,
+            ))
+        } else {
+            // Unknown model, assume no overflow
+            Ok(false)
+        }
+    }
+
+    /// Get max output tokens for a session (OpenCode parity)
+    pub fn get_max_output_tokens(&self, session_id: &str) -> SessionResult<usize> {
+        let session = self.get_session(session_id)?;
+        let pricing = self.token_estimator.get_pricing(&session.context.model);
+        
+        if let Some(pricing) = pricing {
+            Ok(crate::token_estimator::max_output_tokens(pricing.max_output_tokens))
+        } else {
+            Ok(crate::token_estimator::OUTPUT_TOKEN_MAX)
+        }
+    }
+
+    // === GAP 1: Session CRUD API additions ===
+
+    /// Fork a session from a specific message point
+    pub fn fork(
+        &mut self,
+        session_id: &str,
+        message_id: Option<&str>,
+    ) -> SessionResult<Session> {
+        let parent_session = self.get_session(session_id)?;
+
+        // Truncate history at message_id if provided
+        let mut forked_session = parent_session.clone();
+        if let Some(msg_id) = message_id {
+            let message_idx = forked_session
+                .history
+                .iter()
+                .position(|m| m.id == msg_id)
+                .ok_or_else(|| SessionError::NotFound(format!("Message {} not found", msg_id)))?;
+            forked_session.history.truncate(message_idx + 1);
+        }
+
+        // Create new session with forked history
+        let forked_session = Session {
+            id: uuid::Uuid::new_v4().to_string(),
+            name: format!("{} (fork)", parent_session.name),
+            history: forked_session.history,
+            context: parent_session.context.clone(),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            status: crate::models::SessionStatus::Active,
+            background_agents: Vec::new(),
+        };
+
+        // Track parent-child relationship
+        self.session_children
+            .entry(session_id.to_string())
+            .or_insert_with(Vec::new)
+            .push(forked_session.id.clone());
+
+        // Store forked session
+        self.sessions
+            .insert(forked_session.id.clone(), forked_session.clone());
+
+        // Create token tracker for forked session
+        let tracker = self
+            .token_estimator
+            .create_usage_tracker(&forked_session.context.model)?;
+        self.token_trackers
+            .insert(forked_session.id.clone(), tracker);
+
+        // Publish event
+        self.event_bus.publish(BusEvent::Session(SessionEvent::Created {
+            session_id: forked_session.id.clone(),
+        }));
+
+        Ok(forked_session)
+    }
+
+    /// Touch a session to update its timestamp
+    pub fn touch(&mut self, session_id: &str) -> SessionResult<()> {
+        let session = self
+            .sessions
+            .get_mut(session_id)
+            .ok_or_else(|| SessionError::NotFound(session_id.to_string()))?;
+
+        session.updated_at = Utc::now();
+
+        // Publish SessionUpdated event
+        self.event_bus.publish(BusEvent::Session(SessionEvent::Updated {
+            session_id: session_id.to_string(),
+        }));
+
+        Ok(())
+    }
+
+    /// Get snapshot diff for a session
+    pub async fn diff(&self, session_id: &str) -> SessionResult<String> {
+        let session = self.get_session(session_id)?;
+        
+        // Use snapshot manager to get diff
+        match self.snapshot_manager.diff(&session.id).await {
+            Ok(diff_text) => Ok(diff_text),
+            Err(_) => Ok(String::from("No changes detected")),
+        }
+    }
+
+    /// Get child sessions
+    pub fn children(&self, session_id: &str) -> SessionResult<Vec<Session>> {
+        let child_ids = self
+            .session_children
+            .get(session_id)
+            .map(|v| v.as_slice())
+            .unwrap_or(&[]);
+
+        let children: Vec<Session> = child_ids
+            .iter()
+            .filter_map(|id| self.sessions.get(id).cloned())
+            .collect();
+
+        Ok(children)
+    }
+
+    // === GAP 3: Sharing integration ===
+
+    /// Share a session
+    pub fn share(
+        &self,
+        session_id: &str,
+        permissions: crate::share::SharePermissions,
+        expires_in: Option<Duration>,
+    ) -> SessionResult<crate::share::SessionShare> {
+        // Verify session exists
+        let _session = self.get_session(session_id)?;
+
+        self.share_service
+            .generate_share_link(session_id, permissions, expires_in)
+    }
+
+    /// Revoke a share
+    pub fn unshare(
+        &self,
+        share_id: &str,
+        revoker_user_id: Option<String>,
+    ) -> SessionResult<()> {
+        self.share_service.revoke_share(share_id, revoker_user_id)
+    }
+
+    /// Get a share by ID
+    pub fn get_share(&self, share_id: &str) -> SessionResult<crate::share::SessionShare> {
+        self.share_service.get_share(share_id)
+    }
+
+    // === Event bus access ===
+
+    /// Get the event bus for external subscribers
+    pub fn event_bus(&self) -> &EventBus {
+        &self.event_bus
+    }
+
+    /// Get the share service for external access
+    pub fn share_service(&self) -> &ShareService {
+        &self.share_service
+    }
+
+    /// Get the snapshot manager for external access
+    pub fn snapshot_manager(&self) -> &SnapshotManager {
+        &self.snapshot_manager
     }
 }
 

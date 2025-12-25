@@ -29,11 +29,13 @@ dirs = { workspace = true }
 regex = { workspace = true }
 uuid = { workspace = true }
 ricecoder-mcp = { workspace = true }
+ricecoder-files = { workspace = true }
 
 # DI registration (via ricecoder-common to avoid circular deps)
 ricecoder-common = { workspace = true }
 inventory = { workspace = true }
 urlencoding = "2.1.3"
+base64 = "0.21"
 
 [dev-dependencies]
 proptest = { workspace = true }
