@@ -31,6 +31,7 @@ pub mod components;
 pub mod di;
 pub mod lifecycle;
 pub mod model;
+pub mod tui;
 pub mod update;
 pub mod view;
 

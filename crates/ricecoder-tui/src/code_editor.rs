@@ -10,7 +10,7 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph, Widget},
 };
-use ratatui_textarea::{TextArea, Input, Key};
+use tui_textarea::{TextArea, Input, Key};
 
 /// Simple code editor widget
 pub struct CodeEditor<'a> {

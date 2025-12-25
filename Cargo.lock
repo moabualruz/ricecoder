@@ -343,7 +343,7 @@ dependencies = [
  "proc-macro-crate",
  "proc-macro2",
  "quote",
- "strum 0.26.3",
+ "strum",
  "syn 2.0.111",
  "thiserror 1.0.69",
 ]
@@ -5525,24 +5525,6 @@ dependencies = [
 
 [[package]]
 name = "ratatui"
-version = "0.24.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ebc917cfb527a566c37ecb94c7e3fd098353516fb4eb6bea17015ade0182425"
-dependencies = [
- "bitflags 2.10.0",
- "cassowary",
- "crossterm 0.27.0",
- "indoc",
- "itertools 0.11.0",
- "lru",
- "paste",
- "strum 0.25.0",
- "unicode-segmentation",
- "unicode-width 0.1.14",
-]
-
-[[package]]
-name = "ratatui"
 version = "0.26.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f44c9e68fd46eda15c646fbb85e1040b657a58cdc8c98db1d97a55930d991eef"
@@ -5554,7 +5536,7 @@ dependencies = [
  "lru",
  "paste",
  "stability",
- "strum 0.26.3",
+ "strum",
  "unicode-segmentation",
  "unicode-truncate",
  "unicode-width 0.1.14",
@@ -5575,7 +5557,7 @@ dependencies = [
  "itertools 0.13.0",
  "lru",
  "paste",
- "strum 0.26.3",
+ "strum",
  "unicode-segmentation",
  "unicode-truncate",
  "unicode-width 0.2.0",
@@ -5605,16 +5587,6 @@ dependencies = [
  "rustix 0.38.44",
  "thiserror 1.0.69",
  "windows 0.58.0",
-]
-
-[[package]]
-name = "ratatui-textarea"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "802cc8229dab704f3dcbc97799186a5b4b7aea63ecc928ffc7d17753152527b8"
-dependencies = [
- "crossterm 0.27.0",
- "ratatui 0.24.0",
 ]
 
 [[package]]
@@ -7350,10 +7322,10 @@ dependencies = [
  "notify",
  "nucleo",
  "proptest",
+ "rand 0.8.5",
  "ratatui 0.29.0",
  "ratatui-explorer",
  "ratatui-image",
- "ratatui-textarea",
  "regex",
  "resvg",
  "ricecoder-common",
@@ -7380,6 +7352,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "tui-scrollview",
+ "tui-textarea",
  "tui-tree-widget",
  "unicode-width 0.1.14",
  "usvg",
@@ -8634,33 +8607,11 @@ checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
 
 [[package]]
 name = "strum"
-version = "0.25.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "290d54ea6f91c969195bdbcd7442c8c2a2ba87da8bf60a7ee86a235d4bc1e125"
-dependencies = [
- "strum_macros 0.25.3",
-]
-
-[[package]]
-name = "strum"
 version = "0.26.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8fec0f0aef304996cf250b31b5a10dee7980c85da9d759361292b8bca5a18f06"
 dependencies = [
- "strum_macros 0.26.4",
-]
-
-[[package]]
-name = "strum_macros"
-version = "0.25.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23dc1fa9ac9c169a78ba62f0b841814b7abae11bdd047b9c58f893439e309ea0"
-dependencies = [
- "heck 0.4.1",
- "proc-macro2",
- "quote",
- "rustversion",
- "syn 2.0.111",
+ "strum_macros",
 ]
 
 [[package]]
@@ -9785,6 +9736,17 @@ checksum = "cea93a4789dc04a89aa6aeda29dd581b18f88cbbcf19702baf8325814b4af394"
 dependencies = [
  "indoc",
  "ratatui 0.29.0",
+]
+
+[[package]]
+name = "tui-textarea"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0a5318dd619ed73c52a9417ad19046724effc1287fb75cdcc4eca1d6ac1acbae"
+dependencies = [
+ "crossterm 0.28.1",
+ "ratatui 0.29.0",
+ "unicode-width 0.2.0",
 ]
 
 [[package]]

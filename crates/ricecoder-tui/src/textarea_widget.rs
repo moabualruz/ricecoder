@@ -4,7 +4,37 @@
 //! It supports multi-line input, vim mode, and integration with the TUI event loop.
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use ratatui_textarea::TextArea;
+use tui_textarea::TextArea;
+
+/// Convert crossterm KeyEvent to tui_textarea Input
+/// This is needed because tui-textarea uses ratatui's re-exported crossterm types
+fn key_event_to_input(key: KeyEvent) -> tui_textarea::Input {
+    let tui_key = match key.code {
+        KeyCode::Char(c) => tui_textarea::Key::Char(c),
+        KeyCode::Backspace => tui_textarea::Key::Backspace,
+        KeyCode::Enter => tui_textarea::Key::Enter,
+        KeyCode::Left => tui_textarea::Key::Left,
+        KeyCode::Right => tui_textarea::Key::Right,
+        KeyCode::Up => tui_textarea::Key::Up,
+        KeyCode::Down => tui_textarea::Key::Down,
+        KeyCode::Tab => tui_textarea::Key::Tab,
+        KeyCode::Delete => tui_textarea::Key::Delete,
+        KeyCode::Home => tui_textarea::Key::Home,
+        KeyCode::End => tui_textarea::Key::End,
+        KeyCode::PageUp => tui_textarea::Key::PageUp,
+        KeyCode::PageDown => tui_textarea::Key::PageDown,
+        KeyCode::Esc => tui_textarea::Key::Esc,
+        KeyCode::F(n) => tui_textarea::Key::F(n),
+        _ => tui_textarea::Key::Null,
+    };
+    
+    tui_textarea::Input {
+        key: tui_key,
+        ctrl: key.modifiers.contains(KeyModifiers::CONTROL),
+        alt: key.modifiers.contains(KeyModifiers::ALT),
+        shift: key.modifiers.contains(KeyModifiers::SHIFT),
+    }
+}
 
 /// Vim mode states
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -343,5 +373,31 @@ impl TextAreaWidget {
 impl Default for TextAreaWidget {
     fn default() -> Self {
         Self::new(false, 10)
+    }
+}
+
+// ========================================================================
+// Key Input Handling (for prompt.rs integration)
+// ========================================================================
+
+impl TextAreaWidget {
+    /// Handle keyboard input (crossterm KeyEvent)
+    pub fn handle_key(&mut self, key: crossterm::event::KeyEvent) {
+        use crossterm::event::KeyCode;
+        
+        // Convert crossterm KeyEvent to tui_textarea::Input
+        let input = key_event_to_input(key);
+        self.textarea.input(input);
+        
+        // Update selection if in visual mode
+        if matches!(self.vim_state, VimMode::Visual | VimMode::VisualLine) {
+            self.update_selection();
+        }
+    }
+    
+    /// Render the textarea to a buffer
+    pub fn render(&self, area: ratatui::layout::Rect, buf: &mut ratatui::buffer::Buffer) {
+        use ratatui::widgets::Widget;
+        self.textarea.widget().render(area, buf);
     }
 }

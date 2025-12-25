@@ -4,7 +4,7 @@
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::widgets::Block;
-use ratatui_textarea::{CursorMove, Input, Key, TextArea};
+use tui_textarea::{CursorMove, Input, Key, TextArea};
 use std::collections::VecDeque;
 
 /// Selection state for text selection operations (GAP-32-004)

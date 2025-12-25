@@ -47,12 +47,13 @@ ricecoder-research = { workspace = true }
 ricecoder-di = { workspace = true }
 ricecoder-common = { workspace = true }
 inventory = { workspace = true }
+rand = { workspace = true }
 resvg = { workspace = true }
 usvg = { workspace = true }
 tiny-skia = { workspace = true }
 image = { workspace = true }
 ratatui = { workspace = true }
-ratatui-textarea = { workspace = true }
+tui-textarea = { workspace = true }
 tui-tree-widget = { workspace = true }
 ratatui-image = { workspace = true }
 ratatui-explorer = { workspace = true }
@@ -69,11 +70,11 @@ uuid = { workspace = true, features = ["v4"] }
 notify = { workspace = true }
 walkdir = { workspace = true }
 nucleo = { workspace = true }
+tempfile = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
 tokio-test = { workspace = true }
-tempfile = { workspace = true }
 ricecoder-storage = { workspace = true }
 
 

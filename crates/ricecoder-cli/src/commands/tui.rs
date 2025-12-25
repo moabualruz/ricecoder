@@ -123,34 +123,17 @@ async fn load_provider_data_for_tui(
 
 /// Launch the TUI application
 async fn launch_tui(config: TuiConfig) -> CliResult<()> {
-    // For now, show information about TUI development status
-    // TODO: Properly integrate with ricecoder-tui crate's event loop
-    println!("🍚 RiceCoder TUI - Terminal User Interface");
-    println!();
-    println!("The interactive TUI is currently under development.");
-    println!("For now, you can use the command-line interface:");
-    println!();
-    println!("🚀 Quick Start:");
-    println!("  • rice init          Initialize a new project");
-    println!("  • rice chat          Start interactive AI chat");
-    println!("  • rice refactor      AI-powered code refactoring");
-    println!("  • rice sessions list Manage coding sessions");
-    println!("  • rice providers     Configure AI providers");
-    println!();
-    println!("📚 Available Commands:");
-    println!("  gen, chat, refactor, review, config, compliance, completions,");
-    println!("  custom, sessions, providers, mcp, lsp, hooks, help");
-    println!();
-    println!("💡 The TUI will provide:");
-    println!("  • Interactive session management");
-    println!("  • Real-time AI chat interface");
-    println!("  • Code editing and refactoring tools");
-    println!("  • Provider and model switching");
-    println!("  • Progress monitoring and analytics");
-    println!();
-    println!("Version: {}", env!("CARGO_PKG_VERSION"));
-    println!();
-    println!("Stay tuned for the full TUI release!");
-
+    use ricecoder_tui::tui::TuiApp;
+    
+    // Create and run the TUI application
+    let mut app = TuiApp::new().map_err(|e| {
+        CliError::Internal(format!("Failed to initialize TUI: {}", e))
+    })?;
+    
+    // Run the TUI event loop
+    app.run().await.map_err(|e| {
+        CliError::Internal(format!("TUI error: {}", e))
+    })?;
+    
     Ok(())
 }
