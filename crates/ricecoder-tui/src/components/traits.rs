@@ -19,6 +19,11 @@ pub use super::ComponentId;
 /// This is a monolithic trait for backward compatibility.
 /// New components can use the segregated traits (Renderable, Interactive, etc.)
 /// and get Component through the blanket implementation.
+#[deprecated(
+    since = "0.1.8",
+    note = "Use segregated traits (Renderable, Interactive, Focusable, etc.) instead. \
+            Types implementing all segregated traits automatically implement Component via blanket impl."
+)]
 pub trait Component: Send + Sync {
     // ========== Core (Required) ==========
     
@@ -200,4 +205,136 @@ pub trait Composite {
 /// Validatable capability - components that can validate their state
 pub trait Validatable {
     fn validate(&self) -> Result<(), String>;
+}
+
+// ============================================================================
+// Blanket Implementation (Backward Compatibility Bridge)
+// ============================================================================
+
+/// Blanket implementation for backward compatibility
+/// 
+/// Any type implementing all segregated traits automatically implements Component.
+/// This allows new components to use the fine-grained ISP-compliant traits while
+/// maintaining compatibility with code expecting the monolithic Component trait.
+impl<T> Component for T
+where
+    T: Renderable + Interactive + Focusable + Visible + Layered + Composite + Validatable + Clone + Send + Sync + 'static,
+{
+    // ========== Core (Required) ==========
+    
+    fn id(&self) -> ComponentId {
+        Renderable::id(self)
+    }
+    
+    fn render(&self, frame: &mut Frame, area: Rect, model: &AppModel) {
+        Renderable::render(self, frame, area, model)
+    }
+    
+    // ========== Bounds ==========
+    
+    fn bounds(&self) -> Rect {
+        Renderable::bounds(self)
+    }
+    
+    fn set_bounds(&mut self, bounds: Rect) {
+        Renderable::set_bounds(self, bounds)
+    }
+    
+    // ========== Input Handling ==========
+    
+    fn update(&mut self, message: &AppMessage, model: &AppModel) -> bool {
+        Interactive::update(self, message, model)
+    }
+    
+    fn handle_focus(&mut self, direction: FocusDirection) -> FocusResult {
+        Interactive::handle_focus(self, direction)
+    }
+    
+    // ========== Focus State ==========
+    
+    fn is_focused(&self) -> bool {
+        Focusable::is_focused(self)
+    }
+    
+    fn set_focused(&mut self, focused: bool) {
+        Focusable::set_focused(self, focused)
+    }
+    
+    fn can_focus(&self) -> bool {
+        Focusable::can_focus(self)
+    }
+    
+    fn tab_order(&self) -> Option<usize> {
+        Focusable::tab_order(self)
+    }
+    
+    fn set_tab_order(&mut self, order: Option<usize>) {
+        Focusable::set_tab_order(self, order)
+    }
+    
+    // ========== Visibility ==========
+    
+    fn is_visible(&self) -> bool {
+        Visible::is_visible(self)
+    }
+    
+    fn set_visible(&mut self, visible: bool) {
+        Visible::set_visible(self, visible)
+    }
+    
+    fn is_enabled(&self) -> bool {
+        Visible::is_enabled(self)
+    }
+    
+    fn set_enabled(&mut self, enabled: bool) {
+        Visible::set_enabled(self, enabled)
+    }
+    
+    // ========== Layering ==========
+    
+    fn z_index(&self) -> i32 {
+        Layered::z_index(self)
+    }
+    
+    fn set_z_index(&mut self, z_index: i32) {
+        Layered::set_z_index(self, z_index)
+    }
+    
+    // ========== Composite (Children) ==========
+    
+    fn children(&self) -> Vec<&dyn Component> {
+        Composite::children(self)
+    }
+    
+    fn children_mut(&mut self) -> Vec<&mut dyn Component> {
+        Composite::children_mut(self)
+    }
+    
+    fn find_child(&self, id: &ComponentId) -> Option<&dyn Component> {
+        Composite::find_child(self, id)
+    }
+    
+    fn find_child_mut(&mut self, id: &ComponentId) -> Option<&mut dyn Component> {
+        Composite::find_child_mut(self, id)
+    }
+    
+    fn add_child(&mut self, child: Box<dyn Component>) {
+        Composite::add_child(self, child)
+    }
+    
+    fn remove_child(&mut self, id: &ComponentId) -> Option<Box<dyn Component>> {
+        Composite::remove_child(self, id)
+    }
+    
+    // ========== Validation ==========
+    
+    fn validate(&self) -> Result<(), String> {
+        Validatable::validate(self)
+    }
+    
+    // ========== Cloning ==========
+    
+    fn clone_box(&self) -> Box<dyn Component> {
+        Box::new(self.clone())
+    }
 }

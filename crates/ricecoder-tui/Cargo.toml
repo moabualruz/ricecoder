@@ -45,6 +45,8 @@ ricecoder-themes = { workspace = true }
 ricecoder-config = { workspace = true }
 ricecoder-research = { workspace = true }
 ricecoder-di = { workspace = true }
+ricecoder-common = { workspace = true }
+inventory = { workspace = true }
 resvg = { workspace = true }
 usvg = { workspace = true }
 tiny-skia = { workspace = true }

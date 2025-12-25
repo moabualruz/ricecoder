@@ -151,23 +151,12 @@ where
 impl OllamaProvider {
     /// Create a new Ollama provider instance
     pub fn new(base_url: String) -> Result<Self, ProviderError> {
-        if base_url.is_empty() {
-            return Err(ProviderError::ConfigError(
-                "Ollama base URL is required".to_string(),
-            ));
-        }
-
-        Ok(Self {
-            client: Arc::new(Client::new()),
-            base_url,
-            available_models: vec![],
-            model_cache: Arc::new(tokio::sync::Mutex::new(ModelCache::new())),
-        })
+        Self::with_client(Arc::new(Client::new()), base_url)
     }
 
     /// Create a new Ollama provider with default localhost endpoint
     pub fn with_default_endpoint() -> Result<Self, ProviderError> {
-        Self::new("http://localhost:11434".to_string())
+        Self::with_client(Arc::new(Client::new()), "http://localhost:11434".to_string())
     }
 
     /// Create a new Ollama provider from configuration files
@@ -182,7 +171,23 @@ impl OllamaProvider {
             "Creating OllamaProvider from configuration: base_url={}, default_model={}",
             config.base_url, config.default_model
         );
-        Self::new(config.base_url)
+        Self::with_client(Arc::new(Client::new()), config.base_url)
+    }
+
+    /// Create a new Ollama provider with custom HTTP client
+    pub fn with_client(client: Arc<Client>, base_url: String) -> Result<Self, ProviderError> {
+        if base_url.is_empty() {
+            return Err(ProviderError::ConfigError(
+                "Ollama base URL is required".to_string(),
+            ));
+        }
+
+        Ok(Self {
+            client,
+            base_url,
+            available_models: vec![],
+            model_cache: Arc::new(tokio::sync::Mutex::new(ModelCache::new())),
+        })
     }
 
     /// Get the current configuration

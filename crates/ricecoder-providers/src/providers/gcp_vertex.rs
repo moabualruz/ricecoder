@@ -32,6 +32,21 @@ impl GcpVertexProvider {
         location: String,
         access_token: String,
     ) -> Result<Self, ProviderError> {
+        Self::with_client(
+            Arc::new(Client::new()),
+            project_id,
+            location,
+            access_token,
+        )
+    }
+
+    /// Create a new GCP Vertex AI provider with a custom HTTP client
+    pub fn with_client(
+        client: Arc<Client>,
+        project_id: String,
+        location: String,
+        access_token: String,
+    ) -> Result<Self, ProviderError> {
         if project_id.is_empty() {
             return Err(ProviderError::ConfigError(
                 "GCP project ID is required".to_string(),
@@ -54,7 +69,7 @@ impl GcpVertexProvider {
             project_id,
             location,
             access_token,
-            client: Arc::new(Client::new()),
+            client,
             token_counter: Arc::new(TokenCounter::new()),
         })
     }

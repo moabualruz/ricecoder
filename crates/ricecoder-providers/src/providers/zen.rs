@@ -127,9 +127,21 @@ impl ZenProvider {
     /// Create a new Zen provider instance
     /// API key is optional for free models
     pub fn new(api_key: Option<String>) -> Result<Self, ProviderError> {
+        Self::with_client(Arc::new(Client::new()), api_key)
+    }
+
+    /// Create a new Zen provider with a custom base URL
+    /// API key is optional for free models
+    pub fn with_base_url(api_key: Option<String>, base_url: String) -> Result<Self, ProviderError> {
+        Self::with_client_and_base_url(Arc::new(Client::new()), api_key, base_url)
+    }
+
+    /// Create a new Zen provider with a custom HTTP client
+    /// API key is optional for free models
+    pub fn with_client(client: Arc<Client>, api_key: Option<String>) -> Result<Self, ProviderError> {
         Ok(Self {
             api_key: api_key.unwrap_or_default(),
-            client: Arc::new(Client::new()),
+            client,
             base_url: "https://opencode.ai/zen/v1".to_string(),
             token_counter: Arc::new(TokenCounter::new()),
             models_cache: Arc::new(tokio::sync::Mutex::new(ModelCache::new())),
@@ -137,12 +149,16 @@ impl ZenProvider {
         })
     }
 
-    /// Create a new Zen provider with a custom base URL
+    /// Create a new Zen provider with a custom HTTP client and base URL
     /// API key is optional for free models
-    pub fn with_base_url(api_key: Option<String>, base_url: String) -> Result<Self, ProviderError> {
+    pub fn with_client_and_base_url(
+        client: Arc<Client>,
+        api_key: Option<String>,
+        base_url: String,
+    ) -> Result<Self, ProviderError> {
         Ok(Self {
             api_key: api_key.unwrap_or_default(),
-            client: Arc::new(Client::new()),
+            client,
             base_url,
             token_counter: Arc::new(TokenCounter::new()),
             models_cache: Arc::new(tokio::sync::Mutex::new(ModelCache::new())),

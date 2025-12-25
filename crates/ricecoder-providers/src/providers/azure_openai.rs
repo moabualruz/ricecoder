@@ -34,6 +34,23 @@ impl AzureOpenAiProvider {
         deployment_name: String,
         api_version: String,
     ) -> Result<Self, ProviderError> {
+        Self::with_client(
+            Arc::new(Client::new()),
+            api_key,
+            base_url,
+            deployment_name,
+            api_version,
+        )
+    }
+
+    /// Create a new Azure OpenAI provider with a custom HTTP client
+    pub fn with_client(
+        client: Arc<Client>,
+        api_key: String,
+        base_url: String,
+        deployment_name: String,
+        api_version: String,
+    ) -> Result<Self, ProviderError> {
         if api_key.is_empty() {
             return Err(ProviderError::ConfigError(
                 "Azure OpenAI API key is required".to_string(),
@@ -54,7 +71,7 @@ impl AzureOpenAiProvider {
 
         Ok(Self {
             api_key,
-            client: Arc::new(Client::new()),
+            client,
             base_url,
             api_version,
             deployment_name,

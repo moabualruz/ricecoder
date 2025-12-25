@@ -26,6 +26,11 @@ pub struct ReplicateProvider {
 impl ReplicateProvider {
     /// Create a new Replicate provider instance
     pub fn new(api_key: String) -> Result<Self, ProviderError> {
+        Self::with_client(Arc::new(Client::new()), api_key)
+    }
+
+    /// Create a new Replicate provider instance with custom HTTP client
+    pub fn with_client(client: Arc<Client>, api_key: String) -> Result<Self, ProviderError> {
         if api_key.is_empty() {
             return Err(ProviderError::ConfigError(
                 "Replicate API key is required".to_string(),
@@ -34,7 +39,7 @@ impl ReplicateProvider {
 
         Ok(Self {
             api_key,
-            client: Arc::new(Client::new()),
+            client,
             token_counter: Arc::new(TokenCounter::new()),
         })
     }

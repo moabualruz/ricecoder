@@ -27,6 +27,16 @@ pub struct GoogleProvider {
 impl GoogleProvider {
     /// Create a new Google provider instance
     pub fn new(api_key: String) -> Result<Self, ProviderError> {
+        Self::with_client(Arc::new(Client::new()), api_key)
+    }
+
+    /// Create a new Google provider with a custom base URL
+    pub fn with_base_url(api_key: String, base_url: String) -> Result<Self, ProviderError> {
+        Self::with_client_and_base_url(Arc::new(Client::new()), api_key, base_url)
+    }
+
+    /// Create a new Google provider with a custom HTTP client
+    pub fn with_client(client: Arc<Client>, api_key: String) -> Result<Self, ProviderError> {
         if api_key.is_empty() {
             return Err(ProviderError::ConfigError(
                 "Google API key is required".to_string(),
@@ -35,14 +45,18 @@ impl GoogleProvider {
 
         Ok(Self {
             api_key,
-            client: Arc::new(Client::new()),
+            client,
             base_url: "https://generativelanguage.googleapis.com/v1beta/models".to_string(),
             token_counter: Arc::new(TokenCounter::new()),
         })
     }
 
-    /// Create a new Google provider with a custom base URL
-    pub fn with_base_url(api_key: String, base_url: String) -> Result<Self, ProviderError> {
+    /// Create a new Google provider with a custom HTTP client and base URL
+    pub fn with_client_and_base_url(
+        client: Arc<Client>,
+        api_key: String,
+        base_url: String,
+    ) -> Result<Self, ProviderError> {
         if api_key.is_empty() {
             return Err(ProviderError::ConfigError(
                 "Google API key is required".to_string(),
@@ -51,7 +65,7 @@ impl GoogleProvider {
 
         Ok(Self {
             api_key,
-            client: Arc::new(Client::new()),
+            client,
             base_url,
             token_counter: Arc::new(TokenCounter::new()),
         })

@@ -27,6 +27,16 @@ pub struct AnthropicProvider {
 impl AnthropicProvider {
     /// Create a new Anthropic provider instance
     pub fn new(api_key: String) -> Result<Self, ProviderError> {
+        Self::with_client(Arc::new(Client::new()), api_key)
+    }
+
+    /// Create a new Anthropic provider with a custom base URL
+    pub fn with_base_url(api_key: String, base_url: String) -> Result<Self, ProviderError> {
+        Self::with_client_and_base_url(Arc::new(Client::new()), api_key, base_url)
+    }
+
+    /// Create a new Anthropic provider with a custom HTTP client
+    pub fn with_client(client: Arc<Client>, api_key: String) -> Result<Self, ProviderError> {
         if api_key.is_empty() {
             return Err(ProviderError::ConfigError(
                 "Anthropic API key is required".to_string(),
@@ -35,14 +45,18 @@ impl AnthropicProvider {
 
         Ok(Self {
             api_key,
-            client: Arc::new(Client::new()),
+            client,
             base_url: "https://api.anthropic.com/v1".to_string(),
             token_counter: Arc::new(TokenCounter::new()),
         })
     }
 
-    /// Create a new Anthropic provider with a custom base URL
-    pub fn with_base_url(api_key: String, base_url: String) -> Result<Self, ProviderError> {
+    /// Create a new Anthropic provider with a custom HTTP client and base URL
+    pub fn with_client_and_base_url(
+        client: Arc<Client>,
+        api_key: String,
+        base_url: String,
+    ) -> Result<Self, ProviderError> {
         if api_key.is_empty() {
             return Err(ProviderError::ConfigError(
                 "Anthropic API key is required".to_string(),
@@ -51,7 +65,7 @@ impl AnthropicProvider {
 
         Ok(Self {
             api_key,
-            client: Arc::new(Client::new()),
+            client,
             base_url,
             token_counter: Arc::new(TokenCounter::new()),
         })

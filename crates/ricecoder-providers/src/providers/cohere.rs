@@ -26,6 +26,11 @@ pub struct CohereProvider {
 impl CohereProvider {
     /// Create a new Cohere provider instance
     pub fn new(api_key: String) -> Result<Self, ProviderError> {
+        Self::with_client(Arc::new(Client::new()), api_key)
+    }
+
+    /// Create a new Cohere provider with custom HTTP client
+    pub fn with_client(client: Arc<Client>, api_key: String) -> Result<Self, ProviderError> {
         if api_key.is_empty() {
             return Err(ProviderError::ConfigError(
                 "Cohere API key is required".to_string(),
@@ -34,7 +39,7 @@ impl CohereProvider {
 
         Ok(Self {
             api_key,
-            client: Arc::new(Client::new()),
+            client,
             token_counter: Arc::new(TokenCounter::new()),
         })
     }

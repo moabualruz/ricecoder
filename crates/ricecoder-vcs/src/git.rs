@@ -8,7 +8,7 @@ use tracing::{debug, trace};
 
 use crate::{
     error::{Result, VcsError},
-    repository::Repository,
+    repository::{RepositoryFileInspection, RepositoryMutation, RepositoryQuery},
     status::{CommitInfo, RepositoryStatus},
     types::{Branch, FileStatus, ModifiedFile},
 };
@@ -190,7 +190,7 @@ impl GitRepository {
     }
 }
 
-impl Repository for GitRepository {
+impl RepositoryQuery for GitRepository {
     fn get_status(&self) -> Result<RepositoryStatus> {
         debug!("Getting repository status");
 
@@ -324,6 +324,22 @@ impl Repository for GitRepository {
         Ok(branches)
     }
 
+    fn is_clean(&self) -> Result<bool> {
+        let status = self.get_status()?;
+        Ok(status.is_clean)
+    }
+
+    fn count_uncommitted_changes(&self) -> Result<usize> {
+        let status = self.get_status()?;
+        Ok(status.uncommitted_changes + status.untracked_files)
+    }
+
+    fn get_root_path(&self) -> Result<String> {
+        Ok(self.root_path.display().to_string())
+    }
+}
+
+impl RepositoryFileInspection for GitRepository {
     fn get_modified_files(&self) -> Result<Vec<ModifiedFile>> {
         debug!("Getting modified files");
 
@@ -349,20 +365,6 @@ impl Repository for GitRepository {
         Ok(modified_files)
     }
 
-    fn get_root_path(&self) -> Result<String> {
-        Ok(self.root_path.display().to_string())
-    }
-
-    fn is_clean(&self) -> Result<bool> {
-        let status = self.get_status()?;
-        Ok(status.is_clean)
-    }
-
-    fn count_uncommitted_changes(&self) -> Result<usize> {
-        let status = self.get_status()?;
-        Ok(status.uncommitted_changes + status.untracked_files)
-    }
-
     fn get_file_diff(&self, file_path: &Path) -> Result<String> {
         debug!("Getting diff for file: {}", file_path.display());
 
@@ -386,7 +388,9 @@ impl Repository for GitRepository {
 
         Ok(diff_output)
     }
+}
 
+impl RepositoryMutation for GitRepository {
     fn stage_file(&self, file_path: &Path) -> Result<()> {
         debug!("Staging file: {}", file_path.display());
 

@@ -126,21 +126,31 @@ pub struct ProviderMetrics {
     pub last_health_check: i64,
 }
 
-/// Enterprise provider interface
-#[async_trait]
-pub trait EnterpriseProvider: Send + Sync {
+/// Core provider trait - Required by all providers
+pub trait ProviderCore: Send + Sync {
     /// Get provider configuration
     fn config(&self) -> &EnterpriseProviderConfig;
+}
 
+/// Provider monitoring - Observability and health tracking
+pub trait ProviderMonitoring: ProviderCore {
     /// Get current health status
     fn health(&self) -> ProviderHealth;
 
     /// Get provider metrics
     fn metrics(&self) -> ProviderMetrics;
+}
 
+/// Provider connectivity - Health checks and connection testing
+#[async_trait]
+pub trait ProviderConnectivity: ProviderCore {
     /// Test provider connectivity
     async fn test_connectivity(&self) -> IndustryResult<bool>;
+}
 
+/// Provider execution - HTTP operations and request handling
+#[async_trait]
+pub trait ProviderExecution: ProviderCore {
     /// Make a request to the provider
     async fn make_request(
         &self,
@@ -149,15 +159,52 @@ pub trait EnterpriseProvider: Send + Sync {
         body: Option<serde_json::Value>,
         headers: Option<HashMap<String, String>>,
     ) -> IndustryResult<serde_json::Value>;
+}
 
+/// Provider model registry - Model management and discovery
+#[async_trait]
+pub trait ProviderModelRegistry: ProviderCore {
     /// Check if provider supports a specific model
     fn supports_model(&self, model: &str) -> bool;
 
     /// Get available models
     async fn get_available_models(&self) -> IndustryResult<Vec<String>>;
+}
 
+/// Provider rate limiting - Rate limit management and status
+#[async_trait]
+pub trait ProviderRateLimiting: ProviderCore {
     /// Get rate limit status
     async fn get_rate_limit_status(&self) -> IndustryResult<RateLimitStatus>;
+}
+
+/// Enterprise provider interface (deprecated)
+///
+/// This trait is deprecated in favor of using the specific provider traits.
+/// Use the individual traits (`ProviderCore`, `ProviderMonitoring`, etc.) instead.
+#[deprecated(
+    since = "0.2.0",
+    note = "Use specific provider traits (ProviderCore, ProviderMonitoring, etc.) instead"
+)]
+pub trait EnterpriseProvider:
+    ProviderCore
+    + ProviderMonitoring
+    + ProviderConnectivity
+    + ProviderExecution
+    + ProviderModelRegistry
+    + ProviderRateLimiting
+{
+}
+
+/// Blanket implementation for backward compatibility
+impl<T> EnterpriseProvider for T where
+    T: ProviderCore
+        + ProviderMonitoring
+        + ProviderConnectivity
+        + ProviderExecution
+        + ProviderModelRegistry
+        + ProviderRateLimiting
+{
 }
 
 /// Rate limit status
@@ -296,12 +343,15 @@ impl GenericEnterpriseProvider {
     }
 }
 
-#[async_trait]
-impl EnterpriseProvider for GenericEnterpriseProvider {
+// Implement ProviderCore
+impl ProviderCore for GenericEnterpriseProvider {
     fn config(&self) -> &EnterpriseProviderConfig {
         &self.config
     }
+}
 
+// Implement ProviderMonitoring
+impl ProviderMonitoring for GenericEnterpriseProvider {
     fn health(&self) -> ProviderHealth {
         futures::executor::block_on(async { self.metrics.read().await.health.clone() })
     }
@@ -309,7 +359,11 @@ impl EnterpriseProvider for GenericEnterpriseProvider {
     fn metrics(&self) -> ProviderMetrics {
         futures::executor::block_on(async { self.metrics.read().await.clone() })
     }
+}
 
+// Implement ProviderConnectivity
+#[async_trait]
+impl ProviderConnectivity for GenericEnterpriseProvider {
     async fn test_connectivity(&self) -> IndustryResult<bool> {
         // Simple connectivity test - try to access a basic endpoint
         let test_endpoint = match self.config.provider_type {
@@ -320,10 +374,14 @@ impl EnterpriseProvider for GenericEnterpriseProvider {
             ProviderType::Custom(_) => "/health",
         };
 
-        let result = self.make_request("GET", test_endpoint, None, None).await;
+        let result = self.make_request(test_endpoint, "GET", None, None).await;
         Ok(result.is_ok())
     }
+}
 
+// Implement ProviderExecution
+#[async_trait]
+impl ProviderExecution for GenericEnterpriseProvider {
     async fn make_request(
         &self,
         endpoint: &str,
@@ -365,7 +423,11 @@ impl EnterpriseProvider for GenericEnterpriseProvider {
         self.update_metrics(true, response_time).await;
         Ok(response_json)
     }
+}
 
+// Implement ProviderModelRegistry
+#[async_trait]
+impl ProviderModelRegistry for GenericEnterpriseProvider {
     fn supports_model(&self, model: &str) -> bool {
         // Basic model support check - in practice, this would query the provider
         match self.config.provider_type {
@@ -420,7 +482,11 @@ impl EnterpriseProvider for GenericEnterpriseProvider {
             }
         }
     }
+}
 
+// Implement ProviderRateLimiting
+#[async_trait]
+impl ProviderRateLimiting for GenericEnterpriseProvider {
     async fn get_rate_limit_status(&self) -> IndustryResult<RateLimitStatus> {
         // This would typically query the provider's rate limit endpoint
         // For now, return a mock status

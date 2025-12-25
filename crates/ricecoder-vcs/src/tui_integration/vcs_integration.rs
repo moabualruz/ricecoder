@@ -12,7 +12,7 @@ use std::{
 
 use tokio::{sync::watch, time};
 
-use crate::{GitRepository, Repository, RepositoryStatus, Result as VcsResult};
+use crate::{GitRepository, RepositoryQuery, RepositoryStatus, Result as VcsResult};
 
 /// VCS status information for display in status bar
 #[derive(Debug, Clone, PartialEq)]

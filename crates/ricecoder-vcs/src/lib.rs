@@ -36,7 +36,9 @@ pub mod types;
 
 pub use error::{Result, VcsError};
 pub use git::GitRepository;
+#[allow(deprecated)]
 pub use repository::Repository;
+pub use repository::{RepositoryFileInspection, RepositoryMutation, RepositoryQuery};
 pub use status::{FileStatus, ModificationIndicator, RepositoryStatus};
 pub use tui_integration::{VcsIntegration, VcsStatus};
 pub use types::{Branch, ModifiedFile};
