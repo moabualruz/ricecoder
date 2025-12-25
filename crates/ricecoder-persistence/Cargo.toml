@@ -16,6 +16,10 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 uuid = { workspace = true }
 chrono = { workspace = true }
+tracing = { workspace = true }
+
+# SurrealDB for persistent storage
+surrealdb = { version = "2.4", default-features = false, features = ["kv-mem", "protocol-ws", "rustls"], optional = true }
 
 [dev-dependencies]
 tokio-test = { workspace = true }
@@ -24,5 +28,5 @@ proptest = { workspace = true }
 [features]
 default = ["memory"]
 memory = []
-# Future: surrealdb feature for SurrealDB backend
-# surrealdb = ["dep:surrealdb"]
+# SurrealDB backend for production persistence
+surrealdb-backend = ["dep:surrealdb"]

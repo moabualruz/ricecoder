@@ -114,11 +114,11 @@ impl TreeSitterContextAnalyzer {
     /// Get the tree-sitter language for the given language identifier
     fn get_language(language: &str) -> Option<Language> {
         match language {
-            "rust" => Some(tree_sitter_rust::language()),
+            "rust" => Some(tree_sitter_rust::LANGUAGE.into()),
             "typescript" | "ts" | "tsx" | "javascript" | "js" | "jsx" => {
-                Some(tree_sitter_typescript::language_typescript())
+                Some(tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into())
             }
-            "python" | "py" => Some(tree_sitter_python::language()),
+            "python" | "py" => Some(tree_sitter_python::LANGUAGE.into()),
             _ => None,
         }
     }
@@ -796,7 +796,7 @@ impl TreeSitterContextAnalyzer {
         })?;
 
         let mut parser = Parser::new();
-        parser.set_language(lang).map_err(|_| {
+        parser.set_language(&lang).map_err(|_| {
             CompletionError::ContextAnalysisError("Failed to set parser language".to_string())
         })?;
 

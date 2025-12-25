@@ -250,8 +250,9 @@ impl CommandHandler {
 
         // Initialize tree-sitter parser
         let mut parser = tree_sitter::Parser::new();
+        let lang: tree_sitter::Language = tree_sitter_bash::LANGUAGE.into();
         parser
-            .set_language(tree_sitter_bash::language().into())
+            .set_language(&lang)
             .map_err(|e| {
                 ExecutionError::ValidationError(format!("Failed to load bash grammar: {}", e))
             })?;

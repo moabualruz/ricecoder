@@ -55,9 +55,8 @@ tantivy = { workspace = true }
 tempfile = { workspace = true }
 dashmap = { workspace = true }
 lru = { workspace = true }
-ndarray = { workspace = true }
+fastembed = { workspace = true, optional = true }
 once_cell = { workspace = true }
-onnxruntime = { workspace = true }
 parking_lot = { workspace = true }
 qdrant-client = { workspace = true }
 memmap2 = { workspace = true }
@@ -74,4 +73,7 @@ async-graphql-axum = { workspace = true }
 tokio-stream = { workspace = true }
 
 [features]
+default = []
 server = []
+# Local embeddings via fastembed - works with SurrealDB (no ndarray conflict)
+local-embeddings = ["dep:fastembed"]

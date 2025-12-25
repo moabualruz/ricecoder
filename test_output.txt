@@ -1,0 +1,694 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   F:\work\kiro-workspace\projects\ricecoder\crates\ricecoder-cli\Cargo.toml
+workspace: F:\work\kiro-workspace\projects\ricecoder\Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.37s
+     Running unittests src\lib.rs (target\debug\deps\ricecoder_cli-f1a2610c70a1de56.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\ricecoder_activity_log-be749742ca9953cf.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\ricecoder_agents-730c4821dd375b5b.exe)
+
+running 403 tests
+test agents::backend::tests::test_backend_agent_all_architectures_present ... ok
+test agents::backend::tests::test_backend_agent_all_api_patterns_present ... ok
+test agents::backend::tests::test_backend_agent_all_databases_present ... ok
+test agents::backend::tests::test_backend_agent_all_caching_solutions_present ... ok
+test agents::backend::tests::test_backend_agent_all_observability_tools_present ... ok
+test agents::backend::tests::test_backend_agent_redis_alternatives ... ok
+test agents::backend::tests::test_backend_agent_all_security_technologies_present ... ok
+test agents::code_review::tests::test_code_review_agent_default_config ... ok
+test agents::code_review::tests::test_code_review_agent_default ... ok
+test agents::backend::tests::test_backend_agent_knowledge ... ok
+test agents::backend::tests::test_backend_agent_default ... ok
+test agents::code_review::tests::test_check_best_practices ... ok
+test agents::code_review::tests::test_code_review_agent_supports_task_types ... ok
+test agents::code_review::tests::test_has_complexity_issues ... ok
+test agents::code_review::tests::test_has_hardcoded_secrets ... ok
+test agents::code_review::tests::test_has_structural_issues ... ok
+test agents::code_review::tests::test_analyze_code_quality ... ok
+test agents::backend::tests::test_backend_agent_supports_task_types ... ok
+test agents::code_review::tests::test_analyze_performance ... ok
+test agents::code_review::tests::test_code_review_agent_creation ... ok
+test agents::backend::tests::test_backend_agent_execute ... ok
+test agents::code_review::tests::test_code_review_agent_config_schema ... ok
+test agents::code_review::tests::test_code_review_agent_metrics ... ok
+test agents::backend::tests::test_backend_agent_clone ... ok
+test agents::backend::tests::test_backend_agent_capabilities ... ok
+test agents::backend::tests::test_backend_agent_postgresql_alternatives ... ok
+test agents::code_review::tests::test_code_review_agent_with_custom_config ... ok
+test agents::code_review::tests::test_code_review_agent_execute ... ok
+test agents::backend::tests::test_backend_agent_creation ... ok
+test agents::code_review::tests::test_has_naming_violations ... ok
+test agents::backend::tests::test_backend_agent_rest_alternatives ... ok
+test agents::devops::tests::test_devops_agent_all_cicd_tools_present ... ok
+test agents::code_review::tests::test_has_unsafe_operations ... ok
+test agents::devops::tests::test_devops_agent_all_container_tools_present ... ok
+test agents::code_review::tests::test_has_unnecessary_allocations ... ok
+test agents::backend::tests::test_backend_agent_technology_recommendations ... ok
+test agents::devops::tests::test_devops_agent_all_iac_tools_present ... ok
+test agents::code_review::tests::test_scan_security ... ok
+test agents::devops::tests::test_devops_agent_all_observability_tools_present ... ok
+test agents::devops::tests::test_devops_agent_all_security_tools_present ... ok
+test agents::devops::tests::test_devops_agent_capabilities ... ok
+test agents::devops::tests::test_devops_agent_creation ... ok
+test agents::devops::tests::test_devops_agent_clone ... ok
+test agents::devops::tests::test_devops_agent_default ... ok
+test agents::devops::tests::test_devops_agent_execute ... ok
+test agents::devops::tests::test_devops_agent_github_actions_alternatives ... ok
+test agents::devops::tests::test_devops_agent_knowledge ... ok
+test agents::devops::tests::test_devops_agent_kubernetes_alternatives ... ok
+test agents::devops::tests::test_devops_agent_supports_task_types ... ok
+test agents::devops::tests::test_devops_agent_technology_recommendations ... ok
+test agents::devops::tests::test_devops_agent_terraform_alternatives ... ok
+test agents::tests::test_agent_default_config_schema ... ok
+test agents::tests::test_agent_default_metrics ... ok
+test agents::tests::test_agent_trait_implementation ... ok
+test agents::tests::test_agent_execute ... ok
+test agents::tests::test_multiple_supported_task_types ... ok
+test agents::web::tests::test_web_agent_all_build_tools_present ... ok
+test agents::web::tests::test_web_agent_all_frameworks_present ... ok
+test agents::web::tests::test_web_agent_all_testing_frameworks_present ... ok
+test agents::web::tests::test_web_agent_capabilities ... ok
+test agents::web::tests::test_web_agent_clone ... ok
+test agents::web::tests::test_web_agent_creation ... ok
+test agents::web::tests::test_web_agent_default ... ok
+test agents::web::tests::test_web_agent_jest_alternatives ... ok
+test agents::web::tests::test_web_agent_knowledge ... ok
+test agents::web::tests::test_web_agent_react_alternatives ... ok
+test agents::web::tests::test_web_agent_execute ... ok
+test agents::web::tests::test_web_agent_styling_solutions_present ... ok
+test agents::web::tests::test_web_agent_supports_task_types ... ok
+test agents::web::tests::test_web_agent_technology_recommendations ... ok
+test agents::web::tests::test_web_agent_vite_alternatives ... ok
+test coordinator::tests::test_aggregate_empty ... ok
+test coordinator::tests::test_aggregate_multiple_outputs ... ok
+test coordinator::tests::test_aggregate_preserves_severity_order ... ok
+test coordinator::tests::test_aggregate_single_output ... ok
+test coordinator::tests::test_aggregate_with_generated_content ... ok
+test coordinator::tests::test_deduplicate_findings ... ok
+test coordinator::tests::test_aggregate_with_suggestions ... ok
+test coordinator::tests::test_deduplicate_findings_with_source ... ok
+test coordinator::tests::test_prioritize_findings ... ok
+test coordinator::tests::test_resolve_conflicts ... ok
+test coordinator::tests::test_resolve_conflicts_different_locations ... ok
+test coordinator::tests::test_resolve_conflicts_keeps_same_severity ... ok
+test coordinator::tests::test_resolve_conflicts_prioritizes_severity ... ok
+test coordinator_properties::tests::property_finding_consistency_deduplication ... ok
+test coordinator_properties::tests::property_finding_consistency_empty_inputs ... ok
+test coordinator_properties::tests::property_finding_consistency_deterministic_aggregation ... ok
+test coordinator_properties::tests::property_finding_consistency_multiple_agents ... ok
+test coordinator_properties::tests::property_finding_consistency_severity_preservation ... ok
+test coordinator_properties::tests::property_finding_consistency_single_agent ... ok
+test coordinator_properties::tests::property_result_aggregation_correctness_deduplication ... ok
+test domain::config_loader::tests::test_config_loader_creation ... ok
+test coordinator_properties::tests::property_result_aggregation_correctness_no_loss ... ok
+test coordinator_properties::tests::property_result_aggregation_correctness_completeness ... ok
+test domain::config_loader::tests::test_config_loader_default ... ok
+test domain::config_loader::tests::test_load_from_json_invalid ... ok
+test domain::config_loader::tests::test_load_from_json ... ok
+test domain::config_loader::tests::test_load_from_yaml ... ok
+test domain::config_loader::tests::test_load_from_yaml_invalid ... ok
+test domain::config_loader::tests::test_validate_config_without_schema ... ok
+test domain::config_loader::tests::test_load_from_yaml_with_anti_patterns ... ok
+test domain::config_loader::tests::test_load_from_yaml_with_all_fields ... ok
+test domain::config_loader::tests::test_load_from_yaml_with_best_practices ... ok
+test domain::config_loader::tests::test_load_from_yaml_with_tech_recommendations ... ok
+test domain::config_loader::tests::test_load_from_yaml_with_patterns ... ok
+test domain::conflict::tests::test_analyze_conflict ... ok
+test domain::conflict::tests::test_are_recommendations_contradictory ... ok
+test domain::conflict::tests::test_analyze_conflict_includes_rationale ... ok
+test domain::conflict::tests::test_are_technologies_incompatible ... ok
+test domain::conflict::tests::test_detect_contradictory_recommendations ... ok
+test domain::conflict::tests::test_detect_incompatible_technologies ... ok
+test domain::conflict::tests::test_conflict_serialization ... ok
+test domain::conflict::tests::test_default_detector ... ok
+test domain::conflict::tests::test_conflict_type_equality ... ok
+test domain::conflict::tests::test_detect_no_conflicts ... ok
+test domain::conflict::tests::test_format_conflict_contradictory ... ok
+test domain::conflict::tests::test_detector_creation ... ok
+test domain::conflict::tests::test_format_conflict_incompatible ... ok
+test domain::conflict::tests::test_format_report_no_conflicts ... ok
+test domain::conflict::tests::test_format_conflict_requires_sequencing ... ok
+test domain::conflict::tests::test_format_report_with_conflicts ... ok
+test domain::conflict::tests::test_generate_report_no_conflicts ... ok
+test domain::conflict::tests::test_generate_report_with_conflicts ... ok
+test domain::conflict::tests::test_multiple_conflicts ... ok
+test domain::conflict::tests::test_suggest_resolutions_contradictory ... ok
+test domain::conflict::tests::test_suggest_resolutions_incompatible ... ok
+test domain::conflict::tests::test_suggest_resolutions_requires_sequencing ... ok
+test domain::conflict_properties::tests::test_conflict_analysis_provides_suggestions ... ok
+test domain::conflict_properties::tests::test_conflict_formatting_includes_all_information ... ok
+test domain::conflict_properties::tests::test_conflict_report_formatting_is_consistent ... ok
+test domain::conflict_properties::tests::test_conflict_report_includes_analysis ... ok
+test domain::conflict_properties::tests::test_conflict_report_includes_resolution ... ok
+test domain::conflict_properties::tests::test_conflict_types_correctly_identified ... ok
+test domain::conflict_properties::tests::test_conflicting_recommendations_detected ... ok
+test domain::conflict_properties::tests::test_conflicts_include_rationale ... ok
+test domain::conflict_properties::tests::test_multiple_conflicts_all_detected ... ok
+test domain::conflict_properties::tests::test_no_false_positives_for_compatible_recommendations ... ok
+test domain::context::tests::test_add_constraint ... ok
+test domain::context::tests::test_add_duplicate_technology ... ok
+test domain::context::tests::test_add_multiple_constraints ... ok
+test domain::context::tests::test_add_multiple_technologies ... ok
+test domain::context::tests::test_add_technology ... ok
+test domain::context::tests::test_clear ... ok
+test domain::context::tests::test_context_isolation ... ok
+test domain::context::tests::test_context_manager_creation ... ok
+test domain::context::tests::test_default_manager ... ok
+test domain::context::tests::test_get_all_recommendations ... ok
+test domain::context::tests::test_get_nonexistent_context ... ok
+test domain::context::tests::test_get_shared_context ... ok
+test domain::context::tests::test_set_project_type ... ok
+test domain::context::tests::test_store_agent_recommendations ... ok
+test domain::context::tests::test_update_context ... ok
+test domain::context_sharing_properties::tests::test_all_agents_access_shared_context ... ok
+test domain::context_sharing_properties::tests::test_clear_resets_all_context ... ok
+test domain::context_sharing_properties::tests::test_context_isolation_between_managers ... ok
+test domain::context_sharing_properties::tests::test_context_shared_between_agents ... ok
+test domain::context_sharing_properties::tests::test_context_updates_visible_to_all_agents ... ok
+test domain::context_sharing_properties::tests::test_cross_domain_state_maintained ... ok
+test domain::context_sharing_properties::tests::test_duplicate_constraints_not_added ... ok
+test domain::context_sharing_properties::tests::test_duplicate_technologies_not_added ... ok
+test domain::context_sharing_properties::tests::test_recommendations_from_different_agents_accessible ... ok
+test domain::context_sharing_properties::tests::test_shared_context_contains_all_fields ... ok
+test domain::coordination_properties::tests::property_full_stack_coordination_partial_stack ... ok
+test domain::coordination_properties::tests::property_full_stack_coordination_empty_input ... ok
+test domain::coordination_properties::tests::property_full_stack_coordination_multiple_per_domain ... ok
+test domain::coordination_properties::tests::property_full_stack_coordination_deterministic ... ok
+test domain::coordination_properties::tests::property_full_stack_coordination_recommendation_integrity ... ok
+test domain::error::tests::test_domain_error_clone ... ok
+test domain::coordination_properties::tests::property_full_stack_coordination_single_domain ... ok
+test domain::error::tests::test_domain_error_agent_not_found ... ok
+test domain::coordination_properties::tests::property_full_stack_coordination_tech_stack_consistency ... ok
+test domain::coordination_properties::tests::property_full_stack_coordination_all_domains_present ... ok
+test domain::error::tests::test_domain_error_config_error ... ok
+test domain::error::tests::test_domain_error_conflict_error ... ok
+test domain::error::tests::test_domain_error_context_error ... ok
+test domain::error::tests::test_domain_error_coordination_error ... ok
+test domain::error::tests::test_domain_error_domain_not_found ... ok
+test domain::error::tests::test_domain_error_internal ... ok
+test domain::error::tests::test_domain_error_knowledge_not_found ... ok
+test domain::error::tests::test_domain_error_invalid_input ... ok
+test domain::error::tests::test_domain_error_serialization_error ... ok
+test domain::error::tests::test_result_type_err ... ok
+test domain::error::tests::test_result_type_ok ... ok
+test domain::factory::tests::test_create_agent ... ok
+test domain::factory::tests::test_create_agent_multiple_capabilities ... ok
+test domain::factory::tests::test_create_agent_preserves_domain ... ok
+test domain::factory::tests::test_create_agent_with_anti_patterns ... ok
+test domain::factory::tests::test_create_agent_with_best_practices ... ok
+test domain::factory::tests::test_create_agent_with_patterns ... ok
+test domain::factory::tests::test_create_agent_with_tech_recommendations ... ok
+test domain::factory::tests::test_default_factory ... ok
+test domain::factory::tests::test_factory_creation ... ok
+test domain::factory::tests::test_load_from_json_invalid ... ok
+test domain::factory::tests::test_load_from_json ... ok
+test domain::factory::tests::test_validate_config_empty_capability_name ... ok
+test domain::factory::tests::test_validate_config_empty_domain ... ok
+test domain::factory::tests::test_validate_config_empty_name ... ok
+test domain::factory::tests::test_validate_config_no_capabilities ... ok
+test domain::factory::tests::test_validate_config_no_technologies ... ok
+test domain::factory::tests::test_validate_config_valid ... ok
+test domain::knowledge::tests::test_add_anti_pattern ... ok
+test domain::knowledge::tests::test_add_best_practice ... ok
+test domain::knowledge::tests::test_add_pattern ... ok
+test domain::knowledge::tests::test_add_tech_recommendation ... ok
+test domain::knowledge::tests::test_clear_all ... ok
+test domain::knowledge::tests::test_clear_domain ... ok
+test domain::knowledge::tests::test_default_knowledge_base ... ok
+test domain::knowledge::tests::test_get_nonexistent_tech_recommendation ... ok
+test domain::knowledge::tests::test_get_tech_recommendation ... ok
+test domain::knowledge::tests::test_knowledge_base_creation ... ok
+test domain::knowledge::tests::test_multiple_domains ... ok
+test domain::knowledge::tests::test_multiple_practices_per_domain ... ok
+test domain::knowledge::tests::test_multiple_recommendations_per_domain ... ok
+test domain::knowledge_properties::tests::property_anti_pattern_guidance ... ok
+test domain::knowledge_properties::tests::property_best_practice_applicability ... ok
+test domain::knowledge_properties::tests::property_knowledge_relevance_backend_domain ... ok
+test domain::knowledge_properties::tests::property_knowledge_retrieval_accuracy ... ok
+test domain::models::tests::test_best_practice_creation ... ok
+test domain::knowledge_properties::tests::property_technology_recommendation_completeness ... ok
+test domain::models::tests::test_domain_agent_creation ... ok
+test domain::models::tests::test_anti_pattern_creation ... ok
+test domain::models::tests::test_domain_capability_with_patterns ... ok
+test domain::models::tests::test_domain_capability_creation ... ok
+test domain::models::tests::test_domain_agent_serialization ... ok
+test domain::models::tests::test_domain_knowledge_default ... ok
+test domain::models::tests::test_pattern_creation ... ok
+test domain::models::tests::test_recommendation_creation ... ok
+test domain::knowledge_properties::tests::property_knowledge_relevance_devops_domain ... ok
+test domain::models::tests::test_domain_knowledge_with_all_fields ... ok
+test domain::models::tests::test_recommendation_serialization ... ok
+test domain::knowledge_properties::tests::property_knowledge_relevance_web_domain ... ok
+test domain::models::tests::test_shared_context_creation ... ok
+test domain::models::tests::test_shared_context_default ... ok
+test domain::models::tests::test_shared_context_with_state ... ok
+test domain::models::tests::test_tech_recommendation_creation ... ok
+test domain::models::tests::test_tech_recommendation_multiple_alternatives ... ok
+test domain::registry::tests::test_default_registry ... ok
+test domain::registry::tests::test_clear ... ok
+test domain::registry::tests::test_discover_domains ... ok
+test domain::registry::tests::test_domain_count ... ok
+test domain::registry::tests::test_get_agent ... ok
+test domain::registry::tests::test_get_all_agents ... ok
+test domain::registry::tests::test_get_nonexistent_agent ... ok
+test domain::registry::tests::test_has_domain ... ok
+test domain::registry::tests::test_list_capabilities ... ok
+test domain::registry::tests::test_overwrite_agent ... ok
+test domain::registry::tests::test_register_agent ... ok
+test domain::registry::tests::test_register_multiple_agents ... ok
+test domain::registry::tests::test_registry_creation ... ok
+test domain::routing_properties::tests::property_all_agents_routing_independence ... ok
+test domain::routing_properties::tests::property_backend_agent_domain_routing_multiple_registrations ... ok
+test domain::routing_properties::tests::property_devops_agent_domain_routing_multiple_registrations ... ok
+test domain::routing_properties::tests::property_backend_agent_domain_routing_registration ... ok
+test domain::routing_properties::tests::property_domain_count_accuracy ... ok
+test domain::routing_properties::tests::property_devops_agent_domain_routing_registration ... ok
+test domain::routing_properties::tests::property_web_agent_domain_routing_multiple_registrations ... ok
+test domain::sequencing_properties::tests::property_operation_sequencing_by_priority ... ok
+test domain::routing_properties::tests::property_web_agent_domain_routing_registration ... ok
+test domain::sequencing_properties::tests::property_operation_sequencing_complex_dependencies ... ok
+test domain::sequencing_properties::tests::property_operation_sequencing_data_preservation ... ok
+test domain::sequencing_properties::tests::property_operation_sequencing_deterministic ... ok
+test domain::sequencing_properties::tests::property_operation_sequencing_empty_input ... ok
+test domain::sequencing_properties::tests::property_operation_sequencing_priority_ordering ... ok
+test domain::sequencing_properties::tests::property_operation_sequencing_single_operation ... ok
+test domain::sequencing_properties::tests::property_operation_sequencing_respects_dependencies ... ok
+test domain::sequencing_properties::tests::property_operation_sequencing_stable_sort ... ok
+test domain::sequencing_properties::tests::property_operation_sequencing_large_number ... ok
+test executor::tests::test_execute_phase_empty ... ok
+test executor::tests::test_execution_config_custom ... ok
+test executor::tests::test_execution_config_default ... ok
+test executor::tests::test_execution_result_failure ... ok
+test executor::tests::test_execution_result_success ... ok
+test executor::tests::test_parallel_executor_default ... ok
+test executor::tests::test_parallel_executor_new ... ok
+test executor::tests::test_parallel_executor_set_max_concurrency ... ok
+test executor::tests::test_parallel_executor_set_timeout ... ok
+test executor::tests::test_parallel_executor_set_verbose ... ok
+test executor::tests::test_parallel_executor_with_config ... ok
+test metrics::tests::test_agent_stats_min_max_execution_time ... ok
+test metrics::tests::test_execution_metrics_complete_failure ... ok
+test metrics::tests::test_execution_metrics_complete_success ... ok
+test metrics::tests::test_execution_metrics_new ... ok
+test metrics::tests::test_execution_metrics_record_findings ... ok
+test metrics::tests::test_metrics_collector_all_agent_stats ... ok
+test metrics::tests::test_metrics_collector_all_executions ... ok
+test metrics::tests::test_metrics_collector_average_execution_time ... ok
+test metrics::tests::test_metrics_collector_clear ... ok
+test metrics::tests::test_metrics_collector_get_agent_executions ... ok
+test metrics::tests::test_metrics_collector_get_agent_stats ... ok
+test metrics::tests::test_metrics_collector_mixed_success_failure ... ok
+test metrics::tests::test_metrics_collector_multiple_executions ... ok
+test metrics::tests::test_metrics_collector_new ... ok
+test metrics::tests::test_metrics_collector_record_execution ... ok
+test models::tests::test_agent_config_default ... ok
+test models::tests::test_agent_config_serialization ... ok
+test models::tests::test_agent_metadata_serialization ... ok
+test models::tests::test_agent_metrics_default ... ok
+test models::tests::test_agent_output_default ... ok
+test models::tests::test_agent_output_serialization ... ok
+test models::tests::test_config_schema_default ... ok
+test models::tests::test_finding_with_location ... ok
+test models::tests::test_generated_content ... ok
+test models::tests::test_project_context ... ok
+test models::tests::test_severity_ordering ... ok
+test models::tests::test_suggestion_auto_fixable ... ok
+test models::tests::test_task_scope_serialization ... ok
+test models::tests::test_task_target_multiple_files ... ok
+test models::tests::test_task_type_serialization ... ok
+test orchestrator::tests::test_execute_empty_tasks ... ok
+test orchestrator::tests::test_execute_conditional_always_false ... ok
+test orchestrator::tests::test_execute_conditional_always_true ... ok
+test orchestrator::tests::test_execute_conditional_based_on_output_count ... ok
+test orchestrator::tests::test_execute_with_retry_empty_tasks ... ok
+test orchestrator::tests::test_orchestrator_set_retry_config ... ok
+test orchestrator::tests::test_orchestrator_with_retry_config ... ok
+test orchestrator::tests::test_retry_config_custom ... ok
+test orchestrator::tests::test_execute_with_retry_success_first_attempt ... ok
+test orchestrator::tests::test_execute_with_agent ... ok
+test orchestrator::tests::test_retry_config_default ... ok
+test orchestrator_properties::tests::property_result_aggregation_correctness_all_findings_included ... ok
+test orchestrator_properties::tests::property_result_aggregation_correctness_empty_inputs ... ok
+test orchestrator_properties::tests::property_result_aggregation_correctness_no_duplication ... ok
+test orchestrator_properties::tests::property_result_aggregation_correctness_severity_preservation ... ok
+test orchestrator_properties::tests::property_result_aggregation_correctness_single_agent ... ok
+test orchestrator_properties::tests::property_result_aggregation_correctness_completeness ... ok
+test registry::tests::test_agent_metadata_serialization ... ok
+test registry::tests::test_agents_for_task_type ... ok
+test registry::tests::test_discover_builtin_agents ... ok
+test registry::tests::test_all_agent_metadata ... ok
+test registry::tests::test_find_agent_by_id ... ok
+test registry::tests::test_find_agent_not_found ... ok
+test registry::tests::test_find_agents_by_task_type ... ok
+test registry::tests::test_get_agent_metadata ... ok
+test registry::tests::test_load_configuration ... ok
+test registry::tests::test_multiple_agents_same_task_type ... ok
+test registry::tests::test_has_agent ... ok
+test registry::tests::test_register_agent ... ok
+test registry::tests::test_registry_empty_discovery ... ok
+test registry::tests::test_registry_with_multiple_agents ... ok
+test registry::tests::test_supported_task_types ... ok
+test scheduler::tests::test_create_execution_phases_linear_dependency ... ok
+test scheduler::tests::test_detect_circular_dependency_complex ... ok
+test scheduler::tests::test_detect_circular_dependency_simple ... ok
+test scheduler::tests::test_detect_circular_dependencies ... ok
+test scheduler::tests::test_create_execution_phases_parallel_tasks ... ok
+test scheduler::tests::test_detect_circular_dependency_self_loop ... ok
+test scheduler::tests::test_resolve_dependencies ... ok
+test scheduler::tests::test_schedule_multiple_tasks ... ok
+test scheduler::tests::test_schedule_single_task ... ok
+test scheduler::tests::test_schedule_with_no_tasks ... ok
+test scheduler::tests::test_scheduler_default ... ok
+test scheduler::tests::test_task_dag_add_dependency ... ok
+test scheduler::tests::test_task_dag_add_task ... ok
+test scheduler::tests::test_task_dag_default ... ok
+test scheduler::tests::test_task_dag_get_root_tasks ... ok
+test scheduler::tests::test_task_dag_multiple_root_tasks ... ok
+test scheduler_properties::tests::property_agent_isolation_execution_phases ... ok
+test scheduler_properties::tests::property_agent_isolation_dag_independence ... ok
+test domain::config_loader::tests::test_load_from_yaml_empty_capabilities ... ok
+test domain::config_loader::tests::test_load_from_json_missing_required_field ... ok
+test domain::extensibility_properties::tests::property_10_agent_creation_creates_agent_from_config ... ok
+test domain::extensibility_properties::tests::property_12_custom_domain_works_like_builtin ... ok
+test domain::config_loader::tests::test_with_builtin_schema ... ok
+test tool_registry::tests::test_discover_builtin_tools ... ok
+test tool_registry::tests::test_all_tool_metadata ... ok
+test tool_registry::tests::test_available_tool_ids ... ok
+test domain::config_loader::tests::test_load_from_yaml_missing_required_field ... ok
+test domain::config_loader::tests::test_load_from_yaml_with_schema_validation ... ok
+test domain::extensibility_properties::tests::property_12_custom_domain_provides_recommendations ... ok
+test tool_registry::tests::test_find_tool_by_id ... ok
+test domain::extensibility_properties::tests::property_10_agent_creation_loads_all_config_fields ... ok
+test tool_registry::tests::test_find_tool_not_found ... ok
+test domain::config_loader::tests::test_load_from_yaml_invalid_domain_format ... ok
+test domain::config_loader::tests::test_load_from_json_with_schema_validation ... ok
+test tool_registry::tests::test_get_tool_metadata ... ok
+test tool_registry::tests::test_has_tool ... ok
+test domain::config_loader::tests::test_validate_with_schema ... ok
+test tool_registry::tests::test_invoke_tool ... ok
+test tool_registry::tests::test_load_configuration ... ok
+test tool_registry::tests::test_invoke_tool_not_found ... ok
+test tool_registry::tests::test_register_tool ... ok
+test domain::extensibility_properties::tests::property_13_validation_provides_clear_error_messages ... ok
+test tool_registry::tests::test_registry_empty_discovery ... ok
+test tool_registry::tests::test_registry_with_multiple_tools ... ok
+test domain::extensibility_properties::tests::property_13_validation_handles_minimal_config ... ok
+test domain::extensibility_properties::tests::property_13_validation_rejects_missing_required_fields ... ok
+test domain::extensibility_properties::tests::property_9_auto_discovery_discovers_new_domains ... ok
+test executor::tests::test_execute_phase_single_task ... ok
+test executor::tests::test_execute_phase_multiple_tasks ... ok
+test domain::context_sharing_properties::tests::prop_multiple_agents_store_retrieve_recommendations ... ok
+test domain::extensibility_properties::tests::property_11_hot_reload_detects_config_changes ... ok
+test domain::extensibility_properties::tests::property_13_validation_maintains_existing_config_on_error ... ok
+test domain::extensibility_properties::tests::property_11_hot_reload_updates_agent ... ok
+test domain::extensibility_properties::tests::property_9_auto_discovery_discovers_multiple_domains ... ok
+test scheduler_properties::tests::property_agent_isolation_task_independence ... ok
+test scheduler_properties::tests::property_agent_isolation_parallel_execution ... ok
+test executor::tests::test_execute_phase_respects_concurrency ... ok
+test scheduler_properties::tests::property_parallel_execution_safety_order_independence ... ok
+test scheduler_properties::tests::property_parallel_execution_safety_deterministic ... ok
+test domain::context_sharing_properties::tests::prop_context_values_updated_multiple_times ... ok
+test scheduler_properties::tests::property_parallel_execution_safety_consistency ... ok
+test scheduler_properties::tests::property_agent_isolation_respects_concurrency ... ok
+test scheduler_properties::tests::property_parallel_execution_safety_completeness ... ok
+
+test result: ok. 403 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
+
+     Running unittests src\lib.rs (target\debug\deps\ricecoder_api-4a0c6a6f61681fa0.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\ricecoder_application-a4ea47bcab1a1e77.exe)
+
+running 40 tests
+test di::container::tests::test_singleton_same_instance ... ok
+test di::container::tests::test_service_count ... ok
+test di::container::tests::test_is_registered ... ok
+test di::container::tests::test_not_registered ... ok
+test di::container::tests::test_transient_new_instance ... ok
+test di::scope::tests::test_singleton_accessible_from_scope ... ok
+test di::scope::tests::test_scoped_different_instance_different_scope ... ok
+test di::scope::tests::test_scoped_same_instance_within_scope ... ok
+test di::error::tests::test_error_display ... ok
+test di::scope::tests::test_scoped_instance_count ... ok
+test dto::session::tests::test_create_session_command_serialization ... ok
+test dto::project::tests::test_create_project_command_serialization ... ok
+test di::tests::test_resolve_not_registered ... ok
+test di::tests::test_resolve_trait_object ... ok
+test di::tests::test_scoped_created_once_per_scope ... ok
+test di::tests::test_singleton_created_once ... ok
+test di::scope::tests::test_not_registered_in_scope ... ok
+test di::scope::tests::test_transient_creates_new_in_scope ... ok
+test errors::tests::test_domain_error_conversion ... ok
+test errors::tests::test_not_found_error_display ... ok
+test errors::tests::test_validation_error_display ... ok
+test services::code_service::tests::test_generate_code_project_not_found ... ok
+test ports::tests::test_no_op_unit_of_work_error ... ok
+test events::tests::test_in_memory_publisher ... ok
+test ports::tests::test_no_op_unit_of_work_success ... ok
+test services::session_service::tests::test_create_session_project_not_found ... ok
+test services::project_service::tests::test_create_project_empty_name ... ok
+test services::project_service::tests::test_create_project_empty_path ... ok
+test services::specification_service::tests::test_create_specification_project_not_found ... ok
+test services::code_service::tests::test_analyze_code_empty_files ... ok
+test services::code_service::tests::test_generate_code_success ... ok
+test services::project_service::tests::test_get_project_not_found ... ok
+test di::tests::test_transient_created_every_time ... ok
+test services::specification_service::tests::test_create_specification_success ... ok
+test services::code_service::tests::test_analyze_code_success ... ok
+test events::tests::test_event_type ... ok
+test services::project_service::tests::test_create_project_success ... ok
+test services::specification_service::tests::test_create_specification_empty_name ... ok
+test services::session_service::tests::test_create_session_success ... ok
+test services::project_service::tests::test_list_projects ... ok
+
+test result: ok. 40 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\ricecoder_benchmark-97a804c68019769d.exe)
+
+running 1 test
+test tests::placeholder ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\ricecoder_beta-71c287ae20421bc3.exe)
+
+running 8 tests
+test analytics::tests::test_enterprise_validation_analytics ... ok
+test analytics::tests::test_feedback_analytics ... ok
+test validation::tests::test_integration_validation ... ok
+test validation::tests::test_performance_validation ... ok
+test compliance::tests::test_gdpr_compliance_validation ... ok
+test validation::tests::test_deployment_validation ... ok
+test feedback::tests::test_collect_feedback ... ok
+test compliance::tests::test_soc2_compliance_validation ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\ricecoder_cache-d444d17ea2d8c794.exe)
+
+running 29 tests
+test metrics::tests::test_cache_stats_hit_rate ... ok
+test compression::tests::test_compression_ratio_calculation ... ok
+test metrics::tests::test_cache_stats_efficiency_score ... ok
+test compression::tests::test_space_savings_calculation ... ok
+test compression::tests::test_small_data_not_compressed ... ok
+test metrics::tests::test_cache_metrics_record_store ... ok
+test metrics::tests::test_cache_metrics_record_miss ... ok
+test metrics::tests::test_cache_metrics_record_hit ... ok
+test compression::tests::test_compression_stats ... ok
+test compression::tests::test_no_compression_level ... ok
+test compression::tests::test_incompressible_data ... ok
+test compression::tests::test_compression_levels ... ok
+test compression::tests::test_compress_decompresses_correctly ... ok
+test strategy::tests::test_composite_strategy ... ok
+test strategy::tests::test_lru_strategy ... ok
+test strategy::tests::test_size_limit_strategy ... ok
+test strategy::tests::test_ttl_strategy ... ok
+test storage::tests::test_cache_entry_ttl_remaining ... ok
+test cache::tests::test_cache_metrics ... ok
+test cache::tests::test_cache_basic_operations ... ok
+test cache::tests::test_cache_builder ... ok
+test storage::tests::test_memory_storage_basic_operations ... ok
+test cache::tests::test_multi_level_cache ... ok
+test metrics::tests::test_operation_timer ... ok
+test storage::tests::test_cache_entry_expiration ... ok
+test storage::tests::test_disk_storage_basic_operations ... ok
+test strategy::tests::test_file_change_strategy ... ok
+test cache::tests::test_cache_with_ttl ... ok
+test cache::tests::test_cache_with_strategy ... ok
+
+test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.01s
+
+     Running unittests src\lib.rs (target\debug\deps\ricecoder_commands-4a2bc3e146d0eac2.exe)
+
+running 24 tests
+test config::tests::test_merge_registries ... ok
+test output_injection::tests::test_exclude_exit_code ... ok
+test types::tests::test_command_definition_builder ... ok
+test output_injection::tests::test_truncate_output ... ok
+test output_injection::tests::test_exclude_stderr ... ok
+test types::tests::test_command_argument_creation ... ok
+test output_injection::tests::test_format_markdown ... ok
+test output_injection::tests::test_format_plain ... ok
+test types::tests::test_command_definition_creation ... ok
+test types::tests::test_execution_result_creation ... ok
+test output_injection::tests::test_format_json ... ok
+test config::tests::test_unsupported_format ... ok
+test template::tests::test_validate_variables_success ... ok
+test template::tests::test_simple_substitution ... ok
+test template::tests::test_extract_variables ... ok
+test template::tests::test_substitution_with_default ... ok
+test template::tests::test_missing_variable_error ... ok
+test template::tests::test_no_variables ... ok
+test template::tests::test_validate_variables_with_default ... ok
+test template::tests::test_validate_variables_missing ... ok
+test config::tests::test_save_and_load_json ... ok
+test config::tests::test_save_and_load_yaml ... ok
+test config::tests::test_auto_detect_yaml ... ok
+test config::tests::test_auto_detect_json ... ok
+
+test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src\lib.rs (target\debug\deps\ricecoder_completion-bdc87824f26d0952.exe)
+
+running 107 tests
+test config::tests::test_config_loader_validate_negative_weights ... ok
+test config::tests::test_config_default_for_language ... ok
+test config::tests::test_config_loader_validate_empty_language ... ok
+test context::tests::test_extract_prefix ... ok
+test context::tests::test_extract_rust_type_annotation ... ok
+test context::tests::test_byte_offset_to_position ... ok
+test config::tests::test_config_loader_validate_valid ... ok
+test context::tests::test_infer_python_function_return_type_list ... ok
+test context::tests::test_extract_python_type_annotation ... ok
+test context::tests::test_infer_rust_function_return_type_result ... ok
+test context::tests::test_extract_rust_type_annotation_complex ... ok
+test context::tests::test_infer_typescript_function_return_type ... ok
+test context::tests::test_infer_typescript_function_return_type_promise ... ok
+test context::tests::test_generic_detect_scope_function ... ok
+test context::tests::test_generic_detect_scope_block ... ok
+test context::tests::test_generic_detect_scope_global ... ok
+test context::tests::test_generic_extract_prefix ... ok
+test context::tests::test_extract_prefix_with_word ... ok
+test context::tests::test_infer_python_variable_type_optional ... ok
+test context::tests::test_infer_python_variable_type_simple ... ok
+test context::tests::test_parse_rust_type_simple ... ok
+test context::tests::test_infer_rust_variable_type_option ... ok
+test context::tests::test_infer_rust_variable_type_reference ... ok
+test context::tests::test_infer_rust_variable_type_simple ... ok
+test config::tests::test_language_config_registry_unregister ... ok
+test context::tests::test_extract_typescript_type_annotation ... ok
+test context::tests::test_infer_typescript_variable_type_array ... ok
+test context::tests::test_infer_typescript_variable_type_array_generic ... ok
+test context::tests::test_infer_typescript_variable_type_simple ... ok
+test context::tests::test_parse_python_type_list ... ok
+test context::tests::test_parse_python_type_optional ... ok
+test context::tests::test_infer_python_function_return_type ... ok
+test context::tests::test_infer_python_variable_type_list ... ok
+test context::tests::test_infer_rust_function_return_type ... ok
+test config::tests::test_language_config_registry_register ... ok
+test context::tests::test_infer_rust_variable_type_vec ... ok
+test context::tests::test_parse_rust_type_vec ... ok
+test context::tests::test_parse_typescript_type_array ... ok
+test context::tests::test_parse_typescript_type_array_generic ... ok
+test context::tests::test_position_to_byte_offset ... ok
+test engine::tests::test_provider_registry_get_nonexistent ... ok
+test context::tests::test_parse_rust_type_option ... ok
+test engine::tests::test_provider_registry_register ... ok
+test external_lsp_proxy::tests::test_proxy_creation ... ok
+test config::tests::test_config_loader_hierarchy_fallback ... ok
+test ghost_text::tests::test_ghost_text_generation_multiline ... ok
+test config::tests::test_language_config_registry_with_hierarchy ... ok
+test ghost_text::tests::test_ghost_text_generation_single_line ... ok
+test ghost_text::tests::test_ghost_text_renderer_faded ... ok
+test ghost_text::tests::test_ghost_text_renderer_italic ... ok
+test ghost_text_state::tests::test_ghost_text_partial_acceptance_characters ... ok
+test ghost_text_state::tests::test_ghost_text_partial_acceptance_line ... ok
+test external_lsp_proxy::tests::test_proxy_fallback ... ok
+test ghost_text_state::tests::test_ghost_text_partial_acceptance_word ... ok
+test ghost_text_state::tests::test_ghost_text_state_accept ... ok
+test ghost_text_state::tests::test_ghost_text_state_dismiss ... ok
+test ghost_text_state::tests::test_ghost_text_state_display ... ok
+test ghost_text_state::tests::test_ghost_text_update ... ok
+test ghost_text_state::tests::test_key_handler_escape ... ok
+test ghost_text_state::tests::test_key_handler_tab ... ok
+test history::tests::test_clear_history ... ok
+test history::tests::test_combined_usage_score ... ok
+test history::tests::test_frequency_score_after_usage ... ok
+test history::tests::test_frequency_score_multiple_usages ... ok
+test history::tests::test_frequency_score_new_completion ... ok
+test history::tests::test_get_all_usages ... ok
+test history::tests::test_recency_score_after_usage ... ok
+test history::tests::test_recency_score_new_completion ... ok
+test history::tests::test_record_usage ... ok
+test language::tests::test_language_as_str ... ok
+test language::tests::test_language_detector_combined ... ok
+test language::tests::test_language_detector_from_content_patterns ... ok
+test language::tests::test_language_detector_from_content_shebang ... ok
+test language::tests::test_language_detector_from_extension ... ok
+test language::tests::test_language_extensions ... ok
+test language::tests::test_language_from_extension ... ok
+test providers::tests::test_dart_provider_language ... ok
+test providers::tests::test_generic_provider_language ... ok
+test providers::tests::test_go_provider_language ... ok
+test providers::tests::test_java_provider_language ... ok
+test providers::tests::test_kotlin_provider_language ... ok
+test providers::tests::test_provider_factory_dart ... ok
+test providers::tests::test_provider_factory_go ... ok
+test providers::tests::test_provider_factory_java ... ok
+test providers::tests::test_provider_factory_kotlin ... ok
+test providers::tests::test_provider_factory_rust ... ok
+test providers::tests::test_provider_factory_unknown ... ok
+test providers::tests::test_python_provider_language ... ok
+test providers::tests::test_rust_provider_language ... ok
+test providers::tests::test_typescript_provider_language ... ok
+test ranker::tests::test_advanced_ranker_fuzzy_filter ... ok
+test ranker::tests::test_frequency_scoring_with_history ... ok
+test ranker::tests::test_frequency_scoring_without_history ... ok
+test ranker::tests::test_fuzzy_match_case_insensitive ... ok
+test ranker::tests::test_fuzzy_match_exact ... ok
+test ranker::tests::test_fuzzy_match_no_match ... ok
+test ranker::tests::test_fuzzy_match_partial ... ok
+test ranker::tests::test_fuzzy_match_prefix ... ok
+test ranker::tests::test_prefix_filter_case_insensitive ... ok
+test ranker::tests::test_prefix_filter_empty_prefix ... ok
+test ranker::tests::test_prefix_filter_exact_match ... ok
+test ranker::tests::test_ranking_sorts_by_score ... ok
+test ranker::tests::test_ranking_stability ... ok
+test ranker::tests::test_ranking_with_frequency_boost ... ok
+test ranker::tests::test_ranking_with_prefix ... ok
+test ranker::tests::test_relevance_score_with_expected_type ... ok
+test history::tests::test_save_and_load ... ok
+
+test result: ok. 107 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running unittests src\lib.rs (target\debug\deps\ricecoder_config-ef479ae7af850351.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\ricecoder_continuous_improvement-49db52a75b9ed5db.exe)
+
+running 1 test
+test tests::test_pipeline_creation ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\ricecoder_di-b81659b8ef394e3c.exe)
+
+running 2 tests
+test services::test_register_use_cases ... ok
+test services::test_create_application_container has been running for over 60 seconds

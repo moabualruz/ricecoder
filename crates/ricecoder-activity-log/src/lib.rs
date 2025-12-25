@@ -24,16 +24,17 @@
 //!
 //! ## Usage
 //!
-//! ```rust
-//! use ricecoder_activity_log::{ActivityLogger, LogLevel, ActivityEvent};
+//! ```rust,no_run
+//! use ricecoder_activity_log::{ActivityLogger, LogLevel, ActivityEvent, EventCategory};
 //!
+//! # async fn example() {
 //! // Create a logger
 //! let logger = ActivityLogger::new();
 //!
 //! // Log an activity event
 //! logger.log_activity(ActivityEvent {
 //!     level: LogLevel::Info,
-//!     category: "user_action".to_string(),
+//!     category: EventCategory::Custom("user_action".to_string()),
 //!     action: "file_opened".to_string(),
 //!     actor: "user123".to_string(),
 //!     resource: "/path/to/file.rs".to_string(),
@@ -41,6 +42,7 @@
 //!     session_id: Some("session-abc".to_string()),
 //!     ..Default::default()
 //! }).await;
+//! # }
 //! ```
 
 pub mod audit;

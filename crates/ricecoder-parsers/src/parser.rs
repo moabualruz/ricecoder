@@ -388,7 +388,7 @@ pub mod tree_sitter_support {
         fn parse(&self, source: &str, config: &ParserConfig) -> ParserResult<SyntaxTree> {
             let mut parser = TSParser::new();
             parser
-                .set_language(self.ts_language)
+                .set_language(&self.ts_language)
                 .map_err(|e| ParserError::ParseError {
                     message: format!("Failed to set language: {}", e),
                 })?;
@@ -424,29 +424,29 @@ pub fn create_supports() -> Vec<Box<dyn LanguageSupport + 'static>> {
     // Rust support
     supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(
         Language::Rust,
-        tree_sitter_rust::language(),
+        tree_sitter_rust::LANGUAGE.into(),
     )) as Box<dyn LanguageSupport + 'static>);
 
     // Python support
     supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(
         Language::Python,
-        tree_sitter_python::language(),
+        tree_sitter_python::LANGUAGE.into(),
     )) as Box<dyn LanguageSupport + 'static>);
 
     // TypeScript/JavaScript support
     supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(
         Language::TypeScript,
-        tree_sitter_typescript::language_tsx(),
+        tree_sitter_typescript::LANGUAGE_TSX.into(),
     )) as Box<dyn LanguageSupport + 'static>);
     supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(
         Language::JavaScript,
-        tree_sitter_typescript::language_tsx(),
+        tree_sitter_typescript::LANGUAGE_TSX.into(),
     )) as Box<dyn LanguageSupport + 'static>);
 
     // Go support
     supports.push(Box::new(tree_sitter_support::TreeSitterSupport::new(
         Language::Go,
-        tree_sitter_go::language(),
+        tree_sitter_go::LANGUAGE.into(),
     )) as Box<dyn LanguageSupport + 'static>);
 
     supports

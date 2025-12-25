@@ -33,8 +33,7 @@ url = { workspace = true }
  aes-gcm = { workspace = true }
  rand = { workspace = true }
  semver = { workspace = true }
-sqlx = { workspace = true, features = ["runtime-tokio-native-tls", "sqlite", "chrono"] }
-rusqlite = { workspace = true, features = ["bundled"] }
+# Database removed - using SurrealDB via ricecoder-persistence
 csv = { workspace = true }
 flate2 = { workspace = true }
 tar = { workspace = true }

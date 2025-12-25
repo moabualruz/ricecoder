@@ -82,8 +82,9 @@ impl ParserPool {
         }
 
         let mut parser = Parser::new();
+        let lang = self.ts_language(language);
         parser
-            .set_language(self.ts_language(language))
+            .set_language(&lang)
             .map_err(|e| ChunkingError::Parser(e.to_string()))?;
         parser
             .parse(source, None)
@@ -128,16 +129,16 @@ impl ParserPool {
     fn ts_language(&self, language: LanguageKind) -> tree_sitter::Language {
         use LanguageKind::*;
         match language {
-            Rust => tree_sitter_rust::language(),
-            Python => tree_sitter_python::language(),
-            JavaScript => tree_sitter_javascript::language(),
-            TypeScript => tree_sitter_typescript::language_typescript(),
-            Tsx => tree_sitter_typescript::language_tsx(),
-            Java => tree_sitter_java::language(),
-            Go => tree_sitter_go::language(),
-            C => tree_sitter_c::language(),
-            Cpp => tree_sitter_cpp::language(),
-            LanguageKind::PlainText => tree_sitter_python::language(),
+            Rust => tree_sitter_rust::LANGUAGE.into(),
+            Python => tree_sitter_python::LANGUAGE.into(),
+            JavaScript => tree_sitter_javascript::LANGUAGE.into(),
+            TypeScript => tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into(),
+            Tsx => tree_sitter_typescript::LANGUAGE_TSX.into(),
+            Java => tree_sitter_java::LANGUAGE.into(),
+            Go => tree_sitter_go::LANGUAGE.into(),
+            C => tree_sitter_c::LANGUAGE.into(),
+            Cpp => tree_sitter_cpp::LANGUAGE.into(),
+            LanguageKind::PlainText => tree_sitter_python::LANGUAGE.into(),
         }
     }
 }
