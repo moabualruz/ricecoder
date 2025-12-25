@@ -13,7 +13,7 @@ use ricecoder_updates::{checker::UpdateChecker, policy::UpdatePolicy};
 use semver::Version;
 use tokio::{sync::mpsc, time};
 
-use crate::types::*;
+use super::types::*;
 
 /// Security monitoring pipeline for continuous security monitoring and compliance
 pub struct SecurityMonitoringPipeline {

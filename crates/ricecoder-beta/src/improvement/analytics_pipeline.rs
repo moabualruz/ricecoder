@@ -8,7 +8,7 @@ use std::{
 use ricecoder_monitoring::analytics::{AnalyticsEngine, FeatureAdoptionMetrics, UsageStats};
 use tokio::{sync::mpsc, time};
 
-use crate::types::*;
+use super::types::*;
 
 /// Analytics pipeline for feature usage analysis and prioritization
 pub struct AnalyticsPipeline {

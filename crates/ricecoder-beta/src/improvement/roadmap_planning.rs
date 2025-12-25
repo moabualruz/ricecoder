@@ -6,7 +6,7 @@ use chrono::TimeDelta;
 use ricecoder_monitoring::types::ComplianceStatus;
 use tokio::{sync::mpsc, time};
 
-use crate::types::*;
+use super::types::*;
 
 /// Roadmap planner for generating and managing product roadmap
 pub struct RoadmapPlanner {

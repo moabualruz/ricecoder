@@ -8,7 +8,7 @@ use ricecoder_monitoring::{
 };
 use tokio::{sync::mpsc, time};
 
-use crate::types::*;
+use super::types::*;
 
 /// Issue detection pipeline for automated issue detection and escalation
 pub struct IssueDetectionPipeline {

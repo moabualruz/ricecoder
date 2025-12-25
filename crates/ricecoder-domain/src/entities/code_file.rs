@@ -62,4 +62,44 @@ impl CodeFile {
             .extension()
             .and_then(|ext| ext.to_str())
     }
+
+    /// Returns the number of lines in the file
+    pub fn line_count(&self) -> usize {
+        self.content.lines().count()
+    }
+
+    /// Add or update a metadata entry
+    pub fn add_metadata(&mut self, key: String, value: String) {
+        self.metadata.insert(key, value);
+        self.last_modified = Utc::now();
+    }
+
+    /// Get a specific metadata value
+    pub fn get_metadata(&self, key: &str) -> Option<&String> {
+        self.metadata.get(key)
+    }
+
+    /// Remove a metadata entry
+    pub fn remove_metadata(&mut self, key: &str) -> Option<String> {
+        let result = self.metadata.remove(key);
+        if result.is_some() {
+            self.last_modified = Utc::now();
+        }
+        result
+    }
+
+    /// Check if this is a test file based on path or metadata
+    pub fn is_test_file(&self) -> bool {
+        self.relative_path.contains("test")
+            || self.relative_path.contains("spec")
+            || self.relative_path.ends_with("_test.rs")
+            || self.relative_path.ends_with(".test.ts")
+            || self.relative_path.ends_with(".spec.ts")
+            || self.metadata.get("is_test").map(|v| v == "true").unwrap_or(false)
+    }
+
+    /// Returns the number of characters in the file
+    pub fn char_count(&self) -> usize {
+        self.content.chars().count()
+    }
 }

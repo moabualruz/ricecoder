@@ -11,11 +11,13 @@
 //! - **Performance Monitoring**: Beta user performance metrics and regression detection
 //! - **Analytics Dashboard**: Real-time beta testing insights and reporting
 //! - **Compliance Reporting**: Automated compliance validation and reporting
+//! - **Continuous Improvement**: Orchestrates feedback, analytics, issue detection, and roadmap planning
 
 pub mod analytics;
 pub mod compliance;
 pub mod feedback;
 pub mod validation;
+pub mod improvement;
 
 pub use analytics::*;
 pub use compliance::*;

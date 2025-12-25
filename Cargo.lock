@@ -6962,7 +6962,6 @@ dependencies = [
  "ricecoder-teams",
  "ricecoder-tools",
  "ricecoder-tui",
- "ricecoder-undo-redo",
  "ricecoder-workflows",
  "rustyline",
  "serde",
@@ -7109,21 +7108,45 @@ dependencies = [
 name = "ricecoder-beta"
 version = "0.1.72"
 dependencies = [
+ "aes-gcm",
  "anyhow",
+ "async-trait",
+ "base64 0.22.1",
  "chrono",
  "clap",
+ "csv",
+ "dashmap",
+ "dirs 5.0.1",
+ "flate2",
+ "futures",
+ "glob",
+ "lazy_static",
+ "mockito",
+ "once_cell",
+ "parking_lot",
  "proptest",
+ "rand 0.8.5",
+ "regex",
  "reqwest 0.11.27",
  "ricecoder-activity-log",
  "ricecoder-domain",
+ "ricecoder-monitoring",
  "ricecoder-security",
+ "ricecoder-updates",
+ "semver",
  "serde",
  "serde_json",
+ "tar",
  "tempfile",
  "thiserror 1.0.69",
  "tokio",
+ "tokio-test",
+ "toml",
  "tracing",
+ "tracing-subscriber",
+ "url",
  "uuid",
+ "walkdir",
 ]
 
 [[package]]
@@ -7233,50 +7256,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ricecoder-continuous-improvement"
-version = "0.1.72"
-dependencies = [
- "aes-gcm",
- "anyhow",
- "async-trait",
- "base64 0.22.1",
- "chrono",
- "csv",
- "dashmap",
- "dirs 5.0.1",
- "flate2",
- "futures",
- "glob",
- "lazy_static",
- "mockito",
- "once_cell",
- "parking_lot",
- "proptest",
- "rand 0.8.5",
- "regex",
- "reqwest 0.11.27",
- "ricecoder-beta",
- "ricecoder-domain",
- "ricecoder-monitoring",
- "ricecoder-security",
- "ricecoder-updates",
- "semver",
- "serde",
- "serde_json",
- "tar",
- "tempfile",
- "thiserror 1.0.69",
- "tokio",
- "tokio-test",
- "toml",
- "tracing",
- "tracing-subscriber",
- "url",
- "uuid",
- "walkdir",
-]
-
-[[package]]
 name = "ricecoder-di"
 version = "0.1.72"
 dependencies = [
@@ -7307,7 +7286,6 @@ dependencies = [
  "ricecoder-storage",
  "ricecoder-themes",
  "ricecoder-tools",
- "ricecoder-undo-redo",
  "ricecoder-vcs",
  "ricecoder-workflows",
  "serde",
@@ -7657,7 +7635,6 @@ dependencies = [
  "ricecoder-teams",
  "ricecoder-tools",
  "ricecoder-tui",
- "ricecoder-undo-redo",
  "ricecoder-vcs",
  "ricecoder-workflows",
  "serde_json",
@@ -8336,24 +8313,6 @@ dependencies = [
  "usvg",
  "uuid",
  "walkdir",
-]
-
-[[package]]
-name = "ricecoder-undo-redo"
-version = "0.1.72"
-dependencies = [
- "chrono",
- "inventory",
- "proptest",
- "ricecoder-common",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror 1.0.69",
- "tokio",
- "tokio-test",
- "tracing",
- "uuid",
 ]
 
 [[package]]

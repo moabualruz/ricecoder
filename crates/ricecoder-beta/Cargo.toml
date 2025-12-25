@@ -19,17 +19,41 @@ path = "src/main.rs"
 ricecoder-domain = { workspace = true }
 ricecoder-security = { workspace = true }
 ricecoder-activity-log = { workspace = true }
+ricecoder-monitoring = { path = "../ricecoder-monitoring", version = "0.1" }
+ricecoder-updates = { path = "../ricecoder-updates", version = "0.1" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
 uuid = { workspace = true }
 chrono = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
 anyhow = { workspace = true }
 clap = { workspace = true }
+async-trait = { workspace = true }
+futures = { workspace = true }
+dashmap = { workspace = true }
+parking_lot = { workspace = true }
+once_cell = { workspace = true }
+regex = { workspace = true }
+url = { workspace = true }
+base64 = { workspace = true }
+aes-gcm = { workspace = true }
+rand = { workspace = true }
+semver = { workspace = true }
+csv = { workspace = true }
+flate2 = { workspace = true }
+tar = { workspace = true }
+walkdir = { workspace = true }
+glob = { workspace = true }
+toml = { workspace = true }
+dirs = { workspace = true }
+lazy_static = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
 tempfile = { workspace = true }
+tokio-test = { workspace = true }
+mockito = { workspace = true }

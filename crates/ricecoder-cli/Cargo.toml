@@ -73,7 +73,6 @@ ricecoder-storage = { workspace = true }
 ricecoder-teams = { workspace = true }
 ricecoder-tools = { workspace = true }
 ricecoder-tui = { workspace = true }
-ricecoder-undo-redo = { workspace = true }
 ricecoder-workflows = { workspace = true }
 
 # DI registration (via ricecoder-common to avoid circular deps)

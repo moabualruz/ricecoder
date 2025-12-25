@@ -36,7 +36,6 @@ ricecoder-storage = { path = "crates/ricecoder-storage", version = "0.1" }
 ricecoder-teams = { path = "crates/ricecoder-teams", version = "0.1" }
 ricecoder-tools = { path = "crates/ricecoder-tools", version = "0.1" }
 ricecoder-tui = { path = "crates/ricecoder-tui", version = "0.1" }
-ricecoder-undo-redo = { path = "crates/ricecoder-undo-redo", version = "0.1" }
 ricecoder-vcs = { path = "crates/ricecoder-vcs", version = "0.1" }
 ricecoder-workflows = { path = "crates/ricecoder-workflows", version = "0.1" }
 ricecoder-security = { path = "crates/ricecoder-security", version = "0.1" }
@@ -86,7 +85,6 @@ members = [
     "crates/ricecoder-learning",
     "crates/ricecoder-mcp",
     "crates/ricecoder-tools",
-    "crates/ricecoder-undo-redo",
     "crates/ricecoder-vcs",
     "crates/ricecoder-github",
     "crates/ricecoder-help",
@@ -103,7 +101,7 @@ members = [
     "crates/ricecoder-performance",
     "crates/ricecoder-monitoring",
     "crates/ricecoder-updates",
-    "crates/ricecoder-continuous-improvement",
+    "crates/ricecoder-beta",
 ]
 resolver = "2"
 
@@ -271,8 +269,6 @@ ricecoder-teams = { path = "crates/ricecoder-teams", version = "0.1" }
 ricecoder-themes = { path = "crates/ricecoder-themes", version = "0.1" }
 ricecoder-tools = { path = "crates/ricecoder-tools", version = "0.1" }
 ricecoder-tui = { path = "crates/ricecoder-tui", version = "0.1" }
-ricecoder-undo-redo = { path = "crates/ricecoder-undo-redo", version = "0.1" }
-ricecoder-updates = { path = "crates/ricecoder-updates", version = "0.1" }
 ricecoder-vcs = { path = "crates/ricecoder-vcs", version = "0.1" }
 ricecoder-workflows = { path = "crates/ricecoder-workflows", version = "0.1" }
 rmcp = { version = "0.11.0" }

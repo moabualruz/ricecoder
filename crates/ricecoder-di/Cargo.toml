@@ -33,7 +33,6 @@ ricecoder-config = { workspace = true, optional = true }
 ricecoder-activity-log = { workspace = true, optional = true }
 ricecoder-orchestration = { workspace = true, optional = true }
 ricecoder-specs = { workspace = true, optional = true }
-ricecoder-undo-redo = { workspace = true, optional = true }
 ricecoder-vcs = { workspace = true, optional = true }
 ricecoder-permissions = { workspace = true, optional = true }
 ricecoder-security = { workspace = true, optional = true }
@@ -58,7 +57,6 @@ config = ["ricecoder-config"]
 activity-log = ["ricecoder-activity-log"]
 orchestration = ["ricecoder-orchestration"]
 specs = ["ricecoder-specs"]
-undo-redo = ["ricecoder-undo-redo"]
 vcs = ["ricecoder-vcs"]
 permissions = ["ricecoder-permissions"]
 security = ["ricecoder-security"]
@@ -70,7 +68,7 @@ safety = ["ricecoder-safety"]
 files = ["ricecoder-files"]
 themes = ["ricecoder-themes"]
 images = ["ricecoder-images"]
-full = ["storage", "research", "workflows", "execution", "mcp", "tools", "config", "activity-log", "orchestration", "specs", "undo-redo", "vcs", "permissions", "security", "cache", "domain", "learning", "industry", "safety", "files", "themes", "images"]
+full = ["storage", "research", "workflows", "execution", "mcp", "tools", "config", "activity-log", "orchestration", "specs", "vcs", "permissions", "security", "cache", "domain", "learning", "industry", "safety", "files", "themes", "images"]
 
 [dev-dependencies]
 proptest = { workspace = true }

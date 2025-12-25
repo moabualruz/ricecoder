@@ -1,6 +1,6 @@
 //! Continuous improvement pipeline for RiceCoder
 //!
-//! This crate orchestrates user feedback collection, feature usage analytics,
+//! This module orchestrates user feedback collection, feature usage analytics,
 //! automated issue detection, and continuous security monitoring to drive
 //! product improvement and roadmap planning.
 

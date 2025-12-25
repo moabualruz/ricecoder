@@ -115,7 +115,7 @@ impl FeedbackCollector {
     ) -> Result<UserFeedback, FeedbackError> {
         let feedback = UserFeedback {
             id: Uuid::new_v4(),
-            user_id: user.map(|u| u.id.clone()),
+            user_id: user.map(|u| u.id().to_string()),
             session_id: session.map(|s| s.id),
             project_id: project.map(|p| p.id),
             feedback_type,
@@ -138,7 +138,7 @@ impl FeedbackCollector {
         if let Some(user) = user {
             let audit_event = AuditEvent::new(
                 "feedback_submitted".to_string(),
-                Some(user.id.clone()),
+                Some(user.id().to_string()),
                 serde_json::to_value(&feedback).unwrap_or_default(),
             );
             // In real implementation, this would be sent to audit logging service

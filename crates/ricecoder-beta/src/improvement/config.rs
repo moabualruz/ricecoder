@@ -1,6 +1,6 @@
 //! Configuration management for continuous improvement pipeline
 
-pub use crate::types::*;
+pub use super::types::*;
 
 /// Load configuration from file or environment
 pub fn load_config() -> Result<ContinuousImprovementConfig, ConfigError> {

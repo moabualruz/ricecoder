@@ -39,6 +39,15 @@ impl AnalysisResult {
         }
     }
 
+    /// Start analysis execution (Pending → Running)
+    pub fn start(&mut self) {
+        debug_assert!(
+            self.status == AnalysisStatus::Pending,
+            "Can only start from Pending state"
+        );
+        self.status = AnalysisStatus::Running;
+    }
+
     /// Mark analysis as completed
     pub fn complete(&mut self, results: serde_json::Value, metrics: AnalysisMetrics) {
         self.status = AnalysisStatus::Completed;
@@ -54,12 +63,28 @@ impl AnalysisResult {
         self.completed_at = Some(Utc::now());
     }
 
-    /// Check if analysis is complete
+    /// Cancel analysis
+    pub fn cancel(&mut self) {
+        self.status = AnalysisStatus::Cancelled;
+        self.completed_at = Some(Utc::now());
+    }
+
+    /// Check if analysis is complete (including cancelled)
     pub fn is_complete(&self) -> bool {
         matches!(
             self.status,
-            AnalysisStatus::Completed | AnalysisStatus::Failed
+            AnalysisStatus::Completed | AnalysisStatus::Failed | AnalysisStatus::Cancelled
         )
+    }
+
+    /// Check if analysis is currently running
+    pub fn is_running(&self) -> bool {
+        self.status == AnalysisStatus::Running
+    }
+
+    /// Check if analysis was cancelled
+    pub fn is_cancelled(&self) -> bool {
+        self.status == AnalysisStatus::Cancelled
     }
 }
 
@@ -82,6 +107,7 @@ pub enum AnalysisStatus {
     Running,
     Completed,
     Failed,
+    Cancelled,
 }
 
 /// Analysis metrics

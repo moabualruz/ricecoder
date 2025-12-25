@@ -2,13 +2,12 @@
 
 use std::sync::{Arc, Mutex};
 
-use ricecoder_beta::{
-    analytics::FeedbackAnalytics,
-    feedback::{FeedbackCollector, FeedbackSeverity, FeedbackType},
+use crate::{
+    analytics::*, compliance::*, feedback::*,
 };
 use tokio::{sync::mpsc, time};
 
-use crate::types::*;
+use super::types::*;
 
 /// Feedback pipeline for collecting and analyzing user feedback
 pub struct FeedbackPipeline {
@@ -90,7 +89,7 @@ impl FeedbackPipeline {
         title: String,
         description: String,
         user_id: Option<String>,
-        enterprise_category: Option<ricecoder_beta::feedback::EnterpriseCategory>,
+        enterprise_category: Option<crate::feedback::EnterpriseCategory>,
         tags: Vec<String>,
         metadata: std::collections::HashMap<String, serde_json::Value>,
     ) -> Result<(), ContinuousImprovementError> {
