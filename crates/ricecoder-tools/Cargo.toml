@@ -23,6 +23,7 @@ reqwest = { workspace = true }
 similar = { workspace = true }
 chrono = { workspace = true }
 async-trait = { workspace = true }
+futures = { workspace = true }
 url = { workspace = true }
 dirs = { workspace = true }
 regex = { workspace = true }
@@ -32,6 +33,7 @@ ricecoder-mcp = { workspace = true }
 # DI registration (via ricecoder-common to avoid circular deps)
 ricecoder-common = { workspace = true }
 inventory = { workspace = true }
+urlencoding = "2.1.3"
 
 [dev-dependencies]
 proptest = { workspace = true }

@@ -7403,6 +7403,7 @@ dependencies = [
  "chrono",
  "fxhash",
  "git2",
+ "glob",
  "inventory",
  "notify",
  "proptest",
@@ -8240,6 +8241,7 @@ dependencies = [
  "async-trait",
  "chrono",
  "dirs 5.0.1",
+ "futures",
  "inventory",
  "proptest",
  "regex",
@@ -8255,6 +8257,7 @@ dependencies = [
  "tokio-test",
  "tracing",
  "url",
+ "urlencoding",
  "uuid",
 ]
 

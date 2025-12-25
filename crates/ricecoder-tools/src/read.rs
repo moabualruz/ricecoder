@@ -14,16 +14,27 @@ use crate::error::ToolError;
 pub struct FileReadInput {
     /// Path to the file to read
     pub file_path: String,
-    /// Optional start line (1-indexed, inclusive)
+    /// Optional start line (1-indexed, inclusive) - legacy parameter
     pub start_line: Option<usize>,
-    /// Optional end line (1-indexed, inclusive)
+    /// Optional end line (1-indexed, inclusive) - legacy parameter
     pub end_line: Option<usize>,
+    /// Optional line offset (0-based) - OpenCode compatible
+    /// Takes precedence over start_line if both specified
+    pub offset: Option<usize>,
+    /// Optional number of lines to read (default: 2000) - OpenCode compatible
+    /// Takes precedence over end_line if both specified
+    pub limit: Option<usize>,
     /// Maximum file size in bytes (default: 1MB)
     pub max_size_bytes: Option<usize>,
     /// Whether to detect and reject binary files
     pub detect_binary: Option<bool>,
     /// Content type filter
     pub content_filter: Option<ContentFilter>,
+    /// Whether to format output with line numbers (cat -n style)
+    /// Default: false for backward compatibility
+    pub line_numbers: Option<bool>,
+    /// Maximum characters per line before truncation (default: 2000)
+    pub max_line_length: Option<usize>,
 }
 
 /// Content filtering options
@@ -114,6 +125,12 @@ pub struct FileReadTool;
 impl FileReadTool {
     /// Default maximum file size (1MB)
     const DEFAULT_MAX_SIZE: usize = 1024 * 1024;
+
+    /// Default line limit (2000 lines, matching OpenCode)
+    const DEFAULT_LINE_LIMIT: usize = 2000;
+
+    /// Default max line length before truncation (2000 chars, matching OpenCode)
+    const DEFAULT_MAX_LINE_LENGTH: usize = 2000;
 
     /// Read a single file with safety checks
     pub fn read_file(input: &FileReadInput) -> Result<FileReadOutput, ToolError> {
@@ -210,17 +227,29 @@ impl FileReadTool {
             )
         })?;
 
-        // Apply line filtering if specified
+        // Determine line range using offset/limit (OpenCode style) or start_line/end_line (legacy)
+        let (start_idx, line_count) = if input.offset.is_some() || input.limit.is_some() {
+            // OpenCode-compatible: offset is 0-based, limit is count
+            let offset = input.offset.unwrap_or(0);
+            let limit = input.limit.unwrap_or(Self::DEFAULT_LINE_LIMIT);
+            (offset, Some(limit))
+        } else if input.start_line.is_some() || input.end_line.is_some() {
+            // Legacy: 1-indexed start/end
+            let start = input.start_line.map(|l| l.saturating_sub(1)).unwrap_or(0);
+            let end = input.end_line;
+            let count = end.map(|e| e.saturating_sub(start));
+            (start, count)
+        } else {
+            // Default: start at 0, read up to DEFAULT_LINE_LIMIT lines
+            (0, Some(Self::DEFAULT_LINE_LIMIT))
+        };
+
+        // Apply line filtering with truncation
+        let max_line_len = input.max_line_length.unwrap_or(Self::DEFAULT_MAX_LINE_LENGTH);
+        let use_line_numbers = input.line_numbers.unwrap_or(false);
+
         let (filtered_content, lines_read, total_lines) =
-            if input.start_line.is_some() || input.end_line.is_some() {
-                Self::filter_lines(&content, input.start_line, input.end_line)?
-            } else {
-                (
-                    content.clone(),
-                    content.lines().count(),
-                    Some(content.lines().count()),
-                )
-            };
+            Self::filter_lines_with_options(&content, start_idx, line_count, max_line_len, use_line_numbers)?;
 
         // Create preview
         let preview = if filtered_content.len() > 500 {
@@ -413,7 +442,7 @@ impl FileReadTool {
             })
     }
 
-    /// Filter content to specific line range
+    /// Filter content to specific line range (legacy method for backward compatibility)
     fn filter_lines(
         content: &str,
         start_line: Option<usize>,
@@ -437,6 +466,67 @@ impl FileReadTool {
 
         Ok((filtered_content, filtered_lines.len(), Some(total_lines)))
     }
+
+    /// Filter content with OpenCode-compatible options
+    ///
+    /// # Arguments
+    /// * `content` - File content to filter
+    /// * `offset` - 0-based line offset to start from
+    /// * `limit` - Optional number of lines to read
+    /// * `max_line_length` - Maximum characters per line before truncation
+    /// * `line_numbers` - Whether to format with cat -n style line numbers
+    ///
+    /// # Returns
+    /// Tuple of (formatted_content, lines_read, total_lines)
+    fn filter_lines_with_options(
+        content: &str,
+        offset: usize,
+        limit: Option<usize>,
+        max_line_length: usize,
+        line_numbers: bool,
+    ) -> Result<(String, usize, Option<usize>), ToolError> {
+        let lines: Vec<&str> = content.lines().collect();
+        let total_lines = lines.len();
+
+        // Handle empty file or offset beyond file
+        if offset >= total_lines {
+            return Ok((String::new(), 0, Some(total_lines)));
+        }
+
+        // Calculate end index based on limit
+        let end_idx = if let Some(lim) = limit {
+            (offset + lim).min(total_lines)
+        } else {
+            total_lines
+        };
+
+        let mut output_lines = Vec::new();
+
+        for (idx, line) in lines.iter().enumerate().skip(offset).take(end_idx - offset) {
+            let line_num = idx + 1; // 1-indexed line number
+
+            // Truncate line if too long
+            let truncated_line = if line.len() > max_line_length {
+                format!("{}...", &line[..max_line_length])
+            } else {
+                line.to_string()
+            };
+
+            // Format with line numbers if requested (cat -n style: 6 char width, right-aligned)
+            let formatted_line = if line_numbers {
+                format!("{:>6}\t{}", line_num, truncated_line)
+            } else {
+                truncated_line
+            };
+
+            output_lines.push(formatted_line);
+        }
+
+        let lines_read = output_lines.len();
+        let filtered_content = output_lines.join("\n");
+
+        Ok((filtered_content, lines_read, Some(total_lines)))
+    }
 }
 
 #[cfg(test)]
@@ -458,9 +548,13 @@ mod tests {
             file_path: file_path.to_string_lossy().to_string(),
             start_line: None,
             end_line: None,
+            offset: None,
+            limit: None,
             max_size_bytes: None,
             detect_binary: None,
             content_filter: None,
+            line_numbers: None,
+            max_line_length: None,
         };
 
         let result = FileReadTool::read_file(&input).unwrap();
@@ -482,9 +576,13 @@ mod tests {
             file_path: file_path.to_string_lossy().to_string(),
             start_line: Some(2),
             end_line: Some(3),
+            offset: None,
+            limit: None,
             max_size_bytes: None,
             detect_binary: None,
             content_filter: None,
+            line_numbers: None,
+            max_line_length: None,
         };
 
         let result = FileReadTool::read_file(&input).unwrap();
@@ -500,9 +598,13 @@ mod tests {
             file_path: "/nonexistent/file.txt".to_string(),
             start_line: None,
             end_line: None,
+            offset: None,
+            limit: None,
             max_size_bytes: None,
             detect_binary: None,
             content_filter: None,
+            line_numbers: None,
+            max_line_length: None,
         };
 
         let result = FileReadTool::read_file(&input).unwrap();
@@ -523,9 +625,13 @@ mod tests {
             file_path: file_path.to_string_lossy().to_string(),
             start_line: None,
             end_line: None,
+            offset: None,
+            limit: None,
             max_size_bytes: None,
             detect_binary: Some(true),
             content_filter: None,
+            line_numbers: None,
+            max_line_length: None,
         };
 
         let result = FileReadTool::read_file(&input).unwrap();
@@ -549,9 +655,13 @@ mod tests {
             file_path: file_path.to_string_lossy().to_string(),
             start_line: None,
             end_line: None,
+            offset: None,
+            limit: None,
             max_size_bytes: Some(1000), // 1000 byte limit
             detect_binary: None,
             content_filter: None,
+            line_numbers: None,
+            max_line_length: None,
         };
 
         let result = FileReadTool::read_file(&input).unwrap();
@@ -570,9 +680,13 @@ mod tests {
             file_path: file_path.to_string_lossy().to_string(),
             start_line: None,
             end_line: None,
+            offset: None,
+            limit: None,
             max_size_bytes: None,
             detect_binary: None,
             content_filter: Some(ContentFilter::AllowedExtensions(vec!["rs".to_string()])),
+            line_numbers: None,
+            max_line_length: None,
         };
 
         let result = FileReadTool::read_file(&input).unwrap();
@@ -590,9 +704,13 @@ mod tests {
             file_path: file_path.to_string_lossy().to_string(),
             start_line: None,
             end_line: None,
+            offset: None,
+            limit: None,
             max_size_bytes: None,
             detect_binary: None,
             content_filter: Some(ContentFilter::RejectedExtensions(vec!["exe".to_string()])),
+            line_numbers: None,
+            max_line_length: None,
         };
 
         let result = FileReadTool::read_file(&input).unwrap();

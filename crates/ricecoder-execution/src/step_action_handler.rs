@@ -93,6 +93,9 @@ impl DeleteFileHandler {
 pub struct CommandHandler;
 
 impl CommandHandler {
+    /// Maximum output size before truncation (30000 chars, matching OpenCode)
+    const MAX_OUTPUT_SIZE: usize = 30000;
+
     /// Execute a shell command with advanced features
     ///
     /// # Arguments
@@ -100,6 +103,8 @@ impl CommandHandler {
     /// * `args` - Command arguments
     /// * `timeout_ms` - Optional timeout in milliseconds (default: 120000 = 2 minutes)
     /// * `require_confirmation` - Whether to check for dangerous commands
+    /// * `workdir` - Optional working directory for command execution
+    /// * `env_vars` - Optional environment variables to set
     ///
     /// # Returns
     /// Returns CommandOutput with stdout, stderr, and exit code
@@ -112,7 +117,34 @@ impl CommandHandler {
         timeout_ms: Option<u64>,
         require_confirmation: Option<bool>,
     ) -> ExecutionResult<CommandOutput> {
-        debug!(command = %command, args_count = args.len(), "Running command asynchronously");
+        Self::handle_async_with_options(command, args, timeout_ms, require_confirmation, None, None)
+            .await
+    }
+
+    /// Execute a shell command with full options including workdir and env
+    ///
+    /// # Arguments
+    /// * `command` - Command to execute
+    /// * `args` - Command arguments
+    /// * `timeout_ms` - Optional timeout in milliseconds (default: 120000 = 2 minutes)
+    /// * `require_confirmation` - Whether to check for dangerous commands
+    /// * `workdir` - Optional working directory for command execution
+    /// * `env_vars` - Optional environment variables to set
+    ///
+    /// # Returns
+    /// Returns CommandOutput with stdout, stderr, and exit code (truncated at 30000 chars)
+    ///
+    /// # Errors
+    /// Returns error if command execution fails or dangerous command is detected
+    pub async fn handle_async_with_options(
+        command: &str,
+        args: &[String],
+        timeout_ms: Option<u64>,
+        require_confirmation: Option<bool>,
+        workdir: Option<&str>,
+        env_vars: Option<&std::collections::HashMap<String, String>>,
+    ) -> ExecutionResult<CommandOutput> {
+        debug!(command = %command, args_count = args.len(), workdir = ?workdir, "Running command asynchronously");
 
         // Check for dangerous commands if required
         if require_confirmation.unwrap_or(false) {
@@ -125,7 +157,11 @@ impl CommandHandler {
         // Execute command with timeout
         let timeout_duration = Duration::from_millis(timeout_ms.unwrap_or(120_000)); // 2 minutes default
 
-        let result = timeout(timeout_duration, Self::execute_command_async(command, args)).await;
+        let result = timeout(
+            timeout_duration,
+            Self::execute_command_async_with_options(command, args, workdir, env_vars),
+        )
+        .await;
 
         match result {
             Ok(output_result) => output_result,
@@ -154,12 +190,49 @@ impl CommandHandler {
         command: &str,
         args: &[String],
     ) -> ExecutionResult<CommandOutput> {
+        Self::execute_command_async_with_options(command, args, None, None).await
+    }
+
+    /// Execute command asynchronously with full options (workdir, env)
+    async fn execute_command_async_with_options(
+        command: &str,
+        args: &[String],
+        workdir: Option<&str>,
+        env_vars: Option<&std::collections::HashMap<String, String>>,
+    ) -> ExecutionResult<CommandOutput> {
         use std::process::Stdio;
 
         use tokio::process::Command;
 
         let mut cmd = Command::new(command);
         cmd.args(args).stdout(Stdio::piped()).stderr(Stdio::piped());
+
+        // Set working directory if specified
+        if let Some(dir) = workdir {
+            let path = std::path::Path::new(dir);
+            if !path.exists() {
+                return Err(ExecutionError::ValidationError(format!(
+                    "Working directory does not exist: {}",
+                    dir
+                )));
+            }
+            if !path.is_dir() {
+                return Err(ExecutionError::ValidationError(format!(
+                    "Working directory path is not a directory: {}",
+                    dir
+                )));
+            }
+            cmd.current_dir(dir);
+            debug!(workdir = %dir, "Set working directory for command");
+        }
+
+        // Set environment variables if specified
+        if let Some(env) = env_vars {
+            for (key, value) in env {
+                cmd.env(key, value);
+            }
+            debug!(env_count = env.len(), "Set environment variables for command");
+        }
 
         let start_time = std::time::Instant::now();
 
@@ -174,9 +247,35 @@ impl CommandHandler {
 
         let duration = start_time.elapsed();
 
-        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        let mut stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        let mut stderr = String::from_utf8_lossy(&output.stderr).to_string();
         let exit_code = output.status.code();
+
+        // Truncate output if it exceeds MAX_OUTPUT_SIZE (30000 chars)
+        let stdout_truncated = stdout.len() > Self::MAX_OUTPUT_SIZE;
+        let stderr_truncated = stderr.len() > Self::MAX_OUTPUT_SIZE;
+
+        if stdout_truncated {
+            stdout.truncate(Self::MAX_OUTPUT_SIZE);
+            stdout.push_str("\n\n[Output truncated at 30000 characters]");
+            warn!(
+                command = %command,
+                original_len = output.stdout.len(),
+                "stdout truncated to {} chars",
+                Self::MAX_OUTPUT_SIZE
+            );
+        }
+
+        if stderr_truncated {
+            stderr.truncate(Self::MAX_OUTPUT_SIZE);
+            stderr.push_str("\n\n[Output truncated at 30000 characters]");
+            warn!(
+                command = %command,
+                original_len = output.stderr.len(),
+                "stderr truncated to {} chars",
+                Self::MAX_OUTPUT_SIZE
+            );
+        }
 
         let command_output = CommandOutput {
             stdout,

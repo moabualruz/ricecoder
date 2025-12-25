@@ -42,6 +42,9 @@ pub use analytics::{
     RealtimeDashboardSnapshot,
 };
 pub use audit::MCPAuditLogger;
+// Re-export batch types from ricecoder-tools (moved for architectural correctness)
+// Note: ricecoder-mcp cannot depend on ricecoder-tools due to circular deps
+// Consumers should import directly from ricecoder_tools::batch
 pub use client::MCPClient;
 pub use compliance::{
     ComplianceReport, MCPComplianceMonitor, MCPEnterpriseMonitor, MonitoringReport,

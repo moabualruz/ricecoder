@@ -143,10 +143,34 @@ impl FileReader for FileSystemRepository {
     }
 
     async fn list_directory(&self, path: &PathBuf) -> DomainResult<Vec<FileMetadata>> {
+        self.list_directory_with_ignore(path, &[]).await
+    }
+}
+
+impl FileSystemRepository {
+    /// List directory contents with ignore pattern support (OpenCode compatible)
+    ///
+    /// # Arguments
+    /// * `path` - Directory path to list
+    /// * `ignore_patterns` - Glob patterns to ignore (e.g., ["node_modules", "*.log", ".git"])
+    ///
+    /// # Returns
+    /// Vector of FileMetadata for non-ignored entries
+    pub async fn list_directory_with_ignore(
+        &self,
+        path: &PathBuf,
+        ignore_patterns: &[&str],
+    ) -> DomainResult<Vec<FileMetadata>> {
         let mut entries = Vec::new();
         let mut dir = tokio::fs::read_dir(path)
             .await
             .map_err(|e| Self::io_to_domain_error(e, "Failed to read directory"))?;
+
+        // Compile glob patterns
+        let patterns: Vec<glob::Pattern> = ignore_patterns
+            .iter()
+            .filter_map(|p| glob::Pattern::new(p).ok())
+            .collect();
 
         while let Some(entry) = dir
             .next_entry()
@@ -154,6 +178,18 @@ impl FileReader for FileSystemRepository {
             .map_err(|e| Self::io_to_domain_error(e, "Failed to read directory entry"))?
         {
             let entry_path = entry.path();
+            let file_name = entry_path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("");
+
+            // Check if entry matches any ignore pattern
+            let should_ignore = patterns.iter().any(|pattern| pattern.matches(file_name));
+
+            if should_ignore {
+                continue;
+            }
+
             match self.metadata(&entry_path).await {
                 Ok(meta) => entries.push(meta),
                 Err(_) => continue, // Skip entries we can't read

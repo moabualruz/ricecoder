@@ -52,6 +52,7 @@
 //! }
 //! ```
 
+pub mod batch;
 pub mod di;
 pub mod edit;
 pub mod error;
@@ -75,6 +76,7 @@ pub use read::{
 };
 pub use result::{ResultMetadata, ToolErrorInfo, ToolResult};
 pub use search::{SearchInput, SearchOutput, SearchResult, SearchTool};
+pub use batch::{BatchInput, BatchOutput, BatchTool, InvocationResult, ToolInvocation};
 pub use todo::{
     Todo, TodoPriority, TodoStatus, TodoTools, TodoreadInput, TodoreadOutput, TodowriteInput,
     TodowriteOutput,
