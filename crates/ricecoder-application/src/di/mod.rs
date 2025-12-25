@@ -5,7 +5,7 @@
 //! - **Scoped**: Created once per scope (request/session)
 //! - **Transient**: Created every time resolved
 //!
-//! REQ-ARCH-003: DI Container Architecture
+//! DI Container Architecture
 //! AC-3.1: Use DI container for ALL service resolution
 //! AC-3.2: Register services with explicit lifetimes
 //! AC-3.6: Type-safe service resolution

@@ -5,7 +5,7 @@ target/
 .idea/
 .vscode/
 .agent/
-.kiro/
+.ai/
 .branding/
 
 # Rust files

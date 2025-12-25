@@ -311,7 +311,7 @@ Proceed with publishing? (yes/no): yes
 
 ## See Also
 
-- [CARGO_PUBLISHING_GUIDE.md](../.kiro/specs/ricecoder-advanced/docs/CARGO_PUBLISHING_GUIDE.md) - Complete publishing guide
+- [CARGO_PUBLISHING_GUIDE.md](../.ai/specs/ricecoder-advanced/docs/CARGO_PUBLISHING_GUIDE.md) - Complete publishing guide
 - [PUBLISHING.md](../PUBLISHING.md) - Quick reference
 - [Cargo Documentation](https://doc.rust-lang.org/cargo/)
 - [Crates.io](https://crates.io)

@@ -56,7 +56,7 @@ echo
 echo "🎉 All documentation validation checks passed!"
 echo
 echo "Reports generated:"
-echo "- .kiro/docs-validation-report.md"
-echo "- .kiro/docs-validation-report.json"
-echo "- .kiro/docs-completeness-report.md"
-echo "- .kiro/docs-completeness-report.json"
+echo "- .ai/docs-validation-report.md"
+echo "- .ai/docs-validation-report.json"
+echo "- .ai/docs-completeness-report.md"
+echo "- .ai/docs-completeness-report.json"

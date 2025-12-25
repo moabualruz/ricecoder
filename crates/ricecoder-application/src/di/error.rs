@@ -1,6 +1,6 @@
 //! DI Container Error Types
 //!
-//! REQ-ARCH-003.7: Clear error messages for service resolution failures
+//! Clear error messages for service resolution failures
 
 use thiserror::Error;
 

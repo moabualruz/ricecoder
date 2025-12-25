@@ -31,7 +31,7 @@ const IGNORE_FILES = [
   '.git',
   '.github',
   '.cargo',
-  '.kiro',
+  '.ai',
   'learning',
   'projects/automation',
   'projects/ricecoder.wiki',
@@ -483,7 +483,7 @@ async function validateDocumentation() {
   console.log(reportMarkdown);
 
   // Save report to file
-  const reportPath = path.join(WORKSPACE_ROOT, 'projects', 'ricecoder', '.kiro', 'docs-validation-report.md');
+  const reportPath = path.join(WORKSPACE_ROOT, 'projects', 'ricecoder', '.ai', 'docs-validation-report.md');
   fs.mkdirSync(path.dirname(reportPath), { recursive: true });
   fs.writeFileSync(reportPath, reportMarkdown);
   console.log(`\nValidation report saved to: ${reportPath}`);
@@ -493,7 +493,7 @@ async function validateDocumentation() {
     WORKSPACE_ROOT,
     'projects',
     'ricecoder',
-    '.kiro',
+    '.ai',
     'docs-validation-report.json'
   );
   fs.writeFileSync(jsonReportPath, JSON.stringify(report, null, 2));

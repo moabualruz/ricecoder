@@ -6,9 +6,11 @@
 pub mod api_key;
 pub mod audit_log;
 pub mod cache;
+pub mod circuit_breaker;
 pub mod community;
 pub mod config;
 pub mod curation;
+pub mod domain_adapter;
 pub mod error;
 pub mod evaluation;
 pub mod health_check;
@@ -56,6 +58,8 @@ pub use providers::{
     OllamaProvider, OpenAiProvider, ReplicateProvider, TogetherProvider, ZenProvider,
 };
 pub use rate_limiter::{ExponentialBackoff, RateLimiterRegistry, TokenBucketLimiter};
+pub use circuit_breaker::{CircuitBreaker, CircuitBreakerConfig, CircuitBreakerRegistry, CircuitState};
+pub use domain_adapter::{DomainProviderAdapter, ProviderErrorMapper};
 pub use redaction::{contains_sensitive_info, redact, Redacted, RedactionFilter};
 pub use security_headers::{SecurityHeadersBuilder, SecurityHeadersValidator};
 pub use streaming::{simulate_stream, simulate_word_stream, SimulatedStream, WordStream};

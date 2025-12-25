@@ -1,4 +1,4 @@
-//! Core data models for specifications and steering
+//! Core data models for specifications and Governance
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -189,20 +189,20 @@ pub enum TaskStatus {
     Complete,
 }
 
-/// Steering rules and standards
+/// Governance rules and standards
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Steering {
-    /// Steering rules
-    pub rules: Vec<SteeringRule>,
+pub struct Governance {
+    /// Governance rules
+    pub rules: Vec<GovernanceRule>,
     /// Standards
     pub standards: Vec<Standard>,
     /// Template references
     pub templates: Vec<TemplateRef>,
 }
 
-/// A steering rule
+/// A Governance rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SteeringRule {
+pub struct GovernanceRule {
     /// Rule identifier
     pub id: String,
     /// Rule description
@@ -740,12 +740,12 @@ mod tests {
     }
 
     // ============================================================================
-    // Steering Serialization Tests
+    // Governance Serialization Tests
     // ============================================================================
 
     #[test]
-    fn test_steering_rule_serialization() {
-        let rule = SteeringRule {
+    fn test_governance_rule_serialization() {
+        let rule = GovernanceRule {
             id: "rule-1".to_string(),
             description: "Use snake_case for variables".to_string(),
             pattern: "^[a-z_]+$".to_string(),
@@ -753,7 +753,7 @@ mod tests {
         };
 
         let json = serde_json::to_string(&rule).unwrap();
-        let deserialized: SteeringRule = serde_json::from_str(&json).unwrap();
+        let deserialized: GovernanceRule = serde_json::from_str(&json).unwrap();
 
         assert_eq!(rule.id, deserialized.id);
         assert_eq!(rule.description, deserialized.description);
@@ -790,9 +790,9 @@ mod tests {
     }
 
     #[test]
-    fn test_steering_serialization() {
-        let steering = Steering {
-            rules: vec![SteeringRule {
+    fn test_governance_serialization() {
+        let Governance = Governance {
+            rules: vec![GovernanceRule {
                 id: "rule-1".to_string(),
                 description: "Use snake_case".to_string(),
                 pattern: "^[a-z_]+$".to_string(),
@@ -808,12 +808,12 @@ mod tests {
             }],
         };
 
-        let json = serde_json::to_string(&steering).unwrap();
-        let deserialized: Steering = serde_json::from_str(&json).unwrap();
+        let json = serde_json::to_string(&Governance).unwrap();
+        let deserialized: Governance = serde_json::from_str(&json).unwrap();
 
-        assert_eq!(steering.rules.len(), deserialized.rules.len());
-        assert_eq!(steering.standards.len(), deserialized.standards.len());
-        assert_eq!(steering.templates.len(), deserialized.templates.len());
+        assert_eq!(Governance.rules.len(), deserialized.rules.len());
+        assert_eq!(Governance.standards.len(), deserialized.standards.len());
+        assert_eq!(Governance.templates.len(), deserialized.templates.len());
     }
 
     // ============================================================================

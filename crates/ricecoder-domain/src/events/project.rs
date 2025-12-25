@@ -1,6 +1,6 @@
 //! Project aggregate domain events
 //!
-//! REQ-DOMAIN-001.5: Project aggregate events
+//! Project aggregate events
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

@@ -27,7 +27,7 @@ fn create_test_standards(team_id: &str) -> TeamStandards {
         team_id: team_id.to_string(),
         code_review_rules: Vec::new(),
         templates: Vec::new(),
-        steering_docs: Vec::new(),
+        governance_docs: Vec::new(),
         compliance_requirements: Vec::new(),
         version: 1,
         created_at: Utc::now(),

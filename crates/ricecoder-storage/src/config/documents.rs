@@ -1,4 +1,4 @@
-//! Document format support for steering and specs
+//! Document format support for Governance and specs
 //!
 //! This module provides loading and saving of documents in YAML and Markdown formats.
 
@@ -92,7 +92,7 @@ mod tests {
 
     #[test]
     fn test_load_yaml_document() {
-        let yaml_content = "# Steering Document\nkey: value\n";
+        let yaml_content = "# Governance Document\nkey: value\n";
         let doc = DocumentLoader::load_from_string(yaml_content.to_string(), DocumentFormat::Yaml);
         assert_eq!(doc.content, yaml_content);
         assert_eq!(doc.format, DocumentFormat::Yaml);
@@ -100,7 +100,7 @@ mod tests {
 
     #[test]
     fn test_load_markdown_document() {
-        let md_content = "# Steering Document\n\nThis is a markdown document.\n";
+        let md_content = "# Governance Document\n\nThis is a markdown document.\n";
         let doc =
             DocumentLoader::load_from_string(md_content.to_string(), DocumentFormat::Markdown);
         assert_eq!(doc.content, md_content);
@@ -110,9 +110,9 @@ mod tests {
     #[test]
     fn test_save_and_load_yaml_document() {
         let temp_dir = tempfile::TempDir::new().expect("Failed to create temp dir");
-        let file_path = temp_dir.path().join("steering.yaml");
+        let file_path = temp_dir.path().join("Governance.yaml");
         let original = Document {
-            content: "# Steering\nkey: value\n".to_string(),
+            content: "# Governance\nkey: value\n".to_string(),
             format: DocumentFormat::Yaml,
         };
 
@@ -126,9 +126,9 @@ mod tests {
     #[test]
     fn test_save_and_load_markdown_document() {
         let temp_dir = tempfile::TempDir::new().expect("Failed to create temp dir");
-        let file_path = temp_dir.path().join("steering.md");
+        let file_path = temp_dir.path().join("Governance.md");
         let original = Document {
-            content: "# Steering\n\nThis is markdown.\n".to_string(),
+            content: "# Governance\n\nThis is markdown.\n".to_string(),
             format: DocumentFormat::Markdown,
         };
 

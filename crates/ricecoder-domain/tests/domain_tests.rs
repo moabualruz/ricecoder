@@ -1,7 +1,13 @@
 //! Unit tests for ricecoder-domain
 
 use proptest::prelude::*;
-use ricecoder_domain::*;
+use ricecoder_domain::errors::*;
+use ricecoder_domain::value_objects::*;
+// Use entity versions explicitly (not DDD aggregates)
+use ricecoder_domain::entities::{
+    AnalysisMetrics, AnalysisResult, AnalysisStatus, AnalysisType, CodeFile, ModelInfo, Project,
+    Provider, ProviderType, Session, SessionStatus,
+};
 
 #[cfg(test)]
 mod tests {
@@ -429,68 +435,293 @@ mod tests {
         }
     }
 
-    mod business_rules_tests {
+    // NOTE: business_rules_tests removed - BusinessRulesValidator and SessionOperation
+    // types were removed during DDD refactoring. Business rules are now enforced
+    // directly in the aggregate root entities (Project, Session).
+
+    mod user_tests {
         use super::*;
+        use ricecoder_domain::entities::User;
 
         #[test]
-        fn test_project_creation_validation() {
-            // Valid project
-            let result = BusinessRulesValidator::validate_project_creation(
-                "my-rust-project",
-                ProgrammingLanguage::Rust,
-            );
-            assert!(result.is_valid);
+        fn test_user_creation() {
+            let user = User::new("user-123".to_string(), "testuser".to_string());
 
-            // Short name warning
-            let result =
-                BusinessRulesValidator::validate_project_creation("x", ProgrammingLanguage::Rust);
-            assert!(result.is_valid);
-            assert!(!result.warnings.is_empty());
-
-            // Rust naming convention warning
-            let result = BusinessRulesValidator::validate_project_creation(
-                "MY_PROJECT",
-                ProgrammingLanguage::Rust,
-            );
-            assert!(result.is_valid);
-            assert!(result.warnings.iter().any(|w| w.contains("lowercase")));
+            assert_eq!(user.id, "user-123");
+            assert_eq!(user.username, "testuser");
+            assert!(user.email.is_none());
+            assert!(user.metadata.is_empty());
         }
 
         #[test]
-        fn test_session_operation_validation() {
-            let session = Session::new("openai".to_string(), "gpt-4".to_string());
+        fn test_user_update_username() {
+            let mut user = User::new("user-123".to_string(), "oldname".to_string());
+            let old_updated = user.updated_at;
+            std::thread::sleep(std::time::Duration::from_millis(1));
 
-            // Valid end operation
-            let result =
-                BusinessRulesValidator::validate_session_operation(&session, SessionOperation::End);
-            assert!(result.is_valid);
+            user.update_username("newname".to_string());
 
-            // Invalid resume on active session
-            let result = BusinessRulesValidator::validate_session_operation(
-                &session,
-                SessionOperation::Resume,
-            );
-            assert!(!result.is_valid);
+            assert_eq!(user.username, "newname");
+            assert!(user.updated_at > old_updated);
         }
 
         #[test]
-        fn test_analysis_operation_validation() {
-            let project_id = ProjectId::new();
-            let small_file = CodeFile::new(
-                project_id,
-                "small.rs".to_string(),
-                "fn main() {}".to_string(),
-                ProgrammingLanguage::Rust,
+        fn test_user_set_email() {
+            let mut user = User::new("user-123".to_string(), "testuser".to_string());
+
+            user.set_email(Some("test@example.com".to_string()));
+            assert_eq!(user.email, Some("test@example.com".to_string()));
+
+            user.set_email(None);
+            assert!(user.email.is_none());
+        }
+    }
+
+    mod security_tests {
+        use super::*;
+        use ricecoder_domain::entities::{SecurityContext, IsolationLevel, ConfidentialityLevel};
+        use ricecoder_domain::value_objects::{UserRole, Permission};
+
+        #[test]
+        fn test_security_context_default() {
+            let ctx = SecurityContext::default();
+
+            assert!(ctx.user_id.is_none());
+            assert_eq!(ctx.role, Some(UserRole::Guest));
+            assert_eq!(ctx.isolation_level, IsolationLevel::Standard);
+            assert!(!ctx.encryption_enabled);
+        }
+
+        #[test]
+        fn test_security_context_has_permission() {
+            let mut ctx = SecurityContext::default();
+            ctx.permissions = vec![Permission::Read, Permission::Write];
+
+            assert!(ctx.has_permission(&Permission::Read));
+            assert!(ctx.has_permission(&Permission::Write));
+            assert!(!ctx.has_permission(&Permission::Delete));
+        }
+
+        #[test]
+        fn test_security_context_grant_revoke_permission() {
+            let mut ctx = SecurityContext::default();
+            ctx.permissions.clear();
+
+            ctx.grant_permission(Permission::Read);
+            assert!(ctx.has_permission(&Permission::Read));
+
+            ctx.revoke_permission(&Permission::Read);
+            assert!(!ctx.has_permission(&Permission::Read));
+        }
+
+        #[test]
+        fn test_security_context_has_role() {
+            let mut ctx = SecurityContext::default();
+            ctx.role = Some(UserRole::Developer);
+
+            assert!(ctx.has_role(&UserRole::Developer));
+            assert!(!ctx.has_role(&UserRole::Admin));
+        }
+
+        #[test]
+        fn test_security_context_confidentiality_access() {
+            let mut ctx = SecurityContext::default();
+
+            // Guest can only access public
+            ctx.role = Some(UserRole::Guest);
+            assert!(ctx.can_access_confidentiality(&ConfidentialityLevel::Public));
+            assert!(!ctx.can_access_confidentiality(&ConfidentialityLevel::Internal));
+
+            // Developer can access internal and confidential
+            ctx.role = Some(UserRole::Developer);
+            assert!(ctx.can_access_confidentiality(&ConfidentialityLevel::Internal));
+            assert!(ctx.can_access_confidentiality(&ConfidentialityLevel::Confidential));
+
+            // Admin can access all
+            ctx.role = Some(UserRole::Admin);
+            assert!(ctx.can_access_confidentiality(&ConfidentialityLevel::Restricted));
+        }
+    }
+
+    mod compliance_tests {
+        use super::*;
+        use chrono::{Duration, Utc};
+        use ricecoder_domain::entities::{
+            ComplianceReport, ComplianceStatus, ComplianceFinding, 
+            FindingSeverity, Soc2Principle
+        };
+
+        #[test]
+        fn test_compliance_report_creation() {
+            let start = Utc::now() - Duration::days(30);
+            let end = Utc::now();
+            let report = ComplianceReport::new(start, end);
+
+            assert_eq!(report.compliance_status, ComplianceStatus::Compliant);
+            assert!(report.findings.is_empty());
+            assert!(report.recommendations.is_empty());
+        }
+
+        #[test]
+        fn test_compliance_report_add_finding() {
+            let start = Utc::now() - Duration::days(30);
+            let end = Utc::now();
+            let mut report = ComplianceReport::new(start, end);
+
+            let finding = ComplianceFinding::new(
+                "Test Finding".to_string(),
+                "Description".to_string(),
+                FindingSeverity::Low,
+                Soc2Principle::Security,
+                "Fix it".to_string(),
+            );
+
+            report.add_finding(finding);
+            assert_eq!(report.findings.len(), 1);
+            // Low severity doesn't change compliance status
+            assert_eq!(report.compliance_status, ComplianceStatus::Compliant);
+        }
+
+        #[test]
+        fn test_compliance_report_critical_finding_changes_status() {
+            let start = Utc::now() - Duration::days(30);
+            let end = Utc::now();
+            let mut report = ComplianceReport::new(start, end);
+
+            let critical_finding = ComplianceFinding::new(
+                "Critical Issue".to_string(),
+                "Major problem".to_string(),
+                FindingSeverity::Critical,
+                Soc2Principle::Security,
+                "Immediate action required".to_string(),
+            );
+
+            report.add_finding(critical_finding);
+            assert_eq!(report.compliance_status, ComplianceStatus::NonCompliant);
+        }
+
+        #[test]
+        fn test_compliance_report_add_recommendation() {
+            let start = Utc::now() - Duration::days(30);
+            let end = Utc::now();
+            let mut report = ComplianceReport::new(start, end);
+
+            report.add_recommendation("Implement MFA".to_string());
+            assert_eq!(report.recommendations.len(), 1);
+            assert_eq!(report.recommendations[0], "Implement MFA");
+        }
+    }
+
+    mod gdpr_tests {
+        use super::*;
+        use ricecoder_domain::entities::{GdprConsent, ConsentType};
+
+        #[test]
+        fn test_gdpr_consent_creation() {
+            let consent = GdprConsent::new(
+                "user-123".to_string(),
+                ConsentType::Analytics,
+                "Website analytics".to_string(),
+                vec!["browsing_data".to_string()],
+            );
+
+            assert_eq!(consent.user_id, "user-123");
+            assert_eq!(consent.consent_type, ConsentType::Analytics);
+            assert!(!consent.consent_given);
+            assert!(!consent.withdrawn);
+        }
+
+        #[test]
+        fn test_gdpr_consent_give_consent() {
+            let mut consent = GdprConsent::new(
+                "user-123".to_string(),
+                ConsentType::Marketing,
+                "Marketing emails".to_string(),
+                vec!["email".to_string()],
+            );
+
+            consent.give_consent();
+
+            assert!(consent.consent_given);
+            assert!(consent.is_valid());
+        }
+
+        #[test]
+        fn test_gdpr_consent_withdraw() {
+            let mut consent = GdprConsent::new(
+                "user-123".to_string(),
+                ConsentType::ThirdParty,
+                "Third party sharing".to_string(),
+                vec!["profile".to_string()],
+            );
+
+            consent.give_consent();
+            assert!(consent.is_valid());
+
+            consent.withdraw_consent();
+            assert!(consent.withdrawn);
+            assert!(consent.withdrawn_date.is_some());
+            assert!(!consent.is_valid());
+        }
+
+        #[test]
+        fn test_gdpr_consent_not_valid_without_giving() {
+            let consent = GdprConsent::new(
+                "user-123".to_string(),
+                ConsentType::Essential,
+                "Essential cookies".to_string(),
+                vec!["session".to_string()],
+            );
+
+            assert!(!consent.is_valid());
+        }
+    }
+
+    mod performance_tests {
+        use super::*;
+        use ricecoder_domain::entities::{PerformanceMetric, MetricUnit, PerformanceBenchmark};
+
+        #[test]
+        fn test_performance_metric_creation() {
+            let metric = PerformanceMetric::new(
+                "response_time".to_string(),
+                150.0,
+                MetricUnit::Milliseconds,
+            );
+
+            assert_eq!(metric.name, "response_time");
+            assert_eq!(metric.value, 150.0);
+            assert_eq!(metric.unit, MetricUnit::Milliseconds);
+            assert!(metric.context.is_empty());
+        }
+
+        #[test]
+        fn test_performance_metric_add_context() {
+            let metric = PerformanceMetric::new(
+                "memory_usage".to_string(),
+                256.0,
+                MetricUnit::Megabytes,
             )
-            .unwrap();
+            .add_context("service".to_string(), "api".to_string())
+            .add_context("environment".to_string(), "production".to_string());
 
-            // Complexity analysis on small file
-            let result = BusinessRulesValidator::validate_analysis_operation(
-                &small_file,
-                AnalysisType::Complexity,
+            assert_eq!(metric.context.get("service"), Some(&"api".to_string()));
+            assert_eq!(metric.context.get("environment"), Some(&"production".to_string()));
+        }
+
+        #[test]
+        fn test_performance_benchmark_creation() {
+            let benchmark = PerformanceBenchmark::new(
+                "API Response Time".to_string(),
+                200.0,
+                50.0,
+                MetricUnit::Milliseconds,
+                "Target response time for API calls".to_string(),
             );
-            assert!(result.is_valid);
-            assert!(!result.warnings.is_empty()); // Should warn about small file
+
+            assert_eq!(benchmark.name, "API Response Time");
+            assert_eq!(benchmark.target_value, 200.0);
+            assert_eq!(benchmark.tolerance, 50.0);
         }
     }
 }

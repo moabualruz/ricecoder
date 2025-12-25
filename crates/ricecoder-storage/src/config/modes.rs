@@ -146,7 +146,7 @@ providers:
   default_provider: openai
 defaults:
   model: gpt-4
-steering: []
+Governance: []
 "#;
         fs::write(&config_file, config_content).expect("Failed to write config");
 
@@ -173,7 +173,7 @@ providers:
   default_provider: anthropic
 defaults:
   model: claude-3
-steering: []
+Governance: []
 "#;
         fs::write(&config_file, config_content).expect("Failed to write config");
 
@@ -200,7 +200,7 @@ providers:
   default_provider: openai
 defaults:
   model: gpt-4
-steering: []
+Governance: []
 "#;
         fs::write(&global_config_file, global_content).expect("Failed to write global config");
 
@@ -211,7 +211,7 @@ providers:
   default_provider: anthropic
 defaults:
   model: claude-3
-steering: []
+Governance: []
 "#;
         fs::write(&project_config_file, project_content).expect("Failed to write project config");
 
@@ -239,14 +239,14 @@ steering: []
         let global_config_file = global_dir.path().join("config.yaml");
         fs::write(
             &global_config_file,
-            "providers:\n  default_provider: openai\ndefaults: {}\nsteering: []",
+            "providers:\n  default_provider: openai\ndefaults: {}\ngovernance: []",
         )
         .expect("Failed to write global config");
 
         let project_config_file = project_dir.path().join("config.yaml");
         fs::write(
             &project_config_file,
-            "providers:\n  default_provider: anthropic\ndefaults: {}\nsteering: []",
+            "providers:\n  default_provider: anthropic\ndefaults: {}\ngovernance: []",
         )
         .expect("Failed to write project config");
 
@@ -274,14 +274,14 @@ steering: []
         let global_config_file = global_dir.path().join("config.yaml");
         fs::write(
             &global_config_file,
-            "providers:\n  default_provider: openai\ndefaults: {}\nsteering: []",
+            "providers:\n  default_provider: openai\ndefaults: {}\ngovernance: []",
         )
         .expect("Failed to write global config");
 
         let project_config_file = project_dir.path().join("config.yaml");
         fs::write(
             &project_config_file,
-            "providers:\n  default_provider: anthropic\ndefaults: {}\nsteering: []",
+            "providers:\n  default_provider: anthropic\ndefaults: {}\ngovernance: []",
         )
         .expect("Failed to write project config");
 

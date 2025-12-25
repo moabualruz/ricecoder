@@ -88,7 +88,7 @@ impl TeamManager {
             team_id: team.id.clone(),
             code_review_rules: Vec::new(),
             templates: Vec::new(),
-            steering_docs: Vec::new(),
+            governance_docs: Vec::new(),
             compliance_requirements: Vec::new(),
             version: 1,
             created_at: now,

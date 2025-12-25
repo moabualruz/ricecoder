@@ -1,6 +1,6 @@
 //! Project Aggregate Root
 //!
-//! REQ-DOMAIN-001: Project aggregate with full DDD compliance
+//! Project aggregate with full DDD compliance
 //! - Aggregate root with encapsulated entities
 //! - Invariant enforcement
 //! - Domain event emission
@@ -46,6 +46,10 @@ pub struct Project {
 
     /// Lifecycle status
     status: ProjectStatus,
+
+    /// Version for optimistic concurrency control
+    /// Incremented on each mutation
+    version: u64,
 }
 
 /// Project lifecycle status
@@ -74,10 +78,10 @@ impl Project {
         root_path: String,
         description: Option<String>,
     ) -> DomainResult<(Self, Vec<Box<dyn DomainEvent>>)> {
-        // REQ-DOMAIN-001.2: Enforce name constraints
+        // Enforce name constraints
         Self::validate_name(&name)?;
 
-        // REQ-DOMAIN-001.3: Enforce path constraints
+        // Enforce path constraints
         Self::validate_path(&root_path)?;
 
         let id = ProjectId::new();
@@ -93,13 +97,57 @@ impl Project {
             updated_at: now,
             metadata: HashMap::new(),
             status: ProjectStatus::Active,
+            version: 1, // Initial version
         };
 
-        // REQ-DOMAIN-001.5: Emit domain events
+        // Emit domain events
         let event = ProjectCreated::new(id.as_uuid(), name, description);
         let events: Vec<Box<dyn DomainEvent>> = vec![Box::new(event)];
 
         Ok((project, events))
+    }
+
+    /// Reconstitute a project from persistence
+    ///
+    /// This factory method bypasses validation since data is already validated
+    /// when it was originally created. Used by repository implementations.
+    ///
+    /// # Arguments
+    /// * `id` - The project's identity
+    /// * `name` - Project name
+    /// * `description` - Optional description
+    /// * `language` - Programming language
+    /// * `root_path` - Root path
+    /// * `created_at` - Creation timestamp
+    /// * `updated_at` - Last update timestamp
+    /// * `metadata` - Key-value metadata
+    /// * `status` - Lifecycle status
+    /// * `version` - Concurrency version
+    #[allow(clippy::too_many_arguments)]
+    pub fn reconstitute(
+        id: ProjectId,
+        name: String,
+        description: Option<String>,
+        language: ProgrammingLanguage,
+        root_path: String,
+        created_at: DateTime<Utc>,
+        updated_at: DateTime<Utc>,
+        metadata: HashMap<String, String>,
+        status: ProjectStatus,
+        version: u64,
+    ) -> Self {
+        Self {
+            id,
+            name,
+            description,
+            language,
+            root_path,
+            created_at,
+            updated_at,
+            metadata,
+            status,
+            version,
+        }
     }
 
     /// Rename project
@@ -120,6 +168,7 @@ impl Project {
         let old_name = self.name.clone();
         self.name = new_name.clone();
         self.updated_at = Utc::now();
+        self.version += 1;
 
         let event = ProjectUpdated::new(self.id.as_uuid(), new_name, self.description.clone());
         Ok(vec![Box::new(event)])
@@ -132,6 +181,7 @@ impl Project {
     ) -> DomainResult<Vec<Box<dyn DomainEvent>>> {
         self.description = description.clone();
         self.updated_at = Utc::now();
+        self.version += 1;
 
         let event = ProjectUpdated::new(
             self.id.as_uuid(),
@@ -154,6 +204,7 @@ impl Project {
 
         self.status = ProjectStatus::Archived;
         self.updated_at = Utc::now();
+        self.version += 1;
 
         let event = ProjectArchived::new(self.id.as_uuid());
         Ok(vec![Box::new(event)])
@@ -172,6 +223,7 @@ impl Project {
 
         self.status = ProjectStatus::Active;
         self.updated_at = Utc::now();
+        self.version += 1;
 
         let event = ProjectRestored::new(self.id.as_uuid());
         Ok(vec![Box::new(event)])
@@ -181,6 +233,7 @@ impl Project {
     pub fn delete(&mut self) -> DomainResult<Vec<Box<dyn DomainEvent>>> {
         self.status = ProjectStatus::Deleted;
         self.updated_at = Utc::now();
+        self.version += 1;
 
         let event = ProjectDeleted::new(self.id.as_uuid());
         Ok(vec![Box::new(event)])
@@ -190,6 +243,7 @@ impl Project {
     pub fn add_metadata(&mut self, key: String, value: String) {
         self.metadata.insert(key, value);
         self.updated_at = Utc::now();
+        self.version += 1;
     }
 
     /// Get metadata value
@@ -197,7 +251,12 @@ impl Project {
         self.metadata.get(key)
     }
 
-    // === Getters (REQ-DOMAIN-001.4: Prevent direct access) ===
+    /// Get all metadata (for serialization)
+    pub fn metadata(&self) -> &HashMap<String, String> {
+        &self.metadata
+    }
+
+    // === Getters (Prevent direct access) ===
 
     pub fn id(&self) -> ProjectId {
         self.id
@@ -243,7 +302,12 @@ impl Project {
         self.status == ProjectStatus::Deleted
     }
 
-    // === Validation (REQ-DOMAIN-001.2, REQ-DOMAIN-001.3) ===
+    /// Get version for optimistic concurrency control
+    pub fn version(&self) -> u64 {
+        self.version
+    }
+
+    // === Validation ===
 
     fn validate_name(name: &str) -> DomainResult<()> {
         if name.is_empty() || name.len() > 100 {

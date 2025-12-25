@@ -10,9 +10,9 @@ use crate::{
     error::SpecError,
     models::{
         ConversationMessage, MessageRole, Spec, SpecMetadata, SpecPhase, SpecStatus,
-        SpecWritingSession, Steering,
+        SpecWritingSession, Governance,
     },
-    steering::SteeringLoader,
+    governance::GovernanceLoader,
     validation::ValidationEngine,
 };
 
@@ -337,41 +337,41 @@ impl AISpecWriter {
         ApprovalManager::are_phases_approved_up_to(session, target_phase)
     }
 
-    /// Builds an AI prompt with steering context included
+    /// Builds an AI prompt with Governance context included
     ///
-    /// Generates a prompt for AI spec writing that includes steering rules,
-    /// standards, and templates. Project steering takes precedence over global steering.
+    /// Generates a prompt for AI spec writing that includes Governance rules,
+    /// standards, and templates. Project Governance takes precedence over global Governance.
     ///
     /// # Arguments
     ///
     /// * `session` - The spec writing session
-    /// * `global_steering` - Global steering document (workspace-level)
-    /// * `project_steering` - Project steering document (project-level)
+    /// * `global_governance` - Global Governance document (workspace-level)
+    /// * `project_governance` - Project Governance document (project-level)
     /// * `user_input` - The user's input or question
     ///
     /// # Returns
     ///
-    /// A formatted prompt string with steering context included
-    pub fn build_prompt_with_steering_context(
+    /// A formatted prompt string with Governance context included
+    pub fn build_prompt_with_governance_context(
         session: &SpecWritingSession,
-        global_steering: &Steering,
-        project_steering: &Steering,
+        global_governance: &Governance,
+        project_governance: &Governance,
         user_input: &str,
     ) -> Result<String, SpecError> {
-        // Merge steering with project taking precedence
-        let merged_steering = SteeringLoader::merge(global_steering, project_steering)?;
+        // Merge Governance with project taking precedence
+        let merged_governance = GovernanceLoader::merge(global_governance, project_governance)?;
 
-        // Build the prompt with steering context
+        // Build the prompt with Governance context
         let mut prompt = String::new();
 
         // Add phase guidance
         let phase_guidance = Self::get_phase_guidance(session);
         prompt.push_str(&format!("## Phase Guidance\n{}\n\n", phase_guidance));
 
-        // Add steering rules if any
-        if !merged_steering.rules.is_empty() {
-            prompt.push_str("## Steering Rules\n");
-            for rule in &merged_steering.rules {
+        // Add Governance rules if any
+        if !merged_governance.rules.is_empty() {
+            prompt.push_str("## Governance Rules\n");
+            for rule in &merged_governance.rules {
                 prompt.push_str(&format!(
                     "- **{}**: {} (Pattern: {}, Action: {})\n",
                     rule.id, rule.description, rule.pattern, rule.action
@@ -381,9 +381,9 @@ impl AISpecWriter {
         }
 
         // Add standards if any
-        if !merged_steering.standards.is_empty() {
+        if !merged_governance.standards.is_empty() {
             prompt.push_str("## Standards\n");
-            for standard in &merged_steering.standards {
+            for standard in &merged_governance.standards {
                 prompt.push_str(&format!(
                     "- **{}**: {}\n",
                     standard.id, standard.description
@@ -393,9 +393,9 @@ impl AISpecWriter {
         }
 
         // Add templates if any
-        if !merged_steering.templates.is_empty() {
+        if !merged_governance.templates.is_empty() {
             prompt.push_str("## Available Templates\n");
-            for template in &merged_steering.templates {
+            for template in &merged_governance.templates {
                 prompt.push_str(&format!("- **{}**: {}\n", template.id, template.path));
             }
             prompt.push('\n');
@@ -421,23 +421,23 @@ impl AISpecWriter {
         Ok(prompt)
     }
 
-    /// Applies steering rules to generated specs
+    /// Applies Governance rules to generated specs
     ///
-    /// Validates that generated specs conform to steering standards.
-    /// Returns a list of violations if any steering rules are not followed.
+    /// Validates that generated specs conform to Governance standards.
+    /// Returns a list of violations if any Governance rules are not followed.
     ///
     /// # Arguments
     ///
     /// * `spec` - The generated spec to validate
-    /// * `steering` - The steering document with rules and standards
+    /// * `Governance` - The Governance document with rules and standards
     ///
     /// # Returns
     ///
     /// Ok with list of violations (empty if all rules are followed),
     /// or Err if validation fails
-    pub fn validate_spec_against_steering(
+    pub fn validate_spec_against_governance(
         spec: &Spec,
-        steering: &Steering,
+        Governance: &Governance,
     ) -> Result<Vec<String>, SpecError> {
         let mut violations = Vec::new();
 
@@ -472,8 +472,8 @@ impl AISpecWriter {
             violations.push("Tasks phase spec has no tasks".to_string());
         }
 
-        // Validate against steering standards
-        for standard in &steering.standards {
+        // Validate against Governance standards
+        for standard in &Governance.standards {
             // Check that all requirements have acceptance criteria (common standard)
             if standard.id == "require-acceptance-criteria" {
                 for req in &spec.requirements {
@@ -502,23 +502,23 @@ impl AISpecWriter {
         Ok(violations)
     }
 
-    /// Gets steering context as a formatted string for display
+    /// Gets Governance context as a formatted string for display
     ///
-    /// Useful for showing users what steering rules are active.
+    /// Useful for showing users what Governance rules are active.
     ///
     /// # Arguments
     ///
-    /// * `steering` - The steering document
+    /// * `Governance` - The Governance document
     ///
     /// # Returns
     ///
-    /// Formatted string representation of steering context
-    pub fn format_steering_context(steering: &Steering) -> String {
+    /// Formatted string representation of Governance context
+    pub fn format_governance_context(Governance: &Governance) -> String {
         let mut output = String::new();
 
-        if !steering.rules.is_empty() {
-            output.push_str("### Steering Rules\n");
-            for rule in &steering.rules {
+        if !Governance.rules.is_empty() {
+            output.push_str("### Governance Rules\n");
+            for rule in &Governance.rules {
                 output.push_str(&format!(
                     "- `{}`: {} ({})\n",
                     rule.id, rule.description, rule.action
@@ -527,17 +527,17 @@ impl AISpecWriter {
             output.push('\n');
         }
 
-        if !steering.standards.is_empty() {
+        if !Governance.standards.is_empty() {
             output.push_str("### Standards\n");
-            for standard in &steering.standards {
+            for standard in &Governance.standards {
                 output.push_str(&format!("- `{}`: {}\n", standard.id, standard.description));
             }
             output.push('\n');
         }
 
-        if !steering.templates.is_empty() {
+        if !Governance.templates.is_empty() {
             output.push_str("### Templates\n");
-            for template in &steering.templates {
+            for template in &Governance.templates {
                 output.push_str(&format!("- `{}`: {}\n", template.id, template.path));
             }
         }
@@ -960,12 +960,12 @@ mod tests {
     }
 
     #[test]
-    fn test_build_prompt_with_steering_context() {
-        use crate::models::SteeringRule;
+    fn test_build_prompt_with_governance_context() {
+        use crate::models::GovernanceRule;
 
         let session = create_test_session();
-        let global_steering = Steering {
-            rules: vec![SteeringRule {
+        let global_governance = Governance {
+            rules: vec![GovernanceRule {
                 id: "global-rule".to_string(),
                 description: "Global rule".to_string(),
                 pattern: "pattern".to_string(),
@@ -975,8 +975,8 @@ mod tests {
             templates: vec![],
         };
 
-        let project_steering = Steering {
-            rules: vec![SteeringRule {
+        let project_governance = Governance {
+            rules: vec![GovernanceRule {
                 id: "project-rule".to_string(),
                 description: "Project rule".to_string(),
                 pattern: "pattern".to_string(),
@@ -986,26 +986,26 @@ mod tests {
             templates: vec![],
         };
 
-        let result = AISpecWriter::build_prompt_with_steering_context(
+        let result = AISpecWriter::build_prompt_with_governance_context(
             &session,
-            &global_steering,
-            &project_steering,
+            &global_governance,
+            &project_governance,
             "Create a task manager",
         );
 
         assert!(result.is_ok());
         let prompt = result.unwrap();
 
-        // Verify prompt contains steering context
+        // Verify prompt contains Governance context
         assert!(prompt.contains("Phase Guidance"));
-        assert!(prompt.contains("Steering Rules"));
+        assert!(prompt.contains("Governance Rules"));
         assert!(prompt.contains("global-rule"));
         assert!(prompt.contains("project-rule"));
         assert!(prompt.contains("Create a task manager"));
     }
 
     #[test]
-    fn test_build_prompt_with_steering_context_includes_conversation() {
+    fn test_build_prompt_with_governance_context_includes_conversation() {
         let mut session = create_test_session();
         AISpecWriter::add_message(&mut session, MessageRole::User, "What should we build?")
             .unwrap();
@@ -1016,22 +1016,22 @@ mod tests {
         )
         .unwrap();
 
-        let global_steering = Steering {
+        let global_governance = Governance {
             rules: vec![],
             standards: vec![],
             templates: vec![],
         };
 
-        let project_steering = Steering {
+        let project_governance = Governance {
             rules: vec![],
             standards: vec![],
             templates: vec![],
         };
 
-        let result = AISpecWriter::build_prompt_with_steering_context(
+        let result = AISpecWriter::build_prompt_with_governance_context(
             &session,
-            &global_steering,
-            &project_steering,
+            &global_governance,
+            &project_governance,
             "Continue with requirements",
         );
 
@@ -1045,12 +1045,12 @@ mod tests {
     }
 
     #[test]
-    fn test_build_prompt_with_steering_context_project_precedence() {
-        use crate::models::SteeringRule;
+    fn test_build_prompt_with_governance_context_project_precedence() {
+        use crate::models::GovernanceRule;
 
         let session = create_test_session();
-        let global_steering = Steering {
-            rules: vec![SteeringRule {
+        let global_governance = Governance {
+            rules: vec![GovernanceRule {
                 id: "rule-1".to_string(),
                 description: "Global version".to_string(),
                 pattern: "global".to_string(),
@@ -1060,8 +1060,8 @@ mod tests {
             templates: vec![],
         };
 
-        let project_steering = Steering {
-            rules: vec![SteeringRule {
+        let project_governance = Governance {
+            rules: vec![GovernanceRule {
                 id: "rule-1".to_string(),
                 description: "Project version".to_string(),
                 pattern: "project".to_string(),
@@ -1071,10 +1071,10 @@ mod tests {
             templates: vec![],
         };
 
-        let result = AISpecWriter::build_prompt_with_steering_context(
+        let result = AISpecWriter::build_prompt_with_governance_context(
             &session,
-            &global_steering,
-            &project_steering,
+            &global_governance,
+            &project_governance,
             "Test",
         );
 
@@ -1088,7 +1088,7 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_spec_against_steering_valid() {
+    fn test_validate_spec_against_governance_valid() {
         let spec = Spec {
             id: "test".to_string(),
             name: "Test Spec".to_string(),
@@ -1115,20 +1115,20 @@ mod tests {
             inheritance: None,
         };
 
-        let steering = Steering {
+        let Governance = Governance {
             rules: vec![],
             standards: vec![],
             templates: vec![],
         };
 
-        let result = AISpecWriter::validate_spec_against_steering(&spec, &steering);
+        let result = AISpecWriter::validate_spec_against_governance(&spec, &Governance);
         assert!(result.is_ok());
         let violations = result.unwrap();
         assert!(violations.is_empty());
     }
 
     #[test]
-    fn test_validate_spec_against_steering_missing_author() {
+    fn test_validate_spec_against_governance_missing_author() {
         let spec = Spec {
             id: "test".to_string(),
             name: "Test Spec".to_string(),
@@ -1146,13 +1146,13 @@ mod tests {
             inheritance: None,
         };
 
-        let steering = Steering {
+        let Governance = Governance {
             rules: vec![],
             standards: vec![],
             templates: vec![],
         };
 
-        let result = AISpecWriter::validate_spec_against_steering(&spec, &steering);
+        let result = AISpecWriter::validate_spec_against_governance(&spec, &Governance);
         assert!(result.is_ok());
         let violations = result.unwrap();
         assert!(!violations.is_empty());
@@ -1160,7 +1160,7 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_spec_against_steering_requirements_phase_no_requirements() {
+    fn test_validate_spec_against_governance_requirements_phase_no_requirements() {
         let spec = Spec {
             id: "test".to_string(),
             name: "Test Spec".to_string(),
@@ -1178,13 +1178,13 @@ mod tests {
             inheritance: None,
         };
 
-        let steering = Steering {
+        let Governance = Governance {
             rules: vec![],
             standards: vec![],
             templates: vec![],
         };
 
-        let result = AISpecWriter::validate_spec_against_steering(&spec, &steering);
+        let result = AISpecWriter::validate_spec_against_governance(&spec, &Governance);
         assert!(result.is_ok());
         let violations = result.unwrap();
         assert!(!violations.is_empty());
@@ -1192,11 +1192,11 @@ mod tests {
     }
 
     #[test]
-    fn test_format_steering_context() {
-        use crate::models::{Standard, SteeringRule, TemplateRef};
+    fn test_format_governance_context() {
+        use crate::models::{Standard, GovernanceRule, TemplateRef};
 
-        let steering = Steering {
-            rules: vec![SteeringRule {
+        let Governance = Governance {
+            rules: vec![GovernanceRule {
                 id: "rule-1".to_string(),
                 description: "Use snake_case".to_string(),
                 pattern: "^[a-z_]+$".to_string(),
@@ -1212,9 +1212,9 @@ mod tests {
             }],
         };
 
-        let output = AISpecWriter::format_steering_context(&steering);
+        let output = AISpecWriter::format_governance_context(&Governance);
 
-        assert!(output.contains("Steering Rules"));
+        assert!(output.contains("Governance Rules"));
         assert!(output.contains("rule-1"));
         assert!(output.contains("Standards"));
         assert!(output.contains("std-1"));
@@ -1223,14 +1223,14 @@ mod tests {
     }
 
     #[test]
-    fn test_format_steering_context_empty() {
-        let steering = Steering {
+    fn test_format_governance_context_empty() {
+        let Governance = Governance {
             rules: vec![],
             standards: vec![],
             templates: vec![],
         };
 
-        let output = AISpecWriter::format_steering_context(&steering);
+        let output = AISpecWriter::format_governance_context(&Governance);
 
         // Should be empty or minimal
         assert!(output.is_empty() || output.trim().is_empty());

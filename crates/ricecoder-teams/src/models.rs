@@ -61,7 +61,7 @@ pub struct TeamStandards {
     pub team_id: String,
     pub code_review_rules: Vec<CodeReviewRule>,
     pub templates: Vec<Template>,
-    pub steering_docs: Vec<SteeringDoc>,
+    pub governance_docs: Vec<GovernanceDoc>,
     pub compliance_requirements: Vec<ComplianceRequirement>,
     pub version: u32,
     pub created_at: DateTime<Utc>,
@@ -86,9 +86,9 @@ pub struct Template {
     pub content: String,
 }
 
-/// Steering document
+/// Governance document
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SteeringDoc {
+pub struct GovernanceDoc {
     pub id: String,
     pub name: String,
     pub content: String,
@@ -249,7 +249,7 @@ mod tests {
                 description: "A test template".to_string(),
                 content: "template content".to_string(),
             }],
-            steering_docs: vec![SteeringDoc {
+            governance_docs: vec![GovernanceDoc {
                 id: "doc-1".to_string(),
                 name: "Test Doc".to_string(),
                 content: "doc content".to_string(),
@@ -359,7 +359,7 @@ updated_at: 2024-01-01T00:00:00Z
         assert_eq!(deserialized.version, standards.version);
         assert_eq!(deserialized.code_review_rules.len(), 1);
         assert_eq!(deserialized.templates.len(), 1);
-        assert_eq!(deserialized.steering_docs.len(), 1);
+        assert_eq!(deserialized.governance_docs.len(), 1);
         assert_eq!(deserialized.compliance_requirements.len(), 1);
     }
 

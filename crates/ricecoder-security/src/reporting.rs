@@ -11,7 +11,7 @@ use crate::{
 };
 
 /// Compliance report types
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ReportType {
     Soc2Type2,
     GdprCompliance,

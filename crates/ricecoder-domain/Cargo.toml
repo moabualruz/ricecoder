@@ -15,6 +15,7 @@ regex = { workspace = true }
 url = { workspace = true }
 mime_guess = { workspace = true }
 async-trait = { workspace = true }
+futures-core = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

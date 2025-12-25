@@ -141,9 +141,11 @@ impl ImageWidget {
             self.picker = Some(Picker::from_fontsize(font_size));
         }
 
-        // Load image using ratatui-image
-        let dyn_img = image::ImageReader::open(&path)
+        // Load image using ratatui-image (image 0.25+ API)
+        let dyn_img = image::io::Reader::open(&path)
             .map_err(|e| format!("Failed to open image: {}", e))?
+            .with_guessed_format()
+            .map_err(|e| format!("Failed to guess format: {}", e))?
             .decode()
             .map_err(|e| format!("Failed to decode image: {}", e))?;
 

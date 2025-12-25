@@ -1,0 +1,28 @@
+[package]
+name = "ricecoder-persistence"
+version.workspace = true
+edition.workspace = true
+description = "Infrastructure persistence layer for RiceCoder - repository implementations"
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+ricecoder-domain = { path = "../ricecoder-domain", version = "0.1" }
+async-trait = { workspace = true }
+tokio = { workspace = true }
+parking_lot = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+
+[dev-dependencies]
+tokio-test = { workspace = true }
+proptest = { workspace = true }
+
+[features]
+default = ["memory"]
+memory = []
+# Future: surrealdb feature for SurrealDB backend
+# surrealdb = ["dep:surrealdb"]

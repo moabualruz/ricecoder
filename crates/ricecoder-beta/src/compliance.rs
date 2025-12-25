@@ -291,7 +291,7 @@ impl ComplianceValidator {
 }
 
 /// Compliance types
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ComplianceType {
     SOC2TypeII,
     GDPR,

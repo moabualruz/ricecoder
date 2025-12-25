@@ -359,10 +359,10 @@ impl ConfigConflictResolver {
             target.defaults.max_tokens = source.defaults.max_tokens;
         }
 
-        // Merge steering rules (add missing ones)
-        for rule in &source.steering {
-            if !target.steering.iter().any(|r| r.name == rule.name) {
-                target.steering.push(rule.clone());
+        // Merge Governance rules (add missing ones)
+        for rule in &source.Governance {
+            if !target.Governance.iter().any(|r| r.name == rule.name) {
+                target.Governance.push(rule.clone());
             }
         }
 

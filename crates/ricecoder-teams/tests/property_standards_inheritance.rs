@@ -5,7 +5,7 @@ use chrono::Utc;
 use proptest::prelude::*;
 use ricecoder_teams::{
     config::TeamConfigManager,
-    models::{CodeReviewRule, ComplianceRequirement, SteeringDoc, TeamStandards, Template},
+    models::{CodeReviewRule, ComplianceRequirement, GovernanceDoc, TeamStandards, Template},
 };
 
 /// Strategy for generating random CodeReviewRule
@@ -40,10 +40,10 @@ fn arb_template() -> impl Strategy<Value = Template> {
         })
 }
 
-/// Strategy for generating random SteeringDoc
-fn arb_steering_doc() -> impl Strategy<Value = SteeringDoc> {
+/// Strategy for generating random GovernanceDoc
+fn arb_governance_doc() -> impl Strategy<Value = GovernanceDoc> {
     ("[a-z0-9]{1,20}", "[a-z0-9 ]{1,50}", "[a-z0-9 ]{1,200}")
-        .prop_map(|(id, name, content)| SteeringDoc { id, name, content })
+        .prop_map(|(id, name, content)| GovernanceDoc { id, name, content })
 }
 
 /// Strategy for generating random ComplianceRequirement
@@ -64,7 +64,7 @@ fn arb_team_standards(team_id: &str) -> impl Strategy<Value = TeamStandards> {
         "[a-z0-9]{1,20}",
         prop::collection::vec(arb_code_review_rule(), 0..3),
         prop::collection::vec(arb_template(), 0..3),
-        prop::collection::vec(arb_steering_doc(), 0..3),
+        prop::collection::vec(arb_governance_doc(), 0..3),
         prop::collection::vec(arb_compliance_requirement(), 0..3),
         1u32..10u32,
     )
@@ -74,7 +74,7 @@ fn arb_team_standards(team_id: &str) -> impl Strategy<Value = TeamStandards> {
                 team_id: team_id.clone(),
                 code_review_rules: rules,
                 templates,
-                steering_docs: docs,
+                governance_docs: docs,
                 compliance_requirements: compliance,
                 version,
                 created_at: Utc::now(),
@@ -233,9 +233,9 @@ proptest! {
         let expected_templates = org_standards.templates.len()
             + team_standards.templates.len()
             + project_standards.templates.len();
-        let expected_docs = org_standards.steering_docs.len()
-            + team_standards.steering_docs.len()
-            + project_standards.steering_docs.len();
+        let expected_docs = org_standards.governance_docs.len()
+            + team_standards.governance_docs.len()
+            + project_standards.governance_docs.len();
         let expected_compliance = org_standards.compliance_requirements.len()
             + team_standards.compliance_requirements.len()
             + project_standards.compliance_requirements.len();
@@ -253,9 +253,9 @@ proptest! {
         );
 
         prop_assert_eq!(
-            merged.steering_docs.len(),
+            merged.governance_docs.len(),
             expected_docs,
-            "All steering docs should be preserved"
+            "All Governance docs should be preserved"
         );
 
         prop_assert_eq!(
@@ -282,7 +282,7 @@ mod tests {
                 enabled: true,
             }],
             templates: vec![],
-            steering_docs: vec![],
+            governance_docs: vec![],
             compliance_requirements: vec![],
             version: 1,
             created_at: Utc::now(),
@@ -299,7 +299,7 @@ mod tests {
                 enabled: true,
             }],
             templates: vec![],
-            steering_docs: vec![],
+            governance_docs: vec![],
             compliance_requirements: vec![],
             version: 2,
             created_at: Utc::now(),
@@ -316,7 +316,7 @@ mod tests {
                 enabled: true,
             }],
             templates: vec![],
-            steering_docs: vec![],
+            governance_docs: vec![],
             compliance_requirements: vec![],
             version: 3,
             created_at: Utc::now(),
@@ -345,7 +345,7 @@ mod tests {
                 enabled: true,
             }],
             templates: vec![],
-            steering_docs: vec![],
+            governance_docs: vec![],
             compliance_requirements: vec![],
             version: 1,
             created_at: Utc::now(),

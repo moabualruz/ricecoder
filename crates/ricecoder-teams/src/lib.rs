@@ -1,7 +1,7 @@
 /// RiceCoder Team Collaboration System
 ///
 /// This crate provides team-level standards, shared configurations, and collaborative workflows
-/// for development teams. It enables teams to share code review rules, templates, steering documents,
+/// for development teams. It enables teams to share code review rules, templates, Governance documents,
 /// and compliance requirements across organization, team, and project levels with inheritance and
 /// override capabilities.
 ///
@@ -26,7 +26,7 @@ pub use error::{Result, TeamError};
 pub use manager::TeamManager;
 pub use models::{
     AdoptionMetrics, AuditLogEntry, CodeReviewRule, ComplianceRequirement, EffectivenessMetrics,
-    MergedStandards, RuleScope, SharedRule, StandardsOverride, SteeringDoc, Team,
+    MergedStandards, RuleScope, SharedRule, StandardsOverride, GovernanceDoc, Team,
     TeamAnalyticsReport, TeamMember, TeamRole, TeamStandards, Template,
 };
 pub use rules::SharedRulesManager;

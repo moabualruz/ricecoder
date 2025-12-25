@@ -310,11 +310,11 @@ async function checkDocumentationCompleteness() {
   console.log(reportMarkdown);
 
   // Save report
-  const reportPath = path.join(WORKSPACE_ROOT, 'projects', 'ricecoder', '.kiro', 'docs-completeness-report.md');
+  const reportPath = path.join(WORKSPACE_ROOT, 'projects', 'ricecoder', '.ai', 'docs-completeness-report.md');
   fs.mkdirSync(path.dirname(reportPath), { recursive: true });
   fs.writeFileSync(reportPath, reportMarkdown);
 
-  const jsonReportPath = path.join(WORKSPACE_ROOT, 'projects', 'ricecoder', '.kiro', 'docs-completeness-report.json');
+  const jsonReportPath = path.join(WORKSPACE_ROOT, 'projects', 'ricecoder', '.ai', 'docs-completeness-report.json');
   fs.writeFileSync(jsonReportPath, JSON.stringify(report, null, 2));
 
   console.log(`\nReports saved to:`);

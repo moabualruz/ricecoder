@@ -10,6 +10,7 @@ pub mod backup;
 pub mod conflict;
 pub mod diff;
 pub mod error;
+pub mod file_repository;
 pub mod git;
 pub mod manager;
 pub mod models;
@@ -21,6 +22,7 @@ pub mod writer;
 // Re-export public API
 pub use audit::AuditLogger;
 pub use backup::BackupManager;
+pub use file_repository::FileSystemRepository;
 pub use conflict::ConflictResolver;
 pub use diff::DiffEngine;
 pub use error::FileError;

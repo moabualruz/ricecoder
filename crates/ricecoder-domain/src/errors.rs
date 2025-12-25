@@ -32,7 +32,7 @@ pub enum DomainError {
     #[error("Concurrency conflict: {resource}")]
     ConcurrencyConflict { resource: String },
 
-    // Event-related errors (REQ-DOMAIN-000.8)
+    // Event-related errors
     #[error("Event dispatch failed: {reason}")]
     EventDispatchFailed { reason: String },
 
@@ -47,6 +47,19 @@ pub enum DomainError {
 
     #[error("Event handler error: {handler} - {reason}")]
     EventHandlerError { handler: String, reason: String },
+
+    // Infrastructure errors
+    #[error("File operation failed: {operation} - {reason}")]
+    FileOperationError { operation: String, reason: String },
+
+    #[error("Cache operation failed: {operation} - {reason}")]
+    CacheOperationError { operation: String, reason: String },
+
+    #[error("External service error: {service} - {reason}")]
+    ExternalServiceError { service: String, reason: String },
+
+    #[error("I/O error: {reason}")]
+    IoError { reason: String },
 }
 
 /// Result type alias for domain operations

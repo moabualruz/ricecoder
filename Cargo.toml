@@ -50,6 +50,7 @@ tempfile = { workspace = true }
 [workspace]
 members = [
     "crates/ricegrep-core",
+    "crates/ricecoder-persistence",
     "crates/ricecoder-storage",
     "crates/ricecoder-cli",
     "crates/ricecoder-providers",
@@ -172,6 +173,7 @@ dotenv = "0.15"
 env_logger = "0.11"
 flate2 = "1.0"
 futures = "0.3"
+futures-core = "0.3"
 futures-util = "0.3"
 fxhash = "0.2"
 git2 = "0.18"
@@ -182,7 +184,7 @@ hex = "0.4"
 hmac = "0.12"
 http = "0.2"
 ignore = "0.4"
-image = "0.24"
+image = "0.25"
 indicatif = "0.17.11"
 itertools = "0.12"
 jsonc-parser = "0.26"
@@ -253,6 +255,7 @@ ricecoder-monitoring = { path = "crates/ricecoder-monitoring", version = "0.1" }
 ricecoder-orchestration = { path = "crates/ricecoder-orchestration", version = "0.1" }
 ricecoder-parsers = { path = "crates/ricecoder-parsers", version = "0.1" }
 ricecoder-patterns = { path = "crates/ricecoder-patterns", version = "0.1" }
+ricecoder-persistence = { path = "crates/ricecoder-persistence", version = "0.1" }
 ricecoder-permissions = { path = "crates/ricecoder-permissions", version = "0.1" }
 ricecoder-providers = { path = "crates/ricecoder-providers", version = "0.1" }
 ricecoder-refactoring = { path = "crates/ricecoder-refactoring", version = "0.1" }

@@ -4,7 +4,7 @@
 //! defined in the ricecoder-templates feature specification.
 //!
 //! Feature: ricecoder-templates
-//! Design: .kiro/specs/ricecoder-templates/design.md
+//! Design: .ai/specs/ricecoder-templates/design.md
 
 use std::fs;
 

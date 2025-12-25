@@ -1,7 +1,7 @@
 //! Domain events infrastructure
 //!
-//! REQ-DOMAIN-000.8: Domain events for state change tracking
-//! REQ-DOMAIN-001.5, 002.5, 003.5: Aggregate-specific events
+//! Domain events for state change tracking
+//! Aggregate-specific events
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -17,18 +17,18 @@ pub mod specification;
 /// They are immutable records of state changes that have already happened.
 ///
 /// # Requirements
-/// - REQ-DOMAIN-000.8: All aggregates emit domain events on state changes
+///  All aggregates emit domain events on state changes
 ///
 /// # Example
 /// ```
 /// use ricecoder_domain::events::DomainEvent;
 /// use uuid::Uuid;
-/// use chrono::Utc;
+/// use chrono::{DateTime, Utc};
 ///
 /// struct MyEvent {
 ///     event_id: Uuid,
 ///     aggregate_id: Uuid,
-///     occurred_at: chrono::DateTime<Utc>,
+///     occurred_at: DateTime<Utc>,
 /// }
 ///
 /// impl DomainEvent for MyEvent {

@@ -2,7 +2,7 @@
 //!
 //! Orchestrates specification-related use cases using domain aggregates.
 //!
-//! REQ-APP-030: SpecificationService
+//! SpecificationService
 //! AC-3.3.1: Stateless and reusable across requests
 //! AC-3.3.2: Depends only on repository abstractions
 //! AC-3.3.3: Validates requirement traceability before accepting tasks
@@ -20,7 +20,7 @@ use crate::ports::UnitOfWork;
 
 use ricecoder_domain::specification::{Specification, SpecStatus};
 use ricecoder_domain::value_objects::{ProjectId, SpecificationId, RequirementId, TaskId};
-use ricecoder_domain::repositories::{SpecificationRepository, ProjectRepository};
+use ricecoder_domain::repositories::{SpecificationRepository, SpecificationReader, SpecificationWriter, ProjectRepository};
 
 /// Specification Application Service
 ///
@@ -377,15 +377,7 @@ mod tests {
     }
 
     #[async_trait]
-    impl SpecificationRepository for InMemorySpecificationRepository {
-        async fn save(&self, spec: &Specification) -> DomainResult<()> {
-            self.specs
-                .lock()
-                .unwrap()
-                .insert(spec.id().to_string(), spec.clone());
-            Ok(())
-        }
-
+    impl SpecificationReader for InMemorySpecificationRepository {
         async fn find_by_id(&self, id: &SpecificationId) -> DomainResult<Option<Specification>> {
             Ok(self.specs.lock().unwrap().get(&id.to_string()).cloned())
         }
@@ -405,11 +397,6 @@ mod tests {
             Ok(self.specs.lock().unwrap().values().cloned().collect())
         }
 
-        async fn delete(&self, id: &SpecificationId) -> DomainResult<()> {
-            self.specs.lock().unwrap().remove(&id.to_string());
-            Ok(())
-        }
-
         async fn exists(&self, id: &SpecificationId) -> DomainResult<bool> {
             Ok(self.specs.lock().unwrap().contains_key(&id.to_string()))
         }
@@ -425,6 +412,24 @@ mod tests {
                 .collect())
         }
     }
+
+    #[async_trait]
+    impl SpecificationWriter for InMemorySpecificationRepository {
+        async fn save(&self, spec: &Specification) -> DomainResult<()> {
+            self.specs
+                .lock()
+                .unwrap()
+                .insert(spec.id().to_string(), spec.clone());
+            Ok(())
+        }
+
+        async fn delete(&self, id: &SpecificationId) -> DomainResult<()> {
+            self.specs.lock().unwrap().remove(&id.to_string());
+            Ok(())
+        }
+    }
+    
+    // Blanket impl provides SpecificationRepository
 
     /// In-memory project repository for testing
     struct InMemoryProjectRepository {

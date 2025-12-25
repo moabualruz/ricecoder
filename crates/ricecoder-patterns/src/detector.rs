@@ -187,7 +187,7 @@ impl Default for PatternDetector {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "parsing"))]
 mod tests {
     use std::sync::Arc;
 

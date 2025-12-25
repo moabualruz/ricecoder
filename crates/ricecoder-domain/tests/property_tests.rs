@@ -1,6 +1,6 @@
 //! Property-based tests for value objects
 //!
-//! REQ-ARCH-002.15 through REQ-ARCH-002.17: LSP validation via property testing
+//! LSP validation via property testing
 //!
 //! These tests verify that value objects maintain their invariants across
 //! all possible inputs and operations.
@@ -433,5 +433,124 @@ proptest! {
         let json = serde_json::to_string(&perm).unwrap();
         let deserialized: Permission = serde_json::from_str(&json).unwrap();
         prop_assert_eq!(perm, deserialized);
+    }
+}
+
+// ============================================================================
+// LSP Property Tests - Substitutability Verification
+// ============================================================================
+
+/// LSP Property: Token usage invariants
+/// For any AiChatResponse, total_tokens >= prompt_tokens
+proptest! {
+    #[test]
+    fn test_lsp_token_usage_invariant(
+        prompt_tokens in 0u32..10000,
+        completion_tokens in 0u32..10000
+    ) {
+        use ricecoder_domain::ports::ai::TokenUsage;
+        let usage = TokenUsage {
+            prompt_tokens,
+            completion_tokens,
+            total_tokens: prompt_tokens + completion_tokens,
+        };
+        prop_assert!(usage.total_tokens >= usage.prompt_tokens,
+            "LSP violation: total_tokens must be >= prompt_tokens");
+        prop_assert!(usage.total_tokens >= usage.completion_tokens,
+            "LSP violation: total_tokens must be >= completion_tokens");
+    }
+}
+
+/// LSP Property: HealthCheckResult status-field consistency
+proptest! {
+    #[test]
+    fn test_lsp_health_check_status_consistency(
+        latency in 0u64..10000,
+        error_len in 0usize..100
+    ) {
+        use ricecoder_domain::ports::ai::{HealthCheckResult, ProviderHealthStatus};
+        
+        // Healthy status must have latency, no error
+        let healthy = HealthCheckResult::healthy(latency);
+        prop_assert_eq!(healthy.status, ProviderHealthStatus::Healthy);
+        prop_assert!(healthy.latency_ms.is_some());
+        prop_assert!(healthy.error.is_none());
+        
+        // Unhealthy status must have error
+        let error_msg: String = (0..error_len).map(|_| 'x').collect();
+        let unhealthy = HealthCheckResult::unhealthy(&error_msg);
+        prop_assert_eq!(unhealthy.status, ProviderHealthStatus::Unhealthy);
+        prop_assert!(unhealthy.error.is_some());
+    }
+}
+
+/// LSP Property: ChatMessage factory methods produce correct roles
+proptest! {
+    #[test]
+    fn test_lsp_chat_message_role_consistency(
+        content in "[a-zA-Z0-9 ]{0,100}"
+    ) {
+        use ricecoder_domain::ports::ai::{ChatMessage, ChatRole};
+        
+        let user_msg = ChatMessage::user(&content);
+        prop_assert_eq!(user_msg.role, ChatRole::User);
+        prop_assert_eq!(user_msg.content, content.clone());
+        
+        let assistant_msg = ChatMessage::assistant(&content);
+        prop_assert_eq!(assistant_msg.role, ChatRole::Assistant);
+        prop_assert_eq!(assistant_msg.content, content.clone());
+        
+        let system_msg = ChatMessage::system(&content);
+        prop_assert_eq!(system_msg.role, ChatRole::System);
+        prop_assert_eq!(system_msg.content, content);
+    }
+}
+
+/// LSP Property: AiChatRequest builder preserves invariants
+proptest! {
+    #[test]
+    fn test_lsp_chat_request_builder_invariants(
+        model in "[a-zA-Z0-9-]{1,50}",
+        temperature in 0.0f32..2.0,
+        max_tokens in 1u32..100000
+    ) {
+        use ricecoder_domain::ports::ai::{AiChatRequest, ChatMessage};
+        
+        let request = AiChatRequest::new(&model, vec![ChatMessage::user("test")])
+            .with_temperature(temperature)
+            .with_max_tokens(max_tokens);
+        
+        prop_assert_eq!(request.model, model);
+        prop_assert_eq!(request.temperature, Some(temperature));
+        prop_assert_eq!(request.max_tokens, Some(max_tokens));
+        prop_assert!(!request.messages.is_empty());
+    }
+}
+
+/// LSP Property: ModelInfo fields are valid
+proptest! {
+    #[test]
+    fn test_lsp_model_info_invariants(
+        id in "[a-zA-Z0-9-]{1,50}",
+        name in "[a-zA-Z0-9 ]{1,100}",
+        provider in "[a-zA-Z0-9-]{1,30}",
+        context_window in 1u32..1000000
+    ) {
+        use ricecoder_domain::ports::ai::ModelInfo;
+        
+        let model = ModelInfo {
+            id: id.clone(),
+            name: name.clone(),
+            provider: provider.clone(),
+            context_window,
+            capabilities: vec![],
+            is_free: true,
+        };
+        
+        // All fields preserved
+        prop_assert_eq!(model.id, id);
+        prop_assert_eq!(model.name, name);
+        prop_assert_eq!(model.provider, provider);
+        prop_assert!(model.context_window > 0, "LSP: context_window must be positive");
     }
 }

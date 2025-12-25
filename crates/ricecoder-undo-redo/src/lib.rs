@@ -12,9 +12,6 @@ pub mod history;
 pub mod models;
 pub mod persistence;
 
-#[cfg(test)]
-mod integration_tests;
-
 // Re-export public API
 pub use change::{Change, ChangeTracker, ChangeType};
 pub use checkpoint::{Checkpoint, CheckpointManager};

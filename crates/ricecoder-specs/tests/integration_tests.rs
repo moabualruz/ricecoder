@@ -2,18 +2,18 @@
 //!
 //! These tests verify the complete workflows and interactions between components:
 //! - Full spec loading workflow (YAML and Markdown)
-//! - Steering loading and merging (project > global > defaults)
+//! - Governance loading and merging (project > global > defaults)
 //! - Spec discovery and filtering with queries
 //! - Hierarchical spec resolution (project > feature > task)
 //! - Dependency resolution and circular dependency detection
 //! - Change tracking and history retrieval
 //! - AI-assisted spec writing workflow with approval gates
 //! - Spec-to-task linking and traceability
-//! - Steering context in AI prompts
+//! - Governance context in AI prompts
 
 use ricecoder_specs::{
     models::*, ApprovalManager, ChangeTracker, ConversationManager, SpecInheritanceResolver,
-    SpecManager, SpecQueryEngine, SteeringLoader, WorkflowOrchestrator,
+    SpecManager, SpecQueryEngine, GovernanceLoader, WorkflowOrchestrator,
 };
 use tempfile::TempDir;
 
@@ -67,9 +67,9 @@ fn create_test_task(id: &str, description: &str, requirements: Vec<String>) -> T
     }
 }
 
-/// Create a test steering rule
-fn create_test_steering_rule(id: &str, description: &str) -> SteeringRule {
-    SteeringRule {
+/// Create a test Governance rule
+fn create_test_governance_rule(id: &str, description: &str) -> GovernanceRule {
+    GovernanceRule {
         id: id.to_string(),
         description: description.to_string(),
         pattern: "test_pattern".to_string(),
@@ -135,44 +135,44 @@ fn integration_test_full_spec_loading_yaml_and_markdown() {
 }
 
 // ============================================================================
-// Integration Test 2: Steering Loading and Merging (project > global > defaults)
+// Integration Test 2: Governance Loading and Merging (project > global > defaults)
 // ============================================================================
 
 #[test]
-fn integration_test_steering_loading_and_merging() {
+fn integration_test_governance_loading_and_merging() {
     let _temp_dir = TempDir::new().unwrap();
 
-    // Create global steering
-    let global_steering = Steering {
+    // Create global Governance
+    let global_governance = Governance {
         rules: vec![
-            create_test_steering_rule("rule-1", "Global rule 1"),
-            create_test_steering_rule("rule-2", "Global rule 2"),
+            create_test_governance_rule("rule-1", "Global rule 1"),
+            create_test_governance_rule("rule-2", "Global rule 2"),
         ],
         standards: vec![],
         templates: vec![],
     };
 
-    // Create project steering (overrides rule-1, adds rule-3)
-    let project_steering = Steering {
+    // Create project Governance (overrides rule-1, adds rule-3)
+    let project_governance = Governance {
         rules: vec![
-            SteeringRule {
+            GovernanceRule {
                 id: "rule-1".to_string(),
                 description: "Project rule 1 (overrides global)".to_string(),
                 pattern: "project_pattern".to_string(),
                 action: "warn".to_string(),
             },
-            create_test_steering_rule("rule-3", "Project rule 3"),
+            create_test_governance_rule("rule-3", "Project rule 3"),
         ],
         standards: vec![],
         templates: vec![],
     };
 
-    // Merge steering with project taking precedence
-    let merged = SteeringLoader::merge(&global_steering, &project_steering)
-        .expect("Failed to merge steering");
+    // Merge Governance with project taking precedence
+    let merged = GovernanceLoader::merge(&global_governance, &project_governance)
+        .expect("Failed to merge Governance");
 
     // Verify precedence: project > global
-    assert_eq!(merged.rules.len(), 3, "Merged steering should have 3 rules");
+    assert_eq!(merged.rules.len(), 3, "Merged Governance should have 3 rules");
 
     // Find rule-1 and verify it's the project version
     let rule_1 = merged
@@ -651,14 +651,14 @@ fn integration_test_spec_to_task_linking_and_traceability() {
 }
 
 // ============================================================================
-// Integration Test 9: Steering Context in AI Prompts
+// Integration Test 9: Governance Context in AI Prompts
 // ============================================================================
 
 #[test]
-fn integration_test_steering_context_in_ai_prompts() {
-    // Create global and project steering
-    let global_steering = Steering {
-        rules: vec![create_test_steering_rule(
+fn integration_test_governance_context_in_ai_prompts() {
+    // Create global and project Governance
+    let global_governance = Governance {
+        rules: vec![create_test_governance_rule(
             "global-rule-1",
             "Use Rust for core",
         )],
@@ -666,8 +666,8 @@ fn integration_test_steering_context_in_ai_prompts() {
         templates: vec![],
     };
 
-    let project_steering = Steering {
-        rules: vec![create_test_steering_rule(
+    let project_governance = Governance {
+        rules: vec![create_test_governance_rule(
             "project-rule-1",
             "Use async/await",
         )],
@@ -675,11 +675,11 @@ fn integration_test_steering_context_in_ai_prompts() {
         templates: vec![],
     };
 
-    // Merge steering with project precedence
+    // Merge Governance with project precedence
     let merged =
-        SteeringLoader::merge(&global_steering, &project_steering).expect("Should merge steering");
+        GovernanceLoader::merge(&global_governance, &project_governance).expect("Should merge Governance");
 
-    // Verify merged steering has both rules
+    // Verify merged Governance has both rules
     assert_eq!(merged.rules.len(), 2, "Should have 2 rules after merge");
 
     // Verify project rule is included
@@ -704,9 +704,9 @@ fn integration_test_steering_context_in_ai_prompts() {
         "Global rule should be included"
     );
 
-    // Simulate including steering in AI prompt
+    // Simulate including Governance in AI prompt
     let prompt_context = format!(
-        "Apply the following steering rules:\n{}",
+        "Apply the following Governance rules:\n{}",
         merged
             .rules
             .iter()

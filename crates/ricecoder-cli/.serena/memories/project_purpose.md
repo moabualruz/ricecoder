@@ -1,0 +1,1 @@
+RiceCoder (`rice`) is a terminal-first, spec-driven coding assistant that understands your project before generating code. Unlike other AI coding tools, RiceCoder follows a research-first approach-analyzing your codebase, understanding your patterns, and generating code that fits your project's style.

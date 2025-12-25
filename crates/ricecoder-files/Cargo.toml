@@ -22,6 +22,10 @@ serde_json = { workspace = true }
 tracing = { workspace = true }
 fxhash = { workspace = true }
 notify = { workspace = true }
+async-trait = { workspace = true }
+
+# Domain layer for port interfaces
+ricecoder-domain = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

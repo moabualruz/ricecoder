@@ -450,9 +450,9 @@ When adding new features:
 
 ## Related Documentation
 
-- **Requirements**: `.kiro/specs/ricecoder-lsp/requirements.md`
-- **Design**: `.kiro/specs/ricecoder-lsp/design.md`
-- **Tasks**: `.kiro/specs/ricecoder-lsp/tasks.md`
+- **Requirements**: `.ai/specs/ricecoder-lsp/requirements.md`
+- **Design**: `.ai/specs/ricecoder-lsp/design.md`
+- **Tasks**: `.ai/specs/ricecoder-lsp/tasks.md`
 - **LSP Specification**: https://microsoft.github.io/language-server-protocol/
 
 ## License

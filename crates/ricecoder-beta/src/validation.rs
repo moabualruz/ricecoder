@@ -420,7 +420,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_performance_validation() {
-        let validator = EnterpriseValidator::new();
+        let mut validator = EnterpriseValidator::new();
 
         let report = validator.validate_performance_requirements().await.unwrap();
 

@@ -143,8 +143,8 @@ defaults:
   # Default maximum tokens for LLM responses
   max_tokens: 2048
 
-# Steering rules (optional)
-# steering: []
+# Governance rules (optional)
+# Governance: []
 
 # Custom settings (optional)
 # custom: {}

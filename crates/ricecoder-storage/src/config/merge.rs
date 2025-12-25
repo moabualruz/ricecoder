@@ -168,15 +168,15 @@ impl ConfigMerger {
             }
         }
 
-        // Merge steering
-        for rule in &source.steering {
-            if !target.steering.iter().any(|r| r.name == rule.name) {
+        // Merge Governance
+        for rule in &source.Governance {
+            if !target.Governance.iter().any(|r| r.name == rule.name) {
                 decisions.push(MergeDecision {
-                    key: format!("steering.{}", rule.name),
+                    key: format!("Governance.{}", rule.name),
                     source: source_name.to_string(),
                     value: format!("{} bytes", rule.content.len()),
                 });
-                target.steering.push(rule.clone());
+                target.Governance.push(rule.clone());
             }
         }
 

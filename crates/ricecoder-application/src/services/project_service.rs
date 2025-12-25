@@ -2,7 +2,7 @@
 //!
 //! Orchestrates project-related use cases using domain aggregates and services.
 //!
-//! REQ-APP-010: ProjectService
+//! ProjectService
 //! AC-3.1.1: Stateless and reusable across requests
 //! AC-3.1.2: Depends only on repository abstractions
 //! AC-3.1.3: Defines transaction boundaries

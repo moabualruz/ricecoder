@@ -196,7 +196,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0348a1c054491f4bfe6ab86a7b6ab1e44e45d899005de92f58b3df180b36ddaf"
 dependencies = [
  "clipboard-win",
- "image 0.25.9",
+ "image",
  "log",
  "objc2",
  "objc2-app-kit",
@@ -2467,16 +2467,6 @@ dependencies = [
 
 [[package]]
 name = "gif"
-version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ae047235e33e2829703574b54fdec96bfbad892062d97fed2f76022287de61b"
-dependencies = [
- "color_quant",
- "weezl",
-]
-
-[[package]]
-name = "gif"
 version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f5df2ba84018d80c213569363bdcd0c64e6933c67fe4c1d60ecf822971a3c35e"
@@ -3115,24 +3105,6 @@ dependencies = [
 
 [[package]]
 name = "image"
-version = "0.24.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5690139d2f55868e080017335e4b94cb7414274c74f1669c84fb5feba2c9f69d"
-dependencies = [
- "bytemuck",
- "byteorder",
- "color_quant",
- "exr",
- "gif 0.13.3",
- "jpeg-decoder",
- "num-traits",
- "png 0.17.16",
- "qoi",
- "tiff 0.9.1",
-]
-
-[[package]]
-name = "image"
 version = "0.25.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6506c6c10786659413faa717ceebcb8f70731c0a60cbae39795fdf114519c1a"
@@ -3150,7 +3122,7 @@ dependencies = [
  "ravif",
  "rayon",
  "rgb",
- "tiff 0.10.3",
+ "tiff",
  "zune-core 0.5.0",
  "zune-jpeg 0.5.7",
 ]
@@ -3407,9 +3379,6 @@ name = "jpeg-decoder"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "00810f1d8b74be64b13dbf3db89ac67740615d6c891f0e7b6179326533011a07"
-dependencies = [
- "rayon",
-]
 
 [[package]]
 name = "js-sys"
@@ -5586,7 +5555,7 @@ checksum = "3ecc67e9f7d0ac69e0f712f58b1a9d5a04d8daeeb3628f4d6b67580abb88b7cb"
 dependencies = [
  "base64-simd",
  "icy_sixel",
- "image 0.25.9",
+ "image",
  "rand 0.8.5",
  "ratatui 0.29.0",
  "rustix 0.38.44",
@@ -6118,6 +6087,7 @@ dependencies = [
  "async-trait",
  "chrono",
  "criterion",
+ "flate2",
  "proptest",
  "ricecoder-domain",
  "serde",
@@ -6287,6 +6257,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "chrono",
+ "futures-core",
  "mime_guess",
  "proptest",
  "proptest-derive",
@@ -6376,11 +6347,13 @@ dependencies = [
 name = "ricecoder-files"
 version = "0.1.72"
 dependencies = [
+ "async-trait",
  "chrono",
  "fxhash",
  "git2",
  "notify",
  "proptest",
+ "ricecoder-domain",
  "serde",
  "serde_json",
  "sha2",
@@ -6510,7 +6483,7 @@ version = "0.1.72"
 dependencies = [
  "async-trait",
  "chrono",
- "image 0.24.9",
+ "image",
  "proptest",
  "resvg",
  "ricecoder-files",
@@ -6890,13 +6863,29 @@ name = "ricecoder-permissions"
 version = "0.1.72"
 dependencies = [
  "chrono",
- "criterion",
  "glob",
  "proptest",
  "serde",
  "serde_json",
  "tempfile",
  "thiserror 1.0.69",
+ "tokio-test",
+ "uuid",
+]
+
+[[package]]
+name = "ricecoder-persistence"
+version = "0.1.72"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "parking_lot",
+ "proptest",
+ "ricecoder-domain",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tokio",
  "tokio-test",
  "uuid",
 ]
@@ -6916,6 +6905,7 @@ dependencies = [
  "rand 0.8.5",
  "regex",
  "reqwest 0.11.27",
+ "ricecoder-domain",
  "ricecoder-storage",
  "serde",
  "serde_json",
@@ -7182,7 +7172,7 @@ dependencies = [
  "ctrlc",
  "dirs",
  "futures",
- "image 0.24.9",
+ "image",
  "lazy_static",
  "notify",
  "proptest",
@@ -9064,17 +9054,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f60246a4944f24f6e018aa17cdeffb7818b76356965d03b07d6a9886e8962185"
 dependencies = [
  "cfg-if",
-]
-
-[[package]]
-name = "tiff"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba1310fcea54c6a9a4fd1aad794ecc02c31682f6bfbecdf460bf19533eed1e3e"
-dependencies = [
- "flate2",
- "jpeg-decoder",
- "weezl",
 ]
 
 [[package]]

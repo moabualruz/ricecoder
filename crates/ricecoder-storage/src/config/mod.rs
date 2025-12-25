@@ -32,9 +32,9 @@ pub struct Config {
     pub providers: ProvidersConfig,
     /// Default settings
     pub defaults: DefaultsConfig,
-    /// Steering rules
+    /// Governance rules
     #[serde(default)]
-    pub steering: Vec<SteeringRule>,
+    pub Governance: Vec<GovernanceRule>,
     /// TUI-specific configuration
     #[serde(default)]
     pub tui: TuiConfig,
@@ -67,9 +67,9 @@ pub struct DefaultsConfig {
     pub max_tokens: Option<u32>,
 }
 
-/// Steering rule
+/// Governance rule
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct SteeringRule {
+pub struct GovernanceRule {
     /// Rule name
     pub name: String,
     /// Rule content
@@ -150,7 +150,7 @@ impl Default for Config {
                 temperature: None,
                 max_tokens: None,
             },
-            steering: Vec::new(),
+            Governance: Vec::new(),
             tui: TuiConfig::default(),
             custom: HashMap::new(),
         }

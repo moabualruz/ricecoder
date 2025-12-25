@@ -1,6 +1,6 @@
 //! Specification aggregate domain events
 //!
-//! REQ-DOMAIN-003.5: Specification aggregate events
+//! Specification aggregate events
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

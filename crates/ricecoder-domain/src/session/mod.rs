@@ -1,6 +1,6 @@
 //! Session Aggregate Root
 //!
-//! REQ-DOMAIN-002: Session aggregate with full DDD compliance
+//! Session aggregate with full DDD compliance
 //! - Aggregate root with encapsulated message entities
 //! - Invariant enforcement (state machine, message limits)
 //! - Domain event emission
@@ -39,6 +39,9 @@ pub struct Session {
 
     /// Last update timestamp
     updated_at: DateTime<Utc>,
+
+    /// Version for optimistic concurrency control
+    version: u64,
 }
 
 /// Session lifecycle states
@@ -85,6 +88,21 @@ impl Message {
         }
     }
 
+    /// Reconstitute message from persistence
+    pub fn reconstitute(
+        id: String,
+        content: String,
+        role: MessageRole,
+        created_at: DateTime<Utc>,
+    ) -> Self {
+        Self {
+            id,
+            content,
+            role,
+            created_at,
+        }
+    }
+
     /// Get message ID
     pub fn id(&self) -> &str {
         &self.id
@@ -122,7 +140,7 @@ impl Session {
         project_id: ProjectId,
         max_messages: usize,
     ) -> DomainResult<(Self, Vec<Box<dyn DomainEvent>>)> {
-        // REQ-DOMAIN-002.2: Enforce immutable SessionId
+        // Enforce immutable SessionId
         let id = SessionId::new();
         let now = Utc::now();
 
@@ -134,9 +152,10 @@ impl Session {
             max_messages,
             created_at: now,
             updated_at: now,
+            version: 1,
         };
 
-        // REQ-DOMAIN-002.6: Emit domain events
+        // Emit domain events
         let event = SessionStarted::new(
             id.as_uuid(),
             format!("Session for project {}", project_id.to_string()),
@@ -147,26 +166,52 @@ impl Session {
         Ok((session, events))
     }
 
+    /// Reconstitute a session from persistence
+    ///
+    /// Bypasses validation since data was validated during original creation.
+    #[allow(clippy::too_many_arguments)]
+    pub fn reconstitute(
+        id: SessionId,
+        project_id: ProjectId,
+        messages: Vec<Message>,
+        state: SessionState,
+        max_messages: usize,
+        created_at: DateTime<Utc>,
+        updated_at: DateTime<Utc>,
+        version: u64,
+    ) -> Self {
+        Self {
+            id,
+            project_id,
+            messages,
+            state,
+            max_messages,
+            created_at,
+            updated_at,
+            version,
+        }
+    }
+
     /// Add message to session
     ///
     /// # Invariants
-    /// - Session must be in Active state (REQ-DOMAIN-002.9)
-    /// - Message count must not exceed limit (REQ-DOMAIN-002.7)
-    /// - Updates timestamp on success (REQ-DOMAIN-002.5)
-    /// - Emits MessageAdded event (REQ-DOMAIN-002.6)
+    /// - Session must be in Active state
+    /// - Message count must not exceed limit
+    /// - Updates timestamp on success
+    /// - Emits MessageAdded event
     pub fn add_message(
         &mut self,
         content: String,
         role: MessageRole,
     ) -> DomainResult<Vec<Box<dyn DomainEvent>>> {
-        // REQ-DOMAIN-002.9: Enforce active state only
+        // Enforce active state only
         if self.state != SessionState::Active {
             return Err(DomainError::BusinessRuleViolation {
                 rule: format!("Cannot add message to {:?} session", self.state),
             });
         }
 
-        // REQ-DOMAIN-002.7: Enforce message limit
+        // Enforce message limit
         if self.messages.len() >= self.max_messages {
             return Err(DomainError::BusinessRuleViolation {
                 rule: format!("Session message limit reached: {}", self.max_messages),
@@ -179,8 +224,9 @@ impl Session {
 
         self.messages.push(message);
         self.updated_at = Utc::now();
+        self.version += 1;
 
-        // REQ-DOMAIN-002.6: Emit domain event
+        // Emit domain event
         let role_str = match role {
             MessageRole::User => "user".to_string(),
             MessageRole::Assistant => "assistant".to_string(),
@@ -203,6 +249,7 @@ impl Session {
 
         self.state = SessionState::Paused;
         self.updated_at = Utc::now();
+        self.version += 1;
 
         let event = SessionPaused::new(self.id.as_uuid());
         Ok(vec![Box::new(event)])
@@ -221,6 +268,7 @@ impl Session {
 
         self.state = SessionState::Active;
         self.updated_at = Utc::now();
+        self.version += 1;
 
         let event = SessionResumed::new(self.id.as_uuid());
         Ok(vec![Box::new(event)])
@@ -239,6 +287,7 @@ impl Session {
 
         self.state = SessionState::Completed;
         self.updated_at = Utc::now();
+        self.version += 1;
 
         let event = SessionCompleted::new(self.id.as_uuid(), self.messages.len());
         Ok(vec![Box::new(event)])
@@ -257,12 +306,13 @@ impl Session {
 
         self.state = SessionState::Archived;
         self.updated_at = Utc::now();
+        self.version += 1;
 
         let event = SessionArchived::new(self.id.as_uuid());
         Ok(vec![Box::new(event)])
     }
 
-    // === Getters (REQ-DOMAIN-002: Prevent direct access) ===
+    // === Getters (Prevent direct access) ===
 
     pub fn id(&self) -> SessionId {
         self.id
@@ -310,6 +360,11 @@ impl Session {
 
     pub fn is_archived(&self) -> bool {
         self.state == SessionState::Archived
+    }
+
+    /// Get version for optimistic concurrency control
+    pub fn version(&self) -> u64 {
+        self.version
     }
 }
 

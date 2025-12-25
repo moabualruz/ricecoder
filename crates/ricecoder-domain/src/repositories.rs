@@ -1,10 +1,19 @@
 //! Repository interfaces for data persistence
 //!
-//! REQ-ARCH-001.4: Infrastructure implements domain interfaces
+//! Infrastructure implements domain interfaces
 //!
 //! These interfaces define the contracts for data access.
 //! Implementations will be provided by infrastructure crates.
 //! The domain layer defines only interfaces (traits), no concrete implementations.
+//!
+//! ## ISP Compliance
+//!
+//! Following Interface Segregation Principle (ISP), repositories are split into
+//! role-specific traits with ≤5 methods each:
+//!
+//! - **Reader traits**: Read-only operations (find, exists)
+//! - **Writer traits**: Write operations (save, delete)
+//! - **Combined traits**: Convenience trait combining reader + writer
 
 use async_trait::async_trait;
 
@@ -54,14 +63,15 @@ pub trait SessionRepository {
     async fn delete(&self, id: &SessionId) -> DomainResult<()>;
 }
 
-/// Repository for specification entities
-///
-/// REQ-ARCH-001.4: Infrastructure implements domain interfaces
-#[async_trait]
-pub trait SpecificationRepository {
-    /// Save a specification
-    async fn save(&self, specification: &Specification) -> DomainResult<()>;
+// ============================================================================
+// Specification Repository (ISP-Compliant Split)
+// ============================================================================
 
+/// Read-only operations for specifications (ISP: 5 methods max)
+///
+/// Infrastructure implements domain interfaces
+#[async_trait]
+pub trait SpecificationReader: Send + Sync {
     /// Find specification by ID
     async fn find_by_id(&self, id: &SpecificationId) -> DomainResult<Option<Specification>>;
 
@@ -71,18 +81,35 @@ pub trait SpecificationRepository {
     /// Find all specifications
     async fn find_all(&self) -> DomainResult<Vec<Specification>>;
 
-    /// Delete specification by ID
-    async fn delete(&self, id: &SpecificationId) -> DomainResult<()>;
-
     /// Check if specification exists
     async fn exists(&self, id: &SpecificationId) -> DomainResult<bool>;
 
     /// List specifications by status
-    async fn find_by_status(
-        &self,
-        status: crate::specification::SpecStatus,
-    ) -> DomainResult<Vec<Specification>>;
+    async fn find_by_status(&self, status: SpecStatus) -> DomainResult<Vec<Specification>>;
 }
+
+/// Write operations for specifications (ISP: 2 methods)
+///
+///  Infrastructure implements domain interfaces
+#[async_trait]
+pub trait SpecificationWriter: Send + Sync {
+    /// Save a specification
+    async fn save(&self, specification: &Specification) -> DomainResult<()>;
+
+    /// Delete specification by ID
+    async fn delete(&self, id: &SpecificationId) -> DomainResult<()>;
+}
+
+/// Combined specification repository (Reader + Writer)
+///
+/// Clients that need both read and write operations can depend on this trait.
+/// Clients that only need read operations should depend on `SpecificationReader`.
+///
+/// Infrastructure implements domain interfaces
+pub trait SpecificationRepository: SpecificationReader + SpecificationWriter {}
+
+/// Blanket implementation: Any type implementing Reader + Writer gets Repository
+impl<T: SpecificationReader + SpecificationWriter> SpecificationRepository for T {}
 
 
 

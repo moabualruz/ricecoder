@@ -42,7 +42,7 @@ impl ProjectStore {
     /// - templates/
     /// - standards/
     /// - specs/
-    /// - steering/
+    /// - Governance/
     /// - boilerplates/
     /// - rules/
     /// - history/
@@ -56,7 +56,7 @@ impl ProjectStore {
             ResourceType::Template,
             ResourceType::Standard,
             ResourceType::Spec,
-            ResourceType::Steering,
+            ResourceType::Governance,
             ResourceType::Boilerplate,
             ResourceType::Rule,
         ] {
@@ -204,7 +204,7 @@ mod tests {
         assert!(store.resource_path(ResourceType::Template).exists());
         assert!(store.resource_path(ResourceType::Standard).exists());
         assert!(store.resource_path(ResourceType::Spec).exists());
-        assert!(store.resource_path(ResourceType::Steering).exists());
+        assert!(store.resource_path(ResourceType::Governance).exists());
         assert!(store.resource_path(ResourceType::Boilerplate).exists());
         assert!(store.resource_path(ResourceType::Rule).exists());
         assert!(temp_dir.path().join("history").exists());

@@ -342,6 +342,6 @@ git push origin v0.1.72
 
 ## Full Guide
 
-See `.kiro/specs/ricecoder-advanced/docs/CARGO_PUBLISHING_GUIDE.md` for complete documentation.
+See `.ai/specs/ricecoder-advanced/docs/CARGO_PUBLISHING_GUIDE.md` for complete documentation.
 
 See `scripts/README.md` for detailed script documentation.

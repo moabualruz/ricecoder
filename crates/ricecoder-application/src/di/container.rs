@@ -1,6 +1,6 @@
 //! Service Container Implementation
 //!
-//! REQ-ARCH-003: DI Container with three lifetime semantics
+//! DI Container with three lifetime semantics
 
 use std::any::{Any, TypeId};
 use std::collections::HashMap;

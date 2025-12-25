@@ -240,7 +240,7 @@ impl TeamConfigManager {
             team_id: "merged".to_string(),
             code_review_rules: Vec::new(),
             templates: Vec::new(),
-            steering_docs: Vec::new(),
+            governance_docs: Vec::new(),
             compliance_requirements: Vec::new(),
             version: 1,
             created_at: Utc::now(),
@@ -251,7 +251,7 @@ impl TeamConfigManager {
         if let Some(team) = team_standards {
             merged.code_review_rules.extend(team.code_review_rules);
             merged.templates.extend(team.templates);
-            merged.steering_docs.extend(team.steering_docs);
+            merged.governance_docs.extend(team.governance_docs);
             merged
                 .compliance_requirements
                 .extend(team.compliance_requirements);
@@ -263,7 +263,7 @@ impl TeamConfigManager {
         if let Some(project) = project_standards {
             merged.code_review_rules.extend(project.code_review_rules);
             merged.templates.extend(project.templates);
-            merged.steering_docs.extend(project.steering_docs);
+            merged.governance_docs.extend(project.governance_docs);
             merged
                 .compliance_requirements
                 .extend(project.compliance_requirements);

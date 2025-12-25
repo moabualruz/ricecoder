@@ -21,11 +21,6 @@ thiserror = { workspace = true }
 proptest = { workspace = true }
 tokio-test = { workspace = true }
 tempfile = { workspace = true }
-criterion = { workspace = true, features = ["html_reports"] }
-
-[[bench]]
-name = "performance_benchmarks"
-harness = false
 
 
 

@@ -68,12 +68,13 @@ pub struct SecurityAdvisory {
 }
 
 /// Security severity levels
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "lowercase")]
 pub enum SecuritySeverity {
     /// Low severity
     Low,
     /// Medium severity
+    #[default]
     Medium,
     /// High severity
     High,
@@ -250,7 +251,7 @@ pub struct SecurityIncident {
 }
 
 /// Update policy configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct UpdatePolicyConfig {
     /// Whether automatic updates are enabled
     pub auto_update_enabled: bool,
@@ -269,7 +270,7 @@ pub struct UpdatePolicyConfig {
 }
 
 /// Security requirements for updates
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct SecurityRequirements {
     /// Require signature verification
     pub require_signature: bool,
@@ -282,7 +283,7 @@ pub struct SecurityRequirements {
 }
 
 /// Enterprise-specific update settings
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct EnterpriseSettings {
     /// Organization ID
     pub organization_id: String,

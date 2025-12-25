@@ -17,7 +17,7 @@ pub mod manager;
 pub mod models;
 pub mod parsers;
 pub mod query;
-pub mod steering;
+pub mod governance;
 pub mod validation;
 pub mod workflow;
 
@@ -32,6 +32,6 @@ pub use inheritance::SpecInheritanceResolver;
 pub use manager::SpecManager;
 pub use models::*;
 pub use query::SpecQueryEngine;
-pub use steering::SteeringLoader;
+pub use governance::GovernanceLoader;
 pub use validation::ValidationEngine;
 pub use workflow::WorkflowOrchestrator;

@@ -2,7 +2,7 @@
 //!
 //! Orchestrates session-related use cases using domain aggregates.
 //!
-//! REQ-APP-020: SessionService
+//! SessionService
 //! AC-3.2.1: Stateless and reusable across requests
 //! AC-3.2.2: Depends only on repository abstractions
 //! AC-3.2.3: Manages transaction boundaries for multi-step operations

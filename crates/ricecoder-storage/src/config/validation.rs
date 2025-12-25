@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 
-use jsonschema::Validator;
+use jsonschema::JSONSchema;
 use serde_json::Value;
 
 use crate::{
@@ -31,7 +31,7 @@ impl std::error::Error for ValidationError {}
 
 /// Configuration validator with schema support
 pub struct ConfigValidator {
-    schemas: HashMap<String, Validator>,
+    schemas: HashMap<String, JSONSchema>,
 }
 
 impl ConfigValidator {
@@ -45,7 +45,7 @@ impl ConfigValidator {
     /// Add a JSON schema for validation
     pub fn add_schema(&mut self, name: String, schema: Value) -> StorageResult<()> {
         let compiled_schema =
-            jsonschema::validator_for(&schema).map_err(|e| StorageError::ConfigValidation {
+            JSONSchema::compile(&schema).map_err(|e| StorageError::ConfigValidation {
                 errors: vec![format!("Invalid schema '{}': {}", name, e)],
             })?;
         self.schemas.insert(name, compiled_schema);
@@ -62,9 +62,9 @@ impl ConfigValidator {
         let defaults_schema = Self::get_defaults_schema();
         self.add_schema("defaults".to_string(), defaults_schema)?;
 
-        // Load steering schema
-        let steering_schema = Self::get_steering_schema();
-        self.add_schema("steering".to_string(), steering_schema)?;
+        // Load Governance schema
+        let governance_schema = Self::get_governance_schema();
+        self.add_schema("Governance".to_string(), governance_schema)?;
 
         Ok(())
     }
@@ -78,8 +78,16 @@ impl ConfigValidator {
             let providers_value = serde_json::to_value(&config.providers).map_err(|e| {
                 StorageError::Internal(format!("Failed to serialize providers: {}", e))
             })?;
-            if let Err(validation_error) = schema.validate(&providers_value) {
-                errors.push(format!("providers validation failed: {}", validation_error));
+            if !schema.is_valid(&providers_value) {
+                let validation_errors: Vec<String> = schema
+                    .validate(&providers_value)
+                    .err()
+                    .map(|errs| errs.map(|e| e.to_string()).collect())
+                    .unwrap_or_default();
+                errors.push(format!(
+                    "providers validation failed: {}",
+                    validation_errors.join(", ")
+                ));
             }
         }
 
@@ -88,18 +96,34 @@ impl ConfigValidator {
             let defaults_value = serde_json::to_value(&config.defaults).map_err(|e| {
                 StorageError::Internal(format!("Failed to serialize defaults: {}", e))
             })?;
-            if let Err(validation_error) = schema.validate(&defaults_value) {
-                errors.push(format!("defaults validation failed: {}", validation_error));
+            if !schema.is_valid(&defaults_value) {
+                let validation_errors: Vec<String> = schema
+                    .validate(&defaults_value)
+                    .err()
+                    .map(|errs| errs.map(|e| e.to_string()).collect())
+                    .unwrap_or_default();
+                errors.push(format!(
+                    "defaults validation failed: {}",
+                    validation_errors.join(", ")
+                ));
             }
         }
 
-        // Validate steering rules
-        if let Some(schema) = self.schemas.get("steering") {
-            let steering_value = serde_json::to_value(&config.steering).map_err(|e| {
-                StorageError::Internal(format!("Failed to serialize steering: {}", e))
+        // Validate Governance rules
+        if let Some(schema) = self.schemas.get("Governance") {
+            let governance_value = serde_json::to_value(&config.Governance).map_err(|e| {
+                StorageError::Internal(format!("Failed to serialize Governance: {}", e))
             })?;
-            if let Err(validation_error) = schema.validate(&steering_value) {
-                errors.push(format!("steering validation failed: {}", validation_error));
+            if !schema.is_valid(&governance_value) {
+                let validation_errors: Vec<String> = schema
+                    .validate(&governance_value)
+                    .err()
+                    .map(|errs| errs.map(|e| e.to_string()).collect())
+                    .unwrap_or_default();
+                errors.push(format!(
+                    "Governance validation failed: {}",
+                    validation_errors.join(", ")
+                ));
             }
         }
 
@@ -185,8 +209,8 @@ impl ConfigValidator {
         })
     }
 
-    /// Get JSON schema for steering rules
-    fn get_steering_schema() -> Value {
+    /// Get JSON schema for Governance rules
+    fn get_governance_schema() -> Value {
         serde_json::json!({
             "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "array",

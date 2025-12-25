@@ -3,7 +3,7 @@
 //! Domain services are stateless and implement complex domain logic that spans multiple aggregates.
 //! They operate on aggregates and value objects, returning domain results.
 //!
-//! REQ-ARCH-001.3: Domain services are stateless and coordinate aggregate operations
+//! Domain services are stateless and coordinate aggregate operations
 
 use serde::{Deserialize, Serialize};
 
@@ -62,7 +62,7 @@ impl ValidationResult {
 
 /// Domain validation service - stateless validation logic for aggregates
 ///
-/// REQ-ARCH-001.3: Domain services are stateless and coordinate aggregate operations
+/// Domain services are stateless and coordinate aggregate operations
 pub struct ValidationService;
 
 impl ValidationService {
@@ -161,7 +161,7 @@ impl ValidationService {
 
 /// Domain analysis service - stateless analysis logic
 ///
-/// REQ-ARCH-001.3: Provides analysis operations without external dependencies
+/// Provides analysis operations without external dependencies
 pub struct AnalysisService;
 
 impl AnalysisService {

@@ -1,6 +1,6 @@
 //! Scoped Container Implementation
 //!
-//! REQ-ARCH-003: Scoped lifetime - created once per scope (request/session)
+//! Scoped lifetime - created once per scope (request/session)
 
 use std::any::{Any, TypeId};
 use std::collections::HashMap;

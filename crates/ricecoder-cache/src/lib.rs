@@ -11,14 +11,17 @@
 //! - **Async operations**: Full async/await support
 //! - **Generic data types**: Support for any serializable data
 //! - **Cache hierarchies**: L1/L2/L3 cache configurations
+//! - **Compression**: Optional gzip compression for cache entries
 
 pub mod cache;
+pub mod compression;
 pub mod error;
 pub mod metrics;
 pub mod storage;
 pub mod strategy;
 
 pub use cache::{Cache, CacheBuilder, CacheConfig};
+pub use compression::{CacheCompressor, CompressedData, CompressionLevel, CompressionStats};
 pub use error::CacheError;
 pub use metrics::{CacheMetrics, CacheStats};
 pub use storage::{CacheEntry, CacheStorage, DiskStorage, MemoryStorage};

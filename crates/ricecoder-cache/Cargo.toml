@@ -22,6 +22,9 @@ thiserror = { workspace = true }
 # Async traits
 async-trait = { workspace = true }
 
+# Compression
+flate2 = { workspace = true }
+
 # Domain dependencies
 ricecoder-domain = { workspace = true }
 

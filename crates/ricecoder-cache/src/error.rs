@@ -34,6 +34,9 @@ pub enum CacheError {
 
     #[error("Lock acquisition failed")]
     LockError,
+
+    #[error("Compression error: {message}")]
+    Compression { message: String },
 }
 
 /// Re-export commonly used Result type

@@ -68,7 +68,7 @@ pub struct UserFeedback {
 }
 
 /// Status of feedback
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FeedbackStatus {
     Open,
     InReview,

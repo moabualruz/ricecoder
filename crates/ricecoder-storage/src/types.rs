@@ -37,8 +37,8 @@ pub enum ResourceType {
     Standard,
     /// Specification documents
     Spec,
-    /// Steering documents (project rules)
-    Steering,
+    /// Governance documents (project rules)
+    Governance,
     /// Boilerplate projects
     Boilerplate,
     /// Learned rules from the learning system
@@ -62,7 +62,7 @@ impl ResourceType {
             ResourceType::Template => "templates",
             ResourceType::Standard => "standards",
             ResourceType::Spec => "specs",
-            ResourceType::Steering => "steering",
+            ResourceType::Governance => "Governance",
             ResourceType::Boilerplate => "boilerplates",
             ResourceType::Rule => "rules",
             ResourceType::CustomCommand => "commands",
@@ -110,7 +110,7 @@ impl ConfigFormat {
     }
 }
 
-/// Document format for steering and specs
+/// Document format for Governance and specs
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DocumentFormat {
     /// YAML format

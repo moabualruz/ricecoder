@@ -1,6 +1,6 @@
 //! Session aggregate domain events
 //!
-//! REQ-DOMAIN-002.5: Session aggregate events
+//! Session aggregate events
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

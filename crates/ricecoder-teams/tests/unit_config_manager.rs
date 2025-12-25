@@ -3,7 +3,7 @@ use chrono::Utc;
 /// Tests configuration storage, retrieval, hierarchy merging, and override capability
 use ricecoder_teams::config::TeamConfigManager;
 use ricecoder_teams::models::{
-    CodeReviewRule, ComplianceRequirement, StandardsOverride, SteeringDoc, TeamStandards, Template,
+    CodeReviewRule, ComplianceRequirement, StandardsOverride, GovernanceDoc, TeamStandards, Template,
 };
 
 /// Helper function to create test standards
@@ -23,7 +23,7 @@ fn create_test_standards(team_id: &str, version: u32) -> TeamStandards {
             description: "A test template".to_string(),
             content: "template content".to_string(),
         }],
-        steering_docs: vec![SteeringDoc {
+        governance_docs: vec![GovernanceDoc {
             id: "doc-1".to_string(),
             name: "Test Doc".to_string(),
             content: "doc content".to_string(),
@@ -353,7 +353,7 @@ async fn test_merge_standards_hierarchy_consistency() {
 
     // Verify all content types are preserved
     assert_eq!(merged.templates.len(), 3);
-    assert_eq!(merged.steering_docs.len(), 3);
+    assert_eq!(merged.governance_docs.len(), 3);
     assert_eq!(merged.compliance_requirements.len(), 3);
 }
 
@@ -383,7 +383,7 @@ async fn test_standards_serialization_roundtrip() {
         retrieved.code_review_rules.len()
     );
     assert_eq!(original.templates.len(), retrieved.templates.len());
-    assert_eq!(original.steering_docs.len(), retrieved.steering_docs.len());
+    assert_eq!(original.governance_docs.len(), retrieved.governance_docs.len());
     assert_eq!(
         original.compliance_requirements.len(),
         retrieved.compliance_requirements.len()
