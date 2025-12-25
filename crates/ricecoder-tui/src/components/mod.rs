@@ -9,6 +9,8 @@ pub mod split_view;
 pub mod tabs;
 pub mod vim;
 pub mod messaging;
+pub mod input_area;
+pub mod tool_output;
 
 use std::collections::HashMap;
 
@@ -284,3 +286,5 @@ pub use dialog::{DialogWidget, DialogType, DialogResult};
 pub use split_view::{SplitViewWidget, SplitDirection};
 pub use tabs::TabWidget;
 pub use vim::{VimKeybindings, VimMode};
+pub use input_area::InputArea;
+pub use tool_output::{ToolOutput, ToolResult};

@@ -188,6 +188,29 @@ cargo test -p ricecoder-providers curation
 - **Health Checks**: < 200ms per provider status check
 - **Token Counting**: < 5ms for typical message lengths
 
+## Recent Changes
+
+### SRP Refactoring (December 2024)
+
+**HTTP Client Injection**: Removed direct `reqwest::Client` construction, now injected via DI container following Dependency Inversion Principle.
+
+**Changes**:
+- HTTP client now created by `ricecoder-di` container and injected into providers
+- Enables centralized HTTP configuration (timeouts, retries, TLS)
+- Simplifies testing with mock HTTP clients
+- Consistent HTTP behavior across all providers
+
+**Migration**: Provider constructors now accept `Arc<reqwest::Client>` parameter. Legacy constructors with default clients available for backward compatibility.
+
+```rust
+// New pattern (DI-injected)
+let client = container.resolve::<Arc<reqwest::Client>>()?;
+let provider = OpenAIProvider::with_client(config, client);
+
+// Legacy pattern (still supported)
+let provider = OpenAIProvider::new(config)?;
+```
+
 ## Contributing
 
 When working with `ricecoder-providers`:

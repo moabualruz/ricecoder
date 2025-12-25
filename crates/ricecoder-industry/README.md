@@ -50,6 +50,25 @@ let auth = EnterpriseAuth::new(OAuthProvider::Okta, config)?;
 let token = auth.authenticate(credentials).await?;
 ```
 
+## Recent Changes
+
+### SRP Refactoring (December 2024)
+
+**EnterpriseProvider Trait Split**: Separated enterprise provider concerns following Interface Segregation Principle.
+
+**New Traits**:
+- `AuthenticationProvider`: OAuth/SAML authentication operations
+- `ComplianceProvider`: Industry compliance checks (HIPAA, SOC 2, GDPR)
+- `ConnectionProvider`: Enterprise connection management
+
+**Changes**:
+- `EnterpriseAuth` now implements 3 focused traits
+- Cleaner separation between auth, compliance, and connection concerns
+- Easier to implement custom enterprise providers
+- No breaking changes to high-level API
+
+**Migration**: Use specific traits for focused dependencies. Existing `EnterpriseAuth` API remains stable.
+
 ## License
 
 MIT

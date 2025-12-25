@@ -373,6 +373,42 @@ cargo test --features full  # Test with all optional services
 cargo bench  # Run performance benchmarks
 ```
 
+## Recent Changes
+
+### SRP Refactoring (December 2024)
+
+**ServiceProvider and Factory-Return Pattern**: Introduced cleaner DI patterns following industry best practices.
+
+**New Patterns**:
+- **ServiceProvider trait**: Unified interface for service creation and lifecycle
+- **Factory-return pattern**: Factories return concrete types, container handles wrapping in `Arc`
+- **Centralized HTTP client**: Single `reqwest::Client` instance configured and shared via DI
+
+**Changes**:
+- Registration now uses `Arc::new(T)` internally, factories return `T` directly
+- HTTP client registered as singleton in container
+- All providers and services receive injected dependencies
+- Cleaner separation between factory logic and lifetime management
+
+**Migration**:
+```rust
+// Old pattern (manual Arc wrapping)
+container.register(|_| {
+    Ok(Arc::new(MyService::new()))
+})?;
+
+// New pattern (factory returns bare type)
+container.register(|_| {
+    Ok(MyService::new())  // Container wraps in Arc
+})?;
+```
+
+**Benefits**:
+- Reduced boilerplate in registration code
+- Consistent lifetime management
+- Easier to refactor service constructors
+- Better alignment with industry DI patterns
+
 ## Examples
 
 See `src/usage.rs` for detailed usage examples and patterns.

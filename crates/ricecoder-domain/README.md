@@ -229,6 +229,20 @@ result.complete(serde_json::json!({"score": 8.5}), metrics);
 - Cache expensive computations
 - Profile performance-critical operations
 
+## Recent Changes
+
+### SRP Refactoring (December 2024)
+
+**Enriched Entities**: Migrated business logic from services into domain entities following Rich Domain Model pattern. Entities now encapsulate behavior and invariants directly.
+
+**Changes**:
+- `Project`, `Session`, `CodeFile` entities enriched with methods previously in service layer
+- Value objects now validate invariants at construction time
+- Domain events added for state transitions
+- Repository interfaces remain stable (no breaking changes)
+
+**Migration**: Services now orchestrate entity operations rather than implementing business logic. Entity methods are self-contained and testable in isolation.
+
 ## Related Crates
 
 - **ricecoder-storage**: Implements repository interfaces

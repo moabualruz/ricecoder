@@ -312,6 +312,26 @@ When working with `ricecoder-vcs`:
 4. **Compatibility**: Support various Git configurations and workflows
 5. **Testing**: Test with different repository states and Git configurations
 
+## Recent Changes
+
+### SRP Refactoring (December 2024)
+
+**ISP Trait Split**: Split the monolithic `Repository` trait into focused, single-responsibility interfaces following the Interface Segregation Principle.
+
+**New Traits**:
+- `RepositoryInfo`: Basic repository information (root path, branch detection)
+- `StatusProvider`: File and branch status queries
+- `DiffProvider`: Diff generation operations
+- `StagingOperations`: File staging and unstaging
+
+**Changes**:
+- `GitRepository` now implements 4 focused traits instead of 1 large trait
+- Clients depend only on the traits they need
+- Easier to mock and test individual capabilities
+- No breaking changes to existing `Repository` trait (still available as supertrait)
+
+**Migration**: Use specific traits (`StatusProvider`, `DiffProvider`, etc.) for fine-grained dependencies. Legacy code using `Repository` trait continues to work unchanged.
+
 ## Architecture
 
 The crate follows a layered architecture:

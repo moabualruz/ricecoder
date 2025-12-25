@@ -118,6 +118,7 @@ pub use components::{
     FocusDirection,
     FocusEvent,
     FocusResult,
+    InputArea,
     InputEvent,
     KeyboardEvent,
     ListWidget,
