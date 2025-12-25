@@ -5,6 +5,7 @@
 
 pub mod agent;
 pub mod audit;
+pub mod di;
 pub mod error;
 pub mod glob_matcher;
 pub mod permission;

@@ -27,6 +27,10 @@ async-trait = { workspace = true }
 # Domain layer for port interfaces
 ricecoder-domain = { workspace = true }
 
+# DI registration (via ricecoder-common to avoid circular deps)
+ricecoder-common = { workspace = true }
+inventory = { workspace = true }
+
 [dev-dependencies]
 proptest = { workspace = true }
 tokio-test = { workspace = true }

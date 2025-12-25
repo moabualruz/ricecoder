@@ -27,6 +27,10 @@ tracing = { workspace = true }
 chrono = { workspace = true }
 serde_json = { workspace = true }
 
+# DI registration (via ricecoder-common to avoid circular deps)
+ricecoder-common = { workspace = true }
+inventory = { workspace = true }
+
 [dev-dependencies]
 proptest = { workspace = true }
 tokio-test = { workspace = true }

@@ -12,6 +12,7 @@
 pub mod access;
 pub mod analytics;
 pub mod config;
+pub mod di;
 pub mod error;
 pub mod manager;
 pub mod models;

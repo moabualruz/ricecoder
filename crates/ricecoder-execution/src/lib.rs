@@ -7,6 +7,7 @@
 
 pub mod approval;
 pub mod approval_ui;
+pub mod di;
 pub mod error;
 pub mod file_operations;
 pub mod manager;

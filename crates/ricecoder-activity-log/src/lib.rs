@@ -46,6 +46,7 @@
 //! ```
 
 pub mod audit;
+pub mod di;
 pub mod error;
 pub mod events;
 pub mod logger;

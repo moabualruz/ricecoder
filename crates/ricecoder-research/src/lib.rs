@@ -6,6 +6,7 @@
 //! Provides core project analysis and context gathering capabilities with MCP integration.
 //! Focuses on semantic understanding, search, and standards detection for AI-assisted development.
 
+pub mod di;
 pub mod error;
 pub mod manager;
 pub mod models;

@@ -30,6 +30,10 @@ tree-sitter-rust = { workspace = true }
 tree-sitter-typescript = { workspace = true }
 tree-sitter-python = { workspace = true }
 
+# DI registration (via ricecoder-common to avoid circular deps)
+ricecoder-common = { workspace = true }
+inventory = { workspace = true }
+
 [dev-dependencies]
 proptest = { workspace = true }
 tokio-test = { workspace = true }

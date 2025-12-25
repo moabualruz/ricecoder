@@ -10,6 +10,7 @@ pub mod approval;
 pub mod cache;
 pub mod change_tracking;
 pub mod conversation;
+pub mod di;
 pub mod error;
 pub mod format_conversion;
 pub mod inheritance;

@@ -174,6 +174,15 @@ pub struct ProjectContext {
     pub root: PathBuf,
 }
 
+impl Default for ProjectContext {
+    fn default() -> Self {
+        Self {
+            name: "ricecoder".to_string(),
+            root: PathBuf::from("."),
+        }
+    }
+}
+
 /// Output from an agent
 ///
 /// This struct contains all the results produced by an agent execution,

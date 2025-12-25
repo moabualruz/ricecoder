@@ -28,6 +28,10 @@ ricecoder-patterns = { workspace = true, optional = true }
 fxhash = { workspace = true }
 lru = { workspace = true }
 
+# DI registration (via ricecoder-common to avoid circular deps)
+ricecoder-common = { workspace = true }
+inventory = { workspace = true }
+
 [features]
 default = []
 parsers = ["ricecoder-parsers"]

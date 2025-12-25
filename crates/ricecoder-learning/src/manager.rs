@@ -44,40 +44,129 @@ pub struct LearningManager {
 impl LearningManager {
     /// Create a new learning manager with the specified scope
     pub fn new(scope: RuleScope) -> Self {
-        let config = LearningConfig::new(scope);
-        let scope_config = ScopeConfiguration::new(scope);
-        Self {
-            config: Arc::new(RwLock::new(config.clone())),
-            scope_config: Arc::new(RwLock::new(scope_config)),
-            decision_logger: Arc::new(DecisionLogger::new()),
-            rule_storage: Arc::new(RuleStorage::new(scope)),
-            rule_validator: Arc::new(RuleValidator::new()),
-            pattern_capturer: Arc::new(PatternCapturer::new()),
-            pattern_validator: Arc::new(PatternValidator::new()),
-            rule_promoter: Arc::new(RwLock::new(RulePromoter::new())),
-            patterns: Arc::new(RwLock::new(HashMap::new())),
-            analytics_engine: Arc::new(AnalyticsEngine::new()),
-        }
+        Self::builder(scope).build()
     }
 
     /// Create a new learning manager with custom configuration
     pub fn with_config(config: LearningConfig) -> Result<Self> {
         config.validate()?;
-        let scope = config.scope;
-        let scope_config = ScopeConfiguration::new(scope);
-        Ok(Self {
+        Ok(Self::builder(config.scope)
+            .with_learning_config(config)
+            .build())
+    }
+
+    /// Create a builder for constructing a LearningManager with dependency injection
+    pub fn builder(scope: RuleScope) -> LearningManagerBuilder {
+        LearningManagerBuilder::new(scope)
+    }
+}
+
+/// Builder for LearningManager with dependency injection support
+pub struct LearningManagerBuilder {
+    scope: RuleScope,
+    config: Option<LearningConfig>,
+    scope_config: Option<ScopeConfiguration>,
+    decision_logger: Option<Arc<DecisionLogger>>,
+    rule_storage: Option<Arc<RuleStorage>>,
+    rule_validator: Option<Arc<RuleValidator>>,
+    pattern_capturer: Option<Arc<PatternCapturer>>,
+    pattern_validator: Option<Arc<PatternValidator>>,
+    rule_promoter: Option<Arc<RwLock<RulePromoter>>>,
+    analytics_engine: Option<Arc<AnalyticsEngine>>,
+}
+
+impl LearningManagerBuilder {
+    /// Create a new builder with the specified scope
+    pub fn new(scope: RuleScope) -> Self {
+        Self {
+            scope,
+            config: None,
+            scope_config: None,
+            decision_logger: None,
+            rule_storage: None,
+            rule_validator: None,
+            pattern_capturer: None,
+            pattern_validator: None,
+            rule_promoter: None,
+            analytics_engine: None,
+        }
+    }
+
+    /// Set custom learning configuration
+    pub fn with_learning_config(mut self, config: LearningConfig) -> Self {
+        self.config = Some(config);
+        self
+    }
+
+    /// Set custom scope configuration
+    pub fn with_scope_config(mut self, scope_config: ScopeConfiguration) -> Self {
+        self.scope_config = Some(scope_config);
+        self
+    }
+
+    /// Inject custom decision logger
+    pub fn with_decision_logger(mut self, logger: Arc<DecisionLogger>) -> Self {
+        self.decision_logger = Some(logger);
+        self
+    }
+
+    /// Inject custom rule storage
+    pub fn with_rule_storage(mut self, storage: Arc<RuleStorage>) -> Self {
+        self.rule_storage = Some(storage);
+        self
+    }
+
+    /// Inject custom rule validator
+    pub fn with_rule_validator(mut self, validator: Arc<RuleValidator>) -> Self {
+        self.rule_validator = Some(validator);
+        self
+    }
+
+    /// Inject custom pattern capturer
+    pub fn with_pattern_capturer(mut self, capturer: Arc<PatternCapturer>) -> Self {
+        self.pattern_capturer = Some(capturer);
+        self
+    }
+
+    /// Inject custom pattern validator
+    pub fn with_pattern_validator(mut self, validator: Arc<PatternValidator>) -> Self {
+        self.pattern_validator = Some(validator);
+        self
+    }
+
+    /// Inject custom rule promoter
+    pub fn with_rule_promoter(mut self, promoter: Arc<RwLock<RulePromoter>>) -> Self {
+        self.rule_promoter = Some(promoter);
+        self
+    }
+
+    /// Inject custom analytics engine
+    pub fn with_analytics_engine(mut self, engine: Arc<AnalyticsEngine>) -> Self {
+        self.analytics_engine = Some(engine);
+        self
+    }
+
+    /// Build the LearningManager with injected or default dependencies
+    pub fn build(self) -> LearningManager {
+        let config = self.config.unwrap_or_else(|| LearningConfig::new(self.scope));
+        let scope_config = self.scope_config.unwrap_or_else(|| ScopeConfiguration::new(self.scope));
+
+        LearningManager {
             config: Arc::new(RwLock::new(config)),
             scope_config: Arc::new(RwLock::new(scope_config)),
-            decision_logger: Arc::new(DecisionLogger::new()),
-            rule_storage: Arc::new(RuleStorage::new(scope)),
-            rule_validator: Arc::new(RuleValidator::new()),
-            pattern_capturer: Arc::new(PatternCapturer::new()),
-            pattern_validator: Arc::new(PatternValidator::new()),
-            rule_promoter: Arc::new(RwLock::new(RulePromoter::new())),
+            decision_logger: self.decision_logger.unwrap_or_else(|| Arc::new(DecisionLogger::new())),
+            rule_storage: self.rule_storage.unwrap_or_else(|| Arc::new(RuleStorage::new(self.scope))),
+            rule_validator: self.rule_validator.unwrap_or_else(|| Arc::new(RuleValidator::new())),
+            pattern_capturer: self.pattern_capturer.unwrap_or_else(|| Arc::new(PatternCapturer::new())),
+            pattern_validator: self.pattern_validator.unwrap_or_else(|| Arc::new(PatternValidator::new())),
+            rule_promoter: self.rule_promoter.unwrap_or_else(|| Arc::new(RwLock::new(RulePromoter::new()))),
             patterns: Arc::new(RwLock::new(HashMap::new())),
-            analytics_engine: Arc::new(AnalyticsEngine::new()),
-        })
+            analytics_engine: self.analytics_engine.unwrap_or_else(|| Arc::new(AnalyticsEngine::new())),
+        }
     }
+}
+
+impl LearningManager {
 
     /// Get the current configuration
     pub async fn get_config(&self) -> LearningConfig {

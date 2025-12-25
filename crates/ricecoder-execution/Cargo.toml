@@ -28,6 +28,10 @@ tree-sitter = { workspace = true }
 tree-sitter-bash = { workspace = true }
 regex = { workspace = true }
 
+# DI registration (via ricecoder-common to avoid circular deps)
+ricecoder-common = { workspace = true }
+inventory = { workspace = true }
+
 [dev-dependencies]
 proptest = { workspace = true }
 tempfile = { workspace = true }

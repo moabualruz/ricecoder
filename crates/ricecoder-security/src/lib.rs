@@ -17,6 +17,7 @@ use std::sync::Arc;
 pub mod access_control;
 pub mod audit;
 pub mod compliance;
+pub mod di;
 pub mod encryption;
 pub mod error;
 pub mod monitoring;

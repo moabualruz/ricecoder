@@ -17,6 +17,8 @@ mod ask_mode_properties;
 pub mod auto_enable;
 /// Code Mode implementation
 pub mod code_mode;
+/// Dependency injection registration
+pub mod di;
 /// Property-based tests for Code Mode
 #[cfg(test)]
 mod code_mode_properties;

@@ -13,6 +13,7 @@
 //! - **Extensible Architecture**: Easy to add support for new languages
 //! - **Comprehensive Testing**: Property-based tests and benchmarks
 
+pub mod di;
 pub mod error;
 pub mod languages;
 pub mod parser;

@@ -3,6 +3,7 @@
 //! This crate provides comprehensive theme management functionality for RiceCoder,
 //! including theme loading, validation, hot reloading, and runtime theme switching.
 
+pub mod di;
 pub mod error;
 pub mod loader;
 pub mod manager;

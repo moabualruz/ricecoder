@@ -28,8 +28,39 @@ pub struct TeamManager {
 }
 
 impl TeamManager {
-    /// Create a new TeamManager
-    pub fn new() -> Self {
+    /// Create a new TeamManager with injected dependencies
+    ///
+    /// This constructor allows full control over all dependencies, enabling
+    /// testability and flexibility in production use.
+    ///
+    /// # Arguments
+    /// * `config_manager` - Manager for team configuration
+    /// * `rules_manager` - Manager for shared rules and promotion
+    /// * `access_control` - Manager for access control and permissions
+    /// * `sync_service` - Service for team synchronization
+    /// * `analytics` - Analytics dashboard for metrics
+    pub fn new(
+        config_manager: Arc<TeamConfigManager>,
+        rules_manager: Arc<SharedRulesManager>,
+        access_control: Arc<AccessControlManager>,
+        sync_service: Arc<SyncService>,
+        analytics: Arc<AnalyticsDashboard>,
+    ) -> Self {
+        TeamManager {
+            config_manager,
+            rules_manager,
+            access_control,
+            sync_service,
+            analytics,
+            teams_cache: Arc::new(RwLock::new(HashMap::new())),
+        }
+    }
+
+    /// Create a new TeamManager with default implementations
+    ///
+    /// This provides a convenient way to create a TeamManager with all default
+    /// dependencies, suitable for most use cases.
+    pub fn with_defaults() -> Self {
         // Create SharedRulesManager with mock implementations
         // TODO: Replace with actual ricecoder-learning implementations
         let rules_manager = SharedRulesManager::new(
@@ -41,14 +72,13 @@ impl TeamManager {
         // Create AccessControlManager with default dependencies
         let access_control = AccessControlManager::default();
 
-        TeamManager {
-            config_manager: Arc::new(TeamConfigManager::new()),
-            rules_manager: Arc::new(rules_manager),
-            access_control: Arc::new(access_control),
-            sync_service: Arc::new(SyncService::new()),
-            analytics: Arc::new(AnalyticsDashboard::new()),
-            teams_cache: Arc::new(RwLock::new(HashMap::new())),
-        }
+        Self::new(
+            Arc::new(TeamConfigManager::new()),
+            Arc::new(rules_manager),
+            Arc::new(access_control),
+            Arc::new(SyncService::new()),
+            Arc::new(AnalyticsDashboard::new()),
+        )
     }
 
     /// Create a new team with initial members and roles
@@ -298,6 +328,6 @@ impl TeamManager {
 
 impl Default for TeamManager {
     fn default() -> Self {
-        Self::new()
+        Self::with_defaults()
     }
 }

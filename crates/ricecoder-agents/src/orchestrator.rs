@@ -7,7 +7,7 @@ use tracing::{debug, error, info, warn};
 use crate::{
     coordinator::AgentCoordinator,
     error::Result,
-    models::{AgentOutput, AgentTask},
+    models::{AgentOutput, AgentTask, ProjectContext},
     registry::AgentRegistry,
     scheduler::AgentScheduler,
 };
@@ -54,7 +54,7 @@ impl Default for RetryConfig {
 /// #[tokio::main]
 /// async fn main() {
 ///     let registry = Arc::new(AgentRegistry::new());
-///     let orchestrator = AgentOrchestrator::new(registry);
+///     let orchestrator = AgentOrchestrator::with_defaults(registry);
 ///
 ///     let task = AgentTask {
 ///         id: "task-1".to_string(),
@@ -74,10 +74,40 @@ pub struct AgentOrchestrator {
     scheduler: Arc<AgentScheduler>,
     coordinator: Arc<AgentCoordinator>,
     retry_config: RetryConfig,
+    context: ProjectContext,
 }
 
 impl AgentOrchestrator {
-    /// Create a new agent orchestrator
+    /// Create a new agent orchestrator with full dependency injection
+    ///
+    /// # Arguments
+    ///
+    /// * `registry` - The agent registry containing registered agents
+    /// * `scheduler` - The scheduler for task ordering and parallelization
+    /// * `coordinator` - The coordinator for result aggregation
+    /// * `context` - Project context for agent execution
+    /// * `retry_config` - Retry configuration for error handling
+    ///
+    /// # Returns
+    ///
+    /// A new `AgentOrchestrator` with injected dependencies
+    pub fn new(
+        registry: Arc<AgentRegistry>,
+        scheduler: Arc<AgentScheduler>,
+        coordinator: Arc<AgentCoordinator>,
+        context: ProjectContext,
+        retry_config: RetryConfig,
+    ) -> Self {
+        Self {
+            registry,
+            scheduler,
+            coordinator,
+            context,
+            retry_config,
+        }
+    }
+
+    /// Create a new agent orchestrator with default dependencies
     ///
     /// # Arguments
     ///
@@ -85,14 +115,15 @@ impl AgentOrchestrator {
     ///
     /// # Returns
     ///
-    /// A new `AgentOrchestrator` with default retry configuration
-    pub fn new(registry: Arc<AgentRegistry>) -> Self {
-        Self {
+    /// A new `AgentOrchestrator` with default scheduler, coordinator, context, and retry configuration
+    pub fn with_defaults(registry: Arc<AgentRegistry>) -> Self {
+        Self::new(
             registry,
-            scheduler: Arc::new(AgentScheduler::new()),
-            coordinator: Arc::new(AgentCoordinator::new()),
-            retry_config: RetryConfig::default(),
-        }
+            Arc::new(AgentScheduler::new()),
+            Arc::new(AgentCoordinator::new()),
+            ProjectContext::default(),
+            RetryConfig::default(),
+        )
     }
 
     /// Create a new agent orchestrator with custom retry configuration
@@ -106,12 +137,13 @@ impl AgentOrchestrator {
     ///
     /// A new `AgentOrchestrator` with the specified retry configuration
     pub fn with_retry_config(registry: Arc<AgentRegistry>, retry_config: RetryConfig) -> Self {
-        Self {
+        Self::new(
             registry,
-            scheduler: Arc::new(AgentScheduler::new()),
-            coordinator: Arc::new(AgentCoordinator::new()),
+            Arc::new(AgentScheduler::new()),
+            Arc::new(AgentCoordinator::new()),
+            ProjectContext::default(),
             retry_config,
-        }
+        )
     }
 
     /// Set the retry configuration
@@ -218,6 +250,7 @@ impl AgentOrchestrator {
             for task in &phase.tasks {
                 let registry = self.registry.clone();
                 let task = task.clone();
+                let context = self.context.clone();
 
                 let future = async move {
                     // Find agent for this task
@@ -238,10 +271,7 @@ impl AgentOrchestrator {
                     // Create agent input
                     let input = crate::models::AgentInput {
                         task,
-                        context: crate::models::ProjectContext {
-                            name: "ricecoder".to_string(),
-                            root: std::path::PathBuf::from("."),
-                        },
+                        context,
                         config: crate::models::AgentConfig::default(),
                     };
 
@@ -335,6 +365,7 @@ impl AgentOrchestrator {
             for task in &phase.tasks {
                 let registry = self.registry.clone();
                 let task = task.clone();
+                let context = self.context.clone();
 
                 let future = async move {
                     let agents = registry.find_agents_by_task_type(task.task_type);
@@ -352,10 +383,7 @@ impl AgentOrchestrator {
 
                     let input = crate::models::AgentInput {
                         task,
-                        context: crate::models::ProjectContext {
-                            name: "ricecoder".to_string(),
-                            root: std::path::PathBuf::from("."),
-                        },
+                        context,
                         config: crate::models::AgentConfig::default(),
                     };
 
@@ -445,7 +473,7 @@ mod tests {
     #[tokio::test]
     async fn test_execute_empty_tasks() {
         let registry = Arc::new(AgentRegistry::new());
-        let orchestrator = AgentOrchestrator::new(registry);
+        let orchestrator = AgentOrchestrator::with_defaults(registry);
 
         let results = orchestrator.execute(vec![]).await.unwrap();
         assert_eq!(results.len(), 0);
@@ -459,7 +487,7 @@ mod tests {
         });
         registry.register(agent);
 
-        let orchestrator = AgentOrchestrator::new(Arc::new(registry));
+        let orchestrator = AgentOrchestrator::with_defaults(Arc::new(registry));
 
         let task = AgentTask {
             id: "task1".to_string(),
@@ -483,7 +511,7 @@ mod tests {
         });
         registry.register(agent);
 
-        let orchestrator = AgentOrchestrator::new(Arc::new(registry));
+        let orchestrator = AgentOrchestrator::with_defaults(Arc::new(registry));
 
         let task = AgentTask {
             id: "task1".to_string(),
@@ -511,7 +539,7 @@ mod tests {
         });
         registry.register(agent);
 
-        let orchestrator = AgentOrchestrator::new(Arc::new(registry));
+        let orchestrator = AgentOrchestrator::with_defaults(Arc::new(registry));
 
         let task = AgentTask {
             id: "task1".to_string(),
@@ -539,7 +567,7 @@ mod tests {
         });
         registry.register(agent);
 
-        let orchestrator = AgentOrchestrator::new(Arc::new(registry));
+        let orchestrator = AgentOrchestrator::with_defaults(Arc::new(registry));
 
         let tasks = vec![
             AgentTask {
@@ -606,7 +634,7 @@ mod tests {
             backoff_multiplier: 1.5,
         };
 
-        let orchestrator = AgentOrchestrator::with_retry_config(registry, retry_config.clone());
+        let orchestrator = AgentOrchestrator::with_retry_config(registry, retry_config);
         assert_eq!(orchestrator.retry_config().max_retries, 5);
         assert_eq!(orchestrator.retry_config().initial_backoff_ms, 200);
     }
@@ -614,7 +642,7 @@ mod tests {
     #[test]
     fn test_orchestrator_set_retry_config() {
         let registry = Arc::new(AgentRegistry::new());
-        let mut orchestrator = AgentOrchestrator::new(registry);
+        let mut orchestrator = AgentOrchestrator::with_defaults(registry);
 
         let new_config = RetryConfig {
             max_retries: 10,
@@ -636,7 +664,7 @@ mod tests {
         });
         registry.register(agent);
 
-        let orchestrator = AgentOrchestrator::new(Arc::new(registry));
+        let orchestrator = AgentOrchestrator::with_defaults(Arc::new(registry));
 
         let task = AgentTask {
             id: "task1".to_string(),
@@ -655,7 +683,7 @@ mod tests {
     #[tokio::test]
     async fn test_execute_with_retry_empty_tasks() {
         let registry = Arc::new(AgentRegistry::new());
-        let orchestrator = AgentOrchestrator::new(registry);
+        let orchestrator = AgentOrchestrator::with_defaults(registry);
 
         let results = orchestrator.execute_with_retry(vec![]).await.unwrap();
         assert_eq!(results.len(), 0);

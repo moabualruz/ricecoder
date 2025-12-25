@@ -28,6 +28,10 @@ flate2 = { workspace = true }
 # Domain dependencies
 ricecoder-domain = { workspace = true }
 
+# DI registration (via ricecoder-common to avoid circular deps)
+ricecoder-common = { workspace = true }
+inventory = { workspace = true }
+
 [dev-dependencies]
 tempfile = { workspace = true }
 criterion = { workspace = true, features = ["html_reports"] }

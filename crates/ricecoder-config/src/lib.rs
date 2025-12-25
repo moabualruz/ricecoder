@@ -3,6 +3,7 @@
 //! This crate provides comprehensive configuration management functionality for RiceCoder,
 //! including loading from multiple sources, validation, hot reloading, and runtime updates.
 
+pub mod di;
 pub mod error;
 pub mod manager;
 pub mod tui_config;

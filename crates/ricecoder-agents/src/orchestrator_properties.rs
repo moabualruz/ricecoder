@@ -46,7 +46,7 @@ mod tests {
     #[test]
     fn property_result_aggregation_correctness_all_findings_included() {
         let registry = Arc::new(AgentRegistry::new());
-        let orchestrator = AgentOrchestrator::new(registry);
+        let orchestrator = AgentOrchestrator::with_defaults(registry);
 
         // Create findings from multiple agents
         let agent1_findings = vec![
@@ -124,7 +124,7 @@ mod tests {
     #[test]
     fn property_result_aggregation_correctness_no_duplication() {
         let registry = Arc::new(AgentRegistry::new());
-        let orchestrator = AgentOrchestrator::new(registry);
+        let orchestrator = AgentOrchestrator::with_defaults(registry);
 
         // Create duplicate findings from multiple agents
         let agent1_findings = vec![
@@ -204,7 +204,7 @@ mod tests {
     #[test]
     fn property_result_aggregation_correctness_severity_preservation() {
         let registry = Arc::new(AgentRegistry::new());
-        let orchestrator = AgentOrchestrator::new(registry);
+        let orchestrator = AgentOrchestrator::with_defaults(registry);
 
         // Create findings with all severity levels
         let agent1_findings = vec![
@@ -288,7 +288,7 @@ mod tests {
     #[test]
     fn property_result_aggregation_correctness_completeness() {
         let registry = Arc::new(AgentRegistry::new());
-        let orchestrator = AgentOrchestrator::new(registry);
+        let orchestrator = AgentOrchestrator::with_defaults(registry);
 
         // Test with varying numbers of agents and findings
         for num_agents in &[1, 2, 3, 5] {
@@ -336,7 +336,7 @@ mod tests {
     #[test]
     fn property_result_aggregation_correctness_empty_inputs() {
         let registry = Arc::new(AgentRegistry::new());
-        let orchestrator = AgentOrchestrator::new(registry);
+        let orchestrator = AgentOrchestrator::with_defaults(registry);
 
         // Aggregate empty outputs multiple times
         let mut all_results = Vec::new();
@@ -365,7 +365,7 @@ mod tests {
     #[test]
     fn property_result_aggregation_correctness_single_agent() {
         let registry = Arc::new(AgentRegistry::new());
-        let orchestrator = AgentOrchestrator::new(registry);
+        let orchestrator = AgentOrchestrator::with_defaults(registry);
 
         let findings = vec![
             create_finding("f1", Severity::Warning, "quality", "issue1"),

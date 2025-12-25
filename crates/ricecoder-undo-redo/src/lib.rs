@@ -7,6 +7,7 @@
 
 pub mod change;
 pub mod checkpoint;
+pub mod di;
 pub mod error;
 pub mod history;
 pub mod models;

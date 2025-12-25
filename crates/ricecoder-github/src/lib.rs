@@ -13,6 +13,7 @@
 //! - Dependency management
 //! - Webhook integration
 
+pub mod di;
 pub mod errors;
 pub mod managers;
 pub mod models;

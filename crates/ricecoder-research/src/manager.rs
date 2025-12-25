@@ -41,23 +41,122 @@ pub struct ResearchManager {
     pattern_detector: Option<Arc<PatternDetector>>,
 }
 
-impl ResearchManager {
-    /// Create a new ResearchManager with default configuration
+/// Builder for ResearchManager with optional dependency injection
+#[derive(Debug, Default)]
+pub struct ResearchManagerBuilder {
+    project_analyzer: Option<Arc<ProjectAnalyzer>>,
+    standards_detector: Option<Arc<StandardsDetector>>,
+    semantic_index: Option<Arc<SemanticIndex>>,
+    search_engine: Option<Arc<SearchEngine>>,
+    reference_tracker: Option<Arc<ReferenceTracker>>,
+    relevance_scorer: Option<Arc<RelevanceScorer>>,
+    #[cfg(feature = "parsers")]
+    parser: Option<Arc<dyn CodeParser>>,
+    #[cfg(feature = "patterns")]
+    pattern_detector: Option<Arc<PatternDetector>>,
+}
+
+impl ResearchManagerBuilder {
+    /// Create a new builder
     pub fn new() -> Self {
-        let semantic_index = Arc::new(SemanticIndex::new());
+        Self::default()
+    }
+
+    /// Set the project analyzer
+    pub fn project_analyzer(mut self, analyzer: Arc<ProjectAnalyzer>) -> Self {
+        self.project_analyzer = Some(analyzer);
+        self
+    }
+
+    /// Set the standards detector
+    pub fn standards_detector(mut self, detector: Arc<StandardsDetector>) -> Self {
+        self.standards_detector = Some(detector);
+        self
+    }
+
+    /// Set the semantic index
+    pub fn semantic_index(mut self, index: Arc<SemanticIndex>) -> Self {
+        self.semantic_index = Some(index);
+        self
+    }
+
+    /// Set the search engine
+    pub fn search_engine(mut self, engine: Arc<SearchEngine>) -> Self {
+        self.search_engine = Some(engine);
+        self
+    }
+
+    /// Set the reference tracker
+    pub fn reference_tracker(mut self, tracker: Arc<ReferenceTracker>) -> Self {
+        self.reference_tracker = Some(tracker);
+        self
+    }
+
+    /// Set the relevance scorer
+    pub fn relevance_scorer(mut self, scorer: Arc<RelevanceScorer>) -> Self {
+        self.relevance_scorer = Some(scorer);
+        self
+    }
+
+    /// Set the parser (optional)
+    #[cfg(feature = "parsers")]
+    pub fn parser(mut self, parser: Arc<dyn CodeParser>) -> Self {
+        self.parser = Some(parser);
+        self
+    }
+
+    /// Set the pattern detector (optional)
+    #[cfg(feature = "patterns")]
+    pub fn pattern_detector(mut self, detector: Arc<PatternDetector>) -> Self {
+        self.pattern_detector = Some(detector);
+        self
+    }
+
+    /// Build ResearchManager, using defaults for any unset dependencies
+    pub fn build(self) -> ResearchManager {
+        let semantic_index = self
+            .semantic_index
+            .unwrap_or_else(|| Arc::new(SemanticIndex::new()));
 
         ResearchManager {
-            project_analyzer: Arc::new(ProjectAnalyzer::new()),
-            standards_detector: Arc::new(StandardsDetector::new()),
+            project_analyzer: self
+                .project_analyzer
+                .unwrap_or_else(|| Arc::new(ProjectAnalyzer::new())),
+            standards_detector: self
+                .standards_detector
+                .unwrap_or_else(|| Arc::new(StandardsDetector::new())),
             semantic_index: Arc::clone(&semantic_index),
-            search_engine: Arc::new(SearchEngine::new((*semantic_index).clone())),
-            reference_tracker: Arc::new(ReferenceTracker),
-            relevance_scorer: Arc::new(RelevanceScorer::new()),
+            search_engine: self
+                .search_engine
+                .unwrap_or_else(|| Arc::new(SearchEngine::new((*semantic_index).clone()))),
+            reference_tracker: self
+                .reference_tracker
+                .unwrap_or_else(|| Arc::new(ReferenceTracker)),
+            relevance_scorer: self
+                .relevance_scorer
+                .unwrap_or_else(|| Arc::new(RelevanceScorer::new())),
             #[cfg(feature = "parsers")]
-            parser: None,
+            parser: self.parser,
             #[cfg(feature = "patterns")]
-            pattern_detector: None,
+            pattern_detector: self.pattern_detector,
         }
+    }
+}
+
+impl ResearchManager {
+    /// Create a new builder for ResearchManager
+    pub fn builder() -> ResearchManagerBuilder {
+        ResearchManagerBuilder::new()
+    }
+
+    /// Create a new ResearchManager with default configuration
+    pub fn new() -> Self {
+        Self::builder().build()
+    }
+
+    /// Create a new ResearchManager with default dependencies (alias for new())
+    pub fn with_defaults() -> Self {
+        Self::new()
     }
 
     /// Create a new ResearchManager with parser support

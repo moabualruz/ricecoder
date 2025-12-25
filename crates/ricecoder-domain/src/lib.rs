@@ -14,6 +14,7 @@
 //! - **Domain Services**: Business logic that doesn't belong to entities
 //! - **Repositories**: Interfaces for data persistence (defined here, implemented in infrastructure)
 
+pub mod di;
 pub mod entities;
 pub mod errors;
 pub mod events;

@@ -56,7 +56,7 @@ fn create_test_rule(rule_id: &str) -> SharedRule {
 #[tokio::test]
 async fn test_error_on_duplicate_member_addition() {
     // **Validates: Requirements 3.1, 3.2**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team with one member
     let member = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -75,7 +75,7 @@ async fn test_error_on_duplicate_member_addition() {
 #[tokio::test]
 async fn test_error_on_remove_nonexistent_member() {
     // **Validates: Requirements 3.6**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team
     let member = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -95,7 +95,7 @@ async fn test_error_on_remove_nonexistent_member() {
 #[tokio::test]
 async fn test_error_on_get_nonexistent_team() {
     // **Validates: Requirements 1.1**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Try to get a team that doesn't exist
     let nonexistent_id = Uuid::new_v4().to_string();
@@ -108,7 +108,7 @@ async fn test_error_on_get_nonexistent_team() {
 #[tokio::test]
 async fn test_error_on_get_nonexistent_standards() {
     // **Validates: Requirements 1.2**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     let config_manager = manager.config_manager();
 
@@ -123,7 +123,7 @@ async fn test_error_on_get_nonexistent_standards() {
 #[tokio::test]
 async fn test_recovery_after_member_removal_error() {
     // **Validates: Requirements 3.6**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team with two members
     let member1 = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -170,7 +170,7 @@ async fn test_recovery_after_member_removal_error() {
 #[tokio::test]
 async fn test_validation_failure_on_invalid_rule() {
     // **Validates: Requirements 2.4**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -197,7 +197,7 @@ async fn test_validation_failure_on_invalid_rule() {
 #[tokio::test]
 async fn test_standards_override_validation_failure() {
     // **Validates: Requirements 1.8**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -238,7 +238,7 @@ async fn test_standards_override_validation_failure() {
 #[tokio::test]
 async fn test_configuration_hierarchy_with_missing_levels() {
     // **Validates: Requirements 1.7**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -280,7 +280,7 @@ async fn test_configuration_hierarchy_with_missing_levels() {
 #[tokio::test]
 async fn test_permission_check_for_different_roles() {
     // **Validates: Requirements 3.3, 3.4, 3.5**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team with members of different roles
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -322,7 +322,7 @@ async fn test_permission_check_for_different_roles() {
 #[tokio::test]
 async fn test_audit_logging_on_permission_changes() {
     // **Validates: Requirements 3.7, 3.8**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -349,7 +349,7 @@ async fn test_audit_logging_on_permission_changes() {
 #[tokio::test]
 async fn test_error_recovery_in_team_operations() {
     // **Validates: Requirements 3.1, 3.2, 3.6**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team
     let member1 = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -387,7 +387,7 @@ async fn test_error_recovery_in_team_operations() {
 #[tokio::test]
 async fn test_standards_storage_error_recovery() {
     // **Validates: Requirements 1.1, 1.2**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -434,7 +434,7 @@ async fn test_standards_storage_error_recovery() {
 #[tokio::test]
 async fn test_concurrent_error_scenarios() {
     // **Validates: Requirements 2.1, 2.2, 3.7**
-    let manager = std::sync::Arc::new(TeamManager::new());
+    let manager = std::sync::Arc::new(TeamManager::with_defaults());
 
     // Create team
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);

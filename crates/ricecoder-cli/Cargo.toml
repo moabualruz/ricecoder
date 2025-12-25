@@ -76,6 +76,10 @@ ricecoder-tui = { workspace = true }
 ricecoder-undo-redo = { workspace = true }
 ricecoder-workflows = { workspace = true }
 
+# DI registration (via ricecoder-common to avoid circular deps)
+ricecoder-common = { workspace = true }
+inventory = { workspace = true }
+
 [profile.release]
 lto = true
 strip = true

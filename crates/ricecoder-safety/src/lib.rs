@@ -41,6 +41,7 @@
 //! ```
 
 pub mod constraints;
+pub mod di;
 pub mod error;
 pub mod monitoring;
 pub mod risk;

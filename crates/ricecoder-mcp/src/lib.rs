@@ -13,6 +13,7 @@ pub mod client;
 pub mod compliance;
 pub mod config;
 pub mod connection_pool;
+pub mod di;
 pub mod error;
 pub mod error_recovery;
 pub mod error_reporting;

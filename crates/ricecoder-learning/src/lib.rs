@@ -8,6 +8,7 @@ pub mod confidence_score_property;
 pub mod conflict_resolver;
 pub mod decision_capture_property;
 pub mod decision_logger;
+pub mod di;
 pub mod drift_detector;
 pub mod error;
 pub mod intent_tracker;

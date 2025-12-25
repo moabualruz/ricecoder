@@ -1,51 +1,46 @@
-//! DI integration for the CLI
+//! Dependency injection support for ricecoder-cli
 //!
-//! This module provides DI container setup and service resolution
-//! for the RiceCoder CLI application.
+//! This module provides factory-return DI pattern for CLI services.
+//! Services are registered via `inventory::submit!` and collected by ricecoder-di.
 
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
+use ricecoder_common::di::{ServiceEntry, ServiceFactory};
+use crate::{
+    BrandingManager,
+    CommandRouter,
+    AccessibilitySettings,
+    lifecycle::LifecycleManager,
+};
 
-use ricecoder_di::{create_application_container, DIContainer, DIResult};
-
-/// Global DI container for the CLI application
-static DI_CONTAINER: OnceLock<Arc<DIContainer>> = OnceLock::new();
-
-/// Initialize the DI container for the CLI
-pub fn initialize_di_container() -> DIResult<()> {
-    let container = create_application_container()?;
-    let _ = DI_CONTAINER.set(Arc::new(container));
-    Ok(())
+inventory::submit! {
+    ServiceFactory::new("cli", create_cli_services)
 }
 
-/// Get the global DI container
-pub fn get_di_container() -> Option<Arc<DIContainer>> {
-    DI_CONTAINER.get().cloned()
+/// Create all CLI services for registration.
+///
+/// This factory function creates instances of all CLI services and returns them
+/// as `ServiceEntry` items. ricecoder-di collects these and registers them in its container.
+fn create_cli_services() -> Vec<ServiceEntry> {
+    vec![
+        // LifecycleManager - Component lifecycle management (replaces global static)
+        ServiceEntry::new::<LifecycleManager>(Arc::new(LifecycleManager::new())),
+        // BrandingManager - Application branding
+        ServiceEntry::new::<BrandingManager>(Arc::new(BrandingManager::new())),
+        // CommandRouter - Command routing
+        ServiceEntry::new::<CommandRouter>(Arc::new(CommandRouter::new())),
+        // AccessibilitySettings - Accessibility configuration
+        ServiceEntry::new::<AccessibilitySettings>(Arc::new(AccessibilitySettings::default())),
+    ]
 }
 
-/// Get a service from the DI container
-pub fn get_service<T>() -> Option<Arc<T>>
-where
-    T: Send + Sync + 'static,
-{
-    get_di_container().and_then(|container| container.resolve::<T>().ok())
-}
-
-/// Initialize DI container with specific features
-/// This allows CLI to opt into specific service groups
-pub fn initialize_di_container_with_features(features: &[&str]) -> DIResult<()> {
-    // For now, just use the default container
-    // In the future, this could conditionally enable features
-    initialize_di_container()
-}
-
-/// Check if DI container is initialized
-pub fn is_di_initialized() -> bool {
-    DI_CONTAINER.get().is_some()
-}
-
-/// Reset the DI container (mainly for testing)
 #[cfg(test)]
-pub fn reset_di_container() {
-    // OnceLock cannot be reset, so this is a no-op for now
-    // In tests, use separate containers
+mod tests {
+    use super::*;
+    use ricecoder_common::di::list_discovered_factories();
+
+    #[test]
+    fn test_cli_factory_registered() {
+        let factories = list_discovered_factories();
+        assert!(factories.contains(&"cli"), "Factory should be registered");
+    }
 }

@@ -35,6 +35,10 @@ ricecoder-files = { workspace = true }
 ricecoder-security = { workspace = true }
 ricecoder-cache = { workspace = true }
 
+# DI registration (via ricecoder-common to avoid circular deps)
+ricecoder-common = { workspace = true }
+inventory = { workspace = true }
+
 [dev-dependencies]
 proptest = { workspace = true }
 tokio-test = { workspace = true }

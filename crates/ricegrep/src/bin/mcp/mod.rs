@@ -1,8 +1,12 @@
 use crate::RuntimeConfig;
 
 mod mappers;
+mod protocol;
+mod response;
+mod search;
 mod tools;
 mod types;
+mod watch;
 
 use types::{
     EditToolInput, GlobToolInput, GrepToolInput, ListToolInput, NlSearchToolInput, ReadToolInput,
@@ -40,460 +44,23 @@ pub struct McpArgs {
     pub server_endpoint: Option<String>,
 }
 
-use anyhow::{Context, Result};
-use glob::Pattern;
-use ignore::WalkBuilder;
-use notify::Watcher;
-use regex::Regex;
-use ricegrep::admin::AdminToolset;
-use ricegrep::api::models::{SearchFilters, SearchRequest, SearchResponse, SearchResult};
-use ricegrep::chunking::{ChunkMetadata, LanguageDetector, LanguageKind};
+use anyhow::Result;
+use ricegrep::api::models::{SearchFilters, SearchRequest, SearchResponse};
 use rmcp::{
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
-    model::{CallToolResult, Content, ServerCapabilities, ServerInfo},
-    schemars::JsonSchema,
-    tool, tool_handler, tool_router, ErrorData, ServerHandler, ServiceExt,
+    model::{CallToolResult, ServerCapabilities, ServerInfo},
+    tool, tool_handler, tool_router, ErrorData, ServerHandler,
 };
 use std::path::Path;
-use std::time::Instant;
 use tokio::io;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt};
-use tokio::time::{sleep, Duration};
-use uuid::Uuid;
 
-const MCP_AUTO_WATCH_DELAY_SECS: u64 = 5;
-
+// Server feature flag for conditional compilation
 #[cfg(feature = "server")]
 const SERVER_FEATURE_ENABLED: bool = true;
 
 #[cfg(not(feature = "server"))]
 const SERVER_FEATURE_ENABLED: bool = false;
-
-/// Manages watch lifecycle tied to MCP server
-struct WatchManager {
-    handle: Option<tokio::task::JoinHandle<()>>,
-    shutdown_tx: tokio::sync::broadcast::Sender<()>,
-}
-
-impl WatchManager {
-    fn new() -> Self {
-        let (shutdown_tx, _) = tokio::sync::broadcast::channel(1);
-        Self {
-            handle: None,
-            shutdown_tx,
-        }
-    }
-
-    /// Start watch operation with index directory
-    fn start_with_index(&mut self, watch_args: crate::WatchArgs, index_dir: std::path::PathBuf) {
-        let mut shutdown_rx = self.shutdown_tx.subscribe();
-
-        let handle = tokio::spawn(async move {
-            // Wait for delay before starting watch
-            tokio::select! {
-                _ = tokio::time::sleep(Duration::from_secs(MCP_AUTO_WATCH_DELAY_SECS)) => {
-                    // Create toolset for index management wrapped in Arc for thread safety
-                    let toolset = std::sync::Arc::new(AdminToolset::new(index_dir, None));
-                    let root_path = watch_args.paths.get(0).map(|p| std::path::PathBuf::from(p)).unwrap_or_else(|| std::path::PathBuf::from("."));
-                    
-                    // Start watch with shutdown signal
-                    let _ = run_watch_with_shutdown(
-                        watch_args,
-                        shutdown_rx.resubscribe(),
-                        toolset,
-                        root_path,
-                    ).await;
-                }
-                _ = shutdown_rx.recv() => {
-                    // Shutdown during delay
-                    tracing::info!("Watch cancelled before start");
-                    return;
-                }
-            }
-        });
-
-        self.handle = Some(handle);
-    }
-
-    /// Gracefully shutdown watch
-    async fn shutdown(&mut self) -> Result<()> {
-        // Send shutdown signal
-        let _ = self.shutdown_tx.send(());
-
-        // Wait for watch to exit (with timeout)
-        if let Some(handle) = self.handle.take() {
-            tokio::time::timeout(Duration::from_secs(5), handle)
-                .await
-                .context("Watch shutdown timed out after 5s")??;
-        }
-
-        Ok(())
-    }
-}
-
-/// Tracks file changes for deduplication and batching
-#[derive(Debug)]
-struct ChangeTracker {
-    /// Internal debounce buffer for event batching
-    debounce_buffer: ricegrep::indexing_optimization::DebounceBuffer,
-}
-
-impl ChangeTracker {
-    fn new() -> Self {
-        Self {
-            debounce_buffer: ricegrep::indexing_optimization::DebounceBuffer::new(),
-        }
-    }
-    
-    /// Create with custom debounce window duration
-    fn with_duration(duration: Duration) -> Self {
-        Self {
-            debounce_buffer: ricegrep::indexing_optimization::DebounceBuffer::with_duration(duration),
-        }
-    }
-
-    /// Record a file change
-    fn record_change(&mut self, path: std::path::PathBuf, kind: ricegrep::indexing_optimization::FileChangeKind) {
-        let event = ricegrep::indexing_optimization::FileChangeEvent {
-            path,
-            kind,
-            timestamp: std::time::Instant::now(),
-        };
-        self.debounce_buffer.collect_event(event);
-    }
-
-    /// Check if debounce window has expired and ready for processing
-    fn is_ready(&self) -> bool {
-        self.debounce_buffer.is_ready()
-    }
-
-    /// Get and clear all accumulated changes
-    fn take_changes(&mut self) -> Vec<std::path::PathBuf> {
-        self.debounce_buffer
-            .take_events()
-            .into_iter()
-            .map(|e| e.path)
-            .collect()
-    }
-
-    /// Check if there are pending changes
-    fn has_changes(&self) -> bool {
-        self.debounce_buffer.has_events()
-    }
-
-    /// Get count of tracked changes
-    fn change_count(&self) -> usize {
-        self.debounce_buffer.event_count()
-    }
-    
-    /// Get remaining time until debounce window expires
-    fn remaining(&self) -> Option<Duration> {
-        self.debounce_buffer.remaining()
-    }
-    
-    /// Get current debouncing statistics
-    fn stats(&self) -> ricegrep::indexing_optimization::DebouncingStats {
-        self.debounce_buffer.stats()
-    }
-}
-
-/// Run watch with shutdown signal support
-async fn run_watch_with_shutdown(
-    args: crate::WatchArgs,
-    mut shutdown_rx: tokio::sync::broadcast::Receiver<()>,
-    toolset: std::sync::Arc<AdminToolset>,
-    root_path: std::path::PathBuf,
-) -> Result<()> {
-    let (tx, rx) = std::sync::mpsc::channel();
-    let mut watcher = notify::recommended_watcher(tx).context("Failed to create file watcher")?;
-
-    for path in &args.paths {
-        watcher
-            .watch(path.as_ref(), notify::RecursiveMode::Recursive)
-            .context("Failed to watch path")?;
-    }
-
-    tracing::info!("Watch started for {:?}", args.paths);
-
-    let mut change_tracker = ChangeTracker::new();
-    let recv_timeout = Duration::from_millis(100);
-
-    loop {
-        // Check for shutdown signal
-        match shutdown_rx.try_recv() {
-            Ok(_) | Err(tokio::sync::broadcast::error::TryRecvError::Closed) => {
-                // Flush pending changes before shutdown
-                process_tracked_changes(&mut change_tracker, &toolset, &root_path).await;
-                tracing::info!("Watch received shutdown signal");
-                break;
-            }
-            Err(tokio::sync::broadcast::error::TryRecvError::Empty) => {
-                // Continue watching
-            }
-            Err(tokio::sync::broadcast::error::TryRecvError::Lagged(_)) => {
-                // Broadcast buffer lagged, still process shutdown
-                tracing::warn!("Watch shutdown signal lagged, continuing");
-            }
-        }
-
-         // Check for file events
-         match rx.recv_timeout(recv_timeout) {
-             Ok(Ok(event)) => {
-                 handle_watch_event(&mut change_tracker, &event, &args);
-             }
-             Ok(Err(e)) => {
-                 // Include file paths if available in the error event
-                 let path_context = if !e.paths.is_empty() {
-                     format!(
-                         " for files: {}",
-                         e.paths
-                             .iter()
-                             .map(|p| p.display().to_string())
-                             .collect::<Vec<_>>()
-                             .join(", ")
-                     )
-                 } else {
-                     String::new()
-                 };
-                 tracing::error!("Watch error processing event: {}{}", e, path_context);
-             }
-            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
-                // Process batch when debounce window expires
-                if change_tracker.is_ready() && change_tracker.has_changes() {
-                    process_tracked_changes(&mut change_tracker, &toolset, &root_path).await;
-                }
-            }
-            Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
-                tracing::warn!("Watch channel disconnected");
-                break;
-            }
-        }
-    }
-
-    Ok(())
-}
-
-/// Handle individual watch events and track changes with debouncing
-fn handle_watch_event(tracker: &mut ChangeTracker, event: &notify::Event, args: &crate::WatchArgs) {
-    use notify::EventKind;
-    use ricegrep::indexing_optimization::FileChangeKind;
-
-    match event.kind {
-        EventKind::Create(_) => {
-            for path in &event.paths {
-                if path.is_file() {
-                    tracing::debug!("File created: {}", path.display());
-                    tracker.record_change(path.clone(), FileChangeKind::Create);
-                }
-            }
-        }
-        EventKind::Modify(_) => {
-            for path in &event.paths {
-                if path.is_file() {
-                    tracing::debug!("File modified: {}", path.display());
-                    tracker.record_change(path.clone(), FileChangeKind::Modify);
-                }
-            }
-        }
-        EventKind::Remove(_) => {
-            for path in &event.paths {
-                tracing::debug!("File removed: {}", path.display());
-                tracker.record_change(path.clone(), FileChangeKind::Delete);
-            }
-        }
-        _ => {
-            // Ignore other event kinds (access, metadata changes, etc.)
-        }
-    }
-
-    // Clear screen on first change if requested
-    if args.clear_screen && tracker.change_count() == 1 {
-        print!("\x1B[2J\x1B[1;1H");
-    }
-}
-
-/// Process accumulated changes and update index
-async fn process_tracked_changes(
-    tracker: &mut ChangeTracker,
-    toolset: &std::sync::Arc<AdminToolset>,
-    root_path: &std::path::Path,
-) {
-    if !tracker.has_changes() {
-        return;
-    }
-
-    let changes = tracker.take_changes();
-    let count = changes.len();
-
-    tracing::info!("Tracked {} file change(s)", count);
-    for path in changes.iter().take(5) {
-        tracing::debug!("  - {}", path.display());
-    }
-
-    if count > 5 {
-        tracing::debug!("  ... and {} more", count - 5);
-    }
-
-    // Update index for changed files
-    match update_index_for_changes(toolset, root_path, &changes).await {
-        Ok(updated) => {
-            if updated > 0 {
-                tracing::info!("Updated index for {} file(s)", updated);
-            }
-        }
-        Err(e) => {
-            // Include file paths context in error message
-            let file_context = if changes.len() <= 3 {
-                format!(
-                    " (files: {})",
-                    changes
-                        .iter()
-                        .map(|p| p.display().to_string())
-                        .collect::<Vec<_>>()
-                        .join(", ")
-                )
-            } else {
-                format!(" ({} files changed)", changes.len())
-            };
-            tracing::error!("Failed to update index for changes{}: {}", file_context, e);
-            // Continue watching even if update fails
-        }
-    }
-}
-
-/// Update index for changed files with metadata gating optimization
-/// 
-/// Uses FileChangeFilter to skip unchanged files based on stored metadata,
-/// significantly reducing re-indexing overhead in watch mode.
-async fn update_index_for_changes(
-    toolset: &std::sync::Arc<AdminToolset>,
-    root_path: &std::path::Path,
-    changed_files: &[std::path::PathBuf],
-) -> Result<usize> {
-    let count = changed_files.len();
-    
-    if count == 0 {
-        return Ok(0);
-    }
-
-    // Initialize metadata store with auto-save enabled
-    let metadata_path = root_path.join(".ricegrep/metadata.json");
-    
-    // Ensure metadata directory exists
-    if let Some(parent) = metadata_path.parent() {
-        let _ = tokio::fs::create_dir_all(parent).await;
-    }
-    
-    // Load or create metadata store
-    let store = ricegrep::indexing_optimization::MetadataStore::new(metadata_path.clone(), true);
-    match store.load() {
-        Ok(_) => {
-            tracing::debug!("Loaded existing metadata store");
-        }
-        Err(e) => {
-            tracing::debug!("Creating new metadata store: {}", e);
-        }
-    }
-    
-    // Apply metadata gating filter
-    let filter = ricegrep::indexing_optimization::FileChangeFilter::new(store);
-    let filter_result = filter.filter_changes(changed_files);
-    
-    let files_to_reindex = &filter_result.files_to_reindex;
-    let reindex_count = files_to_reindex.len();
-    let skipped_count = filter_result.skipped_count();
-    
-    // Log filtering results
-    if skipped_count > 0 {
-        tracing::info!(
-            "Metadata gating: {} file(s) unchanged (skipped), {} file(s) need re-indexing",
-            skipped_count,
-            reindex_count
-        );
-        
-        // Log skipped files (up to 5)
-        for (path, reason) in filter_result.skipped_files.iter().take(5) {
-            tracing::debug!("  Skipped: {} ({})", path.display(), reason);
-        }
-        if filter_result.skipped_files.len() > 5 {
-            tracing::debug!("  ... and {} more skipped files", filter_result.skipped_files.len() - 5);
-        }
-    } else {
-        tracing::info!("No unchanged files detected, re-indexing {} file(s)", reindex_count);
-    }
-
-     // For performance: if too many files still need re-indexing, do full re-index
-     if reindex_count > 100 {
-         tracing::info!(
-             "Many files still need re-indexing ({}), performing full re-index",
-             reindex_count
-         );
-         let metadata_path = root_path.join(".ricegrep/metadata.bin");
-         
-         // Ensure metadata directory exists
-         if let Some(parent) = metadata_path.parent() {
-             let _ = tokio::fs::create_dir_all(parent).await;
-         }
-         
-         match toolset.reindex_repository_with_metadata(root_path, &metadata_path).await {
-             Ok(_) => {
-                 tracing::info!("Full index re-index completed successfully");
-                 Ok(count)
-             }
-             Err(e) => {
-                 tracing::warn!(
-                     "Full re-index failed for repository at {}: {}",
-                     root_path.display(),
-                     e
-                 );
-                 Err(anyhow::anyhow!(
-                     "Full re-index failed for repository at {}: {}",
-                     root_path.display(),
-                     e
-                 ))
-             }
-         }
-     } else {
-         // For small changes: attempt incremental re-index
-         tracing::info!("Re-indexing {} file(s) with potential changes", reindex_count);
-         let metadata_path = root_path.join(".ricegrep/metadata.bin");
-         
-         // Ensure metadata directory exists
-         if let Some(parent) = metadata_path.parent() {
-             let _ = tokio::fs::create_dir_all(parent).await;
-         }
-         
-         match toolset.reindex_repository_with_metadata(root_path, &metadata_path).await {
-             Ok(_) => {
-                 tracing::info!("Index update completed successfully");
-                 
-                 // Update metadata store with successfully re-indexed files
-                 let (success, errors) = filter.update_metadata_batch(files_to_reindex);
-                 if errors > 0 {
-                     tracing::warn!("Failed to update metadata for {} file(s)", errors);
-                 } else {
-                     tracing::debug!("Updated metadata for {} file(s)", success);
-                 }
-                 
-                 Ok(count)
-             }
-             Err(e) => {
-                 tracing::warn!(
-                     "Index update failed for repository at {} ({} file changes): {}",
-                     root_path.display(),
-                     reindex_count,
-                     e
-                 );
-                 Err(anyhow::anyhow!(
-                     "Index update failed for repository at {} ({} file changes): {}",
-                     root_path.display(),
-                     reindex_count,
-                     e
-                 ))
-             }
-         }
-     }
-}
 
 #[derive(Debug)]
 struct RicegrepMcp {
@@ -539,11 +106,11 @@ impl RicegrepMcp {
                     None,
                 ));
             }
-            match server_search_request(endpoint, &request).await {
+            match search::server_search_request(endpoint, &request).await {
                 Ok(response) => return Ok((response, None)),
                 Err(err) => {
                     let response =
-                        local_search_response(&request, root, filter).map_err(|fallback_err| {
+                        search::local_search_response(&request, root, filter).map_err(|fallback_err| {
                             ErrorData::internal_error(
                                 format!(
                                     "server error: {err}; local fallback failed: {fallback_err}"
@@ -557,7 +124,7 @@ impl RicegrepMcp {
             }
         }
 
-        let response = local_search_response(&request, root, filter)
+        let response = search::local_search_response(&request, root, filter)
             .map_err(|err| ErrorData::internal_error(err.to_string(), None))?;
         Ok((response, None))
     }
@@ -593,8 +160,8 @@ impl RicegrepMcp {
             output.push_str(&note);
             output.push('\n');
         }
-        output.push_str(&format_search_lines(&response));
-        Ok(tool_result_with_response(
+        output.push_str(&response::format_search_lines(&response));
+        Ok(response::tool_result_with_response(
             output.trim_end().to_string(),
             &response,
         ))
@@ -636,8 +203,8 @@ impl RicegrepMcp {
                 "Rerank disable is not supported by the server; returning default order.\n",
             );
         }
-        output.push_str(&format_search_lines(&response));
-        Ok(tool_result_with_response(
+        output.push_str(&response::format_search_lines(&response));
+        Ok(response::tool_result_with_response(
             output.trim_end().to_string(),
             &response,
         ))
@@ -659,7 +226,7 @@ impl RicegrepMcp {
             input.ignore_case.unwrap_or(false),
         )
         .map_err(|err| ErrorData::internal_error(err.to_string(), None))?;
-        Ok(tool_text_result(matches.join("\n")))
+        Ok(response::tool_text_result(matches.join("\n")))
     }
 
     #[tool(
@@ -677,65 +244,7 @@ impl RicegrepMcp {
             input.ignore_case.unwrap_or(false),
         )
         .map_err(|err| ErrorData::internal_error(err.to_string(), None))?;
-        Ok(tool_text_result(entries.join("\n")))
-    }
-
-    fn is_binary_file(path: &std::path::Path, content: &[u8]) -> bool {
-        // Check extension first
-        if let Some(ext) = path.extension() {
-            let ext_str = ext.to_string_lossy().to_lowercase();
-            const BINARY_EXTENSIONS: &[&str] = &[
-                "exe", "dll", "so", "dylib", "bin", "o", "a", "zip", "tar", "gz", "bz2", "xz",
-                "7z", "jpg", "jpeg", "png", "gif", "bmp", "ico", "mp3", "mp4", "avi", "mov", "pdf",
-                "doc", "docx",
-            ];
-            if BINARY_EXTENSIONS.contains(&ext_str.as_ref()) {
-                return true;
-            }
-        }
-
-        // Check content heuristic (null bytes in first 8KB)
-        let check_len = content.len().min(8192);
-        content[..check_len].contains(&0)
-    }
-
-    fn format_file_content_for_mcp(
-        path: &str,
-        content: &str,
-        offset: usize,
-        limit: usize,
-    ) -> String {
-        let lines: Vec<&str> = content.lines().collect();
-        let total_lines = lines.len();
-
-        let start = offset;
-        let end = (start + limit).min(total_lines);
-
-        let mut output = String::new();
-        output.push_str("<file>\n");
-
-        for (idx, line) in lines.iter().enumerate().skip(start).take(end - start) {
-            let line_num = idx + 1;
-            // Truncate lines longer than 2000 characters
-            let formatted_line = if line.len() > 2000 {
-                format!("{}...(line truncated)", &line[..2000])
-            } else {
-                line.to_string()
-            };
-            output.push_str(&format!("{:05}| {}\n", line_num, formatted_line));
-        }
-
-        if end < total_lines {
-            output.push_str(&format!(
-                "(File has more lines - total {} lines)\n",
-                total_lines
-            ));
-        } else {
-            output.push_str(&format!("(End of file - total {} lines)\n", total_lines));
-        }
-
-        output.push_str("</file>");
-        output
+        Ok(response::tool_text_result(entries.join("\n")))
     }
 
     #[tool(
@@ -753,7 +262,7 @@ impl RicegrepMcp {
         })?;
 
         // Check if binary
-        if Self::is_binary_file(path, &content_bytes) {
+        if tools::is_binary_file(path, &content_bytes) {
             return Err(ErrorData::internal_error(
                 format!(
                     "Cannot read binary file: {}. Use a binary-safe tool.",
@@ -771,8 +280,8 @@ impl RicegrepMcp {
         let offset = input.offset.unwrap_or(0);
         let limit = input.limit.unwrap_or(2000); // Default limit of 2000 lines
 
-        let output = Self::format_file_content_for_mcp(&input.path, &content, offset, limit);
-        Ok(tool_text_result(output))
+        let output = tools::format_file_content_for_mcp(&input.path, &content, offset, limit);
+        Ok(response::tool_text_result(output))
     }
 
     #[tool(
@@ -786,7 +295,7 @@ impl RicegrepMcp {
         let output = tools::apply_edit(&input)
             .await
             .map_err(|err| ErrorData::internal_error(err.to_string(), None))?;
-        Ok(tool_text_result(output))
+        Ok(response::tool_text_result(output))
     }
 
     #[tool(
@@ -800,7 +309,7 @@ impl RicegrepMcp {
         let output = tools::apply_write(&input)
             .await
             .map_err(|err| ErrorData::internal_error(err.to_string(), None))?;
-        Ok(tool_text_result(output))
+        Ok(response::tool_text_result(output))
     }
 }
 
@@ -814,450 +323,7 @@ impl ServerHandler for RicegrepMcp {
     }
 }
 
-fn tool_title(name: &str) -> &'static str {
-    match name {
-        "rice_grep" => "File Content Search",
-        "rice_nl_search" => "Natural Language Search",
-        "rice_glob" => "File Glob Finder",
-        "rice_list" => "Directory Lister",
-        "rice_read" => "File Reader",
-        "rice_edit" => "File Editor",
-        _ => "Ricegrep Tool",
-    }
-}
-
-fn tool_annotations(name: &str) -> serde_json::Value {
-    let (safe, idempotent, destructive) = match name {
-        "rice_edit" | "rice_write" => (false, false, true),
-        _ => (true, true, false),
-    };
-    serde_json::json!({
-        "audience": ["user", "assistant"],
-        "priority": 0.85,
-        "safe": safe,
-        "idempotent": idempotent,
-        "destructive": destructive
-    })
-}
-
-fn tool_output_schema(name: &str) -> serde_json::Value {
-    match name {
-        "rice_grep" | "rice_nl_search" => search_output_schema(),
-        _ => text_only_output_schema(),
-    }
-}
-
-fn text_only_output_schema() -> serde_json::Value {
-    serde_json::json!({
-        "type": "object",
-        "properties": {
-            "content": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "type": {"type": "string"},
-                        "text": {"type": "string"}
-                    },
-                    "required": ["type", "text"]
-                }
-            },
-            "is_error": {"type": ["boolean", "null"]},
-            "meta": {"type": ["object", "null"]},
-            "structured_content": {"type": ["null", "object"]}
-        },
-        "required": ["content"]
-    })
-}
-
-fn search_output_schema() -> serde_json::Value {
-    serde_json::json!({
-        "type": "object",
-        "properties": {
-            "content": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "type": {"type": "string"},
-                        "text": {"type": "string"}
-                    },
-                    "required": ["type", "text"]
-                }
-            },
-            "is_error": {"type": ["boolean", "null"]},
-            "meta": {"type": ["object", "null"]},
-            "structured_content": {
-                "type": ["object", "null"],
-                "properties": {
-                    "results": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "score": {"type": "number"},
-                                "content": {"type": "string"},
-                                "metadata": {
-                                    "type": "object",
-                                    "properties": {
-                                        "file_path": {"type": "string"},
-                                        "start_line": {"type": "number"},
-                                        "end_line": {"type": "number"}
-                                    },
-                                    "required": ["file_path", "start_line", "end_line"]
-                                }
-                            },
-                            "required": ["score", "content", "metadata"]
-                        }
-                    },
-                    "total_found": {"type": "number"},
-                    "query_time_ms": {"type": "number"},
-                    "request_id": {"type": "string"}
-                },
-                "required": ["results", "total_found", "query_time_ms", "request_id"]
-            }
-        },
-        "required": ["content"]
-    })
-}
-
-// apply_edit and apply_write moved to tools/edit.rs and tools/write.rs
-
-fn tool_text_result(text: String) -> CallToolResult {
-    CallToolResult {
-        content: vec![rmcp::model::Content::text(text)],
-        is_error: None,
-        meta: None,
-        structured_content: None,
-    }
-}
-
-fn tool_result_with_response(text: String, response: &SearchResponse) -> CallToolResult {
-    let structured = serde_json::to_value(response).ok();
-    CallToolResult {
-        content: vec![Content::text(text)],
-        is_error: None,
-        meta: None,
-        structured_content: structured,
-    }
-}
-
-fn format_search_lines(response: &SearchResponse) -> String {
-    let mut lines = Vec::new();
-    for result in &response.results {
-        lines.push(format!(
-            "{}:{}-{} score={:.3}",
-            result.metadata.file_path.display(),
-            result.metadata.start_line,
-            result.metadata.end_line,
-            result.score
-        ));
-    }
-    lines.join("\n")
-}
-
-enum PathMatcher {
-    Any,
-    Glob(Pattern),
-    Substring(String),
-}
-
-impl PathMatcher {
-    fn matches(&self, path: &Path) -> bool {
-        match self {
-            PathMatcher::Any => true,
-            PathMatcher::Glob(pattern) => pattern.matches_path(path),
-            PathMatcher::Substring(filter) => path.to_string_lossy().contains(filter),
-        }
-    }
-}
-
-enum ContentMatcher {
-    Regex(Regex),
-    Literal(String),
-}
-
-impl ContentMatcher {
-    fn is_match(&self, line: &str) -> bool {
-        match self {
-            ContentMatcher::Regex(regex) => regex.is_match(line),
-            ContentMatcher::Literal(text) => line.contains(text),
-        }
-    }
-}
-
-fn build_path_matcher(filter: Option<&str>) -> PathMatcher {
-    let Some(filter) = filter else {
-        return PathMatcher::Any;
-    };
-    Pattern::new(filter)
-        .map(PathMatcher::Glob)
-        .unwrap_or_else(|_| PathMatcher::Substring(filter.to_string()))
-}
-
-fn build_content_matcher(query: &str) -> ContentMatcher {
-    Regex::new(query)
-        .map(ContentMatcher::Regex)
-        .unwrap_or_else(|_| ContentMatcher::Literal(query.to_string()))
-}
-
-fn collect_local_matches(
-    root: &Path,
-    query: &str,
-    path_matcher: &PathMatcher,
-    content_matcher: &ContentMatcher,
-    limit: Option<usize>,
-) -> Result<Vec<SearchResult>> {
-    let detector = LanguageDetector::default();
-    let mut results = Vec::new();
-    let mut next_id: u64 = 1;
-    for entry in WalkBuilder::new(root).build() {
-        let entry = match entry {
-            Ok(entry) => entry,
-            Err(_) => continue,
-        };
-        let path = entry.path();
-        if !path.is_file() {
-            continue;
-        }
-        if !path_matcher.matches(path) {
-            continue;
-        }
-        if append_matches_for_file(
-            &mut results,
-            path,
-            query,
-            limit,
-            &detector,
-            &mut next_id,
-            content_matcher,
-        )? {
-            return Ok(results);
-        }
-    }
-
-    Ok(results)
-}
-
-fn append_matches_for_file(
-    results: &mut Vec<SearchResult>,
-    path: &Path,
-    query: &str,
-    limit: Option<usize>,
-    detector: &LanguageDetector,
-    next_id: &mut u64,
-    content_matcher: &ContentMatcher,
-) -> Result<bool> {
-    let contents = match std::fs::read_to_string(path) {
-        Ok(contents) => contents,
-        Err(_) => return Ok(false),
-    };
-    let language = detector
-        .detect(path, &contents)
-        .unwrap_or(LanguageKind::PlainText);
-    for (index, line) in contents.lines().enumerate() {
-        if !content_matcher.is_match(line) {
-            continue;
-        }
-        let line_number = (index + 1) as u32;
-        let metadata = ChunkMetadata {
-            chunk_id: *next_id,
-            repository_id: None,
-            file_path: path.to_path_buf(),
-            language,
-            start_line: line_number,
-            end_line: line_number,
-            token_count: 0,
-            checksum: String::new(),
-        };
-        results.push(SearchResult {
-            chunk_id: *next_id,
-            score: 1.0,
-            content: line.to_string(),
-            metadata,
-            highlights: vec![query.to_string()],
-        });
-        *next_id = next_id.saturating_add(1);
-        if limit.map_or(false, |max| results.len() >= max) {
-            return Ok(true);
-        }
-    }
-    Ok(false)
-}
-
-fn local_search_response(
-    request: &SearchRequest,
-    root: &Path,
-    filter: Option<&str>,
-) -> Result<SearchResponse> {
-    let start = Instant::now();
-    let path_matcher = build_path_matcher(filter);
-    let content_matcher = build_content_matcher(&request.query);
-    let results = collect_local_matches(
-        root,
-        &request.query,
-        &path_matcher,
-        &content_matcher,
-        request.limit,
-    )?;
-    let total_found = results.len();
-    let elapsed = start.elapsed().as_secs_f64() * 1000.0;
-    Ok(SearchResponse {
-        results,
-        total_found,
-        query_time_ms: elapsed,
-        request_id: Uuid::new_v4().to_string(),
-    })
-}
-
-#[cfg(feature = "server")]
-async fn server_search_request(endpoint: &str, request: &SearchRequest) -> Result<SearchResponse> {
-    let url = format!("{}/search", endpoint.trim_end_matches('/'));
-    let response = reqwest::Client::new()
-        .post(&url)
-        .json(request)
-        .send()
-        .await
-        .context("failed to send server search request")?;
-    if !response.status().is_success() {
-        return Err(anyhow::anyhow!(
-            "server search request failed: {}",
-            response.status()
-        ));
-    }
-    let search_response: SearchResponse = response
-        .json()
-        .await
-        .context("failed to parse server search response")?;
-    Ok(search_response)
-}
-
-#[cfg(not(feature = "server"))]
-async fn server_search_request(
-    _endpoint: &str,
-    _request: &SearchRequest,
-) -> Result<SearchResponse> {
-    Err(anyhow::anyhow!(
-        "Server mode is disabled. Rebuild with --features server to enable it."
-    ))
-}
-
-async fn handle_mcp_request(
-    mcp: &RicegrepMcp,
-    tool_router: &ToolRouter<RicegrepMcp>,
-    request: &serde_json::Value,
-) -> Result<serde_json::Value> {
-    let id = request["id"].clone();
-    let method = request["method"].as_str().unwrap_or("");
-
-    let response = match method {
-        "initialize" => {
-            serde_json::json!({
-                            "jsonrpc": "2.0",
-                            "id": id,
-                            "result": {
-                                "protocolVersion": "2024-11-05",
-                                "capabilities": {
-                                    "tools": {
-                                        "listChanged": true
-            }
-
-                                },
-                                "serverInfo": {
-                                    "name": "ricegrep",
-                                    "version": env!("CARGO_PKG_VERSION")
-                                }
-                            }
-                        })
-        }
-        "tools/list" => {
-            let tools = tool_router
-                .list_all()
-                .into_iter()
-                .filter(|tool| mcp.is_tool_allowed(tool.name.as_ref()))
-                .map(|tool| {
-                    let name = tool.name.as_ref();
-                    serde_json::json!({
-                        "name": name,
-                        "title": tool_title(name),
-                        "description": tool.description,
-                        "inputSchema": tool.input_schema,
-                        "outputSchema": tool_output_schema(name),
-                        "annotations": tool_annotations(name)
-                    })
-                })
-                .collect::<Vec<_>>();
-            serde_json::json!({
-                "jsonrpc": "2.0",
-                "id": id,
-                "result": {
-                    "tools": tools
-                }
-            })
-        }
-        "tools/call" => {
-            let tool_name = request["params"]["name"].as_str().unwrap_or("");
-            let arguments = request["params"]["arguments"].clone();
-            let result = call_tool(mcp, tool_name, arguments).await?;
-            serde_json::json!({
-                "jsonrpc": "2.0",
-                "id": id,
-                "result": result
-            })
-        }
-        _ => {
-            serde_json::json!({
-                "jsonrpc": "2.0",
-                "id": id,
-                "error": {
-                    "code": -32601,
-                    "message": "Method not found"
-                }
-            })
-        }
-    };
-
-    Ok(response)
-}
-
-async fn call_tool(
-    mcp: &RicegrepMcp,
-    tool_name: &str,
-    arguments: serde_json::Value,
-) -> Result<serde_json::Value> {
-    let result = match tool_name {
-        "rice_grep" => {
-            let input: GrepToolInput = serde_json::from_value(arguments)?;
-            mcp.grep(Parameters(input)).await?
-        }
-        "rice_nl_search" => {
-            let input: NlSearchToolInput = serde_json::from_value(arguments)?;
-            mcp.nl_search(Parameters(input)).await?
-        }
-        "rice_glob" => {
-            let input: GlobToolInput = serde_json::from_value(arguments)?;
-            mcp.glob(Parameters(input)).await?
-        }
-        "rice_list" => {
-            let input: ListToolInput = serde_json::from_value(arguments)?;
-            mcp.list(Parameters(input)).await?
-        }
-        "rice_read" => {
-            let input: ReadToolInput = serde_json::from_value(arguments)?;
-            mcp.read(Parameters(input)).await?
-        }
-        "rice_edit" => {
-            let input: EditToolInput = serde_json::from_value(arguments)?;
-            mcp.edit(Parameters(input)).await?
-        }
-        "rice_write" => {
-            let input: WriteToolInput = serde_json::from_value(arguments)?;
-            mcp.write(Parameters(input)).await?
-        }
-        _ => return Ok(serde_json::json!([])),
-    };
-    Ok(serde_json::to_value(&result)?)
-}
+// Response helpers, search, and protocol handlers moved to their respective modules
 
 pub async fn run_mcp(runtime_config: &RuntimeConfig, args: McpArgs) -> Result<()> {
     let watch_paths: Vec<String> = args
@@ -1282,7 +348,7 @@ pub async fn run_mcp(runtime_config: &RuntimeConfig, args: McpArgs) -> Result<()
     );
     let tool_router = &mcp.tool_router;
 
-    let mut watch_manager = WatchManager::new();
+    let mut watch_manager = watch::WatchManager::new();
 
     if !args.no_watch {
         let watch_args = crate::WatchArgs {
@@ -1306,7 +372,7 @@ pub async fn run_mcp(runtime_config: &RuntimeConfig, args: McpArgs) -> Result<()
             break;
         }
         let request: serde_json::Value = serde_json::from_str(&buffer.trim())?;
-        let response = handle_mcp_request(&mcp, tool_router, &request).await?;
+        let response = protocol::handle_mcp_request(&mcp, tool_router, &request).await?;
         let response_str = serde_json::to_string(&response)? + "\n";
         stdout.write_all(response_str.as_bytes()).await?;
         stdout.flush().await?;

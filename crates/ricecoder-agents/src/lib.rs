@@ -22,8 +22,8 @@
 //! let registry = AgentRegistry::new();
 //! // ... register agents ...
 //!
-//! // Create orchestrator
-//! let orchestrator = AgentOrchestrator::new(registry);
+//! // Create orchestrator with default dependencies
+//! let orchestrator = AgentOrchestrator::with_defaults(registry);
 //!
 //! // Execute agents
 //! let results = orchestrator.execute(tasks).await?;

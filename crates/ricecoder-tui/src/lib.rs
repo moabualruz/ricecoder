@@ -112,7 +112,6 @@ pub use components::{
     // Event system
     EventComponent,
     EventContext,
-    EventDispatcher,
     EventPhase,
     EventPropagation,
     EventResult,
@@ -130,6 +129,8 @@ pub use components::{
     StateChangeEvent,
     TabWidget,
 };
+// EventDispatcher is from event_dispatcher module, not components
+pub use event_dispatcher::EventDispatcher;
 // TuiConfig is now exported from ricecoder-storage
 pub use diff::{DiffHunk, DiffLine, DiffLineType, DiffViewType, DiffWidget};
 // LSP integration moved to ricecoder-lsp crate

@@ -27,6 +27,8 @@ rand = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 ricecoder-storage = { workspace = true }
 ricecoder-domain = { workspace = true }
+ricecoder-common = { workspace = true }
+inventory = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

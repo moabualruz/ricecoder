@@ -23,6 +23,10 @@ tokio = { workspace = true }
 async-trait = { workspace = true }
 ricecoder-storage = { workspace = true }
 
+# DI registration (via ricecoder-common to avoid circular deps)
+ricecoder-common = { workspace = true }
+inventory = { workspace = true }
+
 [dev-dependencies]
 proptest = { workspace = true }
 tempfile = { workspace = true }

@@ -29,6 +29,10 @@ hex = { workspace = true }
 ricecoder-storage = { workspace = true }
 ricecoder-files = { workspace = true }
 
+# DI registration (via ricecoder-common to avoid circular deps)
+ricecoder-common = { workspace = true }
+inventory = { workspace = true }
+
 [dev-dependencies]
 proptest = { workspace = true }
 tokio-test = { workspace = true }

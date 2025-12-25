@@ -20,13 +20,23 @@ pub struct SafetyValidator {
 }
 
 impl SafetyValidator {
-    /// Create a new safety validator
-    pub fn new() -> Self {
+    /// Create a new safety validator with injected dependencies
+    pub fn new_with_scorer(risk_scorer: Arc<RiskScorer>) -> Self {
         Self {
             constraints: RwLock::new(Vec::new()),
-            risk_scorer: Arc::new(RiskScorer::new()),
+            risk_scorer,
             approval_gates: RwLock::new(HashMap::new()),
         }
+    }
+
+    /// Create a new safety validator with default dependencies
+    pub fn new() -> Self {
+        Self::new_with_scorer(Arc::new(RiskScorer::new()))
+    }
+
+    /// Create with defaults (alias for new)
+    pub fn with_defaults() -> Self {
+        Self::new()
     }
 
     /// Add a security constraint

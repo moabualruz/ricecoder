@@ -18,6 +18,8 @@
 //!
 //! See [`usage`] module for detailed usage examples.
 
+pub mod provider;
+pub mod registration;
 pub mod services;
 pub mod usage;
 
@@ -416,6 +418,43 @@ impl DIContainer {
         info!("Cleared all services from DI container");
     }
 
+    /// Register a pre-created service instance from a ServiceEntry
+    ///
+    /// This is used by the factory-return DI pattern where crates create
+    /// their own services and return them as ServiceEntry items.
+    pub fn register_entry(&self, entry: ricecoder_common::di::ServiceEntry) -> DIResult<()> {
+        let mut services = self.services.write().unwrap();
+
+        if services.contains_key(&entry.type_id) {
+            // Skip if already registered (allows for priority-based registration)
+            debug!(
+                "Service already registered, skipping: {}",
+                entry.type_name
+            );
+            return Ok(());
+        }
+
+        // Create a factory that returns the pre-created instance
+        let instance = entry.instance;
+        let wrapped_factory = Box::new(
+            move |_container: &DIContainer| -> DIResult<Arc<dyn Any + Send + Sync>> {
+                Ok(instance.clone())
+            },
+        );
+
+        let descriptor = ServiceDescriptor {
+            factory: wrapped_factory,
+            lifetime: ServiceLifetime::Singleton,
+            instance: None, // Will be set on first resolve
+            health_check: None,
+        };
+
+        services.insert(entry.type_id, descriptor);
+
+        debug!("Registered service from entry: {}", entry.type_name);
+        Ok(())
+    }
+
     /// Perform health checks on all registered services that have health checks
     pub fn health_check_all(&self) -> DIResult<Vec<(String, HealthStatus)>> {
         let services = self.services.read().unwrap();
@@ -547,69 +586,20 @@ macro_rules! resolve_service {
 // Re-export service registration functions
 #[cfg(feature = "full")]
 pub use services::create_full_application_container;
-#[cfg(feature = "activity-log")]
-pub use services::register_activity_log_services;
-#[cfg(feature = "config")]
-pub use services::register_app_config_services;
-#[cfg(feature = "cache")]
-pub use services::register_cache_services;
-#[cfg(feature = "cli")]
-pub use services::register_cli_services;
-#[cfg(feature = "config")]
-pub use services::register_config_services;
-#[cfg(feature = "domain-agents")]
-pub use services::register_domain_agents_services;
-#[cfg(feature = "domain")]
-pub use services::register_domain_services;
-#[cfg(feature = "execution")]
-pub use services::register_execution_services;
-#[cfg(feature = "files")]
-pub use services::register_files_services;
-#[cfg(feature = "generation")]
-pub use services::register_generation_services;
-#[cfg(feature = "github")]
-pub use services::register_github_services;
-#[cfg(feature = "images")]
-pub use services::register_images_services;
-#[cfg(feature = "industry")]
-pub use services::register_industry_services;
-#[cfg(feature = "learning")]
-pub use services::register_learning_services;
-#[cfg(feature = "local-models")]
-pub use services::register_local_models_services;
-#[cfg(feature = "mcp")]
-pub use services::register_mcp_services;
-#[cfg(feature = "orchestration")]
-pub use services::register_orchestration_services;
-#[cfg(feature = "parsers")]
-pub use services::register_parsers_services;
-#[cfg(feature = "permissions")]
-pub use services::register_permissions_services;
-#[cfg(feature = "refactoring")]
-pub use services::register_refactoring_services;
-#[cfg(feature = "research")]
-pub use services::register_research_services;
-#[cfg(feature = "safety")]
-pub use services::register_safety_services;
-#[cfg(feature = "security")]
-pub use services::register_security_services;
-#[cfg(feature = "specs")]
-pub use services::register_specs_services;
-#[cfg(feature = "storage")]
-pub use services::register_storage_services;
-#[cfg(feature = "themes")]
-pub use services::register_themes_services;
-#[cfg(feature = "tools")]
-pub use services::register_tool_services;
-#[cfg(feature = "undo-redo")]
-pub use services::register_undo_redo_services;
-#[cfg(feature = "vcs")]
-pub use services::register_vcs_services;
-#[cfg(feature = "workflows")]
-pub use services::register_workflow_services;
 pub use services::{
     create_application_container, create_cli_container, create_configured_container,
     create_development_container, create_test_container, create_tui_container,
-    register_infrastructure_services, register_use_cases, ContainerConfig, Lifecycle,
-    LifecycleManager,
+    register_discovered_services, register_infrastructure_services, register_use_cases,
+    ContainerConfig, DIContainerBuilderExt, Lifecycle, LifecycleManager,
+};
+
+// Re-export ServiceProvider traits
+pub use provider::{
+    HealthCheckProvider, LifecycleServiceProvider, ServiceProvider, ServiceProviderRegistry,
+};
+
+// Re-export auto-discovery registration types
+pub use registration::{
+    discovered_registration_count, list_discovered_registrations,
+    register_all_discovered_services, ServiceRegistration,
 };

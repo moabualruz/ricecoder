@@ -150,6 +150,7 @@
 /// ```
 pub mod config;
 pub mod context;
+pub mod di;
 pub mod engine;
 pub mod external_lsp_proxy;
 pub mod ghost_text;

@@ -8,6 +8,7 @@
 pub mod audit;
 pub mod backup;
 pub mod conflict;
+pub mod di;
 pub mod diff;
 pub mod error;
 pub mod file_repository;

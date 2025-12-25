@@ -17,6 +17,10 @@ mime_guess = { workspace = true }
 async-trait = { workspace = true }
 futures-core = { workspace = true }
 
+# DI registration (via ricecoder-common to avoid circular deps)
+ricecoder-common = { workspace = true }
+inventory = { workspace = true }
+
 [dev-dependencies]
 proptest = { workspace = true }
 proptest-derive = { workspace = true }

@@ -5,6 +5,7 @@ pub mod analytics;
 pub mod anomaly_detection;
 pub mod compliance;
 pub mod dashboards;
+pub mod di;
 pub mod error_tracking;
 pub mod metrics;
 pub mod performance;

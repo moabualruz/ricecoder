@@ -313,24 +313,72 @@ impl Default for TuiLifecycleManager {
     }
 }
 
-/// Global lifecycle manager for TUI
+// =============================================================================
+// DI-based API (Preferred)
+// =============================================================================
+
+/// Get the TUI lifecycle manager from a DI container
+///
+/// This is the preferred way to access the lifecycle manager.
+/// The container should be passed through the application.
+pub fn get_lifecycle_manager_from_container(
+    container: &ricecoder_di::DIContainer,
+) -> Option<Arc<TuiLifecycleManager>> {
+    container.resolve::<TuiLifecycleManager>().ok()
+}
+
+/// Register a component with the lifecycle manager from the container
+pub fn register_component_with_container<C>(
+    container: &ricecoder_di::DIContainer,
+    component: C,
+    dependencies: Vec<String>,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>>
+where
+    C: TuiLifecycleComponent + 'static,
+{
+    if let Some(manager) = get_lifecycle_manager_from_container(container) {
+        manager.register_component(component, dependencies)
+    } else {
+        Err("TuiLifecycleManager not found in container".into())
+    }
+}
+
+// =============================================================================
+// Legacy API - Kept for backward compatibility during migration
+// =============================================================================
+
+/// Legacy: Global lifecycle manager for TUI
+/// 
+/// **DEPRECATED**: Use `get_lifecycle_manager_from_container()` instead.
+#[deprecated(since = "0.2.0", note = "Use get_lifecycle_manager_from_container() with explicit container")]
 static TUI_LIFECYCLE_MANAGER: OnceLock<Arc<TuiLifecycleManager>> = OnceLock::new();
 
-/// Initialize the global TUI lifecycle manager
+/// Legacy: Initialize the global TUI lifecycle manager
+/// 
+/// **DEPRECATED**: The lifecycle manager is now registered as a DI service.
+/// Use `container.resolve::<TuiLifecycleManager>()` instead.
+#[deprecated(since = "0.2.0", note = "Lifecycle manager is now a DI service")]
+#[allow(deprecated)]
 pub fn initialize_tui_lifecycle_manager() -> Arc<TuiLifecycleManager> {
     let manager = Arc::new(TuiLifecycleManager::new());
-    TUI_LIFECYCLE_MANAGER
-        .set(manager.clone())
-        .expect("TUI lifecycle manager already initialized");
+    let _ = TUI_LIFECYCLE_MANAGER.set(manager.clone());
     manager
 }
 
-/// Get the global TUI lifecycle manager
+/// Legacy: Get the global TUI lifecycle manager
+/// 
+/// **DEPRECATED**: Use `get_lifecycle_manager_from_container()` instead.
+#[deprecated(since = "0.2.0", note = "Use get_lifecycle_manager_from_container() instead")]
+#[allow(deprecated)]
 pub fn get_tui_lifecycle_manager() -> Option<Arc<TuiLifecycleManager>> {
     TUI_LIFECYCLE_MANAGER.get().cloned()
 }
 
-/// Register a component with the global TUI lifecycle manager
+/// Legacy: Register a component with the global TUI lifecycle manager
+/// 
+/// **DEPRECATED**: Use `register_component_with_container()` instead.
+#[deprecated(since = "0.2.0", note = "Use register_component_with_container() instead")]
+#[allow(deprecated)]
 pub fn register_tui_component<C>(
     component: C,
     dependencies: Vec<String>,

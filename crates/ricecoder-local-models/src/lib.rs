@@ -3,6 +3,7 @@
 //! This crate provides model management functionality for local models via Ollama.
 //! It handles model pulling, removal, updates, and version management.
 
+pub mod di;
 pub mod error;
 pub mod manager;
 pub mod models;

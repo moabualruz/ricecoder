@@ -4,6 +4,7 @@
 //! (OpenAI, Anthropic, ollama, Google, etc.) without changing your workflow.
 
 pub mod api_key;
+pub mod di;
 pub mod audit_log;
 pub mod cache;
 pub mod circuit_breaker;

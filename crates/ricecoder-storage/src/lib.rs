@@ -33,6 +33,7 @@ pub mod cache;
 pub mod cache_implementations;
 pub mod config;
 pub mod config_cache;
+pub mod di;
 pub mod error;
 pub mod global_store;
 pub mod manager;

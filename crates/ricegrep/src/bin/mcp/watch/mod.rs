@@ -9,6 +9,7 @@ pub use indexer::update_index_for_changes;
 pub use tracker::ChangeTracker;
 
 use anyhow::{Context, Result};
+use notify::Watcher;
 use ricegrep::admin::AdminToolset;
 use std::path::PathBuf;
 use tokio::time::Duration;

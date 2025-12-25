@@ -59,7 +59,7 @@ fn create_test_rule(rule_id: &str) -> SharedRule {
 #[tokio::test]
 async fn test_concurrent_rule_promotions_from_same_team() {
     // **Validates: Requirements 2.1, 2.2**
-    let manager = Arc::new(TeamManager::new());
+    let manager = Arc::new(TeamManager::with_defaults());
 
     // Create team
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -116,7 +116,7 @@ async fn test_concurrent_rule_promotions_from_same_team() {
 #[tokio::test]
 async fn test_concurrent_rule_promotions_different_scopes() {
     // **Validates: Requirements 2.1, 2.2**
-    let manager = Arc::new(TeamManager::new());
+    let manager = Arc::new(TeamManager::with_defaults());
 
     // Create team
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -165,7 +165,7 @@ async fn test_concurrent_rule_promotions_different_scopes() {
 #[tokio::test]
 async fn test_concurrent_rule_promotions_with_validation() {
     // **Validates: Requirements 2.1, 2.4**
-    let manager = Arc::new(TeamManager::new());
+    let manager = Arc::new(TeamManager::with_defaults());
 
     // Create team
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -237,7 +237,7 @@ async fn test_concurrent_rule_promotions_with_validation() {
 #[tokio::test]
 async fn test_concurrent_role_assignments() {
     // **Validates: Requirements 3.7**
-    let manager = Arc::new(TeamManager::new());
+    let manager = Arc::new(TeamManager::with_defaults());
 
     // Create team with initial members
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -314,7 +314,7 @@ async fn test_concurrent_role_assignments() {
 #[tokio::test]
 async fn test_concurrent_permission_checks() {
     // **Validates: Requirements 3.7**
-    let manager = Arc::new(TeamManager::new());
+    let manager = Arc::new(TeamManager::with_defaults());
 
     // Create team
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -371,7 +371,7 @@ async fn test_concurrent_permission_checks() {
 #[tokio::test]
 async fn test_concurrent_standards_storage() {
     // **Validates: Requirements 1.1, 1.2**
-    let manager = Arc::new(TeamManager::new());
+    let manager = Arc::new(TeamManager::with_defaults());
 
     // Create team
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -434,7 +434,7 @@ async fn test_concurrent_standards_storage() {
 #[tokio::test]
 async fn test_concurrent_standards_retrieval() {
     // **Validates: Requirements 1.2**
-    let manager = Arc::new(TeamManager::new());
+    let manager = Arc::new(TeamManager::with_defaults());
 
     // Create team
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -501,7 +501,7 @@ async fn test_concurrent_standards_retrieval() {
 #[tokio::test]
 async fn test_concurrent_member_operations() {
     // **Validates: Requirements 3.1, 3.2**
-    let manager = Arc::new(TeamManager::new());
+    let manager = Arc::new(TeamManager::with_defaults());
 
     // Create team
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);

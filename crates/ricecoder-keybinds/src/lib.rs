@@ -9,6 +9,7 @@
 //! - Persistence layer for saving profiles across sessions
 
 pub mod conflict;
+pub mod di;
 pub mod engine;
 pub mod error;
 pub mod help;

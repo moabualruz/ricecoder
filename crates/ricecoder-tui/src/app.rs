@@ -17,10 +17,8 @@ use ricecoder_storage::TuiConfig;
 use tokio::sync::RwLock;
 
 use crate::{
-    accessibility::{
-        FocusManager, KeyboardNavigationManager, ScreenReaderAnnouncer, StateChangeEvent,
-    },
-    components::Component,
+    accessibility::{FocusManager, KeyboardNavigationManager, ScreenReaderAnnouncer},
+    components::{Component, StateChangeEvent},
     error_handling::{ErrorCategory, ErrorManager, ErrorSeverity, RiceError},
     event::{Event, EventLoop},
     image_integration::ImageIntegration,
@@ -552,7 +550,7 @@ impl App {
 
     /// Switch to high contrast theme
     pub fn set_high_contrast_theme(&mut self, theme_name: String) -> bool {
-        if self.high_contrast_themes.set_theme(theme_name) {
+        if self.high_contrast_themes.set_theme(&theme_name) {
             // Also enable high contrast mode in keyboard navigation
             self.keyboard_nav.set_high_contrast(true);
             true
@@ -562,7 +560,9 @@ impl App {
     }
 
     /// Get current high contrast theme
-    pub fn get_current_high_contrast_theme(&self) -> &crate::style::Theme {
+    pub fn get_current_high_contrast_theme(
+        &self,
+    ) -> Option<&crate::accessibility::themes::HighContrastTheme> {
         self.high_contrast_themes.current_theme()
     }
 

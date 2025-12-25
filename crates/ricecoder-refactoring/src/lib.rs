@@ -39,6 +39,7 @@
 
 pub mod adapters;
 pub mod config;
+pub mod di;
 pub mod error;
 pub mod impact;
 pub mod patterns;

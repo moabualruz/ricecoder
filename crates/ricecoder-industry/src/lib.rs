@@ -32,6 +32,7 @@
 pub mod auth;
 pub mod compliance;
 pub mod connections;
+pub mod di;
 pub mod error;
 pub mod providers;
 pub mod tools;

@@ -127,6 +127,7 @@
 
 pub mod cli;
 pub mod config;
+pub mod di;
 pub mod dispatcher;
 pub mod error;
 pub mod events;

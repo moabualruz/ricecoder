@@ -54,6 +54,7 @@
 //! ```
 
 pub mod analyzers;
+pub mod di;
 pub mod error;
 pub mod managers;
 pub mod models;

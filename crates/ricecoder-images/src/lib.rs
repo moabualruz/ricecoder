@@ -12,6 +12,7 @@ pub mod audit_logging;
 pub mod banner;
 pub mod cache;
 pub mod config;
+pub mod di;
 pub mod display;
 pub mod error;
 pub mod formats;

@@ -18,7 +18,7 @@ fn create_test_member(name: &str, email: &str, role: TeamRole) -> TeamMember {
 
 #[tokio::test]
 async fn test_team_creation_with_members() {
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create test members
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -53,7 +53,7 @@ async fn test_team_creation_with_members() {
 
 #[tokio::test]
 async fn test_member_addition() {
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create initial team with one member
     let initial_member = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -83,7 +83,7 @@ async fn test_member_addition() {
 
 #[tokio::test]
 async fn test_member_removal() {
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team with two members
     let member1 = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -115,7 +115,7 @@ async fn test_member_removal() {
 
 #[tokio::test]
 async fn test_permission_enforcement_across_operations() {
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team with members of different roles
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -163,7 +163,7 @@ async fn test_permission_enforcement_across_operations() {
 
 #[tokio::test]
 async fn test_duplicate_member_addition_fails() {
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team with one member
     let member = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -181,7 +181,7 @@ async fn test_duplicate_member_addition_fails() {
 
 #[tokio::test]
 async fn test_remove_nonexistent_member_fails() {
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team with one member
     let member = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -200,7 +200,7 @@ async fn test_remove_nonexistent_member_fails() {
 
 #[tokio::test]
 async fn test_get_nonexistent_team_fails() {
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Try to get a team that doesn't exist
     let nonexistent_id = Uuid::new_v4().to_string();
@@ -212,7 +212,7 @@ async fn test_get_nonexistent_team_fails() {
 
 #[tokio::test]
 async fn test_team_persistence_across_operations() {
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team
     let member1 = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -259,7 +259,7 @@ async fn test_team_persistence_across_operations() {
 
 #[tokio::test]
 async fn test_multiple_teams_isolation() {
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create first team
     let member1 = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -298,7 +298,7 @@ async fn test_multiple_teams_isolation() {
 
 #[tokio::test]
 async fn test_team_manager_accessors() {
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Verify all sub-managers are accessible (just verify they don't panic)
     let _config_manager = manager.config_manager();

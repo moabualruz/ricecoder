@@ -56,7 +56,7 @@ fn create_test_rule(rule_id: &str) -> SharedRule {
 #[tokio::test]
 async fn test_complete_team_creation_and_standards_sharing_workflow() {
     // **Validates: Requirements 1.1, 1.2, 1.3, 3.1, 3.2**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Step 1: Create team with members
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -121,7 +121,7 @@ async fn test_complete_team_creation_and_standards_sharing_workflow() {
 #[tokio::test]
 async fn test_team_standards_distribution_to_all_members() {
     // **Validates: Requirements 1.2, 1.3, 1.4, 1.5, 1.6**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team with multiple members
     let members = vec![
@@ -158,7 +158,7 @@ async fn test_team_standards_distribution_to_all_members() {
 #[tokio::test]
 async fn test_team_member_addition_and_standards_access() {
     // **Validates: Requirements 1.2, 3.1, 3.2**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create initial team
     let initial_member = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -212,7 +212,7 @@ async fn test_team_member_addition_and_standards_access() {
 #[tokio::test]
 async fn test_rule_promotion_workflow_with_validation() {
     // **Validates: Requirements 2.1, 2.2, 2.4, 2.9**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -249,7 +249,7 @@ async fn test_rule_promotion_workflow_with_validation() {
 #[tokio::test]
 async fn test_rule_promotion_atomicity_with_member_notification() {
     // **Validates: Requirements 2.1, 2.2, 2.9**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team with multiple members
     let members = vec![
@@ -281,7 +281,7 @@ async fn test_rule_promotion_atomicity_with_member_notification() {
 #[tokio::test]
 async fn test_rule_promotion_chain_project_to_team_to_organization() {
     // **Validates: Requirements 2.1, 2.2**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -317,7 +317,7 @@ async fn test_rule_promotion_chain_project_to_team_to_organization() {
 #[tokio::test]
 async fn test_rule_adoption_tracking_after_promotion() {
     // **Validates: Requirements 2.5**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -349,7 +349,7 @@ async fn test_rule_adoption_tracking_after_promotion() {
 #[tokio::test]
 async fn test_rule_effectiveness_tracking_after_promotion() {
     // **Validates: Requirements 2.6**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -385,7 +385,7 @@ async fn test_rule_effectiveness_tracking_after_promotion() {
 #[tokio::test]
 async fn test_configuration_inheritance_organization_to_team_to_project() {
     // **Validates: Requirements 1.7**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -436,7 +436,7 @@ async fn test_configuration_inheritance_organization_to_team_to_project() {
 #[tokio::test]
 async fn test_project_level_override_of_inherited_standards() {
     // **Validates: Requirements 1.8**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -497,7 +497,7 @@ async fn test_project_level_override_of_inherited_standards() {
 #[tokio::test]
 async fn test_standards_change_tracking_with_timestamps() {
     // **Validates: Requirements 1.9**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -534,7 +534,7 @@ async fn test_standards_change_tracking_with_timestamps() {
 #[tokio::test]
 async fn test_multiple_teams_with_independent_standards() {
     // **Validates: Requirements 1.1, 1.2**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create first team
     let admin1 = create_test_member("Alice", "alice@example.com", TeamRole::Admin);
@@ -585,7 +585,7 @@ async fn test_multiple_teams_with_independent_standards() {
 #[tokio::test]
 async fn test_standards_version_increment_on_update() {
     // **Validates: Requirements 1.9**
-    let manager = TeamManager::new();
+    let manager = TeamManager::with_defaults();
 
     // Create team
     let admin = create_test_member("Alice", "alice@example.com", TeamRole::Admin);

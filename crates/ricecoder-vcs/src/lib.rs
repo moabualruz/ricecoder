@@ -26,6 +26,7 @@
 //! }
 //! ```
 
+pub mod di;
 pub mod error;
 pub mod git;
 pub mod repository;

@@ -12,6 +12,7 @@ pub mod code_validator;
 pub mod conflict_detector;
 pub mod conflict_prompter;
 pub mod conflict_resolver;
+pub mod di;
 pub mod error;
 pub mod generation_manager;
 pub mod generation_plan_builder;

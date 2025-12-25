@@ -6,6 +6,7 @@
 //! Core workflow functionality for declarative workflow definitions and execution.
 
 pub mod approval;
+pub mod di;
 pub mod engine;
 pub mod error;
 pub mod models;
