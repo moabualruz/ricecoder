@@ -458,26 +458,33 @@ mod tests {
         assert!(result.is_err());
     }
 
-    #[test]
-    fn test_command_handler_success() {
-        let result = CommandHandler::handle("echo", &["hello".to_string()]);
+    #[tokio::test]
+    async fn test_command_handler_success() {
+        let result =
+            CommandHandler::handle_async("echo", &["hello".to_string()], None, Some(false)).await;
         assert!(result.is_ok());
         let output = result.unwrap();
         assert_eq!(output.exit_code, Some(0));
         assert!(output.stdout.contains("hello"));
     }
 
-    #[test]
-    fn test_command_handler_failure() {
-        let result = CommandHandler::handle("false", &[]);
+    #[tokio::test]
+    async fn test_command_handler_failure() {
+        // On Windows, use "cmd /c exit 1" to get a non-zero exit code
+        #[cfg(windows)]
+        let result =
+            CommandHandler::handle_async("cmd", &["/c".to_string(), "exit".to_string(), "1".to_string()], None, Some(false)).await;
+        #[cfg(not(windows))]
+        let result = CommandHandler::handle_async("false", &[], None, Some(false)).await;
         assert!(result.is_ok()); // Command executed, but failed
         let output = result.unwrap();
         assert_ne!(output.exit_code, Some(0));
     }
 
-    #[test]
-    fn test_command_handler_nonexistent() {
-        let result = CommandHandler::handle("nonexistent_command_xyz", &[]);
+    #[tokio::test]
+    async fn test_command_handler_nonexistent() {
+        let result =
+            CommandHandler::handle_async("nonexistent_command_xyz", &[], None, Some(false)).await;
         assert!(result.is_err()); // Command not found
     }
 }

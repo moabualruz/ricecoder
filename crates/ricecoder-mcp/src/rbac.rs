@@ -43,9 +43,28 @@ impl MCRBACManager {
         principal: &ricecoder_security::access_control::Principal,
         server_id: &str,
     ) -> Result<bool> {
-        // Check if principal has MCP server access permission
+        // Expand principal roles using role mappings
+        let mut expanded_roles = principal.roles.clone();
+        for role_name in &principal.roles {
+            if let Some(security_roles) = self.role_mappings.get(role_name) {
+                for security_role in security_roles {
+                    if !expanded_roles.contains(security_role) {
+                        expanded_roles.push(security_role.clone());
+                    }
+                }
+            }
+        }
+
+        // Create expanded principal with mapped roles
+        let expanded_principal = ricecoder_security::access_control::Principal {
+            id: principal.id.clone(),
+            roles: expanded_roles,
+            attributes: principal.attributes.clone(),
+        };
+
+        // Check if expanded principal has MCP server access permission
         let has_server_access = self.access_control.has_permission(
-            principal,
+            &expanded_principal,
             &ricecoder_security::access_control::Permission::ApiKeyAccess,
         );
 
@@ -57,26 +76,11 @@ impl MCRBACManager {
             return Ok(false);
         }
 
-        // Check role-based server access
-        for role_name in &principal.roles {
-            if let Some(security_roles) = self.role_mappings.get(role_name) {
-                for security_role in security_roles {
-                    if principal.roles.contains(security_role) {
-                        debug!(
-                            "Principal {} granted access to MCP server {} via role {}",
-                            principal.id, server_id, security_role
-                        );
-                        return Ok(true);
-                    }
-                }
-            }
-        }
-
         debug!(
-            "Principal {} has no role-based access to MCP server {}",
+            "Principal {} granted access to MCP server {} via role mapping",
             principal.id, server_id
         );
-        Ok(false)
+        Ok(true)
     }
 
     /// Check if a principal has permission to execute a tool

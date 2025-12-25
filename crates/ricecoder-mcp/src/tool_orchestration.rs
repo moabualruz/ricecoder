@@ -617,8 +617,22 @@ mod tests {
             Ok(())
         }
 
-        async fn get_tool_metadata(&self, _tool_name: &str) -> Result<Option<ToolMetadata>> {
-            Ok(None)
+        async fn get_tool_metadata(&self, tool_name: &str) -> Result<Option<ToolMetadata>> {
+            // Return metadata for mock "echo" tool used in tests
+            if tool_name == "echo" {
+                Ok(Some(ToolMetadata {
+                    id: "echo".to_string(),
+                    name: "echo".to_string(),
+                    description: "Mock echo tool for testing".to_string(),
+                    category: "testing".to_string(),
+                    parameters: vec![],
+                    return_type: "string".to_string(),
+                    source: crate::metadata::ToolSource::BuiltIn,
+                    server_id: None,
+                }))
+            } else {
+                Ok(None)
+            }
         }
 
         async fn list_tools(&self) -> Result<Vec<ToolMetadata>> {

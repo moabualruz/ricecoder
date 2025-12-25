@@ -506,8 +506,8 @@ mod tests {
         assert!(result.is_err()); // Empty plan should fail
     }
 
-    #[test]
-    fn test_execute_command_step() {
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn test_execute_command_step() {
         let executor = StepExecutor::new();
         let step = create_test_step(
             "Run echo",
@@ -529,8 +529,8 @@ mod tests {
         assert!(executor.skip_on_error);
     }
 
-    #[test]
-    fn test_step_result_contains_duration() {
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn test_step_result_contains_duration() {
         let executor = StepExecutor::new();
         let step = create_test_step(
             "Run echo",

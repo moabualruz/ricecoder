@@ -59,10 +59,66 @@ ThemeConfig {
 }
 ```
 
+### TUI Configuration
+```rust
+TuiConfig {
+    theme: String,                    // Theme name
+    animations: bool,                 // Enable animations
+    mouse: bool,                      // Enable mouse support
+    width: Option<u16>,               // Terminal width
+    height: Option<u16>,              // Terminal height
+    accessibility: AccessibilityConfig, // Accessibility settings
+    provider: Option<String>,         // AI provider to use
+    model: Option<String>,            // Model to use
+    vim_mode: bool,                   // Enable vim keybindings
+}
+```
+
+### Accessibility Configuration
+```rust
+AccessibilityConfig {
+    screen_reader_enabled: bool,      // Screen reader support
+    high_contrast_enabled: bool,      // High contrast mode
+    animations_disabled: bool,        // Disable animations
+    announcements_enabled: bool,      // State announcements
+    focus_indicator: FocusIndicatorStyle, // Focus style
+    animations: AnimationConfig,      // Animation settings
+    font_size_multiplier: f32,        // Font size multiplier (1.0-2.0)
+    large_click_targets: bool,        // Large click targets
+    auto_advance: bool,               // Auto-advance for forms
+}
+```
+
+### Configuration Presets
+```rust
+enum ConfigPreset {
+    Developer,      // Dark theme, vim mode enabled
+    Accessibility,  // High contrast, screen reader, larger fonts
+    Minimal,        // Clean, minimal interface
+    Presentation,   // Light theme, optimized for presentations
+}
+```
+
 ## Dependencies
 
-- `ricecoder-storage` - For persistent configuration storage and TUI config integration
-- External crates: `serde`, `config`, `notify`, `tokio`, `toml`, `dirs`
+### Internal Dependencies
+- None (leaf crate in the dependency graph)
+
+### External Dependencies
+- `serde` - Serialization/deserialization with derive macros
+- `serde_json` - JSON format support
+- `serde_yaml` - YAML format support
+- `toml` - TOML format support
+- `config` - Configuration library for hierarchical loading
+- `dirs` - Platform-specific directories (config dir)
+- `notify` - File system watching for hot-reload
+- `tokio` - Async runtime for ConfigManager
+- `thiserror` - Error type derivation
+- `anyhow` - Error handling
+- `tracing` - Logging
+
+### Dependents (crates that use ricecoder-config)
+- `ricecoder-di` - Uses ConfigManager and ConfigLoader for dependency injection
 
 ## Usage Examples
 
@@ -132,6 +188,38 @@ match manager.validate_config(&config) {
 }
 ```
 
+### Runtime Configuration Changes
+
+```rust
+use ricecoder_config::tui_config::{ConfigManager, RuntimeConfigChanges};
+
+let mut manager = ConfigManager::new();
+
+// Apply runtime changes without restart
+let changes = RuntimeConfigChanges::new()
+    .with_theme("dracula")
+    .with_vim_mode(true)
+    .with_high_contrast(false);
+
+manager.apply_runtime_changes(changes).await?;
+```
+
+### Configuration Presets
+
+```rust
+use ricecoder_config::tui_config::{ConfigManager, ConfigPreset};
+
+let mut manager = ConfigManager::new();
+
+// Apply a preset
+manager.apply_preset(ConfigPreset::Developer).await?;
+
+// List available presets
+for (preset, description) in ConfigManager::available_presets() {
+    println!("{}: {}", preset, description);
+}
+```
+
 ## Configuration Files
 
 ### TOML Format Example
@@ -183,3 +271,30 @@ cargo test -p ricecoder-config
 - Save/load functionality
 - TUI configuration integration
 - Property-based tests for edge cases
+
+## Module Structure
+
+```
+src/
+├── lib.rs           # Public API exports
+├── error.rs         # ConfigError type and Result alias
+├── types.rs         # Core config types (AppConfig, EditorConfig, UiConfig, etc.)
+├── manager.rs       # ConfigManager implementation for file-based config
+└── tui_config.rs    # TuiConfig with hot-reload and runtime changes
+```
+
+## Key Types
+
+| Type | Description |
+|------|-------------|
+| `AppConfig` | Main application configuration containing all settings |
+| `EditorConfig` | Editor-specific settings (tabs, line numbers, etc.) |
+| `UiConfig` | UI settings (theme, font size, status bar) |
+| `KeybindConfig` | Custom keybinding overrides |
+| `ThemeConfig` | Theme selection and overrides |
+| `TuiConfig` | TUI-specific configuration with accessibility |
+| `AccessibilityConfig` | Accessibility settings (screen reader, high contrast) |
+| `ConfigManager` | Configuration loader/saver for file-based config |
+| `ConfigError` | Error types for configuration operations |
+| `ConfigPreset` | Predefined configuration presets |
+| `RuntimeConfigChanges` | Runtime changes that don't require restart |
