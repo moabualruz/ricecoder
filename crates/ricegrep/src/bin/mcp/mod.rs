@@ -1,6 +1,13 @@
 use crate::RuntimeConfig;
 
 mod mappers;
+mod tools;
+mod types;
+
+use types::{
+    EditToolInput, GlobToolInput, GrepToolInput, ListToolInput, NlSearchToolInput, ReadToolInput,
+    WriteToolInput,
+};
 
 #[derive(clap::Args, Debug)]
 pub struct McpArgs {
@@ -61,64 +68,6 @@ const SERVER_FEATURE_ENABLED: bool = true;
 
 #[cfg(not(feature = "server"))]
 const SERVER_FEATURE_ENABLED: bool = false;
-#[derive(Debug, serde::Deserialize, JsonSchema)]
-struct GrepToolInput {
-    pattern: String,
-    include: Option<String>,
-    path: Option<String>,
-    max_results: Option<usize>,
-}
-
-#[derive(Debug, serde::Deserialize, JsonSchema)]
-struct NlSearchToolInput {
-    query: String,
-    include: Option<String>,
-    path: Option<String>,
-    max_results: Option<usize>,
-    answer: Option<bool>,
-    no_rerank: Option<bool>,
-}
-
-#[derive(Debug, serde::Deserialize, JsonSchema)]
-struct GlobToolInput {
-    pattern: String,
-    path: Option<String>,
-    include_dirs: Option<bool>,
-    ignore_case: Option<bool>,
-}
-
-#[derive(Debug, serde::Deserialize, JsonSchema)]
-struct ListToolInput {
-    path: Option<String>,
-    pattern: Option<String>,
-    ignore_case: Option<bool>,
-}
-
-#[derive(Debug, serde::Deserialize, JsonSchema)]
-struct ReadToolInput {
-    path: String,
-    offset: Option<usize>,
-    limit: Option<usize>,
-}
-
-#[derive(Debug, serde::Deserialize, JsonSchema)]
-struct EditToolInput {
-    file_path: String,
-    old_string: String,
-    new_string: String,
-    #[serde(default)]
-    replace_all: Option<bool>,
-    #[serde(default)]
-    timeout_secs: Option<u64>,
-}
-
-#[derive(Debug, serde::Deserialize, JsonSchema)]
-struct WriteToolInput {
-    file_path: String,
-    content: String,
-    #[serde(default)]
-    timeout_secs: Option<u64>,
-}
 
 /// Manages watch lifecycle tied to MCP server
 struct WatchManager {
@@ -834,7 +783,7 @@ impl RicegrepMcp {
         &self,
         Parameters(input): Parameters<EditToolInput>,
     ) -> Result<CallToolResult, ErrorData> {
-        let output = apply_edit(&input)
+        let output = tools::apply_edit(&input)
             .await
             .map_err(|err| ErrorData::internal_error(err.to_string(), None))?;
         Ok(tool_text_result(output))
@@ -848,7 +797,7 @@ impl RicegrepMcp {
         &self,
         Parameters(input): Parameters<WriteToolInput>,
     ) -> Result<CallToolResult, ErrorData> {
-        let output = apply_write(&input)
+        let output = tools::apply_write(&input)
             .await
             .map_err(|err| ErrorData::internal_error(err.to_string(), None))?;
         Ok(tool_text_result(output))
@@ -972,262 +921,7 @@ fn search_output_schema() -> serde_json::Value {
     })
 }
 
-async fn apply_edit(input: &EditToolInput) -> Result<String> {
-    // Set timeout wrapper
-    let timeout_duration = Duration::from_secs(input.timeout_secs.unwrap_or(30));
-
-    tokio::time::timeout(timeout_duration, apply_edit_inner(input))
-        .await
-        .context(format!(
-            "Edit operation timed out after {}s",
-            timeout_duration.as_secs()
-        ))?
-}
-
-async fn apply_edit_inner(input: &EditToolInput) -> Result<String> {
-    // Read file asynchronously with enhanced error handling
-    let content = match tokio::fs::read_to_string(&input.file_path).await {
-        Ok(content) => content,
-        Err(e) => {
-            let message = match e.kind() {
-                std::io::ErrorKind::NotFound => {
-                    format!(
-                        "File not found: {}. Check the path and try again.",
-                        input.file_path
-                    )
-                }
-                std::io::ErrorKind::PermissionDenied => {
-                    format!(
-                        "Permission denied: {}. Check file permissions.",
-                        input.file_path
-                    )
-                }
-                std::io::ErrorKind::InvalidData => {
-                    format!(
-                        "File contains invalid UTF-8: {}. Check file encoding.",
-                        input.file_path
-                    )
-                }
-                _ => {
-                    // Could be file locked or other I/O error
-                    format!(
-                        "File is locked or inaccessible: {}. Close other applications and retry. (Error: {})",
-                        input.file_path, e
-                    )
-                }
-            };
-            return Err(anyhow::anyhow!(message));
-        }
-    };
-
-    // Handle replace_all parameter
-    let new_content = if input.replace_all.unwrap_or(false) {
-        content.replace(&input.old_string, &input.new_string)
-    } else {
-        content.replacen(&input.old_string, &input.new_string, 1)
-    };
-
-    // Check if replacement happened
-    if new_content == content {
-        return Err(anyhow::anyhow!(
-            "Pattern not found: '{}' in {}",
-            input.old_string,
-            input.file_path
-        ));
-    }
-
-    // Write atomically via temp file with enhanced error handling
-    let temp_path = format!("{}.tmp", input.file_path);
-    match tokio::fs::write(&temp_path, &new_content).await {
-        Ok(_) => {}
-        Err(e) => {
-            let message = match e.kind() {
-                std::io::ErrorKind::NotFound => {
-                    format!(
-                        "Cannot write to path: {} - parent directory does not exist.",
-                        temp_path
-                    )
-                }
-                std::io::ErrorKind::PermissionDenied => {
-                    format!(
-                        "Permission denied writing to: {}. Check directory permissions.",
-                        temp_path
-                    )
-                }
-                std::io::ErrorKind::InvalidInput => {
-                    format!("Invalid file path: {}", temp_path)
-                }
-                _ => {
-                    // Could be disk full or file locked
-                    format!(
-                        "Cannot write file: {} - disk may be full or file locked. (Error: {})",
-                        temp_path, e
-                    )
-                }
-            };
-            return Err(anyhow::anyhow!(message));
-        }
-    }
-
-    // Rename with enhanced error handling
-    match tokio::fs::rename(&temp_path, &input.file_path).await {
-        Ok(_) => {}
-        Err(e) => {
-            // Try to clean up temp file on failure
-            let _ = tokio::fs::remove_file(&temp_path).await;
-            let message = match e.kind() {
-                std::io::ErrorKind::PermissionDenied => {
-                    format!(
-                        "Permission denied replacing original file: {}. Check file permissions.",
-                        input.file_path
-                    )
-                }
-                std::io::ErrorKind::NotFound => {
-                    format!(
-                        "Original file was deleted or moved: {}. Temporary file preserved at {}",
-                        input.file_path, temp_path
-                    )
-                }
-                _ => {
-                    format!(
-                        "Failed to complete edit - original file at {} may not be replaced. Temporary file at {} (Error: {})",
-                        input.file_path, temp_path, e
-                    )
-                }
-            };
-            return Err(anyhow::anyhow!(message));
-        }
-    }
-
-    let occurrences = content.matches(&input.old_string).count();
-    let replaced = if input.replace_all.unwrap_or(false) {
-        occurrences
-    } else {
-        1
-    };
-
-    // Use mapper for consistent response formatting
-    Ok(mappers::format_edit_response(
-        &input.file_path,
-        &input.old_string,
-        &input.new_string,
-        replaced,
-        input.replace_all.unwrap_or(false),
-    ))
-}
-
-async fn apply_write(input: &WriteToolInput) -> Result<String> {
-    // Set timeout wrapper
-    let timeout_duration = Duration::from_secs(input.timeout_secs.unwrap_or(30));
-
-    tokio::time::timeout(timeout_duration, apply_write_inner(input))
-        .await
-        .context(format!(
-            "Write operation timed out after {}s",
-            timeout_duration.as_secs()
-        ))?
-}
-
-async fn apply_write_inner(input: &WriteToolInput) -> Result<String> {
-    // Create parent directory if needed with enhanced error handling
-    if let Some(parent) = std::path::Path::new(&input.file_path).parent() {
-        if !parent.as_os_str().is_empty() {
-            match tokio::fs::create_dir_all(parent).await {
-                Ok(_) => {}
-                Err(e) => {
-                    let message = match e.kind() {
-                        std::io::ErrorKind::PermissionDenied => {
-                            format!(
-                                "Permission denied creating directory: {}. Check directory permissions.",
-                                parent.display()
-                            )
-                        }
-                        std::io::ErrorKind::InvalidInput => {
-                            format!(
-                                "Invalid directory path: {}. Check path is valid.",
-                                parent.display()
-                            )
-                        }
-                        _ => {
-                            format!(
-                                "Failed to create directory: {}. (Error: {})",
-                                parent.display(),
-                                e
-                            )
-                        }
-                    };
-                    return Err(anyhow::anyhow!(message));
-                }
-            }
-        }
-    }
-
-    // Write atomically via temp file with enhanced error handling
-    let temp_path = format!("{}.tmp", input.file_path);
-    match tokio::fs::write(&temp_path, &input.content).await {
-        Ok(_) => {}
-        Err(e) => {
-            let message = match e.kind() {
-                std::io::ErrorKind::PermissionDenied => {
-                    format!(
-                        "Permission denied writing to: {}. Check directory permissions.",
-                        temp_path
-                    )
-                }
-                std::io::ErrorKind::InvalidInput => {
-                    format!("Invalid file path: {}", temp_path)
-                }
-                _ => {
-                    // Could be disk full or other I/O error
-                    format!(
-                        "Cannot write file: {} - disk may be full, read-only filesystem, or other I/O error. (Error: {})",
-                        temp_path, e
-                    )
-                }
-            };
-            return Err(anyhow::anyhow!(message));
-        }
-    }
-
-    // Rename with enhanced error handling
-    match tokio::fs::rename(&temp_path, &input.file_path).await {
-        Ok(_) => {}
-        Err(e) => {
-            // Try to clean up temp file on failure
-            let _ = tokio::fs::remove_file(&temp_path).await;
-            let message = match e.kind() {
-                std::io::ErrorKind::PermissionDenied => {
-                    format!(
-                        "Permission denied replacing file: {}. Check file permissions.",
-                        input.file_path
-                    )
-                }
-                std::io::ErrorKind::NotFound => {
-                    format!(
-                        "Parent directory was deleted or file path is invalid: {}. Temporary file preserved at {}",
-                        input.file_path, temp_path
-                    )
-                }
-                _ => {
-                    format!(
-                        "Failed to complete write - original file at {} may not be replaced. Temporary file at {} (Error: {})",
-                        input.file_path, temp_path, e
-                    )
-                }
-            };
-            return Err(anyhow::anyhow!(message));
-        }
-    }
-
-    let byte_count = input.content.len();
-
-    // Use mapper for consistent response formatting
-    Ok(mappers::format_write_response(
-        &input.file_path,
-        byte_count,
-        &input.content,
-    ))
-}
+// apply_edit and apply_write moved to tools/edit.rs and tools/write.rs
 
 fn tool_text_result(text: String) -> CallToolResult {
     CallToolResult {

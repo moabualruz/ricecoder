@@ -1,6 +1,5 @@
 //! Integration tests for LocalModelManager
 
-use std::time::Duration;
 use ricecoder_local_models::{LocalModelError, LocalModelManager};
 
 // ============================================================================
