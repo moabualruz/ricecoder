@@ -2,6 +2,10 @@
 
 **Purpose**: Multi-project orchestration and workspace management providing cross-project operations and coordinated development workflows for RiceCoder
 
+## DDD Layer
+
+**Application** - Multi-project orchestration as an application service layer.
+
 ## Features
 
 - **Multi-Project Management**: Coordinated operations across multiple projects and repositories

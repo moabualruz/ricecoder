@@ -805,6 +805,40 @@ See [Development Roadmap](https://github.com/moabualruz/ricecoder/wiki/Developme
 
 ---
 
+## DDD Layer
+
+**Layer**: Presentation (CLI Entry Point) / Application Orchestration
+
+### Responsibilities
+- Command-line argument parsing and validation
+- Command routing and execution
+- Application lifecycle management
+- Component orchestration and dependency injection
+- Configuration loading and environment setup
+- Error handling and user feedback
+
+### SOLID Analysis
+- **SRP**: CLI parsing separate from execution logic ✅
+- **OCP**: Extensible via Commands enum and subcommands ✅
+- **LSP**: Command handlers are interchangeable ✅
+- **ISP**: Separate interfaces for parsing, execution, output ✅
+- **DIP**: Depends on abstractions via dependency injection container ✅
+
+### Integration Points
+| Dependency | Direction | Purpose |
+|------------|-----------|---------|
+| ricecoder-di | Inbound | Dependency injection container |
+| ricecoder-config | Inbound | Configuration management |
+| ricecoder-tui | Inbound | Terminal UI integration |
+| ricecoder-providers | Inbound | AI provider management |
+| ricecoder-sessions | Inbound | Session management |
+| ricecoder-commands | Inbound | Custom command execution |
+| All crates | Inbound | Orchestrates entire application |
+| clap | External | CLI argument parsing |
+| tokio | External | Async runtime |
+
+---
+
 ## Contributing
 
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.

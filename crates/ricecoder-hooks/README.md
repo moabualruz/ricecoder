@@ -2,6 +2,10 @@
 
 **Purpose**: Event-driven hooks system providing automation, extensibility, and workflow integration for RiceCoder
 
+## DDD Layer
+
+**Infrastructure** - Event-driven infrastructure providing cross-cutting automation capabilities.
+
 ## Features
 
 - **Event-Driven Architecture**: Comprehensive event system for workspace and file operations

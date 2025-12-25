@@ -2,6 +2,10 @@
 
 **Purpose**: Safe, language-agnostic refactoring engine with impact analysis, preview, and rollback capabilities for RiceCoder
 
+## DDD Layer
+
+**Application** - Refactoring orchestration as an application service layer.
+
 ## Overview
 
 `ricecoder-refactoring` implements a comprehensive refactoring system that provides safe, automated code transformations across multiple programming languages. It features impact analysis, change preview, validation, and automatic rollback to ensure reliable refactoring operations.

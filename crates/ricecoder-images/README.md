@@ -230,6 +230,34 @@ When working with `ricecoder-images`:
 4. **Fallbacks**: Provide graceful degradation when features unavailable
 5. **Testing**: Test with various image formats and edge cases
 
+## DDD Layer
+
+**Layer**: Presentation (User Interface) / Infrastructure (External Integration)
+
+### Responsibilities
+- Image format validation and metadata extraction
+- AI provider integration for image analysis
+- Cache management with LRU eviction
+- Terminal display rendering with fallbacks
+- Session-based image storage
+- Token counting for billing
+
+### SOLID Analysis
+- **SRP**: Separate handlers for processing, analysis, display, caching ✅
+- **OCP**: Extensible via custom analyzers and display renderers ✅
+- **LSP**: ImageHandler abstraction supports different image sources ✅
+- **ISP**: Separate interfaces for Handler, Analyzer, Cache, Display ✅
+- **DIP**: Depends on provider abstraction for AI analysis ✅
+
+### Integration Points
+| Dependency | Direction | Purpose |
+|------------|-----------|---------|
+| ricecoder-storage | Inbound | Cache persistence |
+| ricecoder-sessions | Inbound | Session image management |
+| ricecoder-providers | Inbound | AI vision analysis |
+| ricecoder-tui | Outbound | Drag-and-drop and display |
+| image | External | Format handling |
+
 ## License
 
 MIT

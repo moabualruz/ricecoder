@@ -2,6 +2,10 @@
 
 **Purpose**: Fine-grained access control system with allow/ask/deny levels, per-agent overrides, glob patterns, and comprehensive audit logging for RiceCoder
 
+## DDD Layer
+
+**Infrastructure** - Cross-cutting security infrastructure providing permission enforcement across all RiceCoder components.
+
 ## Overview
 
 `ricecoder-permissions` implements a sophisticated permission system that provides granular access control for RiceCoder operations. It supports hierarchical permissions with allow/ask/deny levels, per-agent overrides, glob pattern matching, and complete audit logging to ensure security and compliance.

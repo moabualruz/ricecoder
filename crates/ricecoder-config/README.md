@@ -1,5 +1,14 @@
 # ricecoder-config
 
+## DDD Layer: Infrastructure
+
+**Layer**: Infrastructure (Configuration)  
+**Purpose**: Configuration loading, validation, and persistence  
+**Dependencies**: None (leaf infrastructure crate)  
+**Dependents**: `ricecoder-di`
+
+---
+
 **Purpose**: Configuration management system for RiceCoder that handles loading, validation, and persistence of application settings from multiple sources.
 
 ## Overview

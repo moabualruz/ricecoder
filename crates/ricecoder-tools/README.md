@@ -2,6 +2,10 @@
 
 **Purpose**: Enhanced tools collection providing webfetch, patch, todo, and web search capabilities with hybrid MCP provider architecture for RiceCoder
 
+## DDD Layer
+
+**Infrastructure** - Tool infrastructure providing enhanced capabilities via MCP integration.
+
 ## Overview
 
 `ricecoder-tools` implements a comprehensive tool ecosystem with webfetch, patch, todo management, and web search capabilities. It uses a hybrid MCP (Model Context Protocol) provider architecture that provides built-in implementations as fallbacks while allowing advanced customization through external MCP servers.

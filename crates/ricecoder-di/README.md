@@ -1,5 +1,14 @@
 # RiceCoder DI Container
 
+## DDD Layer: Infrastructure
+
+**Layer**: Cross-cutting Infrastructure  
+**Purpose**: Dependency injection and service wiring  
+**Dependencies**: All crates (as service factories)  
+**Dependents**: All application entry points (CLI, TUI, MCP)
+
+---
+
 A thread-safe dependency injection container for RiceCoder that implements the service locator pattern with TypeId-based registration.
 
 ## Features

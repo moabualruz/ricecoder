@@ -2,6 +2,10 @@
 
 **Purpose**: Domain-specific agents providing specialized language and framework support for frontend, backend, DevOps, and cloud development in RiceCoder
 
+## DDD Layer
+
+**Application** - Provides domain-specialized agent implementations as application services.
+
 ## Overview
 
 `ricecoder-domain-agents` provides specialized AI agents for different development domains including frontend frameworks, backend technologies, DevOps practices, data engineering, mobile development, and cloud architecture. Each agent is trained and optimized for its specific domain, providing expert-level assistance and code generation.

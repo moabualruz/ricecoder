@@ -2,6 +2,10 @@
 
 **Purpose**: Declarative workflow execution framework with state management, error handling, and approval gates for multi-step agentic operations
 
+## DDD Layer
+
+**Application** - Orchestrates multi-step workflow execution as an application service layer.
+
 ## Overview
 
 `ricecoder-workflows` provides a comprehensive framework for defining and executing complex, multi-step workflows with built-in state management, error recovery, risk assessment, and human approval gates. It enables reliable execution of agentic operations with proper monitoring, rollback capabilities, and safety constraints.

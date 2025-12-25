@@ -2,6 +2,10 @@
 
 Security utilities and cryptographic operations for RiceCoder with enterprise compliance support.
 
+## DDD Layer
+
+**Infrastructure** - Cross-cutting security infrastructure providing encryption, access control, and compliance capabilities.
+
 ## Features
 
 - **API Key Encryption**: Secure encryption/decryption of API keys with AES-256-GCM

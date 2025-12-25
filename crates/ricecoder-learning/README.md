@@ -2,6 +2,10 @@
 
 **Purpose**: Learning system that captures user decisions and converts them into reusable rules with scope-based application and promotion for RiceCoder
 
+## DDD Layer
+
+**Application** - Learning and adaptation as an application service layer.
+
 ## Overview
 
 `ricecoder-learning` implements an intelligent learning system that captures user decisions, patterns, and preferences to create reusable rules. It supports multiple learning scopes (global, project, session) with automatic rule promotion, conflict resolution, and drift detection to ensure rules remain relevant and effective.

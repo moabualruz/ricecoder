@@ -2,6 +2,10 @@
 
 **Purpose**: Language-agnostic code completion engine with external LSP integration and ghost text support for RiceCoder
 
+## DDD Layer
+
+**Infrastructure** - Code completion infrastructure integrating external LSP servers with internal providers.
+
 ## Overview
 
 `ricecoder-completion` provides a comprehensive code completion system that integrates with external Language Server Protocol (LSP) servers while maintaining graceful fallback to internal providers. It supports multiple programming languages with semantic completions, context-aware suggestions, and inline ghost text display.

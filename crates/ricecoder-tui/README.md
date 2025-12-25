@@ -215,6 +215,38 @@ When adding new features to `ricecoder-tui`:
 5. **Performance**: Maintain 60 FPS rendering target
 6. **Accessibility**: Follow WCAG guidelines for screen readers
 
+## DDD Layer
+
+**Layer**: Presentation (User Interface)
+
+### Responsibilities
+- Terminal UI rendering and layout management
+- User input handling and event processing
+- Theme application and visual styling
+- Accessibility features (screen reader, keyboard nav)
+- Widget composition and component lifecycle
+- Cross-platform terminal compatibility
+
+### SOLID Analysis
+- **SRP**: Pure UI concerns, no business logic ✅
+- **OCP**: Extensible via Component trait and custom widgets ✅
+- **LSP**: Component abstraction allows interchangeable widgets ✅
+- **ISP**: Separate interfaces for rendering, events, accessibility ✅
+- **DIP**: Business logic injected via interfaces, not embedded ✅
+
+### Integration Points
+| Dependency | Direction | Purpose |
+|------------|-----------|---------|
+| ricecoder-storage | Inbound | Theme and layout persistence |
+| ricecoder-images | Inbound | Image display in terminal |
+| ricecoder-files | Inbound | File picker integration |
+| ricecoder-help | Inbound | Help dialog widget |
+| ricecoder-keybinds | Inbound | Keybind handling |
+| ricecoder-themes | Inbound | Theme management |
+| ricecoder-cli | Outbound | Provides TUI to main application |
+| ratatui | External | Terminal rendering framework |
+| crossterm | External | Cross-platform terminal I/O |
+
 ## License
 
 MIT

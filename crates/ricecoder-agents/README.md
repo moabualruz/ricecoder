@@ -2,6 +2,10 @@
 
 **Purpose**: Multi-agent framework providing specialized task execution, coordination, and intelligent workflow automation for RiceCoder
 
+## DDD Layer
+
+**Application** - Orchestrates agent-based task execution and workflow coordination as an application service.
+
 ## Overview
 
 `ricecoder-agents` implements a sophisticated multi-agent framework that enables specialized task execution, intelligent coordination, and automated workflow management. It provides a composable architecture for building complex AI-driven workflows with proper error handling and async-first design.

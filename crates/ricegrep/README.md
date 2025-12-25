@@ -2,6 +2,10 @@
 
 RiceGrep is a modern, AI-enhanced search tool that combines ripgrep compatibility with advanced features like MCP integration, assistant plugins, and production observability.
 
+## DDD Layer
+
+**Presentation + Infrastructure** - CLI interface with search infrastructure implementations.
+
 ## Installation
 
 ```bash

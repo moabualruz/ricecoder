@@ -2,6 +2,10 @@
 
 **Purpose**: Integration with external Language Server Protocol servers providing semantic intelligence for code completion, diagnostics, and navigation
 
+## DDD Layer
+
+**Infrastructure** - External service integration for Language Server Protocol servers and process management.
+
 ## Overview
 
 `ricecoder-external-lsp` provides comprehensive integration with external LSP (Language Server Protocol) servers to deliver production-quality semantic code intelligence. It manages LSP server lifecycle, request routing, response transformation, and graceful fallback to internal providers when external servers are unavailable.

@@ -1,5 +1,14 @@
 # ricecoder-persistence
 
+## DDD Layer: Infrastructure
+
+**Layer**: Infrastructure (Persistence)  
+**Purpose**: Repository pattern implementations for domain aggregates  
+**Dependencies**: `ricecoder-domain` (interfaces)  
+**Dependents**: `ricecoder-monitoring`, `ricecoder-continuous-improvement`
+
+---
+
 Infrastructure persistence layer for RiceCoder - repository implementations.
 
 ## Purpose

@@ -2,6 +2,10 @@
 
 **Purpose**: Comprehensive session management and conversation handling for RiceCoder with persistence, sharing, and background processing
 
+## DDD Layer
+
+**Application** - Manages session lifecycle and conversation state as an application service.
+
 ## Overview
 
 `ricecoder-sessions` provides comprehensive session management functionality that was extracted from the TUI during the architectural refactoring. This crate handles all session-related business logic independently of the user interface.

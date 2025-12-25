@@ -2,6 +2,10 @@
 
 Production monitoring infrastructure for RiceCoder, providing comprehensive metrics collection, error tracking, alerting, performance monitoring, analytics, and compliance reporting.
 
+## DDD Layer
+
+**Infrastructure** - Cross-cutting monitoring infrastructure providing observability across the entire RiceCoder ecosystem.
+
 ## Features
 
 ### Metrics Collection

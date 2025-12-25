@@ -2,6 +2,10 @@
 
 **Purpose**: Execution planning and management system with test integration, approval gates, and rollback capabilities for RiceCoder workflows
 
+## DDD Layer
+
+**Application** - Manages execution planning and step orchestration as an application service.
+
 ## Overview
 
 `ricecoder-execution` provides a comprehensive execution framework for managing complex, multi-step operations with built-in testing, risk assessment, user approval gates, and automatic rollback capabilities. It enables safe execution of workflows with proper validation, progress tracking, and recovery mechanisms.

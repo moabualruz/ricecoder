@@ -1,5 +1,14 @@
 # ricecoder-storage
 
+## DDD Layer: Infrastructure
+
+**Layer**: Infrastructure (Storage)  
+**Purpose**: Configuration, session persistence, caching, knowledge base storage  
+**Dependencies**: None (leaf infrastructure crate)  
+**Dependents**: `ricecoder-providers`, all application crates
+
+---
+
 **Purpose**: Pure storage infrastructure providing configuration management, session persistence, caching, and knowledge base storage for RiceCoder.
 
 ## Overview

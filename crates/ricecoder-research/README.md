@@ -2,6 +2,10 @@
 
 **Purpose**: Research and analysis utilities providing code understanding, project analysis, and intelligent code insights for RiceCoder
 
+## DDD Layer
+
+**Application** - Code research and analysis orchestration as an application service.
+
 ## Features
 
 - **Code Analysis**: Deep analysis of codebases for patterns, anti-patterns, and optimization opportunities

@@ -2,6 +2,10 @@
 
 **Purpose**: Custom command system with template substitution and output injection for RiceCoder
 
+## DDD Layer
+
+**Application** - Command execution orchestration as an application service layer.
+
 ## Overview
 
 `ricecoder-commands` provides a comprehensive system for defining, managing, and executing custom commands in RiceCoder. Commands support template substitution, argument validation, timeout handling, and automatic output injection into chat sessions. This crate enables users to extend RiceCoder's functionality with custom shell commands and scripts.

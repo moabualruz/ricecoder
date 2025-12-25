@@ -2,6 +2,10 @@
 
 Core domain and application layer for RiceGrep - pure business logic without infrastructure dependencies.
 
+## DDD Layer
+
+**Domain + Application** - Pure business logic and use cases without infrastructure dependencies.
+
 ## Overview
 
 This crate provides the foundational layers for RiceGrep following Domain-Driven Design (DDD) and Clean Architecture principles:

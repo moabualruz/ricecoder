@@ -2,6 +2,10 @@
 
 **Purpose**: Specification parsing and management system for processing YAML/JSON specs and managing development workflows in RiceCoder
 
+## DDD Layer
+
+**Application** - Specification management as an application service layer.
+
 ## Features
 
 - **YAML/JSON Spec Parsing**: Robust parsing of specification files with validation

@@ -223,3 +223,34 @@ cargo test -p ricecoder-themes
 - Color compatibility
 - Syntax highlighting integration
 - Property-based tests for theme generation
+
+## DDD Layer
+
+**Layer**: Presentation (User Interface)
+
+### Responsibilities
+- Theme definition and management
+- Color scheme application
+- Syntax highlighting coordination
+- Theme validation and integrity
+- Runtime theme switching
+- Theme persistence and preference storage
+
+### SOLID Analysis
+- **SRP**: Focused on theme management only ✅
+- **OCP**: Extensible via custom themes and registry ✅
+- **LSP**: Theme abstraction supports custom theme types ✅
+- **ISP**: Separate interfaces for Theme, Registry, Manager ✅
+- **DIP**: Depends on storage abstraction for persistence ✅
+
+### Integration Points
+| Dependency | Direction | Purpose |
+|------------|-----------|---------|
+| ricecoder-storage | Inbound | Theme persistence |
+| ricecoder-tui | Outbound | Provides theme styling |
+| ratatui | External | Color and style types |
+| syntect | External | Syntax highlighting integration |
+
+## License
+
+MIT

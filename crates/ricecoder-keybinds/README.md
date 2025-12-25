@@ -49,6 +49,33 @@ if let Some(action) = manager.get_action_for_key(key_event)? {
 
 For more information, see the [documentation](https://docs.rs/ricecoder-keybinds).
 
+## DDD Layer
+
+**Layer**: Presentation (User Interface)
+
+### Responsibilities
+- Keybind definition and management
+- Profile management and switching
+- Conflict detection and resolution
+- Cross-platform keyboard handling
+- Context-aware binding dispatch
+- Keybind persistence and import/export
+
+### SOLID Analysis
+- **SRP**: Focused on keybind management only ✅
+- **OCP**: Extensible via custom profiles and actions ✅
+- **LSP**: KeybindProfile abstraction supports custom profiles ✅
+- **ISP**: Separate interfaces for Manager, Profile, Action ✅
+- **DIP**: Depends on abstractions for storage and event handling ✅
+
+### Integration Points
+| Dependency | Direction | Purpose |
+|------------|-----------|---------|
+| ricecoder-storage | Inbound | Keybind persistence |
+| ricecoder-tui | Outbound | Key event handling |
+| ricecoder-config | Inbound | Keybind configuration |
+| crossterm | External | Cross-platform key events |
+
 ## License
 
 MIT

@@ -204,6 +204,32 @@ When working with `ricecoder-help`:
 4. **Content Organization**: Maintain logical categorization and hierarchy
 5. **Performance**: Keep help system responsive even with large content
 
+## DDD Layer
+
+**Layer**: Presentation (User Interface)
+
+### Responsibilities
+- Help dialog rendering and interaction
+- Content organization and categorization
+- Search functionality and result display
+- Keyboard navigation handling
+- Contextual help delivery
+
+### SOLID Analysis
+- **SRP**: Focused on help system presentation ✅
+- **OCP**: Extensible via custom content and categories ✅
+- **LSP**: HelpContent abstraction supports custom implementations ✅
+- **ISP**: Separate interfaces for dialog, content, search ✅
+- **DIP**: Depends on storage abstraction, not concrete implementations ✅
+
+### Integration Points
+| Dependency | Direction | Purpose |
+|------------|-----------|---------|
+| ricecoder-storage | Inbound | Help content persistence |
+| ricecoder-tui | Outbound | Provides help dialog widget |
+| ricecoder-commands | Outbound | Contextual command help |
+| ricecoder-sessions | Outbound | Session-specific guidance |
+
 ## License
 
 MIT

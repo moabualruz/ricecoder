@@ -2,6 +2,10 @@
 
 **Purpose**: Flexible mode system providing different interaction patterns (Code, Ask, Vibe) with extended reasoning capabilities for RiceCoder
 
+## DDD Layer
+
+**Application** - Manages interaction mode switching and behavior as an application service.
+
 ## Overview
 
 `ricecoder-modes` implements a sophisticated mode system that adapts RiceCoder's behavior based on user intent and task complexity. It provides specialized interaction patterns optimized for different use cases, from focused code generation to exploratory conversations, with automatic activation of extended reasoning for complex tasks.
