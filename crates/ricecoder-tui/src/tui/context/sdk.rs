@@ -1,8 +1,22 @@
-//! SDK Client Context Provider
+//! SDK Client Context Provider (DEPRECATED)
 //!
-//! This module provides access to the RiceCoder API client and event stream.
-//! Handles connection to the backend server, event subscriptions, and real-time
-//! updates for TUI components.
+//! **Status**: This SDK layer is deprecated. Real backend integration is now handled by `AppContext`.
+//!
+//! ## Migration Guide
+//! - Use `AppContext::send_message()` for AI chat (blocking)
+//! - Use `AppContext::send_message_streaming()` for streaming responses
+//! - Use `AppContext::load_sessions()` and `AppState.sessions` for session data
+//! - Use `AppContext::load_providers()` and `AppState.providers` for provider info
+//!
+//! ## Why Deprecated?
+//! The SDK layer was originally designed as an intermediary to a backend server.
+//! However, the TUI now integrates directly with backend crates:
+//! - `ricecoder-providers` for AI provider management
+//! - `ricecoder-sessions` for session persistence
+//! - `ricecoder-mcp` for MCP server status
+//!
+//! This module remains for backwards compatibility and event subscription patterns,
+//! but all placeholder methods now point to AppContext for real implementations.
 
 use std::sync::Arc;
 use tokio::sync::{broadcast, RwLock};
@@ -60,32 +74,53 @@ impl SdkClient {
         &self.base_url
     }
 
-    /// Send chat message (placeholder)
+    /// Send chat message (DEPRECATED - use AppContext::send_message)
+    /// 
+    /// This method is a placeholder. Real message sending is now handled by:
+    /// - `AppContext::send_message()` for blocking requests
+    /// - `AppContext::send_message_streaming()` for streaming responses
+    /// 
+    /// Those methods integrate with ricecoder-providers for actual AI calls.
     pub async fn send_message(
         &self,
         session_id: &str,
         content: String,
     ) -> Result<String, String> {
-        // TODO: Implement actual API call
+        // SDK layer is deprecated - real implementation in AppContext
         Ok(format!(
-            "Sent message to session {} via {}: {}",
-            session_id, self.base_url, content
+            "DEPRECATED: Use AppContext::send_message() instead. Session: {}, Message: {}",
+            session_id, content
         ))
     }
 
-    /// List sessions (placeholder)
+    /// List sessions (DEPRECATED - use AppContext::load_sessions)
+    /// 
+    /// This method returns empty data. Real session listing is now handled by:
+    /// - `AppContext::load_sessions()` during initialization
+    /// - Session data is stored in `AppState.sessions`
+    /// 
+    /// The AppContext integrates with ricecoder-sessions for session persistence.
     pub async fn list_sessions(&self) -> Result<Vec<String>, String> {
-        // TODO: Implement actual API call
-        Ok(vec!["session-1".to_string(), "session-2".to_string()])
+        // SDK layer is deprecated - real session data comes from AppContext state
+        Ok(vec![])
     }
 
-    /// Get provider info (placeholder)
+    /// Get provider info (DEPRECATED - use AppContext::load_providers)
+    /// 
+    /// This method returns minimal placeholder data. Real provider info is now available via:
+    /// - `AppContext::load_providers()` during initialization
+    /// - Provider data is stored in `AppState.providers`
+    /// 
+    /// The AppContext integrates with ricecoder-providers::ProviderManager for:
+    /// - Provider registry and configuration
+    /// - Model discovery and selection
+    /// - AI chat requests via `ProviderManager::chat()`
     pub async fn get_provider(&self, provider_id: &str) -> Result<serde_json::Value, String> {
-        // TODO: Implement actual API call
+        // SDK layer is deprecated - real provider data comes from AppContext state
         Ok(serde_json::json!({
             "id": provider_id,
-            "name": "Mock Provider",
-            "status": "active"
+            "name": provider_id,
+            "status": "see AppContext for real provider data"
         }))
     }
 }
@@ -164,7 +199,8 @@ mod tests {
         let client = SdkClient::new("http://localhost:8080".to_string());
         let result = client.list_sessions().await;
         assert!(result.is_ok());
-        assert_eq!(result.unwrap().len(), 2);
+        // SDK is deprecated - returns empty vec, use AppContext::load_sessions instead
+        assert_eq!(result.unwrap().len(), 0);
     }
 
     #[tokio::test]

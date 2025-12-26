@@ -53,24 +53,21 @@ impl ConfigLoader {
     /// Loads configuration from multiple sources with the following priority:
     /// 1. CLI arguments (highest)
     /// 2. Environment variable overrides (`RICECODER_*`)
-    /// 3. Project config (`./.ricecoder/ricecoder.yaml`)
-    /// 4. User config (`~/.ricecoder/ricecoder.yaml`)
-    /// 5. Global config (`~/Documents/.ricecoder/ricecoder.yaml`)
-    /// 6. Built-in defaults (lowest)
+    /// 3. Project config (`.rice/config.*`)
+    /// 4. Global config (`~/Documents/.ricecoder/config/config.*`)
+    /// 5. Built-in defaults (lowest)
     ///
+    /// All config files support yaml, yml, json, toml, and jsonc formats.
     /// Returns the merged configuration. If no configuration files exist,
     /// returns the built-in defaults.
     pub fn load_merged(self) -> StorageResult<Config> {
         // Start with built-in defaults
         let defaults = Config::default();
 
-        // Load global config if it exists
+        // Load global config if it exists (~/Documents/.ricecoder/config/config.*)
         let global_config = Self::load_global_config().ok();
 
-        // Load user config if it exists
-        let user_config = Self::load_user_config().ok();
-
-        // Load project config if it exists
+        // Load project config if it exists (.rice/config.*)
         let project_config = Self::load_project_config().ok();
 
         // Parse environment variable overrides
@@ -80,11 +77,12 @@ impl ConfigLoader {
         // Apply CLI overrides (highest priority)
         let cli_config = self.cli_args.as_ref().map(Self::cli_args_to_config);
 
-        // Merge all configurations with proper precedence: CLI > Env > Project > User > Global > Defaults
+        // Merge all configurations with proper precedence: CLI > Env > Project > Global > Defaults
+        // Note: User and Global are now unified in ~/Documents/.ricecoder/
         let (mut merged, _decisions) = ConfigMerger::merge_with_cli(
             defaults,
             global_config,
-            user_config,
+            None, // User config is now unified with global
             project_config,
             Some(env_config),
             cli_config,
@@ -106,41 +104,56 @@ impl ConfigLoader {
         Ok(merged)
     }
 
-    /// Load global configuration from `~/Documents/.ricecoder/ricecoder.yaml`
+    /// Supported config file extensions in priority order
+    const CONFIG_EXTENSIONS: &'static [&'static str] = &["yaml", "yml", "json", "toml", "jsonc"];
+
+    /// Load global configuration from `~/Documents/.ricecoder/config/config.*`
+    ///
+    /// Searches for config file with any supported extension (yaml, yml, json, toml, jsonc)
     fn load_global_config() -> StorageResult<Config> {
         let global_path = PathResolver::resolve_global_path()?;
-        let config_file = global_path.join("ricecoder.yaml");
+        let config_dir = global_path.join(crate::types::StorageDirectory::Config.dir_name());
 
-        if config_file.exists() {
-            Self::load_from_file(&config_file)
-        } else {
-            Ok(Config::default())
-        }
+        Self::load_config_from_dir(&config_dir, "config")
     }
 
-    /// Load user configuration from `~/.ricecoder/ricecoder.yaml`
-    fn load_user_config() -> StorageResult<Config> {
-        let user_config_dir = dirs::home_dir().ok_or_else(|| {
-            StorageError::Internal("Could not determine home directory".to_string())
-        })?;
-        let config_file = user_config_dir.join(".ricecoder").join("ricecoder.yaml");
-
-        if config_file.exists() {
-            Self::load_from_file(&config_file)
-        } else {
-            Ok(Config::default())
-        }
-    }
-
-    /// Load project configuration from `./.ricecoder/ricecoder.yaml`
+    /// Load project configuration from `.rice/config.*`
+    ///
+    /// Searches for config file with any supported extension
     fn load_project_config() -> StorageResult<Config> {
-        let project_config_file = PathBuf::from(".ricecoder/ricecoder.yaml");
+        let project_path = PathResolver::resolve_project_path();
+        Self::load_config_from_dir(&project_path, "config")
+    }
 
-        if project_config_file.exists() {
-            Self::load_from_file(&project_config_file)
-        } else {
-            Ok(Config::default())
+    /// Load config from a directory, searching for any supported format
+    ///
+    /// Looks for files named `{name}.{ext}` where ext is yaml, yml, json, toml, or jsonc
+    fn load_config_from_dir(dir: &Path, name: &str) -> StorageResult<Config> {
+        if !dir.exists() {
+            return Ok(Config::default());
         }
+
+        // Try each extension in priority order
+        for ext in Self::CONFIG_EXTENSIONS {
+            let config_file = dir.join(format!("{}.{}", name, ext));
+            if config_file.exists() {
+                return Self::load_from_file(&config_file);
+            }
+        }
+
+        // No config file found
+        Ok(Config::default())
+    }
+
+    /// Find the first existing config file in a directory
+    pub fn find_config_file(dir: &Path, name: &str) -> Option<PathBuf> {
+        for ext in Self::CONFIG_EXTENSIONS {
+            let config_file = dir.join(format!("{}.{}", name, ext));
+            if config_file.exists() {
+                return Some(config_file);
+            }
+        }
+        None
     }
 
     /// Substitute `${VAR_NAME}` patterns in configuration values with environment variables

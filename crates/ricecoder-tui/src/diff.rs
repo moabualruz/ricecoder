@@ -143,7 +143,7 @@ pub enum DiffViewType {
 }
 
 /// Diff widget
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DiffWidget {
     /// Hunks in the diff
     pub hunks: Vec<DiffHunk>,
@@ -155,6 +155,16 @@ pub struct DiffWidget {
     pub scroll: usize,
     /// Approval state for each hunk
     pub approvals: Vec<bool>,
+    /// Component ID
+    id: String,
+    /// Bounds
+    bounds: ratatui::layout::Rect,
+    /// Focused state
+    focused: bool,
+    /// Visible state
+    visible: bool,
+    /// Z-index
+    z_index: i32,
 }
 
 impl DiffWidget {
@@ -166,6 +176,11 @@ impl DiffWidget {
             selected_hunk: None,
             scroll: 0,
             approvals: Vec::new(),
+            id: "diff_widget".to_string(),
+            bounds: ratatui::layout::Rect::default(),
+            focused: false,
+            visible: true,
+            z_index: 0,
         }
     }
 
@@ -278,10 +293,166 @@ impl DiffWidget {
             self.scroll += 1;
         }
     }
+
+    /// Render the diff widget
+    pub fn render(&self, frame: &mut ratatui::Frame, area: ratatui::layout::Rect) {
+        use ratatui::widgets::{Block, Borders, Paragraph};
+        use ratatui::style::{Color, Style, Modifier};
+        use ratatui::text::{Line, Span};
+
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .title(format!(" Diff ({} hunks) ", self.hunks.len()))
+            .border_style(Style::default().fg(if self.focused { Color::Cyan } else { Color::Gray }));
+
+        let inner = block.inner(area);
+        frame.render_widget(block, area);
+
+        if self.hunks.is_empty() {
+            let empty = Paragraph::new("No changes")
+                .style(Style::default().fg(Color::Gray));
+            frame.render_widget(empty, inner);
+            return;
+        }
+
+        // Build diff lines
+        let mut lines: Vec<Line> = Vec::new();
+        
+        for (hunk_idx, hunk) in self.hunks.iter().enumerate() {
+            let is_selected = self.selected_hunk == Some(hunk_idx);
+            let is_approved = self.approvals.get(hunk_idx).copied().unwrap_or(false);
+            
+            // Hunk header
+            let header_style = Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(if is_selected { Modifier::BOLD | Modifier::REVERSED } else { Modifier::BOLD });
+            
+            let status = if is_approved { "✓" } else { "○" };
+            lines.push(Line::from(vec![
+                Span::styled(format!("{} ", status), Style::default().fg(if is_approved { Color::Green } else { Color::Gray })),
+                Span::styled(format!("@@ {} @@", hunk.header), header_style),
+            ]));
+
+            // Diff lines
+            for line in &hunk.lines {
+                let (prefix, style) = match line.line_type {
+                    DiffLineType::Added => ("+", Style::default().fg(Color::Green)),
+                    DiffLineType::Removed => ("-", Style::default().fg(Color::Red)),
+                    DiffLineType::Context => (" ", Style::default().fg(Color::Gray)),
+                    DiffLineType::Unchanged => (" ", Style::default().fg(Color::Gray)),
+                };
+                lines.push(Line::from(Span::styled(
+                    format!("{}{}", prefix, line.content),
+                    style,
+                )));
+            }
+            lines.push(Line::from("")); // Spacing between hunks
+        }
+
+        // Apply scroll offset
+        let visible_lines: Vec<Line> = lines
+            .into_iter()
+            .skip(self.scroll)
+            .take(inner.height as usize)
+            .collect();
+
+        let paragraph = Paragraph::new(visible_lines);
+        frame.render_widget(paragraph, inner);
+    }
 }
 
 impl Default for DiffWidget {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+// Component trait implementation
+use crate::components::traits::{Component, ComponentId};
+use crate::components::{FocusDirection, FocusResult};
+use crate::model::{AppModel, AppMessage};
+use crossterm::event::KeyCode;
+
+#[allow(deprecated)]
+impl Component for DiffWidget {
+    fn id(&self) -> ComponentId {
+        self.id.clone()
+    }
+
+    fn render(&self, frame: &mut ratatui::Frame, area: ratatui::layout::Rect, _model: &AppModel) {
+        self.render(frame, area);
+    }
+
+    fn clone_box(&self) -> Box<dyn Component> {
+        Box::new(self.clone())
+    }
+
+    fn bounds(&self) -> ratatui::layout::Rect {
+        self.bounds
+    }
+
+    fn set_bounds(&mut self, bounds: ratatui::layout::Rect) {
+        self.bounds = bounds;
+    }
+
+    fn is_focused(&self) -> bool {
+        self.focused
+    }
+
+    fn set_focused(&mut self, focused: bool) {
+        self.focused = focused;
+    }
+
+    fn can_focus(&self) -> bool {
+        true
+    }
+
+    fn is_visible(&self) -> bool {
+        self.visible
+    }
+
+    fn set_visible(&mut self, visible: bool) {
+        self.visible = visible;
+    }
+
+    fn z_index(&self) -> i32 {
+        self.z_index
+    }
+
+    fn set_z_index(&mut self, z_index: i32) {
+        self.z_index = z_index;
+    }
+
+    fn update(&mut self, message: &AppMessage, _model: &AppModel) -> bool {
+        if let AppMessage::KeyPress(key) = message {
+            match key.code {
+                KeyCode::Up | KeyCode::Char('k') => {
+                    self.select_prev_hunk();
+                    return true;
+                }
+                KeyCode::Down | KeyCode::Char('j') => {
+                    self.select_next_hunk();
+                    return true;
+                }
+                KeyCode::Enter | KeyCode::Char(' ') => {
+                    self.approve_hunk();
+                    return true;
+                }
+                KeyCode::Char('r') => {
+                    self.reject_hunk();
+                    return true;
+                }
+                KeyCode::Char('a') => {
+                    self.approve_all();
+                    return true;
+                }
+                KeyCode::Char('v') => {
+                    self.toggle_view_type();
+                    return true;
+                }
+                _ => {}
+            }
+        }
+        false
     }
 }

@@ -119,9 +119,14 @@ impl TextAreaWidget {
     /// Set the input text
     pub fn set_text(&mut self, text: impl Into<String>) {
         let text = text.into();
-        let lines: Vec<String> = text.lines().map(|s| s.to_string()).collect();
-        self.textarea = TextArea::new(lines);
-        self.textarea.set_max_histories(50);
+        if text.is_empty() {
+            // Use clear() for empty text to ensure consistent state
+            self.clear();
+        } else {
+            let lines: Vec<String> = text.lines().map(|s| s.to_string()).collect();
+            self.textarea = TextArea::new(lines);
+            self.textarea.set_max_histories(50);
+        }
     }
 
     /// Clear the input

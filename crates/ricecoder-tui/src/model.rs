@@ -225,6 +225,8 @@ pub struct UiState {
     // pub help_dialog: HelpDialog, // Temporarily removed due to trait bounds
     pub file_picker_visible: bool,
     pub config: TuiConfig,
+    pub activity_bar: crate::components::activity_bar::ActivityBarState,
+    pub git_panel: crate::components::git_panel::GitPanelState,
 }
 
 /// MCP state for managing Model Context Protocol servers and tools
@@ -411,6 +413,8 @@ impl AppModel {
                 // help_dialog: HelpDialog::default_ricecoder(), // Temporarily removed
                 file_picker_visible: false,
                 config,
+                activity_bar: crate::components::activity_bar::ActivityBarState::default(),
+                git_panel: crate::components::git_panel::GitPanelState::default(),
             },
 
             pending_operations: HashMap::new(),

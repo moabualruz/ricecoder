@@ -8,9 +8,10 @@ use ricecoder_themes::Theme;
 
 use crate::model::*;
 
-/// Commands that produce side effects
-#[derive(Clone)]
+/// TUI Commands - all actions that can be triggered in the TUI
+#[derive(Debug, Clone, PartialEq)]
 pub enum Command {
+    // === Existing commands ===
     /// Execute a shell command
     ExecuteCommand(String),
     /// Load a file
@@ -29,6 +30,371 @@ pub enum Command {
     SendMessage(String),
     /// Exit the application
     Exit,
+    
+    // === File Operations ===
+    /// Attach a file to the current session
+    AttachFile(std::path::PathBuf),
+    /// Remove an attachment by index
+    RemoveAttachment(usize),
+    /// Browse files using file picker
+    BrowseFiles,
+    
+    // === Session Management ===
+    /// Create a new session
+    CreateSession,
+    /// Delete a session
+    DeleteSession(String),
+    /// Rename a session
+    RenameSession { id: String, name: String },
+    /// Share a session
+    ShareSession(String),
+    /// Unshare a session
+    UnshareSession(String),
+    /// Compact a session
+    CompactSession(String),
+    /// Fork session from a message
+    ForkSession { from_message: String },
+    
+    // === Navigation ===
+    /// Navigate to home
+    NavigateHome,
+    /// Navigate to a specific session
+    NavigateSession(String),
+    /// Navigate back
+    NavigateBack,
+    /// Navigate forward
+    NavigateForward,
+    
+    // === UI Navigation ===
+    /// Toggle command palette
+    ToggleCommandPalette,
+    /// Toggle help dialog
+    ToggleHelp,
+    /// Toggle sidebar
+    ToggleSidebar,
+    /// Toggle thinking display
+    ToggleThinking,
+    /// Toggle timestamps
+    ToggleTimestamps,
+    /// Toggle scrollbar
+    ToggleScrollbar,
+    /// Toggle tool details
+    ToggleToolDetails,
+    /// Focus prompt input
+    FocusPrompt,
+    /// Focus history view
+    FocusHistory,
+    
+    // === Messages ===
+    /// Scroll up
+    ScrollUp,
+    /// Scroll down
+    ScrollDown,
+    /// Scroll page up
+    ScrollPageUp,
+    /// Scroll page down
+    ScrollPageDown,
+    /// Scroll to top
+    ScrollToTop,
+    /// Scroll to bottom
+    ScrollToBottom,
+    /// Navigate to next message
+    NextMessage,
+    /// Navigate to previous message
+    PrevMessage,
+    /// Copy last message
+    CopyLastMessage,
+    /// Copy session transcript
+    CopySessionTranscript,
+    /// Undo last message
+    UndoMessage,
+    /// Redo last message
+    RedoMessage,
+    
+    // === Dialogs ===
+    /// Show a dialog
+    ShowDialog(DialogType),
+    /// Close current dialog
+    CloseDialog,
+    
+    // === Provider/Model ===
+    /// List available providers
+    ListProviders,
+    /// Select a provider
+    SelectProvider(String),
+    /// Select a model
+    SelectModel(String),
+    /// Test provider connection
+    TestProvider(String),
+    
+    // === MCP ===
+    /// List MCP servers
+    ListMcpServers,
+    /// Toggle MCP server
+    ToggleMcpServer(String),
+    /// Refresh MCP servers
+    RefreshMcpServers,
+    
+    // === Agent ===
+    /// Select an agent
+    SelectAgent(String),
+    
+    // === Toast/Notifications ===
+    /// Show a toast notification
+    ShowToast { message: String, variant: ToastVariant },
+    /// Clear all toasts
+    ClearToasts,
+    
+    // === History/Stash ===
+    /// Navigate history up
+    NavigateHistoryUp,
+    /// Navigate history down
+    NavigateHistoryDown,
+    /// Stash current prompt
+    StashPrompt,
+    /// Pop from stash
+    PopStash,
+    /// List stash contents
+    ListStash,
+    
+    // === Editor ===
+    /// Open external editor
+    OpenExternalEditor,
+    /// Import from editor
+    ImportFromEditor,
+    
+    // === Child Sessions ===
+    /// Navigate to next child session
+    NextChildSession,
+    /// Navigate to previous child session
+    PrevChildSession,
+    /// Go to parent session
+    GoToParentSession,
+    
+    // === Misc ===
+    /// Interrupt current operation
+    Interrupt,
+    /// Refresh display
+    Refresh,
+    /// No operation
+    Noop,
+}
+
+/// Dialog types that can be shown
+#[derive(Debug, Clone, PartialEq)]
+pub enum DialogType {
+    /// Agent selection dialog
+    Agent,
+    /// Command palette
+    Command,
+    /// MCP server management
+    Mcp,
+    /// Model selection
+    Model,
+    /// Provider selection
+    Provider,
+    /// Session list
+    SessionList,
+    /// Session rename dialog
+    SessionRename,
+    /// Stash list
+    Stash,
+    /// Status information
+    Status,
+    /// Tag management
+    Tag,
+    /// Theme selection
+    ThemeList,
+    /// Timeline view
+    Timeline,
+    /// Fork session dialog
+    Fork,
+    /// Message options
+    Message,
+    /// Subagent selection
+    Subagent,
+    /// Help dialog
+    Help,
+    /// Confirmation dialog
+    Confirm { title: String, message: String },
+    /// Prompt dialog
+    Prompt { title: String, placeholder: String },
+    /// Alert dialog
+    Alert { title: String, message: String },
+}
+
+/// Toast notification variants
+#[derive(Debug, Clone, PartialEq)]
+pub enum ToastVariant {
+    /// Info notification
+    Info,
+    /// Success notification
+    Success,
+    /// Warning notification
+    Warning,
+    /// Error notification
+    Error,
+}
+
+impl Command {
+    /// Parse a command from a string (for command palette, keybinds)
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            // Basic
+            "exit" | "quit" => Some(Self::Exit),
+            "save" | "session.save" => Some(Self::SaveSession),
+            "refresh" => Some(Self::Refresh),
+            "interrupt" | "cancel" => Some(Self::Interrupt),
+            
+            // Navigation
+            "home" | "navigate.home" => Some(Self::NavigateHome),
+            "back" | "navigate.back" => Some(Self::NavigateBack),
+            "forward" | "navigate.forward" => Some(Self::NavigateForward),
+            
+            // UI Toggles
+            "command_palette" | "toggle.command_palette" => Some(Self::ToggleCommandPalette),
+            "help" | "toggle.help" => Some(Self::ToggleHelp),
+            "sidebar" | "toggle.sidebar" => Some(Self::ToggleSidebar),
+            "thinking" | "toggle.thinking" => Some(Self::ToggleThinking),
+            "timestamps" | "toggle.timestamps" => Some(Self::ToggleTimestamps),
+            "scrollbar" | "toggle.scrollbar" => Some(Self::ToggleScrollbar),
+            "tool_details" | "toggle.tool_details" => Some(Self::ToggleToolDetails),
+            
+            // Scroll
+            "scroll.up" => Some(Self::ScrollUp),
+            "scroll.down" => Some(Self::ScrollDown),
+            "scroll.page_up" => Some(Self::ScrollPageUp),
+            "scroll.page_down" => Some(Self::ScrollPageDown),
+            "scroll.top" => Some(Self::ScrollToTop),
+            "scroll.bottom" => Some(Self::ScrollToBottom),
+            
+            // Messages
+            "message.next" => Some(Self::NextMessage),
+            "message.prev" => Some(Self::PrevMessage),
+            "message.copy" => Some(Self::CopyLastMessage),
+            "message.undo" => Some(Self::UndoMessage),
+            "message.redo" => Some(Self::RedoMessage),
+            
+            // Session
+            "session.create" | "new" => Some(Self::CreateSession),
+            "session.copy" => Some(Self::CopySessionTranscript),
+            
+            // Dialogs
+            "dialog.agent" => Some(Self::ShowDialog(DialogType::Agent)),
+            "dialog.model" => Some(Self::ShowDialog(DialogType::Model)),
+            "dialog.provider" => Some(Self::ShowDialog(DialogType::Provider)),
+            "dialog.mcp" => Some(Self::ShowDialog(DialogType::Mcp)),
+            "dialog.sessions" => Some(Self::ShowDialog(DialogType::SessionList)),
+            "dialog.themes" => Some(Self::ShowDialog(DialogType::ThemeList)),
+            "dialog.stash" => Some(Self::ShowDialog(DialogType::Stash)),
+            "dialog.status" => Some(Self::ShowDialog(DialogType::Status)),
+            "dialog.timeline" => Some(Self::ShowDialog(DialogType::Timeline)),
+            "dialog.fork" => Some(Self::ShowDialog(DialogType::Fork)),
+            "dialog.message" => Some(Self::ShowDialog(DialogType::Message)),
+            "dialog.subagent" => Some(Self::ShowDialog(DialogType::Subagent)),
+            "dialog.close" => Some(Self::CloseDialog),
+            
+            // History
+            "history.up" => Some(Self::NavigateHistoryUp),
+            "history.down" => Some(Self::NavigateHistoryDown),
+            "stash" | "stash.push" => Some(Self::StashPrompt),
+            "stash.pop" => Some(Self::PopStash),
+            "stash.list" => Some(Self::ListStash),
+            
+            // Editor
+            "editor.open" => Some(Self::OpenExternalEditor),
+            "editor.import" => Some(Self::ImportFromEditor),
+            
+            // MCP
+            "mcp.list" => Some(Self::ListMcpServers),
+            "mcp.refresh" => Some(Self::RefreshMcpServers),
+            
+            // Provider
+            "provider.list" => Some(Self::ListProviders),
+            
+            // Files
+            "files.browse" => Some(Self::BrowseFiles),
+            
+            // Child sessions
+            "session.child.next" => Some(Self::NextChildSession),
+            "session.child.prev" => Some(Self::PrevChildSession),
+            "session.parent" => Some(Self::GoToParentSession),
+            
+            // Focus
+            "focus.prompt" => Some(Self::FocusPrompt),
+            "focus.history" => Some(Self::FocusHistory),
+            
+            // Toasts
+            "toast.clear" => Some(Self::ClearToasts),
+            
+            _ => None,
+        }
+    }
+    
+    /// Convert command to string representation
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Exit => "exit",
+            Self::SaveSession => "session.save",
+            Self::Refresh => "refresh",
+            Self::Interrupt => "interrupt",
+            Self::NavigateHome => "navigate.home",
+            Self::NavigateBack => "navigate.back",
+            Self::NavigateForward => "navigate.forward",
+            Self::ToggleCommandPalette => "toggle.command_palette",
+            Self::ToggleHelp => "toggle.help",
+            Self::ToggleSidebar => "toggle.sidebar",
+            Self::ToggleThinking => "toggle.thinking",
+            Self::ToggleTimestamps => "toggle.timestamps",
+            Self::ToggleScrollbar => "toggle.scrollbar",
+            Self::ToggleToolDetails => "toggle.tool_details",
+            Self::ScrollUp => "scroll.up",
+            Self::ScrollDown => "scroll.down",
+            Self::ScrollPageUp => "scroll.page_up",
+            Self::ScrollPageDown => "scroll.page_down",
+            Self::ScrollToTop => "scroll.top",
+            Self::ScrollToBottom => "scroll.bottom",
+            Self::NextMessage => "message.next",
+            Self::PrevMessage => "message.prev",
+            Self::CopyLastMessage => "message.copy",
+            Self::UndoMessage => "message.undo",
+            Self::RedoMessage => "message.redo",
+            Self::CreateSession => "session.create",
+            Self::CopySessionTranscript => "session.copy",
+            Self::CloseDialog => "dialog.close",
+            Self::NavigateHistoryUp => "history.up",
+            Self::NavigateHistoryDown => "history.down",
+            Self::StashPrompt => "stash.push",
+            Self::PopStash => "stash.pop",
+            Self::ListStash => "stash.list",
+            Self::OpenExternalEditor => "editor.open",
+            Self::ImportFromEditor => "editor.import",
+            Self::RefreshMcpServers => "mcp.refresh",
+            Self::ListMcpServers => "mcp.list",
+            Self::ListProviders => "provider.list",
+            Self::BrowseFiles => "files.browse",
+            Self::NextChildSession => "session.child.next",
+            Self::PrevChildSession => "session.child.prev",
+            Self::GoToParentSession => "session.parent",
+            Self::FocusPrompt => "focus.prompt",
+            Self::FocusHistory => "focus.history",
+            Self::ClearToasts => "toast.clear",
+            Self::ShowDialog(DialogType::Agent) => "dialog.agent",
+            Self::ShowDialog(DialogType::Model) => "dialog.model",
+            Self::ShowDialog(DialogType::Provider) => "dialog.provider",
+            Self::ShowDialog(DialogType::Mcp) => "dialog.mcp",
+            Self::ShowDialog(DialogType::SessionList) => "dialog.sessions",
+            Self::ShowDialog(DialogType::ThemeList) => "dialog.themes",
+            Self::ShowDialog(DialogType::Stash) => "dialog.stash",
+            Self::ShowDialog(DialogType::Status) => "dialog.status",
+            Self::ShowDialog(DialogType::Timeline) => "dialog.timeline",
+            Self::ShowDialog(DialogType::Fork) => "dialog.fork",
+            Self::ShowDialog(DialogType::Message) => "dialog.message",
+            Self::ShowDialog(DialogType::Subagent) => "dialog.subagent",
+            Self::ShowDialog(DialogType::Help) => "dialog.help",
+            _ => "unknown",
+        }
+    }
 }
 
 impl AppModel {
@@ -605,6 +971,259 @@ impl AppModel {
                         || p.id.to_lowercase().contains(&filter.to_lowercase())
                 })
                 .collect()
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_command_from_str_basic() {
+        assert_eq!(Command::from_str("exit"), Some(Command::Exit));
+        assert_eq!(Command::from_str("quit"), Some(Command::Exit));
+        assert_eq!(Command::from_str("save"), Some(Command::SaveSession));
+        assert_eq!(Command::from_str("session.save"), Some(Command::SaveSession));
+        assert_eq!(Command::from_str("refresh"), Some(Command::Refresh));
+        assert_eq!(Command::from_str("interrupt"), Some(Command::Interrupt));
+        assert_eq!(Command::from_str("cancel"), Some(Command::Interrupt));
+    }
+    
+    #[test]
+    fn test_command_from_str_navigation() {
+        assert_eq!(Command::from_str("home"), Some(Command::NavigateHome));
+        assert_eq!(Command::from_str("navigate.home"), Some(Command::NavigateHome));
+        assert_eq!(Command::from_str("back"), Some(Command::NavigateBack));
+        assert_eq!(Command::from_str("navigate.back"), Some(Command::NavigateBack));
+        assert_eq!(Command::from_str("forward"), Some(Command::NavigateForward));
+        assert_eq!(Command::from_str("navigate.forward"), Some(Command::NavigateForward));
+    }
+    
+    #[test]
+    fn test_command_from_str_toggles() {
+        assert_eq!(Command::from_str("command_palette"), Some(Command::ToggleCommandPalette));
+        assert_eq!(Command::from_str("toggle.command_palette"), Some(Command::ToggleCommandPalette));
+        assert_eq!(Command::from_str("help"), Some(Command::ToggleHelp));
+        assert_eq!(Command::from_str("toggle.help"), Some(Command::ToggleHelp));
+        assert_eq!(Command::from_str("sidebar"), Some(Command::ToggleSidebar));
+        assert_eq!(Command::from_str("thinking"), Some(Command::ToggleThinking));
+        assert_eq!(Command::from_str("timestamps"), Some(Command::ToggleTimestamps));
+        assert_eq!(Command::from_str("scrollbar"), Some(Command::ToggleScrollbar));
+        assert_eq!(Command::from_str("tool_details"), Some(Command::ToggleToolDetails));
+    }
+    
+    #[test]
+    fn test_command_from_str_scroll() {
+        assert_eq!(Command::from_str("scroll.up"), Some(Command::ScrollUp));
+        assert_eq!(Command::from_str("scroll.down"), Some(Command::ScrollDown));
+        assert_eq!(Command::from_str("scroll.page_up"), Some(Command::ScrollPageUp));
+        assert_eq!(Command::from_str("scroll.page_down"), Some(Command::ScrollPageDown));
+        assert_eq!(Command::from_str("scroll.top"), Some(Command::ScrollToTop));
+        assert_eq!(Command::from_str("scroll.bottom"), Some(Command::ScrollToBottom));
+    }
+    
+    #[test]
+    fn test_command_from_str_messages() {
+        assert_eq!(Command::from_str("message.next"), Some(Command::NextMessage));
+        assert_eq!(Command::from_str("message.prev"), Some(Command::PrevMessage));
+        assert_eq!(Command::from_str("message.copy"), Some(Command::CopyLastMessage));
+        assert_eq!(Command::from_str("message.undo"), Some(Command::UndoMessage));
+        assert_eq!(Command::from_str("message.redo"), Some(Command::RedoMessage));
+    }
+    
+    #[test]
+    fn test_command_from_str_session() {
+        assert_eq!(Command::from_str("session.create"), Some(Command::CreateSession));
+        assert_eq!(Command::from_str("new"), Some(Command::CreateSession));
+        assert_eq!(Command::from_str("session.copy"), Some(Command::CopySessionTranscript));
+    }
+    
+    #[test]
+    fn test_command_from_str_dialogs() {
+        assert_eq!(Command::from_str("dialog.agent"), Some(Command::ShowDialog(DialogType::Agent)));
+        assert_eq!(Command::from_str("dialog.model"), Some(Command::ShowDialog(DialogType::Model)));
+        assert_eq!(Command::from_str("dialog.provider"), Some(Command::ShowDialog(DialogType::Provider)));
+        assert_eq!(Command::from_str("dialog.mcp"), Some(Command::ShowDialog(DialogType::Mcp)));
+        assert_eq!(Command::from_str("dialog.sessions"), Some(Command::ShowDialog(DialogType::SessionList)));
+        assert_eq!(Command::from_str("dialog.themes"), Some(Command::ShowDialog(DialogType::ThemeList)));
+        assert_eq!(Command::from_str("dialog.stash"), Some(Command::ShowDialog(DialogType::Stash)));
+        assert_eq!(Command::from_str("dialog.status"), Some(Command::ShowDialog(DialogType::Status)));
+        assert_eq!(Command::from_str("dialog.timeline"), Some(Command::ShowDialog(DialogType::Timeline)));
+        assert_eq!(Command::from_str("dialog.close"), Some(Command::CloseDialog));
+    }
+    
+    #[test]
+    fn test_command_from_str_history() {
+        assert_eq!(Command::from_str("history.up"), Some(Command::NavigateHistoryUp));
+        assert_eq!(Command::from_str("history.down"), Some(Command::NavigateHistoryDown));
+        assert_eq!(Command::from_str("stash"), Some(Command::StashPrompt));
+        assert_eq!(Command::from_str("stash.push"), Some(Command::StashPrompt));
+        assert_eq!(Command::from_str("stash.pop"), Some(Command::PopStash));
+        assert_eq!(Command::from_str("stash.list"), Some(Command::ListStash));
+    }
+    
+    #[test]
+    fn test_command_from_str_editor() {
+        assert_eq!(Command::from_str("editor.open"), Some(Command::OpenExternalEditor));
+        assert_eq!(Command::from_str("editor.import"), Some(Command::ImportFromEditor));
+    }
+    
+    #[test]
+    fn test_command_from_str_mcp() {
+        assert_eq!(Command::from_str("mcp.list"), Some(Command::ListMcpServers));
+        assert_eq!(Command::from_str("mcp.refresh"), Some(Command::RefreshMcpServers));
+    }
+    
+    #[test]
+    fn test_command_from_str_child_sessions() {
+        assert_eq!(Command::from_str("session.child.next"), Some(Command::NextChildSession));
+        assert_eq!(Command::from_str("session.child.prev"), Some(Command::PrevChildSession));
+        assert_eq!(Command::from_str("session.parent"), Some(Command::GoToParentSession));
+    }
+    
+    #[test]
+    fn test_command_from_str_focus() {
+        assert_eq!(Command::from_str("focus.prompt"), Some(Command::FocusPrompt));
+        assert_eq!(Command::from_str("focus.history"), Some(Command::FocusHistory));
+    }
+    
+    #[test]
+    fn test_command_from_str_invalid() {
+        assert_eq!(Command::from_str("invalid"), None);
+        assert_eq!(Command::from_str(""), None);
+        assert_eq!(Command::from_str("random.command"), None);
+    }
+    
+    #[test]
+    fn test_command_as_str() {
+        assert_eq!(Command::Exit.as_str(), "exit");
+        assert_eq!(Command::SaveSession.as_str(), "session.save");
+        assert_eq!(Command::ToggleHelp.as_str(), "toggle.help");
+        assert_eq!(Command::ScrollUp.as_str(), "scroll.up");
+        assert_eq!(Command::CreateSession.as_str(), "session.create");
+        assert_eq!(Command::ShowDialog(DialogType::Agent).as_str(), "dialog.agent");
+        assert_eq!(Command::NavigateHistoryUp.as_str(), "history.up");
+    }
+    
+    #[test]
+    fn test_command_roundtrip() {
+        let commands = vec![
+            Command::Exit,
+            Command::SaveSession,
+            Command::Refresh,
+            Command::Interrupt,
+            Command::NavigateHome,
+            Command::NavigateBack,
+            Command::NavigateForward,
+            Command::ToggleHelp,
+            Command::ToggleCommandPalette,
+            Command::ToggleSidebar,
+            Command::ToggleThinking,
+            Command::ToggleTimestamps,
+            Command::ToggleScrollbar,
+            Command::ToggleToolDetails,
+            Command::ScrollUp,
+            Command::ScrollDown,
+            Command::ScrollPageUp,
+            Command::ScrollPageDown,
+            Command::ScrollToTop,
+            Command::ScrollToBottom,
+            Command::NextMessage,
+            Command::PrevMessage,
+            Command::CopyLastMessage,
+            Command::UndoMessage,
+            Command::RedoMessage,
+            Command::CreateSession,
+            Command::CopySessionTranscript,
+            Command::ShowDialog(DialogType::Agent),
+            Command::ShowDialog(DialogType::Model),
+            Command::ShowDialog(DialogType::Provider),
+            Command::ShowDialog(DialogType::Mcp),
+            Command::ShowDialog(DialogType::SessionList),
+            Command::ShowDialog(DialogType::ThemeList),
+            Command::ShowDialog(DialogType::Stash),
+            Command::ShowDialog(DialogType::Status),
+            Command::ShowDialog(DialogType::Timeline),
+            Command::CloseDialog,
+            Command::NavigateHistoryUp,
+            Command::NavigateHistoryDown,
+            Command::StashPrompt,
+            Command::PopStash,
+            Command::ListStash,
+            Command::OpenExternalEditor,
+            Command::ImportFromEditor,
+            Command::RefreshMcpServers,
+            Command::ListMcpServers,
+            Command::ListProviders,
+            Command::BrowseFiles,
+            Command::NextChildSession,
+            Command::PrevChildSession,
+            Command::GoToParentSession,
+            Command::FocusPrompt,
+            Command::FocusHistory,
+            Command::ClearToasts,
+        ];
+        
+        for cmd in commands {
+            let s = cmd.as_str();
+            let parsed = Command::from_str(s);
+            assert_eq!(parsed, Some(cmd.clone()), "Roundtrip failed for command: {:?}", cmd);
+        }
+    }
+    
+    #[test]
+    fn test_command_aliases() {
+        // Test that aliases map to the same command
+        assert_eq!(Command::from_str("exit"), Command::from_str("quit"));
+        assert_eq!(Command::from_str("save"), Command::from_str("session.save"));
+        assert_eq!(Command::from_str("interrupt"), Command::from_str("cancel"));
+        assert_eq!(Command::from_str("home"), Command::from_str("navigate.home"));
+        assert_eq!(Command::from_str("back"), Command::from_str("navigate.back"));
+        assert_eq!(Command::from_str("help"), Command::from_str("toggle.help"));
+        assert_eq!(Command::from_str("stash"), Command::from_str("stash.push"));
+        assert_eq!(Command::from_str("new"), Command::from_str("session.create"));
+    }
+    
+    #[test]
+    fn test_dialog_type_variants() {
+        let dialogs = vec![
+            DialogType::Agent,
+            DialogType::Command,
+            DialogType::Mcp,
+            DialogType::Model,
+            DialogType::Provider,
+            DialogType::SessionList,
+            DialogType::SessionRename,
+            DialogType::Stash,
+            DialogType::Status,
+            DialogType::Tag,
+            DialogType::ThemeList,
+            DialogType::Timeline,
+            DialogType::Fork,
+            DialogType::Message,
+            DialogType::Subagent,
+            DialogType::Help,
+        ];
+        
+        // Verify they all implement PartialEq correctly
+        for dialog in &dialogs {
+            assert_eq!(dialog, dialog);
+        }
+    }
+    
+    #[test]
+    fn test_toast_variant_variants() {
+        let toasts = vec![
+            ToastVariant::Info,
+            ToastVariant::Success,
+            ToastVariant::Warning,
+            ToastVariant::Error,
+        ];
+        
+        // Verify they all implement PartialEq correctly
+        for toast in &toasts {
+            assert_eq!(toast, toast);
         }
     }
 }

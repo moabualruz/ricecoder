@@ -33,9 +33,11 @@ pub mod cache;
 pub mod cache_implementations;
 pub mod config;
 pub mod config_cache;
+pub mod defaults;
 pub mod di;
 pub mod error;
 pub mod global_store;
+pub mod loaders;
 pub mod manager;
 pub mod project_store;
 pub mod session;
@@ -53,6 +55,7 @@ pub use config::{
     ProvidersConfig, StorageModeHandler, TuiAccessibilityConfig, TuiConfig,
 };
 pub use config_cache::ConfigCache;
+pub use defaults::{DefaultsManager, EmbeddedDefault};
 pub use error::{IoOperation, StorageError, StorageResult};
 pub use global_store::GlobalStore;
 pub use manager::{PathResolver, StorageManager};
@@ -60,5 +63,12 @@ pub use project_store::ProjectStore;
 pub use session::{SessionData, SessionManager, SessionState};
 pub use theme::{ThemePreference, ThemeStorage};
 pub use types::{
-    ConfigFormat, DocumentFormat, ResourceType, StorageConfig, StorageMode, StorageState,
+    ConfigFormat, ConfigSubdirectory, DocumentFormat, ResourceType, RuntimeStorageType,
+    StorageConfig, StorageDirectory, StorageMode, StorageState,
+};
+
+// Re-export loaders
+pub use loaders::{
+    Agent, AgentLoader, AuthLoader, Command, CommandLoader, PromptCategory, PromptLoader,
+    ProviderAuth, ProvidersAuth, Theme, ThemeLoader, TipsLoader,
 };

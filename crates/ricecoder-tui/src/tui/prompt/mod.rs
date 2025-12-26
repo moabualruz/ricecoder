@@ -67,20 +67,23 @@ pub mod spinner;
 
 // Re-exports for convenience
 pub use parts::{AgentPart, AgentSource, FilePart, FileSource, PromptPart, TextPart, TextSource};
-pub use state::{PromptInfo, PromptMode, PromptState, PLACEHOLDERS};
+pub use state::{PromptInfo, PromptMode, PromptState, random_placeholder, PLACEHOLDERS};
 pub use input::{CursorPosition, InputAction, PromptInput};
-pub use extmarks::{Extmark, ExtmarkManager, ExtmarkStyle};
+pub use extmarks::{Extmark, ExtmarkManager, ExtmarkStyle, render_with_extmarks};
 pub use clipboard::{Clipboard, ClipboardContent, Osc52Clipboard, PasteConfig, PastedContent};
-pub use editor::{EditorConfig, EditorError, EditorResult, ExternalEditor};
-pub use commands::{CommandContext, CommandResult, PromptCommand, PromptCommandId};
+pub use editor::{EditorConfig, EditorError, EditorResult, ExternalEditor, editor_name};
+pub use commands::{
+    CommandContext, CommandResult, PromptCommand, PromptCommandId,
+    get_commands, CATEGORY_PROMPT, CATEGORY_SESSION,
+};
 pub use handler::{DialogRequest, KeybindConfig, PromptEvent, PromptHandler, PromptRef, ToastVariant};
 pub use widget::{PromptBorderStyle, PromptWidget, PromptWidgetConfig, SessionStatus};
-pub use provider::{Model, ParsedModel, Provider, ProviderManager, ProviderStatus};
-pub use cycling::{Agent, AgentManager, CycleDirection, CyclingEvent, CyclingMode, CyclingState};
-pub use mcp::{McpEvent, McpManager, McpServer, McpServerStatus, McpStatusSummary, McpTool};
-pub use selection::{Selection, SelectionHandler, SelectionMode, SelectionPoint};
-pub use spinner::{SimpleSpinner, Spinner, SpinnerConfig, SpinnerState, SpinnerStyle};
-pub use autocomplete_widget::{AutocompleteState, AutocompleteWidget, AutocompleteWidgetConfig, Suggestion, SuggestionCategory};
+pub use provider::{Model, ParsedModel, Provider, ProviderManager, ProviderStatus, default_providers};
+pub use cycling::{Agent, AgentManager, CycleDirection, CyclingEvent, CyclingMode, CyclingState, default_agents, parse_color};
+pub use mcp::{McpEvent, McpManager, McpServer, McpServerStatus, McpStatusSummary, McpTool, McpToolParam};
+pub use selection::{Selection, SelectionHandler, SelectionMode, SelectionPoint, calculate_line_offsets};
+pub use spinner::{ColoredFrame, SimpleSpinner, Spinner, SpinnerConfig, SpinnerState, SpinnerStyle, create_colors, create_frames};
+pub use autocomplete_widget::{AutocompleteState, AutocompleteWidget, AutocompleteWidgetConfig, Suggestion, SuggestionCategory, render_autocomplete_hints};
 pub use terminal::{ColorScheme, TerminalCapabilities, TerminalInfo, ThemedColors};
 
 #[cfg(test)]

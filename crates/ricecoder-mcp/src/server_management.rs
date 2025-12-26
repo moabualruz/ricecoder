@@ -335,79 +335,100 @@ impl ServerManager {
             params: serde_json::json!({}),
         });
 
-        match transport.send(&request).await {
-            Ok(_) => {
-                // In a real implementation, we'd wait for the response
-                // For now, return some mock tools based on the server config
-                let tools = match config.id.as_str() {
-                    "filesystem" => vec![
-                        ToolMetadata {
-                            id: "read_file".to_string(),
-                            name: "Read File".to_string(),
-                            description: "Read the contents of a file".to_string(),
-                            category: "filesystem".to_string(),
-                            parameters: vec![crate::metadata::ParameterMetadata {
-                                name: "path".to_string(),
-                                type_: "string".to_string(),
-                                description: "Path to the file to read".to_string(),
-                                required: true,
-                                default: None,
-                            }],
-                            return_type: "string".to_string(),
-                            source: crate::metadata::ToolSource::Mcp(config.id.clone()),
-                            server_id: Some(config.id.clone()),
-                        },
-                        ToolMetadata {
-                            id: "list_dir".to_string(),
-                            name: "List Directory".to_string(),
-                            description: "List contents of a directory".to_string(),
-                            category: "filesystem".to_string(),
-                            parameters: vec![crate::metadata::ParameterMetadata {
-                                name: "path".to_string(),
-                                type_: "string".to_string(),
-                                description: "Path to the directory".to_string(),
-                                required: true,
-                                default: None,
-                            }],
-                            return_type: "array".to_string(),
-                            source: crate::metadata::ToolSource::Mcp(config.id.clone()),
-                            server_id: Some(config.id.clone()),
-                        },
-                    ],
-                    "git" => vec![ToolMetadata {
-                        id: "git_status".to_string(),
-                        name: "Git Status".to_string(),
-                        description: "Get the status of a git repository".to_string(),
-                        category: "git".to_string(),
-                        parameters: vec![crate::metadata::ParameterMetadata {
-                            name: "repo_path".to_string(),
-                            type_: "string".to_string(),
-                            description: "Path to the git repository".to_string(),
-                            required: true,
-                            default: None,
-                        }],
-                        return_type: "object".to_string(),
-                        source: crate::metadata::ToolSource::Mcp(config.id.clone()),
-                        server_id: Some(config.id.clone()),
-                    }],
-                    _ => vec![ToolMetadata {
-                        id: format!("{}_tool", config.id),
-                        name: format!("{} Tool", config.name),
-                        description: format!("A tool from {}", config.name),
-                        category: "general".to_string(),
-                        parameters: vec![],
-                        return_type: "string".to_string(),
-                        source: crate::metadata::ToolSource::Mcp(config.id.clone()),
-                        server_id: Some(config.id.clone()),
-                    }],
-                };
+        // Send the request
+        transport.send(&request).await.map_err(|e| {
+            Error::ConnectionError(format!("Failed to send tools/list request: {}", e))
+        })?;
 
+        // Wait for response with timeout (30 seconds = 30000ms)
+        let response = tokio::time::timeout(
+            Duration::from_secs(30),
+            transport.receive(),
+        )
+        .await
+        .map_err(|_| Error::TimeoutError(30000))?
+        .map_err(|e| Error::ConnectionError(format!("Failed to receive tools/list response: {}", e)))?;
+
+        // Parse the response
+        match response {
+            MCPMessage::Response(resp) => {
+                // Parse tools from the result
+                // MCP tools/list response format: { "tools": [{ "name": "...", "description": "...", "inputSchema": {...} }] }
+                let tools_value = resp.result.get("tools").cloned().unwrap_or(serde_json::json!([]));
+                let tools_array = tools_value.as_array().cloned().unwrap_or_default();
+
+                let tools: Vec<ToolMetadata> = tools_array
+                    .into_iter()
+                    .filter_map(|tool_json| {
+                        let name = tool_json.get("name")?.as_str()?.to_string();
+                        let description = tool_json
+                            .get("description")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .to_string();
+
+                        // Parse input schema to extract parameters
+                        let input_schema = tool_json.get("inputSchema").cloned().unwrap_or(serde_json::json!({}));
+                        let properties = input_schema.get("properties").cloned().unwrap_or(serde_json::json!({}));
+                        let required_params: Vec<String> = input_schema
+                            .get("required")
+                            .and_then(|v| v.as_array())
+                            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+                            .unwrap_or_default();
+
+                        let parameters: Vec<crate::metadata::ParameterMetadata> = properties
+                            .as_object()
+                            .map(|props| {
+                                props
+                                    .iter()
+                                    .map(|(param_name, param_schema)| {
+                                        crate::metadata::ParameterMetadata {
+                                            name: param_name.clone(),
+                                            type_: param_schema
+                                                .get("type")
+                                                .and_then(|v| v.as_str())
+                                                .unwrap_or("string")
+                                                .to_string(),
+                                            description: param_schema
+                                                .get("description")
+                                                .and_then(|v| v.as_str())
+                                                .unwrap_or("")
+                                                .to_string(),
+                                            required: required_params.contains(param_name),
+                                            default: param_schema.get("default").cloned(),
+                                        }
+                                    })
+                                    .collect()
+                            })
+                            .unwrap_or_default();
+
+                        Some(ToolMetadata {
+                            id: name.clone(),
+                            name: name.clone(),
+                            description,
+                            category: config.id.clone(), // Use server ID as category
+                            parameters,
+                            return_type: "object".to_string(),
+                            source: crate::metadata::ToolSource::Mcp(config.id.clone()),
+                            server_id: Some(config.id.clone()),
+                        })
+                    })
+                    .collect();
+
+                info!("Discovered {} tools from server {}", tools.len(), config.id);
                 Ok(tools)
             }
-            Err(e) => Err(Error::ConnectionError(format!(
-                "Failed to send tools/list request: {}",
-                e
-            ))),
+            MCPMessage::Error(err) => {
+                Err(Error::ServerError(format!(
+                    "Server returned error during tool discovery: {} (code: {})",
+                    err.error.message, err.error.code
+                )))
+            }
+            _ => {
+                Err(Error::ValidationError(
+                    "Unexpected response type for tools/list request".to_string(),
+                ))
+            }
         }
     }
 
@@ -430,22 +451,80 @@ impl ServerManager {
 
     /// Start a server by ID
     pub async fn start_server(&self, server_id: &str) -> Result<()> {
-        let mut servers = self.servers.write().await;
-        if let Some(registration) = servers.get_mut(server_id) {
-            if registration.health.state == ServerState::Stopped
-                || registration.health.state == ServerState::Disconnected
-            {
-                // In a real implementation, this would start the transport
-                // For now, just set the state
+        // First, get the config we need (read lock)
+        let config = {
+            let servers = self.servers.read().await;
+            if let Some(registration) = servers.get(server_id) {
+                if registration.health.state != ServerState::Stopped
+                    && registration.health.state != ServerState::Disconnected
+                {
+                    // Already running or in another state
+                    return Ok(());
+                }
+                registration.config.clone()
+            } else {
+                return Err(Error::ServerNotFound(server_id.to_string()));
+            }
+        };
+
+        // Mark as starting
+        {
+            let mut servers = self.servers.write().await;
+            if let Some(registration) = servers.get_mut(server_id) {
                 registration.health.state = ServerState::Starting;
-                info!("Starting server: {}", server_id);
-                // Simulate starting
+            }
+        }
+
+        info!("Starting server: {}", server_id);
+
+        // Create transport using TransportFactory
+        let transport = match TransportFactory::create(&config.transport_config) {
+            Ok(t) => t,
+            Err(e) => {
+                // Mark as error state
+                let mut servers = self.servers.write().await;
+                if let Some(registration) = servers.get_mut(server_id) {
+                    registration.health.state = ServerState::Error;
+                    registration.health.last_error = Some(format!("Transport creation failed: {}", e));
+                }
+                return Err(e);
+            }
+        };
+
+        // Clone transport for tool discovery
+        let transport_clone = transport.clone();
+
+        // Discover tools from the server
+        let tools = match self.discover_tools_from_server(&config, &*transport_clone).await {
+            Ok(t) => t,
+            Err(e) => {
+                warn!("Failed to discover tools from server {}: {}. Starting anyway.", server_id, e);
+                Vec::new() // Continue without tools, can be discovered later
+            }
+        };
+
+        // Update registration with transport and tools
+        {
+            let mut servers = self.servers.write().await;
+            if let Some(registration) = servers.get_mut(server_id) {
+                registration.transport = Some(transport);
+                registration.tools = tools.clone();
                 registration.health.state = ServerState::Connected;
                 registration.health.last_seen = Some(SystemTime::now());
+                registration.health.tools_available = tools.len();
+                registration.health.last_error = None;
+                registration.health.connection_attempts += 1;
             }
-        } else {
-            return Err(Error::ServerNotFound(server_id.to_string()));
         }
+
+        // Audit logging
+        if let Some(ref audit_logger) = self.audit_logger {
+            let _ = audit_logger
+                .log_server_connection(server_id, true, None, None, None)
+                .await;
+        }
+
+        info!("Server {} started successfully with {} tools", server_id, tools.len());
         Ok(())
     }
 

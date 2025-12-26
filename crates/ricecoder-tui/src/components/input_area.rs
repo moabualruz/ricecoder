@@ -213,6 +213,8 @@ impl InputArea {
     /// Remove validator
     pub fn clear_validator(&mut self) {
         self.validator = None;
+        // Reset validation result when validator is cleared
+        self.validation_result = ValidationResult::Valid;
     }
 
     /// Validate current input
@@ -838,14 +840,14 @@ mod tests {
         
         // Test empty input
         input.set_text("");
-        let result = input.validate();
-        assert!(matches!(result, ValidationResult::Invalid(_)));
+        let result = InputArea::validate(&mut input);
+        assert!(matches!(result, &ValidationResult::Invalid(_)));
         assert!(!input.is_valid());
         
         // Test valid input
         input.set_text("Hello");
-        let result = input.validate();
-        assert!(matches!(result, ValidationResult::Valid));
+        let result = InputArea::validate(&mut input);
+        assert!(matches!(result, &ValidationResult::Valid));
         assert!(input.is_valid());
     }
 
@@ -886,12 +888,14 @@ mod tests {
         }));
         
         input.set_text("");
-        input.validate();
+        let result = InputArea::validate(&mut input);
+        assert!(matches!(result, &ValidationResult::Invalid(_)));
         assert!(!input.is_valid());
         
         // Clear validator
         input.clear_validator();
-        input.validate();
+        let result = InputArea::validate(&mut input);
+        assert!(matches!(result, &ValidationResult::Valid));
         assert!(input.is_valid()); // Should be valid now
     }
 
@@ -911,15 +915,18 @@ mod tests {
         }));
         
         input.set_text("ab");
-        input.validate();
+        let result = InputArea::validate(&mut input);
+        assert!(matches!(result, &ValidationResult::Invalid(_)));
         assert!(!input.is_valid());
         
         input.set_text("abc");
-        input.validate();
+        let result = InputArea::validate(&mut input);
+        assert!(matches!(result, &ValidationResult::Valid));
         assert!(input.is_valid());
         
         input.set_text("12345678901");
-        input.validate();
+        let result = InputArea::validate(&mut input);
+        assert!(matches!(result, &ValidationResult::Invalid(_)));
         assert!(!input.is_valid());
     }
 }

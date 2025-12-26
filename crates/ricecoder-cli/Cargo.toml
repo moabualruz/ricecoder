@@ -91,4 +91,15 @@ proptest = { workspace = true }
 tokio-test = { workspace = true }
 tempfile = { workspace = true }
 
+# Include configuration files in the crate
+[package.metadata.cargo-dist]
+# Include paths for cargo package
+include = [
+    "src/**/*",
+    "Cargo.toml",
+    "README.md",
+    "../../config/**/*",
+    "../../assets/**/*",
+]
+
 

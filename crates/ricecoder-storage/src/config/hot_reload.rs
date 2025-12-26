@@ -145,14 +145,11 @@ impl HotReloadManager {
     /// Start watching configuration files
     pub async fn start_watching(&mut self) -> StorageResult<()> {
         // Watch standard configuration paths
+        // Note: Global and User paths are now unified in ~/Documents/.ricecoder/
         let paths = vec![
             (
                 Some(crate::manager::PathResolver::resolve_global_path()?),
                 ConfigType::Global,
-            ),
-            (
-                Some(crate::manager::PathResolver::resolve_user_path()?),
-                ConfigType::User,
             ),
             (
                 Some(crate::manager::PathResolver::resolve_project_path()),
@@ -162,7 +159,10 @@ impl HotReloadManager {
 
         for (path_option, config_type) in paths {
             if let Some(path) = path_option {
-                let config_file = path.join("ricecoder.yaml");
+                // Watch the main config file in the config subdirectory
+                let config_file = path
+                    .join(crate::types::StorageDirectory::Config.dir_name())
+                    .join("config.yaml");
                 self.watcher.watch_file(config_file, config_type)?;
             }
         }

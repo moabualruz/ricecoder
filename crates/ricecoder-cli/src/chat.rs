@@ -41,6 +41,11 @@ impl ChatSession {
         self.provider_instance = Some(provider);
     }
 
+    /// Get the provider instance for this session
+    pub fn get_provider_instance(&self) -> Option<Arc<dyn Provider>> {
+        self.provider_instance.clone()
+    }
+
     /// Start interactive chat mode
     pub fn start(&mut self) -> CliResult<()> {
         let mut rl =

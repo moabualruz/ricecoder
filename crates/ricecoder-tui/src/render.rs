@@ -162,13 +162,76 @@ impl Renderer {
         // TODO: Render file picker if visible - needs integration
         // app.file_picker.render(f, area);
 
-        // TODO: Render status bar with token usage - needs session integration
-        let token_usage = Default::default(); // Placeholder
+        // Render status bar with real data from reactive state
+        let model = app.reactive_state.blocking_read();
+        let current_model = model.current();
+        
+        // Get provider info from state
+        let provider_name = current_model.providers.current_provider
+            .as_ref()
+            .and_then(|id| {
+                current_model.providers.available_providers
+                    .iter()
+                    .find(|p| &p.id == id)
+                    .map(|p| p.name.clone())
+            })
+            .unwrap_or_else(|| "No Provider".to_string());
+        
+        // Get model info - use first model from current provider or default
+        let model_name = current_model.providers.current_provider
+            .as_ref()
+            .and_then(|id| {
+                current_model.providers.available_providers
+                    .iter()
+                    .find(|p| &p.id == id)
+                    .and_then(|p| p.models.first().cloned())
+            })
+            .unwrap_or_else(|| "No Model".to_string());
+        
+        // Get connection status from provider state
+        let connection_status = current_model.providers.current_provider
+            .as_ref()
+            .and_then(|id| {
+                current_model.providers.available_providers
+                    .iter()
+                    .find(|p| &p.id == id)
+                    .map(|p| match p.state {
+                        crate::model::ProviderConnectionState::Connected => crate::status_bar::ConnectionStatus::Connected,
+                        crate::model::ProviderConnectionState::Disconnected => crate::status_bar::ConnectionStatus::Disconnected,
+                        crate::model::ProviderConnectionState::Error => crate::status_bar::ConnectionStatus::Error,
+                        crate::model::ProviderConnectionState::Disabled => crate::status_bar::ConnectionStatus::Disconnected,
+                    })
+            })
+            .unwrap_or(crate::status_bar::ConnectionStatus::Disconnected);
+        
+        // Get session name from state
+        let session_name = current_model.sessions.active_session_id
+            .as_ref()
+            .map(|id| id.chars().take(8).collect::<String>())
+            .unwrap_or_else(|| "new".to_string());
+        
+        // Token usage from session state
+        let total = current_model.sessions.total_tokens.input_tokens as usize
+            + current_model.sessions.total_tokens.output_tokens as usize;
+        let token_usage = if total > 0 {
+            Some(crate::status_bar::TokenUsage {
+                input: current_model.sessions.total_tokens.input_tokens as usize,
+                output: current_model.sessions.total_tokens.output_tokens as usize,
+                cached: 0,
+                token_limit: 128000, // Default context limit
+                total_tokens: total,
+            })
+        } else {
+            None
+        };
+        
+        drop(model); // Release lock before creating widget
+        
         let status_bar = crate::status_bar::StatusBarWidget::new()
-            .with_provider("RiceCoder") // TODO: Get from provider integration
-            .with_model("gpt-4") // TODO: Get from provider integration
-            .with_connection_status(crate::status_bar::ConnectionStatus::Connected) // TODO: Get from provider integration
-            .with_session_name("default") // TODO: Get current session name
+            .with_provider(&provider_name)
+            .with_model(&model_name)
+            .with_connection_status(connection_status)
+            .with_session_name(&session_name)
             .with_message_count(app.chat.messages.len())
             .with_token_usage(token_usage)
             .with_input_mode(crate::status_bar::InputMode::Insert);

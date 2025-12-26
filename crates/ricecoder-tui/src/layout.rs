@@ -115,6 +115,11 @@ impl Rect {
     pub const fn is_empty(&self) -> bool {
         self.width == 0 || self.height == 0
     }
+
+    /// Convert to ratatui Rect
+    pub fn to_ratatui(&self) -> ratatui::layout::Rect {
+        ratatui::layout::Rect::new(self.x, self.y, self.width, self.height)
+    }
 }
 
 /// Layout manager with enhanced responsive capabilities
@@ -134,15 +139,21 @@ pub struct Layout {
 /// Layout areas for different UI components
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LayoutAreas {
-    /// Banner area (optional)
+    /// Top bar area (Logo, Menu, Version)
+    pub top_bar: Rect,
+    /// Activity bar area (Left icons)
+    pub activity_bar: Rect,
+    /// Side panel area (Files/Git/etc) - Optional/Collapsible
+    pub side_panel: Option<Rect>,
+    /// Main content area (Chat/Editor)
+    pub content: Rect,
+    /// Bottom bar area (Context/Status)
+    pub bottom_bar: Rect,
+    /// Legacy fields to maintain compatibility during migration (will be deprecated)
     pub banner: Option<Rect>,
-    /// Sidebar area (optional)
     pub sidebar: Option<Rect>,
-    /// Main chat area
     pub chat: Rect,
-    /// Input area
     pub input: Rect,
-    /// Status bar area
     pub status: Rect,
 }
 
@@ -364,96 +375,92 @@ impl Layout {
         config: &LayoutConfig,
         degradation: DegradationLevel,
     ) -> LayoutAreas {
-        let mut current_y = 0;
-        let mut current_x = 0;
-        let mut remaining_width = self.width;
-        let mut remaining_height = self.height;
+        let mut remaining_area = Rect::new(0, 0, self.width, self.height);
 
-        // Apply degradation-specific adjustments
-        let (banner_height, sidebar_enabled, input_height) = match degradation {
-            DegradationLevel::TooSmall => {
-                // Minimal layout: no banner, no sidebar, minimal input
-                (0, false, 1)
-            }
-            DegradationLevel::Minimal => {
-                // Minimal viable: no banner, no sidebar, small input
-                (0, false, 2)
-            }
-            DegradationLevel::ReduceBanner => {
-                // Reduce banner height, keep sidebar if width allows
-                let reduced_banner_height = if config.banner_height > 0 {
-                    3.min(config.banner_height)
-                } else {
-                    0
-                };
-                (
-                    reduced_banner_height,
-                    config.sidebar_enabled && self.width >= 80,
-                    config.input_height,
-                )
-            }
-            DegradationLevel::HideSidebar => {
-                // Hide sidebar but keep banner
-                (config.banner_height, false, config.input_height)
-            }
-            DegradationLevel::Full => {
-                // Full layout
-                (
-                    config.banner_height,
-                    config.sidebar_enabled,
-                    config.input_height,
-                )
-            }
+        // 1. Top Bar (Fixed height: 1)
+        let top_bar_height = 1;
+        let top_bar = Rect::new(remaining_area.x, remaining_area.y, remaining_area.width, top_bar_height);
+        remaining_area.y += top_bar_height;
+        remaining_area.height = remaining_area.height.saturating_sub(top_bar_height);
+
+        // 2. Bottom Bar (Fixed height: 1)
+        let bottom_bar_height = 1;
+        let bottom_bar = Rect::new(
+            remaining_area.x,
+            remaining_area.y + remaining_area.height.saturating_sub(bottom_bar_height),
+            remaining_area.width,
+            bottom_bar_height,
+        );
+        remaining_area.height = remaining_area.height.saturating_sub(bottom_bar_height);
+
+        // 3. Activity Bar (Fixed width: 5)
+        // Hide activity bar in minimal/too small modes
+        let activity_bar_width = if degradation == DegradationLevel::TooSmall || degradation == DegradationLevel::Minimal {
+            0
+        } else {
+            5
         };
+        
+        let activity_bar = Rect::new(remaining_area.x, remaining_area.y, activity_bar_width, remaining_area.height);
+        remaining_area.x += activity_bar_width;
+        remaining_area.width = remaining_area.width.saturating_sub(activity_bar_width);
 
-        // Banner area (top)
-        let banner = if banner_height > 0 && remaining_height > banner_height {
-            let area = Rect::new(0, current_y, self.width, banner_height);
-            current_y += banner_height;
-            remaining_height = remaining_height.saturating_sub(banner_height);
+        // 4. Side Panel (Configurable width, usually 30)
+        // Hide side panel if disabled or screen too narrow
+        let show_side_panel = config.sidebar_enabled 
+            && degradation != DegradationLevel::TooSmall 
+            && degradation != DegradationLevel::Minimal 
+            && degradation != DegradationLevel::HideSidebar;
+
+        let side_panel_width = if show_side_panel { config.sidebar_width } else { 0 };
+        
+        let side_panel = if side_panel_width > 0 && remaining_area.width > side_panel_width + config.min_chat_width {
+            let area = Rect::new(remaining_area.x, remaining_area.y, side_panel_width, remaining_area.height);
+            remaining_area.x += side_panel_width;
+            remaining_area.width = remaining_area.width.saturating_sub(side_panel_width);
             Some(area)
         } else {
             None
         };
 
-        // Status bar area (bottom, reserve 1 line)
-        let status_height = 1;
-        remaining_height = remaining_height.saturating_sub(status_height);
-        let status = Rect::new(0, current_y + remaining_height, self.width, status_height);
+        // 5. Content Area (Remaining space)
+        let content = remaining_area;
 
-        // Input area (bottom, above status bar)
-        let actual_input_height = input_height.min(remaining_height / 2).max(1);
-        remaining_height = remaining_height.saturating_sub(actual_input_height);
+        // Map to legacy fields for compatibility
+        // Legacy banner maps to top_bar (conceptually different but keeps code compiling)
+        // Legacy sidebar maps to side_panel
+        // Legacy chat maps to content
+        // Legacy status maps to bottom_bar
+        // Legacy input needs to be derived from content area (bottom of content)
+        
+        let input_height = config.input_height.min(content.height / 2).max(1);
         let input = Rect::new(
-            0,
-            current_y + remaining_height,
-            self.width,
-            actual_input_height,
+            content.x,
+            content.y + content.height.saturating_sub(input_height),
+            content.width,
+            input_height,
+        );
+        
+        // Adjust chat to exclude input
+        let chat = Rect::new(
+            content.x,
+            content.y,
+            content.width,
+            content.height.saturating_sub(input_height),
         );
 
-        // Sidebar area (left side of remaining area)
-        let sidebar = if sidebar_enabled
-            && config.sidebar_width > 0
-            && remaining_width > config.sidebar_width + config.min_chat_width
-        // Ensure minimum chat width
-        {
-            let area = Rect::new(current_x, current_y, config.sidebar_width, remaining_height);
-            current_x += config.sidebar_width;
-            remaining_width = remaining_width.saturating_sub(config.sidebar_width);
-            Some(area)
-        } else {
-            None
-        };
-
-        // Chat area (remaining space)
-        let chat = Rect::new(current_x, current_y, remaining_width, remaining_height);
-
         LayoutAreas {
-            banner,
-            sidebar,
+            top_bar,
+            activity_bar,
+            side_panel,
+            content,
+            bottom_bar,
+            // Legacy mapping
+            banner: Some(top_bar), 
+            sidebar: side_panel,
             chat,
             input,
-            status,
+            status: bottom_bar,
         }
     }
 

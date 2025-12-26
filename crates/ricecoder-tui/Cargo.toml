@@ -46,6 +46,10 @@ ricecoder-config = { workspace = true }
 ricecoder-research = { workspace = true }
 ricecoder-di = { workspace = true }
 ricecoder-common = { workspace = true }
+ricecoder-sessions = { workspace = true }
+ricecoder-providers = { workspace = true }
+ricecoder-mcp = { workspace = true }
+ricecoder-agents = { workspace = true }
 inventory = { workspace = true }
 rand = { workspace = true }
 resvg = { workspace = true }

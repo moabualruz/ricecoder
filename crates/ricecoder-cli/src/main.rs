@@ -1,10 +1,10 @@
 // RiceCoder CLI Entry Point
 
-use std::{fs, path::Path};
+use std::path::Path;
 
 use ricecoder_cli::{lifecycle, output, router::CommandRouter};
-use ricecoder_storage::PathResolver;
-use tokio::signal;
+use ricecoder_storage::DefaultsManager;
+
 
 #[tokio::main]
 async fn main() {
@@ -73,81 +73,19 @@ async fn main() {
     }
 }
 
-/// Initialize first-run setup
+/// Initialize first-run setup using DefaultsManager
 ///
 /// This function:
-/// 1. Checks if this is the first run
-/// 2. Creates the global config directory if needed
-/// 3. Creates a default configuration file
-/// 4. Marks first-run as complete
+/// 1. Creates a DefaultsManager for the global storage path
+/// 2. Initializes the folder structure and default files if needed
+/// 3. Does NOT overwrite existing user files
 fn initialize_first_run() -> Result<(), Box<dyn std::error::Error>> {
-    // Check if this is the first run
-    let is_first_run = false;
+    // Create defaults manager with the default global path
+    let defaults_manager = DefaultsManager::with_default_path()?;
 
-    if !is_first_run {
-        return Ok(());
-    }
-
-    // Get the global storage path
-    let global_path = PathResolver::resolve_global_path()?;
-
-    // Create directory structure if it doesn't exist
-    if !global_path.exists() {
-        fs::create_dir_all(&global_path)?;
-    }
-
-    // Create default configuration file
-    let config_file = global_path.join("ricecoder.yaml");
-    if !config_file.exists() {
-        let default_config = create_default_config();
-        fs::write(&config_file, default_config)?;
-    }
+    // Initialize folder structure and default files
+    // This is idempotent - it won't overwrite existing files
+    defaults_manager.initialize()?;
 
     Ok(())
-}
-
-/// Create default configuration content
-fn create_default_config() -> String {
-    r#"# RiceCoder Configuration
-# 
-# This file contains the default configuration for RiceCoder.
-# You can customize these settings to suit your needs.
-
-# Provider configuration
-providers:
-  # Default provider to use (zen, openai, anthropic, etc.)
-  default_provider: zen
-  
-  # API keys for various providers
-  # Set these to enable access to paid models
-  api_keys:
-    # zen: ${OPENCODE_API_KEY}
-    # openai: ${OPENAI_API_KEY}
-    # anthropic: ${ANTHROPIC_API_KEY}
-
-  # Custom endpoints for providers (optional)
-  endpoints:
-    # zen: https://opencode.ai/zen/v1
-    # openai: https://api.openai.com/v1
-    # anthropic: https://api.anthropic.com
-
-# Default settings
-defaults:
-  # Default model to use (e.g., zen/big-pickle, gpt-4, claude-3-opus)
-  model: zen/big-pickle
-  
-  # Default temperature for LLM responses (0.0 - 2.0)
-  # Lower values = more deterministic, higher values = more creative
-  temperature: 0.7
-  
-  # Default maximum tokens for LLM responses
-  max_tokens: 2048
-
-# Governance rules (optional)
-# Governance: []
-
-# Custom settings (optional)
-# custom: {}
-"#
-    .to_string()
 }

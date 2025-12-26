@@ -7,7 +7,7 @@ use anyhow::Result;
 
 use crate::{
     app::App,
-    components::{DialogWidget, ListWidget, MenuWidget, SplitViewWidget, TabWidget},
+    components::{DialogWidget, MenuWidget, SplitViewWidget, TabWidget},
     diff::DiffWidget,
     layout::Rect,
     model::AppMode,
@@ -25,8 +25,7 @@ pub struct WidgetContainer {
     pub prompt: PromptWidget,
     /// Menu widget
     pub menu: MenuWidget,
-    /// List widget
-    pub list: ListWidget,
+    // pub list: ListWidget,
     /// Dialog widget (optional)
     pub dialog: Option<DialogWidget>,
     /// Split view widget (optional)
@@ -43,7 +42,7 @@ impl WidgetContainer {
             diff: DiffWidget::new(),
             prompt: PromptWidget::new(),
             menu: MenuWidget::new(),
-            list: ListWidget::new(),
+            // list: ListWidget::new(),
             dialog: None,
             split_view: None,
             tabs: None,
@@ -56,7 +55,7 @@ impl WidgetContainer {
         self.diff = DiffWidget::new();
         self.prompt = PromptWidget::new();
         self.menu.clear();
-        self.list.clear();
+        // self.list.clear();
         self.dialog = None;
         self.split_view = None;
         self.tabs = None;

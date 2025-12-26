@@ -1,15 +1,178 @@
 //! Core types for RiceCoder storage
+//!
+//! Unified folder structure:
+//! ```text
+//! ~/Documents/.ricecoder/          # User config folder (OS-appropriate Documents)
+//! ├── config/                      # User-editable config files
+//! │   ├── config.yaml              # Main config (yaml/json/toml supported)
+//! │   ├── agents/                  # User agent overrides
+//! │   ├── commands/                # User slash commands
+//! │   ├── themes/                  # User custom themes
+//! │   ├── prompts/                 # User prompts
+//! │   └── tips.txt                 # User tips
+//! ├── auth/                        # Credentials (separate for security)
+//! │   └── providers.yaml           # API keys per provider
+//! ├── storage/                     # Runtime data
+//! │   ├── sessions/                # Session data
+//! │   ├── messages/                # Message history
+//! │   ├── parts/                   # Message parts
+//! │   ├── projects/                # Project data
+//! │   ├── todo/                    # Todo items
+//! │   └── migration                # Migration marker
+//! ├── logs/                        # Log files
+//! ├── cache/                       # Cached data
+//! └── templates/                   # User templates
+//!
+//! .rice/                           # Project-specific config
+//! ├── config.yaml                  # Project config (overrides user)
+//! ├── agents/                      # Project-specific agents
+//! ├── commands/                    # Project-specific commands
+//! └── ...
+//! ```
 
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
+/// Top-level directory categories in the unified storage structure
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum StorageDirectory {
+    /// User-editable config files (config/)
+    Config,
+    /// Authentication credentials (auth/)
+    Auth,
+    /// Runtime data storage (storage/)
+    Storage,
+    /// Log files (logs/)
+    Logs,
+    /// Cached data (cache/)
+    Cache,
+    /// User templates (templates/)
+    Templates,
+}
+
+impl StorageDirectory {
+    /// Get the directory name for this storage category
+    pub fn dir_name(&self) -> &'static str {
+        match self {
+            StorageDirectory::Config => "config",
+            StorageDirectory::Auth => "auth",
+            StorageDirectory::Storage => "storage",
+            StorageDirectory::Logs => "logs",
+            StorageDirectory::Cache => "cache",
+            StorageDirectory::Templates => "templates",
+        }
+    }
+
+    /// Get all directories that should be created on initialization
+    pub fn all() -> &'static [StorageDirectory] {
+        &[
+            StorageDirectory::Config,
+            StorageDirectory::Auth,
+            StorageDirectory::Storage,
+            StorageDirectory::Logs,
+            StorageDirectory::Cache,
+            StorageDirectory::Templates,
+        ]
+    }
+}
+
+/// Subdirectories within the storage/ directory
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum RuntimeStorageType {
+    /// Session data
+    Sessions,
+    /// Message history
+    Messages,
+    /// Message parts (attachments, etc.)
+    Parts,
+    /// Project-specific data
+    Projects,
+    /// Todo items
+    Todo,
+    /// Session diffs
+    SessionDiff,
+    /// Agent usage reminders
+    AgentUsageReminder,
+    /// Directory agents
+    DirectoryAgents,
+    /// Directory readme
+    DirectoryReadme,
+}
+
+impl RuntimeStorageType {
+    /// Get the directory name
+    pub fn dir_name(&self) -> &'static str {
+        match self {
+            RuntimeStorageType::Sessions => "sessions",
+            RuntimeStorageType::Messages => "messages",
+            RuntimeStorageType::Parts => "parts",
+            RuntimeStorageType::Projects => "projects",
+            RuntimeStorageType::Todo => "todo",
+            RuntimeStorageType::SessionDiff => "session_diff",
+            RuntimeStorageType::AgentUsageReminder => "agent-usage-reminder",
+            RuntimeStorageType::DirectoryAgents => "directory-agents",
+            RuntimeStorageType::DirectoryReadme => "directory-readme",
+        }
+    }
+
+    /// Get all storage types that should be created on initialization
+    pub fn all() -> &'static [RuntimeStorageType] {
+        &[
+            RuntimeStorageType::Sessions,
+            RuntimeStorageType::Messages,
+            RuntimeStorageType::Parts,
+            RuntimeStorageType::Projects,
+            RuntimeStorageType::Todo,
+            RuntimeStorageType::SessionDiff,
+            RuntimeStorageType::AgentUsageReminder,
+            RuntimeStorageType::DirectoryAgents,
+            RuntimeStorageType::DirectoryReadme,
+        ]
+    }
+}
+
+/// Subdirectories within the config/ directory
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum ConfigSubdirectory {
+    /// Agent definitions
+    Agents,
+    /// Slash commands
+    Commands,
+    /// Theme files
+    Themes,
+    /// Prompt templates
+    Prompts,
+}
+
+impl ConfigSubdirectory {
+    /// Get the directory name
+    pub fn dir_name(&self) -> &'static str {
+        match self {
+            ConfigSubdirectory::Agents => "agents",
+            ConfigSubdirectory::Commands => "commands",
+            ConfigSubdirectory::Themes => "themes",
+            ConfigSubdirectory::Prompts => "prompts",
+        }
+    }
+
+    /// Get all config subdirectories
+    pub fn all() -> &'static [ConfigSubdirectory] {
+        &[
+            ConfigSubdirectory::Agents,
+            ConfigSubdirectory::Commands,
+            ConfigSubdirectory::Themes,
+            ConfigSubdirectory::Prompts,
+        ]
+    }
+}
+
 /// Storage configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StorageConfig {
-    /// Path to global storage directory
+    /// Path to global storage directory (~/Documents/.ricecoder/)
     pub global_path: PathBuf,
-    /// Path to project storage directory (if in a project)
+    /// Path to project storage directory (.rice/)
     pub project_path: Option<PathBuf>,
     /// Storage mode (how to combine global and project storage)
     pub mode: StorageMode,

@@ -9,7 +9,7 @@ use anyhow::{anyhow, Result};
 use ratatui::style::{Color, Color as ColorSupport};
 use serde::{Deserialize, Serialize};
 
-use crate::types::{SyntaxTheme, Theme};
+use crate::types::{AgentColors, SyntaxTheme, Theme};
 
 /// YAML theme format for custom themes
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -61,12 +61,36 @@ impl ThemeYaml {
 
     /// Convert YAML theme to Theme struct
     pub fn to_theme(&self) -> Result<Theme> {
+        // Derive UI colors from the base colors
+        let bg = Self::parse_color(&self.background)?;
+        let (panel_bg, element_bg, border_color) = match bg {
+            Color::Rgb(r, g, b) => {
+                // If dark background, make panels slightly lighter
+                // If light background, make panels slightly darker
+                let is_dark = (r as u16 + g as u16 + b as u16) / 3 < 128;
+                if is_dark {
+                    (
+                        Color::Rgb(r.saturating_add(20), g.saturating_add(20), b.saturating_add(20)),
+                        Color::Rgb(r.saturating_add(35), g.saturating_add(35), b.saturating_add(35)),
+                        Color::Rgb(r.saturating_add(50), g.saturating_add(50), b.saturating_add(50)),
+                    )
+                } else {
+                    (
+                        Color::Rgb(r.saturating_sub(10), g.saturating_sub(10), b.saturating_sub(10)),
+                        Color::Rgb(r.saturating_sub(20), g.saturating_sub(20), b.saturating_sub(20)),
+                        Color::Rgb(r.saturating_sub(55), g.saturating_sub(55), b.saturating_sub(55)),
+                    )
+                }
+            }
+            _ => (Color::DarkGray, Color::Gray, Color::Gray),
+        };
+
         Ok(Theme {
             name: self.name.clone(),
             primary: Self::parse_color(&self.primary)?,
             secondary: Self::parse_color(&self.secondary)?,
             accent: Self::parse_color(&self.accent)?,
-            background: Self::parse_color(&self.background)?,
+            background: bg,
             foreground: Self::parse_color(&self.foreground)?,
             error: Self::parse_color(&self.error)?,
             warning: Self::parse_color(&self.warning)?,
@@ -81,6 +105,13 @@ impl ThemeYaml {
                 r#type: Self::parse_color("#00ffff")?,
                 constant: Self::parse_color("#ff6600")?,
             },
+            // Derived UI colors
+            text_muted: Self::parse_color(&self.secondary)?,
+            background_panel: panel_bg,
+            background_element: element_bg,
+            border: border_color,
+            border_active: Self::parse_color(&self.accent)?,
+            agent_colors: AgentColors::default(),
         })
     }
 }

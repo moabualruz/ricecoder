@@ -10,7 +10,7 @@ use std::{
 };
 
 use anyhow::Result;
-use ricecoder_storage::TuiConfig;
+use ricecoder_storage::{DefaultsManager, TuiConfig};
 use ricecoder_tui::{
     accessibility::*, app::App, banner::*, clipboard::*, code_editor_widget::*, command_blocks::*,
     command_palette::*, components::*, di::*, diff::*, error::*, event::*, event_dispatcher::*,
@@ -625,6 +625,15 @@ impl CleanupResource for PerformanceTrackerCleanup {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Initialize storage defaults (folder structure, default configs)
+    // This is idempotent - won't overwrite existing user files
+    if let Ok(defaults_manager) = DefaultsManager::with_default_path() {
+        if let Err(e) = defaults_manager.initialize() {
+            eprintln!("Warning: Failed to initialize defaults: {}", e);
+            // Continue anyway - this is not fatal
+        }
+    }
+
     // Initialize DI container first
     if let Err(e) = ricecoder_tui::di::initialize_di_container() {
         eprintln!("DI container initialization failed: {}", e);

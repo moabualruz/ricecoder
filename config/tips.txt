@@ -1,0 +1,24 @@
+# RiceCoder Tips
+# Lines starting with # are comments and will be ignored
+# One tip per line
+
+Use Tab to switch between agents (build, plan, general)
+Press Ctrl+C to cancel a running operation
+Use /help to see all available commands
+Press Ctrl+L to clear the screen
+Use @file to reference a file in your message
+Use arrow keys to navigate message history
+Press Esc to cancel current input
+Use /theme to change the color theme
+Enable vim mode with --vim-mode flag
+Use /session to manage your sessions
+Press Ctrl+K to open the command palette
+Use /commit to create a git commit with AI-generated message
+Use @folder to include an entire directory in context
+Press Tab in the prompt for autocomplete suggestions
+Use /init to initialize RiceCoder in a new project
+Drag and drop images to include them in your prompt
+Use /review to get an AI code review
+Press Ctrl+R to search command history
+Use /explain to get an explanation of selected code
+Configure providers in config/ricecoder.yaml

@@ -1,0 +1,42 @@
+{
+  // RiceCoder Configuration Example
+  // Copy to ~/.config/ricecoder/ricecoder.jsonc or project root
+  
+  // Custom instructions files to load
+  "instructions": ["STYLE_GUIDE.md"],
+  
+  // Provider configuration
+  "provider": {
+    // Default provider (openai, anthropic, google, etc.)
+    "default": "anthropic",
+    
+    // Provider-specific options
+    "anthropic": {
+      "model": "claude-sonnet-4-20250514"
+    },
+    "openai": {
+      "model": "gpt-4o"
+    }
+  },
+  
+  // MCP server configuration
+  "mcp": {
+    // Add MCP servers here
+    // "server-name": {
+    //   "command": "npx",
+    //   "args": ["-y", "@modelcontextprotocol/server-name"]
+    // }
+  },
+  
+  // Custom tools configuration
+  "tools": {
+    // Enable/disable custom tools
+    "github-triage": false
+  },
+  
+  // Theme configuration
+  "theme": "catppuccin",
+  
+  // Keybindings profile
+  "keybinds": "defaults"
+}

@@ -2,7 +2,7 @@
 // Adapted from automation/src/cli/prompts.rs
 
 use async_trait::async_trait;
-use ricecoder_providers::{models::ChatRequest, provider::ProviderRegistry};
+use ricecoder_providers::models::ChatRequest;
 use ricecoder_storage::{ConfigLoader, PathResolver};
 
 use super::Command;
@@ -152,26 +152,10 @@ impl ChatCommand {
     ) -> CliResult<String> {
         use futures::stream::StreamExt;
 
-        // Create provider registry and register Zen provider
-        let mut registry = ProviderRegistry::new();
-
-        // Get API key from environment or use empty string for free models
-        let api_key = std::env::var("ZEN_API_KEY")
-            .or_else(|_| std::env::var("RICECODER_API_KEY"))
-            .ok();
-
-        // Create and register Zen provider
-        let zen_provider = ricecoder_providers::ZenProvider::new(api_key)
-            .map_err(|e| CliError::Provider(format!("Failed to create Zen provider: {}", e)))?;
-
-        registry
-            .register(std::sync::Arc::new(zen_provider))
-            .map_err(|e| CliError::Provider(format!("Failed to register provider: {}", e)))?;
-
-        // Get the provider
-        let provider = registry
-            .get(&session.provider)
-            .map_err(|e| CliError::Provider(format!("Provider not found: {}", e)))?;
+        // Use the provider instance that was already set on the session
+        let provider = session
+            .get_provider_instance()
+            .ok_or_else(|| CliError::Provider("Provider not initialized. Please check your API key configuration.".to_string()))?;
 
         // Create chat request with conversation history
         let mut messages = Vec::new();

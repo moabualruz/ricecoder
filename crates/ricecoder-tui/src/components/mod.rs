@@ -2,8 +2,12 @@
 
 pub mod traits;
 pub mod mode_indicator;
+pub mod activity_bar;
+pub mod top_bar;
+pub mod bottom_bar;
+pub mod git_panel;
 pub mod menu;
-pub mod list;
+// pub mod status_bar;
 pub mod dialog;
 pub mod split_view;
 pub mod tabs;
@@ -11,6 +15,7 @@ pub mod vim;
 pub mod messaging;
 pub mod input_area;
 pub mod tool_output;
+pub mod help_dialog_wrapper;
 
 use std::collections::HashMap;
 
@@ -281,10 +286,11 @@ impl Default for ComponentRegistry {
 pub use traits::*;
 pub use mode_indicator::ModeIndicator;
 pub use menu::{MenuItem, MenuWidget, ModeSelectionMenu};
-pub use list::ListWidget;
+// pub use list::ListWidget;
 pub use dialog::{DialogWidget, DialogType, DialogResult};
 pub use split_view::{SplitViewWidget, SplitDirection};
 pub use tabs::TabWidget;
 pub use vim::{VimKeybindings, VimMode};
 pub use input_area::InputArea;
 pub use tool_output::{ToolOutput, ToolResult};
+pub use help_dialog_wrapper::HelpDialogComponent;

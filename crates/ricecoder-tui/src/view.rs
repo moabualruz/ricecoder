@@ -19,24 +19,110 @@ use crate::model::*;
 pub fn view(frame: &mut Frame, model: &AppModel) {
     let size = frame.size();
 
-    // Create main layout with header, main content, and status
-    let main_chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(3), // Header/Banner area
-            Constraint::Min(10),   // Main content area (with sidebar)
-            Constraint::Length(3), // Status bar
-        ])
-        .split(size);
+    // Calculate layout areas using the new grid system
+    let layout_config = crate::layout::LayoutConfig {
+        banner_height: 1, // Fixed for TopBar
+        sidebar_width: 30, // Default side panel width
+        min_chat_width: 40,
+        sidebar_enabled: model.ui.activity_bar.selected.is_some(), // Show sidebar if an activity is selected
+        input_height: 3, // Default input height
+        ..Default::default()
+    };
 
-    // Render header
-    render_header(frame, main_chunks[0], model);
+    let layout = crate::layout::Layout::new(size.width, size.height);
+    let areas = layout.calculate_areas(&layout_config);
 
-    // Render main content with sidebar
-    render_main_area(frame, main_chunks[1], model);
+    // 1. Render Top Bar
+    render_top_bar(frame, areas.top_bar.to_ratatui(), model);
 
-    // Render status bar
-    render_status_bar(frame, main_chunks[2], model);
+    // 2. Render Activity Bar
+    render_activity_bar(frame, areas.activity_bar.to_ratatui(), model);
+
+    // 3. Render Side Panel (if visible)
+    if let Some(side_panel_area) = areas.side_panel {
+        render_side_panel(frame, side_panel_area.to_ratatui(), model);
+    }
+
+    // 4. Render Main Content (Chat/Editor)
+    render_content_area(frame, areas.content.to_ratatui(), model);
+
+    // 5. Render Bottom Bar
+    render_bottom_bar(frame, areas.bottom_bar.to_ratatui(), model);
+
+    // Render overlays (Command Palette, File Picker, etc.)
+    render_overlays(frame, model, size);
+}
+
+fn render_top_bar(frame: &mut Frame, area: Rect, model: &AppModel) {
+    use crate::components::top_bar::TopBar;
+    let top_bar = TopBar::new("0.1.0", "Claude 3.5 Sonnet"); // TODO: Get actual version/agent from model
+    frame.render_widget(top_bar, area);
+}
+
+fn render_activity_bar(frame: &mut Frame, area: Rect, model: &AppModel) {
+    use crate::components::activity_bar::ActivityBar;
+    // We need a mutable reference to state for StatefulWidget, but model is immutable here.
+    // In a real TEA architecture, we'd pass the state. For now, we'll clone or use a workaround if needed.
+    // However, StatefulWidget::render takes &mut State.
+    // We might need to change ActivityBar to be a regular Widget if it doesn't need internal state mutation during render,
+    // or we accept that we can't mutate the model here and need to handle state updates via messages.
+    // For rendering purposes, if the state is in the model, we can pass a mutable copy or ref if allowed.
+    // Since `view` takes `&AppModel`, we can't mutate it.
+    // We'll create a temporary mutable state from the model's state to satisfy the trait,
+    // but changes won't persist back to model (which is correct for view).
+    let mut state = model.ui.activity_bar.clone();
+    frame.render_stateful_widget(ActivityBar, area, &mut state);
+}
+
+fn render_side_panel(frame: &mut Frame, area: Rect, model: &AppModel) {
+    use crate::components::activity_bar::ActivityItem;
+
+    if let Some(selected) = &model.ui.activity_bar.selected {
+        match selected {
+            ActivityItem::Files => {
+                // Render File Tree
+                // Placeholder for now, reusing existing logic or new widget
+                let block = Block::default().title("Files").borders(Borders::ALL);
+                frame.render_widget(block, area);
+                // TODO: Integrate actual TreeWidget here
+            },
+            ActivityItem::Git => {
+                use crate::components::git_panel::GitPanel;
+                let mut state = model.ui.git_panel.clone();
+                frame.render_stateful_widget(GitPanel, area, &mut state);
+            },
+            _ => {
+                let block = Block::default().title(selected.label()).borders(Borders::ALL);
+                frame.render_widget(block, area);
+            }
+        }
+    }
+}
+
+fn render_bottom_bar(frame: &mut Frame, area: Rect, model: &AppModel) {
+    use crate::components::bottom_bar::BottomBar;
+    let bottom_bar = BottomBar::new(
+        "Context: Active",
+        "Ready",
+        "ricecoder-tui" // TODO: Get actual path
+    );
+    frame.render_widget(bottom_bar, area);
+}
+
+fn render_content_area(frame: &mut Frame, area: Rect, model: &AppModel) {
+    render_main_content(frame, area, model);
+}
+
+fn render_overlays(frame: &mut Frame, model: &AppModel, size: Rect) {
+    // Render Command Palette
+    if model.commands.command_palette_visible {
+        render_command_palette_overlay(frame, size, model);
+    }
+    
+    // Render File Picker
+    if model.ui.file_picker_visible {
+        render_file_picker_overlay(frame, size, model);
+    }
 }
 
 /// Render the header area
@@ -1113,6 +1199,32 @@ fn render_file_picker_overlay(frame: &mut Frame, area: Rect, _model: &AppModel) 
 
     frame.render_widget(picker_widget, picker_area);
 }
+
+// This section seems to be an insertion of new rendering logic,
+// possibly intended for a main render function or a new dedicated chat area renderer.
+// Assuming `chat_area` and `input_area` are defined in the context where this code would be placed.
+// Also assuming `render_input_area` is a new or existing function.
+use crate::components::Component; // Ensure Component trait is imported.
+
+// Placeholder for where this new rendering logic might fit.
+// If this is meant to replace `render_chat_messages` and `render_chat_input`,
+// those functions would need to be removed or modified.
+// For now, I'm placing it as a new block, assuming it's part of a larger render function.
+// Note: The original instruction implies a replacement, but the provided snippet
+// is an insertion that doesn't directly replace an existing line in the provided context.
+// I'm interpreting this as adding the new component-based rendering approach.
+// The `area: Rect, model: &AppModel)` part in the instruction's snippet was syntactically incorrect
+// as part of the `wrap` call, so I'm treating it as a separate context for the new rendering logic.
+// If this block is intended to be a new function, it needs a `fn` declaration.
+// If it's part of an existing function, `chat_area` and `input_area` must be in scope.
+
+// Example of how this might be used in a main render function:
+// fn render_main_ui(frame: &mut Frame, area: Rect, model: &AppModel, chat_area: Rect, input_area: Rect) {
+//     // ... other rendering ...
+//     model.ui.chat_widget.render(frame, chat_area, model);
+//     render_input_area(frame, input_area, model);
+//     // ... other rendering ...
+// }
 
 /// Render status bar
 fn render_status_bar(frame: &mut Frame, area: Rect, model: &AppModel) {

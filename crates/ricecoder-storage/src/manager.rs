@@ -1,10 +1,14 @@
 //! Storage manager trait and path resolution
+//!
+//! Provides unified path resolution for the RiceCoder storage structure:
+//! - Global user config: `~/Documents/.ricecoder/` (or `~/.ricecoder/` fallback)
+//! - Project config: `.rice/` in project root
 
 use std::path::{Path, PathBuf};
 
 use crate::{
     error::{StorageError, StorageResult},
-    types::{ResourceType, StorageMode},
+    types::{ConfigSubdirectory, ResourceType, RuntimeStorageType, StorageDirectory, StorageMode},
 };
 
 /// Storage manager trait for managing storage operations
@@ -29,14 +33,43 @@ pub trait StorageManager: Send + Sync {
 }
 
 /// Path resolver for cross-platform storage paths
+///
+/// Unified storage structure:
+/// ```text
+/// ~/Documents/.ricecoder/          # Global user config
+/// ├── config/                      # User-editable config files
+/// │   ├── config.yaml              # Main config
+/// │   ├── agents/                  # Agent definitions
+/// │   ├── commands/                # Slash commands
+/// │   ├── themes/                  # Custom themes
+/// │   └── prompts/                 # Prompt templates
+/// ├── auth/                        # Credentials
+/// │   └── providers.yaml           # API keys
+/// ├── storage/                     # Runtime data
+/// │   ├── sessions/
+/// │   ├── messages/
+/// │   └── ...
+/// ├── logs/                        # Log files
+/// ├── cache/                       # Cached data
+/// └── templates/                   # User templates
+///
+/// .rice/                           # Project-specific config
+/// └── config.yaml                  # Project overrides
+/// ```
 pub struct PathResolver;
 
 impl PathResolver {
+    /// Project folder name (since global is .ricecoder/)
+    pub const PROJECT_DIR: &'static str = ".rice";
+
+    /// Global folder name
+    pub const GLOBAL_DIR: &'static str = ".ricecoder";
+
     /// Resolve the global storage path based on OS and environment
     ///
     /// Priority:
     /// 1. RICECODER_HOME environment variable
-    /// 2. ~/Documents/.ricecoder/ (primary)
+    /// 2. ~/Documents/.ricecoder/ (primary - OS-appropriate Documents)
     /// 3. ~/.ricecoder/ (fallback if Documents doesn't exist)
     pub fn resolve_global_path() -> StorageResult<PathBuf> {
         // Check for RICECODER_HOME environment variable
@@ -45,15 +78,15 @@ impl PathResolver {
             return Ok(path);
         }
 
-        // Try Documents folder first
+        // Try Documents folder first (OS-appropriate)
         if let Some(docs_dir) = dirs::document_dir() {
-            let ricecoder_path = docs_dir.join(".ricecoder");
+            let ricecoder_path = docs_dir.join(Self::GLOBAL_DIR);
             return Ok(ricecoder_path);
         }
 
         // Fallback to home directory
         if let Some(home_dir) = dirs::home_dir() {
-            let ricecoder_path = home_dir.join(".ricecoder");
+            let ricecoder_path = home_dir.join(Self::GLOBAL_DIR);
             return Ok(ricecoder_path);
         }
 
@@ -62,21 +95,49 @@ impl PathResolver {
         ))
     }
 
-    /// Resolve the user storage path (~/.ricecoder/)
-    pub fn resolve_user_path() -> StorageResult<PathBuf> {
-        if let Some(home_dir) = dirs::home_dir() {
-            let ricecoder_path = home_dir.join(".ricecoder");
-            Ok(ricecoder_path)
-        } else {
-            Err(StorageError::path_resolution_error(
-                "Could not determine home directory",
-            ))
-        }
+    /// Resolve the project storage path (.rice/ in current directory)
+    pub fn resolve_project_path() -> PathBuf {
+        PathBuf::from(Self::PROJECT_DIR)
     }
 
-    /// Resolve the project storage path (./.agent/)
-    pub fn resolve_project_path() -> PathBuf {
-        PathBuf::from(".agent")
+    /// Get the path for a top-level storage directory
+    pub fn storage_dir(base: &Path, dir: StorageDirectory) -> PathBuf {
+        base.join(dir.dir_name())
+    }
+
+    /// Get the path for a config subdirectory
+    pub fn config_subdir(base: &Path, subdir: ConfigSubdirectory) -> PathBuf {
+        base.join(StorageDirectory::Config.dir_name())
+            .join(subdir.dir_name())
+    }
+
+    /// Get the path for a runtime storage subdirectory
+    pub fn runtime_storage_path(base: &Path, storage_type: RuntimeStorageType) -> PathBuf {
+        base.join(StorageDirectory::Storage.dir_name())
+            .join(storage_type.dir_name())
+    }
+
+    /// Get the path for the main config file (config/config.yaml or similar)
+    pub fn main_config_path(base: &Path) -> PathBuf {
+        base.join(StorageDirectory::Config.dir_name())
+            .join("config.yaml")
+    }
+
+    /// Get the path for the auth providers file
+    pub fn auth_providers_path(base: &Path) -> PathBuf {
+        base.join(StorageDirectory::Auth.dir_name())
+            .join("providers.yaml")
+    }
+
+    /// Get the path for the tips file
+    pub fn tips_path(base: &Path) -> PathBuf {
+        base.join(StorageDirectory::Config.dir_name())
+            .join("tips.txt")
+    }
+
+    /// Get the path for log files
+    pub fn log_file(base: &Path, name: &str) -> PathBuf {
+        base.join(StorageDirectory::Logs.dir_name()).join(name)
     }
 
     /// Expand ~ in paths to home directory
@@ -85,7 +146,7 @@ impl PathResolver {
             .to_str()
             .ok_or_else(|| StorageError::path_resolution_error("Invalid path encoding"))?;
 
-        if path_str.starts_with("~") {
+        if path_str.starts_with('~') {
             if let Some(home_dir) = dirs::home_dir() {
                 let expanded = if path_str == "~" {
                     home_dir
@@ -97,5 +158,23 @@ impl PathResolver {
         }
 
         Ok(path.to_path_buf())
+    }
+
+    /// Check if we're in a project directory (has .rice/ folder)
+    pub fn is_project_dir(path: &Path) -> bool {
+        path.join(Self::PROJECT_DIR).exists()
+    }
+
+    /// Find the project root by walking up directories
+    pub fn find_project_root(start: &Path) -> Option<PathBuf> {
+        let mut current = start.to_path_buf();
+        loop {
+            if Self::is_project_dir(&current) {
+                return Some(current);
+            }
+            if !current.pop() {
+                return None;
+            }
+        }
     }
 }

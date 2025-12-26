@@ -4,6 +4,8 @@
 //! discover features. Tips support highlighting syntax and are displayed
 //! in a bordered box.
 //!
+//! Tips are loaded from `config/tips.txt` via ricecoder-storage loaders.
+//!
 //! # Examples
 //!
 //! ```ignore
@@ -22,24 +24,39 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph, Widget},
 };
+use ricecoder_storage::TipsLoader;
+use std::sync::OnceLock;
 
-/// RiceCoder tips with {highlight} syntax support
-const TIPS: &[&str] = &[
-    "Type {highlight}@{/highlight} followed by a filename to fuzzy search and attach files to your prompt.",
-    "Start a message with {highlight}!{/highlight} to run shell commands directly (e.g., {highlight}!ls -la{/highlight}).",
-    "Press {highlight}Tab{/highlight} to cycle between Build (full access) and Plan (read-only) agents.",
-    "Use {highlight}/undo{/highlight} to revert the last message and any file changes made by RiceCoder.",
-    "Use {highlight}/redo{/highlight} to restore previously undone messages and file changes.",
-    "Run {highlight}/share{/highlight} to create a public link to your conversation at github.com/moabualruz/ricecoder.",
-    "Drag and drop images into the terminal to add them as context for your prompts.",
-    "Press {highlight}Ctrl+V{/highlight} to paste images from your clipboard directly into the prompt.",
-    "Press {highlight}Ctrl+X E{/highlight} or {highlight}/editor{/highlight} to compose messages in your external editor.",
-    "Run {highlight}/init{/highlight} to auto-generate project rules based on your codebase structure.",
-    "Run {highlight}/models{/highlight} or {highlight}Ctrl+X M{/highlight} to see and switch between available AI models.",
-    "Use {highlight}/theme{/highlight} or {highlight}Ctrl+X T{/highlight} to preview and switch between 50+ built-in themes.",
-    "Press {highlight}Ctrl+X N{/highlight} or {highlight}/new{/highlight} to start a fresh conversation session.",
-    "Use {highlight}/sessions{/highlight} or {highlight}Ctrl+X L{/highlight} to list and continue previous conversations.",
-];
+/// Cached tips loaded from config/tips.txt
+static LOADED_TIPS: OnceLock<Vec<String>> = OnceLock::new();
+
+/// Get tips, loading from config/tips.txt on first access
+fn get_tips() -> &'static [String] {
+    LOADED_TIPS.get_or_init(|| {
+        let loader = TipsLoader::with_default_path();
+        loader.load_all().unwrap_or_else(|_| default_tips())
+    })
+}
+
+/// Default tips when config file is not available
+fn default_tips() -> Vec<String> {
+    vec![
+        "Type {highlight}@{/highlight} followed by a filename to fuzzy search and attach files to your prompt.".to_string(),
+        "Start a message with {highlight}!{/highlight} to run shell commands directly (e.g., {highlight}!ls -la{/highlight}).".to_string(),
+        "Press {highlight}Tab{/highlight} to cycle between Build (full access) and Plan (read-only) agents.".to_string(),
+        "Use {highlight}/undo{/highlight} to revert the last message and any file changes made by RiceCoder.".to_string(),
+        "Use {highlight}/redo{/highlight} to restore previously undone messages and file changes.".to_string(),
+        "Run {highlight}/share{/highlight} to create a public link to your conversation.".to_string(),
+        "Drag and drop images into the terminal to add them as context for your prompts.".to_string(),
+        "Press {highlight}Ctrl+V{/highlight} to paste images from your clipboard directly into the prompt.".to_string(),
+        "Press {highlight}Ctrl+X E{/highlight} or {highlight}/editor{/highlight} to compose messages in your external editor.".to_string(),
+        "Run {highlight}/init{/highlight} to auto-generate project rules based on your codebase structure.".to_string(),
+        "Run {highlight}/models{/highlight} or {highlight}Ctrl+X M{/highlight} to see and switch between available AI models.".to_string(),
+        "Use {highlight}/theme{/highlight} or {highlight}Ctrl+X T{/highlight} to preview and switch between 50+ built-in themes.".to_string(),
+        "Press {highlight}Ctrl+X N{/highlight} or {highlight}/new{/highlight} to start a fresh conversation session.".to_string(),
+        "Use {highlight}/sessions{/highlight} or {highlight}Ctrl+X L{/highlight} to list and continue previous conversations.".to_string(),
+    ]
+}
 
 const BOX_WIDTH: u16 = 42;
 const TITLE: &str = " 🅘 Did you know? ";
@@ -61,7 +78,7 @@ fn parse_tip(tip: &str) -> Vec<TipPart> {
     while let Some(ch) = chars.next() {
         if ch == '{' {
             // Check if this is a highlight tag
-            let peek: String = chars.clone().take(10).collect();
+            let peek: String = chars.clone().take(11).collect();
             if peek.starts_with("highlight}") {
                 // Save current text as non-highlighted
                 if !current.is_empty() {
@@ -119,8 +136,16 @@ pub struct DidYouKnow {
 impl DidYouKnow {
     /// Create a new Did You Know widget with random tip
     pub fn new() -> Self {
+        let tips = get_tips();
+        let tip_count = tips.len().max(1);
+        // Simple random using time-based seed
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default();
+        let tip_index = (now.as_nanos() as usize) % tip_count;
+        
         Self {
-            tip_index: rand::random::<usize>() % TIPS.len(),
+            tip_index,
             text_color: Color::White,
             muted_color: Color::DarkGray,
             border_color: Color::Gray,
@@ -129,7 +154,14 @@ impl DidYouKnow {
 
     /// Randomize the current tip
     pub fn randomize(&mut self) {
-        self.tip_index = rand::random::<usize>() % TIPS.len();
+        let tips = get_tips();
+        if tips.is_empty() {
+            return;
+        }
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default();
+        self.tip_index = (now.as_nanos() as usize) % tips.len();
     }
 
     /// Set the text color
@@ -152,7 +184,8 @@ impl DidYouKnow {
 
     /// Get the current tip as styled spans
     fn tip_spans(&self) -> Vec<Span> {
-        let tip = TIPS[self.tip_index];
+        let tips = get_tips();
+        let tip = tips.get(self.tip_index).map(|s| s.as_str()).unwrap_or("");
         let parts = parse_tip(tip);
 
         parts

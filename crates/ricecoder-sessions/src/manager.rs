@@ -3,6 +3,7 @@
 use std::collections::{HashMap, HashSet};
 
 use chrono::{Duration, Utc};
+use tracing::{debug, error, warn};
 
 use crate::{
     bus::{BusEvent, EventBus, SessionEvent},
@@ -10,6 +11,7 @@ use crate::{
     models::{MessagePart, Session, SessionContext},
     share::ShareService,
     snapshot::SnapshotManager,
+    store::SessionStore,
     token_estimator::{TokenEstimator, TokenUsageTracker},
 };
 
@@ -33,12 +35,26 @@ pub struct SessionManager {
     snapshot_manager: SnapshotManager,
     /// Parent-child session relationships
     session_children: HashMap<String, Vec<String>>,
+    /// Session store for disk persistence
+    store: Option<SessionStore>,
 }
 
 impl SessionManager {
     /// Create a new session manager with a session limit
     pub fn new(session_limit: usize) -> Self {
-        Self {
+        // Try to create session store for disk persistence
+        let store = match SessionStore::new() {
+            Ok(s) => {
+                debug!("SessionStore initialized for disk persistence");
+                Some(s)
+            }
+            Err(e) => {
+                warn!("Failed to initialize SessionStore, sessions will be in-memory only: {}", e);
+                None
+            }
+        };
+
+        let mut manager = Self {
             sessions: HashMap::new(),
             active_session_id: None,
             session_limit,
@@ -48,6 +64,63 @@ impl SessionManager {
             share_service: ShareService::new(),
             snapshot_manager: SnapshotManager::disabled(),
             session_children: HashMap::new(),
+            store,
+        };
+
+        // Load existing sessions from disk synchronously at startup
+        manager.load_sessions_from_disk();
+
+        manager
+    }
+
+    /// Load all sessions from disk into memory
+    fn load_sessions_from_disk(&mut self) {
+        if let Some(ref store) = self.store {
+            // Use blocking runtime for sync context
+            let rt = match tokio::runtime::Handle::try_current() {
+                Ok(handle) => {
+                    // Already in async context, spawn blocking
+                    let store_clone = store.clone();
+                    let sessions = std::thread::spawn(move || {
+                        tokio::runtime::Runtime::new()
+                            .unwrap()
+                            .block_on(store_clone.list())
+                    })
+                    .join()
+                    .unwrap_or_else(|_| Ok(Vec::new()));
+                    sessions
+                }
+                Err(_) => {
+                    // Not in async context, create runtime
+                    match tokio::runtime::Runtime::new() {
+                        Ok(rt) => rt.block_on(store.list()),
+                        Err(e) => {
+                            error!("Failed to create runtime for session loading: {}", e);
+                            Ok(Vec::new())
+                        }
+                    }
+                }
+            };
+
+            match rt {
+                Ok(sessions) => {
+                    debug!("Loaded {} sessions from disk", sessions.len());
+                    for session in sessions {
+                        // Create token tracker for loaded session
+                        if let Ok(tracker) = self.token_estimator.create_usage_tracker(&session.context.model) {
+                            self.token_trackers.insert(session.id.clone(), tracker);
+                        }
+                        self.sessions.insert(session.id.clone(), session);
+                    }
+                    // Set first session as active if we have any
+                    if self.active_session_id.is_none() {
+                        self.active_session_id = self.sessions.keys().next().cloned();
+                    }
+                }
+                Err(e) => {
+                    warn!("Failed to load sessions from disk: {}", e);
+                }
+            }
         }
     }
 
@@ -75,6 +148,9 @@ impl SessionManager {
 
         self.sessions.insert(session_id.clone(), session.clone());
 
+        // Persist to disk
+        self.persist_session(&session);
+
         // Set as active if it's the first session
         if self.active_session_id.is_none() {
             self.active_session_id = Some(session_id.clone());
@@ -86,6 +162,23 @@ impl SessionManager {
         }));
 
         Ok(session)
+    }
+
+    /// Persist a session to disk (fire-and-forget)
+    fn persist_session(&self, session: &Session) {
+        if let Some(ref store) = self.store {
+            let store_clone = store.clone();
+            let session_clone = session.clone();
+            
+            // Spawn async task to persist without blocking
+            tokio::spawn(async move {
+                if let Err(e) = store_clone.save(&session_clone).await {
+                    error!("Failed to persist session {} to disk: {}", session_clone.id, e);
+                } else {
+                    debug!("Session {} persisted to disk", session_clone.id);
+                }
+            });
+        }
     }
 
     /// Close a session (alias for delete_session for interface compatibility)
@@ -103,6 +196,9 @@ impl SessionManager {
         self.token_trackers.remove(session_id);
         self.session_children.remove(session_id);
 
+        // Delete from disk
+        self.delete_session_from_disk(session_id);
+
         // If the deleted session was active, switch to another session
         if self.active_session_id.as_deref() == Some(session_id) {
             self.active_session_id = self.sessions.keys().next().cloned();
@@ -114,6 +210,24 @@ impl SessionManager {
         }));
 
         Ok(())
+    }
+
+    /// Delete a session from disk (fire-and-forget)
+    fn delete_session_from_disk(&self, session_id: &str) {
+        if let Some(ref store) = self.store {
+            let store_clone = store.clone();
+            let session_id = session_id.to_string();
+            
+            // Spawn async task to delete without blocking
+            tokio::spawn(async move {
+                if let Err(e) = store_clone.delete(&session_id).await {
+                    // Not an error if session doesn't exist on disk
+                    debug!("Note: Could not delete session {} from disk: {}", session_id, e);
+                } else {
+                    debug!("Session {} deleted from disk", session_id);
+                }
+            });
+        }
     }
 
     /// Get a session by ID
@@ -161,7 +275,10 @@ impl SessionManager {
         }
 
         let session_id = session.id.clone();
-        self.sessions.insert(session_id.clone(), session);
+        self.sessions.insert(session_id.clone(), session.clone());
+
+        // Persist to disk
+        self.persist_session(&session);
 
         // Publish SessionUpdated event
         self.event_bus.publish(BusEvent::Session(SessionEvent::Updated {
@@ -437,6 +554,10 @@ impl SessionManager {
         session.name = title;
         session.updated_at = Utc::now();
 
+        // Persist updated session to disk
+        let session_clone = session.clone();
+        self.persist_session(&session_clone);
+
         Ok(())
     }
 
@@ -543,6 +664,10 @@ impl SessionManager {
             .ok_or_else(|| SessionError::NotFound(session_id.to_string()))?;
 
         session.updated_at = Utc::now();
+
+        // Persist updated session to disk
+        let session_clone = session.clone();
+        self.persist_session(&session_clone);
 
         // Publish SessionUpdated event
         self.event_bus.publish(BusEvent::Session(SessionEvent::Updated {

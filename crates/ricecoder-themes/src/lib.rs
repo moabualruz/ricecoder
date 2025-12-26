@@ -17,6 +17,6 @@ pub use manager::ThemeManager;
 pub use registry::ThemeRegistry;
 pub use reset::ThemeResetManager;
 pub use types::{
-    Theme, ThemeConfig, ThemeError as ThemeErrorType, ThemeManager as ThemeManagerTrait,
-    ThemeMetadata,
+    AgentColors, SyntaxTheme, Theme, ThemeConfig, ThemeError as ThemeErrorType,
+    ThemeManager as ThemeManagerTrait, ThemeMetadata,
 };
