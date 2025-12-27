@@ -1,0 +1,30 @@
+# C/C++ Language Server Configuration
+# Server: clangd
+# Documentation: https://clangd.llvm.org/
+
+language: c
+extensions:
+  - .c
+  - .h
+  - .cpp
+  - .hpp
+  - .cc
+  - .cxx
+executable: clangd
+args:
+  - --background-index
+  - --clang-tidy
+  - --completion-style=detailed
+  - --header-insertion=iwyu
+env: {}
+
+# Initialization options
+init_options:
+  clangdFileStatus: true
+  fallbackFlags:
+    - -std=c++17
+
+enabled: true
+timeout_ms: 10000
+max_restarts: 3
+idle_timeout_ms: 300000

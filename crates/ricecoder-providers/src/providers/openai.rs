@@ -24,21 +24,30 @@ pub struct OpenAiProvider {
     client: Arc<Client>,
     base_url: String,
     token_counter: Arc<TokenCounter>,
+    models: Vec<ModelInfo>,
 }
 
 impl OpenAiProvider {
     /// Create a new OpenAI provider instance
-    pub fn new(api_key: String) -> Result<Self, ProviderError> {
-        Self::with_client(Arc::new(Client::new()), api_key)
+    pub fn new(api_key: String, models: Vec<ModelInfo>) -> Result<Self, ProviderError> {
+        Self::with_client(Arc::new(Client::new()), api_key, models)
+    }
+
+    /// Create a new OpenAI provider with default models from registry
+    #[allow(dead_code)]
+    pub fn with_default_models(api_key: String) -> Result<Self, ProviderError> {
+        use crate::model_registry::global_registry;
+        let models = global_registry().get_provider_models("openai");
+        Self::new(api_key, models)
     }
 
     /// Create a new OpenAI provider with a custom base URL
-    pub fn with_base_url(api_key: String, base_url: String) -> Result<Self, ProviderError> {
-        Self::with_client_and_base_url(Arc::new(Client::new()), api_key, base_url)
+    pub fn with_base_url(api_key: String, base_url: String, models: Vec<ModelInfo>) -> Result<Self, ProviderError> {
+        Self::with_client_and_base_url(Arc::new(Client::new()), api_key, base_url, models)
     }
 
     /// Create a new OpenAI provider with a custom HTTP client
-    pub fn with_client(client: Arc<Client>, api_key: String) -> Result<Self, ProviderError> {
+    pub fn with_client(client: Arc<Client>, api_key: String, models: Vec<ModelInfo>) -> Result<Self, ProviderError> {
         if api_key.is_empty() {
             return Err(ProviderError::ConfigError(
                 "OpenAI API key is required".to_string(),
@@ -50,6 +59,7 @@ impl OpenAiProvider {
             client,
             base_url: "https://api.openai.com/v1".to_string(),
             token_counter: Arc::new(TokenCounter::new()),
+            models,
         })
     }
 
@@ -58,6 +68,7 @@ impl OpenAiProvider {
         client: Arc<Client>,
         api_key: String,
         base_url: String,
+        models: Vec<ModelInfo>,
     ) -> Result<Self, ProviderError> {
         if api_key.is_empty() {
             return Err(ProviderError::ConfigError(
@@ -70,6 +81,7 @@ impl OpenAiProvider {
             client,
             base_url,
             token_counter: Arc::new(TokenCounter::new()),
+            models,
         })
     }
 
@@ -177,66 +189,7 @@ impl Provider for OpenAiProvider {
     }
 
     fn models(&self) -> Vec<ModelInfo> {
-        vec![
-            ModelInfo {
-                id: "gpt-4".to_string(),
-                name: "GPT-4".to_string(),
-                provider: "openai".to_string(),
-                context_window: 8192,
-                capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
-                pricing: Some(crate::models::Pricing {
-                    input_per_1k_tokens: 0.03,
-                    output_per_1k_tokens: 0.06,
-                }),
-                is_free: false,
-            },
-            ModelInfo {
-                id: "gpt-4-turbo".to_string(),
-                name: "GPT-4 Turbo".to_string(),
-                provider: "openai".to_string(),
-                context_window: 128000,
-                capabilities: vec![
-                    Capability::Chat,
-                    Capability::Code,
-                    Capability::Vision,
-                    Capability::Streaming,
-                ],
-                pricing: Some(crate::models::Pricing {
-                    input_per_1k_tokens: 0.01,
-                    output_per_1k_tokens: 0.03,
-                }),
-                is_free: false,
-            },
-            ModelInfo {
-                id: "gpt-4o".to_string(),
-                name: "GPT-4o".to_string(),
-                provider: "openai".to_string(),
-                context_window: 128000,
-                capabilities: vec![
-                    Capability::Chat,
-                    Capability::Code,
-                    Capability::Vision,
-                    Capability::Streaming,
-                ],
-                pricing: Some(crate::models::Pricing {
-                    input_per_1k_tokens: 0.005,
-                    output_per_1k_tokens: 0.015,
-                }),
-                is_free: false,
-            },
-            ModelInfo {
-                id: "gpt-3.5-turbo".to_string(),
-                name: "GPT-3.5 Turbo".to_string(),
-                provider: "openai".to_string(),
-                context_window: 4096,
-                capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
-                pricing: Some(crate::models::Pricing {
-                    input_per_1k_tokens: 0.0005,
-                    output_per_1k_tokens: 0.0015,
-                }),
-                is_free: false,
-            },
-        ]
+        self.models.clone()
     }
 
     async fn chat(&self, request: ChatRequest) -> Result<ChatResponse, ProviderError> {

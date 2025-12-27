@@ -31,6 +31,7 @@ tempfile = { workspace = true }
 httpdate = { workspace = true }
 ricecoder-security = { workspace = true }
 ricecoder-domain = { workspace = true }
+ricecoder-storage = { version = "0.1.72", path = "../ricecoder-storage" }
 
 [dev-dependencies]
 proptest = { workspace = true }

@@ -69,6 +69,7 @@ pub use types::{
 
 // Re-export loaders
 pub use loaders::{
-    Agent, AgentLoader, AuthLoader, Command, CommandLoader, PromptCategory, PromptLoader,
-    ProviderAuth, ProvidersAuth, Theme, ThemeLoader, TipsLoader,
+    global_lsp_configs, Agent, AgentLoader, AuthLoader, Command, CommandLoader, LspConfig,
+    LspConfigLoader, PromptCategory, PromptLoader, ProviderAuth, ProvidersAuth, Theme,
+    ThemeLoader, TipsLoader,
 };

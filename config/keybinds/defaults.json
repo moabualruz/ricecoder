@@ -1,144 +1,646 @@
 {
-  "version": "1.0",
+  "version": "2.0",
+  "description": "OpenCode-compatible keybindings for RiceCoder TUI",
   "keybinds": [
     {
-      "action_id": "editor.save",
-      "key": "Ctrl+S",
-      "category": "editing",
-      "description": "Save current file",
-      "is_default": true
-    },
-    {
-      "action_id": "editor.save_all",
-      "key": "Ctrl+Shift+S",
-      "category": "editing",
-      "description": "Save all files",
-      "is_default": true
-    },
-    {
-      "action_id": "editor.undo",
-      "key": "Ctrl+Z",
-      "category": "editing",
-      "description": "Undo last change",
-      "is_default": true
-    },
-    {
-      "action_id": "editor.redo",
-      "key": "Ctrl+Y",
-      "category": "editing",
-      "description": "Redo last change",
-      "is_default": true
-    },
-    {
-      "action_id": "editor.cut",
+      "action_id": "leader",
       "key": "Ctrl+X",
-      "category": "editing",
-      "description": "Cut selection",
+      "category": "system",
+      "description": "Leader key for keybind combinations",
       "is_default": true
     },
     {
-      "action_id": "editor.copy",
-      "key": "Ctrl+C",
-      "category": "editing",
-      "description": "Copy selection",
+      "action_id": "app.exit",
+      "key": "Ctrl+C,Ctrl+D,<leader>q",
+      "category": "app",
+      "description": "Exit the application",
       "is_default": true
     },
     {
-      "action_id": "editor.paste",
-      "key": "Ctrl+V",
-      "category": "editing",
-      "description": "Paste from clipboard",
+      "action_id": "app.editor_open",
+      "key": "<leader>e",
+      "category": "app",
+      "description": "Open external editor",
       "is_default": true
     },
     {
-      "action_id": "editor.select_all",
-      "key": "Ctrl+A",
-      "category": "editing",
-      "description": "Select all content",
+      "action_id": "app.theme_list",
+      "key": "<leader>t",
+      "category": "app",
+      "description": "List available themes",
       "is_default": true
     },
     {
-      "action_id": "editor.find",
-      "key": "Ctrl+F",
-      "category": "search",
-      "description": "Find in file",
+      "action_id": "app.sidebar_toggle",
+      "key": "<leader>b",
+      "category": "app",
+      "description": "Toggle sidebar",
       "is_default": true
     },
     {
-      "action_id": "editor.replace",
-      "key": "Ctrl+H",
-      "category": "search",
-      "description": "Find and replace",
+      "action_id": "app.scrollbar_toggle",
+      "key": "none",
+      "category": "app",
+      "description": "Toggle session scrollbar",
       "is_default": true
     },
     {
-      "action_id": "nav.next",
-      "key": "Tab",
-      "category": "navigation",
-      "description": "Move to next item",
+      "action_id": "app.username_toggle",
+      "key": "none",
+      "category": "app",
+      "description": "Toggle username visibility",
       "is_default": true
     },
     {
-      "action_id": "nav.prev",
-      "key": "Shift+Tab",
-      "category": "navigation",
-      "description": "Move to previous item",
+      "action_id": "app.status_view",
+      "key": "<leader>s",
+      "category": "app",
+      "description": "View status",
       "is_default": true
     },
     {
-      "action_id": "nav.up",
-      "key": "Up",
-      "category": "navigation",
-      "description": "Move up",
+      "action_id": "session.export",
+      "key": "<leader>x",
+      "category": "session",
+      "description": "Export session to editor",
       "is_default": true
     },
     {
-      "action_id": "nav.down",
-      "key": "Down",
-      "category": "navigation",
-      "description": "Move down",
+      "action_id": "session.new",
+      "key": "<leader>n",
+      "category": "session",
+      "description": "Create a new session",
       "is_default": true
     },
     {
-      "action_id": "nav.left",
-      "key": "Left",
-      "category": "navigation",
-      "description": "Move left",
+      "action_id": "session.list",
+      "key": "<leader>l",
+      "category": "session",
+      "description": "List all sessions",
       "is_default": true
     },
     {
-      "action_id": "nav.right",
-      "key": "Right",
-      "category": "navigation",
-      "description": "Move right",
+      "action_id": "session.timeline",
+      "key": "<leader>g",
+      "category": "session",
+      "description": "Show session timeline",
       "is_default": true
     },
     {
-      "action_id": "nav.home",
-      "key": "Home",
-      "category": "navigation",
-      "description": "Move to start of line",
+      "action_id": "session.fork",
+      "key": "none",
+      "category": "session",
+      "description": "Fork session from message",
       "is_default": true
     },
     {
-      "action_id": "nav.end",
-      "key": "End",
-      "category": "navigation",
-      "description": "Move to end of line",
+      "action_id": "session.rename",
+      "key": "none",
+      "category": "session",
+      "description": "Rename session",
       "is_default": true
     },
     {
-      "action_id": "nav.page_up",
+      "action_id": "session.share",
+      "key": "none",
+      "category": "session",
+      "description": "Share current session",
+      "is_default": true
+    },
+    {
+      "action_id": "session.unshare",
+      "key": "none",
+      "category": "session",
+      "description": "Unshare current session",
+      "is_default": true
+    },
+    {
+      "action_id": "session.interrupt",
+      "key": "Escape",
+      "category": "session",
+      "description": "Interrupt current session",
+      "is_default": true
+    },
+    {
+      "action_id": "session.compact",
+      "key": "<leader>c",
+      "category": "session",
+      "description": "Compact the session",
+      "is_default": true
+    },
+    {
+      "action_id": "session.child_cycle",
+      "key": "<leader>Right",
+      "category": "session",
+      "description": "Next child session",
+      "is_default": true
+    },
+    {
+      "action_id": "session.child_cycle_reverse",
+      "key": "<leader>Left",
+      "category": "session",
+      "description": "Previous child session",
+      "is_default": true
+    },
+    {
+      "action_id": "session.parent",
+      "key": "<leader>Up",
+      "category": "session",
+      "description": "Go to parent session",
+      "is_default": true
+    },
+    {
+      "action_id": "messages.page_up",
       "key": "PageUp",
-      "category": "navigation",
-      "description": "Page up",
+      "category": "messages",
+      "description": "Scroll messages up by one page",
       "is_default": true
     },
     {
-      "action_id": "nav.page_down",
+      "action_id": "messages.page_down",
       "key": "PageDown",
-      "category": "navigation",
-      "description": "Page down",
+      "category": "messages",
+      "description": "Scroll messages down by one page",
+      "is_default": true
+    },
+    {
+      "action_id": "messages.half_page_up",
+      "key": "Ctrl+Alt+U",
+      "category": "messages",
+      "description": "Scroll messages up by half page",
+      "is_default": true
+    },
+    {
+      "action_id": "messages.half_page_down",
+      "key": "Ctrl+Alt+D",
+      "category": "messages",
+      "description": "Scroll messages down by half page",
+      "is_default": true
+    },
+    {
+      "action_id": "messages.first",
+      "key": "Ctrl+G,Home",
+      "category": "messages",
+      "description": "Navigate to first message",
+      "is_default": true
+    },
+    {
+      "action_id": "messages.last",
+      "key": "Ctrl+Alt+G,End",
+      "category": "messages",
+      "description": "Navigate to last message",
+      "is_default": true
+    },
+    {
+      "action_id": "messages.next",
+      "key": "none",
+      "category": "messages",
+      "description": "Navigate to next message",
+      "is_default": true
+    },
+    {
+      "action_id": "messages.previous",
+      "key": "none",
+      "category": "messages",
+      "description": "Navigate to previous message",
+      "is_default": true
+    },
+    {
+      "action_id": "messages.last_user",
+      "key": "none",
+      "category": "messages",
+      "description": "Navigate to last user message",
+      "is_default": true
+    },
+    {
+      "action_id": "messages.copy",
+      "key": "<leader>y",
+      "category": "messages",
+      "description": "Copy message",
+      "is_default": true
+    },
+    {
+      "action_id": "messages.undo",
+      "key": "<leader>u",
+      "category": "messages",
+      "description": "Undo message",
+      "is_default": true
+    },
+    {
+      "action_id": "messages.redo",
+      "key": "<leader>r",
+      "category": "messages",
+      "description": "Redo message",
+      "is_default": true
+    },
+    {
+      "action_id": "messages.toggle_conceal",
+      "key": "<leader>h",
+      "category": "messages",
+      "description": "Toggle code block concealment in messages",
+      "is_default": true
+    },
+    {
+      "action_id": "tool.details",
+      "key": "none",
+      "category": "tool",
+      "description": "Toggle tool details visibility",
+      "is_default": true
+    },
+    {
+      "action_id": "model.list",
+      "key": "<leader>m",
+      "category": "model",
+      "description": "List available models",
+      "is_default": true
+    },
+    {
+      "action_id": "model.cycle_recent",
+      "key": "F2",
+      "category": "model",
+      "description": "Next recently used model",
+      "is_default": true
+    },
+    {
+      "action_id": "model.cycle_recent_reverse",
+      "key": "Shift+F2",
+      "category": "model",
+      "description": "Previous recently used model",
+      "is_default": true
+    },
+    {
+      "action_id": "model.cycle_favorite",
+      "key": "none",
+      "category": "model",
+      "description": "Next favorite model",
+      "is_default": true
+    },
+    {
+      "action_id": "model.cycle_favorite_reverse",
+      "key": "none",
+      "category": "model",
+      "description": "Previous favorite model",
+      "is_default": true
+    },
+    {
+      "action_id": "command.list",
+      "key": "Ctrl+P",
+      "category": "command",
+      "description": "List available commands",
+      "is_default": true
+    },
+    {
+      "action_id": "agent.list",
+      "key": "<leader>a",
+      "category": "agent",
+      "description": "List agents",
+      "is_default": true
+    },
+    {
+      "action_id": "agent.cycle",
+      "key": "Tab",
+      "category": "agent",
+      "description": "Next agent",
+      "is_default": true
+    },
+    {
+      "action_id": "agent.cycle_reverse",
+      "key": "Shift+Tab",
+      "category": "agent",
+      "description": "Previous agent",
+      "is_default": true
+    },
+    {
+      "action_id": "input.clear",
+      "key": "Ctrl+C",
+      "category": "input",
+      "description": "Clear input field",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.paste",
+      "key": "Ctrl+V",
+      "category": "input",
+      "description": "Paste from clipboard",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.submit",
+      "key": "Return",
+      "category": "input",
+      "description": "Submit input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.newline",
+      "key": "Shift+Return,Ctrl+Return,Alt+Return,Ctrl+J",
+      "category": "input",
+      "description": "Insert newline in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.move_left",
+      "key": "Left,Ctrl+B",
+      "category": "input",
+      "description": "Move cursor left in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.move_right",
+      "key": "Right,Ctrl+F",
+      "category": "input",
+      "description": "Move cursor right in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.move_up",
+      "key": "Up",
+      "category": "input",
+      "description": "Move cursor up in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.move_down",
+      "key": "Down",
+      "category": "input",
+      "description": "Move cursor down in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.select_left",
+      "key": "Shift+Left",
+      "category": "input",
+      "description": "Select left in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.select_right",
+      "key": "Shift+Right",
+      "category": "input",
+      "description": "Select right in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.select_up",
+      "key": "Shift+Up",
+      "category": "input",
+      "description": "Select up in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.select_down",
+      "key": "Shift+Down",
+      "category": "input",
+      "description": "Select down in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.line_home",
+      "key": "Ctrl+A",
+      "category": "input",
+      "description": "Move to start of line in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.line_end",
+      "key": "Ctrl+E",
+      "category": "input",
+      "description": "Move to end of line in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.select_line_home",
+      "key": "Ctrl+Shift+A",
+      "category": "input",
+      "description": "Select to start of line in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.select_line_end",
+      "key": "Ctrl+Shift+E",
+      "category": "input",
+      "description": "Select to end of line in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.visual_line_home",
+      "key": "Alt+A",
+      "category": "input",
+      "description": "Move to start of visual line in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.visual_line_end",
+      "key": "Alt+E",
+      "category": "input",
+      "description": "Move to end of visual line in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.select_visual_line_home",
+      "key": "Alt+Shift+A",
+      "category": "input",
+      "description": "Select to start of visual line in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.select_visual_line_end",
+      "key": "Alt+Shift+E",
+      "category": "input",
+      "description": "Select to end of visual line in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.buffer_home",
+      "key": "Home",
+      "category": "input",
+      "description": "Move to start of buffer in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.buffer_end",
+      "key": "End",
+      "category": "input",
+      "description": "Move to end of buffer in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.select_buffer_home",
+      "key": "Shift+Home",
+      "category": "input",
+      "description": "Select to start of buffer in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.select_buffer_end",
+      "key": "Shift+End",
+      "category": "input",
+      "description": "Select to end of buffer in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.delete_line",
+      "key": "Ctrl+Shift+D",
+      "category": "input",
+      "description": "Delete line in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.delete_to_line_end",
+      "key": "Ctrl+K",
+      "category": "input",
+      "description": "Delete to end of line in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.delete_to_line_start",
+      "key": "Ctrl+U",
+      "category": "input",
+      "description": "Delete to start of line in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.backspace",
+      "key": "Backspace,Shift+Backspace",
+      "category": "input",
+      "description": "Backspace in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.delete",
+      "key": "Ctrl+D,Delete,Shift+Delete",
+      "category": "input",
+      "description": "Delete character in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.undo",
+      "key": "Ctrl+-,Super+Z",
+      "category": "input",
+      "description": "Undo in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.redo",
+      "key": "Ctrl+.,Super+Shift+Z",
+      "category": "input",
+      "description": "Redo in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.word_forward",
+      "key": "Alt+F,Alt+Right,Ctrl+Right",
+      "category": "input",
+      "description": "Move word forward in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.word_backward",
+      "key": "Alt+B,Alt+Left,Ctrl+Left",
+      "category": "input",
+      "description": "Move word backward in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.select_word_forward",
+      "key": "Alt+Shift+F,Alt+Shift+Right",
+      "category": "input",
+      "description": "Select word forward in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.select_word_backward",
+      "key": "Alt+Shift+B,Alt+Shift+Left",
+      "category": "input",
+      "description": "Select word backward in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.delete_word_forward",
+      "key": "Alt+D,Alt+Delete,Ctrl+Delete",
+      "category": "input",
+      "description": "Delete word forward in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "input.delete_word_backward",
+      "key": "Ctrl+W,Ctrl+Backspace,Alt+Backspace",
+      "category": "input",
+      "description": "Delete word backward in input",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "history.previous",
+      "key": "Up",
+      "category": "history",
+      "description": "Previous history item",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "history.next",
+      "key": "Down",
+      "category": "history",
+      "description": "Next history item",
+      "is_default": true,
+      "contexts": ["input"]
+    },
+    {
+      "action_id": "terminal.suspend",
+      "key": "Ctrl+Z",
+      "category": "terminal",
+      "description": "Suspend terminal",
+      "is_default": true
+    },
+    {
+      "action_id": "terminal.title_toggle",
+      "key": "none",
+      "category": "terminal",
+      "description": "Toggle terminal title",
+      "is_default": true
+    },
+    {
+      "action_id": "tips.toggle",
+      "key": "<leader>h",
+      "category": "app",
+      "description": "Toggle tips on home screen",
       "is_default": true
     }
   ]

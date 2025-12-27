@@ -6,9 +6,9 @@ use crate::{
     app::App,
     diff::{DiffLineType, DiffViewType, DiffWidget},
     markdown::{MarkdownElement, MarkdownParser},
-    style::Theme,
     widgets::{Message, MessageAuthor, ToolStatus},
 };
+use ricecoder_themes::Theme;
 
 /// Renderer for the TUI
 pub struct Renderer;
@@ -258,7 +258,7 @@ impl Renderer {
                 match element {
                     MarkdownElement::Header(level, text) => {
                         let style = Style::default()
-                            .fg(theme.accent.to_ratatui())
+                            .fg(theme.accent)
                             .add_modifier(Modifier::BOLD);
                         let prefix = "#".repeat(level as usize);
                         text_lines.push(Line::from(Span::styled(
@@ -272,7 +272,7 @@ impl Renderer {
                     }
                     MarkdownElement::ListItem(text) => {
                         text_lines.push(Line::from(vec![
-                            Span::styled("• ", Style::default().fg(theme.secondary.to_ratatui())),
+                            Span::styled("• ", Style::default().fg(theme.secondary)),
                             Span::raw(text),
                         ]));
                     }

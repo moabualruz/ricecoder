@@ -1,0 +1,32 @@
+# Go Language Server Configuration
+# Server: gopls
+# Documentation: https://github.com/golang/tools/tree/master/gopls
+
+language: go
+extensions:
+  - .go
+executable: gopls
+args:
+  - serve
+env: {}
+
+# Initialization options
+init_options:
+  usePlaceholders: true
+  completionDocumentation: true
+  deepCompletion: true
+  matcher: fuzzy
+  staticcheck: true
+  analyses:
+    unusedparams: true
+    shadow: true
+  codelenses:
+    generate: true
+    gc_details: false
+    test: true
+    tidy: true
+
+enabled: true
+timeout_ms: 5000
+max_restarts: 3
+idle_timeout_ms: 300000

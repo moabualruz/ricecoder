@@ -16,6 +16,7 @@ use crate::{
     error::{AgentError, Result},
     tool_registry::{ToolInvoker, ToolMetadata},
 };
+use ricecoder_storage::loaders::tools::global_tool_descriptions;
 
 /// Parameters for task tool invocation
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -227,20 +228,20 @@ impl TaskTool {
             .collect::<Vec<_>>()
             .join("\n");
 
+        // Try to get external base description, with hardcoded fallback
+        let base_description = global_tool_descriptions()
+            .get_description("task")
+            .unwrap_or_else(|| "Launch a new agent to handle complex, multi-step tasks autonomously.".to_string());
+
         format!(
-            r#"Launch a new agent to handle complex, multi-step tasks autonomously.
+            r#"{}
 
 Available agent types and the tools they have access to:
 {}
 
 When using the Task tool, you must specify a subagent_type parameter to select which agent type to use.
-
-Usage notes:
-1. Launch multiple agents concurrently whenever possible, to maximize performance
-2. When the agent is done, it will return a single message back to you
-3. Each agent invocation is stateless unless you provide a session_id
-4. Your prompt should contain a highly detailed task description for the agent to perform autonomously
 "#,
+            base_description.trim(),
             subagents_desc
         )
     }
@@ -264,6 +265,151 @@ Usage notes:
             .filter(|a| a.mode != "primary")
             .cloned()
             .collect()
+    }
+    
+    /// Load and register subagents from markdown files
+    ///
+    /// This method loads agent definitions from markdown files in the config directory
+    /// and registers them as available subagents. Agents from markdown override any
+    /// built-in agents with the same name.
+    ///
+    /// # Returns
+    ///
+    /// The number of agents successfully loaded and registered
+    pub async fn load_markdown_agents(&self) -> Result<usize> {
+        use ricecoder_storage::loaders::AgentLoader;
+        
+        info!("Loading markdown agents from config");
+        
+        let loader = AgentLoader::with_default_path();
+        let agents = loader.load_all_merged()
+            .map_err(|e| AgentError::Internal(format!("Failed to load markdown agents: {}", e)))?;
+        
+        let mut count = 0;
+        for (name, agent) in agents {
+            // Convert storage Agent to SubagentType
+            let subagent = SubagentType {
+                name: name.clone(),
+                description: agent.description.clone(),
+                mode: agent.mode.clone(),
+                tools: agent.tools.clone(),
+                model: agent.model.as_ref().map(|m| {
+                    // Parse "provider/model" format or just use model as-is
+                    if let Some(pos) = m.find('/') {
+                        ModelConfig {
+                            provider_id: m[..pos].to_string(),
+                            model_id: m[pos + 1..].to_string(),
+                        }
+                    } else {
+                        ModelConfig {
+                            provider_id: "default".to_string(),
+                            model_id: m.clone(),
+                        }
+                    }
+                }),
+            };
+            
+            self.register_subagent(subagent).await;
+            count += 1;
+            
+            debug!(agent_name = %name, "Registered markdown agent");
+        }
+        
+        info!(count = %count, "Markdown agents loaded and registered");
+        Ok(count)
+    }
+
+    /// Execute a slash command from markdown config
+    ///
+    /// Loads a command from config/commands/*.md and executes it as an agent task.
+    /// The command's `instructions` field becomes the agent prompt, optionally prefixed
+    /// with user-provided arguments.
+    ///
+    /// # Arguments
+    ///
+    /// * `command_name` - Name of the command (without "/" prefix, e.g., "commit")
+    /// * `args` - Optional user arguments to prepend to instructions
+    /// * `context` - Execution context with session info
+    ///
+    /// # Returns
+    ///
+    /// TaskResult containing the agent's response
+    pub async fn execute_slash_command(
+        &self,
+        command_name: &str,
+        args: Option<&str>,
+        context: TaskExecutionContext,
+    ) -> Result<TaskResult> {
+        use ricecoder_storage::loaders::CommandLoader;
+
+        info!(command = %command_name, "Executing slash command");
+
+        // Load command from markdown
+        let loader = CommandLoader::with_default_path();
+        let command = loader
+            .load(command_name)
+            .map_err(|e| AgentError::Internal(format!("Failed to load command '{}': {}", command_name, e)))?;
+
+        // Build prompt from instructions + args
+        let prompt = if let Some(user_args) = args {
+            if user_args.trim().is_empty() {
+                command.instructions.clone()
+            } else {
+                format!("{}\n\n{}", user_args, command.instructions)
+            }
+        } else {
+            command.instructions.clone()
+        };
+
+        // Determine subagent type
+        // If command specifies a model, try to infer agent from it; otherwise use "general"
+        let subagent_type = if command.subtask {
+            // For subtask commands, use "general" agent
+            "general".to_string()
+        } else if let Some(model_str) = &command.model {
+            // Try to extract agent name from model string
+            // e.g., "opencode/glm-4.6" -> use "general" since it's just a model
+            // For now, just use "general" for all model-specified commands
+            "general".to_string()
+        } else {
+            "general".to_string()
+        };
+
+        // Build model config from command's model field if present
+        let model_override = command.model.as_ref().and_then(|m| {
+            if let Some(pos) = m.find('/') {
+                Some(ModelConfig {
+                    provider_id: m[..pos].to_string(),
+                    model_id: m[pos + 1..].to_string(),
+                })
+            } else {
+                None
+            }
+        });
+
+        // Execute as task
+        let task_params = TaskParams {
+            description: command.description.clone(),
+            prompt,
+            subagent_type,
+            session_id: None, // Slash commands create new sessions
+            command: Some(format!("/{}", command_name)),
+        };
+
+        // If command has model override, use it; otherwise use context model
+        let effective_context = if let Some(model) = model_override {
+            TaskExecutionContext {
+                session_id: context.session_id,
+                message_id: context.message_id,
+                model,
+                metadata_callback: context.metadata_callback,
+                abort_rx: context.abort_rx,
+            }
+        } else {
+            context
+        };
+
+        self.execute_task(task_params, effective_context).await
     }
 
     /// Set session manager

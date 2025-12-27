@@ -6378,13 +6378,9 @@ dependencies = [
 name = "ricecoder-external-lsp"
 version = "0.1.72"
 dependencies = [
- "anyhow",
- "async-trait",
- "chrono",
  "dirs 5.0.1",
  "itertools 0.12.1",
  "proptest",
- "regex",
  "ricecoder-completion",
  "ricecoder-lsp",
  "ricecoder-storage",
@@ -6396,7 +6392,6 @@ dependencies = [
  "tokio",
  "tokio-test",
  "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -6993,12 +6988,14 @@ dependencies = [
  "anyhow",
  "async-trait",
  "chrono",
+ "dirs 5.0.1",
  "dotenv",
  "futures",
  "inventory",
  "lazy_static",
  "mockito",
  "nucleo",
+ "once_cell",
  "proptest",
  "rand 0.8.5",
  "regex",
@@ -7141,6 +7138,7 @@ dependencies = [
  "proptest",
  "ricecoder-domain",
  "ricecoder-security",
+ "ricecoder-storage",
  "serde",
  "serde_json",
  "tempfile",
@@ -7289,6 +7287,7 @@ dependencies = [
  "ricecoder-common",
  "ricecoder-files",
  "ricecoder-mcp",
+ "ricecoder-storage",
  "serde",
  "serde_json",
  "similar",

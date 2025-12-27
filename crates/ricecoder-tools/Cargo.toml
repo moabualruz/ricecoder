@@ -32,6 +32,7 @@ glob = { workspace = true }
 ignore = { workspace = true }
 ricecoder-mcp = { workspace = true }
 ricecoder-files = { workspace = true }
+ricecoder-storage = { workspace = true }
 
 # DI registration (via ricecoder-common to avoid circular deps)
 ricecoder-common = { workspace = true }

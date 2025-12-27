@@ -14,6 +14,7 @@ use std::path::PathBuf;
 use std::time::SystemTime;
 
 use crate::context::ToolContext;
+use crate::descriptions::get_description;
 use crate::error::ToolError;
 use crate::tool::{ParameterSchema, Tool, ToolDefinition, ToolExecutionResult, ToolParameters};
 
@@ -286,8 +287,13 @@ impl Tool for GrepTool {
             },
         );
 
+        let description = get_description(
+            "grep",
+            "Fast content search tool with safety limits (60s timeout, 10MB output). Searches file contents using regular expressions. Supports full regex syntax. Filter files by pattern with the include parameter. Returns file paths with matches sorted by modification time.",
+        );
+
         Ok(ToolDefinition {
-            description: "Fast content search tool with safety limits (60s timeout, 10MB output). Searches file contents using regular expressions. Supports full regex syntax. Filter files by pattern with the include parameter. Returns file paths with matches sorted by modification time.".to_string(),
+            description,
             parameters,
             format_validation_error: None,
         })

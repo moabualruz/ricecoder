@@ -18,6 +18,7 @@ pub mod fallback;
 pub mod fuzzy_search;
 pub mod health_check;
 pub mod integration;
+pub mod model_registry;
 pub mod models;
 pub mod models_dev;
 pub mod performance_monitor;
@@ -50,10 +51,11 @@ pub use fallback::{closest_model, default_model, get_small_model, sort_by_priori
 pub use fuzzy_search::{fuzzy_search_models, fuzzy_search_providers, FuzzyMatch, MatchScore};
 pub use health_check::{HealthCheckCache, HealthCheckResult};
 pub use integration::ProviderIntegration;
+pub use model_registry::{global_registry, ModelRegistry};
 pub use models::{
     Capability, ChatRequest, ChatResponse, FinishReason, Message, ModelInfo, TokenUsage,
 };
-pub use models_dev::{fetch_models, ModelsDevCache, ModelsDevModel, ModelsDevResponse};
+pub use models_dev::{fetch_models, ModelsDevCache, ModelsDevModel, ModelsDevResponse, ModelsFetcher};
 pub use performance_monitor::{
     PerformanceSummary, PerformanceThresholds, ProviderMetrics, ProviderPerformanceMonitor,
 };

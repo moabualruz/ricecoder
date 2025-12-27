@@ -21,16 +21,25 @@ pub struct TogetherProvider {
     api_key: String,
     client: Arc<Client>,
     token_counter: Arc<TokenCounter>,
+    models: Vec<ModelInfo>,
 }
 
 impl TogetherProvider {
     /// Create a new Together AI provider instance
-    pub fn new(api_key: String) -> Result<Self, ProviderError> {
-        Self::with_client(Arc::new(Client::new()), api_key)
+    pub fn new(api_key: String, models: Vec<ModelInfo>) -> Result<Self, ProviderError> {
+        Self::with_client(Arc::new(Client::new()), api_key, models)
+    }
+
+    /// Create a new Together AI provider with default models from registry
+    #[allow(dead_code)]
+    pub fn with_default_models(api_key: String) -> Result<Self, ProviderError> {
+        use crate::model_registry::global_registry;
+        let models = global_registry().get_provider_models("together");
+        Self::new(api_key, models)
     }
 
     /// Create a new Together AI provider instance with custom HTTP client
-    pub fn with_client(client: Arc<Client>, api_key: String) -> Result<Self, ProviderError> {
+    pub fn with_client(client: Arc<Client>, api_key: String, models: Vec<ModelInfo>) -> Result<Self, ProviderError> {
         if api_key.is_empty() {
             return Err(ProviderError::ConfigError(
                 "Together AI API key is required".to_string(),
@@ -41,6 +50,7 @@ impl TogetherProvider {
             api_key,
             client,
             token_counter: Arc::new(TokenCounter::new()),
+            models,
         })
     }
 
@@ -97,56 +107,7 @@ impl Provider for TogetherProvider {
     }
 
     fn models(&self) -> Vec<ModelInfo> {
-        vec![
-            ModelInfo {
-                id: "meta-llama/Llama-2-70b-chat-hf".to_string(),
-                name: "Llama 2 70B Chat".to_string(),
-                provider: self.name().to_string(),
-                context_window: 4096,
-                capabilities: vec![Capability::Chat],
-                pricing: Some(Pricing {
-                    input_per_1k_tokens: 0.0009,
-                    output_per_1k_tokens: 0.0009,
-                }),
-                is_free: false,
-            },
-            ModelInfo {
-                id: "mistralai/Mistral-7B-Instruct-v0.1".to_string(),
-                name: "Mistral 7B Instruct".to_string(),
-                provider: self.name().to_string(),
-                context_window: 8192,
-                capabilities: vec![Capability::Chat],
-                pricing: Some(Pricing {
-                    input_per_1k_tokens: 0.0002,
-                    output_per_1k_tokens: 0.0002,
-                }),
-                is_free: false,
-            },
-            ModelInfo {
-                id: "codellama/CodeLlama-34b-Instruct-hf".to_string(),
-                name: "CodeLlama 34B Instruct".to_string(),
-                provider: self.name().to_string(),
-                context_window: 16384,
-                capabilities: vec![Capability::Chat],
-                pricing: Some(Pricing {
-                    input_per_1k_tokens: 0.0008,
-                    output_per_1k_tokens: 0.0008,
-                }),
-                is_free: false,
-            },
-            ModelInfo {
-                id: "NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO".to_string(),
-                name: "Nous Hermes 2 Mixtral 8x7B".to_string(),
-                provider: self.name().to_string(),
-                context_window: 32768,
-                capabilities: vec![Capability::Chat],
-                pricing: Some(Pricing {
-                    input_per_1k_tokens: 0.0006,
-                    output_per_1k_tokens: 0.0006,
-                }),
-                is_free: false,
-            },
-        ]
+        self.models.clone()
     }
 
     async fn chat(&self, request: ChatRequest) -> Result<ChatResponse, ProviderError> {

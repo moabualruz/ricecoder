@@ -12,6 +12,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::path::PathBuf;
 
 use crate::context::ToolContext;
+use crate::descriptions::get_description;
 use crate::error::ToolError;
 use crate::tool::{ParameterSchema, Tool, ToolDefinition, ToolExecutionResult, ToolParameters};
 
@@ -297,8 +298,13 @@ impl Tool for ListTool {
             },
         );
 
+        let description = get_description(
+            "list",
+            "List files and directories in a given path. The path parameter must be absolute; omit it to use the current workspace directory. You can optionally provide an array of glob patterns to ignore.",
+        );
+
         Ok(ToolDefinition {
-            description: "List files and directories in a given path. The path parameter must be absolute; omit it to use the current workspace directory. You can optionally provide an array of glob patterns to ignore.".to_string(),
+            description,
             parameters,
             format_validation_error: None,
         })

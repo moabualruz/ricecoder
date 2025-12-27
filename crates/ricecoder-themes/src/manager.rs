@@ -83,7 +83,7 @@ impl ThemeManager {
 
     /// Switch to a theme by name
     pub fn switch_by_name(&self, name: &str) -> Result<()> {
-        if let Some(theme) = Theme::by_name(name) {
+        if let Some(theme) = self.registry.get(name) {
             self.switch_to(theme)
         } else {
             Err(anyhow::anyhow!("Unknown theme: {}", name))
@@ -111,8 +111,8 @@ impl ThemeManager {
     }
 
     /// Get all available theme names
-    pub fn available_themes(&self) -> Vec<&'static str> {
-        Theme::available_themes()
+    pub fn available_themes(&self) -> Vec<String> {
+        self.registry.list_all().unwrap_or_default()
     }
 
     /// Get the current theme name
@@ -258,7 +258,7 @@ impl ThemeManager {
 
     /// Get the default custom themes directory
     pub fn custom_themes_directory() -> Result<std::path::PathBuf> {
-        ThemeLoader::themes_directory()
+        ThemeLoader::user_themes_directory()
     }
 
     /// Get the theme registry

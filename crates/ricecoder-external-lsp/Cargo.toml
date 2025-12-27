@@ -17,14 +17,9 @@ path = "src/lib.rs"
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
-thiserror = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
 tracing = { workspace = true }
-tracing-subscriber = { workspace = true }
-tokio = { workspace = true }
-anyhow = { workspace = true }
-async-trait = { workspace = true }
-regex = { workspace = true }
-chrono = { workspace = true }
+thiserror = { workspace = true }
 dirs = { workspace = true }
 ricecoder-storage = { workspace = true }
 ricecoder-lsp = { workspace = true }

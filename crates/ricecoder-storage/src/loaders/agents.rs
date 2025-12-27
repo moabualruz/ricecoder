@@ -21,8 +21,21 @@ pub struct Agent {
     /// Optional model override
     #[serde(default)]
     pub model: Option<String>,
+    /// Agent mode: "subagent", "primary", or "all"
+    #[serde(default = "default_mode")]
+    pub mode: String,
+    /// Tool permissions (tool_name -> enabled)
+    #[serde(default)]
+    pub tools: std::collections::HashMap<String, bool>,
+    /// Whether this agent is hidden from UI
+    #[serde(default)]
+    pub hidden: bool,
     /// System prompt (markdown body)
     pub system_prompt: String,
+}
+
+fn default_mode() -> String {
+    "subagent".to_string()
 }
 
 /// Frontmatter structure for agent files
@@ -31,6 +44,12 @@ struct AgentFrontmatter {
     description: String,
     #[serde(default)]
     model: Option<String>,
+    #[serde(default = "default_mode")]
+    mode: String,
+    #[serde(default)]
+    tools: std::collections::HashMap<String, bool>,
+    #[serde(default)]
+    hidden: bool,
 }
 
 /// Loader for agent configuration files
@@ -175,6 +194,9 @@ impl AgentLoader {
             name,
             description: meta.description,
             model: meta.model,
+            mode: meta.mode,
+            tools: meta.tools,
+            hidden: meta.hidden,
             system_prompt: body.trim().to_string(),
         })
     }
@@ -213,6 +235,11 @@ mod tests {
         let content = r#"---
 description: Test agent for documentation
 model: gpt-4
+mode: subagent
+tools:
+  edit: false
+  bash: true
+hidden: false
 ---
 
 You are a helpful assistant.
@@ -227,6 +254,30 @@ Be concise and clear.
         assert_eq!(agent.name, "test");
         assert_eq!(agent.description, "Test agent for documentation");
         assert_eq!(agent.model, Some("gpt-4".to_string()));
+        assert_eq!(agent.mode, "subagent");
+        assert_eq!(agent.tools.get("edit"), Some(&false));
+        assert_eq!(agent.tools.get("bash"), Some(&true));
+        assert!(!agent.hidden);
         assert!(agent.system_prompt.contains("helpful assistant"));
+    }
+    
+    #[test]
+    fn test_parse_agent_defaults() {
+        let content = r#"---
+description: Minimal agent
+---
+
+Basic prompt.
+"#;
+        let loader = AgentLoader::with_default_path();
+        let agent = loader
+            .parse_agent(content, "minimal".to_string(), Path::new("minimal.md"))
+            .unwrap();
+
+        assert_eq!(agent.name, "minimal");
+        assert_eq!(agent.mode, "subagent"); // Default
+        assert!(agent.tools.is_empty()); // Default
+        assert!(!agent.hidden); // Default
+        assert_eq!(agent.model, None);
     }
 }

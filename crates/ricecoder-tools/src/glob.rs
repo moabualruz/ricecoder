@@ -13,6 +13,7 @@ use std::path::PathBuf;
 use std::time::SystemTime;
 
 use crate::context::ToolContext;
+use crate::descriptions::get_description;
 use crate::error::ToolError;
 use crate::tool::{ParameterSchema, Tool, ToolDefinition, ToolExecutionResult, ToolParameters};
 
@@ -215,8 +216,13 @@ impl Tool for GlobTool {
             },
         );
 
+        let description = get_description(
+            "glob",
+            "Fast file pattern matching tool with safety limits (60s timeout, 100 file limit). Supports glob patterns like \"**/*.js\" or \"src/**/*.ts\". Returns matching file paths sorted by modification time.",
+        );
+
         Ok(ToolDefinition {
-            description: "Fast file pattern matching tool with safety limits (60s timeout, 100 file limit). Supports glob patterns like \"**/*.js\" or \"src/**/*.ts\". Returns matching file paths sorted by modification time.".to_string(),
+            description,
             parameters,
             format_validation_error: None,
         })

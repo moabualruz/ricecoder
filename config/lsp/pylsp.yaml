@@ -1,0 +1,39 @@
+# Python Language Server Configuration
+# Server: python-lsp-server (pylsp)
+# Documentation: https://github.com/python-lsp/python-lsp-server
+
+language: python
+extensions:
+  - .py
+  - .pyi
+executable: pylsp
+args: []
+env: {}
+
+# Initialization options
+init_options:
+  pylsp:
+    plugins:
+      pycodestyle:
+        enabled: true
+        maxLineLength: 120
+      pyflakes:
+        enabled: true
+      pylint:
+        enabled: false
+      rope_completion:
+        enabled: true
+      jedi_completion:
+        enabled: true
+        fuzzy: true
+      jedi_hover:
+        enabled: true
+      jedi_references:
+        enabled: true
+      jedi_signature_help:
+        enabled: true
+
+enabled: true
+timeout_ms: 5000
+max_restarts: 3
+idle_timeout_ms: 300000

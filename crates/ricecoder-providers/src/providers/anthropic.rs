@@ -24,21 +24,30 @@ pub struct AnthropicProvider {
     client: Arc<Client>,
     base_url: String,
     token_counter: Arc<TokenCounter>,
+    models: Vec<ModelInfo>,
 }
 
 impl AnthropicProvider {
     /// Create a new Anthropic provider instance
-    pub fn new(api_key: String) -> Result<Self, ProviderError> {
-        Self::with_client(Arc::new(Client::new()), api_key)
+    pub fn new(api_key: String, models: Vec<ModelInfo>) -> Result<Self, ProviderError> {
+        Self::with_client(Arc::new(Client::new()), api_key, models)
+    }
+
+    /// Create a new Anthropic provider with default models from registry
+    #[allow(dead_code)]
+    pub fn with_default_models(api_key: String) -> Result<Self, ProviderError> {
+        use crate::model_registry::global_registry;
+        let models = global_registry().get_provider_models("anthropic");
+        Self::new(api_key, models)
     }
 
     /// Create a new Anthropic provider with a custom base URL
-    pub fn with_base_url(api_key: String, base_url: String) -> Result<Self, ProviderError> {
-        Self::with_client_and_base_url(Arc::new(Client::new()), api_key, base_url)
+    pub fn with_base_url(api_key: String, base_url: String, models: Vec<ModelInfo>) -> Result<Self, ProviderError> {
+        Self::with_client_and_base_url(Arc::new(Client::new()), api_key, base_url, models)
     }
 
     /// Create a new Anthropic provider with a custom HTTP client
-    pub fn with_client(client: Arc<Client>, api_key: String) -> Result<Self, ProviderError> {
+    pub fn with_client(client: Arc<Client>, api_key: String, models: Vec<ModelInfo>) -> Result<Self, ProviderError> {
         if api_key.is_empty() {
             return Err(ProviderError::ConfigError(
                 "Anthropic API key is required".to_string(),
@@ -50,6 +59,7 @@ impl AnthropicProvider {
             client,
             base_url: "https://api.anthropic.com/v1".to_string(),
             token_counter: Arc::new(TokenCounter::new()),
+            models,
         })
     }
 
@@ -58,6 +68,7 @@ impl AnthropicProvider {
         client: Arc<Client>,
         api_key: String,
         base_url: String,
+        models: Vec<ModelInfo>,
     ) -> Result<Self, ProviderError> {
         if api_key.is_empty() {
             return Err(ProviderError::ConfigError(
@@ -70,6 +81,7 @@ impl AnthropicProvider {
             client,
             base_url,
             token_counter: Arc::new(TokenCounter::new()),
+            models,
         })
     }
 
@@ -166,56 +178,7 @@ impl Provider for AnthropicProvider {
     }
 
     fn models(&self) -> Vec<ModelInfo> {
-        vec![
-            ModelInfo {
-                id: "claude-3-opus-20250219".to_string(),
-                name: "Claude 3 Opus".to_string(),
-                provider: "anthropic".to_string(),
-                context_window: 200000,
-                capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
-                pricing: Some(crate::models::Pricing {
-                    input_per_1k_tokens: 0.015,
-                    output_per_1k_tokens: 0.075,
-                }),
-                is_free: false,
-            },
-            ModelInfo {
-                id: "claude-3-5-sonnet-20241022".to_string(),
-                name: "Claude 3.5 Sonnet".to_string(),
-                provider: "anthropic".to_string(),
-                context_window: 200000,
-                capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
-                pricing: Some(crate::models::Pricing {
-                    input_per_1k_tokens: 0.003,
-                    output_per_1k_tokens: 0.015,
-                }),
-                is_free: false,
-            },
-            ModelInfo {
-                id: "claude-3-5-haiku-20241022".to_string(),
-                name: "Claude 3.5 Haiku".to_string(),
-                provider: "anthropic".to_string(),
-                context_window: 200000,
-                capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
-                pricing: Some(crate::models::Pricing {
-                    input_per_1k_tokens: 0.0008,
-                    output_per_1k_tokens: 0.004,
-                }),
-                is_free: false,
-            },
-            ModelInfo {
-                id: "claude-3-haiku-20240307".to_string(),
-                name: "Claude 3 Haiku".to_string(),
-                provider: "anthropic".to_string(),
-                context_window: 200000,
-                capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
-                pricing: Some(crate::models::Pricing {
-                    input_per_1k_tokens: 0.00025,
-                    output_per_1k_tokens: 0.00125,
-                }),
-                is_free: false,
-            },
-        ]
+        self.models.clone()
     }
 
     async fn chat(&self, request: ChatRequest) -> Result<ChatResponse, ProviderError> {

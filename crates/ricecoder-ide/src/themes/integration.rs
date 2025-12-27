@@ -201,7 +201,7 @@ impl IdeThemeIntegration {
     }
 
     /// Get all available themes
-    pub fn available_themes(&self) -> Vec<&'static str> {
+    pub fn available_themes(&self) -> Vec<String> {
         self.theme_manager.available_themes()
     }
 

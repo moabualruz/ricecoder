@@ -1,4 +1,4 @@
-//! Token estimation and tracking for AI conversations
+﻿//! Token estimation and tracking for AI conversations
 //!
 //! This module provides accurate token counting using tiktoken and cost estimation
 //! for various AI models. It integrates with the session system to track token usage
@@ -10,7 +10,6 @@ use serde::{Deserialize, Serialize};
 use tiktoken_rs::{get_bpe_from_model, CoreBPE};
 
 use crate::error::{SessionError, SessionResult};
-use ricecoder_storage::loaders::ModelLoader;
 
 /// Token estimation result
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -122,64 +121,9 @@ impl TokenEstimator {
             default_model: "gpt-3.5-turbo".to_string(),
         };
 
-        // Try loading from ModelLoader first
-        estimator.load_from_model_loader();
-
-        // If no models loaded, use hardcoded fallback
-        if estimator.pricing.is_empty() {
-            estimator.initialize_pricing();
-        }
-
+        // Initialize with common model pricing
+        estimator.initialize_pricing();
         estimator
-    }
-
-    /// Load pricing from ModelLoader (with fallback to hardcoded)
-    fn load_from_model_loader(&mut self) {
-        match ModelLoader::with_default_path().get_all_models() {
-            Ok(models) => {
-                for (_provider_id, model) in models {
-                    if let Some(pricing) = model.pricing {
-                        // Convert per-1K to per-1M
-                        let model_pricing = ModelPricing {
-                            input_per_1m: pricing.input_per_1k * 1000.0,
-                            output_per_1m: pricing.output_per_1k * 1000.0,
-                            cache_read_per_1m: pricing.cache_read_per_1k.map(|x| x * 1000.0),
-                            cache_write_per_1m: pricing.cache_write_per_1k.map(|x| x * 1000.0),
-                            max_tokens: model.context_window,
-                            max_output_tokens: model.max_output_tokens,
-                            experimental_over_200k: None,
-                        };
-
-                        self.pricing.insert(model.id.clone(), model_pricing);
-
-                        // Add alias for short model names
-                        self.add_model_alias(&model.id);
-                    }
-                }
-                tracing::debug!("Loaded {} models from ModelLoader", self.pricing.len());
-            }
-            Err(e) => {
-                tracing::warn!("Failed to load from ModelLoader, using hardcoded pricing: {}", e);
-                // Fallback to hardcoded pricing (already in initialize_pricing)
-            }
-        }
-    }
-
-    /// Add short name aliases for models
-    fn add_model_alias(&mut self, model_id: &str) {
-        let alias = match model_id {
-            "claude-3-opus-20250219" => Some("claude-3-opus"),
-            "claude-3-5-sonnet-20241022" => Some("claude-3-5-sonnet"),
-            "claude-3-5-haiku-20241022" => Some("claude-3-5-haiku"),
-            "claude-3-haiku-20240307" => Some("claude-3-haiku"),
-            _ => None,
-        };
-
-        if let Some(alias_name) = alias {
-            if let Some(pricing) = self.pricing.get(model_id).cloned() {
-                self.pricing.insert(alias_name.to_string(), pricing);
-            }
-        }
     }
 
     /// Initialize default pricing for common models (per 1M tokens - OpenCode compatible)
@@ -425,9 +369,9 @@ impl TokenLimitStatus {
     /// Get status symbol
     pub fn symbol(&self) -> &'static str {
         match self {
-            TokenLimitStatus::Normal => "✓",
-            TokenLimitStatus::Warning => "⚠",
-            TokenLimitStatus::Critical => "🚨",
+            TokenLimitStatus::Normal => "âœ“",
+            TokenLimitStatus::Warning => "âš ",
+            TokenLimitStatus::Critical => "ðŸš¨",
             TokenLimitStatus::Unknown => "?",
         }
     }
@@ -584,3 +528,4 @@ pub fn max_output_tokens(model_limit: Option<usize>) -> usize {
         .map(|limit| limit.min(OUTPUT_TOKEN_MAX))
         .unwrap_or(OUTPUT_TOKEN_MAX)
 }
+

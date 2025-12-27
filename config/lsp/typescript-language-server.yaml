@@ -1,0 +1,29 @@
+# TypeScript/JavaScript Language Server Configuration
+# Server: typescript-language-server
+# Documentation: https://github.com/typescript-language-server/typescript-language-server
+
+language: typescript
+extensions:
+  - .ts
+  - .tsx
+  - .js
+  - .jsx
+  - .mjs
+  - .cjs
+executable: typescript-language-server
+args:
+  - --stdio
+env: {}
+
+# Initialization options
+init_options:
+  preferences:
+    includeInlayParameterNameHints: all
+    includeInlayFunctionParameterTypeHints: true
+    includeInlayVariableTypeHints: true
+    includeInlayPropertyDeclarationTypeHints: true
+
+enabled: true
+timeout_ms: 5000
+max_restarts: 3
+idle_timeout_ms: 300000

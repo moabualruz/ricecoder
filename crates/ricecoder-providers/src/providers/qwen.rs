@@ -57,21 +57,38 @@ pub struct QwenProvider {
     custom_default_model: Option<String>,
     thinking_config: ThinkingConfig,
     token_counter: Arc<TokenCounter>,
+    models: Vec<ModelInfo>,
 }
 
 impl QwenProvider {
     /// Create provider for DashScope International (Singapore)
-    pub fn dashscope_intl(api_key: String) -> Result<Self, ProviderError> {
-        Self::with_base_url(api_key, DASHSCOPE_INTL_URL.to_string())
+    pub fn dashscope_intl(api_key: String, models: Vec<ModelInfo>) -> Result<Self, ProviderError> {
+        Self::with_base_url(api_key, DASHSCOPE_INTL_URL.to_string(), models)
+    }
+
+    /// Create provider for DashScope International with default models from registry
+    #[allow(dead_code)]
+    pub fn dashscope_intl_with_default_models(api_key: String) -> Result<Self, ProviderError> {
+        use crate::model_registry::global_registry;
+        let models = global_registry().get_provider_models("qwen");
+        Self::dashscope_intl(api_key, models)
     }
 
     /// Create provider for DashScope China (Beijing)
-    pub fn dashscope_cn(api_key: String) -> Result<Self, ProviderError> {
-        Self::with_base_url(api_key, DASHSCOPE_CN_URL.to_string())
+    pub fn dashscope_cn(api_key: String, models: Vec<ModelInfo>) -> Result<Self, ProviderError> {
+        Self::with_base_url(api_key, DASHSCOPE_CN_URL.to_string(), models)
+    }
+
+    /// Create provider for DashScope China with default models from registry
+    #[allow(dead_code)]
+    pub fn dashscope_cn_with_default_models(api_key: String) -> Result<Self, ProviderError> {
+        use crate::model_registry::global_registry;
+        let models = global_registry().get_provider_models("qwen");
+        Self::dashscope_cn(api_key, models)
     }
 
     /// Create provider for local Qwen deployment (vLLM, LM Studio, Ollama)
-    pub fn local(base_url: String) -> Result<Self, ProviderError> {
+    pub fn local(base_url: String, models: Vec<ModelInfo>) -> Result<Self, ProviderError> {
         let client = Self::build_client()?;
 
         Ok(Self {
@@ -81,11 +98,20 @@ impl QwenProvider {
             custom_default_model: None,
             thinking_config: ThinkingConfig::default(),
             token_counter: Arc::new(TokenCounter::new()),
+            models,
         })
     }
 
+    /// Create provider for local Qwen deployment with default models from registry
+    #[allow(dead_code)]
+    pub fn local_with_default_models(base_url: String) -> Result<Self, ProviderError> {
+        use crate::model_registry::global_registry;
+        let models = global_registry().get_provider_models("qwen");
+        Self::local(base_url, models)
+    }
+
     /// Create with custom base URL and API key
-    pub fn with_base_url(api_key: String, base_url: String) -> Result<Self, ProviderError> {
+    pub fn with_base_url(api_key: String, base_url: String, models: Vec<ModelInfo>) -> Result<Self, ProviderError> {
         if api_key.is_empty() {
             return Err(ProviderError::ConfigError(
                 "Qwen API key is required".to_string(),
@@ -101,6 +127,7 @@ impl QwenProvider {
             custom_default_model: None,
             thinking_config: ThinkingConfig::default(),
             token_counter: Arc::new(TokenCounter::new()),
+            models,
         })
     }
 
@@ -266,98 +293,7 @@ impl Provider for QwenProvider {
     }
 
     fn models(&self) -> Vec<ModelInfo> {
-        vec![
-            ModelInfo {
-                id: "qwen3-235b-a22b".to_string(),
-                name: "Qwen3 235B MoE".to_string(),
-                provider: "qwen".to_string(),
-                context_window: 131072,
-                capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
-                pricing: None,
-                is_free: false,
-            },
-            ModelInfo {
-                id: "qwen3-32b".to_string(),
-                name: "Qwen3 32B".to_string(),
-                provider: "qwen".to_string(),
-                context_window: 131072,
-                capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
-                pricing: None,
-                is_free: false,
-            },
-            ModelInfo {
-                id: "qwen3-8b".to_string(),
-                name: "Qwen3 8B".to_string(),
-                provider: "qwen".to_string(),
-                context_window: 131072,
-                capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
-                pricing: None,
-                is_free: false,
-            },
-            ModelInfo {
-                id: "qwen2.5-coder-32b-instruct".to_string(),
-                name: "Qwen2.5 Coder 32B".to_string(),
-                provider: "qwen".to_string(),
-                context_window: 131072,
-                capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
-                pricing: None,
-                is_free: false,
-            },
-            ModelInfo {
-                id: "qwen2.5-coder-14b-instruct".to_string(),
-                name: "Qwen2.5 Coder 14B".to_string(),
-                provider: "qwen".to_string(),
-                context_window: 131072,
-                capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
-                pricing: None,
-                is_free: false,
-            },
-            ModelInfo {
-                id: "qwen2.5-coder-7b-instruct".to_string(),
-                name: "Qwen2.5 Coder 7B".to_string(),
-                provider: "qwen".to_string(),
-                context_window: 131072,
-                capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
-                pricing: None,
-                is_free: false,
-            },
-            ModelInfo {
-                id: "qwen-max".to_string(),
-                name: "Qwen Max".to_string(),
-                provider: "qwen".to_string(),
-                context_window: 32768,
-                capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
-                pricing: Some(crate::models::Pricing {
-                    input_per_1k_tokens: 0.0024,
-                    output_per_1k_tokens: 0.0096,
-                }),
-                is_free: false,
-            },
-            ModelInfo {
-                id: "qwen-plus".to_string(),
-                name: "Qwen Plus".to_string(),
-                provider: "qwen".to_string(),
-                context_window: 131072,
-                capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
-                pricing: Some(crate::models::Pricing {
-                    input_per_1k_tokens: 0.0008,
-                    output_per_1k_tokens: 0.002,
-                }),
-                is_free: false,
-            },
-            ModelInfo {
-                id: "qwen-turbo".to_string(),
-                name: "Qwen Turbo".to_string(),
-                provider: "qwen".to_string(),
-                context_window: 131072,
-                capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
-                pricing: Some(crate::models::Pricing {
-                    input_per_1k_tokens: 0.0003,
-                    output_per_1k_tokens: 0.0006,
-                }),
-                is_free: false,
-            },
-        ]
+        self.models.clone()
     }
 
     async fn chat(&self, request: ChatRequest) -> Result<ChatResponse, ProviderError> {
@@ -618,9 +554,44 @@ struct QwenDelta {
 mod tests {
     use super::*;
 
+    fn test_models() -> Vec<ModelInfo> {
+        vec![
+            ModelInfo {
+                id: "qwen3-8b".to_string(),
+                name: "Qwen3 8B".to_string(),
+                provider: "qwen".to_string(),
+                context_window: 131072,
+                capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
+                pricing: None,
+                is_free: false,
+            },
+            ModelInfo {
+                id: "qwen2.5-coder-32b-instruct".to_string(),
+                name: "Qwen2.5 Coder 32B".to_string(),
+                provider: "qwen".to_string(),
+                context_window: 131072,
+                capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
+                pricing: None,
+                is_free: false,
+            },
+            ModelInfo {
+                id: "qwen-max".to_string(),
+                name: "Qwen Max".to_string(),
+                provider: "qwen".to_string(),
+                context_window: 32768,
+                capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
+                pricing: Some(crate::models::Pricing {
+                    input_per_1k_tokens: 0.0024,
+                    output_per_1k_tokens: 0.0096,
+                }),
+                is_free: false,
+            },
+        ]
+    }
+
     #[test]
     fn test_qwen_provider_local() {
-        let provider = QwenProvider::local("http://localhost:8000/v1/chat/completions".to_string())
+        let provider = QwenProvider::local("http://localhost:8000/v1/chat/completions".to_string(), test_models())
             .expect("Should create local provider");
         assert_eq!(provider.id(), "qwen");
         assert_eq!(provider.api_key, "not-needed");
@@ -628,7 +599,7 @@ mod tests {
 
     #[test]
     fn test_thinking_config() {
-        let provider = QwenProvider::local("http://localhost:8000/v1/chat/completions".to_string())
+        let provider = QwenProvider::local("http://localhost:8000/v1/chat/completions".to_string(), test_models())
             .expect("Should create provider")
             .with_thinking(true)
             .with_thinking_budget(5000);
@@ -639,7 +610,7 @@ mod tests {
 
     #[test]
     fn test_custom_default_model() {
-        let provider = QwenProvider::local("http://localhost:8000/v1/chat/completions".to_string())
+        let provider = QwenProvider::local("http://localhost:8000/v1/chat/completions".to_string(), test_models())
             .expect("Should create provider")
             .with_default_model("qwen2.5-coder-14b-instruct".to_string());
 
@@ -651,7 +622,7 @@ mod tests {
 
     #[test]
     fn test_extract_thinking() {
-        let provider = QwenProvider::local("http://localhost:8000/v1/chat/completions".to_string())
+        let provider = QwenProvider::local("http://localhost:8000/v1/chat/completions".to_string(), test_models())
             .expect("Should create provider")
             .with_thinking(true);
 
@@ -666,7 +637,7 @@ mod tests {
 
     #[test]
     fn test_models_list() {
-        let provider = QwenProvider::local("http://localhost:8000/v1/chat/completions".to_string())
+        let provider = QwenProvider::local("http://localhost:8000/v1/chat/completions".to_string(), test_models())
             .expect("Should create provider");
 
         let models = provider.models();

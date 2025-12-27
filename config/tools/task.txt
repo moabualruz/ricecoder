@@ -1,0 +1,10 @@
+Launch a new agent to handle complex, multi-step tasks autonomously.
+
+Usage notes:
+1. Launch multiple agents concurrently whenever possible to maximize performance
+2. When the agent is done, it will return a single message back to you
+3. The result returned by the agent is not visible to the user - summarize it for them
+4. Each agent invocation is stateless unless you provide a session_id
+5. Your prompt should contain a highly detailed task description
+6. The agent's outputs should generally be trusted
+7. Clearly tell the agent whether to write code or just do research

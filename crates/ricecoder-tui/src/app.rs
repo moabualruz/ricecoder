@@ -25,7 +25,6 @@ use crate::{
     integration::WidgetIntegration,
     model::{AppMode, PendingOperation},
     render::Renderer,
-    style::Theme,
     tea::ReactiveState,
     terminal_state::TerminalCapabilities,
     theme::ThemeManager,

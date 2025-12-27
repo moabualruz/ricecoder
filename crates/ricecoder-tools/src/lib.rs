@@ -55,6 +55,7 @@
 pub mod bash;
 pub mod batch;
 pub mod context;
+pub mod descriptions;
 pub mod di;
 pub mod edit;
 pub mod error;

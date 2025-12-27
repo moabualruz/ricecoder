@@ -1,0 +1,3 @@
+Fast file pattern matching tool with safety limits (60s timeout, 100 file limit). Supports glob patterns like "**/*.js" or "src/**/*.ts". Returns matching file paths sorted by modification time.
+
+Use this tool when you need to find files by name patterns. Prefer this over shell find commands.

@@ -22,21 +22,30 @@ pub struct GoogleProvider {
     client: Arc<Client>,
     base_url: String,
     token_counter: Arc<TokenCounter>,
+    models: Vec<ModelInfo>,
 }
 
 impl GoogleProvider {
     /// Create a new Google provider instance
-    pub fn new(api_key: String) -> Result<Self, ProviderError> {
-        Self::with_client(Arc::new(Client::new()), api_key)
+    pub fn new(api_key: String, models: Vec<ModelInfo>) -> Result<Self, ProviderError> {
+        Self::with_client(Arc::new(Client::new()), api_key, models)
+    }
+
+    /// Create a new Google provider with default models from registry
+    #[allow(dead_code)]
+    pub fn with_default_models(api_key: String) -> Result<Self, ProviderError> {
+        use crate::model_registry::global_registry;
+        let models = global_registry().get_provider_models("google");
+        Self::new(api_key, models)
     }
 
     /// Create a new Google provider with a custom base URL
-    pub fn with_base_url(api_key: String, base_url: String) -> Result<Self, ProviderError> {
-        Self::with_client_and_base_url(Arc::new(Client::new()), api_key, base_url)
+    pub fn with_base_url(api_key: String, base_url: String, models: Vec<ModelInfo>) -> Result<Self, ProviderError> {
+        Self::with_client_and_base_url(Arc::new(Client::new()), api_key, base_url, models)
     }
 
     /// Create a new Google provider with a custom HTTP client
-    pub fn with_client(client: Arc<Client>, api_key: String) -> Result<Self, ProviderError> {
+    pub fn with_client(client: Arc<Client>, api_key: String, models: Vec<ModelInfo>) -> Result<Self, ProviderError> {
         if api_key.is_empty() {
             return Err(ProviderError::ConfigError(
                 "Google API key is required".to_string(),
@@ -48,6 +57,7 @@ impl GoogleProvider {
             client,
             base_url: "https://generativelanguage.googleapis.com/v1beta/models".to_string(),
             token_counter: Arc::new(TokenCounter::new()),
+            models,
         })
     }
 
@@ -56,6 +66,7 @@ impl GoogleProvider {
         client: Arc<Client>,
         api_key: String,
         base_url: String,
+        models: Vec<ModelInfo>,
     ) -> Result<Self, ProviderError> {
         if api_key.is_empty() {
             return Err(ProviderError::ConfigError(
@@ -68,6 +79,7 @@ impl GoogleProvider {
             client,
             base_url,
             token_counter: Arc::new(TokenCounter::new()),
+            models,
         })
     }
 
@@ -139,71 +151,7 @@ impl Provider for GoogleProvider {
     }
 
     fn models(&self) -> Vec<ModelInfo> {
-        vec![
-            ModelInfo {
-                id: "gemini-2.0-flash".to_string(),
-                name: "Gemini 2.0 Flash".to_string(),
-                provider: "google".to_string(),
-                context_window: 1000000,
-                capabilities: vec![
-                    Capability::Chat,
-                    Capability::Code,
-                    Capability::Vision,
-                    Capability::Streaming,
-                ],
-                pricing: Some(crate::models::Pricing {
-                    input_per_1k_tokens: 0.075,
-                    output_per_1k_tokens: 0.3,
-                }),
-                is_free: false,
-            },
-            ModelInfo {
-                id: "gemini-1.5-pro".to_string(),
-                name: "Gemini 1.5 Pro".to_string(),
-                provider: "google".to_string(),
-                context_window: 2000000,
-                capabilities: vec![
-                    Capability::Chat,
-                    Capability::Code,
-                    Capability::Vision,
-                    Capability::Streaming,
-                ],
-                pricing: Some(crate::models::Pricing {
-                    input_per_1k_tokens: 1.25,
-                    output_per_1k_tokens: 5.0,
-                }),
-                is_free: false,
-            },
-            ModelInfo {
-                id: "gemini-1.5-flash".to_string(),
-                name: "Gemini 1.5 Flash".to_string(),
-                provider: "google".to_string(),
-                context_window: 1000000,
-                capabilities: vec![
-                    Capability::Chat,
-                    Capability::Code,
-                    Capability::Vision,
-                    Capability::Streaming,
-                ],
-                pricing: Some(crate::models::Pricing {
-                    input_per_1k_tokens: 0.075,
-                    output_per_1k_tokens: 0.3,
-                }),
-                is_free: false,
-            },
-            ModelInfo {
-                id: "gemini-1.0-pro".to_string(),
-                name: "Gemini 1.0 Pro".to_string(),
-                provider: "google".to_string(),
-                context_window: 32000,
-                capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
-                pricing: Some(crate::models::Pricing {
-                    input_per_1k_tokens: 0.5,
-                    output_per_1k_tokens: 1.5,
-                }),
-                is_free: false,
-            },
-        ]
+        self.models.clone()
     }
 
     async fn chat(&self, request: ChatRequest) -> Result<ChatResponse, ProviderError> {

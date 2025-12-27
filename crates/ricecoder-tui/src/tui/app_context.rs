@@ -551,7 +551,7 @@ impl AppContext {
         // Check for Anthropic API key
         if let Ok(api_key) = std::env::var("ANTHROPIC_API_KEY") {
             if !api_key.is_empty() {
-                if let Ok(provider) = AnthropicProvider::new(api_key) {
+                if let Ok(provider) = AnthropicProvider::with_default_models(api_key) {
                     let models: Vec<ModelDisplayInfo> = provider
                         .models()
                         .into_iter()
@@ -577,7 +577,7 @@ impl AppContext {
         // Check for OpenAI API key
         if let Ok(api_key) = std::env::var("OPENAI_API_KEY") {
             if !api_key.is_empty() {
-                if let Ok(provider) = OpenAiProvider::new(api_key) {
+                if let Ok(provider) = OpenAiProvider::with_default_models(api_key) {
                     let models: Vec<ModelDisplayInfo> = provider
                         .models()
                         .into_iter()

@@ -1,0 +1,3 @@
+Fast content search tool with safety limits (60s timeout, 10MB output). Searches file contents using regular expressions. Supports full regex syntax (eg. "log.*Error", "function\s+\w+", etc.). Filter files by pattern with the include parameter (eg. "*.js", "*.{ts,tsx}"). Returns file paths with matches sorted by modification time.
+
+Use this instead of shell grep/ripgrep commands for better integration with the agent workflow.

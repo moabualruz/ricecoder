@@ -152,67 +152,56 @@ impl StorageConfigLoader {
 
     /// Load built-in configuration
     fn load_builtin_config(&self) -> Result<Value> {
-        // Create built-in defaults for common LSP servers
+        // Use ricecoder-storage LspConfigLoader to load configs from config/lsp/*.yaml
+        // with hardcoded fallbacks
+        let loader = ricecoder_storage::loaders::LspConfigLoader::with_default_path();
+        
         let mut servers: HashMap<String, Vec<LspServerConfig>> = HashMap::new();
-
-        // Rust
-        servers.insert(
-            "rust".to_string(),
-            vec![LspServerConfig {
-                language: "rust".to_string(),
-                extensions: vec![".rs".to_string()],
-                executable: "rust-analyzer".to_string(),
-                args: vec![],
-                env: HashMap::new(),
-                init_options: None,
-                enabled: true,
-                timeout_ms: 5000,
-                max_restarts: 3,
-                idle_timeout_ms: 300000,
-                output_mapping: None,
-            }],
-        );
-
-        // TypeScript
-        servers.insert(
-            "typescript".to_string(),
-            vec![LspServerConfig {
-                language: "typescript".to_string(),
-                extensions: vec![
-                    ".ts".to_string(),
-                    ".tsx".to_string(),
-                    ".js".to_string(),
-                    ".jsx".to_string(),
-                ],
-                executable: "typescript-language-server".to_string(),
-                args: vec!["--stdio".to_string()],
-                env: HashMap::new(),
-                init_options: None,
-                enabled: true,
-                timeout_ms: 5000,
-                max_restarts: 3,
-                idle_timeout_ms: 300000,
-                output_mapping: None,
-            }],
-        );
-
-        // Python
-        servers.insert(
-            "python".to_string(),
-            vec![LspServerConfig {
-                language: "python".to_string(),
-                extensions: vec![".py".to_string()],
-                executable: "pylsp".to_string(),
-                args: vec![],
-                env: HashMap::new(),
-                init_options: None,
-                enabled: true,
-                timeout_ms: 5000,
-                max_restarts: 3,
-                idle_timeout_ms: 300000,
-                output_mapping: None,
-            }],
-        );
+        
+        // Load all configs from storage (includes YAML files + hardcoded fallbacks)
+        match loader.get_all() {
+            Ok(configs) => {
+                for (language, storage_config) in configs {
+                    // Convert ricecoder-storage LspConfig to external-lsp LspServerConfig
+                    let lsp_config = LspServerConfig {
+                        language: storage_config.language.clone(),
+                        extensions: storage_config.extensions.clone(),
+                        executable: storage_config.executable.clone(),
+                        args: storage_config.args.clone(),
+                        env: storage_config.env.clone(),
+                        init_options: storage_config.init_options.clone(),
+                        enabled: storage_config.enabled,
+                        timeout_ms: storage_config.timeout_ms,
+                        max_restarts: storage_config.max_restarts,
+                        idle_timeout_ms: storage_config.idle_timeout_ms,
+                        output_mapping: None,
+                    };
+                    
+                    servers.insert(language, vec![lsp_config]);
+                }
+            }
+            Err(e) => {
+                warn!("Failed to load LSP configs from storage: {}, using minimal defaults", e);
+                
+                // Fallback to minimal hardcoded defaults if storage fails
+                servers.insert(
+                    "rust".to_string(),
+                    vec![LspServerConfig {
+                        language: "rust".to_string(),
+                        extensions: vec![".rs".to_string()],
+                        executable: "rust-analyzer".to_string(),
+                        args: vec![],
+                        env: HashMap::new(),
+                        init_options: None,
+                        enabled: true,
+                        timeout_ms: 10000,
+                        max_restarts: 3,
+                        idle_timeout_ms: 300000,
+                        output_mapping: None,
+                    }],
+                );
+            }
+        }
 
         let config_value = serde_json::json!({
             "servers": servers,

@@ -21,16 +21,25 @@ pub struct CohereProvider {
     api_key: String,
     client: Arc<Client>,
     token_counter: Arc<TokenCounter>,
+    models: Vec<ModelInfo>,
 }
 
 impl CohereProvider {
     /// Create a new Cohere provider instance
-    pub fn new(api_key: String) -> Result<Self, ProviderError> {
-        Self::with_client(Arc::new(Client::new()), api_key)
+    pub fn new(api_key: String, models: Vec<ModelInfo>) -> Result<Self, ProviderError> {
+        Self::with_client(Arc::new(Client::new()), api_key, models)
+    }
+
+    /// Create a new Cohere provider with default models from registry
+    #[allow(dead_code)]
+    pub fn with_default_models(api_key: String) -> Result<Self, ProviderError> {
+        use crate::model_registry::global_registry;
+        let models = global_registry().get_provider_models("cohere");
+        Self::new(api_key, models)
     }
 
     /// Create a new Cohere provider with custom HTTP client
-    pub fn with_client(client: Arc<Client>, api_key: String) -> Result<Self, ProviderError> {
+    pub fn with_client(client: Arc<Client>, api_key: String, models: Vec<ModelInfo>) -> Result<Self, ProviderError> {
         if api_key.is_empty() {
             return Err(ProviderError::ConfigError(
                 "Cohere API key is required".to_string(),
@@ -41,6 +50,7 @@ impl CohereProvider {
             api_key,
             client,
             token_counter: Arc::new(TokenCounter::new()),
+            models,
         })
     }
 
@@ -100,44 +110,7 @@ impl Provider for CohereProvider {
     }
 
     fn models(&self) -> Vec<ModelInfo> {
-        vec![
-            ModelInfo {
-                id: "command".to_string(),
-                name: "Command".to_string(),
-                provider: self.name().to_string(),
-                context_window: 4096,
-                capabilities: vec![Capability::Chat],
-                pricing: Some(Pricing {
-                    input_per_1k_tokens: 0.015,
-                    output_per_1k_tokens: 0.015,
-                }),
-                is_free: false,
-            },
-            ModelInfo {
-                id: "command-light".to_string(),
-                name: "Command Light".to_string(),
-                provider: self.name().to_string(),
-                context_window: 4096,
-                capabilities: vec![Capability::Chat],
-                pricing: Some(Pricing {
-                    input_per_1k_tokens: 0.015,
-                    output_per_1k_tokens: 0.015,
-                }),
-                is_free: false,
-            },
-            ModelInfo {
-                id: "base".to_string(),
-                name: "Base".to_string(),
-                provider: self.name().to_string(),
-                context_window: 2048,
-                capabilities: vec![Capability::Chat],
-                pricing: Some(Pricing {
-                    input_per_1k_tokens: 0.015,
-                    output_per_1k_tokens: 0.015,
-                }),
-                is_free: false,
-            },
-        ]
+        self.models.clone()
     }
 
     async fn chat(&self, request: ChatRequest) -> Result<ChatResponse, ProviderError> {

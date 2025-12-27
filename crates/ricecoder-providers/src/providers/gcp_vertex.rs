@@ -23,6 +23,7 @@ pub struct GcpVertexProvider {
     access_token: String,
     client: Arc<Client>,
     token_counter: Arc<TokenCounter>,
+    models: Vec<ModelInfo>,
 }
 
 impl GcpVertexProvider {
@@ -31,13 +32,27 @@ impl GcpVertexProvider {
         project_id: String,
         location: String,
         access_token: String,
+        models: Vec<ModelInfo>,
     ) -> Result<Self, ProviderError> {
         Self::with_client(
             Arc::new(Client::new()),
             project_id,
             location,
             access_token,
+            models,
         )
+    }
+
+    /// Create a new GCP Vertex AI provider with default models from registry
+    #[allow(dead_code)]
+    pub fn with_default_models(
+        project_id: String,
+        location: String,
+        access_token: String,
+    ) -> Result<Self, ProviderError> {
+        use crate::model_registry::global_registry;
+        let models = global_registry().get_provider_models("gcp_vertex");
+        Self::new(project_id, location, access_token, models)
     }
 
     /// Create a new GCP Vertex AI provider with a custom HTTP client
@@ -46,6 +61,7 @@ impl GcpVertexProvider {
         project_id: String,
         location: String,
         access_token: String,
+        models: Vec<ModelInfo>,
     ) -> Result<Self, ProviderError> {
         if project_id.is_empty() {
             return Err(ProviderError::ConfigError(
@@ -71,6 +87,7 @@ impl GcpVertexProvider {
             access_token,
             client,
             token_counter: Arc::new(TokenCounter::new()),
+            models,
         })
     }
 
@@ -140,64 +157,7 @@ impl Provider for GcpVertexProvider {
     }
 
     fn models(&self) -> Vec<ModelInfo> {
-        vec![
-            ModelInfo {
-                id: "gemini-1.5-pro".to_string(),
-                name: "Gemini 1.5 Pro".to_string(),
-                provider: self.name().to_string(),
-                context_window: 1048576, // 1M tokens
-                capabilities: vec![
-                    Capability::Chat,
-                    Capability::FunctionCalling,
-                    Capability::Vision,
-                ],
-                pricing: Some(Pricing {
-                    input_per_1k_tokens: 0.00125,
-                    output_per_1k_tokens: 0.005,
-                }),
-                is_free: false,
-            },
-            ModelInfo {
-                id: "gemini-1.5-flash".to_string(),
-                name: "Gemini 1.5 Flash".to_string(),
-                provider: self.name().to_string(),
-                context_window: 1048576, // 1M tokens
-                capabilities: vec![
-                    Capability::Chat,
-                    Capability::FunctionCalling,
-                    Capability::Vision,
-                ],
-                pricing: Some(Pricing {
-                    input_per_1k_tokens: 0.000075,
-                    output_per_1k_tokens: 0.0003,
-                }),
-                is_free: false,
-            },
-            ModelInfo {
-                id: "gemini-1.0-pro".to_string(),
-                name: "Gemini 1.0 Pro".to_string(),
-                provider: self.name().to_string(),
-                context_window: 32768,
-                capabilities: vec![Capability::Chat, Capability::FunctionCalling],
-                pricing: Some(Pricing {
-                    input_per_1k_tokens: 0.0005,
-                    output_per_1k_tokens: 0.0015,
-                }),
-                is_free: false,
-            },
-            ModelInfo {
-                id: "palm-2-text-bison".to_string(),
-                name: "PaLM 2 Text Bison".to_string(),
-                provider: self.name().to_string(),
-                context_window: 8192,
-                capabilities: vec![Capability::Chat],
-                pricing: Some(Pricing {
-                    input_per_1k_tokens: 0.001,
-                    output_per_1k_tokens: 0.002,
-                }),
-                is_free: false,
-            },
-        ]
+        self.models.clone()
     }
 
     async fn chat(&self, request: ChatRequest) -> Result<ChatResponse, ProviderError> {

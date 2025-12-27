@@ -9,6 +9,10 @@ repository = "https://github.com/moabualruz/ricecoder"
 homepage = "https://github.com/moabualruz/ricecoder"
 documentation = "https://github.com/moabualruz/ricecoder/wiki"
 
+[features]
+default = []
+models-api = []
+
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -30,6 +34,8 @@ ricecoder-domain = { workspace = true }
 ricecoder-common = { workspace = true }
 inventory = { workspace = true }
 nucleo = { workspace = true }
+once_cell = { workspace = true }
+dirs = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

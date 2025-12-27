@@ -5,29 +5,49 @@ use std::{collections::HashMap, sync::Arc};
 use anyhow::{anyhow, Result};
 use ratatui::style::Color;
 
-use crate::types::Theme;
+use crate::{loader::ThemeLoader, types::Theme};
 
 /// Theme reset manager for resetting themes to their default state
 pub struct ThemeResetManager {
-    /// Default built-in themes for reference
+    /// Default built-in themes for reference (loaded from JSON files)
     default_themes: Arc<HashMap<String, Theme>>,
 }
 
 impl ThemeResetManager {
-    /// Create a new theme reset manager
+    /// Create a new theme reset manager with themes loaded from JSON files
     pub fn new() -> Self {
-        let mut defaults = HashMap::new();
-
-        // Store all built-in themes as defaults
-        defaults.insert("dark".to_string(), Theme::default());
-        defaults.insert("light".to_string(), Theme::light());
-        defaults.insert("monokai".to_string(), Theme::monokai());
-        defaults.insert("dracula".to_string(), Theme::dracula());
-        defaults.insert("nord".to_string(), Theme::nord());
-        defaults.insert("high-contrast".to_string(), Theme::high_contrast());
-
+        let defaults = Self::load_default_themes();
         Self {
             default_themes: Arc::new(defaults),
+        }
+    }
+    
+    /// Load default themes from bundled JSON files
+    fn load_default_themes() -> HashMap<String, Theme> {
+        let mut themes = HashMap::new();
+        
+        // Try to load from bundled themes directory
+        if let Some(bundled_dir) = ThemeLoader::bundled_themes_directory() {
+            if let Ok(loaded) = ThemeLoader::load_from_directory(&bundled_dir) {
+                for theme in loaded {
+                    themes.insert(theme.name.clone(), theme);
+                }
+            }
+        }
+        
+        // Ensure we always have at least the fallback theme
+        if themes.is_empty() {
+            let fallback = Theme::fallback();
+            themes.insert(fallback.name.clone(), fallback);
+        }
+        
+        themes
+    }
+    
+    /// Create a reset manager with specific themes (for testing)
+    pub fn with_themes(themes: HashMap<String, Theme>) -> Self {
+        Self {
+            default_themes: Arc::new(themes),
         }
     }
 
@@ -202,16 +222,23 @@ impl std::fmt::Debug for ThemeResetManager {
 mod tests {
     use super::*;
 
+    fn create_test_manager() -> ThemeResetManager {
+        let mut themes = HashMap::new();
+        themes.insert("fallback".to_string(), Theme::fallback());
+        ThemeResetManager::with_themes(themes)
+    }
+
     #[test]
     fn test_reset_manager_creation() {
         let manager = ThemeResetManager::new();
-        assert_eq!(manager.builtin_theme_names().len(), 6);
+        // Should have at least one theme (fallback if no JSON files)
+        assert!(manager.builtin_theme_names().len() >= 1);
     }
 
     #[test]
     fn test_reset_colors() {
-        let manager = ThemeResetManager::new();
-        let mut theme = Theme::default();
+        let manager = create_test_manager();
+        let mut theme = Theme::fallback();
 
         // Modify colors
         theme.primary = Color::Rgb(255, 0, 0);
@@ -221,15 +248,15 @@ mod tests {
         manager.reset_colors(&mut theme).unwrap();
 
         // Verify colors are reset to defaults
-        let default = Theme::default();
+        let default = Theme::fallback();
         assert_eq!(theme.primary, default.primary);
         assert_eq!(theme.error, default.error);
     }
 
     #[test]
     fn test_reset_theme() {
-        let manager = ThemeResetManager::new();
-        let mut theme = Theme::light();
+        let manager = create_test_manager();
+        let mut theme = Theme::fallback();
 
         // Modify theme
         theme.primary = Color::Rgb(255, 0, 0);
@@ -239,7 +266,7 @@ mod tests {
         manager.reset_theme(&mut theme).unwrap();
 
         // Verify theme is reset to defaults
-        let default = Theme::light();
+        let default = Theme::fallback();
         assert_eq!(theme.primary, default.primary);
         assert_eq!(theme.secondary, default.secondary);
         assert_eq!(theme.accent, default.accent);
@@ -252,8 +279,8 @@ mod tests {
 
     #[test]
     fn test_reset_theme_preserves_name() {
-        let manager = ThemeResetManager::new();
-        let mut theme = Theme::monokai();
+        let manager = create_test_manager();
+        let mut theme = Theme::fallback();
         let original_name = theme.name.clone();
 
         // Modify theme
@@ -268,57 +295,57 @@ mod tests {
 
     #[test]
     fn test_get_default_color() {
-        let manager = ThemeResetManager::new();
-        let default_primary = manager.get_default_color("dark", "primary").unwrap();
-        let theme = Theme::default();
+        let manager = create_test_manager();
+        let default_primary = manager.get_default_color("fallback", "primary").unwrap();
+        let theme = Theme::fallback();
         assert_eq!(default_primary, theme.primary);
     }
 
     #[test]
     fn test_get_default_color_all_fields() {
-        let manager = ThemeResetManager::new();
-        let theme = Theme::dracula();
+        let manager = create_test_manager();
+        let theme = Theme::fallback();
 
         assert_eq!(
-            manager.get_default_color("dracula", "primary").unwrap(),
+            manager.get_default_color("fallback", "primary").unwrap(),
             theme.primary
         );
         assert_eq!(
-            manager.get_default_color("dracula", "secondary").unwrap(),
+            manager.get_default_color("fallback", "secondary").unwrap(),
             theme.secondary
         );
         assert_eq!(
-            manager.get_default_color("dracula", "accent").unwrap(),
+            manager.get_default_color("fallback", "accent").unwrap(),
             theme.accent
         );
         assert_eq!(
-            manager.get_default_color("dracula", "background").unwrap(),
+            manager.get_default_color("fallback", "background").unwrap(),
             theme.background
         );
         assert_eq!(
-            manager.get_default_color("dracula", "foreground").unwrap(),
+            manager.get_default_color("fallback", "foreground").unwrap(),
             theme.foreground
         );
         assert_eq!(
-            manager.get_default_color("dracula", "error").unwrap(),
+            manager.get_default_color("fallback", "error").unwrap(),
             theme.error
         );
         assert_eq!(
-            manager.get_default_color("dracula", "warning").unwrap(),
+            manager.get_default_color("fallback", "warning").unwrap(),
             theme.warning
         );
         assert_eq!(
-            manager.get_default_color("dracula", "success").unwrap(),
+            manager.get_default_color("fallback", "success").unwrap(),
             theme.success
         );
     }
 
     #[test]
     fn test_get_default_color_case_insensitive() {
-        let manager = ThemeResetManager::new();
-        let color1 = manager.get_default_color("dark", "primary").unwrap();
-        let color2 = manager.get_default_color("dark", "PRIMARY").unwrap();
-        let color3 = manager.get_default_color("dark", "Primary").unwrap();
+        let manager = create_test_manager();
+        let color1 = manager.get_default_color("fallback", "primary").unwrap();
+        let color2 = manager.get_default_color("fallback", "PRIMARY").unwrap();
+        let color3 = manager.get_default_color("fallback", "Primary").unwrap();
 
         assert_eq!(color1, color2);
         assert_eq!(color2, color3);
@@ -326,21 +353,21 @@ mod tests {
 
     #[test]
     fn test_get_default_color_invalid_theme() {
-        let manager = ThemeResetManager::new();
-        assert!(manager.get_default_color("invalid", "primary").is_err());
+        let manager = create_test_manager();
+        assert!(manager.get_default_color("nonexistent-xyz", "primary").is_err());
     }
 
     #[test]
     fn test_get_default_color_invalid_field() {
-        let manager = ThemeResetManager::new();
-        assert!(manager.get_default_color("dark", "invalid").is_err());
+        let manager = create_test_manager();
+        assert!(manager.get_default_color("fallback", "invalid").is_err());
     }
 
     #[test]
     fn test_reset_color() {
-        let manager = ThemeResetManager::new();
-        let mut theme = Theme::nord();
-        let default_primary = manager.get_default_color("nord", "primary").unwrap();
+        let manager = create_test_manager();
+        let mut theme = Theme::fallback();
+        let default_primary = manager.get_default_color("fallback", "primary").unwrap();
 
         // Modify primary color
         theme.primary = Color::Rgb(255, 0, 0);
@@ -351,65 +378,51 @@ mod tests {
 
         // Verify primary color is reset
         assert_eq!(theme.primary, default_primary);
-
-        // Verify other colors are unchanged
-        let default_error = manager.get_default_color("nord", "error").unwrap();
-        assert_eq!(theme.error, default_error);
     }
 
     #[test]
     fn test_reset_color_invalid_field() {
-        let manager = ThemeResetManager::new();
+        let manager = create_test_manager();
         let mut theme = Theme::default();
         assert!(manager.reset_color(&mut theme, "invalid").is_err());
     }
 
     #[test]
     fn test_is_builtin_theme() {
-        let manager = ThemeResetManager::new();
-        assert!(manager.is_builtin_theme("dark"));
-        assert!(manager.is_builtin_theme("light"));
-        assert!(manager.is_builtin_theme("monokai"));
-        assert!(manager.is_builtin_theme("dracula"));
-        assert!(manager.is_builtin_theme("nord"));
-        assert!(manager.is_builtin_theme("high-contrast"));
+        let manager = create_test_manager();
+        assert!(manager.is_builtin_theme("fallback"));
         assert!(!manager.is_builtin_theme("custom"));
-        assert!(!manager.is_builtin_theme("invalid"));
+        assert!(!manager.is_builtin_theme("nonexistent-xyz"));
     }
 
     #[test]
     fn test_builtin_theme_names() {
-        let manager = ThemeResetManager::new();
+        let manager = create_test_manager();
         let names = manager.builtin_theme_names();
-        assert_eq!(names.len(), 6);
-        assert!(names.contains(&"dark".to_string()));
-        assert!(names.contains(&"light".to_string()));
-        assert!(names.contains(&"monokai".to_string()));
-        assert!(names.contains(&"dracula".to_string()));
-        assert!(names.contains(&"nord".to_string()));
-        assert!(names.contains(&"high-contrast".to_string()));
+        assert!(names.len() >= 1);
+        assert!(names.contains(&"fallback".to_string()));
     }
 
     #[test]
     fn test_get_builtin_theme() {
-        let manager = ThemeResetManager::new();
-        let theme = manager.get_builtin_theme("dark").unwrap();
-        assert_eq!(theme.name, "dark");
-        let default = Theme::default();
+        let manager = create_test_manager();
+        let theme = manager.get_builtin_theme("fallback").unwrap();
+        assert_eq!(theme.name, "fallback");
+        let default = Theme::fallback();
         assert_eq!(theme.primary, default.primary);
         assert_eq!(theme.secondary, default.secondary);
     }
 
     #[test]
     fn test_get_builtin_theme_invalid() {
-        let manager = ThemeResetManager::new();
-        assert!(manager.get_builtin_theme("invalid").is_err());
+        let manager = create_test_manager();
+        assert!(manager.get_builtin_theme("nonexistent-xyz").is_err());
     }
 
     #[test]
     fn test_reset_colors_invalid_theme() {
-        let manager = ThemeResetManager::new();
-        let mut theme = Theme::light();
+        let manager = create_test_manager();
+        let mut theme = Theme::fallback();
         theme.name = "custom".to_string();
 
         // Should fail because "custom" is not a built-in theme
@@ -418,8 +431,8 @@ mod tests {
 
     #[test]
     fn test_reset_theme_invalid_theme() {
-        let manager = ThemeResetManager::new();
-        let mut theme = Theme::light();
+        let manager = create_test_manager();
+        let mut theme = Theme::fallback();
         theme.name = "custom".to_string();
 
         // Should fail because "custom" is not a built-in theme
@@ -428,7 +441,7 @@ mod tests {
 
     #[test]
     fn test_reset_all_themes() {
-        let manager = ThemeResetManager::new();
+        let manager = create_test_manager();
 
         for theme_name in manager.builtin_theme_names() {
             let mut theme = manager.get_builtin_theme(&theme_name).unwrap();

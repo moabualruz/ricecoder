@@ -1,0 +1,35 @@
+# Rust Language Server Configuration
+# Server: rust-analyzer
+# Documentation: https://rust-analyzer.github.io/
+
+language: rust
+extensions:
+  - .rs
+executable: rust-analyzer
+args: []
+env: {}
+
+# Initialization options sent to rust-analyzer
+init_options:
+  checkOnSave:
+    command: clippy
+    allTargets: false
+  cargo:
+    allFeatures: false
+    loadOutDirsFromCheck: true
+  procMacro:
+    enable: true
+  diagnostics:
+    enable: true
+    disabled: []
+    enableExperimental: false
+  inlayHints:
+    enable: true
+    chainingHints: true
+    parameterHints: true
+    typeHints: true
+
+enabled: true
+timeout_ms: 10000
+max_restarts: 3
+idle_timeout_ms: 300000

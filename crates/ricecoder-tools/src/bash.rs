@@ -13,6 +13,7 @@ use tokio::process::Command;
 use tokio::time::{timeout, Duration};
 
 use crate::context::ToolContext;
+use crate::descriptions::get_description;
 use crate::error::ToolError;
 use crate::tool::{ParameterSchema, Tool, ToolDefinition, ToolExecutionResult, ToolParameters};
 
@@ -259,8 +260,13 @@ impl Tool for BashTool {
             },
         );
 
+        let description = get_description(
+            "bash",
+            "Execute a bash command in the shell. Returns stdout, stderr, and exit code. Use this for running tests, builds, git commands, and other shell operations.",
+        );
+
         Ok(ToolDefinition {
-            description: "Execute a bash command in the shell. Returns stdout, stderr, and exit code. Use this for running tests, builds, git commands, and other shell operations.".to_string(),
+            description,
             parameters,
             format_validation_error: None,
         })

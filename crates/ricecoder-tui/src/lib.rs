@@ -231,7 +231,8 @@ pub use ricecoder_storage::config::TuiConfig;
 // ProviderIntegration is now exported from ricecoder-providers
 pub use scrollview_widget::ScrollViewWidget;
 // Session exports moved to ricecoder-sessions crate
-pub use style::{ColorSupport, Theme};
+pub use ricecoder_themes::Theme;
+pub use style::ColorSupport;
 pub use terminal_state::{
     ColorSupport as TerminalColorSupport, TerminalCapabilities, TerminalState, TerminalType,
 };

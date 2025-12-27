@@ -1,0 +1,10 @@
+Execute a bash command in the shell. Returns stdout, stderr, and exit code. Use this for running tests, builds, git commands, and other shell operations.
+
+Usage notes:
+- The command argument is required
+- You can specify an optional timeout in milliseconds (default: 120000ms / 2 minutes)
+- The workdir parameter specifies the working directory for the command
+- Always quote file paths that contain spaces with double quotes
+- Use && or ; to chain multiple commands (NOT newlines)
+- Avoid using search commands like find and grep - use Glob/Grep tools instead
+- Avoid using read tools like cat, head, tail, ls - use Read/List tools instead

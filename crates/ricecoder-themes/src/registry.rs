@@ -1,39 +1,103 @@
 //! Theme registry for managing built-in and custom themes
+//!
+//! Themes are loaded from JSON files in:
+//! 1. Bundled themes: `config/themes/*.json` (relative to workspace)
+//! 2. User themes: `~/.config/ricecoder/themes/*.json`
 
 use std::{
     collections::HashMap,
+    path::Path,
     sync::{Arc, RwLock},
 };
 
 use anyhow::{anyhow, Result};
 
-use crate::types::Theme;
+use crate::{loader::ThemeLoader, types::Theme};
 
 /// Theme registry for storing and managing themes
 #[derive(Clone)]
 pub struct ThemeRegistry {
-    /// Built-in themes (immutable)
+    /// Built-in themes (immutable, loaded from bundled JSON)
     builtin_themes: Arc<HashMap<String, Theme>>,
-    /// Custom themes (mutable)
+    /// Custom themes (mutable, loaded from user directory or registered at runtime)
     custom_themes: Arc<RwLock<HashMap<String, Theme>>>,
 }
 
 impl ThemeRegistry {
-    /// Create a new theme registry with built-in themes
+    /// Create a new theme registry with built-in themes loaded from JSON files
     pub fn new() -> Self {
-        let mut builtin = HashMap::new();
-
-        // Register all built-in themes dynamically from Theme::available_themes()
-        for name in Theme::available_themes() {
-            if let Some(theme) = Theme::by_name(name) {
-                builtin.insert(name.to_string(), theme);
-            }
-        }
+        let builtin = Self::load_builtin_themes();
 
         Self {
             builtin_themes: Arc::new(builtin),
             custom_themes: Arc::new(RwLock::new(HashMap::new())),
         }
+    }
+    
+    /// Create a registry with themes loaded from a specific directory
+    pub fn from_directory(dir: &Path) -> Result<Self> {
+        let themes = ThemeLoader::load_from_directory(dir)?;
+        let mut builtin = HashMap::new();
+        for theme in themes {
+            builtin.insert(theme.name.clone(), theme);
+        }
+        
+        Ok(Self {
+            builtin_themes: Arc::new(builtin),
+            custom_themes: Arc::new(RwLock::new(HashMap::new())),
+        })
+    }
+    
+    /// Load built-in themes from bundled JSON files
+    fn load_builtin_themes() -> HashMap<String, Theme> {
+        let mut themes = HashMap::new();
+        
+        // Try to find bundled themes directory
+        if let Some(bundled_dir) = ThemeLoader::bundled_themes_directory() {
+            match ThemeLoader::load_from_directory(&bundled_dir) {
+                Ok(loaded) => {
+                    tracing::info!("Loaded {} bundled themes from {}", loaded.len(), bundled_dir.display());
+                    for theme in loaded {
+                        themes.insert(theme.name.clone(), theme);
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!("Failed to load bundled themes: {}", e);
+                }
+            }
+        } else {
+            tracing::debug!("No bundled themes directory found, using fallback theme");
+        }
+        
+        // Ensure we always have at least the default theme
+        if themes.is_empty() {
+            tracing::info!("No themes loaded from files, using fallback default theme");
+            let default = Theme::fallback();
+            themes.insert(default.name.clone(), default);
+        }
+        
+        themes
+    }
+    
+    /// Load user themes from ~/.config/ricecoder/themes/
+    pub fn load_user_themes(&self) -> Result<usize> {
+        let user_dir = ThemeLoader::user_themes_directory()?;
+        if !user_dir.exists() {
+            return Ok(0);
+        }
+        
+        let loaded = ThemeLoader::load_from_directory(&user_dir)?;
+        let count = loaded.len();
+        
+        let mut custom = self.custom_themes.write()
+            .map_err(|e| anyhow!("Failed to lock custom themes: {}", e))?;
+        
+        for theme in loaded {
+            custom.insert(theme.name.clone(), theme);
+        }
+        
+        tracing::info!("Loaded {} user themes from {}", count, user_dir.display());
+        Ok(count)
     }
 
     /// Get a theme by name (checks built-in first, then custom)
@@ -195,32 +259,33 @@ mod tests {
     #[test]
     fn test_registry_creation() {
         let registry = ThemeRegistry::new();
-        assert_eq!(registry.builtin_count(), Theme::available_themes().len());
+        // Registry should have at least 1 theme (fallback if no JSON files found)
+        assert!(registry.builtin_count() >= 1);
         assert_eq!(registry.custom_count().unwrap(), 0);
     }
 
     #[test]
     fn test_get_builtin_theme() {
         let registry = ThemeRegistry::new();
-        assert!(registry.get("dark").is_some());
-        assert!(registry.get("light").is_some());
-        assert!(registry.get("monokai").is_some());
-        assert!(registry.get("dracula").is_some());
-        assert!(registry.get("nord").is_some());
-        assert!(registry.get("high-contrast").is_some());
+        // At minimum, should have fallback theme
+        let builtin = registry.list_builtin();
+        assert!(!builtin.is_empty());
+        
+        // Get first available theme
+        let first = &builtin[0];
+        assert!(registry.get(first).is_some());
     }
 
     #[test]
     fn test_get_nonexistent_theme() {
         let registry = ThemeRegistry::new();
-        assert!(registry.get("nonexistent").is_none());
+        assert!(registry.get("nonexistent-theme-xyz").is_none());
     }
 
     #[test]
     fn test_register_custom_theme() {
         let registry = ThemeRegistry::new();
-        let custom_theme = Theme::light();
-        let mut custom = custom_theme.clone();
+        let mut custom = Theme::fallback();
         custom.name = "my-custom".to_string();
 
         registry.register(custom).unwrap();
@@ -231,8 +296,7 @@ mod tests {
     #[test]
     fn test_unregister_custom_theme() {
         let registry = ThemeRegistry::new();
-        let custom_theme = Theme::light();
-        let mut custom = custom_theme.clone();
+        let mut custom = Theme::fallback();
         custom.name = "my-custom".to_string();
 
         registry.register(custom).unwrap();
@@ -245,27 +309,27 @@ mod tests {
     #[test]
     fn test_list_all_themes() {
         let registry = ThemeRegistry::new();
-        let custom_theme = Theme::light();
-        let mut custom = custom_theme.clone();
+        let initial_count = registry.builtin_count();
+        
+        let mut custom = Theme::fallback();
         custom.name = "my-custom".to_string();
         registry.register(custom).unwrap();
 
         let all = registry.list_all().unwrap();
-        assert_eq!(all.len(), Theme::available_themes().len() + 1);
+        assert_eq!(all.len(), initial_count + 1);
     }
 
     #[test]
     fn test_list_builtin_themes() {
         let registry = ThemeRegistry::new();
         let builtin = registry.list_builtin();
-        assert_eq!(builtin.len(), Theme::available_themes().len());
+        assert!(!builtin.is_empty());
     }
 
     #[test]
     fn test_list_custom_themes() {
         let registry = ThemeRegistry::new();
-        let custom_theme = Theme::light();
-        let mut custom = custom_theme.clone();
+        let mut custom = Theme::fallback();
         custom.name = "my-custom".to_string();
         registry.register(custom).unwrap();
 
@@ -276,47 +340,59 @@ mod tests {
     #[test]
     fn test_exists() {
         let registry = ThemeRegistry::new();
-        assert!(registry.exists("dark"));
-        assert!(!registry.exists("nonexistent"));
+        let builtin = registry.list_builtin();
+        if !builtin.is_empty() {
+            assert!(registry.exists(&builtin[0]));
+        }
+        assert!(!registry.exists("nonexistent-xyz"));
     }
 
     #[test]
     fn test_is_builtin() {
         let registry = ThemeRegistry::new();
-        assert!(registry.is_builtin("dark"));
-        assert!(!registry.is_builtin("nonexistent"));
+        let builtin = registry.list_builtin();
+        if !builtin.is_empty() {
+            assert!(registry.is_builtin(&builtin[0]));
+        }
+        assert!(!registry.is_builtin("nonexistent-xyz"));
     }
 
     #[test]
     fn test_is_custom() {
         let registry = ThemeRegistry::new();
-        let custom_theme = Theme::light();
-        let mut custom = custom_theme.clone();
+        let mut custom = Theme::fallback();
         custom.name = "my-custom".to_string();
         registry.register(custom).unwrap();
 
         assert!(registry.is_custom("my-custom").unwrap());
-        assert!(!registry.is_custom("dark").unwrap());
+        
+        let builtin = registry.list_builtin();
+        if !builtin.is_empty() {
+            assert!(!registry.is_custom(&builtin[0]).unwrap());
+        }
     }
 
     #[test]
     fn test_reset_to_default() {
         let registry = ThemeRegistry::new();
-        let custom_theme = Theme::light();
-        let mut custom = custom_theme.clone();
-        custom.name = "dark".to_string();
-        registry.register(custom).unwrap();
+        let builtin = registry.list_builtin();
+        
+        if !builtin.is_empty() {
+            let theme_name = &builtin[0];
+            let mut modified = registry.get(theme_name).unwrap();
+            modified.name = theme_name.clone();
+            registry.register(modified).unwrap();
 
-        registry.reset_to_default("dark").unwrap();
-        let theme = registry.get("dark").unwrap();
-        assert_eq!(theme.name, "dark");
+            registry.reset_to_default(theme_name).unwrap();
+            let theme = registry.get(theme_name).unwrap();
+            assert_eq!(theme.name, *theme_name);
+        }
     }
 
     #[test]
     fn test_clear_custom() {
         let registry = ThemeRegistry::new();
-        let custom_theme = Theme::light();
-        let mut custom = custom_theme.clone();
+        let mut custom = Theme::fallback();
         custom.name = "my-custom".to_string();
         registry.register(custom).unwrap();
 

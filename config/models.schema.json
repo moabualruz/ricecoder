@@ -1,0 +1,106 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RiceCoder Models Configuration",
+  "description": "Schema for AI model definitions",
+  "type": "object",
+  "required": ["version", "providers"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Schema version"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last update timestamp"
+    },
+    "providers": {
+      "type": "object",
+      "description": "Model providers",
+      "patternProperties": {
+        "^[a-z0-9_]+$": {
+          "type": "object",
+          "required": ["name", "models"],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Human-readable provider name"
+            },
+            "base_url": {
+              "type": "string",
+              "description": "API base URL"
+            },
+            "models": {
+              "type": "array",
+              "description": "Available models",
+              "items": {
+                "type": "object",
+                "required": ["id", "name", "context_window", "capabilities"],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Unique model identifier"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Human-readable model name"
+                  },
+                  "context_window": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Maximum context window in tokens"
+                  },
+                  "max_output_tokens": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Maximum output tokens"
+                  },
+                  "capabilities": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["chat", "code", "vision", "function_calling", "streaming"]
+                    },
+                    "description": "Model capabilities"
+                  },
+                  "pricing": {
+                    "type": "object",
+                    "required": ["input_per_1k", "output_per_1k"],
+                    "properties": {
+                      "input_per_1k": {
+                        "type": "number",
+                        "minimum": 0,
+                        "description": "Cost per 1K input tokens (USD)"
+                      },
+                      "output_per_1k": {
+                        "type": "number",
+                        "minimum": 0,
+                        "description": "Cost per 1K output tokens (USD)"
+                      },
+                      "cache_read_per_1k": {
+                        "type": "number",
+                        "minimum": 0,
+                        "description": "Cost per 1K cached tokens read (USD)"
+                      },
+                      "cache_write_per_1k": {
+                        "type": "number",
+                        "minimum": 0,
+                        "description": "Cost per 1K cached tokens written (USD)"
+                      }
+                    },
+                    "description": "Pricing information"
+                  },
+                  "is_free": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether model is free to use"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

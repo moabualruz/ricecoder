@@ -10,7 +10,8 @@
 
 use ricecoder_storage::TuiConfig;
 
-use crate::{model::*, style::Theme, terminal_state::TerminalCapabilities, update::Command};
+use crate::{model::*, terminal_state::TerminalCapabilities, update::Command};
+use ricecoder_themes::Theme;
 
 // StateDiff and StateChange are now in model.rs
 

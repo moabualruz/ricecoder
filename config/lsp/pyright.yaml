@@ -1,0 +1,26 @@
+# Python Language Server Configuration (Alternative)
+# Server: Pyright
+# Documentation: https://github.com/microsoft/pyright
+
+language: python
+extensions:
+  - .py
+  - .pyi
+executable: pyright-langserver
+args:
+  - --stdio
+env: {}
+
+# Initialization options
+init_options:
+  python:
+    analysis:
+      typeCheckingMode: basic
+      autoSearchPaths: true
+      useLibraryCodeForTypes: true
+      diagnosticMode: openFilesOnly
+
+enabled: false  # Disabled by default, prefer pylsp
+timeout_ms: 5000
+max_restarts: 3
+idle_timeout_ms: 300000
