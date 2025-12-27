@@ -8,10 +8,10 @@ pub mod session;
 // Home route exports
 pub use home::{Home, HomeState, HomeTheme, HomeView, McpStatus};
 
-// Session route exports - dialogs
-pub use session::{
-    DialogFork, DialogMessage, DialogSubagent, DialogTimeline, MessageAction, SubagentAction,
-};
+// Session route exports - dialogs (commented out - dialog modules removed during cleanup)
+// pub use session::{
+//     DialogFork, DialogMessage, DialogSubagent, DialogTimeline, MessageAction, SubagentAction,
+// };
 
 // Session route exports - components
 pub use session::{

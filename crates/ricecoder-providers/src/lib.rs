@@ -65,7 +65,7 @@ pub use provider::{
 };
 pub use providers::{
     AnthropicProvider, AzureOpenAiProvider, CohereProvider, GcpVertexProvider, GoogleProvider,
-    OllamaProvider, OpenAiProvider, ReplicateProvider, TogetherProvider, ZenProvider,
+    OllamaProvider, OpenAiProvider, QwenProvider, ReplicateProvider, TogetherProvider, ZenProvider,
 };
 pub use rate_limiter::{ExponentialBackoff, RateLimiterRegistry, TokenBucketLimiter};
 pub use circuit_breaker::{CircuitBreaker, CircuitBreakerConfig, CircuitBreakerRegistry, CircuitState};

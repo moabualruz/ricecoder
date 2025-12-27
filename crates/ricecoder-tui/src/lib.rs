@@ -20,136 +20,83 @@
 //! `ricecoder-tui` only depends on infrastructure crates and has no business logic dependencies.
 //! Business logic is injected through interfaces or dependency injection patterns.
 
-pub mod accessibility;
-pub mod app;
+// === Old TEA System Modules (commented out - migrated to src/tui/) ===
+// pub mod accessibility;  // Depends on old model::AppMessage
+// pub mod components;     // Depends on old model::AppMessage, AppModel
+// pub mod command_palette; // Depends on old model::AppMessage
+// pub mod diff;           // Depends on old model::AppMessage, AppModel
+// pub mod error_handling; // Depends on old model, tea::ReactiveState
+// pub mod file_picker;    // Depends on old model::AppMessage
+// pub mod plugins;        // Depends on old model::AppMessage, AppModel
+// pub mod prompt;         // Depends on old model::AppMode
+// pub mod reactive_ui_updates; // Depends on old model, tea, StateDiff
+// pub mod render_pipeline; // Depends on old model::AppModel, StateChange
+// pub mod widgets;        // Depends on old model, StateDiff
+
+// === Core Modules (keep) ===
 pub mod banner;
 pub mod clipboard;
 pub mod code_editor_widget;
 pub mod command_blocks;
-pub mod command_palette;
-pub mod components;
 pub mod di;
-pub mod lifecycle;
-pub mod model;
-pub mod tui;
-pub mod update;
-pub mod view;
-
-pub mod diff;
 pub mod error;
-pub mod error_handling;
-pub mod event;
-pub mod event_dispatcher;
-pub mod providers;
-// executor moved to ricecoder-commands
-// help moved to ricecoder-help
-// keybinds moved to ricecoder-keybinds
-pub mod file_picker;
+pub mod error_handling_stub; // Minimal error types for compatibility
+pub mod lifecycle;
+pub mod menu_stub; // Minimal menu types for dialog compatibility
+pub mod model_stub; // Minimal model types for CLI compatibility
+pub mod tui; // New TUI system
+
+// Stub module aliases for old imports
+pub mod components {
+    pub mod menu {
+        pub use crate::menu_stub::{MenuItem, MenuWidget};
+    }
+}
+pub mod error_handling {
+    pub use crate::error_handling_stub::{ErrorCategory, ErrorManager, ErrorSeverity, RiceError};
+}
+pub mod model {
+    pub use crate::model_stub::{ProviderConnectionState, ProviderInfo};
+}
+
+// === Utility Modules (keep) ===
 pub mod image_integration;
 pub mod image_widget;
 pub mod input;
-pub mod integration;
 pub mod layout;
 pub mod logger_widget;
 pub mod markdown;
+pub mod monitoring;
 pub mod performance;
 pub mod popup_widget;
 pub mod progressive_enhancement;
 pub mod project_bootstrap;
-pub mod prompt;
-pub mod prompt_context;
-
-pub mod reactive_ui_updates;
 pub mod real_time_updates;
-pub mod render;
-pub mod render_pipeline;
 pub mod scrollview_widget;
-// Session modules moved to ricecoder-sessions crate
 pub mod status_bar;
 pub mod style;
-pub mod tea;
 pub mod terminal_state;
 pub mod textarea_widget;
 pub mod theme;
-// Theme modules moved to ricecoder-themes crate
-// pub mod theme;
-// pub mod theme_loader;
-// pub mod theme_registry;
-// pub mod theme_reset;
-pub mod monitoring;
-pub mod plugins;
 pub mod tree_widget;
 pub mod ui_components;
-pub mod widgets;
 
 // Re-export commonly used types
-pub use accessibility::{
-    AccessibilityConfig, AnimationConfig, Announcement, AnnouncementPriority, ElementType,
-    EnhancedKeyboardNavigation, FocusIndicatorStyle, FocusManager, HighContrastThemeManager,
-    KeyboardNavigationManager, KeyboardShortcutCustomizer, ScreenReaderAnnouncer, TextAlternative,
-};
-pub use app::App;
+// Accessibility exports removed - depends on old TEA system
+// pub use accessibility::{...};
 pub use banner::{BannerArea, BannerComponent, BannerComponentConfig};
 pub use clipboard::{ClipboardError, ClipboardManager, CopyFeedback, CopyOperation};
 pub use code_editor_widget::{CodeEditorWidget, CodeLine, Language, SyntaxTheme};
 pub use command_blocks::{Command, CommandBlock, CommandBlocksWidget, CommandStatus};
-// Provider and session errors moved to respective crates
-// pub use error_handling::{
-//     ErrorBoundary, ErrorCategory, ErrorLogger, ErrorManager, ErrorSeverity, RecoveryStrategy,
-//     RiceError, RetryMechanism, CrashRecovery, CrashReport, LogEntry as ErrorLogEntry, LogLevel as ErrorLogLevel,
-// };
-// LSP integration moved to ricecoder-lsp crate
-// pub use ricecoder_lsp::tui_integration::{language_from_file_path, lsp_diagnostics_to_tui, lsp_hover_to_text};
-pub use command_palette::{CommandPaletteWidget, PaletteCommand};
-// executor exports moved to ricecoder-commands
-pub use components::{
-    Component,
-    ComponentEvent as ComponentLifecycleEvent,
-    ComponentId,
-    ComponentRegistry,
-    CustomEvent,
-    DialogType,
-    DialogWidget,
-    // Event system
-    EventComponent,
-    EventContext,
-    EventPhase,
-    EventPropagation,
-    EventResult,
-    FocusDirection,
-    FocusEvent,
-    FocusResult,
-    InputArea,
-    InputEvent,
-    KeyboardEvent,
-    // ListWidget,
-    MenuWidget,
-    ModeIndicator,
-    ModeSelectionMenu,
-    MouseEvent,
-    SplitViewWidget,
-    StateChangeEvent,
-    TabWidget,
-};
-// EventDispatcher is from event_dispatcher module, not components
-pub use event_dispatcher::EventDispatcher;
-// TuiConfig is now exported from ricecoder-storage
-pub use diff::{DiffHunk, DiffLine, DiffLineType, DiffViewType, DiffWidget};
-// LSP integration moved to ricecoder-lsp crate
-// pub use ricecoder_lsp::tui_integration::{
-//     DiagnosticDetailWidget, DiagnosticItem, DiagnosticSeverity, DiagnosticsWidget, HoverWidget,
-// };
+// Old TEA system exports removed
+// pub use command_palette::{CommandPaletteWidget, PaletteCommand};
+// pub use components::{...};
+// pub use diff::{DiffHunk, DiffLine, DiffLineType, DiffViewType, DiffWidget};
 pub use error::{KeybindError, StorageError, ToolError, TuiError, TuiResult};
-pub use event::{
-    EventLoop, KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent as EventMouseEvent,
-};
-pub use file_picker::FilePickerWidget;
+// pub use file_picker::FilePickerWidget; // Old TEA system
 pub use image_integration::ImageIntegration;
 pub use image_widget::{ImageFormat, ImageWidget, RenderMode};
 pub use input::{ChatInputWidget, InputAnalyzer, Intent};
-pub use integration::{
-    LayoutCoordinator, LayoutInfo, StateSynchronizer, WidgetContainer, WidgetIntegration,
-};
 pub use layout::{Constraint, Layout, Rect};
 pub use lifecycle::{
     get_tui_lifecycle_manager, initialize_tui_lifecycle_manager, register_tui_component,
@@ -157,7 +104,6 @@ pub use lifecycle::{
 };
 pub use logger_widget::{LogEntry, LogLevel, LoggerWidget};
 pub use markdown::{MarkdownElement, MarkdownParser};
-pub use model::{AppMessage, AppMode, AppModel, StateDiff};
 pub use monitoring::{
     AnalyticsReport, AnonymousStatistics, ComplianceStatus, MemorySafetyMonitor, MetricsCollector,
     MonitoringReport, MonitoringSystem, PerformanceMonitor, PerformanceProfiler, PerformanceReport,
@@ -173,60 +119,21 @@ pub use performance::{
     RenderPerformanceMetrics, RenderPerformanceTracker, ThemeSwitchPerformance,
     VirtualScrollManager,
 };
-pub use plugins::{
-    CommandPlugin,
-    CommandResult,
-    DiscoveredPlugin,
-    EnhancedPluginMetadata,
-    // Enhanced plugin architecture
-    EnhancedPluginRegistry,
-    MarketplaceTheme,
-    Plugin,
-    PluginCapability,
-    PluginCommand,
-    PluginContext,
-    PluginId,
-    PluginManager,
-    PluginManifest,
-    PluginMessage,
-    PluginMetadata,
-    PluginOperation,
-    PluginSandbox,
-    PluginTheme,
-    PluginVersion,
-    RateLimiter,
-    ThemeMarketplace,
-    ThemePlugin,
-    ThemePluginImpl,
-    UiComponentPlugin,
-};
+// Plugins removed - depends on old TEA system
+// pub use plugins::{...};
 pub use popup_widget::{PopupButton, PopupType, PopupWidget};
 pub use progressive_enhancement::{
     FeatureLevel, FeatureToggles, ProgressiveEnhancement, RenderingStrategy,
 };
-// theme::ThemeManager moved to ricecoder-themes
-// VCS integration moved to ricecoder-vcs crate
-// pub use ricecoder_vcs::tui_integration::{VcsIntegration, VcsStatus};
-// VCS integration moved to ricecoder-vcs crate
-// pub use status_bar::StatusBarVcsExt;
-// theme_loader, theme_registry, theme_reset moved to ricecoder-themes
 pub use project_bootstrap::{BootstrapResult, ProjectBootstrap, ProjectInfo};
-pub use prompt::{ContextIndicators, PromptConfig, PromptWidget};
-pub use prompt_context::PromptContext;
-// Provider management components
-pub use providers::{
-    ProviderFactory, ProviderManager, ProviderPerformanceWidget, ProviderStatusWidget,
-};
-pub use reactive_ui_updates::{
-    ConflictInfo, ConflictResolution, ConflictType, FileChangeEvent, FileChangeType, LiveDataEvent,
-    LiveDataSynchronizer, ReactiveRenderer, ReactiveUICoordinator, SessionChangeType,
-    SessionSyncEvent, UpdatePriority, UpdateType,
-};
+// Old TEA system exports removed
+// pub use prompt::{ContextIndicators, PromptConfig, PromptWidget};
+// pub use reactive_ui_updates::{...};
+// pub use render_pipeline::LazyLoader;
 pub use real_time_updates::{
     OperationInfo, OperationStatus, ProgressIndicator, RealTimeStats, RealTimeStream,
     RealTimeUpdates, StreamData, StreamType,
 };
-pub use render_pipeline::LazyLoader;
 pub use ricecoder_storage::config::TuiConfig;
 // ProviderIntegration is now exported from ricecoder-providers
 pub use scrollview_widget::ScrollViewWidget;
@@ -243,4 +150,5 @@ pub use ui_components::{
     LoadingManager, OptimisticUpdater, VirtualContent, VirtualList, VirtualNode, VirtualRenderer,
     VirtualStyle,
 };
-pub use widgets::{ChatWidget, Message, MessageAuthor};
+// Old TEA system exports removed
+// pub use widgets::{ChatWidget, Message, MessageAuthor};

@@ -137,10 +137,12 @@ impl ZenProvider {
     }
 
     /// Create a new Zen provider with a custom HTTP client
-    /// API key is optional for free models
+    /// API key is optional for free models - defaults to "public" for free tier access
     pub fn with_client(client: Arc<Client>, api_key: Option<String>) -> Result<Self, ProviderError> {
+        // Use "public" as default API key for free model access (matches OpenCode's behavior)
+        let key = api_key.unwrap_or_else(|| "public".to_string());
         Ok(Self {
-            api_key: api_key.unwrap_or_default(),
+            api_key: key,
             client,
             base_url: "https://opencode.ai/zen/v1".to_string(),
             token_counter: Arc::new(TokenCounter::new()),
@@ -150,14 +152,16 @@ impl ZenProvider {
     }
 
     /// Create a new Zen provider with a custom HTTP client and base URL
-    /// API key is optional for free models
+    /// API key is optional for free models - defaults to "public" for free tier access
     pub fn with_client_and_base_url(
         client: Arc<Client>,
         api_key: Option<String>,
         base_url: String,
     ) -> Result<Self, ProviderError> {
+        // Use "public" as default API key for free model access (matches OpenCode's behavior)
+        let key = api_key.unwrap_or_else(|| "public".to_string());
         Ok(Self {
-            api_key: api_key.unwrap_or_default(),
+            api_key: key,
             client,
             base_url,
             token_counter: Arc::new(TokenCounter::new()),
@@ -461,24 +465,63 @@ impl Provider for ZenProvider {
     }
 
     fn models(&self) -> Vec<ModelInfo> {
-        // This is a blocking call, so we return a default set
-        // The async version is used in chat() and other async methods
+        // Return hardcoded models from OpenCode Zen
+        // These are the actual models available at https://opencode.ai/zen/v1/models
+        // Free models are prioritized for users without API keys
         vec![
+            // Free models (work with apiKey: "public")
             ModelInfo {
-                id: "zen-gpt4".to_string(),
-                name: "Zen GPT-4".to_string(),
+                id: "gpt-5-nano".to_string(),
+                name: "GPT-5 Nano".to_string(),
                 provider: "zen".to_string(),
-                context_window: 8192,
+                context_window: 400000,
                 capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
                 pricing: Some(crate::models::Pricing {
-                    input_per_1k_tokens: 0.03,
-                    output_per_1k_tokens: 0.06,
+                    input_per_1k_tokens: 0.0,
+                    output_per_1k_tokens: 0.0,
                 }),
-                is_free: false,
+                is_free: true,
             },
             ModelInfo {
-                id: "zen-gpt4-turbo".to_string(),
-                name: "Zen GPT-4 Turbo".to_string(),
+                id: "glm-4.7-free".to_string(),
+                name: "GLM 4.7".to_string(),
+                provider: "zen".to_string(),
+                context_window: 204800,
+                capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
+                pricing: Some(crate::models::Pricing {
+                    input_per_1k_tokens: 0.0,
+                    output_per_1k_tokens: 0.0,
+                }),
+                is_free: true,
+            },
+            ModelInfo {
+                id: "grok-code".to_string(),
+                name: "Grok Code Fast 1".to_string(),
+                provider: "zen".to_string(),
+                context_window: 256000,
+                capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
+                pricing: Some(crate::models::Pricing {
+                    input_per_1k_tokens: 0.0,
+                    output_per_1k_tokens: 0.0,
+                }),
+                is_free: true,
+            },
+            ModelInfo {
+                id: "big-pickle".to_string(),
+                name: "Big Pickle".to_string(),
+                provider: "zen".to_string(),
+                context_window: 128000,
+                capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
+                pricing: Some(crate::models::Pricing {
+                    input_per_1k_tokens: 0.0,
+                    output_per_1k_tokens: 0.0,
+                }),
+                is_free: true,
+            },
+            // Paid models
+            ModelInfo {
+                id: "gpt-5.2".to_string(),
+                name: "GPT-5.2".to_string(),
                 provider: "zen".to_string(),
                 context_window: 128000,
                 capabilities: vec![
@@ -488,8 +531,71 @@ impl Provider for ZenProvider {
                     Capability::Streaming,
                 ],
                 pricing: Some(crate::models::Pricing {
-                    input_per_1k_tokens: 0.01,
-                    output_per_1k_tokens: 0.03,
+                    input_per_1k_tokens: 1.75,
+                    output_per_1k_tokens: 14.0,
+                }),
+                is_free: false,
+            },
+            ModelInfo {
+                id: "gpt-5.1-codex".to_string(),
+                name: "GPT-5.1 Codex".to_string(),
+                provider: "zen".to_string(),
+                context_window: 128000,
+                capabilities: vec![Capability::Chat, Capability::Code, Capability::Streaming],
+                pricing: Some(crate::models::Pricing {
+                    input_per_1k_tokens: 1.07,
+                    output_per_1k_tokens: 8.5,
+                }),
+                is_free: false,
+            },
+            ModelInfo {
+                id: "claude-sonnet-4-5".to_string(),
+                name: "Claude Sonnet 4.5".to_string(),
+                provider: "zen".to_string(),
+                context_window: 200000,
+                capabilities: vec![
+                    Capability::Chat,
+                    Capability::Code,
+                    Capability::Vision,
+                    Capability::Streaming,
+                ],
+                pricing: Some(crate::models::Pricing {
+                    input_per_1k_tokens: 3.0,
+                    output_per_1k_tokens: 15.0,
+                }),
+                is_free: false,
+            },
+            ModelInfo {
+                id: "claude-sonnet-4".to_string(),
+                name: "Claude Sonnet 4".to_string(),
+                provider: "zen".to_string(),
+                context_window: 200000,
+                capabilities: vec![
+                    Capability::Chat,
+                    Capability::Code,
+                    Capability::Vision,
+                    Capability::Streaming,
+                ],
+                pricing: Some(crate::models::Pricing {
+                    input_per_1k_tokens: 3.0,
+                    output_per_1k_tokens: 15.0,
+                }),
+                is_free: false,
+            },
+            ModelInfo {
+                id: "gemini-3-flash".to_string(),
+                name: "Gemini 3 Flash".to_string(),
+                provider: "zen".to_string(),
+                context_window: 1000000,
+                capabilities: vec![
+                    Capability::Chat,
+                    Capability::Code,
+                    Capability::Vision,
+                    Capability::Streaming,
+                ],
+                pricing: Some(crate::models::Pricing {
+                    input_per_1k_tokens: 0.5,
+                    output_per_1k_tokens: 3.0,
                 }),
                 is_free: false,
             },
@@ -497,7 +603,7 @@ impl Provider for ZenProvider {
     }
 
     async fn chat(&self, request: ChatRequest) -> Result<ChatResponse, ProviderError> {
-        // Get models from cache or fetch from API
+        // Get models from cache, API, or fall back to hardcoded defaults
         let models = {
             let mut cache = self.models_cache.lock().await;
             if let Some(models) = cache.get() {
@@ -505,9 +611,17 @@ impl Provider for ZenProvider {
                 models
             } else {
                 debug!("Cache miss, fetching models from API");
-                let models = self.fetch_models_from_api().await?;
-                cache.set(models.clone());
-                models
+                match self.fetch_models_from_api().await {
+                    Ok(models) => {
+                        cache.set(models.clone());
+                        models
+                    }
+                    Err(e) => {
+                        debug!("API fetch failed: {}, using hardcoded models", e);
+                        // Fall back to hardcoded models from models() method
+                        self.models()
+                    }
+                }
             }
         };
 
@@ -544,10 +658,15 @@ impl Provider for ZenProvider {
         let mut retries = 0;
         let max_retries = 3;
 
+        // Determine the correct endpoint based on model type
+        let endpoint = self.endpoint_for_model(model_name);
+        let url = format!("{}{}", self.base_url, endpoint);
+        debug!("Using endpoint {} for model {}", endpoint, model_name);
+
         loop {
             let response = self
                 .client
-                .post(format!("{}/chat/completions", self.base_url))
+                .post(&url)
                 .header("Authorization", self.get_auth_header())
                 .header("Content-Type", "application/json")
                 .json(&zen_request)
@@ -608,19 +727,31 @@ impl Provider for ZenProvider {
         // Enable streaming in the request
         request.stream = true;
 
+        // Extract model name for endpoint determination
+        let model_id = &request.model;
+        let model_name = if model_id.contains('/') {
+            model_id.split('/').nth(1).unwrap_or(model_id.as_str())
+        } else {
+            model_id.as_str()
+        };
+
+        // Determine the correct endpoint based on model type
+        let endpoint = self.endpoint_for_model(model_name);
+        let url = format!("{}{}", self.base_url, endpoint);
+
         // Send streaming request to Zen API
         let mut retries = 0;
         let max_retries = 3;
 
         loop {
             debug!(
-                "Sending streaming chat request to Zen API (attempt {})",
-                retries + 1
+                "Sending streaming chat request to Zen API {} (attempt {})",
+                url, retries + 1
             );
 
             let response = self
                 .client
-                .post(format!("{}/chat/completions", self.base_url))
+                .post(&url)
                 .header("Authorization", self.get_auth_header())
                 .json(&request)
                 .timeout(Duration::from_secs(120))

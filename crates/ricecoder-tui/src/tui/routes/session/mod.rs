@@ -3,19 +3,20 @@
 //! This module contains UI components for the session route,
 //! including dialogs, header, footer, sidebar, and the main session view.
 
-pub mod dialog_fork;
-pub mod dialog_message;
-pub mod dialog_subagent;
-pub mod dialog_timeline;
+// Dialogs temporarily commented out - need menu stub improvements
+// pub mod dialog_fork;
+// pub mod dialog_message;
+// pub mod dialog_subagent;
+// pub mod dialog_timeline;
 pub mod footer;
 pub mod header;
 pub mod sidebar;
 
-// Dialogs
-pub use dialog_fork::DialogFork;
-pub use dialog_message::{DialogMessage, MessageAction};
-pub use dialog_subagent::{DialogSubagent, SubagentAction};
-pub use dialog_timeline::DialogTimeline;
+// Dialogs (temporarily commented)
+// pub use dialog_fork::DialogFork;
+// pub use dialog_message::{DialogMessage, MessageAction};
+// pub use dialog_subagent::{DialogSubagent, SubagentAction};
+// pub use dialog_timeline::DialogTimeline;
 
 // Session components
 pub use footer::{KeybindHint, SessionFooter, SessionFooterTheme};

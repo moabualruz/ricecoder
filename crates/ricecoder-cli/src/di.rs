@@ -3,8 +3,9 @@
 //! This module provides factory-return DI pattern for CLI services.
 //! Services are registered via `inventory::submit!` and collected by ricecoder-di.
 
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use ricecoder_common::di::{ServiceEntry, ServiceFactory};
+use ricecoder_di::DIContainer;
 use crate::{
     BrandingManager,
     CommandRouter,
@@ -12,27 +13,26 @@ use crate::{
     lifecycle::LifecycleManager,
 };
 
+/// Global DI container instance
+static CONTAINER: OnceLock<DIContainer> = OnceLock::new();
+
 /// Get a service from the global DI container.
-///
-/// Note: This is a temporary stub. The proper implementation should use
-/// an application container passed through the call stack.
-/// Currently returns None as container-based DI is not yet fully wired.
 pub fn get_service<T>() -> Option<Arc<T>>
 where
     T: Send + Sync + 'static,
 {
-    // TODO: Wire up proper container-based DI
-    // The application should create a container at startup and pass it through
-    None
+    CONTAINER.get().and_then(|container| container.resolve::<T>().ok())
 }
 
 /// Initialize the DI container.
 ///
-/// Note: This is a temporary stub. The proper implementation should
-/// create and configure an application container with all required services.
+/// Creates and configures the application container with all required services.
 pub fn initialize_di_container() -> Result<(), String> {
-    // TODO: Wire up proper container initialization
-    // For now, services are created on-demand via factory pattern
+    let container = ricecoder_di::create_application_container()
+        .map_err(|e| format!("Failed to create DI container: {}", e))?;
+    
+    CONTAINER.set(container).map_err(|_| "DI container already initialized".to_string())?;
+    
     Ok(())
 }
 

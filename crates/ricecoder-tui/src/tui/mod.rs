@@ -31,8 +31,8 @@ pub use did_you_know::DidYouKnow;
 pub use routes::{
     // Home route
     Home, HomeState, HomeTheme, HomeView, McpStatus,
-    // Session dialogs
-    DialogFork, DialogMessage, DialogSubagent, DialogTimeline, MessageAction, SubagentAction,
+    // Session dialogs (temporarily commented out)
+    // DialogFork, DialogMessage, DialogSubagent, DialogTimeline, MessageAction, SubagentAction,
     // Session components
     ItemStatus, KeybindHint, SessionFooter, SessionFooterTheme, SessionHeader, SessionHeaderTheme,
     SessionSidebar, SidebarItem, SidebarSection, SidebarTheme,

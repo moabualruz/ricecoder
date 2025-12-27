@@ -288,7 +288,7 @@ impl RealTimeUpdates {
                     // Handle different data types
                     match &data {
                         StreamData::Error(error) => {
-                            let _ = self.error_manager.handle_error(error.clone()).await;
+                            let _ = self.error_manager.handle_error(error.clone());
                         }
                         StreamData::Completion(_) => {
                             // Could trigger cleanup or notifications

@@ -548,6 +548,28 @@ impl AppContext {
         // Auto-detect and register providers based on environment variables
         let mut provider_infos = Vec::new();
 
+        // Always add Zen provider (works without API key - free tier)
+        if let Ok(provider) = ZenProvider::new(std::env::var("ZEN_API_KEY").ok()) {
+            let models: Vec<ModelDisplayInfo> = provider
+                .models()
+                .into_iter()
+                .map(|m| ModelDisplayInfo {
+                    id: m.id.clone(),
+                    name: m.name.clone(),
+                    description: None,
+                })
+                .collect();
+            let default_model = models.first().map(|m| m.id.clone());
+            provider_infos.push(ProviderInfo {
+                id: "zen".to_string(),
+                name: "OpenCode Zen".to_string(),
+                connected: true,
+                models,
+                default_model,
+            });
+            let _ = registry.register(std::sync::Arc::new(provider));
+        }
+
         // Check for Anthropic API key
         if let Ok(api_key) = std::env::var("ANTHROPIC_API_KEY") {
             if !api_key.is_empty() {

@@ -216,21 +216,88 @@ impl ChatCommand {
     async fn create_provider(
         &self,
     ) -> CliResult<std::sync::Arc<dyn ricecoder_providers::provider::Provider>> {
-        // Get API key from environment or use empty string for free models
-        let api_key = std::env::var("ZEN_API_KEY")
-            .or_else(|_| std::env::var("RICECODER_API_KEY"))
-            .ok();
+        use ricecoder_providers::{
+            AnthropicProvider, GoogleProvider, OpenAiProvider, ZenProvider,
+            CohereProvider, TogetherProvider, ReplicateProvider, GcpVertexProvider, QwenProvider,
+        };
+
+        let provider_name = self.get_provider()?;
 
         // Create and return the appropriate provider based on configuration
-        match self.get_provider()?.as_str() {
-            "zen" => {
-                let zen_provider = ricecoder_providers::ZenProvider::new(api_key).map_err(|e| {
-                    CliError::Provider(format!("Failed to create Zen provider: {}", e))
-                })?;
-                Ok(std::sync::Arc::new(zen_provider))
+        match provider_name.as_str() {
+            "anthropic" => {
+                let api_key = std::env::var("ANTHROPIC_API_KEY")
+                    .map_err(|_| CliError::Provider("ANTHROPIC_API_KEY not set".to_string()))?;
+                let provider = AnthropicProvider::with_default_models(api_key)
+                    .map_err(|e| CliError::Provider(format!("Failed to create Anthropic provider: {}", e)))?;
+                Ok(std::sync::Arc::new(provider))
             }
-            provider_name => Err(CliError::Provider(format!(
-                "Unsupported provider: {}",
+            "openai" => {
+                let api_key = std::env::var("OPENAI_API_KEY")
+                    .map_err(|_| CliError::Provider("OPENAI_API_KEY not set".to_string()))?;
+                let provider = OpenAiProvider::with_default_models(api_key)
+                    .map_err(|e| CliError::Provider(format!("Failed to create OpenAI provider: {}", e)))?;
+                Ok(std::sync::Arc::new(provider))
+            }
+            "google" => {
+                let api_key = std::env::var("GOOGLE_API_KEY")
+                    .or_else(|_| std::env::var("GEMINI_API_KEY"))
+                    .map_err(|_| CliError::Provider("GOOGLE_API_KEY or GEMINI_API_KEY not set".to_string()))?;
+                let provider = GoogleProvider::with_default_models(api_key)
+                    .map_err(|e| CliError::Provider(format!("Failed to create Google provider: {}", e)))?;
+                Ok(std::sync::Arc::new(provider))
+            }
+            "cohere" => {
+                let api_key = std::env::var("COHERE_API_KEY")
+                    .map_err(|_| CliError::Provider("COHERE_API_KEY not set".to_string()))?;
+                let provider = CohereProvider::with_default_models(api_key)
+                    .map_err(|e| CliError::Provider(format!("Failed to create Cohere provider: {}", e)))?;
+                Ok(std::sync::Arc::new(provider))
+            }
+            "together" => {
+                let api_key = std::env::var("TOGETHER_API_KEY")
+                    .map_err(|_| CliError::Provider("TOGETHER_API_KEY not set".to_string()))?;
+                let provider = TogetherProvider::with_default_models(api_key)
+                    .map_err(|e| CliError::Provider(format!("Failed to create Together provider: {}", e)))?;
+                Ok(std::sync::Arc::new(provider))
+            }
+            "replicate" => {
+                let api_key = std::env::var("REPLICATE_API_TOKEN")
+                    .map_err(|_| CliError::Provider("REPLICATE_API_TOKEN not set".to_string()))?;
+                let provider = ReplicateProvider::with_default_models(api_key)
+                    .map_err(|e| CliError::Provider(format!("Failed to create Replicate provider: {}", e)))?;
+                Ok(std::sync::Arc::new(provider))
+            }
+            "gcp_vertex" | "vertex" => {
+                let project_id = std::env::var("GCP_PROJECT_ID")
+                    .or_else(|_| std::env::var("GOOGLE_CLOUD_PROJECT"))
+                    .map_err(|_| CliError::Provider("GCP_PROJECT_ID not set".to_string()))?;
+                let location = std::env::var("GCP_LOCATION").unwrap_or_else(|_| "us-central1".to_string());
+                let access_token = std::env::var("GOOGLE_ACCESS_TOKEN")
+                    .or_else(|_| std::env::var("GCP_ACCESS_TOKEN"))
+                    .map_err(|_| CliError::Provider("GOOGLE_ACCESS_TOKEN not set".to_string()))?;
+                let provider = GcpVertexProvider::with_default_models(project_id, location, access_token)
+                    .map_err(|e| CliError::Provider(format!("Failed to create GCP Vertex provider: {}", e)))?;
+                Ok(std::sync::Arc::new(provider))
+            }
+            "qwen" => {
+                let api_key = std::env::var("DASHSCOPE_API_KEY")
+                    .or_else(|_| std::env::var("QWEN_API_KEY"))
+                    .map_err(|_| CliError::Provider("DASHSCOPE_API_KEY or QWEN_API_KEY not set".to_string()))?;
+                let provider = QwenProvider::dashscope_intl_with_default_models(api_key)
+                    .map_err(|e| CliError::Provider(format!("Failed to create Qwen provider: {}", e)))?;
+                Ok(std::sync::Arc::new(provider))
+            }
+            "zen" => {
+                let api_key = std::env::var("ZEN_API_KEY")
+                    .or_else(|_| std::env::var("RICECODER_API_KEY"))
+                    .ok();
+                let provider = ZenProvider::new(api_key)
+                    .map_err(|e| CliError::Provider(format!("Failed to create Zen provider: {}", e)))?;
+                Ok(std::sync::Arc::new(provider))
+            }
+            _ => Err(CliError::Provider(format!(
+                "Unsupported provider: '{}'. Supported: anthropic, openai, google, cohere, together, replicate, gcp_vertex, qwen, zen",
                 provider_name
             ))),
         }
