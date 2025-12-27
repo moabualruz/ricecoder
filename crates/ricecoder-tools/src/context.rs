@@ -4,6 +4,7 @@
 
 use std::collections::HashMap;
 use std::fmt;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use serde::{Deserialize, Serialize};
@@ -28,6 +29,9 @@ pub struct ToolContext {
     
     /// Abort signal for cancellation
     pub abort: Arc<tokio::sync::Notify>,
+    
+    /// Abort state flag (for non-blocking checks)
+    aborted: Arc<AtomicBool>,
     
     /// Optional call ID for specific tool invocation
     pub call_id: Option<String>,
@@ -60,6 +64,7 @@ impl ToolContext {
             message_id,
             agent,
             abort: Arc::new(tokio::sync::Notify::new()),
+            aborted: Arc::new(AtomicBool::new(false)),
             call_id: None,
             extra: None,
             metadata_callback: Arc::new(RwLock::new(None)),
@@ -117,8 +122,7 @@ impl ToolContext {
 
     /// Check if abort has been signaled
     pub fn is_aborted(&self) -> bool {
-        // Non-blocking check: if notified() completes immediately, abort was signaled
-        self.abort.notified().now_or_never().is_some()
+        self.aborted.load(Ordering::SeqCst)
     }
 
     /// Wait for abort signal
@@ -128,6 +132,7 @@ impl ToolContext {
 
     /// Signal abort
     pub fn signal_abort(&self) {
+        self.aborted.store(true, Ordering::SeqCst);
         self.abort.notify_waiters();
     }
 }

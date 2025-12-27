@@ -159,7 +159,8 @@ mod tests {
     #[test]
     fn test_normalize_mistral_tool_id() {
         assert_eq!(normalize_mistral_tool_id("call_123"), "call12300");
-        assert_eq!(normalize_mistral_tool_id("verylongid123"), "verylong1");
+        // "verylongid123" → filter alphanumeric → "verylongid123" → take 9 → "verylongi"
+        assert_eq!(normalize_mistral_tool_id("verylongid123"), "verylongi");
     }
 
     #[test]

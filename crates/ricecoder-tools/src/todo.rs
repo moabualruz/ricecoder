@@ -1112,7 +1112,7 @@ mod tests {
         // Write initial todos
         let todo1 = Todo::new("1", "First", TodoStatus::Pending, TodoPriority::High).unwrap();
         tools
-            .write_todos(TodowriteInput { todos: vec![todo1] })
+            .write_todos(TodowriteInput { todos: vec![todo1] }, None)
             .unwrap();
 
         // Update the todo
@@ -1126,23 +1126,23 @@ mod tests {
         let write_result = tools
             .write_todos(TodowriteInput {
                 todos: vec![updated_todo],
-            })
+            }, None)
             .unwrap();
 
-        assert_eq!(write_result.created, 0);
-        assert_eq!(write_result.updated, 1);
+        assert_eq!(write_result.metadata.created.unwrap(), 0);
+        assert_eq!(write_result.metadata.updated.unwrap(), 1);
 
         // Verify update
         let read_result = tools
             .read_todos(TodoreadInput {
                 status_filter: None,
                 priority_filter: None,
-            })
+            }, None)
             .unwrap();
 
-        assert_eq!(read_result.todos.len(), 1);
-        assert_eq!(read_result.todos[0].content, "First (updated)");
-        assert_eq!(read_result.todos[0].status, TodoStatus::Completed);
+        assert_eq!(read_result.metadata.todos.len(), 1);
+        assert_eq!(read_result.metadata.todos[0].content, "First (updated)");
+        assert_eq!(read_result.metadata.todos[0].status, TodoStatus::Completed);
     }
 
     #[test]
@@ -1164,7 +1164,7 @@ mod tests {
         tools
             .write_todos(TodowriteInput {
                 todos: vec![todo1, todo2],
-            })
+            }, None)
             .unwrap();
 
         // Filter by status
@@ -1172,11 +1172,11 @@ mod tests {
             .read_todos(TodoreadInput {
                 status_filter: Some(TodoStatus::Completed),
                 priority_filter: None,
-            })
+            }, None)
             .unwrap();
 
-        assert_eq!(read_result.todos.len(), 1);
-        assert_eq!(read_result.todos[0].content, "Completed");
+        assert_eq!(read_result.metadata.todos.len(), 1);
+        assert_eq!(read_result.metadata.todos[0].content, "Completed");
     }
 
     #[test]
@@ -1192,7 +1192,7 @@ mod tests {
         tools
             .write_todos(TodowriteInput {
                 todos: vec![todo1, todo2],
-            })
+            }, None)
             .unwrap();
 
         // Filter by priority
@@ -1200,11 +1200,11 @@ mod tests {
             .read_todos(TodoreadInput {
                 status_filter: None,
                 priority_filter: Some(TodoPriority::High),
-            })
+            }, None)
             .unwrap();
 
-        assert_eq!(read_result.todos.len(), 1);
-        assert_eq!(read_result.todos[0].content, "High");
+        assert_eq!(read_result.metadata.todos.len(), 1);
+        assert_eq!(read_result.metadata.todos[0].content, "High");
     }
 
     #[tokio::test]
@@ -1216,12 +1216,12 @@ mod tests {
         // Write todos with timeout enforcement (should complete well within 500ms)
         let todo = Todo::new("1", "Test", TodoStatus::Pending, TodoPriority::High).unwrap();
         let result = tools
-            .write_todos_with_timeout(TodowriteInput { todos: vec![todo] })
+            .write_todos_with_timeout(TodowriteInput { todos: vec![todo] }, None)
             .await;
 
         assert!(result.is_ok());
         let output = result.unwrap();
-        assert_eq!(output.created, 1);
+        assert_eq!(output.metadata.created.unwrap(), 1);
     }
 
     #[tokio::test]
@@ -1233,7 +1233,7 @@ mod tests {
         // Write a todo first
         let todo = Todo::new("1", "Test", TodoStatus::Pending, TodoPriority::High).unwrap();
         tools
-            .write_todos(TodowriteInput { todos: vec![todo] })
+            .write_todos(TodowriteInput { todos: vec![todo] }, None)
             .unwrap();
 
         // Read todos with timeout enforcement (should complete well within 500ms)
@@ -1241,12 +1241,12 @@ mod tests {
             .read_todos_with_timeout(TodoreadInput {
                 status_filter: None,
                 priority_filter: None,
-            })
+            }, None)
             .await;
 
         assert!(result.is_ok());
         let output = result.unwrap();
-        assert_eq!(output.todos.len(), 1);
+        assert_eq!(output.metadata.todos.len(), 1);
     }
 
     #[test]
@@ -1263,7 +1263,7 @@ mod tests {
         tools
             .write_todos(TodowriteInput {
                 todos: vec![todo1, todo2],
-            })
+            }, None)
             .unwrap();
 
         // Filter by cancelled status
@@ -1271,12 +1271,12 @@ mod tests {
             .read_todos(TodoreadInput {
                 status_filter: Some(TodoStatus::Cancelled),
                 priority_filter: None,
-            })
+            }, None)
             .unwrap();
 
-        assert_eq!(read_result.todos.len(), 1);
-        assert_eq!(read_result.todos[0].content, "Cancelled task");
-        assert_eq!(read_result.todos[0].status, TodoStatus::Cancelled);
+        assert_eq!(read_result.metadata.todos.len(), 1);
+        assert_eq!(read_result.metadata.todos[0].content, "Cancelled task");
+        assert_eq!(read_result.metadata.todos[0].status, TodoStatus::Cancelled);
     }
 
     #[test]
@@ -1292,7 +1292,7 @@ mod tests {
 
         let json = serde_json::to_string(&todo).unwrap();
         assert!(json.contains(r#""content":"Implement feature""#));
-        assert!(json.contains(r#""status":"inprogress""#));
+        assert!(json.contains(r#""status":"in_progress""#));
         assert!(json.contains(r#""priority":"high""#));
 
         // Test deserialization (using "content" field)

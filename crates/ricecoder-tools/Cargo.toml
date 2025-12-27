@@ -28,6 +28,8 @@ url = { workspace = true }
 dirs = { workspace = true }
 regex = { workspace = true }
 uuid = { workspace = true }
+glob = { workspace = true }
+ignore = { workspace = true }
 ricecoder-mcp = { workspace = true }
 ricecoder-files = { workspace = true }
 

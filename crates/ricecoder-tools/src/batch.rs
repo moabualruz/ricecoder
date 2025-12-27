@@ -703,9 +703,10 @@ mod tests {
         );
         let batch_tool = BatchTool::new(executor);
 
-        // Create 15 invocations but limit to 5 concurrent
+        // Create 10 invocations (max allowed) but limit to 5 concurrent
+        // Note: MAX_CONCURRENT_INVOCATIONS=10 is the hard limit for total invocations
         let input = BatchInput {
-            invocations: (0..15)
+            invocations: (0..10)
                 .map(|_| ToolInvocation {
                     tool: "tool".to_string(),
                     input: serde_json::json!({}),
@@ -717,8 +718,8 @@ mod tests {
         };
 
         let result = batch_tool.execute_batch(&input, None, None).await.unwrap();
-        // All should still complete even with chunking
-        assert_eq!(result.total_count, 15);
+        // All should still complete even with chunking (5 at a time)
+        assert_eq!(result.total_count, 10);
         assert!(result.all_succeeded);
     }
 }

@@ -276,8 +276,11 @@ impl WriteTool {
                     .map_err(|e| WriteError::PathResolutionFailed(e.to_string()))?
                     .join(path.file_name().unwrap())
             } else {
-                // Parent doesn't exist - create it to check containment
-                return Ok(path.starts_with(&canonical_workspace));
+                // Parent doesn't exist yet - check without canonicalization
+                // On Windows, canonicalize() adds \\?\ prefix which breaks starts_with
+                // For nested paths like "subdir/nested/file.txt", we check if the 
+                // resolved path starts with the workspace root (non-canonical comparison)
+                return Ok(path.starts_with(&self.workspace_root));
             }
         };
         

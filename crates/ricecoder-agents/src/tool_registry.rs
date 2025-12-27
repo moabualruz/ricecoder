@@ -3,10 +3,16 @@
 //! This module provides a registry for discovering and managing tools that agents can invoke.
 //! Tools are registered with metadata about their capabilities and invocation interface.
 
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info};
+
+use crate::tool_invokers::{
+    EditToolInvoker, GlobToolInvoker, GrepToolInvoker, ListToolInvoker, PatchToolInvoker,
+    ReadToolInvoker, TodoreadToolInvoker, TodowriteToolInvoker, WebfetchToolInvoker,
+    WebsearchToolInvoker, WriteToolInvoker,
+};
 
 /// Metadata about a registered tool
 ///
@@ -199,14 +205,48 @@ impl ToolRegistry {
     /// Discover built-in tools at startup
     ///
     /// This method initializes the registry with built-in tools from ricecoder-tools.
-    /// It registers webfetch, patch, todowrite, todoread, and websearch tools.
-    pub fn discover_builtin_tools(&mut self) -> Result<(), String> {
+    /// It registers webfetch, patch, todowrite, todoread, websearch, read, write, and edit tools.
+    ///
+    /// # Arguments
+    ///
+    /// * `workspace_root` - The workspace root directory for file operations
+    pub fn discover_builtin_tools(&mut self, workspace_root: PathBuf) -> Result<(), String> {
         info!("Discovering built-in tools");
 
-        // Built-in tools will be registered here as they are implemented
-        // For now, this is a placeholder that can be extended
-        debug!("Built-in tool discovery completed");
+        // Register file operation tools
+        self.register(Arc::new(ReadToolInvoker));
+        self.register(Arc::new(WriteToolInvoker::new(workspace_root.clone())));
+        self.register(Arc::new(EditToolInvoker));
+
+        // Register file system tools (list, glob, grep)
+        self.register(Arc::new(ListToolInvoker::new(workspace_root.clone())));
+        self.register(Arc::new(GlobToolInvoker::new(workspace_root.clone())));
+        self.register(Arc::new(GrepToolInvoker::new(workspace_root)));
+
+        // Register webfetch tool
+        self.register(Arc::new(WebfetchToolInvoker));
+
+        // Register patch tool
+        self.register(Arc::new(PatchToolInvoker));
+
+        // Register todo tools
+        self.register(Arc::new(TodowriteToolInvoker));
+        self.register(Arc::new(TodoreadToolInvoker));
+
+        // Register websearch tool
+        self.register(Arc::new(WebsearchToolInvoker));
+
+        info!(tool_count = self.tool_count(), "Built-in tool discovery completed");
         Ok(())
+    }
+
+    /// Discover built-in tools using current working directory as workspace
+    ///
+    /// Convenience method that uses the current working directory as the workspace root.
+    pub fn discover_builtin_tools_cwd(&mut self) -> Result<(), String> {
+        let workspace_root = std::env::current_dir()
+            .map_err(|e| format!("Failed to get current directory: {}", e))?;
+        self.discover_builtin_tools(workspace_root)
     }
 
     /// Load tool configuration from project settings
@@ -415,8 +455,11 @@ mod tests {
     #[test]
     fn test_discover_builtin_tools() {
         let mut registry = ToolRegistry::new();
-        let result = registry.discover_builtin_tools();
+        let temp_dir = std::env::temp_dir();
+        let result = registry.discover_builtin_tools(temp_dir);
         assert!(result.is_ok());
+        // Should have registered 11 tools: read, write, edit, list, glob, grep, webfetch, patch, todowrite, todoread, websearch
+        assert_eq!(registry.tool_count(), 11);
     }
 
     #[test]

@@ -291,7 +291,7 @@ mod tests {
     #[test]
     fn test_did_you_know_creation() {
         let widget = DidYouKnow::new();
-        assert!(widget.tip_index < TIPS.len());
+        assert!(widget.tip_index < super::get_tips().len());
     }
 
     #[test]
@@ -300,6 +300,6 @@ mod tests {
         let first_index = widget.tip_index;
         widget.randomize();
         // Might be same by chance, but verifies it's valid
-        assert!(widget.tip_index < TIPS.len());
+        assert!(widget.tip_index < super::get_tips().len());
     }
 }

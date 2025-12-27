@@ -99,32 +99,33 @@ proptest! {
 
         // Write todos
         let write_result = tools
-            .write_todos(TodowriteInput { todos: todos.clone() })
+            .write_todos(TodowriteInput { todos: todos.clone() }, None)
             .expect("Failed to write todos");
 
         // Verify write result
-        prop_assert_eq!(write_result.created, todos.len());
-        prop_assert_eq!(write_result.updated, 0);
+        prop_assert_eq!(write_result.metadata.created, Some(todos.len()));
+        prop_assert_eq!(write_result.metadata.updated, Some(0));
 
         // Read todos back
         let read_result = tools
             .read_todos(TodoreadInput {
                 status_filter: None,
                 priority_filter: None,
-            })
+            }, None)
             .expect("Failed to read todos");
 
         // Verify all todos were persisted
-        prop_assert_eq!(read_result.todos.len(), todos.len());
+        prop_assert_eq!(read_result.metadata.todos.len(), todos.len());
 
         // Verify each todo has identical data
         let written_ids: HashSet<String> = todos.iter().map(|t| t.id.clone()).collect();
-        let read_ids: HashSet<String> = read_result.todos.iter().map(|t| t.id.clone()).collect();
+        let read_ids: HashSet<String> = read_result.metadata.todos.iter().map(|t| t.id.clone()).collect();
         prop_assert_eq!(written_ids, read_ids);
 
         // Verify each todo's data is identical
         for written_todo in &todos {
             let read_todo = read_result
+                .metadata
                 .todos
                 .iter()
                 .find(|t| t.id == written_todo.id)
@@ -177,35 +178,36 @@ proptest! {
         let write_result1 = tools
             .write_todos(TodowriteInput {
                 todos: todos_batch1.clone(),
-            })
+            }, None)
             .expect("Failed to write first batch");
 
-        prop_assert_eq!(write_result1.created, todos_batch1.len());
+        prop_assert_eq!(write_result1.metadata.created, Some(todos_batch1.len()));
 
         // Write second batch
         let write_result2 = tools
             .write_todos(TodowriteInput {
                 todos: todos_batch2_renamed.clone(),
-            })
+            }, None)
             .expect("Failed to write second batch");
 
-        prop_assert_eq!(write_result2.created, todos_batch2_renamed.len());
+        prop_assert_eq!(write_result2.metadata.created, Some(todos_batch2_renamed.len()));
 
         // Read all todos
         let read_result = tools
             .read_todos(TodoreadInput {
                 status_filter: None,
                 priority_filter: None,
-            })
+            }, None)
             .expect("Failed to read todos");
 
         // Verify all todos from both batches are present
         let total_expected = todos_batch1.len() + todos_batch2_renamed.len();
-        prop_assert_eq!(read_result.todos.len(), total_expected);
+        prop_assert_eq!(read_result.metadata.todos.len(), total_expected);
 
         // Verify all todos from batch 1
         for written_todo in &todos_batch1 {
             let read_todo = read_result
+                .metadata
                 .todos
                 .iter()
                 .find(|t| t.id == written_todo.id)
@@ -220,6 +222,7 @@ proptest! {
         // Verify all todos from batch 2
         for written_todo in &todos_batch2_renamed {
             let read_todo = read_result
+                .metadata
                 .todos
                 .iter()
                 .find(|t| t.id == written_todo.id)
@@ -253,7 +256,7 @@ proptest! {
         tools
             .write_todos(TodowriteInput {
                 todos: vec![original_todo.clone()],
-            })
+            }, None)
             .expect("Failed to write original todo");
 
         // Create updated todo with same ID but different status/priority
@@ -270,26 +273,26 @@ proptest! {
         let write_result = tools
             .write_todos(TodowriteInput {
                 todos: vec![updated_todo.clone()],
-            })
+            }, None)
             .expect("Failed to write updated todo");
 
         // Verify it was an update, not a create
-        prop_assert_eq!(write_result.created, 0);
-        prop_assert_eq!(write_result.updated, 1);
+        prop_assert_eq!(write_result.metadata.created, Some(0));
+        prop_assert_eq!(write_result.metadata.updated, Some(1));
 
         // Read todos
         let read_result = tools
             .read_todos(TodoreadInput {
                 status_filter: None,
                 priority_filter: None,
-            })
+            }, None)
             .expect("Failed to read todos");
 
         // Verify only one todo exists
-        prop_assert_eq!(read_result.todos.len(), 1);
+        prop_assert_eq!(read_result.metadata.todos.len(), 1);
 
         // Verify the todo has the updated data
-        let read_todo = &read_result.todos[0];
+        let read_todo = &read_result.metadata.todos[0];
         prop_assert_eq!(&read_todo.id, &updated_todo.id);
         prop_assert_eq!(&read_todo.content, &updated_todo.content);
         prop_assert_eq!(read_todo.status, new_status);
@@ -329,7 +332,7 @@ proptest! {
 
         // Write todos
         tools
-            .write_todos(TodowriteInput { todos: todos.clone() })
+            .write_todos(TodowriteInput { todos: todos.clone() }, None)
             .expect("Failed to write todos");
 
         // Read with filters
@@ -337,11 +340,11 @@ proptest! {
             .read_todos(TodoreadInput {
                 status_filter: filter_status,
                 priority_filter: filter_priority,
-            })
+            }, None)
             .expect("Failed to read todos");
 
         // Verify all returned todos match the filters
-        for read_todo in &read_result.todos {
+        for read_todo in &read_result.metadata.todos {
             if let Some(status) = filter_status {
                 prop_assert_eq!(read_todo.status, status);
             }

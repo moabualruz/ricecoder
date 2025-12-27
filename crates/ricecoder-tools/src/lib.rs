@@ -52,6 +52,7 @@
 //! }
 //! ```
 
+pub mod bash;
 pub mod batch;
 pub mod context;
 pub mod di;
@@ -59,6 +60,9 @@ pub mod edit;
 pub mod error;
 pub mod filetype;
 pub mod format;
+pub mod glob;
+pub mod grep;
+pub mod list;
 pub mod locale;
 pub mod lsp;
 pub mod patch;
@@ -73,6 +77,7 @@ pub mod webfetch;
 pub mod write;
 
 // Re-export commonly used types
+pub use bash::{BashInput, BashOutput, BashTool};
 pub use batch::{BatchInput, BatchOutput, BatchTool, InvocationResult, ToolInvocation};
 pub use context::{MetadataUpdate, ToolContext};
 pub use edit::{
@@ -100,3 +105,8 @@ pub use tool::{
     ParameterSchema, Tool, ToolDefinition, ToolExecutionResult, ToolParameters, ToolWrapper,
 };
 pub use write::{WriteError, WriteInput, WriteMetadata, WriteOutput, WriteTool};
+
+// File system tools
+pub use glob::{GlobInput, GlobOutput, GlobTool};
+pub use grep::{GrepInput, GrepMatch, GrepOutput, GrepTool};
+pub use list::{ListInput, ListOutput, ListTool};

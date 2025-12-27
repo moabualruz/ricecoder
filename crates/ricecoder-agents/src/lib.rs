@@ -32,6 +32,7 @@
 #![warn(missing_docs)]
 
 pub mod agents;
+pub mod chat;
 pub mod coordinator;
 pub mod domain;
 pub mod error;
@@ -57,6 +58,10 @@ mod coordinator_properties;
 mod orchestrator_properties;
 
 pub use agents::{Agent, CodeReviewAgent, WebAgent};
+pub use chat::{
+    ApprovalCallback, ChatContext, ChatError, ChatMessage, ChatResponse, ChatService,
+    ContentBlock, Role, StopReason, ToolApprovalInfo, ToolCall, TrackedFile, Usage,
+};
 pub use coordinator::AgentCoordinator;
 pub use error::AgentError;
 pub use executor::{ExecutionConfig, ExecutionResult, ParallelExecutor};
@@ -72,8 +77,9 @@ pub use orchestrator::AgentOrchestrator;
 pub use registry::AgentRegistry;
 pub use scheduler::{AgentScheduler, ExecutionPhase, ExecutionSchedule, TaskDAG};
 pub use tool_invokers::{
-    ExtensibleToolInvoker, PatchToolInvoker, TodoreadToolInvoker, TodowriteToolInvoker,
-    ToolBackend, WebfetchToolInvoker, WebsearchToolInvoker,
+    ExtensibleToolInvoker, GlobToolInvoker, GrepToolInvoker, ListToolInvoker, PatchToolInvoker,
+    ReadToolInvoker, TodoreadToolInvoker, TodowriteToolInvoker, ToolBackend, WebfetchToolInvoker,
+    WebsearchToolInvoker, WriteToolInvoker, EditToolInvoker,
 };
 pub use tool_registry::{ToolInvoker, ToolMetadata, ToolRegistry};
 pub use tools::{

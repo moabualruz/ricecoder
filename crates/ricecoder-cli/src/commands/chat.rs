@@ -250,8 +250,8 @@ impl ChatCommand {
             println!("{}", style.info("Type 'exit' to quit, 'help' for commands"));
             println!();
 
-            // Use the chat session's built-in REPL
-            session.start()?;
+            // Use the chat session's built-in REPL (async version)
+            session.start_async().await?;
         }
 
         Ok(())

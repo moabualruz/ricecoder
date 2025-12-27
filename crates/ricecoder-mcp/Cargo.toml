@@ -30,7 +30,8 @@ base64 = { workspace = true }
 # For ricecoder integration
 ricecoder-storage = { workspace = true }
 ricecoder-permissions = { workspace = true }
-ricecoder-agents = { workspace = true }
+# NOTE: ricecoder-agents removed to break cyclic dependency
+# ricecoder-agents = { workspace = true }
 ricecoder-files = { workspace = true }
 ricecoder-security = { workspace = true }
 ricecoder-cache = { workspace = true }

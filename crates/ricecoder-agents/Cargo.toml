@@ -24,6 +24,7 @@ ricecoder-storage = { workspace = true }
 ricecoder-providers = { workspace = true }
 ricecoder-sessions = { workspace = true }
 ricecoder-security = { workspace = true }
+ricecoder-tools = { workspace = true }
 jsonschema = { workspace = true }
 serde_yaml = { workspace = true }
 reqwest = { workspace = true }

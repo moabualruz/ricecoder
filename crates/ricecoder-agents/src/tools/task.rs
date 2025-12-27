@@ -104,6 +104,8 @@ pub struct TaskTool {
     tasks: Arc<RwLock<HashMap<String, TaskHandle>>>,
     /// Session manager
     session_manager: Arc<RwLock<Option<Arc<dyn SessionManager + Send + Sync>>>>,
+    /// Cached subagent description for metadata (updated on registration)
+    cached_description: Arc<RwLock<String>>,
 }
 
 /// Handle to a running task
@@ -203,17 +205,55 @@ impl TaskTool {
             },
         );
 
+        // Build cached description synchronously
+        let cached_description = Self::build_description_from_map(&subagents);
+
         Self {
             subagents: Arc::new(RwLock::new(subagents)),
             tasks: Arc::new(RwLock::new(HashMap::new())),
             session_manager: Arc::new(RwLock::new(None)),
+            cached_description: Arc::new(RwLock::new(cached_description)),
         }
+    }
+
+    /// Build description string from subagent map (sync helper)
+    fn build_description_from_map(subagents: &HashMap<String, SubagentType>) -> String {
+        let mut agents: Vec<_> = subagents.values().collect();
+        agents.sort_by(|a, b| a.name.cmp(&b.name));
+        
+        let subagents_desc = agents
+            .iter()
+            .map(|a| format!("- {}: {}", a.name, a.description))
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        format!(
+            r#"Launch a new agent to handle complex, multi-step tasks autonomously.
+
+Available agent types and the tools they have access to:
+{}
+
+When using the Task tool, you must specify a subagent_type parameter to select which agent type to use.
+
+Usage notes:
+1. Launch multiple agents concurrently whenever possible, to maximize performance
+2. When the agent is done, it will return a single message back to you
+3. Each agent invocation is stateless unless you provide a session_id
+4. Your prompt should contain a highly detailed task description for the agent to perform autonomously
+"#,
+            subagents_desc
+        )
     }
 
     /// Register a new subagent type
     pub async fn register_subagent(&self, subagent: SubagentType) {
         let mut agents = self.subagents.write().await;
         agents.insert(subagent.name.clone(), subagent);
+        
+        // Update cached description
+        let new_desc = Self::build_description_from_map(&agents);
+        let mut desc = self.cached_description.write().await;
+        *desc = new_desc;
     }
 
     /// Get list of available subagents
@@ -465,34 +505,15 @@ impl ToolInvoker for TaskTool {
     }
 
     fn metadata(&self) -> ToolMetadata {
-        // Generate dynamic description with available subagents
-        let subagents_desc = tokio::task::block_in_place(|| {
-            tokio::runtime::Handle::current().block_on(async {
-                let agents = self.list_subagents().await;
-                agents
-                    .iter()
-                    .map(|a| format!("- {}: {}", a.name, a.description))
-                    .collect::<Vec<_>>()
-                    .join("\n")
-            })
-        });
-
-        let description = format!(
-            r#"Launch a new agent to handle complex, multi-step tasks autonomously.
-
-Available agent types and the tools they have access to:
-{}
-
-When using the Task tool, you must specify a subagent_type parameter to select which agent type to use.
-
-Usage notes:
-1. Launch multiple agents concurrently whenever possible, to maximize performance
-2. When the agent is done, it will return a single message back to you
-3. Each agent invocation is stateless unless you provide a session_id
-4. Your prompt should contain a highly detailed task description for the agent to perform autonomously
-"#,
-            subagents_desc
-        );
+        // Use cached description (updated on subagent registration)
+        // This avoids async in the sync metadata() function
+        let description = self.cached_description
+            .try_read()
+            .map(|desc| desc.clone())
+            .unwrap_or_else(|_| {
+                // Fallback if lock is contended (rare)
+                "Launch a new agent to handle complex, multi-step tasks autonomously.".to_string()
+            });
 
         ToolMetadata {
             id: "task".to_string(),
@@ -585,8 +606,8 @@ mod tests {
         assert!(subagents.iter().any(|s| s.name == "custom"));
     }
 
-    #[test]
-    fn test_tool_metadata() {
+    #[tokio::test]
+    async fn test_tool_metadata() {
         let tool = TaskTool::new();
         let metadata = tool.metadata();
 

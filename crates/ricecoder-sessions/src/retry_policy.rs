@@ -95,7 +95,7 @@ impl RetryPolicy {
             return Some("Provider is overloaded".to_string());
         }
         
-        if message_lower.contains("too many requests") || message_lower.contains("rate_limit") {
+        if message_lower.contains("too many requests") || message_lower.contains("rate_limit") || message_lower.contains("rate limited") {
             return Some("Rate Limited".to_string());
         }
         

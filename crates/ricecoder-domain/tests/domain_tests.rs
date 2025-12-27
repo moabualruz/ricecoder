@@ -447,22 +447,22 @@ mod tests {
         fn test_user_creation() {
             let user = User::new("user-123".to_string(), "testuser".to_string());
 
-            assert_eq!(user.id, "user-123");
-            assert_eq!(user.username, "testuser");
-            assert!(user.email.is_none());
-            assert!(user.metadata.is_empty());
+            assert_eq!(user.id(), "user-123");
+            assert_eq!(user.username(), "testuser");
+            assert!(user.email().is_none());
+            assert!(user.metadata().is_empty());
         }
 
         #[test]
         fn test_user_update_username() {
             let mut user = User::new("user-123".to_string(), "oldname".to_string());
-            let old_updated = user.updated_at;
+            let old_updated = user.updated_at();
             std::thread::sleep(std::time::Duration::from_millis(1));
 
             user.update_username("newname".to_string());
 
-            assert_eq!(user.username, "newname");
-            assert!(user.updated_at > old_updated);
+            assert_eq!(user.username(), "newname");
+            assert!(user.updated_at() > old_updated);
         }
 
         #[test]
@@ -470,10 +470,10 @@ mod tests {
             let mut user = User::new("user-123".to_string(), "testuser".to_string());
 
             user.set_email(Some("test@example.com".to_string()));
-            assert_eq!(user.email, Some("test@example.com".to_string()));
+            assert_eq!(user.email(), Some("test@example.com".to_string()).as_deref());
 
             user.set_email(None);
-            assert!(user.email.is_none());
+            assert!(user.email().is_none());
         }
     }
 

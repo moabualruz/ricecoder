@@ -429,6 +429,8 @@ pub async fn run_mcp(runtime_config: &RuntimeConfig, args: McpArgs) -> Result<()
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::mcp::tools::{apply_edit, apply_write};
+    use crate::mcp::watch::ChangeTracker;
 
     #[test]
     fn mcp_tool_variant_inventory() {

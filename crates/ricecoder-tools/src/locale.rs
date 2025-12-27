@@ -111,13 +111,15 @@ impl Locale {
     /// Truncate string in the middle with ellipsis
     /// Matches: `str.slice(0, keepStart) + ellipsis + str.slice(-keepEnd)`
     pub fn truncate_middle(s: &str, max_length: usize) -> String {
-        if s.len() <= max_length {
+        let char_count = s.chars().count();
+        if char_count <= max_length {
             return s.to_string();
         }
 
         let ellipsis = "…";
-        let keep_start = (max_length.saturating_sub(ellipsis.len()) + 1) / 2;
-        let keep_end = (max_length.saturating_sub(ellipsis.len())) / 2;
+        let ellipsis_len = 1; // ellipsis is 1 character
+        let keep_start = (max_length.saturating_sub(ellipsis_len) + 1) / 2;
+        let keep_end = (max_length.saturating_sub(ellipsis_len)) / 2;
 
         let chars: Vec<char> = s.chars().collect();
         let start: String = chars.iter().take(keep_start).collect();

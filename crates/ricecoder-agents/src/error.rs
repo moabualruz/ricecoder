@@ -60,6 +60,14 @@ pub enum AgentError {
     /// Internal error
     #[error("Internal error: {0}")]
     Internal(String),
+
+    /// Session not found
+    #[error("Session not found: {0}")]
+    SessionNotFound(String),
+
+    /// Task was aborted
+    #[error("Task aborted")]
+    TaskAborted,
 }
 
 impl AgentError {

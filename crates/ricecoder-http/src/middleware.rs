@@ -145,20 +145,24 @@ mod tests {
 
     #[tokio::test]
     async fn test_retry_success_on_second_attempt() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
         let middleware = RetryMiddleware::new(RetryConfig {
             max_attempts: 2,
             initial_delay: Duration::from_millis(10),
             ..Default::default()
         });
 
-        let mut attempt = 0;
+        let attempt = AtomicUsize::new(0);
         let result = middleware
-            .execute(|| async {
-                attempt += 1;
-                if attempt == 1 {
-                    Err(HttpError::Timeout(Duration::from_secs(1)))
-                } else {
-                    Ok(42)
+            .execute(|| {
+                let current = attempt.fetch_add(1, Ordering::SeqCst) + 1;
+                async move {
+                    if current == 1 {
+                        Err(HttpError::Timeout(Duration::from_secs(1)))
+                    } else {
+                        Ok(42)
+                    }
                 }
             })
             .await;

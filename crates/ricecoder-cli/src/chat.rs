@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 use ricecoder_providers::provider::Provider;
-use rustyline::DefaultEditor;
+use tokio::sync::mpsc;
 
 use crate::{
     error::{CliError, CliResult},
@@ -23,6 +23,13 @@ pub struct ChatSession {
 pub struct ChatMessage {
     pub role: String,
     pub content: String,
+}
+
+/// Command from readline thread
+enum ReadlineCommand {
+    Line(String),
+    Exit,
+    Error(String),
 }
 
 impl ChatSession {
@@ -46,10 +53,11 @@ impl ChatSession {
         self.provider_instance.clone()
     }
 
-    /// Start interactive chat mode
-    pub fn start(&mut self) -> CliResult<()> {
-        let mut rl =
-            DefaultEditor::new().map_err(|e| crate::error::CliError::Internal(e.to_string()))?;
+    /// Start interactive chat mode (async version)
+    ///
+    /// Uses spawn_blocking for readline to avoid blocking the async runtime.
+    pub async fn start_async(&mut self) -> CliResult<()> {
+        use rustyline::DefaultEditor;
 
         let style = OutputStyle::default();
         println!("{}", style.header("Chat Mode"));
@@ -58,10 +66,38 @@ impl ChatSession {
         println!("{}", style.info("Type 'exit' to quit"));
         println!();
 
-        loop {
-            let readline = rl.readline("r[ > ");
-            match readline {
-                Ok(line) => {
+        // Create channel for readline communication
+        let (tx, mut rx) = mpsc::channel::<ReadlineCommand>(1);
+
+        // Spawn blocking task for readline
+        let readline_handle = tokio::task::spawn_blocking(move || {
+            let mut rl = match DefaultEditor::new() {
+                Ok(rl) => rl,
+                Err(e) => {
+                    let _ = tx.blocking_send(ReadlineCommand::Error(e.to_string()));
+                    return;
+                }
+            };
+
+            loop {
+                match rl.readline("r[ > ") {
+                    Ok(line) => {
+                        if tx.blocking_send(ReadlineCommand::Line(line)).is_err() {
+                            break;
+                        }
+                    }
+                    Err(_) => {
+                        let _ = tx.blocking_send(ReadlineCommand::Exit);
+                        break;
+                    }
+                }
+            }
+        });
+
+        // Process commands from readline
+        while let Some(cmd) = rx.recv().await {
+            match cmd {
+                ReadlineCommand::Line(line) => {
                     if line.trim() == "exit" {
                         println!("{}", style.success("Goodbye!"));
                         break;
@@ -74,8 +110,8 @@ impl ChatSession {
                             content: line.clone(),
                         });
 
-                        // Send to provider and get response
-                        match self.send_message_to_provider(&line) {
+                        // Send to provider and get response (async, no new runtime)
+                        match self.send_message_to_provider_async(&line).await {
                             Ok(response) => {
                                 // Add assistant response to history
                                 self.history.push(ChatMessage {
@@ -95,23 +131,42 @@ impl ChatSession {
                         }
                     }
                 }
-                Err(_) => {
+                ReadlineCommand::Exit => {
                     println!("{}", style.success("Goodbye!"));
                     break;
+                }
+                ReadlineCommand::Error(e) => {
+                    return Err(CliError::Internal(e));
                 }
             }
         }
 
+        // Clean up readline task
+        readline_handle.abort();
+
         Ok(())
     }
 
-    /// Send a message to the provider and get response
-    fn send_message_to_provider(&self, message: &str) -> CliResult<String> {
-        // Create a runtime for async operations
-        let rt = tokio::runtime::Runtime::new()
-            .map_err(|e| CliError::Internal(format!("Failed to create runtime: {}", e)))?;
-
-        rt.block_on(self.send_message_to_provider_async(message))
+    /// Start interactive chat mode (sync wrapper for backward compatibility)
+    ///
+    /// NOTE: This creates a new runtime. Prefer `start_async()` when already in async context.
+    pub fn start(&mut self) -> CliResult<()> {
+        // Use Handle::current() if we're already in a runtime, otherwise create one
+        match tokio::runtime::Handle::try_current() {
+            Ok(handle) => {
+                // We're in an async context - use block_on with the current handle
+                // This is safe because start_async uses spawn_blocking for readline
+                tokio::task::block_in_place(|| handle.block_on(self.start_async()))
+            }
+            Err(_) => {
+                // No runtime - create a new multi-threaded one
+                let rt = tokio::runtime::Builder::new_multi_thread()
+                    .enable_all()
+                    .build()
+                    .map_err(|e| CliError::Internal(format!("Failed to create runtime: {}", e)))?;
+                rt.block_on(self.start_async())
+            }
+        }
     }
 
     /// Simulate streaming by typing characters one at a time
@@ -128,7 +183,7 @@ impl ChatSession {
     }
 
     /// Async version of send_message_to_provider
-    async fn send_message_to_provider_async(&self, _message: &str) -> CliResult<String> {
+    pub async fn send_message_to_provider_async(&self, _message: &str) -> CliResult<String> {
         use futures::stream::StreamExt;
 
         // Get provider instance

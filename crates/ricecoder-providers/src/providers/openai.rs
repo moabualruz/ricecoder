@@ -1,13 +1,15 @@
 //! OpenAI provider implementation
 //!
 //! Supports GPT-4, GPT-4o, and GPT-3.5-turbo models via the OpenAI API.
+//! Includes full streaming support via Server-Sent Events (SSE).
 
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use futures::StreamExt;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use tracing::{debug, error, warn};
+use tracing::{debug, error, trace, warn};
 
 use crate::{
     error::ProviderError,
@@ -109,6 +111,58 @@ impl OpenAiProvider {
             },
             finish_reason,
         })
+    }
+
+    /// Parse SSE response into a stream of ChatResponse
+    fn parse_sse_response(
+        body: &str,
+        model: String,
+    ) -> Result<crate::provider::ChatStream, ProviderError> {
+        let mut responses: Vec<Result<ChatResponse, ProviderError>> = Vec::new();
+
+        // Parse SSE format: each event is "data: <json>\n\n"
+        for line in body.lines() {
+            if let Some(json_str) = line.strip_prefix("data: ") {
+                // Skip [DONE] marker
+                if json_str.trim() == "[DONE]" {
+                    trace!("Stream completed with [DONE] marker");
+                    continue;
+                }
+
+                // Try to parse as streaming chunk
+                match serde_json::from_str::<OpenAiStreamChunk>(json_str) {
+                    Ok(chunk) => {
+                        // Extract delta content from first choice
+                        if let Some(choice) = chunk.choices.first() {
+                            if let Some(delta) = &choice.delta {
+                                if let Some(content) = &delta.content {
+                                    if !content.is_empty() {
+                                        responses.push(Ok(ChatResponse {
+                                            content: content.clone(),
+                                            model: model.clone(),
+                                            usage: TokenUsage {
+                                                prompt_tokens: 0,
+                                                completion_tokens: 0,
+                                                total_tokens: 0,
+                                            },
+                                            finish_reason: FinishReason::Stop,
+                                        }));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        // Log parsing error but continue
+                        debug!("Failed to parse SSE chunk: {} - data: {}", e, json_str);
+                    }
+                }
+            }
+        }
+
+        // Convert to a stream
+        let chat_stream = futures::stream::iter(responses);
+        Ok(chat_stream.boxed())
     }
 }
 
@@ -245,12 +299,72 @@ impl Provider for OpenAiProvider {
 
     async fn chat_stream(
         &self,
-        _request: ChatRequest,
+        request: ChatRequest,
     ) -> Result<crate::provider::ChatStream, ProviderError> {
-        // Streaming support will be implemented in a future iteration
-        Err(ProviderError::ProviderError(
-            "Streaming not yet implemented for OpenAI".to_string(),
-        ))
+        // Validate model
+        let model_id = &request.model;
+        if !self.models().iter().any(|m| m.id == *model_id) {
+            return Err(ProviderError::InvalidModel(model_id.clone()));
+        }
+
+        let openai_request = OpenAiStreamRequest {
+            model: request.model.clone(),
+            messages: request
+                .messages
+                .iter()
+                .map(|m| OpenAiMessage {
+                    role: m.role.clone(),
+                    content: m.content.clone(),
+                })
+                .collect(),
+            temperature: request.temperature,
+            max_tokens: request.max_tokens,
+            stream: true,
+        };
+
+        debug!(
+            "Starting streaming chat request to OpenAI for model: {}",
+            request.model
+        );
+
+        let response = self
+            .client
+            .post(format!("{}/chat/completions", self.base_url))
+            .header("Authorization", self.get_auth_header())
+            .header("Content-Type", "application/json")
+            .json(&openai_request)
+            .send()
+            .await
+            .map_err(|e| {
+                error!("OpenAI streaming request failed: {}", e);
+                ProviderError::from(e)
+            })?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            error!("OpenAI streaming API error ({}): {}", status, error_text);
+
+            return match status.as_u16() {
+                401 => Err(ProviderError::AuthError),
+                429 => Err(ProviderError::RateLimited(60)),
+                _ => Err(ProviderError::ProviderError(format!(
+                    "OpenAI API error: {}",
+                    status
+                ))),
+            };
+        }
+
+        // Read and parse SSE response
+        let model = request.model.clone();
+        let body = response.text().await.map_err(|e| {
+            error!("Failed to read streaming response body: {}", e);
+            ProviderError::NetworkError(e.to_string())
+        })?;
+
+        // Parse SSE events and create stream
+        let stream = Self::parse_sse_response(&body, model)?;
+        Ok(stream)
     }
 
     fn count_tokens(&self, content: &str, model: &str) -> Result<usize, ProviderError> {
@@ -337,4 +451,38 @@ struct OpenAiUsage {
     prompt_tokens: usize,
     completion_tokens: usize,
     total_tokens: usize,
+}
+
+/// OpenAI streaming request format
+#[derive(Debug, Serialize)]
+struct OpenAiStreamRequest {
+    model: String,
+    messages: Vec<OpenAiMessage>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    temperature: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    max_tokens: Option<usize>,
+    stream: bool,
+}
+
+/// OpenAI streaming chunk format (Server-Sent Events)
+#[derive(Debug, Deserialize)]
+struct OpenAiStreamChunk {
+    choices: Vec<OpenAiStreamChoice>,
+}
+
+/// OpenAI streaming choice format
+#[derive(Debug, Deserialize)]
+struct OpenAiStreamChoice {
+    delta: Option<OpenAiDelta>,
+    finish_reason: Option<String>,
+}
+
+/// OpenAI delta content in streaming response
+#[derive(Debug, Deserialize)]
+struct OpenAiDelta {
+    #[serde(default)]
+    content: Option<String>,
+    #[serde(default)]
+    role: Option<String>,
 }

@@ -35,7 +35,7 @@ pub fn fuzzy_search_models(
             item: model.clone(),
             score: fuzzy_match(&model.id, query),
         })
-        .filter(|m| m.score.value() > 0.3) // Minimum threshold
+        .filter(|m| m.score.value() > 0.0) // Any non-zero match is valid
         .collect();
 
     matches.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap());
@@ -54,7 +54,7 @@ pub fn fuzzy_search_providers(
             item: provider.clone(),
             score: fuzzy_match(provider, query),
         })
-        .filter(|m| m.score.value() > 0.3)
+        .filter(|m| m.score.value() > 0.0) // Any non-zero match is valid
         .collect();
 
     matches.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap());

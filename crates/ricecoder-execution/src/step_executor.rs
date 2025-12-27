@@ -296,7 +296,13 @@ impl StepExecutor {
         crate::step_action_handler::CommandHandler::handle(command, args)
     }
 
-    /// Handle shell command execution (OpenCode-compatible)
+    /// Handle shell command execution (OpenCode-compatible) - SYNC version
+    ///
+    /// # Warning
+    /// This function requires a multi-threaded Tokio runtime due to use of `block_in_place`.
+    /// Prefer using `execute_single_step_async` or `execute_batch` for async execution.
+    ///
+    /// For tests, use `#[tokio::test(flavor = "multi_thread", worker_threads = 2)]`.
     fn handle_run_shell_command(
         &self,
         command: &str,
@@ -304,7 +310,7 @@ impl StepExecutor {
         workdir: Option<&str>,
         description: &str,
     ) -> ExecutionResult<CommandOutput> {
-        // Run async in blocking context
+        // Run async in blocking context - requires multi-threaded runtime
         tokio::task::block_in_place(|| {
             tokio::runtime::Handle::current().block_on(async {
                 crate::step_action_handler::ShellCommandHandler::handle(
