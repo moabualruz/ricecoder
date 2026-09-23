@@ -11,7 +11,7 @@ on:
 jobs:
   # Skip all jobs if GitHub Actions are disabled
   check-enabled:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, generic]
     outputs:
       enabled: ${{ steps.check.outputs.enabled }}
     steps:
@@ -40,12 +40,12 @@ jobs:
         include:
           # Linux x86_64 (musl for static linking)
           - target: x86_64-unknown-linux-musl
-            os: ubuntu-latest
+            os: [self-hosted, linux, x64, generic]
             use_cross: true
             
           # Linux ARM64 (musl for static linking)
           - target: aarch64-unknown-linux-musl
-            os: ubuntu-latest
+            os: [self-hosted, linux, x64, generic]
             use_cross: true
             
           # macOS x86_64
@@ -232,7 +232,7 @@ jobs:
    create-release:
      name: Create Release
      needs: [build, universal-macos]
-     runs-on: ubuntu-latest
+     runs-on: [self-hosted, linux, x64, generic]
     permissions:
       contents: write
 
@@ -294,7 +294,7 @@ jobs:
   docker:
     name: Build and Push Docker Image
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, generic]
     permissions:
       contents: read
       packages: write
@@ -334,7 +334,7 @@ jobs:
   npm-publish:
     name: Publish to npm Registry
     needs: create-release
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, generic]
 
     steps:
       - name: Checkout code
