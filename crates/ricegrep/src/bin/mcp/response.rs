@@ -122,23 +122,14 @@ fn search_output_schema() -> serde_json::Value {
 
 /// Create a simple text-based tool result
 pub fn tool_text_result(text: String) -> CallToolResult {
-    CallToolResult {
-        content: vec![Content::text(text)],
-        is_error: None,
-        meta: None,
-        structured_content: None,
-    }
+    CallToolResult::success(vec![Content::text(text)])
 }
 
 /// Create a tool result with both text and structured search response
 pub fn tool_result_with_response(text: String, response: &SearchResponse) -> CallToolResult {
-    let structured = serde_json::to_value(response).ok();
-    CallToolResult {
-        content: vec![Content::text(text)],
-        is_error: None,
-        meta: None,
-        structured_content: structured,
-    }
+    let mut result = CallToolResult::success(vec![Content::text(text)]);
+    result.structured_content = serde_json::to_value(response).ok();
+    result
 }
 
 /// Format search results as human-readable lines (OpenCode-compatible)
@@ -147,24 +138,21 @@ pub fn format_search_lines(response: &SearchResponse) -> String {
 }
 
 /// Format search results in OpenCode grep.ts format
-/// 
+///
 /// Output format:
 /// ```
 /// Found N matches
-/// 
+///
 /// <path>:
 ///   Line <n>: <text>
 ///   Line <m>: <text>
-/// 
+///
 /// <path2>:
 ///   Line <x>: <text>
 /// ```
-pub fn format_search_lines_opencode_style(
-    response: &SearchResponse,
-    truncated: bool,
-) -> String {
+pub fn format_search_lines_opencode_style(response: &SearchResponse, truncated: bool) -> String {
     const MAX_LINE_LENGTH: usize = 2000;
-    
+
     if response.results.is_empty() {
         return "No files found".to_string();
     }
@@ -175,7 +163,7 @@ pub fn format_search_lines_opencode_style(
     let mut current_file = String::new();
     for result in &response.results {
         let file_path = result.metadata.file_path.display().to_string();
-        
+
         // Add file header if changed
         if current_file != file_path {
             if !current_file.is_empty() {
@@ -192,12 +180,17 @@ pub fn format_search_lines_opencode_style(
             result.content.clone()
         };
 
-        output.push(format!("  Line {}: {}", result.metadata.start_line, line_text));
+        output.push(format!(
+            "  Line {}: {}",
+            result.metadata.start_line, line_text
+        ));
     }
 
     if truncated {
         output.push(String::new());
-        output.push("(Results are truncated. Consider using a more specific path or pattern.)".to_string());
+        output.push(
+            "(Results are truncated. Consider using a more specific path or pattern.)".to_string(),
+        );
     }
 
     output.join("\n")
@@ -206,12 +199,12 @@ pub fn format_search_lines_opencode_style(
 /// Sort search results by file modification time (newest first)
 /// GAP-3 implementation: Match OpenCode grep.ts mtime sorting behavior
 pub async fn sort_results_by_mtime(response: &mut SearchResponse) {
-    use tokio::fs;
     use std::time::SystemTime;
+    use tokio::fs;
 
     // Collect unique file paths and their mtimes
     let mut file_mtimes: HashMap<std::path::PathBuf, SystemTime> = HashMap::new();
-    
+
     for result in &response.results {
         let path = &result.metadata.file_path;
         if !file_mtimes.contains_key(path) {
@@ -228,7 +221,7 @@ pub async fn sort_results_by_mtime(response: &mut SearchResponse) {
     response.results.sort_by(|a, b| {
         let a_mtime = file_mtimes.get(&a.metadata.file_path);
         let b_mtime = file_mtimes.get(&b.metadata.file_path);
-        
+
         match (a_mtime, b_mtime) {
             (Some(a_time), Some(b_time)) => {
                 // Sort by mtime descending (newest first)
