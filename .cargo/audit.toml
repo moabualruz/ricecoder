@@ -1,0 +1,3 @@
+[advisories]
+# OpenID Connect verifies remote JWKS public keys; the application does not use RSA private-key operations.
+ignore = ["RUSTSEC-2023-0071"]
