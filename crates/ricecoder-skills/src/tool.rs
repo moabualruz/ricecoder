@@ -23,10 +23,10 @@ pub struct SkillToolInput {
 pub struct SkillToolOutput {
     /// Output title (Gap G-17-10)
     pub title: String,
-    
+
     /// Formatted skill content (Gap G-17-10)
     pub output: String,
-    
+
     /// Metadata about the loaded skill
     pub metadata: SkillToolMetadata,
 }
@@ -64,7 +64,7 @@ impl SkillToolProvider {
         agent_permissions: Option<&SkillPermission>,
     ) -> Result<String, SkillError> {
         let skills = SkillRegistry::all().await?;
-        
+
         // Filter accessible skills (Gap G-17-11, G-17-12)
         let accessible_skills: Vec<SkillInfo> = if let Some(perms) = agent_permissions {
             skills
@@ -89,7 +89,10 @@ impl SkillToolProvider {
         for skill in accessible_skills {
             desc.push(format!("  <skill>"));
             desc.push(format!("    <name>{}</name>", skill.name));
-            desc.push(format!("    <description>{}</description>", skill.description));
+            desc.push(format!(
+                "    <description>{}</description>",
+                skill.description
+            ));
             desc.push(format!("  </skill>"));
         }
 
@@ -106,23 +109,24 @@ impl SkillToolProvider {
         agent_permissions: &SkillPermission,
     ) -> Result<SkillToolOutput, SkillError> {
         // Load skill from registry
-        let skill = SkillRegistry::get(&input.name)
-            .await?
-            .ok_or_else(|| {
-                let all_skills = tokio::task::block_in_place(|| {
-                    tokio::runtime::Handle::current().block_on(async {
-                        SkillRegistry::all().await
-                            .unwrap_or_default()
-                            .iter()
-                            .map(|s| s.name.clone())
-                            .collect::<Vec<_>>()
-                    })
-                });
-                SkillError::not_found(&input.name, &all_skills)
-            })?;
+        let skill = SkillRegistry::get(&input.name).await?.ok_or_else(|| {
+            let all_skills = tokio::task::block_in_place(|| {
+                tokio::runtime::Handle::current().block_on(async {
+                    SkillRegistry::all()
+                        .await
+                        .unwrap_or_default()
+                        .iter()
+                        .map(|s| s.name.clone())
+                        .collect::<Vec<_>>()
+                })
+            });
+            SkillError::not_found(&input.name, &all_skills)
+        })?;
 
         // Check permissions (Gap G-17-03, G-17-04)
-        let action = self.permission_checker.check_with_cache(&input.name, agent_permissions);
+        let action = self
+            .permission_checker
+            .check_with_cache(&input.name, agent_permissions);
 
         match action {
             SkillPermissionAction::Deny => {
@@ -145,7 +149,8 @@ impl SkillToolProvider {
 
         // Load skill content
         let content = self.load_skill_content(&skill.location)?;
-        let dir = skill.location
+        let dir = skill
+            .location
             .parent()
             .and_then(|p| p.to_str())
             .unwrap_or("")
@@ -172,11 +177,11 @@ impl SkillToolProvider {
     /// Load and parse skill markdown content
     fn load_skill_content(&self, path: &Path) -> Result<String, SkillError> {
         let content = std::fs::read_to_string(path)?;
-        
+
         // Parse frontmatter to extract content only
         let matter = gray_matter::Matter::<gray_matter::engine::YAML>::new();
         let parsed = matter.parse(&content);
-        
+
         Ok(parsed.content)
     }
 
@@ -193,11 +198,11 @@ mod tests {
     #[tokio::test]
     async fn test_skill_tool_description() {
         let provider = SkillToolProvider::new();
-        
+
         // With no permissions filter
         let desc = provider.get_description(None).await;
         assert!(desc.is_ok());
-        
+
         let desc_text = desc.unwrap();
         assert!(desc_text.contains("<available_skills>"));
         assert!(desc_text.contains("</available_skills>"));
@@ -206,20 +211,20 @@ mod tests {
     #[tokio::test]
     async fn test_skill_tool_description_with_permissions() {
         let provider = SkillToolProvider::new();
-        
+
         let mut rules = HashMap::new();
         rules.insert("*".to_string(), SkillPermissionAction::Allow);
         rules.insert("dangerous-*".to_string(), SkillPermissionAction::Deny);
         let perms = SkillPermission::new(rules);
-        
+
         let desc = provider.get_description(Some(&perms)).await;
         assert!(desc.is_ok());
     }
 
     #[test]
     fn test_load_skill_content() {
-        use tempfile::NamedTempFile;
         use std::io::Write;
+        use tempfile::NamedTempFile;
 
         let mut temp_file = NamedTempFile::new().unwrap();
         write!(
@@ -230,7 +235,7 @@ mod tests {
 
         let provider = SkillToolProvider::new();
         let content = provider.load_skill_content(temp_file.path());
-        
+
         assert!(content.is_ok());
         let content_str = content.unwrap();
         assert!(content_str.contains("# Skill Content"));

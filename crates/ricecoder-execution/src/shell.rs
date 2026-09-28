@@ -235,7 +235,7 @@ impl ProcessTree {
                 Err(e) => {
                     warn!(pid = %pid, error = %e, "Failed to send SIGTERM to process group, trying process only");
                     // Fallback to killing just the process
-                    let _ = proc.kill().await;
+                    let _ = proc.kill();
                 }
             }
 
@@ -248,7 +248,7 @@ impl ProcessTree {
                 Err(e) => {
                     warn!(pid = %pid, error = %e, "Failed to send SIGKILL to process group, trying process only");
                     // Fallback to killing just the process
-                    let _ = proc.kill().await;
+                    let _ = proc.kill();
                 }
             }
 

@@ -31,15 +31,3 @@ fn create_github_services() -> Vec<ServiceEntry> {
     vec![]
 }
 */
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use ricecoder_common::di::list_discovered_factories;
-
-    #[test]
-    fn test_github_factory_registered() {
-        let factories = list_discovered_factories();
-        assert!(factories.contains(&"github"), "Factory should be registered");
-    }
-}

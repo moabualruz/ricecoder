@@ -17,10 +17,7 @@ pub enum LspError {
     NoServerAvailable,
 
     #[error("Operation {operation} failed: {message}")]
-    OperationFailed {
-        operation: String,
-        message: String,
-    },
+    OperationFailed { operation: String, message: String },
 
     #[error("Request timeout after {timeout_ms}ms")]
     Timeout { timeout_ms: u64 },
@@ -255,11 +252,12 @@ impl LspTool {
             input.character
         );
 
-        let output = if result.is_null() || (result.is_array() && result.as_array().unwrap().is_empty()) {
-            format!("No results found for {}", input.operation.as_str())
-        } else {
-            serde_json::to_string_pretty(&result).unwrap_or_else(|_| result.to_string())
-        };
+        let output =
+            if result.is_null() || (result.is_array() && result.as_array().unwrap().is_empty()) {
+                format!("No results found for {}", input.operation.as_str())
+            } else {
+                serde_json::to_string_pretty(&result).unwrap_or_else(|_| result.to_string())
+            };
 
         Ok(LspToolOutput {
             title,

@@ -48,30 +48,47 @@
 //! let response = use_case.execute(request)?;
 //! ```
 
-pub mod domain;
 pub mod application;
+pub mod domain;
 
 // Re-export commonly used types at crate root for convenience
 pub use domain::{
-    // Value Objects
-    FilePath, EditPattern, SearchQuery,
-    // Aggregates
-    FileEdit, SearchResult, SearchMatch,
+    // Errors
+    DomainError,
     // Events
     DomainEvent,
-    // Errors
-    DomainError, DomainResult,
+    DomainResult,
+    EditPattern,
+    // Aggregates
+    FileEdit,
+    // Value Objects
+    FilePath,
+    SearchMatch,
+    SearchQuery,
+    SearchResult,
 };
 
 pub use application::{
     // Errors
-    AppError, AppResult, IoOperation,
-    // Repository Traits (Ports)
-    FileRepository, IndexRepository, EventPublisher, FileIndexEntry,
-    // Use Cases
-    EditFileUseCase, EditFileRequest, EditFileResponse,
-    SearchFilesUseCase, SearchFilesRequest, SearchFilesResponse,
-    WriteFileUseCase, WriteFileRequest, WriteFileResponse,
+    AppError,
+    AppResult,
     // Services
-    AppServices, AppServicesBuilder,
+    AppServices,
+    AppServicesBuilder,
+    EditFileRequest,
+    EditFileResponse,
+    // Use Cases
+    EditFileUseCase,
+    EventPublisher,
+    FileIndexEntry,
+    // Repository Traits (Ports)
+    FileRepository,
+    IndexRepository,
+    IoOperation,
+    SearchFilesRequest,
+    SearchFilesResponse,
+    SearchFilesUseCase,
+    WriteFileRequest,
+    WriteFileResponse,
+    WriteFileUseCase,
 };

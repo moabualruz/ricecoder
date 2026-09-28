@@ -4,13 +4,13 @@
 //! (OpenAI, Anthropic, ollama, Google, etc.) without changing your workflow.
 
 pub mod api_key;
-pub mod di;
 pub mod audit_log;
 pub mod cache;
 pub mod circuit_breaker;
 pub mod community;
 pub mod config;
 pub mod curation;
+pub mod di;
 pub mod domain_adapter;
 pub mod error;
 pub mod evaluation;
@@ -36,6 +36,9 @@ pub mod transform;
 pub use api_key::ApiKeyManager;
 pub use audit_log::{AuditEventType, AuditLogEntry, AuditLogger};
 pub use cache::ProviderCache;
+pub use circuit_breaker::{
+    CircuitBreaker, CircuitBreakerConfig, CircuitBreakerRegistry, CircuitState,
+};
 pub use community::{
     CommunityProviderConfig, CommunityProviderRegistry, ContributionMetadata, ContributionReview,
     ContributionStatus, ProviderAnalytics, ProviderUpdate, ProviderUsage, UpdateType,
@@ -43,6 +46,7 @@ pub use community::{
 pub use curation::{
     CurationConfig, ProviderCurator, QualityScore, ReliabilityStatus, SelectionConstraints,
 };
+pub use domain_adapter::{DomainProviderAdapter, ProviderErrorMapper};
 pub use error::ProviderError;
 pub use evaluation::{
     BenchmarkResult, ContinuousEvaluator, PerformanceMetrics, ProviderEvaluation, ProviderEvaluator,
@@ -55,7 +59,9 @@ pub use model_registry::{global_registry, ModelRegistry};
 pub use models::{
     Capability, ChatRequest, ChatResponse, FinishReason, Message, ModelInfo, TokenUsage,
 };
-pub use models_dev::{fetch_models, ModelsDevCache, ModelsDevModel, ModelsDevResponse, ModelsFetcher};
+pub use models_dev::{
+    fetch_models, ModelsDevCache, ModelsDevModel, ModelsDevResponse, ModelsFetcher,
+};
 pub use performance_monitor::{
     PerformanceSummary, PerformanceThresholds, ProviderMetrics, ProviderPerformanceMonitor,
 };
@@ -68,8 +74,6 @@ pub use providers::{
     OllamaProvider, OpenAiProvider, QwenProvider, ReplicateProvider, TogetherProvider, ZenProvider,
 };
 pub use rate_limiter::{ExponentialBackoff, RateLimiterRegistry, TokenBucketLimiter};
-pub use circuit_breaker::{CircuitBreaker, CircuitBreakerConfig, CircuitBreakerRegistry, CircuitState};
-pub use domain_adapter::{DomainProviderAdapter, ProviderErrorMapper};
 pub use redaction::{contains_sensitive_info, redact, Redacted, RedactionFilter};
 pub use security_headers::{SecurityHeadersBuilder, SecurityHeadersValidator};
 pub use streaming::{simulate_stream, simulate_word_stream, SimulatedStream, WordStream};
@@ -78,6 +82,4 @@ pub use sync::{
     ValidationRules,
 };
 pub use token_counter::{TokenCounter, TokenCounterTrait};
-pub use transform::{
-    transform_for_claude, transform_for_mistral, transform_schema_for_gemini,
-};
+pub use transform::{transform_for_claude, transform_for_mistral, transform_schema_for_gemini};

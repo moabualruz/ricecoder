@@ -158,10 +158,7 @@ impl ServiceProviderRegistry {
         let mut sorted: Vec<_> = self.providers.iter().collect();
         sorted.sort_by_key(|p| p.priority());
 
-        tracing::info!(
-            "Registering {} service providers",
-            sorted.len()
-        );
+        tracing::info!("Registering {} service providers", sorted.len());
 
         // Register each provider
         for provider in sorted {
@@ -210,7 +207,10 @@ impl Default for ServiceProviderRegistry {
 #[async_trait]
 pub trait HealthCheckProvider: ServiceProvider {
     /// Perform health checks on all services provided by this provider.
-    async fn health_check(&self, container: &DIContainer) -> DIResult<Vec<(&'static str, HealthStatus)>>;
+    async fn health_check(
+        &self,
+        container: &DIContainer,
+    ) -> DIResult<Vec<(&'static str, HealthStatus)>>;
 }
 
 // ============================================================================

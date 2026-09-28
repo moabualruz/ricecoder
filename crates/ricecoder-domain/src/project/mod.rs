@@ -9,7 +9,7 @@
 use crate::errors::{DomainError, DomainResult};
 use crate::events::project::*;
 use crate::events::DomainEvent;
-use crate::value_objects::{ProjectId, ProgrammingLanguage};
+use crate::value_objects::{ProgrammingLanguage, ProjectId};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -183,11 +183,7 @@ impl Project {
         self.updated_at = Utc::now();
         self.version += 1;
 
-        let event = ProjectUpdated::new(
-            self.id.as_uuid(),
-            self.name.clone(),
-            description,
-        );
+        let event = ProjectUpdated::new(self.id.as_uuid(), self.name.clone(), description);
         Ok(vec![Box::new(event)])
     }
 
@@ -369,24 +365,14 @@ mod tests {
 
     #[test]
     fn test_create_project_invalid_name_empty() {
-        let result = Project::create(
-            "".into(),
-            ProgrammingLanguage::Rust,
-            "/path".into(),
-            None,
-        );
+        let result = Project::create("".into(), ProgrammingLanguage::Rust, "/path".into(), None);
         assert!(result.is_err());
     }
 
     #[test]
     fn test_create_project_invalid_name_too_long() {
         let long_name = "a".repeat(101);
-        let result = Project::create(
-            long_name,
-            ProgrammingLanguage::Rust,
-            "/path".into(),
-            None,
-        );
+        let result = Project::create(long_name, ProgrammingLanguage::Rust, "/path".into(), None);
         assert!(result.is_err());
     }
 
@@ -496,7 +482,10 @@ mod tests {
         .unwrap();
 
         project.add_metadata("author".into(), "test-user".into());
-        assert_eq!(project.get_metadata("author"), Some(&"test-user".to_string()));
+        assert_eq!(
+            project.get_metadata("author"),
+            Some(&"test-user".to_string())
+        );
         assert_eq!(project.get_metadata("nonexistent"), None);
     }
 }

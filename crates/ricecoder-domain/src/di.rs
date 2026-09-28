@@ -48,9 +48,13 @@ mod tests {
         assert_eq!(services.len(), 2, "Should create 2 services");
 
         // Check that both services are present
-        let has_validation = services.iter().any(|s| s.type_name.contains("ValidationService"));
-        let has_analysis = services.iter().any(|s| s.type_name.contains("AnalysisService"));
-        
+        let has_validation = services
+            .iter()
+            .any(|s| s.type_name.contains("ValidationService"));
+        let has_analysis = services
+            .iter()
+            .any(|s| s.type_name.contains("AnalysisService"));
+
         assert!(has_validation, "Should include ValidationService");
         assert!(has_analysis, "Should include AnalysisService");
     }

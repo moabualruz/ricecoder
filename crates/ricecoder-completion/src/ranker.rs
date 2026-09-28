@@ -357,7 +357,10 @@ mod tests {
         let ranker = BasicCompletionRanker::default_weights();
         let score = ranker.fuzzy_match_score("Test", "test");
         // Case-insensitive matching with Smart case
-        assert!(score > 0.0, "Case-insensitive match should have non-zero score");
+        assert!(
+            score > 0.0,
+            "Case-insensitive match should have non-zero score"
+        );
         assert!(score <= 1.0, "Score should be normalized");
     }
 

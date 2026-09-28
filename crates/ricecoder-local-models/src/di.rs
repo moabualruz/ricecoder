@@ -1,8 +1,8 @@
 //! Dependency injection support for ricecoder-local-models
 
-use std::sync::Arc;
-use ricecoder_common::di::{ServiceEntry, ServiceFactory};
 use crate::LocalModelManager;
+use ricecoder_common::di::{ServiceEntry, ServiceFactory};
+use std::sync::Arc;
 
 inventory::submit! {
     ServiceFactory::new("local-models", create_local_models_services)
@@ -13,7 +13,7 @@ fn create_local_models_services() -> Vec<ServiceEntry> {
         // LocalModelManager requires endpoint configuration, so we create it with default endpoint
         ServiceEntry::new::<LocalModelManager>(Arc::new(
             LocalModelManager::with_default_endpoint()
-                .expect("Failed to create LocalModelManager with default endpoint")
+                .expect("Failed to create LocalModelManager with default endpoint"),
         )),
     ]
 }
@@ -26,6 +26,9 @@ mod tests {
     #[test]
     fn test_local_models_factory_registered() {
         let factories = list_discovered_factories();
-        assert!(factories.contains(&"local-models"), "Factory should be registered");
+        assert!(
+            factories.contains(&"local-models"),
+            "Factory should be registered"
+        );
     }
 }

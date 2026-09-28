@@ -64,7 +64,10 @@ impl PromptLoader {
     }
 
     /// Load all prompts for a specific category
-    pub fn load_category(&self, category: PromptCategory) -> StorageResult<HashMap<String, String>> {
+    pub fn load_category(
+        &self,
+        category: PromptCategory,
+    ) -> StorageResult<HashMap<String, String>> {
         let mut prompts = HashMap::new();
         let category_dir = self.config_dir.join(category.dir_name());
 
@@ -116,9 +119,8 @@ impl PromptLoader {
             .join(category.dir_name())
             .join(format!("{}.txt", name));
 
-        fs::read_to_string(&path).map_err(|e| {
-            StorageError::io_error(path, crate::error::IoOperation::Read, e)
-        })
+        fs::read_to_string(&path)
+            .map_err(|e| StorageError::io_error(path, crate::error::IoOperation::Read, e))
     }
 
     /// List all available prompt names in a category

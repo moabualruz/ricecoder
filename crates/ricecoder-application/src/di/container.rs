@@ -175,9 +175,9 @@ impl ServiceContainer {
                 .map_err(|_| ContainerError::TypeMismatch(std::any::type_name::<T>()));
         }
 
-        Err(ContainerError::ServiceNotRegistered(std::any::type_name::<
-            T,
-        >()))
+        Err(ContainerError::ServiceNotRegistered(
+            std::any::type_name::<T>(),
+        ))
     }
 
     /// Resolve a trait object by type
@@ -195,9 +195,9 @@ impl ServiceContainer {
                 .map_err(|_| ContainerError::TypeMismatch(std::any::type_name::<T>()));
         }
 
-        Err(ContainerError::ServiceNotRegistered(std::any::type_name::<
-            T,
-        >()))
+        Err(ContainerError::ServiceNotRegistered(
+            std::any::type_name::<T>(),
+        ))
     }
 
     // ========================================================================

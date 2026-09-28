@@ -1070,8 +1070,12 @@ mod tests {
         let presets = ConfigManager::available_presets();
         assert_eq!(presets.len(), 4);
         assert!(presets.iter().any(|(p, _)| *p == ConfigPreset::Developer));
-        assert!(presets.iter().any(|(p, _)| *p == ConfigPreset::Accessibility));
+        assert!(presets
+            .iter()
+            .any(|(p, _)| *p == ConfigPreset::Accessibility));
         assert!(presets.iter().any(|(p, _)| *p == ConfigPreset::Minimal));
-        assert!(presets.iter().any(|(p, _)| *p == ConfigPreset::Presentation));
+        assert!(presets
+            .iter()
+            .any(|(p, _)| *p == ConfigPreset::Presentation));
     }
 }

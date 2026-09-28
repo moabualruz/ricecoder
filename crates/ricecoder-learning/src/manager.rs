@@ -148,26 +148,43 @@ impl LearningManagerBuilder {
 
     /// Build the LearningManager with injected or default dependencies
     pub fn build(self) -> LearningManager {
-        let config = self.config.unwrap_or_else(|| LearningConfig::new(self.scope));
-        let scope_config = self.scope_config.unwrap_or_else(|| ScopeConfiguration::new(self.scope));
+        let config = self
+            .config
+            .unwrap_or_else(|| LearningConfig::new(self.scope));
+        let scope_config = self
+            .scope_config
+            .unwrap_or_else(|| ScopeConfiguration::new(self.scope));
 
         LearningManager {
             config: Arc::new(RwLock::new(config)),
             scope_config: Arc::new(RwLock::new(scope_config)),
-            decision_logger: self.decision_logger.unwrap_or_else(|| Arc::new(DecisionLogger::new())),
-            rule_storage: self.rule_storage.unwrap_or_else(|| Arc::new(RuleStorage::new(self.scope))),
-            rule_validator: self.rule_validator.unwrap_or_else(|| Arc::new(RuleValidator::new())),
-            pattern_capturer: self.pattern_capturer.unwrap_or_else(|| Arc::new(PatternCapturer::new())),
-            pattern_validator: self.pattern_validator.unwrap_or_else(|| Arc::new(PatternValidator::new())),
-            rule_promoter: self.rule_promoter.unwrap_or_else(|| Arc::new(RwLock::new(RulePromoter::new()))),
+            decision_logger: self
+                .decision_logger
+                .unwrap_or_else(|| Arc::new(DecisionLogger::new())),
+            rule_storage: self
+                .rule_storage
+                .unwrap_or_else(|| Arc::new(RuleStorage::new(self.scope))),
+            rule_validator: self
+                .rule_validator
+                .unwrap_or_else(|| Arc::new(RuleValidator::new())),
+            pattern_capturer: self
+                .pattern_capturer
+                .unwrap_or_else(|| Arc::new(PatternCapturer::new())),
+            pattern_validator: self
+                .pattern_validator
+                .unwrap_or_else(|| Arc::new(PatternValidator::new())),
+            rule_promoter: self
+                .rule_promoter
+                .unwrap_or_else(|| Arc::new(RwLock::new(RulePromoter::new()))),
             patterns: Arc::new(RwLock::new(HashMap::new())),
-            analytics_engine: self.analytics_engine.unwrap_or_else(|| Arc::new(AnalyticsEngine::new())),
+            analytics_engine: self
+                .analytics_engine
+                .unwrap_or_else(|| Arc::new(AnalyticsEngine::new())),
         }
     }
 }
 
 impl LearningManager {
-
     /// Get the current configuration
     pub async fn get_config(&self) -> LearningConfig {
         self.config.read().await.clone()

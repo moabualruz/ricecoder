@@ -3,7 +3,8 @@ use chrono::Utc;
 /// Tests configuration storage, retrieval, hierarchy merging, and override capability
 use ricecoder_teams::config::TeamConfigManager;
 use ricecoder_teams::models::{
-    CodeReviewRule, ComplianceRequirement, StandardsOverride, GovernanceDoc, TeamStandards, Template,
+    CodeReviewRule, ComplianceRequirement, GovernanceDoc, StandardsOverride, TeamStandards,
+    Template,
 };
 
 /// Helper function to create test standards
@@ -383,7 +384,10 @@ async fn test_standards_serialization_roundtrip() {
         retrieved.code_review_rules.len()
     );
     assert_eq!(original.templates.len(), retrieved.templates.len());
-    assert_eq!(original.governance_docs.len(), retrieved.governance_docs.len());
+    assert_eq!(
+        original.governance_docs.len(),
+        retrieved.governance_docs.len()
+    );
     assert_eq!(
         original.compliance_requirements.len(),
         retrieved.compliance_requirements.len()

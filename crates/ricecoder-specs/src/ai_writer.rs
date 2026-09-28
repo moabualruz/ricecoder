@@ -8,11 +8,11 @@ use chrono::Utc;
 use crate::{
     approval::ApprovalManager,
     error::SpecError,
-    models::{
-        ConversationMessage, MessageRole, Spec, SpecMetadata, SpecPhase, SpecStatus,
-        SpecWritingSession, Governance,
-    },
     governance::GovernanceLoader,
+    models::{
+        ConversationMessage, Governance, MessageRole, Spec, SpecMetadata, SpecPhase, SpecStatus,
+        SpecWritingSession,
+    },
     validation::ValidationEngine,
 };
 
@@ -1193,7 +1193,7 @@ mod tests {
 
     #[test]
     fn test_format_governance_context() {
-        use crate::models::{Standard, GovernanceRule, TemplateRef};
+        use crate::models::{GovernanceRule, Standard, TemplateRef};
 
         let Governance = Governance {
             rules: vec![GovernanceRule {

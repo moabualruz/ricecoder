@@ -37,10 +37,12 @@ impl SpinnerStyle {
             Self::Braille => &["⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"],
             Self::Line => &["-", "\\", "|", "/"],
             Self::Arrow => &["←", "↖", "↑", "↗", "→", "↘", "↓", "↙"],
-            Self::Clock => &["🕛", "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚"],
+            Self::Clock => &[
+                "🕛", "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚",
+            ],
         }
     }
-    
+
     /// Get default interval for this style
     pub fn interval(&self) -> Duration {
         match self {
@@ -55,43 +57,57 @@ impl SpinnerStyle {
 }
 
 /// Generate frames with color variations
-pub fn create_frames(color: Color, style: SpinnerStyle, inactive_factor: f32, min_alpha: f32) -> Vec<ColoredFrame> {
+pub fn create_frames(
+    color: Color,
+    style: SpinnerStyle,
+    inactive_factor: f32,
+    min_alpha: f32,
+) -> Vec<ColoredFrame> {
     let base_frames = style.frames();
     let len = base_frames.len();
-    
-    base_frames.iter().enumerate().map(|(i, &frame)| {
-        // Calculate brightness based on position (front of wave is brightest)
-        let brightness = 1.0 - (i as f32 / len as f32) * inactive_factor;
-        let brightness = brightness.max(min_alpha);
-        
-        ColoredFrame {
-            text: frame.to_string(),
-            color: adjust_color_brightness(color, brightness),
-        }
-    }).collect()
+
+    base_frames
+        .iter()
+        .enumerate()
+        .map(|(i, &frame)| {
+            // Calculate brightness based on position (front of wave is brightest)
+            let brightness = 1.0 - (i as f32 / len as f32) * inactive_factor;
+            let brightness = brightness.max(min_alpha);
+
+            ColoredFrame {
+                text: frame.to_string(),
+                color: adjust_color_brightness(color, brightness),
+            }
+        })
+        .collect()
 }
 
 /// Generate color sequence for frames
-pub fn create_colors(color: Color, style: SpinnerStyle, inactive_factor: f32, min_alpha: f32) -> Vec<Color> {
+pub fn create_colors(
+    color: Color,
+    style: SpinnerStyle,
+    inactive_factor: f32,
+    min_alpha: f32,
+) -> Vec<Color> {
     let len = style.frames().len();
-    
-    (0..len).map(|i| {
-        let brightness = 1.0 - (i as f32 / len as f32) * inactive_factor;
-        let brightness = brightness.max(min_alpha);
-        adjust_color_brightness(color, brightness)
-    }).collect()
+
+    (0..len)
+        .map(|i| {
+            let brightness = 1.0 - (i as f32 / len as f32) * inactive_factor;
+            let brightness = brightness.max(min_alpha);
+            adjust_color_brightness(color, brightness)
+        })
+        .collect()
 }
 
 /// Adjust color brightness
 fn adjust_color_brightness(color: Color, factor: f32) -> Color {
     match color {
-        Color::Rgb(r, g, b) => {
-            Color::Rgb(
-                (r as f32 * factor) as u8,
-                (g as f32 * factor) as u8,
-                (b as f32 * factor) as u8,
-            )
-        }
+        Color::Rgb(r, g, b) => Color::Rgb(
+            (r as f32 * factor) as u8,
+            (g as f32 * factor) as u8,
+            (b as f32 * factor) as u8,
+        ),
         Color::Indexed(idx) => {
             // For indexed colors, just return the original
             // A more sophisticated implementation would convert to RGB first
@@ -146,28 +162,28 @@ impl SpinnerState {
             spinning: true,
         }
     }
-    
+
     pub fn with_interval(mut self, interval: Duration) -> Self {
         self.interval = interval;
         self
     }
-    
+
     /// Start spinning
     pub fn start(&mut self) {
         self.spinning = true;
         self.last_update = Instant::now();
     }
-    
+
     /// Stop spinning
     pub fn stop(&mut self) {
         self.spinning = false;
     }
-    
+
     /// Check if should advance frame
     pub fn should_advance(&self) -> bool {
         self.spinning && self.last_update.elapsed() >= self.interval
     }
-    
+
     /// Advance to next frame
     pub fn advance(&mut self, frame_count: usize) {
         if self.spinning {
@@ -175,12 +191,12 @@ impl SpinnerState {
             self.last_update = Instant::now();
         }
     }
-    
+
     /// Get current frame index
     pub fn frame(&self) -> usize {
         self.frame
     }
-    
+
     /// Tick - advance if needed
     pub fn tick(&mut self, frame_count: usize) -> bool {
         if self.should_advance() {
@@ -228,7 +244,7 @@ impl Spinner {
         );
         Self { config, frames }
     }
-    
+
     pub fn dots(color: Color) -> Self {
         Self::new(SpinnerConfig {
             style: SpinnerStyle::Dots,
@@ -236,7 +252,7 @@ impl Spinner {
             ..Default::default()
         })
     }
-    
+
     pub fn blocks(color: Color) -> Self {
         Self::new(SpinnerConfig {
             style: SpinnerStyle::Blocks,
@@ -254,15 +270,15 @@ impl Default for Spinner {
 
 impl StatefulWidget for Spinner {
     type State = SpinnerState;
-    
+
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         if area.width == 0 || area.height == 0 {
             return;
         }
-        
+
         // Tick the state
         state.tick(self.frames.len());
-        
+
         // Get current frame
         if let Some(frame) = self.frames.get(state.frame()) {
             let style = Style::default().fg(frame.color);
@@ -286,7 +302,7 @@ impl SimpleSpinner {
             interval_ms: style.interval().as_millis() as u64,
         }
     }
-    
+
     pub fn dots(color: Color) -> Self {
         Self::new(SpinnerStyle::Dots, color)
     }
@@ -297,16 +313,16 @@ impl Widget for SimpleSpinner {
         if area.width == 0 || area.height == 0 || self.frames.is_empty() {
             return;
         }
-        
+
         // Time-based frame selection
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
             .as_millis() as u64;
-        
+
         let frame_idx = ((now / self.interval_ms) % self.frames.len() as u64) as usize;
         let frame = self.frames[frame_idx];
-        
+
         let style = Style::default().fg(self.color);
         buf.set_string(area.x, area.y, frame, style);
     }
@@ -315,50 +331,50 @@ impl Widget for SimpleSpinner {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_spinner_style_frames() {
         assert_eq!(SpinnerStyle::Dots.frames().len(), 10);
         assert_eq!(SpinnerStyle::Blocks.frames().len(), 4);
         assert_eq!(SpinnerStyle::Braille.frames().len(), 8);
     }
-    
+
     #[test]
     fn test_spinner_state() {
         let mut state = SpinnerState::new();
         assert_eq!(state.frame(), 0);
-        
+
         state.advance(10);
         assert_eq!(state.frame(), 1);
-        
+
         // Wrap around
         for _ in 0..9 {
             state.advance(10);
         }
         assert_eq!(state.frame(), 0);
     }
-    
+
     #[test]
     fn test_spinner_state_stop() {
         let mut state = SpinnerState::new();
         state.stop();
-        
+
         let old_frame = state.frame();
         state.advance(10);
         assert_eq!(state.frame(), old_frame); // Doesn't advance when stopped
     }
-    
+
     #[test]
     fn test_create_frames() {
         let frames = create_frames(Color::Cyan, SpinnerStyle::Dots, 0.6, 0.3);
         assert_eq!(frames.len(), 10);
     }
-    
+
     #[test]
     fn test_adjust_color_brightness() {
         let color = Color::Rgb(100, 100, 100);
         let dimmed = adjust_color_brightness(color, 0.5);
-        
+
         if let Color::Rgb(r, g, b) = dimmed {
             assert_eq!(r, 50);
             assert_eq!(g, 50);
@@ -367,7 +383,7 @@ mod tests {
             panic!("Expected RGB color");
         }
     }
-    
+
     #[test]
     fn test_spinner_new() {
         let spinner = Spinner::dots(Color::Green);

@@ -92,7 +92,11 @@ impl ToolRegistry {
         debug!("Replacing tool: {}", tool_id);
 
         // Replace in tools registry
-        let old_tool = self.tools.write().await.insert(tool_id.clone(), tool.clone());
+        let old_tool = self
+            .tools
+            .write()
+            .await
+            .insert(tool_id.clone(), tool.clone());
 
         // Update metadata if tool already existed, otherwise create new
         let mut metadata_lock = self.tool_metadata.write().await;
@@ -122,13 +126,19 @@ impl ToolRegistry {
         fallback_to_old: bool,
     ) -> Result<(), ToolError> {
         let tool_id = tool_id.into();
-        debug!("Overriding tool: {} (fallback={})", tool_id, fallback_to_old);
+        debug!(
+            "Overriding tool: {} (fallback={})",
+            tool_id, fallback_to_old
+        );
 
         if fallback_to_old {
             // Keep old tool in a "fallback" namespace
             if let Some(old_tool) = self.tools.read().await.get(&tool_id) {
                 let fallback_id = format!("{}_fallback", tool_id);
-                self.tools.write().await.insert(fallback_id, old_tool.clone());
+                self.tools
+                    .write()
+                    .await
+                    .insert(fallback_id, old_tool.clone());
             }
         }
 
@@ -150,7 +160,7 @@ impl ToolRegistry {
     /// **GAP-6**: Check if tool is available for given provider
     pub async fn is_tool_available_for_provider(&self, tool_id: &str, provider_id: &str) -> bool {
         let filter = self.provider_filter.read().await;
-        
+
         // If no filter, all tools available
         if filter.is_none() {
             return true;
@@ -159,7 +169,7 @@ impl ToolRegistry {
         // Check if tool's provider matches filter
         if let Some(metadata) = self.tool_metadata.read().await.get(tool_id) {
             if let Some(allowed_providers) = filter.as_ref() {
-                return allowed_providers.contains(&metadata.provider_id) 
+                return allowed_providers.contains(&metadata.provider_id)
                     || allowed_providers.contains(provider_id);
             }
         }
@@ -205,9 +215,12 @@ impl ToolRegistry {
         };
 
         let tool: Arc<dyn Tool> = Arc::new(adapter);
-        
+
         // Register in tools registry
-        self.tools.write().await.insert(plugin_tool.name.clone(), tool.clone());
+        self.tools
+            .write()
+            .await
+            .insert(plugin_tool.name.clone(), tool.clone());
 
         // Create metadata
         let metadata = ToolMetadata {
@@ -217,7 +230,10 @@ impl ToolRegistry {
             enabled: true,
             required_permissions: Vec::new(),
         };
-        self.tool_metadata.write().await.insert(metadata.id.clone(), metadata);
+        self.tool_metadata
+            .write()
+            .await
+            .insert(metadata.id.clone(), metadata);
 
         Ok(tool)
     }
@@ -335,7 +351,10 @@ impl Tool for PluginToolAdapter {
         // Plugin tools should be executed via provider registry
         Err(ToolError::new(
             "PLUGIN_EXECUTION_NOT_SUPPORTED",
-            format!("Plugin tool '{}' must be executed via provider registry", self.id),
+            format!(
+                "Plugin tool '{}' must be executed via provider registry",
+                self.id
+            ),
         ))
     }
 }
@@ -396,8 +415,12 @@ mod tests {
         let provider_registry = Arc::new(ProviderRegistry::new());
         let registry = ToolRegistry::new(provider_registry);
 
-        let tool1 = Arc::new(MockTool { id: "test".to_string() });
-        let tool2 = Arc::new(MockTool { id: "test".to_string() });
+        let tool1 = Arc::new(MockTool {
+            id: "test".to_string(),
+        });
+        let tool2 = Arc::new(MockTool {
+            id: "test".to_string(),
+        });
 
         // Register initial tool
         let metadata = ToolMetadata {
@@ -424,10 +447,14 @@ mod tests {
         let registry = ToolRegistry::new(provider_registry);
 
         // Set filter for "mcp" provider only
-        registry.set_provider_filter(Some(vec!["mcp".to_string()])).await;
+        registry
+            .set_provider_filter(Some(vec!["mcp".to_string()]))
+            .await;
 
         // Register tool with "builtin" provider
-        let tool = Arc::new(MockTool { id: "test".to_string() });
+        let tool = Arc::new(MockTool {
+            id: "test".to_string(),
+        });
         let metadata = ToolMetadata {
             id: "test".to_string(),
             description: "Test tool".to_string(),
@@ -438,8 +465,12 @@ mod tests {
         registry.register_tool(tool, metadata).await.unwrap();
 
         // Tool should not be available for builtin provider
-        assert!(!registry.is_tool_available_for_provider("test", "builtin").await);
-        
+        assert!(
+            !registry
+                .is_tool_available_for_provider("test", "builtin")
+                .await
+        );
+
         // Tool should be available for mcp provider
         assert!(registry.is_tool_available_for_provider("test", "mcp").await);
     }
@@ -449,7 +480,9 @@ mod tests {
         let provider_registry = Arc::new(ProviderRegistry::new());
         let registry = ToolRegistry::new(provider_registry);
 
-        let tool = Arc::new(MockTool { id: "test".to_string() });
+        let tool = Arc::new(MockTool {
+            id: "test".to_string(),
+        });
         let metadata = ToolMetadata {
             id: "test".to_string(),
             description: "Test tool".to_string(),

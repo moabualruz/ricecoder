@@ -148,12 +148,8 @@ impl FileReadTool {
     const DEFAULT_MAX_LINE_LENGTH: usize = 2000;
 
     /// .env file whitelist (OpenCode parity)
-    const ENV_FILE_WHITELIST: &'static [&'static str] = &[
-        ".env.sample",
-        ".env.example",
-        ".env.template",
-        ".example",
-    ];
+    const ENV_FILE_WHITELIST: &'static [&'static str] =
+        &[".env.sample", ".env.example", ".env.template", ".example"];
 
     /// Read a single file with safety checks
     pub fn read_file(input: &FileReadInput) -> Result<FileReadOutput, ToolError> {
@@ -184,10 +180,15 @@ impl FileReadTool {
         // Gap 9: Block .env files with whitelist
         if input.block_env_files.unwrap_or(true) {
             if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
-                let is_whitelisted = Self::ENV_FILE_WHITELIST.iter().any(|w| filename.ends_with(w));
-                
+                let is_whitelisted = Self::ENV_FILE_WHITELIST
+                    .iter()
+                    .any(|w| filename.ends_with(w));
+
                 // Block .env* files except whitelisted
-                if !is_whitelisted && filename.starts_with(".env") && (filename == ".env" || filename.chars().nth(4) == Some('.')) {
+                if !is_whitelisted
+                    && filename.starts_with(".env")
+                    && (filename == ".env" || filename.chars().nth(4) == Some('.'))
+                {
                     return Ok(FileReadOutput {
                         success: false,
                         content: None,
@@ -255,19 +256,32 @@ impl FileReadTool {
 
         // Gap 3 & 4: Image/PDF base64 attachments, SVG as text
         let mime_type = Self::detect_mime_type(path);
-        let is_image = mime_type.as_ref().map(|m| m.starts_with("image/")).unwrap_or(false);
-        let is_svg = mime_type.as_ref().map(|m| m == "image/svg+xml").unwrap_or(false);
-        let is_pdf = mime_type.as_ref().map(|m| m == "application/pdf").unwrap_or(false);
-        
+        let is_image = mime_type
+            .as_ref()
+            .map(|m| m.starts_with("image/"))
+            .unwrap_or(false);
+        let is_svg = mime_type
+            .as_ref()
+            .map(|m| m == "image/svg+xml")
+            .unwrap_or(false);
+        let is_pdf = mime_type
+            .as_ref()
+            .map(|m| m == "application/pdf")
+            .unwrap_or(false);
+
         // Return base64 attachment for images (except SVG) and PDFs
         if input.return_attachments.unwrap_or(true) && (is_image && !is_svg) || is_pdf {
             let content_bytes = fs::read(&file_path)
                 .map_err(|e| ToolError::new("IO_ERROR", format!("Failed to read file: {}", e)))?;
-            
+
             let base64_content = base64::encode(&content_bytes);
             let mime = mime_type.unwrap_or_else(|| "application/octet-stream".to_string());
-            let msg = if is_image { "Image read successfully" } else { "PDF read successfully" };
-            
+            let msg = if is_image {
+                "Image read successfully"
+            } else {
+                "PDF read successfully"
+            };
+
             return Ok(FileReadOutput {
                 success: true,
                 content: Some(msg.to_string()),
@@ -335,21 +349,31 @@ impl FileReadTool {
         };
 
         // Apply line filtering with truncation
-        let max_line_len = input.max_line_length.unwrap_or(Self::DEFAULT_MAX_LINE_LENGTH);
+        let max_line_len = input
+            .max_line_length
+            .unwrap_or(Self::DEFAULT_MAX_LINE_LENGTH);
         let use_line_numbers = input.line_numbers.unwrap_or(true); // Default true for OpenCode parity
 
-        let (filtered_content, lines_read, total_lines_val) =
-            Self::filter_lines_with_options(&content, start_idx, line_count, max_line_len, use_line_numbers)?;
+        let (filtered_content, lines_read, total_lines_val) = Self::filter_lines_with_options(
+            &content,
+            start_idx,
+            line_count,
+            max_line_len,
+            use_line_numbers,
+        )?;
 
         // Gap 6: Add OpenCode-style footer
         let mut output = String::from("<file>\n");
         output.push_str(&filtered_content);
-        
+
         let last_read_line = start_idx + lines_read;
         let has_more_lines = total_lines_val.map(|t| t > last_read_line).unwrap_or(false);
-        
+
         if has_more_lines {
-            output.push_str(&format!("\n\n(File has more lines. Use 'offset' parameter to read beyond line {})", last_read_line));
+            output.push_str(&format!(
+                "\n\n(File has more lines. Use 'offset' parameter to read beyond line {})",
+                last_read_line
+            ));
         } else if let Some(total) = total_lines_val {
             output.push_str(&format!("\n\n(End of file - total {} lines)", total));
         }
@@ -504,17 +528,17 @@ impl FileReadTool {
     /// Resolve relative paths to absolute (Gap 2)
     fn resolve_path(file_path: &str, working_dir: Option<&str>) -> Result<String, ToolError> {
         let path = Path::new(file_path);
-        
+
         if path.is_absolute() {
             return Ok(file_path.to_string());
         }
-        
+
         // Resolve relative to working directory or current directory
         let base_dir = working_dir
             .map(|d| Path::new(d).to_path_buf())
             .or_else(|| std::env::current_dir().ok())
             .ok_or_else(|| ToolError::new("PATH_ERROR", "Cannot determine working directory"))?;
-        
+
         let absolute_path = base_dir.join(path);
         absolute_path
             .to_str()
@@ -524,43 +548,46 @@ impl FileReadTool {
 
     /// Generate file-not-found error with suggestions (Gap 11)
     fn generate_file_not_found_error(path: &Path) -> Result<String, ToolError> {
-        let dir = path.parent().ok_or_else(|| {
-            ToolError::new("PATH_ERROR", "Invalid file path")
-        })?;
-        
-        let filename = path.file_name()
+        let dir = path
+            .parent()
+            .ok_or_else(|| ToolError::new("PATH_ERROR", "Invalid file path"))?;
+
+        let filename = path
+            .file_name()
             .and_then(|n| n.to_str())
             .ok_or_else(|| ToolError::new("PATH_ERROR", "Invalid filename"))?;
-        
+
         // Try to find similar files in directory
         if dir.exists() {
             let entries = fs::read_dir(dir)
                 .map_err(|e| ToolError::new("IO_ERROR", format!("Cannot read directory: {}", e)))?;
-            
+
             let mut suggestions = Vec::new();
             for entry in entries {
                 if let Ok(entry) = entry {
                     if let Some(entry_name) = entry.file_name().to_str() {
                         let lower_entry = entry_name.to_lowercase();
                         let lower_filename = filename.to_lowercase();
-                        
+
                         // Simple fuzzy match: contains or is contained
-                        if lower_entry.contains(&lower_filename) || lower_filename.contains(&lower_entry) {
+                        if lower_entry.contains(&lower_filename)
+                            || lower_filename.contains(&lower_entry)
+                        {
                             suggestions.push(entry.path());
                         }
                     }
                 }
             }
-            
+
             // Return top 3 suggestions
             suggestions.truncate(3);
-            
+
             if !suggestions.is_empty() {
                 let suggestion_list: Vec<String> = suggestions
                     .iter()
                     .filter_map(|p| p.to_str().map(|s| s.to_string()))
                     .collect();
-                
+
                 return Ok(format!(
                     "File not found: {}\n\nDid you mean one of these?\n{}",
                     path.display(),
@@ -568,7 +595,7 @@ impl FileReadTool {
                 ));
             }
         }
-        
+
         Ok(format!("File not found: {}", path.display()))
     }
 
@@ -828,11 +855,7 @@ mod tests {
         let result = FileReadTool::read_file(&input).unwrap();
         assert!(!result.success);
         assert!(result.is_binary);
-        assert!(result
-            .error
-            .as_ref()
-            .unwrap()
-            .contains("binary file"));
+        assert!(result.error.as_ref().unwrap().contains("binary file"));
     }
 
     #[test]

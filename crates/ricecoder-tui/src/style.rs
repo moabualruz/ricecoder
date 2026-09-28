@@ -239,7 +239,7 @@ impl ProgressIndicator {
 
 // NOTE: Theme definitions have been moved to JSON files in config/themes/
 // Use ricecoder_themes::Theme and ricecoder_themes::ThemeLoader instead.
-// 
+//
 // The following utility functions are kept for color support detection:
 
 /// Detect terminal color capabilities

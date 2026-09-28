@@ -152,7 +152,8 @@ impl SearchInput {
 
     /// Get the effective context max characters
     pub fn get_context_max_chars(&self) -> usize {
-        self.context_max_characters.unwrap_or(DEFAULT_CONTEXT_MAX_CHARS)
+        self.context_max_characters
+            .unwrap_or(DEFAULT_CONTEXT_MAX_CHARS)
     }
 }
 
@@ -236,7 +237,9 @@ impl SearchTool {
 
         Self {
             http_client,
-            provider: SearchProvider::ExaAI { api_key: api_key.into() },
+            provider: SearchProvider::ExaAI {
+                api_key: api_key.into(),
+            },
             mcp_available: false,
         }
     }
@@ -294,7 +297,10 @@ impl SearchTool {
 
         // Check for SQL injection patterns
         let sql_patterns = [
-            r"(?i)(union|select|insert|update|delete|drop|create|alter|exec|execute)",
+            r"(?i)\bunion\s+(all\s+)?select\b",
+            r"(?i)\b(insert\s+into|delete\s+from|drop\s+table|create\s+table|alter\s+table)\b",
+            r"(?i)\bupdate\s+\w+\s+set\b",
+            r"(?i)\bexec(?:ute)?\s+\w+",
             r"(?i)(--|;|/\*|\*/|xp_|sp_)",
             r"'.*=.*'",   // Pattern matching for quoted comparisons like '1'='1'
             r#"".*=.*""#, // Pattern matching for double-quoted comparisons
@@ -355,7 +361,7 @@ impl SearchTool {
         // use tokio::select;
         // let timeout_fut = timeout(Duration::from_secs(SEARCH_TIMEOUT_SECS), self.execute_search(&input));
         // let cancel_fut = ctx.cancellation_token.cancelled();
-        // 
+        //
         // match select! {
         //     result = timeout_fut => result?,
         //     _ = cancel_fut => Err(ToolError::new("CANCELLED", "Search cancelled")),
@@ -393,15 +399,9 @@ impl SearchTool {
     /// Internal search execution - routes to appropriate provider
     async fn execute_search(&self, input: &SearchInput) -> Result<SearchOutput, ToolError> {
         match &self.provider {
-            SearchProvider::ExaAI { api_key } => {
-                self.search_exa_ai(input, api_key).await
-            }
-            SearchProvider::DuckDuckGo => {
-                self.search_duckduckgo(input).await
-            }
-            SearchProvider::SearXNG { base_url } => {
-                self.search_searxng(input, base_url).await
-            }
+            SearchProvider::ExaAI { api_key } => self.search_exa_ai(input, api_key).await,
+            SearchProvider::DuckDuckGo => self.search_duckduckgo(input).await,
+            SearchProvider::SearXNG { base_url } => self.search_searxng(input, base_url).await,
             SearchProvider::MCP => {
                 // MCP handled separately in search()
                 self.search_duckduckgo(input).await
@@ -410,7 +410,11 @@ impl SearchTool {
     }
 
     /// Search using Exa AI API
-    async fn search_exa_ai(&self, input: &SearchInput, api_key: &str) -> Result<SearchOutput, ToolError> {
+    async fn search_exa_ai(
+        &self,
+        input: &SearchInput,
+        api_key: &str,
+    ) -> Result<SearchOutput, ToolError> {
         debug!("Executing Exa AI search for: {}", input.query);
 
         let search_type = match input.search_type {
@@ -435,7 +439,8 @@ impl SearchTool {
         });
 
         // GAP-1 FIX: Use MCP endpoint matching OpenCode
-        let response = self.http_client
+        let response = self
+            .http_client
             .post("https://mcp.exa.ai/mcp")
             .header("x-api-key", api_key)
             .header("Content-Type", "application/json")
@@ -452,15 +457,16 @@ impl SearchTool {
         if !response.status().is_success() {
             let status = response.status();
             let error_text = response.text().await.unwrap_or_default();
-            return Err(ToolError::new("API_ERROR", format!("Exa AI MCP returned {}", status))
-                .with_details(error_text)
-                .with_suggestion("Check API key and rate limits"));
+            return Err(
+                ToolError::new("API_ERROR", format!("Exa AI MCP returned {}", status))
+                    .with_details(error_text)
+                    .with_suggestion("Check API key and rate limits"),
+            );
         }
 
         // GAP-2 FIX: Parse SSE response matching OpenCode
         let response_text = response.text().await.map_err(|e| {
-            ToolError::new("PARSE_ERROR", "Failed to read MCP response")
-                .with_details(e.to_string())
+            ToolError::new("PARSE_ERROR", "Failed to read MCP response").with_details(e.to_string())
         })?;
 
         // Parse SSE-formatted response (lines starting with "data: ")
@@ -491,12 +497,14 @@ impl SearchTool {
             .enumerate()
             .skip(input.get_offset())
             .take(input.get_limit())
-            .map(|(idx, r)| SearchResult::new(
-                r.title.unwrap_or_else(|| "Untitled".to_string()),
-                r.url,
-                r.text.unwrap_or_else(|| r.snippet.unwrap_or_default()),
-                idx + 1,
-            ))
+            .map(|(idx, r)| {
+                SearchResult::new(
+                    r.title.unwrap_or_else(|| "Untitled".to_string()),
+                    r.url,
+                    r.text.unwrap_or_else(|| r.snippet.unwrap_or_default()),
+                    idx + 1,
+                )
+            })
             .collect();
 
         let total = results.len();
@@ -514,7 +522,8 @@ impl SearchTool {
             urlencoding::encode(&input.query)
         );
 
-        let response = self.http_client
+        let response = self
+            .http_client
             .get(&url)
             .header("User-Agent", "RiceCoder/1.0")
             .send()
@@ -574,7 +583,11 @@ impl SearchTool {
     }
 
     /// Search using SearXNG instance
-    async fn search_searxng(&self, input: &SearchInput, base_url: &str) -> Result<SearchOutput, ToolError> {
+    async fn search_searxng(
+        &self,
+        input: &SearchInput,
+        base_url: &str,
+    ) -> Result<SearchOutput, ToolError> {
         debug!("Executing SearXNG search for: {}", input.query);
 
         let url = format!(
@@ -583,14 +596,10 @@ impl SearchTool {
             urlencoding::encode(&input.query)
         );
 
-        let response = self.http_client
-            .get(&url)
-            .send()
-            .await
-            .map_err(|e| {
-                ToolError::new("NETWORK_ERROR", "Failed to connect to SearXNG")
-                    .with_details(e.to_string())
-            })?;
+        let response = self.http_client.get(&url).send().await.map_err(|e| {
+            ToolError::new("NETWORK_ERROR", "Failed to connect to SearXNG")
+                .with_details(e.to_string())
+        })?;
 
         if !response.status().is_success() {
             return Err(ToolError::new("API_ERROR", "SearXNG search failed")
@@ -608,12 +617,9 @@ impl SearchTool {
             .enumerate()
             .skip(input.get_offset())
             .take(input.get_limit())
-            .map(|(idx, r)| SearchResult::new(
-                r.title,
-                r.url,
-                r.content.unwrap_or_default(),
-                idx + 1,
-            ))
+            .map(|(idx, r)| {
+                SearchResult::new(r.title, r.url, r.content.unwrap_or_default(), idx + 1)
+            })
             .collect();
 
         let total = results.len();

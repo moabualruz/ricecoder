@@ -99,9 +99,11 @@ impl CacheCompressor {
         };
 
         let mut encoder = GzEncoder::new(Vec::new(), compression);
-        encoder.write_all(data).map_err(|e| CacheError::Compression {
-            message: format!("Failed to compress data: {}", e),
-        })?;
+        encoder
+            .write_all(data)
+            .map_err(|e| CacheError::Compression {
+                message: format!("Failed to compress data: {}", e),
+            })?;
 
         let compressed = encoder.finish().map_err(|e| CacheError::Compression {
             message: format!("Failed to finalize compression: {}", e),
@@ -258,7 +260,9 @@ mod tests {
             "Compressed size should be smaller"
         );
 
-        let decompressed = compressor.decompress(&compressed.data, compressed.is_compressed).unwrap();
+        let decompressed = compressor
+            .decompress(&compressed.data, compressed.is_compressed)
+            .unwrap();
         assert_eq!(decompressed, original_bytes);
     }
 

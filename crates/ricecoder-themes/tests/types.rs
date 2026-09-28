@@ -15,7 +15,10 @@ fn test_theme_default() {
 fn test_theme_fallback() {
     let theme = Theme::fallback();
     assert_eq!(theme.name, "fallback");
-    assert!(matches!(theme.primary, ratatui::style::Color::Rgb(255, 255, 255)));
+    assert!(matches!(
+        theme.primary,
+        ratatui::style::Color::Rgb(255, 255, 255)
+    ));
 }
 
 #[test]
@@ -23,7 +26,7 @@ fn test_registry_get_themes() {
     let registry = ThemeRegistry::new();
     // Registry should have at least the fallback theme
     assert!(registry.builtin_count() >= 1);
-    
+
     // Can get themes through registry
     let themes = registry.list_builtin();
     assert!(!themes.is_empty());

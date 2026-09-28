@@ -39,7 +39,11 @@ impl ReplicateProvider {
     }
 
     /// Create a new Replicate provider instance with custom HTTP client
-    pub fn with_client(client: Arc<Client>, api_key: String, models: Vec<ModelInfo>) -> Result<Self, ProviderError> {
+    pub fn with_client(
+        client: Arc<Client>,
+        api_key: String,
+        models: Vec<ModelInfo>,
+    ) -> Result<Self, ProviderError> {
         if api_key.is_empty() {
             return Err(ProviderError::ConfigError(
                 "Replicate API key is required".to_string(),

@@ -57,11 +57,9 @@ impl Clipboard {
     pub fn set(content: &str) -> Result<(), ClipboardError> {
         // Try arboard first
         match arboard::Clipboard::new() {
-            Ok(mut clipboard) => {
-                clipboard
-                    .set_text(content)
-                    .map_err(|e| ClipboardError::CopyError(e.to_string()))
-            }
+            Ok(mut clipboard) => clipboard
+                .set_text(content)
+                .map_err(|e| ClipboardError::CopyError(e.to_string())),
             Err(_) => {
                 // Fall back to OSC 52
                 Osc52Clipboard::copy_text(content)

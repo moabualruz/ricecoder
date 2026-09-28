@@ -34,9 +34,7 @@ impl ContentHash {
         let mtime = metadata
             .modified()?
             .duration_since(SystemTime::UNIX_EPOCH)
-            .map_err(|e| {
-                HashCacheError::ComputationFailed(format!("time error: {}", e))
-            })?
+            .map_err(|e| HashCacheError::ComputationFailed(format!("time error: {}", e)))?
             .as_secs();
 
         // Simple hash: combine size and mtime
@@ -56,13 +54,13 @@ impl ContentHash {
 struct CachedHash {
     /// The computed hash
     hash: ContentHash,
-    
+
     /// File mtime when hash was computed
     mtime: u64,
-    
+
     /// File size when hash was computed
     size: u64,
-    
+
     /// When this cache entry was created
     cached_at: u64,
 }
@@ -79,10 +77,10 @@ struct CachedHash {
 pub struct ContentHashCache {
     /// Cache entries: path -> cached hash
     cache: HashMap<PathBuf, CachedHash>,
-    
+
     /// Maximum cache size in bytes (default 50 MB)
     max_bytes: usize,
-    
+
     /// Current cache size in bytes
     current_bytes: usize,
 }
@@ -103,13 +101,7 @@ impl ContentHashCache {
     }
 
     /// Add/update hash in cache
-    pub fn add(
-        &mut self,
-        path: PathBuf,
-        hash: ContentHash,
-        mtime: u64,
-        size: u64,
-    ) {
+    pub fn add(&mut self, path: PathBuf, hash: ContentHash, mtime: u64, size: u64) {
         // Evict LRU entries if needed to make space
         // Simple eviction: remove oldest entry when at capacity
         while self.current_bytes + std::mem::size_of::<CachedHash>() > self.max_bytes
@@ -123,8 +115,7 @@ impl ContentHashCache {
             {
                 if let Some(entry) = self.cache.remove(&oldest_path) {
                     self.current_bytes = self.current_bytes.saturating_sub(
-                        entry.hash.value() as usize + 
-                        std::mem::size_of::<u64>() * 3
+                        entry.hash.value() as usize + std::mem::size_of::<u64>() * 3,
                     );
                 }
             }

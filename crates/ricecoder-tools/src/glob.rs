@@ -3,8 +3,8 @@
 //! Fast file pattern matching with safety limits.
 //! Matches OpenCode's glob tool behavior.
 
-use async_trait::async_trait;
 use ::glob::Pattern;
+use async_trait::async_trait;
 use ignore::WalkBuilder;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -196,7 +196,9 @@ impl Tool for GlobTool {
             "pattern".to_string(),
             ParameterSchema {
                 type_: "string".to_string(),
-                description: "The glob pattern to match files against (e.g., \"**/*.rs\", \"src/**/*.ts\")".to_string(),
+                description:
+                    "The glob pattern to match files against (e.g., \"**/*.rs\", \"src/**/*.ts\")"
+                        .to_string(),
                 required: true,
                 default: None,
                 properties: None,
@@ -208,7 +210,8 @@ impl Tool for GlobTool {
             "path".to_string(),
             ParameterSchema {
                 type_: "string".to_string(),
-                description: "The directory to search in. Defaults to current workspace.".to_string(),
+                description: "The directory to search in. Defaults to current workspace."
+                    .to_string(),
                 required: false,
                 default: None,
                 properties: None,
@@ -258,7 +261,9 @@ impl Tool for GlobTool {
         // Build output
         let mut output = result.files.join("\n");
         if result.truncated {
-            output.push_str("\n\n(Results are truncated. Consider using a more specific path or pattern.)");
+            output.push_str(
+                "\n\n(Results are truncated. Consider using a more specific path or pattern.)",
+            );
         }
 
         Ok(ToolExecutionResult {

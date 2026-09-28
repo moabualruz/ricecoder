@@ -206,7 +206,7 @@ impl EmbeddingGenerator {
         }
 
         let documents: Vec<String> = texts.iter().map(|s| s.to_string()).collect();
-        
+
         self.model
             .embed(documents, None)
             .map_err(|e| anyhow!("embedding generation failed: {e}"))

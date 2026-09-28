@@ -274,10 +274,7 @@ mod tests {
 
         // Add several messages with longer text
         for i in 0..5 {
-            let long_text = format!(
-                "This is a longer message {} that will use more tokens",
-                i
-            );
+            let long_text = format!("This is a longer message {} that will use more tokens", i);
             let message = ChatMessage::user(long_text);
             context.add_message(message);
         }
@@ -304,8 +301,8 @@ mod tests {
 
     #[test]
     fn test_tracked_file() {
-        let file = TrackedFile::new(PathBuf::from("test.rs"))
-            .with_content("fn main() {}".to_string());
+        let file =
+            TrackedFile::new(PathBuf::from("test.rs")).with_content("fn main() {}".to_string());
 
         assert!(file.content.is_some());
         assert!(file.token_count > 0);

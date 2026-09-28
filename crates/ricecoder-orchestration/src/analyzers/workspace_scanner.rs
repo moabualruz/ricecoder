@@ -88,9 +88,10 @@ impl WorkspaceScanner {
 
         match std::fs::read_dir(dir) {
             Ok(entries) => {
-                for entry in entries.flatten() {
-                    let path = entry.path();
+                let mut paths: Vec<_> = entries.flatten().map(|entry| entry.path()).collect();
+                paths.sort();
 
+                for path in paths {
                     if path.is_dir() {
                         // Check if this directory is a project
                         if let Some(project) = self.detect_project(&path).await {

@@ -21,11 +21,11 @@
 //! - `MetadataIndexRepository` - Index operations using existing `metadata_gating` module
 //! - `TracingEventPublisher` - Event publishing using `tracing` crate
 
+pub mod event_publisher;
 pub mod file_repository;
 pub mod index_repository;
-pub mod event_publisher;
 
 // Re-export for ergonomic imports
+pub use event_publisher::TracingEventPublisher;
 pub use file_repository::FsFileRepository;
 pub use index_repository::MetadataIndexRepository;
-pub use event_publisher::TracingEventPublisher;

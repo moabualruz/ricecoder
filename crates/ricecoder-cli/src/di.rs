@@ -3,15 +3,10 @@
 //! This module provides factory-return DI pattern for CLI services.
 //! Services are registered via `inventory::submit!` and collected by ricecoder-di.
 
-use std::sync::{Arc, OnceLock};
+use crate::{lifecycle::LifecycleManager, AccessibilitySettings, BrandingManager, CommandRouter};
 use ricecoder_common::di::{ServiceEntry, ServiceFactory};
 use ricecoder_di::DIContainer;
-use crate::{
-    BrandingManager,
-    CommandRouter,
-    AccessibilitySettings,
-    lifecycle::LifecycleManager,
-};
+use std::sync::{Arc, OnceLock};
 
 /// Global DI container instance
 static CONTAINER: OnceLock<DIContainer> = OnceLock::new();
@@ -21,7 +16,9 @@ pub fn get_service<T>() -> Option<Arc<T>>
 where
     T: Send + Sync + 'static,
 {
-    CONTAINER.get().and_then(|container| container.resolve::<T>().ok())
+    CONTAINER
+        .get()
+        .and_then(|container| container.resolve::<T>().ok())
 }
 
 /// Initialize the DI container.
@@ -30,9 +27,11 @@ where
 pub fn initialize_di_container() -> Result<(), String> {
     let container = ricecoder_di::create_application_container()
         .map_err(|e| format!("Failed to create DI container: {}", e))?;
-    
-    CONTAINER.set(container).map_err(|_| "DI container already initialized".to_string())?;
-    
+
+    CONTAINER
+        .set(container)
+        .map_err(|_| "DI container already initialized".to_string())?;
+
     Ok(())
 }
 

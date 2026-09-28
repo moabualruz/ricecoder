@@ -131,7 +131,7 @@ mod tests {
     fn test_event_metadata_with_causation() {
         let causation_id = Uuid::new_v4();
         let metadata = EventMetadata::with_causation(causation_id);
-        
+
         assert!(!metadata.event_id.is_nil());
         assert_eq!(metadata.causation_id, Some(causation_id));
         assert!(metadata.correlation_id.is_none());
@@ -142,7 +142,7 @@ mod tests {
         let causation_id = Uuid::new_v4();
         let correlation_id = Uuid::new_v4();
         let metadata = EventMetadata::with_correlation(causation_id, correlation_id);
-        
+
         assert!(!metadata.event_id.is_nil());
         assert_eq!(metadata.causation_id, Some(causation_id));
         assert_eq!(metadata.correlation_id, Some(correlation_id));
@@ -153,7 +153,7 @@ mod tests {
         let metadata = EventMetadata::new();
         let json = serde_json::to_string(&metadata).unwrap();
         let deserialized: EventMetadata = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(metadata.event_id, deserialized.event_id);
         assert_eq!(metadata.occurred_at, deserialized.occurred_at);
     }

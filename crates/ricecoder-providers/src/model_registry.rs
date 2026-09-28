@@ -47,12 +47,10 @@ impl ModelRegistry {
         let last = self.last_refresh.read().unwrap();
         match *last {
             None => true,
-            Some(timestamp) => {
-                SystemTime::now()
-                    .duration_since(timestamp)
-                    .map(|d| d > self.cache_ttl)
-                    .unwrap_or(true)
-            }
+            Some(timestamp) => SystemTime::now()
+                .duration_since(timestamp)
+                .map(|d| d > self.cache_ttl)
+                .unwrap_or(true),
         }
     }
 
@@ -102,25 +100,32 @@ impl ModelRegistry {
         let fetcher = match ModelsFetcher::new() {
             Ok(f) => f,
             Err(e) => {
-                tracing::warn!("Failed to create ModelsFetcher, using local models only: {}", e);
+                tracing::warn!(
+                    "Failed to create ModelsFetcher, using local models only: {}",
+                    e
+                );
                 return Ok(local_models);
             }
         };
 
         // Attempt async fetch (we need to block here since load_models is sync)
         let api_models = match tokio::runtime::Handle::try_current() {
-            Ok(handle) => {
-                match handle.block_on(fetcher.fetch_with_cache()) {
-                    Ok(models) => {
-                        tracing::info!("Successfully fetched {} models from models.dev API", models.len());
-                        models
-                    }
-                    Err(e) => {
-                        tracing::warn!("Failed to fetch from models.dev API, using local models only: {}", e);
-                        return Ok(local_models);
-                    }
+            Ok(handle) => match handle.block_on(fetcher.fetch_with_cache()) {
+                Ok(models) => {
+                    tracing::info!(
+                        "Successfully fetched {} models from models.dev API",
+                        models.len()
+                    );
+                    models
                 }
-            }
+                Err(e) => {
+                    tracing::warn!(
+                        "Failed to fetch from models.dev API, using local models only: {}",
+                        e
+                    );
+                    return Ok(local_models);
+                }
+            },
             Err(_) => {
                 tracing::warn!("No tokio runtime available, using local models only");
                 return Ok(local_models);
@@ -149,10 +154,7 @@ impl ModelRegistry {
     }
 
     /// Convert storage::Model to ModelInfo
-    fn convert_model(
-        provider_id: &str,
-        model: ricecoder_storage::loaders::Model,
-    ) -> ModelInfo {
+    fn convert_model(provider_id: &str, model: ricecoder_storage::loaders::Model) -> ModelInfo {
         let capabilities = model
             .capabilities
             .iter()
@@ -186,7 +188,7 @@ impl ModelRegistry {
     fn refresh_cache(&self) -> Result<(), ProviderError> {
         #[cfg(feature = "models-api")]
         let models = self.load_models_with_api()?;
-        
+
         #[cfg(not(feature = "models-api"))]
         let models = self.load_models()?;
 

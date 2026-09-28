@@ -103,8 +103,7 @@ async fn test_webfetch_timeout_enforcement() {
     // This test verifies that timeout is enforced
     // We use a slow/non-responsive endpoint with explicit short timeout
     let tool = WebfetchTool::new().unwrap();
-    let input = WebfetchInput::new("http://httpbin.org/delay/15")
-        .with_timeout(5); // 5 second timeout, but endpoint delays 15s
+    let input = WebfetchInput::new("http://httpbin.org/delay/15").with_timeout(5); // 5 second timeout, but endpoint delays 15s
 
     let result = tool.fetch(input).await;
 
@@ -115,7 +114,7 @@ async fn test_webfetch_timeout_enforcement() {
         // This is acceptable - we mainly want to ensure timeout logic doesn't panic
         return;
     }
-    
+
     assert!(result.error.is_some());
     if let Some(error) = result.error {
         // Accept TIMEOUT, HTTP_ERROR, or CLIENT_ERROR as all indicate the request handled timeout

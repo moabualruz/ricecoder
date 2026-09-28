@@ -46,9 +46,9 @@ mod tests {
         assert!(!services.is_empty(), "Should create at least one service");
 
         // Check that ProviderRegistry is in the list
-        let has_provider_registry = services.iter().any(|s| {
-            s.type_name.contains("ProviderRegistry")
-        });
+        let has_provider_registry = services
+            .iter()
+            .any(|s| s.type_name.contains("ProviderRegistry"));
         assert!(has_provider_registry, "Should include ProviderRegistry");
     }
 }

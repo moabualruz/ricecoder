@@ -7,8 +7,8 @@ use proptest::prelude::*;
 use ricecoder_specs::{
     ai_writer::AISpecWriter,
     models::{
-        ApprovalGate, ConversationMessage, MessageRole, SpecPhase, SpecWritingSession, Standard,
-        Governance, GovernanceRule, TemplateRef,
+        ApprovalGate, ConversationMessage, Governance, GovernanceRule, MessageRole, SpecPhase,
+        SpecWritingSession, Standard, TemplateRef,
     },
 };
 

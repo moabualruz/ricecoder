@@ -23,5 +23,7 @@ pub mod validation;
 pub use cache::CacheOperations;
 pub use collection::CollectionAccess;
 // impl_error_from! is exported at crate root via #[macro_export]
-pub use logging::{LogLevel, LogOptions, Logger, create as create_logger, format_error, init as init_logging};
+pub use logging::{
+    create as create_logger, format_error, init as init_logging, LogLevel, LogOptions, Logger,
+};
 pub use validation::{Validatable, ValidationError, Validator};

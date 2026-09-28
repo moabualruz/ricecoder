@@ -236,7 +236,10 @@ impl ToolRegistry {
         // Register websearch tool
         self.register(Arc::new(WebsearchToolInvoker));
 
-        info!(tool_count = self.tool_count(), "Built-in tool discovery completed");
+        info!(
+            tool_count = self.tool_count(),
+            "Built-in tool discovery completed"
+        );
         Ok(())
     }
 

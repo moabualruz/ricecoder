@@ -214,7 +214,7 @@ mod tests {
 
     #[test]
     fn test_default_policy() {
-        let policy = UpdatePolicy::default();
+        let policy = UpdatePolicy::default().with_roles([Role::Admin].into());
         assert!(policy.auto_updates_allowed());
         assert!(policy.channel_allowed(&ReleaseChannel::Stable));
         assert!(!policy.channel_allowed(&ReleaseChannel::Beta));
@@ -262,6 +262,7 @@ mod tests {
         let config = UpdatePolicyConfig {
             require_approval: true,
             max_download_size_mb: 50,
+            allowed_channels: vec![ReleaseChannel::Stable],
             ..Default::default()
         };
 

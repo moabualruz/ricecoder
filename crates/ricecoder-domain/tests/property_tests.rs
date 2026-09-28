@@ -469,13 +469,13 @@ proptest! {
         error_len in 0usize..100
     ) {
         use ricecoder_domain::ports::ai::{HealthCheckResult, ProviderHealthStatus};
-        
+
         // Healthy status must have latency, no error
         let healthy = HealthCheckResult::healthy(latency);
         prop_assert_eq!(healthy.status, ProviderHealthStatus::Healthy);
         prop_assert!(healthy.latency_ms.is_some());
         prop_assert!(healthy.error.is_none());
-        
+
         // Unhealthy status must have error
         let error_msg: String = (0..error_len).map(|_| 'x').collect();
         let unhealthy = HealthCheckResult::unhealthy(&error_msg);
@@ -491,15 +491,15 @@ proptest! {
         content in "[a-zA-Z0-9 ]{0,100}"
     ) {
         use ricecoder_domain::ports::ai::{ChatMessage, ChatRole};
-        
+
         let user_msg = ChatMessage::user(&content);
         prop_assert_eq!(user_msg.role, ChatRole::User);
         prop_assert_eq!(user_msg.content, content.clone());
-        
+
         let assistant_msg = ChatMessage::assistant(&content);
         prop_assert_eq!(assistant_msg.role, ChatRole::Assistant);
         prop_assert_eq!(assistant_msg.content, content.clone());
-        
+
         let system_msg = ChatMessage::system(&content);
         prop_assert_eq!(system_msg.role, ChatRole::System);
         prop_assert_eq!(system_msg.content, content);
@@ -515,11 +515,11 @@ proptest! {
         max_tokens in 1u32..100000
     ) {
         use ricecoder_domain::ports::ai::{AiChatRequest, ChatMessage};
-        
+
         let request = AiChatRequest::new(&model, vec![ChatMessage::user("test")])
             .with_temperature(temperature)
             .with_max_tokens(max_tokens);
-        
+
         prop_assert_eq!(request.model, model);
         prop_assert_eq!(request.temperature, Some(temperature));
         prop_assert_eq!(request.max_tokens, Some(max_tokens));
@@ -537,7 +537,7 @@ proptest! {
         context_window in 1u32..1000000
     ) {
         use ricecoder_domain::ports::ai::ModelInfo;
-        
+
         let model = ModelInfo {
             id: id.clone(),
             name: name.clone(),
@@ -546,7 +546,7 @@ proptest! {
             capabilities: vec![],
             is_free: true,
         };
-        
+
         // All fields preserved
         prop_assert_eq!(model.id, id);
         prop_assert_eq!(model.name, name);

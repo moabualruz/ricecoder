@@ -78,9 +78,10 @@ impl SessionHeader {
         frame.render_widget(block, area);
 
         // Build header line
-        let mut spans = vec![
-            Span::styled(&self.title, Style::default().fg(theme.title).bold()),
-        ];
+        let mut spans = vec![Span::styled(
+            &self.title,
+            Style::default().fg(theme.title).bold(),
+        )];
 
         // Add model info
         if !self.model.is_empty() {
@@ -91,7 +92,10 @@ impl SessionHeader {
         // Add provider
         if !self.provider.is_empty() {
             spans.push(Span::styled(" (", Style::default().fg(theme.separator)));
-            spans.push(Span::styled(&self.provider, Style::default().fg(theme.provider)));
+            spans.push(Span::styled(
+                &self.provider,
+                Style::default().fg(theme.provider),
+            ));
             spans.push(Span::styled(")", Style::default().fg(theme.separator)));
         }
 
@@ -124,10 +128,7 @@ impl SessionHeader {
         // Add processing indicator
         if self.is_processing {
             spans.push(Span::styled(" ", Style::default()));
-            spans.push(Span::styled(
-                "●",
-                Style::default().fg(theme.processing),
-            ));
+            spans.push(Span::styled("●", Style::default().fg(theme.processing)));
         }
 
         let line = Line::from(spans);

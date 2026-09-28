@@ -211,13 +211,13 @@ impl Default for DiffColors {
     fn default() -> Self {
         use ratatui::style::Color;
         Self {
-            added: Color::Rgb(30, 60, 30),           // Dark green bg
-            removed: Color::Rgb(60, 30, 30),         // Dark red bg
-            context: Color::Reset,                    // No highlight
-            hunk_header: Color::Rgb(100, 100, 180),  // Muted blue
-            highlight_added: Color::Rgb(50, 120, 50), // Brighter green
-            highlight_removed: Color::Rgb(120, 50, 50), // Brighter red
-            line_number_added: Color::Rgb(80, 180, 80), // Green text
+            added: Color::Rgb(30, 60, 30),                // Dark green bg
+            removed: Color::Rgb(60, 30, 30),              // Dark red bg
+            context: Color::Reset,                        // No highlight
+            hunk_header: Color::Rgb(100, 100, 180),       // Muted blue
+            highlight_added: Color::Rgb(50, 120, 50),     // Brighter green
+            highlight_removed: Color::Rgb(120, 50, 50),   // Brighter red
+            line_number_added: Color::Rgb(80, 180, 80),   // Green text
             line_number_removed: Color::Rgb(180, 80, 80), // Red text
         }
     }

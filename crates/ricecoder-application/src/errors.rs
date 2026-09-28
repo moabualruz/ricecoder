@@ -15,7 +15,6 @@ pub type ApplicationResult<T> = Result<T, ApplicationError>;
 #[derive(Error, Debug, Clone)]
 pub enum ApplicationError {
     // === Validation Errors ===
-    
     /// Input validation failed
     #[error("Validation failed: {0}")]
     ValidationFailed(String),
@@ -25,7 +24,6 @@ pub enum ApplicationError {
     RequiredFieldMissing(String),
 
     // === Not Found Errors ===
-    
     /// Project not found
     #[error("Project not found: {0}")]
     ProjectNotFound(String),
@@ -39,7 +37,6 @@ pub enum ApplicationError {
     SpecificationNotFound(String),
 
     // === Conflict Errors ===
-    
     /// Project with this name already exists
     #[error("Project already exists with name: {0}")]
     ProjectAlreadyExists(String),
@@ -49,7 +46,6 @@ pub enum ApplicationError {
     SpecificationAlreadyExists(String),
 
     // === Business Rule Violations ===
-    
     /// Operation not allowed in current state
     #[error("Operation not allowed: {0}")]
     OperationNotAllowed(String),
@@ -59,7 +55,6 @@ pub enum ApplicationError {
     BusinessRuleViolation(String),
 
     // === Infrastructure Errors ===
-    
     /// Repository operation failed
     #[error("Repository error: {0}")]
     RepositoryError(String),
@@ -73,7 +68,6 @@ pub enum ApplicationError {
     EventPublicationFailed(String),
 
     // === Domain Error Wrapper ===
-    
     /// Wrapped domain error
     #[error("Domain error: {0}")]
     DomainError(String),

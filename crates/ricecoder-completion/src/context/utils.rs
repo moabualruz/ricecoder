@@ -1,6 +1,50 @@
 // Position and offset conversion utilities
 
-use crate::types::Position;
+use crate::types::{Position, Range, Scope, ScopeKind, Symbol, SymbolKind};
+
+/// Return the small set of built-in types offered by the context analyzers.
+pub fn builtin_symbols(language: &str) -> Vec<Symbol> {
+    let entries: &[(&str, &str, &str)] = match language {
+        "rust" => &[
+            ("String", "std::string::String", "A UTF-8 encoded string"),
+            ("Vec", "std::vec::Vec", "A growable array"),
+            ("Option", "std::option::Option", "An optional value"),
+            (
+                "Result",
+                "std::result::Result",
+                "A result type for error handling",
+            ),
+        ],
+        "typescript" | "ts" | "tsx" | "javascript" | "js" | "jsx" => &[
+            ("Array", "Array", "A JavaScript array"),
+            ("Object", "Object", "A JavaScript object"),
+            ("Promise", "Promise", "A promise for async operations"),
+            ("Map", "Map", "A key-value map"),
+        ],
+        "python" | "py" => &[
+            ("list", "list", "A Python list"),
+            ("dict", "dict", "A Python dictionary"),
+            ("str", "str", "A Python string"),
+            ("int", "int", "A Python integer"),
+        ],
+        _ => &[],
+    };
+
+    entries
+        .iter()
+        .map(|(name, type_info, documentation)| Symbol {
+            name: (*name).to_owned(),
+            kind: SymbolKind::Type,
+            scope: Scope {
+                kind: ScopeKind::Global,
+                name: None,
+                range: Range::new(Position::new(0, 0), Position::new(0, 0)),
+            },
+            type_info: Some((*type_info).to_owned()),
+            documentation: Some((*documentation).to_owned()),
+        })
+        .collect()
+}
 
 /// Convert a Position to a byte offset in the code
 pub fn position_to_byte_offset(code: &str, position: Position) -> usize {

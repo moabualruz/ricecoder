@@ -101,7 +101,10 @@ mod tests {
     fn test_fuzzy_match_exact() {
         let score = fuzzy_match("gpt-4", "gpt-4");
         // nucleo scores are normalized with sqrt, so exact match won't be 1.0
-        assert!(score.value() > 0.0, "Exact match should have non-zero score");
+        assert!(
+            score.value() > 0.0,
+            "Exact match should have non-zero score"
+        );
         assert!(score.value() <= 1.0, "Score should be normalized");
     }
 
@@ -109,7 +112,10 @@ mod tests {
     fn test_fuzzy_match_contains() {
         let score = fuzzy_match("gpt-4-turbo", "gpt-4");
         // nucleo should match prefix patterns
-        assert!(score.value() > 0.0, "Prefix match should have non-zero score");
+        assert!(
+            score.value() > 0.0,
+            "Prefix match should have non-zero score"
+        );
     }
 
     #[test]

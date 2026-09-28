@@ -257,6 +257,30 @@ pub fn format_search_result(
 
 #[cfg(test)]
 mod tests {
+    use std::sync::{Mutex, MutexGuard};
+
+    static COLOR_OVERRIDE_LOCK: Mutex<()> = Mutex::new(());
+
+    struct ForcedColors {
+        _lock: MutexGuard<'static, ()>,
+    }
+
+    impl ForcedColors {
+        fn new() -> Self {
+            let lock = COLOR_OVERRIDE_LOCK
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            colored::control::set_override(true);
+            Self { _lock: lock }
+        }
+    }
+
+    impl Drop for ForcedColors {
+        fn drop(&mut self) {
+            colored::control::unset_override();
+        }
+    }
+
     use super::*;
 
     #[test]
@@ -332,8 +356,7 @@ mod tests {
     #[test]
     fn test_format_search_result_with_highlight_no_color() {
         let config = FormatConfig::without_colors();
-        let result =
-            format_search_result("src/main.rs", 42, "fn main() {", Some((3, 7)), &config);
+        let result = format_search_result("src/main.rs", 42, "fn main() {", Some((3, 7)), &config);
 
         // Without colors, should just be the same (no ANSI codes)
         assert_eq!(result, "src/main.rs:42:fn main() {");
@@ -341,19 +364,19 @@ mod tests {
 
     #[test]
     fn test_format_search_result_with_highlight_colors() {
-        // Force colors for this test (colored crate disables in non-TTY)
-        colored::control::set_override(true);
-        
+        let _colors = ForcedColors::new();
+
         let config = FormatConfig::with_colors();
-        let result =
-            format_search_result("src/main.rs", 42, "fn main() {", Some((3, 7)), &config);
+        let result = format_search_result("src/main.rs", 42, "fn main() {", Some((3, 7)), &config);
 
         // With colors forced, should contain ANSI codes (check for escape sequence)
-        assert!(result.contains("\x1b["), "Expected ANSI codes in: {}", result);
+        assert!(
+            result.contains("\x1b["),
+            "Expected ANSI codes in: {}",
+            result
+        );
         // Should still contain the text
         assert!(result.contains("main"));
-        
-        colored::control::unset_override();
     }
 
     #[test]
@@ -364,46 +387,49 @@ mod tests {
 
     #[test]
     fn test_painter_line_num_with_color() {
-        // Force colors for this test
-        colored::control::set_override(true);
-        
+        let _colors = ForcedColors::new();
+
         let painter = Painter::new(true);
         let result = painter.line_num(42, 5);
         // Should contain ANSI escape codes
-        assert!(result.contains("\x1b["), "Expected ANSI codes in: {}", result);
+        assert!(
+            result.contains("\x1b["),
+            "Expected ANSI codes in: {}",
+            result
+        );
         // Should still contain the number
         assert!(result.contains("00042"));
-        
-        colored::control::unset_override();
     }
 
     #[test]
     fn test_painter_file_path_with_color() {
-        // Force colors for this test
-        colored::control::set_override(true);
-        
+        let _colors = ForcedColors::new();
+
         let painter = Painter::new(true);
         let result = painter.file_path("src/main.rs");
         // Should contain ANSI escape codes
-        assert!(result.contains("\x1b["), "Expected ANSI codes in: {}", result);
+        assert!(
+            result.contains("\x1b["),
+            "Expected ANSI codes in: {}",
+            result
+        );
         // Should still contain the path
         assert!(result.contains("src/main.rs"));
-        
-        colored::control::unset_override();
     }
 
     #[test]
     fn test_painter_match_highlight() {
-        // Force colors for this test
-        colored::control::set_override(true);
-        
+        let _colors = ForcedColors::new();
+
         let painter = Painter::new(true);
         let result = painter.match_highlight("TODO");
         // Should contain ANSI escape codes
-        assert!(result.contains("\x1b["), "Expected ANSI codes in: {}", result);
+        assert!(
+            result.contains("\x1b["),
+            "Expected ANSI codes in: {}",
+            result
+        );
         // Should still contain the text
         assert!(result.contains("TODO"));
-        
-        colored::control::unset_override();
     }
 }

@@ -1,8 +1,8 @@
 //! Dependency injection support for ricecoder-teams
 
-use std::sync::Arc;
+use crate::{AnalyticsDashboard, SyncService, TeamConfigManager};
 use ricecoder_common::di::{ServiceEntry, ServiceFactory};
-use crate::{AnalyticsDashboard, TeamConfigManager, SyncService};
+use std::sync::Arc;
 
 inventory::submit! {
     ServiceFactory::new("teams", create_teams_services)

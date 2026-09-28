@@ -427,10 +427,7 @@ impl DIContainer {
 
         if services.contains_key(&entry.type_id) {
             // Skip if already registered (allows for priority-based registration)
-            debug!(
-                "Service already registered, skipping: {}",
-                entry.type_name
-            );
+            debug!("Service already registered, skipping: {}", entry.type_name);
             return Ok(());
         }
 
@@ -571,7 +568,7 @@ impl Default for DIContainerBuilder {
 #[macro_export]
 macro_rules! register_service {
     ($container:expr, $service_type:ty, $factory:expr) => {
-        $container.register::<$service_type, _>($factory)
+        $container.register::<_, $service_type>($factory)
     };
 }
 
@@ -600,6 +597,6 @@ pub use provider::{
 
 // Re-export auto-discovery registration types
 pub use registration::{
-    discovered_registration_count, list_discovered_registrations,
-    register_all_discovered_services, ServiceRegistration,
+    discovered_registration_count, list_discovered_registrations, register_all_discovered_services,
+    ServiceRegistration,
 };

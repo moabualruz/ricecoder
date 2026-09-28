@@ -12,12 +12,12 @@
 //! - Testable without mocks
 //! - Immutable types (mutations return new instances)
 
-pub mod value_objects;
 pub mod aggregates;
-pub mod events;
 pub mod errors;
+pub mod events;
+pub mod value_objects;
 
-pub use value_objects::*;
 pub use aggregates::*;
-pub use events::*;
 pub use errors::*;
+pub use events::*;
+pub use value_objects::*;

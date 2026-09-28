@@ -79,8 +79,7 @@ async fn test_check_permission_returns_bool() {
         .await
         .expect("Failed to check permission");
 
-    // Should return a boolean
-    assert!(has_permission || !has_permission);
+    assert!(has_permission);
 }
 
 #[tokio::test]

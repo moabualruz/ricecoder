@@ -13,9 +13,7 @@ use ricecoder_domain::{
         HealthCheckResult, ModelCapability, ModelInfo,
     },
     ports::cache::{CacheEntryInfo, CacheReader, CacheRepository, CacheStatistics, CacheWriter},
-    ports::file::{
-        FileManager, FileMetadata, FileReader, FileRepository, FileWriter, WriteResult,
-    },
+    ports::file::{FileManager, FileMetadata, FileReader, FileRepository, FileWriter, WriteResult},
     repositories::{SpecificationReader, SpecificationRepository, SpecificationWriter},
     specification::{SpecStatus, Specification},
     value_objects::{ProjectId, SpecificationId},

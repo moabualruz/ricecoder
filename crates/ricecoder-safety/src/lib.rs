@@ -26,18 +26,23 @@
 //!
 //! ```rust
 //! use ricecoder_safety::{SafetyValidator, RiskScorer, SecurityConstraint};
+//! use ricecoder_safety::constraints::ValidationContext;
+//! use ricecoder_safety::risk::RiskContext;
 //!
-//! // Create a safety validator
-//! let validator = SafetyValidator::new();
+//! #[tokio::main]
+//! async fn main() -> ricecoder_safety::SafetyResult<()> {
+//!     let validator = SafetyValidator::new();
+//!     validator
+//!         .add_constraint(SecurityConstraint::max_file_size(10 * 1024 * 1024))
+//!         .await?;
+//!     let operation = ValidationContext::new().with_file_size(1024);
+//!     let _result = validator.validate_operation(&operation).await?;
 //!
-//! // Add security constraints
-//! validator.add_constraint(SecurityConstraint::max_file_size(10 * 1024 * 1024));
-//!
-//! // Validate an operation
-//! let result = validator.validate_operation(&operation).await;
-//!
-//! // Score risk for an action
-//! let risk_score = RiskScorer::score_action(&action, &context);
+//!     let scorer = RiskScorer::new();
+//!     let context = RiskContext::default();
+//!     let _risk_score = scorer.score_action("read_file", &context)?;
+//!     Ok(())
+//! }
 //! ```
 
 pub mod constraints;

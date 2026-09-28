@@ -5,9 +5,9 @@
 //! # DDD Layer: Infrastructure
 //! Provides the text input component for the prompt widget.
 
-use tui_textarea::{TextArea, CursorMove, Input, Key};
 use ratatui::style::{Color, Style};
 use std::collections::HashMap;
+use tui_textarea::{CursorMove, Input, Key, TextArea};
 
 /// Text input actions matching OpenCode's TEXTAREA_ACTIONS
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -54,18 +54,44 @@ impl InputAction {
     pub fn all() -> &'static [InputAction] {
         use InputAction::*;
         &[
-            Submit, Newline, MoveLeft, MoveRight, MoveUp, MoveDown,
-            SelectLeft, SelectRight, SelectUp, SelectDown,
-            LineHome, LineEnd, SelectLineHome, SelectLineEnd,
-            VisualLineHome, VisualLineEnd, SelectVisualLineHome, SelectVisualLineEnd,
-            BufferHome, BufferEnd, SelectBufferHome, SelectBufferEnd,
-            DeleteLine, DeleteToLineEnd, DeleteToLineStart,
-            Backspace, Delete, Undo, Redo,
-            WordForward, WordBackward, SelectWordForward, SelectWordBackward,
-            DeleteWordForward, DeleteWordBackward,
+            Submit,
+            Newline,
+            MoveLeft,
+            MoveRight,
+            MoveUp,
+            MoveDown,
+            SelectLeft,
+            SelectRight,
+            SelectUp,
+            SelectDown,
+            LineHome,
+            LineEnd,
+            SelectLineHome,
+            SelectLineEnd,
+            VisualLineHome,
+            VisualLineEnd,
+            SelectVisualLineHome,
+            SelectVisualLineEnd,
+            BufferHome,
+            BufferEnd,
+            SelectBufferHome,
+            SelectBufferEnd,
+            DeleteLine,
+            DeleteToLineEnd,
+            DeleteToLineStart,
+            Backspace,
+            Delete,
+            Undo,
+            Redo,
+            WordForward,
+            WordBackward,
+            SelectWordForward,
+            SelectWordBackward,
+            DeleteWordForward,
+            DeleteWordBackward,
         ]
     }
-    
+
     /// Convert to config key name
     pub fn config_key(&self) -> &'static str {
         match self {
@@ -146,7 +172,7 @@ impl<'a> PromptInput<'a> {
     pub fn new() -> Self {
         let mut textarea = TextArea::default();
         textarea.set_cursor_line_style(Style::default());
-        
+
         Self {
             textarea,
             cursor_color: Color::White,
@@ -155,47 +181,47 @@ impl<'a> PromptInput<'a> {
             min_height: 1,
         }
     }
-    
+
     /// Set placeholder text
     pub fn set_placeholder(&mut self, placeholder: impl Into<String>) {
         self.textarea.set_placeholder_text(placeholder);
     }
-    
+
     /// Set cursor color
     pub fn set_cursor_color(&mut self, color: Color) {
         self.cursor_color = color;
         self.textarea.set_cursor_style(Style::default().fg(color));
     }
-    
+
     /// Set max height
     pub fn set_max_height(&mut self, height: u16) {
         self.max_height = height;
     }
-    
+
     /// Get the plain text content
     pub fn plain_text(&self) -> String {
         self.textarea.lines().join("\n")
     }
-    
+
     /// Set text content
     pub fn set_text(&mut self, text: impl Into<String>) {
         let text = text.into();
         let lines: Vec<String> = text.lines().map(String::from).collect();
         self.textarea = TextArea::new(lines);
     }
-    
+
     /// Clear the input
     pub fn clear(&mut self) {
         self.textarea = TextArea::default();
     }
-    
+
     /// Insert text at cursor
     pub fn insert_text(&mut self, text: &str) {
         for c in text.chars() {
             self.textarea.insert_char(c);
         }
     }
-    
+
     /// Get cursor position
     pub fn cursor(&self) -> CursorPosition {
         let (row, col) = self.textarea.cursor();
@@ -206,7 +232,7 @@ impl<'a> PromptInput<'a> {
             offset: self.calculate_offset(row, col),
         }
     }
-    
+
     /// Calculate byte offset from row/col
     fn calculate_offset(&self, row: usize, col: usize) -> usize {
         let mut offset = 0;
@@ -220,7 +246,7 @@ impl<'a> PromptInput<'a> {
         }
         offset
     }
-    
+
     /// Set cursor offset
     pub fn set_cursor_offset(&mut self, offset: usize) {
         let text = self.plain_text();
@@ -229,7 +255,8 @@ impl<'a> PromptInput<'a> {
             let line_len = line.len() + 1;
             if current + line_len > offset {
                 let col = offset - current;
-                self.textarea.move_cursor(CursorMove::Jump(row as u16, col as u16));
+                self.textarea
+                    .move_cursor(CursorMove::Jump(row as u16, col as u16));
                 return;
             }
             current += line_len;
@@ -237,55 +264,55 @@ impl<'a> PromptInput<'a> {
         // Move to end if offset exceeds content
         self.goto_buffer_end();
     }
-    
+
     /// Move cursor to buffer start
     pub fn goto_buffer_start(&mut self) {
         self.textarea.move_cursor(CursorMove::Top);
         self.textarea.move_cursor(CursorMove::Head);
     }
-    
+
     /// Move cursor to buffer end
     pub fn goto_buffer_end(&mut self) {
         self.textarea.move_cursor(CursorMove::Bottom);
         self.textarea.move_cursor(CursorMove::End);
     }
-    
+
     /// Get current height in lines
     pub fn height(&self) -> u16 {
         let lines = self.textarea.lines().len() as u16;
         lines.clamp(self.min_height, self.max_height)
     }
-    
+
     /// Focus the input
     pub fn focus(&mut self) {
         self.focused = true;
     }
-    
+
     /// Blur the input
     pub fn blur(&mut self) {
         self.focused = false;
     }
-    
+
     /// Check if focused
     pub fn is_focused(&self) -> bool {
         self.focused
     }
-    
+
     /// Handle input event
     pub fn handle_input(&mut self, input: Input) -> bool {
         self.textarea.input(input)
     }
-    
+
     /// Get the textarea widget
     pub fn widget(&'a self) -> &TextArea<'a> {
         &self.textarea
     }
-    
+
     /// Get mutable textarea
     pub fn widget_mut(&mut self) -> &mut TextArea<'a> {
         &mut self.textarea
     }
-    
+
     /// Execute an input action
     pub fn execute_action(&mut self, action: InputAction) -> bool {
         match action {
@@ -381,34 +408,34 @@ impl<'a> PromptInput<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_input_action_all() {
         let all = InputAction::all();
         assert!(all.len() >= 30);
     }
-    
+
     #[test]
     fn test_prompt_input_new() {
         let input = PromptInput::new();
         assert!(input.plain_text().is_empty());
         assert!(input.is_focused());
     }
-    
+
     #[test]
     fn test_set_text() {
         let mut input = PromptInput::new();
         input.set_text("hello\nworld");
         assert_eq!(input.plain_text(), "hello\nworld");
     }
-    
+
     #[test]
     fn test_insert_text() {
         let mut input = PromptInput::new();
         input.insert_text("hello");
         assert_eq!(input.plain_text(), "hello");
     }
-    
+
     #[test]
     fn test_clear() {
         let mut input = PromptInput::new();
@@ -416,24 +443,24 @@ mod tests {
         input.clear();
         assert!(input.plain_text().is_empty());
     }
-    
+
     #[test]
     fn test_height() {
         let mut input = PromptInput::new();
         assert_eq!(input.height(), 1);
-        
+
         input.set_text("line1\nline2\nline3");
         assert_eq!(input.height(), 3);
     }
-    
+
     #[test]
     fn test_focus_blur() {
         let mut input = PromptInput::new();
         assert!(input.is_focused());
-        
+
         input.blur();
         assert!(!input.is_focused());
-        
+
         input.focus();
         assert!(input.is_focused());
     }

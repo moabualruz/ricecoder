@@ -22,15 +22,27 @@ pub use ricegrep_core::application::*;
 // Also re-export at module level for backwards compatibility
 pub use ricegrep_core::{
     // Errors
-    AppError, AppResult, IoOperation,
-    // Repository Traits (Ports)
-    FileRepository, IndexRepository, EventPublisher, FileIndexEntry,
-    // Use Cases
-    EditFileUseCase, EditFileRequest, EditFileResponse,
-    SearchFilesUseCase, SearchFilesRequest, SearchFilesResponse,
-    WriteFileUseCase, WriteFileRequest, WriteFileResponse,
+    AppError,
+    AppResult,
     // Services
-    AppServices, AppServicesBuilder,
+    AppServices,
+    AppServicesBuilder,
+    EditFileRequest,
+    EditFileResponse,
+    // Use Cases
+    EditFileUseCase,
+    EventPublisher,
+    FileIndexEntry,
+    // Repository Traits (Ports)
+    FileRepository,
+    IndexRepository,
+    IoOperation,
+    SearchFilesRequest,
+    SearchFilesResponse,
+    SearchFilesUseCase,
+    WriteFileRequest,
+    WriteFileResponse,
+    WriteFileUseCase,
 };
 
 // Re-export use_cases module for explicit imports like `use crate::application::use_cases::*`

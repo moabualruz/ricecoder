@@ -9,10 +9,10 @@ use std::path::PathBuf;
 pub struct SkillInfo {
     /// Skill identifier (from frontmatter)
     pub name: String,
-    
+
     /// Human-readable description (from frontmatter)
     pub description: String,
-    
+
     /// Absolute path to the SKILL.md file
     pub location: PathBuf,
 }
@@ -22,18 +22,18 @@ pub struct SkillInfo {
 pub struct SkillMetadata {
     /// Skill name (required)
     pub name: String,
-    
+
     /// Skill description (required)
     pub description: String,
-    
+
     /// Optional version
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
-    
+
     /// Optional author
     #[serde(skip_serializing_if = "Option::is_none")]
     pub author: Option<String>,
-    
+
     /// Optional tags for categorization
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,

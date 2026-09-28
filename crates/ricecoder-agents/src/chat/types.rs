@@ -268,7 +268,8 @@ mod tests {
 
     #[test]
     fn test_content_block_tool_use() {
-        let block = ContentBlock::tool_use("123", "read_file", serde_json::json!({"path": "test.txt"}));
+        let block =
+            ContentBlock::tool_use("123", "read_file", serde_json::json!({"path": "test.txt"}));
         assert!(block.is_tool_use());
         let (id, name, input) = block.as_tool_use().unwrap();
         assert_eq!(id, "123");

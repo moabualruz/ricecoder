@@ -1,8 +1,8 @@
 //! Dependency injection support for ricecoder-cache
 
-use std::sync::Arc;
+use crate::{storage::MemoryStorage, CacheBuilder};
 use ricecoder_common::di::{ServiceEntry, ServiceFactory};
-use crate::{CacheBuilder, storage::MemoryStorage};
+use std::sync::Arc;
 
 inventory::submit! {
     ServiceFactory::new("cache", create_cache_services)
@@ -14,10 +14,8 @@ fn create_cache_services() -> Vec<ServiceEntry> {
         .primary_storage(storage)
         .build()
         .expect("Failed to build cache");
-    
-    vec![
-        ServiceEntry::new::<crate::Cache>(Arc::new(cache)),
-    ]
+
+    vec![ServiceEntry::new::<crate::Cache>(Arc::new(cache))]
 }
 
 #[cfg(test)]

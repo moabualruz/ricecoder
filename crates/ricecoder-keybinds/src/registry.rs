@@ -41,17 +41,13 @@ impl KeybindRegistry {
             .parse_all_keys()
             .map_err(|e| RegistryError::InvalidActionIdFormat(format!("Invalid key: {}", e)))?;
 
-        // Register the keybind by action
         let action_id = keybind.action_id.clone();
-        self.by_action.insert(action_id.clone(), keybind.clone());
 
-        // Register each key combination
-        for key_combo in key_combos {
+        // Check every binding before mutating the registry, so an error leaves it unchanged.
+        for key_combo in &key_combos {
             let key_str = key_combo.to_string();
 
-            // Register by key and context
             if keybind.contexts.is_empty() {
-                // Global keybind
                 if let Some(existing_action) = self.by_key_global.get(&key_str) {
                     if existing_action != &keybind.action_id {
                         return Err(RegistryError::DuplicateActionId(format!(
@@ -60,9 +56,7 @@ impl KeybindRegistry {
                         )));
                     }
                 }
-                self.by_key_global.insert(key_str, action_id.clone());
             } else {
-                // Context-specific keybinds
                 for &context in &keybind.contexts {
                     let key = (context, key_str.clone());
                     if let Some(existing_action) = self.by_key_context.get(&key) {
@@ -73,7 +67,19 @@ impl KeybindRegistry {
                             )));
                         }
                     }
-                    self.by_key_context.insert(key, action_id.clone());
+                }
+            }
+        }
+
+        self.by_action.insert(action_id.clone(), keybind.clone());
+        for key_combo in key_combos {
+            let key_str = key_combo.to_string();
+            if keybind.contexts.is_empty() {
+                self.by_key_global.insert(key_str, action_id.clone());
+            } else {
+                for &context in &keybind.contexts {
+                    self.by_key_context
+                        .insert((context, key_str.clone()), action_id.clone());
                 }
             }
         }

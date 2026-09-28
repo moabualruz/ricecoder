@@ -21,7 +21,7 @@ use crate::{
     errors::*,
     project::Project,
     session::Session,
-    specification::{Specification, SpecStatus},
+    specification::{SpecStatus, Specification},
     value_objects::*,
 };
 
@@ -110,8 +110,6 @@ pub trait SpecificationRepository: SpecificationReader + SpecificationWriter {}
 
 /// Blanket implementation: Any type implementing Reader + Writer gets Repository
 impl<T: SpecificationReader + SpecificationWriter> SpecificationRepository for T {}
-
-
 
 /// Generic repository trait for common operations
 #[async_trait]

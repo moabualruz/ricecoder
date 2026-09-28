@@ -175,7 +175,8 @@ fn integration_test_rules_validation() {
     let result = validator.validate_all().unwrap();
 
     // Verify: Validation completed
-    assert!(result.passed || !result.passed);
+    assert!(result.passed);
+    assert!(result.violations.is_empty());
 
     // Verify: Violations are reported if any
     if !result.violations.is_empty() {

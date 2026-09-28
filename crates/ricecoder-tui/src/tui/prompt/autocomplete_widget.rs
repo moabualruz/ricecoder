@@ -14,7 +14,9 @@ use ratatui::{
     layout::{Position, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragraph, StatefulWidget, Widget},
+    widgets::{
+        Block, Borders, Clear, List, ListItem, ListState, Paragraph, StatefulWidget, Widget,
+    },
 };
 
 /// Suggestion category

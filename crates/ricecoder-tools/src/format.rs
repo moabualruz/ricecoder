@@ -64,11 +64,14 @@ pub fn format_file_content_for_mcp(
     offset: usize,
     limit: usize,
 ) -> String {
-    format_file_content_with_options(content, &McpFormatOptions {
-        offset,
-        limit,
-        ..Default::default()
-    })
+    format_file_content_with_options(
+        content,
+        &McpFormatOptions {
+            offset,
+            limit,
+            ..Default::default()
+        },
+    )
 }
 
 /// Format file content with full options control.
@@ -80,21 +83,26 @@ pub fn format_file_content_with_options(content: &str, options: &McpFormatOption
     let end = (start + options.limit).min(total_lines);
 
     let mut output = String::new();
-    
+
     if options.wrap_in_tags {
         output.push_str("<file>\n");
     }
 
-    for (idx, line) in lines.iter().enumerate().skip(start).take(end.saturating_sub(start)) {
+    for (idx, line) in lines
+        .iter()
+        .enumerate()
+        .skip(start)
+        .take(end.saturating_sub(start))
+    {
         let line_num = idx + 1;
-        
+
         // Truncate lines longer than max_line_length
         let formatted_line = if line.len() > options.max_line_length {
             format!("{}...(line truncated)", &line[..options.max_line_length])
         } else {
             line.to_string()
         };
-        
+
         // Format with line number (e.g., "00001| ")
         output.push_str(&format!(
             "{:0width$}| {}\n",
@@ -106,7 +114,10 @@ pub fn format_file_content_with_options(content: &str, options: &McpFormatOption
 
     // Add footer
     if end < total_lines {
-        output.push_str(&format!("(File has more lines - total {} lines)\n", total_lines));
+        output.push_str(&format!(
+            "(File has more lines - total {} lines)\n",
+            total_lines
+        ));
     } else {
         output.push_str(&format!("(End of file - total {} lines)\n", total_lines));
     }
@@ -157,13 +168,19 @@ pub fn format_write_response(file_path: &str, bytes_written: usize, content: &st
 pub fn format_read_error(file_path: &str, error: &std::io::Error) -> String {
     match error.kind() {
         std::io::ErrorKind::NotFound => {
-            format!("File not found: {}. Check the path and try again.", file_path)
+            format!(
+                "File not found: {}. Check the path and try again.",
+                file_path
+            )
         }
         std::io::ErrorKind::PermissionDenied => {
             format!("Permission denied: {}. Check file permissions.", file_path)
         }
         std::io::ErrorKind::InvalidData => {
-            format!("File contains invalid UTF-8: {}. Check file encoding.", file_path)
+            format!(
+                "File contains invalid UTF-8: {}. Check file encoding.",
+                file_path
+            )
         }
         _ => {
             format!(
@@ -178,10 +195,16 @@ pub fn format_read_error(file_path: &str, error: &std::io::Error) -> String {
 pub fn format_write_error(file_path: &str, error: &std::io::Error) -> String {
     match error.kind() {
         std::io::ErrorKind::NotFound => {
-            format!("Cannot write to path: {} - parent directory does not exist.", file_path)
+            format!(
+                "Cannot write to path: {} - parent directory does not exist.",
+                file_path
+            )
         }
         std::io::ErrorKind::PermissionDenied => {
-            format!("Permission denied writing to: {}. Check directory permissions.", file_path)
+            format!(
+                "Permission denied writing to: {}. Check directory permissions.",
+                file_path
+            )
         }
         std::io::ErrorKind::InvalidInput => {
             format!("Invalid file path: {}", file_path)
@@ -256,10 +279,16 @@ mod tests {
     #[test]
     fn test_format_edit_response() {
         let response = format_edit_response("test.rs", "foo", "bar", 3, true);
-        assert_eq!(response, "Edited test.rs: replaced 3 occurrence(s) of 'foo' with 'bar'");
+        assert_eq!(
+            response,
+            "Edited test.rs: replaced 3 occurrence(s) of 'foo' with 'bar'"
+        );
 
         let response = format_edit_response("test.rs", "old", "new", 1, false);
-        assert_eq!(response, "Edited test.rs: replaced 1 occurrence(s) of 'old' with 'new'");
+        assert_eq!(
+            response,
+            "Edited test.rs: replaced 1 occurrence(s) of 'old' with 'new'"
+        );
     }
 
     #[test]

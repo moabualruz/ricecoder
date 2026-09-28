@@ -52,14 +52,12 @@ impl ManagedChild {
     /// Wait for process to exit
     pub async fn wait(&mut self) -> Result<std::process::ExitStatus> {
         match self.config.timeout {
-            Some(timeout) => {
-                tokio::time::timeout(timeout, self.child.wait())
-                    .await
-                    .map_err(|_| ProcessError::Timeout {
-                        seconds: timeout.as_secs(),
-                    })?
-                    .map_err(Into::into)
-            }
+            Some(timeout) => tokio::time::timeout(timeout, self.child.wait())
+                .await
+                .map_err(|_| ProcessError::Timeout {
+                    seconds: timeout.as_secs(),
+                })?
+                .map_err(Into::into),
             None => self.child.wait().await.map_err(Into::into),
         }
     }
@@ -151,7 +149,6 @@ impl ManagedChild {
                     let _ = self.child.kill().await;
                 }
             }
-
         }
 
         #[allow(unreachable_code)]

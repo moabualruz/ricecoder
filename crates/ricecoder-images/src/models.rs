@@ -132,7 +132,7 @@ impl ImageCacheEntry {
 
     /// Check if the cache entry has expired.
     pub fn is_expired(&self) -> bool {
-        Utc::now() > self.expires_at
+        Utc::now() >= self.expires_at
     }
 
     /// Get the remaining TTL in seconds.

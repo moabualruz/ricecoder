@@ -95,17 +95,17 @@ impl SessionFooter {
         // Mode indicator
         spans.push(Span::styled(
             format!(" {} ", self.mode.to_uppercase()),
-            Style::default()
-                .fg(theme.mode_fg)
-                .bg(theme.mode_bg)
-                .bold(),
+            Style::default().fg(theme.mode_fg).bg(theme.mode_bg).bold(),
         ));
         spans.push(Span::styled(" ", Style::default()));
 
         // Working directory (truncated)
         if !self.working_dir.is_empty() {
             let display_dir = truncate_path(&self.working_dir, 30);
-            spans.push(Span::styled(display_dir, Style::default().fg(theme.working_dir)));
+            spans.push(Span::styled(
+                display_dir,
+                Style::default().fg(theme.working_dir),
+            ));
             spans.push(Span::styled(" · ", Style::default().fg(theme.separator)));
         }
 
@@ -118,9 +118,15 @@ impl SessionFooter {
                 if i > 0 {
                     spans.push(Span::styled("  ", Style::default()));
                 }
-                spans.push(Span::styled(&hint.key, Style::default().fg(theme.key).bold()));
+                spans.push(Span::styled(
+                    &hint.key,
+                    Style::default().fg(theme.key).bold(),
+                ));
                 spans.push(Span::styled(" ", Style::default()));
-                spans.push(Span::styled(&hint.action, Style::default().fg(theme.action)));
+                spans.push(Span::styled(
+                    &hint.action,
+                    Style::default().fg(theme.action),
+                ));
             }
         }
 

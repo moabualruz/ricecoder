@@ -13,7 +13,7 @@ pub enum DomainEvent {
         is_regex: bool,
         dry_run: bool,
     },
-    
+
     /// A file edit was successfully executed
     FileEditExecuted {
         file_path: String,
@@ -22,7 +22,7 @@ pub enum DomainEvent {
         matches_replaced: usize,
         was_dry_run: bool,
     },
-    
+
     /// A search operation was executed
     SearchExecuted {
         file_path: String,
@@ -42,8 +42,14 @@ mod tests {
             is_regex: false,
             dry_run: true,
         };
-        
-        if let DomainEvent::FileEditValidated { pattern, is_regex, dry_run, .. } = event {
+
+        if let DomainEvent::FileEditValidated {
+            pattern,
+            is_regex,
+            dry_run,
+            ..
+        } = event
+        {
             assert_eq!(pattern, "hello");
             assert!(!is_regex);
             assert!(dry_run);
@@ -51,7 +57,7 @@ mod tests {
             panic!("Expected FileEditValidated event");
         }
     }
-    
+
     #[test]
     fn test_domain_event_types() {
         let events = vec![
@@ -73,7 +79,7 @@ mod tests {
                 matches_found: 1,
             },
         ];
-        
+
         assert_eq!(events.len(), 3);
     }
 }

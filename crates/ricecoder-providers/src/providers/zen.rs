@@ -138,7 +138,10 @@ impl ZenProvider {
 
     /// Create a new Zen provider with a custom HTTP client
     /// API key is optional for free models - defaults to "public" for free tier access
-    pub fn with_client(client: Arc<Client>, api_key: Option<String>) -> Result<Self, ProviderError> {
+    pub fn with_client(
+        client: Arc<Client>,
+        api_key: Option<String>,
+    ) -> Result<Self, ProviderError> {
         // Use "public" as default API key for free model access (matches OpenCode's behavior)
         let key = api_key.unwrap_or_else(|| "public".to_string());
         Ok(Self {
@@ -746,7 +749,8 @@ impl Provider for ZenProvider {
         loop {
             debug!(
                 "Sending streaming chat request to Zen API {} (attempt {})",
-                url, retries + 1
+                url,
+                retries + 1
             );
 
             let response = self

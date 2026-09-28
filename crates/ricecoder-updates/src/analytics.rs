@@ -1,6 +1,9 @@
 //! Distribution analytics, monitoring, and enterprise usage tracking
 
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::{Arc, OnceLock},
+};
 
 use chrono::{DateTime, Duration, Utc};
 use reqwest::Client;
@@ -196,17 +199,22 @@ impl AnalyticsCollector {
 
     /// Get or create installation ID
     fn get_or_create_installation_id() -> Uuid {
-        // Try to read from file
-        if let Ok(id_str) = std::fs::read_to_string(Self::installation_id_path()) {
-            if let Ok(id) = Uuid::parse_str(id_str.trim()) {
-                return id;
+        static INSTALLATION_ID: OnceLock<Uuid> = OnceLock::new();
+        *INSTALLATION_ID.get_or_init(|| {
+            let path = Self::installation_id_path();
+            if let Ok(id_str) = std::fs::read_to_string(&path) {
+                if let Ok(id) = Uuid::parse_str(id_str.trim()) {
+                    return id;
+                }
             }
-        }
 
-        // Create new ID and save it
-        let id = Uuid::new_v4();
-        let _ = std::fs::write(Self::installation_id_path(), id.to_string());
-        id
+            let id = Uuid::new_v4();
+            if let Some(parent) = path.parent() {
+                let _ = std::fs::create_dir_all(parent);
+            }
+            let _ = std::fs::write(path, id.to_string());
+            id
+        })
     }
 
     /// Get installation ID file path
@@ -273,7 +281,12 @@ impl EnterpriseDashboard {
         let end = Utc::now();
         let start = end - Duration::days(period_days);
 
-        self.collector.generate_enterprise_report(start, end).await
+        let mut report = self
+            .collector
+            .generate_enterprise_report(start, end)
+            .await?;
+        report.organization_id.clone_from(&self.organization_id);
+        Ok(report)
     }
 
     /// Get security incidents report

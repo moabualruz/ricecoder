@@ -18,7 +18,9 @@ use super::commands::{CommandContext, CommandResult, PromptCommandId};
 use super::editor::{EditorConfig, EditorResult, ExternalEditor};
 use super::extmarks::{Extmark, ExtmarkManager, ExtmarkStyle};
 use super::input::PromptInput;
-use super::parts::{AgentPart, AgentSource, FilePart, FileSource, PromptPart, TextPart, TextSource};
+use super::parts::{
+    AgentPart, AgentSource, FilePart, FileSource, PromptPart, TextPart, TextSource,
+};
 use super::state::{PromptInfo, PromptMode, PromptState};
 
 /// Events emitted by the prompt handler
@@ -37,7 +39,10 @@ pub enum PromptEvent {
     /// Request to open dialog
     OpenDialog(DialogRequest),
     /// Request to show toast
-    ShowToast { message: String, variant: ToastVariant },
+    ShowToast {
+        message: String,
+        variant: ToastVariant,
+    },
     /// Exit requested
     Exit,
     /// Interrupt session
@@ -110,7 +115,9 @@ impl Default for KeybindConfig {
 impl KeybindConfig {
     /// Check if key matches any keybind in list
     fn matches(bindings: &[KeyEvent], key: &KeyEvent) -> bool {
-        bindings.iter().any(|b| b.code == key.code && b.modifiers == key.modifiers)
+        bindings
+            .iter()
+            .any(|b| b.code == key.code && b.modifiers == key.modifiers)
     }
 }
 
@@ -214,7 +221,8 @@ impl<'a> PromptHandler<'a> {
         // Shell mode toggle - ! at start
         if key.code == KeyCode::Char('!') && self.input.cursor().offset == 0 {
             self.state.mode = PromptMode::Shell;
-            self.pending_events.push(PromptEvent::ModeChanged(PromptMode::Shell));
+            self.pending_events
+                .push(PromptEvent::ModeChanged(PromptMode::Shell));
             return true;
         }
 
@@ -224,7 +232,8 @@ impl<'a> PromptHandler<'a> {
                 || (key.code == KeyCode::Backspace && self.input.cursor().offset == 0)
             {
                 self.state.mode = PromptMode::Normal;
-                self.pending_events.push(PromptEvent::ModeChanged(PromptMode::Normal));
+                self.pending_events
+                    .push(PromptEvent::ModeChanged(PromptMode::Normal));
                 return true;
             }
         }
@@ -330,7 +339,12 @@ impl<'a> PromptHandler<'a> {
     }
 
     /// Handle image paste
-    pub fn handle_image_paste(&mut self, mime: String, data: String, filename: Option<String>) -> bool {
+    pub fn handle_image_paste(
+        &mut self,
+        mime: String,
+        data: String,
+        filename: Option<String>,
+    ) -> bool {
         if self.state.disabled {
             return false;
         }
@@ -364,7 +378,8 @@ impl<'a> PromptHandler<'a> {
             source: Some(TextSource::new(start, end, virtual_text)),
         });
         self.state.prompt.parts.push(part);
-        self.state.register_extmark(extmark_id, self.state.prompt.parts.len() - 1);
+        self.state
+            .register_extmark(extmark_id, self.state.prompt.parts.len() - 1);
 
         self.sync_state();
     }
@@ -402,7 +417,8 @@ impl<'a> PromptHandler<'a> {
             }),
         });
         self.state.prompt.parts.push(part);
-        self.state.register_extmark(extmark_id, self.state.prompt.parts.len() - 1);
+        self.state
+            .register_extmark(extmark_id, self.state.prompt.parts.len() - 1);
 
         self.sync_state();
     }
@@ -429,7 +445,8 @@ impl<'a> PromptHandler<'a> {
             source: Some(AgentSource::new(start, end, virtual_text)),
         });
         self.state.prompt.parts.push(part);
-        self.state.register_extmark(extmark_id, self.state.prompt.parts.len() - 1);
+        self.state
+            .register_extmark(extmark_id, self.state.prompt.parts.len() - 1);
 
         self.sync_state();
     }
@@ -460,13 +477,20 @@ impl<'a> PromptHandler<'a> {
             let parts: Vec<&str> = input.splitn(2, ' ').collect();
             let command = parts[0].trim_start_matches('/').to_string();
             let args = parts.get(1).map(|s| s.to_string()).unwrap_or_default();
-            self.pending_events.push(PromptEvent::CommandSubmit { command, args });
+            self.pending_events
+                .push(PromptEvent::CommandSubmit { command, args });
         }
         // Normal submission
         else {
             self.pending_events.push(PromptEvent::Submit {
                 text: self.expand_text_parts(),
-                parts: self.state.prompt.non_text_parts().into_iter().cloned().collect(),
+                parts: self
+                    .state
+                    .prompt
+                    .non_text_parts()
+                    .into_iter()
+                    .cloned()
+                    .collect(),
                 mode: self.state.mode,
             });
         }
@@ -532,13 +556,9 @@ impl<'a> PromptHandler<'a> {
                 }
             };
 
-            let extmark_id = self.extmarks.create(
-                start,
-                end,
-                virtual_text,
-                style,
-                self.prompt_part_type_id,
-            );
+            let extmark_id =
+                self.extmarks
+                    .create(start, end, virtual_text, style, self.prompt_part_type_id);
             self.state.register_extmark(extmark_id, part_index);
         }
     }
@@ -570,7 +590,9 @@ impl<'a> PromptHandler<'a> {
             EditorResult::Modified(new_content) => {
                 self.input.set_text(&new_content);
                 // Keep non-text parts, clear text parts
-                let non_text_parts: Vec<_> = self.state.prompt
+                let non_text_parts: Vec<_> = self
+                    .state
+                    .prompt
                     .parts
                     .iter()
                     .filter(|p| !p.is_text())

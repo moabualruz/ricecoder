@@ -175,7 +175,9 @@ fn test_suggestions_for_provider_error() {
     let error = CliError::Provider("Failed".to_string());
     let suggestions = error.suggestions();
     assert!(!suggestions.is_empty());
-    assert!(suggestions.iter().any(|s| s.contains("API key") || s.contains("network")));
+    assert!(suggestions
+        .iter()
+        .any(|s| s.contains("API key") || s.contains("network")));
 }
 
 #[test]
@@ -185,7 +187,9 @@ fn test_suggestions_for_file_not_found() {
     };
     let suggestions = error.suggestions();
     assert!(!suggestions.is_empty());
-    assert!(suggestions.iter().any(|s| s.contains("path") || s.contains("exists")));
+    assert!(suggestions
+        .iter()
+        .any(|s| s.contains("path") || s.contains("exists")));
 }
 
 #[test]

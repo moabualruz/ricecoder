@@ -34,9 +34,13 @@ impl ColorScheme {
                     Self::Dark
                 }
             }
-            Color::White | Color::LightRed | Color::LightGreen | 
-            Color::LightYellow | Color::LightBlue | Color::LightMagenta |
-            Color::LightCyan => Self::Light,
+            Color::White
+            | Color::LightRed
+            | Color::LightGreen
+            | Color::LightYellow
+            | Color::LightBlue
+            | Color::LightMagenta
+            | Color::LightCyan => Self::Light,
             _ => Self::Dark,
         }
     }
@@ -73,20 +77,21 @@ impl TerminalCapabilities {
         let term_program = std::env::var("TERM_PROGRAM").ok();
         let tmux = std::env::var("TMUX").is_ok();
         let sty = std::env::var("STY").is_ok(); // screen
-        
-        let true_color = colorterm == "truecolor" || colorterm == "24bit"
+
+        let true_color = colorterm == "truecolor"
+            || colorterm == "24bit"
             || term.contains("256color")
             || term_program.as_deref() == Some("iTerm.app")
             || term_program.as_deref() == Some("WezTerm")
             || term_program.as_deref() == Some("Alacritty");
-        
+
         let kitty_keyboard = term.contains("kitty")
             || term_program.as_deref() == Some("kitty")
             || std::env::var("KITTY_WINDOW_ID").is_ok();
-        
+
         // OSC 52 is widely supported in modern terminals
         let osc52_clipboard = true_color || tmux || term.contains("xterm");
-        
+
         Self {
             term,
             color_scheme: ColorScheme::Dark, // Will be updated by background detection
@@ -99,32 +104,32 @@ impl TerminalCapabilities {
             terminal_program: term_program,
         }
     }
-    
+
     /// Query background color using OSC 11
     /// Note: This is blocking and may not work in all terminals
     #[cfg(not(windows))]
     pub fn query_background(&mut self) -> Option<Color> {
         use std::os::unix::io::AsRawFd;
-        
+
         // This is a simplified version - real implementation would need
         // to handle terminal modes and timeouts properly
-        
+
         // Send OSC 11 query: ESC ] 11 ; ? BEL
         let query = "\x1b]11;?\x07";
-        
+
         // Try to read response
         // Response format: ESC ] 11 ; rgb:RRRR/GGGG/BBBB BEL
-        
+
         // For safety, we'll just use environment-based detection
         self.detect_from_environment()
     }
-    
+
     #[cfg(windows)]
     pub fn query_background(&mut self) -> Option<Color> {
         // On Windows, use registry or console API
         self.detect_from_environment()
     }
-    
+
     /// Detect color scheme from environment
     fn detect_from_environment(&mut self) -> Option<Color> {
         // Check for explicit color scheme settings
@@ -141,7 +146,7 @@ impl TerminalCapabilities {
                 }
             }
         }
-        
+
         // Check for macOS dark mode
         #[cfg(target_os = "macos")]
         {
@@ -159,7 +164,7 @@ impl TerminalCapabilities {
                 };
             }
         }
-        
+
         // Check Windows console
         #[cfg(windows)]
         {
@@ -167,10 +172,10 @@ impl TerminalCapabilities {
             // For now, assume dark
             self.color_scheme = ColorScheme::Dark;
         }
-        
+
         None
     }
-    
+
     /// Get appropriate colors for current scheme
     pub fn themed_colors(&self) -> ThemedColors {
         match self.color_scheme {
@@ -209,7 +214,7 @@ impl ThemedColors {
             border: Color::Rgb(88, 91, 112),
         }
     }
-    
+
     /// Light theme colors
     pub fn light() -> Self {
         Self {
@@ -236,7 +241,7 @@ pub struct TerminalInfo {
 impl From<&TerminalCapabilities> for TerminalInfo {
     fn from(caps: &TerminalCapabilities) -> Self {
         let mut capabilities = Vec::new();
-        
+
         if caps.true_color {
             capabilities.push("24-bit color".to_string());
         }
@@ -249,11 +254,12 @@ impl From<&TerminalCapabilities> for TerminalInfo {
         if caps.in_tmux {
             capabilities.push("tmux".to_string());
         }
-        
-        let name = caps.terminal_program
+
+        let name = caps
+            .terminal_program
             .clone()
             .unwrap_or_else(|| caps.term.clone());
-        
+
         Self { name, capabilities }
     }
 }
@@ -261,7 +267,7 @@ impl From<&TerminalCapabilities> for TerminalInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_color_scheme_from_background() {
         assert_eq!(
@@ -281,36 +287,36 @@ mod tests {
             ColorScheme::Light
         );
     }
-    
+
     #[test]
     fn test_terminal_capabilities_detect() {
         let caps = TerminalCapabilities::detect();
         // Just verify it doesn't panic
         assert!(caps.term.is_empty() || !caps.term.is_empty());
     }
-    
+
     #[test]
     fn test_themed_colors() {
         let dark = ThemedColors::dark();
         let light = ThemedColors::light();
-        
+
         // Dark background should be darker than light
-        if let (Color::Rgb(dr, dg, db), Color::Rgb(lr, lg, lb)) = 
-            (dark.background, light.background) 
+        if let (Color::Rgb(dr, dg, db), Color::Rgb(lr, lg, lb)) =
+            (dark.background, light.background)
         {
             let dark_brightness = dr as u32 + dg as u32 + db as u32;
             let light_brightness = lr as u32 + lg as u32 + lb as u32;
             assert!(dark_brightness < light_brightness);
         }
     }
-    
+
     #[test]
     fn test_terminal_info_from_caps() {
         let mut caps = TerminalCapabilities::default();
         caps.term = "xterm-256color".to_string();
         caps.true_color = true;
         caps.kitty_keyboard = true;
-        
+
         let info = TerminalInfo::from(&caps);
         assert!(info.capabilities.contains(&"24-bit color".to_string()));
         assert!(info.capabilities.contains(&"Kitty keyboard".to_string()));

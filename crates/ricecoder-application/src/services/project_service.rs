@@ -18,8 +18,8 @@ use crate::events::{ApplicationEvent, EventPublisher};
 use crate::ports::UnitOfWork;
 
 use ricecoder_domain::project::Project;
-use ricecoder_domain::value_objects::ProjectId;
 use ricecoder_domain::repositories::ProjectRepository;
+use ricecoder_domain::value_objects::ProjectId;
 
 /// Project Application Service
 ///
@@ -261,11 +261,7 @@ mod tests {
         }
 
         async fn exists(&self, id: &ProjectId) -> ricecoder_domain::DomainResult<bool> {
-            Ok(self
-                .projects
-                .lock()
-                .unwrap()
-                .contains_key(&id.to_string()))
+            Ok(self.projects.lock().unwrap().contains_key(&id.to_string()))
         }
     }
 

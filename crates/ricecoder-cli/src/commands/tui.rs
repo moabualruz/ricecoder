@@ -124,16 +124,15 @@ async fn load_provider_data_for_tui(
 /// Launch the TUI application
 async fn launch_tui(config: TuiConfig) -> CliResult<()> {
     use ricecoder_tui::tui::TuiApp;
-    
+
     // Create and run the TUI application
-    let mut app = TuiApp::new().map_err(|e| {
-        CliError::Internal(format!("Failed to initialize TUI: {}", e))
-    })?;
-    
+    let mut app = TuiApp::new()
+        .map_err(|e| CliError::Internal(format!("Failed to initialize TUI: {}", e)))?;
+
     // Run the TUI event loop
-    app.run().await.map_err(|e| {
-        CliError::Internal(format!("TUI error: {}", e))
-    })?;
-    
+    app.run()
+        .await
+        .map_err(|e| CliError::Internal(format!("TUI error: {}", e)))?;
+
     Ok(())
 }

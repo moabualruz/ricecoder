@@ -26,7 +26,7 @@ impl TracingEventPublisher {
     pub fn new() -> Self {
         TracingEventPublisher { verbose: false }
     }
-    
+
     /// Create a verbose publisher that logs full event details
     pub fn verbose() -> Self {
         TracingEventPublisher { verbose: true }
@@ -36,7 +36,12 @@ impl TracingEventPublisher {
 impl EventPublisher for TracingEventPublisher {
     fn publish(&self, event: &DomainEvent) {
         match event {
-            DomainEvent::FileEditValidated { file_path, pattern, is_regex, dry_run } => {
+            DomainEvent::FileEditValidated {
+                file_path,
+                pattern,
+                is_regex,
+                dry_run,
+            } => {
                 if self.verbose {
                     tracing::info!(
                         event = "FileEditValidated",
@@ -54,7 +59,13 @@ impl EventPublisher for TracingEventPublisher {
                     );
                 }
             }
-            DomainEvent::FileEditExecuted { file_path, pattern, replacement, matches_replaced, was_dry_run } => {
+            DomainEvent::FileEditExecuted {
+                file_path,
+                pattern,
+                replacement,
+                matches_replaced,
+                was_dry_run,
+            } => {
                 tracing::info!(
                     event = "FileEditExecuted",
                     file_path = %file_path,
@@ -65,7 +76,10 @@ impl EventPublisher for TracingEventPublisher {
                     "File edit executed"
                 );
             }
-            DomainEvent::SearchExecuted { file_path, matches_found } => {
+            DomainEvent::SearchExecuted {
+                file_path,
+                matches_found,
+            } => {
                 tracing::debug!(
                     event = "SearchExecuted",
                     file_path = %file_path,
@@ -92,17 +106,17 @@ impl InMemoryEventPublisher {
             events: std::sync::Mutex::new(Vec::new()),
         }
     }
-    
+
     /// Get the number of published events
     pub fn event_count(&self) -> usize {
         self.events.lock().map(|e| e.len()).unwrap_or(0)
     }
-    
+
     /// Get all published events
     pub fn events(&self) -> Vec<DomainEvent> {
         self.events.lock().map(|e| e.clone()).unwrap_or_default()
     }
-    
+
     /// Clear all events
     pub fn clear(&self) {
         if let Ok(mut events) = self.events.lock() {
@@ -127,7 +141,7 @@ mod tests {
     fn test_tracing_publisher_creation() {
         let publisher = TracingEventPublisher::new();
         assert!(!publisher.verbose);
-        
+
         let verbose = TracingEventPublisher::verbose();
         assert!(verbose.verbose);
     }
@@ -136,14 +150,14 @@ mod tests {
     fn test_tracing_publisher_publish() {
         // This test just ensures no panics - actual logging is tested via tracing-test
         let publisher = TracingEventPublisher::new();
-        
+
         publisher.publish(&DomainEvent::FileEditValidated {
             file_path: "test.rs".to_string(),
             pattern: "hello".to_string(),
             is_regex: false,
             dry_run: true,
         });
-        
+
         publisher.publish(&DomainEvent::FileEditExecuted {
             file_path: "test.rs".to_string(),
             pattern: "hello".to_string(),
@@ -151,7 +165,7 @@ mod tests {
             matches_replaced: 5,
             was_dry_run: false,
         });
-        
+
         publisher.publish(&DomainEvent::SearchExecuted {
             file_path: "test.rs".to_string(),
             matches_found: 10,
@@ -161,9 +175,9 @@ mod tests {
     #[test]
     fn test_in_memory_publisher() {
         let publisher = InMemoryEventPublisher::new();
-        
+
         assert_eq!(publisher.event_count(), 0);
-        
+
         publisher.publish(&DomainEvent::FileEditExecuted {
             file_path: "test.rs".to_string(),
             pattern: "old".to_string(),
@@ -171,9 +185,9 @@ mod tests {
             matches_replaced: 1,
             was_dry_run: false,
         });
-        
+
         assert_eq!(publisher.event_count(), 1);
-        
+
         let events = publisher.events();
         assert_eq!(events.len(), 1);
         assert!(matches!(events[0], DomainEvent::FileEditExecuted { .. }));
@@ -182,23 +196,23 @@ mod tests {
     #[test]
     fn test_in_memory_publisher_clear() {
         let publisher = InMemoryEventPublisher::new();
-        
+
         publisher.publish(&DomainEvent::SearchExecuted {
             file_path: "test.rs".to_string(),
             matches_found: 5,
         });
-        
+
         assert_eq!(publisher.event_count(), 1);
-        
+
         publisher.clear();
-        
+
         assert_eq!(publisher.event_count(), 0);
     }
 
     #[test]
     fn test_in_memory_publisher_batch() {
         let publisher = InMemoryEventPublisher::new();
-        
+
         let events = vec![
             DomainEvent::FileEditValidated {
                 file_path: "a.rs".to_string(),
@@ -218,9 +232,9 @@ mod tests {
                 matches_found: 3,
             },
         ];
-        
+
         publisher.publish_batch(&events);
-        
+
         assert_eq!(publisher.event_count(), 3);
     }
 }

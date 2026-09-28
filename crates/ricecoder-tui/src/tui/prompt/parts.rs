@@ -84,26 +84,7 @@ impl FileSource {
 }
 
 /// Source information for agent mentions
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct AgentSource {
-    /// Start offset
-    pub start: usize,
-    /// End offset
-    pub end: usize,
-    /// Display value (@agent_name)
-    pub value: String,
-}
-
-impl AgentSource {
-    /// Create a new agent source
-    pub fn new(start: usize, end: usize, value: impl Into<String>) -> Self {
-        Self {
-            start,
-            end,
-            value: value.into(),
-        }
-    }
-}
+pub type AgentSource = TextSource;
 
 /// A file part in the prompt (image, document, etc.)
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -266,11 +247,7 @@ impl PromptPart {
         match self {
             PromptPart::Text(p) => p.source.as_ref(),
             PromptPart::File(p) => p.source.as_ref().and_then(|s| s.text.as_ref()),
-            PromptPart::Agent(p) => p.source.as_ref().map(|s| {
-                // Convert AgentSource to TextSource reference - this is a bit awkward
-                // In a real impl we'd use a trait
-                unsafe { &*(s as *const AgentSource as *const TextSource) }
-            }),
+            PromptPart::Agent(p) => p.source.as_ref(),
         }
     }
 

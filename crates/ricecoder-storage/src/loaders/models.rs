@@ -132,7 +132,7 @@ impl ModelLoader {
     /// Load models from models.json file
     pub fn load_from_file(&self) -> StorageResult<HashMap<String, Provider>> {
         let path = self.config_dir.join("models.json");
-        
+
         if !path.exists() {
             return Ok(HashMap::new());
         }
@@ -141,9 +141,8 @@ impl ModelLoader {
             StorageError::io_error(path.clone(), crate::error::IoOperation::Read, e)
         })?;
 
-        let config: ModelsConfig = serde_json::from_str(&content).map_err(|e| {
-            StorageError::parse_error(path, "JSON", e.to_string())
-        })?;
+        let config: ModelsConfig = serde_json::from_str(&content)
+            .map_err(|e| StorageError::parse_error(path, "JSON", e.to_string()))?;
 
         Ok(config.providers)
     }
@@ -164,9 +163,8 @@ impl ModelLoader {
             StorageError::io_error(cache_path.clone(), crate::error::IoOperation::Read, e)
         })?;
 
-        let cache_entry: ModelsCacheEntry = serde_json::from_str(&content).map_err(|e| {
-            StorageError::parse_error(cache_path, "JSON", e.to_string())
-        })?;
+        let cache_entry: ModelsCacheEntry = serde_json::from_str(&content)
+            .map_err(|e| StorageError::parse_error(cache_path, "JSON", e.to_string()))?;
 
         // Check if cache is still valid
         let now = SystemTime::now();
@@ -201,13 +199,11 @@ impl ModelLoader {
             cached_at: SystemTime::now(),
         };
 
-        let content = serde_json::to_string_pretty(&cache_entry).map_err(|e| {
-            StorageError::Internal(format!("Failed to serialize cache: {}", e))
-        })?;
+        let content = serde_json::to_string_pretty(&cache_entry)
+            .map_err(|e| StorageError::Internal(format!("Failed to serialize cache: {}", e)))?;
 
-        fs::write(&cache_path, content).map_err(|e| {
-            StorageError::io_error(cache_path, crate::error::IoOperation::Write, e)
-        })?;
+        fs::write(&cache_path, content)
+            .map_err(|e| StorageError::io_error(cache_path, crate::error::IoOperation::Write, e))?;
 
         Ok(())
     }
@@ -230,7 +226,7 @@ impl ModelLoader {
     /// Get all models from a specific provider
     pub fn get_provider_models(&self, provider_id: &str) -> StorageResult<Vec<Model>> {
         let providers = self.load_with_cache()?;
-        
+
         Ok(providers
             .get(provider_id)
             .map(|p| p.models.clone())
@@ -277,8 +273,7 @@ mod tests {
 
     #[test]
     fn test_cache_ttl_configuration() {
-        let loader = ModelLoader::with_default_path()
-            .with_cache_ttl(Duration::from_secs(1800));
+        let loader = ModelLoader::with_default_path().with_cache_ttl(Duration::from_secs(1800));
         assert_eq!(loader.cache_ttl, Duration::from_secs(1800));
     }
 }

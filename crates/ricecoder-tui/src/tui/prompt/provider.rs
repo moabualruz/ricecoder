@@ -8,9 +8,9 @@
 //! # DDD Layer: Application
 //! Provider and model management for the prompt system.
 
-use std::collections::HashMap;
-use serde::{Deserialize, Serialize};
 use ratatui::style::Color;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Provider status
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -34,7 +34,7 @@ impl ProviderStatus {
             Self::Unknown => Color::DarkGray,
         }
     }
-    
+
     /// Get status indicator
     pub fn indicator(&self) -> &'static str {
         match self {
@@ -83,7 +83,7 @@ impl Model {
             None
         }
     }
-    
+
     /// Format as "provider/model"
     pub fn format(&self) -> String {
         format!("{}/{}", self.provider_id, self.id)
@@ -103,45 +103,47 @@ impl ProviderManager {
     pub fn new() -> Self {
         Self::default()
     }
-    
+
     /// Register a provider
     pub fn register(&mut self, provider: Provider) {
         self.providers.insert(provider.id.clone(), provider);
     }
-    
+
     /// Get provider by ID
     pub fn get(&self, id: &str) -> Option<&Provider> {
         self.providers.get(id)
     }
-    
+
     /// Get all providers
     pub fn all(&self) -> impl Iterator<Item = &Provider> {
         self.providers.values()
     }
-    
+
     /// Get current provider
     pub fn current_provider(&self) -> Option<&Provider> {
-        self.current_provider.as_ref().and_then(|id| self.providers.get(id))
+        self.current_provider
+            .as_ref()
+            .and_then(|id| self.providers.get(id))
     }
-    
+
     /// Get current model
     pub fn current_model(&self) -> Option<&Model> {
         let provider = self.current_provider()?;
         let model_id = self.current_model.as_ref()?;
         provider.models.iter().find(|m| &m.id == model_id)
     }
-    
+
     /// Set current provider and model
     pub fn set_current(&mut self, provider_id: &str, model_id: &str) {
         self.current_provider = Some(provider_id.to_string());
         self.current_model = Some(model_id.to_string());
     }
-    
+
     /// Set model override (temporary)
     pub fn set_override(&mut self, model: Option<String>) {
         self.model_override = model;
     }
-    
+
     /// Get effective model (override or current)
     pub fn effective_model(&self) -> Option<&Model> {
         if let Some(override_str) = &self.model_override {
@@ -153,23 +155,26 @@ impl ProviderManager {
         }
         self.current_model()
     }
-    
+
     /// Cycle to next provider
     pub fn cycle_provider(&mut self, direction: i8) -> Option<&Provider> {
         let ids: Vec<_> = self.providers.keys().cloned().collect();
-        if ids.is_empty() { return None; }
-        
-        let current_idx = self.current_provider
+        if ids.is_empty() {
+            return None;
+        }
+
+        let current_idx = self
+            .current_provider
             .as_ref()
             .and_then(|id| ids.iter().position(|i| i == id))
             .unwrap_or(0);
-        
+
         let new_idx = if direction > 0 {
             (current_idx + 1) % ids.len()
         } else {
             (current_idx + ids.len() - 1) % ids.len()
         };
-        
+
         self.current_provider = Some(ids[new_idx].clone());
         if let Some(provider) = self.providers.get(&ids[new_idx]) {
             if let Some(model) = provider.models.first() {
@@ -178,35 +183,38 @@ impl ProviderManager {
         }
         self.current_provider()
     }
-    
+
     /// Cycle to next model within current provider
     pub fn cycle_model(&mut self, direction: i8) -> Option<&Model> {
         let provider = self.current_provider()?;
         let models = &provider.models;
-        if models.is_empty() { return None; }
-        
-        let current_idx = self.current_model
+        if models.is_empty() {
+            return None;
+        }
+
+        let current_idx = self
+            .current_model
             .as_ref()
             .and_then(|id| models.iter().position(|m| &m.id == id))
             .unwrap_or(0);
-        
+
         let new_idx = if direction > 0 {
             (current_idx + 1) % models.len()
         } else {
             (current_idx + models.len() - 1) % models.len()
         };
-        
+
         self.current_model = Some(models[new_idx].id.clone());
         self.current_model()
     }
-    
+
     /// Update provider status
     pub fn update_status(&mut self, provider_id: &str, status: ProviderStatus) {
         if let Some(provider) = self.providers.get_mut(provider_id) {
             provider.status = status;
         }
     }
-    
+
     /// Get parsed model info for display
     pub fn parsed(&self) -> ParsedModel {
         if let Some(model) = self.effective_model() {
@@ -261,16 +269,14 @@ pub fn default_providers() -> Vec<Provider> {
             name: "OpenAI".to_string(),
             status: ProviderStatus::Unknown,
             api_key_set: false,
-            models: vec![
-                Model {
-                    id: "gpt-4o".to_string(),
-                    name: "GPT-4o".to_string(),
-                    provider_id: "openai".to_string(),
-                    context_length: Some(128000),
-                    supports_vision: true,
-                    supports_tools: true,
-                },
-            ],
+            models: vec![Model {
+                id: "gpt-4o".to_string(),
+                name: "GPT-4o".to_string(),
+                provider_id: "openai".to_string(),
+                context_length: Some(128000),
+                supports_vision: true,
+                supports_tools: true,
+            }],
         },
     ]
 }
@@ -278,20 +284,20 @@ pub fn default_providers() -> Vec<Provider> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_provider_status_color() {
         assert_eq!(ProviderStatus::Connected.color(), Color::Green);
         assert_eq!(ProviderStatus::Error.color(), Color::Red);
     }
-    
+
     #[test]
     fn test_model_parse() {
         let (provider, model) = Model::parse("anthropic/claude-3").unwrap();
         assert_eq!(provider, "anthropic");
         assert_eq!(model, "claude-3");
     }
-    
+
     #[test]
     fn test_provider_manager_cycle() {
         let mut manager = ProviderManager::new();
@@ -299,11 +305,11 @@ mod tests {
             manager.register(provider);
         }
         manager.set_current("anthropic", "claude-sonnet-4-20250514");
-        
+
         manager.cycle_provider(1);
         assert!(manager.current_provider().is_some());
     }
-    
+
     #[test]
     fn test_model_cycle() {
         let mut manager = ProviderManager::new();
@@ -311,8 +317,11 @@ mod tests {
             manager.register(provider);
         }
         manager.set_current("anthropic", "claude-sonnet-4-20250514");
-        
+
         manager.cycle_model(1);
-        assert_eq!(manager.current_model().unwrap().id, "claude-3-5-sonnet-20241022");
+        assert_eq!(
+            manager.current_model().unwrap().id,
+            "claude-3-5-sonnet-20241022"
+        );
     }
 }

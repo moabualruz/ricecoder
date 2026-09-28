@@ -39,8 +39,8 @@ impl ComplianceReport {
 
     /// Add a finding
     pub fn add_finding(&mut self, finding: ComplianceFinding) {
-        let is_critical =
-            finding.severity == FindingSeverity::High || finding.severity == FindingSeverity::Critical;
+        let is_critical = finding.severity == FindingSeverity::High
+            || finding.severity == FindingSeverity::Critical;
         self.findings.push(finding);
         if is_critical {
             self.compliance_status = ComplianceStatus::NonCompliant;

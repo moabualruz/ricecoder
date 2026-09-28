@@ -16,7 +16,9 @@ pub fn transform_for_claude(messages: Vec<Message>) -> Vec<Message> {
         .map(|mut msg| {
             // Sanitize toolCallId if present
             if let Ok(mut content) = serde_json::from_str::<Value>(&msg.content) {
-                if let Some(tool_calls) = content.get_mut("tool_calls").and_then(|v| v.as_array_mut()) {
+                if let Some(tool_calls) =
+                    content.get_mut("tool_calls").and_then(|v| v.as_array_mut())
+                {
                     for call in tool_calls {
                         if let Some(id) = call.get_mut("id").and_then(|v| v.as_str()) {
                             let sanitized = sanitize_claude_tool_id(id);
@@ -139,9 +141,11 @@ fn transform_schema_recursive(mut value: Value) -> Value {
 
             Value::Object(map.clone())
         }
-        Value::Array(arr) => {
-            Value::Array(arr.iter().map(|v| transform_schema_recursive(v.clone())).collect())
-        }
+        Value::Array(arr) => Value::Array(
+            arr.iter()
+                .map(|v| transform_schema_recursive(v.clone()))
+                .collect(),
+        ),
         _ => value,
     }
 }
@@ -152,7 +156,10 @@ mod tests {
 
     #[test]
     fn test_sanitize_claude_tool_id() {
-        assert_eq!(sanitize_claude_tool_id("tool::call::123"), "tool__call__123");
+        assert_eq!(
+            sanitize_claude_tool_id("tool::call::123"),
+            "tool__call__123"
+        );
         assert_eq!(sanitize_claude_tool_id("call@#$%456"), "call____456");
     }
 

@@ -109,7 +109,7 @@ mod tests {
 
         let json = serde_json::to_string(&cmd).unwrap();
         let parsed: CreateProjectCommand = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(parsed.name, "test-project");
         assert_eq!(parsed.language, ProgrammingLanguage::Rust);
     }

@@ -280,9 +280,7 @@ pub enum ApiError {
     #[serde(rename = "MessageOutputLengthError")]
     MessageOutputLengthError,
     #[serde(rename = "MessageAbortedError")]
-    MessageAbortedError {
-        message: String,
-    },
+    MessageAbortedError { message: String },
     #[serde(rename = "APIError")]
     ApiError {
         message: String,
@@ -301,9 +299,7 @@ pub enum ApiError {
         metadata: Option<HashMap<String, String>>,
     },
     #[serde(rename = "Unknown")]
-    Unknown {
-        message: String,
-    },
+    Unknown { message: String },
 }
 
 /// Tool state (OpenCode V2 ToolState discriminated union)
@@ -362,16 +358,18 @@ pub struct LegacyMessage {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum LegacyMessagePart {
-    Text { text: String },
+    Text {
+        text: String,
+    },
     Reasoning {
         text: String,
         #[serde(rename = "providerMetadata")]
         provider_metadata: Option<HashMap<String, Value>>,
     },
     #[serde(rename = "tool-invocation")]
-    ToolInvocation { 
+    ToolInvocation {
         #[serde(rename = "toolInvocation")]
-        tool_invocation: LegacyToolInvocation 
+        tool_invocation: LegacyToolInvocation,
     },
     #[serde(rename = "source-url")]
     SourceUrl {
@@ -462,8 +460,10 @@ impl TryFrom<LegacyMessage> for Message {
             _ => return Err(format!("Invalid role: {}", legacy.role)),
         };
 
-        let parts: Vec<MessagePart> = legacy.parts.into_iter().map(|part| {
-            match part {
+        let parts: Vec<MessagePart> = legacy
+            .parts
+            .into_iter()
+            .map(|part| match part {
                 LegacyMessagePart::Text { text } => MessagePart::Text {
                     id: None,
                     session_id: Some(legacy.metadata.session_id.clone()),
@@ -474,7 +474,10 @@ impl TryFrom<LegacyMessage> for Message {
                     time: None,
                     metadata: None,
                 },
-                LegacyMessagePart::Reasoning { text, provider_metadata } => MessagePart::Reasoning {
+                LegacyMessagePart::Reasoning {
+                    text,
+                    provider_metadata,
+                } => MessagePart::Reasoning {
                     id: None,
                     session_id: Some(legacy.metadata.session_id.clone()),
                     message_id: Some(legacy.id.clone()),
@@ -498,7 +501,11 @@ impl TryFrom<LegacyMessage> for Message {
                             metadata: HashMap::new(),
                             time: CompletedTime {
                                 start: legacy.metadata.time.created,
-                                end: legacy.metadata.time.completed.unwrap_or(legacy.metadata.time.created),
+                                end: legacy
+                                    .metadata
+                                    .time
+                                    .completed
+                                    .unwrap_or(legacy.metadata.time.created),
                                 compacted: None,
                             },
                             attachments: None,
@@ -517,28 +524,33 @@ impl TryFrom<LegacyMessage> for Message {
                         state,
                         metadata: None,
                     }
+                }
+                LegacyMessagePart::SourceUrl {
+                    source_id,
+                    url,
+                    title,
+                    provider_metadata,
+                } => MessagePart::SourceUrl {
+                    id: None,
+                    session_id: Some(legacy.metadata.session_id.clone()),
+                    message_id: Some(legacy.id.clone()),
+                    source_id,
+                    url,
+                    title,
+                    provider_metadata,
                 },
-                LegacyMessagePart::SourceUrl { source_id, url, title, provider_metadata } => {
-                    MessagePart::SourceUrl {
-                        id: None,
-                        session_id: Some(legacy.metadata.session_id.clone()),
-                        message_id: Some(legacy.id.clone()),
-                        source_id,
-                        url,
-                        title,
-                        provider_metadata,
-                    }
-                },
-                LegacyMessagePart::File { media_type, filename, url } => {
-                    MessagePart::File {
-                        id: None,
-                        session_id: Some(legacy.metadata.session_id.clone()),
-                        message_id: Some(legacy.id.clone()),
-                        mime: media_type,
-                        filename,
-                        url,
-                        source: None,
-                    }
+                LegacyMessagePart::File {
+                    media_type,
+                    filename,
+                    url,
+                } => MessagePart::File {
+                    id: None,
+                    session_id: Some(legacy.metadata.session_id.clone()),
+                    message_id: Some(legacy.id.clone()),
+                    mime: media_type,
+                    filename,
+                    url,
+                    source: None,
                 },
                 LegacyMessagePart::StepStart => MessagePart::StepStart {
                     id: None,
@@ -546,8 +558,8 @@ impl TryFrom<LegacyMessage> for Message {
                     message_id: Some(legacy.id.clone()),
                     snapshot: None,
                 },
-            }
-        }).collect();
+            })
+            .collect();
 
         let timestamp = chrono::DateTime::from_timestamp(legacy.metadata.time.created / 1000, 0)
             .unwrap_or_else(|| chrono::Utc::now());
@@ -997,7 +1009,9 @@ impl Message {
                 MessagePart::Agent { name, .. } => {
                     result.push_str(&format!("🤖 Agent: {}\n", name));
                 }
-                MessagePart::Subtask { description, agent, .. } => {
+                MessagePart::Subtask {
+                    description, agent, ..
+                } => {
                     result.push_str(&format!("📋 Subtask ({}) - {}\n", agent, description));
                 }
                 MessagePart::Compaction { auto, .. } => {

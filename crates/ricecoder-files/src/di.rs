@@ -46,9 +46,7 @@ mod tests {
         assert!(!services.is_empty(), "Should create at least one service");
 
         // Check that FileManager is in the list
-        let has_file_manager = services.iter().any(|s| {
-            s.type_name.contains("FileManager")
-        });
+        let has_file_manager = services.iter().any(|s| s.type_name.contains("FileManager"));
         assert!(has_file_manager, "Should include FileManager");
     }
 }

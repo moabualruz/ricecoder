@@ -172,7 +172,12 @@ impl SessionSidebar {
         if !self.mcp_servers.is_empty() {
             let height = self.render_section(
                 frame,
-                Rect::new(inner.x, current_y, inner.width, inner.height.saturating_sub(current_y - inner.y)),
+                Rect::new(
+                    inner.x,
+                    current_y,
+                    inner.width,
+                    inner.height.saturating_sub(current_y - inner.y),
+                ),
                 "MCP Servers",
                 SidebarSection::Mcp,
                 &self.mcp_servers.clone(),
@@ -185,7 +190,12 @@ impl SessionSidebar {
         if !self.lsp_servers.is_empty() && current_y < inner.y + inner.height {
             let height = self.render_section(
                 frame,
-                Rect::new(inner.x, current_y, inner.width, inner.height.saturating_sub(current_y - inner.y)),
+                Rect::new(
+                    inner.x,
+                    current_y,
+                    inner.width,
+                    inner.height.saturating_sub(current_y - inner.y),
+                ),
                 "LSP",
                 SidebarSection::Lsp,
                 &self.lsp_servers.clone(),
@@ -198,7 +208,12 @@ impl SessionSidebar {
         if !self.todos.is_empty() && current_y < inner.y + inner.height {
             let height = self.render_section(
                 frame,
-                Rect::new(inner.x, current_y, inner.width, inner.height.saturating_sub(current_y - inner.y)),
+                Rect::new(
+                    inner.x,
+                    current_y,
+                    inner.width,
+                    inner.height.saturating_sub(current_y - inner.y),
+                ),
                 "Todos",
                 SidebarSection::Todos,
                 &self.todos.clone(),
@@ -211,7 +226,12 @@ impl SessionSidebar {
         if !self.diffs.is_empty() && current_y < inner.y + inner.height {
             let height = self.render_section(
                 frame,
-                Rect::new(inner.x, current_y, inner.width, inner.height.saturating_sub(current_y - inner.y)),
+                Rect::new(
+                    inner.x,
+                    current_y,
+                    inner.width,
+                    inner.height.saturating_sub(current_y - inner.y),
+                ),
                 "Changes",
                 SidebarSection::Diffs,
                 &self.diffs.clone(),
@@ -224,7 +244,12 @@ impl SessionSidebar {
         if self.show_getting_started && current_y < inner.y + inner.height {
             self.render_getting_started(
                 frame,
-                Rect::new(inner.x, current_y, inner.width, inner.height.saturating_sub(current_y - inner.y).min(6)),
+                Rect::new(
+                    inner.x,
+                    current_y,
+                    inner.width,
+                    inner.height.saturating_sub(current_y - inner.y).min(6),
+                ),
                 theme,
             );
         }
@@ -268,7 +293,7 @@ impl SessionSidebar {
             .take(max_items)
             .map(|item| {
                 let mut spans = Vec::new();
-                
+
                 // Status indicator
                 if let Some(status) = &item.status {
                     spans.push(Span::styled(
@@ -300,7 +325,12 @@ impl SessionSidebar {
         let list = List::new(list_items);
         frame.render_widget(
             list,
-            Rect::new(area.x + 1, area.y + 1, area.width.saturating_sub(1), max_items as u16),
+            Rect::new(
+                area.x + 1,
+                area.y + 1,
+                area.width.saturating_sub(1),
+                max_items as u16,
+            ),
         );
 
         1 + max_items as u16
@@ -327,12 +357,8 @@ impl SessionSidebar {
             if i as u16 >= inner.height {
                 break;
             }
-            let para = Paragraph::new(*tip)
-                .style(Style::default().fg(theme.getting_started_text));
-            frame.render_widget(
-                para,
-                Rect::new(inner.x, inner.y + i as u16, inner.width, 1),
-            );
+            let para = Paragraph::new(*tip).style(Style::default().fg(theme.getting_started_text));
+            frame.render_widget(para, Rect::new(inner.x, inner.y + i as u16, inner.width, 1));
         }
     }
 }

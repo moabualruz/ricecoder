@@ -4,8 +4,8 @@
 
 use proptest::prelude::*;
 use ricecoder_specs::{
-    models::{Standard, Governance, GovernanceRule, TemplateRef},
-    Governance::GovernanceLoader,
+    governance::GovernanceLoader,
+    models::{Governance, GovernanceRule, Standard, TemplateRef},
 };
 
 // ============================================================================

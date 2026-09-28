@@ -179,10 +179,7 @@ impl Specification {
         // Business rule: Requirements can only be added in Draft or RequirementsComplete
         if self.status != SpecStatus::Draft && self.status != SpecStatus::RequirementsComplete {
             return Err(DomainError::BusinessRuleViolation {
-                rule: format!(
-                    "Cannot add requirements in {:?} state",
-                    self.status
-                ),
+                rule: format!("Cannot add requirements in {:?} state", self.status),
             });
         }
 

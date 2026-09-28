@@ -31,7 +31,7 @@ impl McpServerStatus {
             Self::Error => Color::Red,
         }
     }
-    
+
     pub fn indicator(&self) -> &'static str {
         match self {
             Self::Connected => "●",
@@ -40,7 +40,7 @@ impl McpServerStatus {
             Self::Error => "✗",
         }
     }
-    
+
     pub fn label(&self) -> &'static str {
         match self {
             Self::Connected => "Connected",
@@ -89,22 +89,22 @@ impl McpServer {
             error: None,
         }
     }
-    
+
     pub fn with_status(mut self, status: McpServerStatus) -> Self {
         self.status = status;
         self
     }
-    
+
     pub fn with_tools(mut self, tools: Vec<McpTool>) -> Self {
         self.tools = tools;
         self
     }
-    
+
     pub fn set_error(&mut self, error: impl Into<String>) {
         self.error = Some(error.into());
         self.status = McpServerStatus::Error;
     }
-    
+
     pub fn clear_error(&mut self) {
         self.error = None;
         if self.status == McpServerStatus::Error {
@@ -125,20 +125,20 @@ impl McpManager {
     pub fn new() -> Self {
         Self::default()
     }
-    
+
     /// Register a server
     pub fn register_server(&mut self, server: McpServer) {
         self.servers.insert(server.name.clone(), server);
         self.rebuild_tools_cache();
     }
-    
+
     /// Update server status
     pub fn update_status(&mut self, name: &str, status: McpServerStatus) {
         if let Some(server) = self.servers.get_mut(name) {
             server.status = status;
         }
     }
-    
+
     /// Update server tools
     pub fn update_tools(&mut self, name: &str, tools: Vec<McpTool>) {
         if let Some(server) = self.servers.get_mut(name) {
@@ -146,64 +146,72 @@ impl McpManager {
             self.rebuild_tools_cache();
         }
     }
-    
+
     /// Set server error
     pub fn set_error(&mut self, name: &str, error: impl Into<String>) {
         if let Some(server) = self.servers.get_mut(name) {
             server.set_error(error);
         }
     }
-    
+
     /// Get server by name
     pub fn get_server(&self, name: &str) -> Option<&McpServer> {
         self.servers.get(name)
     }
-    
+
     /// Get all servers
     pub fn servers(&self) -> impl Iterator<Item = &McpServer> {
         self.servers.values()
     }
-    
+
     /// Get all tools (flattened)
     pub fn tools(&self) -> &[McpTool] {
         &self.all_tools
     }
-    
+
     /// Get tools for a specific server
     pub fn server_tools(&self, name: &str) -> Option<&[McpTool]> {
         self.servers.get(name).map(|s| s.tools.as_slice())
     }
-    
+
     /// Find tool by name
     pub fn find_tool(&self, name: &str) -> Option<&McpTool> {
         self.all_tools.iter().find(|t| t.name == name)
     }
-    
+
     /// Get connected server count
     pub fn connected_count(&self) -> usize {
-        self.servers.values().filter(|s| s.status == McpServerStatus::Connected).count()
+        self.servers
+            .values()
+            .filter(|s| s.status == McpServerStatus::Connected)
+            .count()
     }
-    
+
     /// Get total server count
     pub fn total_count(&self) -> usize {
         self.servers.len()
     }
-    
+
     /// Rebuild the flat tools cache
     fn rebuild_tools_cache(&mut self) {
-        self.all_tools = self.servers
+        self.all_tools = self
+            .servers
             .values()
             .flat_map(|s| s.tools.clone())
             .collect();
     }
-    
+
     /// Get status summary for display
     pub fn status_summary(&self) -> McpStatusSummary {
         let total = self.servers.len();
         let connected = self.connected_count();
-        let error_count = self.servers.values().filter(|s| s.status == McpServerStatus::Error).count();
+        let error_count = self
+            .servers
+            .values()
+            .filter(|s| s.status == McpServerStatus::Error)
+            .count();
         let tool_count = self.all_tools.len();
-        
+
         McpStatusSummary {
             total_servers: total,
             connected_servers: connected,
@@ -237,7 +245,7 @@ impl McpStatusSummary {
             McpServerStatus::Disconnected
         }
     }
-    
+
     /// Format for display
     pub fn display(&self) -> String {
         if self.total_servers == 0 {
@@ -245,9 +253,7 @@ impl McpStatusSummary {
         } else {
             format!(
                 "{}/{} servers, {} tools",
-                self.connected_servers,
-                self.total_servers,
-                self.total_tools
+                self.connected_servers, self.total_servers, self.total_tools
             )
         }
     }
@@ -266,78 +272,72 @@ pub enum McpEvent {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_server_status() {
         assert_eq!(McpServerStatus::Connected.color(), Color::Green);
         assert_eq!(McpServerStatus::Error.indicator(), "✗");
     }
-    
+
     #[test]
     fn test_mcp_server() {
-        let mut server = McpServer::new("test-server")
-            .with_status(McpServerStatus::Connected);
-        
+        let mut server = McpServer::new("test-server").with_status(McpServerStatus::Connected);
+
         assert_eq!(server.name, "test-server");
         assert_eq!(server.status, McpServerStatus::Connected);
-        
+
         server.set_error("Connection failed");
         assert_eq!(server.status, McpServerStatus::Error);
         assert!(server.error.is_some());
     }
-    
+
     #[test]
     fn test_mcp_manager() {
         let mut manager = McpManager::new();
-        
+
         let server = McpServer::new("server1")
             .with_status(McpServerStatus::Connected)
-            .with_tools(vec![
-                McpTool {
-                    name: "tool1".to_string(),
-                    description: Some("A tool".to_string()),
-                    server_name: "server1".to_string(),
-                    parameters: vec![],
-                },
-            ]);
-        
+            .with_tools(vec![McpTool {
+                name: "tool1".to_string(),
+                description: Some("A tool".to_string()),
+                server_name: "server1".to_string(),
+                parameters: vec![],
+            }]);
+
         manager.register_server(server);
-        
+
         assert_eq!(manager.total_count(), 1);
         assert_eq!(manager.connected_count(), 1);
         assert_eq!(manager.tools().len(), 1);
     }
-    
+
     #[test]
     fn test_status_summary() {
         let mut manager = McpManager::new();
-        
+
         manager.register_server(McpServer::new("s1").with_status(McpServerStatus::Connected));
         manager.register_server(McpServer::new("s2").with_status(McpServerStatus::Error));
-        
+
         let summary = manager.status_summary();
         assert_eq!(summary.total_servers, 2);
         assert_eq!(summary.connected_servers, 1);
         assert_eq!(summary.error_servers, 1);
         assert_eq!(summary.overall_status(), McpServerStatus::Error);
     }
-    
+
     #[test]
     fn test_find_tool() {
         let mut manager = McpManager::new();
-        
-        let server = McpServer::new("server1")
-            .with_tools(vec![
-                McpTool {
-                    name: "read_file".to_string(),
-                    description: Some("Read a file".to_string()),
-                    server_name: "server1".to_string(),
-                    parameters: vec![],
-                },
-            ]);
-        
+
+        let server = McpServer::new("server1").with_tools(vec![McpTool {
+            name: "read_file".to_string(),
+            description: Some("Read a file".to_string()),
+            server_name: "server1".to_string(),
+            parameters: vec![],
+        }]);
+
         manager.register_server(server);
-        
+
         assert!(manager.find_tool("read_file").is_some());
         assert!(manager.find_tool("nonexistent").is_none());
     }

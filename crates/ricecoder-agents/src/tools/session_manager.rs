@@ -82,7 +82,7 @@ impl SessionManager for DefaultSessionManager {
     async fn create_child_session(&self, parent_id: &str, title: &str) -> Result<String> {
         let session_uuid = Uuid::new_v4();
         let session_id = session_uuid.to_string();
-        
+
         let session_data = SessionData {
             id: session_id.clone(),
             parent_id: Some(parent_id.to_string()),
@@ -146,12 +146,14 @@ impl SessionManager for DefaultSessionManager {
         // Get or create session context
         let _context = {
             let mut sessions = self.sessions.write().await;
-            let session = sessions.get_mut(session_id).ok_or_else(|| {
-                AgentError::SessionNotFound(session_id.to_string())
-            })?;
+            let session = sessions
+                .get_mut(session_id)
+                .ok_or_else(|| AgentError::SessionNotFound(session_id.to_string()))?;
 
             // Add user message to context and messages
-            session.context.add_message(ChatMessage::user(prompt.to_string()));
+            session
+                .context
+                .add_message(ChatMessage::user(prompt.to_string()));
             session.messages.push(json!({
                 "id": message_id,
                 "role": "user",
@@ -190,7 +192,7 @@ impl SessionManager for DefaultSessionManager {
         // Execute with tool loop
         // Note: We use a simplified execution here. Full implementation would use
         // chat_service.send_message_with_tools() but that requires more context setup.
-        
+
         // For now, do a simple chat completion
         let response = tokio::select! {
             result = chat_service.send_message(&mut exec_context, prompt.to_string(), Some(model.model_id.clone())) => {
@@ -246,9 +248,9 @@ impl SessionManager for DefaultSessionManager {
     /// Get session messages
     async fn get_session_messages(&self, session_id: &str) -> Result<Vec<Value>> {
         let sessions = self.sessions.read().await;
-        let session = sessions.get(session_id).ok_or_else(|| {
-            AgentError::SessionNotFound(session_id.to_string())
-        })?;
+        let session = sessions
+            .get(session_id)
+            .ok_or_else(|| AgentError::SessionNotFound(session_id.to_string()))?;
 
         Ok(session.messages.clone())
     }

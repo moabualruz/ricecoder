@@ -59,8 +59,8 @@ mod orchestrator_properties;
 
 pub use agents::{Agent, CodeReviewAgent, WebAgent};
 pub use chat::{
-    ApprovalCallback, ChatContext, ChatError, ChatMessage, ChatResponse, ChatService,
-    ContentBlock, Role, StopReason, ToolApprovalInfo, ToolCall, TrackedFile, Usage,
+    ApprovalCallback, ChatContext, ChatError, ChatMessage, ChatResponse, ChatService, ContentBlock,
+    Role, StopReason, ToolApprovalInfo, ToolCall, TrackedFile, Usage,
 };
 pub use coordinator::AgentCoordinator;
 pub use error::AgentError;
@@ -77,9 +77,9 @@ pub use orchestrator::AgentOrchestrator;
 pub use registry::AgentRegistry;
 pub use scheduler::{AgentScheduler, ExecutionPhase, ExecutionSchedule, TaskDAG};
 pub use tool_invokers::{
-    ExtensibleToolInvoker, GlobToolInvoker, GrepToolInvoker, ListToolInvoker, PatchToolInvoker,
-    ReadToolInvoker, TodoreadToolInvoker, TodowriteToolInvoker, ToolBackend, WebfetchToolInvoker,
-    WebsearchToolInvoker, WriteToolInvoker, EditToolInvoker,
+    EditToolInvoker, ExtensibleToolInvoker, GlobToolInvoker, GrepToolInvoker, ListToolInvoker,
+    PatchToolInvoker, ReadToolInvoker, TodoreadToolInvoker, TodowriteToolInvoker, ToolBackend,
+    WebfetchToolInvoker, WebsearchToolInvoker, WriteToolInvoker,
 };
 pub use tool_registry::{ToolInvoker, ToolMetadata, ToolRegistry};
 pub use tools::{

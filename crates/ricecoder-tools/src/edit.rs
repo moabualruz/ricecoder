@@ -136,14 +136,14 @@ impl FileEditTool {
                         if !input.continue_on_error {
                             // Rollback all successful edits
                             Self::rollback_batch(&results)?;
-                            
+
                             // Generate title for failed batch
                             let title = if !input.edits.is_empty() {
                                 Self::compute_relative_path(&input.edits[0].file_path)
                             } else {
                                 None
                             };
-                            
+
                             return Ok(BatchFileEditOutput {
                                 success: false,
                                 results,
@@ -249,7 +249,7 @@ impl FileEditTool {
     /// Compute relative path from project root (OpenCode compatibility)
     fn compute_relative_path(file_path: &str) -> Option<String> {
         let path = Path::new(file_path);
-        
+
         // Try to find project root by walking up the directory tree
         let mut current = path.parent()?;
         while let Some(parent) = current.parent() {
@@ -260,11 +260,15 @@ impl FileEditTool {
                 || parent.join("pyproject.toml").exists()
             {
                 // Found project root, compute relative path
-                return path.strip_prefix(parent).ok()?.to_str().map(|s| s.to_string());
+                return path
+                    .strip_prefix(parent)
+                    .ok()?
+                    .to_str()
+                    .map(|s| s.to_string());
             }
             current = parent;
         }
-        
+
         // Fallback: use filename if no project root found
         path.file_name()?.to_str().map(|s| s.to_string())
     }
@@ -280,7 +284,7 @@ impl FileEditTool {
         }
 
         let file_path = Path::new(&input.file_path);
-        
+
         // GAP-10: File type/existence checks with specific error messages
         if !file_path.exists() {
             return Err(ToolError::new(
@@ -288,7 +292,7 @@ impl FileEditTool {
                 format!("File {} not found", input.file_path),
             ));
         }
-        
+
         if file_path.is_dir() {
             return Err(ToolError::new(
                 "PATH_IS_DIRECTORY",
@@ -301,7 +305,7 @@ impl FileEditTool {
             std::fs::write(file_path, &input.new_string).map_err(|e| {
                 ToolError::new("FILE_WRITE_ERROR", format!("Failed to write file: {}", e))
             })?;
-            
+
             let diff = generate_diff("", &input.new_string);
             return Ok(FileEditOutput {
                 success: true,
@@ -330,7 +334,9 @@ impl FileEditTool {
             Box::new(EscapeNormalizedStrategy),
             Box::new(TrimmedBoundaryStrategy),
             Box::new(ContextAwareStrategy),
-            Box::new(MultiOccurrenceStrategy { replace_all: input.replace_all }),
+            Box::new(MultiOccurrenceStrategy {
+                replace_all: input.replace_all,
+            }),
         ];
 
         for strategy in strategies {
@@ -413,17 +419,17 @@ impl EditStrategy for EscapeNormalizedStrategy {
     fn apply(&self, content: &str, input: &FileEditInput) -> Result<String, EditError> {
         let unescape = |s: &str| -> String {
             s.replace("\\n", "\n")
-             .replace("\\t", "\t")
-             .replace("\\r", "\r")
-             .replace("\\'", "'")
-             .replace("\\\"", "\"")
-             .replace("\\`", "`")
-             .replace("\\\\", "\\")
-             .replace("\\$", "$")
+                .replace("\\t", "\t")
+                .replace("\\r", "\r")
+                .replace("\\'", "'")
+                .replace("\\\"", "\"")
+                .replace("\\`", "`")
+                .replace("\\\\", "\\")
+                .replace("\\$", "$")
         };
 
         let unescaped_old = unescape(&input.old_string);
-        
+
         if content.contains(&unescaped_old) {
             let new_content = content.replace(&unescaped_old, &input.new_string);
             Ok(new_content)
@@ -443,7 +449,7 @@ impl EditStrategy for TrimmedBoundaryStrategy {
 
     fn apply(&self, content: &str, input: &FileEditInput) -> Result<String, EditError> {
         let trimmed_old = input.old_string.trim();
-        
+
         if trimmed_old == input.old_string {
             // Already trimmed, no point trying
             return Err(EditError::NoMatch);
@@ -481,7 +487,7 @@ impl EditStrategy for ContextAwareStrategy {
                 for j in (i + 2)..content_lines.len() {
                     if content_lines[j].trim() == last_line {
                         let block_lines = &content_lines[i..=j];
-                        
+
                         if block_lines.len() == old_lines.len() {
                             let mut matching_lines = 0;
                             let mut total_non_empty = 0;
@@ -498,16 +504,18 @@ impl EditStrategy for ContextAwareStrategy {
                                 }
                             }
 
-                            if total_non_empty == 0 || (matching_lines as f64 / total_non_empty as f64) >= 0.5 {
+                            if total_non_empty == 0
+                                || (matching_lines as f64 / total_non_empty as f64) >= 0.5
+                            {
                                 let mut new_lines = content_lines.clone();
                                 let new_block_lines: Vec<&str> = input.new_string.lines().collect();
-                                
-                                for k in 0..=j-i {
+
+                                for k in 0..=j - i {
                                     if k < new_block_lines.len() {
                                         new_lines[i + k] = new_block_lines[k];
                                     }
                                 }
-                                
+
                                 let new_content = new_lines.join("\n");
                                 return Ok(new_content);
                             }

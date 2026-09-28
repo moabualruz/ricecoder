@@ -192,7 +192,7 @@ mod tests {
 
     #[test]
     fn test_invalid_proxy() {
-        let config = HttpConfig::default().with_proxy("invalid-proxy");
+        let config = HttpConfig::default().with_proxy("http://[");
 
         let result = HttpClient::new(config);
         assert!(matches!(result, Err(HttpError::InvalidProxy(_))));

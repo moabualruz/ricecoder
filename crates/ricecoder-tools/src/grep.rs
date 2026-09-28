@@ -3,8 +3,8 @@
 //! Fast content search with regex support and safety limits.
 //! Matches OpenCode's grep tool behavior.
 
-use async_trait::async_trait;
 use ::glob::Pattern as GlobPattern;
+use async_trait::async_trait;
 use ignore::WalkBuilder;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -267,7 +267,8 @@ impl Tool for GrepTool {
             "path".to_string(),
             ParameterSchema {
                 type_: "string".to_string(),
-                description: "The directory to search in. Defaults to current workspace.".to_string(),
+                description: "The directory to search in. Defaults to current workspace."
+                    .to_string(),
                 required: false,
                 default: None,
                 properties: None,
@@ -279,7 +280,9 @@ impl Tool for GrepTool {
             "include".to_string(),
             ParameterSchema {
                 type_: "string".to_string(),
-                description: "File pattern to include in the search (e.g., \"*.js\", \"*.{ts,tsx}\").".to_string(),
+                description:
+                    "File pattern to include in the search (e.g., \"*.js\", \"*.{ts,tsx}\")."
+                        .to_string(),
                 required: false,
                 default: None,
                 properties: None,
@@ -312,7 +315,10 @@ impl Tool for GrepTool {
             .to_string();
 
         let path = args.get("path").and_then(|v| v.as_str()).map(String::from);
-        let include = args.get("include").and_then(|v| v.as_str()).map(String::from);
+        let include = args
+            .get("include")
+            .and_then(|v| v.as_str())
+            .map(String::from);
 
         let input = GrepInput {
             pattern: pattern.clone(),

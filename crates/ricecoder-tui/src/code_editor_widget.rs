@@ -153,7 +153,8 @@ impl CodeEditorWidget {
     pub fn handle_key_event(&mut self, key: CrosstermKeyEvent) {
         // Convert crossterm KeyEvent to edtui KeyEvent
         let edtui_key = edtui::events::KeyEvent::from(key);
-        self.event_handler.on_key_event(edtui_key, &mut self.editor_state);
+        self.event_handler
+            .on_key_event(edtui_key, &mut self.editor_state);
     }
 
     /// Set the title

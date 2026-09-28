@@ -48,7 +48,11 @@ fn key_combo_strategy() -> impl Strategy<Value = KeyCombo> {
         prop::collection::vec(modifier_strategy(), 0..3),
         key_strategy(),
     )
-        .prop_map(|(modifiers, key)| KeyCombo { modifiers, key, leader: false })
+        .prop_map(|(modifiers, key)| KeyCombo {
+            modifiers,
+            key,
+            leader: false,
+        })
 }
 
 /// Strategy for generating valid keybinds
@@ -103,7 +107,11 @@ proptest! {
             .expect("Failed to parse key combo");
 
         // Verify equivalence
-        assert_eq!(key_combo.modifiers, parsed.modifiers);
+        let mut expected_modifiers = key_combo.modifiers.clone();
+        let mut parsed_modifiers = parsed.modifiers;
+        expected_modifiers.sort_by_key(|modifier| modifier.to_string());
+        parsed_modifiers.sort_by_key(|modifier| modifier.to_string());
+        assert_eq!(expected_modifiers, parsed_modifiers);
         assert_eq!(key_combo.key, parsed.key);
     }
 
@@ -377,12 +385,26 @@ proptest! {
     /// **Validates: Requirements 50.1, 50.2**
     #[test]
     fn prop_keybinding_context_isolation(
-        global_keybinds in prop::collection::vec(keybind_strategy(), 1..5),
-        input_keybinds in prop::collection::vec(keybind_strategy(), 1..5),
-        chat_keybinds in prop::collection::vec(keybind_strategy(), 1..5),
-        dialog_keybinds in prop::collection::vec(keybind_strategy(), 1..5),
+        global_keys in prop::collection::btree_set(b'a'..=b'z', 1..5)
+            .prop_map(|keys| keys.into_iter().map(char::from).collect::<std::collections::BTreeSet<_>>()),
+        input_keys in prop::collection::btree_set(b'a'..=b'z', 1..5)
+            .prop_map(|keys| keys.into_iter().map(char::from).collect::<std::collections::BTreeSet<_>>()),
+        chat_keys in prop::collection::btree_set(b'a'..=b'z', 1..5)
+            .prop_map(|keys| keys.into_iter().map(char::from).collect::<std::collections::BTreeSet<_>>()),
+        dialog_keys in prop::collection::btree_set(b'a'..=b'z', 1..5)
+            .prop_map(|keys| keys.into_iter().map(char::from).collect::<std::collections::BTreeSet<_>>()),
     ) {
         use ricecoder_keybinds::{KeybindEngine, Context};
+
+        let keybinds_for = |context: &str, keys: &std::collections::BTreeSet<char>| {
+            keys.iter()
+                .map(|key| Keybind::new(format!("{context}.{key}"), key.to_string(), context, "test"))
+                .collect::<Vec<_>>()
+        };
+        let global_keybinds = keybinds_for("global", &global_keys);
+        let input_keybinds = keybinds_for("input", &input_keys);
+        let chat_keybinds = keybinds_for("chat", &chat_keys);
+        let dialog_keybinds = keybinds_for("dialog", &dialog_keys);
 
         let mut engine = KeybindEngine::new();
 
@@ -418,7 +440,7 @@ proptest! {
         }
 
         // Apply all keybinds
-        let _ = engine.apply_keybinds(all_keybinds);
+        prop_assert!(engine.apply_keybinds(all_keybinds).is_ok());
 
         // Test context isolation: same key in different contexts should return different actions
         for global_kb in &global_keybinds {
@@ -501,9 +523,7 @@ mod unit_tests {
         };
 
         let display = combo.to_string();
-        assert!(display.contains("Ctrl"));
-        assert!(display.contains("Shift"));
-        assert!(display.contains("z"));
+        assert_eq!(display, "Ctrl+Alt+k");
     }
 
     #[test]

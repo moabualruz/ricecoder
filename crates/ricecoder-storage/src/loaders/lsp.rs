@@ -43,37 +43,37 @@ use crate::error::{IoOperation, StorageError, StorageResult};
 pub struct LspConfig {
     /// Language identifier (e.g., "rust", "typescript", "python")
     pub language: String,
-    
+
     /// File extensions this server handles (e.g., [".rs"])
     pub extensions: Vec<String>,
-    
+
     /// Executable command (e.g., "rust-analyzer")
     pub executable: String,
-    
+
     /// Command-line arguments
     #[serde(default)]
     pub args: Vec<String>,
-    
+
     /// Environment variables
     #[serde(default)]
     pub env: HashMap<String, String>,
-    
+
     /// Initialization options sent to the LSP server
     #[serde(default)]
     pub init_options: Option<serde_json::Value>,
-    
+
     /// Whether this server is enabled
     #[serde(default = "default_enabled")]
     pub enabled: bool,
-    
+
     /// Request timeout in milliseconds
     #[serde(default = "default_timeout_ms")]
     pub timeout_ms: u64,
-    
+
     /// Maximum restart attempts
     #[serde(default = "default_max_restarts")]
     pub max_restarts: u32,
-    
+
     /// Idle timeout before shutdown in milliseconds
     #[serde(default = "default_idle_timeout_ms")]
     pub idle_timeout_ms: u64,
@@ -164,7 +164,9 @@ impl LspConfigLoader {
         // Check cache first
         {
             let cache = self.cache.read().map_err(|_| {
-                StorageError::Internal("Failed to acquire read lock on LSP config cache".to_string())
+                StorageError::Internal(
+                    "Failed to acquire read lock on LSP config cache".to_string(),
+                )
             })?;
             if cache.loaded {
                 return Ok(cache.configs.clone());
@@ -175,29 +177,27 @@ impl LspConfigLoader {
         let mut configs = HashMap::new();
 
         if !self.config_dir.exists() {
-            tracing::debug!(
-                "LSP config directory not found: {:?}",
-                self.config_dir
-            );
-            
+            tracing::debug!("LSP config directory not found: {:?}", self.config_dir);
+
             // Populate with hardcoded fallbacks
             configs.extend(Self::hardcoded_fallbacks());
-            
+
             // Update cache even with fallbacks
             {
                 let mut cache = self.cache.write().map_err(|_| {
-                    StorageError::Internal("Failed to acquire write lock on LSP config cache".to_string())
+                    StorageError::Internal(
+                        "Failed to acquire write lock on LSP config cache".to_string(),
+                    )
                 })?;
                 cache.configs = configs.clone();
                 cache.loaded = true;
             }
-            
+
             return Ok(configs);
         }
 
-        let entries = fs::read_dir(&self.config_dir).map_err(|e| {
-            StorageError::io_error(self.config_dir.clone(), IoOperation::Read, e)
-        })?;
+        let entries = fs::read_dir(&self.config_dir)
+            .map_err(|e| StorageError::io_error(self.config_dir.clone(), IoOperation::Read, e))?;
 
         for entry in entries {
             let entry = entry.map_err(|e| {
@@ -232,7 +232,9 @@ impl LspConfigLoader {
         // Update cache
         {
             let mut cache = self.cache.write().map_err(|_| {
-                StorageError::Internal("Failed to acquire write lock on LSP config cache".to_string())
+                StorageError::Internal(
+                    "Failed to acquire write lock on LSP config cache".to_string(),
+                )
             })?;
             cache.configs = configs.clone();
             cache.loaded = true;
@@ -249,13 +251,11 @@ impl LspConfigLoader {
 
     /// Load a single LSP configuration file
     fn load_config_file(path: &Path) -> StorageResult<LspConfig> {
-        let content = fs::read_to_string(path).map_err(|e| {
-            StorageError::io_error(path.to_path_buf(), IoOperation::Read, e)
-        })?;
+        let content = fs::read_to_string(path)
+            .map_err(|e| StorageError::io_error(path.to_path_buf(), IoOperation::Read, e))?;
 
-        let config: LspConfig = serde_yaml::from_str(&content).map_err(|e| {
-            StorageError::parse_error(path.to_path_buf(), "YAML", e.to_string())
-        })?;
+        let config: LspConfig = serde_yaml::from_str(&content)
+            .map_err(|e| StorageError::parse_error(path.to_path_buf(), "YAML", e.to_string()))?;
 
         // Validate configuration
         Self::validate_config(&config, path)?;
@@ -268,28 +268,34 @@ impl LspConfigLoader {
         if config.language.is_empty() {
             return Err(StorageError::validation_error(
                 "language",
-                format!("LSP config {:?} has empty language field", path)
+                format!("LSP config {:?} has empty language field", path),
             ));
         }
 
         if config.executable.is_empty() {
             return Err(StorageError::validation_error(
                 "executable",
-                format!("LSP config for '{}' has empty executable", config.language)
+                format!("LSP config for '{}' has empty executable", config.language),
             ));
         }
 
         if config.extensions.is_empty() {
             return Err(StorageError::validation_error(
                 "extensions",
-                format!("LSP config for '{}' has no file extensions", config.language)
+                format!(
+                    "LSP config for '{}' has no file extensions",
+                    config.language
+                ),
             ));
         }
 
         if config.timeout_ms == 0 {
             return Err(StorageError::validation_error(
                 "timeout_ms",
-                format!("LSP config for '{}' has invalid timeout_ms: 0", config.language)
+                format!(
+                    "LSP config for '{}' has invalid timeout_ms: 0",
+                    config.language
+                ),
             ));
         }
 
@@ -445,7 +451,9 @@ impl LspConfigLoader {
         // Clear cache
         {
             let mut cache = self.cache.write().map_err(|_| {
-                StorageError::Internal("Failed to acquire write lock on LSP config cache".to_string())
+                StorageError::Internal(
+                    "Failed to acquire write lock on LSP config cache".to_string(),
+                )
             })?;
             cache.configs.clear();
             cache.loaded = false;
@@ -517,7 +525,7 @@ idle_timeout_ms: 300000
         fs::create_dir_all(&lsp_dir).unwrap();
 
         let loader = LspConfigLoader::new(lsp_dir);
-        
+
         // Should use hardcoded fallback for rust
         let config = loader.get_config("rust").unwrap();
         assert_eq!(config.language, "rust");

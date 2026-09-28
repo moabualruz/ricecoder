@@ -17,8 +17,8 @@ use ricecoder_application::services::{ProjectService, SessionService};
 use ricecoder_domain::errors::DomainResult;
 use ricecoder_domain::events::DomainEvent;
 use ricecoder_domain::project::Project;
-use ricecoder_domain::session::Session;
 use ricecoder_domain::repositories::{ProjectRepository, SessionRepository};
+use ricecoder_domain::session::Session;
 use ricecoder_domain::value_objects::{ProgrammingLanguage, ProjectId, SessionId};
 
 // ============================================================================
@@ -85,7 +85,11 @@ impl SessionRepository for MockSessionRepository {
 
     async fn find_active(&self) -> DomainResult<Vec<Session>> {
         let sessions = self.sessions.read().unwrap();
-        Ok(sessions.values().filter(|s| s.is_active()).cloned().collect())
+        Ok(sessions
+            .values()
+            .filter(|s| s.is_active())
+            .cloned()
+            .collect())
     }
 
     async fn save(&self, session: &Session) -> DomainResult<()> {
@@ -269,7 +273,12 @@ mod session_service_tests {
     use super::*;
 
     fn create_session_service() -> (
-        SessionService<MockSessionRepository, MockProjectRepository, MockUnitOfWork, MockEventPublisher>,
+        SessionService<
+            MockSessionRepository,
+            MockProjectRepository,
+            MockUnitOfWork,
+            MockEventPublisher,
+        >,
         Arc<MockSessionRepository>,
         Arc<MockProjectRepository>,
         Arc<MockEventPublisher>,

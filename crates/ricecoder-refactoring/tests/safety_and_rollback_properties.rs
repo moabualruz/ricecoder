@@ -17,6 +17,12 @@ fn file_path_strategy() -> impl Strategy<Value = PathBuf> {
     r"[a-z0-9_]+\.rs".prop_map(|name| PathBuf::from(format!("src/{}", name)))
 }
 
+/// Generate file sets with unique paths because backups are keyed by path.
+fn file_set_strategy() -> impl Strategy<Value = Vec<(PathBuf, String)>> {
+    prop::collection::hash_map(file_path_strategy(), code_content_strategy(), 1..5)
+        .prop_map(|files| files.into_iter().collect())
+}
+
 /// Strategy for generating symbol names
 fn symbol_strategy() -> impl Strategy<Value = String> {
     r"[a-z_][a-z0-9_]{0,20}".prop_map(|s| s.to_string())
@@ -60,16 +66,21 @@ proptest! {
     /// 4. The restored content matches the original byte-for-byte
     #[test]
     fn prop_refactoring_reversibility(
-        files in prop::collection::vec((file_path_strategy(), code_content_strategy()), 1..5)
+        files in file_set_strategy()
     ) {
+        let temp_dir = tempfile::tempdir().expect("Failed to create temporary directory");
+        std::fs::create_dir_all(temp_dir.path().join("src"))
+            .expect("Failed to create temporary source directory");
+
         // Create temporary files with original content
         let mut temp_files = Vec::new();
         let mut original_content = Vec::new();
 
         for (path, content) in &files {
+            let path = temp_dir.path().join(path);
             // Store original content
             original_content.push((path.clone(), content.clone()));
-            temp_files.push((path.clone(), content.clone()));
+            temp_files.push((path, content.clone()));
         }
 
         // Create backup from original files
@@ -114,7 +125,7 @@ proptest! {
     /// For any set of files, backup creation should preserve all content exactly.
     #[test]
     fn prop_backup_integrity(
-        files in prop::collection::vec((file_path_strategy(), code_content_strategy()), 1..5)
+        files in file_set_strategy()
     ) {
         let backup = RollbackHandler::create_backup(&files)
             .expect("Failed to create backup");

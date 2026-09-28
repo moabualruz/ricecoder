@@ -27,7 +27,7 @@ fn key_event_to_input(key: KeyEvent) -> tui_textarea::Input {
         KeyCode::F(n) => tui_textarea::Key::F(n),
         _ => tui_textarea::Key::Null,
     };
-    
+
     tui_textarea::Input {
         key: tui_key,
         ctrl: key.modifiers.contains(KeyModifiers::CONTROL),
@@ -237,7 +237,7 @@ impl TextAreaWidget {
             }
             let ((start_row, start_col), (end_row, end_col)) = sel.range();
             let lines = self.textarea.lines();
-            
+
             if start_row >= lines.len() {
                 return None;
             }
@@ -255,7 +255,12 @@ impl TextAreaWidget {
             } else {
                 // Multi-line selection
                 let mut result = String::new();
-                for (i, line) in lines.iter().enumerate().skip(start_row).take(end_row - start_row + 1) {
+                for (i, line) in lines
+                    .iter()
+                    .enumerate()
+                    .skip(start_row)
+                    .take(end_row - start_row + 1)
+                {
                     if i == start_row {
                         let chars: Vec<char> = line.chars().collect();
                         if start_col < chars.len() {
@@ -299,7 +304,9 @@ impl TextAreaWidget {
         if let Some(text) = self.selected_text() {
             crate::clipboard::ClipboardManager::copy_text_static(&text)
         } else {
-            Err(crate::clipboard::ClipboardError::CopyError("No selection".to_string()))
+            Err(crate::clipboard::ClipboardError::CopyError(
+                "No selection".to_string(),
+            ))
         }
     }
 
@@ -312,14 +319,16 @@ impl TextAreaWidget {
             }
             result
         } else {
-            Err(crate::clipboard::ClipboardError::CopyError("No selection".to_string()))
+            Err(crate::clipboard::ClipboardError::CopyError(
+                "No selection".to_string(),
+            ))
         }
     }
 
     /// Paste text from clipboard at cursor position
     pub fn paste_from_clipboard(&mut self) -> Result<(), crate::clipboard::ClipboardError> {
         let text = crate::clipboard::ClipboardManager::read_text()?;
-        
+
         // Delete selection if exists
         if self.selection.is_some() {
             self.delete_selection();
@@ -389,17 +398,17 @@ impl TextAreaWidget {
     /// Handle keyboard input (crossterm KeyEvent)
     pub fn handle_key(&mut self, key: crossterm::event::KeyEvent) {
         use crossterm::event::KeyCode;
-        
+
         // Convert crossterm KeyEvent to tui_textarea::Input
         let input = key_event_to_input(key);
         self.textarea.input(input);
-        
+
         // Update selection if in visual mode
         if matches!(self.vim_state, VimMode::Visual | VimMode::VisualLine) {
             self.update_selection();
         }
     }
-    
+
     /// Render the textarea to a buffer
     pub fn render(&self, area: ratatui::layout::Rect, buf: &mut ratatui::buffer::Buffer) {
         use ratatui::widgets::Widget;

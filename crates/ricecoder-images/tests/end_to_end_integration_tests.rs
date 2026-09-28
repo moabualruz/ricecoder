@@ -112,7 +112,8 @@ fn test_workflow_add_to_prompt_context() {
 fn test_workflow_cache_integration() {
     use chrono::Utc;
 
-    let cache = ImageCache::new().unwrap();
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cache = ImageCache::with_temp_dir(temp_dir.path()).unwrap();
 
     let hash = "test_hash";
     let analysis = ricecoder_images::ImageAnalysisResult {

@@ -1,7 +1,7 @@
 //! Application Ports (Repository Traits)
 
-use crate::domain::{FilePath, SearchQuery, SearchResult, DomainEvent};
-use crate::application::errors::{AppResult, AppError, IoOperation};
+use crate::application::errors::{AppError, AppResult, IoOperation};
+use crate::domain::{DomainEvent, FilePath, SearchQuery, SearchResult};
 
 /// Repository trait for file operations
 pub trait FileRepository {
@@ -23,13 +23,23 @@ pub struct FileIndexEntry {
 
 impl FileIndexEntry {
     pub fn new(path: String, modified_at: u64, size: u64) -> Self {
-        FileIndexEntry { path, modified_at, size, content_hash: None }
+        FileIndexEntry {
+            path,
+            modified_at,
+            size,
+            content_hash: None,
+        }
     }
-    
+
     pub fn with_hash(path: String, modified_at: u64, size: u64, hash: String) -> Self {
-        FileIndexEntry { path, modified_at, size, content_hash: Some(hash) }
+        FileIndexEntry {
+            path,
+            modified_at,
+            size,
+            content_hash: Some(hash),
+        }
     }
-    
+
     pub fn is_stale(&self, new_modified: u64, new_size: u64) -> bool {
         self.modified_at != new_modified || self.size != new_size
     }
@@ -41,7 +51,7 @@ pub trait IndexRepository {
     fn update_metadata(&self, entry: FileIndexEntry) -> AppResult<()>;
     fn remove_metadata(&self, path: &FilePath) -> AppResult<()>;
     fn search(&self, query: &SearchQuery) -> AppResult<Vec<SearchResult>>;
-    
+
     fn needs_reindex(&self, path: &FilePath, modified_at: u64, size: u64) -> bool {
         match self.get_metadata(path) {
             None => true,
@@ -54,7 +64,9 @@ pub trait IndexRepository {
 pub trait EventPublisher {
     fn publish(&self, event: &DomainEvent);
     fn publish_batch(&self, events: &[DomainEvent]) {
-        for event in events { self.publish(event); }
+        for event in events {
+            self.publish(event);
+        }
     }
 }
 

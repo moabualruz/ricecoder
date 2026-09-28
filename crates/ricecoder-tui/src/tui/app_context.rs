@@ -16,11 +16,13 @@ use tokio::sync::RwLock;
 
 use ricecoder_agents::{AgentConfig, AgentMetadata, AgentRegistry};
 use ricecoder_config::{ConfigManager, TuiConfig};
-use ricecoder_mcp::{HealthStatus, ServerManager, ServerState, MCPToolExecutor, ToolExecutionContext, ToolExecutor};
+use ricecoder_mcp::{
+    HealthStatus, MCPToolExecutor, ServerManager, ServerState, ToolExecutionContext, ToolExecutor,
+};
 use ricecoder_providers::{
-    AnthropicProvider, ChatRequest, ChatResponse, ModelInfo, OllamaProvider, OpenAiProvider,
-    Provider, ProviderManager, ProviderRegistry, ProviderStatus, TokenUsage as ProviderTokenUsage,
-    ZenProvider, Message as ProviderMessage, WordStream,
+    AnthropicProvider, ChatRequest, ChatResponse, Message as ProviderMessage, ModelInfo,
+    OllamaProvider, OpenAiProvider, Provider, ProviderManager, ProviderRegistry, ProviderStatus,
+    TokenUsage as ProviderTokenUsage, WordStream, ZenProvider,
 };
 use ricecoder_sessions::{
     Message, MessageRole, Session, SessionContext, SessionManager, SessionMode, SessionStatus,
@@ -396,8 +398,9 @@ fn convert_server_state(state: &ricecoder_mcp::ServerState) -> McpConnectionStat
         ServerState::Connected => McpConnectionStatus::Connected,
         ServerState::Connecting | ServerState::Starting => McpConnectionStatus::Loading,
         ServerState::Error => McpConnectionStatus::Error,
-        ServerState::Disconnected | ServerState::Disabled | ServerState::Stopped 
-            => McpConnectionStatus::Disconnected,
+        ServerState::Disconnected | ServerState::Disabled | ServerState::Stopped => {
+            McpConnectionStatus::Disconnected
+        }
     }
 }
 
@@ -412,7 +415,7 @@ fn calculate_token_cost(model_id: &str, prompt_tokens: usize, completion_tokens:
         m if m.contains("claude-3-opus") => (15.0, 75.0),
         m if m.contains("claude-3-sonnet") => (3.0, 15.0),
         m if m.contains("claude-3-haiku") => (0.25, 1.25),
-        
+
         // OpenAI GPT models
         m if m.contains("gpt-4o") => (2.50, 10.0),
         m if m.contains("gpt-4o-mini") => (0.15, 0.60),
@@ -422,19 +425,25 @@ fn calculate_token_cost(model_id: &str, prompt_tokens: usize, completion_tokens:
         m if m.contains("o1-preview") => (15.0, 60.0),
         m if m.contains("o1-mini") => (3.0, 12.0),
         m if m.contains("o3-mini") => (1.10, 4.40),
-        
+
         // Ollama/local models (free)
-        m if m.contains("llama") || m.contains("mistral") || m.contains("phi") 
-            || m.contains("gemma") || m.contains("qwen") => (0.0, 0.0),
-        
+        m if m.contains("llama")
+            || m.contains("mistral")
+            || m.contains("phi")
+            || m.contains("gemma")
+            || m.contains("qwen") =>
+        {
+            (0.0, 0.0)
+        }
+
         // Default pricing for unknown models
         _ => (1.0, 3.0),
     };
-    
+
     // Calculate cost: tokens / 1_000_000 * price_per_million
     let input_cost = (prompt_tokens as f64 / 1_000_000.0) * input_price;
     let output_cost = (completion_tokens as f64 / 1_000_000.0) * output_price;
-    
+
     input_cost + output_cost
 }
 
@@ -518,7 +527,7 @@ impl AppContext {
         match TuiConfig::load() {
             Ok(tui_config) => {
                 let mut state = self.state.write().await;
-                
+
                 // Apply provider/model defaults from config if set
                 if let Some(provider) = &tui_config.provider {
                     state.current_provider_id = Some(provider.clone());
@@ -526,10 +535,10 @@ impl AppContext {
                 if let Some(model) = &tui_config.model {
                     state.current_model_id = Some(model.clone());
                 }
-                
+
                 // Apply UI preferences
                 state.tips_hidden = tui_config.accessibility.animations_disabled;
-                
+
                 tracing::debug!("Loaded TuiConfig: theme={}", tui_config.theme);
             }
             Err(e) => {
@@ -650,8 +659,8 @@ impl AppContext {
 
         // Check for Ollama (local, no API key needed)
         // Try to connect to default Ollama endpoint
-        let ollama_url = std::env::var("OLLAMA_HOST")
-            .unwrap_or_else(|_| "http://localhost:11434".to_string());
+        let ollama_url =
+            std::env::var("OLLAMA_HOST").unwrap_or_else(|_| "http://localhost:11434".to_string());
         if let Ok(provider) = OllamaProvider::new(ollama_url) {
             // Only add if Ollama is reachable (check health)
             if provider.health_check().await.unwrap_or(false) {
@@ -683,39 +692,33 @@ impl AppContext {
                     id: "anthropic".to_string(),
                     name: "Anthropic".to_string(),
                     connected: false,
-                    models: vec![
-                        ModelDisplayInfo {
-                            id: "claude-sonnet-4-20250514".to_string(),
-                            name: "Claude Sonnet 4".to_string(),
-                            description: Some("Set ANTHROPIC_API_KEY to enable".to_string()),
-                        },
-                    ],
+                    models: vec![ModelDisplayInfo {
+                        id: "claude-sonnet-4-20250514".to_string(),
+                        name: "Claude Sonnet 4".to_string(),
+                        description: Some("Set ANTHROPIC_API_KEY to enable".to_string()),
+                    }],
                     default_model: Some("claude-sonnet-4-20250514".to_string()),
                 },
                 ProviderInfo {
                     id: "openai".to_string(),
                     name: "OpenAI".to_string(),
                     connected: false,
-                    models: vec![
-                        ModelDisplayInfo {
-                            id: "gpt-4o".to_string(),
-                            name: "GPT-4o".to_string(),
-                            description: Some("Set OPENAI_API_KEY to enable".to_string()),
-                        },
-                    ],
+                    models: vec![ModelDisplayInfo {
+                        id: "gpt-4o".to_string(),
+                        name: "GPT-4o".to_string(),
+                        description: Some("Set OPENAI_API_KEY to enable".to_string()),
+                    }],
                     default_model: Some("gpt-4o".to_string()),
                 },
                 ProviderInfo {
                     id: "ollama".to_string(),
                     name: "Ollama".to_string(),
                     connected: false,
-                    models: vec![
-                        ModelDisplayInfo {
-                            id: "llama3.1".to_string(),
-                            name: "Llama 3.1".to_string(),
-                            description: Some("Start Ollama to enable".to_string()),
-                        },
-                    ],
+                    models: vec![ModelDisplayInfo {
+                        id: "llama3.1".to_string(),
+                        name: "Llama 3.1".to_string(),
+                        description: Some("Start Ollama to enable".to_string()),
+                    }],
                     default_model: Some("llama3.1".to_string()),
                 },
             ];
@@ -754,16 +757,16 @@ impl AppContext {
     async fn load_agents(&self) -> anyhow::Result<()> {
         // Create agent registry
         let registry = AgentRegistry::new();
-        
+
         // Store registry
         {
             let mut reg = self.agent_registry.write().await;
             *reg = Some(registry);
         }
-        
+
         // First, try to load agents from config/agents/*.md files
         let mut agent_infos: Vec<AgentInfo> = Vec::new();
-        
+
         let loader = ricecoder_storage::AgentLoader::with_default_path();
         if let Ok(config_agents) = loader.load_all() {
             for (idx, (name, agent)) in config_agents.into_iter().enumerate() {
@@ -784,12 +787,13 @@ impl AppContext {
             }
             tracing::debug!("Loaded {} agents from config files", agent_infos.len());
         }
-        
+
         // If no file-based agents, try from registry
         if agent_infos.is_empty() {
             let reg = self.agent_registry.read().await;
             if let Some(registry) = reg.as_ref() {
-                agent_infos = registry.all_agent_metadata()
+                agent_infos = registry
+                    .all_agent_metadata()
                     .into_iter()
                     .enumerate()
                     .map(|(idx, metadata)| {
@@ -811,7 +815,7 @@ impl AppContext {
                     .collect();
             }
         }
-        
+
         // Update state with loaded agents
         let mut state = self.state.write().await;
         if !agent_infos.is_empty() {
@@ -821,14 +825,14 @@ impl AppContext {
             }
         }
         // If still empty, keep default agents from AppState::default()
-        
+
         Ok(())
     }
 
     /// Load slash commands from config/commands/*.md files
     async fn load_commands(&self) -> anyhow::Result<()> {
         let loader = ricecoder_storage::CommandLoader::with_default_path();
-        
+
         match loader.load_all() {
             Ok(commands) => {
                 let mut command_infos: Vec<SlashCommandInfo> = commands
@@ -840,20 +844,23 @@ impl AppContext {
                         is_subtask: cmd.subtask,
                     })
                     .collect();
-                
+
                 // Sort by name for consistent ordering
                 command_infos.sort_by(|a, b| a.name.cmp(&b.name));
-                
+
                 let mut state = self.state.write().await;
                 state.slash_commands = command_infos;
-                
-                tracing::debug!("Loaded {} slash commands from config files", state.slash_commands.len());
+
+                tracing::debug!(
+                    "Loaded {} slash commands from config files",
+                    state.slash_commands.len()
+                );
             }
             Err(e) => {
                 tracing::debug!("Could not load slash commands: {}", e);
             }
         }
-        
+
         Ok(())
     }
 
@@ -862,7 +869,7 @@ impl AppContext {
         let session_mgr = self.session_manager.read().await;
         let backend_sessions = session_mgr.list_sessions();
         drop(session_mgr); // Release read lock before acquiring write lock
-        
+
         // Convert backend sessions to TUI SessionSummary format
         let mut state = self.state.write().await;
         state.sessions = backend_sessions
@@ -875,14 +882,14 @@ impl AppContext {
                 message_count: session.history.len(),
             })
             .collect();
-        
+
         Ok(())
     }
 
     /// Load MCP server status
     async fn load_mcp_status(&self) -> anyhow::Result<()> {
         let mcp_mgr = self.mcp_manager.read().await;
-        
+
         if let Some(manager) = mcp_mgr.as_ref() {
             // Try to list servers
             match manager.list_servers().await {
@@ -897,7 +904,7 @@ impl AppContext {
                         };
                         mcp_servers.insert(registration.config.id.clone(), status);
                     }
-                    
+
                     let mut state = self.state.write().await;
                     state.mcp_servers = mcp_servers;
                 }
@@ -906,7 +913,7 @@ impl AppContext {
                 }
             }
         }
-        
+
         Ok(())
     }
 
@@ -938,19 +945,25 @@ impl AppContext {
         let context = SessionContext::new(
             {
                 let state = self.state.read().await;
-                state.current_provider_id.clone().unwrap_or_else(|| "anthropic".to_string())
+                state
+                    .current_provider_id
+                    .clone()
+                    .unwrap_or_else(|| "anthropic".to_string())
             },
             {
                 let state = self.state.read().await;
-                state.current_model_id.clone().unwrap_or_else(|| "claude-sonnet-4-20250514".to_string())
+                state
+                    .current_model_id
+                    .clone()
+                    .unwrap_or_else(|| "claude-sonnet-4-20250514".to_string())
             },
             SessionMode::Chat,
         );
-        
+
         let mut session_mgr = self.session_manager.write().await;
         let session = session_mgr.create_session("New Session".to_string(), context)?;
         let session_id = session.id.clone();
-        
+
         // Set as current session
         {
             let mut state = self.state.write().await;
@@ -958,11 +971,11 @@ impl AppContext {
             state.messages = Vec::new();
             state.session_status = SessionStatus::Active;
         }
-        
+
         // Reload sessions list
         drop(session_mgr);
         self.load_sessions().await?;
-        
+
         Ok(session_id)
     }
 
@@ -973,13 +986,13 @@ impl AppContext {
             let session_mgr = self.session_manager.read().await;
             session_mgr.get_session(session_id)?
         };
-        
+
         // Switch in SessionManager
         {
             let mut session_mgr = self.session_manager.write().await;
             session_mgr.switch_session(session_id)?;
         }
-        
+
         // Update local state
         {
             let mut state = self.state.write().await;
@@ -988,7 +1001,7 @@ impl AppContext {
             state.current_session = Some(session);
             state.session_status = SessionStatus::Active;
         }
-        
+
         Ok(())
     }
 
@@ -999,23 +1012,23 @@ impl AppContext {
             let state = self.state.read().await;
             state.current_session.as_ref().map(|s| s.id.as_str()) == Some(session_id)
         };
-        
+
         // Delete from SessionManager
         {
             let mut session_mgr = self.session_manager.write().await;
             session_mgr.delete_session(session_id)?;
         }
-        
+
         // If this was the current session, clear state
         if is_current {
             let mut state = self.state.write().await;
             state.current_session = None;
             state.messages.clear();
         }
-        
+
         // Reload sessions list
         self.load_sessions().await?;
-        
+
         Ok(())
     }
 
@@ -1065,7 +1078,7 @@ impl AppContext {
             // Use Message::new helper which properly constructs MessagePart::Text
             let message = Message::new(MessageRole::Assistant, content.clone());
             state.messages.push(message);
-            
+
             // Back to Active (idle equivalent in SessionStatus)
             state.session_status = SessionStatus::Active;
 
@@ -1095,12 +1108,15 @@ impl AppContext {
         // Build chat request from current session messages
         let (model, messages) = {
             let state = self.state.read().await;
-            
-            let model = state.current_model_id.clone()
+
+            let model = state
+                .current_model_id
+                .clone()
                 .unwrap_or_else(|| "claude-sonnet-4-20250514".to_string());
-            
+
             // Convert session messages to provider messages
-            let provider_messages: Vec<ProviderMessage> = state.messages
+            let provider_messages: Vec<ProviderMessage> = state
+                .messages
                 .iter()
                 .map(|msg| {
                     let role = match msg.role {
@@ -1114,14 +1130,14 @@ impl AppContext {
                     }
                 })
                 .collect();
-            
+
             (model, provider_messages)
         };
 
         // Try to send via provider manager
         let response = {
             let mut provider_mgr = self.provider_manager.write().await;
-            
+
             if let Some(mgr) = provider_mgr.as_mut() {
                 let request = ChatRequest {
                     model: model.clone(),
@@ -1175,7 +1191,10 @@ impl AppContext {
             }
             Err(e) => {
                 // Add error as assistant message so user sees it
-                let error_msg = format!("⚠️ Error: {}\n\nPlease check your API key configuration.", e);
+                let error_msg = format!(
+                    "⚠️ Error: {}\n\nPlease check your API key configuration.",
+                    e
+                );
                 self.add_assistant_message(error_msg).await?;
             }
         }
@@ -1184,22 +1203,28 @@ impl AppContext {
     }
 
     /// Send message to AI with streaming response (simulated word-by-word)
-    /// 
+    ///
     /// Returns a WordStream that yields words one at a time for visual typing effect.
     /// The full response is fetched first, then streamed word-by-word to the UI.
-    pub async fn send_message_streaming(&self, content: String) -> anyhow::Result<(WordStream, ProviderTokenUsage)> {
+    pub async fn send_message_streaming(
+        &self,
+        content: String,
+    ) -> anyhow::Result<(WordStream, ProviderTokenUsage)> {
         // Add user message
         self.add_user_message(content.clone()).await?;
 
         // Build chat request from current session messages
         let (model, messages) = {
             let state = self.state.read().await;
-            
-            let model = state.current_model_id.clone()
+
+            let model = state
+                .current_model_id
+                .clone()
                 .unwrap_or_else(|| "claude-sonnet-4-20250514".to_string());
-            
+
             // Convert session messages to provider messages
-            let provider_messages: Vec<ProviderMessage> = state.messages
+            let provider_messages: Vec<ProviderMessage> = state
+                .messages
                 .iter()
                 .map(|msg| {
                     let role = match msg.role {
@@ -1213,14 +1238,14 @@ impl AppContext {
                     }
                 })
                 .collect();
-            
+
             (model, provider_messages)
         };
 
         // Get response from provider (blocking)
         let (assistant_content, usage) = {
             let mut provider_mgr = self.provider_manager.write().await;
-            
+
             if let Some(mgr) = provider_mgr.as_mut() {
                 let request = ChatRequest {
                     model: model.clone(),
@@ -1240,14 +1265,25 @@ impl AppContext {
                     }
                     Err(e) => {
                         tracing::error!("Provider chat error: {}", e);
-                        let error_msg = format!("⚠️ Error: {}\n\nPlease check your API key configuration.", e);
-                        let empty_usage = ProviderTokenUsage { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+                        let error_msg = format!(
+                            "⚠️ Error: {}\n\nPlease check your API key configuration.",
+                            e
+                        );
+                        let empty_usage = ProviderTokenUsage {
+                            prompt_tokens: 0,
+                            completion_tokens: 0,
+                            total_tokens: 0,
+                        };
                         return Ok((WordStream::new(error_msg, 30), empty_usage));
                     }
                 }
             } else {
                 let error_msg = "No AI provider configured. Set ANTHROPIC_API_KEY, OPENAI_API_KEY, or start Ollama.".to_string();
-                let empty_usage = ProviderTokenUsage { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+                let empty_usage = ProviderTokenUsage {
+                    prompt_tokens: 0,
+                    completion_tokens: 0,
+                    total_tokens: 0,
+                };
                 return Ok((WordStream::new(error_msg, 30), empty_usage));
             }
         };
@@ -1260,15 +1296,13 @@ impl AppContext {
             state.session_tokens.total_tokens += usage.total_tokens;
             // Calculate cost based on model pricing
             let model_id = state.current_model_id.clone().unwrap_or_default();
-            state.session_tokens.estimated_cost += calculate_token_cost(
-                &model_id,
-                usage.prompt_tokens,
-                usage.completion_tokens,
-            );
+            state.session_tokens.estimated_cost +=
+                calculate_token_cost(&model_id, usage.prompt_tokens, usage.completion_tokens);
         }
 
         // Store the full response for session persistence
-        self.add_assistant_message(assistant_content.clone()).await?;
+        self.add_assistant_message(assistant_content.clone())
+            .await?;
 
         // Return WordStream for visual streaming effect (50ms per word)
         Ok((WordStream::new(assistant_content, 50), usage))
@@ -1324,7 +1358,7 @@ impl AppContext {
                 return Ok(()); // No manager, nothing to do
             }
         };
-        
+
         // Now toggle the server
         {
             let mcp_mgr = self.mcp_manager.write().await;
@@ -1336,10 +1370,10 @@ impl AppContext {
                 }
             }
         }
-        
+
         // Reload MCP status
         self.load_mcp_status().await?;
-        
+
         Ok(())
     }
 
@@ -1351,11 +1385,11 @@ impl AppContext {
         parameters: serde_json::Value,
     ) -> anyhow::Result<serde_json::Value> {
         let mcp_mgr = self.mcp_manager.read().await;
-        
+
         if let Some(manager) = mcp_mgr.as_ref() {
             // Get server and its transport
             let server = manager.get_server(server_id).await?;
-            
+
             if let Some(transport) = &server.transport {
                 // Create executor with transport
                 let executor = MCPToolExecutor::new(
@@ -1363,7 +1397,7 @@ impl AppContext {
                     transport.clone(),
                     std::sync::Arc::new(ricecoder_mcp::MCPPermissionManager::new()),
                 );
-                
+
                 let context = ToolExecutionContext {
                     tool_name: tool_name.to_string(),
                     parameters: if let serde_json::Value::Object(map) = parameters {
@@ -1376,24 +1410,24 @@ impl AppContext {
                     timeout: std::time::Duration::from_secs(30),
                     metadata: std::collections::HashMap::new(),
                 };
-                
+
                 let result = executor.execute(&context).await?;
                 return Ok(result.result.unwrap_or(serde_json::Value::Null));
             }
         }
-        
+
         anyhow::bail!("MCP server or transport not available")
     }
 
     /// List available tools for an MCP server
     pub async fn list_mcp_tools(&self, server_id: &str) -> anyhow::Result<Vec<String>> {
         let mcp_mgr = self.mcp_manager.read().await;
-        
+
         if let Some(manager) = mcp_mgr.as_ref() {
             let server = manager.get_server(server_id).await?;
             return Ok(server.tools.into_iter().map(|t| t.name).collect());
         }
-        
+
         Ok(vec![])
     }
 
@@ -1420,7 +1454,7 @@ impl AppContext {
     /// Get action for a key event using keybind engine
     pub async fn get_action_for_key(&self, event: crossterm::event::KeyEvent) -> Option<String> {
         use crate::tui::keybind_bridge::to_key_combo;
-        
+
         let combo = to_key_combo(event)?;
         let engine = self.keybind_engine.read().await;
         engine.get_action(&combo).map(|s| s.to_string())

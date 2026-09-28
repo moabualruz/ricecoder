@@ -291,8 +291,11 @@ mod tests {
     async fn test_update_checker_creation() {
         let policy = UpdatePolicy::default();
         let version = Version::from_str("1.0.0").unwrap();
-        let checker =
-            UpdateChecker::new(policy, "https://updates.example.com".to_string(), version.clone());
+        let checker = UpdateChecker::new(
+            policy,
+            "https://updates.example.com".to_string(),
+            version.clone(),
+        );
 
         assert_eq!(checker.current_version, version);
         assert_eq!(checker.update_server_url, "https://updates.example.com");

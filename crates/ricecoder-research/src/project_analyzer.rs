@@ -6,8 +6,17 @@ use walkdir::WalkDir;
 
 use crate::{
     error::ResearchError,
-    models::{Framework, Language, ProjectStructure, ProjectType},
+    models::{Dependency, Framework, Language, ProjectStructure, ProjectType},
 };
+
+fn dependency(name: &str, version: &str, is_dev: bool) -> Dependency {
+    Dependency {
+        name: name.to_owned(),
+        version: version.to_owned(),
+        constraints: (!version.is_empty()).then(|| version.to_owned()),
+        is_dev,
+    }
+}
 
 /// Analyzes project structure and metadata to understand project type and organization
 #[derive(Debug)]
@@ -164,12 +173,103 @@ impl ProjectAnalyzer {
         Ok(frameworks)
     }
 
+    /// Detect dependencies declared by common project manifests.
+    pub fn identify_dependencies(&self, root: &Path) -> Vec<Dependency> {
+        let mut dependencies = Vec::new();
+
+        if let Ok(contents) = std::fs::read_to_string(root.join("Cargo.toml")) {
+            if let Ok(manifest) = toml::from_str::<toml::Value>(&contents) {
+                for (section, is_dev) in [("dependencies", false), ("dev-dependencies", true)] {
+                    if let Some(entries) = manifest.get(section).and_then(toml::Value::as_table) {
+                        dependencies.extend(entries.iter().map(|(name, value)| {
+                            let version = value
+                                .as_str()
+                                .or_else(|| value.get("version").and_then(toml::Value::as_str))
+                                .unwrap_or("*");
+                            dependency(name, version, is_dev)
+                        }));
+                    }
+                }
+            }
+        }
+
+        if let Ok(contents) = std::fs::read_to_string(root.join("package.json")) {
+            if let Ok(manifest) = serde_json::from_str::<serde_json::Value>(&contents) {
+                for (section, is_dev) in [("dependencies", false), ("devDependencies", true)] {
+                    if let Some(entries) =
+                        manifest.get(section).and_then(serde_json::Value::as_object)
+                    {
+                        dependencies.extend(entries.iter().filter_map(|(name, value)| {
+                            value
+                                .as_str()
+                                .map(|version| dependency(name, version, is_dev))
+                        }));
+                    }
+                }
+            }
+        }
+
+        for manifest in ["pyproject.toml", "requirements.txt"] {
+            if let Ok(contents) = std::fs::read_to_string(root.join(manifest)) {
+                let entries: Vec<String> = if manifest == "pyproject.toml" {
+                    toml::from_str::<toml::Value>(&contents)
+                        .ok()
+                        .and_then(|v| v.get("project")?.get("dependencies")?.as_array().cloned())
+                        .unwrap_or_default()
+                        .into_iter()
+                        .filter_map(|v| v.as_str().map(str::to_owned))
+                        .collect()
+                } else {
+                    contents.lines().map(str::to_owned).collect()
+                };
+                dependencies.extend(entries.iter().filter_map(|entry| {
+                    let entry = entry.split('#').next()?.trim();
+                    if entry.is_empty() || entry.starts_with('-') {
+                        return None;
+                    }
+                    let split = entry.find(['=', '<', '>', '!']).unwrap_or(entry.len());
+                    let name = entry[..split].trim();
+                    (!name.is_empty()).then(|| dependency(name, entry[split..].trim_start(), false))
+                }));
+                if manifest == "pyproject.toml" {
+                    break;
+                }
+            }
+        }
+
+        if let Ok(contents) = std::fs::read_to_string(root.join("go.mod")) {
+            let mut in_require = false;
+            for line in contents.lines() {
+                let line = line.trim();
+                if line == "require (" {
+                    in_require = true;
+                    continue;
+                }
+                if in_require && line == ")" {
+                    in_require = false;
+                    continue;
+                }
+                if line.starts_with("require ") || in_require {
+                    let parts: Vec<_> = line
+                        .trim_start_matches("require ")
+                        .split_whitespace()
+                        .collect();
+                    if parts.len() >= 2 {
+                        dependencies.push(dependency(parts[0], parts[1], false));
+                    }
+                }
+            }
+        }
+
+        dependencies
+    }
+
     // ========================================================================
     // Private helper methods
     // ========================================================================
 
     /// Detect programming languages used in the project
-    fn detect_languages(&self, root: &Path) -> Result<Vec<Language>, ResearchError> {
+    pub fn detect_languages(&self, root: &Path) -> Result<Vec<Language>, ResearchError> {
         let mut languages = Vec::new();
 
         // Check for Rust

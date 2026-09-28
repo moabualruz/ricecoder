@@ -16,7 +16,6 @@ use uuid::Uuid;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ApplicationEvent {
     // === Project Events ===
-    
     /// Project was successfully created
     ProjectCreated {
         project_id: String,
@@ -49,7 +48,6 @@ pub enum ApplicationEvent {
     },
 
     // === Session Events ===
-    
     /// Session was started
     SessionStarted {
         session_id: String,
@@ -65,7 +63,6 @@ pub enum ApplicationEvent {
     },
 
     // === Specification Events ===
-    
     /// Specification was created
     SpecificationCreated {
         specification_id: String,
@@ -207,7 +204,7 @@ mod tests {
     #[tokio::test]
     async fn test_in_memory_publisher() {
         let publisher = InMemoryEventPublisher::new();
-        
+
         publisher
             .publish(ApplicationEvent::ProjectCreated {
                 project_id: "123".into(),

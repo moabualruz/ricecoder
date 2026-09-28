@@ -33,7 +33,7 @@ impl ThemeRegistry {
             custom_themes: Arc::new(RwLock::new(HashMap::new())),
         }
     }
-    
+
     /// Create a registry with themes loaded from a specific directory
     pub fn from_directory(dir: &Path) -> Result<Self> {
         let themes = ThemeLoader::load_from_directory(dir)?;
@@ -41,22 +41,26 @@ impl ThemeRegistry {
         for theme in themes {
             builtin.insert(theme.name.clone(), theme);
         }
-        
+
         Ok(Self {
             builtin_themes: Arc::new(builtin),
             custom_themes: Arc::new(RwLock::new(HashMap::new())),
         })
     }
-    
+
     /// Load built-in themes from bundled JSON files
     fn load_builtin_themes() -> HashMap<String, Theme> {
         let mut themes = HashMap::new();
-        
+
         // Try to find bundled themes directory
         if let Some(bundled_dir) = ThemeLoader::bundled_themes_directory() {
             match ThemeLoader::load_from_directory(&bundled_dir) {
                 Ok(loaded) => {
-                    tracing::info!("Loaded {} bundled themes from {}", loaded.len(), bundled_dir.display());
+                    tracing::info!(
+                        "Loaded {} bundled themes from {}",
+                        loaded.len(),
+                        bundled_dir.display()
+                    );
                     for theme in loaded {
                         themes.insert(theme.name.clone(), theme);
                     }
@@ -68,34 +72,36 @@ impl ThemeRegistry {
         } else {
             tracing::debug!("No bundled themes directory found, using fallback theme");
         }
-        
+
         // Ensure we always have at least the default theme
         if themes.is_empty() {
             tracing::info!("No themes loaded from files, using fallback default theme");
             let default = Theme::fallback();
             themes.insert(default.name.clone(), default);
         }
-        
+
         themes
     }
-    
+
     /// Load user themes from ~/.config/ricecoder/themes/
     pub fn load_user_themes(&self) -> Result<usize> {
         let user_dir = ThemeLoader::user_themes_directory()?;
         if !user_dir.exists() {
             return Ok(0);
         }
-        
+
         let loaded = ThemeLoader::load_from_directory(&user_dir)?;
         let count = loaded.len();
-        
-        let mut custom = self.custom_themes.write()
+
+        let mut custom = self
+            .custom_themes
+            .write()
             .map_err(|e| anyhow!("Failed to lock custom themes: {}", e))?;
-        
+
         for theme in loaded {
             custom.insert(theme.name.clone(), theme);
         }
-        
+
         tracing::info!("Loaded {} user themes from {}", count, user_dir.display());
         Ok(count)
     }
@@ -270,7 +276,7 @@ mod tests {
         // At minimum, should have fallback theme
         let builtin = registry.list_builtin();
         assert!(!builtin.is_empty());
-        
+
         // Get first available theme
         let first = &builtin[0];
         assert!(registry.get(first).is_some());
@@ -310,7 +316,7 @@ mod tests {
     fn test_list_all_themes() {
         let registry = ThemeRegistry::new();
         let initial_count = registry.builtin_count();
-        
+
         let mut custom = Theme::fallback();
         custom.name = "my-custom".to_string();
         registry.register(custom).unwrap();
@@ -365,7 +371,7 @@ mod tests {
         registry.register(custom).unwrap();
 
         assert!(registry.is_custom("my-custom").unwrap());
-        
+
         let builtin = registry.list_builtin();
         if !builtin.is_empty() {
             assert!(!registry.is_custom(&builtin[0]).unwrap());
@@ -376,7 +382,7 @@ mod tests {
     fn test_reset_to_default() {
         let registry = ThemeRegistry::new();
         let builtin = registry.list_builtin();
-        
+
         if !builtin.is_empty() {
             let theme_name = &builtin[0];
             let mut modified = registry.get(theme_name).unwrap();

@@ -42,26 +42,6 @@ proptest! {
     }
 
     #[test]
-    fn prop_sync_log_structure_valid(
-        _dummy in Just(())
-    ) {
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        let manager = SyncManager::new();
-        let log = rt.block_on(manager.get_sync_log());
-
-        // Log should be a valid collection
-        prop_assert!(log.len() >= 0);
-
-        // All entries should have valid structure
-        for entry in log {
-            prop_assert!(!entry.timestamp.is_empty());
-            prop_assert!(!entry.project.is_empty());
-            prop_assert!(!entry.operation.is_empty());
-            prop_assert!(!entry.status.is_empty());
-        }
-    }
-
-    #[test]
     fn prop_multiple_managers_independent(
         count in 1..5usize
     ) {

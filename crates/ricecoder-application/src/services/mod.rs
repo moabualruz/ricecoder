@@ -29,12 +29,12 @@
 //! - Domain logic (belongs in Domain Layer)
 //! - Direct I/O (belongs in Infrastructure Layer)
 
+mod code_service;
 mod project_service;
 mod session_service;
 mod specification_service;
-mod code_service;
 
+pub use code_service::CodeService;
 pub use project_service::ProjectService;
 pub use session_service::SessionService;
 pub use specification_service::SpecificationService;
-pub use code_service::CodeService;

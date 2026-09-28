@@ -13,13 +13,13 @@ use super::{DomainEvent, EventMetadata};
 pub struct SpecificationCreated {
     /// Event metadata
     pub metadata: EventMetadata,
-    
+
     /// Specification aggregate ID
     pub specification_id: Uuid,
-    
+
     /// Associated project ID
     pub project_id: Uuid,
-    
+
     /// Specification version
     pub version: String,
 }
@@ -59,13 +59,13 @@ impl DomainEvent for SpecificationCreated {
 pub struct RequirementAdded {
     /// Event metadata
     pub metadata: EventMetadata,
-    
+
     /// Specification aggregate ID
     pub specification_id: Uuid,
-    
+
     /// Requirement ID
     pub requirement_id: Uuid,
-    
+
     /// Requirement title
     pub title: String,
 }
@@ -105,10 +105,10 @@ impl DomainEvent for RequirementAdded {
 pub struct RequirementUpdated {
     /// Event metadata
     pub metadata: EventMetadata,
-    
+
     /// Specification aggregate ID
     pub specification_id: Uuid,
-    
+
     /// Requirement ID
     pub requirement_id: Uuid,
 }
@@ -147,10 +147,10 @@ impl DomainEvent for RequirementUpdated {
 pub struct RequirementApproved {
     /// Event metadata
     pub metadata: EventMetadata,
-    
+
     /// Specification aggregate ID
     pub specification_id: Uuid,
-    
+
     /// Requirement ID
     pub requirement_id: Uuid,
 }
@@ -189,13 +189,13 @@ impl DomainEvent for RequirementApproved {
 pub struct TaskAdded {
     /// Event metadata
     pub metadata: EventMetadata,
-    
+
     /// Specification aggregate ID
     pub specification_id: Uuid,
-    
+
     /// Task ID
     pub task_id: Uuid,
-    
+
     /// Task title
     pub title: String,
 }
@@ -235,10 +235,10 @@ impl DomainEvent for TaskAdded {
 pub struct TaskStarted {
     /// Event metadata
     pub metadata: EventMetadata,
-    
+
     /// Specification aggregate ID
     pub specification_id: Uuid,
-    
+
     /// Task ID
     pub task_id: Uuid,
 }
@@ -277,10 +277,10 @@ impl DomainEvent for TaskStarted {
 pub struct TaskCompleted {
     /// Event metadata
     pub metadata: EventMetadata,
-    
+
     /// Specification aggregate ID
     pub specification_id: Uuid,
-    
+
     /// Task ID
     pub task_id: Uuid,
 }
@@ -319,7 +319,7 @@ impl DomainEvent for TaskCompleted {
 pub struct SpecificationApproved {
     /// Event metadata
     pub metadata: EventMetadata,
-    
+
     /// Specification aggregate ID
     pub specification_id: Uuid,
 }
@@ -357,7 +357,7 @@ impl DomainEvent for SpecificationApproved {
 pub struct SpecificationImplemented {
     /// Event metadata
     pub metadata: EventMetadata,
-    
+
     /// Specification aggregate ID
     pub specification_id: Uuid,
 }
@@ -398,11 +398,7 @@ mod tests {
     fn test_specification_created_event() {
         let spec_id = Uuid::new_v4();
         let project_id = Uuid::new_v4();
-        let event = SpecificationCreated::new(
-            spec_id,
-            project_id,
-            "1.0.0".to_string(),
-        );
+        let event = SpecificationCreated::new(spec_id, project_id, "1.0.0".to_string());
 
         assert_eq!(event.aggregate_id(), spec_id);
         assert_eq!(event.project_id, project_id);
@@ -414,11 +410,8 @@ mod tests {
     fn test_requirement_added_event() {
         let spec_id = Uuid::new_v4();
         let req_id = Uuid::new_v4();
-        let event = RequirementAdded::new(
-            spec_id,
-            req_id,
-            "REQ-001: User Authentication".to_string(),
-        );
+        let event =
+            RequirementAdded::new(spec_id, req_id, "REQ-001: User Authentication".to_string());
 
         assert_eq!(event.aggregate_id(), spec_id);
         assert_eq!(event.requirement_id, req_id);
@@ -452,11 +445,7 @@ mod tests {
     fn test_task_added_event() {
         let spec_id = Uuid::new_v4();
         let task_id = Uuid::new_v4();
-        let event = TaskAdded::new(
-            spec_id,
-            task_id,
-            "TASK-001: Implement login".to_string(),
-        );
+        let event = TaskAdded::new(spec_id, task_id, "TASK-001: Implement login".to_string());
 
         assert_eq!(event.aggregate_id(), spec_id);
         assert_eq!(event.task_id, task_id);
@@ -508,11 +497,7 @@ mod tests {
     fn test_event_serialization() {
         let spec_id = Uuid::new_v4();
         let project_id = Uuid::new_v4();
-        let event = SpecificationCreated::new(
-            spec_id,
-            project_id,
-            "2.0.0".to_string(),
-        );
+        let event = SpecificationCreated::new(spec_id, project_id, "2.0.0".to_string());
 
         let json = serde_json::to_string(&event).unwrap();
         let deserialized: SpecificationCreated = serde_json::from_str(&json).unwrap();

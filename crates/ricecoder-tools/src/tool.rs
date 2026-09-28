@@ -21,22 +21,22 @@ pub struct ParameterSchema {
     /// Parameter type (string, number, boolean, object, array)
     #[serde(rename = "type")]
     pub type_: String,
-    
+
     /// Human-readable description
     pub description: String,
-    
+
     /// Whether this parameter is required
     #[serde(default)]
     pub required: bool,
-    
+
     /// Default value if not provided
     #[serde(skip_serializing_if = "Option::is_none")]
     pub default: Option<Value>,
-    
+
     /// For object types: nested schema
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<Box<ToolParameters>>,
-    
+
     /// For array types: item schema
     #[serde(skip_serializing_if = "Option::is_none")]
     pub items: Option<Box<ParameterSchema>>,
@@ -47,13 +47,13 @@ pub struct ParameterSchema {
 pub struct ToolExecutionResult {
     /// Human-readable title
     pub title: String,
-    
+
     /// Structured metadata about execution
     pub metadata: HashMap<String, Value>,
-    
+
     /// Tool output (text/json/etc)
     pub output: String,
-    
+
     /// Optional file attachments
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub attachments: Vec<FileAttachment>,
@@ -97,10 +97,10 @@ pub trait Tool: Send + Sync {
 pub struct ToolDefinition {
     /// Tool description
     pub description: String,
-    
+
     /// Parameter schemas
     pub parameters: ToolParameters,
-    
+
     /// Optional custom validation error formatter
     pub format_validation_error: Option<Arc<dyn Fn(&str) -> String + Send + Sync>>,
 }
@@ -110,7 +110,10 @@ impl fmt::Debug for ToolDefinition {
         f.debug_struct("ToolDefinition")
             .field("description", &self.description)
             .field("parameters", &self.parameters)
-            .field("has_format_validation_error", &self.format_validation_error.is_some())
+            .field(
+                "has_format_validation_error",
+                &self.format_validation_error.is_some(),
+            )
             .finish()
     }
 }
@@ -326,7 +329,10 @@ mod tests {
         assert!(validate_type(&Value::Number(123.into()), "number"));
         assert!(validate_type(&Value::Bool(true), "boolean"));
         assert!(validate_type(&Value::Array(vec![]), "array"));
-        assert!(validate_type(&Value::Object(serde_json::Map::new()), "object"));
+        assert!(validate_type(
+            &Value::Object(serde_json::Map::new()),
+            "object"
+        ));
         assert!(validate_type(&Value::Null, "null"));
     }
 

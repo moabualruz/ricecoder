@@ -78,21 +78,26 @@ impl BashTool {
 
     /// Create a new BashTool using current directory as workspace
     pub fn with_current_dir() -> Result<Self, ToolError> {
-        let workspace_root = std::env::current_dir()
-            .map_err(|e| ToolError::new("INIT_ERROR", format!("Failed to get current directory: {}", e)))?;
+        let workspace_root = std::env::current_dir().map_err(|e| {
+            ToolError::new(
+                "INIT_ERROR",
+                format!("Failed to get current directory: {}", e),
+            )
+        })?;
         Ok(Self { workspace_root })
     }
 
     /// Execute bash command with given input
-    pub async fn execute_command(&self, input: &BashInput, _ctx: &ToolContext) -> Result<BashOutput, ToolError> {
+    pub async fn execute_command(
+        &self,
+        input: &BashInput,
+        _ctx: &ToolContext,
+    ) -> Result<BashOutput, ToolError> {
         let start = Instant::now();
 
         // Validate command
         if input.command.trim().is_empty() {
-            return Err(ToolError::new(
-                "INVALID_INPUT",
-                "Command cannot be empty",
-            ));
+            return Err(ToolError::new("INVALID_INPUT", "Command cannot be empty"));
         }
 
         // Determine working directory
@@ -228,7 +233,9 @@ impl Tool for BashTool {
             "workdir".to_string(),
             ParameterSchema {
                 type_: "string".to_string(),
-                description: "Working directory for command execution. Defaults to current workspace.".to_string(),
+                description:
+                    "Working directory for command execution. Defaults to current workspace."
+                        .to_string(),
                 required: false,
                 default: None,
                 properties: None,
@@ -240,7 +247,8 @@ impl Tool for BashTool {
             "timeout".to_string(),
             ParameterSchema {
                 type_: "number".to_string(),
-                description: "Optional timeout in milliseconds. Default: 120000 (2 minutes)".to_string(),
+                description: "Optional timeout in milliseconds. Default: 120000 (2 minutes)"
+                    .to_string(),
                 required: false,
                 default: Some(Value::Number(DEFAULT_TIMEOUT_MS.into())),
                 properties: None,
@@ -284,9 +292,15 @@ impl Tool for BashTool {
             .ok_or_else(|| ToolError::new("MISSING_PARAM", "Missing required parameter: command"))?
             .to_string();
 
-        let workdir = args.get("workdir").and_then(|v| v.as_str()).map(String::from);
+        let workdir = args
+            .get("workdir")
+            .and_then(|v| v.as_str())
+            .map(String::from);
         let timeout_val = args.get("timeout").and_then(|v| v.as_u64());
-        let description = args.get("description").and_then(|v| v.as_str()).map(String::from);
+        let description = args
+            .get("description")
+            .and_then(|v| v.as_str())
+            .map(String::from);
 
         let input = BashInput {
             command: command.clone(),
@@ -310,18 +324,22 @@ impl Tool for BashTool {
 
         // Build metadata
         let mut metadata = HashMap::new();
-        metadata.insert("exit_code".to_string(), Value::Number(result.exit_code.into()));
+        metadata.insert(
+            "exit_code".to_string(),
+            Value::Number(result.exit_code.into()),
+        );
         metadata.insert("success".to_string(), Value::Bool(result.success));
-        metadata.insert("duration_ms".to_string(), Value::Number(result.duration_ms.into()));
+        metadata.insert(
+            "duration_ms".to_string(),
+            Value::Number(result.duration_ms.into()),
+        );
         metadata.insert("truncated".to_string(), Value::Bool(result.truncated));
         metadata.insert("workdir".to_string(), Value::String(result.workdir));
 
         // Format output with bash_metadata annotation (OpenCode pattern)
         let output = format!(
             "{}\n\n<bash_metadata>\nexit_code: {}\nduration_ms: {}\n</bash_metadata>",
-            result.output,
-            result.exit_code,
-            result.duration_ms
+            result.output, result.exit_code, result.duration_ms
         );
 
         Ok(ToolExecutionResult {
@@ -366,13 +384,26 @@ pub fn is_read_only_command(command: &str) -> bool {
     // Safe read-only commands
     const SAFE_COMMANDS: &[&str] = &[
         "ls", "cat", "head", "tail", "less", "more", "grep", "find", "tree", "file", "pwd",
-        "whoami", "hostname", "date", "echo", "which", "type", "env", "printenv", "df", "du",
-        "wc", "curl", "wget", "rg", "fd", "bat", "exa", "eza",
+        "whoami", "hostname", "date", "echo", "which", "type", "env", "printenv", "df", "du", "wc",
+        "curl", "wget", "rg", "fd", "bat", "exa", "eza",
     ];
 
     const SAFE_GIT_SUBCOMMANDS: &[&str] = &[
-        "status", "log", "diff", "branch", "show", "remote", "tag", "describe", "rev-parse",
-        "config", "ls-files", "ls-tree", "shortlog", "blame", "reflog",
+        "status",
+        "log",
+        "diff",
+        "branch",
+        "show",
+        "remote",
+        "tag",
+        "describe",
+        "rev-parse",
+        "config",
+        "ls-files",
+        "ls-tree",
+        "shortlog",
+        "blame",
+        "reflog",
     ];
 
     const SAFE_CARGO_SUBCOMMANDS: &[&str] = &[
@@ -438,14 +469,20 @@ mod tests {
         let ctx = ToolContext::default();
 
         let mut args = HashMap::new();
-        args.insert("command".to_string(), Value::String("echo hello".to_string()));
+        args.insert(
+            "command".to_string(),
+            Value::String("echo hello".to_string()),
+        );
 
         let result = tool.execute(args, &ctx).await;
         assert!(result.is_ok());
 
         let output = result.unwrap();
         assert!(output.output.contains("hello"));
-        assert_eq!(output.metadata.get("exit_code"), Some(&Value::Number(0.into())));
+        assert_eq!(
+            output.metadata.get("exit_code"),
+            Some(&Value::Number(0.into()))
+        );
     }
 
     #[tokio::test]

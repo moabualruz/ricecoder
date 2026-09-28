@@ -21,12 +21,17 @@ pub use ricegrep_core::domain::*;
 
 // Also re-export at module level for backwards compatibility
 pub use ricegrep_core::{
-    // Value Objects
-    FilePath, EditPattern, SearchQuery,
-    // Aggregates  
-    FileEdit, SearchResult, SearchMatch,
+    // Errors
+    DomainError,
     // Events
     DomainEvent,
-    // Errors
-    DomainError, DomainResult,
+    DomainResult,
+    EditPattern,
+    // Aggregates
+    FileEdit,
+    // Value Objects
+    FilePath,
+    SearchMatch,
+    SearchQuery,
+    SearchResult,
 };

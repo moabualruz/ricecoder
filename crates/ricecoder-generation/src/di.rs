@@ -1,13 +1,8 @@
 //! Dependency injection support for ricecoder-generation
 
-use std::sync::Arc;
+use crate::{BoilerplateManager, CodeValidator, ConflictDetector, TemplateEngine};
 use ricecoder_common::di::{ServiceEntry, ServiceFactory};
-use crate::{
-    TemplateEngine,
-    BoilerplateManager,
-    CodeValidator,
-    ConflictDetector,
-};
+use std::sync::Arc;
 
 inventory::submit! {
     ServiceFactory::new("generation", create_generation_services)
@@ -30,6 +25,9 @@ mod tests {
     #[test]
     fn test_generation_factory_registered() {
         let factories = list_discovered_factories();
-        assert!(factories.contains(&"generation"), "Factory should be registered");
+        assert!(
+            factories.contains(&"generation"),
+            "Factory should be registered"
+        );
     }
 }

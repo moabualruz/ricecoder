@@ -1,17 +1,17 @@
 //! Dependency injection support for ricecoder-hooks
 
-use std::sync::Arc;
-use ricecoder_common::di::{ServiceEntry, ServiceFactory};
 use crate::registry::InMemoryHookRegistry;
+use ricecoder_common::di::{ServiceEntry, ServiceFactory};
+use std::sync::Arc;
 
 inventory::submit! {
     ServiceFactory::new("hooks", create_hooks_services)
 }
 
 fn create_hooks_services() -> Vec<ServiceEntry> {
-    vec![
-        ServiceEntry::new::<InMemoryHookRegistry>(Arc::new(InMemoryHookRegistry::new())),
-    ]
+    vec![ServiceEntry::new::<InMemoryHookRegistry>(Arc::new(
+        InMemoryHookRegistry::new(),
+    ))]
 }
 
 #[cfg(test)]

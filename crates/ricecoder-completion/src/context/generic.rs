@@ -35,7 +35,9 @@ impl GenericContextAnalyzer {
             ScopeKind::Function
         } else if before.contains("impl ") {
             ScopeKind::Impl
-        } else if before.contains("struct ") || before.contains("enum ") {
+        } else if before.contains("class ") || before.contains("struct ") {
+            ScopeKind::Class
+        } else if before.contains("enum ") {
             ScopeKind::Struct
         } else if before.contains("mod ") {
             ScopeKind::Module
@@ -54,8 +56,8 @@ impl GenericContextAnalyzer {
         }
     }
 
-    fn extract_symbols(&self, code: &str, scope: Scope) -> Vec<Symbol> {
-        let mut symbols = Vec::new();
+    fn extract_symbols(&self, code: &str, scope: Scope, language: &str) -> Vec<Symbol> {
+        let mut symbols = utils::builtin_symbols(language);
 
         for line in code.lines() {
             let trimmed = line.trim();
@@ -66,8 +68,8 @@ impl GenericContextAnalyzer {
                     name,
                     kind: SymbolKind::Function,
                     scope: scope.clone(),
-                    type_info: None,
-                    documentation: None,
+                    type_info: Some("function".to_string()),
+                    documentation: Some("Function declared in the current source".to_string()),
                 });
             }
 
@@ -144,7 +146,7 @@ impl ContextAnalyzer for GenericContextAnalyzer {
         let prefix = utils::extract_prefix(code, position);
         let scope_kind = self.detect_scope_kind(code, byte_offset);
         let scope = self.create_scope(scope_kind);
-        let symbols = self.extract_symbols(code, scope.clone());
+        let symbols = self.extract_symbols(code, scope.clone(), language);
 
         Ok(CompletionContext {
             prefix,
@@ -175,7 +177,10 @@ mod tests {
         let code = "fn main() { let x = }";
         let position = Position::new(0, 20);
 
-        let context = analyzer.analyze_context(code, position, "rust").await.unwrap();
+        let context = analyzer
+            .analyze_context(code, position, "rust")
+            .await
+            .unwrap();
 
         assert_eq!(context.scope.kind, ScopeKind::Function);
     }

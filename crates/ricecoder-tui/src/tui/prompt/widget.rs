@@ -169,12 +169,10 @@ impl<'a> PromptWidget<'a> {
             PromptMode::Shell => "Shell".to_string(),
         };
 
-        Line::from(vec![
-            Span::styled(
-                format!("{} ", mode_text),
-                Style::default().fg(self.highlight_color()),
-            ),
-        ])
+        Line::from(vec![Span::styled(
+            format!("{} ", mode_text),
+            Style::default().fg(self.highlight_color()),
+        )])
     }
 
     /// Render the model info
@@ -222,13 +220,8 @@ impl<'a> PromptWidget<'a> {
     /// Render idle status hints
     fn render_idle_status(&self, area: Rect, buf: &mut Buffer) {
         let hints = match self.state.mode {
-            PromptMode::Normal => vec![
-                ("Tab", "switch agent"),
-                ("Ctrl+K", "commands"),
-            ],
-            PromptMode::Shell => vec![
-                ("Esc", "exit shell mode"),
-            ],
+            PromptMode::Normal => vec![("Tab", "switch agent"), ("Ctrl+K", "commands")],
+            PromptMode::Shell => vec![("Esc", "exit shell mode")],
         };
 
         let hint_spans: Vec<Span> = hints
@@ -264,7 +257,10 @@ impl<'a> PromptWidget<'a> {
 
         let line = Line::from(vec![
             Span::styled("● ", Style::default().fg(Color::Green)),
-            Span::styled("Running ", Style::default().fg(self.config.text_muted_color)),
+            Span::styled(
+                "Running ",
+                Style::default().fg(self.config.text_muted_color),
+            ),
             Span::raw("  "),
             Span::styled("esc ", interrupt_style),
             Span::styled(hint_text, Style::default().fg(self.config.text_muted_color)),
@@ -275,7 +271,14 @@ impl<'a> PromptWidget<'a> {
     }
 
     /// Render retry status with error message
-    fn render_retry_status(&self, area: Rect, buf: &mut Buffer, message: &str, attempt: u32, secs: u32) {
+    fn render_retry_status(
+        &self,
+        area: Rect,
+        buf: &mut Buffer,
+        message: &str,
+        attempt: u32,
+        secs: u32,
+    ) {
         let truncated = if message.len() > 80 {
             format!("{}...", &message[..77])
         } else {
@@ -306,9 +309,9 @@ impl<'a> Widget for PromptWidget<'a> {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Min(3),     // Input area
-                Constraint::Length(1),  // Mode/model line
-                Constraint::Length(1),  // Status bar
+                Constraint::Min(3),    // Input area
+                Constraint::Length(1), // Mode/model line
+                Constraint::Length(1), // Status bar
             ])
             .split(area);
 
@@ -350,16 +353,16 @@ impl<'a> Widget for PromptWidget<'a> {
         let info_layout = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([
-                Constraint::Length(1),  // Border spacing
-                Constraint::Min(0),     // Content
+                Constraint::Length(1), // Border spacing
+                Constraint::Min(0),    // Content
             ])
             .split(info_area);
 
         let mode_model_layout = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([
-                Constraint::Min(0),     // Mode
-                Constraint::Min(0),     // Model
+                Constraint::Min(0), // Mode
+                Constraint::Min(0), // Model
             ])
             .split(info_layout[1]);
 
@@ -372,10 +375,7 @@ impl<'a> Widget for PromptWidget<'a> {
         // Render status bar
         let status_layout = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([
-                Constraint::Length(1),
-                Constraint::Min(0),
-            ])
+            .constraints([Constraint::Length(1), Constraint::Min(0)])
             .split(status_area);
 
         self.render_status_bar(status_layout[1], buf);
@@ -433,7 +433,7 @@ mod tests {
         let state = PromptState::new();
         let config = PromptWidgetConfig::default();
         let widget = PromptWidget::new(&state, config);
-        
+
         assert_eq!(widget.highlight_color(), Color::Cyan);
     }
 
@@ -443,7 +443,7 @@ mod tests {
         state.mode = PromptMode::Shell;
         let config = PromptWidgetConfig::default();
         let widget = PromptWidget::new(&state, config);
-        
+
         assert_eq!(widget.highlight_color(), Color::Blue);
     }
 }

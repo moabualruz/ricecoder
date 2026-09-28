@@ -27,7 +27,7 @@ pub use error::{Result, TeamError};
 pub use manager::TeamManager;
 pub use models::{
     AdoptionMetrics, AuditLogEntry, CodeReviewRule, ComplianceRequirement, EffectivenessMetrics,
-    MergedStandards, RuleScope, SharedRule, StandardsOverride, GovernanceDoc, Team,
+    GovernanceDoc, MergedStandards, RuleScope, SharedRule, StandardsOverride, Team,
     TeamAnalyticsReport, TeamMember, TeamRole, TeamStandards, Template,
 };
 pub use rules::SharedRulesManager;

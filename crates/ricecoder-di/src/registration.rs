@@ -120,7 +120,8 @@ inventory::collect!(ServiceRegistration);
 /// Services are registered in priority order (lower priority value = earlier).
 pub fn register_all_discovered_services(container: &DIContainer) -> DIResult<()> {
     // Collect all registrations
-    let mut registrations: Vec<&ServiceRegistration> = inventory::iter::<ServiceRegistration>().collect();
+    let mut registrations: Vec<&ServiceRegistration> =
+        inventory::iter::<ServiceRegistration>().collect();
 
     // Sort by priority (stable sort to preserve insertion order for equal priorities)
     registrations.sort_by_key(|r| r.priority);

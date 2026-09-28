@@ -26,10 +26,10 @@ pub mod writer;
 // Re-export public API
 pub use audit::AuditLogger;
 pub use backup::BackupManager;
-pub use file_repository::FileSystemRepository;
 pub use conflict::ConflictResolver;
 pub use diff::DiffEngine;
 pub use error::FileError;
+pub use file_repository::FileSystemRepository;
 pub use git::GitIntegration;
 pub use gitignore::GitignoreFilter;
 pub use manager::FileManager;

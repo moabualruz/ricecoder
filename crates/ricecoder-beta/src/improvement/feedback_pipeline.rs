@@ -2,9 +2,7 @@
 
 use std::sync::{Arc, Mutex};
 
-use crate::{
-    analytics::*, compliance::*, feedback::*,
-};
+use crate::{analytics::*, compliance::*, feedback::*};
 use tokio::{sync::mpsc, time};
 
 use super::types::*;

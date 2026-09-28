@@ -87,7 +87,7 @@ impl EventBus {
     /// # Example
     ///
     /// ```rust
-    /// use ricecoder_sessions::bus::EventBus;
+    /// use ricecoder_sessions::bus::{BusEvent, EventBus, SessionEvent};
     ///
     /// let bus = EventBus::with_capacity(2048);
     /// ```
@@ -128,16 +128,17 @@ impl EventBus {
     /// # Example
     ///
     /// ```rust
-    /// use ricecoder_sessions::bus::EventBus;
+    /// use ricecoder_sessions::bus::{BusEvent, EventBus, SessionEvent};
     ///
     /// # tokio_test::block_on(async {
     /// let bus = EventBus::new();
     /// let mut subscriber = bus.subscribe();
     ///
-    /// // Receive events
-    /// while let Ok(event) = subscriber.recv().await {
-    ///     println!("Received: {:?}", event);
-    /// }
+    /// bus.publish(BusEvent::Session(SessionEvent::Created {
+    ///     session_id: "test-123".to_string(),
+    /// }));
+    /// let event = subscriber.recv().await.unwrap();
+    /// println!("Received: {:?}", event);
     /// # });
     /// ```
     pub fn subscribe(&self) -> broadcast::Receiver<BusEvent> {
@@ -260,10 +261,7 @@ mod tests {
 
         let event = subscriber.recv().await.unwrap();
         match event {
-            BusEvent::Tool(ToolEvent::Completed {
-                call_id,
-                tool_name,
-            }) => {
+            BusEvent::Tool(ToolEvent::Completed { call_id, tool_name }) => {
                 assert_eq!(call_id, "call-1");
                 assert_eq!(tool_name, "grep");
             }

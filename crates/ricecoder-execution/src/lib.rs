@@ -45,11 +45,11 @@ pub use progress_tracker::{ProgressCallback, ProgressTracker, ProgressUpdate};
 pub use risk_scorer::ExecutionRiskScorer;
 pub use rollback_actions::{RestoreFileHandler, UndoCommandHandler};
 pub use rollback_handler::{RollbackHandler, RollbackResult};
-pub use step_action_handler::{
-    CommandHandler, CreateFileHandler, DeleteFileHandler, ModifyFileHandler,
-    ShellCommandHandler, TestHandler,
-};
 pub use shell::{Environment, ProcessTree, ShellDetector};
+pub use step_action_handler::{
+    CommandHandler, CreateFileHandler, DeleteFileHandler, ModifyFileHandler, ShellCommandHandler,
+    TestHandler,
+};
 pub use step_creator::StepCreator;
 pub use step_executor::StepExecutor;
 pub use validation::ExecutionValidator;

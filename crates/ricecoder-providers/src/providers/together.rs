@@ -39,7 +39,11 @@ impl TogetherProvider {
     }
 
     /// Create a new Together AI provider instance with custom HTTP client
-    pub fn with_client(client: Arc<Client>, api_key: String, models: Vec<ModelInfo>) -> Result<Self, ProviderError> {
+    pub fn with_client(
+        client: Arc<Client>,
+        api_key: String,
+        models: Vec<ModelInfo>,
+    ) -> Result<Self, ProviderError> {
         if api_key.is_empty() {
             return Err(ProviderError::ConfigError(
                 "Together AI API key is required".to_string(),

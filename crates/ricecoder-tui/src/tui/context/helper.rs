@@ -3,10 +3,10 @@
 //! This module provides helper functions for creating context providers
 //! with common patterns (async initialization, lazy loading, etc.).
 
-use std::sync::Arc;
-use tokio::sync::{RwLock, Mutex};
 use std::future::Future;
 use std::pin::Pin;
+use std::sync::Arc;
+use tokio::sync::{Mutex, RwLock};
 
 /// Type alias for async init function
 pub type AsyncInit<T> = Pin<Box<dyn Future<Output = Result<T, String>> + Send>>;
@@ -25,9 +25,7 @@ impl<T: Clone + Send + Sync + 'static> LazyProvider<T> {
         F: Fn() -> Fut + Send + Sync + 'static,
         Fut: Future<Output = Result<T, String>> + Send + 'static,
     {
-        let boxed_fn = Box::new(move || -> AsyncInit<T> {
-            Box::pin(init_fn())
-        });
+        let boxed_fn = Box::new(move || -> AsyncInit<T> { Box::pin(init_fn()) });
 
         Self {
             value: Arc::new(RwLock::new(None)),
@@ -48,7 +46,8 @@ impl<T: Clone + Send + Sync + 'static> LazyProvider<T> {
         // Slow path: initialize
         let init_fn = {
             let mut init = self.init.lock().await;
-            init.take().ok_or_else(|| "Already initializing".to_string())?
+            init.take()
+                .ok_or_else(|| "Already initializing".to_string())?
         };
 
         let result = (init_fn)().await;
@@ -121,9 +120,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_lazy_provider_initialization() {
-        let provider = LazyProvider::new(|| async {
-            Ok("initialized".to_string())
-        });
+        let provider = LazyProvider::new(|| async { Ok("initialized".to_string()) });
 
         assert!(!provider.is_initialized().await);
         let value = provider.get().await.unwrap();
@@ -153,9 +150,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_lazy_provider_reset() {
-        let provider = LazyProvider::new(|| async {
-            Ok(42)
-        });
+        let provider = LazyProvider::new(|| async { Ok(42) });
 
         provider.get().await.unwrap();
         assert!(provider.is_initialized().await);

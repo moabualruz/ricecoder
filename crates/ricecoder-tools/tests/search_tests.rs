@@ -89,7 +89,12 @@ fn test_validate_query_sql_injection() {
 
 #[test]
 fn test_validate_query_valid() {
-    let queries = vec!["rust programming", "how to learn rust", "best practices"];
+    let queries = vec![
+        "rust programming",
+        "how to learn rust",
+        "best practices",
+        "EXEC",
+    ];
 
     for query in queries {
         let result = SearchTool::validate_query(query);

@@ -46,9 +46,9 @@ mod tests {
         assert!(!services.is_empty(), "Should create at least one service");
 
         // Check that ConnectionManager is in the list
-        let has_connection_manager = services.iter().any(|s| {
-            s.type_name.contains("ConnectionManager")
-        });
+        let has_connection_manager = services
+            .iter()
+            .any(|s| s.type_name.contains("ConnectionManager"));
         assert!(has_connection_manager, "Should include ConnectionManager");
     }
 }

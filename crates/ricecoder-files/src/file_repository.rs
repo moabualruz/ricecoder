@@ -261,10 +261,8 @@ impl FileSystemRepository {
         };
 
         // Build combined ignore patterns
-        let mut ignore_globs: Vec<String> = IGNORE_PATTERNS
-            .iter()
-            .map(|p| format!("!{}*", p))
-            .collect();
+        let mut ignore_globs: Vec<String> =
+            IGNORE_PATTERNS.iter().map(|p| format!("!{}*", p)).collect();
         ignore_globs.extend(ignore.iter().map(|p| format!("!{}", p)));
 
         // Recursively enumerate files (OpenCode uses Ripgrep.files)
@@ -333,7 +331,10 @@ impl FileSystemRepository {
                 let path_str = relative_path.display().to_string();
                 let should_ignore = ignore_globs.iter().any(|glob| {
                     // Simple prefix check for now
-                    glob.trim_start_matches('!').split('*').next().map_or(false, |prefix| path_str.starts_with(prefix))
+                    glob.trim_start_matches('!')
+                        .split('*')
+                        .next()
+                        .map_or(false, |prefix| path_str.starts_with(prefix))
                 });
 
                 if !should_ignore {
@@ -346,11 +347,7 @@ impl FileSystemRepository {
     }
 
     /// Build tree structure from file list (OpenCode ls.ts L72-L97)
-    fn build_tree_structure(
-        &self,
-        files: &[PathBuf],
-        root: &PathBuf,
-    ) -> DomainResult<String> {
+    fn build_tree_structure(&self, files: &[PathBuf], root: &PathBuf) -> DomainResult<String> {
         use std::collections::BTreeMap;
         use std::collections::BTreeSet;
 
@@ -361,7 +358,7 @@ impl FileSystemRepository {
 
         for file in files {
             let parent = file.parent().unwrap_or(&default_parent);
-            
+
             // Add all parent directories
             let components: Vec<_> = file.components().collect();
             for i in 0..components.len() {
@@ -379,12 +376,7 @@ impl FileSystemRepository {
         // Render tree
         let mut output = String::new();
         output.push_str(&format!("{}/\n", root.display()));
-        output.push_str(&self.render_dir(
-            &PathBuf::from("."),
-            0,
-            &dirs,
-            &files_by_dir,
-        ));
+        output.push_str(&self.render_dir(&PathBuf::from("."), 0, &dirs, &files_by_dir));
 
         Ok(output)
     }
@@ -402,7 +394,9 @@ impl FileSystemRepository {
 
         // Render directory name (skip for root)
         if depth > 0 {
-            let dir_name = dir_path.file_name().map_or("", |n| n.to_str().unwrap_or(""));
+            let dir_name = dir_path
+                .file_name()
+                .map_or("", |n| n.to_str().unwrap_or(""));
             output.push_str(&format!("{}{}/\n", indent, dir_name));
         }
 
@@ -411,9 +405,7 @@ impl FileSystemRepository {
         // Render subdirectories first (sorted)
         let children: Vec<_> = dirs
             .iter()
-            .filter(|d| {
-                d.parent().map_or(false, |p| p == dir_path) && *d != dir_path
-            })
+            .filter(|d| d.parent().map_or(false, |p| p == dir_path) && *d != dir_path)
             .collect();
 
         for child in children {
@@ -625,7 +617,10 @@ mod tests {
             .await
             .unwrap();
 
-        let entries = repo.list_directory(&temp_dir.path().to_path_buf()).await.unwrap();
+        let entries = repo
+            .list_directory(&temp_dir.path().to_path_buf())
+            .await
+            .unwrap();
         assert_eq!(entries.len(), 2);
     }
 

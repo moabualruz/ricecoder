@@ -1,8 +1,8 @@
 //! Dependency injection support for ricecoder-refactoring
 
-use std::sync::Arc;
-use ricecoder_common::di::{ServiceEntry, ServiceFactory};
 use crate::{ImpactAnalyzer, PreviewGenerator, SafetyChecker, ValidationEngine};
+use ricecoder_common::di::{ServiceEntry, ServiceFactory};
+use std::sync::Arc;
 
 inventory::submit! {
     ServiceFactory::new("refactoring", create_refactoring_services)
@@ -25,6 +25,9 @@ mod tests {
     #[test]
     fn test_refactoring_factory_registered() {
         let factories = list_discovered_factories();
-        assert!(factories.contains(&"refactoring"), "Factory should be registered");
+        assert!(
+            factories.contains(&"refactoring"),
+            "Factory should be registered"
+        );
     }
 }

@@ -80,10 +80,20 @@ pub trait FileWriter: Send + Sync {
     /// * `path` - Target file path
     /// * `content` - Content to write
     /// * `create_backup` - Whether to create a backup before overwriting
-    async fn write(&self, path: &PathBuf, content: &[u8], create_backup: bool) -> DomainResult<WriteResult>;
+    async fn write(
+        &self,
+        path: &PathBuf,
+        content: &[u8],
+        create_backup: bool,
+    ) -> DomainResult<WriteResult>;
 
     /// Write string content to a file
-    async fn write_string(&self, path: &PathBuf, content: &str, create_backup: bool) -> DomainResult<WriteResult>;
+    async fn write_string(
+        &self,
+        path: &PathBuf,
+        content: &str,
+        create_backup: bool,
+    ) -> DomainResult<WriteResult>;
 
     /// Delete a file or empty directory
     async fn delete(&self, path: &PathBuf) -> DomainResult<()>;

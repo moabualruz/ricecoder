@@ -33,8 +33,8 @@ impl Default for RetryConfig {
 impl RetryConfig {
     /// Calculate delay for given attempt number
     pub fn calculate_delay(&self, attempt: u32) -> Duration {
-        let delay_ms = self.initial_delay.as_millis() as f64
-            * self.backoff_multiplier.powi(attempt as i32);
+        let delay_ms =
+            self.initial_delay.as_millis() as f64 * self.backoff_multiplier.powi(attempt as i32);
 
         let delay = Duration::from_millis(delay_ms as u64);
         std::cmp::min(delay, self.max_delay)

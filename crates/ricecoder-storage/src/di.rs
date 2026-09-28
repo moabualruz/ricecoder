@@ -83,15 +83,15 @@ mod tests {
         assert!(!services.is_empty(), "Should create at least one service");
 
         // Check that CacheManager is in the list
-        let has_cache_manager = services.iter().any(|s| {
-            s.type_name.contains("CacheManager")
-        });
+        let has_cache_manager = services
+            .iter()
+            .any(|s| s.type_name.contains("CacheManager"));
         assert!(has_cache_manager, "Should include CacheManager");
 
         // Check that SessionManager is in the list
-        let has_session_manager = services.iter().any(|s| {
-            s.type_name.contains("SessionManager")
-        });
+        let has_session_manager = services
+            .iter()
+            .any(|s| s.type_name.contains("SessionManager"));
         assert!(has_session_manager, "Should include SessionManager");
     }
 }

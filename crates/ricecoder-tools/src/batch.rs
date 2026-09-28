@@ -169,7 +169,8 @@ impl BatchTool {
         }
 
         // OpenCode compatible: Slice at 10, mark rest as errors
-        let (valid_calls, discarded_calls) = if input.invocations.len() > MAX_CONCURRENT_INVOCATIONS {
+        let (valid_calls, discarded_calls) = if input.invocations.len() > MAX_CONCURRENT_INVOCATIONS
+        {
             let valid = &input.invocations[..MAX_CONCURRENT_INVOCATIONS];
             let discarded = &input.invocations[MAX_CONCURRENT_INVOCATIONS..];
             (valid, discarded)
@@ -244,7 +245,9 @@ impl BatchTool {
         let output_message = if failure_count > 0 {
             format!(
                 "Executed {}/{} tools successfully. {} failed.",
-                success_count, all_results.len(), failure_count
+                success_count,
+                all_results.len(),
+                failure_count
             )
         } else {
             format!(
@@ -268,7 +271,11 @@ impl BatchTool {
         });
 
         let output = BatchOutput {
-            title: format!("Batch execution ({}/{} successful)", success_count, all_results.len()),
+            title: format!(
+                "Batch execution ({}/{} successful)",
+                success_count,
+                all_results.len()
+            ),
             output: output_message,
             all_succeeded: failure_count == 0,
             total_count: all_results.len(),
@@ -276,7 +283,11 @@ impl BatchTool {
             failure_count,
             results: all_results,
             total_execution_time_ms,
-            attachments: if attachments.is_empty() { None } else { Some(attachments) },
+            attachments: if attachments.is_empty() {
+                None
+            } else {
+                Some(attachments)
+            },
             metadata,
         };
 
@@ -368,7 +379,9 @@ impl BatchTool {
                         Ok(Ok(exec_result)) => {
                             // Extract attachments if available from result
                             // OpenCode compatible: Tools may include attachments in their result
-                            let attachments = exec_result.result.as_ref()
+                            let attachments = exec_result
+                                .result
+                                .as_ref()
                                 .and_then(|v| v.get("attachments"))
                                 .and_then(|v| v.as_array())
                                 .map(|arr| arr.clone());
@@ -382,7 +395,7 @@ impl BatchTool {
                                 execution_time_ms,
                                 attachments,
                             }
-                        },
+                        }
                         Ok(Err(e)) => {
                             error!("Tool {} failed: {}", tool_name, e);
                             InvocationResult {
@@ -698,9 +711,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_concurrency_limit() {
-        let executor = Arc::new(
-            MockExecutor::new().with_success("tool", serde_json::json!({"ok": true})),
-        );
+        let executor =
+            Arc::new(MockExecutor::new().with_success("tool", serde_json::json!({"ok": true})));
         let batch_tool = BatchTool::new(executor);
 
         // Create 10 invocations (max allowed) but limit to 5 concurrent

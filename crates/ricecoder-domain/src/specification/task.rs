@@ -54,7 +54,11 @@ pub enum TaskStatus {
 
 impl Task {
     /// Create a new task (internal use by Specification aggregate)
-    pub(crate) fn new(title: String, description: String, requirement_refs: Vec<RequirementId>) -> Self {
+    pub(crate) fn new(
+        title: String,
+        description: String,
+        requirement_refs: Vec<RequirementId>,
+    ) -> Self {
         let now = Utc::now();
         Self {
             id: TaskId::new(),
