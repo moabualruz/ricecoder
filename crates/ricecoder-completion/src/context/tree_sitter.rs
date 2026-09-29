@@ -71,6 +71,19 @@ impl TreeSitterContextAnalyzer {
         position: Position,
     ) -> Vec<Symbol> {
         let mut symbols = utils::builtin_symbols(language);
+        if let Some(parameters) = Self::extract_enclosing_function_parameters(
+            code,
+            language,
+            utils::position_to_byte_offset(code, position),
+        ) {
+            symbols.extend(parameters.into_iter().map(|name| Symbol {
+                name,
+                kind: SymbolKind::Parameter,
+                scope: scope.clone(),
+                type_info: Some("parameter".to_string()),
+                documentation: Some("Function parameter".to_string()),
+            }));
+        }
 
         for (line_number, line) in code.lines().enumerate() {
             let trimmed = line.trim();
@@ -103,22 +116,6 @@ impl TreeSitterContextAnalyzer {
                         type_info: Some("function".to_string()),
                         documentation: Some("Function declared in the current source".to_string()),
                     });
-                }
-            }
-
-            // Function parameters are visible in the function body.
-            if trimmed.contains("fn ")
-                || trimmed.starts_with("function ")
-                || trimmed.starts_with("def ")
-            {
-                if let Some(parameters) = Self::extract_parameters(trimmed, language) {
-                    symbols.extend(parameters.into_iter().map(|name| Symbol {
-                        name,
-                        kind: SymbolKind::Parameter,
-                        scope: scope.clone(),
-                        type_info: Some("parameter".to_string()),
-                        documentation: Some("Function parameter".to_string()),
-                    }));
                 }
             }
 
@@ -296,6 +293,103 @@ impl TreeSitterContextAnalyzer {
             .then(|| name.to_string())
     }
 
+    fn extract_enclosing_function_parameters(
+        code: &str,
+        language: &str,
+        byte_offset: usize,
+    ) -> Option<Vec<String>> {
+        fn find_functions<'tree>(
+            node: tree_sitter::Node<'tree>,
+            code: &str,
+            byte_offset: usize,
+            language: &str,
+        ) -> Option<Vec<tree_sitter::Node<'tree>>> {
+            if byte_offset < node.start_byte() || byte_offset > node.end_byte() {
+                return None;
+            }
+
+            let is_function = match language {
+                "rust" => node.kind() == "function_item",
+                "typescript" | "ts" | "tsx" | "javascript" | "js" | "jsx" => matches!(
+                    node.kind(),
+                    "function_declaration"
+                        | "function_expression"
+                        | "generator_function"
+                        | "generator_function_declaration"
+                        | "generator_function_expression"
+                        | "method_definition"
+                        | "arrow_function"
+                ),
+                "python" | "py" => node.kind() == "function_definition",
+                _ => false,
+            };
+            let cursor_in_body = node.child_by_field_name("body").is_some_and(|body| {
+                let cursor_at_body_end = byte_offset == body.end_byte()
+                    && (matches!(language, "python" | "py")
+                        || !body
+                            .utf8_text(code.as_bytes())
+                            .unwrap_or_default()
+                            .trim_end()
+                            .ends_with('}'));
+                body.start_byte() <= byte_offset
+                    && (byte_offset < body.end_byte() || cursor_at_body_end)
+            });
+
+            let mut cursor = node.walk();
+            for child in node.named_children(&mut cursor) {
+                if let Some(mut functions) = find_functions(child, code, byte_offset, language) {
+                    if is_function && cursor_in_body {
+                        functions.push(node);
+                    }
+                    return Some(functions);
+                }
+            }
+
+            (is_function && cursor_in_body).then(|| vec![node])
+        }
+
+        let grammar = match language {
+            "rust" => tree_sitter_rust::LANGUAGE.into(),
+            "typescript" | "ts" => tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into(),
+            "tsx" | "jsx" | "javascript" | "js" => tree_sitter_typescript::LANGUAGE_TSX.into(),
+            "python" | "py" => tree_sitter_python::LANGUAGE.into(),
+            _ => return None,
+        };
+        let mut parser = tree_sitter::Parser::new();
+        parser.set_language(&grammar).ok()?;
+        let tree = parser.parse(code, None)?;
+        let mut functions = find_functions(tree.root_node(), code, byte_offset, language)?;
+        if language == "rust" {
+            functions.truncate(1);
+        }
+
+        let mut parameters = Vec::new();
+        for function in functions {
+            let Some(parameter_node) = function
+                .child_by_field_name("parameters")
+                .or_else(|| function.child_by_field_name("parameter"))
+            else {
+                continue;
+            };
+            let Some(parameter_text) = parameter_node.utf8_text(code.as_bytes()).ok() else {
+                continue;
+            };
+            let function_parameters = if parameter_node.kind() == "identifier" {
+                vec![parameter_text.to_string()]
+            } else if let Some(parameters) = Self::extract_parameters(parameter_text, language) {
+                parameters
+            } else {
+                continue;
+            };
+            for parameter in function_parameters {
+                if !parameters.contains(&parameter) {
+                    parameters.push(parameter);
+                }
+            }
+        }
+        Some(parameters)
+    }
+
     fn extract_parameters(line: &str, language: &str) -> Option<Vec<String>> {
         let start = line.find('(')?;
         let end = line[start + 1..].find(')')? + start + 1;
@@ -377,5 +471,113 @@ pub enum Bar {}
         assert!(context.available_symbols.iter().any(|s| s.name == "hello"));
         assert!(context.available_symbols.iter().any(|s| s.name == "Foo"));
         assert!(context.available_symbols.iter().any(|s| s.name == "Bar"));
+    }
+
+    #[tokio::test]
+    async fn test_only_enclosing_function_parameters_are_available() {
+        let analyzer = TreeSitterContextAnalyzer::new();
+        let code = r#"
+fn first(first_param: i32) {
+    let _ = first_param;
+}
+
+fn second(second_param: i32) {
+    let _ = second_param;
+}
+"#;
+        let position = Position::new(2, 10);
+
+        let context = analyzer
+            .analyze_context(code, position, "rust")
+            .await
+            .unwrap();
+
+        assert!(context
+            .available_symbols
+            .iter()
+            .any(|symbol| symbol.name == "first_param"));
+        assert!(!context
+            .available_symbols
+            .iter()
+            .any(|symbol| symbol.name == "second_param"));
+    }
+
+    #[tokio::test]
+    async fn enclosing_function_parameters_include_lexical_ancestors() {
+        let analyzer = TreeSitterContextAnalyzer::new();
+        let code = r#"function outer(outer_param) {
+    function inner(inner_param) {
+        return inner_param;
+    }
+}"#;
+        let position = Position::new(2, 16);
+
+        let context = analyzer
+            .analyze_context(code, position, "javascript")
+            .await
+            .unwrap();
+
+        assert!(context
+            .available_symbols
+            .iter()
+            .any(|symbol| symbol.name == "inner_param"));
+        assert!(context
+            .available_symbols
+            .iter()
+            .any(|symbol| symbol.name == "outer_param"));
+    }
+
+    #[tokio::test]
+    async fn python_function_parameters_are_available_at_the_body_end() {
+        let analyzer = TreeSitterContextAnalyzer::new();
+        let code = r#"def first(first_param):
+    return first_param"#;
+        let position = Position::new(1, "    return first_param".len() as u32);
+
+        let context = analyzer
+            .analyze_context(code, position, "python")
+            .await
+            .unwrap();
+
+        assert!(context
+            .available_symbols
+            .iter()
+            .any(|symbol| symbol.name == "first_param"));
+    }
+
+    #[tokio::test]
+    async fn generator_function_parameters_are_available() {
+        let analyzer = TreeSitterContextAnalyzer::new();
+        let code = r#"function* generate(item) {
+    yield item;
+}"#;
+        let position = Position::new(1, 14);
+
+        let context = analyzer
+            .analyze_context(code, position, "javascript")
+            .await
+            .unwrap();
+
+        assert!(context
+            .available_symbols
+            .iter()
+            .any(|symbol| symbol.name == "item"));
+    }
+
+    #[tokio::test]
+    async fn single_parameter_arrow_functions_expose_the_parameter() {
+        let analyzer = TreeSitterContextAnalyzer::new();
+        let code = "const identity = value => value;";
+        let position = Position::new(0, 28);
+
+        let context = analyzer
+            .analyze_context(code, position, "javascript")
+            .await
+            .unwrap();
+
+        assert!(context
+            .available_symbols
+            .iter()
+            .any(|symbol| symbol.name == "value"));
     }
 }

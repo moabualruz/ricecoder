@@ -5,7 +5,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 #[cfg(feature = "parsing")]
-use ricecoder_parsers::{CodeParser, SyntaxTree};
+use ricecoder_parsers::CodeParser;
 
 use crate::{
     architectural::ArchitecturalPatternDetector,
@@ -189,28 +189,32 @@ impl Default for PatternDetector {
 
 #[cfg(all(test, feature = "parsing"))]
 mod tests {
-    use std::sync::Arc;
+    use std::{future::Future, pin::Pin, sync::Arc};
 
-    use ricecoder_parsers::error::ParserError;
+    use ricecoder_parsers::{error::ParserError, SyntaxTree};
 
     use super::*;
 
-    // Mock parser for testing
     struct MockParser;
 
     impl CodeParser for MockParser {
-        async fn parse(&self, _content: &str) -> Result<SyntaxTree, ParserError> {
-            Ok(SyntaxTree {
-                root: ricecoder_parsers::ASTNode {
-                    node_type: ricecoder_parsers::NodeType::Root,
-                    text: "".to_string(),
-                    children: vec![],
-                    position: ricecoder_parsers::Position { line: 1, column: 1 },
-                    range: ricecoder_parsers::Range {
-                        start: ricecoder_parsers::Position { line: 1, column: 1 },
-                        end: ricecoder_parsers::Position { line: 1, column: 1 },
-                    },
-                },
+        fn parse<'a>(
+            &'a self,
+            _content: &'a str,
+        ) -> Pin<Box<dyn Future<Output = Result<SyntaxTree, ParserError>> + Send + 'a>> {
+            Box::pin(async {
+                let position = ricecoder_parsers::Position::zero();
+                Ok(SyntaxTree {
+                    root: ricecoder_parsers::ASTNode::new(
+                        ricecoder_parsers::NodeType::Program,
+                        ricecoder_parsers::Range::point(position),
+                        String::new(),
+                    ),
+                    language: "rust".to_string(),
+                    file_path: None,
+                    warnings: Vec::new(),
+                    metadata: Default::default(),
+                })
             })
         }
     }

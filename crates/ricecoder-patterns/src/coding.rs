@@ -8,8 +8,8 @@ use ricecoder_parsers::{ASTNode, CodeParser, NodeType, SyntaxTree};
 use walkdir;
 
 use crate::{
-    error::{PatternError, PatternResult},
-    models::{DesignPattern, DetectedPattern, PatternCategory, PatternLocation},
+    error::PatternResult,
+    models::{DetectedPattern, PatternCategory, PatternLocation},
 };
 
 /// Detector for design patterns and coding conventions
@@ -127,6 +127,7 @@ impl CodingPatternDetector {
         });
 
         if !factory_functions.is_empty() {
+            let functions_found = factory_functions.len();
             Ok(Some(DetectedPattern {
                 name: "Factory Pattern".to_string(),
                 category: PatternCategory::Design,
@@ -135,8 +136,8 @@ impl CodingPatternDetector {
                     .into_iter()
                     .map(|node| PatternLocation {
                         file: file_path.to_string_lossy().to_string(),
-                        line: node.position.line,
-                        column: node.position.column,
+                        line: node.range.start.line,
+                        column: node.range.start.column,
                         snippet: node.text.chars().take(50).collect(),
                     })
                     .collect(),
@@ -144,7 +145,7 @@ impl CodingPatternDetector {
                     ("pattern_type".to_string(), serde_json::json!("design")),
                     (
                         "functions_found".to_string(),
-                        serde_json::json!(factory_functions.len()),
+                        serde_json::json!(functions_found),
                     ),
                 ]),
             }))
@@ -175,6 +176,7 @@ impl CodingPatternDetector {
         });
 
         if observer_indicators.len() >= 2 {
+            let indicators_found = observer_indicators.len();
             Ok(Some(DetectedPattern {
                 name: "Observer Pattern".to_string(),
                 category: PatternCategory::Design,
@@ -183,8 +185,8 @@ impl CodingPatternDetector {
                     .into_iter()
                     .map(|node| PatternLocation {
                         file: file_path.to_string_lossy().to_string(),
-                        line: node.position.line,
-                        column: node.position.column,
+                        line: node.range.start.line,
+                        column: node.range.start.column,
                         snippet: node.text.chars().take(50).collect(),
                     })
                     .collect(),
@@ -192,7 +194,7 @@ impl CodingPatternDetector {
                     ("pattern_type".to_string(), serde_json::json!("design")),
                     (
                         "indicators_found".to_string(),
-                        serde_json::json!(observer_indicators.len()),
+                        serde_json::json!(indicators_found),
                     ),
                 ]),
             }))
@@ -223,6 +225,7 @@ impl CodingPatternDetector {
         });
 
         if repository_indicators.len() >= 3 {
+            let indicators_found = repository_indicators.len();
             Ok(Some(DetectedPattern {
                 name: "Repository Pattern".to_string(),
                 category: PatternCategory::Design,
@@ -231,8 +234,8 @@ impl CodingPatternDetector {
                     .into_iter()
                     .map(|node| PatternLocation {
                         file: file_path.to_string_lossy().to_string(),
-                        line: node.position.line,
-                        column: node.position.column,
+                        line: node.range.start.line,
+                        column: node.range.start.column,
                         snippet: node.text.chars().take(50).collect(),
                     })
                     .collect(),
@@ -240,7 +243,7 @@ impl CodingPatternDetector {
                     ("pattern_type".to_string(), serde_json::json!("design")),
                     (
                         "indicators_found".to_string(),
-                        serde_json::json!(repository_indicators.len()),
+                        serde_json::json!(indicators_found),
                     ),
                 ]),
             }))
@@ -273,7 +276,7 @@ impl CodingPatternDetector {
     fn has_conditional_logic(&self, node: &ASTNode) -> bool {
         for child in &node.children {
             match child.node_type {
-                NodeType::If | NodeType::Match => return true,
+                NodeType::IfStatement | NodeType::SwitchCase => return true,
                 _ => {}
             }
             if self.has_conditional_logic(child) {
@@ -286,37 +289,48 @@ impl CodingPatternDetector {
 
 #[cfg(all(test, feature = "parsing"))]
 mod tests {
-    use std::sync::Arc;
+    use std::{future::Future, pin::Pin, sync::Arc};
 
     use ricecoder_parsers::error::ParserError;
 
     use super::*;
 
-    // Mock parser for testing
     struct MockParser;
 
-    impl Parser for MockParser {
-        fn parse(&self, _content: &str) -> Result<SyntaxTree, ParserError> {
-            Ok(SyntaxTree {
-                root: ASTNode {
-                    node_type: NodeType::Root,
-                    text: "".to_string(),
-                    children: vec![],
-                    position: ricecoder_parsers::Position { line: 1, column: 1 },
-                    range: ricecoder_parsers::Range {
-                        start: ricecoder_parsers::Position { line: 1, column: 1 },
-                        end: ricecoder_parsers::Position { line: 1, column: 1 },
-                    },
-                },
+    impl CodeParser for MockParser {
+        fn parse<'a>(
+            &'a self,
+            _content: &'a str,
+        ) -> Pin<Box<dyn Future<Output = Result<SyntaxTree, ParserError>> + Send + 'a>> {
+            Box::pin(async {
+                let position = ricecoder_parsers::Position::zero();
+                Ok(SyntaxTree {
+                    root: ASTNode::new(
+                        NodeType::Program,
+                        ricecoder_parsers::Range::point(position),
+                        String::new(),
+                    ),
+                    language: "rust".to_string(),
+                    file_path: None,
+                    warnings: Vec::new(),
+                    metadata: Default::default(),
+                })
             })
         }
     }
 
     #[test]
-    fn test_coding_pattern_detector_creation() {
-        let parser = Arc::new(MockParser);
-        let detector = CodingPatternDetector::with_parser(parser);
-        // Just test that it can be created
-        assert!(true);
+    fn coding_pattern_detector_processes_syntax_tree() {
+        let parser: Arc<dyn CodeParser> = Arc::new(MockParser);
+        let detector = CodingPatternDetector::with_parser(Arc::clone(&parser));
+
+        tokio_test::block_on(async {
+            let tree = parser.parse("").await.unwrap();
+            let patterns = detector
+                .detect_in_tree(&tree, Path::new("src/lib.rs"))
+                .await
+                .unwrap();
+            assert!(patterns.is_empty());
+        });
     }
 }

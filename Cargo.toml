@@ -345,4 +345,5 @@ which = "6.0"
 wiremock = "0.6"
 [dev-dependencies]
 proptest = { workspace = true }
+serde_yaml = { workspace = true }
 tempfile = { workspace = true }

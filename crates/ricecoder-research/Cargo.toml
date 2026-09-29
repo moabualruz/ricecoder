@@ -35,7 +35,7 @@ inventory = { workspace = true }
 [features]
 default = []
 parsers = ["ricecoder-parsers"]
-patterns = ["ricecoder-patterns"]
+patterns = ["ricecoder-patterns", "ricecoder-patterns/parsing"]
 
 [dev-dependencies]
 proptest = { workspace = true }

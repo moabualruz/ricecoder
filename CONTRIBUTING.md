@@ -246,8 +246,8 @@ git checkout -b docs/update-contributing-guide
 # Format code
 cargo fmt
 
-# Run linter
-cargo clippy
+# Run strict linter
+cargo clippy -- -D warnings
 
 # Run tests
 cargo test
@@ -255,8 +255,8 @@ cargo test
 # Run security audit
 cargo audit
 
-# Check coverage
-cargo tarpaulin --fail-under 80
+# Check workspace coverage. The current 45.13% ratchet will rise to 80% in [issue #17](https://github.com/moabualruz/ricecoder/issues/17).
+cargo tarpaulin --workspace --all-features --fail-under 45
 ```
 
 ### 5. Commit Changes

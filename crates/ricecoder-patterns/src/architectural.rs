@@ -3,8 +3,8 @@
 use std::{collections::HashMap, path::Path};
 
 use crate::{
-    error::{PatternError, PatternResult},
-    models::{ArchitecturalPattern, DetectedPattern, PatternCategory, PatternLocation},
+    error::PatternResult,
+    models::{DetectedPattern, PatternCategory, PatternLocation},
 };
 
 /// Detector for architectural patterns in codebases

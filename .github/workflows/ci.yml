@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ${{ fromJSON((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && format('["self-hosted","linux","x64","generic","pr-{0}-{1}"]', github.repository_id, github.event.pull_request.number)) || (github.event_name == 'pull_request' && '["ubuntu-latest"]') || '["self-hosted","linux","x64","generic"]') }}
+    steps:
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Verify broker-prepared same-repository source
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          test -L "$GITHUB_WORKSPACE"
+          test "$(git rev-parse --show-toplevel)" = "$(cd "$GITHUB_WORKSPACE" && pwd -P)"
+          test "$(git -C "$GITHUB_WORKSPACE" rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git -C "$GITHUB_WORKSPACE" status --porcelain)"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+      - name: Install cargo-tarpaulin
+        run: cargo install cargo-tarpaulin --locked
+      - name: cargo fmt
+        run: cargo fmt --all -- --check
+      - name: cargo clippy
+        run: cargo clippy -- -D warnings
+      - name: cargo test
+        run: cargo test --workspace --all-features
+      - name: cargo audit
+        run: cargo audit
+      - name: cargo tarpaulin
+        run: cargo tarpaulin --workspace --all-features --fail-under 45
+
+  required:
+    if: ${{ always() }}
+    needs: [ci]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require the CI gate job to succeed
+        env:
+          CI_RESULT: ${{ needs.ci.result }}
+        run: test "$CI_RESULT" = success
