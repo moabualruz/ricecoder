@@ -27,7 +27,7 @@ async fn test_git_status_detects_modified_files() {
 
     let tree_id = index.write_tree().unwrap();
     let tree = repo.find_tree(tree_id).unwrap();
-    let sig = repo.signature().unwrap();
+    let sig = git2::Signature::now("Test", "test@example.com").unwrap();
 
     repo.commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[])
         .unwrap();
@@ -65,7 +65,7 @@ async fn test_git_status_detects_untracked_files() {
 
     let tree_id = index.write_tree().unwrap();
     let tree = repo.find_tree(tree_id).unwrap();
-    let sig = repo.signature().unwrap();
+    let sig = git2::Signature::now("Test", "test@example.com").unwrap();
 
     repo.commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[])
         .unwrap();
@@ -106,7 +106,7 @@ async fn test_git_status_detects_staged_files() {
 
     let tree_id = index.write_tree().unwrap();
     let tree = repo.find_tree(tree_id).unwrap();
-    let sig = repo.signature().unwrap();
+    let sig = git2::Signature::now("Test", "test@example.com").unwrap();
 
     repo.commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[])
         .unwrap();
@@ -149,7 +149,7 @@ async fn test_get_current_branch() {
 
     let tree_id = index.write_tree().unwrap();
     let tree = repo.find_tree(tree_id).unwrap();
-    let sig = repo.signature().unwrap();
+    let sig = git2::Signature::now("Test", "test@example.com").unwrap();
 
     repo.commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[])
         .unwrap();
@@ -180,7 +180,7 @@ async fn test_git_status_clean_repository() {
 
     let tree_id = index.write_tree().unwrap();
     let tree = repo.find_tree(tree_id).unwrap();
-    let sig = repo.signature().unwrap();
+    let sig = git2::Signature::now("Test", "test@example.com").unwrap();
 
     repo.commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[])
         .unwrap();
@@ -298,7 +298,7 @@ async fn test_git_status_with_multiple_file_types() {
 
     let tree_id = index.write_tree().unwrap();
     let tree = repo.find_tree(tree_id).unwrap();
-    let sig = repo.signature().unwrap();
+    let sig = git2::Signature::now("Test", "test@example.com").unwrap();
 
     repo.commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[])
         .unwrap();
