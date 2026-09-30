@@ -256,7 +256,7 @@ cargo test
 cargo audit
 
 # Check workspace coverage. The current 45.13% ratchet will rise to 80% in [issue #17](https://github.com/moabualruz/ricecoder/issues/17).
-cargo tarpaulin --workspace --all-features --fail-under 45
+cargo tarpaulin --engine llvm --workspace --all-features --fail-under 45
 ```
 
 ### 5. Commit Changes
