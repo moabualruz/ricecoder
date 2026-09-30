@@ -13,6 +13,8 @@ pub struct RuleStorage {
     cache: Arc<RwLock<HashMap<String, Rule>>>,
     /// Current scope for rule storage
     scope: RuleScope,
+    /// Directory that project-scope rules live under (defaults to the working directory)
+    project_root: PathBuf,
 }
 
 impl RuleStorage {
@@ -21,6 +23,15 @@ impl RuleStorage {
         Self {
             cache: Arc::new(RwLock::new(HashMap::new())),
             scope,
+            project_root: PathBuf::from("."),
+        }
+    }
+
+    /// Create a rule storage whose project-scope rules live under `project_root`
+    pub fn with_project_root(scope: RuleScope, project_root: impl Into<PathBuf>) -> Self {
+        Self {
+            project_root: project_root.into(),
+            ..Self::new(scope)
         }
     }
 
@@ -31,7 +42,7 @@ impl RuleStorage {
                 let global_path = PathResolver::resolve_global_path()?;
                 Ok(global_path.join("rules"))
             }
-            RuleScope::Project => Ok(PathBuf::from(".ricecoder/rules")),
+            RuleScope::Project => Ok(self.project_root.join(".ricecoder/rules")),
             RuleScope::Session => Err(LearningError::PathResolutionFailed(
                 "Session scope has no persistent path".to_string(),
             )),
