@@ -194,7 +194,7 @@ impl CircuitBreaker {
     /// Record a successful call
     pub fn record_success(&self) {
         let mut state = self.state.write().expect("RwLock poisoned");
-        
+
         match state.state {
             CircuitState::Closed => {
                 // Reset failure count on success
@@ -206,7 +206,7 @@ impl CircuitBreaker {
                     "Circuit breaker {} HalfOpen success {}/{}",
                     self.provider_id, state.success_count, self.config.success_threshold
                 );
-                
+
                 if state.success_count >= self.config.success_threshold {
                     // Transition back to closed
                     state.state = CircuitState::Closed;
@@ -232,24 +232,24 @@ impl CircuitBreaker {
     /// Record a failed call
     pub fn record_failure(&self) {
         let mut state = self.state.write().expect("RwLock poisoned");
-        
+
         // Reset failure count if outside failure window
         if let Some(last_failure) = state.last_failure_time {
             if last_failure.elapsed() >= self.config.failure_window {
                 state.failure_count = 0;
             }
         }
-        
+
         state.failure_count += 1;
         state.last_failure_time = Some(Instant::now());
-        
+
         match state.state {
             CircuitState::Closed => {
                 debug!(
                     "Circuit breaker {} failure {}/{}",
                     self.provider_id, state.failure_count, self.config.failure_threshold
                 );
-                
+
                 if state.failure_count >= self.config.failure_threshold {
                     // Open the circuit
                     state.state = CircuitState::Open;
@@ -367,7 +367,10 @@ impl CircuitBreakerRegistry {
             return Arc::clone(cb);
         }
 
-        let cb = Arc::new(CircuitBreaker::new(provider_id, self.default_config.clone()));
+        let cb = Arc::new(CircuitBreaker::new(
+            provider_id,
+            self.default_config.clone(),
+        ));
         breakers.insert(provider_id.to_string(), Arc::clone(&cb));
         cb
     }
@@ -419,10 +422,10 @@ mod tests {
 
         cb.record_failure();
         assert_eq!(cb.state(), CircuitState::Closed);
-        
+
         cb.record_failure();
         assert_eq!(cb.state(), CircuitState::Closed);
-        
+
         cb.record_failure();
         assert_eq!(cb.state(), CircuitState::Open);
         assert!(!cb.can_execute());
@@ -436,7 +439,7 @@ mod tests {
         cb.record_failure();
         cb.record_failure();
         cb.record_success();
-        
+
         assert_eq!(cb.failure_count(), 0);
         assert_eq!(cb.state(), CircuitState::Closed);
     }
@@ -444,11 +447,11 @@ mod tests {
     #[test]
     fn test_force_open_and_close() {
         let cb = CircuitBreaker::new("test", CircuitBreakerConfig::default());
-        
+
         cb.force_open();
         assert_eq!(cb.state(), CircuitState::Open);
         assert!(!cb.can_execute());
-        
+
         cb.force_close();
         assert_eq!(cb.state(), CircuitState::Closed);
         assert!(cb.can_execute());
@@ -463,7 +466,7 @@ mod tests {
         cb.record_failure();
         cb.record_failure();
         assert_eq!(cb.state(), CircuitState::Open);
-        
+
         cb.reset();
         assert_eq!(cb.state(), CircuitState::Closed);
         assert_eq!(cb.failure_count(), 0);
@@ -472,7 +475,7 @@ mod tests {
     #[test]
     fn test_registry_get_or_create() {
         let registry = CircuitBreakerRegistry::new();
-        
+
         let cb1 = registry.get_or_create("provider1");
         let cb2 = registry.get_or_create("provider1");
         let cb3 = registry.get_or_create("provider2");
@@ -489,7 +492,7 @@ mod tests {
             .with_failure_threshold(2)
             .with_success_threshold(2)
             .with_recovery_timeout(Duration::from_millis(1));
-        
+
         let cb = CircuitBreaker::new("test", config);
 
         // Open the circuit
@@ -499,14 +502,14 @@ mod tests {
 
         // Wait for recovery timeout
         std::thread::sleep(Duration::from_millis(5));
-        
+
         // Should be half-open now
         assert!(cb.can_execute());
-        
+
         // Record successes
         cb.record_success();
         cb.record_success();
-        
+
         // Should be closed now
         assert_eq!(cb.state(), CircuitState::Closed);
     }
@@ -516,22 +519,22 @@ mod tests {
         let config = CircuitBreakerConfig::default()
             .with_failure_threshold(2)
             .with_recovery_timeout(Duration::from_millis(1));
-        
+
         let cb = CircuitBreaker::new("test", config);
 
         // Open the circuit
         cb.record_failure();
         cb.record_failure();
-        
+
         // Wait for recovery timeout
         std::thread::sleep(Duration::from_millis(5));
-        
+
         // Should be half-open now
         assert!(cb.can_execute());
-        
+
         // Record failure in half-open
         cb.record_failure();
-        
+
         // Should be open again
         assert_eq!(cb.state(), CircuitState::Open);
     }

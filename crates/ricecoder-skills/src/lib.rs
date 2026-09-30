@@ -1,5 +1,5 @@
 //! Skills system for RiceCoder
-//! 
+//!
 //! Provides discoverable prompt assets (markdown + frontmatter) loaded at runtime
 //! from config directories, with agent-level permission gating (allow/deny/ask + wildcard rules).
 //!

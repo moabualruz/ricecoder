@@ -174,8 +174,8 @@ mod tests {
 
     #[test]
     fn test_config_value_as_f64() {
-        let value = ConfigValue::Float(3.14);
-        assert_eq!(value.as_f64(), Some(3.14));
+        let value = ConfigValue::Float(3.25);
+        assert_eq!(value.as_f64(), Some(3.25));
 
         // Integer should convert to float
         let value = ConfigValue::Integer(42);

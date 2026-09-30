@@ -153,9 +153,11 @@ impl ChatCommand {
         use futures::stream::StreamExt;
 
         // Use the provider instance that was already set on the session
-        let provider = session
-            .get_provider_instance()
-            .ok_or_else(|| CliError::Provider("Provider not initialized. Please check your API key configuration.".to_string()))?;
+        let provider = session.get_provider_instance().ok_or_else(|| {
+            CliError::Provider(
+                "Provider not initialized. Please check your API key configuration.".to_string(),
+            )
+        })?;
 
         // Create chat request with conversation history
         let mut messages = Vec::new();
@@ -217,8 +219,8 @@ impl ChatCommand {
         &self,
     ) -> CliResult<std::sync::Arc<dyn ricecoder_providers::provider::Provider>> {
         use ricecoder_providers::{
-            AnthropicProvider, GoogleProvider, OpenAiProvider, ZenProvider,
-            CohereProvider, TogetherProvider, ReplicateProvider, GcpVertexProvider, QwenProvider,
+            AnthropicProvider, CohereProvider, GcpVertexProvider, GoogleProvider, OpenAiProvider,
+            QwenProvider, ReplicateProvider, TogetherProvider, ZenProvider,
         };
 
         let provider_name = self.get_provider()?;

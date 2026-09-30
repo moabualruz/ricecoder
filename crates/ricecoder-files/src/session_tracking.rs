@@ -59,7 +59,11 @@ impl SessionFileTracker {
         })?;
 
         records.insert(key, record);
-        debug!("Recorded file read: {} in session {}", path.display(), session_id);
+        debug!(
+            "Recorded file read: {} in session {}",
+            path.display(),
+            session_id
+        );
         Ok(())
     }
 
@@ -165,7 +169,10 @@ mod tests {
         let new_mtime = mtime + Duration::from_secs(10);
         let result = tracker.assert_can_write("session1", &path, new_mtime);
         assert!(result.is_err());
-        assert!(matches!(result, Err(FileError::ExternalModification { .. })));
+        assert!(matches!(
+            result,
+            Err(FileError::ExternalModification { .. })
+        ));
     }
 
     #[test]

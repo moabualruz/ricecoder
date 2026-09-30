@@ -38,44 +38,44 @@ impl SkillRegistry {
     /// Get all skills (OpenCode Skill.all())
     pub async fn all() -> Result<Vec<SkillInfo>, SkillError> {
         Self::ensure_initialized().await?;
-        
-        let registry = SKILL_REGISTRY
-            .read()
-            .map_err(|_| SkillError::Io(std::io::Error::new(
+
+        let registry = SKILL_REGISTRY.read().map_err(|_| {
+            SkillError::Io(std::io::Error::new(
                 std::io::ErrorKind::Other,
                 "Failed to acquire registry lock",
-            )))?;
-            
+            ))
+        })?;
+
         Ok(registry.skills.values().cloned().collect())
     }
 
     /// Get a specific skill by name (OpenCode Skill.get(name))
     pub async fn get(name: &str) -> Result<Option<SkillInfo>, SkillError> {
         Self::ensure_initialized().await?;
-        
-        let registry = SKILL_REGISTRY
-            .read()
-            .map_err(|_| SkillError::Io(std::io::Error::new(
+
+        let registry = SKILL_REGISTRY.read().map_err(|_| {
+            SkillError::Io(std::io::Error::new(
                 std::io::ErrorKind::Other,
                 "Failed to acquire registry lock",
-            )))?;
-            
+            ))
+        })?;
+
         Ok(registry.skills.get(name).cloned())
     }
 
     /// Clear and reinitialize the registry
     pub async fn reload() -> Result<(), SkillError> {
-        let mut registry = SKILL_REGISTRY
-            .write()
-            .map_err(|_| SkillError::Io(std::io::Error::new(
+        let mut registry = SKILL_REGISTRY.write().map_err(|_| {
+            SkillError::Io(std::io::Error::new(
                 std::io::ErrorKind::Other,
                 "Failed to acquire registry lock",
-            )))?;
-            
+            ))
+        })?;
+
         registry.skills.clear();
         registry.initialized = false;
         drop(registry);
-        
+
         Self::ensure_initialized().await
     }
 
@@ -88,37 +88,40 @@ impl SkillRegistry {
                     "Failed to acquire registry lock",
                 ))
             })?;
-            
+
             if registry.initialized {
                 return Ok(());
             }
         }
 
         // Acquire write lock to initialize
-        let mut registry = SKILL_REGISTRY
-            .write()
-            .map_err(|_| SkillError::Io(std::io::Error::new(
+        let mut registry = SKILL_REGISTRY.write().map_err(|_| {
+            SkillError::Io(std::io::Error::new(
                 std::io::ErrorKind::Other,
                 "Failed to acquire registry lock",
-            )))?;
+            ))
+        })?;
 
         if registry.initialized {
             return Ok(());
         }
 
         debug!("Initializing skill registry");
-        
+
         // Get config directories (Gap G-17-05 - OpenCode compatibility)
         let directories = Self::get_config_directories()?;
-        
+
         // Scan for SKILL.md files
         for dir in directories {
             Self::scan_directory(&mut registry, &dir)?;
         }
 
         registry.initialized = true;
-        debug!("Skill registry initialized with {} skills", registry.skills.len());
-        
+        debug!(
+            "Skill registry initialized with {} skills",
+            registry.skills.len()
+        );
+
         Ok(())
     }
 
@@ -147,12 +150,9 @@ impl SkillRegistry {
     }
 
     /// Scan a directory for SKILL.md files (OpenCode glob: "skill/**/SKILL.md")
-    fn scan_directory(
-        registry: &mut SkillRegistryState,
-        dir: &Path,
-    ) -> Result<(), SkillError> {
+    fn scan_directory(registry: &mut SkillRegistryState, dir: &Path) -> Result<(), SkillError> {
         let skill_base = dir.join("skill");
-        
+
         if !skill_base.exists() {
             return Ok(());
         }
@@ -163,10 +163,7 @@ impl SkillRegistry {
             .follow_links(true)
             .into_iter()
             .filter_map(|e| e.ok())
-            .filter(|e| {
-                e.file_type().is_file() && 
-                e.file_name() == "SKILL.md"
-            })
+            .filter(|e| e.file_type().is_file() && e.file_name() == "SKILL.md")
         {
             let path = entry.path();
             match Self::parse_skill_file(path) {
@@ -180,7 +177,7 @@ impl SkillRegistry {
                             skill_info.location.display()
                         );
                     }
-                    
+
                     registry.skills.insert(skill_info.name.clone(), skill_info);
                 }
                 Err(e) => {
@@ -195,13 +192,14 @@ impl SkillRegistry {
     /// Parse a SKILL.md file (frontmatter + content)
     fn parse_skill_file(path: &Path) -> Result<SkillInfo, SkillError> {
         let content = std::fs::read_to_string(path)?;
-        
+
         // Parse YAML frontmatter using gray-matter
         let matter = gray_matter::Matter::<gray_matter::engine::YAML>::new();
         let parsed = matter.parse(&content);
-        
+
         // Extract metadata from frontmatter
-        let metadata: SkillMetadata = parsed.data
+        let metadata: SkillMetadata = parsed
+            .data
             .ok_or_else(|| SkillError::MissingField {
                 field: "frontmatter".to_string(),
                 path: path.display().to_string(),
@@ -212,10 +210,12 @@ impl SkillRegistry {
             })?;
 
         // Validate metadata
-        metadata.validate().map_err(|msg| SkillError::InvalidSkill {
-            path: path.display().to_string(),
-            message: msg,
-        })?;
+        metadata
+            .validate()
+            .map_err(|msg| SkillError::InvalidSkill {
+                path: path.display().to_string(),
+                message: msg,
+            })?;
 
         Ok(SkillInfo {
             name: metadata.name,
@@ -228,8 +228,8 @@ impl SkillRegistry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
     use std::fs;
+    use tempfile::TempDir;
 
     #[tokio::test]
     async fn test_skill_registry_initialization() {
@@ -237,14 +237,18 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let skill_dir = temp_dir.path().join("skill").join("test-skill");
         fs::create_dir_all(&skill_dir).unwrap();
-        
+
         let skill_md = skill_dir.join("SKILL.md");
-        fs::write(&skill_md, r#"---
+        fs::write(
+            &skill_md,
+            r#"---
 name: test-skill
 description: A test skill
 ---
 # Test Skill Content
-"#).unwrap();
+"#,
+        )
+        .unwrap();
 
         // Note: This test would need dependency injection to test properly
         // For now, it just verifies the API compiles

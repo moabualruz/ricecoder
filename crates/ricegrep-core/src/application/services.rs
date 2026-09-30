@@ -7,8 +7,8 @@
 //! - Consistent service configuration
 
 use crate::application::{
-    FileRepository, IndexRepository, EventPublisher,
     use_cases::{EditFileUseCase, SearchFilesUseCase, WriteFileUseCase},
+    EventPublisher, FileRepository, IndexRepository,
 };
 
 /// Application services container
@@ -151,7 +151,7 @@ where
 mod tests {
     use super::*;
     use crate::application::{AppResult, FileIndexEntry};
-    use crate::domain::{FilePath, SearchQuery, SearchResult, DomainEvent};
+    use crate::domain::{DomainEvent, FilePath, SearchQuery, SearchResult};
     use std::cell::RefCell;
     use std::collections::HashMap;
 
@@ -167,9 +167,11 @@ mod tests {
                 files: std::sync::Arc::new(RefCell::new(HashMap::new())),
             }
         }
-        
+
         fn with_file(self, path: &str, content: &str) -> Self {
-            self.files.borrow_mut().insert(path.to_string(), content.to_string());
+            self.files
+                .borrow_mut()
+                .insert(path.to_string(), content.to_string());
             self
         }
     }
@@ -177,31 +179,34 @@ mod tests {
     impl FileRepository for MockFileRepo {
         fn read(&self, path: &FilePath) -> AppResult<String> {
             let path_str = path.as_path().to_string_lossy().to_string();
-            self.files.borrow().get(&path_str).cloned()
-                .ok_or_else(|| crate::application::AppError::Io {
+            self.files.borrow().get(&path_str).cloned().ok_or_else(|| {
+                crate::application::AppError::Io {
                     operation: crate::application::IoOperation::Read,
                     path: path_str,
                     source: std::io::Error::new(std::io::ErrorKind::NotFound, "not found"),
-                })
+                }
+            })
         }
-        
+
         fn write(&self, path: &FilePath, content: &str) -> AppResult<()> {
             let path_str = path.as_path().to_string_lossy().to_string();
-            self.files.borrow_mut().insert(path_str, content.to_string());
+            self.files
+                .borrow_mut()
+                .insert(path_str, content.to_string());
             Ok(())
         }
-        
+
         fn exists(&self, path: &FilePath) -> bool {
             let path_str = path.as_path().to_string_lossy().to_string();
             self.files.borrow().contains_key(&path_str)
         }
-        
+
         fn delete(&self, path: &FilePath) -> AppResult<()> {
             let path_str = path.as_path().to_string_lossy().to_string();
             self.files.borrow_mut().remove(&path_str);
             Ok(())
         }
-        
+
         fn ensure_parent_dirs(&self, _path: &FilePath) -> AppResult<()> {
             Ok(())
         }
@@ -213,15 +218,15 @@ mod tests {
         fn get_metadata(&self, _path: &FilePath) -> Option<FileIndexEntry> {
             None
         }
-        
+
         fn update_metadata(&self, _entry: FileIndexEntry) -> AppResult<()> {
             Ok(())
         }
-        
+
         fn remove_metadata(&self, _path: &FilePath) -> AppResult<()> {
             Ok(())
         }
-        
+
         fn search(&self, _query: &SearchQuery) -> AppResult<Vec<SearchResult>> {
             Ok(vec![])
         }
@@ -238,7 +243,7 @@ mod tests {
                 events: std::sync::Arc::new(RefCell::new(Vec::new())),
             }
         }
-        
+
         fn event_count(&self) -> usize {
             self.events.borrow().len()
         }
@@ -255,9 +260,9 @@ mod tests {
         let file_repo = MockFileRepo::new().with_file("test.rs", "fn main() {}");
         let index_repo = MockIndexRepo;
         let event_pub = MockEventPublisher::new();
-        
+
         let services = AppServices::new(file_repo, index_repo, event_pub);
-        
+
         // Services should be accessible
         let _ = services.edit_file();
         let _ = services.search_files();
@@ -269,13 +274,13 @@ mod tests {
         let file_repo = MockFileRepo::new();
         let index_repo = MockIndexRepo;
         let event_pub = MockEventPublisher::new();
-        
+
         let services = AppServicesBuilder::new()
             .with_file_repo(file_repo)
             .with_index_repo(index_repo)
             .with_event_publisher(event_pub)
             .build();
-        
+
         let _ = services.edit_file();
     }
 
@@ -284,37 +289,37 @@ mod tests {
         let file_repo = MockFileRepo::new();
         let index_repo = MockIndexRepo;
         let event_pub = MockEventPublisher::new();
-        
+
         let result = AppServicesBuilder::new()
             .with_file_repo(file_repo)
             .with_index_repo(index_repo)
             .with_event_publisher(event_pub)
             .try_build();
-        
+
         assert!(result.is_some());
     }
 
     #[test]
     fn test_app_services_try_build_missing() {
-        let result: Option<AppServices<MockFileRepo, MockIndexRepo, MockEventPublisher>> = 
+        let result: Option<AppServices<MockFileRepo, MockIndexRepo, MockEventPublisher>> =
             AppServicesBuilder::new()
                 .with_file_repo(MockFileRepo::new())
                 // Missing index_repo and event_publisher
                 .try_build();
-        
+
         assert!(result.is_none());
     }
 
     #[test]
     fn test_app_services_edit_file_use_case() {
         use crate::application::use_cases::EditFileRequest;
-        
+
         let file_repo = MockFileRepo::new().with_file("test.rs", "hello world");
         let index_repo = MockIndexRepo;
         let event_pub = MockEventPublisher::new();
-        
+
         let services = AppServices::new(file_repo, index_repo, event_pub.clone());
-        
+
         let request = EditFileRequest {
             file_path: "test.rs".to_string(),
             pattern: "hello".to_string(),
@@ -322,9 +327,9 @@ mod tests {
             is_regex: false,
             dry_run: true,
         };
-        
+
         let result = services.edit_file().execute(request);
-        
+
         assert!(result.is_ok());
         assert!(event_pub.event_count() > 0);
     }
@@ -332,17 +337,17 @@ mod tests {
     #[test]
     fn test_app_services_write_file_use_case() {
         use crate::application::use_cases::WriteFileRequest;
-        
+
         let file_repo = MockFileRepo::new();
         let index_repo = MockIndexRepo;
         let event_pub = MockEventPublisher::new();
-        
+
         let services = AppServices::new(file_repo, index_repo, event_pub);
-        
+
         let request = WriteFileRequest::new("output.txt", "test content");
-        
+
         let result = services.write_file().execute(request);
-        
+
         assert!(result.is_ok());
         let response = result.unwrap();
         assert_eq!(response.bytes_written, 12);
@@ -351,17 +356,17 @@ mod tests {
     #[test]
     fn test_app_services_search_use_case() {
         use crate::application::use_cases::SearchFilesRequest;
-        
+
         let file_repo = MockFileRepo::new();
         let index_repo = MockIndexRepo;
         let event_pub = MockEventPublisher::new();
-        
+
         let services = AppServices::new(file_repo, index_repo, event_pub);
-        
+
         let request = SearchFilesRequest::literal("TODO");
-        
+
         let result = services.search_files().execute(request);
-        
+
         assert!(result.is_ok());
         // Empty results from mock
         assert!(result.unwrap().results.is_empty());

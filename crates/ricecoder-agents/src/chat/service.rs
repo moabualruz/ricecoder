@@ -234,7 +234,10 @@ impl ChatService {
 
         while iteration < self.max_tool_iterations {
             iteration += 1;
-            debug!("Tool execution iteration {}/{}", iteration, self.max_tool_iterations);
+            debug!(
+                "Tool execution iteration {}/{}",
+                iteration, self.max_tool_iterations
+            );
 
             // Build messages for provider
             let mut messages = context.to_simple_messages();
@@ -293,7 +296,7 @@ impl ChatService {
             let current_signature = self.compute_tool_signature(&tool_calls);
             if self.detect_tool_loop(&mut recent_tool_signatures, &current_signature) {
                 warn!("Detected tool loop, breaking out");
-                
+
                 let assistant_msg = ChatMessage::assistant(&response.content);
                 context.add_message(assistant_msg);
                 context.add_usage(total_usage.clone());
@@ -311,8 +314,10 @@ impl ChatService {
             let mut tool_results: Vec<ContentBlock> = Vec::new();
 
             for tool_call in &tool_calls {
-                info!("Executing tool '{}' (iteration {}/{})", 
-                    tool_call.name, iteration, self.max_tool_iterations);
+                info!(
+                    "Executing tool '{}' (iteration {}/{})",
+                    tool_call.name, iteration, self.max_tool_iterations
+                );
 
                 // Check if approval is needed
                 let needs_approval = !self.auto_approve_tools;
@@ -352,7 +357,11 @@ impl ChatService {
                 }
 
                 // Execute the tool
-                match self.tool_registry.invoke_tool(&tool_call.name, tool_call.input.clone()).await {
+                match self
+                    .tool_registry
+                    .invoke_tool(&tool_call.name, tool_call.input.clone())
+                    .await
+                {
                     Ok(result) => {
                         let result_str = serde_json::to_string_pretty(&result)
                             .unwrap_or_else(|_| result.to_string());
@@ -375,12 +384,18 @@ impl ChatService {
             }
 
             // Add assistant message with tool calls to context
-            let assistant_content: Vec<ContentBlock> = std::iter::once(ContentBlock::text(&response.content))
-                .chain(tool_calls.iter().map(|tc| {
-                    ContentBlock::tool_use(&tc.id, &tc.name, tc.input.clone())
-                }))
-                .collect();
-            context.add_message(ChatMessage::with_content(Role::Assistant, assistant_content));
+            let assistant_content: Vec<ContentBlock> =
+                std::iter::once(ContentBlock::text(&response.content))
+                    .chain(
+                        tool_calls
+                            .iter()
+                            .map(|tc| ContentBlock::tool_use(&tc.id, &tc.name, tc.input.clone())),
+                    )
+                    .collect();
+            context.add_message(ChatMessage::with_content(
+                Role::Assistant,
+                assistant_content,
+            ));
 
             // Add tool results to context
             context.add_message(ChatMessage::with_content(Role::User, tool_results));
@@ -399,7 +414,7 @@ impl ChatService {
         // Look for tool call patterns like:
         // <tool_call>{"name": "...", "input": {...}}</tool_call>
         // or function_call blocks
-        
+
         // Simple regex-free parsing for common patterns
         if let Some(start) = content.find("<tool_call>") {
             if let Some(end) = content.find("</tool_call>") {
@@ -431,17 +446,14 @@ impl ChatService {
             .map(|c| {
                 // Include tool name and key arguments for signature
                 let args_summary = match &c.input {
-                    Value::Object(map) => {
-                        map.iter()
-                            .filter_map(|(k, v)| {
-                                match v {
-                                    Value::String(s) => Some(format!("{}:{}", k, s)),
-                                    _ => None,
-                                }
-                            })
-                            .collect::<Vec<_>>()
-                            .join(",")
-                    }
+                    Value::Object(map) => map
+                        .iter()
+                        .filter_map(|(k, v)| match v {
+                            Value::String(s) => Some(format!("{}:{}", k, s)),
+                            _ => None,
+                        })
+                        .collect::<Vec<_>>()
+                        .join(","),
                     _ => String::new(),
                 };
                 format!("{}:{}", c.name, args_summary)
@@ -546,7 +558,10 @@ mod tests {
         async fn chat(
             &self,
             _request: ricecoder_providers::models::ChatRequest,
-        ) -> std::result::Result<ricecoder_providers::models::ChatResponse, ricecoder_providers::error::ProviderError> {
+        ) -> std::result::Result<
+            ricecoder_providers::models::ChatResponse,
+            ricecoder_providers::error::ProviderError,
+        > {
             Ok(ricecoder_providers::models::ChatResponse {
                 content: self.response.clone(),
                 model: "mock-model".to_string(),
@@ -562,15 +577,24 @@ mod tests {
         async fn chat_stream(
             &self,
             _request: ricecoder_providers::models::ChatRequest,
-        ) -> std::result::Result<ricecoder_providers::provider::ChatStream, ricecoder_providers::error::ProviderError> {
+        ) -> std::result::Result<
+            ricecoder_providers::provider::ChatStream,
+            ricecoder_providers::error::ProviderError,
+        > {
             unimplemented!()
         }
 
-        fn count_tokens(&self, content: &str, _model: &str) -> std::result::Result<usize, ricecoder_providers::error::ProviderError> {
+        fn count_tokens(
+            &self,
+            content: &str,
+            _model: &str,
+        ) -> std::result::Result<usize, ricecoder_providers::error::ProviderError> {
             Ok(content.len() / 4)
         }
 
-        async fn health_check(&self) -> std::result::Result<bool, ricecoder_providers::error::ProviderError> {
+        async fn health_check(
+            &self,
+        ) -> std::result::Result<bool, ricecoder_providers::error::ProviderError> {
             Ok(true)
         }
     }

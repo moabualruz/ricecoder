@@ -111,7 +111,7 @@ impl KeybindParser for JsonKeybindParser {
                     message: "Missing key".to_string(),
                 });
             }
-            
+
             // OpenCode: "none" disables the keybind - skip it
             if keybind.key.trim().to_lowercase() == "none" {
                 continue;

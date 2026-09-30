@@ -74,7 +74,7 @@ impl TreeNode {
 }
 
 /// Tree widget for hierarchical navigation
-/// 
+///
 /// This is a wrapper around `tui-tree-widget::Tree` that maintains compatibility
 /// with the existing RiceCoder TUI API.
 pub struct TreeWidget {
@@ -114,12 +114,12 @@ impl TreeWidget {
     /// Add a node to the tree
     pub fn add_node(&mut self, parent_id: &str, mut node: TreeNode) {
         let node_id = node.id.clone();
-        
+
         // Set depth based on parent
         if let Some(parent) = self.nodes.get(parent_id) {
             node.depth = parent.depth + 1;
         }
-        
+
         self.nodes.insert(node_id.clone(), node);
 
         if let Some(parent) = self.nodes.get_mut(parent_id) {
@@ -180,7 +180,7 @@ impl TreeWidget {
     pub fn toggle_node(&mut self, id: &str) {
         if let Some(node) = self.nodes.get_mut(id) {
             node.toggle_expanded();
-            
+
             // Update tui-tree-widget state
             if node.expanded {
                 self.state.open(vec![id.to_string()]);
@@ -310,7 +310,7 @@ impl TreeWidget {
     fn build_tree_items_recursive(&self, node_id: &str) -> Vec<TuiTreeItem<'static, String>> {
         if let Some(node) = self.nodes.get(node_id) {
             let mut children = Vec::new();
-            
+
             for child_id in &node.children {
                 let mut child_items = self.build_tree_items_recursive(child_id);
                 children.append(&mut child_items);

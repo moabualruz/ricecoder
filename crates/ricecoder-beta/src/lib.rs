@@ -16,8 +16,8 @@
 pub mod analytics;
 pub mod compliance;
 pub mod feedback;
-pub mod validation;
 pub mod improvement;
+pub mod validation;
 
 pub use analytics::*;
 pub use compliance::*;

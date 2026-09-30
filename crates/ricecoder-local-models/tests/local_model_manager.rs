@@ -47,10 +47,7 @@ fn test_local_model_manager_with_custom_timeout() {
 
 #[test]
 fn test_local_model_manager_with_timeout_empty_url() {
-    let manager = LocalModelManager::with_timeout(
-        "".to_string(),
-        Duration::from_secs(60),
-    );
+    let manager = LocalModelManager::with_timeout("".to_string(), Duration::from_secs(60));
     assert!(manager.is_err());
     match manager {
         Err(LocalModelError::ConfigError(msg)) => {
@@ -162,7 +159,7 @@ fn test_manager_with_https_url() {
 async fn test_health_check_unreachable_server() {
     // Use a port that's unlikely to have anything running
     let manager = LocalModelManager::new("http://localhost:59999".to_string()).unwrap();
-    
+
     // Health check should return false for unreachable server (not error)
     let result = manager.health_check().await;
     assert!(result.is_ok());
@@ -173,7 +170,7 @@ async fn test_health_check_unreachable_server() {
 async fn test_health_check_with_retry_unreachable_server() {
     // Use a port that's unlikely to have anything running
     let manager = LocalModelManager::new("http://localhost:59998".to_string()).unwrap();
-    
+
     // Health check with retry should eventually return false
     let result = manager.health_check_with_retry().await;
     assert!(result.is_ok());

@@ -1,8 +1,8 @@
 //! Dependency injection support for ricecoder-keybinds
 
-use std::sync::Arc;
+use crate::{KeybindEngine, KeybindRegistry, ParserRegistry, ProfileManager};
 use ricecoder_common::di::{ServiceEntry, ServiceFactory};
-use crate::{KeybindRegistry, ParserRegistry, ProfileManager, KeybindEngine};
+use std::sync::Arc;
 
 inventory::submit! {
     ServiceFactory::new("keybinds", create_keybinds_services)
@@ -25,6 +25,9 @@ mod tests {
     #[test]
     fn test_keybinds_factory_registered() {
         let factories = list_discovered_factories();
-        assert!(factories.contains(&"keybinds"), "Factory should be registered");
+        assert!(
+            factories.contains(&"keybinds"),
+            "Factory should be registered"
+        );
     }
 }

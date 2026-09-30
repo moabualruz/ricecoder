@@ -159,7 +159,10 @@ impl TokenEstimator {
                 tracing::debug!("Loaded {} models from ModelLoader", self.pricing.len());
             }
             Err(e) => {
-                tracing::warn!("Failed to load from ModelLoader, using hardcoded pricing: {}", e);
+                tracing::warn!(
+                    "Failed to load from ModelLoader, using hardcoded pricing: {}",
+                    e
+                );
                 // Fallback to hardcoded pricing (already in initialize_pricing)
             }
         }
@@ -564,17 +567,17 @@ pub fn is_overflow(
     if context_limit == 0 {
         return false;
     }
-    
+
     // Count excludes reasoning and cache write per OpenCode
     let count = input_tokens + cache_read_tokens + output_tokens;
-    
+
     // Calculate reserved output budget
     let output_budget = model_output_limit
         .map(|limit| limit.min(OUTPUT_TOKEN_MAX))
         .unwrap_or(OUTPUT_TOKEN_MAX);
-    
+
     let usable = context_limit.saturating_sub(output_budget);
-    
+
     count > usable
 }
 

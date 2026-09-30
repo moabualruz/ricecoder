@@ -46,9 +46,9 @@ mod tests {
         assert!(!services.is_empty(), "Should create at least one service");
 
         // Check that ResearchManager is in the list
-        let has_research_manager = services.iter().any(|s| {
-            s.type_name.contains("ResearchManager")
-        });
+        let has_research_manager = services
+            .iter()
+            .any(|s| s.type_name.contains("ResearchManager"));
         assert!(has_research_manager, "Should include ResearchManager");
     }
 }

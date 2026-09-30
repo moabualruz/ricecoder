@@ -11,16 +11,14 @@ use std::sync::Arc;
 
 use chrono::Utc;
 
-use crate::dto::{
-    CreateSessionCommand, MessageDto, SessionDetailDto, SessionSummaryDto,
-};
+use crate::dto::{CreateSessionCommand, MessageDto, SessionDetailDto, SessionSummaryDto};
 use crate::errors::{ApplicationError, ApplicationResult};
 use crate::events::{ApplicationEvent, EventPublisher};
 use crate::ports::UnitOfWork;
 
-use ricecoder_domain::session::{Session, MessageRole};
+use ricecoder_domain::repositories::{ProjectRepository, SessionRepository};
+use ricecoder_domain::session::{MessageRole, Session};
 use ricecoder_domain::value_objects::{ProjectId, SessionId};
-use ricecoder_domain::repositories::{SessionRepository, ProjectRepository};
 
 /// Session Application Service
 ///
@@ -329,9 +327,9 @@ mod tests {
     use crate::events::NoOpEventPublisher;
     use crate::ports::NoOpUnitOfWork;
     use async_trait::async_trait;
-    use ricecoder_domain::DomainResult;
     use ricecoder_domain::project::Project;
     use ricecoder_domain::value_objects::ProgrammingLanguage;
+    use ricecoder_domain::DomainResult;
     use std::collections::HashMap;
     use std::sync::Mutex;
 
@@ -434,11 +432,7 @@ mod tests {
         }
 
         async fn exists(&self, id: &ProjectId) -> DomainResult<bool> {
-            Ok(self
-                .projects
-                .lock()
-                .unwrap()
-                .contains_key(&id.to_string()))
+            Ok(self.projects.lock().unwrap().contains_key(&id.to_string()))
         }
     }
 
@@ -455,7 +449,8 @@ mod tests {
             ProgrammingLanguage::Rust,
             "/path".to_string(),
             None,
-        ).unwrap();
+        )
+        .unwrap();
         let project_id = project.id().to_string();
         project_repo.add_project(project);
 

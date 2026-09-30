@@ -192,6 +192,9 @@ mod tests {
 
         assert_eq!(config.timeout, Duration::from_secs(15));
         assert_eq!(config.retry_count, 5);
-        assert_eq!(config.proxy, Some("http://proxy.example.com:8080".to_string()));
+        assert_eq!(
+            config.proxy,
+            Some("http://proxy.example.com:8080".to_string())
+        );
     }
 }

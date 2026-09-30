@@ -34,8 +34,7 @@ use crate::{
 // DashScope API endpoints
 const DASHSCOPE_INTL_URL: &str =
     "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions";
-const DASHSCOPE_CN_URL: &str =
-    "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
+const DASHSCOPE_CN_URL: &str = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(180);
 const DEFAULT_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
@@ -111,7 +110,11 @@ impl QwenProvider {
     }
 
     /// Create with custom base URL and API key
-    pub fn with_base_url(api_key: String, base_url: String, models: Vec<ModelInfo>) -> Result<Self, ProviderError> {
+    pub fn with_base_url(
+        api_key: String,
+        base_url: String,
+        models: Vec<ModelInfo>,
+    ) -> Result<Self, ProviderError> {
         if api_key.is_empty() {
             return Err(ProviderError::ConfigError(
                 "Qwen API key is required".to_string(),
@@ -194,11 +197,7 @@ impl QwenProvider {
             .first()
             .ok_or_else(|| ProviderError::ProviderError("No choices in response".to_string()))?;
 
-        let raw_content = choice
-            .message
-            .content
-            .clone()
-            .unwrap_or_default();
+        let raw_content = choice.message.content.clone().unwrap_or_default();
 
         // Extract thinking if enabled
         let content = if thinking_enabled {
@@ -331,10 +330,7 @@ impl Provider for QwenProvider {
             stream: false,
         };
 
-        debug!(
-            "Sending chat request to Qwen for model: {}",
-            request.model
-        );
+        debug!("Sending chat request to Qwen for model: {}", request.model);
 
         let mut request_builder = self
             .client
@@ -384,7 +380,8 @@ impl Provider for QwenProvider {
                     budget
                 )
             } else {
-                "You have thinking mode enabled. Use <think></think> tags for reasoning.".to_string()
+                "You have thinking mode enabled. Use <think></think> tags for reasoning."
+                    .to_string()
             };
             messages.push(QwenMessage {
                 role: "system".to_string(),
@@ -461,7 +458,9 @@ impl Provider for QwenProvider {
         debug!("Performing health check for Qwen provider");
 
         // For local deployments, just check if the endpoint is reachable
-        let mut request_builder = self.client.get(&self.base_url.replace("/chat/completions", "/models"));
+        let mut request_builder = self
+            .client
+            .get(&self.base_url.replace("/chat/completions", "/models"));
 
         if self.api_key != "not-needed" {
             request_builder = request_builder.header("Authorization", self.get_auth_header());
@@ -591,18 +590,24 @@ mod tests {
 
     #[test]
     fn test_qwen_provider_local() {
-        let provider = QwenProvider::local("http://localhost:8000/v1/chat/completions".to_string(), test_models())
-            .expect("Should create local provider");
+        let provider = QwenProvider::local(
+            "http://localhost:8000/v1/chat/completions".to_string(),
+            test_models(),
+        )
+        .expect("Should create local provider");
         assert_eq!(provider.id(), "qwen");
         assert_eq!(provider.api_key, "not-needed");
     }
 
     #[test]
     fn test_thinking_config() {
-        let provider = QwenProvider::local("http://localhost:8000/v1/chat/completions".to_string(), test_models())
-            .expect("Should create provider")
-            .with_thinking(true)
-            .with_thinking_budget(5000);
+        let provider = QwenProvider::local(
+            "http://localhost:8000/v1/chat/completions".to_string(),
+            test_models(),
+        )
+        .expect("Should create provider")
+        .with_thinking(true)
+        .with_thinking_budget(5000);
 
         assert!(provider.thinking_config.enabled);
         assert_eq!(provider.thinking_config.budget_tokens, Some(5000));
@@ -610,9 +615,12 @@ mod tests {
 
     #[test]
     fn test_custom_default_model() {
-        let provider = QwenProvider::local("http://localhost:8000/v1/chat/completions".to_string(), test_models())
-            .expect("Should create provider")
-            .with_default_model("qwen2.5-coder-14b-instruct".to_string());
+        let provider = QwenProvider::local(
+            "http://localhost:8000/v1/chat/completions".to_string(),
+            test_models(),
+        )
+        .expect("Should create provider")
+        .with_default_model("qwen2.5-coder-14b-instruct".to_string());
 
         assert_eq!(
             provider.custom_default_model,
@@ -622,9 +630,12 @@ mod tests {
 
     #[test]
     fn test_extract_thinking() {
-        let provider = QwenProvider::local("http://localhost:8000/v1/chat/completions".to_string(), test_models())
-            .expect("Should create provider")
-            .with_thinking(true);
+        let provider = QwenProvider::local(
+            "http://localhost:8000/v1/chat/completions".to_string(),
+            test_models(),
+        )
+        .expect("Should create provider")
+        .with_thinking(true);
 
         let text = "<think>Let me analyze this...</think>Here's the answer.";
         let (thinking, remaining) = provider.extract_thinking(text);
@@ -637,8 +648,11 @@ mod tests {
 
     #[test]
     fn test_models_list() {
-        let provider = QwenProvider::local("http://localhost:8000/v1/chat/completions".to_string(), test_models())
-            .expect("Should create provider");
+        let provider = QwenProvider::local(
+            "http://localhost:8000/v1/chat/completions".to_string(),
+            test_models(),
+        )
+        .expect("Should create provider");
 
         let models = provider.models();
         assert!(!models.is_empty());

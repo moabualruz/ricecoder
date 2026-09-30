@@ -629,8 +629,11 @@ mod tests {
         let analyzer = ImportAnalyzer::new();
         let content = "use std::io;\nuse std::fs;";
         let result = analyzer.analyze(content).unwrap();
-        // Sorted imports should be detected
-        assert!(result.sort_within_group || !result.sort_within_group); // Either is valid
+        assert!(!result.sort_within_group);
+
+        let sorted_content = "use std::fs;\nuse std::io;";
+        let sorted_result = analyzer.analyze(sorted_content).unwrap();
+        assert!(sorted_result.sort_within_group);
     }
 
     // ========================================================================

@@ -54,11 +54,7 @@ impl TipsLoader {
         }
 
         let content = fs::read_to_string(&self.config_path).map_err(|e| {
-            StorageError::io_error(
-                self.config_path.clone(),
-                crate::error::IoOperation::Read,
-                e,
-            )
+            StorageError::io_error(self.config_path.clone(), crate::error::IoOperation::Read, e)
         })?;
 
         let tips: Vec<String> = content

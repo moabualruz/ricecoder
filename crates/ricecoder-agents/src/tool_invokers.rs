@@ -11,23 +11,23 @@ use std::sync::Arc;
 
 use serde_json::json;
 use tokio::sync::RwLock;
-use tracing::{debug, info, warn, error};
+use tracing::{debug, error, info, warn};
 
 use crate::tool_registry::{ToolInvoker, ToolMetadata};
 
 // Import actual tool implementations
 use ricecoder_tools::{
-    webfetch::{WebfetchTool, WebfetchInput, OutputFormat},
-    search::{SearchTool, SearchInput, SearchType},
-    todo::{Todo, TodoStatus, TodoPriority, TodoTools, TodowriteInput, TodoreadInput},
-    patch::{PatchTool, PatchInput},
-    read::{FileReadTool, FileReadInput},
-    write::{WriteTool, WriteInput},
-    edit::{FileEditTool, FileEditInput},
-    list::{ListTool, ListInput},
-    glob::{GlobTool, GlobInput},
-    grep::{GrepTool, GrepInput},
     context::ToolContext,
+    edit::{FileEditInput, FileEditTool},
+    glob::{GlobInput, GlobTool},
+    grep::{GrepInput, GrepTool},
+    list::{ListInput, ListTool},
+    patch::{PatchInput, PatchTool},
+    read::{FileReadInput, FileReadTool},
+    search::{SearchInput, SearchTool, SearchType},
+    todo::{Todo, TodoPriority, TodoStatus, TodoTools, TodoreadInput, TodowriteInput},
+    webfetch::{OutputFormat, WebfetchInput, WebfetchTool},
+    write::{WriteInput, WriteTool},
 };
 
 /// Webfetch tool invoker
@@ -58,9 +58,7 @@ impl ToolInvoker for WebfetchToolInvoker {
             .unwrap_or(OutputFormat::Text);
 
         // Extract optional timeout
-        let timeout = input
-            .get("timeout")
-            .and_then(|v| v.as_u64());
+        let timeout = input.get("timeout").and_then(|v| v.as_u64());
 
         // Extract optional max_size
         let max_size = input
@@ -180,21 +178,17 @@ impl ToolInvoker for PatchToolInvoker {
 
         // Use async version with timeout
         match PatchTool::apply_patch_with_timeout(&patch_input).await {
-            Ok(output) => {
-                Ok(json!({
-                    "success": output.success,
-                    "applied_hunks": output.applied_hunks,
-                    "failed_hunks": output.failed_hunks,
-                    "file_path": file_path,
-                    "failed_hunk_details": output.failed_hunk_details,
-                    "metadata": {
-                        "provider": "builtin"
-                    }
-                }))
-            }
-            Err(e) => {
-                Err(format!("{}: {}", e.code, e.message))
-            }
+            Ok(output) => Ok(json!({
+                "success": output.success,
+                "applied_hunks": output.applied_hunks,
+                "failed_hunks": output.failed_hunks,
+                "file_path": file_path,
+                "failed_hunk_details": output.failed_hunk_details,
+                "metadata": {
+                    "provider": "builtin"
+                }
+            })),
+            Err(e) => Err(format!("{}: {}", e.code, e.message)),
         }
     }
 
@@ -259,29 +253,25 @@ impl ToolInvoker for TodowriteToolInvoker {
         info!(todo_count = todos.len(), "Writing todos");
 
         // Create TodoTools and write
-        let todo_tools = TodoTools::new()
-            .map_err(|e| format!("Failed to create todo tools: {}", e.message))?;
+        let todo_tools =
+            TodoTools::new().map_err(|e| format!("Failed to create todo tools: {}", e.message))?;
 
         let write_input = TodowriteInput { todos };
 
         // Use async version with timeout
         match todo_tools.write_todos_with_timeout(write_input, None).await {
-            Ok(output) => {
-                Ok(json!({
-                    "success": true,
-                    "title": output.title,
-                    "output": output.output,
-                    "created": output.metadata.created,
-                    "updated": output.metadata.updated,
-                    "todos": output.metadata.todos,
-                    "metadata": {
-                        "provider": "builtin"
-                    }
-                }))
-            }
-            Err(e) => {
-                Err(format!("{}: {}", e.code, e.message))
-            }
+            Ok(output) => Ok(json!({
+                "success": true,
+                "title": output.title,
+                "output": output.output,
+                "created": output.metadata.created,
+                "updated": output.metadata.updated,
+                "todos": output.metadata.todos,
+                "metadata": {
+                    "provider": "builtin"
+                }
+            })),
+            Err(e) => Err(format!("{}: {}", e.code, e.message)),
         }
     }
 
@@ -357,8 +347,8 @@ impl ToolInvoker for TodoreadToolInvoker {
         );
 
         // Create TodoTools and read
-        let todo_tools = TodoTools::new()
-            .map_err(|e| format!("Failed to create todo tools: {}", e.message))?;
+        let todo_tools =
+            TodoTools::new().map_err(|e| format!("Failed to create todo tools: {}", e.message))?;
 
         let read_input = TodoreadInput {
             status_filter,
@@ -367,20 +357,16 @@ impl ToolInvoker for TodoreadToolInvoker {
 
         // Use async version with timeout
         match todo_tools.read_todos_with_timeout(read_input, None).await {
-            Ok(output) => {
-                Ok(json!({
-                    "success": true,
-                    "title": output.title,
-                    "output": output.output,
-                    "todos": output.metadata.todos,
-                    "metadata": {
-                        "provider": "builtin"
-                    }
-                }))
-            }
-            Err(e) => {
-                Err(format!("{}: {}", e.code, e.message))
-            }
+            Ok(output) => Ok(json!({
+                "success": true,
+                "title": output.title,
+                "output": output.output,
+                "todos": output.metadata.todos,
+                "metadata": {
+                    "provider": "builtin"
+                }
+            })),
+            Err(e) => Err(format!("{}: {}", e.code, e.message)),
         }
     }
 
@@ -448,8 +434,14 @@ impl ToolInvoker for WebsearchToolInvoker {
             .and_then(|v| v.as_str())
             .ok_or_else(|| "Missing 'query' field in input".to_string())?;
 
-        let limit = input.get("limit").and_then(|v| v.as_u64()).map(|v| v as usize);
-        let offset = input.get("offset").and_then(|v| v.as_u64()).map(|v| v as usize);
+        let limit = input
+            .get("limit")
+            .and_then(|v| v.as_u64())
+            .map(|v| v as usize);
+        let offset = input
+            .get("offset")
+            .and_then(|v| v.as_u64())
+            .map(|v| v as usize);
 
         // Extract optional search type
         let search_type = input
@@ -575,8 +567,14 @@ impl ToolInvoker for ReadToolInvoker {
             .ok_or_else(|| "Missing 'file_path' or 'filePath' field in input".to_string())?;
 
         // Extract optional parameters
-        let offset = input.get("offset").and_then(|v| v.as_u64()).map(|v| v as usize);
-        let limit = input.get("limit").and_then(|v| v.as_u64()).map(|v| v as usize);
+        let offset = input
+            .get("offset")
+            .and_then(|v| v.as_u64())
+            .map(|v| v as usize);
+        let limit = input
+            .get("limit")
+            .and_then(|v| v.as_u64())
+            .map(|v| v as usize);
         let line_numbers = input.get("line_numbers").and_then(|v| v.as_bool());
 
         info!(file_path = %file_path, ?offset, ?limit, "Reading file");
@@ -616,7 +614,9 @@ impl ToolInvoker for ReadToolInvoker {
                         }
                     }))
                 } else {
-                    Err(output.error.unwrap_or_else(|| "Unknown read error".to_string()))
+                    Err(output
+                        .error
+                        .unwrap_or_else(|| "Unknown read error".to_string()))
                 }
             }
             Err(e) => Err(format!("{}: {}", e.code, e.message)),
@@ -704,25 +704,23 @@ impl ToolInvoker for WriteToolInvoker {
 
         // Create write tool and execute
         let mut write_tool = WriteTool::new(self.workspace_root.clone());
-        
+
         let write_input = WriteInput {
             file_path: file_path.to_string(),
             content: content.to_string(),
         };
 
         match write_tool.execute(write_input).await {
-            Ok(output) => {
-                Ok(json!({
-                    "success": true,
-                    "title": output.title,
-                    "file_path": output.metadata.filepath,
-                    "existed": output.metadata.exists,
-                    "diagnostics": output.output,
-                    "metadata": {
-                        "provider": "builtin"
-                    }
-                }))
-            }
+            Ok(output) => Ok(json!({
+                "success": true,
+                "title": output.title,
+                "file_path": output.metadata.filepath,
+                "existed": output.metadata.exists,
+                "diagnostics": output.output,
+                "metadata": {
+                    "provider": "builtin"
+                }
+            })),
             Err(e) => Err(e.to_string()),
         }
     }
@@ -836,7 +834,7 @@ impl ToolInvoker for EditToolInvoker {
                         "error": output.error,
                         "strategies_attempted": output.strategies_attempted
                     });
-                    
+
                     if let Some(closest) = output.closest_match {
                         error_response["closest_match"] = json!({
                             "strategy": closest.strategy,
@@ -845,7 +843,7 @@ impl ToolInvoker for EditToolInvoker {
                             "matched_text": closest.matched_text
                         });
                     }
-                    
+
                     Ok(error_response)
                 }
             }
@@ -857,7 +855,8 @@ impl ToolInvoker for EditToolInvoker {
         ToolMetadata {
             id: "edit".to_string(),
             name: "Edit".to_string(),
-            description: "Edit files by replacing text with multiple matching strategies".to_string(),
+            description: "Edit files by replacing text with multiple matching strategies"
+                .to_string(),
             input_schema: json!({
                 "type": "object",
                 "properties": {
@@ -925,12 +924,16 @@ impl ToolInvoker for ListToolInvoker {
         debug!("Invoking list tool");
 
         // Parse input
-        let list_input: ListInput = serde_json::from_value(input)
-            .map_err(|e| format!("Invalid list input: {}", e))?;
+        let list_input: ListInput =
+            serde_json::from_value(input).map_err(|e| format!("Invalid list input: {}", e))?;
 
         // Create tool and execute
         let tool = ListTool::new(self.workspace_root.clone());
-        let ctx = ToolContext::new("session".to_string(), "message".to_string(), "list".to_string());
+        let ctx = ToolContext::new(
+            "session".to_string(),
+            "message".to_string(),
+            "list".to_string(),
+        );
 
         let result = tool.list_directory(&list_input, &ctx).await;
 
@@ -1004,12 +1007,16 @@ impl ToolInvoker for GlobToolInvoker {
         debug!("Invoking glob tool");
 
         // Parse input
-        let glob_input: GlobInput = serde_json::from_value(input)
-            .map_err(|e| format!("Invalid glob input: {}", e))?;
+        let glob_input: GlobInput =
+            serde_json::from_value(input).map_err(|e| format!("Invalid glob input: {}", e))?;
 
         // Create tool and execute
         let tool = GlobTool::new(self.workspace_root.clone());
-        let ctx = ToolContext::new("session".to_string(), "message".to_string(), "glob".to_string());
+        let ctx = ToolContext::new(
+            "session".to_string(),
+            "message".to_string(),
+            "glob".to_string(),
+        );
 
         let result = tool.find_files(&glob_input, &ctx).await;
 
@@ -1028,7 +1035,8 @@ impl ToolInvoker for GlobToolInvoker {
         ToolMetadata {
             id: "glob".to_string(),
             name: "Glob".to_string(),
-            description: "Fast file pattern matching with safety limits (100 file limit)".to_string(),
+            description: "Fast file pattern matching with safety limits (100 file limit)"
+                .to_string(),
             input_schema: json!({
                 "type": "object",
                 "properties": {
@@ -1084,25 +1092,33 @@ impl ToolInvoker for GrepToolInvoker {
         debug!("Invoking grep tool");
 
         // Parse input
-        let grep_input: GrepInput = serde_json::from_value(input)
-            .map_err(|e| format!("Invalid grep input: {}", e))?;
+        let grep_input: GrepInput =
+            serde_json::from_value(input).map_err(|e| format!("Invalid grep input: {}", e))?;
 
         // Create tool and execute
         let tool = GrepTool::new(self.workspace_root.clone());
-        let ctx = ToolContext::new("session".to_string(), "message".to_string(), "grep".to_string());
+        let ctx = ToolContext::new(
+            "session".to_string(),
+            "message".to_string(),
+            "grep".to_string(),
+        );
 
         let result = tool.search(&grep_input, &ctx).await;
 
         match result {
             Ok(output) => {
                 // Format matches for output
-                let matches: Vec<serde_json::Value> = output.matches.iter().map(|m| {
-                    json!({
-                        "file": m.file,
-                        "line": m.line,
-                        "content": m.content
+                let matches: Vec<serde_json::Value> = output
+                    .matches
+                    .iter()
+                    .map(|m| {
+                        json!({
+                            "file": m.file,
+                            "line": m.line,
+                            "content": m.content
+                        })
                     })
-                }).collect();
+                    .collect();
 
                 Ok(json!({
                     "success": true,
@@ -1110,7 +1126,7 @@ impl ToolInvoker for GrepToolInvoker {
                     "count": output.count,
                     "truncated": output.truncated
                 }))
-            },
+            }
             Err(e) => Err(format!("Grep failed: {}", e.message)),
         }
     }

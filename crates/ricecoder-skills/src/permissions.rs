@@ -48,9 +48,7 @@ impl SkillPermission {
         // Sort by pattern length (ascending) then alphabetically
         // This ensures longer (more specific) patterns override shorter ones
         let mut sorted_patterns: Vec<_> = self.rules.iter().collect();
-        sorted_patterns.sort_by(|(a, _), (b, _)| {
-            a.len().cmp(&b.len()).then_with(|| a.cmp(b))
-        });
+        sorted_patterns.sort_by(|(a, _), (b, _)| a.len().cmp(&b.len()).then_with(|| a.cmp(b)));
 
         // Return the last matching action (most specific wins)
         let mut result = SkillPermissionAction::Deny; // Default if no match
@@ -71,7 +69,7 @@ fn wildcard_match(text: &str, pattern: &str) -> bool {
         .replace('.', "\\.")
         .replace('*', ".*")
         .replace('?', ".");
-    
+
     regex::Regex::new(&format!("^{}$", regex_pattern))
         .map(|re| re.is_match(text))
         .unwrap_or(false)
@@ -158,9 +156,9 @@ mod tests {
         rules.insert("*".to_string(), SkillPermissionAction::Allow);
         rules.insert("dangerous-*".to_string(), SkillPermissionAction::Deny);
         rules.insert("review-*".to_string(), SkillPermissionAction::Ask);
-        
+
         let perms = SkillPermission::new(rules);
-        
+
         assert_eq!(perms.check("anything"), SkillPermissionAction::Allow);
         assert_eq!(perms.check("dangerous-op"), SkillPermissionAction::Deny);
         assert_eq!(perms.check("review-code"), SkillPermissionAction::Ask);
@@ -169,11 +167,11 @@ mod tests {
     #[test]
     fn test_permission_cache() {
         let checker = SkillPermissionChecker::new();
-        
+
         assert!(!checker.is_approved("test-skill"));
         checker.approve("test-skill");
         assert!(checker.is_approved("test-skill"));
-        
+
         checker.clear();
         assert!(!checker.is_approved("test-skill"));
     }

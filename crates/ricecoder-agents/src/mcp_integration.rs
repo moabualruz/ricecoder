@@ -7,9 +7,13 @@
 use std::{collections::HashMap, sync::Arc};
 
 #[cfg(feature = "mcp")]
-use rmcp::client::Client;
+use rmcp::transport::TokioChildProcess;
 #[cfg(feature = "mcp")]
-use rmcp::transport::StdioTransport;
+use rmcp::{
+    model::{CallToolRequestParams, CallToolResult, RawContent},
+    service::{RoleClient, RunningService},
+    ServiceExt,
+};
 use serde_json::json;
 use tokio::sync::RwLock;
 use tracing::{debug, error, info, warn};
@@ -237,7 +241,7 @@ impl ToolExecutor for HTTPToolExecutor {
 /// MCP (Model Context Protocol) tool executor
 #[cfg(feature = "mcp")]
 pub struct MCPToolExecutor {
-    client: Arc<RwLock<Option<Client<StdioTransport>>>>,
+    client: Arc<RwLock<Option<RunningService<RoleClient, ()>>>>,
     server_command: String,
     server_args: Vec<String>,
 }
@@ -264,16 +268,12 @@ impl MCPToolExecutor {
                 "Initializing MCP client"
             );
 
-            // Create stdio transport
-            let transport = StdioTransport::new(&self.server_command, &self.server_args)
+            let mut command = tokio::process::Command::new(&self.server_command);
+            command.args(&self.server_args);
+            let transport = TokioChildProcess::new(command)
                 .map_err(|e| format!("Failed to create MCP transport: {}", e))?;
-
-            // Create MCP client
-            let client = Client::new(transport);
-
-            // Initialize the client
-            client
-                .initialize()
+            let client = ()
+                .serve(transport)
                 .await
                 .map_err(|e| format!("Failed to initialize MCP client: {}", e))?;
 
@@ -295,6 +295,10 @@ impl ToolExecutor for MCPToolExecutor {
         parameters: serde_json::Value,
         _config: serde_json::Value,
     ) -> Result<ToolExecutionResult, String> {
+        let arguments = parameters
+            .as_object()
+            .cloned()
+            .ok_or_else(|| "MCP tool parameters must be a JSON object".to_string())?;
         let start_time = std::time::Instant::now();
 
         // Ensure client is initialized
@@ -307,46 +311,63 @@ impl ToolExecutor for MCPToolExecutor {
 
         debug!(tool_name = %tool_name, "Executing tool via MCP");
 
-        // Execute tool using MCP
         let result = client
-            .call_tool(tool_name, parameters)
+            .call_tool(CallToolRequestParams::new(tool_name.to_owned()).with_arguments(arguments))
             .await
             .map_err(|e| format!("MCP tool execution failed: {}", e))?;
 
         let execution_time = start_time.elapsed().as_millis() as u64;
+        Ok(convert_mcp_result(result, execution_time))
+    }
+}
 
-        // Convert MCP result to our format
-        match result {
-            rmcp::schema::CallToolResult::Success { content, .. } => {
-                // Extract the first text content if available
-                let data = if let Some(first_content) = content.first() {
-                    match first_content {
-                        rmcp::schema::ToolResultContent::Text { text } => Some(json!(text)),
-                        rmcp::schema::ToolResultContent::Image { .. } => {
-                            Some(json!({"type": "image", "content": "Image content not supported"}))
-                        }
-                        rmcp::schema::ToolResultContent::Resource { .. } => Some(
-                            json!({"type": "resource", "content": "Resource content not supported"}),
-                        ),
-                    }
-                } else {
-                    Some(json!({"content": []}))
-                };
+#[cfg(feature = "mcp")]
+fn convert_mcp_result(result: CallToolResult, execution_time_ms: u64) -> ToolExecutionResult {
+    if result.is_error.unwrap_or(false) {
+        let error = result
+            .content
+            .iter()
+            .find_map(|content| match &content.raw {
+                RawContent::Text(text) => Some(text.text.clone()),
+                _ => None,
+            })
+            .unwrap_or_else(|| "MCP tool returned an error".to_string());
 
-                Ok(ToolExecutionResult {
-                    success: true,
-                    data,
-                    error: None,
-                    execution_time_ms: execution_time,
-                })
-            }
-            rmcp::schema::CallToolResult::Error { error } => Ok(ToolExecutionResult {
-                success: false,
-                data: None,
-                error: Some(error.message),
-                execution_time_ms: execution_time,
-            }),
-        }
+        return ToolExecutionResult {
+            success: false,
+            data: None,
+            error: Some(error),
+            execution_time_ms,
+        };
+    }
+
+    let data = result.structured_content.or_else(|| {
+        Some(match result.content.first() {
+            Some(content) => match &content.raw {
+                RawContent::Text(text) => json!(text.text),
+                RawContent::Image(_) => {
+                    json!({"type": "image", "content": "Image content not supported"})
+                }
+                RawContent::Resource(_) => {
+                    json!({"type": "resource", "content": "Resource content not supported"})
+                }
+                RawContent::Audio(_) => {
+                    json!({"type": "audio", "content": "Audio content not supported"})
+                }
+                RawContent::ResourceLink(_) => json!({
+                    "type": "resource_link",
+                    "content": "Resource link content not supported"
+                }),
+            },
+            None => json!({"content": []}),
+        })
+    });
+
+    ToolExecutionResult {
+        success: true,
+        data,
+        error: None,
+        execution_time_ms,
     }
 }
 
@@ -892,5 +913,58 @@ impl Default for McpSecurityConfig {
 impl Default for ExternalToolIntegrationService {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(all(test, feature = "mcp"))]
+mod mcp_result_tests {
+    use super::*;
+    use rmcp::model::{CallToolResult, Content};
+
+    #[test]
+    fn maps_structured_mcp_success() {
+        let output = convert_mcp_result(CallToolResult::structured(json!({"answer": 42})), 7);
+
+        assert!(output.success);
+        assert_eq!(output.data, Some(json!({"answer": 42})));
+        assert_eq!(output.error, None);
+        assert_eq!(output.execution_time_ms, 7);
+    }
+
+    #[test]
+    fn maps_text_mcp_success() {
+        let output = convert_mcp_result(
+            CallToolResult::success(vec![Content::text("tool output")]),
+            9,
+        );
+
+        assert!(output.success);
+        assert_eq!(output.data, Some(json!("tool output")));
+        assert_eq!(output.error, None);
+        assert_eq!(output.execution_time_ms, 9);
+    }
+
+    #[test]
+    fn preserves_mcp_tool_error_message() {
+        let output = convert_mcp_result(
+            CallToolResult::error(vec![Content::text("permission denied")]),
+            13,
+        );
+
+        assert!(!output.success);
+        assert_eq!(output.data, None);
+        assert_eq!(output.error.as_deref(), Some("permission denied"));
+        assert_eq!(output.execution_time_ms, 13);
+    }
+
+    #[tokio::test]
+    async fn rejects_non_object_arguments_before_starting_the_server() {
+        let executor = MCPToolExecutor::new("missing-mcp-server".to_string(), Vec::new());
+        let error = match executor.execute_tool("tool", json!(42), json!({})).await {
+            Ok(_) => panic!("non-object MCP arguments must be rejected"),
+            Err(error) => error,
+        };
+
+        assert_eq!(error, "MCP tool parameters must be a JSON object");
     }
 }

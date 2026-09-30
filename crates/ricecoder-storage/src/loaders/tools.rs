@@ -80,7 +80,9 @@ impl ToolDescriptionLoader {
         // Check cache first
         {
             let cache = self.cache.read().map_err(|_| {
-                StorageError::Internal("Failed to acquire read lock on tool descriptions cache".to_string())
+                StorageError::Internal(
+                    "Failed to acquire read lock on tool descriptions cache".to_string(),
+                )
             })?;
             if cache.loaded {
                 return Ok(cache.descriptions.clone());
@@ -98,9 +100,8 @@ impl ToolDescriptionLoader {
             return Ok(descriptions);
         }
 
-        let entries = fs::read_dir(&self.config_dir).map_err(|e| {
-            StorageError::io_error(self.config_dir.clone(), IoOperation::Read, e)
-        })?;
+        let entries = fs::read_dir(&self.config_dir)
+            .map_err(|e| StorageError::io_error(self.config_dir.clone(), IoOperation::Read, e))?;
 
         for entry in entries {
             let entry = entry.map_err(|e| {
@@ -136,7 +137,9 @@ impl ToolDescriptionLoader {
         // Update cache
         {
             let mut cache = self.cache.write().map_err(|_| {
-                StorageError::Internal("Failed to acquire write lock on tool descriptions cache".to_string())
+                StorageError::Internal(
+                    "Failed to acquire write lock on tool descriptions cache".to_string(),
+                )
             })?;
             cache.descriptions = descriptions.clone();
             cache.loaded = true;
@@ -187,7 +190,9 @@ impl ToolDescriptionLoader {
         // Clear cache
         {
             let mut cache = self.cache.write().map_err(|_| {
-                StorageError::Internal("Failed to acquire write lock on tool descriptions cache".to_string())
+                StorageError::Internal(
+                    "Failed to acquire write lock on tool descriptions cache".to_string(),
+                )
             })?;
             cache.descriptions.clear();
             cache.loaded = false;
@@ -227,7 +232,11 @@ mod tests {
         // Create test description files
         let mut file = fs::File::create(tools_dir.join("bash.txt")).unwrap();
         writeln!(file, "Execute bash commands in the shell.").unwrap();
-        writeln!(file, "Use this for running tests, builds, and git commands.").unwrap();
+        writeln!(
+            file,
+            "Use this for running tests, builds, and git commands."
+        )
+        .unwrap();
 
         let mut file = fs::File::create(tools_dir.join("read.txt")).unwrap();
         writeln!(file, "Read file contents from disk.").unwrap();

@@ -379,7 +379,12 @@ impl Layout {
 
         // 1. Top Bar (Fixed height: 1)
         let top_bar_height = 1;
-        let top_bar = Rect::new(remaining_area.x, remaining_area.y, remaining_area.width, top_bar_height);
+        let top_bar = Rect::new(
+            remaining_area.x,
+            remaining_area.y,
+            remaining_area.width,
+            top_bar_height,
+        );
         remaining_area.y += top_bar_height;
         remaining_area.height = remaining_area.height.saturating_sub(top_bar_height);
 
@@ -395,27 +400,45 @@ impl Layout {
 
         // 3. Activity Bar (Fixed width: 5)
         // Hide activity bar in minimal/too small modes
-        let activity_bar_width = if degradation == DegradationLevel::TooSmall || degradation == DegradationLevel::Minimal {
+        let activity_bar_width = if degradation == DegradationLevel::TooSmall
+            || degradation == DegradationLevel::Minimal
+        {
             0
         } else {
             5
         };
-        
-        let activity_bar = Rect::new(remaining_area.x, remaining_area.y, activity_bar_width, remaining_area.height);
+
+        let activity_bar = Rect::new(
+            remaining_area.x,
+            remaining_area.y,
+            activity_bar_width,
+            remaining_area.height,
+        );
         remaining_area.x += activity_bar_width;
         remaining_area.width = remaining_area.width.saturating_sub(activity_bar_width);
 
         // 4. Side Panel (Configurable width, usually 30)
         // Hide side panel if disabled or screen too narrow
-        let show_side_panel = config.sidebar_enabled 
-            && degradation != DegradationLevel::TooSmall 
-            && degradation != DegradationLevel::Minimal 
+        let show_side_panel = config.sidebar_enabled
+            && degradation != DegradationLevel::TooSmall
+            && degradation != DegradationLevel::Minimal
             && degradation != DegradationLevel::HideSidebar;
 
-        let side_panel_width = if show_side_panel { config.sidebar_width } else { 0 };
-        
-        let side_panel = if side_panel_width > 0 && remaining_area.width > side_panel_width + config.min_chat_width {
-            let area = Rect::new(remaining_area.x, remaining_area.y, side_panel_width, remaining_area.height);
+        let side_panel_width = if show_side_panel {
+            config.sidebar_width
+        } else {
+            0
+        };
+
+        let side_panel = if side_panel_width > 0
+            && remaining_area.width > side_panel_width + config.min_chat_width
+        {
+            let area = Rect::new(
+                remaining_area.x,
+                remaining_area.y,
+                side_panel_width,
+                remaining_area.height,
+            );
             remaining_area.x += side_panel_width;
             remaining_area.width = remaining_area.width.saturating_sub(side_panel_width);
             Some(area)
@@ -432,7 +455,7 @@ impl Layout {
         // Legacy chat maps to content
         // Legacy status maps to bottom_bar
         // Legacy input needs to be derived from content area (bottom of content)
-        
+
         let input_height = config.input_height.min(content.height / 2).max(1);
         let input = Rect::new(
             content.x,
@@ -440,7 +463,7 @@ impl Layout {
             content.width,
             input_height,
         );
-        
+
         // Adjust chat to exclude input
         let chat = Rect::new(
             content.x,
@@ -456,7 +479,7 @@ impl Layout {
             content,
             bottom_bar,
             // Legacy mapping
-            banner: Some(top_bar), 
+            banner: Some(top_bar),
             sidebar: side_panel,
             chat,
             input,

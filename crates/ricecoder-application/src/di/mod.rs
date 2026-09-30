@@ -24,11 +24,11 @@ pub enum ServiceLifetime {
     /// Created once at registration, shared for application lifetime
     /// Use for: Database pools, configuration, stateless services
     Singleton,
-    
+
     /// Created once per scope (request/session)
     /// Use for: Request handlers, transaction contexts
     Scoped,
-    
+
     /// Created every time resolved
     /// Use for: Lightweight factories, builders
     Transient,
@@ -43,16 +43,16 @@ mod tests {
     #[test]
     fn test_singleton_created_once() {
         let mut container = ServiceContainer::new();
-        
+
         let counter = Arc::new(AtomicUsize::new(0));
         let counter_clone = Arc::clone(&counter);
-        
+
         container.register_singleton(Arc::new(TestService::new(counter_clone)));
-        
+
         let _s1: Arc<TestService> = container.resolve().unwrap();
         let _s2: Arc<TestService> = container.resolve().unwrap();
         let _s3: Arc<TestService> = container.resolve().unwrap();
-        
+
         // Should only create once for singleton
         assert_eq!(counter.load(Ordering::SeqCst), 1);
     }
@@ -60,18 +60,16 @@ mod tests {
     #[test]
     fn test_transient_created_every_time() {
         let mut container = ServiceContainer::new();
-        
+
         let counter = Arc::new(AtomicUsize::new(0));
         let counter_clone = Arc::clone(&counter);
-        
-        container.register_transient(move || {
-            TestService::new(Arc::clone(&counter_clone))
-        });
-        
+
+        container.register_transient(move || TestService::new(Arc::clone(&counter_clone)));
+
         let _s1: Arc<TestService> = container.resolve().unwrap();
         let _s2: Arc<TestService> = container.resolve().unwrap();
         let _s3: Arc<TestService> = container.resolve().unwrap();
-        
+
         // Should create each time for transient
         assert_eq!(counter.load(Ordering::SeqCst), 3);
     }
@@ -79,27 +77,25 @@ mod tests {
     #[test]
     fn test_scoped_created_once_per_scope() {
         let mut container = ServiceContainer::new();
-        
+
         let counter = Arc::new(AtomicUsize::new(0));
         let counter_clone = Arc::clone(&counter);
-        
-        container.register_scoped(move || {
-            TestService::new(Arc::clone(&counter_clone))
-        });
-        
+
+        container.register_scoped(move || TestService::new(Arc::clone(&counter_clone)));
+
         // First scope
         {
             let scope = container.create_scope();
             let _s1: Arc<TestService> = scope.resolve().unwrap();
             let _s2: Arc<TestService> = scope.resolve().unwrap();
         }
-        
+
         // Second scope
         {
             let scope = container.create_scope();
             let _s3: Arc<TestService> = scope.resolve().unwrap();
         }
-        
+
         // Should create once per scope (2 scopes = 2 creations)
         assert_eq!(counter.load(Ordering::SeqCst), 2);
     }
@@ -107,21 +103,22 @@ mod tests {
     #[test]
     fn test_resolve_not_registered() {
         let container = ServiceContainer::new();
-        
+
         let result: Result<Arc<TestService>, _> = container.resolve();
-        
+
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), ContainerError::ServiceNotRegistered(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            ContainerError::ServiceNotRegistered(_)
+        ));
     }
 
     #[test]
     fn test_resolve_trait_object() {
         let mut container = ServiceContainer::new();
-        
-        container.register_singleton_trait::<dyn TestTrait>(
-            Arc::new(TestTraitImpl { value: 42 })
-        );
-        
+
+        container.register_singleton_trait::<dyn TestTrait>(Arc::new(TestTraitImpl { value: 42 }));
+
         let service: Arc<dyn TestTrait> = container.resolve_trait().unwrap();
         assert_eq!(service.get_value(), 42);
     }

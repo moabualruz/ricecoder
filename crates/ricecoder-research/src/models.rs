@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use chrono::{DateTime, Utc};
 // Re-export DetectedPattern when patterns feature is enabled
 #[cfg(feature = "patterns")]
-pub use ricecoder_patterns::DetectedPattern;
+pub use ricecoder_patterns::{DetectedPattern, PatternCategory};
 use serde::{Deserialize, Serialize};
 
 // ============================================================================

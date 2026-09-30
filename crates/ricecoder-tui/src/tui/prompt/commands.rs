@@ -89,26 +89,38 @@ impl PromptCommandId {
     /// Get command definition
     pub fn definition(&self) -> PromptCommand {
         match self {
-            Self::Clear => PromptCommand::new("prompt.clear", "Clear prompt", CATEGORY_PROMPT)
-                .disabled(true),
+            Self::Clear => {
+                PromptCommand::new("prompt.clear", "Clear prompt", CATEGORY_PROMPT).disabled(true)
+            }
             Self::Submit => PromptCommand::new("prompt.submit", "Submit prompt", CATEGORY_PROMPT)
                 .with_keybind("input_submit")
                 .disabled(true),
             Self::Paste => PromptCommand::new("prompt.paste", "Paste", CATEGORY_PROMPT)
                 .with_keybind("input_paste")
                 .disabled(true),
-            Self::Interrupt => PromptCommand::new("session.interrupt", "Interrupt session", CATEGORY_SESSION)
-                .with_keybind("session_interrupt"),
-            Self::OpenEditor => PromptCommand::new("prompt.editor", "Open editor", CATEGORY_SESSION)
-                .with_keybind("editor_open"),
+            Self::Interrupt => {
+                PromptCommand::new("session.interrupt", "Interrupt session", CATEGORY_SESSION)
+                    .with_keybind("session_interrupt")
+            }
+            Self::OpenEditor => {
+                PromptCommand::new("prompt.editor", "Open editor", CATEGORY_SESSION)
+                    .with_keybind("editor_open")
+            }
             Self::Stash => PromptCommand::new("prompt.stash", "Stash prompt", CATEGORY_PROMPT),
             Self::StashPop => PromptCommand::new("prompt.stash.pop", "Stash pop", CATEGORY_PROMPT),
-            Self::StashList => PromptCommand::new("prompt.stash.list", "Stash list", CATEGORY_PROMPT),
-            Self::ToggleShell => PromptCommand::new("prompt.shell", "Toggle shell mode", CATEGORY_PROMPT),
-            Self::ClearInput => PromptCommand::new("prompt.clear_input", "Clear input", CATEGORY_PROMPT)
-                .with_keybind("input_clear"),
-            Self::Exit => PromptCommand::new("app.exit", "Exit", CATEGORY_SESSION)
-                .with_keybind("app_exit"),
+            Self::StashList => {
+                PromptCommand::new("prompt.stash.list", "Stash list", CATEGORY_PROMPT)
+            }
+            Self::ToggleShell => {
+                PromptCommand::new("prompt.shell", "Toggle shell mode", CATEGORY_PROMPT)
+            }
+            Self::ClearInput => {
+                PromptCommand::new("prompt.clear_input", "Clear input", CATEGORY_PROMPT)
+                    .with_keybind("input_clear")
+            }
+            Self::Exit => {
+                PromptCommand::new("app.exit", "Exit", CATEGORY_SESSION).with_keybind("app_exit")
+            }
         }
     }
 
@@ -246,7 +258,10 @@ mod tests {
 
     #[test]
     fn test_command_id_from_str() {
-        assert_eq!(PromptCommandId::from_str("prompt.submit"), Some(PromptCommandId::Submit));
+        assert_eq!(
+            PromptCommandId::from_str("prompt.submit"),
+            Some(PromptCommandId::Submit)
+        );
         assert_eq!(PromptCommandId::from_str("invalid"), None);
     }
 
@@ -290,7 +305,7 @@ mod tests {
         let ctx = CommandContext::default();
         let commands = get_commands(&ctx);
         assert!(!commands.is_empty());
-        
+
         // Verify disabled states are applied
         let submit = commands.iter().find(|c| c.id == "prompt.submit").unwrap();
         assert!(submit.disabled); // Empty input

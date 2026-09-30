@@ -39,12 +39,12 @@
 //! # }
 //! ```
 
+pub mod child;
 pub mod config;
 pub mod error;
 pub mod manager;
-pub mod child;
 
+pub use child::ManagedChild;
 pub use config::ProcessConfig;
 pub use error::{ProcessError, Result};
 pub use manager::ProcessManager;
-pub use child::ManagedChild;

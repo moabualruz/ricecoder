@@ -1,7 +1,7 @@
 // Context analyzer trait
 
-use async_trait::async_trait;
 use crate::types::*;
+use async_trait::async_trait;
 
 /// Context analyzer trait for analyzing code context
 ///

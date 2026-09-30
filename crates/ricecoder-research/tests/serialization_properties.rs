@@ -101,6 +101,7 @@ fn arb_architectural_style() -> impl Strategy<Value = ArchitecturalStyle> {
     ]
 }
 
+#[cfg(not(feature = "patterns"))]
 fn arb_pattern_category() -> impl Strategy<Value = PatternCategory> {
     prop_oneof![
         Just(PatternCategory::Architectural),
@@ -108,6 +109,16 @@ fn arb_pattern_category() -> impl Strategy<Value = PatternCategory> {
         Just(PatternCategory::Coding),
         Just(PatternCategory::Testing),
         Just(PatternCategory::Configuration),
+    ]
+}
+
+#[cfg(feature = "patterns")]
+fn arb_pattern_category() -> impl Strategy<Value = PatternCategory> {
+    prop_oneof![
+        Just(PatternCategory::Architectural),
+        Just(PatternCategory::Design),
+        Just(PatternCategory::Convention),
+        Just(PatternCategory::AntiPattern),
     ]
 }
 

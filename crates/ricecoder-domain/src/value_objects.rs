@@ -19,11 +19,6 @@ impl ProjectId {
         Ok(Self(uuid::Uuid::parse_str(s)?))
     }
 
-    /// Convert to string
-    pub fn to_string(&self) -> String {
-        self.0.to_string()
-    }
-
     /// Get inner UUID
     pub fn as_uuid(&self) -> uuid::Uuid {
         self.0
@@ -55,11 +50,6 @@ impl SessionId {
     /// Create from string representation
     pub fn from_string(s: &str) -> Result<Self, uuid::Error> {
         Ok(Self(uuid::Uuid::parse_str(s)?))
-    }
-
-    /// Convert to string
-    pub fn to_string(&self) -> String {
-        self.0.to_string()
     }
 
     /// Get inner UUID
@@ -95,11 +85,6 @@ impl SpecificationId {
         Ok(Self(uuid::Uuid::parse_str(s)?))
     }
 
-    /// Convert to string
-    pub fn to_string(&self) -> String {
-        self.0.to_string()
-    }
-
     /// Get inner UUID
     pub fn as_uuid(&self) -> uuid::Uuid {
         self.0
@@ -133,11 +118,6 @@ impl RequirementId {
         Ok(Self(uuid::Uuid::parse_str(s)?))
     }
 
-    /// Convert to string
-    pub fn to_string(&self) -> String {
-        self.0.to_string()
-    }
-
     /// Get inner UUID
     pub fn as_uuid(&self) -> uuid::Uuid {
         self.0
@@ -169,11 +149,6 @@ impl TaskId {
     /// Create from string representation
     pub fn from_string(s: &str) -> Result<Self, uuid::Error> {
         Ok(Self(uuid::Uuid::parse_str(s)?))
-    }
-
-    /// Convert to string
-    pub fn to_string(&self) -> String {
-        self.0.to_string()
     }
 
     /// Get inner UUID
@@ -419,15 +394,8 @@ impl UserRole {
                 Permission::Admin,
                 Permission::Audit,
             ],
-            UserRole::Developer => vec![
-                Permission::Read,
-                Permission::Write,
-                Permission::Execute,
-            ],
-            UserRole::Analyst => vec![
-                Permission::Read,
-                Permission::Analyze,
-            ],
+            UserRole::Developer => vec![Permission::Read, Permission::Write, Permission::Execute],
+            UserRole::Analyst => vec![Permission::Read, Permission::Analyze],
             UserRole::Viewer => vec![Permission::Read],
             UserRole::Guest => vec![Permission::Read],
         }

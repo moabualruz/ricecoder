@@ -61,16 +61,22 @@ pub fn get_lifecycle_manager(container: &DIContainer) -> Option<Arc<TuiLifecycle
 use std::sync::OnceLock;
 
 /// Legacy: Global DI container for the TUI application
-/// 
+///
 /// **DEPRECATED**: Pass container through application instead.
 /// This is kept for backward compatibility during migration.
-#[deprecated(since = "0.2.0", note = "Pass DIContainer through application instead of using global static")]
+#[deprecated(
+    since = "0.2.0",
+    note = "Pass DIContainer through application instead of using global static"
+)]
 static DI_CONTAINER: OnceLock<Arc<DIContainer>> = OnceLock::new();
 
 /// Legacy: Initialize the DI container for the TUI
-/// 
+///
 /// **DEPRECATED**: Use `ricecoder_di::create_application_container()` and pass the container.
-#[deprecated(since = "0.2.0", note = "Use create_application_container() and pass container through app")]
+#[deprecated(
+    since = "0.2.0",
+    note = "Use create_application_container() and pass container through app"
+)]
 #[allow(deprecated)]
 pub fn initialize_di_container() -> DIResult<()> {
     let container = ricecoder_di::create_application_container()?;
@@ -83,18 +89,24 @@ pub fn initialize_di_container() -> DIResult<()> {
 }
 
 /// Legacy: Get the global DI container
-/// 
+///
 /// **DEPRECATED**: Pass container through application instead.
-#[deprecated(since = "0.2.0", note = "Pass DIContainer through application instead of using global static")]
+#[deprecated(
+    since = "0.2.0",
+    note = "Pass DIContainer through application instead of using global static"
+)]
 #[allow(deprecated)]
 pub fn get_di_container() -> Option<Arc<DIContainer>> {
     DI_CONTAINER.get().cloned()
 }
 
 /// Legacy: Get a service from the global DI container
-/// 
+///
 /// **DEPRECATED**: Use `get_service(container)` instead.
-#[deprecated(since = "0.2.0", note = "Use get_service(container) with explicit container reference")]
+#[deprecated(
+    since = "0.2.0",
+    note = "Use get_service(container) with explicit container reference"
+)]
 #[allow(deprecated)]
 pub fn get_service_global<T>() -> Option<Arc<T>>
 where
@@ -104,16 +116,19 @@ where
 }
 
 /// Legacy: Initialize DI container with specific features
-/// 
+///
 /// **DEPRECATED**: Features are controlled by cargo features and linking.
-#[deprecated(since = "0.2.0", note = "Features controlled by cargo features, not runtime")]
+#[deprecated(
+    since = "0.2.0",
+    note = "Features controlled by cargo features, not runtime"
+)]
 #[allow(deprecated)]
 pub fn initialize_di_container_with_features(_features: &[&str]) -> DIResult<()> {
     initialize_di_container()
 }
 
 /// Legacy: Check if DI container is initialized
-/// 
+///
 /// **DEPRECATED**: Container state is managed by the application.
 #[deprecated(since = "0.2.0", note = "Container state managed by application")]
 #[allow(deprecated)]
@@ -129,16 +144,21 @@ mod tests {
     #[test]
     fn test_tui_factory_registered() {
         let factories = list_discovered_factories();
-        assert!(factories.contains(&"tui"), "TUI factory should be registered");
+        assert!(
+            factories.contains(&"tui"),
+            "TUI factory should be registered"
+        );
     }
 
     #[test]
     fn test_create_tui_services() {
         let services = create_tui_services();
         assert!(!services.is_empty(), "Should create at least one service");
-        
+
         // Check that TuiLifecycleManager is present
-        let has_lifecycle = services.iter().any(|s| s.type_name.contains("TuiLifecycleManager"));
+        let has_lifecycle = services
+            .iter()
+            .any(|s| s.type_name.contains("TuiLifecycleManager"));
         assert!(has_lifecycle, "Should include TuiLifecycleManager");
     }
 }

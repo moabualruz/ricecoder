@@ -177,7 +177,11 @@ fn test_task_lifecycle_start_and_complete() {
 
     // Add requirement and task
     let (req_id, _) = spec
-        .add_requirement("REQ".to_string(), "Desc".to_string(), vec!["AC".to_string()])
+        .add_requirement(
+            "REQ".to_string(),
+            "Desc".to_string(),
+            vec!["AC".to_string()],
+        )
         .unwrap();
     let (task_id, _) = spec
         .add_task("TASK".to_string(), "Desc".to_string(), vec![req_id])
@@ -199,7 +203,11 @@ fn test_cannot_start_already_started_task() {
     let mut spec = create_test_specification();
 
     let (req_id, _) = spec
-        .add_requirement("REQ".to_string(), "Desc".to_string(), vec!["AC".to_string()])
+        .add_requirement(
+            "REQ".to_string(),
+            "Desc".to_string(),
+            vec!["AC".to_string()],
+        )
         .unwrap();
     let (task_id, _) = spec
         .add_task("TASK".to_string(), "Desc".to_string(), vec![req_id])
@@ -222,7 +230,11 @@ fn test_completion_percentage() {
 
     // Add requirement and tasks
     let (req_id, _) = spec
-        .add_requirement("REQ".to_string(), "Desc".to_string(), vec!["AC".to_string()])
+        .add_requirement(
+            "REQ".to_string(),
+            "Desc".to_string(),
+            vec!["AC".to_string()],
+        )
         .unwrap();
 
     let (task1_id, _) = spec
@@ -252,7 +264,11 @@ fn test_approve_specification() {
 
     // Add and complete tasks
     let (req_id, _) = spec
-        .add_requirement("REQ".to_string(), "Desc".to_string(), vec!["AC".to_string()])
+        .add_requirement(
+            "REQ".to_string(),
+            "Desc".to_string(),
+            vec!["AC".to_string()],
+        )
         .unwrap();
     let (task_id, _) = spec
         .add_task("TASK".to_string(), "Desc".to_string(), vec![req_id])
@@ -273,7 +289,11 @@ fn test_cannot_approve_incomplete_specification() {
 
     // Add tasks but don't complete them
     let (req_id, _) = spec
-        .add_requirement("REQ".to_string(), "Desc".to_string(), vec!["AC".to_string()])
+        .add_requirement(
+            "REQ".to_string(),
+            "Desc".to_string(),
+            vec!["AC".to_string()],
+        )
         .unwrap();
     spec.add_task("TASK".to_string(), "Desc".to_string(), vec![req_id])
         .unwrap();
@@ -315,7 +335,11 @@ fn test_approve_requirement() {
     let mut spec = create_test_specification();
 
     let (req_id, _) = spec
-        .add_requirement("REQ".to_string(), "Desc".to_string(), vec!["AC".to_string()])
+        .add_requirement(
+            "REQ".to_string(),
+            "Desc".to_string(),
+            vec!["AC".to_string()],
+        )
         .unwrap();
 
     assert!(!spec.requirements()[0].is_approved());
@@ -331,7 +355,11 @@ fn test_archive_completed_specification() {
 
     // Add, complete, and approve
     let (req_id, _) = spec
-        .add_requirement("REQ".to_string(), "Desc".to_string(), vec!["AC".to_string()])
+        .add_requirement(
+            "REQ".to_string(),
+            "Desc".to_string(),
+            vec!["AC".to_string()],
+        )
         .unwrap();
     let (task_id, _) = spec
         .add_task("TASK".to_string(), "Desc".to_string(), vec![req_id])

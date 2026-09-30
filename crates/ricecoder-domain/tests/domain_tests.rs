@@ -470,7 +470,10 @@ mod tests {
             let mut user = User::new("user-123".to_string(), "testuser".to_string());
 
             user.set_email(Some("test@example.com".to_string()));
-            assert_eq!(user.email(), Some("test@example.com".to_string()).as_deref());
+            assert_eq!(
+                user.email(),
+                Some("test@example.com".to_string()).as_deref()
+            );
 
             user.set_email(None);
             assert!(user.email().is_none());
@@ -479,8 +482,8 @@ mod tests {
 
     mod security_tests {
         use super::*;
-        use ricecoder_domain::entities::{SecurityContext, IsolationLevel, ConfidentialityLevel};
-        use ricecoder_domain::value_objects::{UserRole, Permission};
+        use ricecoder_domain::entities::{ConfidentialityLevel, IsolationLevel, SecurityContext};
+        use ricecoder_domain::value_objects::{Permission, UserRole};
 
         #[test]
         fn test_security_context_default() {
@@ -547,8 +550,7 @@ mod tests {
         use super::*;
         use chrono::{Duration, Utc};
         use ricecoder_domain::entities::{
-            ComplianceReport, ComplianceStatus, ComplianceFinding, 
-            FindingSeverity, Soc2Principle
+            ComplianceFinding, ComplianceReport, ComplianceStatus, FindingSeverity, Soc2Principle,
         };
 
         #[test]
@@ -614,7 +616,7 @@ mod tests {
 
     mod gdpr_tests {
         use super::*;
-        use ricecoder_domain::entities::{GdprConsent, ConsentType};
+        use ricecoder_domain::entities::{ConsentType, GdprConsent};
 
         #[test]
         fn test_gdpr_consent_creation() {
@@ -679,7 +681,7 @@ mod tests {
 
     mod performance_tests {
         use super::*;
-        use ricecoder_domain::entities::{PerformanceMetric, MetricUnit, PerformanceBenchmark};
+        use ricecoder_domain::entities::{MetricUnit, PerformanceBenchmark, PerformanceMetric};
 
         #[test]
         fn test_performance_metric_creation() {
@@ -697,16 +699,16 @@ mod tests {
 
         #[test]
         fn test_performance_metric_add_context() {
-            let metric = PerformanceMetric::new(
-                "memory_usage".to_string(),
-                256.0,
-                MetricUnit::Megabytes,
-            )
-            .add_context("service".to_string(), "api".to_string())
-            .add_context("environment".to_string(), "production".to_string());
+            let metric =
+                PerformanceMetric::new("memory_usage".to_string(), 256.0, MetricUnit::Megabytes)
+                    .add_context("service".to_string(), "api".to_string())
+                    .add_context("environment".to_string(), "production".to_string());
 
             assert_eq!(metric.context.get("service"), Some(&"api".to_string()));
-            assert_eq!(metric.context.get("environment"), Some(&"production".to_string()));
+            assert_eq!(
+                metric.context.get("environment"),
+                Some(&"production".to_string())
+            );
         }
 
         #[test]

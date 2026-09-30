@@ -143,7 +143,7 @@ impl DidYouKnow {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default();
         let tip_index = (now.as_nanos() as usize) % tip_count;
-        
+
         Self {
             tip_index,
             text_color: Color::White,

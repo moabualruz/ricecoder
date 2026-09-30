@@ -156,7 +156,10 @@ impl OllamaProvider {
 
     /// Create a new Ollama provider with default localhost endpoint
     pub fn with_default_endpoint() -> Result<Self, ProviderError> {
-        Self::with_client(Arc::new(Client::new()), "http://localhost:11434".to_string())
+        Self::with_client(
+            Arc::new(Client::new()),
+            "http://localhost:11434".to_string(),
+        )
     }
 
     /// Create a new Ollama provider from configuration files

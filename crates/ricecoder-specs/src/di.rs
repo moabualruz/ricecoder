@@ -1,10 +1,10 @@
 //! Dependency injection support for ricecoder-specs
 
-use std::sync::Arc;
-use ricecoder_common::di::{ServiceEntry, ServiceFactory};
 use crate::{
-    SpecManager, ApprovalManager, ChangeTracker, ConversationManager, WorkflowOrchestrator,
+    ApprovalManager, ChangeTracker, ConversationManager, SpecManager, WorkflowOrchestrator,
 };
+use ricecoder_common::di::{ServiceEntry, ServiceFactory};
+use std::sync::Arc;
 
 inventory::submit! {
     ServiceFactory::new("specs", create_specs_services)

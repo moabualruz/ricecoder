@@ -10,12 +10,12 @@
 //! - Merge strategy: local config overrides API models
 //! - Graceful fallback on network failures
 
+use crate::{error::ProviderError, models::Capability, models::ModelInfo, models::Pricing};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
-use serde::{Deserialize, Serialize};
-use crate::{error::ProviderError, models::ModelInfo, models::Capability, models::Pricing};
 
 /// Models.dev API URL
 const MODELS_DEV_API: &str = "https://models.dev/api.json";
@@ -77,11 +77,13 @@ impl ModelsFetcher {
     pub fn new() -> Result<Self, ProviderError> {
         let cache_dir = Self::get_cache_directory()?;
         let cache_path = cache_dir.join("models.json");
-        
+
         let http_client = reqwest::Client::builder()
             .timeout(FETCH_TIMEOUT)
             .build()
-            .map_err(|e| ProviderError::ConfigError(format!("Failed to create HTTP client: {}", e)))?;
+            .map_err(|e| {
+                ProviderError::ConfigError(format!("Failed to create HTTP client: {}", e))
+            })?;
 
         Ok(Self {
             cache_path,
@@ -94,7 +96,9 @@ impl ModelsFetcher {
         let http_client = reqwest::Client::builder()
             .timeout(FETCH_TIMEOUT)
             .build()
-            .map_err(|e| ProviderError::ConfigError(format!("Failed to create HTTP client: {}", e)))?;
+            .map_err(|e| {
+                ProviderError::ConfigError(format!("Failed to create HTTP client: {}", e))
+            })?;
 
         Ok(Self {
             cache_path,
@@ -104,11 +108,12 @@ impl ModelsFetcher {
 
     /// Get the default cache directory (~/.ricecoder/cache)
     fn get_cache_directory() -> Result<PathBuf, ProviderError> {
-        let config_dir = dirs::config_dir()
-            .ok_or_else(|| ProviderError::ConfigError("Cannot determine config directory".to_string()))?;
-        
+        let config_dir = dirs::config_dir().ok_or_else(|| {
+            ProviderError::ConfigError("Cannot determine config directory".to_string())
+        })?;
+
         let cache_dir = config_dir.join("ricecoder").join("cache");
-        
+
         // Ensure directory exists
         if !cache_dir.exists() {
             fs::create_dir_all(&cache_dir).map_err(|e| {
@@ -122,8 +127,9 @@ impl ModelsFetcher {
     /// Fetch models from models.dev API
     pub async fn fetch(&self) -> Result<Vec<ModelInfo>, ProviderError> {
         tracing::info!("Fetching models from {}", MODELS_DEV_API);
-        
-        let response = self.http_client
+
+        let response = self
+            .http_client
             .get(MODELS_DEV_API)
             .header("User-Agent", "ricecoder/0.1")
             .send()
@@ -133,19 +139,12 @@ impl ModelsFetcher {
                 ProviderError::NetworkError(e.to_string())
             })?;
 
-        let api_response: ModelsDevResponse = response
-            .json()
-            .await
-            .map_err(|e| {
-                tracing::warn!("Failed to parse models.dev response: {}", e);
-                ProviderError::SerializationError(e.to_string())
-            })?;
+        let api_response: ModelsDevResponse = response.json().await.map_err(|e| {
+            tracing::warn!("Failed to parse models.dev response: {}", e);
+            ProviderError::SerializationError(e.to_string())
+        })?;
 
-        let models: Vec<ModelInfo> = api_response
-            .models
-            .into_iter()
-            .map(convert_model)
-            .collect();
+        let models: Vec<ModelInfo> = api_response.models.into_iter().map(convert_model).collect();
 
         tracing::info!("Fetched {} models from models.dev", models.len());
         Ok(models)
@@ -159,23 +158,21 @@ impl ModelsFetcher {
         }
 
         match fs::read_to_string(&self.cache_path) {
-            Ok(content) => {
-                match serde_json::from_str::<ModelsDevCache>(&content) {
-                    Ok(cache) => {
-                        if cache.is_valid() {
-                            tracing::info!("Using valid cached models ({} models)", cache.models.len());
-                            Some(cache.models)
-                        } else {
-                            tracing::info!("Cache expired, will fetch fresh data");
-                            None
-                        }
-                    }
-                    Err(e) => {
-                        tracing::warn!("Failed to deserialize cache: {}", e);
+            Ok(content) => match serde_json::from_str::<ModelsDevCache>(&content) {
+                Ok(cache) => {
+                    if cache.is_valid() {
+                        tracing::info!("Using valid cached models ({} models)", cache.models.len());
+                        Some(cache.models)
+                    } else {
+                        tracing::info!("Cache expired, will fetch fresh data");
                         None
                     }
                 }
-            }
+                Err(e) => {
+                    tracing::warn!("Failed to deserialize cache: {}", e);
+                    None
+                }
+            },
             Err(e) => {
                 tracing::warn!("Failed to read cache file: {}", e);
                 None
@@ -206,7 +203,10 @@ impl ModelsFetcher {
     /// - Start with all API models
     /// - For each local model with matching ID, replace API model
     /// - Add any local models not in API
-    pub fn merge_models(api_models: Vec<ModelInfo>, local_models: Vec<ModelInfo>) -> Vec<ModelInfo> {
+    pub fn merge_models(
+        api_models: Vec<ModelInfo>,
+        local_models: Vec<ModelInfo>,
+    ) -> Vec<ModelInfo> {
         let mut merged = HashMap::new();
 
         // Start with API models
@@ -241,7 +241,7 @@ impl ModelsFetcher {
 
         // Fetch from API
         let models = self.fetch().await?;
-        
+
         // Save to cache (log but don't fail on cache errors)
         if let Err(e) = self.save_cache(&models) {
             tracing::warn!("Failed to save cache: {}", e);
@@ -369,32 +369,30 @@ mod tests {
             },
         ];
 
-        let local_models = vec![
-            ModelInfo {
-                id: "model-1".to_string(),
-                name: "Local Model 1".to_string(),
-                provider: "local-provider".to_string(),
-                context_window: 16384,
-                capabilities: vec![Capability::Chat, Capability::Vision],
-                pricing: Some(Pricing {
-                    input_per_1k_tokens: 0.01,
-                    output_per_1k_tokens: 0.03,
-                }),
-                is_free: true,
-            },
-        ];
+        let local_models = vec![ModelInfo {
+            id: "model-1".to_string(),
+            name: "Local Model 1".to_string(),
+            provider: "local-provider".to_string(),
+            context_window: 16384,
+            capabilities: vec![Capability::Chat, Capability::Vision],
+            pricing: Some(Pricing {
+                input_per_1k_tokens: 0.01,
+                output_per_1k_tokens: 0.03,
+            }),
+            is_free: true,
+        }];
 
         let merged = ModelsFetcher::merge_models(api_models, local_models);
-        
+
         assert_eq!(merged.len(), 2);
-        
+
         // Find model-1 in merged
         let model1 = merged.iter().find(|m| m.id == "model-1").unwrap();
         assert_eq!(model1.name, "Local Model 1"); // Local overrides API
         assert_eq!(model1.context_window, 16384);
         assert!(model1.is_free);
         assert!(model1.pricing.is_some());
-        
+
         // model-2 should remain from API
         let model2 = merged.iter().find(|m| m.id == "model-2").unwrap();
         assert_eq!(model2.name, "API Model 2");
@@ -403,32 +401,28 @@ mod tests {
 
     #[test]
     fn test_merge_models_adds_local_only() {
-        let api_models = vec![
-            ModelInfo {
-                id: "api-only".to_string(),
-                name: "API Only Model".to_string(),
-                provider: "api".to_string(),
-                context_window: 4096,
-                capabilities: vec![],
-                pricing: None,
-                is_free: false,
-            },
-        ];
+        let api_models = vec![ModelInfo {
+            id: "api-only".to_string(),
+            name: "API Only Model".to_string(),
+            provider: "api".to_string(),
+            context_window: 4096,
+            capabilities: vec![],
+            pricing: None,
+            is_free: false,
+        }];
 
-        let local_models = vec![
-            ModelInfo {
-                id: "local-only".to_string(),
-                name: "Local Only Model".to_string(),
-                provider: "local".to_string(),
-                context_window: 8192,
-                capabilities: vec![],
-                pricing: None,
-                is_free: true,
-            },
-        ];
+        let local_models = vec![ModelInfo {
+            id: "local-only".to_string(),
+            name: "Local Only Model".to_string(),
+            provider: "local".to_string(),
+            context_window: 8192,
+            capabilities: vec![],
+            pricing: None,
+            is_free: true,
+        }];
 
         let merged = ModelsFetcher::merge_models(api_models, local_models);
-        
+
         assert_eq!(merged.len(), 2);
         assert!(merged.iter().any(|m| m.id == "api-only"));
         assert!(merged.iter().any(|m| m.id == "local-only"));
@@ -437,17 +431,15 @@ mod tests {
     #[test]
     fn test_merge_models_empty_api() {
         let api_models = vec![];
-        let local_models = vec![
-            ModelInfo {
-                id: "local-1".to_string(),
-                name: "Local Model".to_string(),
-                provider: "local".to_string(),
-                context_window: 4096,
-                capabilities: vec![],
-                pricing: None,
-                is_free: false,
-            },
-        ];
+        let local_models = vec![ModelInfo {
+            id: "local-1".to_string(),
+            name: "Local Model".to_string(),
+            provider: "local".to_string(),
+            context_window: 4096,
+            capabilities: vec![],
+            pricing: None,
+            is_free: false,
+        }];
 
         let merged = ModelsFetcher::merge_models(api_models, local_models);
         assert_eq!(merged.len(), 1);
@@ -456,17 +448,15 @@ mod tests {
 
     #[test]
     fn test_merge_models_empty_local() {
-        let api_models = vec![
-            ModelInfo {
-                id: "api-1".to_string(),
-                name: "API Model".to_string(),
-                provider: "api".to_string(),
-                context_window: 4096,
-                capabilities: vec![],
-                pricing: None,
-                is_free: false,
-            },
-        ];
+        let api_models = vec![ModelInfo {
+            id: "api-1".to_string(),
+            name: "API Model".to_string(),
+            provider: "api".to_string(),
+            context_window: 4096,
+            capabilities: vec![],
+            pricing: None,
+            is_free: false,
+        }];
         let local_models = vec![];
 
         let merged = ModelsFetcher::merge_models(api_models, local_models);
@@ -480,27 +470,25 @@ mod tests {
 
         let temp_dir = tempdir().unwrap();
         let cache_path = temp_dir.path().join("test_models.json");
-        
+
         let fetcher = ModelsFetcher::with_cache_path(cache_path.clone()).unwrap();
-        
+
         // Initially no cache
         assert!(fetcher.get_cached().is_none());
-        
+
         // Save some models
-        let models = vec![
-            ModelInfo {
-                id: "test".to_string(),
-                name: "Test".to_string(),
-                provider: "test".to_string(),
-                context_window: 4096,
-                capabilities: vec![],
-                pricing: None,
-                is_free: false,
-            },
-        ];
-        
+        let models = vec![ModelInfo {
+            id: "test".to_string(),
+            name: "Test".to_string(),
+            provider: "test".to_string(),
+            context_window: 4096,
+            capabilities: vec![],
+            pricing: None,
+            is_free: false,
+        }];
+
         fetcher.save_cache(&models).unwrap();
-        
+
         // Should be able to retrieve
         let cached = fetcher.get_cached().unwrap();
         assert_eq!(cached.len(), 1);

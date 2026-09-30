@@ -46,9 +46,9 @@ mod tests {
         assert!(!services.is_empty(), "Should create at least one service");
 
         // Check that SafetyValidator is in the list
-        let has_safety_validator = services.iter().any(|s| {
-            s.type_name.contains("SafetyValidator")
-        });
+        let has_safety_validator = services
+            .iter()
+            .any(|s| s.type_name.contains("SafetyValidator"));
         assert!(has_safety_validator, "Should include SafetyValidator");
     }
 }

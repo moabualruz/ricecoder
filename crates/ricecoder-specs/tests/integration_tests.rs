@@ -12,8 +12,8 @@
 //! - Governance context in AI prompts
 
 use ricecoder_specs::{
-    models::*, ApprovalManager, ChangeTracker, ConversationManager, SpecInheritanceResolver,
-    SpecManager, SpecQueryEngine, GovernanceLoader, WorkflowOrchestrator,
+    models::*, ApprovalManager, ChangeTracker, ConversationManager, GovernanceLoader,
+    SpecInheritanceResolver, SpecManager, SpecQueryEngine, WorkflowOrchestrator,
 };
 use tempfile::TempDir;
 
@@ -172,7 +172,11 @@ fn integration_test_governance_loading_and_merging() {
         .expect("Failed to merge Governance");
 
     // Verify precedence: project > global
-    assert_eq!(merged.rules.len(), 3, "Merged Governance should have 3 rules");
+    assert_eq!(
+        merged.rules.len(),
+        3,
+        "Merged Governance should have 3 rules"
+    );
 
     // Find rule-1 and verify it's the project version
     let rule_1 = merged
@@ -676,8 +680,8 @@ fn integration_test_governance_context_in_ai_prompts() {
     };
 
     // Merge Governance with project precedence
-    let merged =
-        GovernanceLoader::merge(&global_governance, &project_governance).expect("Should merge Governance");
+    let merged = GovernanceLoader::merge(&global_governance, &project_governance)
+        .expect("Should merge Governance");
 
     // Verify merged Governance has both rules
     assert_eq!(merged.rules.len(), 2, "Should have 2 rules after merge");

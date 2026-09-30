@@ -79,7 +79,8 @@ mod tests {
         assert_eq!(status.summary(), "Clean");
         assert!(status.is_clean);
 
-        let status = RepositoryStatus::new(branch.clone(), "/test/repo").with_counts(2, 1, 1, false);
+        let status =
+            RepositoryStatus::new(branch.clone(), "/test/repo").with_counts(2, 1, 1, false);
         assert_eq!(status.summary(), "1S 2M 1U");
         assert!(!status.is_clean);
 
@@ -154,11 +155,11 @@ mod tests {
     fn test_repository_status_ahead_behind() {
         let branch = Branch::new("feature").current();
         let status = RepositoryStatus::new(branch, "/test/repo");
-        
+
         // Default values
         assert_eq!(status.ahead, 0);
         assert_eq!(status.behind, 0);
-        
+
         // With ahead/behind set
         let status = status.with_ahead_behind(3, 1);
         assert_eq!(status.ahead, 3);

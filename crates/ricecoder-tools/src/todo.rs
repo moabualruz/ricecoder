@@ -390,7 +390,11 @@ impl TodoStorage {
     }
 
     /// Save todos to storage from HashMap (atomic write)
-    pub fn save_todos(&self, todos: &HashMap<String, Todo>, session_id: Option<&str>) -> Result<(), ToolError> {
+    pub fn save_todos(
+        &self,
+        todos: &HashMap<String, Todo>,
+        session_id: Option<&str>,
+    ) -> Result<(), ToolError> {
         let path = self.effective_path(session_id)?;
         debug!("Saving {} todos to: {:?}", todos.len(), path);
 
@@ -431,10 +435,7 @@ impl TodoStorage {
             // Clean up temp file on error
             let _ = std::fs::remove_file(&temp_path);
             ToolError::from(e)
-                .with_details(format!(
-                    "Failed to rename: {:?} to {:?}",
-                    temp_path, path
-                ))
+                .with_details(format!("Failed to rename: {:?} to {:?}", temp_path, path))
                 .with_suggestion("Check file permissions and disk space")
         })?;
 
@@ -443,7 +444,11 @@ impl TodoStorage {
     }
 
     /// Save todos to storage from Vec (preserves order, atomic write)
-    pub fn save_todos_ordered(&self, todos: &[Todo], session_id: Option<&str>) -> Result<(), ToolError> {
+    pub fn save_todos_ordered(
+        &self,
+        todos: &[Todo],
+        session_id: Option<&str>,
+    ) -> Result<(), ToolError> {
         let path = self.effective_path(session_id)?;
         debug!("Saving {} todos to: {:?}", todos.len(), path);
 
@@ -480,10 +485,7 @@ impl TodoStorage {
             // Clean up temp file on error
             let _ = std::fs::remove_file(&temp_path);
             ToolError::from(e)
-                .with_details(format!(
-                    "Failed to rename: {:?} to {:?}",
-                    temp_path, path
-                ))
+                .with_details(format!("Failed to rename: {:?} to {:?}", temp_path, path))
                 .with_suggestion("Check file permissions and disk space")
         })?;
 
@@ -578,8 +580,14 @@ impl TodoTools {
 
             // Validate status enum value
             let status_str = format!("{}", todo.status);
-            if !["pending", "in_progress", "completed", "cancelled", "blocked"]
-                .contains(&status_str.as_str())
+            if ![
+                "pending",
+                "in_progress",
+                "completed",
+                "cancelled",
+                "blocked",
+            ]
+            .contains(&status_str.as_str())
             {
                 return Err(ToolError::new(
                     "INVALID_STATUS",
@@ -609,7 +617,10 @@ impl TodoTools {
 
     /// Count incomplete todos (status != completed)
     fn count_incomplete(todos: &[Todo]) -> usize {
-        todos.iter().filter(|t| t.status != TodoStatus::Completed).count()
+        todos
+            .iter()
+            .filter(|t| t.status != TodoStatus::Completed)
+            .count()
     }
 
     /// Format output for OpenCode compatibility
@@ -644,13 +655,25 @@ impl TodoTools {
     /// Write todos (create or update)
     ///
     /// Attempts to use MCP provider if available, falls back to built-in implementation.
-    pub fn write_todos(&self, input: TodowriteInput, session_id: Option<&str>) -> Result<TodowriteOutput, ToolError> {
+    pub fn write_todos(
+        &self,
+        input: TodowriteInput,
+        session_id: Option<&str>,
+    ) -> Result<TodowriteOutput, ToolError> {
         self.write_todos_internal(input, session_id)
     }
 
     /// Internal write todos implementation (with session and mode support)
-    fn write_todos_internal(&self, input: TodowriteInput, session_id: Option<&str>) -> Result<TodowriteOutput, ToolError> {
-        debug!("Writing {} todos (mode: {:?})", input.todos.len(), self.write_mode);
+    fn write_todos_internal(
+        &self,
+        input: TodowriteInput,
+        session_id: Option<&str>,
+    ) -> Result<TodowriteOutput, ToolError> {
+        debug!(
+            "Writing {} todos (mode: {:?})",
+            input.todos.len(),
+            self.write_mode
+        );
 
         // G-05: Validate input before processing
         Self::validate_todo_input(&input)?;
@@ -769,12 +792,20 @@ impl TodoTools {
     /// Read todos with optional filtering
     ///
     /// Attempts to use MCP provider if available, falls back to built-in implementation.
-    pub fn read_todos(&self, input: TodoreadInput, session_id: Option<&str>) -> Result<TodoreadOutput, ToolError> {
+    pub fn read_todos(
+        &self,
+        input: TodoreadInput,
+        session_id: Option<&str>,
+    ) -> Result<TodoreadOutput, ToolError> {
         self.read_todos_internal(input, session_id)
     }
 
     /// Internal read todos implementation (with session support)
-    fn read_todos_internal(&self, input: TodoreadInput, session_id: Option<&str>) -> Result<TodoreadOutput, ToolError> {
+    fn read_todos_internal(
+        &self,
+        input: TodoreadInput,
+        session_id: Option<&str>,
+    ) -> Result<TodoreadOutput, ToolError> {
         debug!(
             "Reading todos with filters: status={:?}, priority={:?}",
             input.status_filter, input.priority_filter
@@ -822,30 +853,31 @@ impl TodoTools {
         };
 
         // Filter todos (RiceCoder extra - KEEP)
-        let filtered: Vec<Todo> = if input.status_filter.is_some() || input.priority_filter.is_some() {
-            todos
-                .into_iter()
-                .filter(|todo| {
-                    // Apply status filter
-                    if let Some(status) = input.status_filter {
-                        if todo.status != status {
-                            return false;
+        let filtered: Vec<Todo> =
+            if input.status_filter.is_some() || input.priority_filter.is_some() {
+                todos
+                    .into_iter()
+                    .filter(|todo| {
+                        // Apply status filter
+                        if let Some(status) = input.status_filter {
+                            if todo.status != status {
+                                return false;
+                            }
                         }
-                    }
 
-                    // Apply priority filter
-                    if let Some(priority) = input.priority_filter {
-                        if todo.priority != priority {
-                            return false;
+                        // Apply priority filter
+                        if let Some(priority) = input.priority_filter {
+                            if todo.priority != priority {
+                                return false;
+                            }
                         }
-                    }
 
-                    true
-                })
-                .collect()
-        } else {
-            todos
-        };
+                        true
+                    })
+                    .collect()
+            } else {
+                todos
+            };
 
         // Format OpenCode-compatible output
         let incomplete_count = Self::count_incomplete(&filtered);
@@ -856,9 +888,7 @@ impl TodoTools {
         Ok(TodoreadOutput {
             title,
             output,
-            metadata: TodoreadMetadata {
-                todos: filtered,
-            },
+            metadata: TodoreadMetadata { todos: filtered },
         })
     }
 }
@@ -930,25 +960,49 @@ impl TodoTools {
     }
 
     /// Invoke todowrite from JSON parameters
-    pub fn invoke_todowrite(&self, params: Value, session_id: Option<&str>) -> Result<Value, ToolError> {
-        let input: TodowriteInput = serde_json::from_value(params)
-            .map_err(|e| ToolError::new("INVALID_INPUT", format!("Failed to parse todowrite input: {}", e)))?;
-        
+    pub fn invoke_todowrite(
+        &self,
+        params: Value,
+        session_id: Option<&str>,
+    ) -> Result<Value, ToolError> {
+        let input: TodowriteInput = serde_json::from_value(params).map_err(|e| {
+            ToolError::new(
+                "INVALID_INPUT",
+                format!("Failed to parse todowrite input: {}", e),
+            )
+        })?;
+
         let output = self.write_todos(input, session_id)?;
-        
-        serde_json::to_value(output)
-            .map_err(|e| ToolError::new("SERIALIZATION_ERROR", format!("Failed to serialize output: {}", e)))
+
+        serde_json::to_value(output).map_err(|e| {
+            ToolError::new(
+                "SERIALIZATION_ERROR",
+                format!("Failed to serialize output: {}", e),
+            )
+        })
     }
 
     /// Invoke todoread from JSON parameters
-    pub fn invoke_todoread(&self, params: Value, session_id: Option<&str>) -> Result<Value, ToolError> {
-        let input: TodoreadInput = serde_json::from_value(params)
-            .map_err(|e| ToolError::new("INVALID_INPUT", format!("Failed to parse todoread input: {}", e)))?;
-        
+    pub fn invoke_todoread(
+        &self,
+        params: Value,
+        session_id: Option<&str>,
+    ) -> Result<Value, ToolError> {
+        let input: TodoreadInput = serde_json::from_value(params).map_err(|e| {
+            ToolError::new(
+                "INVALID_INPUT",
+                format!("Failed to parse todoread input: {}", e),
+            )
+        })?;
+
         let output = self.read_todos(input, session_id)?;
-        
-        serde_json::to_value(output)
-            .map_err(|e| ToolError::new("SERIALIZATION_ERROR", format!("Failed to serialize output: {}", e)))
+
+        serde_json::to_value(output).map_err(|e| {
+            ToolError::new(
+                "SERIALIZATION_ERROR",
+                format!("Failed to serialize output: {}", e),
+            )
+        })
     }
 }
 
@@ -1084,9 +1138,12 @@ mod tests {
         let todo2 = Todo::new("2", "Second", TodoStatus::InProgress, TodoPriority::Medium).unwrap();
 
         let write_result = tools
-            .write_todos(TodowriteInput {
-                todos: vec![todo1, todo2],
-            }, None)
+            .write_todos(
+                TodowriteInput {
+                    todos: vec![todo1, todo2],
+                },
+                None,
+            )
             .unwrap();
 
         assert_eq!(write_result.metadata.created.unwrap(), 2);
@@ -1094,10 +1151,13 @@ mod tests {
 
         // Read todos
         let read_result = tools
-            .read_todos(TodoreadInput {
-                status_filter: None,
-                priority_filter: None,
-            }, None)
+            .read_todos(
+                TodoreadInput {
+                    status_filter: None,
+                    priority_filter: None,
+                },
+                None,
+            )
             .unwrap();
 
         assert_eq!(read_result.metadata.todos.len(), 2);
@@ -1124,9 +1184,12 @@ mod tests {
         )
         .unwrap();
         let write_result = tools
-            .write_todos(TodowriteInput {
-                todos: vec![updated_todo],
-            }, None)
+            .write_todos(
+                TodowriteInput {
+                    todos: vec![updated_todo],
+                },
+                None,
+            )
             .unwrap();
 
         assert_eq!(write_result.metadata.created.unwrap(), 0);
@@ -1134,10 +1197,13 @@ mod tests {
 
         // Verify update
         let read_result = tools
-            .read_todos(TodoreadInput {
-                status_filter: None,
-                priority_filter: None,
-            }, None)
+            .read_todos(
+                TodoreadInput {
+                    status_filter: None,
+                    priority_filter: None,
+                },
+                None,
+            )
             .unwrap();
 
         assert_eq!(read_result.metadata.todos.len(), 1);
@@ -1162,17 +1228,23 @@ mod tests {
         .unwrap();
 
         tools
-            .write_todos(TodowriteInput {
-                todos: vec![todo1, todo2],
-            }, None)
+            .write_todos(
+                TodowriteInput {
+                    todos: vec![todo1, todo2],
+                },
+                None,
+            )
             .unwrap();
 
         // Filter by status
         let read_result = tools
-            .read_todos(TodoreadInput {
-                status_filter: Some(TodoStatus::Completed),
-                priority_filter: None,
-            }, None)
+            .read_todos(
+                TodoreadInput {
+                    status_filter: Some(TodoStatus::Completed),
+                    priority_filter: None,
+                },
+                None,
+            )
             .unwrap();
 
         assert_eq!(read_result.metadata.todos.len(), 1);
@@ -1190,17 +1262,23 @@ mod tests {
         let todo2 = Todo::new("2", "Low", TodoStatus::Pending, TodoPriority::Low).unwrap();
 
         tools
-            .write_todos(TodowriteInput {
-                todos: vec![todo1, todo2],
-            }, None)
+            .write_todos(
+                TodowriteInput {
+                    todos: vec![todo1, todo2],
+                },
+                None,
+            )
             .unwrap();
 
         // Filter by priority
         let read_result = tools
-            .read_todos(TodoreadInput {
-                status_filter: None,
-                priority_filter: Some(TodoPriority::High),
-            }, None)
+            .read_todos(
+                TodoreadInput {
+                    status_filter: None,
+                    priority_filter: Some(TodoPriority::High),
+                },
+                None,
+            )
             .unwrap();
 
         assert_eq!(read_result.metadata.todos.len(), 1);
@@ -1238,10 +1316,13 @@ mod tests {
 
         // Read todos with timeout enforcement (should complete well within 500ms)
         let result = tools
-            .read_todos_with_timeout(TodoreadInput {
-                status_filter: None,
-                priority_filter: None,
-            }, None)
+            .read_todos_with_timeout(
+                TodoreadInput {
+                    status_filter: None,
+                    priority_filter: None,
+                },
+                None,
+            )
             .await;
 
         assert!(result.is_ok());
@@ -1257,21 +1338,32 @@ mod tests {
 
         // Create todos with different statuses including cancelled
         let todo1 = Todo::new("1", "Active task", TodoStatus::Pending, TodoPriority::High).unwrap();
-        let todo2 =
-            Todo::new("2", "Cancelled task", TodoStatus::Cancelled, TodoPriority::Low).unwrap();
+        let todo2 = Todo::new(
+            "2",
+            "Cancelled task",
+            TodoStatus::Cancelled,
+            TodoPriority::Low,
+        )
+        .unwrap();
 
         tools
-            .write_todos(TodowriteInput {
-                todos: vec![todo1, todo2],
-            }, None)
+            .write_todos(
+                TodowriteInput {
+                    todos: vec![todo1, todo2],
+                },
+                None,
+            )
             .unwrap();
 
         // Filter by cancelled status
         let read_result = tools
-            .read_todos(TodoreadInput {
-                status_filter: Some(TodoStatus::Cancelled),
-                priority_filter: None,
-            }, None)
+            .read_todos(
+                TodoreadInput {
+                    status_filter: Some(TodoStatus::Cancelled),
+                    priority_filter: None,
+                },
+                None,
+            )
             .unwrap();
 
         assert_eq!(read_result.metadata.todos.len(), 1);

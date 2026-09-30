@@ -64,7 +64,9 @@ mod tests {
     #[tokio::test]
     async fn test_no_op_unit_of_work_success() {
         let uow = NoOpUnitOfWork;
-        let result = uow.execute(async { Ok::<_, crate::errors::ApplicationError>(42) }).await;
+        let result = uow
+            .execute(async { Ok::<_, crate::errors::ApplicationError>(42) })
+            .await;
         assert_eq!(result.unwrap(), 42);
     }
 

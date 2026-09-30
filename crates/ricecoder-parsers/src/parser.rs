@@ -12,12 +12,18 @@ use crate::{
 };
 
 /// Parser trait for parsing source code into syntax trees
-pub trait CodeParser {
+pub trait CodeParser: Send + Sync {
     /// Parse source code into a syntax tree
     fn parse<'a>(
         &'a self,
         source: &'a str,
     ) -> Pin<Box<dyn Future<Output = Result<SyntaxTree, ParserError>> + Send + 'a>>;
+}
+
+impl std::fmt::Debug for dyn CodeParser + '_ {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("CodeParser")
+    }
 }
 
 /// Parser configuration

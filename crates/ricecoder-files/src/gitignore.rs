@@ -3,8 +3,8 @@
 //! Provides gitignore pattern matching for directory listing and file operations
 //! matching OpenCode's ignore.ts functionality.
 
-use std::path::{Path, PathBuf};
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
+use std::path::{Path, PathBuf};
 use tracing::{debug, warn};
 
 use crate::error::FileError;
@@ -107,7 +107,7 @@ mod tests {
     fn test_gitignore_filter_no_files() {
         let temp_dir = TempDir::new().unwrap();
         let filter = GitignoreFilter::load_from_directory(temp_dir.path()).unwrap();
-        
+
         // Without .gitignore/.ignore files, nothing should be ignored
         // (except what the builder adds by default)
         // For this test, we just verify it doesn't crash

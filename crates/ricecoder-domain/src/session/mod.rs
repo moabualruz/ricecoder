@@ -220,7 +220,8 @@ impl Session {
 
         let message = Message::new(content.clone(), role);
         let message_id_str = message.id().to_string();
-        let message_uuid = uuid::Uuid::parse_str(&message_id_str).unwrap_or_else(|_| uuid::Uuid::new_v4());
+        let message_uuid =
+            uuid::Uuid::parse_str(&message_id_str).unwrap_or_else(|_| uuid::Uuid::new_v4());
 
         self.messages.push(message);
         self.updated_at = Utc::now();

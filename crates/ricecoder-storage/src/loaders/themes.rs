@@ -91,11 +91,7 @@ impl ThemeLoader {
         }
 
         let entries = fs::read_dir(&self.config_dir).map_err(|e| {
-            StorageError::io_error(
-                self.config_dir.clone(),
-                crate::error::IoOperation::Read,
-                e,
-            )
+            StorageError::io_error(self.config_dir.clone(), crate::error::IoOperation::Read, e)
         })?;
 
         for entry in entries.flatten() {
@@ -120,11 +116,7 @@ impl ThemeLoader {
         }
 
         let entries = fs::read_dir(&self.config_dir).map_err(|e| {
-            StorageError::io_error(
-                self.config_dir.clone(),
-                crate::error::IoOperation::Read,
-                e,
-            )
+            StorageError::io_error(self.config_dir.clone(), crate::error::IoOperation::Read, e)
         })?;
 
         for entry in entries.flatten() {
@@ -151,9 +143,8 @@ impl ThemeLoader {
             .unwrap_or("unknown")
             .to_string();
 
-        let mut theme: Theme = serde_json::from_str(&content).map_err(|e| {
-            StorageError::parse_error(path.to_path_buf(), "JSON", e.to_string())
-        })?;
+        let mut theme: Theme = serde_json::from_str(&content)
+            .map_err(|e| StorageError::parse_error(path.to_path_buf(), "JSON", e.to_string()))?;
 
         theme.name = name;
         Ok(theme)
@@ -189,7 +180,13 @@ mod tests {
         theme.name = "test".to_string();
 
         assert_eq!(theme.defs.get("primary"), Some(&"#ff0000".to_string()));
-        assert_eq!(theme.get_color("background", true), Some("#ff0000".to_string()));
-        assert_eq!(theme.get_color("background", false), Some("#00ff00".to_string()));
+        assert_eq!(
+            theme.get_color("background", true),
+            Some("#ff0000".to_string())
+        );
+        assert_eq!(
+            theme.get_color("background", false),
+            Some("#00ff00".to_string())
+        );
     }
 }

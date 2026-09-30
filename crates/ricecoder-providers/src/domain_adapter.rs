@@ -50,12 +50,8 @@ impl ProviderErrorMapper {
             ProviderError::NetworkError(msg) => DomainError::InvalidProviderConfig {
                 reason: format!("Network error: {}", msg),
             },
-            ProviderError::ProviderError(msg) => DomainError::InvalidProviderConfig {
-                reason: msg,
-            },
-            ProviderError::ConfigError(msg) => DomainError::InvalidProviderConfig {
-                reason: msg,
-            },
+            ProviderError::ProviderError(msg) => DomainError::InvalidProviderConfig { reason: msg },
+            ProviderError::ConfigError(msg) => DomainError::InvalidProviderConfig { reason: msg },
             ProviderError::InvalidModel(model) => DomainError::ValidationError {
                 field: "model".to_string(),
                 reason: format!("Invalid model: {}", model),
@@ -363,9 +359,10 @@ impl AiProviderChat for DomainProviderAdapter {
                 (provider_models::Capability::Chat, ModelCapability::Chat) => true,
                 (provider_models::Capability::Code, ModelCapability::Code) => true,
                 (provider_models::Capability::Vision, ModelCapability::Vision) => true,
-                (provider_models::Capability::FunctionCalling, ModelCapability::FunctionCalling) => {
-                    true
-                }
+                (
+                    provider_models::Capability::FunctionCalling,
+                    ModelCapability::FunctionCalling,
+                ) => true,
                 (provider_models::Capability::Streaming, ModelCapability::Streaming) => true,
                 // Embeddings not supported in infrastructure yet
                 (_, ModelCapability::Embeddings) => false,
@@ -379,8 +376,7 @@ impl AiProviderChat for DomainProviderAdapter {
 mod tests {
     use super::*;
     use crate::models::{
-        Capability, ChatResponse, FinishReason as InfraFinishReason,
-        TokenUsage as InfraTokenUsage,
+        Capability, ChatResponse, FinishReason as InfraFinishReason, TokenUsage as InfraTokenUsage,
     };
     use std::sync::atomic::{AtomicU32, Ordering};
 
@@ -520,8 +516,8 @@ mod tests {
     async fn test_adapter_circuit_breaker_opens() {
         let provider = Arc::new(MockProvider::failing("test", "Test"));
         let config = CircuitBreakerConfig::default().with_failure_threshold(2);
-        let adapter = DomainProviderAdapter::with_circuit_breaker(provider, config)
-            .with_max_retries(0); // No retries to speed up test
+        let adapter =
+            DomainProviderAdapter::with_circuit_breaker(provider, config).with_max_retries(0); // No retries to speed up test
 
         let request = AiChatRequest::new("test-model", vec![ChatMessage::user("Hello")]);
 
@@ -591,7 +587,9 @@ mod tests {
         let provider = Arc::new(MockProvider::new("test", "Test Provider"));
         let adapter = DomainProviderAdapter::new(provider);
 
-        let count = adapter.count_tokens("hello world test", "test-model").unwrap();
+        let count = adapter
+            .count_tokens("hello world test", "test-model")
+            .unwrap();
         assert_eq!(count, 3);
     }
 }

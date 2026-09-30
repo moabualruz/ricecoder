@@ -89,6 +89,7 @@ proptest! {
         changes in prop::collection::vec(arb_change(), 1..10), // Reduced to avoid stack overflow
         config in arb_history_config(),
     ) {
+        let max_redo = config.max_redo_stack_size;
         let mut manager = HistoryManager::with_config(config);
 
         // Record all changes
@@ -117,8 +118,8 @@ proptest! {
         }
 
         // Verify we redid the operations we undid
-        prop_assert_eq!(redo_operations, undo_operations,
-            "Should be able to redo all operations we undid");
+        prop_assert_eq!(redo_operations, undo_operations.min(max_redo),
+            "Redo operations should respect the configured stack limit");
     }
 
     /// **Feature: ricecoder-undo-redo, Property 3: Undo/Redo Round Trip - Stack Size Limits**

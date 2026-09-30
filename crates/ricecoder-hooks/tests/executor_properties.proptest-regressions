@@ -8,3 +8,4 @@ cc 34eb591ad4c1724f7dd8aa81acb285a598e673fea19d91b1f8229bb0447c3f10 # shrinks to
 cc 117ef4d1ce9b84504119fbb13db22bdc9eaac68a93412f0f8675009e580af0b7 # shrinks to value = ""
 cc a166283a206646394c646ffc1d62cebaed61c272aaa3b0f5a3bb99d63a96f16c # shrinks to var1 = "", var2 = "", var3 = "\0"
 cc e8080339db4247671fb1b388be2973e36419a8f131a1560a50387ee3abfa5c55 # shrinks to message = "\0"
+cc ca36933ea1319a8d98d9ca1e355e36dd7c3a39132accab82fd8796c4b28a1c75 # shrinks to message = "-n"

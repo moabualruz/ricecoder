@@ -8,11 +8,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    project::Project,
-    session::Session,
-    specification::Specification,
-    errors::*,
-    value_objects::*,
+    errors::*, project::Project, session::Session, specification::Specification, value_objects::*,
 };
 
 /// Validation result for domain operations
@@ -119,7 +115,8 @@ impl ValidationService {
         }
 
         // Message capacity check
-        let capacity_percent = (session.message_count() as f32 / session.max_messages() as f32) * 100.0;
+        let capacity_percent =
+            (session.message_count() as f32 / session.max_messages() as f32) * 100.0;
         if capacity_percent > 90.0 {
             result.add_warning(format!(
                 "Session message capacity is {}% full",
@@ -180,7 +177,9 @@ impl AnalysisService {
         let completion_percentage = specification.completion_percentage();
 
         let status = match (has_requirements, has_tasks, completion_percentage) {
-            (true, true, percent) if (percent - 100.0).abs() < f32::EPSILON => ProgressStatus::Complete,
+            (true, true, percent) if (percent - 100.0).abs() < f32::EPSILON => {
+                ProgressStatus::Complete
+            }
             (true, true, percent) if percent > 50.0 => ProgressStatus::InProgress,
             (true, true, _) => ProgressStatus::Planned,
             (true, false, _) => ProgressStatus::RequirementsDefined,

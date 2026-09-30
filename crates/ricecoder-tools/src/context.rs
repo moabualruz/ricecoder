@@ -2,13 +2,13 @@
 //!
 //! Provides complete execution context matching OpenCode's Tool.Context interface.
 
+use futures::FutureExt;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use serde::{Deserialize, Serialize};
-use futures::FutureExt;
 
 /// Tool execution context (OpenCode-compatible)
 ///
@@ -20,25 +20,25 @@ use futures::FutureExt;
 pub struct ToolContext {
     /// Session ID for tracking
     pub session_id: String,
-    
+
     /// Message ID within the session
     pub message_id: String,
-    
+
     /// Agent name executing the tool
     pub agent: String,
-    
+
     /// Abort signal for cancellation
     pub abort: Arc<tokio::sync::Notify>,
-    
+
     /// Abort state flag (for non-blocking checks)
     aborted: Arc<AtomicBool>,
-    
+
     /// Optional call ID for specific tool invocation
     pub call_id: Option<String>,
-    
+
     /// Optional extra metadata
     pub extra: Option<HashMap<String, serde_json::Value>>,
-    
+
     /// Metadata callback for incremental reporting
     metadata_callback: Arc<RwLock<Option<MetadataCallback>>>,
 }
@@ -48,7 +48,7 @@ pub struct ToolContext {
 pub struct MetadataUpdate {
     /// Optional updated title
     pub title: Option<String>,
-    
+
     /// Optional updated metadata
     pub metadata: Option<HashMap<String, serde_json::Value>>,
 }
@@ -155,7 +155,14 @@ impl fmt::Debug for ToolContext {
             .field("agent", &self.agent)
             .field("call_id", &self.call_id)
             .field("extra", &self.extra)
-            .field("has_metadata_callback", &self.metadata_callback.try_read().map(|cb| cb.is_some()).unwrap_or(false))
+            .field(
+                "has_metadata_callback",
+                &self
+                    .metadata_callback
+                    .try_read()
+                    .map(|cb| cb.is_some())
+                    .unwrap_or(false),
+            )
             .finish()
     }
 }

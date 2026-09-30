@@ -6,7 +6,10 @@ use std::{
 };
 
 #[cfg(feature = "parsers")]
-use tree_sitter::{Language as TSLanguage, Parser};
+use ricecoder_parsers::{
+    parser::{create_supports, ParserConfig},
+    ASTNode, Language as ParserLanguage, NodeType,
+};
 
 use crate::{
     error::ResearchError,
@@ -39,82 +42,67 @@ impl ReferenceTracker {
     /// # Returns
     /// A vector of symbol references found in the file
     pub fn track_references(
-        _path: &Path,
-        _language: &Language,
-        _content: &str,
-        _known_symbols: &HashMap<String, String>,
-    ) -> Result<Vec<SymbolReference>, ResearchError> {
-        #[cfg(feature = "parsers")]
-        {
-            let mut parser = Parser::new();
-            let ts_language = Self::get_tree_sitter_language(_language)?;
-            parser
-                .set_language(ts_language)
-                .map_err(|_| ResearchError::AnalysisFailed {
-                    reason: format!("Failed to set language for {:?}", _language),
-                    context: "Reference tracking requires a valid tree-sitter language parser"
-                        .to_string(),
-                })?;
-
-            let tree = parser.parse(_content, None)
-                .ok_or_else(|| ResearchError::AnalysisFailed {
-                reason: "Failed to parse file".to_string(),
-                context: "Tree-sitter parser could not generate an abstract syntax tree for reference tracking".to_string(),
-            })?;
-
-            let mut references = Vec::new();
-            let root = tree.root_node();
-
-            // Extract references based on language
-            Self::track_references_recursive(
-                &root,
-                content,
-                path,
-                language,
-                known_symbols,
-                &mut references,
-            )?;
-
-            Ok(references)
-        }
-        #[cfg(not(feature = "parsers"))]
-        {
-            // Return empty references when parsers are not available
-            Ok(Vec::new())
-        }
-    }
-
-    /// Recursively track references from AST nodes
-    #[cfg(feature = "parsers")]
-    fn track_references_recursive(
-        node: &tree_sitter::Node,
-        content: &str,
         path: &Path,
         language: &Language,
+        content: &str,
+        known_symbols: &HashMap<String, String>,
+    ) -> Result<Vec<SymbolReference>, ResearchError> {
+        let parser_language = match language {
+            Language::Rust => ParserLanguage::Rust,
+            Language::TypeScript => ParserLanguage::TypeScript,
+            Language::Python => ParserLanguage::Python,
+            Language::Go => ParserLanguage::Go,
+            unsupported => {
+                return Err(ResearchError::AnalysisFailed {
+                    reason: format!("Reference tracking does not support {unsupported:?}"),
+                    context: "Supported languages are Rust, TypeScript, Python, and Go".to_string(),
+                });
+            }
+        };
+
+        let support = create_supports()
+            .into_iter()
+            .find(|support| support.language() == parser_language)
+            .ok_or_else(|| ResearchError::AnalysisFailed {
+                reason: format!("No parser is registered for {language:?}"),
+                context: "Reference tracking requires a supported tree-sitter parser".to_string(),
+            })?;
+        let tree = support
+            .parse(content, &ParserConfig::default())
+            .map_err(|error| ResearchError::AnalysisFailed {
+                reason: error.to_string(),
+                context: format!("Failed to parse {language:?} source for reference tracking"),
+            })?;
+
+        let mut references = Vec::new();
+        Self::track_references_recursive(&tree.root, path, known_symbols, &mut references);
+        Ok(references)
+    }
+
+    fn track_references_recursive(
+        node: &ASTNode,
+        path: &Path,
         known_symbols: &HashMap<String, String>,
         references: &mut Vec<SymbolReference>,
-    ) -> Result<(), ResearchError> {
-        // Extract references from current node if applicable
-        if let Some(reference) =
-            Self::extract_reference_from_node(node, content, path, language, known_symbols)
-        {
-            references.push(reference);
+    ) {
+        if matches!(
+            &node.node_type,
+            NodeType::Custom(kind)
+                if matches!(kind.as_str(), "identifier" | "field_identifier" | "type_identifier")
+        ) {
+            if let Some(symbol_id) = known_symbols.get(node.text.trim()) {
+                references.push(SymbolReference {
+                    symbol_id: symbol_id.clone(),
+                    file: path.to_path_buf(),
+                    line: node.range.start.line + 1,
+                    kind: ReferenceKind::Usage,
+                });
+            }
         }
 
-        // Recursively process children
-        let mut cursor = node.walk();
-        for child in node.children(&mut cursor) {
-            Self::track_references_recursive(
-                &child,
-                content,
-                path,
-                language,
-                known_symbols,
-                references,
-            )?;
+        for child in &node.children {
+            Self::track_references_recursive(child, path, known_symbols, references);
         }
-
-        Ok(())
     }
 }
 
@@ -138,7 +126,7 @@ mod tests {
 
     #[test]
     fn test_track_rust_references() {
-        let content = "fn main() { let x = 5; println!(\"{}\", x); }";
+        let content = "fn main() { println!(\"{}\", x); }";
         let path = Path::new("test.rs");
         let mut known_symbols = HashMap::new();
         known_symbols.insert("x".to_string(), "test.rs:1:11".to_string());
@@ -147,13 +135,16 @@ mod tests {
             ReferenceTracker::track_references(path, &Language::Rust, content, &known_symbols)
                 .expect("Failed to track references");
 
-        // Should find at least one reference to 'x'
-        assert!(!references.is_empty());
+        assert_eq!(references.len(), 1);
+        assert_eq!(references[0].symbol_id, "test.rs:1:11");
+        assert_eq!(references[0].file.as_path(), path);
+        assert_eq!(references[0].line, 1);
+        assert_eq!(references[0].kind, ReferenceKind::Usage);
     }
 
     #[test]
     fn test_track_python_references() {
-        let content = "def foo():\n    x = 5\n    print(x)";
+        let content = "def foo():\n    print(x)";
         let path = Path::new("test.py");
         let mut known_symbols = HashMap::new();
         known_symbols.insert("x".to_string(), "test.py:2:5".to_string());
@@ -162,8 +153,11 @@ mod tests {
             ReferenceTracker::track_references(path, &Language::Python, content, &known_symbols)
                 .expect("Failed to track references");
 
-        // Should find references to 'x'
-        let _ = references;
+        assert_eq!(references.len(), 1);
+        assert_eq!(references[0].symbol_id, "test.py:2:5");
+        assert_eq!(references[0].file.as_path(), path);
+        assert_eq!(references[0].line, 2);
+        assert_eq!(references[0].kind, ReferenceKind::Usage);
     }
 
     #[test]
@@ -178,17 +172,6 @@ mod tests {
 
         // Should find no references since no symbols are known
         assert!(references.is_empty());
-    }
-
-    #[test]
-    fn test_get_line_from_byte_offset() {
-        let content = "line1\nline2\nline3";
-        // Byte offset 0 is at the start of line 1
-        assert_eq!(ReferenceTracker::get_line_from_byte_offset(content, 0), 1);
-        // Byte offset 6 is after the newline, at the start of line 2
-        assert_eq!(ReferenceTracker::get_line_from_byte_offset(content, 6), 2);
-        // Byte offset 12 is after the second newline, at the start of line 3
-        assert_eq!(ReferenceTracker::get_line_from_byte_offset(content, 12), 3);
     }
 
     #[test]

@@ -143,7 +143,7 @@ impl fmt::Display for KeyCombo {
                 write!(f, " ")?;
             }
         }
-        
+
         // Canonical modifier order: Ctrl, Alt, Super, Shift (OpenCode compatible)
         let mut sorted_mods = self.modifiers.clone();
         sorted_mods.sort_by_key(|m| match m {
@@ -153,11 +153,11 @@ impl fmt::Display for KeyCombo {
             Modifier::Shift => 3,
             Modifier::Meta => 4,
         });
-        
+
         for modifier in &sorted_mods {
             write!(f, "{}+", modifier)?;
         }
-        
+
         // Normalize key names (OpenCode: delete → del)
         match &self.key {
             Key::Delete => write!(f, "del"),
@@ -177,7 +177,7 @@ impl FromStr for KeyCombo {
                 "Empty key combination".to_string(),
             ));
         }
-        
+
         // Check for leader prefix (OpenCode: <leader>)
         let normalized = trimmed.replace("leader+", "");
         let (leader, rest) = if trimmed.starts_with("<leader>") {
@@ -188,7 +188,7 @@ impl FromStr for KeyCombo {
         } else {
             (false, trimmed)
         };
-        
+
         // If rest is empty after leader, it's just the leader key
         if rest.is_empty() {
             return Ok(KeyCombo {
@@ -212,7 +212,11 @@ impl FromStr for KeyCombo {
 
         let key = Key::from_str(parts[parts.len() - 1])?;
 
-        Ok(KeyCombo { modifiers, key, leader })
+        Ok(KeyCombo {
+            modifiers,
+            key,
+            leader,
+        })
     }
 }
 
@@ -303,12 +307,12 @@ impl Keybind {
     pub fn parse_key(&self) -> Result<KeyCombo, ParseError> {
         KeyCombo::from_str(&self.key)
     }
-    
+
     /// Parse all key bindings (primary + alternatives) into KeyCombo vec
     /// OpenCode: supports comma-separated alternatives (e.g. "ctrl+k,ctrl+p")
     pub fn parse_all_keys(&self) -> Result<Vec<KeyCombo>, ParseError> {
         let mut combos = vec![];
-        
+
         // First try comma-separated format in primary key
         if self.key.contains(',') {
             for part in self.key.split(',') {
@@ -318,7 +322,7 @@ impl Keybind {
             // Single primary key
             combos.push(KeyCombo::from_str(&self.key)?);
         }
-        
+
         // Then add alternatives
         for alt in &self.alternatives {
             if alt.contains(',') {
@@ -329,7 +333,7 @@ impl Keybind {
                 combos.push(KeyCombo::from_str(alt)?);
             }
         }
-        
+
         Ok(combos)
     }
 

@@ -8,9 +8,9 @@ use serde::{Deserialize, Serialize};
 use crate::value_objects::{ProjectId, SessionId};
 
 use super::{
-    AccessEvent, ConsentRecord, ConsentType, DataDeletionRequest, DataExport, DataMinimizationPolicy,
-    DeletionReason, ExportFormat, GdprConsent, PerformanceMetric, PrivacyPolicy, SecurityAlert,
-    SecurityContext, SecurityEvent,
+    AccessEvent, ConsentRecord, ConsentType, DataDeletionRequest, DataExport,
+    DataMinimizationPolicy, DeletionReason, ExportFormat, GdprConsent, PerformanceMetric,
+    PrivacyPolicy, SecurityAlert, SecurityContext, SecurityEvent,
 };
 
 /// Session entity representing an AI interaction session with security features
@@ -161,7 +161,11 @@ impl Session {
     }
 
     /// Request data export for GDPR portability
-    pub fn request_data_export(&mut self, user_id: String, format: ExportFormat) -> &mut DataExport {
+    pub fn request_data_export(
+        &mut self,
+        user_id: String,
+        format: ExportFormat,
+    ) -> &mut DataExport {
         let export = DataExport::new(user_id, format);
         self.data_exports.push(export);
         self.data_exports.last_mut().unwrap()

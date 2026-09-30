@@ -341,20 +341,23 @@ impl ServerManager {
         })?;
 
         // Wait for response with timeout (30 seconds = 30000ms)
-        let response = tokio::time::timeout(
-            Duration::from_secs(30),
-            transport.receive(),
-        )
-        .await
-        .map_err(|_| Error::TimeoutError(30000))?
-        .map_err(|e| Error::ConnectionError(format!("Failed to receive tools/list response: {}", e)))?;
+        let response = tokio::time::timeout(Duration::from_secs(30), transport.receive())
+            .await
+            .map_err(|_| Error::TimeoutError(30000))?
+            .map_err(|e| {
+                Error::ConnectionError(format!("Failed to receive tools/list response: {}", e))
+            })?;
 
         // Parse the response
         match response {
             MCPMessage::Response(resp) => {
                 // Parse tools from the result
                 // MCP tools/list response format: { "tools": [{ "name": "...", "description": "...", "inputSchema": {...} }] }
-                let tools_value = resp.result.get("tools").cloned().unwrap_or(serde_json::json!([]));
+                let tools_value = resp
+                    .result
+                    .get("tools")
+                    .cloned()
+                    .unwrap_or(serde_json::json!([]));
                 let tools_array = tools_value.as_array().cloned().unwrap_or_default();
 
                 let tools: Vec<ToolMetadata> = tools_array
@@ -368,12 +371,22 @@ impl ServerManager {
                             .to_string();
 
                         // Parse input schema to extract parameters
-                        let input_schema = tool_json.get("inputSchema").cloned().unwrap_or(serde_json::json!({}));
-                        let properties = input_schema.get("properties").cloned().unwrap_or(serde_json::json!({}));
+                        let input_schema = tool_json
+                            .get("inputSchema")
+                            .cloned()
+                            .unwrap_or(serde_json::json!({}));
+                        let properties = input_schema
+                            .get("properties")
+                            .cloned()
+                            .unwrap_or(serde_json::json!({}));
                         let required_params: Vec<String> = input_schema
                             .get("required")
                             .and_then(|v| v.as_array())
-                            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+                            .map(|arr| {
+                                arr.iter()
+                                    .filter_map(|v| v.as_str().map(String::from))
+                                    .collect()
+                            })
                             .unwrap_or_default();
 
                         let parameters: Vec<crate::metadata::ParameterMetadata> = properties
@@ -418,17 +431,13 @@ impl ServerManager {
                 info!("Discovered {} tools from server {}", tools.len(), config.id);
                 Ok(tools)
             }
-            MCPMessage::Error(err) => {
-                Err(Error::ServerError(format!(
-                    "Server returned error during tool discovery: {} (code: {})",
-                    err.error.message, err.error.code
-                )))
-            }
-            _ => {
-                Err(Error::ValidationError(
-                    "Unexpected response type for tools/list request".to_string(),
-                ))
-            }
+            MCPMessage::Error(err) => Err(Error::ServerError(format!(
+                "Server returned error during tool discovery: {} (code: {})",
+                err.error.message, err.error.code
+            ))),
+            _ => Err(Error::ValidationError(
+                "Unexpected response type for tools/list request".to_string(),
+            )),
         }
     }
 
@@ -485,7 +494,8 @@ impl ServerManager {
                 let mut servers = self.servers.write().await;
                 if let Some(registration) = servers.get_mut(server_id) {
                     registration.health.state = ServerState::Error;
-                    registration.health.last_error = Some(format!("Transport creation failed: {}", e));
+                    registration.health.last_error =
+                        Some(format!("Transport creation failed: {}", e));
                 }
                 return Err(e);
             }
@@ -495,10 +505,16 @@ impl ServerManager {
         let transport_clone = transport.clone();
 
         // Discover tools from the server
-        let tools = match self.discover_tools_from_server(&config, &*transport_clone).await {
+        let tools = match self
+            .discover_tools_from_server(&config, &*transport_clone)
+            .await
+        {
             Ok(t) => t,
             Err(e) => {
-                warn!("Failed to discover tools from server {}: {}. Starting anyway.", server_id, e);
+                warn!(
+                    "Failed to discover tools from server {}: {}. Starting anyway.",
+                    server_id, e
+                );
                 Vec::new() // Continue without tools, can be discovered later
             }
         };
@@ -524,7 +540,11 @@ impl ServerManager {
                 .await;
         }
 
-        info!("Server {} started successfully with {} tools", server_id, tools.len());
+        info!(
+            "Server {} started successfully with {} tools",
+            server_id,
+            tools.len()
+        );
         Ok(())
     }
 

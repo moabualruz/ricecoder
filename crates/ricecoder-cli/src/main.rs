@@ -5,7 +5,6 @@ use std::path::Path;
 use ricecoder_cli::{lifecycle, output, router::CommandRouter};
 use ricecoder_storage::DefaultsManager;
 
-
 #[tokio::main]
 async fn main() {
     // Check for multi-call binary pattern

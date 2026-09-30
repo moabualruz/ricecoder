@@ -18,9 +18,15 @@ pub mod routes;
 pub mod todo_item;
 
 pub use app_context::{
-    AgentInfo, AppContext, McpConnectionStatus, McpServerStatus, ModelDisplayInfo,
-    ProviderInfo, SessionSummary, SyncStatus,
-    AppState as BackendAppState,  // Renamed to avoid conflict with TUI AppState
+    AgentInfo,
+    AppContext,
+    AppState as BackendAppState, // Renamed to avoid conflict with TUI AppState
+    McpConnectionStatus,
+    McpServerStatus,
+    ModelDisplayInfo,
+    ProviderInfo,
+    SessionSummary,
+    SyncStatus,
 };
 pub use border::{SplitBorder, EMPTY_BORDER};
 pub use context::{
@@ -30,12 +36,24 @@ pub use context::{
 pub use did_you_know::DidYouKnow;
 pub use routes::{
     // Home route
-    Home, HomeState, HomeTheme, HomeView, McpStatus,
+    Home,
+    HomeState,
+    HomeTheme,
+    HomeView,
     // Session dialogs (temporarily commented out)
     // DialogFork, DialogMessage, DialogSubagent, DialogTimeline, MessageAction, SubagentAction,
     // Session components
-    ItemStatus, KeybindHint, SessionFooter, SessionFooterTheme, SessionHeader, SessionHeaderTheme,
-    SessionSidebar, SidebarItem, SidebarSection, SidebarTheme,
+    ItemStatus,
+    KeybindHint,
+    McpStatus,
+    SessionFooter,
+    SessionFooterTheme,
+    SessionHeader,
+    SessionHeaderTheme,
+    SessionSidebar,
+    SidebarItem,
+    SidebarSection,
+    SidebarTheme,
 };
 pub use todo_item::{TodoItem, TodoStatus};
 
@@ -239,7 +257,7 @@ impl TuiApp {
             // Capture state snapshot for rendering (avoids borrow conflict)
             let state = self.state.clone();
             let placeholder_idx = self.placeholder_idx;
-            
+
             // Draw the UI with captured state
             self.terminal.draw(|frame| {
                 render_ui(frame, &state, placeholder_idx);
@@ -270,12 +288,12 @@ impl TuiApp {
     /// Sync TuiState from AppContext backend state
     async fn sync_state_from_context(&mut self) {
         let backend_state = self.app_context.state.read().await;
-        
+
         // Sync provider/model info
         self.state.current_provider = backend_state.current_provider_id.clone();
         self.state.current_model = backend_state.current_model_id.clone();
         self.state.current_agent = backend_state.current_agent.clone();
-        
+
         // Sync MCP status
         let connected_count = backend_state.connected_mcp_count();
         let has_errors = backend_state.has_mcp_errors();
@@ -284,14 +302,14 @@ impl TuiApp {
             total: backend_state.mcp_servers.len(),
             has_errors,
         };
-        
+
         // Sync directory and version
         self.state.home.directory = backend_state.directory.clone();
         self.state.home.version = backend_state.version.clone();
-        
+
         // Sync token usage display
         self.state.token_display = backend_state.token_display();
-        
+
         // VCS branch is tracked in backend_state.vcs_branch but not exposed in HomeState
         // This can be used for status bar display in the future
     }
@@ -325,7 +343,7 @@ fn render_home(frame: &mut Frame, area: Rect, state: &TuiState, placeholder_idx:
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Min(10), // Main content (centered)
+            Constraint::Min(10),   // Main content (centered)
             Constraint::Length(2), // Footer
         ])
         .split(area);
@@ -391,7 +409,9 @@ fn render_logo(frame: &mut Frame, area: Rect, theme: &Theme) {
         let left = Span::styled(LOGO_LEFT[i], Style::default().fg(theme.text_muted));
         let right = Span::styled(
             LOGO_RIGHT[i],
-            Style::default().fg(theme.foreground).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(theme.foreground)
+                .add_modifier(Modifier::BOLD),
         );
         lines.push(Line::from(vec![left, Span::raw(" "), right]));
     }
@@ -449,7 +469,7 @@ fn render_prompt(frame: &mut Frame, area: Rect, state: &TuiState, placeholder_id
     let inner_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Min(1), // Input
+            Constraint::Min(1),    // Input
             Constraint::Length(1), // Status
         ])
         .margin(1)
@@ -537,10 +557,10 @@ fn render_session(frame: &mut Frame, area: Rect, state: &TuiState) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(2),  // Header
-            Constraint::Min(5),     // Messages
-            Constraint::Length(5),  // Prompt
-            Constraint::Length(1),  // Footer
+            Constraint::Length(2), // Header
+            Constraint::Min(5),    // Messages
+            Constraint::Length(5), // Prompt
+            Constraint::Length(1), // Footer
         ])
         .split(area);
 
@@ -560,31 +580,52 @@ fn render_session(frame: &mut Frame, area: Rect, state: &TuiState) {
 /// Render session header
 fn render_session_header(frame: &mut Frame, area: Rect, state: &TuiState) {
     let title = match &state.route {
-        Route::Session { session_id } => format!("Session: {}", &session_id[..8.min(session_id.len())]),
+        Route::Session { session_id } => {
+            format!("Session: {}", &session_id[..8.min(session_id.len())])
+        }
         _ => "Session".to_string(),
     };
 
     // Build header line with title, model, and token usage
     let agent_color = state.theme.agent_colors.get(&state.current_agent);
-    let mut header_spans = vec![
-        Span::styled(title, Style::default().fg(agent_color).add_modifier(Modifier::BOLD)),
-    ];
-    
+    let mut header_spans = vec![Span::styled(
+        title,
+        Style::default()
+            .fg(agent_color)
+            .add_modifier(Modifier::BOLD),
+    )];
+
     // Add model info
     if let Some(model) = &state.current_model {
-        header_spans.push(Span::styled("  |  ", Style::default().fg(state.theme.text_muted)));
-        header_spans.push(Span::styled(model.clone(), Style::default().fg(state.theme.foreground)));
+        header_spans.push(Span::styled(
+            "  |  ",
+            Style::default().fg(state.theme.text_muted),
+        ));
+        header_spans.push(Span::styled(
+            model.clone(),
+            Style::default().fg(state.theme.foreground),
+        ));
     }
-    
+
     // Add token usage if available
     if !state.token_display.is_empty() {
-        header_spans.push(Span::styled("  |  ", Style::default().fg(state.theme.text_muted)));
-        header_spans.push(Span::styled(&state.token_display, Style::default().fg(state.theme.success)));
+        header_spans.push(Span::styled(
+            "  |  ",
+            Style::default().fg(state.theme.text_muted),
+        ));
+        header_spans.push(Span::styled(
+            &state.token_display,
+            Style::default().fg(state.theme.success),
+        ));
     }
 
     let header = Paragraph::new(Line::from(header_spans))
         .alignment(Alignment::Left)
-        .block(Block::default().borders(Borders::BOTTOM).border_style(Style::default().fg(state.theme.border)));
+        .block(
+            Block::default()
+                .borders(Borders::BOTTOM)
+                .border_style(Style::default().fg(state.theme.border)),
+        );
 
     frame.render_widget(header, area);
 }
@@ -606,10 +647,14 @@ fn render_messages(frame: &mut Frame, area: Rect, state: &TuiState) {
             MessageRole::Assistant => ("Assistant", state.theme.success),
         };
 
-        lines.push(Line::from(vec![
-            Span::styled(format!("{}: ", prefix), Style::default().fg(color).add_modifier(Modifier::BOLD)),
-        ]));
-        lines.push(Line::from(Span::styled(&msg.content, Style::default().fg(state.theme.foreground))));
+        lines.push(Line::from(vec![Span::styled(
+            format!("{}: ", prefix),
+            Style::default().fg(color).add_modifier(Modifier::BOLD),
+        )]));
+        lines.push(Line::from(Span::styled(
+            &msg.content,
+            Style::default().fg(state.theme.foreground),
+        )));
         lines.push(Line::from(""));
     }
 
@@ -629,7 +674,10 @@ fn render_session_footer(frame: &mut Frame, area: Rect, state: &TuiState) {
 
     let footer = Line::from(vec![
         Span::styled("Tab ", Style::default().fg(state.theme.foreground)),
-        Span::styled("switch agent  ", Style::default().fg(state.theme.text_muted)),
+        Span::styled(
+            "switch agent  ",
+            Style::default().fg(state.theme.text_muted),
+        ),
         Span::styled("Ctrl+K ", Style::default().fg(state.theme.foreground)),
         Span::styled("commands  ", Style::default().fg(state.theme.text_muted)),
         Span::styled(&status_text, Style::default().fg(state.theme.text_muted)),
@@ -646,7 +694,12 @@ fn render_command_palette(frame: &mut Frame, area: Rect, state: &TuiState) {
     let x = (area.width.saturating_sub(width)) / 2;
     let y = (area.height.saturating_sub(height)) / 2;
 
-    let overlay_area = Rect { x, y, width, height };
+    let overlay_area = Rect {
+        x,
+        y,
+        width,
+        height,
+    };
 
     // Clear background
     frame.render_widget(Clear, overlay_area);
@@ -664,7 +717,12 @@ fn render_command_palette(frame: &mut Frame, area: Rect, state: &TuiState) {
 
     let content: Vec<Line> = commands
         .iter()
-        .map(|c| Line::from(Span::styled(*c, Style::default().fg(state.theme.foreground))))
+        .map(|c| {
+            Line::from(Span::styled(
+                *c,
+                Style::default().fg(state.theme.foreground),
+            ))
+        })
         .collect();
 
     let palette = Paragraph::new(content)
@@ -743,7 +801,7 @@ impl TuiApp {
                 if !self.state.prompt_input.is_empty() {
                     let prompt_content = self.state.prompt_input.clone();
                     self.state.prompt_input.clear();
-                    
+
                     // Create new session via AppContext
                     match self.app_context.create_session().await {
                         Ok(session_id) => {
@@ -754,7 +812,7 @@ impl TuiApp {
                                 timestamp: std::time::Instant::now(),
                                 is_streaming: false,
                             });
-                            
+
                             // Add placeholder assistant message for streaming
                             self.state.messages.push(ChatMessage {
                                 role: MessageRole::Assistant,
@@ -762,10 +820,10 @@ impl TuiApp {
                                 timestamp: std::time::Instant::now(),
                                 is_streaming: true,
                             });
-                            
+
                             // Send message with streaming (updates UI progressively)
                             self.send_with_streaming(prompt_content).await;
-                            
+
                             // Navigate to session
                             self.state.route = Route::Session { session_id };
                         }
@@ -778,7 +836,7 @@ impl TuiApp {
             KeyCode::Tab => {
                 // Cycle agent via AppContext
                 self.app_context.cycle_agent().await;
-                
+
                 // Sync agent from backend
                 let backend_state = self.app_context.state.read().await;
                 self.state.current_agent = backend_state.current_agent.clone();
@@ -800,7 +858,7 @@ impl TuiApp {
                 if !self.state.prompt_input.is_empty() {
                     let prompt_content = self.state.prompt_input.clone();
                     self.state.prompt_input.clear();
-                    
+
                     // Add user message to local UI state
                     self.state.messages.push(ChatMessage {
                         role: MessageRole::User,
@@ -808,7 +866,7 @@ impl TuiApp {
                         timestamp: std::time::Instant::now(),
                         is_streaming: false,
                     });
-                    
+
                     // Add placeholder assistant message for streaming
                     self.state.messages.push(ChatMessage {
                         role: MessageRole::Assistant,
@@ -816,7 +874,7 @@ impl TuiApp {
                         timestamp: std::time::Instant::now(),
                         is_streaming: true,
                     });
-                    
+
                     // Send message with streaming (updates UI progressively)
                     self.send_with_streaming(prompt_content).await;
                 }
@@ -824,7 +882,7 @@ impl TuiApp {
             KeyCode::Tab => {
                 // Cycle agent via AppContext
                 self.app_context.cycle_agent().await;
-                
+
                 // Sync agent from backend
                 let backend_state = self.app_context.state.read().await;
                 self.state.current_agent = backend_state.current_agent.clone();
@@ -837,7 +895,7 @@ impl TuiApp {
     async fn send_with_streaming(&mut self, content: String) {
         // Set session status to running
         self.state.session_status = SessionStatus::Running;
-        
+
         // Get streaming response from AppContext
         match self.app_context.send_message_streaming(content).await {
             Ok((mut word_stream, _usage)) => {
@@ -847,7 +905,7 @@ impl TuiApp {
                     if let Some(last_msg) = self.state.messages.last_mut() {
                         last_msg.content.push_str(&word);
                     }
-                    
+
                     // Redraw terminal to show progress
                     let state = self.state.clone();
                     let placeholder_idx = self.placeholder_idx;
@@ -857,7 +915,7 @@ impl TuiApp {
                         tracing::warn!("Failed to redraw during streaming: {}", e);
                     }
                 }
-                
+
                 // Mark streaming complete
                 if let Some(last_msg) = self.state.messages.last_mut() {
                     last_msg.is_streaming = false;
@@ -872,10 +930,10 @@ impl TuiApp {
                 }
             }
         }
-        
+
         // Sync token display from backend
         self.sync_state_from_context().await;
-        
+
         // Set session status back to idle
         self.state.session_status = SessionStatus::Idle;
     }
@@ -883,25 +941,29 @@ impl TuiApp {
     /// Sync messages from AppContext to local TuiState
     async fn sync_messages_from_context(&mut self) {
         let backend_state = self.app_context.state.read().await;
-        
+
         // Convert backend messages to TUI ChatMessages
-        self.state.messages = backend_state.messages.iter().map(|msg| {
-            let role = match msg.role {
-                ricecoder_sessions::MessageRole::User => MessageRole::User,
-                ricecoder_sessions::MessageRole::Assistant => MessageRole::Assistant,
-                ricecoder_sessions::MessageRole::System => MessageRole::Assistant, // Map system to assistant for display
-            };
-            
-            // Extract text content from message parts using Message::content()
-            let content = msg.content();
-            
-            ChatMessage {
-                role,
-                content,
-                timestamp: std::time::Instant::now(), // Use current time since we don't have direct conversion
-                is_streaming: false,
-            }
-        }).collect();
+        self.state.messages = backend_state
+            .messages
+            .iter()
+            .map(|msg| {
+                let role = match msg.role {
+                    ricecoder_sessions::MessageRole::User => MessageRole::User,
+                    ricecoder_sessions::MessageRole::Assistant => MessageRole::Assistant,
+                    ricecoder_sessions::MessageRole::System => MessageRole::Assistant, // Map system to assistant for display
+                };
+
+                // Extract text content from message parts using Message::content()
+                let content = msg.content();
+
+                ChatMessage {
+                    role,
+                    content,
+                    timestamp: std::time::Instant::now(), // Use current time since we don't have direct conversion
+                    is_streaming: false,
+                }
+            })
+            .collect();
     }
 
     /// Handle mouse events

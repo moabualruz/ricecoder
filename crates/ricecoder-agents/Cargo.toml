@@ -28,7 +28,7 @@ ricecoder-tools = { workspace = true }
 jsonschema = { workspace = true }
 serde_yaml = { workspace = true }
 reqwest = { workspace = true }
-rmcp = { workspace = true, features = ["client", "transport-io"], optional = true }
+rmcp = { workspace = true, features = ["client", "transport-child-process"], optional = true }
 
 [features]
 default = []

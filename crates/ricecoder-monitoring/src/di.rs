@@ -1,12 +1,12 @@
 //! Dependency injection support for ricecoder-monitoring
 
-use std::sync::Arc;
-use ricecoder_common::di::{ServiceEntry, ServiceFactory};
 use crate::{
     dashboards::DashboardManager,
-    reporting::{ReportGenerator, ReportScheduler},
     performance::PerformanceProfiler,
+    reporting::{ReportGenerator, ReportScheduler},
 };
+use ricecoder_common::di::{ServiceEntry, ServiceFactory};
+use std::sync::Arc;
 
 inventory::submit! {
     ServiceFactory::new("monitoring", create_monitoring_services)
@@ -29,6 +29,9 @@ mod tests {
     #[test]
     fn test_monitoring_factory_registered() {
         let factories = list_discovered_factories();
-        assert!(factories.contains(&"monitoring"), "Factory should be registered");
+        assert!(
+            factories.contains(&"monitoring"),
+            "Factory should be registered"
+        );
     }
 }

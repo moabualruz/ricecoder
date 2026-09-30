@@ -63,11 +63,7 @@ impl Ripgrep {
     ///
     /// Matches OpenCode's `Ripgrep.files()` - uses `rg --files`
     /// with `--follow`, `--hidden`, and `--glob=!.git/*`
-    pub async fn files(
-        &self,
-        cwd: &Path,
-        glob_patterns: &[String],
-    ) -> RipgrepResult<Vec<PathBuf>> {
+    pub async fn files(&self, cwd: &Path, glob_patterns: &[String]) -> RipgrepResult<Vec<PathBuf>> {
         let mut args = vec![
             "--files".to_string(),
             "--follow".to_string(),
@@ -144,9 +140,10 @@ impl Ripgrep {
             .spawn()
             .map_err(|e| RipgrepError::Io(e))?;
 
-        let stdout = child.stdout.take().ok_or_else(|| {
-            RipgrepError::SearchFailed("Failed to capture stdout".to_string())
-        })?;
+        let stdout = child
+            .stdout
+            .take()
+            .ok_or_else(|| RipgrepError::SearchFailed("Failed to capture stdout".to_string()))?;
 
         let reader = BufReader::new(stdout);
         let mut lines = reader.lines();

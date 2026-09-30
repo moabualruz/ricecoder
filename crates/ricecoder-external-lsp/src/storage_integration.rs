@@ -155,9 +155,9 @@ impl StorageConfigLoader {
         // Use ricecoder-storage LspConfigLoader to load configs from config/lsp/*.yaml
         // with hardcoded fallbacks
         let loader = ricecoder_storage::loaders::LspConfigLoader::with_default_path();
-        
+
         let mut servers: HashMap<String, Vec<LspServerConfig>> = HashMap::new();
-        
+
         // Load all configs from storage (includes YAML files + hardcoded fallbacks)
         match loader.get_all() {
             Ok(configs) => {
@@ -176,13 +176,16 @@ impl StorageConfigLoader {
                         idle_timeout_ms: storage_config.idle_timeout_ms,
                         output_mapping: None,
                     };
-                    
+
                     servers.insert(language, vec![lsp_config]);
                 }
             }
             Err(e) => {
-                warn!("Failed to load LSP configs from storage: {}, using minimal defaults", e);
-                
+                warn!(
+                    "Failed to load LSP configs from storage: {}, using minimal defaults",
+                    e
+                );
+
                 // Fallback to minimal hardcoded defaults if storage fails
                 servers.insert(
                     "rust".to_string(),

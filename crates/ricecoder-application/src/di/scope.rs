@@ -18,13 +18,13 @@ use super::error::ContainerError;
 ///
 /// ```ignore
 /// let scope = container.create_scope();
-/// 
+///
 /// // First resolution creates the instance
 /// let ctx1: Arc<RequestContext> = scope.resolve().unwrap();
-/// 
+///
 /// // Second resolution returns the same instance
 /// let ctx2: Arc<RequestContext> = scope.resolve().unwrap();
-/// 
+///
 /// assert!(Arc::ptr_eq(&ctx1, &ctx2));
 /// // When scope is dropped, ctx1 and ctx2 references remain valid
 /// // but no new instances can be created from this scope
@@ -101,9 +101,9 @@ impl<'a> ScopedContainer<'a> {
                 .map_err(|_| ContainerError::TypeMismatch(std::any::type_name::<T>()));
         }
 
-        Err(ContainerError::ServiceNotRegistered(std::any::type_name::<
-            T,
-        >()))
+        Err(ContainerError::ServiceNotRegistered(
+            std::any::type_name::<T>(),
+        ))
     }
 
     /// Check if a service is registered (in parent or scoped)

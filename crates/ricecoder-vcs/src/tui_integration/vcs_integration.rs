@@ -80,14 +80,13 @@ impl VcsStatus {
     /// Get formatted ahead/behind string for display
     /// Returns format like "↑1 ↓2" or "↑3" or "↓1" or None
     pub fn ahead_behind_display(&self) -> Option<String> {
-        self.ahead_behind.and_then(|(ahead, behind)| {
-            match (ahead > 0, behind > 0) {
+        self.ahead_behind
+            .and_then(|(ahead, behind)| match (ahead > 0, behind > 0) {
                 (true, true) => Some(format!("↑{} ↓{}", ahead, behind)),
                 (true, false) => Some(format!("↑{}", ahead)),
                 (false, true) => Some(format!("↓{}", behind)),
                 (false, false) => None,
-            }
-        })
+            })
     }
 }
 
@@ -343,22 +342,22 @@ mod tests {
     #[test]
     fn test_ahead_behind_display() {
         let mut status = VcsStatus::default();
-        
+
         // No ahead/behind
         assert!(status.ahead_behind_display().is_none());
-        
+
         // Only ahead
         status.ahead_behind = Some((3, 0));
         assert_eq!(status.ahead_behind_display(), Some("↑3".to_string()));
-        
+
         // Only behind
         status.ahead_behind = Some((0, 2));
         assert_eq!(status.ahead_behind_display(), Some("↓2".to_string()));
-        
+
         // Both ahead and behind
         status.ahead_behind = Some((1, 4));
         assert_eq!(status.ahead_behind_display(), Some("↑1 ↓4".to_string()));
-        
+
         // Zero both (edge case)
         status.ahead_behind = Some((0, 0));
         assert!(status.ahead_behind_display().is_none());

@@ -58,7 +58,7 @@ mod tests {
     fn test_domain_result_type() {
         let success: DomainResult<i32> = Ok(42);
         let failure: DomainResult<i32> = Err(DomainError::ValidationError("test".to_string()));
-        
+
         assert!(success.is_ok());
         assert!(failure.is_err());
     }

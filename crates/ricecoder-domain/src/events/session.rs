@@ -13,13 +13,13 @@ use super::{DomainEvent, EventMetadata};
 pub struct SessionStarted {
     /// Event metadata
     pub metadata: EventMetadata,
-    
+
     /// Session aggregate ID
     pub session_id: Uuid,
-    
+
     /// Session title
     pub title: String,
-    
+
     /// AI provider ID
     pub provider_id: String,
 }
@@ -59,16 +59,16 @@ impl DomainEvent for SessionStarted {
 pub struct MessageAdded {
     /// Event metadata
     pub metadata: EventMetadata,
-    
+
     /// Session aggregate ID
     pub session_id: Uuid,
-    
+
     /// Message ID
     pub message_id: Uuid,
-    
+
     /// Message role (user, assistant, system)
     pub role: String,
-    
+
     /// Message content
     pub content: String,
 }
@@ -109,7 +109,7 @@ impl DomainEvent for MessageAdded {
 pub struct SessionPaused {
     /// Event metadata
     pub metadata: EventMetadata,
-    
+
     /// Session aggregate ID
     pub session_id: Uuid,
 }
@@ -147,7 +147,7 @@ impl DomainEvent for SessionPaused {
 pub struct SessionResumed {
     /// Event metadata
     pub metadata: EventMetadata,
-    
+
     /// Session aggregate ID
     pub session_id: Uuid,
 }
@@ -185,10 +185,10 @@ impl DomainEvent for SessionResumed {
 pub struct SessionCompleted {
     /// Event metadata
     pub metadata: EventMetadata,
-    
+
     /// Session aggregate ID
     pub session_id: Uuid,
-    
+
     /// Number of messages in session
     pub message_count: usize,
 }
@@ -227,7 +227,7 @@ impl DomainEvent for SessionCompleted {
 pub struct SessionArchived {
     /// Event metadata
     pub metadata: EventMetadata,
-    
+
     /// Session aggregate ID
     pub session_id: Uuid,
 }
@@ -267,11 +267,8 @@ mod tests {
     #[test]
     fn test_session_started_event() {
         let session_id = Uuid::new_v4();
-        let event = SessionStarted::new(
-            session_id,
-            "Test Session".to_string(),
-            "openai".to_string(),
-        );
+        let event =
+            SessionStarted::new(session_id, "Test Session".to_string(), "openai".to_string());
 
         assert_eq!(event.aggregate_id(), session_id);
         assert_eq!(event.title, "Test Session");
@@ -337,11 +334,7 @@ mod tests {
     #[test]
     fn test_event_serialization() {
         let session_id = Uuid::new_v4();
-        let event = SessionStarted::new(
-            session_id,
-            "Test".to_string(),
-            "openai".to_string(),
-        );
+        let event = SessionStarted::new(session_id, "Test".to_string(), "openai".to_string());
 
         let json = serde_json::to_string(&event).unwrap();
         let deserialized: SessionStarted = serde_json::from_str(&json).unwrap();

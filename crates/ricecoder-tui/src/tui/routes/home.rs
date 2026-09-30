@@ -202,7 +202,7 @@ impl<'a> HomeView<'a> {
     /// Render the logo
     fn render_logo(&self, area: Rect, buf: &mut Buffer) {
         let logo_height = self.logo_lines.len() as u16;
-        
+
         // Center the logo vertically in the area
         let start_y = if area.height > logo_height {
             area.y + (area.height - logo_height) / 2
@@ -337,19 +337,19 @@ impl Widget for HomeView<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         // Main layout: logo area (center), tips (if showing), footer
         let has_tips = self.state.should_show_tips() && self.state.current_tip.is_some();
-        
+
         let main_chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints(if has_tips {
                 vec![
-                    Constraint::Min(20),        // Logo + prompt area
-                    Constraint::Length(3),      // Tips
-                    Constraint::Length(1),      // Footer
+                    Constraint::Min(20),   // Logo + prompt area
+                    Constraint::Length(3), // Tips
+                    Constraint::Length(1), // Footer
                 ]
             } else {
                 vec![
-                    Constraint::Min(20),        // Logo + prompt area
-                    Constraint::Length(1),      // Footer
+                    Constraint::Min(20),   // Logo + prompt area
+                    Constraint::Length(1), // Footer
                 ]
             })
             .margin(1)
@@ -490,7 +490,7 @@ mod tests {
     #[test]
     fn test_should_show_tips() {
         let mut state = HomeState::default();
-        
+
         // First time user - no tips
         assert!(!state.should_show_tips());
 
@@ -507,10 +507,10 @@ mod tests {
     fn test_home_toggle_tips() {
         let mut home = Home::new();
         assert!(!home.state().tips_hidden);
-        
+
         home.toggle_tips();
         assert!(home.state().tips_hidden);
-        
+
         home.toggle_tips();
         assert!(!home.state().tips_hidden);
     }

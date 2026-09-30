@@ -46,9 +46,9 @@ mod tests {
         assert!(!services.is_empty(), "Should create at least one service");
 
         // Check that WorkflowEngine is in the list
-        let has_workflow_engine = services.iter().any(|s| {
-            s.type_name.contains("WorkflowEngine")
-        });
+        let has_workflow_engine = services
+            .iter()
+            .any(|s| s.type_name.contains("WorkflowEngine"));
         assert!(has_workflow_engine, "Should include WorkflowEngine");
     }
 }

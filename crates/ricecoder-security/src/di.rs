@@ -1,8 +1,8 @@
 //! Dependency injection support for ricecoder-security
 
-use std::sync::Arc;
-use ricecoder_common::di::{ServiceEntry, ServiceFactory};
 use crate::{EncryptionService, ValidationService};
+use ricecoder_common::di::{ServiceEntry, ServiceFactory};
+use std::sync::Arc;
 
 inventory::submit! {
     ServiceFactory::new("security", create_security_services)
@@ -23,6 +23,9 @@ mod tests {
     #[test]
     fn test_security_factory_registered() {
         let factories = list_discovered_factories();
-        assert!(factories.contains(&"security"), "Factory should be registered");
+        assert!(
+            factories.contains(&"security"),
+            "Factory should be registered"
+        );
     }
 }

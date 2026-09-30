@@ -1,12 +1,10 @@
-use std::sync::Arc;
-
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use ricecoder_mcp::{
     metadata::{ToolMetadata, ToolSource},
     permissions::MCPPermissionManager,
     protocol_validation::MCPProtocolValidator,
     registry::ToolRegistry,
-    transport::{MCPMessage, MCPNotification, MCPRequest, MCPResponse},
+    transport::{MCPMessage, MCPRequest},
     ToolMarshaler,
 };
 use serde_json::json;
@@ -30,7 +28,7 @@ fn benchmark_unmarshal_output(c: &mut Criterion) {
 }
 
 fn benchmark_message_validation(c: &mut Criterion) {
-    let validator = MCPProtocolValidator::new();
+    let validator = MCPProtocolValidator::new().expect("Failed to create protocol validator");
     let message = black_box(MCPMessage::Request(MCPRequest {
         id: "bench-test".to_string(),
         method: "test.benchmark".to_string(),
@@ -53,7 +51,7 @@ fn benchmark_message_validation(c: &mut Criterion) {
 }
 
 fn benchmark_permission_check(c: &mut Criterion) {
-    let permission_manager = MCPPermissionManager::new();
+    let mut permission_manager = MCPPermissionManager::new();
 
     // Setup some rules
     for i in 0..10 {

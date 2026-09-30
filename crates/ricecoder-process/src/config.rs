@@ -41,9 +41,12 @@ impl ProcessConfig {
     pub fn args<I, S>(mut self, args: I) -> Self
     where
         I: IntoIterator<Item = S>,
-        S: Into<String>,
+        S: AsRef<str>,
     {
-        self.args = args.into_iter().map(Into::into).collect();
+        self.args = args
+            .into_iter()
+            .map(|arg| arg.as_ref().to_owned())
+            .collect();
         self
     }
 

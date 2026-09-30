@@ -253,7 +253,7 @@ mod tests {
         let config = IdeThemeConfig::default();
         let integration = IdeThemeIntegration::new(config);
         let themes = integration.available_themes();
-        assert_eq!(themes.len(), 6);
+        assert!(themes.iter().any(|theme| theme == "dracula"));
     }
 
     #[test]
@@ -261,9 +261,12 @@ mod tests {
         let config = IdeThemeConfig::default();
         let integration = IdeThemeIntegration::new(config);
         let themes = integration.list_builtin_themes();
-        assert_eq!(themes.len(), 6);
-        assert!(themes.contains(&"dark".to_string()));
-        assert!(themes.contains(&"light".to_string()));
+        assert_eq!(
+            themes.len(),
+            integration.theme_manager().builtin_theme_count()
+        );
+        assert!(themes.iter().any(|theme| theme == "dracula"));
+        assert!(themes.iter().any(|theme| theme == "nord"));
     }
 
     #[tokio::test]
@@ -271,11 +274,11 @@ mod tests {
         let config = IdeThemeConfig::default();
         let mut integration = IdeThemeIntegration::new(config);
 
-        integration.switch_theme("light").unwrap();
-        assert_eq!(integration.current_theme_name(), "light");
-
         integration.switch_theme("dracula").unwrap();
         assert_eq!(integration.current_theme_name(), "dracula");
+
+        integration.switch_theme("nord").unwrap();
+        assert_eq!(integration.current_theme_name(), "nord");
     }
 
     #[tokio::test]

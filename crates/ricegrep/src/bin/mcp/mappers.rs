@@ -11,8 +11,8 @@
 
 use anyhow::{Context, Result};
 use ricegrep::application::{
-    AppError, IoOperation,
     use_cases::{EditFileRequest, WriteFileRequest},
+    AppError, IoOperation,
 };
 
 // ============================================================================
@@ -53,9 +53,11 @@ pub fn map_error_to_message(error: &AppError) -> String {
         AppError::Domain(domain_err) => {
             format!("Domain error: {}", domain_err)
         }
-        AppError::Io { operation, path, source } => {
-            map_io_error_message(operation, path, source)
-        }
+        AppError::Io {
+            operation,
+            path,
+            source,
+        } => map_io_error_message(operation, path, source),
         AppError::Index { operation, message } => {
             format!("Index {} failed: {}", operation, message)
         }
@@ -78,19 +80,34 @@ fn map_io_error_message(operation: &IoOperation, path: &str, source: &std::io::E
             format!("Permission denied: {}. Check file permissions.", path)
         }
         (IoOperation::Read, std::io::ErrorKind::InvalidData) => {
-            format!("File contains invalid UTF-8: {}. Check file encoding.", path)
+            format!(
+                "File contains invalid UTF-8: {}. Check file encoding.",
+                path
+            )
         }
         (IoOperation::Write, std::io::ErrorKind::NotFound) => {
-            format!("Cannot write to path: {} - parent directory does not exist.", path)
+            format!(
+                "Cannot write to path: {} - parent directory does not exist.",
+                path
+            )
         }
         (IoOperation::Write, std::io::ErrorKind::PermissionDenied) => {
-            format!("Permission denied writing to: {}. Check directory permissions.", path)
+            format!(
+                "Permission denied writing to: {}. Check directory permissions.",
+                path
+            )
         }
         (IoOperation::Delete, std::io::ErrorKind::PermissionDenied) => {
-            format!("Permission denied deleting: {}. Check file permissions.", path)
+            format!(
+                "Permission denied deleting: {}. Check file permissions.",
+                path
+            )
         }
         (IoOperation::Create, std::io::ErrorKind::PermissionDenied) => {
-            format!("Permission denied creating: {}. Check directory permissions.", path)
+            format!(
+                "Permission denied creating: {}. Check directory permissions.",
+                path
+            )
         }
         _ => {
             format!(
@@ -155,7 +172,7 @@ mod tests {
     #[test]
     fn test_map_edit_request() {
         let request = map_edit_request("test.rs", "old", "new", false);
-        
+
         assert_eq!(request.file_path, "test.rs");
         assert_eq!(request.pattern, "old");
         assert_eq!(request.replacement, "new");
@@ -166,7 +183,7 @@ mod tests {
     #[test]
     fn test_map_write_request() {
         let request = map_write_request("output.txt", "hello world");
-        
+
         assert_eq!(request.file_path, "output.txt");
         assert_eq!(request.content, "hello world");
     }
@@ -194,8 +211,8 @@ mod tests {
 
     #[test]
     fn test_map_error_validation() {
-        let error = AppError::Validation { 
-            message: "empty path".to_string() 
+        let error = AppError::Validation {
+            message: "empty path".to_string(),
         };
         let message = map_error_to_message(&error);
         assert!(message.contains("Validation"));

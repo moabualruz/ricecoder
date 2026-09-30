@@ -472,8 +472,6 @@ impl Default for ImageAnalyzer {
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;

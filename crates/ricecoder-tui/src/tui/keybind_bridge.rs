@@ -8,7 +8,7 @@ use ricecoder_keybinds::{Key, KeyCombo, Modifier};
 /// Convert a crossterm KeyEvent to a ricecoder-keybinds KeyCombo
 pub fn to_key_combo(event: KeyEvent) -> Option<KeyCombo> {
     let mut modifiers = Vec::new();
-    
+
     if event.modifiers.contains(KeyModifiers::CONTROL) {
         modifiers.push(Modifier::Ctrl);
     }
@@ -18,7 +18,7 @@ pub fn to_key_combo(event: KeyEvent) -> Option<KeyCombo> {
     if event.modifiers.contains(KeyModifiers::ALT) {
         modifiers.push(Modifier::Alt);
     }
-    
+
     let key = match event.code {
         KeyCode::Char(c) => Key::Char(c),
         KeyCode::Enter => Key::Enter,
@@ -36,9 +36,9 @@ pub fn to_key_combo(event: KeyEvent) -> Option<KeyCombo> {
         KeyCode::Right => Key::Right,
         KeyCode::F(n) => Key::F(n),
         KeyCode::Insert => return None, // Not supported in ricecoder-keybinds
-        _ => return None, // Unsupported key
+        _ => return None,               // Unsupported key
     };
-    
+
     Some(KeyCombo {
         modifiers,
         key,
@@ -49,7 +49,7 @@ pub fn to_key_combo(event: KeyEvent) -> Option<KeyCombo> {
 /// Convert a KeyCombo back to a display string for UI
 pub fn key_combo_to_string(combo: &KeyCombo) -> String {
     let mut parts = Vec::new();
-    
+
     for modifier in &combo.modifiers {
         parts.push(match modifier {
             Modifier::Ctrl => "Ctrl",
@@ -59,7 +59,7 @@ pub fn key_combo_to_string(combo: &KeyCombo) -> String {
             Modifier::Meta => "Meta",
         });
     }
-    
+
     let key_str = match &combo.key {
         Key::Char(c) => c.to_string(),
         Key::Enter => "Enter".to_string(),
@@ -77,7 +77,7 @@ pub fn key_combo_to_string(combo: &KeyCombo) -> String {
         Key::Right => "→".to_string(),
         Key::F(n) => format!("F{}", n),
     };
-    
+
     parts.push(&key_str);
     parts.join("+")
 }
@@ -85,7 +85,7 @@ pub fn key_combo_to_string(combo: &KeyCombo) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_simple_key() {
         let event = KeyEvent::new(KeyCode::Char('a'), KeyModifiers::NONE);
@@ -93,21 +93,21 @@ mod tests {
         assert!(combo.modifiers.is_empty());
         assert!(matches!(combo.key, Key::Char('a')));
     }
-    
+
     #[test]
     fn test_ctrl_key() {
         let event = KeyEvent::new(KeyCode::Char('c'), KeyModifiers::CONTROL);
         let combo = to_key_combo(event).unwrap();
         assert!(combo.modifiers.contains(&Modifier::Ctrl));
     }
-    
+
     #[test]
     fn test_function_key() {
         let event = KeyEvent::new(KeyCode::F(5), KeyModifiers::NONE);
         let combo = to_key_combo(event).unwrap();
         assert!(matches!(combo.key, Key::F(5)));
     }
-    
+
     #[test]
     fn test_combo_to_string() {
         let combo = KeyCombo {

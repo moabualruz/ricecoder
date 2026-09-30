@@ -13,13 +13,13 @@ use super::{DomainEvent, EventMetadata};
 pub struct ProjectCreated {
     /// Event metadata
     pub metadata: EventMetadata,
-    
+
     /// Project aggregate ID
     pub project_id: Uuid,
-    
+
     /// Project name
     pub name: String,
-    
+
     /// Optional project description
     pub description: Option<String>,
 }
@@ -59,13 +59,13 @@ impl DomainEvent for ProjectCreated {
 pub struct ProjectUpdated {
     /// Event metadata
     pub metadata: EventMetadata,
-    
+
     /// Project aggregate ID
     pub project_id: Uuid,
-    
+
     /// Updated name
     pub name: String,
-    
+
     /// Updated description
     pub description: Option<String>,
 }
@@ -105,7 +105,7 @@ impl DomainEvent for ProjectUpdated {
 pub struct ProjectArchived {
     /// Event metadata
     pub metadata: EventMetadata,
-    
+
     /// Project aggregate ID
     pub project_id: Uuid,
 }
@@ -143,7 +143,7 @@ impl DomainEvent for ProjectArchived {
 pub struct ProjectDeleted {
     /// Event metadata
     pub metadata: EventMetadata,
-    
+
     /// Project aggregate ID
     pub project_id: Uuid,
 }
@@ -181,7 +181,7 @@ impl DomainEvent for ProjectDeleted {
 pub struct ProjectRestored {
     /// Event metadata
     pub metadata: EventMetadata,
-    
+
     /// Project aggregate ID
     pub project_id: Uuid,
 }
@@ -277,11 +277,7 @@ mod tests {
     #[test]
     fn test_event_serialization() {
         let project_id = Uuid::new_v4();
-        let event = ProjectCreated::new(
-            project_id,
-            "test".to_string(),
-            None,
-        );
+        let event = ProjectCreated::new(project_id, "test".to_string(), None);
 
         let json = serde_json::to_string(&event).unwrap();
         let deserialized: ProjectCreated = serde_json::from_str(&json).unwrap();

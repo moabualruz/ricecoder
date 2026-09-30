@@ -85,7 +85,9 @@ impl LocalModelManager {
             .pool_idle_timeout(Duration::from_secs(DEFAULT_POOL_IDLE_TIMEOUT_SECS))
             .tcp_keepalive(Duration::from_secs(DEFAULT_TCP_KEEPALIVE_SECS))
             .build()
-            .map_err(|e| LocalModelError::ConfigError(format!("Failed to build HTTP client: {}", e)))?;
+            .map_err(|e| {
+                LocalModelError::ConfigError(format!("Failed to build HTTP client: {}", e))
+            })?;
 
         Ok(Self {
             client: Arc::new(client),
@@ -365,13 +367,17 @@ impl LocalModelManager {
     /// }
     /// ```
     pub async fn health_check(&self) -> Result<bool> {
-        debug!("Performing health check on Ollama server at {}", self.base_url);
+        debug!(
+            "Performing health check on Ollama server at {}",
+            self.base_url
+        );
 
         // Use root endpoint for simple health check
         let url = format!("{}/", self.base_url);
 
         // Use shorter timeout for health checks
-        match self.client
+        match self
+            .client
             .get(&url)
             .timeout(Duration::from_secs(HEALTH_CHECK_TIMEOUT_SECS))
             .send()
@@ -382,7 +388,10 @@ impl LocalModelManager {
                 if healthy {
                     debug!("Ollama server health check passed");
                 } else {
-                    warn!("Ollama server health check failed: HTTP {}", response.status());
+                    warn!(
+                        "Ollama server health check failed: HTTP {}",
+                        response.status()
+                    );
                 }
                 Ok(healthy)
             }
@@ -407,7 +416,11 @@ impl LocalModelManager {
                 Ok(true) => return Ok(true),
                 Ok(false) | Err(_) if attempt < MAX_RETRIES - 1 => {
                     let backoff_ms = INITIAL_BACKOFF_MS * 2_u64.pow(attempt);
-                    debug!("Health check attempt {} failed, retrying in {}ms", attempt + 1, backoff_ms);
+                    debug!(
+                        "Health check attempt {} failed, retrying in {}ms",
+                        attempt + 1,
+                        backoff_ms
+                    );
                     tokio::time::sleep(Duration::from_millis(backoff_ms)).await;
                 }
                 Ok(false) => return Ok(false),

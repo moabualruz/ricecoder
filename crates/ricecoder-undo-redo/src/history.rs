@@ -121,22 +121,8 @@ impl HistoryManager {
     pub fn record_change(&mut self, change: Change) -> Result<(), UndoRedoError> {
         change.validate()?;
 
-        // Enforce stack size limits
-        if self.undo_stack.len() >= self.config.max_undo_stack_size {
-            // Remove oldest undo entry
-            let removed = self.undo_stack.remove(0);
-            // Mark as removed in all_changes if found
-            if let Some(entry) = self
-                .all_changes
-                .iter_mut()
-                .find(|e| e.change.id == removed.id)
-            {
-                entry.is_undone = true; // Mark as effectively undone
-            }
-        }
-
         // Add to undo stack
-        self.undo_stack.push(change.clone());
+        self.push_undo_stack(change.clone());
 
         // Clear redo stack when new change is recorded
         self.redo_stack.clear();
@@ -188,8 +174,13 @@ impl HistoryManager {
             entry.is_undone = true;
         }
 
-        // Add to redo stack
-        self.redo_stack.push(change.clone());
+        // Keep the redo stack bounded while preserving the newest redo operations.
+        if self.config.max_redo_stack_size > 0 {
+            if self.redo_stack.len() >= self.config.max_redo_stack_size {
+                self.redo_stack.remove(0);
+            }
+            self.redo_stack.push(change.clone());
+        }
 
         Ok(change)
     }
@@ -208,10 +199,29 @@ impl HistoryManager {
             entry.is_undone = false;
         }
 
-        // Add back to undo stack
-        self.undo_stack.push(change.clone());
+        // Add back to undo stack, enforcing the same limit as newly recorded changes.
+        self.push_undo_stack(change.clone());
 
         Ok(change)
+    }
+
+    fn push_undo_stack(&mut self, change: Change) {
+        if self.config.max_undo_stack_size == 0 {
+            return;
+        }
+
+        if self.undo_stack.len() >= self.config.max_undo_stack_size {
+            let removed = self.undo_stack.remove(0);
+            if let Some(entry) = self
+                .all_changes
+                .iter_mut()
+                .find(|entry| entry.change.id == removed.id)
+            {
+                entry.is_undone = true;
+            }
+        }
+
+        self.undo_stack.push(change);
     }
 
     /// Check if undo is available

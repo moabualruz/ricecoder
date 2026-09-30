@@ -1,10 +1,10 @@
 //! Dependency injection support for ricecoder-orchestration
 
-use std::sync::Arc;
-use ricecoder_common::di::{ServiceEntry, ServiceFactory};
 use crate::{
-    DependencyAnalyzer, ImpactAnalyzer, ChangePropagationTracker, DependencyValidator, SyncManager,
+    ChangePropagationTracker, DependencyAnalyzer, DependencyValidator, ImpactAnalyzer, SyncManager,
 };
+use ricecoder_common::di::{ServiceEntry, ServiceFactory};
+use std::sync::Arc;
 
 inventory::submit! {
     ServiceFactory::new("orchestration", create_orchestration_services)
@@ -28,6 +28,9 @@ mod tests {
     #[test]
     fn test_orchestration_factory_registered() {
         let factories = list_discovered_factories();
-        assert!(factories.contains(&"orchestration"), "Factory should be registered");
+        assert!(
+            factories.contains(&"orchestration"),
+            "Factory should be registered"
+        );
     }
 }

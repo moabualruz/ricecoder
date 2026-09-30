@@ -3,10 +3,10 @@
 use std::collections::HashMap;
 
 use oauth2::{
-    basic::BasicClient, reqwest::async_http_client, AuthUrl, ClientId, ClientSecret, CsrfToken,
+    basic::BasicClient, AuthUrl, ClientId, ClientSecret, CsrfToken, EndpointNotSet, EndpointSet,
     PkceCodeChallenge, RedirectUrl, Scope, TokenResponse, TokenUrl,
 };
-use reqwest::Client;
+use reqwest::{redirect::Policy, Client};
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use url::Url;
@@ -50,7 +50,7 @@ pub struct OAuthToken {
 /// OAuth authentication flow state
 #[derive(Debug)]
 pub struct OAuthFlow {
-    client: BasicClient,
+    client: BasicClient<EndpointSet, EndpointNotSet, EndpointNotSet, EndpointNotSet, EndpointSet>,
     config: OAuthConfig,
     http_client: Client,
 }
@@ -98,18 +98,22 @@ impl OAuthConfig {
 impl OAuthFlow {
     /// Create a new OAuth flow
     pub fn new(config: OAuthConfig) -> IndustryResult<Self> {
-        let client = BasicClient::new(
-            ClientId::new(config.client_id.clone()),
-            Some(ClientSecret::new(config.client_secret.clone())),
-            AuthUrl::new(config.auth_url.clone())?,
-            Some(TokenUrl::new(config.token_url.clone())?),
-        )
-        .set_redirect_uri(RedirectUrl::new(config.redirect_url.clone())?);
+        let client = BasicClient::new(ClientId::new(config.client_id.clone()))
+            .set_client_secret(ClientSecret::new(config.client_secret.clone()))
+            .set_auth_uri(AuthUrl::new(config.auth_url.clone())?)
+            .set_token_uri(TokenUrl::new(config.token_url.clone())?)
+            .set_redirect_uri(RedirectUrl::new(config.redirect_url.clone())?);
+        let http_client = Client::builder()
+            .redirect(Policy::none())
+            .build()
+            .map_err(|e| IndustryError::OAuthError {
+                message: format!("Failed to create OAuth HTTP client: {}", e),
+            })?;
 
         Ok(Self {
             client,
             config,
-            http_client: Client::new(),
+            http_client,
         })
     }
 
@@ -146,7 +150,7 @@ impl OAuthFlow {
             .client
             .exchange_code(oauth2::AuthorizationCode::new(code))
             .set_pkce_verifier(pkce_verifier)
-            .request_async(async_http_client)
+            .request_async(&self.http_client)
             .await
             .map_err(|e| IndustryError::OAuthError {
                 message: format!("Token exchange failed: {}", e),
@@ -173,7 +177,7 @@ impl OAuthFlow {
         let token_result = self
             .client
             .exchange_refresh_token(&oauth2::RefreshToken::new(refresh_token))
-            .request_async(async_http_client)
+            .request_async(&self.http_client)
             .await
             .map_err(|e| IndustryError::OAuthError {
                 message: format!("Token refresh failed: {}", e),

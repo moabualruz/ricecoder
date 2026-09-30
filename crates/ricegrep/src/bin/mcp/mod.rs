@@ -109,15 +109,16 @@ impl RicegrepMcp {
             match search::server_search_request(endpoint, &request).await {
                 Ok(response) => return Ok((response, None)),
                 Err(err) => {
-                    let response =
-                        search::local_search_response(&request, root, filter).map_err(|fallback_err| {
+                    let response = search::local_search_response(&request, root, filter).map_err(
+                        |fallback_err| {
                             ErrorData::internal_error(
                                 format!(
                                     "server error: {err}; local fallback failed: {fallback_err}"
                                 ),
                                 None,
                             )
-                        })?;
+                        },
+                    )?;
                     let warning = format!("Server unavailable; using local scan. error={}", err);
                     return Ok((response, Some(warning)));
                 }
@@ -127,6 +128,55 @@ impl RicegrepMcp {
         let response = search::local_search_response(&request, root, filter)
             .map_err(|err| ErrorData::internal_error(err.to_string(), None))?;
         Ok((response, None))
+    }
+
+    /// Shared grep implementation for both `grep` and `rice_grep` tools
+    async fn grep_impl(&self, input: GrepToolInput) -> Result<CallToolResult, ErrorData> {
+        // GAP-2 FIX: Separate path (search root) from include (glob filter)
+        // OpenCode: path = search root, include = file glob filter
+        let search_root = input.path.as_deref();
+        let file_glob_filter = input.include.as_deref();
+
+        let filters = file_glob_filter.map(|pattern| SearchFilters {
+            repository_id: None,
+            language: None,
+            file_path_pattern: Some(pattern.to_string()),
+        });
+
+        // GAP-4 FIX: Default to 100 match limit (OpenCode behavior)
+        let limit = input.max_results.or(Some(100));
+
+        let request = SearchRequest {
+            query: input.pattern.clone(),
+            limit,
+            filters,
+            ranking: None,
+            timeout_ms: None,
+        };
+
+        let (mut response, warning) = self.execute_search(request, search_root).await?;
+
+        // GAP-3 FIX: Sort by mtime descending (newest first)
+        response::sort_results_by_mtime(&mut response).await;
+
+        // GAP-4 FIX: Check if results were truncated (limit reached)
+        let truncated = limit.map_or(false, |max| response.total_found > max);
+
+        let mut output = String::new();
+        if let Some(note) = warning {
+            output.push_str(&note);
+            output.push('\n');
+        }
+
+        // GAP-5, GAP-6, GAP-7 FIX: Use OpenCode-compatible output format
+        output.push_str(&response::format_search_lines_opencode_style(
+            &response, truncated,
+        ));
+
+        Ok(response::tool_result_with_response(
+            output.trim_end().to_string(),
+            &response,
+        ))
     }
 }
 
@@ -152,58 +202,6 @@ impl RicegrepMcp {
         Parameters(input): Parameters<GrepToolInput>,
     ) -> Result<CallToolResult, ErrorData> {
         self.grep_impl(input).await
-    }
-}
-
-impl RicegrepMcp {
-    /// Shared grep implementation for both `grep` and `rice_grep` tools
-    async fn grep_impl(
-        &self,
-        input: GrepToolInput,
-    ) -> Result<CallToolResult, ErrorData> {
-        // GAP-2 FIX: Separate path (search root) from include (glob filter)
-        // OpenCode: path = search root, include = file glob filter
-        let search_root = input.path.as_deref();
-        let file_glob_filter = input.include.as_deref();
-        
-        let filters = file_glob_filter.map(|pattern| SearchFilters {
-            repository_id: None,
-            language: None,
-            file_path_pattern: Some(pattern.to_string()),
-        });
-        
-        // GAP-4 FIX: Default to 100 match limit (OpenCode behavior)
-        let limit = input.max_results.or(Some(100));
-        
-        let request = SearchRequest {
-            query: input.pattern.clone(),
-            limit,
-            filters,
-            ranking: None,
-            timeout_ms: None,
-        };
-
-        let (mut response, warning) = self.execute_search(request, search_root).await?;
-        
-        // GAP-3 FIX: Sort by mtime descending (newest first)
-        response::sort_results_by_mtime(&mut response).await;
-        
-        // GAP-4 FIX: Check if results were truncated (limit reached)
-        let truncated = limit.map_or(false, |max| response.total_found > max);
-        
-        let mut output = String::new();
-        if let Some(note) = warning {
-            output.push_str(&note);
-            output.push('\n');
-        }
-        
-        // GAP-5, GAP-6, GAP-7 FIX: Use OpenCode-compatible output format
-        output.push_str(&response::format_search_lines_opencode_style(&response, truncated));
-        
-        Ok(response::tool_result_with_response(
-            output.trim_end().to_string(),
-            &response,
-        ))
     }
 
     #[tool(
@@ -258,7 +256,7 @@ impl RicegrepMcp {
         Parameters(input): Parameters<GlobToolInput>,
     ) -> Result<CallToolResult, ErrorData> {
         let root = input.path.as_deref().unwrap_or(".");
-        
+
         let (matches, _truncated) = crate::collect_glob_matches(
             root,
             &input.pattern,
@@ -356,10 +354,7 @@ impl RicegrepMcp {
 #[tool_handler]
 impl ServerHandler for RicegrepMcp {
     fn get_info(&self) -> ServerInfo {
-        ServerInfo {
-            capabilities: ServerCapabilities::builder().enable_tools().build(),
-            ..Default::default()
-        }
+        ServerInfo::new(ServerCapabilities::builder().enable_tools().build())
     }
 }
 
@@ -435,7 +430,7 @@ mod tests {
     #[test]
     fn mcp_tool_variant_inventory() {
         let expected = [
-            "grep",          // GAP-1: OpenCode-compatible alias
+            "grep", // GAP-1: OpenCode-compatible alias
             "rice_grep",
             "rice_glob",
             "rice_list",
@@ -546,10 +541,7 @@ mod tests {
 
         let result = apply_edit(&input).await;
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("File not found"));
+        assert!(result.unwrap_err().to_string().contains("File not found"));
     }
 
     #[tokio::test]
@@ -629,7 +621,10 @@ mod tests {
         let path = std::path::PathBuf::from("test.txt");
 
         assert!(!tracker.has_changes());
-        tracker.record_change(path.clone(), ricegrep::indexing_optimization::FileChangeKind::Modify);
+        tracker.record_change(
+            path.clone(),
+            ricegrep::indexing_optimization::FileChangeKind::Modify,
+        );
 
         // Should only have 1 entry (latest timestamp)
         assert_eq!(tracker.change_count(), 1);
@@ -642,9 +637,18 @@ mod tests {
         let path2 = std::path::PathBuf::from("file2.txt");
         let path3 = std::path::PathBuf::from("file3.txt");
 
-        tracker.record_change(path1.clone(), ricegrep::indexing_optimization::FileChangeKind::Modify);
-        tracker.record_change(path2.clone(), ricegrep::indexing_optimization::FileChangeKind::Create);
-        tracker.record_change(path3.clone(), ricegrep::indexing_optimization::FileChangeKind::Modify);
+        tracker.record_change(
+            path1.clone(),
+            ricegrep::indexing_optimization::FileChangeKind::Modify,
+        );
+        tracker.record_change(
+            path2.clone(),
+            ricegrep::indexing_optimization::FileChangeKind::Create,
+        );
+        tracker.record_change(
+            path3.clone(),
+            ricegrep::indexing_optimization::FileChangeKind::Modify,
+        );
 
         assert_eq!(tracker.change_count(), 3);
         assert!(tracker.has_changes());
@@ -656,8 +660,14 @@ mod tests {
         let path1 = std::path::PathBuf::from("file1.txt");
         let path2 = std::path::PathBuf::from("file2.txt");
 
-        tracker.record_change(path1.clone(), ricegrep::indexing_optimization::FileChangeKind::Modify);
-        tracker.record_change(path2.clone(), ricegrep::indexing_optimization::FileChangeKind::Modify);
+        tracker.record_change(
+            path1.clone(),
+            ricegrep::indexing_optimization::FileChangeKind::Modify,
+        );
+        tracker.record_change(
+            path2.clone(),
+            ricegrep::indexing_optimization::FileChangeKind::Modify,
+        );
 
         let changes = tracker.take_changes();
 
@@ -675,7 +685,10 @@ mod tests {
         let path = std::path::PathBuf::from("test.txt");
 
         let before = std::time::SystemTime::now();
-        tracker.record_change(path.clone(), ricegrep::indexing_optimization::FileChangeKind::Modify);
+        tracker.record_change(
+            path.clone(),
+            ricegrep::indexing_optimization::FileChangeKind::Modify,
+        );
         let after = std::time::SystemTime::now();
 
         // Verify that the change was recorded within timestamp bounds
@@ -691,7 +704,10 @@ mod tests {
 
         // Rapid updates to same file
         for _ in 0..100 {
-            tracker.record_change(path.clone(), ricegrep::indexing_optimization::FileChangeKind::Modify);
+            tracker.record_change(
+                path.clone(),
+                ricegrep::indexing_optimization::FileChangeKind::Modify,
+            );
         }
 
         // Should only have 1 entry with latest timestamp
@@ -706,9 +722,18 @@ mod tests {
         let path = std::path::PathBuf::from("test.txt");
 
         // Record same file multiple times
-        tracker.record_change(path.clone(), ricegrep::indexing_optimization::FileChangeKind::Modify);
-        tracker.record_change(path.clone(), ricegrep::indexing_optimization::FileChangeKind::Modify);
-        tracker.record_change(path.clone(), ricegrep::indexing_optimization::FileChangeKind::Modify);
+        tracker.record_change(
+            path.clone(),
+            ricegrep::indexing_optimization::FileChangeKind::Modify,
+        );
+        tracker.record_change(
+            path.clone(),
+            ricegrep::indexing_optimization::FileChangeKind::Modify,
+        );
+        tracker.record_change(
+            path.clone(),
+            ricegrep::indexing_optimization::FileChangeKind::Modify,
+        );
 
         // Should only have 1 entry (latest timestamp)
         assert_eq!(tracker.change_count(), 1);

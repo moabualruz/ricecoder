@@ -294,7 +294,11 @@ pub struct ConsentRecord {
 
 impl ConsentRecord {
     /// Create a new consent record
-    pub fn new(user_id: String, policy_version: String, consent_details: HashMap<String, bool>) -> Self {
+    pub fn new(
+        user_id: String,
+        policy_version: String,
+        consent_details: HashMap<String, bool>,
+    ) -> Self {
         Self {
             id: uuid::Uuid::new_v4().to_string(),
             user_id,

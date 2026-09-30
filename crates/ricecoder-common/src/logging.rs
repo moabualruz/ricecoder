@@ -204,9 +204,7 @@ impl LoggerInner {
         *last_time = now;
 
         // ISO timestamp (seconds precision)
-        let timestamp = chrono::Utc::now()
-            .format("%Y-%m-%dT%H:%M:%S")
-            .to_string();
+        let timestamp = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
 
         // Combine all parts
         let parts: Vec<String> = vec![
@@ -282,9 +280,7 @@ pub fn init(options: LogOptions) -> std::io::Result<()> {
         let filename = if options.dev.unwrap_or(false) {
             "dev.log".to_string()
         } else {
-            let timestamp = chrono::Utc::now()
-                .format("%Y-%m-%dT%H%M%S")
-                .to_string();
+            let timestamp = chrono::Utc::now().format("%Y-%m-%dT%H%M%S").to_string();
             format!("{}.log", timestamp)
         };
 
@@ -301,12 +297,7 @@ pub fn init(options: LogOptions) -> std::io::Result<()> {
 
     // Open file writer if needed
     let file_writer = if let Some(ref path) = log_path {
-        Some(
-            File::options()
-                .create(true)
-                .append(true)
-                .open(path)?,
-        )
+        Some(File::options().create(true).append(true).open(path)?)
     } else {
         None
     };
@@ -416,7 +407,11 @@ fn format_error_recursive(error: &dyn std::error::Error, depth: usize) -> String
     let base = error.to_string();
 
     if let Some(source) = error.source() {
-        format!("{} Caused by: {}", base, format_error_recursive(source, depth + 1))
+        format!(
+            "{} Caused by: {}",
+            base,
+            format_error_recursive(source, depth + 1)
+        )
     } else {
         base
     }
@@ -478,7 +473,10 @@ mod tests {
         use std::io;
 
         let inner_error = io::Error::new(io::ErrorKind::NotFound, "file not found");
-        let outer_error = io::Error::new(io::ErrorKind::Other, format!("operation failed: {}", inner_error));
+        let outer_error = io::Error::new(
+            io::ErrorKind::Other,
+            format!("operation failed: {}", inner_error),
+        );
 
         let formatted = format_error(&outer_error);
         assert!(formatted.contains("operation failed"));

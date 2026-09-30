@@ -25,7 +25,7 @@ async fn main() -> Result<()> {
 
     // Create and run the TUI application
     let mut app = ricecoder_tui::tui::TuiApp::new()?;
-    
+
     // Run the event loop
     match app.run().await {
         Ok(_) => {

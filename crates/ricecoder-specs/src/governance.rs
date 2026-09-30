@@ -4,7 +4,7 @@ use std::{fs, path::Path};
 
 use crate::{
     error::{Severity, SpecError, ValidationError},
-    models::{Standard, Governance, GovernanceRule, TemplateRef},
+    models::{Governance, GovernanceRule, Standard, TemplateRef},
 };
 
 /// Loads and merges Governance documents

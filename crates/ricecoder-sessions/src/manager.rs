@@ -49,7 +49,10 @@ impl SessionManager {
                 Some(s)
             }
             Err(e) => {
-                warn!("Failed to initialize SessionStore, sessions will be in-memory only: {}", e);
+                warn!(
+                    "Failed to initialize SessionStore, sessions will be in-memory only: {}",
+                    e
+                );
                 None
             }
         };
@@ -107,7 +110,10 @@ impl SessionManager {
                     debug!("Loaded {} sessions from disk", sessions.len());
                     for session in sessions {
                         // Create token tracker for loaded session
-                        if let Ok(tracker) = self.token_estimator.create_usage_tracker(&session.context.model) {
+                        if let Ok(tracker) = self
+                            .token_estimator
+                            .create_usage_tracker(&session.context.model)
+                        {
                             self.token_trackers.insert(session.id.clone(), tracker);
                         }
                         self.sessions.insert(session.id.clone(), session);
@@ -157,9 +163,10 @@ impl SessionManager {
         }
 
         // Publish SessionCreated event
-        self.event_bus.publish(BusEvent::Session(SessionEvent::Created {
-            session_id: session_id.clone(),
-        }));
+        self.event_bus
+            .publish(BusEvent::Session(SessionEvent::Created {
+                session_id: session_id.clone(),
+            }));
 
         Ok(session)
     }
@@ -169,11 +176,14 @@ impl SessionManager {
         if let Some(ref store) = self.store {
             let store_clone = store.clone();
             let session_clone = session.clone();
-            
+
             // Spawn async task to persist without blocking
             tokio::spawn(async move {
                 if let Err(e) = store_clone.save(&session_clone).await {
-                    error!("Failed to persist session {} to disk: {}", session_clone.id, e);
+                    error!(
+                        "Failed to persist session {} to disk: {}",
+                        session_clone.id, e
+                    );
                 } else {
                     debug!("Session {} persisted to disk", session_clone.id);
                 }
@@ -205,9 +215,10 @@ impl SessionManager {
         }
 
         // Publish SessionDeleted event
-        self.event_bus.publish(BusEvent::Session(SessionEvent::Deleted {
-            session_id: session_id.to_string(),
-        }));
+        self.event_bus
+            .publish(BusEvent::Session(SessionEvent::Deleted {
+                session_id: session_id.to_string(),
+            }));
 
         Ok(())
     }
@@ -217,12 +228,15 @@ impl SessionManager {
         if let Some(ref store) = self.store {
             let store_clone = store.clone();
             let session_id = session_id.to_string();
-            
+
             // Spawn async task to delete without blocking
             tokio::spawn(async move {
                 if let Err(e) = store_clone.delete(&session_id).await {
                     // Not an error if session doesn't exist on disk
-                    debug!("Note: Could not delete session {} from disk: {}", session_id, e);
+                    debug!(
+                        "Note: Could not delete session {} from disk: {}",
+                        session_id, e
+                    );
                 } else {
                     debug!("Session {} deleted from disk", session_id);
                 }
@@ -281,9 +295,8 @@ impl SessionManager {
         self.persist_session(&session);
 
         // Publish SessionUpdated event
-        self.event_bus.publish(BusEvent::Session(SessionEvent::Updated {
-            session_id,
-        }));
+        self.event_bus
+            .publish(BusEvent::Session(SessionEvent::Updated { session_id }));
 
         Ok(())
     }
@@ -571,7 +584,7 @@ impl SessionManager {
     ) -> SessionResult<bool> {
         let session = self.get_session(session_id)?;
         let pricing = self.token_estimator.get_pricing(&session.context.model);
-        
+
         if let Some(pricing) = pricing {
             Ok(crate::token_estimator::is_overflow(
                 input_tokens,
@@ -590,9 +603,11 @@ impl SessionManager {
     pub fn get_max_output_tokens(&self, session_id: &str) -> SessionResult<usize> {
         let session = self.get_session(session_id)?;
         let pricing = self.token_estimator.get_pricing(&session.context.model);
-        
+
         if let Some(pricing) = pricing {
-            Ok(crate::token_estimator::max_output_tokens(pricing.max_output_tokens))
+            Ok(crate::token_estimator::max_output_tokens(
+                pricing.max_output_tokens,
+            ))
         } else {
             Ok(crate::token_estimator::OUTPUT_TOKEN_MAX)
         }
@@ -601,11 +616,7 @@ impl SessionManager {
     // === GAP 1: Session CRUD API additions ===
 
     /// Fork a session from a specific message point
-    pub fn fork(
-        &mut self,
-        session_id: &str,
-        message_id: Option<&str>,
-    ) -> SessionResult<Session> {
+    pub fn fork(&mut self, session_id: &str, message_id: Option<&str>) -> SessionResult<Session> {
         let parent_session = self.get_session(session_id)?;
 
         // Truncate history at message_id if provided
@@ -649,9 +660,10 @@ impl SessionManager {
             .insert(forked_session.id.clone(), tracker);
 
         // Publish event
-        self.event_bus.publish(BusEvent::Session(SessionEvent::Created {
-            session_id: forked_session.id.clone(),
-        }));
+        self.event_bus
+            .publish(BusEvent::Session(SessionEvent::Created {
+                session_id: forked_session.id.clone(),
+            }));
 
         Ok(forked_session)
     }
@@ -670,9 +682,10 @@ impl SessionManager {
         self.persist_session(&session_clone);
 
         // Publish SessionUpdated event
-        self.event_bus.publish(BusEvent::Session(SessionEvent::Updated {
-            session_id: session_id.to_string(),
-        }));
+        self.event_bus
+            .publish(BusEvent::Session(SessionEvent::Updated {
+                session_id: session_id.to_string(),
+            }));
 
         Ok(())
     }
@@ -680,7 +693,7 @@ impl SessionManager {
     /// Get snapshot diff for a session
     pub async fn diff(&self, session_id: &str) -> SessionResult<String> {
         let session = self.get_session(session_id)?;
-        
+
         // Use snapshot manager to get diff
         match self.snapshot_manager.diff(&session.id).await {
             Ok(diff_text) => Ok(diff_text),
@@ -721,11 +734,7 @@ impl SessionManager {
     }
 
     /// Revoke a share
-    pub fn unshare(
-        &self,
-        share_id: &str,
-        revoker_user_id: Option<String>,
-    ) -> SessionResult<()> {
+    pub fn unshare(&self, share_id: &str, revoker_user_id: Option<String>) -> SessionResult<()> {
         self.share_service.revoke_share(share_id, revoker_user_id)
     }
 

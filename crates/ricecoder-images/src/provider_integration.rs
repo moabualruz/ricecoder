@@ -336,8 +336,6 @@ impl ImageAuditLogEntry {
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use ricecoder_providers::models::Message;

@@ -162,7 +162,10 @@ where
         // orchestration pattern and ensures project existence checks work.
         // See: ricecoder-providers crate for actual AI integration.
         Ok(CodeGenerationResult {
-            content: format!("// Generated code for: {}\n// Awaiting AI provider integration", request.prompt),
+            content: format!(
+                "// Generated code for: {}\n// Awaiting AI provider integration",
+                request.prompt
+            ),
             file_path: request.file_path,
             language: "rust".to_string(),
             confidence: 0.0, // Zero confidence = placeholder
@@ -252,9 +255,9 @@ mod tests {
     use super::*;
     use crate::ports::NoOpUnitOfWork;
     use async_trait::async_trait;
-    use ricecoder_domain::DomainResult;
     use ricecoder_domain::project::Project;
     use ricecoder_domain::value_objects::ProgrammingLanguage;
+    use ricecoder_domain::DomainResult;
     use std::collections::HashMap;
     use std::sync::Mutex;
 
@@ -302,11 +305,7 @@ mod tests {
         }
 
         async fn exists(&self, id: &ProjectId) -> DomainResult<bool> {
-            Ok(self
-                .projects
-                .lock()
-                .unwrap()
-                .contains_key(&id.to_string()))
+            Ok(self.projects.lock().unwrap().contains_key(&id.to_string()))
         }
     }
 
@@ -321,7 +320,8 @@ mod tests {
             ProgrammingLanguage::Rust,
             "/path".to_string(),
             None,
-        ).unwrap();
+        )
+        .unwrap();
         let project_id = project.id().to_string();
         project_repo.add_project(project);
 
@@ -367,7 +367,8 @@ mod tests {
             ProgrammingLanguage::Rust,
             "/path".to_string(),
             None,
-        ).unwrap();
+        )
+        .unwrap();
         let project_id = project.id().to_string();
         project_repo.add_project(project);
 
@@ -395,7 +396,8 @@ mod tests {
             ProgrammingLanguage::Rust,
             "/path".to_string(),
             None,
-        ).unwrap();
+        )
+        .unwrap();
         let project_id = project.id().to_string();
         project_repo.add_project(project);
 

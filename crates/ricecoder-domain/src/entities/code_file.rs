@@ -95,7 +95,11 @@ impl CodeFile {
             || self.relative_path.ends_with("_test.rs")
             || self.relative_path.ends_with(".test.ts")
             || self.relative_path.ends_with(".spec.ts")
-            || self.metadata.get("is_test").map(|v| v == "true").unwrap_or(false)
+            || self
+                .metadata
+                .get("is_test")
+                .map(|v| v == "true")
+                .unwrap_or(false)
     }
 
     /// Returns the number of characters in the file

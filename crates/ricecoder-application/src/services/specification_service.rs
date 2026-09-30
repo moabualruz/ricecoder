@@ -11,16 +11,16 @@ use std::sync::Arc;
 
 use chrono::Utc;
 
-use crate::dto::{
-    CreateSpecificationCommand, RequirementDto, SpecificationSummaryDto, TaskDto,
-};
+use crate::dto::{CreateSpecificationCommand, RequirementDto, SpecificationSummaryDto, TaskDto};
 use crate::errors::{ApplicationError, ApplicationResult};
 use crate::events::{ApplicationEvent, EventPublisher};
 use crate::ports::UnitOfWork;
 
-use ricecoder_domain::specification::{Specification, SpecStatus};
-use ricecoder_domain::value_objects::{ProjectId, SpecificationId, RequirementId, TaskId};
-use ricecoder_domain::repositories::{SpecificationRepository, SpecificationReader, SpecificationWriter, ProjectRepository};
+use ricecoder_domain::repositories::{
+    ProjectRepository, SpecificationReader, SpecificationRepository, SpecificationWriter,
+};
+use ricecoder_domain::specification::{SpecStatus, Specification};
+use ricecoder_domain::value_objects::{ProjectId, RequirementId, SpecificationId, TaskId};
 
 /// Specification Application Service
 ///
@@ -125,10 +125,7 @@ where
     }
 
     /// Get specification by ID
-    pub async fn get_specification(
-        &self,
-        id: &str,
-    ) -> ApplicationResult<SpecificationSummaryDto> {
+    pub async fn get_specification(&self, id: &str) -> ApplicationResult<SpecificationSummaryDto> {
         let spec_id = SpecificationId::from_string(id)
             .map_err(|_| ApplicationError::ValidationFailed("Invalid specification ID".into()))?;
 
@@ -357,9 +354,9 @@ mod tests {
     use crate::events::NoOpEventPublisher;
     use crate::ports::NoOpUnitOfWork;
     use async_trait::async_trait;
-    use ricecoder_domain::DomainResult;
     use ricecoder_domain::project::Project;
     use ricecoder_domain::value_objects::ProgrammingLanguage;
+    use ricecoder_domain::DomainResult;
     use std::collections::HashMap;
     use std::sync::Mutex;
 
@@ -382,7 +379,10 @@ mod tests {
             Ok(self.specs.lock().unwrap().get(&id.to_string()).cloned())
         }
 
-        async fn find_by_project(&self, project_id: &ProjectId) -> DomainResult<Vec<Specification>> {
+        async fn find_by_project(
+            &self,
+            project_id: &ProjectId,
+        ) -> DomainResult<Vec<Specification>> {
             Ok(self
                 .specs
                 .lock()
@@ -428,7 +428,7 @@ mod tests {
             Ok(())
         }
     }
-    
+
     // Blanket impl provides SpecificationRepository
 
     /// In-memory project repository for testing
@@ -475,11 +475,7 @@ mod tests {
         }
 
         async fn exists(&self, id: &ProjectId) -> DomainResult<bool> {
-            Ok(self
-                .projects
-                .lock()
-                .unwrap()
-                .contains_key(&id.to_string()))
+            Ok(self.projects.lock().unwrap().contains_key(&id.to_string()))
         }
     }
 
@@ -496,7 +492,8 @@ mod tests {
             ProgrammingLanguage::Rust,
             "/path".to_string(),
             None,
-        ).unwrap();
+        )
+        .unwrap();
         let project_id = project.id().to_string();
         project_repo.add_project(project);
 

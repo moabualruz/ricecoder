@@ -42,12 +42,20 @@ impl AnthropicProvider {
     }
 
     /// Create a new Anthropic provider with a custom base URL
-    pub fn with_base_url(api_key: String, base_url: String, models: Vec<ModelInfo>) -> Result<Self, ProviderError> {
+    pub fn with_base_url(
+        api_key: String,
+        base_url: String,
+        models: Vec<ModelInfo>,
+    ) -> Result<Self, ProviderError> {
         Self::with_client_and_base_url(Arc::new(Client::new()), api_key, base_url, models)
     }
 
     /// Create a new Anthropic provider with a custom HTTP client
-    pub fn with_client(client: Arc<Client>, api_key: String, models: Vec<ModelInfo>) -> Result<Self, ProviderError> {
+    pub fn with_client(
+        client: Arc<Client>,
+        api_key: String,
+        models: Vec<ModelInfo>,
+    ) -> Result<Self, ProviderError> {
         if api_key.is_empty() {
             return Err(ProviderError::ConfigError(
                 "Anthropic API key is required".to_string(),

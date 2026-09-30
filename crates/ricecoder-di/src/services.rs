@@ -12,8 +12,10 @@
 //! Each crate uses `inventory::submit!` with a `ServiceFactory` that returns
 //! `Vec<ServiceEntry>` containing its services.
 
+use ricecoder_common::di::{
+    collect_all_services, discovered_factory_count, list_discovered_factories,
+};
 use std::sync::Arc;
-use ricecoder_common::di::{collect_all_services, discovered_factory_count, list_discovered_factories};
 
 use async_trait::async_trait;
 use ricecoder_agents::use_cases::{
@@ -98,7 +100,7 @@ impl Default for LifecycleManager {
 pub fn register_discovered_services(container: &DIContainer) -> DIResult<()> {
     let factory_count = discovered_factory_count();
     let factory_names = list_discovered_factories();
-    
+
     tracing::info!(
         "Registering services from {} discovered factories: {:?}",
         factory_count,
@@ -328,9 +330,13 @@ pub fn create_configured_container(_config: &ContainerConfig) -> DIResult<DICont
 /// Extension trait for DIContainerBuilder to add service registration methods
 pub trait DIContainerBuilderExt {
     /// Register infrastructure services
-    fn register_infrastructure_services(self) -> DIResult<Self> where Self: Sized;
+    fn register_infrastructure_services(self) -> DIResult<Self>
+    where
+        Self: Sized;
     /// Register use cases
-    fn register_use_cases(self) -> DIResult<Self> where Self: Sized;
+    fn register_use_cases(self) -> DIResult<Self>
+    where
+        Self: Sized;
 }
 
 impl DIContainerBuilderExt for crate::DIContainerBuilder {

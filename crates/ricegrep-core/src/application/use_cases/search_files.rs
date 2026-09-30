@@ -2,8 +2,8 @@
 //!
 //! Orchestrates search operations across indexed files.
 
-use crate::application::{AppResult, IndexRepository, EventPublisher};
-use crate::domain::{SearchQuery, SearchResult, DomainEvent};
+use crate::application::{AppResult, EventPublisher, IndexRepository};
+use crate::domain::{DomainEvent, SearchQuery, SearchResult};
 
 /// Request for searching files
 #[derive(Debug, Clone)]
@@ -34,7 +34,7 @@ impl SearchFilesRequest {
             max_results: None,
         }
     }
-    
+
     /// Create a regex search request
     pub fn regex(pattern: impl Into<String>) -> Self {
         SearchFilesRequest {
@@ -90,13 +90,14 @@ impl<I: IndexRepository, E: EventPublisher> SearchFilesUseCase<I, E> {
             request.case_sensitive,
             request.whole_word,
             request.is_regex,
-        ).map_err(|e| crate::application::AppError::Validation { 
-            message: e.to_string() 
+        )
+        .map_err(|e| crate::application::AppError::Validation {
+            message: e.to_string(),
         })?;
-        
+
         // 2. Execute search via repository
         let mut results = self.index_repo.search(&query)?;
-        
+
         // 3. Apply path filter if specified
         if let Some(ref filter) = request.path_filter {
             results.retain(|r| {
@@ -104,7 +105,7 @@ impl<I: IndexRepository, E: EventPublisher> SearchFilesUseCase<I, E> {
                 path_str.contains(filter)
             });
         }
-        
+
         // 4. Apply max results limit
         let truncated = if let Some(max) = request.max_results {
             if results.len() > max {
@@ -116,12 +117,10 @@ impl<I: IndexRepository, E: EventPublisher> SearchFilesUseCase<I, E> {
         } else {
             false
         };
-        
+
         // 5. Calculate total matches
-        let total_matches: usize = results.iter()
-            .map(|r| r.matches().len())
-            .sum();
-        
+        let total_matches: usize = results.iter().map(|r| r.matches().len()).sum();
+
         // 6. Publish search events
         for result in &results {
             self.event_publisher.publish(&DomainEvent::SearchExecuted {
@@ -129,7 +128,7 @@ impl<I: IndexRepository, E: EventPublisher> SearchFilesUseCase<I, E> {
                 matches_found: result.matches().len(),
             });
         }
-        
+
         Ok(SearchFilesResponse {
             results,
             total_matches,
@@ -164,18 +163,18 @@ mod tests {
             let path_str = path.as_path().to_string_lossy().to_string();
             self.entries.borrow().get(&path_str).cloned()
         }
-        
+
         fn update_metadata(&self, entry: FileIndexEntry) -> AppResult<()> {
             self.entries.borrow_mut().insert(entry.path.clone(), entry);
             Ok(())
         }
-        
+
         fn remove_metadata(&self, path: &FilePath) -> AppResult<()> {
             let path_str = path.as_path().to_string_lossy().to_string();
             self.entries.borrow_mut().remove(&path_str);
             Ok(())
         }
-        
+
         fn search(&self, _query: &SearchQuery) -> AppResult<Vec<SearchResult>> {
             // Mock returns empty results for now
             Ok(vec![])
@@ -188,9 +187,11 @@ mod tests {
 
     impl TestEventPublisher {
         fn new() -> Self {
-            TestEventPublisher { events: RefCell::new(Vec::new()) }
+            TestEventPublisher {
+                events: RefCell::new(Vec::new()),
+            }
         }
-        
+
         fn event_count(&self) -> usize {
             self.events.borrow().len()
         }
@@ -205,7 +206,7 @@ mod tests {
     #[test]
     fn test_search_literal_request() {
         let request = SearchFilesRequest::literal("TODO");
-        
+
         assert_eq!(request.pattern, "TODO");
         assert!(!request.is_regex);
         assert!(request.case_sensitive);
@@ -214,7 +215,7 @@ mod tests {
     #[test]
     fn test_search_regex_request() {
         let request = SearchFilesRequest::regex(r"fn\s+\w+");
-        
+
         assert_eq!(request.pattern, r"fn\s+\w+");
         assert!(request.is_regex);
     }
@@ -223,12 +224,12 @@ mod tests {
     fn test_search_empty_results() {
         let index_repo = TestIndexRepo::new();
         let event_pub = TestEventPublisher::new();
-        
+
         let use_case = SearchFilesUseCase::new(index_repo, event_pub);
         let request = SearchFilesRequest::literal("nonexistent");
-        
+
         let response = use_case.execute(request).unwrap();
-        
+
         assert!(response.results.is_empty());
         assert_eq!(response.total_matches, 0);
         assert!(!response.truncated);
@@ -238,12 +239,12 @@ mod tests {
     fn test_search_invalid_regex() {
         let index_repo = TestIndexRepo::new();
         let event_pub = TestEventPublisher::new();
-        
+
         let use_case = SearchFilesUseCase::new(index_repo, event_pub);
         let request = SearchFilesRequest::regex("[invalid");
-        
+
         let result = use_case.execute(request);
-        
+
         assert!(result.is_err());
     }
 
@@ -251,12 +252,12 @@ mod tests {
     fn test_search_no_events_for_empty_results() {
         let index_repo = TestIndexRepo::new();
         let event_pub = TestEventPublisher::new();
-        
+
         let use_case = SearchFilesUseCase::new(index_repo, event_pub);
         let request = SearchFilesRequest::literal("test");
-        
+
         use_case.execute(request).unwrap();
-        
+
         // No events for empty results
         assert_eq!(use_case.event_publisher.event_count(), 0);
     }

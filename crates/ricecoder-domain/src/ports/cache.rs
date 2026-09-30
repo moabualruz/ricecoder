@@ -96,7 +96,12 @@ pub trait CacheWriter: Send + Sync {
     /// * `key` - Cache key
     /// * `value` - Serialized value as bytes
     /// * `ttl` - Optional time-to-live
-    async fn set(&self, key: &str, value: Vec<u8>, ttl: Option<std::time::Duration>) -> DomainResult<()>;
+    async fn set(
+        &self,
+        key: &str,
+        value: Vec<u8>,
+        ttl: Option<std::time::Duration>,
+    ) -> DomainResult<()>;
 
     /// Remove a key from the cache
     async fn remove(&self, key: &str) -> DomainResult<bool>;

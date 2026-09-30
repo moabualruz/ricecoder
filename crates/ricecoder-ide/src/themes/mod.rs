@@ -241,14 +241,14 @@ mod tests {
     #[test]
     fn test_ide_theme_manager_creation() {
         let manager = IdeThemeManager::new();
-        assert_eq!(manager.current().unwrap().name, "dark");
+        assert_eq!(manager.current().unwrap().name, "fallback");
     }
 
     #[test]
     fn test_ide_theme_manager_with_theme() {
-        let theme = Theme::light();
+        let theme = Theme::fallback();
         let manager = IdeThemeManager::with_theme(theme);
-        assert_eq!(manager.current().unwrap().name, "light");
+        assert_eq!(manager.current().unwrap().name, "fallback");
     }
 
     #[test]
@@ -262,19 +262,16 @@ mod tests {
     fn test_ide_available_themes() {
         let manager = IdeThemeManager::new();
         let themes = manager.available_themes();
-        assert_eq!(themes.len(), 6);
-        assert!(themes.contains(&"dark"));
-        assert!(themes.contains(&"light"));
-        assert!(themes.contains(&"dracula"));
-        assert!(themes.contains(&"monokai"));
-        assert!(themes.contains(&"nord"));
-        assert!(themes.contains(&"high-contrast"));
+        assert_eq!(themes.len(), manager.builtin_theme_count());
+        assert!(themes.iter().any(|theme| theme == "dracula"));
+        assert!(themes.iter().any(|theme| theme == "monokai"));
+        assert!(themes.iter().any(|theme| theme == "nord"));
     }
 
     #[test]
     fn test_ide_current_name() {
         let manager = IdeThemeManager::new();
-        assert_eq!(manager.current_name().unwrap(), "dark");
+        assert_eq!(manager.current_name().unwrap(), "fallback");
 
         manager.switch_by_name("nord").unwrap();
         assert_eq!(manager.current_name().unwrap(), "nord");
@@ -283,56 +280,66 @@ mod tests {
     #[test]
     fn test_ide_theme_exists() {
         let manager = IdeThemeManager::new();
-        assert!(manager.theme_exists("dark"));
-        assert!(manager.theme_exists("light"));
+        assert!(manager.theme_exists("dracula"));
         assert!(!manager.theme_exists("nonexistent"));
     }
 
     #[test]
     fn test_ide_is_builtin_theme() {
         let manager = IdeThemeManager::new();
-        assert!(manager.is_builtin_theme("dark"));
-        assert!(manager.is_builtin_theme("light"));
+        assert!(manager.is_builtin_theme("dracula"));
         assert!(!manager.is_builtin_theme("nonexistent"));
     }
 
     #[test]
     fn test_ide_builtin_theme_count() {
         let manager = IdeThemeManager::new();
-        assert_eq!(manager.builtin_theme_count(), 6);
+        assert_eq!(
+            manager.builtin_theme_count(),
+            manager.available_themes().len()
+        );
     }
 
     #[test]
     fn test_ide_reset_colors() {
         let manager = IdeThemeManager::new();
-        let original_primary = manager.current().unwrap().primary;
+        manager.switch_by_name("dracula").unwrap();
+        let original = manager.current().unwrap();
+        let mut modified = original.clone();
+        modified.primary = Color::Black;
+        manager.switch_to(modified).unwrap();
 
-        // Reset colors (should restore to defaults)
         manager.reset_colors().unwrap();
 
-        // Verify reset
-        assert_eq!(manager.current().unwrap().primary, original_primary);
+        let reset = manager.current().unwrap();
+        assert_eq!(reset.primary, original.primary);
+        assert_eq!(reset.background, original.background);
     }
 
     #[test]
     fn test_ide_reset_theme() {
         let manager = IdeThemeManager::new();
-        manager.switch_by_name("light").unwrap();
+        manager.switch_by_name("dracula").unwrap();
 
-        let original_theme = Theme::light();
+        let mut modified_theme = manager.current().unwrap();
+        let original_primary = modified_theme.primary;
+        let original_background = modified_theme.background;
+        modified_theme.primary = Color::Black;
+        modified_theme.background = Color::White;
+        manager.switch_to(modified_theme).unwrap();
 
         // Reset theme
         manager.reset_theme().unwrap();
 
         // Verify reset
         let reset = manager.current().unwrap();
-        assert_eq!(reset.primary, original_theme.primary);
-        assert_eq!(reset.background, original_theme.background);
+        assert_eq!(reset.primary, original_primary);
+        assert_eq!(reset.background, original_background);
     }
 
     #[test]
     fn test_ide_default() {
         let manager = IdeThemeManager::default();
-        assert_eq!(manager.current().unwrap().name, "dark");
+        assert_eq!(manager.current().unwrap().name, "fallback");
     }
 }

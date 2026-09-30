@@ -7,10 +7,7 @@ use thiserror::Error;
 pub enum SkillError {
     /// Skill validation failed
     #[error("Skill validation failed at {path}: {message}")]
-    InvalidSkill {
-        path: String,
-        message: String,
-    },
+    InvalidSkill { path: String, message: String },
 
     /// Skill name mismatch between frontmatter and expected
     #[error("Skill name mismatch at {path}: expected '{expected}', found '{actual}'")]
@@ -22,17 +19,11 @@ pub enum SkillError {
 
     /// Skill not found
     #[error("Skill '{name}' not found. Available skills: {available}")]
-    NotFound {
-        name: String,
-        available: String,
-    },
+    NotFound { name: String, available: String },
 
     /// Permission denied
     #[error("Access to skill '{skill}' is denied for agent '{agent}'")]
-    PermissionDenied {
-        skill: String,
-        agent: String,
-    },
+    PermissionDenied { skill: String, agent: String },
 
     /// IO error during skill loading
     #[error("IO error loading skill: {0}")]
@@ -44,10 +35,7 @@ pub enum SkillError {
 
     /// Missing required field
     #[error("Missing required field '{field}' in skill at {path}")]
-    MissingField {
-        field: String,
-        path: String,
-    },
+    MissingField { field: String, path: String },
 }
 
 impl SkillError {

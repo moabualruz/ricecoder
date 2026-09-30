@@ -32,7 +32,7 @@ pub enum BannerSize {
 impl BannerSize {
     /// Get the compact text tagline for minimal space
     pub const TAGLINE: &'static str = "r[ Plan. Think. Code";
-    
+
     /// Get minimum height required for this size
     pub fn min_height(&self) -> u16 {
         match self {
@@ -42,7 +42,7 @@ impl BannerSize {
             BannerSize::Full => 23,
         }
     }
-    
+
     /// Select appropriate size based on available height
     pub fn from_available_height(height: u16) -> Self {
         if height >= 31 {
@@ -179,12 +179,12 @@ impl BannerComponent {
             fallback_text: config.fallback_text.clone(),
         };
         self.size = config.size;
-        
+
         // Reload ASCII fallbacks if directory changed
         if let Some(ref branding_dir) = config.branding_dir {
             self.ascii_fallbacks = AsciiFallbacks::load(branding_dir);
         }
-        
+
         // Clear cache when config changes
         self.cached_output = None;
     }
@@ -251,7 +251,7 @@ impl BannerComponent {
             }
             Err(e) => {
                 warn!("Banner rendering failed: {}, trying ASCII fallback", e);
-                
+
                 // Try ASCII fallback
                 if let Some(ascii) = self.ascii_fallbacks.get(self.size) {
                     ascii.to_string()
@@ -304,12 +304,12 @@ impl BannerComponent {
         self.config.height = size.min_height();
         self.cached_output = None;
     }
-    
+
     /// Set banner to compact text mode: `r[ Plan. Think. Code`
     pub fn set_text_mode(&mut self) {
         self.set_size(BannerSize::Text);
     }
-    
+
     /// Auto-select size based on available terminal height
     pub fn auto_size(&mut self, available_height: u16) {
         self.set_size(BannerSize::from_available_height(available_height));

@@ -23,9 +23,9 @@ pub use observability::{
 };
 
 #[cfg(feature = "local-embeddings")]
-pub use embeddings::{EmbeddingConfig, EmbeddingGenerator, EmbeddingModelKind, ModelManager};
-#[cfg(feature = "local-embeddings")]
 pub use batch::BatchProcessor;
+#[cfg(feature = "local-embeddings")]
+pub use embeddings::{EmbeddingConfig, EmbeddingGenerator, EmbeddingModelKind, ModelManager};
 #[cfg(feature = "local-embeddings")]
 pub use pipeline::VectorPipeline;
 #[cfg(feature = "local-embeddings")]

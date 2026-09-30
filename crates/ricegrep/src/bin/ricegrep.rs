@@ -540,48 +540,48 @@ fn collect_glob_matches(
 ) -> Result<(Vec<String>, bool)> {
     use glob::Pattern;
     use std::time::SystemTime;
-    
+
     // Gap #1 FIX: Use real glob pattern matching, not substring matching
     let glob_pattern = if ignore_case {
         Pattern::new(&pattern.to_lowercase())?
     } else {
         Pattern::new(pattern)?
     };
-    
+
     // Gap #2 FIX: Hard limit at 100 files (matches OpenCode behavior)
     const LIMIT: usize = 100;
     let mut file_results = Vec::new();
     let mut truncated = false;
-    
+
     let walker = WalkBuilder::new(root).build();
     for entry in walker {
         let entry = entry?;
         let path = entry.path();
-        
+
         // Get the full path string for glob matching
         let path_str = path.to_string_lossy();
-        
+
         // Match against the full path using glob semantics
         let matches_pattern = if ignore_case {
             glob_pattern.matches(&path_str.to_lowercase())
         } else {
             glob_pattern.matches(&path_str)
         };
-        
+
         if matches_pattern && (include_dirs || path.is_file()) {
             // Gap #3 FIX: Get mtime for sorting
             let mtime = path
                 .metadata()
                 .and_then(|m| m.modified())
                 .unwrap_or(SystemTime::UNIX_EPOCH);
-            
+
             let full_path = std::path::Path::new(root)
                 .join(path)
                 .canonicalize()
                 .unwrap_or_else(|_| path.to_path_buf());
-            
+
             file_results.push((full_path.display().to_string(), mtime));
-            
+
             // Gap #2 FIX: Stop at limit and mark as truncated
             if file_results.len() >= LIMIT {
                 truncated = true;
@@ -589,12 +589,15 @@ fn collect_glob_matches(
             }
         }
     }
-    
+
     // Gap #3 FIX: Sort by mtime descending (newest first)
     file_results.sort_by(|a, b| b.1.cmp(&a.1));
-    
+
     // Extract paths only, return with truncation flag
-    Ok((file_results.into_iter().map(|(path, _)| path).collect(), truncated))
+    Ok((
+        file_results.into_iter().map(|(path, _)| path).collect(),
+        truncated,
+    ))
 }
 
 fn list_directory_entries(
@@ -996,8 +999,8 @@ async fn run_index(runtime: &RuntimeConfig, args: IndexArgs) -> Result<()> {
             let root = resolve_repo_root(&paths.paths)?;
             let index_dir = local_index_dir(&root);
             let metadata_path = local_metadata_path(&root);
-            let toolset = AdminToolset::new(index_dir.clone(), None)
-                .with_no_ignore(paths.no_ignore);
+            let toolset =
+                AdminToolset::new(index_dir.clone(), None).with_no_ignore(paths.no_ignore);
             let stats = toolset
                 .reindex_repository_with_metadata(&root, &metadata_path)
                 .await
@@ -1019,8 +1022,8 @@ async fn run_index(runtime: &RuntimeConfig, args: IndexArgs) -> Result<()> {
             let root = resolve_repo_root(&paths.paths)?;
             let index_dir = local_index_dir(&root);
             let metadata_path = local_metadata_path(&root);
-            let toolset = AdminToolset::new(index_dir.clone(), None)
-                .with_no_ignore(paths.no_ignore);
+            let toolset =
+                AdminToolset::new(index_dir.clone(), None).with_no_ignore(paths.no_ignore);
             let stats = toolset
                 .reindex_repository_with_metadata(&root, &metadata_path)
                 .await
@@ -1117,7 +1120,8 @@ fn run_replace(_runtime: &RuntimeConfig, args: ReplaceArgs) -> Result<()> {
 
 fn run_files(args: FilesArgs) -> Result<()> {
     let root = args.paths.first().map(|s| s.as_str()).unwrap_or(".");
-    let (matches, _truncated) = collect_glob_matches(root, &args.pattern, args.include_dirs, args.ignore_case)?;
+    let (matches, _truncated) =
+        collect_glob_matches(root, &args.pattern, args.include_dirs, args.ignore_case)?;
     for m in matches {
         println!("{}", m);
     }

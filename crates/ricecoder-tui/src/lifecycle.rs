@@ -348,13 +348,16 @@ where
 // =============================================================================
 
 /// Legacy: Global lifecycle manager for TUI
-/// 
+///
 /// **DEPRECATED**: Use `get_lifecycle_manager_from_container()` instead.
-#[deprecated(since = "0.2.0", note = "Use get_lifecycle_manager_from_container() with explicit container")]
+#[deprecated(
+    since = "0.2.0",
+    note = "Use get_lifecycle_manager_from_container() with explicit container"
+)]
 static TUI_LIFECYCLE_MANAGER: OnceLock<Arc<TuiLifecycleManager>> = OnceLock::new();
 
 /// Legacy: Initialize the global TUI lifecycle manager
-/// 
+///
 /// **DEPRECATED**: The lifecycle manager is now registered as a DI service.
 /// Use `container.resolve::<TuiLifecycleManager>()` instead.
 #[deprecated(since = "0.2.0", note = "Lifecycle manager is now a DI service")]
@@ -366,18 +369,24 @@ pub fn initialize_tui_lifecycle_manager() -> Arc<TuiLifecycleManager> {
 }
 
 /// Legacy: Get the global TUI lifecycle manager
-/// 
+///
 /// **DEPRECATED**: Use `get_lifecycle_manager_from_container()` instead.
-#[deprecated(since = "0.2.0", note = "Use get_lifecycle_manager_from_container() instead")]
+#[deprecated(
+    since = "0.2.0",
+    note = "Use get_lifecycle_manager_from_container() instead"
+)]
 #[allow(deprecated)]
 pub fn get_tui_lifecycle_manager() -> Option<Arc<TuiLifecycleManager>> {
     TUI_LIFECYCLE_MANAGER.get().cloned()
 }
 
 /// Legacy: Register a component with the global TUI lifecycle manager
-/// 
+///
 /// **DEPRECATED**: Use `register_component_with_container()` instead.
-#[deprecated(since = "0.2.0", note = "Use register_component_with_container() instead")]
+#[deprecated(
+    since = "0.2.0",
+    note = "Use register_component_with_container() instead"
+)]
 #[allow(deprecated)]
 pub fn register_tui_component<C>(
     component: C,

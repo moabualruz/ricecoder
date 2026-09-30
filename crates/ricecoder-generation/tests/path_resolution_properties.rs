@@ -29,8 +29,8 @@ proptest! {
         prop_assert_eq!(&path1, &path2);
         prop_assert_eq!(&path2, &path3);
 
-        // Project path should always be .agent
-        prop_assert_eq!(&path1, &PathBuf::from(".agent"));
+        // The resolver owns the project directory name.
+        prop_assert_eq!(&path1, &PathBuf::from(PathResolver::PROJECT_DIR));
     }
 }
 
@@ -131,7 +131,7 @@ fn test_environment_variable_override_is_respected() {
 fn test_dependency_isolation_all_path_resolution_through_path_resolver() {
     // This test verifies that all path resolution goes through PathResolver
     // by checking that:
-    // 1. PathResolver::resolve_project_path() always returns .agent
+    // 1. PathResolver::resolve_project_path() returns its configured project directory
     // 2. PathResolver::resolve_global_path() always returns a consistent path
     // 3. Multiple calls return identical results (no custom logic)
 
@@ -152,8 +152,8 @@ fn test_dependency_isolation_all_path_resolution_through_path_resolver() {
     assert_eq!(&project_path1, &project_path2);
     assert_eq!(&project_path2, &project_path3);
 
-    // Project path should always be .agent (no custom logic)
-    assert_eq!(&project_path1, &PathBuf::from(".agent"));
+    // Project path should match the resolver's configured directory (no custom logic)
+    assert_eq!(&project_path1, &PathBuf::from(PathResolver::PROJECT_DIR));
 
     // Test global path resolution (without modifying environment)
     let global_path1 = PathResolver::resolve_global_path();
@@ -188,9 +188,11 @@ fn test_dependency_isolation_no_hardcoded_paths() {
     // This test verifies that path resolution doesn't use hardcoded paths
     // by checking that PathResolver is the single source of truth
 
+    let _guard = ENV_LOCK.lock().unwrap();
+
     // Project path should be resolved through PathResolver
     let project_path = PathResolver::resolve_project_path();
-    assert_eq!(project_path, PathBuf::from(".agent"));
+    assert_eq!(project_path, PathBuf::from(PathResolver::PROJECT_DIR));
 
     // Global path should be resolved through PathResolver
     let original = std::env::var("RICECODER_HOME").ok();
@@ -229,7 +231,7 @@ fn test_dependency_isolation_consistency_across_multiple_calls() {
 
     // All should be identical
     for path in &project_paths {
-        assert_eq!(path, &PathBuf::from(".agent"));
+        assert_eq!(path, &PathBuf::from(PathResolver::PROJECT_DIR));
     }
 
     // Make multiple calls to global path resolution (without modifying environment)

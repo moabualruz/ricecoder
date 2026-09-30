@@ -97,15 +97,11 @@ impl Default for EmbeddingConfig {
 
 /// Generates embeddings using fastembed.
 pub struct EmbeddingGenerator {
-    model: TextEmbedding,
+    model: Mutex<TextEmbedding>,
     model_kind: EmbeddingModelKind,
     cache: Mutex<LruCache<u64, Vec<f32>>>,
     telemetry: Option<Arc<VectorTelemetry>>,
 }
-
-// TextEmbedding from fastembed is Send + Sync safe
-unsafe impl Send for EmbeddingGenerator {}
-unsafe impl Sync for EmbeddingGenerator {}
 
 impl EmbeddingGenerator {
     /// Load an embedding model.
@@ -122,7 +118,7 @@ impl EmbeddingGenerator {
         .map_err(|e| anyhow!("failed to load embedding model: {e}"))?;
 
         Ok(Self {
-            model,
+            model: Mutex::new(model),
             model_kind,
             cache: Mutex::new(LruCache::new(
                 NonZeroUsize::new(cache_size).unwrap_or(NonZeroUsize::new(1024).unwrap()),
@@ -206,8 +202,9 @@ impl EmbeddingGenerator {
         }
 
         let documents: Vec<String> = texts.iter().map(|s| s.to_string()).collect();
-        
+
         self.model
+            .lock()
             .embed(documents, None)
             .map_err(|e| anyhow!("embedding generation failed: {e}"))
     }

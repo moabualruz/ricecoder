@@ -1,7 +1,18 @@
 use std::path::PathBuf;
 
+use ricecoder_learning::RuleStorage;
 /// Integration tests for complete learning system workflows
 use ricecoder_learning::{Decision, DecisionContext, LearningManager, Rule, RuleScope, RuleSource};
+
+/// Project-scope manager whose rules land in a throwaway directory, not the working tree.
+fn project_manager() -> (LearningManager, tempfile::TempDir) {
+    let dir = tempfile::tempdir().expect("temp project root");
+    let storage = RuleStorage::with_project_root(RuleScope::Project, dir.path());
+    let manager = LearningManager::builder(RuleScope::Project)
+        .with_rule_storage(std::sync::Arc::new(storage))
+        .build();
+    (manager, dir)
+}
 
 // ============================================================================
 // Test 13.1: Decision Capture → Pattern Extraction → Rule Creation
@@ -349,7 +360,7 @@ async fn test_workflow_rule_application_guides_generation() {
 
 #[tokio::test]
 async fn test_workflow_rule_promotion_complete() {
-    let manager = LearningManager::new(RuleScope::Project);
+    let (manager, _project_dir) = project_manager();
     manager.clear_pending_promotions().await;
 
     // Step 1: Create a rule in project scope with unique pattern
@@ -399,7 +410,7 @@ async fn test_workflow_rule_promotion_complete() {
 
 #[tokio::test]
 async fn test_workflow_rule_promotion_with_conflict_detection() {
-    let manager = LearningManager::new(RuleScope::Project);
+    let (manager, _project_dir) = project_manager();
     manager.clear_pending_promotions().await;
 
     // Create a rule in project scope with unique pattern (use timestamp to ensure uniqueness)
@@ -438,7 +449,7 @@ async fn test_workflow_rule_promotion_with_conflict_detection() {
 
 #[tokio::test]
 async fn test_workflow_rule_promotion_rejection() {
-    let manager = LearningManager::new(RuleScope::Project);
+    let (manager, _project_dir) = project_manager();
     manager.clear_pending_promotions().await;
 
     // Create a rule with unique pattern
@@ -483,7 +494,7 @@ async fn test_workflow_rule_promotion_rejection() {
 
 #[tokio::test]
 async fn test_workflow_rule_promotion_version_tracking() {
-    let manager = LearningManager::new(RuleScope::Project);
+    let (manager, _project_dir) = project_manager();
     manager.clear_pending_promotions().await;
 
     // Create initial rule with unique pattern

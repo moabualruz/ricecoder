@@ -243,9 +243,8 @@ impl SnapshotManager {
 
                 if !output.status.success() {
                     // Check if file existed in snapshot
-                    let relative_path = file
-                        .strip_prefix(&self.work_tree)
-                        .unwrap_or(file.as_path());
+                    let relative_path =
+                        file.strip_prefix(&self.work_tree).unwrap_or(file.as_path());
                     let ls_tree_output = Command::new("git")
                         .args(&[
                             "--git-dir",
@@ -263,9 +262,7 @@ impl SnapshotManager {
                             SessionError::SnapshotFailed(format!("failed to ls-tree: {}", e))
                         })?;
 
-                    if ls_tree_output.status.success()
-                        && !ls_tree_output.stdout.is_empty()
-                    {
+                    if ls_tree_output.status.success() && !ls_tree_output.stdout.is_empty() {
                         info!(file = %file.display(), "file existed in snapshot but checkout failed, keeping");
                     } else {
                         info!(file = %file.display(), "file did not exist in snapshot, deleting");
@@ -398,7 +395,9 @@ impl SnapshotManager {
             let before = if is_binary {
                 String::new()
             } else {
-                self.git_show_file(from_hash, &file).await.unwrap_or_default()
+                self.git_show_file(from_hash, &file)
+                    .await
+                    .unwrap_or_default()
             };
 
             let after = if is_binary {
@@ -533,9 +532,7 @@ impl SnapshotManager {
             .current_dir(&self.work_tree)
             .output()
             .await
-            .map_err(|e| {
-                SessionError::SnapshotFailed(format!("failed to execute diff: {}", e))
-            })?;
+            .map_err(|e| SessionError::SnapshotFailed(format!("failed to execute diff: {}", e)))?;
 
         if !output.status.success() {
             warn!(

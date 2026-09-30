@@ -3,7 +3,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use ricecoder_domain::session::{Session, SessionState, MessageRole};
+use ricecoder_domain::session::{MessageRole, Session, SessionState};
 use ricecoder_domain::value_objects::ProjectId;
 
 /// Command to create a new session
@@ -104,7 +104,7 @@ mod tests {
 
         let json = serde_json::to_string(&cmd).unwrap();
         let parsed: CreateSessionCommand = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(parsed.project_id, "proj-123");
         assert_eq!(parsed.max_messages, Some(100));
     }

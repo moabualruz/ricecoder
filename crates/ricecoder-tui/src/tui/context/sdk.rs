@@ -18,18 +18,16 @@
 //! This module remains for backwards compatibility and event subscription patterns,
 //! but all placeholder methods now point to AppContext for real implementations.
 
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::{broadcast, RwLock};
-use serde::{Deserialize, Serialize};
 
 /// SDK events from the backend
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum SdkEvent {
     /// Session created
-    SessionCreated {
-        session_id: String,
-    },
+    SessionCreated { session_id: String },
     /// Message received
     MessageReceived {
         session_id: String,
@@ -37,19 +35,11 @@ pub enum SdkEvent {
         content: String,
     },
     /// Provider status changed
-    ProviderStatusChanged {
-        provider_id: String,
-        status: String,
-    },
+    ProviderStatusChanged { provider_id: String, status: String },
     /// MCP status changed
-    McpStatusChanged {
-        name: String,
-        status: String,
-    },
+    McpStatusChanged { name: String, status: String },
     /// Model list updated
-    ModelListUpdated {
-        provider_id: String,
-    },
+    ModelListUpdated { provider_id: String },
     /// Generic event for extensibility
     Generic {
         event_type: String,
@@ -75,17 +65,13 @@ impl SdkClient {
     }
 
     /// Send chat message (DEPRECATED - use AppContext::send_message)
-    /// 
+    ///
     /// This method is a placeholder. Real message sending is now handled by:
     /// - `AppContext::send_message()` for blocking requests
     /// - `AppContext::send_message_streaming()` for streaming responses
-    /// 
+    ///
     /// Those methods integrate with ricecoder-providers for actual AI calls.
-    pub async fn send_message(
-        &self,
-        session_id: &str,
-        content: String,
-    ) -> Result<String, String> {
+    pub async fn send_message(&self, session_id: &str, content: String) -> Result<String, String> {
         // SDK layer is deprecated - real implementation in AppContext
         Ok(format!(
             "DEPRECATED: Use AppContext::send_message() instead. Session: {}, Message: {}",
@@ -94,11 +80,11 @@ impl SdkClient {
     }
 
     /// List sessions (DEPRECATED - use AppContext::load_sessions)
-    /// 
+    ///
     /// This method returns empty data. Real session listing is now handled by:
     /// - `AppContext::load_sessions()` during initialization
     /// - Session data is stored in `AppState.sessions`
-    /// 
+    ///
     /// The AppContext integrates with ricecoder-sessions for session persistence.
     pub async fn list_sessions(&self) -> Result<Vec<String>, String> {
         // SDK layer is deprecated - real session data comes from AppContext state
@@ -106,11 +92,11 @@ impl SdkClient {
     }
 
     /// Get provider info (DEPRECATED - use AppContext::load_providers)
-    /// 
+    ///
     /// This method returns minimal placeholder data. Real provider info is now available via:
     /// - `AppContext::load_providers()` during initialization
     /// - Provider data is stored in `AppState.providers`
-    /// 
+    ///
     /// The AppContext integrates with ricecoder-providers::ProviderManager for:
     /// - Provider registry and configuration
     /// - Model discovery and selection
@@ -263,9 +249,7 @@ mod tests {
         let provider = SdkProvider::new("http://localhost:8080".to_string());
         assert_eq!(provider.url().await, "http://localhost:8080");
 
-        provider
-            .set_url("http://newhost:9000".to_string())
-            .await;
+        provider.set_url("http://newhost:9000".to_string()).await;
         assert_eq!(provider.url().await, "http://newhost:9000");
     }
 }

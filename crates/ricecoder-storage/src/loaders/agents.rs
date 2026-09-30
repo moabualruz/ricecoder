@@ -71,8 +71,8 @@ impl AgentLoader {
         use crate::types::{ConfigSubdirectory, StorageDirectory};
 
         // First try project-local .rice/agents/
-        let project_dir = PathResolver::resolve_project_path()
-            .join(ConfigSubdirectory::Agents.dir_name());
+        let project_dir =
+            PathResolver::resolve_project_path().join(ConfigSubdirectory::Agents.dir_name());
         if project_dir.exists() {
             return Self::new(project_dir);
         }
@@ -119,8 +119,8 @@ impl AgentLoader {
         }
 
         // Load from project path (overrides global)
-        let project_dir = PathResolver::resolve_project_path()
-            .join(ConfigSubdirectory::Agents.dir_name());
+        let project_dir =
+            PathResolver::resolve_project_path().join(ConfigSubdirectory::Agents.dir_name());
         if project_dir.exists() {
             let project_loader = AgentLoader::new(project_dir);
             if let Ok(project_agents) = project_loader.load_all() {
@@ -140,11 +140,7 @@ impl AgentLoader {
         }
 
         let entries = fs::read_dir(&self.config_dir).map_err(|e| {
-            StorageError::io_error(
-                self.config_dir.clone(),
-                crate::error::IoOperation::Read,
-                e,
-            )
+            StorageError::io_error(self.config_dir.clone(), crate::error::IoOperation::Read, e)
         })?;
 
         for entry in entries.flatten() {
@@ -260,7 +256,7 @@ Be concise and clear.
         assert!(!agent.hidden);
         assert!(agent.system_prompt.contains("helpful assistant"));
     }
-    
+
     #[test]
     fn test_parse_agent_defaults() {
         let content = r#"---

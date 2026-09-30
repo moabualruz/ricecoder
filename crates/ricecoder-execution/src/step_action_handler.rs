@@ -256,7 +256,10 @@ impl CommandHandler {
             for (key, value) in env {
                 cmd.env(key, value);
             }
-            debug!(env_count = env.len(), "Set environment variables for command");
+            debug!(
+                env_count = env.len(),
+                "Set environment variables for command"
+            );
         }
 
         let start_time = std::time::Instant::now();
@@ -294,7 +297,10 @@ impl CommandHandler {
         let mut metadata_lines: Vec<String> = Vec::new();
         if truncated {
             metadata_lines.push("<bash_metadata>".to_string());
-            metadata_lines.push(format!("bash tool truncated output as it exceeded {} char limit", Self::MAX_OUTPUT_SIZE));
+            metadata_lines.push(format!(
+                "bash tool truncated output as it exceeded {} char limit",
+                Self::MAX_OUTPUT_SIZE
+            ));
         }
 
         // Append metadata if any
@@ -385,11 +391,9 @@ impl CommandHandler {
         // Initialize tree-sitter parser
         let mut parser = tree_sitter::Parser::new();
         let lang: tree_sitter::Language = tree_sitter_bash::LANGUAGE.into();
-        parser
-            .set_language(&lang)
-            .map_err(|e| {
-                ExecutionError::ValidationError(format!("Failed to load bash grammar: {}", e))
-            })?;
+        parser.set_language(&lang).map_err(|e| {
+            ExecutionError::ValidationError(format!("Failed to load bash grammar: {}", e))
+        })?;
 
         // Parse the command
         let tree = parser.parse(&full_command, None).ok_or_else(|| {
@@ -453,7 +457,8 @@ impl ShellCommandHandler {
         debug!(shell = %shell, "Using shell for execution");
 
         // Execute command with timeout and process-tree kill on timeout
-        let timeout_duration = Duration::from_millis(timeout_ms.unwrap_or(Self::DEFAULT_TIMEOUT_MS));
+        let timeout_duration =
+            Duration::from_millis(timeout_ms.unwrap_or(Self::DEFAULT_TIMEOUT_MS));
 
         let result = timeout(
             timeout_duration,
@@ -505,7 +510,7 @@ impl ShellCommandHandler {
         let shell_args = {
             let shell_lower = shell.to_lowercase();
             let is_cmd = shell_lower.ends_with("cmd.exe") || shell_lower.ends_with("cmd");
-            
+
             if is_cmd {
                 vec!["/c", command]
             } else {
@@ -547,7 +552,10 @@ impl ShellCommandHandler {
         let start_time = std::time::Instant::now();
 
         let mut child = cmd.spawn().map_err(|e| {
-            ExecutionError::StepFailed(format!("Failed to spawn shell command '{}': {}", command, e))
+            ExecutionError::StepFailed(format!(
+                "Failed to spawn shell command '{}': {}",
+                command, e
+            ))
         })?;
 
         let child_id = child.id();
@@ -561,12 +569,14 @@ impl ShellCommandHandler {
         let mut stdout_buf = vec![0u8; 4096];
         let mut stderr_buf = vec![0u8; 4096];
         let mut truncated = false;
+        let mut stdout_eof = false;
+        let mut stderr_eof = false;
 
-        loop {
+        while !stdout_eof || !stderr_eof {
             tokio::select! {
-                result = stdout_handle.read(&mut stdout_buf) => {
+                result = stdout_handle.read(&mut stdout_buf), if !stdout_eof => {
                     match result {
-                        Ok(0) => break, // EOF
+                        Ok(0) => stdout_eof = true,
                         Ok(n) => {
                             // GAP-10: Single 30000 char buffer enforcement
                             if combined_output.len() + n <= Self::MAX_OUTPUT_SIZE {
@@ -578,13 +588,13 @@ impl ShellCommandHandler {
                         }
                         Err(e) => {
                             error!(error = %e, "Failed to read stdout");
-                            break;
+                            stdout_eof = true;
                         }
                     }
                 }
-                result = stderr_handle.read(&mut stderr_buf) => {
+                result = stderr_handle.read(&mut stderr_buf), if !stderr_eof => {
                     match result {
-                        Ok(0) => break, // EOF
+                        Ok(0) => stderr_eof = true,
                         Ok(n) => {
                             // GAP-10: Single 30000 char buffer enforcement
                             if combined_output.len() + n <= Self::MAX_OUTPUT_SIZE {
@@ -596,7 +606,7 @@ impl ShellCommandHandler {
                         }
                         Err(e) => {
                             error!(error = %e, "Failed to read stderr");
-                            break;
+                            stderr_eof = true;
                         }
                     }
                 }
@@ -605,7 +615,10 @@ impl ShellCommandHandler {
 
         // Wait for process to exit
         let output = child.wait_with_output().await.map_err(|e| {
-            ExecutionError::StepFailed(format!("Failed to wait for shell command '{}': {}", command, e))
+            ExecutionError::StepFailed(format!(
+                "Failed to wait for shell command '{}': {}",
+                command, e
+            ))
         })?;
 
         let duration = start_time.elapsed();
@@ -613,11 +626,14 @@ impl ShellCommandHandler {
 
         // GAP-11: Add runtime annotations (<bash_metadata> block with all metadata)
         let mut metadata_lines: Vec<String> = Vec::new();
-        
+
         if truncated {
             combined_output.truncate(Self::MAX_OUTPUT_SIZE);
             metadata_lines.push("<bash_metadata>".to_string());
-            metadata_lines.push(format!("bash tool truncated output as it exceeded {} char limit", Self::MAX_OUTPUT_SIZE));
+            metadata_lines.push(format!(
+                "bash tool truncated output as it exceeded {} char limit",
+                Self::MAX_OUTPUT_SIZE
+            ));
             warn!(
                 command = %command,
                 "Combined output truncated to {} chars",
@@ -633,7 +649,7 @@ impl ShellCommandHandler {
             metadata_lines.push(format!("exit code: {}", exit_code.unwrap_or(-1)));
             metadata_lines.push(format!("duration: {}ms", duration.as_millis()));
             metadata_lines.push("</bash_metadata>".to_string());
-            
+
             combined_output.push_str(&format!("\n\n{}", metadata_lines.join("\n")));
         }
 
@@ -668,11 +684,9 @@ impl ShellCommandHandler {
     fn validate_command_syntax(command: &str) -> ExecutionResult<()> {
         let mut parser = tree_sitter::Parser::new();
         let lang: tree_sitter::Language = tree_sitter_bash::LANGUAGE.into();
-        parser
-            .set_language(&lang)
-            .map_err(|e| {
-                ExecutionError::ValidationError(format!("Failed to load bash grammar: {}", e))
-            })?;
+        parser.set_language(&lang).map_err(|e| {
+            ExecutionError::ValidationError(format!("Failed to load bash grammar: {}", e))
+        })?;
 
         // Parse the command
         let tree = parser.parse(command, None).ok_or_else(|| {
@@ -889,8 +903,13 @@ mod tests {
     async fn test_command_handler_failure() {
         // On Windows, use "cmd /c exit 1" to get a non-zero exit code
         #[cfg(windows)]
-        let result =
-            CommandHandler::handle_async("cmd", &["/c".to_string(), "exit".to_string(), "1".to_string()], None, Some(false)).await;
+        let result = CommandHandler::handle_async(
+            "cmd",
+            &["/c".to_string(), "exit".to_string(), "1".to_string()],
+            None,
+            Some(false),
+        )
+        .await;
         #[cfg(not(windows))]
         let result = CommandHandler::handle_async("false", &[], None, Some(false)).await;
         assert!(result.is_ok()); // Command executed, but failed
@@ -958,26 +977,30 @@ mod tests {
         let result = ShellCommandHandler::handle(cmd, None, Some(workdir), "Test workdir").await;
         assert!(result.is_ok());
         let output = result.unwrap();
-        
+
         // Verify that pwd executed successfully and returned some path
         let output_trimmed = output.stdout.trim();
-        assert!(!output_trimmed.is_empty(), "pwd should return a non-empty path");
-        
+        assert!(
+            !output_trimmed.is_empty(),
+            "pwd should return a non-empty path"
+        );
+
         // On Windows with Git Bash, /tmp may be symlinked differently than Windows temp
         // So just verify the command ran successfully and we got a valid path output
         // The directory basename should be present in the output
-        let temp_dir_name = temp_dir.path()
+        let temp_dir_name = temp_dir
+            .path()
             .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or("");
-        
+
         assert!(
             output_trimmed.contains(temp_dir_name),
             "Expected pwd output '{}' to contain temp dir name '{}'",
             output_trimmed,
             temp_dir_name
         );
-        
+
         // Verify exit code is success
         assert_eq!(output.exit_code, Some(0));
     }

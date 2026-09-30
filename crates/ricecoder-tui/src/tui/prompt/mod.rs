@@ -45,46 +45,63 @@
 pub mod parts;
 
 // Application layer - state, commands, and orchestration
-pub mod state;
 pub mod commands;
-pub mod handler;
-pub mod provider;
 pub mod cycling;
+pub mod handler;
 pub mod mcp;
+pub mod provider;
+pub mod state;
 
 // Infrastructure layer - I/O and external integrations
-pub mod input;
-pub mod extmarks;
 pub mod clipboard;
 pub mod editor;
+pub mod extmarks;
+pub mod input;
 pub mod selection;
 pub mod terminal;
 
 // Presentation layer - UI widgets
-pub mod widget;
 pub mod autocomplete_widget;
 pub mod spinner;
+pub mod widget;
 
 // Re-exports for convenience
-pub use parts::{AgentPart, AgentSource, FilePart, FileSource, PromptPart, TextPart, TextSource};
-pub use state::{PromptInfo, PromptMode, PromptState, random_placeholder, PLACEHOLDERS};
-pub use input::{CursorPosition, InputAction, PromptInput};
-pub use extmarks::{Extmark, ExtmarkManager, ExtmarkStyle, render_with_extmarks};
-pub use clipboard::{Clipboard, ClipboardContent, Osc52Clipboard, PasteConfig, PastedContent};
-pub use editor::{EditorConfig, EditorError, EditorResult, ExternalEditor, editor_name};
-pub use commands::{
-    CommandContext, CommandResult, PromptCommand, PromptCommandId,
-    get_commands, CATEGORY_PROMPT, CATEGORY_SESSION,
+pub use autocomplete_widget::{
+    render_autocomplete_hints, AutocompleteState, AutocompleteWidget, AutocompleteWidgetConfig,
+    Suggestion, SuggestionCategory,
 };
-pub use handler::{DialogRequest, KeybindConfig, PromptEvent, PromptHandler, PromptRef, ToastVariant};
-pub use widget::{PromptBorderStyle, PromptWidget, PromptWidgetConfig, SessionStatus};
-pub use provider::{Model, ParsedModel, Provider, ProviderManager, ProviderStatus, default_providers};
-pub use cycling::{Agent, AgentManager, CycleDirection, CyclingEvent, CyclingMode, CyclingState, default_agents, parse_color};
-pub use mcp::{McpEvent, McpManager, McpServer, McpServerStatus, McpStatusSummary, McpTool, McpToolParam};
-pub use selection::{Selection, SelectionHandler, SelectionMode, SelectionPoint, calculate_line_offsets};
-pub use spinner::{ColoredFrame, SimpleSpinner, Spinner, SpinnerConfig, SpinnerState, SpinnerStyle, create_colors, create_frames};
-pub use autocomplete_widget::{AutocompleteState, AutocompleteWidget, AutocompleteWidgetConfig, Suggestion, SuggestionCategory, render_autocomplete_hints};
+pub use clipboard::{Clipboard, ClipboardContent, Osc52Clipboard, PasteConfig, PastedContent};
+pub use commands::{
+    get_commands, CommandContext, CommandResult, PromptCommand, PromptCommandId, CATEGORY_PROMPT,
+    CATEGORY_SESSION,
+};
+pub use cycling::{
+    default_agents, parse_color, Agent, AgentManager, CycleDirection, CyclingEvent, CyclingMode,
+    CyclingState,
+};
+pub use editor::{editor_name, EditorConfig, EditorError, EditorResult, ExternalEditor};
+pub use extmarks::{render_with_extmarks, Extmark, ExtmarkManager, ExtmarkStyle};
+pub use handler::{
+    DialogRequest, KeybindConfig, PromptEvent, PromptHandler, PromptRef, ToastVariant,
+};
+pub use input::{CursorPosition, InputAction, PromptInput};
+pub use mcp::{
+    McpEvent, McpManager, McpServer, McpServerStatus, McpStatusSummary, McpTool, McpToolParam,
+};
+pub use parts::{AgentPart, AgentSource, FilePart, FileSource, PromptPart, TextPart, TextSource};
+pub use provider::{
+    default_providers, Model, ParsedModel, Provider, ProviderManager, ProviderStatus,
+};
+pub use selection::{
+    calculate_line_offsets, Selection, SelectionHandler, SelectionMode, SelectionPoint,
+};
+pub use spinner::{
+    create_colors, create_frames, ColoredFrame, SimpleSpinner, Spinner, SpinnerConfig,
+    SpinnerState, SpinnerStyle,
+};
+pub use state::{random_placeholder, PromptInfo, PromptMode, PromptState, PLACEHOLDERS};
 pub use terminal::{ColorScheme, TerminalCapabilities, TerminalInfo, ThemedColors};
+pub use widget::{PromptBorderStyle, PromptWidget, PromptWidgetConfig, SessionStatus};
 
 #[cfg(test)]
 mod tests {

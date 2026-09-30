@@ -44,10 +44,10 @@ mod tests {
     #[test]
     fn test_is_binary_file_by_content() {
         let path = PathBuf::from("test.txt");
-        
+
         // Text content
         assert!(!is_binary_file(&path, b"Hello, World!"));
-        
+
         // Binary content (contains null bytes)
         assert!(is_binary_file(&path, b"Hello\x00World"));
     }
@@ -56,7 +56,7 @@ mod tests {
     fn test_format_file_content_basic() {
         let content = "line 1\nline 2\nline 3";
         let output = format_file_content_for_mcp("test.txt", content, 0, 10);
-        
+
         assert!(output.contains("<file>"));
         assert!(output.contains("</file>"));
         assert!(output.contains("00001| line 1"));
@@ -69,7 +69,7 @@ mod tests {
     fn test_format_file_content_with_offset() {
         let content = "line 1\nline 2\nline 3\nline 4\nline 5";
         let output = format_file_content_for_mcp("test.txt", content, 2, 2);
-        
+
         assert!(output.contains("00003| line 3"));
         assert!(output.contains("00004| line 4"));
         assert!(!output.contains("00001| line 1"));
@@ -82,7 +82,7 @@ mod tests {
         let long_line = "x".repeat(2500);
         let content = format!("{}", long_line);
         let output = format_file_content_for_mcp("test.txt", &content, 0, 10);
-        
+
         assert!(output.contains("...(line truncated)"));
     }
 }

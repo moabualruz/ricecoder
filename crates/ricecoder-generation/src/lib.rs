@@ -48,7 +48,7 @@ pub use models::{
 pub use output_writer::{
     FileWriteResult, OutputWriter, OutputWriterConfig, RollbackInfo, WriteResult,
 };
-pub use prompt_builder::{GeneratedPrompt, PromptBuilder, PromptContext, GovernanceRules};
+pub use prompt_builder::{GeneratedPrompt, GovernanceRules, PromptBuilder, PromptContext};
 pub use report_generator::{
     ConflictReport, FileStatistics, GenerationReport, GenerationResult, GenerationStats,
     PerformanceMetrics, ReportGenerator, ReportSummary, ReviewReport, ValidationReport,

@@ -3,7 +3,7 @@
 //! This module provides centralized locale formatting utilities that match
 //! OpenCode's `Locale` namespace for date/time, numbers, durations, and pluralization.
 
-use chrono::{DateTime, Local, Timelike, Datelike};
+use chrono::{DateTime, Datelike, Local, Timelike};
 
 /// Locale formatting utilities matching OpenCode behavior
 pub struct Locale;
@@ -16,9 +16,7 @@ impl Locale {
                 let mut chars = word.chars();
                 match chars.next() {
                     None => String::new(),
-                    Some(first) => {
-                        first.to_uppercase().chain(chars).collect::<String>()
-                    }
+                    Some(first) => first.to_uppercase().chain(chars).collect::<String>(),
                 }
             })
             .collect::<Vec<_>>()
@@ -152,7 +150,10 @@ mod tests {
     #[test]
     fn test_titlecase() {
         assert_eq!(Locale::titlecase("hello world"), "Hello World");
-        assert_eq!(Locale::titlecase("the quick brown fox"), "The Quick Brown Fox");
+        assert_eq!(
+            Locale::titlecase("the quick brown fox"),
+            "The Quick Brown Fox"
+        );
         assert_eq!(Locale::titlecase(""), "");
         assert_eq!(Locale::titlecase("a"), "A");
     }
@@ -203,7 +204,10 @@ mod tests {
     #[test]
     fn test_truncate_middle() {
         assert_eq!(Locale::truncate_middle("hello", 10), "hello");
-        assert_eq!(Locale::truncate_middle("very long string here", 10), "very …here");
+        assert_eq!(
+            Locale::truncate_middle("very long string here", 10),
+            "very …here"
+        );
         assert_eq!(Locale::truncate_middle("abcdefghijk", 7), "abc…ijk");
     }
 

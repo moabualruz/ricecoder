@@ -1,17 +1,17 @@
 //! Dependency injection support for ricecoder-vcs
 
-use std::sync::Arc;
-use ricecoder_common::di::{ServiceEntry, ServiceFactory};
 use crate::VcsIntegration;
+use ricecoder_common::di::{ServiceEntry, ServiceFactory};
+use std::sync::Arc;
 
 inventory::submit! {
     ServiceFactory::new("vcs", create_vcs_services)
 }
 
 fn create_vcs_services() -> Vec<ServiceEntry> {
-    vec![
-        ServiceEntry::new::<VcsIntegration>(Arc::new(VcsIntegration::new())),
-    ]
+    vec![ServiceEntry::new::<VcsIntegration>(Arc::new(
+        VcsIntegration::new(),
+    ))]
 }
 
 #[cfg(test)]

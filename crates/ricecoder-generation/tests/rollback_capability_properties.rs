@@ -222,7 +222,18 @@ proptest! {
     /// For any collection of files, each should have independent rollback information.
     #[test]
     fn prop_multiple_files_have_independent_rollback(
-        files in prop::collection::vec(generated_file_strategy(), 1..3)
+        files in prop::collection::btree_map(file_path_strategy(), file_content_strategy(), 1..3)
+            .prop_map(|entries| {
+                // Independent files: every path in a batch is unique.
+                entries
+                    .into_iter()
+                    .map(|(path, content)| GeneratedFile {
+                        path,
+                        content,
+                        language: "rust".to_string(),
+                    })
+                    .collect::<Vec<_>>()
+            })
     ) {
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
 

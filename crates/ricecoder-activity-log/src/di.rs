@@ -1,10 +1,8 @@
 //! Dependency injection support for ricecoder-activity-log
 
-use std::sync::Arc;
+use crate::{ActivityLogger, AuditLogger, MetricsCollector, PerformanceMonitor, SessionTracker};
 use ricecoder_common::di::{ServiceEntry, ServiceFactory};
-use crate::{
-    ActivityLogger, AuditLogger, PerformanceMonitor, MetricsCollector, SessionTracker,
-};
+use std::sync::Arc;
 
 inventory::submit! {
     ServiceFactory::new("activity-log", create_activity_log_services)
@@ -28,6 +26,9 @@ mod tests {
     #[test]
     fn test_activity_log_factory_registered() {
         let factories = list_discovered_factories();
-        assert!(factories.contains(&"activity-log"), "Factory should be registered");
+        assert!(
+            factories.contains(&"activity-log"),
+            "Factory should be registered"
+        );
     }
 }

@@ -46,9 +46,9 @@ mod tests {
         assert!(!services.is_empty(), "Should create at least one service");
 
         // Check that LearningManager is in the list
-        let has_learning_manager = services.iter().any(|s| {
-            s.type_name.contains("LearningManager")
-        });
+        let has_learning_manager = services
+            .iter()
+            .any(|s| s.type_name.contains("LearningManager"));
         assert!(has_learning_manager, "Should include LearningManager");
     }
 }

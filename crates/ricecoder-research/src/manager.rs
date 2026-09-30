@@ -244,6 +244,20 @@ impl ResearchManager {
         })?;
         debug!("Found {} source directories", structure.source_dirs.len());
 
+        let languages = self.project_analyzer.detect_languages(root)?;
+        let frameworks = self.project_analyzer.identify_frameworks(root)?;
+        let dependencies = self.project_analyzer.identify_dependencies(root);
+        let architectural_style = if ["domain", "application", "infrastructure"]
+            .iter()
+            .all(|layer| root.join("src").join(layer).is_dir())
+        {
+            crate::models::ArchitecturalStyle::Layered
+        } else if !languages.is_empty() {
+            crate::models::ArchitecturalStyle::Monolithic
+        } else {
+            crate::models::ArchitecturalStyle::Unknown
+        };
+
         // 3. Detect patterns
         debug!("Step 3: Detecting architectural and design patterns");
         #[cfg(feature = "patterns")]
@@ -273,13 +287,13 @@ impl ResearchManager {
         debug!("Step 6: Building project context");
         let context = ProjectContext {
             project_type,
-            languages: vec![],  // Would be populated by project analyzer
-            frameworks: vec![], // Would be populated by project analyzer
+            languages,
+            frameworks,
             structure,
             patterns,
-            dependencies: vec![], // Dependencies moved to separate crate
+            dependencies,
             architectural_intent: crate::models::ArchitecturalIntent {
-                style: crate::models::ArchitecturalStyle::Unknown,
+                style: architectural_style,
                 principles: vec![],
                 constraints: vec![],
                 decisions: vec![],

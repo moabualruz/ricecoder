@@ -1,8 +1,8 @@
 //! Dependency injection support for ricecoder-config
 
-use std::sync::Arc;
-use ricecoder_common::di::{ServiceEntry, ServiceFactory};
 use crate::{ConfigManager, TuiConfig};
+use ricecoder_common::di::{ServiceEntry, ServiceFactory};
+use std::sync::Arc;
 
 inventory::submit! {
     ServiceFactory::new("config", create_config_services)
@@ -23,6 +23,9 @@ mod tests {
     #[test]
     fn test_config_factory_registered() {
         let factories = list_discovered_factories();
-        assert!(factories.contains(&"config"), "Factory should be registered");
+        assert!(
+            factories.contains(&"config"),
+            "Factory should be registered"
+        );
     }
 }

@@ -4,19 +4,19 @@ use std::collections::HashMap;
 
 use async_trait::async_trait;
 use oauth2::{
-    basic::BasicClient, reqwest::async_http_client, AuthUrl,
-    AuthorizationCode as OAuthAuthorizationCode, ClientId, ClientSecret, CsrfToken,
-    PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, Scope, TokenResponse, TokenUrl,
+    basic::BasicClient, AuthUrl, AuthorizationCode as OAuthAuthorizationCode, ClientId,
+    ClientSecret, CsrfToken, EndpointNotSet, EndpointSet, PkceCodeChallenge, PkceCodeVerifier,
+    RedirectUrl, Scope, TokenResponse, TokenUrl,
 };
 use openidconnect::{
     core::{CoreAuthenticationFlow, CoreClient, CoreProviderMetadata},
-    reqwest::async_http_client as oidc_http_client,
     AccessTokenHash, AuthorizationCode as OidcAuthorizationCode, ClientId as OidcClientId,
-    ClientSecret as OidcClientSecret, CsrfToken as OidcCsrfToken, IssuerUrl, Nonce,
-    OAuth2TokenResponse, PkceCodeChallenge as OidcPkceCodeChallenge,
+    ClientSecret as OidcClientSecret, CsrfToken as OidcCsrfToken, EndpointMaybeSet, IssuerUrl,
+    Nonce, OAuth2TokenResponse, PkceCodeChallenge as OidcPkceCodeChallenge,
     PkceCodeVerifier as OidcPkceCodeVerifier, RedirectUrl as OidcRedirectUrl, Scope as OidcScope,
     SubjectIdentifier, TokenResponse as OidcTokenResponse,
 };
+use reqwest::{redirect::Policy, Client};
 use serde::{Deserialize, Serialize};
 use url::Url;
 use uuid;
@@ -74,13 +74,25 @@ pub struct UserInfo {
 /// OAuth 2.0 client for token management
 #[derive(Debug)]
 pub struct OAuthClient {
-    providers: HashMap<String, BasicClient>,
+    providers: HashMap<
+        String,
+        BasicClient<EndpointSet, EndpointNotSet, EndpointNotSet, EndpointNotSet, EndpointSet>,
+    >,
 }
+
+type OidcProviderClient = CoreClient<
+    EndpointSet,
+    EndpointNotSet,
+    EndpointNotSet,
+    EndpointNotSet,
+    EndpointSet,
+    EndpointMaybeSet,
+>;
 
 /// OpenID Connect client
 #[derive(Debug)]
 pub struct OidcClient {
-    providers: HashMap<String, CoreClient>,
+    providers: HashMap<String, OidcProviderClient>,
     nonces: HashMap<String, Nonce>,
 }
 
@@ -93,6 +105,15 @@ pub struct TokenManager {
     stored_tokens: HashMap<String, OAuthToken>,
 }
 
+fn secure_http_client() -> Result<Client> {
+    Client::builder()
+        .redirect(Policy::none())
+        .build()
+        .map_err(|e| SecurityError::Validation {
+            message: format!("Failed to create OAuth HTTP client: {}", e),
+        })
+}
+
 impl OAuthClient {
     /// Create a new OAuth client
     pub fn new() -> Self {
@@ -103,13 +124,11 @@ impl OAuthClient {
 
     /// Register an OAuth 2.0 provider
     pub fn register_provider(&mut self, config: OAuthProvider) -> Result<()> {
-        let client = BasicClient::new(
-            ClientId::new(config.client_id),
-            Some(ClientSecret::new(config.client_secret)),
-            AuthUrl::new(config.auth_url)?,
-            Some(TokenUrl::new(config.token_url)?),
-        )
-        .set_redirect_uri(RedirectUrl::new(config.redirect_url)?);
+        let client = BasicClient::new(ClientId::new(config.client_id))
+            .set_client_secret(ClientSecret::new(config.client_secret))
+            .set_auth_uri(AuthUrl::new(config.auth_url)?)
+            .set_token_uri(TokenUrl::new(config.token_url)?)
+            .set_redirect_uri(RedirectUrl::new(config.redirect_url)?);
 
         self.providers.insert(config.name, client);
         Ok(())
@@ -157,10 +176,11 @@ impl OAuthClient {
                     message: format!("OAuth provider '{}' not found", provider_name),
                 })?;
 
+        let http_client = secure_http_client()?;
         let token_result = client
             .exchange_code(OAuthAuthorizationCode::new(code.to_string()))
             .set_pkce_verifier(pkce_verifier)
-            .request_async(async_http_client)
+            .request_async(&http_client)
             .await
             .map_err(|e| SecurityError::Validation {
                 message: format!("Token exchange failed: {}", e),
@@ -195,13 +215,18 @@ impl OidcClient {
 
     /// Register an OpenID Connect provider
     pub async fn register_provider(&mut self, config: OidcProvider) -> Result<()> {
-        let provider_metadata = CoreProviderMetadata::discover_async(
-            IssuerUrl::new(config.issuer_url)?,
-            oidc_http_client,
-        )
-        .await
-        .map_err(|e| SecurityError::Validation {
-            message: format!("OIDC discovery failed: {}", e),
+        let http_client = secure_http_client()?;
+        let provider_metadata =
+            CoreProviderMetadata::discover_async(IssuerUrl::new(config.issuer_url)?, &http_client)
+                .await
+                .map_err(|e| SecurityError::Validation {
+                    message: format!("OIDC discovery failed: {}", e),
+                })?;
+
+        let token_url = provider_metadata.token_endpoint().cloned().ok_or_else(|| {
+            SecurityError::Validation {
+                message: "OIDC provider does not expose a token endpoint".to_string(),
+            }
         })?;
 
         let client = CoreClient::from_provider_metadata(
@@ -209,6 +234,7 @@ impl OidcClient {
             OidcClientId::new(config.client_id),
             Some(OidcClientSecret::new(config.client_secret)),
         )
+        .set_token_uri(token_url)
         .set_redirect_uri(OidcRedirectUrl::new(config.redirect_url)?);
 
         self.providers.insert(config.name, client);
@@ -274,10 +300,11 @@ impl OidcClient {
                 message: "Invalid or expired CSRF token".to_string(),
             })?;
 
+        let http_client = secure_http_client()?;
         let token_result = client
             .exchange_code(OidcAuthorizationCode::new(code.to_string()))
             .set_pkce_verifier(pkce_verifier)
-            .request_async(oidc_http_client)
+            .request_async(&http_client)
             .await
             .map_err(|e| SecurityError::Validation {
                 message: format!("OIDC token exchange failed: {}", e),

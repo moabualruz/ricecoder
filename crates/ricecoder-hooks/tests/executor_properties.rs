@@ -137,7 +137,8 @@ fn prop_hook_context_variables_substituted() {
 #[test]
 fn prop_hook_output_captured() {
     proptest!(|(
-        message in safe_string_strategy(),
+        message in safe_string_strategy()
+            .prop_filter("echo emits non-empty output", |message| !message.is_empty() && message != "-n"),
     )| {
         let executor = DefaultHookExecutor::new();
 

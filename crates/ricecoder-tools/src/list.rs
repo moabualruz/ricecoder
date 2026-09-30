@@ -3,8 +3,8 @@
 //! Lists directory contents with filtering and ignore pattern support.
 //! Matches OpenCode's list tool behavior.
 
-use async_trait::async_trait;
 use ::glob::Pattern;
+use async_trait::async_trait;
 use ignore::WalkBuilder;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -84,20 +84,20 @@ struct DirEntry {
 impl DirEntry {
     fn render(&self, prefix: &str) -> String {
         let mut output = String::new();
-        
+
         // Render directories first (sorted)
         for (name, entry) in &self.dirs {
             output.push_str(&format!("{}{}/\n", prefix, name));
             output.push_str(&entry.render(&format!("{}  ", prefix)));
         }
-        
+
         // Render files (sorted)
         let mut files: Vec<_> = self.files.iter().collect();
         files.sort();
         for file in files {
             output.push_str(&format!("{}{}\n", prefix, file));
         }
-        
+
         output
     }
 }
@@ -178,20 +178,21 @@ impl ListTool {
 
         for entry in builder.build().flatten() {
             let path = entry.path();
-            
+
             // Skip the root directory itself
             if path == target_dir {
                 continue;
             }
 
             // Get relative path
-            let rel_path = path
-                .strip_prefix(&target_dir)
-                .unwrap_or(path);
+            let rel_path = path.strip_prefix(&target_dir).unwrap_or(path);
             let rel_path_str = rel_path.to_string_lossy();
 
             // Check default ignore patterns
-            if default_patterns.iter().any(|pat| pat.matches(&rel_path_str)) {
+            if default_patterns
+                .iter()
+                .any(|pat| pat.matches(&rel_path_str))
+            {
                 continue;
             }
 
@@ -212,7 +213,7 @@ impl ListTool {
 
             for (i, component) in components.iter().enumerate() {
                 let name = component.as_os_str().to_string_lossy().to_string();
-                
+
                 if i == components.len() - 1 {
                     // Last component - file or directory
                     if path.is_dir() {
@@ -317,7 +318,7 @@ impl Tool for ListTool {
     ) -> Result<ToolExecutionResult, ToolError> {
         // Parse input
         let path = args.get("path").and_then(|v| v.as_str()).map(String::from);
-        
+
         let ignore = args.get("ignore").and_then(|v| {
             v.as_array().map(|arr| {
                 arr.iter()
@@ -356,7 +357,7 @@ mod tests {
 
     async fn setup_test_dir() -> TempDir {
         let dir = TempDir::new().unwrap();
-        
+
         // Create some files and directories
         std::fs::create_dir(dir.path().join("src")).unwrap();
         std::fs::write(dir.path().join("src/main.rs"), "fn main() {}").unwrap();
@@ -365,7 +366,7 @@ mod tests {
         std::fs::write(dir.path().join("tests/test.rs"), "// test").unwrap();
         std::fs::write(dir.path().join("Cargo.toml"), "[package]").unwrap();
         std::fs::write(dir.path().join("README.md"), "# README").unwrap();
-        
+
         dir
     }
 
@@ -391,7 +392,7 @@ mod tests {
         };
 
         let result = tool.list_directory(&input, &ctx).await.unwrap();
-        
+
         assert!(result.output.contains("src/"));
         assert!(result.output.contains("tests/"));
         assert!(result.output.contains("Cargo.toml"));
@@ -411,7 +412,7 @@ mod tests {
         };
 
         let result = tool.list_directory(&input, &ctx).await.unwrap();
-        
+
         assert!(!result.output.contains("README.md"));
         assert!(result.output.contains("Cargo.toml"));
     }

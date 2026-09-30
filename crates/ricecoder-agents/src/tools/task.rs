@@ -125,11 +125,7 @@ struct TaskHandle {
 #[async_trait]
 pub trait SessionManager {
     /// Create a new child session
-    async fn create_child_session(
-        &self,
-        parent_id: &str,
-        title: &str,
-    ) -> Result<String>;
+    async fn create_child_session(&self, parent_id: &str, title: &str) -> Result<String>;
 
     /// Get or create session
     async fn get_or_create_session(
@@ -188,7 +184,8 @@ impl TaskTool {
             "librarian".to_string(),
             SubagentType {
                 name: "librarian".to_string(),
-                description: "Specialized agent for searching remote repos and documentation".to_string(),
+                description: "Specialized agent for searching remote repos and documentation"
+                    .to_string(),
                 mode: "subagent".to_string(),
                 tools: HashMap::new(),
                 model: None,
@@ -221,7 +218,7 @@ impl TaskTool {
     fn build_description_from_map(subagents: &HashMap<String, SubagentType>) -> String {
         let mut agents: Vec<_> = subagents.values().collect();
         agents.sort_by(|a, b| a.name.cmp(&b.name));
-        
+
         let subagents_desc = agents
             .iter()
             .map(|a| format!("- {}: {}", a.name, a.description))
@@ -231,7 +228,9 @@ impl TaskTool {
         // Try to get external base description, with hardcoded fallback
         let base_description = global_tool_descriptions()
             .get_description("task")
-            .unwrap_or_else(|| "Launch a new agent to handle complex, multi-step tasks autonomously.".to_string());
+            .unwrap_or_else(|| {
+                "Launch a new agent to handle complex, multi-step tasks autonomously.".to_string()
+            });
 
         format!(
             r#"{}
@@ -250,7 +249,7 @@ When using the Task tool, you must specify a subagent_type parameter to select w
     pub async fn register_subagent(&self, subagent: SubagentType) {
         let mut agents = self.subagents.write().await;
         agents.insert(subagent.name.clone(), subagent);
-        
+
         // Update cached description
         let new_desc = Self::build_description_from_map(&agents);
         let mut desc = self.cached_description.write().await;
@@ -266,7 +265,7 @@ When using the Task tool, you must specify a subagent_type parameter to select w
             .cloned()
             .collect()
     }
-    
+
     /// Load and register subagents from markdown files
     ///
     /// This method loads agent definitions from markdown files in the config directory
@@ -278,13 +277,14 @@ When using the Task tool, you must specify a subagent_type parameter to select w
     /// The number of agents successfully loaded and registered
     pub async fn load_markdown_agents(&self) -> Result<usize> {
         use ricecoder_storage::loaders::AgentLoader;
-        
+
         info!("Loading markdown agents from config");
-        
+
         let loader = AgentLoader::with_default_path();
-        let agents = loader.load_all_merged()
+        let agents = loader
+            .load_all_merged()
             .map_err(|e| AgentError::Internal(format!("Failed to load markdown agents: {}", e)))?;
-        
+
         let mut count = 0;
         for (name, agent) in agents {
             // Convert storage Agent to SubagentType
@@ -308,13 +308,13 @@ When using the Task tool, you must specify a subagent_type parameter to select w
                     }
                 }),
             };
-            
+
             self.register_subagent(subagent).await;
             count += 1;
-            
+
             debug!(agent_name = %name, "Registered markdown agent");
         }
-        
+
         info!(count = %count, "Markdown agents loaded and registered");
         Ok(count)
     }
@@ -346,9 +346,9 @@ When using the Task tool, you must specify a subagent_type parameter to select w
 
         // Load command from markdown
         let loader = CommandLoader::with_default_path();
-        let command = loader
-            .load(command_name)
-            .map_err(|e| AgentError::Internal(format!("Failed to load command '{}': {}", command_name, e)))?;
+        let command = loader.load(command_name).map_err(|e| {
+            AgentError::Internal(format!("Failed to load command '{}': {}", command_name, e))
+        })?;
 
         // Build prompt from instructions + args
         let prompt = if let Some(user_args) = args {
@@ -433,23 +433,16 @@ When using the Task tool, you must specify a subagent_type parameter to select w
         // Validate subagent type
         let subagent = {
             let agents = self.subagents.read().await;
-            agents
-                .get(&params.subagent_type)
-                .cloned()
-                .ok_or_else(|| {
-                    AgentError::ValidationError(format!(
-                        "Unknown agent type: {}",
-                        params.subagent_type
-                    ))
-                })?
+            agents.get(&params.subagent_type).cloned().ok_or_else(|| {
+                AgentError::ValidationError(format!("Unknown agent type: {}", params.subagent_type))
+            })?
         };
 
         // Get session manager
         let session_mgr = {
             let mgr = self.session_manager.read().await;
-            mgr.clone().ok_or_else(|| {
-                AgentError::config_error("No session manager configured")
-            })?
+            mgr.clone()
+                .ok_or_else(|| AgentError::config_error("No session manager configured"))?
         };
 
         // Create or get session
@@ -653,7 +646,8 @@ impl ToolInvoker for TaskTool {
     fn metadata(&self) -> ToolMetadata {
         // Use cached description (updated on subagent registration)
         // This avoids async in the sync metadata() function
-        let description = self.cached_description
+        let description = self
+            .cached_description
             .try_read()
             .map(|desc| desc.clone())
             .unwrap_or_else(|_| {

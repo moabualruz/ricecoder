@@ -1,8 +1,8 @@
 //! Dependency injection support for ricecoder-undo-redo
 
-use std::sync::Arc;
+use crate::{ChangeTracker, CheckpointManager, HistoryManager};
 use ricecoder_common::di::{ServiceEntry, ServiceFactory};
-use crate::{HistoryManager, CheckpointManager, ChangeTracker};
+use std::sync::Arc;
 
 inventory::submit! {
     ServiceFactory::new("undo-redo", create_undo_redo_services)
@@ -24,6 +24,9 @@ mod tests {
     #[test]
     fn test_undo_redo_factory_registered() {
         let factories = list_discovered_factories();
-        assert!(factories.contains(&"undo-redo"), "Factory should be registered");
+        assert!(
+            factories.contains(&"undo-redo"),
+            "Factory should be registered"
+        );
     }
 }

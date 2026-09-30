@@ -237,7 +237,9 @@ pub fn discovered_factory_count() -> usize {
 ///
 /// Useful for debugging and diagnostics.
 pub fn list_discovered_factories() -> Vec<&'static str> {
-    inventory::iter::<ServiceFactory>().map(|f| f.name).collect()
+    inventory::iter::<ServiceFactory>()
+        .map(|f| f.name)
+        .collect()
 }
 
 // ============================================================================
@@ -400,13 +402,17 @@ mod tests {
     #[test]
     fn test_collect_all_services() {
         let services = collect_all_services();
-        assert!(!services.is_empty(), "Should collect at least test services");
+        assert!(
+            !services.is_empty(),
+            "Should collect at least test services"
+        );
 
         // Find our test service
-        let has_string_service = services
-            .iter()
-            .any(|s| s.type_id == TypeId::of::<String>());
-        assert!(has_string_service, "Should have String service from test factory");
+        let has_string_service = services.iter().any(|s| s.type_id == TypeId::of::<String>());
+        assert!(
+            has_string_service,
+            "Should have String service from test factory"
+        );
     }
 
     #[test]

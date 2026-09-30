@@ -38,7 +38,11 @@ pub struct Requirement {
 
 impl Requirement {
     /// Create a new requirement (internal use by Specification aggregate)
-    pub(crate) fn new(title: String, description: String, acceptance_criteria: Vec<String>) -> Self {
+    pub(crate) fn new(
+        title: String,
+        description: String,
+        acceptance_criteria: Vec<String>,
+    ) -> Self {
         let now = Utc::now();
         Self {
             id: RequirementId::new(),

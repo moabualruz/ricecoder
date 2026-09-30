@@ -48,15 +48,13 @@ mod tests {
         assert!(!services.is_empty(), "Should create at least one service");
 
         // Check that MCPClient is in the list
-        let has_mcp_client = services.iter().any(|s| {
-            s.type_name.contains("MCPClient")
-        });
+        let has_mcp_client = services.iter().any(|s| s.type_name.contains("MCPClient"));
         assert!(has_mcp_client, "Should include MCPClient");
 
         // Check that ToolRegistry is in the list
-        let has_tool_registry = services.iter().any(|s| {
-            s.type_name.contains("ToolRegistry")
-        });
+        let has_tool_registry = services
+            .iter()
+            .any(|s| s.type_name.contains("ToolRegistry"));
         assert!(has_tool_registry, "Should include ToolRegistry");
     }
 }

@@ -3,7 +3,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use ricecoder_domain::specification::{Specification, SpecStatus};
+use ricecoder_domain::specification::{SpecStatus, Specification};
 
 /// Command to create a new specification
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -88,11 +88,7 @@ impl SpecificationDetailDto {
                 .iter()
                 .map(RequirementDto::from_domain)
                 .collect(),
-            tasks: spec
-                .tasks()
-                .iter()
-                .map(TaskDto::from_domain)
-                .collect(),
+            tasks: spec.tasks().iter().map(TaskDto::from_domain).collect(),
             completion_percentage: spec.completion_percentage(),
             created_at: spec.created_at(),
             updated_at: spec.updated_at(),
@@ -141,7 +137,11 @@ impl TaskDto {
             title: task.title().to_string(),
             description: task.description().to_string(),
             status: format!("{:?}", task.status()),
-            requirement_ids: task.requirement_refs().iter().map(|r| r.to_string()).collect(),
+            requirement_ids: task
+                .requirement_refs()
+                .iter()
+                .map(|r| r.to_string())
+                .collect(),
         }
     }
 }

@@ -92,7 +92,12 @@ impl AuthLoader {
     }
 
     /// Parse content based on format
-    fn parse(&self, content: &str, format: ConfigFormat, path: &Path) -> StorageResult<ProvidersAuth> {
+    fn parse(
+        &self,
+        content: &str,
+        format: ConfigFormat,
+        path: &Path,
+    ) -> StorageResult<ProvidersAuth> {
         match format {
             ConfigFormat::Yaml => serde_yaml::from_str(content)
                 .map_err(|e| StorageError::parse_error(path.to_path_buf(), "YAML", e.to_string())),
@@ -106,10 +111,7 @@ impl AuthLoader {
     /// Get API key for a provider
     pub fn get_api_key(&self, provider: &str) -> StorageResult<Option<String>> {
         let auth = self.load()?;
-        Ok(auth
-            .providers
-            .get(provider)
-            .and_then(|p| p.api_key.clone()))
+        Ok(auth.providers.get(provider).and_then(|p| p.api_key.clone()))
     }
 
     /// Get base URL for a provider
@@ -125,18 +127,16 @@ impl AuthLoader {
     pub fn save(&self, auth: &ProvidersAuth) -> StorageResult<()> {
         // Ensure auth directory exists
         if !self.auth_dir.exists() {
-            fs::create_dir_all(&self.auth_dir).map_err(|e| {
-                StorageError::directory_creation_failed(self.auth_dir.clone(), e)
-            })?;
+            fs::create_dir_all(&self.auth_dir)
+                .map_err(|e| StorageError::directory_creation_failed(self.auth_dir.clone(), e))?;
         }
 
         let auth_file = self.auth_dir.join("providers.yaml");
         let content = serde_yaml::to_string(auth)
             .map_err(|e| StorageError::Internal(format!("Failed to serialize auth: {}", e)))?;
 
-        fs::write(&auth_file, content).map_err(|e| {
-            StorageError::io_error(auth_file, crate::error::IoOperation::Write, e)
-        })
+        fs::write(&auth_file, content)
+            .map_err(|e| StorageError::io_error(auth_file, crate::error::IoOperation::Write, e))
     }
 
     /// Set API key for a provider

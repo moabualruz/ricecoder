@@ -19,6 +19,6 @@ pub mod search_files;
 pub mod write_file;
 
 // Re-export use cases for ergonomic imports
-pub use edit_file::{EditFileUseCase, EditFileRequest, EditFileResponse};
-pub use search_files::{SearchFilesUseCase, SearchFilesRequest, SearchFilesResponse};
-pub use write_file::{WriteFileUseCase, WriteFileRequest, WriteFileResponse};
+pub use edit_file::{EditFileRequest, EditFileResponse, EditFileUseCase};
+pub use search_files::{SearchFilesRequest, SearchFilesResponse, SearchFilesUseCase};
+pub use write_file::{WriteFileRequest, WriteFileResponse, WriteFileUseCase};

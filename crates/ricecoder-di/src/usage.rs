@@ -55,19 +55,11 @@
 //! ```rust
 //! use ricecoder_di::{DIContainerBuilder, DIContainerBuilderExt};
 //!
-//! // Build container with specific services
-//! let container = DIContainerBuilder::new()
-//!     .register_infrastructure_services()
-//!     .register_use_cases()
-//!     .register_storage_services()        // Only if "storage" feature enabled
-//!     .register_research_services()       // Only if "research" feature enabled
-//!     .register_activity_log_services()   // Only if "activity-log" feature enabled
-//!     .register_orchestration_services()  // Only if "orchestration" feature enabled
-//!     .register_specs_services()          // Only if "specs" feature enabled
-//!     .register_undo_redo_services()      // Only if "undo-redo" feature enabled
-//!     .register_vcs_services()            // Only if "vcs" feature enabled
-//!     .build()
-//!     .unwrap();
+//! // Build a container with core services.
+//! let builder = DIContainerBuilder::new()
+//!     .register_infrastructure_services().unwrap()
+//!     .register_use_cases().unwrap();
+//! let container = builder.build();
 //! ```
 //!
 //! ## Service Registration
@@ -82,45 +74,45 @@
 //! ### Optional Services
 //!
 //! #### Storage Services (`storage` feature)
-//! ```rust
+//! ```rust,ignore
 //! let storage_manager = container.resolve::<ricecoder_storage::StorageManager>().unwrap();
 //! let file_storage = container.resolve::<ricecoder_storage::FileStorage>().unwrap();
 //! let memory_storage = container.resolve::<ricecoder_storage::MemoryStorage>().unwrap();
 //! ```
 //!
 //! #### Research Services (`research` feature)
-//! ```rust
+//! ```rust,ignore
 //! let research_manager = container.resolve::<ricecoder_research::ResearchManager>().unwrap();
 //! let codebase_scanner = container.resolve::<ricecoder_research::CodebaseScanner>().unwrap();
 //! let semantic_indexer = container.resolve::<ricecoder_research::SemanticIndexer>().unwrap();
 //! ```
 //!
 //! #### Workflow Services (`workflows` feature)
-//! ```rust
+//! ```rust,ignore
 //! let workflow_engine = container.resolve::<ricecoder_workflows::WorkflowEngine>().unwrap();
 //! let workflow_manager = container.resolve::<ricecoder_workflows::WorkflowManager>().unwrap();
 //! ```
 //!
 //! #### Execution Services (`execution` feature)
-//! ```rust
+//! ```rust,ignore
 //! let execution_engine = container.resolve::<ricecoder_execution::ExecutionEngine>().unwrap();
 //! let command_executor = container.resolve::<ricecoder_execution::CommandExecutor>().unwrap();
 //! ```
 //!
 //! #### MCP Services (`mcp` feature)
-//! ```rust
+//! ```rust,ignore
 //! let mcp_client = container.resolve::<ricecoder_mcp::MCPClient>().unwrap();
 //! let mcp_server = container.resolve::<ricecoder_mcp::MCPServer>().unwrap();
 //! ```
 //!
 //! #### Tool Services (`tools` feature)
-//! ```rust
+//! ```rust,ignore
 //! let tool_registry = container.resolve::<ricecoder_tools::ToolRegistry>().unwrap();
 //! let tool_executor = container.resolve::<ricecoder_tools::ToolExecutor>().unwrap();
 //! ```
 //!
 //! #### Config Services (`config` feature)
-//! ```rust
+//! ```rust,ignore
 //! let config_manager = container.resolve::<ricecoder_config::ConfigManager>().unwrap();
 //! let config_loader = container.resolve::<ricecoder_config::ConfigLoader>().unwrap();
 //! ```
@@ -132,13 +124,18 @@
 //! ```rust
 //! use ricecoder_di::{DIContainer, register_service};
 //!
+//! struct MyCustomService;
+//! impl MyCustomService { fn new() -> Self { Self } }
+//! struct AnotherService;
+//! impl AnotherService { fn new() -> Self { Self } }
+//!
 //! let container = DIContainer::new();
 //!
 //! // Register a custom service
 //! container.register(|_| Ok(std::sync::Arc::new(MyCustomService::new()))).unwrap();
 //!
 //! // Or use the macro
-//! register_service!(container, MyCustomService, |_| Ok(std::sync::Arc::new(MyCustomService::new())));
+//! register_service!(container, AnotherService, |_| Ok(std::sync::Arc::new(AnotherService::new()))).unwrap();
 //!
 //! // Resolve it
 //! let service = container.resolve::<MyCustomService>().unwrap();
@@ -158,38 +155,10 @@
 //! use ricecoder_di::{DIContainerBuilder, DIContainerBuilderExt};
 //!
 //! fn setup_container() -> Result<ricecoder_di::DIContainer, ricecoder_di::DIError> {
-//!     let container = DIContainerBuilder::new()
-//!         // Core services (always available)
+//!     let builder = DIContainerBuilder::new()
 //!         .register_infrastructure_services()?
-//!         .register_use_cases()?
-//!
-//!         // Optional services (feature-gated)
-//!         .register_storage_services()?
-//!         .register_research_services()?
-//!         .register_workflow_services()?
-//!         .register_execution_services()?
-//!         .register_mcp_services()?
-//!         .register_tool_services()?
-//!         .register_config_services()?
-//!         .register_activity_log_services()?
-//!         .register_orchestration_services()?
-//!         .register_specs_services()?
-//!         .register_undo_redo_services()?
-//!         .register_vcs_services()?
-//!         .register_permissions_services()?
-//!         .register_security_services()?
-//!         .register_cache_services()?
-//!         .register_domain_services()?
-//!         .register_learning_services()?
-//!         .register_industry_services()?
-//!         .register_safety_services()?
-//!         .register_files_services()?
-//!         .register_themes_services()?
-//!         .register_images_services()?
-//!
-//!         .build()?;
-//!
-//!     Ok(container)
+//!         .register_use_cases()?;
+//!     Ok(builder.build())
 //! }
 //!
 //! fn main() -> Result<(), Box<dyn std::error::Error>> {

@@ -21,11 +21,11 @@ impl ThemeResetManager {
             default_themes: Arc::new(defaults),
         }
     }
-    
+
     /// Load default themes from bundled JSON files
     fn load_default_themes() -> HashMap<String, Theme> {
         let mut themes = HashMap::new();
-        
+
         // Try to load from bundled themes directory
         if let Some(bundled_dir) = ThemeLoader::bundled_themes_directory() {
             if let Ok(loaded) = ThemeLoader::load_from_directory(&bundled_dir) {
@@ -34,16 +34,16 @@ impl ThemeResetManager {
                 }
             }
         }
-        
+
         // Ensure we always have at least the fallback theme
         if themes.is_empty() {
             let fallback = Theme::fallback();
             themes.insert(fallback.name.clone(), fallback);
         }
-        
+
         themes
     }
-    
+
     /// Create a reset manager with specific themes (for testing)
     pub fn with_themes(themes: HashMap<String, Theme>) -> Self {
         Self {
@@ -354,7 +354,9 @@ mod tests {
     #[test]
     fn test_get_default_color_invalid_theme() {
         let manager = create_test_manager();
-        assert!(manager.get_default_color("nonexistent-xyz", "primary").is_err());
+        assert!(manager
+            .get_default_color("nonexistent-xyz", "primary")
+            .is_err());
     }
 
     #[test]
